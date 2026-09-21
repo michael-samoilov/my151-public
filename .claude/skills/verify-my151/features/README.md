@@ -6,10 +6,8 @@ proves it works. The harness's standard suite (`harness/lib/flows.ts`) re-checks
 `standard-surfaces` on every run; the other files are the per-feature detail a
 change-specific flow builds on.
 
-This map describes **two tools**: the pokedex builder with its view and
-analytics tabs, and the Pokémon League Builder. The favourite picker, when it
-lands, adds one file of its own. Do not treat this list as final; grow it with
-the app and keep it honest with `/maintain-verification-skill`.
+This map describes **three tools**: the pokedex builder with its view and
+analytics tabs, the Pokémon League Builder, and the favorite Pokémon picker.
 
 | Feature | File | Owner (source) |
 | --- | --- | --- |
@@ -19,6 +17,7 @@ the app and keep it honest with `/maintain-verification-skill`.
 | View and export the finished dex | `view-and-export.md` | `src/components/view/ViewPage.tsx` |
 | Analytics dashboard | `analytics.md` | `src/components/analytics/AnalyticsDashboard.tsx` |
 | Pokémon League Builder | `league-builder.md` | `src/league/LeagueApp.tsx`, `src/league/components/CardGrid.tsx` |
+| Favorite Pokémon picker | `favorite-picker.md` | `src/favorites/FavoritesApp.tsx` |
 
 ## Stable handles (the whole app has few)
 

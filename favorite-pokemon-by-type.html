@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Favorite Pokémon Picker by Type and Generation | my151</title>
+    <meta name="description" content="Favorite Pokémon picker: pick a favorite Pokémon per type per generation, export the chart, and send your picks to your custom Pokédex." />
+    <link rel="canonical" href="https://my151.app/favorite-pokemon-by-type" />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="my151" />
+    <meta property="og:title" content="Favorite Pokémon Picker by Type and Generation | my151" />
+    <meta property="og:description" content="Favorite Pokémon picker: pick a favorite Pokémon per type per generation, export the chart, and send your picks to your custom Pokédex." />
+    <meta property="og:url" content="https://my151.app/favorite-pokemon-by-type" />
+    <meta property="og:image" content="https://my151.app/og-image.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Favorite Pokémon Picker by Type and Generation | my151" />
+    <meta name="twitter:description" content="Favorite Pokémon picker: pick a favorite Pokémon per type per generation, export the chart, and send your picks to your custom Pokédex." />
+    <meta name="twitter:image" content="https://my151.app/og-image.png" />
+
+    <style>
+      html { background-color: #f7f7f8; }
+      body { margin: 0; background-color: #f7f7f8; color: #0a0a0a;
+             font-family: system-ui, -apple-system, sans-serif; }
+      html { font-size: clamp(16px, 13px + 0.7vw, 20px); }
+      .fv-shell { display: flex; flex-direction: column; min-height: 100dvh; }
+      .fv-header { display: flex; align-items: center; justify-content: space-between;
+                   height: 2.75rem; box-sizing: border-box;
+                   padding: 0 0.75rem; border-bottom: 1px solid #e5e5e5; background: #ffffff; }
+      .fv-wordmark { font-size: 1.5rem; line-height: 2rem; font-weight: 800; letter-spacing: -0.025em;
+                     color: #0a0a0a; text-decoration: none; white-space: nowrap; }
+      .fv-wordmark b { color: #dc2626; font-weight: inherit; }
+      .fv-bar { display: flex; align-items: center; height: 2.75rem; box-sizing: border-box;
+                padding: 0 0.75rem; border-bottom: 1px solid #e5e5e5; background: #ffffff; }
+      .fv-bar h1 { margin: 0; font-size: 0.6875rem; line-height: 1; font-weight: 600; color: #737373; white-space: nowrap; }
+      .fv-copy { max-width: 40rem; margin: 0 auto; padding: 1rem 0.75rem; opacity: 0;
+                 animation: fv-reveal 320ms ease-out 1s forwards; }
+      .fv-copy p { margin: 0 0 0.5rem; font-size: 0.875rem; line-height: 1.5; color: #525252; }
+      @keyframes fv-reveal { to { opacity: 1; } }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="fv-shell">
+        <header class="fv-header">
+          <a class="fv-wordmark" href="/"><b>my151</b>.app</a>
+        </header>
+        <div class="fv-bar">
+          <h1>Favorite Pokémon Picker by Type and Generation</h1>
+        </div>
+        <main class="fv-copy">
+          <p>
+            Pick your favorite Pokémon of each type and gen: one for each of the 18 types, then one from each of the 9 generations. Export the result as a chart, or send the picks into the custom Pokédex builder.
+          </p>
+          <p>Loading the picker…</p>
+        </main>
+      </div>
+    </div>
+    <script type="module" src="/src/favorites/main.tsx"></script>
+  </body>
+</html>

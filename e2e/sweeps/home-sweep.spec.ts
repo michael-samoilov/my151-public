@@ -18,11 +18,11 @@ const WIDTHS = [
 ];
 
 /**
- * Three tools ship today. The favorite picker returns as a fourth, and when it
- * does this number changes with it — the page reads the count and lays itself
- * out from that, so a stale number here would pass while the page is wrong.
+ * Four hub cards: dex, league, favorite picker, then the feedback call.
+ * The page reads the count and lays itself out from that, so a stale number
+ * here would pass while the page is wrong.
  */
-const CARDS = 3;
+const CARDS = 4;
 
 type Problem = string;
 
@@ -93,7 +93,8 @@ test.describe('home page responsive sweep', () => {
         const wide = cards.filter((cell) => !cell.querySelector('[data-card-title]'));
         if (desktop && wide.length) fail.push(`${wide.length} cards have no caption at desktop width`);
         if (!desktop) {
-          if (wide.length !== 1) fail.push(`expected 1 wide bar on a phone, found ${wide.length}`);
+          const wantWide = cardCount % 2 === 1 ? 1 : 0;
+          if (wide.length !== wantWide) fail.push(`expected ${wantWide} wide bar on a phone, found ${wide.length}`);
           wide.forEach((cell) => {
             const spread = R(grid!).width - R(cell).width;
             if (spread > 0.5) fail.push(`the wide bar is ${spread.toFixed(1)}px short of the grid`);

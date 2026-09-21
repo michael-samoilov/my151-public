@@ -9,7 +9,7 @@ import { useT, type NoArgKey } from '@/i18n';
  * like every other visible string. The keys are written out rather than
  * built from the page name, so the extraction catalog can place each one.
  */
-export type FaqPage = 'hub' | 'dex' | 'league';
+export type FaqPage = 'hub' | 'dex' | 'league' | 'favorites';
 
 const FAQ: Record<FaqPage, [NoArgKey, NoArgKey][]> = {
   hub: [
@@ -27,6 +27,10 @@ const FAQ: Record<FaqPage, [NoArgKey, NoArgKey][]> = {
     ['faq.league.q1', 'faq.league.a1'],
     ['faq.league.q2', 'faq.league.a2'],
     ['faq.league.q3', 'faq.league.a3'],
+  ],
+  favorites: [
+    ['faq.favorites.q1', 'faq.favorites.a1'],
+    ['faq.favorites.q2', 'faq.favorites.a2'],
   ],
 };
 

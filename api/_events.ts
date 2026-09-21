@@ -11,7 +11,7 @@
  * import it too. The leading underscore keeps Vercel from serving it.
  */
 
-export const TOOLS = ['dex', 'league', 'hub'] as const;
+export const TOOLS = ['dex', 'league', 'hub', 'favorites'] as const;
 export type Tool = (typeof TOOLS)[number];
 
 /** The tool a beacon names, defaulting to the dex for clients that predate
@@ -73,6 +73,8 @@ export const FUNNEL_EVENTS = [
   'hub-shown',
   'hub-cta-dex',
   'hub-cta-league',
+  'hub-cta-favorites',
+  'favorites-open',
   // The gym leader maker.
   'league-open',
   'league-first-seat',

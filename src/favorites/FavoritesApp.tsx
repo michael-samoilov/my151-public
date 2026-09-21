@@ -1,0 +1,109 @@
+import { useEffect, useState } from 'react';
+import { LanguagePicker } from '@/components/layout/LanguagePicker';
+import { ToolsMenu } from '@/components/layout/ToolsMenu';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { FeedbackHost } from '@/components/feedback/FeedbackHost';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
+import { PageFooter } from '@/components/shared/PageFooter';
+import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { cellKey, type GenAxisId, type TypeAxisId } from './model/cells';
+import { getPickerMon } from './model/catalog';
+import { kindFor } from './model/eligibility';
+import { useFavoritesStore } from './store/useFavoritesStore';
+import { FavoritesGrid } from './components/FavoritesGrid';
+import { PickerSheet } from './components/PickerSheet';
+import type { PackMove } from './model/packing';
+
+const TOOL_NAME = 'Favorite Pokémon Picker by Type and Generation';
+
+function GlobalHeader() {
+  return (
+    <header className="flex h-11 items-center justify-between border-b bg-card px-3 sm:px-6">
+      <a href="/" data-testid="wordmark" className="text-2xl font-extrabold tracking-tight">
+        <span className="text-primary">my151</span>
+        <span className="text-foreground">.app</span>
+      </a>
+      <div className="flex flex-shrink-0 items-center gap-1">
+        <LanguagePicker />
+        <FeedbackButton />
+        <ToolsMenu current="favorites" />
+      </div>
+    </header>
+  );
+}
+
+export function FavoritesApp() {
+  useJsErrorCounter();
+  const desktop = useIsDesktop();
+  const fills = useFavoritesStore((s) => s.fills);
+  const place = useFavoritesStore((s) => s.place);
+  const applyPack = useFavoritesStore((s) => s.applyPack);
+  const clear = useFavoritesStore((s) => s.clear);
+  const [sel, setSel] = useState<{ type: TypeAxisId; gen: GenAxisId } | null>(null);
+
+  useEffect(() => {
+    sendEventBeacon('favorites-open', { once: true });
+  }, []);
+
+  function open(type: TypeAxisId, gen: GenAxisId) {
+    const kind = kindFor(type, gen);
+    if (kind === 'disabled' || kind === 'null') return;
+    setSel({ type, gen });
+  }
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <div className="flex min-h-dvh flex-col bg-background text-foreground">
+        <GlobalHeader />
+        <div className="flex h-11 items-center border-b bg-card px-3">
+          <h1 className="overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground" title={TOOL_NAME}>
+            {TOOL_NAME}
+          </h1>
+        </div>
+        <div className="flex min-h-0 flex-1">
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col p-1 sm:p-2">
+            <FavoritesGrid
+              fills={fills}
+              resolve={getPickerMon}
+              selected={sel}
+              onSelect={open}
+              desktop={desktop}
+            />
+          </main>
+          {desktop && sel ? (
+            <PickerSheet
+              type={sel.type}
+              gen={sel.gen}
+              fills={fills}
+              currentId={fills[cellKey(sel.type, sel.gen)]}
+              onClose={() => setSel(null)}
+              onPlace={(id) => place(sel.type, sel.gen, id)}
+              onApplyPack={(path: PackMove[]) => {
+                if (typeof sel.gen === 'number') applyPack(sel.gen, path);
+              }}
+              onClear={() => clear(sel.type, sel.gen)}
+            />
+          ) : null}
+        </div>
+        {!desktop && sel ? (
+          <PickerSheet
+            type={sel.type}
+            gen={sel.gen}
+            fills={fills}
+            currentId={fills[cellKey(sel.type, sel.gen)]}
+            onClose={() => setSel(null)}
+            onPlace={(id) => place(sel.type, sel.gen, id)}
+            onApplyPack={(path: PackMove[]) => {
+              if (typeof sel.gen === 'number') applyPack(sel.gen, path);
+            }}
+            onClear={() => clear(sel.type, sel.gen)}
+          />
+        ) : null}
+        <PageFooter faq="favorites" compact />
+      </div>
+      <FeedbackHost route="/favorite-pokemon-by-type" />
+    </TooltipProvider>
+  );
+}

@@ -122,6 +122,12 @@ function useTools(placed: number): Tool[] {
         'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
       ],
     },
+    {
+      key: 'favorites',
+      href: '/favorite-pokemon-by-type',
+      title: t('home.favorites.title'),
+      blurb: t('home.favorites.blurb'),
+    },
     { key: HAMMER_TITLE, title: t('home.next.title'), blurb: t('home.next.blurb') },
   ];
 }
@@ -171,8 +177,13 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       className={panel}
       style={style}
       data-card-panel
+      aria-label={tool.shots ? undefined : tool.title}
       // fetch keepalive lets the beacon outlive the navigation this starts.
-      onClick={() => sendEventBeacon(tool.key === 'dex' ? 'hub-cta-dex' : 'hub-cta-league')}
+      onClick={() =>
+        sendEventBeacon(
+          tool.key === 'dex' ? 'hub-cta-dex' : tool.key === 'league' ? 'hub-cta-league' : 'hub-cta-favorites',
+        )
+      }
     >
       {body}
     </a>

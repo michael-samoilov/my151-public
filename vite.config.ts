@@ -30,6 +30,7 @@ export default defineConfig({
         slotlab: path.resolve(__dirname, 'slot-lab.html'),
         // Preview-only lighting studio for the league export card.
         foilworkshop: path.resolve(__dirname, 'foil-workshop.html'),
+        favorites: path.resolve(__dirname, 'favorite-pokemon-by-type.html'),
       },
     },
   },
