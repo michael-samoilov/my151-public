@@ -19,3 +19,7 @@ Pick one Pokémon per type×generation cell (plus starter, gimmick, legendary, a
 - localStorage `favorite-picker`: `{state:{fills:{"fire|1":4,…}},version:1}`
 - Grid: `[data-testid="favorites-grid"]`
 - Last picker row: `[data-pretty-row]` with `justify-content: center` when shorter than the row above.
+
+## Harness
+
+`runFavoritesSuite` in `harness/lib/flows.ts`. Skips when `/favorite-pokemon-by-type` is the SPA fallback. Checks: hub card, grid boot, last Unova Electric row centred, packing vacate opacity under 0.5, store `fairy|2` = Togetic and `water|2` = Azumarill before a chain is chosen.

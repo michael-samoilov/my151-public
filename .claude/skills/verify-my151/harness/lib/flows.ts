@@ -904,3 +904,183 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
   }
   return checks;
 }
+
+// ---------------------------------------------------------------------------
+// Favorite Pokémon picker (/favorite-pokemon-by-type). Skip until the MPA
+// page is in the build (production still serves the SPA fallback). The
+// checks are the ship-1 invariants: hub card, grid boot, last picker row
+// centred when it is short, packing vacate shows the incoming Pokémon
+// faded, and the favorite-picker store holds the placements.
+const FAV_PATH = '/favorite-pokemon-by-type';
+const FAV_KEY = 'favorite-picker';
+
+async function waitGone(s: Session, selector: string, tries = 40): Promise<boolean> {
+  for (let i = 0; i < tries; i++) {
+    const there = await s.evalJson<boolean>(`return !!document.querySelector(${JSON.stringify(selector)});`).catch(() => true);
+    if (!there) return true;
+    await sleep(200);
+  }
+  return false;
+}
+
+async function waitFavoritesGrid(s: Session): Promise<boolean> {
+  return waitFor(s, '[data-testid="favorites-grid"]');
+}
+
+async function pickFavorite(s: Session, cell: string, id: number): Promise<boolean> {
+  await s.click(`[data-testid="${cell}"]`);
+  if (!(await waitFor(s, `[data-testid="favorites-pick-${id}"]`))) return false;
+  await s.click(`[data-testid="favorites-pick-${id}"]`);
+  await sleep(400);
+  return true;
+}
+
+export async function runFavoritesSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + FAV_PATH;
+
+  try {
+    const res = await fetch(url);
+    const html = await res.text();
+    const hasH1 = /<h1[^>]*>[^<]*Favorite Pokémon Picker/i.test(html);
+    const hasTitle = /<title>[^<]*Favorite Pokémon Picker/i.test(html);
+    if (!res.ok) {
+      checks.push(ok('favorites:static-seo-content', false, `status ${res.status}`));
+      return checks;
+    }
+    if (!hasH1 || !hasTitle) {
+      checks.push({
+        name: 'favorites:static-seo-content',
+        status: 'skip',
+        detail: `favorite picker not in this build yet (SPA fallback at ${FAV_PATH})`,
+      });
+      return checks;
+    }
+    checks.push(ok('favorites:static-seo-content', true, `status ${res.status}`));
+  } catch (e) {
+    checks.push({ name: 'favorites:static-seo-content', status: 'fail', detail: (e as Error).message });
+    return checks;
+  }
+
+  await s.navigate(ctx.base + '/');
+  await waitForApp(s);
+  const hub = await waitFor(s, 'a[href="/favorite-pokemon-by-type"]');
+  checks.push(ok('favorites:hub-card', hub));
+  await s.screenshot(ctx.shot('favorites-hub'));
+
+  await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);
+  await s.navigate(url);
+  const hydrated = await waitFavoritesGrid(s);
+  checks.push(ok('favorites:hydrated-grid', hydrated));
+  await s.screenshot(ctx.shot('favorites-grid'));
+  if (hydrated) checks.push(await auditRender(s, 'favorites:render-grid'));
+
+  const layout = await s.evalJson<{ scrollWidth: number; innerWidth: number; bodyH: number }>(LAYOUT);
+  checks.push(ok(
+    'favorites:no-horizontal-overflow',
+    layout.scrollWidth <= layout.innerWidth + 2,
+    `scrollWidth ${layout.scrollWidth} vs innerWidth ${layout.innerWidth}`,
+  ));
+
+  if (!hydrated) {
+    const errs = await s.errors();
+    checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
+    return checks;
+  }
+
+  await s.click('[data-testid="favorites-cell-electric-5"]');
+  const pretty = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+  checks.push(ok('favorites:picker-opens', pretty));
+  await settle(s);
+  if (pretty) {
+    const row = await s.evalJson<{
+      lastShorter: boolean;
+      lastInset: boolean;
+      justify: string;
+      firstX: number;
+      lastX: number;
+      firstLen: number;
+      lastLen: number;
+    }>(`
+      const rows = [...document.querySelectorAll('[data-pretty-row]')];
+      if (rows.length < 2) return { lastShorter:false, lastInset:false, justify:'', firstX:0, lastX:0, firstLen:0, lastLen:0 };
+      const first = rows[0], last = rows[rows.length-1];
+      const firstBtn = first.querySelector('button');
+      const lastBtn = last.querySelector('button');
+      const firstLen = first.querySelectorAll('button').length;
+      const lastLen = last.querySelectorAll('button').length;
+      const firstX = firstBtn ? firstBtn.getBoundingClientRect().left : 0;
+      const lastX = lastBtn ? lastBtn.getBoundingClientRect().left : 0;
+      const justify = getComputedStyle(last).justifyContent;
+      return {
+        lastShorter: lastLen < firstLen,
+        lastInset: lastX > firstX + 4,
+        justify, firstX, lastX, firstLen, lastLen,
+      };
+    `);
+    const centred = row.justify === 'center' && (!row.lastShorter || row.lastInset);
+    checks.push(ok(
+      'favorites:last-row-centred',
+      centred,
+      `justify=${row.justify} firstLen=${row.firstLen} lastLen=${row.lastLen} firstX=${Math.round(row.firstX)} lastX=${Math.round(row.lastX)}`,
+    ));
+    await s.screenshot(ctx.shot('favorites-picker-last-row'));
+    checks.push(await auditRender(s, 'favorites:render-picker'));
+  }
+
+  await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);
+  await s.navigate(url);
+  if (!(await waitFavoritesGrid(s))) {
+    checks.push({ name: 'favorites:packing-opens', status: 'fail', detail: 'grid missing after reload' });
+    const errs = await s.errors();
+    checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
+    return checks;
+  }
+
+  const placedTogetic = await pickFavorite(s, 'favorites-cell-fairy-2', 176);
+  await waitGone(s, '[data-testid="favorites-picker"]');
+  const placedAzu = placedTogetic && await pickFavorite(s, 'favorites-cell-water-2', 184);
+  await waitGone(s, '[data-testid="favorites-picker"]');
+  let openedPack = false;
+  if (placedAzu) {
+    await s.click('[data-testid="favorites-cell-fairy-2"]');
+    if (await waitFor(s, '[data-testid="favorites-pick-184"]')) {
+      await s.click('[data-testid="favorites-pick-184"]');
+      openedPack = await waitFor(s, '[data-testid="favorites-packing"]');
+    }
+  }
+  checks.push(ok('favorites:packing-opens', openedPack, `togetic=${placedTogetic} azu=${placedAzu}`));
+  if (openedPack) {
+    const vacate = await s.evalJson<{ found: boolean; opacity: number; hasSprite: boolean }>(`
+      const slot = document.querySelector('[data-testid="favorites-pack-slot"][data-role="vacate"]');
+      if (!slot) return { found:false, opacity:1, hasSprite:false };
+      const imgs = [...slot.querySelectorAll('img')];
+      const sprite = imgs[imgs.length-1];
+      const opacity = sprite ? Number(getComputedStyle(sprite).opacity) : 1;
+      return { found:true, opacity, hasSprite: !!sprite };
+    `);
+    checks.push(ok(
+      'favorites:vacate-faded-sprite',
+      vacate.found && vacate.hasSprite && vacate.opacity < 0.5,
+      `found=${vacate.found} sprite=${vacate.hasSprite} opacity=${vacate.opacity}`,
+    ));
+    await s.screenshot(ctx.shot('favorites-packing-vacate'));
+    checks.push(await auditRender(s, 'favorites:render-packing'));
+  }
+
+  const oracle = await s.evalJson<{ has: boolean; fairy?: number; water?: number }>(`
+    const raw=localStorage.getItem(${JSON.stringify(FAV_KEY)});
+    if(!raw) return {has:false};
+    try { const d=JSON.parse(raw); const f=d.state?.fills||{}; return {has:true, fairy:f['fairy|2'], water:f['water|2']}; }
+    catch { return {has:false}; }
+  `);
+  checks.push(ok(
+    'favorites:store-has-placements',
+    Boolean(oracle.has && oracle.fairy === 176 && oracle.water === 184),
+    `fairy=${oracle.fairy} water=${oracle.water}`,
+  ));
+
+  const errs = await s.errors();
+  checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
+  return checks;
+}
