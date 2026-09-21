@@ -1621,7 +1621,6 @@ export function AdminPage() {
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
   const [page, setPage] = useState<'analytics' | 'feedback'>('analytics');
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
-  const [cohort, setCohort] = useState<'built' | 'incomplete' | 'completed'>('built');
   const [whoClamp, setWhoClamp] = useState<PlatformClamp | null>(null);
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
@@ -1916,31 +1915,19 @@ export function AdminPage() {
             return groups.slice(0, 5).map((g) => ({ label: g.label, pct: Math.round((g.count / total) * 100) }));
           };
 
-          // Who: use cohort breakdowns when the endpoint provides them, else the
-          // slice's own rollups (league, or an older deploy).
-          const cohorts = showDex ? data.cohorts : undefined;
-          const whoSrc = cohorts
-            ? cohorts[cohort]
-            : {
-                devices: slice.devices,
-                os: slice.os,
-                countries: slice.countries,
-                browsers: slice.browsers,
-                users: slice.users,
-                joints: slice.joints,
-              };
+          // The selected tool's whole population, not a built/incomplete/completed slice.
+          const whoSrc = {
+            devices: slice.devices,
+            os: slice.os,
+            countries: slice.countries,
+            browsers: slice.browsers,
+            users: slice.users,
+            joints: slice.joints,
+          };
           const whoJoints = whoSrc.joints ?? [];
-          const whoOs = whoSrc.os ?? slice.os ?? {};
-          const whoN = whoSrc.users ?? slice.users;
+          const whoOs = whoSrc.os ?? {};
+          const whoN = whoSrc.users;
           const whoClampedN = whoClamp && whoJoints.length ? clampedN(whoJoints, whoClamp) : null;
-          const whoBuilt = cohorts?.built;
-          const deltaVs = (rows: RollupRow[], baseRows: RollupRow[] | null): RollupRow[] =>
-            !baseRows ? rows : rows.map((r) => {
-              const b = baseRows.find((x) => x.label === r.label);
-              return { ...r, delta: b ? r.pct - b.pct : undefined };
-            });
-          const baseGeo = whoBuilt ? regionRollup(whoBuilt.countries) : null;
-          const showDelta = !!cohorts && cohort !== 'built';
 
           // Build depth: device split when available, else the slice total.
           const depthCurve =
@@ -2077,32 +2064,11 @@ export function AdminPage() {
               sub={
                 whoClampedN != null
                   ? [`${whoClampedN} of ${whoN}`]
-                  : cohorts
-                    ? [cohort, String(whoN)]
-                    : [TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(slice.users)]
+                  : [TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(whoN)]
               }
               actions={
-                (whoClamp && whoJoints.length > 0) || cohorts ? (
-                <div className="flex flex-wrap items-center justify-end gap-1">
-                  {whoClamp && whoJoints.length > 0 && (
-                    <ClampChip clamp={whoClamp} onClear={() => setWhoClamp(null)} />
-                  )}
-                  {cohorts ? (
-                    <Seg
-                      ariaLabel="Cohort"
-                      options={[
-                        { key: 'built', label: 'Built' },
-                        { key: 'incomplete', label: 'Incomplete' },
-                        { key: 'completed', label: 'Completed' },
-                      ]}
-                      value={cohort}
-                      onChange={(next) => {
-                        setWhoClamp(null);
-                        setCohort(next);
-                      }}
-                    />
-                  ) : undefined}
-                </div>
+                whoClamp && whoJoints.length > 0 ? (
+                  <ClampChip clamp={whoClamp} onClear={() => setWhoClamp(null)} />
                 ) : undefined
               }
             >
@@ -2117,7 +2083,7 @@ export function AdminPage() {
                 />
                 <div>
                   <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Region</div>
-                  <Rollup rows={showDelta ? deltaVs(regionRollup(whoSrc.countries), baseGeo) : regionRollup(whoSrc.countries)} />
+                  <Rollup rows={regionRollup(whoSrc.countries)} />
                 </div>
               </div>
             </Panel>
