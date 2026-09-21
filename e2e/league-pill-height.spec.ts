@@ -2,11 +2,11 @@ import { expect, test } from '@playwright/test';
 import { seededLeague } from './support/leagueSeed';
 
 /**
- * The red active pill is one control on two pages: the dex builder's view
- * nav and the league home's Story / Rematch toggle. Both take the shared
- * button's pill size, so both paint 1.75rem tall in every viewport, and both
- * take a press from the whole height of their 2.75rem bar: the pill stays
- * short, the target does not.
+ * The pill is one control on two pages: the dex builder's view nav and the
+ * league home's Story / Rematch tabs. Both take the shared button's pill
+ * size, so both paint 1.75rem tall in every viewport, and both take a press
+ * from the whole height of their 2.75rem bar: the pill stays short, the
+ * target does not.
  */
 
 /** The painted pill, and how far above and below it a press still lands on it. */
@@ -30,9 +30,9 @@ test('the dex nav pill and the league toggle pill paint alike and press alike', 
 
   await seededLeague(page);
   await page.goto('/custom-gym-leader');
-  await page.waitForSelector('[data-league-view][aria-pressed="true"]');
+  await page.waitForSelector('[data-league-view][aria-selected="true"]');
   await page.waitForTimeout(300);
-  const league = await page.evaluate(measurePill, { selector: '[data-league-view][aria-pressed="true"]' });
+  const league = await page.evaluate(measurePill, { selector: '[data-league-view][aria-selected="true"]' });
 
   expect(Math.abs(league.height - dex.height), `dex pill ${dex.height}px, league pill ${league.height}px`).toBeLessThanOrEqual(0.5);
   expect(Math.abs(dex.height - 1.75 * dex.rem), 'the pill paints 1.75rem').toBeLessThanOrEqual(0.5);
