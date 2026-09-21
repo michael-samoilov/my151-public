@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,9 @@ import { kindFor } from '../model/eligibility';
 import type { PickerMon } from '../model/catalog';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 
+const COLS = TYPE_AXIS.length + 1;
+const ROWS = GEN_AXIS.length + 1;
+
 export function FavoritesGrid({
   fills,
   resolve,
@@ -28,45 +32,93 @@ export function FavoritesGrid({
   onSelect: (type: TypeAxisId, gen: GenAxisId) => void;
   desktop: boolean;
 }) {
-  const typeMajor = !desktop;
-  const axisA = typeMajor ? TYPE_AXIS : GEN_AXIS;
-  const axisB = typeMajor ? GEN_AXIS : TYPE_AXIS;
-  const cols = axisB.length + 1;
-  const rows = axisA.length + 1;
+  const cells = (
+    <>
+      <Corner pin={!desktop} />
+      {TYPE_AXIS.map((id) => (
+        <HeaderCell key={`h-${String(id)}`} id={id} />
+      ))}
+      {GEN_AXIS.map((gen) => (
+        <GenRow
+          key={String(gen)}
+          gen={gen}
+          pin={!desktop}
+          fills={fills}
+          resolve={resolve}
+          selected={selected}
+          onSelect={onSelect}
+        />
+      ))}
+    </>
+  );
+
+  if (desktop) {
+    return (
+      <div
+        className="grid min-h-0 w-full flex-1 bg-card"
+        style={{
+          gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
+        }}
+        data-testid="favorites-grid"
+        data-axis="gen-major"
+      >
+        {cells}
+      </div>
+    );
+  }
+
+  return <TypeColumnScroller>{cells}</TypeColumnScroller>;
+}
+
+function TypeColumnScroller({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [cell, setCell] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const apply = () => setCell(el.clientHeight / ROWS);
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
-      className="grid min-h-0 w-full flex-1 bg-card"
-      style={{
-        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-      }}
-      data-testid="favorites-grid"
-      data-axis={typeMajor ? 'type-major' : 'gen-major'}
+      ref={ref}
+      className="h-full min-h-0 w-full overflow-x-auto overflow-y-hidden overscroll-x-contain bg-card"
+      style={{ touchAction: 'pan-x pan-y' }}
+      data-testid="favorites-grid-scroll"
     >
-      <div className="border-[0.5px] border-neutral-200 bg-neutral-50" />
-      {axisB.map((id) => (
-        <HeaderCell key={`h-${String(id)}`} id={id} />
-      ))}
-      {axisA.map((a) => (
-        <Row key={String(a)} a={a} axisB={axisB} typeMajor={typeMajor} fills={fills} resolve={resolve} selected={selected} onSelect={onSelect} />
-      ))}
+      <div
+        className="grid"
+        style={{
+          height: cell > 0 ? cell * ROWS : '100%',
+          gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
+          gridTemplateColumns: cell > 0 ? `repeat(${COLS}, ${cell}px)` : `repeat(${COLS}, minmax(0, 1fr))`,
+          width: cell > 0 ? cell * COLS : '100%',
+        }}
+        data-testid="favorites-grid"
+        data-axis="gen-major"
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
-function Row({
-  a,
-  axisB,
-  typeMajor,
+function GenRow({
+  gen,
+  pin,
   fills,
   resolve,
   selected,
   onSelect,
 }: {
-  a: TypeAxisId | GenAxisId;
-  axisB: readonly (TypeAxisId | GenAxisId)[];
-  typeMajor: boolean;
+  gen: GenAxisId;
+  pin: boolean;
   fills: Record<string, number>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
@@ -74,36 +126,55 @@ function Row({
 }) {
   return (
     <>
-      <HeaderCell id={a} />
-      {axisB.map((b) => {
-        const type = (typeMajor ? a : b) as TypeAxisId;
-        const gen = (typeMajor ? b : a) as GenAxisId;
-        return (
-          <BodyCell
-            key={cellKey(type, gen)}
-            type={type}
-            gen={gen}
-            fills={fills}
-            resolve={resolve}
-            selected={selected}
-            onSelect={onSelect}
-          />
-        );
-      })}
+      <HeaderCell id={gen} pin={pin} />
+      {TYPE_AXIS.map((type) => (
+        <BodyCell
+          key={cellKey(type, gen)}
+          type={type}
+          gen={gen}
+          fills={fills}
+          resolve={resolve}
+          selected={selected}
+          onSelect={onSelect}
+        />
+      ))}
     </>
   );
 }
 
-function HeaderCell({ id }: { id: TypeAxisId | GenAxisId }) {
+function Corner({ pin }: { pin: boolean }) {
   return (
-    <div className="flex items-center justify-center border-[0.5px] border-neutral-200 bg-card">
-      {isTypeName(id) ? (
-        <TypeIcon type={id} size={18} />
-      ) : isGenNumber(id) ? (
-        <RomanDisc gen={id} size={22} />
-      ) : (
-        <ExtraMark id={id} size={18} />
+    <div
+      className={cn(
+        'border-[0.5px] border-neutral-200 bg-neutral-50',
+        pin && 'sticky left-0 z-20',
       )}
+    />
+  );
+}
+
+function HeaderCell({ id, pin = false }: { id: TypeAxisId | GenAxisId; pin?: boolean }) {
+  return (
+    <div
+      className={cn(
+        'relative min-h-0 min-w-0 overflow-hidden border-[0.5px] border-neutral-200 bg-card',
+        pin && 'sticky left-0 z-20',
+      )}
+    >
+      <div className="absolute inset-0" style={{ containerType: 'size' }}>
+        <div
+          className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain [&_span]:!h-full [&_span]:!w-full [&_span]:!text-[0.62em]"
+          style={{ width: '72cqmin', height: '72cqmin', fontSize: '72cqmin' }}
+        >
+          {isTypeName(id) ? (
+            <TypeIcon type={id} size={32} />
+          ) : isGenNumber(id) ? (
+            <RomanDisc gen={id} size={32} />
+          ) : (
+            <ExtraMark id={id} size={32} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

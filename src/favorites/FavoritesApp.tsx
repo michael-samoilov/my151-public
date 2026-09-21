@@ -62,8 +62,8 @@ export function FavoritesApp() {
             {TOOL_NAME}
           </h1>
         </div>
-        <div className="flex min-h-0 flex-1">
-          <main className="flex min-h-0 min-w-0 flex-1 flex-col p-1 sm:p-2">
+        <div className={desktop ? 'flex min-h-0 flex-1' : 'h-[calc(100dvh-2*2.75rem)] shrink-0'}>
+          <main className={desktop ? 'flex min-h-0 min-w-0 flex-1 flex-col p-1 sm:p-2' : 'h-full min-h-0 p-1'}>
             <FavoritesGrid
               fills={fills}
               resolve={getPickerMon}
