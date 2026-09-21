@@ -1313,10 +1313,10 @@ export async function runGymCardExportParitySuite(
 }
 
 const FIVE_LINE_LEAGUE =
-  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);cards[0]={...empty(),lines:[line(1),line(4),line(7),line(10),line(16)]};return JSON.stringify({state:{name:'',cards},version:1});})()";
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);cards[0]={...empty(),lines:[line(1),line(4),line(7),line(10),line(16)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
 
 const SEVEN_GYMS_LEAGUE =
-  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);for(let i=0;i<7;i++)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards},version:1});})()";
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);for(let i=0;i<7;i++)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
 
 async function waitNudge(s: Session, kind: 'card' | 'league'): Promise<boolean> {
   return waitFor(s, `[data-testid="league-nudge"][data-league-nudge="${kind}"]`, 25);
@@ -1325,6 +1325,15 @@ async function waitNudge(s: Session, kind: 'card' | 'league'): Promise<boolean> 
 async function closeLeagueCard(s: Session): Promise<void> {
   const collapsed = await s.evalJson<boolean>(`const b=document.querySelector('[aria-label="Collapse the trainer card"]')||document.querySelector('[aria-label^="Back to the league"]'); if(!b) return false; b.click(); return true;`).catch(() => false);
   if (collapsed) await sleep(500);
+}
+
+/** Seat the current picker result. Native click, then close the desktop pane. */
+async function placePickerLine(s: Session): Promise<boolean> {
+  const clicked = await s.evalJson<boolean>(`const el=document.querySelector(${JSON.stringify(PLACE_CARD)}); if(!el) return false; el.click(); return true;`).catch(() => false);
+  await sleep(600);
+  await s.evalJson(`const b=document.querySelector('[data-testid="browser-close"]'); if(b) b.click(); return true;`).catch(() => false);
+  await sleep(400);
+  return clicked;
 }
 
 export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
@@ -1345,8 +1354,7 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
     await waitFor(s, '[data-filter-chip="my-dex"]');
     await sleep(600);
     await searchPicker(s, 'eevee');
-    await s.click(PLACE_CARD);
-    await sleep(800);
+    await placePickerLine(s);
     const shown = await waitNudge(s, 'card');
     await s.screenshot(ctx.shot('league-funnel-card-nudge'));
     checks.push(ok('league-funnel:card-nudge-shown', shown, shown ? 'card export nudge' : 'no [data-testid=league-nudge] after sixth line'));
@@ -1365,8 +1373,7 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   await waitFor(s, '[data-filter-chip="my-dex"]');
   await sleep(600);
   await searchPicker(s, 'pikachu');
-  await s.click(PLACE_CARD);
-  await sleep(800);
+  await placePickerLine(s);
   await closeLeagueCard(s);
   const roster = await waitNudge(s, 'league');
   await s.screenshot(ctx.shot('league-funnel-roster-nudge'));
