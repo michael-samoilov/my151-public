@@ -132,12 +132,16 @@ const basePreview = startPreview(WORKTREE, 4191);
 const fixPreview = startPreview('/workspace', 4190);
 
 const browser = await chromium.launch();
-const beforePage = await browser.newPage();
+const beforeCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
+const beforePage = await beforeCtx.newPage();
 await captureSet(beforePage, 'http://127.0.0.1:4191', 'before');
 await beforePage.close();
-const afterPage = await browser.newPage();
+await beforeCtx.close();
+const afterCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
+const afterPage = await afterCtx.newPage();
 await captureSet(afterPage, 'http://127.0.0.1:4190', 'after');
 await afterPage.close();
+await afterCtx.close();
 await browser.close();
 basePreview.stop();
 fixPreview.stop();

@@ -311,11 +311,19 @@ describe('export layout', () => {
     expect(L.TM_TYPE_ABOVE_NAME).toBe(true);
   });
 
-  it('fills the gym-leader-team panel with 2× ace/partner sprites', () => {
+  it('paints ace/partner at the live card CSS size, not 2× native on the canvas', () => {
+    // A 3× phone picks 2× as 64 CSS px. The export maps CSS through K, so
+    // that is ~118 canvas px. Painting 192 (2× native on a 1× artboard)
+    // overlaps the pair; the live card does not.
     const box = L.showcaseBox();
+    const css = pairSprite(box.width / L.K, box.height / L.K, 3, 16);
     const sprite = L.pairExportSprite(box.width, box.height);
-    expect(sprite % 96).toBe(0);
-    expect(sprite).toBe(192);
+    expect(css).toBe(64);
+    expect(sprite).toBe(Math.round(css * L.K));
+    const pad = 0.5 * 16 * L.K;
+    const aceRight = pad + sprite;
+    const partnerLeft = box.width - pad - sprite;
+    expect(aceRight).toBeLessThanOrEqual(partnerLeft);
   });
 
   it('pins ace and partner sprite centres as a 180° mirror', () => {

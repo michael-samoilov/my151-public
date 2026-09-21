@@ -12,7 +12,7 @@
  */
 
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
-import { pairSpriteScale, SPRITE_NATIVE } from '../slotLayout';
+import { pairSprite } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
 /** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
@@ -154,18 +154,22 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
 export const FRAME = 12;
 
 /**
- * 2× native sprite. Ace/partner paint at `pairExportSprite`, which is this
- * size when the live card would pick 2×.
+ * Native 2× source pixels. Export paint size is `pairExportSprite`, which
+ * maps the live card's CSS edge through K. On a 3× phone that CSS edge is
+ * 64px, not 192.
  */
 export const SIG_SPRITE = 192;
 
 /**
- * Ace/partner edge in export pixels. Same 1×/2× rule as the live card
- * (`pairSpriteScale` on the CSS-equivalent slot). The PNG is native sprite
- * pixels, so a 3× device that picks 2× (64 CSS px) paints at 192 here.
+ * Ace/partner edge in export pixels.
+ *
+ * The live card sizes the pair in CSS px (`pairSprite`: 64 on a 3× phone
+ * that picks 2×). The export artboard maps 52 CSS px to 96 canvas px, so
+ * the same sprite is `css * K`. Multiplying the 1|2 scale by 96 instead
+ * paints 2× native on a 1× canvas and overlaps the pair.
  */
 export function pairExportSprite(w: number, h: number): number {
-  return pairSpriteScale(w / K, h / K, 3, 16) * SPRITE_NATIVE;
+  return Math.round(pairSprite(w / K, h / K, 3, 16) * K);
 }
 
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */
