@@ -145,6 +145,27 @@ test.describe('mobile dex export sheet', () => {
   test.use({ viewport: MOBILE });
   test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'the sheet is hidden at md');
 
+  test('paints rainbow on first open with no setting change', async ({ page }) => {
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 8000 }).toBe('1');
+    await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.2);
+    const rainbow = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const holo = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      if (!card || !holo) return { ok: false, reason: 'missing' };
+      const cs = getComputedStyle(holo);
+      const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`;
+      if (card.getAttribute('data-foil-maps') !== '1') return { ok: false, reason: 'maps' };
+      if (cs.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
+      if (Number(cs.opacity) <= 0.15) return { ok: false, reason: `opacity ${cs.opacity}` };
+      if (!mask.includes('url(')) return { ok: false, reason: 'unmasked' };
+      return { ok: true, reason: 'open' };
+    });
+    expect(rainbow.ok, rainbow.reason).toBe(true);
+  });
+
   test('keeps the preview above the settings sheet', async ({ page }) => {
     await openDexExport(page);
     await waitPreviewReady(page);
@@ -188,10 +209,10 @@ test.describe('mobile dex export sheet', () => {
       }
       if (!/round/i.test(clip)) return { ok: false, reason: `clip ${clip}` };
       if (!mask.includes('url(')) return { ok: false, reason: `holo unmasked ${mask}` };
-      if (holoStyle.mixBlendMode !== 'soft-light') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
+      if (holoStyle.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
-      if (Math.abs(holoAmt - 0.55) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
+      if (Math.abs(holoAmt - 1) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
@@ -285,6 +306,31 @@ test.describe('mobile dex export copy', () => {
 
 test.describe('desktop dex export preview', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('paints rainbow on first open with no setting change', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 8000 }).toBe('1');
+    await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.2);
+    const rainbow = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const holo = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      if (!card || !holo) return { ok: false, reason: 'missing' };
+      const cs = getComputedStyle(holo);
+      const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`;
+      if (card.getAttribute('data-foil-maps') !== '1') return { ok: false, reason: 'maps' };
+      if (cs.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
+      if (Number(cs.opacity) <= 0.15) return { ok: false, reason: `opacity ${cs.opacity}` };
+      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 1) > 0.02) {
+        return { ok: false, reason: 'amount' };
+      }
+      if (!mask.includes('url(')) return { ok: false, reason: 'unmasked' };
+      return { ok: true, reason: 'open' };
+    });
+    expect(rainbow.ok, rainbow.reason).toBe(true);
+  });
 
   test('tilts only near the card and keeps the export in view', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
@@ -459,7 +505,7 @@ test.describe('desktop dex export preview', () => {
           !style.transformStyle.includes('preserve-3d') &&
           overflowLayers.length === 0 &&
           mask.includes('url(') &&
-          Math.abs(holoAmt - 0.55) < 0.02 &&
+          Math.abs(holoAmt - 1) < 0.02 &&
           !(bloom instanceof HTMLElement && getComputedStyle(bloom).inset.includes('-')),
       };
     });
@@ -517,8 +563,31 @@ test.describe('desktop dex export preview', () => {
     });
     expect(corners.ok, JSON.stringify(corners)).toBe(true);
 
-    await hit.click();
-    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
+    await page.mouse.move(16, 16);
+    await page.waitForTimeout(80);
+    const resume = await page.evaluate(async () => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
+      if (!card || !hitEl) return { ok: false, sameTick: 99, frame1: 99, frame2: 99 };
+      const hypot = () =>
+        Math.hypot(Number(card.getAttribute('data-tilt-x') || 0), Number(card.getAttribute('data-tilt-y') || 0));
+      const r = hitEl.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      hitEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse' }));
+      hitEl.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse' }));
+      const sameTick = hypot();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const frame1 = hypot();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      const frame2 = hypot();
+      return { ok: true, sameTick, frame1, frame2, paused: card.getAttribute('data-paused') };
+    });
+    expect(resume.ok, JSON.stringify(resume)).toBe(true);
+    expect(resume.paused, JSON.stringify(resume)).toBe('0');
+    expect(resume.sameTick, 're-enable must ease, not snap to orbit start').toBeLessThan(1.2);
+    expect(resume.frame1, JSON.stringify(resume)).toBeLessThan(2.4);
+    expect(resume.frame2, JSON.stringify(resume)).toBeLessThan(3.2);
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
   });
 
@@ -659,9 +728,9 @@ test.describe('desktop dex export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('soft-light');
+    expect(holo.mix, JSON.stringify(holo)).toBe('hue');
     expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.15);
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.55, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);

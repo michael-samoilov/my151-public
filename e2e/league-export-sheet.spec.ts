@@ -171,6 +171,19 @@ test.describe('desktop export preview', () => {
     await waitPreviewReady(page);
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => foil.getAttribute('data-foil-maps')).toBe('1');
+    const rainbowOnOpen = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      if (!card || !layer) return { ok: false, reason: 'missing' };
+      const cs = getComputedStyle(layer);
+      if (cs.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
+      if (Number(cs.opacity) <= 0.15) return { ok: false, reason: `opacity ${cs.opacity}` };
+      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 1) > 0.02) {
+        return { ok: false, reason: 'amount' };
+      }
+      return { ok: true, reason: 'open' };
+    });
+    expect(rainbowOnOpen.ok, rainbowOnOpen.reason).toBe(true);
     const hit = page.locator('[data-export-tilt-hit]');
     const box = await hit.boundingBox();
     expect(box).toBeTruthy();
@@ -197,8 +210,8 @@ test.describe('desktop export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('soft-light');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.55, 2);
+    expect(holo.mix, JSON.stringify(holo)).toBe('hue');
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.shadow, JSON.stringify(holo)).not.toBe('none');
@@ -239,8 +252,8 @@ test.describe('gym trainer-card export', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('soft-light');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.55, 2);
+    expect(holo.mix, JSON.stringify(holo)).toBe('hue');
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2.4);
     expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(3.8);

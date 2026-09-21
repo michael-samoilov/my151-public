@@ -411,7 +411,7 @@ export function ExportPreview3D({
     return () => cancelAnimationFrame(raf);
   }, [idleAt, paint]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     recipeRef.current = recipe;
     tiltRef.current = tilt;
     const el = cardRef.current;
@@ -426,7 +426,12 @@ export function ExportPreview3D({
       el.style.setProperty(key, value);
     }
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
-    if (!tilt) return;
+    if (!tilt) {
+      if (!releaseRef.current) {
+        paint(pausedRef.current ? REST_POSE : idleAt(performance.now()));
+      }
+      return;
+    }
     el.dataset.maskSpriteCount = String(maskContext.sprites.length);
     el.dataset.maskSpriteTypes = hoverTiltMaskSpriteTypes(maskContext);
     const syncGlare = hoverTiltMaskPaint(tilt.glareMask, maskContext);
@@ -449,35 +454,41 @@ export function ExportPreview3D({
     return () => {
       cancelled = true;
     };
-  }, [activeSrc, maskContext, recipe, tilt]);
+  }, [activeSrc, idleAt, maskContext, paint, recipe, tilt]);
 
   useEffect(() => {
     const el = cardRef.current;
+    const img = imgRef.current;
     if (!el || !activeSrc) return;
-    el.style.setProperty('--foil-sat-mask', 'none');
-    el.style.setProperty('--foil-edge-mask', 'none');
-    el.style.setProperty('--foil-gloss-mask', 'none');
     if (!needSat && !needEdge && !needGloss) {
       el.dataset.foilMaps = '1';
       return;
     }
-    el.dataset.foilMaps = '0';
     let cancelled = false;
-    void foilMaskUrlsFromImage(activeSrc, { sat: needSat, edge: needEdge, gloss: needGloss })
-      .then((maps) => {
-        if (cancelled) return;
-        const card = cardRef.current;
-        if (!card) return;
-        card.style.setProperty('--foil-sat-mask', foilMaskCss(maps.sat));
-        card.style.setProperty('--foil-edge-mask', foilMaskCss(maps.edge));
-        card.style.setProperty('--foil-gloss-mask', foilMaskCss(maps.gloss));
-        card.dataset.foilMaps = '1';
-      })
-      .catch(() => {
-        /* Point light still runs without maps. Masked layers stay hidden. */
-      });
+    let tries = 0;
+    const apply = () => {
+      if (cancelled) return;
+      void foilMaskUrlsFromImage(activeSrc, { sat: needSat, edge: needEdge, gloss: needGloss })
+        .then((maps) => {
+          if (cancelled) return;
+          const card = cardRef.current;
+          if (!card) return;
+          card.style.setProperty('--foil-sat-mask', foilMaskCss(maps.sat));
+          card.style.setProperty('--foil-edge-mask', foilMaskCss(maps.edge));
+          card.style.setProperty('--foil-gloss-mask', foilMaskCss(maps.gloss));
+          card.dataset.foilMaps = '1';
+        })
+        .catch(() => {
+          if (cancelled || tries >= 6) return;
+          tries += 1;
+          window.setTimeout(apply, 50);
+        });
+    };
+    if (img?.complete && img.naturalWidth > 0) apply();
+    else img?.addEventListener('load', apply);
     return () => {
       cancelled = true;
+      img?.removeEventListener('load', apply);
     };
   }, [activeSrc, needSat, needEdge, needGloss]);
 
@@ -536,7 +547,11 @@ export function ExportPreview3D({
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* Synthetic test events have no pointer capture. */
+    }
     downRef.current = { t: performance.now(), x: e.clientX, y: e.clientY, dragged: false };
   }, []);
 
@@ -555,13 +570,15 @@ export function ExportPreview3D({
       restAtRef.current = null;
       enterSinceRef.current = null;
       pausedRef.current = !pausedRef.current;
+      const now = performance.now();
+      releaseRef.current = { from: { ...lastPoseRef.current }, t0: now };
       if (pausedRef.current) {
         orbitRef.current = 'paused';
-        releaseRef.current = { from: { ...lastPoseRef.current }, t0: performance.now() };
+        paint(lerpPose(releaseRef.current.from, REST_POSE, 0));
       } else {
         orbitRef.current = 'idle';
-        originRef.current = performance.now();
-        releaseRef.current = null;
+        if (originRef.current === null) originRef.current = now;
+        paint(lerpPose(releaseRef.current.from, idleAt(now), 0));
       }
       return;
     }
@@ -574,7 +591,7 @@ export function ExportPreview3D({
       return;
     }
     beginRest(performance.now());
-  }, [beginRest]);
+  }, [beginRest, idleAt, paint]);
 
   const onPointerCancel = useCallback(() => {
     downRef.current = null;

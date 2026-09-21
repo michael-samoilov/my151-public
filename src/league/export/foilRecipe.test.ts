@@ -47,7 +47,7 @@ describe('foil recipe', () => {
     });
     expect(DEFAULT_FOIL_RECIPE.layers.ambient.on).toBe(false);
     expect(DEFAULT_FOIL_RECIPE.layers.emboss.on).toBe(false);
-    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.55);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(1);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.on).toBe(true);
     expect(DEFAULT_FOIL_RECIPE.layers.iridescence.amount).toBe(0.15);
     expect(DEFAULT_FOIL_RECIPE.layers.sparkle.amount).toBe(0.52);
@@ -59,10 +59,9 @@ describe('foil recipe', () => {
     expect(foilMapsNeeded(holoOnly)).toEqual({ sat: true, edge: false, gloss: false });
   });
 
-  it('sat-masked soft-light tints ink and the sat map keeps paper at zero', () => {
+  it('sat-masked hue tints ink and the sat map keeps paper at zero', () => {
     expect(foilMapsNeeded(DEFAULT_FOIL_RECIPE).sat).toBe(true);
-    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeGreaterThan(0.3);
-    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeLessThan(0.7);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(1);
   });
 
   it('drops unknown keys and clamps amounts at the parse boundary', () => {

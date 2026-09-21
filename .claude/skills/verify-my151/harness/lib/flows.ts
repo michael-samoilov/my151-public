@@ -339,7 +339,7 @@ async function waitForFoilMaps(s: Session, ms = 15000): Promise<boolean> {
   return false;
 }
 
-/** Rainbow on ink only: sat-mask + color blend. Paper stays white. */
+/** Rainbow on ink only: sat-mask + hue blend. Paper stays white. */
 async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: string }> {
   return s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
@@ -354,9 +354,9 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const opacity=Number(cs.opacity);
      const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
-     if(mix!=='soft-light') return {ok:false,reason:'blend '+mix};
+     if(mix!=='hue') return {ok:false,reason:'blend '+mix};
      if(!(opacity>0.15)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
-     if(Math.abs(amount-0.55)>0.02) return {ok:false,reason:'amount '+amount};
+     if(Math.abs(amount-1)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
      if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
      if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no grating'};
@@ -372,21 +372,32 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      cv.width=cv.height=8;
      const g=cv.getContext('2d');
      if(!g) return {ok:false,reason:'canvas'};
-     const base=[40,160,40];
-     g.fillStyle='rgb(40,160,40)';
-     g.fillRect(0,0,8,8);
-     g.globalCompositeOperation='soft-light';
-     g.fillStyle='hsl(2, 100%, 73%)';
-     g.globalAlpha=0.55;
-     g.fillRect(0,0,8,8);
-     const ink=g.getImageData(4,4,1,1).data;
-     const inkChroma=Math.max(ink[0],ink[1],ink[2])-Math.min(ink[0],ink[1],ink[2]);
      const luma=(r,gch,b)=>0.2126*r+0.7152*gch+0.0722*b;
-     const lumaDelta=Math.abs(luma(ink[0],ink[1],ink[2])-luma(base[0],base[1],base[2]));
-     if(inkChroma<20) return {ok:false,reason:'ink chroma '+inkChroma};
-     if(lumaDelta>12) return {ok:false,reason:'ink darkened '+lumaDelta.toFixed(1)};
-     if(Math.abs(ink[0]-base[0])+Math.abs(ink[1]-base[1])+Math.abs(ink[2]-base[2])<16) return {ok:false,reason:'ink unchanged'};
-     return {ok:true,reason:'soft-light-ink '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' ink='+inkChroma+' lumaΔ='+lumaDelta.toFixed(1)};`,
+     const inks=[[40,160,40],[48,112,200],[220,72,40],[248,208,48],[196,164,120],[118,22,28]];
+     let lastChroma=0;
+     let lastLuma=0;
+     let shifted=false;
+     for(const base of inks){
+       g.globalCompositeOperation='source-over';
+       g.globalAlpha=1;
+       g.fillStyle='rgb('+base[0]+','+base[1]+','+base[2]+')';
+       g.fillRect(0,0,8,8);
+       g.globalCompositeOperation='hue';
+       g.fillStyle='hsl(2, 100%, 73%)';
+       g.fillRect(0,0,8,8);
+       const ink=g.getImageData(4,4,1,1).data;
+       const baseChroma=Math.max(base[0],base[1],base[2])-Math.min(base[0],base[1],base[2]);
+       const inkChroma=Math.max(ink[0],ink[1],ink[2])-Math.min(ink[0],ink[1],ink[2]);
+       const lumaDelta=Math.abs(luma(ink[0],ink[1],ink[2])-luma(base[0],base[1],base[2]));
+       const wall=ink[0]===0||ink[0]===255||ink[1]===0||ink[1]===255||ink[2]===0||ink[2]===255;
+       if(inkChroma<Math.round(baseChroma*0.85) && !wall) return {ok:false,reason:'ink washed '+base.join(',')+' '+inkChroma};
+       if(lumaDelta>12) return {ok:false,reason:'ink darkened '+base.join(',')+' '+lumaDelta.toFixed(1)};
+       if(Math.abs(ink[0]-base[0])+Math.abs(ink[1]-base[1])+Math.abs(ink[2]-base[2])>=16) shifted=true;
+       lastChroma=inkChroma;
+       lastLuma=lumaDelta;
+     }
+     if(!shifted) return {ok:false,reason:'ink unchanged'};
+     return {ok:true,reason:'hue-ink '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' ink='+lastChroma+' lumaΔ='+lastLuma.toFixed(1)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
 }
 
@@ -530,6 +541,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     };`,
   ).catch(() => ({ preview: false, confirm: false, surveyHost: true, shell: false, outlines: false }));
   const imgReady = await waitForDexPreviewImg(s);
+  const mapsOnOpen = await waitForFoilMaps(s);
+  const rainbowOnOpen = await readInkOnlyRainbow(s);
   // Do not move the Playwright mouse. Sit a stationary cursor on the card,
   // the way a person often has it, then require the painted box to change.
   await sitCursorOnDexPreview(s);
@@ -776,7 +789,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        }
      }
      const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
-     if(Math.abs(holoAmt-0.55)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
+     if(Math.abs(holoAmt-1)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
      return {ok:true,reason:bloom?'ink-holo-clipped':'ink-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
@@ -825,6 +838,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
     ok('dex-export:tilt-park-idle', restOk, `hold=${restHold.orbit}/${restHold.hypot.toFixed(1)} after=${restAfter.orbit}/${restAfter.hypot.toFixed(1)} ${restStatic.reason}`),
     ok('dex-export:shine', imgReady && shineOn, JSON.stringify(shineSample)),
+    ok('dex-export:rainbow-on-open', imgReady && mapsOnOpen && rainbowOnOpen.ok, rainbowOnOpen.reason),
     ok('dex-export:rainbow-foil', rainbow.ok, rainbow.reason),
     ok('dex-export:shine-clip', shineClip.ok, shineClip.reason),
     ok('dex-export:lock-on-press', locked.paused === '1' && locked.hypot < 0.8, JSON.stringify(locked)),
@@ -1430,7 +1444,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
      };`,
   ).catch(() => ({ rot: '', holo: '', hx: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^10(\.0+)?deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
-  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.55) < 0.02, `holo=${tiltVars.holo}`));
+  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 1) < 0.02, `holo=${tiltVars.holo}`));
   await s.screenshot(ctx.shot('foil-workshop'));
 
   const labels = await s.evalJson<string[]>(

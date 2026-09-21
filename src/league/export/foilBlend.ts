@@ -1,6 +1,6 @@
 /**
- * Live holographic blend. Multiply at 0.40 darkens ink. This file scores
- * CSS blend modes so the layer tints sprites without dropping luminance.
+ * Live holographic blend. Multiply darkens. Soft-light washes chroma.
+ * This file scores CSS blends so the layer tints ink without that drop.
  */
 
 export const FOIL_HOLO_BLEND_CANDIDATES = [
@@ -9,6 +9,7 @@ export const FOIL_HOLO_BLEND_CANDIDATES = [
   'overlay',
   'soft-light',
   'color',
+  'hue',
 ] as const;
 
 export type FoilHoloBlend = (typeof FOIL_HOLO_BLEND_CANDIDATES)[number];
@@ -16,12 +17,22 @@ export type FoilHoloBlend = (typeof FOIL_HOLO_BLEND_CANDIDATES)[number];
 /** Rainbow swatch from the live holographic grating. */
 export const FOIL_HOLO_TINT = { r: 255, g: 118, b: 117 };
 
-const INKS = [
+/** Other grating hues. Hue keeps chroma until a channel hits the gamut wall. */
+export const FOIL_HOLO_STRIPES = [
+  FOIL_HOLO_TINT,
+  { r: 255, g: 230, b: 97 },
+  { r: 80, g: 220, b: 80 },
+  { r: 80, g: 180, b: 255 },
+] as const;
+
+/** Poster inks the live foil must keep vivid. One blend for the whole card. */
+export const FOIL_POSTER_INKS = [
   { name: 'grass', r: 40, g: 160, b: 40 },
   { name: 'water', r: 48, g: 112, b: 200 },
   { name: 'fire', r: 220, g: 72, b: 40 },
   { name: 'electric', r: 248, g: 208, b: 48 },
   { name: 'normal', r: 196, g: 164, b: 120 },
+  { name: 'band', r: 118, g: 22, b: 28 },
 ] as const;
 
 function clampByte(n: number): number {
@@ -32,7 +43,7 @@ export function luma(r: number, g: number, b: number): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-function chroma(r: number, g: number, b: number): number {
+export function chroma(r: number, g: number, b: number): number {
   return Math.max(r, g, b) - Math.min(r, g, b);
 }
 
@@ -85,6 +96,27 @@ function clipColor(rgb: { r: number; g: number; b: number }): { r: number; g: nu
   };
 }
 
+function setSat(r: number, g: number, b: number, s: number): { r: number; g: number; b: number } {
+  const rgb = [
+    { k: 'r' as const, v: r },
+    { k: 'g' as const, v: g },
+    { k: 'b' as const, v: b },
+  ].sort((a, b) => a.v - b.v);
+  const min = rgb[0]!;
+  const mid = rgb[1]!;
+  const max = rgb[2]!;
+  if (max.v > min.v) {
+    mid.v = ((mid.v - min.v) * s) / (max.v - min.v);
+    max.v = s;
+    min.v = 0;
+  } else {
+    min.v = 0;
+    mid.v = 0;
+    max.v = 0;
+  }
+  return { [min.k]: min.v, [mid.k]: mid.v, [max.k]: max.v } as { r: number; g: number; b: number };
+}
+
 export function blendRgb(
   base: { r: number; g: number; b: number },
   src: { r: number; g: number; b: number },
@@ -92,6 +124,10 @@ export function blendRgb(
 ): { r: number; g: number; b: number } {
   if (mode === 'color') {
     return clipColor(setLum(src.r, src.g, src.b, luma(base.r, base.g, base.b)));
+  }
+  if (mode === 'hue') {
+    const tinted = setSat(src.r, src.g, src.b, chroma(base.r, base.g, base.b));
+    return clipColor(setLum(tinted.r, tinted.g, tinted.b, luma(base.r, base.g, base.b)));
   }
   return {
     r: channel(base.r, src.r, mode),
@@ -129,14 +165,14 @@ export function scoreHoloBlend(mode: FoilHoloBlend, amount: number): BlendScore 
   let lumaDelta = 0;
   let satDelta = 0;
   let chromaShift = 0;
-  for (const ink of INKS) {
+  for (const ink of FOIL_POSTER_INKS) {
     const out = foilComposite(ink, FOIL_HOLO_TINT, mode, amount);
     lumaDelta += Math.abs(luma(out.r, out.g, out.b) - luma(ink.r, ink.g, ink.b));
     satDelta += Math.abs(sat(out.r, out.g, out.b) - sat(ink.r, ink.g, ink.b));
     chromaShift += Math.abs(chroma(out.r, out.g, out.b) - chroma(ink.r, ink.g, ink.b));
     chromaShift += Math.abs(out.r - ink.r) + Math.abs(out.g - ink.g) + Math.abs(out.b - ink.b);
   }
-  const n = INKS.length;
+  const n = FOIL_POSTER_INKS.length;
   lumaDelta /= n;
   satDelta /= n;
   chromaShift /= n;
@@ -154,9 +190,9 @@ export function pickHoloBlend(amount: number): BlendScore {
   const scored = FOIL_HOLO_BLEND_CANDIDATES.map((mode) => scoreHoloBlend(mode, amount));
   const keep = scored.filter((s) => s.visible && s.bright);
   const pool = keep.length ? keep : scored.filter((s) => s.visible);
-  return pool.sort((a, b) => a.lumaDelta + a.satDelta * 40 - (b.lumaDelta + b.satDelta * 40))[0];
+  return pool.sort((a, b) => a.lumaDelta + a.satDelta * 80 - (b.lumaDelta + b.satDelta * 80))[0];
 }
 
-/** Live overlay winner: tint ink, keep poster luminance. */
-export const FOIL_HOLO_BLEND: FoilHoloBlend = 'soft-light';
-export const FOIL_HOLO_AMOUNT = 0.55;
+/** Live overlay winner: hue-shift ink, keep poster luma and chroma. */
+export const FOIL_HOLO_BLEND: FoilHoloBlend = 'hue';
+export const FOIL_HOLO_AMOUNT = 1;

@@ -3,7 +3,8 @@
  * Layers read a FoilRecipe through CSS variables (`--foil-pointLight`, …)
  * and clip to maps derived from the PNG (`--foil-sat-mask`, edge, gloss).
  * Holographic uses the sat map so rainbow sits on ink, not white paper.
- * Soft-light tints sprites without the luminance drop of multiply.
+ * Hue-blend tints sprites without the luminance drop of multiply
+ * or the chroma wash of soft-light.
  */
 
 /* poke-holo .card__translater: perspective lives on the parent of the rotator. */
@@ -197,12 +198,12 @@
   z-index: 2;
   background-image: radial-gradient(
     circle at var(--pointer-x) var(--pointer-y),
-    hsla(40, 45%, 100%, 0.88) 0%,
-    hsla(40, 30%, 96%, 0.34) 22%,
+    hsla(40, 45%, 100%, 0.70) 0%,
+    hsla(40, 30%, 96%, 0.24) 22%,
     transparent 58%
   );
   mix-blend-mode: soft-light;
-  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.9 + 0.1 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.72 + 0.08 * var(--pointer-from-center)));
 }
 
 .export-foil-holographic {
@@ -229,9 +230,9 @@
   background-position:
     calc(10% + var(--pointer-from-left) * 80%) calc(10% + var(--pointer-from-top) * 80%),
     calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%);
-  mix-blend-mode: soft-light;
+  mix-blend-mode: hue;
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
-  opacity: calc(var(--foil-opacity) * var(--foil-holographic) * (0.82 + 0.18 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-holographic));
 }
 
 .export-foil-iridescence {
@@ -242,7 +243,7 @@
     hsl(calc(120 + var(--pointer-from-left) * 360), 88%, 58%),
     hsl(calc(240 + var(--pointer-from-left) * 360), 88%, 58%)
   );
-  mix-blend-mode: color;
+  mix-blend-mode: hue;
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
 }
