@@ -877,7 +877,8 @@ function SlotHalf({
   );
   const name = (
     <span
-      className={cn('relative block max-w-[var(--slot-sprite)] truncate', NAME_CLASS)}
+      data-slot-name={half}
+      className={cn('relative block w-max shrink-0 whitespace-nowrap', NAME_CLASS)}
       style={{ color: pokemon ? 'var(--lg-band)' : undefined }}
     >
       {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0'}

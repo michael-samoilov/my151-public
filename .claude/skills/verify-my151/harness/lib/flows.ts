@@ -908,6 +908,8 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
 const NIMBUS_LEAGUE =
   "JSON.stringify({state:{name:'',cards:(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,signatureId:null,partnerId:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const cards=Array.from({length:14},empty);cards[0]={type:'flying',theme:'Clouds',lines:[{branch:[333,334],boundaries:[1,6]},{branch:[179,180,181],boundaries:[1,4,8]}],signatureSeat:1,signatureId:334,partnerId:179,tmMoveId:538,badgeName:'Nimbus',legend:null,powerup:null};return cards;})()},version:1})";
 const NIMBUS_SOLO_LEAGUE = NIMBUS_LEAGUE.replace('partnerId:179', 'partnerId:null');
+const SABRINA_SOLO_LEAGUE =
+  "JSON.stringify({state:{name:'',cards:(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,signatureId:null,partnerId:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const cards=Array.from({length:14},empty);cards[0]={type:'psychic',theme:'Sabrina',lines:[{branch:[63,64,65],boundaries:[1,4,8]}],signatureSeat:1,signatureId:65,partnerId:null,tmMoveId:94,badgeName:'Marsh',legend:null,powerup:null};return cards;})()},version:1})";
 
 /**
  * Gym-card export preview for the Nimbus/Cotton Guard card. Proves the overlay
@@ -1036,6 +1038,60 @@ export async function runGymCardExportParitySuite(
     'gym-export:solo-ace-integer-scale',
     solo.integer,
     `n=${solo.n.toFixed(3)} (want 1, 2, or 3 × 3.25rem)`,
+  ));
+
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${SABRINA_SOLO_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:ace-name-inside-pane', status: 'skip', detail: 'league home never hydrated after Alakazam seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-ace"]', 40))) {
+    checks.push({ name: 'gym-export:ace-name-inside-pane', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const aceName = await s.evalJson<{
+    text: string;
+    ellipsis: boolean;
+    lastInsidePane: boolean;
+    mode: string | null;
+    partner: boolean;
+    seam: boolean;
+  }>(
+    `const pane=document.querySelector('[data-ace-partner-slot]');
+     const cluster=pane&&pane.querySelector('[data-testid="slot-ace"]');
+     if(!pane||!cluster) return {text:'',ellipsis:true,lastInsidePane:false,mode:null,partner:false,seam:false};
+     const name=[...cluster.querySelectorAll('span')].find(el=>/alakaz/i.test(el.textContent||'')&&el.childElementCount===0);
+     if(!name) return {text:'',ellipsis:true,lastInsidePane:false,mode:pane.getAttribute('data-showcase'),partner:!!pane.querySelector('[data-testid="slot-partner"]'),seam:!!pane.querySelector(':scope > svg line')};
+     const raw=(name.textContent||'').replace(/\\s+/g,'');
+     const cs=getComputedStyle(name);
+     const node=[...name.childNodes].find(n=>n.nodeType===3);
+     let lastInsidePane=false;
+     if(node&&raw.length){
+       const range=document.createRange();
+       range.setStart(node, raw.length-1);
+       range.setEnd(node, raw.length);
+       const last=range.getBoundingClientRect();
+       const pr=pane.getBoundingClientRect();
+       lastInsidePane=last.width>0.5&&last.left>=pr.left-0.5&&last.right<=pr.right+0.5&&last.top>=pr.top-0.5&&last.bottom<=pr.bottom+0.5;
+     }
+     return {
+       text: raw,
+       ellipsis: cs.textOverflow==='ellipsis',
+       lastInsidePane,
+       mode: pane.getAttribute('data-showcase'),
+       partner: !!pane.querySelector('[data-testid="slot-partner"]'),
+       seam: !!pane.querySelector(':scope > svg line'),
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-ace-name-inside-pane'));
+  checks.push(ok(
+    'gym-export:ace-name-inside-pane',
+    aceName.text.toUpperCase() === 'ALAKAZAM' && !aceName.ellipsis && aceName.lastInsidePane
+      && aceName.mode === 'split' && aceName.partner && aceName.seam,
+    `text=${aceName.text} ellipsis=${aceName.ellipsis} lastInside=${aceName.lastInsidePane} mode=${aceName.mode} partner=${aceName.partner} seam=${aceName.seam}`,
   ));
   return checks;
 }

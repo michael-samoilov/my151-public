@@ -329,6 +329,68 @@ test.describe('the ace and partner slot', () => {
     await expect(page.locator('[data-filter-chip="my-dex"]')).toBeVisible();
   });
 
+  test('a lone ace shows the full name inside the pane', async ({ page }) => {
+    // Squat phone is where the sprite-width cap cuts ALAKAZAM. CSS truncate
+    // keeps the full string in the DOM, so this check reads paint: no
+    // ellipsis, and the last letter's box inside the pane.
+    await page.setViewportSize({ width: 390, height: 667 });
+    await pairLeague(page, 65, null);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="slot-ace"]');
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+
+    const got = await page.evaluate(() => {
+      const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
+      const cluster = pane.querySelector<HTMLElement>('[data-testid="slot-ace"]')!;
+      const name = [...cluster.querySelectorAll('span')].find(
+        (el) => /alakaz/i.test(el.textContent ?? '') && el.childElementCount === 0,
+      );
+      if (!name) {
+        return {
+          text: '',
+          ellipsis: true,
+          lastInsidePane: false,
+          partner: false,
+          seam: false,
+          mode: null as string | null,
+        };
+      }
+      const raw = (name.textContent ?? '').replace(/\s+/g, '');
+      const cs = getComputedStyle(name);
+      const node = [...name.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
+      let lastInsidePane = false;
+      if (node && raw.length > 0) {
+        const range = document.createRange();
+        range.setStart(node, raw.length - 1);
+        range.setEnd(node, raw.length);
+        const last = range.getBoundingClientRect();
+        const pr = pane.getBoundingClientRect();
+        lastInsidePane = last.width > 0.5
+          && last.left >= pr.left - 0.5
+          && last.right <= pr.right + 0.5
+          && last.top >= pr.top - 0.5
+          && last.bottom <= pr.bottom + 0.5;
+      }
+      return {
+        text: raw,
+        ellipsis: cs.textOverflow === 'ellipsis',
+        lastInsidePane,
+        partner: !!pane.querySelector('[data-testid="slot-partner"]'),
+        seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
+        mode: pane.dataset.showcase ?? null,
+      };
+    });
+    expect(got.text.toUpperCase(), 'the DOM still holds ALAKAZAM').toBe('ALAKAZAM');
+    expect(got.ellipsis, 'the name must not clip with an ellipsis').toBe(false);
+    expect(got.lastInsidePane, 'the last letter stays inside the pane').toBe(true);
+    expect(got.mode, 'one filled seat is still a split pane').toBe('split');
+    expect(got.partner, 'empty partner half stays').toBe(true);
+    expect(got.seam, 'the diagonal stays').toBe(true);
+  });
+
   test('a lone partner keeps the empty ace half and the diagonal', async ({ page }) => {
     await pairLeague(page, null, 179);
     await page.goto('/custom-gym-leader');
