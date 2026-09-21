@@ -545,8 +545,8 @@ test.describe('an empty slot and a filled one', () => {
     await openCard(page);
     const empty = await anchors(page);
 
-    // Seeded Brock has an ace and no partner, so the pane is solo: one
-    // centred sprite, no partner heading, no seam.
+    // Seeded Brock has an ace and no partner. Both halves stay; the empty
+    // partner heading and the diagonal stay with them.
     await seededLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
@@ -566,13 +566,13 @@ test.describe('an empty slot and a filled one', () => {
         mode: pane.getAttribute('data-showcase'),
         seam: !!pane.querySelector(':scope > svg line'),
         partnerHead: !!document.querySelector('[data-slot-head="partner"]'),
-        arts: pane.querySelectorAll('[data-slot-art]').length,
+        arts: pane.querySelectorAll('[data-slot-art] img').length,
         aceHead: hex(getComputedStyle(word(ace, 'ACE')).color),
       };
     });
-    expect(seeded.mode, 'seeded Brock is a lone ace').toBe('solo');
-    expect(seeded.seam, 'solo drops the diagonal').toBe(false);
-    expect(seeded.partnerHead, 'solo hides the empty partner heading').toBe(false);
+    expect(seeded.mode, 'seeded Brock keeps a split pane').toBe('split');
+    expect(seeded.seam, 'the diagonal stays').toBe(true);
+    expect(seeded.partnerHead, 'empty partner heading stays').toBe(true);
     expect(seeded.arts).toBe(1);
 
     expect(empty.colours.aceHead).toBe(empty.colours.tmWord);

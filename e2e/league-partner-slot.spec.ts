@@ -286,7 +286,7 @@ test.describe('the ace and partner slot', () => {
     expect(Math.abs(ace.sprite - partner.sprite), 'the two match').toBeLessThanOrEqual(1);
   });
 
-  test('a lone ace is one centred sprite at integer scale, with no seam', async ({ page }) => {
+  test('a lone ace keeps the empty partner half and the diagonal', async ({ page }) => {
     await pairLeague(page, 334, null);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
@@ -306,21 +306,22 @@ test.describe('the ace and partner slot', () => {
       return {
         mode: pane.dataset.showcase,
         seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
-        arts: pane.querySelectorAll('[data-slot-art]').length,
+        arts: pane.querySelectorAll('[data-slot-art] img').length,
         heads: [...pane.querySelectorAll('[data-slot-head]')].map((el) => el.getAttribute('data-slot-head')),
         cx: (box.left + box.width / 2 - slot.left) / slot.width,
         cy: (box.top + box.height / 2 - slot.top) / slot.height,
         css,
         attr: Number(pane.dataset.slotSprite),
         integer: [1, 2, 3].some((s) => Math.abs(n - s) < 0.02),
+        partner: !!pane.querySelector('[data-testid="slot-partner"]'),
       };
     });
-    expect(got.mode, 'the pane marks itself solo').toBe('solo');
-    expect(got.seam, 'the diagonal is gone').toBe(false);
+    expect(got.mode, 'one filled seat is still a split pane').toBe('split');
+    expect(got.seam, 'the diagonal stays').toBe(true);
     expect(got.arts, 'one sprite').toBe(1);
-    expect(got.heads, 'only the ace heading').toEqual(['ace']);
-    expect(got.cx, 'cluster sits on the mid X').toBeCloseTo(0.5, 1);
-    expect(got.cy, 'cluster sits on the mid Y').toBeCloseTo(0.5, 1);
+    expect(got.heads, 'both headings').toEqual(['ace', 'partner']);
+    expect(got.partner, 'empty partner half stays').toBe(true);
+    expect(got.cx, 'ace stays in its corner').toBeLessThan(0.42);
     expect(got.css).toBeCloseTo(got.attr, 0);
     expect(got.integer, `css ${got.css} is n×3.25rem`).toBe(true);
 
@@ -328,7 +329,7 @@ test.describe('the ace and partner slot', () => {
     await expect(page.locator('[data-filter-chip="my-dex"]')).toBeVisible();
   });
 
-  test('a lone partner is one centred sprite, with no seam', async ({ page }) => {
+  test('a lone partner keeps the empty ace half and the diagonal', async ({ page }) => {
     await pairLeague(page, null, 179);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
@@ -344,17 +345,18 @@ test.describe('the ace and partner slot', () => {
       return {
         mode: pane.dataset.showcase,
         seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
-        arts: pane.querySelectorAll('[data-slot-art]').length,
+        arts: pane.querySelectorAll('[data-slot-art] img').length,
         heads: [...pane.querySelectorAll('[data-slot-head]')].map((el) => el.getAttribute('data-slot-head')),
         cx: (box.left + box.width / 2 - slot.left) / slot.width,
         cy: (box.top + box.height / 2 - slot.top) / slot.height,
+        ace: !!pane.querySelector('[data-testid="slot-ace"]'),
       };
     });
-    expect(got.mode).toBe('solo');
-    expect(got.seam).toBe(false);
+    expect(got.mode).toBe('split');
+    expect(got.seam).toBe(true);
     expect(got.arts).toBe(1);
-    expect(got.heads).toEqual(['partner']);
-    expect(got.cx).toBeCloseTo(0.5, 1);
-    expect(got.cy).toBeCloseTo(0.5, 1);
+    expect(got.heads).toEqual(['ace', 'partner']);
+    expect(got.ace).toBe(true);
+    expect(got.cx, 'partner stays in its corner').toBeGreaterThan(0.58);
   });
 });

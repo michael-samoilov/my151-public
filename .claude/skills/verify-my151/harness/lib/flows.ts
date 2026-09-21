@@ -1016,7 +1016,7 @@ export async function runGymCardExportParitySuite(
      return {
        mode: pane.getAttribute('data-showcase'),
        seam: !!pane.querySelector(':scope > svg line'),
-       arts: pane.querySelectorAll('[data-slot-art]').length,
+       arts: pane.querySelectorAll('[data-slot-art] img').length,
        heads: [...pane.querySelectorAll('[data-slot-head]')].map(e=>e.getAttribute('data-slot-head')).join(','),
        cx: (cr.left+cr.width/2-pr.left)/pr.width,
        cy: (cr.top+cr.height/2-pr.top)/pr.height,
@@ -1026,9 +1026,10 @@ export async function runGymCardExportParitySuite(
   );
   await s.screenshot(ctx.shot('gym-export-solo-ace'));
   const centred = Math.abs(solo.cx - 0.5) < 0.08 && Math.abs(solo.cy - 0.5) < 0.08;
+  const heads = solo.heads.split(',');
   checks.push(ok(
     'gym-export:solo-ace-panel',
-    solo.mode === 'solo' && !solo.seam && solo.arts === 1 && solo.heads === 'ace' && centred,
+    solo.mode === 'split' && solo.seam && solo.arts === 1 && heads.includes('ace') && heads.includes('partner') && !centred,
     `mode=${solo.mode} seam=${solo.seam} arts=${solo.arts} heads=${solo.heads} cx=${solo.cx.toFixed(2)} cy=${solo.cy.toFixed(2)}`,
   ));
   checks.push(ok(
