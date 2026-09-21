@@ -456,6 +456,8 @@ async function readDexPreviewMotion(s: Session): Promise<{
      const y=Number(el?.getAttribute('data-tilt-y')||0);
      const r=el instanceof HTMLElement ? el.getBoundingClientRect() : {top:0,left:0,width:0,height:0};
      const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
+     const stage=hit instanceof HTMLElement ? hit.parentElement : null;
+     const stageStyle=stage instanceof HTMLElement ? getComputedStyle(stage) : null;
      return {
        x, y,
        hypot: Math.hypot(x,y),
@@ -467,7 +469,7 @@ async function readDexPreviewMotion(s: Session): Promise<{
        holo: holo ? Number(getComputedStyle(holo).opacity) : 0,
        maps: el?.getAttribute('data-foil-maps')||'',
        top: r.top, left: r.left, width: r.width, height: r.height,
-       perspective: hitStyle?.perspective || '',
+       perspective: stageStyle?.perspective || '',
        transformStyle: hitStyle?.transformStyle || '',
      };`,
   ).catch(() => ({
