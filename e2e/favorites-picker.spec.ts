@@ -52,7 +52,7 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-pick-184').click();
     await page.getByTestId('favorites-cell-fairy-2').click();
     await page.getByTestId('favorites-pick-184').click();
-    const vacate = page.locator('[data-testid="favorites-pack-slot"][data-role="vacate"]');
+    const vacate = page.locator('[data-testid="favorites-pack-slot"][data-role="vacate"]').first();
     await expect(vacate).toBeVisible();
     const sprite = vacate.locator('img').last();
     await expect(sprite).toBeVisible();
