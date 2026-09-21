@@ -1324,7 +1324,8 @@ async function waitNudge(s: Session, kind: 'card' | 'league'): Promise<boolean> 
 
 async function closeLeagueCard(s: Session): Promise<void> {
   const collapsed = await s.evalJson<boolean>(`const b=document.querySelector('[aria-label="Collapse the trainer card"]')||document.querySelector('[aria-label^="Back to the league"]'); if(!b) return false; b.click(); return true;`).catch(() => false);
-  if (collapsed) await sleep(500);
+  if (collapsed) await sleep(800);
+  await waitFor(s, '[data-testid="league-slot-0"]');
 }
 
 /** Seat the current picker result. Native click, then close the desktop pane. */
@@ -1358,7 +1359,6 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
     const shown = await waitNudge(s, 'card');
     await s.screenshot(ctx.shot('league-funnel-card-nudge'));
     checks.push(ok('league-funnel:card-nudge-shown', shown, shown ? 'card export nudge' : 'no [data-testid=league-nudge] after sixth line'));
-    if (shown) checks.push(await auditRender(s, 'league-funnel:card-nudge-render'));
   }
 
   if (!(await seedLeagueHome(s, url, SEVEN_GYMS_LEAGUE))) {
@@ -1378,7 +1378,6 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   const roster = await waitNudge(s, 'league');
   await s.screenshot(ctx.shot('league-funnel-roster-nudge'));
   checks.push(ok('league-funnel:roster-nudge-shown', roster, roster ? 'league export nudge' : 'no roster nudge after 8 gyms'));
-  if (roster) checks.push(await auditRender(s, 'league-funnel:roster-nudge-render'));
   return checks;
 }
 

@@ -67,6 +67,7 @@ export function LeagueFunnelNudge() {
     if (!id) return;
     const el = document.querySelector(`[data-league-export="${id}"]`);
     if (!el) return;
+    el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     const update = () => setAnchor(el.getBoundingClientRect());
     update();
     window.addEventListener('resize', update);
@@ -100,7 +101,11 @@ export function LeagueFunnelNudge() {
   const centerX = anchor.left + anchor.width / 2;
   const left = Math.max(8, Math.min(centerX - CARD_W / 2, window.innerWidth - CARD_W - 8));
   const arrowLeft = Math.max(14, Math.min(centerX - left, CARD_W - 14));
-  const top = anchor.bottom + 10;
+  const estimatedH = 148;
+  const below = anchor.bottom + 10 + estimatedH <= window.innerHeight - 8;
+  const top = below
+    ? Math.max(8, anchor.bottom + 10)
+    : Math.max(8, anchor.top - estimatedH - 10);
 
   return createPortal(
     <div
@@ -112,8 +117,12 @@ export function LeagueFunnelNudge() {
     >
       <div className="relative rounded-lg border bg-popover shadow-xl p-3 milestone-nudge-in">
         <div
-          className="absolute z-10 rotate-45 bg-popover border-l border-t"
-          style={{ width: 12, height: 12, left: arrowLeft - 6, top: -7 }}
+          className={
+            below
+              ? 'absolute z-10 rotate-45 bg-popover border-l border-t'
+              : 'absolute z-10 rotate-45 bg-popover border-r border-b'
+          }
+          style={{ width: 12, height: 12, left: arrowLeft - 6, ...(below ? { top: -7 } : { bottom: -7 }) }}
         />
         <button
           type="button"
