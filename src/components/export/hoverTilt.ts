@@ -49,6 +49,20 @@ export const HOVER_TILT_EXIT_SPRING = {
 
 export const HOVER_TILT_EXIT_DELAY_MS = 200;
 
+/** Parked-cursor jitter below this keeps poke-holo idle on desktop. */
+export const POINTER_WAKE_PX = 12;
+
+/** True when the pointer left the seed by at least `slop` px. */
+export function pointerMovedFrom(
+  last: { x: number; y: number } | null,
+  x: number,
+  y: number,
+  slop = POINTER_WAKE_PX,
+): boolean {
+  if (!last) return false;
+  return Math.hypot(x - last.x, y - last.y) >= slop;
+}
+
 export type HoverTiltSpring = {
   value: number;
   velocity: number;
@@ -176,8 +190,8 @@ export function pointInBox(clientX: number, clientY: number, box: HoverTiltBox, 
 }
 
 /**
- * Idle orbit matching production league export on my151.app.
- * Hover uses hover-tilt; this is unattended motion only.
+ * Idle orbit: 10° / 14s circle (sin on X, cos on Y).
+ * In-phase sin/sin is a diagonal corner flip, not an orbit.
  */
 export function pokeHoloIdle(opts: {
   now: number;
@@ -190,7 +204,7 @@ export function pokeHoloIdle(opts: {
   const rx = (t / Math.max(1, opts.idleMsX)) * Math.PI * 2;
   const ry = (t / Math.max(1, opts.idleMsY)) * Math.PI * 2;
   const rotateX = Math.sin(rx) * opts.idleTilt;
-  const rotateY = Math.sin(ry) * opts.idleTilt;
+  const rotateY = Math.cos(ry) * opts.idleTilt;
   const nx = clamp(0.5 + (rotateY / Math.max(1, opts.idleTilt)) * 0.45, 0, 1);
   const ny = clamp(0.5 - (rotateX / Math.max(1, opts.idleTilt)) * 0.45, 0, 1);
   return {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dexExportFrameKey, dexExportPermutations, type DexExportDraft } from './dexExportDraft';
+import { dexExportFrameKey, dexExportLiveJobs, dexExportPermutations, type DexExportDraft } from './dexExportDraft';
 
 const base: DexExportDraft = {
   sort: 'build-order',
@@ -14,6 +14,11 @@ describe('dexExportDraft', () => {
     const on = dexExportFrameKey({ ...base, sort: 'national', showSections: true });
     const off = dexExportFrameKey({ ...base, sort: 'national', showSections: false });
     expect(on).toBe(off);
+  });
+
+  it('live preview encodes only the visible settings', () => {
+    expect(dexExportLiveJobs(base)).toEqual([base]);
+    expect(dexExportPermutations(base, true).length).toBeGreaterThan(1);
   });
 
   it('lists every switchable permutation once, active settings first-class', () => {

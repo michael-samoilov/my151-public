@@ -268,7 +268,9 @@ describe('exportPreviewFit', () => {
     expect(tiltInsetForRestGap(10)).toBe(8);
   });
 
-  it('caps combined hypot so a tall poster cannot diamond', () => {
+  it('caps combined hypot below the 5.5° diamond without shrinking rest', () => {
+    expect(PREVIEW_DESKTOP_MAX_HYPOT).toBeLessThan(5.5);
+    expect(PREVIEW_DESKTOP_MAX_HYPOT).toBeGreaterThan(2);
     const corner = clampHypot(10, -10, PREVIEW_DESKTOP_MAX_HYPOT);
     expect(Math.hypot(corner.x, corner.y)).toBeCloseTo(PREVIEW_DESKTOP_MAX_HYPOT, 5);
     expect(Math.hypot(10, -10)).toBeGreaterThan(12);

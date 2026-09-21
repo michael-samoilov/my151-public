@@ -22,6 +22,11 @@ export function dexExportFrameKey(draft: DexExportDraft): string {
   return `${draft.sort}|o${outlines}|g${draft.groupSpecialAtEnd ? 1 : 0}|s${draft.showStats ? 1 : 0}|c${custom}`;
 }
 
+/** Live overlay encodes this draft only. Hidden permutations freeze pointer-tilt. */
+export function dexExportLiveJobs(draft: DexExportDraft): DexExportDraft[] {
+  return [draft];
+}
+
 export function dexExportPermutations(base: DexExportDraft, statsEnabled: boolean): DexExportDraft[] {
   const out: DexExportDraft[] = [];
   for (const sort of DEX_EXPORT_SORTS) {

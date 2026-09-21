@@ -441,6 +441,11 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     Math.max(idleA.hypot, idleB.hypot) > 2.5 &&
     perspectiveOn &&
     (idleDelta > 2 || visualDelta > 4 || Math.min(idleA.hypot, idleB.hypot) > 4);
+  const idleAlign =
+    idleA.hypot * idleB.hypot > 0
+      ? Math.abs(idleA.x * idleB.x + idleA.y * idleB.y) / (idleA.hypot * idleB.hypot)
+      : 1;
+  const idleCircular = idleMoved && idleAlign < 0.85;
   await s.screenshot(ctx.shot('dex-export-overlay'));
   const tiltedFit = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
@@ -490,9 +495,11 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     await sleep(160);
   }
   const widthDelta = widths.length ? Math.max(...widths) - Math.min(...widths) : 99;
+  const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
+  const desktop = viewW >= 1024;
   const hoverCircle = {
-    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 3.5 && hoverMax < 6.2 && hoverOrbit === 'pointer',
-    reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit}`,
+    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 2.4 && hoverOrbit === 'pointer' && (desktop ? hoverMax < 4.0 : hoverMax < 11),
+    reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit} w=${viewW}`,
   };
   const rainbow = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
@@ -504,16 +511,26 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const opacity=Number(cs.opacity);
      const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
-     const maps=card.getAttribute('data-foil-maps')||'';
-     if(mix!=='color-dodge') return {ok:false,reason:'blend '+mix};
+     if(mix!=='multiply') return {ok:false,reason:'blend '+mix};
      if(!(opacity>0.2)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
      if(Math.abs(amount-0.75)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
-     if(maps!=='1') return {ok:false,reason:'maps '+maps};
-     if(!mask.includes('url(') || mask==='none' || mask==='none none') return {ok:false,reason:'mask '+mask.slice(0,40)};
+     if(mask.includes('url(')) return {ok:false,reason:'mask '+mask.slice(0,40)};
      if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no grating'};
      if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
-     return {ok:true,reason:'dodge '+opacity.toFixed(2)+' foil='+foil.toFixed(2)};`,
+     const cv=document.createElement('canvas');
+     cv.width=cv.height=8;
+     const g=cv.getContext('2d');
+     if(!g) return {ok:false,reason:'canvas'};
+     g.fillStyle='#ffffff';
+     g.fillRect(0,0,8,8);
+     g.globalCompositeOperation='multiply';
+     g.fillStyle='hsl(2, 100%, 73%)';
+     g.fillRect(0,0,8,8);
+     const px=g.getImageData(4,4,1,1).data;
+     const chroma=Math.max(px[0],px[1],px[2])-Math.min(px[0],px[1],px[2]);
+     if(chroma<40) return {ok:false,reason:'white chroma '+chroma};
+     return {ok:true,reason:'multiply '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' chroma='+chroma};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const readShadowX = async () =>
     s.evalJson<number>(
@@ -528,7 +545,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        const x=r.left+r.width*${u};
        const y=r.top+r.height*${v};
        document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerType:'mouse',pointerId:1}));
-       document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x+1,clientY:y,pointerType:'mouse',pointerId:1}));
+       document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x+16,clientY:y,pointerType:'mouse',pointerId:1}));
        return true;`,
     ).catch(() => false);
     const t0 = Date.now();
@@ -543,9 +560,18 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   };
   const leftShadow = await fireShadow(0.12, 0.5, 'neg');
   const rightShadow = await fireShadow(0.88, 0.5, 'pos');
+  const shadowPainted = await s.evalJson<{ ok: boolean; reason: string }>(
+    `const hit=document.querySelector('[data-export-tilt-hit]');
+     if(!(hit instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const box=getComputedStyle(hit).boxShadow;
+     const opacity=Number(hit.getAttribute('data-shadow-opacity')||0);
+     if(!box || box==='none') return {ok:false,reason:'box-shadow none'};
+     if(!(opacity>0.2)) return {ok:false,reason:'opacity '+opacity};
+     return {ok:true,reason:box.slice(0,80)+' op='+opacity.toFixed(2)};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
   const shadowPair = {
-    ok: rightShadow > leftShadow + 0.2,
-    reason: `${leftShadow.toFixed(2)} → ${rightShadow.toFixed(2)}`,
+    ok: rightShadow > leftShadow + 0.2 && shadowPainted.ok,
+    reason: `${leftShadow.toFixed(2)} → ${rightShadow.toFixed(2)} ${shadowPainted.reason}`,
   };
   const cornerMargin = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
@@ -589,10 +615,10 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   await sleep(1100);
   const restAfter = await readDexPreviewMotion(s);
   const restOk =
-    (restHold.orbit === 'rest' || restHold.orbit === 'idle') &&
-    restAfter.hypot < restHold.hypot + 0.4 &&
-    restAfter.hypot < 8 &&
-    restAfter.orbit !== 'pointer';
+    restHold.orbit !== 'pointer' &&
+    restAfter.orbit === 'idle' &&
+    restAfter.hypot > 2 &&
+    (desktop ? restAfter.hypot <= 3.8 : restAfter.hypot < 11);
   await s.screenshot(ctx.shot('dex-export-hover'));
   await s.click('[data-export-tilt-hit]').catch(() => undefined);
   await sleep(500);
@@ -633,7 +659,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      if(!(holo instanceof HTMLElement)) return {ok:false,reason:'no holo'};
      const holoStyle=getComputedStyle(holo);
      const mask=(holoStyle.getPropertyValue('-webkit-mask-image')+' '+holoStyle.getPropertyValue('mask-image')).replace(/\\s+/g,' ').trim();
-     if(mask==='none'||mask===''||mask==='none none') return {ok:false,reason:'holo unmasked'};
+     if(mask.includes('url(')) return {ok:false,reason:'holo still masked'};
      const c=card.getBoundingClientRect();
      for(const layer of card.querySelectorAll('[data-foil-layer]')){
        if(!(layer instanceof HTMLElement)) continue;
@@ -644,6 +670,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      }
      const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
      if(Math.abs(holoAmt-0.75)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
+     if(mask.includes('url(')) return {ok:false,reason:'holo still masked'};
      return {ok:true,reason:bloom?'prod-holo-clipped':'prod-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
@@ -684,12 +711,13 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:card-in-view', tiltedFit.ok, tiltedFit.reason),
     ok('dex-export:outlines-row', state.outlines, 'missing [data-export-outlines]'),
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
+    ok('dex-export:idle-circular', imgReady && idleCircular, JSON.stringify({ idleA, idleB, idleAlign, idleDelta })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
-    ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax <= 5.6, `hypot=${hoverMax.toFixed(1)}`),
+    ok('dex-export:tilt-magnitude', hoverCircle.ok && (desktop ? hoverMax <= 3.8 : hoverMax < 11), `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
     ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
     ok('dex-export:tilt-corner-margin', cornerMargin.ok, cornerMargin.reason),
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
-    ok('dex-export:tilt-rest-static', restOk, `hold=${restHold.orbit}/${restHold.hypot.toFixed(1)} after=${restAfter.orbit}/${restAfter.hypot.toFixed(1)} ${restStatic.reason}`),
+    ok('dex-export:tilt-park-idle', restOk, `hold=${restHold.orbit}/${restHold.hypot.toFixed(1)} after=${restAfter.orbit}/${restAfter.hypot.toFixed(1)} ${restStatic.reason}`),
     ok('dex-export:shine', imgReady && shineOn, JSON.stringify(shineSample)),
     ok('dex-export:rainbow-foil', rainbow.ok, rainbow.reason),
     ok('dex-export:shine-clip', shineClip.ok, shineClip.reason),

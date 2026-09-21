@@ -4,7 +4,6 @@ import {
   clampHypot,
   clampTiltToBox,
   fitCardInPreviewBox,
-  paintedBoxOverflow,
   PREVIEW_DESKTOP_MAX_HYPOT,
   PREVIEW_DESKTOP_MIN_PX,
   PREVIEW_PERSPECTIVE_PX,
@@ -22,6 +21,7 @@ import {
   hoverTiltFromPointer,
   pointInBox,
   pokeHoloIdle,
+  pointerMovedFrom,
   REST_POSE,
   springSettled,
   tickSpring,
@@ -126,6 +126,8 @@ export function ExportPreview3D({
   const recipeRef = useRef(recipe);
   const tiltRef = useRef(tilt);
   const measureRef = useRef<() => void>(() => {});
+  const stageSizeRef = useRef({ w: 0, h: 0 });
+  const cardMaxRef = useRef({ w: 0, h: 0 });
   const [cardMax, setCardMax] = useState({ w: 0, h: 0 });
   const layerIds = activeFoilLayerIds(recipe);
   const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
@@ -138,30 +140,28 @@ export function ExportPreview3D({
     let rotateX = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateX));
     let rotateY = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateY));
     const foilMag = Math.hypot(rotateX, rotateY);
-    const stage = stageRef.current;
-    const boxEl =
-      stage?.closest<HTMLElement>('[data-export-preview-layer]') ?? stage;
+    const stageSize = stageSizeRef.current;
+    const cardW = cardMaxRef.current.w;
+    const cardH = cardMaxRef.current.h;
     const tiltPad = (() => {
-      const box = (boxEl ?? stage)?.getBoundingClientRect();
-      if (!box || el.offsetWidth <= 0) return PREVIEW_TILT_INSET;
-      const restGap = Math.min((box.width - el.offsetWidth) / 2, (box.height - el.offsetHeight) / 2);
+      if (stageSize.w <= 0 || cardW <= 0) return PREVIEW_TILT_INSET;
+      const restGap = Math.min((stageSize.w - cardW) / 2, (stageSize.h - cardH) / 2);
       return tiltInsetForRestGap(restGap);
     })();
-    if (stage && el.offsetWidth > 0 && el.offsetHeight > 0) {
-      const box = stage.getBoundingClientRect();
+    if (stageSize.w > 0 && cardW > 0 && cardH > 0) {
       const clamped = clampTiltToBox({
         tiltX: rotateX,
         tiltY: rotateY,
-        cardWidth: el.offsetWidth,
-        cardHeight: el.offsetHeight,
-        boxWidth: box.width,
-        boxHeight: box.height,
+        cardWidth: cardW,
+        cardHeight: cardH,
+        boxWidth: stageSize.w,
+        boxHeight: stageSize.h,
         pad: tiltPad,
       });
       rotateX = clamped.x;
       rotateY = clamped.y;
     }
-    if (window.innerWidth >= PREVIEW_DESKTOP_MIN_PX) {
+    if (!tiltRef.current && window.innerWidth >= PREVIEW_DESKTOP_MIN_PX) {
       const capped = clampHypot(rotateX, rotateY, PREVIEW_DESKTOP_MAX_HYPOT);
       rotateX = capped.x;
       rotateY = capped.y;
@@ -170,30 +170,10 @@ export function ExportPreview3D({
     const pointerY = pose.pointerY;
     const nx = pose.nx;
     const ny = pose.ny;
-    const applyRotate = (x: number, y: number) => {
-      el.style.setProperty('--rotation-x', `${x}deg`);
-      el.style.setProperty('--rotation-y', `${y}deg`);
-      el.style.setProperty('--rotate-x', `${y}deg`);
-      el.style.setProperty('--rotate-y', `${x}deg`);
-    };
-    applyRotate(rotateX, rotateY);
-    if (boxEl && el.offsetWidth > 0) {
-      const live = boxEl.getBoundingClientRect();
-      const overflowOf = () => paintedBoxOverflow(el.getBoundingClientRect(), live, tiltPad);
-      if (overflowOf() > 0) {
-        let lo = 0;
-        let hi = 1;
-        for (let i = 0; i < 8; i++) {
-          const mid = (lo + hi) / 2;
-          applyRotate(rotateX * mid, rotateY * mid);
-          if (overflowOf() <= 0) lo = mid;
-          else hi = mid;
-        }
-        rotateX *= lo;
-        rotateY *= lo;
-        applyRotate(rotateX, rotateY);
-      }
-    }
+    el.style.setProperty('--rotation-x', `${rotateX}deg`);
+    el.style.setProperty('--rotation-y', `${rotateY}deg`);
+    el.style.setProperty('--rotate-x', `${rotateY}deg`);
+    el.style.setProperty('--rotate-y', `${rotateX}deg`);
     lastPoseRef.current = { rotateX, rotateY, pointerX, pointerY, nx, ny };
     el.style.setProperty('--pointer-x', `${pointerX}%`);
     el.style.setProperty('--pointer-y', `${pointerY}%`);
@@ -217,8 +197,21 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-at-edge', Math.min(1, Math.max(Math.abs(nx - 0.5), Math.abs(ny - 0.5)) * 2).toFixed(3));
     const shadowX = nx * 2 - 1;
     const shadowY = ny * 2 - 1;
+    const displayedHypot = Math.hypot(rotateX, rotateY);
+    const shadowAmt =
+      displayedHypot < 0.4 ? 0.28 : Math.min(1, 0.42 + displayedHypot / Math.max(4, recipeNow.maxTilt));
     el.style.setProperty('--shadow-x', shadowX.toFixed(4));
     el.style.setProperty('--shadow-y', shadowY.toFixed(4));
+    el.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
+    const hit = hitRef.current;
+    if (hit) {
+      hit.style.setProperty('--shadow-x', shadowX.toFixed(4));
+      hit.style.setProperty('--shadow-y', shadowY.toFixed(4));
+      hit.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
+      hit.setAttribute('data-shadow-x', shadowX.toFixed(2));
+      hit.setAttribute('data-shadow-y', shadowY.toFixed(2));
+      hit.setAttribute('data-shadow-opacity', shadowAmt.toFixed(3));
+    }
     if (!el.style.getPropertyValue('--foil-pointLight')) {
       const vars = foilRecipeCssVars(recipeNow);
       for (const [key, value] of Object.entries(vars)) {
@@ -309,6 +302,7 @@ export function ExportPreview3D({
     if (!stage) return;
     const apply = () => {
       const r = stage.getBoundingClientRect();
+      stageSizeRef.current = { w: r.width, h: r.height };
       const img = imgRef.current;
       const aspect = img && img.naturalWidth > 0 ? img.naturalWidth / img.naturalHeight : 1;
       const size = fitCardInPreviewBox({
@@ -318,6 +312,7 @@ export function ExportPreview3D({
         tiltDeg: recipeRef.current.idleTilt,
         pad: PREVIEW_REST_PAD,
       });
+      cardMaxRef.current = { w: size.width, h: size.height };
       setCardMax((prev) => {
         if (Math.abs(prev.w - size.width) < 1 && Math.abs(prev.h - size.height) < 1) return prev;
         return { w: size.width, h: size.height };
@@ -329,6 +324,10 @@ export function ExportPreview3D({
     ro.observe(stage);
     return () => ro.disconnect();
   }, [activeSrc]);
+
+  useEffect(() => {
+    cardMaxRef.current = cardMax;
+  }, [cardMax]);
 
   useEffect(() => {
     reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -496,11 +495,14 @@ export function ExportPreview3D({
       if (e.pointerType !== 'mouse') return;
       if (overCard || (orbitRef.current === 'pointer' && overHit)) {
         const last = lastPointerRef.current;
+        if (!last) {
+          lastPointerRef.current = { x: e.clientX, y: e.clientY };
+          return;
+        }
+        if (orbitRef.current !== 'pointer' && !pointerMovedFrom(last, e.clientX, e.clientY)) {
+          return;
+        }
         lastPointerRef.current = { x: e.clientX, y: e.clientY };
-        // Seed only: a parked cursor must not cancel poke-holo idle.
-        // Real mice always send a second event; hover-tilt springs still track that.
-        if (!last) return;
-        if (last.x === e.clientX && last.y === e.clientY && orbitRef.current !== 'pointer') return;
         const enterDelay = tiltRef.current?.enterDelay ?? 0;
         if (enterDelay > 0 && orbitRef.current !== 'pointer') {
           if (enterSinceRef.current === null) enterSinceRef.current = performance.now();
@@ -591,6 +593,7 @@ export function ExportPreview3D({
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerCancel}
           data-export-tilt-hit
+          data-export-shadow
           data-tilt-perspective={String(PREVIEW_PERSPECTIVE_PX)}
         >
           <div

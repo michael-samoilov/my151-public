@@ -3,12 +3,14 @@ import {
   HOVER_TILT_EXIT_SPRING,
   HOVER_TILT_ROTATION,
   HOVER_TILT_SPRING,
+  POINTER_WAKE_PX,
   applySpringOpts,
   createSpring,
   hoverTiltFromNormalized,
   hoverTiltFromPointer,
   pointInBox,
   pokeHoloIdle,
+  pointerMovedFrom,
   tickSpring,
 } from './hoverTilt';
 
@@ -90,6 +92,15 @@ describe('pointInBox', () => {
   });
 });
 
+describe('pointerMovedFrom', () => {
+  it('ignores parked-cursor jitter under the wake slop', () => {
+    expect(POINTER_WAKE_PX).toBe(12);
+    expect(pointerMovedFrom(null, 100, 100)).toBe(false);
+    expect(pointerMovedFrom({ x: 100, y: 100 }, 104, 103)).toBe(false);
+    expect(pointerMovedFrom({ x: 100, y: 100 }, 112, 100)).toBe(true);
+  });
+});
+
 describe('pokeHoloIdle', () => {
   const idle = {
     origin: 0,
@@ -98,13 +109,25 @@ describe('pokeHoloIdle', () => {
     idleTilt: 10,
   };
 
-  it('matches production league export: in-phase sin on both axes', () => {
-    const peak = pokeHoloIdle({ ...idle, now: 3500 });
-    expect(peak.rotateX).toBeCloseTo(10, 5);
-    expect(peak.rotateY).toBeCloseTo(10, 5);
-    expect(Math.hypot(peak.rotateX, peak.rotateY)).toBeCloseTo(10 * Math.SQRT2, 5);
+  it('orbits in a circle, not the in-phase diagonal', () => {
     const start = pokeHoloIdle({ ...idle, now: 0 });
-    expect(Math.hypot(start.rotateX, start.rotateY)).toBeCloseTo(0, 5);
+    expect(start.rotateX).toBeCloseTo(0, 5);
+    expect(start.rotateY).toBeCloseTo(10, 5);
+    expect(Math.hypot(start.rotateX, start.rotateY)).toBeCloseTo(10, 5);
+    const quarter = pokeHoloIdle({ ...idle, now: 3500 });
+    expect(quarter.rotateX).toBeCloseTo(10, 5);
+    expect(quarter.rotateY).toBeCloseTo(0, 5);
+    expect(Math.hypot(quarter.rotateX, quarter.rotateY)).toBeCloseTo(10, 5);
+    const half = pokeHoloIdle({ ...idle, now: 7000 });
+    expect(half.rotateX).toBeCloseTo(0, 5);
+    expect(half.rotateY).toBeCloseTo(-10, 5);
+    const three = pokeHoloIdle({ ...idle, now: 10500 });
+    expect(three.rotateX).toBeCloseTo(-10, 5);
+    expect(three.rotateY).toBeCloseTo(0, 5);
+    for (const t of [0, 1000, 2500, 5000, 9000, 12000]) {
+      const pose = pokeHoloIdle({ ...idle, now: t });
+      expect(Math.hypot(pose.rotateX, pose.rotateY)).toBeCloseTo(10, 5);
+    }
   });
 
   it('completes one cycle in the production period', () => {

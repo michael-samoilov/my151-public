@@ -9,7 +9,7 @@ export const PREVIEW_TILT_INSET = 24;
  * into a diamond even when the AABB still fits. Cap the vector length, not
  * rest size. Mobile keeps the full poke-holo 10° orbit.
  */
-export const PREVIEW_DESKTOP_MAX_HYPOT = 5.5;
+export const PREVIEW_DESKTOP_MAX_HYPOT = 3.6;
 export const PREVIEW_DESKTOP_MIN_PX = 1024;
 
 export type ProjectedCardAabb = {

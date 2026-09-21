@@ -14,7 +14,7 @@ import { LeagueExportSurvey } from '@/league/components/LeagueExportSurvey';
 import { LeagueExportSurveyIntro } from '@/league/components/LeagueExportSurveyIntro';
 import { DexExportSettingsPane } from './DexExportSettingsPane';
 import { ExportPreviewShell, type ExportPreviewPhase } from './ExportPreviewShell';
-import { dexExportFrameKey, dexExportPermutations, type DexExportDraft } from './dexExportDraft';
+import { dexExportFrameKey, dexExportLiveJobs, type DexExportDraft } from './dexExportDraft';
 import { useExportPreviewCache } from './useExportPreviewCache';
 
 function seedDraft(): DexExportDraft {
@@ -57,7 +57,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   );
 
   const jobs = useMemo(() => {
-    const items = dexExportPermutations(draft, statsEnabled);
+    const items = dexExportLiveJobs(draft);
     const renderOne = (item: DexExportDraft) => {
       const rows = computeViewSort(sections, item.sort, item.groupSpecialAtEnd, item.customOrder);
       const outlines = item.showSections && item.sort === 'build-order';
@@ -67,12 +67,11 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
         stats: stats ? { data: statsDataRef.current, heights: DEFAULT_STATS_HEIGHTS } : null,
       });
     };
-    const mapped = items.map((item) => ({
+    return items.map((item) => ({
       key: dexExportFrameKey(item),
       render: () => renderOne(item),
     }));
-    return [...mapped.filter((job) => job.key === activeKey), ...mapped.filter((job) => job.key !== activeKey)];
-  }, [activeKey, draft, sections, statsEnabled]);
+  }, [draft, sections, statsEnabled]);
 
   const { urls, busy } = useExportPreviewCache({
     enabled: phase === 'settings',

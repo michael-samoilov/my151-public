@@ -1,23 +1,34 @@
 /* Lighting layers for the export preview.
  *
  * Layers read a FoilRecipe through CSS variables (`--foil-pointLight`, …)
- * and clip to maps derived from the PNG (`--foil-sat-mask`, edge, gloss).
- * White paper has no chroma, so holographic / iridescence / sparkle stay on
- * type pills, sprites, and ink. Emboss and rim use the edge map.
+ * and clip to maps derived from the PNG (`--foil-sat-mask`, edge, gloss)
+ * except holographic, which is unmasked so the grating tints white paper.
  *
- * Holographic uses color-dodge, clipped to the saturation map
- * (`mask-mode: alpha`). Overlay on white paper is a no-op, so dodge is
- * what actually paints the rainbow on sprites and ink.
+ * Overlay and color-dodge on white are no-ops. Multiply paints the rainbow
+ * on the Dex poster the same way overlay paints it on dark league art.
  */
 
 /* poke-holo .card__translater: perspective lives on the parent of the rotator. */
 .export-foil-hit {
+  --shadow-x: 0;
+  --shadow-y: 0;
+  --hover-tilt-shadow-opacity: 0.28;
+  --hover-tilt-shadow-blur: 30;
   perspective: 600px;
   -webkit-perspective: 600px;
   transform-origin: center center;
   -webkit-transform-origin: center center;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
+  /* credit-cards `shadow` + `shadow-blur={30}`: more shadow on the lifted side.
+     Lives here because overflow/clip on `.export-foil` would hide it. */
+  box-shadow:
+    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 1px)
+      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.6px + 10px)
+      calc(var(--hover-tilt-shadow-blur) * 1px)
+      calc(var(--hover-tilt-shadow-blur) * -0.12px)
+      rgb(0 0 0 / calc(var(--hover-tilt-shadow-opacity) * 0.55)),
+    0 18px 36px rgb(0 0 0 / 0.22);
 }
 
 .export-foil {
@@ -33,19 +44,11 @@
   --hover-tilt-x: 0.5;
   --hover-tilt-y: 0.5;
   --hover-tilt-opacity: 0;
-  --hover-tilt-shadow-blur: 48;
+  --hover-tilt-shadow-blur: 30;
   --hover-tilt-scale: 1;
   --shadow-x: 0;
   --shadow-y: 0;
-  --shadow-blur-1: calc(var(--hover-tilt-shadow-blur, 12) * 1px);
-  --shadow-blur-2: calc(var(--shadow-blur-1) / 2);
-  --hover-tilt-default-shadow:
-    calc(var(--shadow-x) * var(--shadow-blur-1)) calc(var(--shadow-y) * var(--shadow-blur-1) / 2 + var(--shadow-blur-1) / 4)
-      calc(var(--shadow-blur-1) / 2) calc(var(--shadow-blur-1) * -0.25)
-      rgb(0 0 0 / calc(var(--hover-tilt-opacity, 0) * 0.125)),
-    calc(var(--shadow-x) * var(--shadow-blur-2)) calc(var(--shadow-y) * var(--shadow-blur-2) / 2 + var(--shadow-blur-2) / 4)
-      calc(var(--shadow-blur-2) / 2) calc(var(--shadow-blur-2) * -0.25)
-      rgb(0 0 0 / calc(var(--hover-tilt-opacity, 0) * 0.125));
+  --hover-tilt-shadow-opacity: 0.28;
   --foil-opacity: 0;
   --foil-pointLight: 0;
   --foil-ambient: 0;
@@ -78,9 +81,7 @@
   overflow: hidden;
   -webkit-clip-path: inset(0 round 0.5rem);
   clip-path: inset(0 round 0.5rem);
-  box-shadow:
-    0 24px 48px rgb(0 0 0 / 0.28),
-    var(--hover-tilt-custom-shadow, var(--hover-tilt-default-shadow));
+  box-shadow: none;
   /* Live overlay (no hover-tilt): flatten so Safari clips shine.
      Hover-tilt overrides this to preserve-3d + ::before glare, matching
      https://hover-tilt.simey.me/bespoke/credit-cards/ */
@@ -90,7 +91,7 @@
   transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
   transform-origin: center center;
   -webkit-transform-origin: center center;
-  will-change: transform, box-shadow;
+  will-change: transform;
 }
 
 .export-foil-layer {
@@ -106,7 +107,6 @@
 }
 
 .export-foil-mask-sat,
-.export-foil-holographic,
 .export-foil-iridescence,
 .export-foil-parallax {
   -webkit-mask-image: var(--foil-sat-mask);
@@ -140,7 +140,6 @@
   mask-repeat: no-repeat;
 }
 
-.export-foil:not([data-foil-maps='1']) .export-foil-holographic,
 .export-foil:not([data-foil-maps='1']) .export-foil-iridescence,
 .export-foil:not([data-foil-maps='1']) .export-foil-emboss,
 .export-foil:not([data-foil-maps='1']) .export-foil-rim,
@@ -199,9 +198,9 @@
   background-position:
     calc(10% + var(--pointer-from-left) * 80%) calc(10% + var(--pointer-from-top) * 80%),
     calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%);
-  /* poke-holo / pokemon-cards: dodge a darkened rainbow so bands read on ink. */
-  mix-blend-mode: color-dodge;
-  filter: brightness(0.66) contrast(1.33) saturate(1.2);
+  /* Overlay/dodge on white paper is a no-op. Multiply tints the Dex poster. */
+  mix-blend-mode: multiply;
+  filter: saturate(1.35) contrast(1.08);
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-holographic) * (0.82 + 0.18 * var(--pointer-from-center)));
 }

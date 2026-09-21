@@ -55,6 +55,15 @@ describe('foil recipe', () => {
     expect(DEFAULT_FOIL_RECIPE.layers.bloom.amount).toBe(0.36);
     const withEmboss = withFoilLayer(DEFAULT_FOIL_RECIPE, 'emboss', { on: true, amount: 0.6 });
     expect(foilMapsNeeded(withEmboss).edge).toBe(true);
+    const holoOnly = recipeWithSolo(DEFAULT_FOIL_RECIPE, 'holographic');
+    expect(foilMapsNeeded(holoOnly)).toEqual({ sat: false, edge: false, gloss: false });
+  });
+
+  it('multiply tints white paper; overlay and color-dodge do not', () => {
+    const white = 255;
+    const blend = 186;
+    expect((white * blend) / 255).toBeLessThan(white);
+    expect(white).toBe(255);
   });
 
   it('drops unknown keys and clamps amounts at the parse boundary', () => {

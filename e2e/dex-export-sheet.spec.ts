@@ -186,7 +186,8 @@ test.describe('mobile dex export sheet', () => {
         return { ok: false, reason: `corner fill ${bg}` };
       }
       if (!/round/i.test(clip)) return { ok: false, reason: `clip ${clip}` };
-      if (mask === 'none' || mask === '' || mask === 'none none') return { ok: false, reason: `holo unmasked ${mask}` };
+      if (mask.includes('url(')) return { ok: false, reason: `holo masked ${mask}` };
+      if (holoStyle.mixBlendMode !== 'multiply') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
       if (Math.abs(holoAmt - 0.75) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
@@ -214,7 +215,10 @@ test.describe('dex export settings isolation', () => {
     });
     await page.locator('[data-export-sort="national"]').click();
     await expect(page.locator('[data-export-outlines]')).toBeDisabled();
-    await page.locator('[data-export-scrim] button').click({ force: true });
+    await page.locator('[data-export-outlines]').waitFor();
+    await page.evaluate(() => {
+      document.querySelector<HTMLButtonElement>('[data-export-scrim] button')?.click();
+    });
     await expect(page.locator('[data-export-preview-layer]')).toHaveCount(0);
     const after = await page.evaluate(() => {
       const raw = localStorage.getItem(
@@ -355,6 +359,9 @@ test.describe('desktop dex export preview', () => {
     expect(a.orbit, JSON.stringify({ a, b, visual })).toBe('idle');
     expect(b.orbit, JSON.stringify({ a, b, visual })).toBe('idle');
     expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b, visual })).toBeGreaterThan(2.5);
+    const aligned =
+      a.hypot * b.hypot > 0 ? Math.abs(a.x * b.x + a.y * b.y) / (a.hypot * b.hypot) : 1;
+    expect(aligned, JSON.stringify({ a, b, aligned, visual })).toBeLessThan(0.85);
     expect(visual, JSON.stringify({ a, b, visual })).toBeGreaterThan(4);
     expect(a.perspective.startsWith('600'), a.perspective).toBe(true);
     expect(b.transformStyle.includes('preserve-3d'), b.transformStyle).toBe(true);
@@ -407,9 +414,7 @@ test.describe('desktop dex export preview', () => {
           style.overflow === 'hidden' &&
           !style.transformStyle.includes('preserve-3d') &&
           overflowLayers.length === 0 &&
-          mask !== 'none' &&
-          mask !== '' &&
-          mask !== 'none none' &&
+          !mask.includes('url(') &&
           Math.abs(holoAmt - 0.75) < 0.02 &&
           !(bloom instanceof HTMLElement && getComputedStyle(bloom).inset.includes('-')),
       };
@@ -499,24 +504,20 @@ test.describe('desktop dex export preview', () => {
     await page.mouse.move(painted!.x, painted!.y, { steps: 4 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
     await page.mouse.move(12, 12, { steps: 4 });
-    await expect.poll(async () => {
-      const orbit = await foil.getAttribute('data-export-orbit');
-      return orbit === 'rest' || orbit === 'idle';
-    }).toBeTruthy();
-    await page.waitForTimeout(220);
-    const holdOrbit = await foil.getAttribute('data-export-orbit');
-    const hold = Math.hypot(
-      Number(await foil.getAttribute('data-tilt-x')),
-      Number(await foil.getAttribute('data-tilt-y')),
-    );
-    expect(holdOrbit === 'rest' || holdOrbit === 'idle').toBe(true);
-    await page.waitForTimeout(1100);
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).not.toBe('pointer');
+    await expect.poll(async () => foil.getAttribute('data-export-orbit'), { timeout: 3000 }).toBe('idle');
+    await expect
+      .poll(async () => {
+        const x = Number(await foil.getAttribute('data-tilt-x'));
+        const y = Number(await foil.getAttribute('data-tilt-y'));
+        return Math.hypot(x, y);
+      })
+      .toBeGreaterThan(2);
     const after = Math.hypot(
       Number(await foil.getAttribute('data-tilt-x')),
       Number(await foil.getAttribute('data-tilt-y')),
     );
-    expect(after).toBeLessThanOrEqual(hold + 0.5);
-    expect(after).toBeLessThan(12);
+    expect(after, 'parked desktop idle hypot').toBeLessThanOrEqual(3.8);
   });
 
   test('keeps the tilted card AABB off the overlay corner', async ({ page }, testInfo) => {
@@ -577,8 +578,8 @@ test.describe('desktop dex export preview', () => {
       Number(await foil.getAttribute('data-tilt-x')),
       Number(await foil.getAttribute('data-tilt-y')),
     );
-    expect(hypot, 'desktop peak hypot').toBeGreaterThan(3.5);
-    expect(hypot, 'desktop peak hypot').toBeLessThanOrEqual(5.6);
+    expect(hypot, 'desktop peak hypot').toBeGreaterThan(2.4);
+    expect(hypot, 'desktop peak hypot').toBeLessThanOrEqual(3.8);
   });
 
   test('paints rainbow holographic foil on the live overlay', async ({ page }, testInfo) => {
@@ -614,14 +615,24 @@ test.describe('desktop dex export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
+    expect(holo.mix, JSON.stringify(holo)).toBe('multiply');
     expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.75, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.bg, JSON.stringify(holo)).toMatch(/repeating-linear-gradient/);
-    expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
-    expect(holo.mask, JSON.stringify(holo)).not.toMatch(/^(none|none none)$/);
+    expect(holo.mask, JSON.stringify(holo)).not.toMatch(/url\(/);
+    const shadow = await hit.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        box: cs.boxShadow,
+        x: Number(el.getAttribute('data-shadow-x') || 0),
+        opacity: Number(el.getAttribute('data-shadow-opacity') || 0),
+      };
+    });
+    expect(shadow.box, JSON.stringify(shadow)).not.toBe('none');
+    expect(shadow.box.length, JSON.stringify(shadow)).toBeGreaterThan(24);
+    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.2);
   });
 });
