@@ -318,6 +318,16 @@ describe('export layout', () => {
     expect(sprite).toBe(192);
   });
 
+  it('pins ace and partner sprite centres as a 180° mirror', () => {
+    const box = L.showcaseBox();
+    const pad = 0.5 * 16 * L.K;
+    const sprite = L.pairExportSprite(box.width, box.height);
+    const head = 2 * L.HEAD_LINE;
+    const aceCy = pad + head + sprite / 2;
+    const partnerCy = box.height - pad - head - sprite / 2;
+    expect(aceCy + partnerCy).toBeCloseTo(box.height);
+  });
+
   it('names a vacancy for every slot kind', () => {
     expect(Object.keys(L.VACANCY).sort()).toEqual(['boss', 'champion', 'elite', 'gym']);
   });

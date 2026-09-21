@@ -12,7 +12,7 @@
  */
 
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
-import { pairSprite } from '../slotLayout';
+import { pairSpriteScale, SPRITE_NATIVE } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
 /** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
@@ -154,18 +154,18 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
 export const FRAME = 12;
 
 /**
- * Solo signature sprite is 2×. A pair uses `pairSprite`, which is 1× when
- * two 2× squares do not fit (Hisuian Braviary and Celesteela). Never a
- * pane fraction.
+ * 2× native sprite. Ace/partner paint at `pairExportSprite`, which is this
+ * size when the live card would pick 2×.
  */
 export const SIG_SPRITE = 192;
 
 /**
- * Ace/partner edge in export pixels. Same 1×/2× rule as the live card, on
- * the CSS-equivalent slot at a 3× device (the PNG is native sprite pixels).
+ * Ace/partner edge in export pixels. Same 1×/2× rule as the live card
+ * (`pairSpriteScale` on the CSS-equivalent slot). The PNG is native sprite
+ * pixels, so a 3× device that picks 2× (64 CSS px) paints at 192 here.
  */
 export function pairExportSprite(w: number, h: number): number {
-  return pairSprite(w, h);
+  return pairSpriteScale(w / K, h / K, 3, 16) * SPRITE_NATIVE;
 }
 
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */
@@ -197,13 +197,13 @@ export const BAND_BEFORE: Record<number, [string, string]> = {
 export const MARK_COL = 45;
 export const MARK_LABEL_PX = 6.7 * K;
 export const MARK_TRACK = 0.06 * MARK_LABEL_PX;
-export const TM_BADGE_W = 2.7 * 16 * K;
+export const TM_BADGE_W = 2.75 * 16 * K;
 export const MARK_PAD = 7;
-/** The move name, at the app's 0.6875rem, and the smallest it may shrink to. */
-export const MOVE_PX = 11 * K;
-export const MOVE_MIN_PX = 12;
+/** Same rem as ACE POKÉMON. The live card does not shrink the move name. */
+export const MOVE_PX = HEAD_PX;
+export const MOVE_MIN_PX = HEAD_PX;
 /** Live card stacks the type badge and category above the move name. */
-export const TM_TYPE_ABOVE_NAME = false;
+export const TM_TYPE_ABOVE_NAME = true;
 
 /** Top of a row inside the grid box, which starts at the first band. */
 export function rowTop(row: number): number {

@@ -20,7 +20,7 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W } from '@/lib/typeBadgeGeometry';
 import { expandTemplate } from '@/lib/richTemplate';
-import { raw } from '@/i18n';
+import { localeUppercase, pokemonLabel, raw } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
 import { deriveRow, signatureMember } from '../model/engine';
@@ -28,7 +28,7 @@ import { formAt, type PowerupForm } from '../model/powerups';
 import { SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { cardShades, type CardShades } from '../theme';
 import { getMoveById, CATEGORY_COLORS, type Move } from '../moves';
-import { pairSprite, seamEnds, SLOT_PAD_REM } from '../slotLayout';
+import { RING_OF_SPRITE, seamEnds, SLOT_PAD_REM } from '../slotLayout';
 import * as L from './layout';
 import {
   DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
@@ -301,7 +301,6 @@ function capHeight(ctx: CanvasRenderingContext2D): number {
 
 const ACE_HEAD = ['ACE', 'POKÉMON'];
 const PARTNER_HEAD = ['PARTNER /', 'SHOULDERMON'];
-const SIG_HEAD = ['SIGNATURE', 'POKÉMON'];
 
 /** The width of a two-line heading run, at the heading's own size. */
 function headWidth(ctx: CanvasRenderingContext2D, lines: string[]): number {
@@ -353,6 +352,52 @@ function drawShowcaseArt(
   }
 }
 
+function speciesCaps(pokemonId: number): string {
+  const pokemon = getPokemonById(pokemonId);
+  if (!pokemon) return '';
+  const label = pokemonLabel(pokemon.id, pokemon.name);
+  return localeUppercase(label.pending ? pokemon.name : label.name);
+}
+
+function halfSpriteCy(mirrored: boolean, outer: number, sprite: number): number {
+  const headH = 2 * L.HEAD_LINE;
+  return mirrored ? outer - headH - sprite / 2 : outer + headH + sprite / 2;
+}
+
+/**
+ * One ace or partner cluster. Partner is the 180° CSS mirror: heading on the
+ * outer corner, name toward the seam, same pad.
+ */
+function drawSlotHalfChrome(
+  ctx: CanvasRenderingContext2D,
+  pokemonId: number | null,
+  lines: string[],
+  mirrored: boolean,
+  shades: CardShades,
+  cx: number,
+  outer: number,
+  sprite: number,
+): void {
+  const headH = 2 * L.HEAD_LINE;
+  const colour = pokemonId !== null ? shades.band : shades.hint;
+  const headTop = mirrored ? outer - headH : outer;
+  const spriteCy = halfSpriteCy(mirrored, outer, sprite);
+  drawHeading(ctx, lines, cx, headTop, colour);
+  if (pokemonId !== null) {
+    const nameCy = mirrored
+      ? spriteCy - sprite / 2 - L.NAME_LINE / 2
+      : spriteCy + sprite / 2 + L.NAME_LINE / 2;
+    ctx.save();
+    ctx.font = font(L.NAME_PX, 800);
+    ctx.fillStyle = colour;
+    ctx.textBaseline = 'middle';
+    fillTrackedCentered(ctx, speciesCaps(pokemonId), cx, nameCy, L.NAME_TRACK);
+    ctx.restore();
+  } else {
+    drawEmptyBall(ctx, RING_OF_SPRITE * sprite, cx, spriteCy);
+  }
+}
+
 function drawShowcase(
   ctx: CanvasRenderingContext2D,
   card: GymCard,
@@ -365,9 +410,11 @@ function drawShowcase(
   const x = ox + box.left;
   const y = oy + box.top;
   const { ace, partner } = showcasePair(card);
-  const solo = ace ?? partner;
-  const filled = solo !== null;
-  const headH = 2 * L.HEAD_LINE;
+  const filled = ace !== null || partner !== null;
+  const pad = SLOT_PAD_REM * 16 * L.K;
+  const sprite = L.pairExportSprite(box.width, box.height);
+  const aceW = Math.max(headWidth(ctx, ACE_HEAD), sprite);
+  const partnerW = Math.max(headWidth(ctx, PARTNER_HEAD), sprite);
 
   ctx.save();
   ctx.fillStyle = filled ? '#ffffff' : 'rgba(255,255,255,0.65)';
@@ -383,78 +430,65 @@ function drawShowcase(
   }
   ctx.restore();
 
-  if (ace !== null && partner !== null && ace !== partner) {
-    const pad = SLOT_PAD_REM * 16 * L.K;
-    const sprite = pairSprite(box.width, box.height);
-    const seam = seamEnds(box.width, box.height);
-    const aceW = Math.max(headWidth(ctx, ACE_HEAD), sprite);
-    const partnerW = Math.max(headWidth(ctx, PARTNER_HEAD), sprite);
-    const blocks = [
-      {
-        id: ace,
-        lines: ACE_HEAD,
-        cx: x + pad + aceW / 2,
-        cy: y + pad + headH + sprite / 2,
-        mirrored: false,
-      },
-      {
-        id: partner,
-        lines: PARTNER_HEAD,
-        cx: x + box.width - pad - partnerW / 2,
-        cy: y + box.height - pad - headH - sprite / 2,
-        mirrored: true,
-      },
-    ];
+  const seam = seamEnds(box.width, box.height);
+  const halves = [
+    {
+      id: ace,
+      lines: ACE_HEAD,
+      cx: x + pad + aceW / 2,
+      outer: y + pad,
+      mirrored: false,
+    },
+    {
+      id: partner,
+      lines: PARTNER_HEAD,
+      cx: x + box.width - pad - partnerW / 2,
+      outer: y + box.height - pad,
+      mirrored: true,
+    },
+  ];
 
-    ctx.save();
-    roundRect(ctx, x, y, box.width, box.height, L.SLOT_R);
-    ctx.clip();
+  ctx.save();
+  roundRect(ctx, x, y, box.width, box.height, L.SLOT_R);
+  ctx.clip();
 
-    for (const b of blocks) {
-      drawShowcaseArt(ctx, b.id, images, b.cx, b.cy, sprite, 'ball');
-    }
-
-    ctx.save();
-    ctx.strokeStyle = shades.dash;
-    ctx.lineWidth = L.K;
-    ctx.beginPath();
-    ctx.moveTo(x + seam.x1 * box.width, y + seam.y1 * box.height);
-    ctx.lineTo(x + seam.x2 * box.width, y + seam.y2 * box.height);
-    ctx.stroke();
-    ctx.restore();
-
-    for (const b of blocks) {
-      drawShowcaseArt(ctx, b.id, images, b.cx, b.cy, sprite, 'sprite');
-    }
-    ctx.restore();
-
-    for (const b of blocks) {
-      const headTop = b.mirrored ? b.cy + sprite / 2 : b.cy - sprite / 2 - headH;
-      drawHeading(ctx, b.lines, b.cx, headTop, shades.band);
-    }
-    return;
+  for (const half of halves) {
+    if (half.id === null) continue;
+    drawShowcaseArt(
+      ctx,
+      half.id,
+      images,
+      half.cx,
+      halfSpriteCy(half.mirrored, half.outer, sprite),
+      sprite,
+      'ball',
+    );
   }
 
-  const cx = x + box.width / 2;
-  const gap = 12;
+  ctx.save();
+  ctx.strokeStyle = shades.dash;
+  ctx.lineWidth = L.K;
+  ctx.beginPath();
+  ctx.moveTo(x + seam.x1 * box.width, y + seam.y1 * box.height);
+  ctx.lineTo(x + seam.x2 * box.width, y + seam.y2 * box.height);
+  ctx.stroke();
+  ctx.restore();
 
-  if (filled) {
-    // One Pokémon, or the same one in both slots: the signature, centred. It
-    // has the whole slot and no seam to share, so it takes the 2× sprite.
-    const total = headH + gap + L.SIG_SPRITE;
-    const top = y + (box.height - total) / 2;
-    drawHeading(ctx, SIG_HEAD, cx, top, shades.band);
-    drawShowcaseArt(ctx, solo, images, cx, top + headH + gap + L.SIG_SPRITE / 2, L.SIG_SPRITE);
-    return;
+  for (const half of halves) {
+    if (half.id !== null) {
+      drawShowcaseArt(
+        ctx,
+        half.id,
+        images,
+        half.cx,
+        halfSpriteCy(half.mirrored, half.outer, sprite),
+        sprite,
+        'sprite',
+      );
+    }
+    drawSlotHalfChrome(ctx, half.id, half.lines, half.mirrored, shades, half.cx, half.outer, sprite);
   }
-
-  // Empty: the heading and the placeholder ball, and no words. The slot's
-  // dashed outline already says it waits to be filled in.
-  const ring = Math.round((0.8 / 1.2) * (92 / 204) * box.height);
-  const total = headH + gap + ring;
-  const top = y + (box.height - total) / 2;
-  drawHeading(ctx, SIG_HEAD, cx, top, shades.hint);
-  drawEmptyBall(ctx, ring, cx, top + headH + gap + ring / 2);
+  ctx.restore();
 }
 
 /** The mark column both the TM and the badge slot open with. */
@@ -469,13 +503,15 @@ function drawMarkColumn(
   const glyph = L.MARK_COL * 0.72;
   ctx.save();
   ctx.font = font(L.MARK_LABEL_PX, 800);
-  const labelH = L.MARK_LABEL_PX * 1.2;
-  const total = glyph + labelH - L.K;
+  const labelH = word ? L.MARK_LABEL_PX * 1.2 : 0;
+  const total = glyph + (labelH ? labelH - L.K : 0);
   const top = cy - total / 2;
   drawGlyph(glyph, cx - glyph / 2, top);
-  ctx.fillStyle = colour;
-  ctx.textBaseline = 'middle';
-  fillTrackedCentered(ctx, word, cx, top + glyph - L.K + labelH / 2, L.MARK_TRACK);
+  if (word) {
+    ctx.fillStyle = colour;
+    ctx.textBaseline = 'middle';
+    fillTrackedCentered(ctx, word, cx, top + glyph - L.K + labelH / 2, L.MARK_TRACK);
+  }
   ctx.restore();
 }
 
@@ -536,35 +572,28 @@ function drawTmSlot(
   const badgeH = (L.TM_BADGE_W * TYPE_BADGE_H) / TYPE_BADGE_W;
   const chipW = 0.9375 * 16 * L.K;
   const chipH = 0.6875 * 16 * L.K;
-  const gap = 2 * L.K;
-  // Name shares the badge slot's left edge. Type and category grow after it.
-  const trailing = L.TM_BADGE_W + 3 * L.K + chipW;
-  const nameMax = Math.max(8, bodyW - trailing - gap);
-  const namePx = fitFontSize(ctx, move.name, nameMax, L.MOVE_PX, L.MOVE_MIN_PX, 400);
-  ctx.font = font(namePx, 400);
-  const name = ellipsize(ctx, move.name, nameMax);
-  const nameW = ctx.measureText(name).width;
+  const typeGap = 3 * L.K;
+  const stackGap = 2 * L.K;
+  const name = localeUppercase(move.name);
 
   ctx.save();
-  ctx.font = font(namePx, 400);
-  ctx.fillStyle = FG;
-  ctx.textBaseline = 'middle';
-  ctx.fillText(name, bodyX, cy);
-  ctx.restore();
+  ctx.beginPath();
+  ctx.rect(bodyX, y, bodyW, h);
+  ctx.clip();
 
-  const typeX = bodyX + nameW + gap;
+  const stackH = badgeH + stackGap + L.NAME_LINE;
+  const stackTop = cy - stackH / 2;
   drawTypeBadge(
     ctx,
     move.type as TypeName,
     images.get(typeGlyphPath(move.type as TypeName)) ?? null,
-    typeX,
-    cy - badgeH / 2,
+    bodyX,
+    stackTop,
     badgeH,
   );
 
-  const chipX = typeX + L.TM_BADGE_W + 3 * L.K;
-  const chipY = cy - chipH / 2;
-  ctx.save();
+  const chipX = bodyX + L.TM_BADGE_W + typeGap;
+  const chipY = stackTop + (badgeH - chipH) / 2;
   ctx.fillStyle = CATEGORY_COLORS[move.category];
   roundRect(ctx, chipX, chipY, chipW, chipH, 4 * L.K);
   ctx.fill();
@@ -578,6 +607,11 @@ function drawTmSlot(
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(icon, chipX + (chipW - iw) / 2, chipY + (chipH - ih) / 2, iw, ih);
   }
+
+  ctx.font = font(L.NAME_PX, 800);
+  ctx.fillStyle = moveShades.band;
+  ctx.textBaseline = 'middle';
+  fillTracked(ctx, name, bodyX, stackTop + badgeH + stackGap + L.NAME_LINE / 2, L.NAME_TRACK);
   ctx.restore();
 }
 
@@ -599,20 +633,23 @@ function drawBadgeSlot(
   const bodyX = x + L.MARK_PAD + L.MARK_COL + L.MARK_PAD;
   const bodyW = width - (bodyX - x) - 4 * L.K;
 
-  drawMarkColumn(ctx, 'BADGE', name ? shades.band : shades.hint, markCx, cy, (size, gx, gy) =>
+  drawMarkColumn(ctx, name ? '' : 'BADGE', name ? shades.band : shades.hint, markCx, cy, (size, gx, gy) =>
     drawHexagon(ctx, name ? shades.type : shades.dash, !!name, size, gx, gy),
   );
 
-  const size = 10.5 * L.K;
+  if (!name) return;
+
+  const phrase = localeUppercase(`${name} Badge`);
   ctx.save();
-  ctx.font = font(size, 400);
-  ctx.fillStyle = name ? FG : shades.hint;
+  ctx.font = font(L.NAME_PX, 800);
+  ctx.fillStyle = shades.band;
   ctx.textBaseline = 'middle';
-  // Empty, the slot shows the hexagon and its word, and nothing else.
-  const lines = name ? wrapLines(ctx, `${name} Badge`, bodyW, 3) : [];
-  const lineH = size * 1.25;
+  const lines = wrapLines(ctx, phrase, bodyW, 3);
+  const lineH = L.NAME_LINE;
   const top = cy - (lines.length * lineH) / 2;
-  lines.forEach((line, i) => ctx.fillText(line, bodyX, top + (i + 0.5) * lineH));
+  lines.forEach((line, i) => {
+    fillTracked(ctx, line, bodyX, top + (i + 0.5) * lineH, L.NAME_TRACK);
+  });
   ctx.restore();
 }
 
