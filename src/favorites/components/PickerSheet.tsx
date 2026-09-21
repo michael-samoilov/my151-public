@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
+import { useDevicePixelRatio, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerSpriteCssPx } from '../model/pickerSprite';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -42,7 +42,7 @@ export function PickerSheet({
 }) {
   const t = useT();
   const desktop = useIsDesktop();
-  const spritePx = pickerSpriteCssPx(useDevicePixelRatio());
+  const spritePx = pickerSpriteCssPx(useDevicePixelRatio(), useLayoutViewportCssPx());
   const paneWidth = spritePx * 6 + 4 * 5 + 24;
   const kind = kindFor(type, gen);
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);
@@ -146,7 +146,7 @@ export function PickerSheet({
   }
 
   return (
-    <BottomSheet onClose={onClose} title={title} closeLabel={t('favorites.close')} size="full">
+    <BottomSheet onClose={onClose} title={title} closeLabel={t('favorites.close')} size="content">
       <div data-testid="favorites-picker">{body}</div>
     </BottomSheet>
   );

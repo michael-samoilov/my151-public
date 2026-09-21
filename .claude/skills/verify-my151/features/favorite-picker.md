@@ -22,4 +22,4 @@ Pick one Pokémon per type×generation cell (plus starter, gimmick, legendary, a
 
 ## Harness
 
-`runFavoritesSuite` in `harness/lib/flows.ts`. Skips when `/favorite-pokemon-by-type` is the SPA fallback. Checks: hub card, grid boot, last Unova Electric row centred, packing vacate opacity under 0.5, store `fairy|2` = Togetic and `water|2` = Azumarill before a chain is chosen.
+`runFavoritesSuite` in `harness/lib/flows.ts`. Skips when `/favorite-pokemon-by-type` is the SPA fallback. Checks: hub card, grid boot, empty balls inside their cells, last Unova Electric row centred, picker sprites at the dex six-column size (not a 1× shrink), a short mobile sheet shorter than the cap with the grid still above it, packing vacate opacity under 0.5, store `fairy|2` = Togetic and `water|2` = Azumarill before a chain is chosen.

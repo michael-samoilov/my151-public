@@ -973,7 +973,31 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   const hydrated = await waitFavoritesGrid(s);
   checks.push(ok('favorites:hydrated-grid', hydrated));
   await s.screenshot(ctx.shot('favorites-grid'));
-  if (hydrated) checks.push(await auditRender(s, 'favorites:render-grid'));
+  if (hydrated) {
+    const balls = await s.evalJson<{ count: number; inside: number; centered: number }>(`
+      const balls = [...document.querySelectorAll('[data-testid="favorites-empty-ball"]')];
+      let inside = 0, centered = 0;
+      for (const ball of balls) {
+        const cell = ball.closest('button');
+        const svg = ball.querySelector('svg');
+        if (!cell || !svg) continue;
+        const cb = cell.getBoundingClientRect();
+        const bb = svg.getBoundingClientRect();
+        const pad = 0.75;
+        if (bb.width > 8 && bb.height > 8 && bb.left >= cb.left - pad && bb.right <= cb.right + pad && bb.top >= cb.top - pad && bb.bottom <= cb.bottom + pad) inside++;
+        const dx = Math.abs((bb.left + bb.right) / 2 - (cb.left + cb.right) / 2);
+        const dy = Math.abs((bb.top + bb.bottom) / 2 - (cb.top + cb.bottom) / 2);
+        if (dx < 1.5 && dy < 1.5) centered++;
+      }
+      return { count: balls.length, inside, centered };
+    `);
+    checks.push(ok(
+      'favorites:empty-ball-inside-cell',
+      balls.count > 20 && balls.inside === balls.count && balls.centered === balls.count,
+      `count=${balls.count} inside=${balls.inside} centered=${balls.centered}`,
+    ));
+    checks.push(await auditRender(s, 'favorites:render-grid'));
+  }
 
   const layout = await s.evalJson<{ scrollWidth: number; innerWidth: number; bodyH: number }>(LAYOUT);
   checks.push(ok(
@@ -1025,7 +1049,71 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       `justify=${row.justify} firstLen=${row.firstLen} lastLen=${row.lastLen} firstX=${Math.round(row.firstX)} lastX=${Math.round(row.lastX)}`,
     ));
     await s.screenshot(ctx.shot('favorites-picker-last-row'));
+    const sprite = await s.evalJson<{
+      css: number; dex: number; w: number; dpr: number; natural: number; max: number; same: boolean;
+    }>(`
+      const el = document.querySelector('[data-testid="favorites-pretty-grid"]');
+      if (!el) return { css:0, dex:0, w:0, dpr:1, natural:96, max:0, same:false };
+      const imgs = [...el.querySelectorAll('img')];
+      const widths = imgs.map((node) => node.getBoundingClientRect().width);
+      const rows = [...el.querySelectorAll('[data-pretty-row]')].map((row) => row.querySelectorAll('button').length);
+      const dpr = window.devicePixelRatio || 1;
+      const css = Number(el.getAttribute('data-sprite-px'));
+      const dex = Number(el.getAttribute('data-sprite-dex'));
+      const natural = Number(el.getAttribute('data-sprite-native')) || 96;
+      const w = widths[0] || 0;
+      const same = widths.every((n) => Math.abs(n - w) < 0.6);
+      return { css, dex, w, dpr, natural, max: Math.max(...rows, 0), same };
+    `);
+    const oneX = sprite.natural / Math.max(sprite.dpr, 1);
+    const notShrunk = sprite.dex <= oneX + 1 || sprite.css > oneX + 1;
+    checks.push(ok(
+      'favorites:sprite-matches-six-col',
+      sprite.same && sprite.max <= 6 && sprite.max > 0
+        && Math.abs(sprite.w - sprite.css) < 0.6
+        && sprite.css + 0.01 >= sprite.dex
+        && sprite.css <= sprite.dex * 1.04 + 0.01
+        && notShrunk,
+      `css=${sprite.css} dex=${sprite.dex} w=${sprite.w.toFixed(1)} dpr=${sprite.dpr} oneX=${oneX.toFixed(1)}`,
+    ));
     checks.push(await auditRender(s, 'favorites:render-picker'));
+
+    const sheetOpen = await s.evalJson<boolean>(`return !!document.querySelector('[role="dialog"]');`);
+    if (!sheetOpen) {
+      checks.push({ name: 'favorites:short-sheet', status: 'skip', detail: 'desktop pane' });
+    } else {
+      await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
+      await sleep(300);
+      await s.click('[data-testid="favorites-cell-starter-1"]');
+      const starter = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+      if (!starter) {
+        checks.push({ name: 'favorites:short-sheet', status: 'fail', detail: 'starter picker did not open' });
+      } else {
+        const sheet = await s.evalJson<{
+          sheetH: number; sheetTop: number; max: number; gridTop: number; scrollH: number; clientH: number;
+        }>(`
+          const dialog = document.querySelector('[role="dialog"]');
+          const grid = document.querySelector('[data-testid="favorites-grid"]');
+          if (!dialog || !grid) return { sheetH:0, sheetTop:0, max:0, gridTop:0, scrollH:0, clientH:0 };
+          const box = dialog.getBoundingClientRect();
+          const gb = grid.getBoundingClientRect();
+          const scroller = dialog.querySelector('.overflow-y-auto');
+          return {
+            sheetH: box.height,
+            sheetTop: box.top,
+            max: window.innerHeight - 56,
+            gridTop: gb.top,
+            scrollH: scroller ? scroller.scrollHeight : 0,
+            clientH: scroller ? scroller.clientHeight : 0,
+          };
+        `);
+        checks.push(ok(
+          'favorites:short-sheet',
+          sheet.sheetH < sheet.max - 40 && sheet.gridTop < sheet.sheetTop - 8 && sheet.scrollH <= sheet.clientH + 2,
+          `sheetH=${Math.round(sheet.sheetH)} max=${Math.round(sheet.max)} gridTop=${Math.round(sheet.gridTop)} sheetTop=${Math.round(sheet.sheetTop)}`,
+        ));
+      }
+    }
   }
 
   await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);

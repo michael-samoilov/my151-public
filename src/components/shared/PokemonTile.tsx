@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
-import { useFluidSpritePx, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import { tileImageCssPx } from '@/lib/tileImage';
+import { useFluidSpritePx, useLayoutViewportCssPx, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
@@ -82,13 +83,7 @@ export function useTileSpritePx(): number {
  * they stay at 1×. On mobile, the fluid continuous value is kept.
  */
 function useTileImagePx(): number {
-  const isDesktop = useViewportAtLeast(1024);
-  const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
-  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
-  if (!isDesktop) return Math.round(oneX * SPRITE_IMG_SCALE);
-  const fluidImage = oneX * SPRITE_IMG_SCALE;
-  const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
-  return multiple * SPRITE_NATIVE;
+  return tileImageCssPx(useLayoutViewportCssPx());
 }
 
 /**

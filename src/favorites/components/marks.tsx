@@ -77,7 +77,7 @@ export function TypeIcon({ type, size = 24 }: { type: TypeName; size?: number })
 
 export function EmptyBall({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+    <svg viewBox="-4 -4 32 32" className={className} aria-hidden overflow="visible">
       <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
       <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
       <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />

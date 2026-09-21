@@ -209,7 +209,7 @@ function BodyCell({
       data-testid={`favorites-cell-${type}-${gen}`}
       data-kind={kind}
       className={cn(
-        'relative min-h-0 min-w-0 overflow-hidden border-[0.5px] border-neutral-200 p-0',
+        'relative min-h-0 min-w-0 overflow-hidden border-[0.5px] border-neutral-200 p-0 [container-type:size]',
         locked ? 'cursor-default bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]' : 'cursor-pointer bg-card',
         kind === 'pointer' && 'bg-amber-50',
         isSel && 'z-[1] outline outline-2 outline-offset-[-2px] outline-primary',
@@ -218,7 +218,13 @@ function BodyCell({
       {mon ? (
         <Filled mon={mon} />
       ) : locked ? null : (
-        <EmptyBall className="absolute inset-[18%] text-muted-foreground/20 -rotate-[30deg]" />
+        <span
+          data-testid="favorites-empty-ball"
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          style={{ width: '64cqmin', height: '64cqmin' }}
+        >
+          <EmptyBall className="block h-full w-full overflow-visible text-muted-foreground/20 -rotate-[30deg]" />
+        </span>
       )}
       {tint && !mon && !locked ? (
         <span className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ background: tint }} />

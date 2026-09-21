@@ -1,4 +1,5 @@
-import { SPRITE_NATIVE, useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
+import { tileImageCssPx } from '@/lib/tileImage';
+import { SPRITE_NATIVE, useDevicePixelRatio, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
@@ -19,7 +20,9 @@ export function PrettySpriteGrid({
   onPick: (mon: PickerMon) => void;
 }) {
   useNamesVersion();
-  const spritePx = pickerSpriteCssPx(useDevicePixelRatio());
+  const viewportPx = useLayoutViewportCssPx();
+  const spritePx = pickerSpriteCssPx(useDevicePixelRatio(), viewportPx);
+  const dexPx = tileImageCssPx(viewportPx);
   const rows = prettyRows(mons, maxCols);
 
   return (
@@ -28,6 +31,7 @@ export function PrettySpriteGrid({
       style={{ gap: GAP_PX }}
       data-testid="favorites-pretty-grid"
       data-sprite-px={spritePx}
+      data-sprite-dex={dexPx}
       data-sprite-native={SPRITE_NATIVE}
     >
         {rows.map((row, r) => (

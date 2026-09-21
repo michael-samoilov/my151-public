@@ -1,4 +1,22 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+async function sheetBox(page: Page) {
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  return dialog.evaluate((el) => {
+    const sheet = el.getBoundingClientRect();
+    const grid = document.querySelector('[data-testid="favorites-grid"]')?.getBoundingClientRect();
+    const scroller = el.querySelector('.overflow-y-auto');
+    return {
+      sheetH: sheet.height,
+      sheetTop: sheet.top,
+      max: window.innerHeight - 56,
+      gridTop: grid?.top ?? 0,
+      scrollH: scroller?.scrollHeight ?? 0,
+      clientH: scroller?.clientHeight ?? 0,
+    };
+  });
+}
 
 test.describe('favorite Pokémon picker', () => {
   test.beforeEach(async ({ page }) => {
@@ -58,10 +76,14 @@ test.describe('favorite Pokémon picker', () => {
 
   test('selector sprites stay one size', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
-    const cells = ['favorites-cell-normal-1', 'favorites-cell-water-1', 'favorites-cell-starter-1'];
+    const cells = [
+      { id: 'favorites-cell-normal-1', rows: [6, 6, 5, 5] },
+      { id: 'favorites-cell-water-1', rows: [6, 6, 6, 6, 4, 4] },
+      { id: 'favorites-cell-starter-1', rows: [5, 4] },
+    ];
     const widths: number[] = [];
     for (const cell of cells) {
-      await page.getByTestId(cell).click();
+      await page.getByTestId(cell.id).click();
       const grid = page.getByTestId('favorites-pretty-grid');
       await expect(grid).toBeVisible();
       const spec = await grid.evaluate((el) => {
@@ -71,23 +93,94 @@ test.describe('favorite Pokémon picker', () => {
         );
         const dpr = window.devicePixelRatio || 1;
         const natural = Number(el.getAttribute('data-sprite-native')) || 96;
-        const css = natural / Math.max(dpr, 1);
+        const css = Number(el.getAttribute('data-sprite-px'));
+        const dex = Number(el.getAttribute('data-sprite-dex'));
         const box = img?.getBoundingClientRect();
         const w = box?.width ?? 0;
-        return { css, w, dpr, natural, rows, max: Math.max(...rows, 0) };
+        const widths = [...el.querySelectorAll('img')].map((node) => node.getBoundingClientRect().width);
+        return { css, dex, w, dpr, natural, rows, widths, max: Math.max(...rows, 0) };
       });
-      expect(spec.max, cell).toBeLessThanOrEqual(6);
-      expect(Math.abs(spec.w - spec.css), cell).toBeLessThan(0.6);
-      expect(Math.abs(spec.w * spec.dpr - spec.natural), cell).toBeLessThan(0.75);
-      if (cell.endsWith('water-1')) {
-        const fours = spec.rows.filter((len) => len === 4).length;
-        expect(fours, cell).toBeLessThan(spec.rows.length);
+      expect(spec.rows, cell.id).toEqual(cell.rows);
+      expect(spec.max, cell.id).toBeLessThanOrEqual(6);
+      expect(spec.dex, cell.id).toBeGreaterThan(0);
+      expect(spec.css, cell.id).toBeGreaterThanOrEqual(spec.dex - 0.01);
+      expect(spec.css, cell.id).toBeLessThanOrEqual(spec.dex * 1.04 + 0.01);
+      if (spec.dex > spec.natural / Math.max(spec.dpr, 1) + 1) {
+        expect(spec.css, cell.id).toBeGreaterThan(spec.natural / Math.max(spec.dpr, 1) + 1);
       }
+      expect(Math.abs(spec.w - spec.css), cell.id).toBeLessThan(0.6);
+      for (const w of spec.widths) expect(Math.abs(w - spec.w), cell.id).toBeLessThan(0.6);
       widths.push(spec.w);
       await page.getByRole('button', { name: 'Close picker' }).click();
     }
     expect(Math.abs(widths[0] - widths[1])).toBeLessThan(0.6);
     expect(Math.abs(widths[0] - widths[2])).toBeLessThan(0.6);
+  });
+
+  test('empty balls sit inside the cell', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await expect(page.getByTestId('favorites-empty-ball').first()).toBeVisible();
+    const spec = await page.evaluate(() => {
+      const balls = [...document.querySelectorAll('[data-testid="favorites-empty-ball"]')];
+      let inside = 0;
+      let centered = 0;
+      let sample = { bw: 0, bh: 0, cw: 0, ch: 0 };
+      for (const ball of balls) {
+        const cell = ball.closest('button');
+        const svg = ball.querySelector('svg');
+        if (!cell || !svg) continue;
+        const cb = cell.getBoundingClientRect();
+        const bb = svg.getBoundingClientRect();
+        if (!sample.cw) sample = { bw: bb.width, bh: bb.height, cw: cb.width, ch: cb.height };
+        const pad = 0.75;
+        if (
+          bb.width > 8 &&
+          bb.height > 8 &&
+          bb.left >= cb.left - pad &&
+          bb.right <= cb.right + pad &&
+          bb.top >= cb.top - pad &&
+          bb.bottom <= cb.bottom + pad
+        ) inside += 1;
+        const dx = Math.abs((bb.left + bb.right) / 2 - (cb.left + cb.right) / 2);
+        const dy = Math.abs((bb.top + bb.bottom) / 2 - (cb.top + cb.bottom) / 2);
+        if (dx < 1.5 && dy < 1.5) centered += 1;
+      }
+      return { count: balls.length, inside, centered, sample };
+    });
+    expect(spec.count).toBeGreaterThan(20);
+    expect(spec.inside).toBe(spec.count);
+    expect(spec.centered).toBe(spec.count);
+    expect(spec.sample.bw).toBeLessThan(spec.sample.cw);
+    expect(spec.sample.bh).toBeLessThan(spec.sample.ch);
+  });
+
+  test('a short selector sheet shrinks and a long one scrolls', async ({ page }) => {
+    const viewport = page.viewportSize();
+    expect(viewport).toBeTruthy();
+    test.skip(viewport!.width >= 1024, 'desktop uses a side pane');
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-starter-1').click();
+    const starter = await sheetBox(page);
+    expect(starter.sheetH).toBeLessThan(starter.max - 40);
+    expect(starter.sheetH).toBeGreaterThan(120);
+    expect(starter.gridTop).toBeLessThan(starter.sheetTop - 8);
+    expect(starter.scrollH).toBeLessThanOrEqual(starter.clientH + 2);
+    const starterGrid = await page.getByTestId('favorites-pretty-grid').boundingBox();
+    const starterDialog = await page.getByRole('dialog').boundingBox();
+    expect(starterGrid).toBeTruthy();
+    expect(starterDialog).toBeTruthy();
+    expect(starterGrid!.y).toBeGreaterThanOrEqual(starterDialog!.y);
+    expect(starterGrid!.y + starterGrid!.height).toBeLessThanOrEqual(starterDialog!.y + starterDialog!.height + 2);
+    await page.getByRole('button', { name: 'Close picker' }).click();
+
+    await page.setViewportSize({ width: 390, height: 480 });
+    await page.getByTestId('favorites-cell-water-1').click();
+    const water = await sheetBox(page);
+    expect(water.sheetH).toBeLessThanOrEqual(water.max + 2);
+    expect(water.sheetH).toBeGreaterThan(water.max - 8);
+    expect(water.scrollH).toBeGreaterThan(water.clientH + 8);
   });
 
   test('hub card opens the picker', async ({ page }) => {
