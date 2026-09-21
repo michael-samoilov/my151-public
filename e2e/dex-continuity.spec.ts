@@ -27,7 +27,7 @@ test.describe('dex continuity across the move', () => {
 
   test('the hub reads the saved dex and does not rewrite it', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('[data-card-panel]')).toHaveCount(3);
+    await expect(page.locator('[data-card-panel]')).toHaveCount(4);
     // The dex card offers the way back, with the saved count.
     await expect(page.locator('h2', { hasText: 'Pokédex Builder' }).locator('..')).toContainText('9/151');
     await expect(page.getByTestId('moved-notice')).toContainText('9/151');
@@ -43,7 +43,7 @@ test.describe('dex continuity across the move', () => {
     await page.getByTestId('moved-notice').getByRole('button', { name: 'Dismiss' }).click();
     await expect(page.getByTestId('moved-notice')).toHaveCount(0);
     await page.reload();
-    await expect(page.locator('[data-card-panel]')).toHaveCount(3);
+    await expect(page.locator('[data-card-panel]')).toHaveCount(4);
     await expect(page.getByTestId('moved-notice')).toHaveCount(0);
     // Seeing the hub counts as seeing the gym leader card, so the dex
     // builder's own promo for it will not repeat.
@@ -60,7 +60,7 @@ test.describe('dex continuity across the move', () => {
   test('a visitor with no dex sees no notice', async ({ page, context }) => {
     await context.addInitScript((k) => localStorage.removeItem(k), STORE_KEY);
     await page.goto('/');
-    await expect(page.locator('[data-card-panel]')).toHaveCount(3);
+    await expect(page.locator('[data-card-panel]')).toHaveCount(4);
     await expect(page.getByTestId('moved-notice')).toHaveCount(0);
   });
 });
