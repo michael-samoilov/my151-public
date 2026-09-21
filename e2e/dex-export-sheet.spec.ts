@@ -206,12 +206,14 @@ test.describe('mobile dex export sheet', () => {
     expect(box).toBeTruthy();
     await page.mouse.move(box!.x + box!.width * 0.08, box!.y + box!.height * 0.92, { steps: 8 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await expect.poll(async () => Math.hypot(
+      Number(await foil.getAttribute('data-tilt-x')),
+      Number(await foil.getAttribute('data-tilt-y')),
+    ), { timeout: 2000 }).toBeGreaterThan(3.8);
     const hypot = Math.hypot(
       Number(await foil.getAttribute('data-tilt-x')),
       Number(await foil.getAttribute('data-tilt-y')),
     );
-    expect(hypot, 'mobile peak hypot').toBeGreaterThan(2.4);
-    expect(hypot, 'mobile peak hypot').toBeGreaterThan(3.8);
     expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(4.6);
     const shadow = await page.evaluate(() => {
       const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
