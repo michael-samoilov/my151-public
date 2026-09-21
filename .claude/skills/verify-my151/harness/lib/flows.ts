@@ -376,8 +376,8 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const ink=g.getImageData(4,4,1,1).data;
      const inkChroma=Math.max(ink[0],ink[1],ink[2])-Math.min(ink[0],ink[1],ink[2]);
      if(inkChroma<20) return {ok:false,reason:'ink chroma '+inkChroma};
-     if(ink[1]>=ink[0] && ink[1]>=ink[2]) return {ok:false,reason:'ink still green'};
-     return {ok:true,reason:'multiply-ink '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' ink='+inkChroma};`,
+     if(ink[1]>140) return {ok:false,reason:'ink G unchanged '+ink[1]};
+     return {ok:true,reason:'multiply-ink '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' ink='+inkChroma+' g='+ink[1]};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
 }
 
