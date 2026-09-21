@@ -329,38 +329,15 @@ describe('export layout', () => {
     const cy = slotH / 2;
     const body = L.tmMoveBody(cy);
     expect(body.height).toBeCloseTo(typeRowH + L.TM_STACK_GAP + L.NAME_LINE);
-    expect(body.top + body.height / 2).toBeCloseTo(cy);
     expect(body.badgeY + badgeH / 2).toBeCloseTo(body.chipY + L.TM_CHIP_H / 2);
     expect(body.nameTop).toBeCloseTo(body.top + typeRowH + L.TM_STACK_GAP);
     expect(body.top).toBeGreaterThan(0);
     expect(body.top + body.height).toBeLessThan(slotH);
   });
 
-  it('matches disc+TM and type/name column midlines, not disc vs name', () => {
-    // In-app: left box is disc + "TM"; right box is badge + chip + name.
-    // Those two boxes share a vertical midline (`flex items-center`).
-    // Rejected: type row sharing the disc top; name centred on the disc.
-    const cy = 100;
-    const mark = L.tmMarkColumn(cy);
-    const body = L.tmMoveBody(cy);
-    const badgeH = L.tmBadgeH();
-    const discCy = mark.top + mark.glyph / 2;
-    const nameCy = body.nameCy;
-    const markMid = mark.top + mark.height / 2;
-    const bodyMid = body.top + body.height / 2;
-
-    expect(bodyMid).toBeCloseTo(markMid);
-    expect(bodyMid).toBeCloseTo(cy);
-
-    expect(body.badgeY).not.toBeCloseTo(mark.top, 0);
-    expect(body.badgeY).toBeGreaterThan(mark.top + 5);
-    expect(body.nameCy).toBeCloseTo(body.nameTop + L.NAME_LINE / 2);
-
-    expect(Math.abs(nameCy - discCy)).toBeGreaterThan(mark.glyph * 0.3);
-    expect(Math.abs(nameCy - mark.labelCy)).toBeLessThan(Math.abs(nameCy - discCy));
-
-    expect(body.badgeY).toBeLessThan(discCy);
-    expect(body.badgeY + badgeH).toBeGreaterThan(discCy);
+  it('matches the type-badge→disc-top gap to the name-bottom→TM-bottom gap', () => {
+    const { top, bottom } = L.tmInkGaps(100);
+    expect(Math.abs(top - bottom)).toBeLessThanOrEqual(1);
   });
 
   it('paints ace/partner at a whole multiple of the 96px source', () => {

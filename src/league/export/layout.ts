@@ -233,6 +233,16 @@ export const TM_CHIP_H = 0.6875 * 16 * K;
 export const TM_TYPE_GAP = 3 * K;
 export const TM_STACK_GAP = 2 * K;
 
+/** Circle top inside the TM disc's 24-unit viewBox (r=9, stroke 2 at 12,12). */
+export const TM_DISC_PAD = 2 / 24;
+
+/**
+ * Inter ExtraBold Latin em-ascent. Uppercase ink sits on this baseline, so
+ * the export TM gaps compare badge/disc tops to name/TM ink bottoms, not
+ * the 1.4 line boxes.
+ */
+export const LATIN_EM_ASCENT = 0.73;
+
 export function tmBadgeH(): number {
   return TM_BADGE_W / TYPE_BADGE_ASPECT;
 }
@@ -263,13 +273,25 @@ export function tmMarkColumn(cy: number): {
   };
 }
 
+function tmInkGapsFrom(
+  mark: ReturnType<typeof tmMarkColumn>,
+  body: { badgeY: number; nameTop: number },
+): { top: number; bottom: number } {
+  const discTop = mark.top + TM_DISC_PAD * mark.glyph;
+  const nameBottom =
+    body.nameTop + (NAME_LINE - NAME_PX) / 2 + LATIN_EM_ASCENT * NAME_PX;
+  const tmBottom =
+    mark.labelCy + LATIN_EM_ASCENT * MARK_LABEL_PX - MARK_LABEL_PX / 2;
+  return {
+    top: body.badgeY - discTop,
+    bottom: tmBottom - nameBottom,
+  };
+}
+
 /**
  * Type badge + category chip + move name, as CardGrid's TM slot lays them
- * out: a column beside the disc, vertically centred with the disc+TM column.
- *
- * The live slot is `flex items-center`. The type row is also `items-center`,
- * so its box is the taller of the 5:1 badge and the category chip. The name
- * box is the CSS line (`NAME_LINE`), the same `leading-[1.4]` NAME_CLASS uses.
+ * out: a column beside the disc. Badge top and disc-icon top leave the same
+ * gap as name bottom and the “TM” label bottom.
  */
 export function tmMoveBody(cy: number): {
   top: number;
@@ -282,7 +304,13 @@ export function tmMoveBody(cy: number): {
   const badgeH = tmBadgeH();
   const typeRowH = Math.max(badgeH, TM_CHIP_H);
   const height = typeRowH + TM_STACK_GAP + NAME_LINE;
-  const top = cy - height / 2;
+  const naturalTop = cy - height / 2;
+  const mark = tmMarkColumn(cy);
+  const { top: topGap, bottom: bottomGap } = tmInkGapsFrom(mark, {
+    badgeY: naturalTop + (typeRowH - badgeH) / 2,
+    nameTop: naturalTop + typeRowH + TM_STACK_GAP,
+  });
+  const top = naturalTop + (bottomGap - topGap) / 2;
   const nameTop = top + typeRowH + TM_STACK_GAP;
   return {
     top,
@@ -307,6 +335,14 @@ export function cssLineAlphabetic(
   emAscent: number,
 ): number {
   return lineTop + (lineH - fontPx) / 2 + emAscent;
+}
+
+/**
+ * Distances Michael named: type-badge top → disc-icon top, and move-name
+ * bottom → “TM” label bottom. They must match within 1px.
+ */
+export function tmInkGaps(cy: number): { top: number; bottom: number } {
+  return tmInkGapsFrom(tmMarkColumn(cy), tmMoveBody(cy));
 }
 
 /** Top of a row inside the grid box, which starts at the first band. */
