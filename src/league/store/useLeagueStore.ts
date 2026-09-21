@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } from './seedLeague';
+import { LEAGUE_PERSIST_VERSION, LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } from './seedLeague';
 import type { TypeName } from '@/types/pokemon';
 import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW } from '../model/constants';
 import {
@@ -520,7 +520,7 @@ export const useLeagueStore = create<LeagueState>()(
     }),
     {
       name: LEAGUE_STORAGE_KEY,
-      version: 2,
+      version: LEAGUE_PERSIST_VERSION,
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as {
           name?: string;
