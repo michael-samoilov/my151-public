@@ -299,8 +299,8 @@ function capHeight(ctx: CanvasRenderingContext2D): number {
 
 // ---------- the gym card ----------
 
-const ACE_HEAD = ['ACE', 'POKÉMON'];
-const PARTNER_HEAD = ['PARTNER /', 'SHOULDERMON'];
+const ACE_HEAD = L.ACE_HEAD;
+const PARTNER_HEAD = L.PARTNER_HEAD;
 
 /** The width of a two-line heading run, at the heading's own size. */
 function headWidth(ctx: CanvasRenderingContext2D, lines: string[]): number {
@@ -597,7 +597,7 @@ function drawTmSlot(
   const chipH = 0.6875 * 16 * L.K;
   const typeGap = 3 * L.K;
   const stackGap = 2 * L.K;
-  const name = localeUppercase(move.name);
+  const name = L.moveExportName(move.name);
 
   ctx.save();
   ctx.beginPath();
@@ -662,7 +662,7 @@ function drawBadgeSlot(
 
   if (!name) return;
 
-  const phrase = localeUppercase(`${name} Badge`);
+  const phrase = L.badgeExportPhrase(name);
   ctx.save();
   ctx.font = font(L.NAME_PX, 800);
   ctx.fillStyle = shades.band;

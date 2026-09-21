@@ -936,6 +936,20 @@ export async function runGymCardExportParitySuite(
     checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'trainer card never opened' });
     return checks;
   }
+  await sleep(600);
+  const scale = await s.evalJson<{ css: number; n: number; integer: boolean }>(
+    `const pane=document.querySelector('[data-ace-partner-slot]');
+     const art=pane&&pane.querySelector('[data-slot-art]');
+     const rem=parseFloat(getComputedStyle(document.documentElement).fontSize);
+     const css=art?art.offsetWidth:0;
+     const n=css/(3.25*rem);
+     return {css,n,integer:[1,2,3].some(s=>Math.abs(n-s)<0.02)};`,
+  );
+  checks.push(ok(
+    'gym-export:ace-integer-scale',
+    scale.integer,
+    `css=${scale.css} n=${scale.n.toFixed(3)} (want 1, 2, or 3 × 3.25rem)`,
+  ));
   await s.click('[data-league-export]');
   if (!(await waitFor(s, '[data-export-preview] img', 60))) {
     checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'export preview image never mounted' });
@@ -972,12 +986,18 @@ export async function runGymCardExportParitySuite(
     heads: string;
     cx: number;
     cy: number;
+    integer: boolean;
+    n: number;
   }>(
     `const pane=document.querySelector('[data-ace-partner-slot]');
      const cluster=document.querySelector('[data-testid="slot-ace"]');
-     if(!pane||!cluster) return {mode:null,seam:true,arts:0,heads:'',cx:0,cy:0};
+     const art=pane&&pane.querySelector('[data-slot-art]');
+     if(!pane||!cluster) return {mode:null,seam:true,arts:0,heads:'',cx:0,cy:0,integer:false,n:0};
      const pr=pane.getBoundingClientRect();
      const cr=cluster.getBoundingClientRect();
+     const rem=parseFloat(getComputedStyle(document.documentElement).fontSize);
+     const css=art?art.offsetWidth:0;
+     const n=css/(3.25*rem);
      return {
        mode: pane.getAttribute('data-showcase'),
        seam: !!pane.querySelector(':scope > svg line'),
@@ -985,6 +1005,8 @@ export async function runGymCardExportParitySuite(
        heads: [...pane.querySelectorAll('[data-slot-head]')].map(e=>e.getAttribute('data-slot-head')).join(','),
        cx: (cr.left+cr.width/2-pr.left)/pr.width,
        cy: (cr.top+cr.height/2-pr.top)/pr.height,
+       integer: [1,2,3].some(s=>Math.abs(n-s)<0.02),
+       n,
      };`,
   );
   await s.screenshot(ctx.shot('gym-export-solo-ace'));
@@ -993,6 +1015,11 @@ export async function runGymCardExportParitySuite(
     'gym-export:solo-ace-panel',
     solo.mode === 'solo' && !solo.seam && solo.arts === 1 && solo.heads === 'ace' && centred,
     `mode=${solo.mode} seam=${solo.seam} arts=${solo.arts} heads=${solo.heads} cx=${solo.cx.toFixed(2)} cy=${solo.cy.toFixed(2)}`,
+  ));
+  checks.push(ok(
+    'gym-export:solo-ace-integer-scale',
+    solo.integer,
+    `n=${solo.n.toFixed(3)} (want 1, 2, or 3 × 3.25rem)`,
   ));
   return checks;
 }

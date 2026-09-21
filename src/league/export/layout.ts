@@ -11,8 +11,9 @@
  * from these same constants.
  */
 
+import { localeUppercase } from '@/i18n';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
-import { pairSprite, soloMaxEdge, SPRITE_NATIVE } from '../slotLayout';
+import { pairSprite, soloSprite } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
 /** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
@@ -154,32 +155,41 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
 export const FRAME = 12;
 
 /**
- * Native 2× source pixels. Export paint size is `pairExportSprite`, which
- * maps the live card's CSS edge through K. On a 3× phone that CSS edge is
- * 64px, not 192.
+ * Native 2× source pixels. Export paint size is `pairExportSprite`: 96, 192,
+ * or 288. Never a fraction of 96.
  */
 export const SIG_SPRITE = 192;
 
-/**
- * Ace/partner edge in export pixels.
- *
- * The live card sizes the pair in CSS px (`pairSprite`: 64 on a 3× phone
- * that picks 2×). The export artboard maps 52 CSS px to 96 canvas px, so
- * the same sprite is `css * K`. Multiplying the 1|2 scale by 96 instead
- * paints 2× native on a 1× canvas and overlaps the pair.
- */
-export function pairExportSprite(w: number, h: number): number {
-  return Math.round(pairSprite(w / K, h / K, 3, 16) * K);
+/** Showcase headings. Same two-line caps the live card paints. */
+export const ACE_HEAD = ['ACE', 'POKÉMON'];
+export const PARTNER_HEAD = ['PARTNER /', 'SHOULDERMON'];
+
+/** Badge phrase in the same caps as ACE POKÉMON. */
+export function badgeExportPhrase(name: string): string {
+  return localeUppercase(`${name} Badge`);
+}
+
+/** Move name in the same caps as ACE POKÉMON. */
+export function moveExportName(name: string): string {
+  return localeUppercase(name);
 }
 
 /**
- * One ace or one partner, centered. Largest n×96 that still fits the slot
- * after pad, heading and name. The pair size is smaller; a lone sprite can
- * spend the whole pane.
+ * Ace/partner edge in export pixels: 1×, 2×, or 3× of the team cell (96).
+ * The live card sizes these as n×SPRITE_REM rem so the fit zoom paints n×96.
+ * Export rem is 16×K, so the same n lands on n×96 canvas px. css×K (~118)
+ * is not an integer scale of the 96px asset and aliases it.
+ */
+export function pairExportSprite(w: number, h: number): number {
+  return pairSprite(w, h, 16 * K);
+}
+
+/**
+ * One ace or one partner, centered. Largest of 1×, 2×, 3× of 96 that still
+ * fits the slot after pad, heading and name.
  */
 export function soloExportSprite(w: number, h: number): number {
-  const maxEdge = soloMaxEdge(w, h, 16 * K);
-  return Math.max(SPRITE_NATIVE, Math.floor(maxEdge / SPRITE_NATIVE) * SPRITE_NATIVE);
+  return soloSprite(w, h, 16 * K);
 }
 
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */

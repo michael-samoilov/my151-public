@@ -140,18 +140,31 @@ test.describe('the ace and partner slot', () => {
     const measured = await page.evaluate(() => {
       const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
       const art = pane.querySelector<HTMLElement>('[data-slot-art]')!;
+      const team = document.querySelector<HTMLElement>('[data-testid="card-cell-1-1"] img');
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const css = art.offsetWidth;
+      const n = css / (3.25 * rem);
+      const teamW = team?.offsetWidth ?? 0;
       return {
-        layout: art.offsetWidth,
+        layout: css,
         attr: Number(pane.dataset.slotSprite),
-        dpr: window.devicePixelRatio,
+        rem,
+        n,
+        teamW,
+        vsTeam: teamW > 0 ? css / teamW : 0,
+        integer: [1, 2, 3].some((s) => Math.abs(n - s) < 0.02),
         style: getComputedStyle(art).width,
       };
     });
-    const one = Math.round(96 / measured.dpr);
-    const two = Math.round(192 / measured.dpr);
-    expect([one, two], `layout ${measured.layout} at dpr ${measured.dpr}`).toContain(measured.layout);
-    expect(measured.attr).toBe(measured.layout);
+    expect(measured.integer, `n=${measured.n} css=${measured.layout} rem=${measured.rem}`).toBe(true);
+    expect(measured.attr).toBeCloseTo(measured.layout, 0);
     expect(measured.style).not.toContain('cqw');
+    if (measured.teamW > 0) {
+      expect(
+        [1, 2, 3].some((s) => Math.abs(measured.vsTeam - s) < 0.05),
+        `ace ${measured.layout} vs team ${measured.teamW}`,
+      ).toBe(true);
+    }
     for (const half of halves) {
       expect(half.sprite, `${half.id} painted`).toBeGreaterThan(8);
     }
@@ -287,8 +300,9 @@ test.describe('the ace and partner slot', () => {
       const art = pane.querySelector<HTMLElement>('[data-slot-art]')!;
       const slot = pane.getBoundingClientRect();
       const box = cluster.getBoundingClientRect();
-      const dpr = window.devicePixelRatio;
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
       const css = art.offsetWidth;
+      const n = css / (3.25 * rem);
       return {
         mode: pane.dataset.showcase,
         seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
@@ -298,7 +312,7 @@ test.describe('the ace and partner slot', () => {
         cy: (box.top + box.height / 2 - slot.top) / slot.height,
         css,
         attr: Number(pane.dataset.slotSprite),
-        integer: [1, 2, 3, 4].map((n) => Math.round((n * 96) / dpr)).includes(css),
+        integer: [1, 2, 3].some((s) => Math.abs(n - s) < 0.02),
       };
     });
     expect(got.mode, 'the pane marks itself solo').toBe('solo');
@@ -307,8 +321,8 @@ test.describe('the ace and partner slot', () => {
     expect(got.heads, 'only the ace heading').toEqual(['ace']);
     expect(got.cx, 'cluster sits on the mid X').toBeCloseTo(0.5, 1);
     expect(got.cy, 'cluster sits on the mid Y').toBeCloseTo(0.5, 1);
-    expect(got.css).toBe(got.attr);
-    expect(got.integer, `css ${got.css} is n×96/dpr`).toBe(true);
+    expect(got.css).toBeCloseTo(got.attr, 0);
+    expect(got.integer, `css ${got.css} is n×3.25rem`).toBe(true);
 
     await page.locator('[data-testid="slot-partner"]').click({ position: { x: 8, y: 8 }, force: true });
     await expect(page.locator('[data-filter-chip="my-dex"]')).toBeVisible();

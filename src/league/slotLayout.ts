@@ -3,12 +3,20 @@
  * This file keeps the seam and the pair sprite size the export shares.
  */
 
-import { pixelPerfectCssPx, SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
+import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
 
 /** The seam's slope: 30°, the empty ball's own band. */
 const SEAM_TAN = Math.tan(Math.PI / 6);
 
 export { SPRITE_NATIVE };
+
+/**
+ * Team-cell rem. Ace/partner are 1×, 2×, or 3× of this so the card's fit
+ * zoom paints them at n×96, the same integer scale as the team sprites.
+ */
+export const SPRITE_REM = 3.25;
+
+export type SpriteScale = 1 | 2 | 3;
 
 /** Same padding on both clusters, in rem. Clears the rounded dash. */
 export const SLOT_PAD_REM = 0.5;
@@ -29,10 +37,15 @@ export function slotHeadPx(remPx: number): number {
   return SLOT_HEAD_REM * SLOT_HEAD_LEADING * SLOT_HEAD_LINES * remPx;
 }
 
+/** CSS edge for scale n: n × 3.25 rem. After the card zoom, that is n×96. */
+export function spriteEdge(n: SpriteScale, remPx: number): number {
+  return n * SPRITE_REM * remPx;
+}
+
 /**
  * True when two opposite-corner squares of `sprite` CSS px do not intersect.
  * Headings sit in the flow above/below each square. Names are not part of this
- * test. 1× is always used when 2× fails; a 1× that still intersects is still 1×.
+ * test. 1× is always used when 2× and 3× fail; a 1× that still intersects is still 1×.
  */
 export function pairSquaresFit(
   w: number,
@@ -54,24 +67,24 @@ export function pairSquaresFit(
   return overlapX <= 0 || overlapY <= 0;
 }
 
-/** 2× when both squares fit the pane, else 1×. Never a fraction. */
+/** Largest of 3×, 2×, 1× whose two squares fit the pane. Never a fraction. */
 export function pairSpriteScale(
   w: number,
   h: number,
-  dpr: number = 1,
   remPx: number = 16,
-): 1 | 2 {
-  return pairSquaresFit(w, h, pixelPerfectCssPx(2, dpr), remPx) ? 2 : 1;
+): SpriteScale {
+  if (pairSquaresFit(w, h, spriteEdge(3, remPx), remPx)) return 3;
+  if (pairSquaresFit(w, h, spriteEdge(2, remPx), remPx)) return 2;
+  return 1;
 }
 
-/** Sprite edge in CSS px: `n * 96 / dpr`, rounded, n is 1 or 2. */
+/** Sprite edge in CSS px: `n * 3.25 * remPx`, n is 1, 2, or 3. */
 export function pairSprite(
   w: number,
   h: number,
-  dpr: number = 1,
   remPx: number = 16,
 ): number {
-  return pixelPerfectCssPx(pairSpriteScale(w, h, dpr, remPx), dpr);
+  return spriteEdge(pairSpriteScale(w, h, remPx), remPx);
 }
 
 /** Room for one centered sprite: pad on all sides, heading and name in height. */
@@ -82,25 +95,27 @@ export function soloMaxEdge(w: number, h: number, remPx: number = 16): number {
   return Math.min(w - 2 * pad, h - 2 * pad - headH - nameH);
 }
 
+/** Largest of 1×, 2×, 3× whose edge fits `maxEdge`. Never a fraction. */
+export function soloSpriteScale(
+  w: number,
+  h: number,
+  remPx: number = 16,
+): SpriteScale {
+  const maxEdge = soloMaxEdge(w, h, remPx);
+  if (spriteEdge(3, remPx) <= maxEdge) return 3;
+  if (spriteEdge(2, remPx) <= maxEdge) return 2;
+  return 1;
+}
+
 /**
- * Largest integer native scale whose CSS edge fits `maxEdge`.
- * 1× is the floor. Never a fraction of the pane.
+ * Largest of 1×, 2×, 3× of the team rem that still fits. 1× is the floor.
  */
 export function soloSprite(
   w: number,
   h: number,
-  dpr: number = 1,
   remPx: number = 16,
 ): number {
-  const maxEdge = soloMaxEdge(w, h, remPx);
-  const d = Math.max(dpr, 1);
-  let n = 1;
-  for (let s = 2; ; s++) {
-    const css = Math.round((s * SPRITE_NATIVE) / d);
-    if (css > maxEdge) break;
-    n = s;
-  }
-  return Math.round((n * SPRITE_NATIVE) / d);
+  return spriteEdge(soloSpriteScale(w, h, remPx), remPx);
 }
 
 /**

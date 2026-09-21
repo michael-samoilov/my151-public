@@ -5,7 +5,6 @@ import { emptyCard, type GymCard } from '../store/useLeagueStore';
 import { makePlacedLine } from '../model/engine';
 import { TEAM_SIZES, slotRow } from '../model/constants';
 import { kantoCards } from '../data/kantoLeague';
-import { pairSprite } from '../slotLayout';
 import { DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT } from './exportOptions';
 
 /**
@@ -92,7 +91,7 @@ describe('export layout', () => {
     const box = L.showcaseBox();
     const head = 2 * L.HEAD_LINE;
     const pad = 0.5 * 16 * L.K;
-    const sprite = pairSprite(box.width, box.height);
+    const sprite = L.pairExportSprite(box.width, box.height);
     const aceTop = pad;
     const aceBottom = pad + head + sprite;
     const partnerTop = box.height - pad - head - sprite;
@@ -318,19 +317,28 @@ describe('export layout', () => {
     expect(L.TM_TYPE_ABOVE_NAME).toBe(true);
   });
 
-  it('paints ace/partner at the live card CSS size, not 2× native on the canvas', () => {
-    // A 3× phone picks 2× as 64 CSS px. The export maps CSS through K, so
-    // that is ~118 canvas px. Painting 192 (2× native on a 1× artboard)
-    // overlaps the pair; the live card does not.
+  it('paints ace/partner at a whole multiple of the 96px source', () => {
+    // Team cells paint at 96. Ace/partner may be 1×, 2×, or 3× of that.
+    // css×K (~118) is not an integer scale and aliases the 96px asset.
     const box = L.showcaseBox();
-    const css = pairSprite(box.width / L.K, box.height / L.K, 3, 16);
     const sprite = L.pairExportSprite(box.width, box.height);
-    expect(css).toBe(64);
-    expect(sprite).toBe(Math.round(css * L.K));
+    expect([96, 192, 288]).toContain(sprite);
+    expect(sprite % 96).toBe(0);
+    expect(sprite).not.toBe(Math.round(64 * L.K));
     const pad = 0.5 * 16 * L.K;
     const aceRight = pad + sprite;
     const partnerLeft = box.width - pad - sprite;
     expect(aceRight).toBeLessThanOrEqual(partnerLeft);
+  });
+
+  it('labels the showcase ACE POKÉMON, not SIGNATURE', () => {
+    expect(L.ACE_HEAD).toEqual(['ACE', 'POKÉMON']);
+    expect(L.ACE_HEAD.join(' ')).not.toMatch(/SIGNATURE/i);
+  });
+
+  it('exports badge and move names in the same caps as ACE POKÉMON', () => {
+    expect(L.badgeExportPhrase('Marsh')).toBe('MARSH BADGE');
+    expect(L.moveExportName('Psychic')).toBe('PSYCHIC');
   });
 
   it('pins ace and partner sprite centres as a 180° mirror', () => {

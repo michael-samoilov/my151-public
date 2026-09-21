@@ -44,10 +44,34 @@ function nimbusState({ partner = true } = {}) {
   return { state: { name: '', cards }, version: 1 };
 }
 
-async function seed(page, opts) {
-  await page.addInitScript((state) => {
-    localStorage.setItem('league-builder', JSON.stringify(state));
-  }, nimbusState(opts));
+/** Sabrina psychic / Alakazam ace / Psychic TM / Marsh. Michael's card. */
+function sabrinaState() {
+  const cards = Array.from({ length: 14 }, () => ({ ...EMPTY, lines: [] }));
+  cards[0] = {
+    ...EMPTY,
+    type: 'psychic',
+    theme: "Sabrina's psychic will",
+    lines: [
+      { branch: [63, 64, 65], boundaries: [1, 4, 8] },
+      { branch: [133, 196], boundaries: [1, 8] },
+      { branch: [439, 122], boundaries: [1, 8] },
+      { branch: [238, 124], boundaries: [1, 8] },
+      { branch: [360, 202], boundaries: [1, 8] },
+      { branch: [280, 281, 475], boundaries: [1, 4, 8] },
+    ],
+    signatureSeat: 1,
+    signatureId: 65,
+    partnerId: null,
+    tmMoveId: 94,
+    badgeName: 'Marsh',
+  };
+  return { state: { name: '', cards }, version: 1 };
+}
+
+async function seed(page, state) {
+  await page.addInitScript((next) => {
+    localStorage.setItem('league-builder', JSON.stringify(next));
+  }, state);
 }
 
 async function openCard(page, baseUrl) {
@@ -85,8 +109,8 @@ async function shot(page, name) {
   await page.screenshot({ path: join(ART, file), fullPage: true });
 }
 
-async function captureSet(page, baseUrl, prefix) {
-  await seed(page);
+async function captureSet(page, baseUrl, prefix, state = nimbusState()) {
+  await seed(page, state);
   await openCard(page, baseUrl);
   for (const [label, w, h] of [['mobile_390', 390, 844], ['desktop_1280', 1280, 800]]) {
     await page.setViewportSize({ width: w, height: h });
@@ -105,7 +129,7 @@ async function captureSet(page, baseUrl, prefix) {
 }
 
 async function captureSolo(page, baseUrl, prefix) {
-  await seed(page, { partner: false });
+  await seed(page, nimbusState({ partner: false }));
   await openCard(page, baseUrl);
   for (const [label, w, h] of [['mobile_390', 390, 844], ['desktop_1280', 1280, 800]]) {
     await page.setViewportSize({ width: w, height: h });
@@ -167,6 +191,16 @@ const afterSoloPage = await afterSoloCtx.newPage();
 await captureSolo(afterSoloPage, 'http://127.0.0.1:4190', 'after');
 await afterSoloPage.close();
 await afterSoloCtx.close();
+const beforeSabrinaCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
+const beforeSabrinaPage = await beforeSabrinaCtx.newPage();
+await captureSet(beforeSabrinaPage, 'http://127.0.0.1:4191', 'before_sabrina', sabrinaState());
+await beforeSabrinaPage.close();
+await beforeSabrinaCtx.close();
+const afterSabrinaCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
+const afterSabrinaPage = await afterSabrinaCtx.newPage();
+await captureSet(afterSabrinaPage, 'http://127.0.0.1:4190', 'after_sabrina', sabrinaState());
+await afterSabrinaPage.close();
+await afterSabrinaCtx.close();
 await browser.close();
 basePreview.stop();
 fixPreview.stop();

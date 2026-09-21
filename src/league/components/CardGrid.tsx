@@ -21,7 +21,6 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
 import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
-import { useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
 import { useGridDragSensors } from '@/lib/dragSensors';
 import { warmImages } from '@/lib/warmImages';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
@@ -47,9 +46,10 @@ import {
   BALL_OF_SPRITE,
   RING_OF_SPRITE,
   SLOT_PAD_REM,
-  pairSprite,
+  SPRITE_REM,
+  pairSpriteScale,
   seamEnds,
-  soloSprite,
+  soloSpriteScale,
 } from '../slotLayout';
 import { useSlotLab } from '../slotLab';
 
@@ -68,8 +68,6 @@ const PAD_X = 0.5; // 8px
 const PAD_Y = 0.6875; // 11px
 const INSET_Y = 0.375; // 6px
 const INSET_X = 0.1875; // 3px
-/** Cell sprite size; larger than the cell on purpose, as on the boards. */
-const SPRITE_REM = 3.25;
 
 /**
  * How far a carried column lifts off the card.
@@ -1060,15 +1058,13 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const partner = card.partnerId != null ? getPokemonById(card.partnerId) : undefined;
   const slotRef = useRef<HTMLDivElement>(null);
   const box = useSlotBox(slotRef);
-  const dpr = useDevicePixelRatio();
   const labSprite = useSlotLab((st) => (st.enabled ? st.sprite : 0));
   const remPx = getAppliedRootFontSizePx();
   const solo = Boolean(ace) !== Boolean(partner);
-  const spritePx = labSprite > 0
-    ? labSprite
-    : solo
-      ? soloSprite(box[0], box[1], dpr, remPx)
-      : pairSprite(box[0], box[1], dpr, remPx);
+  const scale = solo
+    ? soloSpriteScale(box[0], box[1], remPx)
+    : pairSpriteScale(box[0], box[1], remPx);
+  const spritePx = labSprite > 0 ? labSprite : scale * SPRITE_REM * remPx;
   const seam = seamEnds(box[0], box[1]);
   const pos = {
     ...slotX(1, 3),
@@ -1084,7 +1080,9 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       className="absolute z-[5] overflow-hidden rounded-lg"
       style={{
         ...pos,
-        ['--slot-sprite' as string]: `${spritePx}px`,
+        ['--slot-sprite' as string]: labSprite > 0
+          ? `${labSprite}px`
+          : `${scale * SPRITE_REM}rem`,
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
