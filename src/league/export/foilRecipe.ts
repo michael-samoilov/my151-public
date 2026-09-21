@@ -1,3 +1,5 @@
+import { FOIL_HOLO_AMOUNT } from './foilBlend';
+
 /**
  * Lighting recipe for the export preview foil.
  *
@@ -89,7 +91,7 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
-  holographic: { on: true, amount: 0.4 },
+  holographic: { on: true, amount: FOIL_HOLO_AMOUNT },
   iridescence: { on: true, amount: 0.15 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },

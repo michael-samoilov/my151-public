@@ -188,10 +188,10 @@ test.describe('mobile dex export sheet', () => {
       }
       if (!/round/i.test(clip)) return { ok: false, reason: `clip ${clip}` };
       if (!mask.includes('url(')) return { ok: false, reason: `holo unmasked ${mask}` };
-      if (holoStyle.mixBlendMode !== 'multiply') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
+      if (holoStyle.mixBlendMode !== 'soft-light') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
-      if (Math.abs(holoAmt - 0.4) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
+      if (Math.abs(holoAmt - 0.55) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
@@ -454,7 +454,7 @@ test.describe('desktop dex export preview', () => {
           !style.transformStyle.includes('preserve-3d') &&
           overflowLayers.length === 0 &&
           mask.includes('url(') &&
-          Math.abs(holoAmt - 0.4) < 0.02 &&
+          Math.abs(holoAmt - 0.55) < 0.02 &&
           !(bloom instanceof HTMLElement && getComputedStyle(bloom).inset.includes('-')),
       };
     });
@@ -654,9 +654,9 @@ test.describe('desktop dex export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('multiply');
+    expect(holo.mix, JSON.stringify(holo)).toBe('soft-light');
     expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.15);
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.4, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.55, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);
