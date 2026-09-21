@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
  * Shared pill tab set from PR 79. One muted track, a raised card pill for
  * the selected tab.
  */
-export function tabTriggerClass(selected: boolean) {
+function tabTriggerClass(selected: boolean) {
   return cn(
     "px-2 sm:px-3",
     selected
