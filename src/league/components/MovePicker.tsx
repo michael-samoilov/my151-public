@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 import { slotLabel } from '../model/constants';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { filterMoves } from '../filterMoves';
+import { movesForPicker } from '../filterMoves';
 import {
   CATEGORY_COLORS,
   CONTEST_COLORS,
@@ -167,8 +167,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   };
 
   const results = useMemo(() => {
-    const filtered = filterMoves({
-      search,
+    const filtered = movesForPicker(search, {
       types: typeFilter,
       categories,
       contests,

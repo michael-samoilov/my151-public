@@ -768,9 +768,6 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     checks.push({ name: 'league-change:charizard-seated', status: 'skip', detail: 'card never opened' });
   }
 
-  // A typed query is a lookup, not a refinement of the chips. The gym's
-  // type arrives pre-selected on the TM picker; searching "surf" on a Fire
-  // gym must still list Surf.
   await s.navigate(url);
   if ((await waitLeagueHome(s)) && (await openLeagueCard(s, CARD))) {
     await s.click('[aria-label^="Gym type"]');
