@@ -1,71 +1,56 @@
 /**
- * Column count for the picker sprite grid. Avoids a last row of 1–2 tiles
- * (CSS `text-wrap: pretty`). Prefers a full last row, then more columns.
- * Tries 2..maxCols first so 16 stays 4×4. If nothing in that range has a
- * last row of 3+, expand up to 8 so 17 becomes 6+6+5, not 5+5+5+2.
+ * Picker rows. At most 6 tiles. A count of 6 or fewer is one row.
+ * Above 6, rows are 6 wide. The last two rows split their tiles when that
+ * puts the last row closer to the row above it. A long list does not drop
+ * to 4 columns for every row.
  */
 
-const PRETTY_EXPAND_MAX = 8;
+export const SELECTOR_MAX_COLS = 6;
 
-function prettyLastLen(count: number, cols: number): number {
-  const rem = count % cols;
-  return rem === 0 ? cols : rem;
+function clampCap(maxCols: number): number {
+  const asked = Math.floor(Number(maxCols) || SELECTOR_MAX_COLS);
+  return Math.max(1, Math.min(SELECTOR_MAX_COLS, asked));
 }
 
-function prettyColsOk(count: number, cols: number): boolean {
-  const rows = Math.ceil(count / cols);
-  const lastLen = prettyLastLen(count, cols);
-  return !(rows > 1 && lastLen < 3);
+function rowGap(sizes: readonly number[]): number {
+  if (sizes.length < 2) return 0;
+  return Math.abs(sizes[sizes.length - 1] - sizes[sizes.length - 2]);
 }
 
-function bestPrettyCols(count: number, from: number, to: number): number | null {
-  let bestCols: number | null = null;
-  let bestRatio = -1;
-  const step = from <= to ? 1 : -1;
-  for (let cols = from; step > 0 ? cols <= to : cols >= to; cols += step) {
-    if (cols < 1 || !prettyColsOk(count, cols)) continue;
-    const ratio = prettyLastLen(count, cols) / cols;
-    if (bestCols == null || ratio > bestRatio || (ratio === bestRatio && cols > bestCols)) {
-      bestRatio = ratio;
-      bestCols = cols;
-    }
-  }
-  return bestCols;
-}
-
-export function prettyGridCols(n: number, maxCols = 5): number {
-  const count = Math.max(0, Number(n) || 0);
-  if (count <= 1) return 1;
-  if (count <= maxCols) return count;
-  const inMax = bestPrettyCols(count, maxCols, 2);
-  if (inMax != null) return inMax;
-  const expandTo = Math.min(count, Math.max(maxCols + 1, PRETTY_EXPAND_MAX));
-  return bestPrettyCols(count, maxCols + 1, expandTo) ?? maxCols;
-}
-
-/** Row lengths for a pretty wrap, e.g. 11 → [4, 4, 3]. */
-export function prettyRowSizes(n: number, maxCols = 5): number[] {
-  const count = Math.max(0, Number(n) || 0);
+export function prettyRowSizes(n: number, maxCols = SELECTOR_MAX_COLS): number[] {
+  const count = Math.max(0, Math.floor(Number(n) || 0));
+  const cap = clampCap(maxCols);
   if (count === 0) return [];
-  const cols = prettyGridCols(count, maxCols);
-  const rem = count % cols;
-  const fullRows = Math.floor(count / cols);
-  const sizes = Array<number>(fullRows).fill(cols);
-  if (rem !== 0) sizes.push(rem);
-  return sizes;
+  if (count <= cap) return [count];
+
+  const full = Math.floor(count / cap);
+  const rem = count % cap;
+  if (rem === 0) return Array(full).fill(cap);
+
+  const plain = [...Array(full).fill(cap), rem];
+  const tail = cap + rem;
+  const high = Math.ceil(tail / 2);
+  const low = tail - high;
+  const balanced = [...Array(full - 1).fill(cap), high, low];
+  return rowGap(balanced) < rowGap(plain) ? balanced : plain;
 }
 
-export function prettyWrapLabel(n: number, maxCols = 5): string {
-  return `${Math.max(0, Number(n) || 0)} → ${prettyRowSizes(n, maxCols).join('+')}`;
+export function prettyGridCols(n: number, maxCols = SELECTOR_MAX_COLS): number {
+  const sizes = prettyRowSizes(n, maxCols);
+  return sizes.reduce((max, len) => Math.max(max, len), 0);
 }
 
-/** Split `items` into pretty rows. The last incomplete row is shorter. */
-export function prettyRows<T>(items: readonly T[], maxCols = 5): T[][] {
+export function prettyWrapLabel(n: number, maxCols = SELECTOR_MAX_COLS): string {
+  return `${Math.max(0, Math.floor(Number(n) || 0))} → ${prettyRowSizes(n, maxCols).join('+')}`;
+}
+
+/** Split `items` into rows. A short last row stays short. */
+export function prettyRows<T>(items: readonly T[], maxCols = SELECTOR_MAX_COLS): T[][] {
   const sizes = prettyRowSizes(items.length, maxCols);
   const rows: T[][] = [];
   let i = 0;
   for (const len of sizes) {
-    rows.push(items.slice(i, i + len) as T[]);
+    rows.push(items.slice(i, i + len));
     i += len;
   }
   return rows;

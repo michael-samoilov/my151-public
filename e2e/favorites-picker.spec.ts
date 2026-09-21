@@ -56,6 +56,37 @@ test.describe('favorite Pokémon picker', () => {
     expect(Math.abs(genAfter!.x - genBefore!.x)).toBeLessThan(2);
   });
 
+  test('selector sprites stay one size', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    const cells = ['favorites-cell-normal-1', 'favorites-cell-water-1', 'favorites-cell-starter-1'];
+    const widths: number[] = [];
+    for (const cell of cells) {
+      await page.getByTestId(cell).click();
+      const grid = page.getByTestId('favorites-pretty-grid');
+      await expect(grid).toBeVisible();
+      const spec = await grid.evaluate((el) => {
+        const img = el.querySelector('img');
+        const rows = [...el.querySelectorAll('[data-pretty-row]')].map((row) =>
+          Number(row.getAttribute('data-pretty-len')),
+        );
+        const dpr = window.devicePixelRatio || 1;
+        const css = Math.round(96 / Math.max(dpr, 1));
+        const box = img?.getBoundingClientRect();
+        return { css, w: box?.width ?? 0, rows, max: Math.max(...rows, 0) };
+      });
+      expect(spec.max, cell).toBeLessThanOrEqual(6);
+      expect(Math.abs(spec.w - spec.css), cell).toBeLessThan(0.6);
+      if (cell.endsWith('water-1')) {
+        const fours = spec.rows.filter((len) => len === 4).length;
+        expect(fours, cell).toBeLessThan(spec.rows.length);
+      }
+      widths.push(spec.w);
+      await page.getByRole('button', { name: 'Close picker' }).click();
+    }
+    expect(Math.abs(widths[0] - widths[1])).toBeLessThan(0.6);
+    expect(Math.abs(widths[0] - widths[2])).toBeLessThan(0.6);
+  });
+
   test('hub card opens the picker', async ({ page }) => {
     await page.goto('/');
     await page.locator('a[href="/favorite-pokemon-by-type"]').click();
