@@ -216,7 +216,13 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
       <div className="flex items-center gap-2 p-3 pb-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search moves" className="pl-9" />
+          <Input
+            data-testid="tm-search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search moves"
+            className="pl-9"
+          />
         </div>
         <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">{results.length} found</span>
       </div>
@@ -379,6 +385,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           <button
             key={m.id}
             type="button"
+            data-testid={`tm-move-${m.id}`}
             onClick={() => {
               setTm(cardIndex, m.id);
               onClose();

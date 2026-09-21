@@ -776,15 +776,28 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     await sleep(400);
     await s.click('[data-testid="slot-tm"]');
     const picker = await waitFor(s, '[data-testid="tm-chip-type-fire"]');
-    await s.evalJson(`const i=document.querySelector('input[placeholder="Search moves"]');
-      const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
-      set.call(i,'surf'); i.dispatchEvent(new Event('input',{bubbles:true})); return !!i;`);
+    const typed = await s
+      .evalJson<{ ok: boolean; value: string }>(`const i=document.querySelector('[data-testid="tm-search"]');
+        if(!i) return {ok:false,value:''};
+        i.focus();
+        const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+        set.call(i,'surf');
+        i.dispatchEvent(new Event('input',{bubbles:true}));
+        i.dispatchEvent(new Event('change',{bubbles:true}));
+        return {ok:true,value:i.value};`)
+      .catch(() => ({ ok: false, value: '' }));
     await sleep(900);
     const hasSurf = await s
-      .evalJson<boolean>(`return [...document.querySelectorAll('button')].some((b)=>/\\bSurf\\b/.test(b.textContent||''));`)
+      .evalJson<boolean>(`return !!document.querySelector('[data-testid="tm-move-57"]');`)
       .catch(() => false);
-    checks.push(ok('league-change:tm-search-ignores-type-chip', picker && hasSurf, `picker=${picker} hasSurf=${hasSurf}`));
+    checks.push(ok(
+      'league-change:tm-search-ignores-type-chip',
+      picker && typed.ok && hasSurf,
+      `picker=${picker} typed=${typed.ok} value=${typed.value} hasSurf=${hasSurf}`,
+    ));
     await s.screenshot(ctx.shot('league-change-tm-search-surf'));
+    await s.navigate(url);
+    await waitLeagueHome(s);
   } else {
     checks.push({ name: 'league-change:tm-search-ignores-type-chip', status: 'skip', detail: 'card never opened' });
   }
