@@ -327,6 +327,113 @@ async function waitForDexPreviewImg(s: Session, ms = 45000): Promise<boolean> {
   return false;
 }
 
+async function waitForFoilMaps(s: Session, ms = 15000): Promise<boolean> {
+  const started = Date.now();
+  while (Date.now() - started < ms) {
+    const ready = await s.evalJson<boolean>(
+      `return document.querySelector('[data-export-preview]')?.getAttribute('data-foil-maps')==='1';`,
+    ).catch(() => false);
+    if (ready) return true;
+    await sleep(200);
+  }
+  return false;
+}
+
+/** Rainbow on ink only: sat-mask + color blend. Paper stays white. */
+async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: string }> {
+  return s.evalJson<{ ok: boolean; reason: string }>(
+    `const card=document.querySelector('[data-export-preview]');
+     const holo=document.querySelector('[data-foil-layer="holographic"]');
+     const hit=document.querySelector('[data-export-tilt-hit]');
+     if(!(card instanceof HTMLElement) || !(holo instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const maps=card.getAttribute('data-foil-maps')||'';
+     if(maps!=='1') return {ok:false,reason:'maps '+maps};
+     const cs=getComputedStyle(holo);
+     const mask=(cs.getPropertyValue('-webkit-mask-image')+' '+cs.maskImage).replace(/\\s+/g,' ').trim();
+     const mix=cs.mixBlendMode;
+     const opacity=Number(cs.opacity);
+     const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
+     const foil=Number(card.getAttribute('data-foil-opacity')||0);
+     if(mix!=='color') return {ok:false,reason:'blend '+mix};
+     if(!(opacity>0.15)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
+     if(Math.abs(amount-0.52)>0.02) return {ok:false,reason:'amount '+amount};
+     if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
+     if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
+     if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no grating'};
+     if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
+     const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
+     const shadow=hitStyle?.boxShadow||'';
+     if(!shadow || shadow==='none') return {ok:false,reason:'no hit shadow'};
+     const cv=document.createElement('canvas');
+     cv.width=cv.height=8;
+     const g=cv.getContext('2d');
+     if(!g) return {ok:false,reason:'canvas'};
+     g.fillStyle='#ffffff';
+     g.fillRect(0,0,8,8);
+     g.globalCompositeOperation='color';
+     g.fillStyle='hsl(2, 100%, 73%)';
+     g.fillRect(0,0,8,8);
+     const paper=g.getImageData(4,4,1,1).data;
+     const paperChroma=Math.max(paper[0],paper[1],paper[2])-Math.min(paper[0],paper[1],paper[2]);
+     if(paperChroma>16) return {ok:false,reason:'paper chroma '+paperChroma};
+     g.globalCompositeOperation='source-over';
+     g.fillStyle='#28a028';
+     g.fillRect(0,0,8,8);
+     g.globalCompositeOperation='color';
+     g.fillStyle='hsl(2, 100%, 73%)';
+     g.fillRect(0,0,8,8);
+     const ink=g.getImageData(4,4,1,1).data;
+     const inkChroma=Math.max(ink[0],ink[1],ink[2])-Math.min(ink[0],ink[1],ink[2]);
+     if(inkChroma<20) return {ok:false,reason:'ink chroma '+inkChroma};
+     if(ink[1]>=ink[0] && ink[1]>=ink[2]) return {ok:false,reason:'ink still green'};
+     return {ok:true,reason:'color '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' paper='+paperChroma+' ink='+inkChroma};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
+}
+
+async function pokeExportCorner(s: Session): Promise<void> {
+  await s.evalJson(
+    `const hit=document.querySelector('[data-export-tilt-hit]');
+     if(!(hit instanceof HTMLElement)) return false;
+     const r=hit.getBoundingClientRect();
+     const x=r.left+r.width*0.82;
+     const y=r.top+r.height*0.18;
+     hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerType:'mouse',pointerId:1}));
+     hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x+16,clientY:y,pointerType:'mouse',pointerId:1}));
+     return true;`,
+  ).catch(() => false);
+  await sleep(200);
+}
+
+async function closeExportOverlay(s: Session): Promise<void> {
+  await s.evalJson(`const b=document.querySelector('[data-export-scrim] button'); if(b instanceof HTMLElement) b.click(); return true;`).catch(() => false);
+  const started = Date.now();
+  while (Date.now() - started < 5000) {
+    const open = await s.evalJson<boolean>(`return !!document.querySelector('[data-export-preview-layer]');`).catch(() => false);
+    if (!open) return;
+    await sleep(150);
+  }
+}
+
+async function measureSharedExportFoil(s: Session): Promise<{
+  img: boolean;
+  maps: boolean;
+  rainbow: { ok: boolean; reason: string };
+  hypot: number;
+  orbit: string;
+}> {
+  const img = await waitForDexPreviewImg(s);
+  const maps = await waitForFoilMaps(s);
+  await pokeExportCorner(s);
+  const rainbow = await readInkOnlyRainbow(s);
+  const pose = await s.evalJson<{ hypot: number; orbit: string }>(
+    `const card=document.querySelector('[data-export-preview]');
+     const x=Number(card?.getAttribute('data-tilt-x')||0);
+     const y=Number(card?.getAttribute('data-tilt-y')||0);
+     return {hypot:Math.hypot(x,y),orbit:card?.getAttribute('data-export-orbit')||''};`,
+  ).catch(() => ({ hypot: 0, orbit: '' }));
+  return { img, maps, rainbow, hypot: pose.hypot, orbit: pose.orbit };
+}
+
 async function readDexPreviewMotion(s: Session): Promise<{
   x: number;
   y: number;
@@ -512,37 +619,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      return true;`,
   ).catch(() => false);
   await sleep(200);
-  const rainbow = await s.evalJson<{ ok: boolean; reason: string }>(
-    `const card=document.querySelector('[data-export-preview]');
-     const holo=document.querySelector('[data-foil-layer="holographic"]');
-     if(!(card instanceof HTMLElement) || !(holo instanceof HTMLElement)) return {ok:false,reason:'missing'};
-     const cs=getComputedStyle(holo);
-     const mask=(cs.getPropertyValue('-webkit-mask-image')+' '+cs.maskImage).replace(/\\s+/g,' ').trim();
-     const mix=cs.mixBlendMode;
-     const opacity=Number(cs.opacity);
-     const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
-     const foil=Number(card.getAttribute('data-foil-opacity')||0);
-     if(mix!=='multiply') return {ok:false,reason:'blend '+mix};
-     if(!(opacity>0.2)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
-     if(Math.abs(amount-0.75)>0.02) return {ok:false,reason:'amount '+amount};
-     if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
-     if(mask.includes('url(')) return {ok:false,reason:'mask '+mask.slice(0,40)};
-     if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no grating'};
-     if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
-     const cv=document.createElement('canvas');
-     cv.width=cv.height=8;
-     const g=cv.getContext('2d');
-     if(!g) return {ok:false,reason:'canvas'};
-     g.fillStyle='#ffffff';
-     g.fillRect(0,0,8,8);
-     g.globalCompositeOperation='multiply';
-     g.fillStyle='hsl(2, 100%, 73%)';
-     g.fillRect(0,0,8,8);
-     const px=g.getImageData(4,4,1,1).data;
-     const chroma=Math.max(px[0],px[1],px[2])-Math.min(px[0],px[1],px[2]);
-     if(chroma<40) return {ok:false,reason:'white chroma '+chroma};
-     return {ok:true,reason:'multiply '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' chroma='+chroma};`,
-  ).catch(() => ({ ok: false, reason: 'eval' }));
+  await waitForFoilMaps(s);
+  const rainbow = await readInkOnlyRainbow(s);
   const readShadowX = async () =>
     s.evalJson<number>(
       `const card=document.querySelector('[data-export-preview]');
@@ -670,7 +748,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      if(!(holo instanceof HTMLElement)) return {ok:false,reason:'no holo'};
      const holoStyle=getComputedStyle(holo);
      const mask=(holoStyle.getPropertyValue('-webkit-mask-image')+' '+holoStyle.getPropertyValue('mask-image')).replace(/\\s+/g,' ').trim();
-     if(mask.includes('url(')) return {ok:false,reason:'holo still masked'};
+     if(!mask.includes('url(')) return {ok:false,reason:'holo unmasked'};
      const c=card.getBoundingClientRect();
      for(const layer of card.querySelectorAll('[data-foil-layer]')){
        if(!(layer instanceof HTMLElement)) continue;
@@ -680,9 +758,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        }
      }
      const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
-     if(Math.abs(holoAmt-0.75)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
-     if(mask.includes('url(')) return {ok:false,reason:'holo still masked'};
-     return {ok:true,reason:bloom?'prod-holo-clipped':'prod-holo'};`,
+     if(Math.abs(holoAmt-0.52)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
+     return {ok:true,reason:bloom?'ink-holo-clipped':'ink-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
   const confirmReady = await s.evalJson<boolean>(
@@ -1335,7 +1412,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
      };`,
   ).catch(() => ({ rot: '', holo: '', hx: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^10(\.0+)?deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
-  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.75) < 0.02, `holo=${tiltVars.holo}`));
+  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.52) < 0.02, `holo=${tiltVars.holo}`));
   await s.screenshot(ctx.shot('foil-workshop'));
 
   const labels = await s.evalJson<string[]>(
@@ -1580,5 +1657,75 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     /* base build has no mask picker */
   }
   await s.screenshot(ctx.shot('foil-workshop-sparkle-dark'));
+  return checks;
+}
+
+/** League and gym live overlays must share Dex foil: ink-only rainbow, hypot, shadow. */
+export async function runLeagueGymExportFoilSuite(
+  s: Session,
+  _persona: PersonaName | null,
+  ctx: FlowContext,
+): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+  if (!(await seedLeagueHome(s, url, SWAP_LEAGUE))) {
+    checks.push({ name: 'league-export:rainbow-foil', status: 'skip', detail: 'league home never hydrated' });
+    checks.push({ name: 'gym-export:rainbow-foil', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+  const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
+  const desktop = viewW >= 1024;
+  const hypotOk = (h: number) => (desktop ? h > 2.4 && h <= 3.8 : h > 2.4 && h < 11);
+
+  const openLeague = await s.evalJson<boolean>(
+    `const b=document.querySelector('[data-league-export]');
+     if(!(b instanceof HTMLElement)) return false;
+     b.click();
+     return true;`,
+  ).catch(() => false);
+  if (!openLeague) {
+    checks.push(ok('league-export:rainbow-foil', false, 'missing [data-league-export]'));
+  } else {
+    await sleep(500);
+    const league = await measureSharedExportFoil(s);
+    await s.screenshot(ctx.shot('league-export-foil'));
+    checks.push(ok(
+      'league-export:rainbow-foil',
+      league.img && league.maps && league.rainbow.ok && hypotOk(league.hypot),
+      `${league.rainbow.reason} hypot=${league.hypot.toFixed(1)} orbit=${league.orbit} maps=${league.maps}`,
+    ));
+    await closeExportOverlay(s);
+  }
+
+  const openedGym = await s.evalJson<boolean>(
+    `const slot=document.querySelector('[data-testid="league-slot-0"]');
+     if(!(slot instanceof HTMLElement)) return false;
+     slot.click();
+     return true;`,
+  ).catch(() => false);
+  if (!openedGym) {
+    checks.push(ok('gym-export:rainbow-foil', false, 'missing league-slot-0'));
+    return checks;
+  }
+  await sleep(400);
+  const gymBtn = await waitFor(s, '[aria-label="Export trainer card"]', 30);
+  if (!gymBtn) {
+    checks.push(ok('gym-export:rainbow-foil', false, 'missing Export trainer card'));
+    return checks;
+  }
+  await s.evalJson(
+    `const b=document.querySelector('[aria-label="Export trainer card"]');
+     if(b instanceof HTMLElement) b.click();
+     return true;`,
+  ).catch(() => false);
+  await sleep(500);
+  const gym = await measureSharedExportFoil(s);
+  await s.screenshot(ctx.shot('gym-export-foil'));
+  checks.push(ok(
+    'gym-export:rainbow-foil',
+    gym.img && gym.maps && gym.rainbow.ok && hypotOk(gym.hypot),
+    `${gym.rainbow.reason} hypot=${gym.hypot.toFixed(1)} orbit=${gym.orbit} maps=${gym.maps}`,
+  ));
+  await closeExportOverlay(s);
   return checks;
 }

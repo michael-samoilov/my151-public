@@ -3,7 +3,7 @@ import type { FoilMapNeed } from './foilRecipe';
 /**
  * Alpha maps derived from an export PNG so lighting can follow the print.
  *
- * sat  — chroma. Type pills, sprites, and ink. White paper stays 0.
+ * sat  — ink. Chroma plus dark-on-paper. White paper stays 0.
  * edge — Sobel magnitude of luminance. Type, frames, sprite outlines.
  * gloss — chroma on mid-bright pixels. Specular and sparkle land here.
  *
@@ -76,7 +76,10 @@ export function deriveFoilMaps(src: RgbaBitmap, need: FoilMapNeed = ALL_MAPS): F
       const maxc = Math.max(r, g, b);
       const minc = Math.min(r, g, b);
       const chroma = maxc - minc;
-      const sat01 = a === 0 || chroma < CHROMA_FLOOR || maxc === 0 ? 0 : chroma / maxc;
+      const nearPaper = a === 0 || (y >= 248 && chroma < CHROMA_FLOOR);
+      const chroma01 = nearPaper || chroma < CHROMA_FLOOR || maxc === 0 ? 0 : chroma / maxc;
+      const dark01 = nearPaper || y >= 230 ? 0 : Math.min(1, (230 - y) / 160);
+      const sat01 = nearPaper ? 0 : Math.max(chroma01, dark01 * 0.65);
       const satA = Math.round(Math.min(255, Math.pow(sat01, 0.72) * 255));
       if (need.sat) writeMaskPixel(sat.data, i, satA);
       if (need.gloss) {

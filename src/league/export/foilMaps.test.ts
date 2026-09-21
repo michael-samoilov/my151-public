@@ -37,7 +37,8 @@ describe('foil maps from export pixels', () => {
     const src = bitmap(4, 3, [...row, ...row, ...row]);
     const maps = deriveFoilMaps(src);
     expect(alphaAt(maps.edge, 1, 1)).toBeGreaterThan(40);
-    expect(alphaAt(maps.sat, 2, 1)).toBe(0);
+    expect(alphaAt(maps.sat, 0, 1)).toBe(0);
+    expect(alphaAt(maps.sat, 2, 1)).toBeGreaterThan(80);
   });
 
   it('leaves the edge map blank when the caller does not need it', () => {
@@ -50,6 +51,7 @@ describe('foil maps from export pixels', () => {
     const src = bitmap(4, 3, [...row, ...row, ...row]);
     const maps = deriveFoilMaps(src, { sat: true, edge: false, gloss: true });
     expect(alphaAt(maps.edge, 1, 1)).toBe(0);
-    expect(alphaAt(maps.sat, 2, 1)).toBe(0);
+    expect(alphaAt(maps.sat, 0, 1)).toBe(0);
+    expect(alphaAt(maps.sat, 2, 1)).toBeGreaterThan(80);
   });
 });

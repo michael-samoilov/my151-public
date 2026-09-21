@@ -1,11 +1,10 @@
 /* Lighting layers for the export preview.
  *
  * Layers read a FoilRecipe through CSS variables (`--foil-pointLight`, …)
- * and clip to maps derived from the PNG (`--foil-sat-mask`, edge, gloss)
- * except holographic, which is unmasked so the grating tints white paper.
- *
- * Overlay and color-dodge on white are no-ops. Multiply paints the rainbow
- * on the Dex poster the same way overlay paints it on dark league art.
+ * and clip to maps derived from the PNG (`--foil-sat-mask`, edge, gloss).
+ * Holographic uses the sat map so rainbow sits on ink, not white paper.
+ * `color` shifts sprite hue. Overlay on ink is too faint; unmasked
+ * multiply tints the paper.
  */
 
 /* poke-holo .card__translater: perspective lives on the parent of the rotator. */
@@ -107,6 +106,7 @@
 }
 
 .export-foil-mask-sat,
+.export-foil-holographic,
 .export-foil-iridescence,
 .export-foil-parallax {
   -webkit-mask-image: var(--foil-sat-mask);
@@ -140,6 +140,7 @@
   mask-repeat: no-repeat;
 }
 
+.export-foil:not([data-foil-maps='1']) .export-foil-holographic,
 .export-foil:not([data-foil-maps='1']) .export-foil-iridescence,
 .export-foil:not([data-foil-maps='1']) .export-foil-emboss,
 .export-foil:not([data-foil-maps='1']) .export-foil-rim,
@@ -198,9 +199,8 @@
   background-position:
     calc(10% + var(--pointer-from-left) * 80%) calc(10% + var(--pointer-from-top) * 80%),
     calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%);
-  /* Overlay/dodge on white paper is a no-op. Multiply tints the Dex poster. */
-  mix-blend-mode: multiply;
-  filter: saturate(1.35) contrast(1.08);
+  mix-blend-mode: color;
+  filter: saturate(1.12);
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-holographic) * (0.82 + 0.18 * var(--pointer-from-center)));
 }

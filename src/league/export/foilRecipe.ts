@@ -58,7 +58,7 @@ export const FOIL_LAYER_META = {
   },
   holographic: {
     title: 'Foil / holographic sheen',
-    blurb: 'Rainbow diffraction across the print, including white paper.',
+    blurb: 'Rainbow diffraction on colored ink. White paper stays paper.',
   },
   iridescence: {
     title: 'Iridescence / color shift',
@@ -89,7 +89,7 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
-  holographic: { on: true, amount: 0.75 },
+  holographic: { on: true, amount: 0.52 },
   iridescence: { on: true, amount: 0.15 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
@@ -110,7 +110,7 @@ export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
   layers: DEFAULT_LAYERS,
 };
 
-const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['iridescence', 'parallax'];
+const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holographic', 'iridescence', 'parallax'];
 const EDGE_MASK_LAYERS: readonly FoilLayerId[] = ['emboss', 'rim'];
 const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'sparkle', 'bloom'];
 

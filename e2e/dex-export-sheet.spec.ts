@@ -162,6 +162,7 @@ test.describe('mobile dex export sheet', () => {
   test('fills the overlay, shows clipped holo, and leaves corner radii open', async ({ page }) => {
     await openDexExport(page);
     await waitPreviewReady(page);
+    await expect.poll(async () => page.locator('[data-export-preview]').getAttribute('data-foil-maps'), { timeout: 15_000 }).toBe('1');
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.1);
     const measure = await page.evaluate(() => {
@@ -186,11 +187,11 @@ test.describe('mobile dex export sheet', () => {
         return { ok: false, reason: `corner fill ${bg}` };
       }
       if (!/round/i.test(clip)) return { ok: false, reason: `clip ${clip}` };
-      if (mask.includes('url(')) return { ok: false, reason: `holo masked ${mask}` };
-      if (holoStyle.mixBlendMode !== 'multiply') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
+      if (!mask.includes('url(')) return { ok: false, reason: `holo unmasked ${mask}` };
+      if (holoStyle.mixBlendMode !== 'color') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
-      if (Math.abs(holoAmt - 0.75) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
+      if (Math.abs(holoAmt - 0.52) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
@@ -312,6 +313,7 @@ test.describe('desktop dex export preview', () => {
     await waitPreviewReady(page);
     const foil = page.locator('[data-export-preview]');
     const hit = page.locator('[data-export-tilt-hit]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 15_000 }).toBe('1');
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('idle');
     await hit.evaluate((el) => {
       const r = el.getBoundingClientRect();
@@ -414,8 +416,8 @@ test.describe('desktop dex export preview', () => {
           style.overflow === 'hidden' &&
           !style.transformStyle.includes('preserve-3d') &&
           overflowLayers.length === 0 &&
-          !mask.includes('url(') &&
-          Math.abs(holoAmt - 0.75) < 0.02 &&
+          mask.includes('url(') &&
+          Math.abs(holoAmt - 0.52) < 0.02 &&
           !(bloom instanceof HTMLElement && getComputedStyle(bloom).inset.includes('-')),
       };
     });
@@ -615,14 +617,14 @@ test.describe('desktop dex export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('multiply');
-    expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.2);
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.75, 2);
+    expect(holo.mix, JSON.stringify(holo)).toBe('color');
+    expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.15);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.52, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.bg, JSON.stringify(holo)).toMatch(/repeating-linear-gradient/);
-    expect(holo.mask, JSON.stringify(holo)).not.toMatch(/url\(/);
+    expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     const shadow = await hit.evaluate((el) => {
       const cs = getComputedStyle(el);
       return {

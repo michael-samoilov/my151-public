@@ -47,7 +47,7 @@ describe('foil recipe', () => {
     });
     expect(DEFAULT_FOIL_RECIPE.layers.ambient.on).toBe(false);
     expect(DEFAULT_FOIL_RECIPE.layers.emboss.on).toBe(false);
-    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.75);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.52);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.on).toBe(true);
     expect(DEFAULT_FOIL_RECIPE.layers.iridescence.amount).toBe(0.15);
     expect(DEFAULT_FOIL_RECIPE.layers.sparkle.amount).toBe(0.52);
@@ -56,14 +56,18 @@ describe('foil recipe', () => {
     const withEmboss = withFoilLayer(DEFAULT_FOIL_RECIPE, 'emboss', { on: true, amount: 0.6 });
     expect(foilMapsNeeded(withEmboss).edge).toBe(true);
     const holoOnly = recipeWithSolo(DEFAULT_FOIL_RECIPE, 'holographic');
-    expect(foilMapsNeeded(holoOnly)).toEqual({ sat: false, edge: false, gloss: false });
+    expect(foilMapsNeeded(holoOnly)).toEqual({ sat: true, edge: false, gloss: false });
   });
 
-  it('multiply tints white paper; overlay and color-dodge do not', () => {
-    const white = 255;
-    const blend = 186;
-    expect((white * blend) / 255).toBeLessThan(white);
-    expect(white).toBe(255);
+  it('sat-masked color shifts ink hue and leaves paper white', () => {
+    // mix-blend-mode: color keeps backdrop luma and takes source hue/sat.
+    const paperLuma = 0.2126 * 255 + 0.7152 * 255 + 0.0722 * 255;
+    const ink = [40, 160, 40] as const;
+    const rainbow = [186, 48, 48] as const;
+    expect(paperLuma).toBeCloseTo(255, 5);
+    expect(Math.abs(ink[0] - rainbow[0])).toBeGreaterThan(80);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeGreaterThan(0.3);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeLessThan(0.7);
   });
 
   it('drops unknown keys and clamps amounts at the parse boundary', () => {

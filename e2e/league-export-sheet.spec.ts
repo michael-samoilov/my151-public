@@ -158,4 +158,83 @@ test.describe('desktop export preview', () => {
       expect(fit.ok, `${mode}: ${fit.reason}`).toBe(true);
     }
   });
+
+  test('paints ink-only rainbow on the live league overlay', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openLeagueExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps')).toBe('1');
+    const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    const holo = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
+      if (!card || !layer) return { ok: false, reason: 'missing' };
+      const cs = getComputedStyle(layer);
+      const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`.replace(/\s+/g, ' ').trim();
+      return {
+        ok: true,
+        mix: cs.mixBlendMode,
+        opacity: Number(cs.opacity),
+        mask,
+        amount: Number(getComputedStyle(card).getPropertyValue('--foil-holographic')),
+        foil: Number(card.getAttribute('data-foil-opacity')),
+        shadow: hitEl ? getComputedStyle(hitEl).boxShadow : 'none',
+        hypot: Math.hypot(Number(card.getAttribute('data-tilt-x') || 0), Number(card.getAttribute('data-tilt-y') || 0)),
+      };
+    });
+    expect(holo.ok, JSON.stringify(holo)).toBe(true);
+    expect(holo.mix, JSON.stringify(holo)).toBe('color');
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.52, 2);
+    expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
+    expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
+    expect(holo.shadow, JSON.stringify(holo)).not.toBe('none');
+    expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2.4);
+    expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(3.8);
+  });
+});
+
+test.describe('gym trainer-card export', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('shares ink-only rainbow with league and Dex', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await seededLeague(page);
+    await page.goto('/custom-gym-leader');
+    await page.locator('[data-testid="league-slot-0"]').waitFor();
+    await page.locator('[data-testid="league-slot-0"]').click();
+    await page.locator('[aria-label="Export trainer card"]').click();
+    await page.locator('[data-export-preview] img').waitFor({ timeout: 45_000 });
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 }).toBe('1');
+    const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    const holo = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      if (!card || !layer) return { ok: false, mix: '', mask: '', amount: 0 };
+      const cs = getComputedStyle(layer);
+      return {
+        ok: true,
+        mix: cs.mixBlendMode,
+        mask: `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`,
+        amount: Number(getComputedStyle(card).getPropertyValue('--foil-holographic')),
+        hypot: Math.hypot(Number(card.getAttribute('data-tilt-x') || 0), Number(card.getAttribute('data-tilt-y') || 0)),
+      };
+    });
+    expect(holo.ok, JSON.stringify(holo)).toBe(true);
+    expect(holo.mix, JSON.stringify(holo)).toBe('color');
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.52, 2);
+    expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
+    expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2.4);
+    expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(3.8);
+  });
 });
