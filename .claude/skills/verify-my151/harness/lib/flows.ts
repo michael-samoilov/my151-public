@@ -907,6 +907,7 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
 
 const NIMBUS_LEAGUE =
   "JSON.stringify({state:{name:'',cards:(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,signatureId:null,partnerId:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const cards=Array.from({length:14},empty);cards[0]={type:'flying',theme:'Clouds',lines:[{branch:[333,334],boundaries:[1,6]},{branch:[179,180,181],boundaries:[1,4,8]}],signatureSeat:1,signatureId:334,partnerId:179,tmMoveId:538,badgeName:'Nimbus',legend:null,powerup:null};return cards;})()},version:1})";
+const NIMBUS_SOLO_LEAGUE = NIMBUS_LEAGUE.replace('partnerId:179', 'partnerId:null');
 
 /**
  * Gym-card export preview for the Nimbus/Cotton Guard card. Proves the overlay
@@ -950,6 +951,48 @@ export async function runGymCardExportParitySuite(
     'gym-export:nimbus-preview',
     painted.complete && painted.w > 800,
     `preview naturalWidth=${painted.w} complete=${painted.complete}`,
+  ));
+
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${NIMBUS_SOLO_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:solo-ace-panel', status: 'skip', detail: 'league home never hydrated after solo seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:solo-ace-panel', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(600);
+  const solo = await s.evalJson<{
+    mode: string | null;
+    seam: boolean;
+    arts: number;
+    heads: string;
+    cx: number;
+    cy: number;
+  }>(
+    `const pane=document.querySelector('[data-ace-partner-slot]');
+     const cluster=document.querySelector('[data-testid="slot-ace"]');
+     if(!pane||!cluster) return {mode:null,seam:true,arts:0,heads:'',cx:0,cy:0};
+     const pr=pane.getBoundingClientRect();
+     const cr=cluster.getBoundingClientRect();
+     return {
+       mode: pane.getAttribute('data-showcase'),
+       seam: !!pane.querySelector(':scope > svg line'),
+       arts: pane.querySelectorAll('[data-slot-art]').length,
+       heads: [...pane.querySelectorAll('[data-slot-head]')].map(e=>e.getAttribute('data-slot-head')).join(','),
+       cx: (cr.left+cr.width/2-pr.left)/pr.width,
+       cy: (cr.top+cr.height/2-pr.top)/pr.height,
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-solo-ace'));
+  const centred = Math.abs(solo.cx - 0.5) < 0.08 && Math.abs(solo.cy - 0.5) < 0.08;
+  checks.push(ok(
+    'gym-export:solo-ace-panel',
+    solo.mode === 'solo' && !solo.seam && solo.arts === 1 && solo.heads === 'ace' && centred,
+    `mode=${solo.mode} seam=${solo.seam} arts=${solo.arts} heads=${solo.heads} cx=${solo.cx.toFixed(2)} cy=${solo.cy.toFixed(2)}`,
   ));
   return checks;
 }

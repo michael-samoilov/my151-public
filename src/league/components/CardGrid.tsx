@@ -783,7 +783,7 @@ function PowerupButton({ kind, active, onPress, side }: {
  * sprite square and draws the ring inside it.
  */
 function SlotHalf({
-  testId, half, heading, mirrored, pokemon, onPick, onRemove, layout, showArt,
+  testId, half, heading, mirrored, pokemon, onPick, onRemove, layout,
 }: {
   testId: string;
   half: 'ace' | 'partner';
@@ -793,12 +793,12 @@ function SlotHalf({
   onPick: () => void;
   onRemove: () => void;
   layout?: 'corner' | 'center';
-  showArt?: boolean;
 }) {
+  const hit = layout === 'center' ? 'pointer-events-auto cursor-pointer' : undefined;
   const label = (
     <HeadRuns
       lines={heading.lines}
-      className={HEAD_CLASS}
+      className={cn(HEAD_CLASS, hit)}
       data-slot-head={half}
       style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)' }}
     />
@@ -842,7 +842,7 @@ function SlotHalf({
   const art = (
     <span
       data-slot-art
-      className="relative flex shrink-0 items-center justify-center"
+      className={cn('relative flex shrink-0 items-center justify-center', hit)}
       style={{ width: 'var(--slot-sprite)', height: 'var(--slot-sprite)' }}
     >
       {pokemon ? (
@@ -882,7 +882,7 @@ function SlotHalf({
   );
   const name = (
     <span
-      className={cn('relative block max-w-[var(--slot-sprite)] truncate', NAME_CLASS)}
+      className={cn('relative block max-w-[var(--slot-sprite)] truncate', hit, NAME_CLASS)}
       style={{ color: pokemon ? 'var(--lg-band)' : undefined }}
     >
       {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0'}
@@ -910,6 +910,7 @@ function SlotHalf({
         layout === 'center'
           ? 'flex-col'
           : mirrored ? 'bottom-0 right-0 flex-col-reverse' : 'left-0 top-0 flex-col',
+        layout === 'center' && !lab && 'pointer-events-none',
         lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer',
       )}
       style={{
@@ -924,8 +925,8 @@ function SlotHalf({
       }}
     >
       {label}
-      {showArt !== false && art}
-      {showArt !== false && name}
+      {art}
+      {name}
     </button>
   );
 }
@@ -1106,28 +1107,39 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
           />
         </svg>
       )}
-      <SlotHalf
-        testId="slot-ace"
-        half="ace"
-        heading={ACE_HEAD}
-        mirrored={false}
-        pokemon={ace}
-        layout={solo && ace ? 'center' : 'corner'}
-        showArt={!!ace || !solo}
-        onPick={() => openLeagueBrowser(cardIndex, 'signature')}
-        onRemove={() => setSignatureSeat(cardIndex, null, null)}
-      />
-      <SlotHalf
-        testId="slot-partner"
-        half="partner"
-        heading={PARTNER_HEAD}
-        mirrored
-        pokemon={partner}
-        layout={solo && partner ? 'center' : 'corner'}
-        showArt={!!partner || !solo}
-        onPick={() => openLeagueBrowser(cardIndex, 'partner')}
-        onRemove={() => setPartner(cardIndex, null)}
-      />
+      {solo && (
+        <button
+          type="button"
+          data-testid={ace ? 'slot-partner' : 'slot-ace'}
+          aria-label={ace ? 'Choose a partner' : 'Choose an ace Pokémon'}
+          onClick={() => openLeagueBrowser(cardIndex, ace ? 'partner' : 'signature')}
+          className="absolute inset-0 z-[4] cursor-pointer"
+        />
+      )}
+      {(!solo || ace) && (
+        <SlotHalf
+          testId="slot-ace"
+          half="ace"
+          heading={ACE_HEAD}
+          mirrored={false}
+          pokemon={ace}
+          layout={solo && ace ? 'center' : 'corner'}
+          onPick={() => openLeagueBrowser(cardIndex, 'signature')}
+          onRemove={() => setSignatureSeat(cardIndex, null, null)}
+        />
+      )}
+      {(!solo || partner) && (
+        <SlotHalf
+          testId="slot-partner"
+          half="partner"
+          heading={PARTNER_HEAD}
+          mirrored
+          pokemon={partner}
+          layout={solo && partner ? 'center' : 'corner'}
+          onPick={() => openLeagueBrowser(cardIndex, 'partner')}
+          onRemove={() => setPartner(cardIndex, null)}
+        />
+      )}
     </div>
   );
 }

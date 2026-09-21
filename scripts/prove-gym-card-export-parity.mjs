@@ -104,6 +104,21 @@ async function captureSet(page, baseUrl, prefix) {
   }
 }
 
+async function captureSolo(page, baseUrl, prefix) {
+  await seed(page, { partner: false });
+  await openCard(page, baseUrl);
+  for (const [label, w, h] of [['mobile_390', 390, 844], ['desktop_1280', 1280, 800]]) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(400);
+    await shot(page, `${prefix}_solo_inapp_${label}`);
+  }
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openExport(page);
+  await savePng(page, join(OUT, `${prefix}_solo_export_png.png`));
+  await savePng(page, join(ART, `${prefix}_solo_export_png.png`));
+  await shot(page, `${prefix}_solo_export_overlay_desktop_1280`);
+}
+
 function startPreview(cwd, port) {
   const child = execSync(
     `nohup npx vite preview --host 127.0.0.1 --port ${port} --strictPort > /tmp/preview-${port}.log 2>&1 & echo $!`,
@@ -137,23 +152,21 @@ const beforePage = await beforeCtx.newPage();
 await captureSet(beforePage, 'http://127.0.0.1:4191', 'before');
 await beforePage.close();
 await beforeCtx.close();
+const beforeSoloCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
+const beforeSoloPage = await beforeSoloCtx.newPage();
+await captureSolo(beforeSoloPage, 'http://127.0.0.1:4191', 'before');
+await beforeSoloPage.close();
+await beforeSoloCtx.close();
 const afterCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
 const afterPage = await afterCtx.newPage();
 await captureSet(afterPage, 'http://127.0.0.1:4190', 'after');
 await afterPage.close();
 await afterCtx.close();
-const soloCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 390, height: 844 } });
-const soloPage = await soloCtx.newPage();
-await seed(soloPage, { partner: false });
-await openCard(soloPage, 'http://127.0.0.1:4190');
-await shot(soloPage, 'after_solo_inapp_mobile_390');
-await soloPage.setViewportSize({ width: 1280, height: 800 });
-await openExport(soloPage);
-await savePng(soloPage, join(OUT, 'after_solo_export_png.png'));
-await savePng(soloPage, join(ART, 'after_solo_export_png.png'));
-await shot(soloPage, 'after_solo_export_overlay_desktop_1280');
-await soloPage.close();
-await soloCtx.close();
+const afterSoloCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
+const afterSoloPage = await afterSoloCtx.newPage();
+await captureSolo(afterSoloPage, 'http://127.0.0.1:4190', 'after');
+await afterSoloPage.close();
+await afterSoloCtx.close();
 await browser.close();
 basePreview.stop();
 fixPreview.stop();

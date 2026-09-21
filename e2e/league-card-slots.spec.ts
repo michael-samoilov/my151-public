@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { blankLeague, seededLeague } from './support/leagueSeed';
+import { blankLeague, pairLeague, seededLeague } from './support/leagueSeed';
 
 /**
  * The gym card's two authored slots: the TM and the badge.
@@ -116,7 +116,7 @@ test.describe('gym card slots', () => {
     await seat(page, '[data-testid="card-cell-2-3"]', 'chinchou');   // gen 2, #170
     await seat(page, '[data-testid="card-cell-5-4"]', 'caterpie');   // gen 1, #10
 
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-filter-chip="scope"]');
     await page.click('[data-filter-chip="scope"]');
     await page.waitForTimeout(700);
@@ -143,7 +143,7 @@ test.describe('gym card slots', () => {
     await seat(page, '[data-testid="card-cell-1-1"]', 'scizor');
     await seat(page, '[data-testid="card-cell-1-2"]', 'chinchou');
 
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-filter-chip="scope"]');
     await page.click('[data-filter-chip="scope"]');
     await page.waitForTimeout(700);
@@ -199,7 +199,7 @@ test.describe('gym card slots', () => {
     const chipIsOff = () => page.locator('[data-filter-chip="scope"]').count();
 
     // Nothing seated: there is no team to narrow to, so no chip at all.
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-result-count]');
     await page.waitForTimeout(500);
     expect(await chipIsOff(), 'no chip on an empty card').toBe(0);
@@ -210,7 +210,7 @@ test.describe('gym card slots', () => {
     await seat(page, '[data-testid="card-cell-1-1"]', 'chinchou');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lotad');
 
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-filter-chip="scope"]');
     await page.click('[data-filter-chip="scope"]');
     await page.waitForTimeout(600);
@@ -220,7 +220,7 @@ test.describe('gym card slots', () => {
     // Reopening keeps it on.
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForTimeout(800);
     expect(await chipIsOff(), 'still on after reopening').toBe(0);
     expect(await results()).toBe(scoped);
@@ -232,7 +232,7 @@ test.describe('gym card slots', () => {
       await page.locator('[aria-label^="Remove"]').first().click();
       await page.waitForTimeout(500);
     }
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForTimeout(800);
     expect(await page.evaluate(() => /Current Team/.test(document.body.innerText))).toBe(false);
     expect(await results()).toBeGreaterThan(100);
@@ -545,28 +545,51 @@ test.describe('an empty slot and a filled one', () => {
     await openCard(page);
     const empty = await anchors(page);
 
-    // The seeded card 0: an ace, a TM and a badge, and no partner.
+    // Seeded Brock has an ace and no partner, so the pane is solo: one
+    // centred sprite, no partner heading, no seam.
     await seededLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(500);
-    const filled = await anchors(page);
+    const seeded = await page.evaluate(() => {
+      const hex = (c: string) => {
+        const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c);
+        return m ? '#' + [1, 2, 3].map((k) => Number(m[k]).toString(16).padStart(2, '0')).join('') : c;
+      };
+      const pane = document.querySelector('[data-ace-partner-slot]')!;
+      const ace = document.querySelector('[data-testid="slot-ace"]')!;
+      const word = (root: Element, text: string) =>
+        [...root.querySelectorAll('span')].find((el) => el.childElementCount === 0 && el.textContent === text)!;
+      return {
+        mode: pane.getAttribute('data-showcase'),
+        seam: !!pane.querySelector(':scope > svg line'),
+        partnerHead: !!document.querySelector('[data-slot-head="partner"]'),
+        arts: pane.querySelectorAll('[data-slot-art]').length,
+        aceHead: hex(getComputedStyle(word(ace, 'ACE')).color),
+      };
+    });
+    expect(seeded.mode, 'seeded Brock is a lone ace').toBe('solo');
+    expect(seeded.seam, 'solo drops the diagonal').toBe(false);
+    expect(seeded.partnerHead, 'solo hides the empty partner heading').toBe(false);
+    expect(seeded.arts).toBe(1);
 
-    for (const key of ['tm', 'badge', 'ace', 'partner'] as const) {
-      expect(Math.abs(filled[key][0] - empty[key][0]), `${key} x`).toBeLessThanOrEqual(0.05);
-      expect(Math.abs(filled[key][1] - empty[key][1]), `${key} y`).toBeLessThanOrEqual(0.05);
-    }
-
-    // Empty, every heading is the hint; the ace and TM read the same shade.
     expect(empty.colours.aceHead).toBe(empty.colours.tmWord);
     expect(empty.colours.partnerHead).toBe(empty.colours.tmWord);
-    // Filled, the ace darkens to the band the BADGE word wears. The partner
-    // half is still empty on this card, so it stays on the hint.
-    expect(filled.colours.aceHead).toBe(filled.colours.badgeWord);
-    expect(filled.colours.aceHead).not.toBe(empty.colours.aceHead);
-    expect(filled.colours.partnerHead).not.toBe(filled.colours.aceHead);
+    expect(seeded.aceHead).not.toBe(empty.colours.aceHead);
+
+    await pairLeague(page, 10240, 797);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(500);
+    const paired = await anchors(page);
+    for (const key of ['ace', 'partner'] as const) {
+      expect(Math.abs(paired[key][0] - empty[key][0]), `${key} x`).toBeLessThanOrEqual(0.05);
+      expect(Math.abs(paired[key][1] - empty[key][1]), `${key} y`).toBeLessThanOrEqual(0.05);
+    }
   });
 });
 

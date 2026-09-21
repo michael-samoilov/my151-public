@@ -197,19 +197,29 @@ test.describe('the ace and partner slot', () => {
         }),
       );
 
+    const pick = async (slot: string, query: string, throughOverlay = false) => {
+      await page.click(
+        `[data-testid="${slot}"]`,
+        throughOverlay ? { position: { x: 8, y: 8 }, force: true } : {},
+      );
+      await page.waitForSelector('[data-filter-chip="my-dex"]');
+      await page.evaluate((q) => {
+        const inputs = [...document.querySelectorAll('input')];
+        const el = inputs[inputs.length - 1];
+        const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+        set.call(el, q);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }, query);
+      await page.waitForTimeout(700);
+      await page.click('[data-testid="verify-evo-card"]');
+      await page.waitForTimeout(700);
+    };
+
     const empty = await runs();
-    await page.click('[data-testid="slot-partner"]');
-    await page.waitForSelector('[data-filter-chip="my-dex"]');
-    await page.evaluate(() => {
-      const inputs = [...document.querySelectorAll('input')];
-      const el = inputs[inputs.length - 1];
-      const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
-      set.call(el, 'pikachu');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await page.waitForTimeout(700);
-    await page.click('[data-testid="verify-evo-card"]');
-    await page.waitForTimeout(700);
+    // One Pokémon centres itself. Fill both so this check stays on the
+    // corner pair, which is the layout empty and filled must share.
+    await pick('slot-partner', 'pikachu');
+    await pick('slot-ace', 'bulbasaur', true);
     const filled = await runs();
 
     // The partner half is the one that changed state; its runs must not move.
@@ -252,6 +262,7 @@ test.describe('the ace and partner slot', () => {
   });
 
   test('both halves get the same sprite', async ({ page }) => {
+    await blankLeague(page);
     await openCard(page);
     const { halves } = await slotGeometry(page);
     const ace = halves.find((h) => h.id === 'slot-ace')!;
@@ -260,5 +271,76 @@ test.describe('the ace and partner slot', () => {
     // so sizing each half to its own room made the partner read as the lesser
     // one; the pair is one size and the slot's width sets it.
     expect(Math.abs(ace.sprite - partner.sprite), 'the two match').toBeLessThanOrEqual(1);
+  });
+
+  test('a lone ace is one centred sprite at integer scale, with no seam', async ({ page }) => {
+    await pairLeague(page, 334, null);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(600);
+
+    const got = await page.evaluate(() => {
+      const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
+      const cluster = pane.querySelector<HTMLElement>('[data-testid="slot-ace"]')!;
+      const art = pane.querySelector<HTMLElement>('[data-slot-art]')!;
+      const slot = pane.getBoundingClientRect();
+      const box = cluster.getBoundingClientRect();
+      const dpr = window.devicePixelRatio;
+      const css = art.offsetWidth;
+      return {
+        mode: pane.dataset.showcase,
+        seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
+        arts: pane.querySelectorAll('[data-slot-art]').length,
+        heads: [...pane.querySelectorAll('[data-slot-head]')].map((el) => el.getAttribute('data-slot-head')),
+        cx: (box.left + box.width / 2 - slot.left) / slot.width,
+        cy: (box.top + box.height / 2 - slot.top) / slot.height,
+        css,
+        attr: Number(pane.dataset.slotSprite),
+        integer: [1, 2, 3, 4].map((n) => Math.round((n * 96) / dpr)).includes(css),
+      };
+    });
+    expect(got.mode, 'the pane marks itself solo').toBe('solo');
+    expect(got.seam, 'the diagonal is gone').toBe(false);
+    expect(got.arts, 'one sprite').toBe(1);
+    expect(got.heads, 'only the ace heading').toEqual(['ace']);
+    expect(got.cx, 'cluster sits on the mid X').toBeCloseTo(0.5, 1);
+    expect(got.cy, 'cluster sits on the mid Y').toBeCloseTo(0.5, 1);
+    expect(got.css).toBe(got.attr);
+    expect(got.integer, `css ${got.css} is n×96/dpr`).toBe(true);
+
+    await page.locator('[data-testid="slot-partner"]').click({ position: { x: 8, y: 8 }, force: true });
+    await expect(page.locator('[data-filter-chip="my-dex"]')).toBeVisible();
+  });
+
+  test('a lone partner is one centred sprite, with no seam', async ({ page }) => {
+    await pairLeague(page, null, 179);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="slot-tm"]');
+    await page.waitForTimeout(600);
+
+    const got = await page.evaluate(() => {
+      const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
+      const cluster = pane.querySelector<HTMLElement>('[data-testid="slot-partner"]')!;
+      const box = cluster.getBoundingClientRect();
+      const slot = pane.getBoundingClientRect();
+      return {
+        mode: pane.dataset.showcase,
+        seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
+        arts: pane.querySelectorAll('[data-slot-art]').length,
+        heads: [...pane.querySelectorAll('[data-slot-head]')].map((el) => el.getAttribute('data-slot-head')),
+        cx: (box.left + box.width / 2 - slot.left) / slot.width,
+        cy: (box.top + box.height / 2 - slot.top) / slot.height,
+      };
+    });
+    expect(got.mode).toBe('solo');
+    expect(got.seam).toBe(false);
+    expect(got.arts).toBe(1);
+    expect(got.heads).toEqual(['partner']);
+    expect(got.cx).toBeCloseTo(0.5, 1);
+    expect(got.cy).toBeCloseTo(0.5, 1);
   });
 });
