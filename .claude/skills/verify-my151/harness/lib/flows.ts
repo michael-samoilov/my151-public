@@ -505,8 +505,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     `const hit=document.querySelector('[data-export-tilt-hit]');
      if(!(hit instanceof HTMLElement)) return false;
      const r=hit.getBoundingClientRect();
-     const x=r.left+r.width*0.5;
-     const y=r.top+r.height*0.5;
+     const x=r.left+r.width*0.82;
+     const y=r.top+r.height*0.18;
      hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerType:'mouse',pointerId:1}));
      hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x+16,clientY:y,pointerType:'mouse',pointerId:1}));
      return true;`,
