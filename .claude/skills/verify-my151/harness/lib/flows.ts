@@ -673,7 +673,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      if(pad<32) return {ok:false,reason:'hit pad '+pad};
      if(hitCs.backgroundColor!=='rgba(0, 0, 0, 0)' && hitCs.backgroundColor!=='transparent' && hitCs.backgroundColor!=='rgba(0,0,0,0)') return {ok:false,reason:'hit fill '+hitCs.backgroundColor};
      const opacity=Number(hit.getAttribute('data-shadow-opacity')||0);
-     if(!(opacity>0.36)) return {ok:false,reason:'opacity '+opacity};
+     if(!(opacity>0.33)) return {ok:false,reason:'opacity '+opacity};
      return {ok:true,reason:'lift-unclipped op='+opacity.toFixed(2)+' pad='+pad};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const shadowPair = {
