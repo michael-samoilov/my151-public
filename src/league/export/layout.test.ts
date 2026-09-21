@@ -317,6 +317,52 @@ describe('export layout', () => {
     expect(L.TM_TYPE_ABOVE_NAME).toBe(true);
   });
 
+  it('centers the TM type/name stack on the disc+label the way the live card flexes', () => {
+    // CardGrid TmSlot: parent `flex items-center`; body is a column of
+    // (type row `items-center` + 2px gap + NAME_CLASS). The type row's box
+    // is the taller child — the category chip, not the 5:1 type badge.
+    // NAME_CLASS is `leading-[1.4]`, so the name box is NAME_LINE.
+    const badgeH = L.tmBadgeH();
+    expect(L.TM_CHIP_H).toBeGreaterThan(badgeH);
+    const typeRowH = Math.max(badgeH, L.TM_CHIP_H);
+    const slotH = 1.5 * L.ROW - 2 * L.INY;
+    const cy = slotH / 2;
+    const body = L.tmMoveBody(cy);
+    expect(body.height).toBeCloseTo(typeRowH + L.TM_STACK_GAP + L.NAME_LINE);
+    expect(body.top + body.height / 2).toBeCloseTo(cy);
+    expect(body.badgeY + badgeH / 2).toBeCloseTo(body.chipY + L.TM_CHIP_H / 2);
+    expect(body.nameTop).toBeCloseTo(body.top + typeRowH + L.TM_STACK_GAP);
+    expect(body.top).toBeGreaterThan(0);
+    expect(body.top + body.height).toBeLessThan(slotH);
+  });
+
+  it('matches disc+TM and type/name column midlines, not disc vs name', () => {
+    // In-app: left box is disc + "TM"; right box is badge + chip + name.
+    // Those two boxes share a vertical midline (`flex items-center`).
+    // Rejected: type row sharing the disc top; name centred on the disc.
+    const cy = 100;
+    const mark = L.tmMarkColumn(cy);
+    const body = L.tmMoveBody(cy);
+    const badgeH = L.tmBadgeH();
+    const discCy = mark.top + mark.glyph / 2;
+    const nameCy = body.nameCy;
+    const markMid = mark.top + mark.height / 2;
+    const bodyMid = body.top + body.height / 2;
+
+    expect(bodyMid).toBeCloseTo(markMid);
+    expect(bodyMid).toBeCloseTo(cy);
+
+    expect(body.badgeY).not.toBeCloseTo(mark.top, 0);
+    expect(body.badgeY).toBeGreaterThan(mark.top + 5);
+    expect(body.nameCy).toBeCloseTo(body.nameTop + L.NAME_LINE / 2);
+
+    expect(Math.abs(nameCy - discCy)).toBeGreaterThan(mark.glyph * 0.3);
+    expect(Math.abs(nameCy - mark.labelCy)).toBeLessThan(Math.abs(nameCy - discCy));
+
+    expect(body.badgeY).toBeLessThan(discCy);
+    expect(body.badgeY + badgeH).toBeGreaterThan(discCy);
+  });
+
   it('paints ace/partner at a whole multiple of the 96px source', () => {
     // Team cells paint at 96. Ace/partner may be 1×, 2×, or 3× of that.
     // css×K (~118) is not an integer scale and aliases the 96px asset.

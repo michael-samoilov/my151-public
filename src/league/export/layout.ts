@@ -210,15 +210,13 @@ export const BAND_BEFORE: Record<number, [string, string]> = {
 };
 
 /**
- * Three sizes that have to agree inside the TM and badge boxes: the label
- * column, the label in it, and the TM's type badge beside it.
+ * Glyph column for the TM and badge slots.
  *
- * "BADGE" at the app's own label size is about 52px, which a 45px column let
- * run into the badge's name. Widening the column instead squeezed the type
- * badge until the word inside it fell to 11.2px, under the legibility floor.
- * So the label comes down a size and the column stays where it was.
+ * CardGrid uses `min(2.75rem, 26%)` of the slot. A fixed 45px column made the
+ * disc as short as the type row, so `items-center` pinned their tops together
+ * and the move name sat on the disc.
  */
-export const MARK_COL = 45;
+export const MARK_COL = Math.min(2.75 * 16 * K, 0.26 * (2 * COL - 2 * INX));
 export const MARK_LABEL_PX = 6.7 * K;
 export const MARK_TRACK = 0.06 * MARK_LABEL_PX;
 export const TM_BADGE_W = 2.75 * 16 * K;
@@ -228,6 +226,88 @@ export const MOVE_PX = HEAD_PX;
 export const MOVE_MIN_PX = HEAD_PX;
 /** Live card stacks the type badge and category above the move name. */
 export const TM_TYPE_ABOVE_NAME = true;
+/** CardGrid CategoryChip on the TM slot: `h-[0.6875rem] w-[0.9375rem]`. */
+export const TM_CHIP_W = 0.9375 * 16 * K;
+export const TM_CHIP_H = 0.6875 * 16 * K;
+/** CardGrid type-row `gap-[3px]` and stack `gap-[2px]`. */
+export const TM_TYPE_GAP = 3 * K;
+export const TM_STACK_GAP = 2 * K;
+
+export function tmBadgeH(): number {
+  return TM_BADGE_W / TYPE_BADGE_ASPECT;
+}
+
+/**
+ * Disc + TM word, as `drawMarkColumn` paints them: a column centred on `cy`.
+ *
+ * Same grouping as CardGrid's mark `flex-col` (disc at 72% of the column,
+ * label pulled up by one `K` against the disc's viewBox padding).
+ */
+export function tmMarkColumn(cy: number): {
+  top: number;
+  height: number;
+  glyph: number;
+  labelH: number;
+  labelCy: number;
+} {
+  const glyph = MARK_COL * 0.72;
+  const labelH = MARK_LABEL_PX * 1.2;
+  const height = glyph + labelH - K;
+  const top = cy - height / 2;
+  return {
+    top,
+    height,
+    glyph,
+    labelH,
+    labelCy: top + glyph - K + labelH / 2,
+  };
+}
+
+/**
+ * Type badge + category chip + move name, as CardGrid's TM slot lays them
+ * out: a column beside the disc, vertically centred with the disc+TM column.
+ *
+ * The live slot is `flex items-center`. The type row is also `items-center`,
+ * so its box is the taller of the 5:1 badge and the category chip. The name
+ * box is the CSS line (`NAME_LINE`), the same `leading-[1.4]` NAME_CLASS uses.
+ */
+export function tmMoveBody(cy: number): {
+  top: number;
+  height: number;
+  badgeY: number;
+  chipY: number;
+  nameTop: number;
+  nameCy: number;
+} {
+  const badgeH = tmBadgeH();
+  const typeRowH = Math.max(badgeH, TM_CHIP_H);
+  const height = typeRowH + TM_STACK_GAP + NAME_LINE;
+  const top = cy - height / 2;
+  const nameTop = top + typeRowH + TM_STACK_GAP;
+  return {
+    top,
+    height,
+    badgeY: top + (typeRowH - badgeH) / 2,
+    chipY: top + (typeRowH - TM_CHIP_H) / 2,
+    nameTop,
+    nameCy: nameTop + NAME_LINE / 2,
+  };
+}
+
+/**
+ * Alphabetic baseline for a CSS line box of height `lineH` at `fontPx`.
+ *
+ * Canvas `middle` is the em-box centre. CSS `leading-[1.4]` centres the em
+ * square and sits Latin on the alphabetic baseline, below that centre.
+ */
+export function cssLineAlphabetic(
+  lineTop: number,
+  lineH: number,
+  fontPx: number,
+  emAscent: number,
+): number {
+  return lineTop + (lineH - fontPx) / 2 + emAscent;
+}
 
 /** Top of a row inside the grid box, which starts at the first band. */
 export function rowTop(row: number): number {

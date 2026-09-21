@@ -950,6 +950,21 @@ export async function runGymCardExportParitySuite(
     scale.integer,
     `css=${scale.css} n=${scale.n.toFixed(3)} (want 1, 2, or 3 × 3.25rem)`,
   ));
+  const tmFit = await s.evalJson<{ tmW: number; chipRight: number; tmRight: number; inside: boolean }>(
+    `const tm=document.querySelector('[data-testid="slot-tm"]');
+     const chip=tm&&tm.querySelector('img[src*="/sprites/moves/"]');
+     const box=chip&&chip.parentElement;
+     const r=tm&&tm.getBoundingClientRect();
+     const c=box&&box.getBoundingClientRect();
+     const tmRight=r?r.right:0;
+     const chipRight=c?c.right:0;
+     return {tmW:r?r.width:0,chipRight,tmRight,inside:!!c&&chipRight<=tmRight+0.5};`,
+  );
+  checks.push(ok(
+    'gym-export:tm-chip-inside-cell',
+    tmFit.inside && tmFit.tmW > 90,
+    `tmW=${tmFit.tmW.toFixed(1)} chipRight=${tmFit.chipRight.toFixed(1)} tmRight=${tmFit.tmRight.toFixed(1)}`,
+  ));
   await s.click('[data-league-export]');
   if (!(await waitFor(s, '[data-export-preview] img', 60))) {
     checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'export preview image never mounted' });

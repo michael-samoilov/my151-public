@@ -18,7 +18,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath, typeGlyphPath } from '@/data/type-ids';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
-import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W } from '@/lib/typeBadgeGeometry';
+import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { expandTemplate } from '@/lib/richTemplate';
 import { localeUppercase, pokemonLabel, raw } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
@@ -523,17 +523,17 @@ function drawMarkColumn(
   cy: number,
   drawGlyph: (size: number, x: number, y: number) => void,
 ): void {
-  const glyph = L.MARK_COL * 0.72;
   ctx.save();
   ctx.font = font(L.MARK_LABEL_PX, 800);
-  const labelH = word ? L.MARK_LABEL_PX * 1.2 : 0;
-  const total = glyph + (labelH ? labelH - L.K : 0);
-  const top = cy - total / 2;
-  drawGlyph(glyph, cx - glyph / 2, top);
-  if (word) {
+  if (!word) {
+    const glyph = L.MARK_COL * 0.72;
+    drawGlyph(glyph, cx - glyph / 2, cy - glyph / 2);
+  } else {
+    const mark = L.tmMarkColumn(cy);
+    drawGlyph(mark.glyph, cx - mark.glyph / 2, mark.top);
     ctx.fillStyle = colour;
     ctx.textBaseline = 'middle';
-    fillTrackedCentered(ctx, word, cx, top + glyph - L.K + labelH / 2, L.MARK_TRACK);
+    fillTrackedCentered(ctx, word, cx, mark.labelCy, L.MARK_TRACK);
   }
   ctx.restore();
 }
@@ -592,49 +592,56 @@ function drawTmSlot(
     drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], size, gx, gy),
   );
 
-  const badgeH = (L.TM_BADGE_W * TYPE_BADGE_H) / TYPE_BADGE_W;
-  const chipW = 0.9375 * 16 * L.K;
-  const chipH = 0.6875 * 16 * L.K;
-  const typeGap = 3 * L.K;
-  const stackGap = 2 * L.K;
+  const badgeH = L.tmBadgeH();
   const name = L.moveExportName(move.name);
+  const body = L.tmMoveBody(cy);
 
   ctx.save();
   ctx.beginPath();
   ctx.rect(bodyX, y, bodyW, h);
   ctx.clip();
 
-  const stackH = badgeH + stackGap + L.NAME_LINE;
-  const stackTop = cy - stackH / 2;
   drawTypeBadge(
     ctx,
     move.type as TypeName,
     images.get(typeGlyphPath(move.type as TypeName)) ?? null,
     bodyX,
-    stackTop,
+    body.badgeY,
     badgeH,
   );
 
-  const chipX = bodyX + L.TM_BADGE_W + typeGap;
-  const chipY = stackTop + (badgeH - chipH) / 2;
+  const chipX = bodyX + L.TM_BADGE_W + L.TM_TYPE_GAP;
   ctx.fillStyle = CATEGORY_COLORS[move.category];
-  roundRect(ctx, chipX, chipY, chipW, chipH, 4 * L.K);
+  roundRect(ctx, chipX, body.chipY, L.TM_CHIP_W, L.TM_CHIP_H, 4 * L.K);
   ctx.fill();
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2 * L.K;
   ctx.stroke();
   const icon = images.get(`/sprites/moves/${move.category}.png`);
   if (icon) {
-    const iw = chipW * 0.62;
+    const iw = L.TM_CHIP_W * 0.62;
     const ih = (icon.naturalHeight / (icon.naturalWidth || 1)) * iw;
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(icon, chipX + (chipW - iw) / 2, chipY + (chipH - ih) / 2, iw, ih);
+    ctx.drawImage(
+      icon,
+      chipX + (L.TM_CHIP_W - iw) / 2,
+      body.chipY + (L.TM_CHIP_H - ih) / 2,
+      iw,
+      ih,
+    );
   }
 
   ctx.font = font(L.NAME_PX, 800);
   ctx.fillStyle = moveShades.band;
-  ctx.textBaseline = 'middle';
-  fillTracked(ctx, name, bodyX, stackTop + badgeH + stackGap + L.NAME_LINE / 2, L.NAME_TRACK);
+  const emAscent = ctx.measureText('H').emHeightAscent || capHeight(ctx);
+  ctx.textBaseline = 'alphabetic';
+  fillTracked(
+    ctx,
+    name,
+    bodyX,
+    L.cssLineAlphabetic(body.nameTop, L.NAME_LINE, L.NAME_PX, emAscent),
+    L.NAME_TRACK,
+  );
   ctx.restore();
 }
 

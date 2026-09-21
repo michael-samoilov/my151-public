@@ -105,42 +105,74 @@ async function savePng(page, dest) {
 
 async function shot(page, name) {
   const file = `${name}.png`;
-  await page.screenshot({ path: join(OUT, file), fullPage: true });
-  await page.screenshot({ path: join(ART, file), fullPage: true });
+  await page.screenshot({ path: join(OUT, file), fullPage: false });
+  await page.screenshot({ path: join(ART, file), fullPage: false });
 }
 
-async function captureSet(page, baseUrl, prefix, state = nimbusState()) {
+/** Phone inner height that squashes the card to pane width, like production. */
+const SQUAT_MOBILE = { label: 'mobile_squat', w: 390, h: 667 };
+const DESKTOP = { label: 'desktop_1280', w: 1280, h: 800 };
+
+async function captureInApp(browser, baseUrl, prefix, state, view) {
+  const ctx = await browser.newContext({
+    deviceScaleFactor: 3,
+    viewport: { width: view.w, height: view.h },
+  });
+  const page = await ctx.newPage();
   await seed(page, state);
   await openCard(page, baseUrl);
-  for (const [label, w, h] of [['mobile_390', 390, 844], ['desktop_1280', 1280, 800]]) {
-    await page.setViewportSize({ width: w, height: h });
-    await page.waitForTimeout(400);
-    await shot(page, `${prefix}_inapp_${label}`);
+  const geom = await page.evaluate(() => {
+    const tm = document.querySelector('[data-testid="slot-tm"]');
+    const chip = tm?.querySelector('img[src*="/sprites/moves/"]')?.parentElement;
+    const r = tm?.getBoundingClientRect();
+    const chipR = chip?.getBoundingClientRect();
+    return {
+      tmW: r?.width ?? 0,
+      tmRight: r?.right ?? 0,
+      chipRight: chipR?.right ?? 0,
+      vw: window.innerWidth,
+    };
+  });
+  if (view.w <= 500 && geom.tmW < 90) {
+    throw new Error(`narrow TM cell at ${view.label}: tmW=${geom.tmW} vw=${geom.vw}`);
   }
-  await page.setViewportSize({ width: 1280, height: 800 });
+  if (view.w <= 500 && geom.chipRight > geom.tmRight + 0.5) {
+    throw new Error(
+      `category clips TM cell at ${view.label}: chipRight=${geom.chipRight} tmRight=${geom.tmRight}`,
+    );
+  }
+  await shot(page, `${prefix}_inapp_${view.label}`);
+  await page.close();
+  await ctx.close();
+}
+
+async function captureExport(browser, baseUrl, prefix, state) {
+  const ctx = await browser.newContext({
+    deviceScaleFactor: 3,
+    viewport: { width: DESKTOP.w, height: DESKTOP.h },
+  });
+  const page = await ctx.newPage();
+  await seed(page, state);
+  await openCard(page, baseUrl);
   await openExport(page);
   await savePng(page, join(OUT, `${prefix}_export_png.png`));
   await savePng(page, join(ART, `${prefix}_export_png.png`));
-  for (const [label, w, h] of [['mobile_390', 390, 844], ['desktop_1280', 1280, 800]]) {
-    await page.setViewportSize({ width: w, height: h });
-    await page.waitForTimeout(500);
-    await shot(page, `${prefix}_export_overlay_${label}`);
-  }
+  await shot(page, `${prefix}_export_overlay_${DESKTOP.label}`);
+  await page.close();
+  await ctx.close();
 }
 
-async function captureSolo(page, baseUrl, prefix) {
-  await seed(page, nimbusState({ partner: false }));
-  await openCard(page, baseUrl);
-  for (const [label, w, h] of [['mobile_390', 390, 844], ['desktop_1280', 1280, 800]]) {
-    await page.setViewportSize({ width: w, height: h });
-    await page.waitForTimeout(400);
-    await shot(page, `${prefix}_solo_inapp_${label}`);
-  }
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await openExport(page);
-  await savePng(page, join(OUT, `${prefix}_solo_export_png.png`));
-  await savePng(page, join(ART, `${prefix}_solo_export_png.png`));
-  await shot(page, `${prefix}_solo_export_overlay_desktop_1280`);
+async function captureSet(browser, baseUrl, prefix, state = nimbusState()) {
+  await captureInApp(browser, baseUrl, prefix, state, SQUAT_MOBILE);
+  await captureInApp(browser, baseUrl, prefix, state, DESKTOP);
+  await captureExport(browser, baseUrl, prefix, state);
+}
+
+async function captureSolo(browser, baseUrl, prefix) {
+  const state = nimbusState({ partner: false });
+  await captureInApp(browser, baseUrl, `${prefix}_solo`, state, SQUAT_MOBILE);
+  await captureInApp(browser, baseUrl, `${prefix}_solo`, state, DESKTOP);
+  await captureExport(browser, baseUrl, `${prefix}_solo`, state);
 }
 
 function startPreview(cwd, port) {
@@ -171,36 +203,12 @@ const basePreview = startPreview(WORKTREE, 4191);
 const fixPreview = startPreview('/workspace', 4190);
 
 const browser = await chromium.launch();
-const beforeCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
-const beforePage = await beforeCtx.newPage();
-await captureSet(beforePage, 'http://127.0.0.1:4191', 'before');
-await beforePage.close();
-await beforeCtx.close();
-const beforeSoloCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
-const beforeSoloPage = await beforeSoloCtx.newPage();
-await captureSolo(beforeSoloPage, 'http://127.0.0.1:4191', 'before');
-await beforeSoloPage.close();
-await beforeSoloCtx.close();
-const afterCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
-const afterPage = await afterCtx.newPage();
-await captureSet(afterPage, 'http://127.0.0.1:4190', 'after');
-await afterPage.close();
-await afterCtx.close();
-const afterSoloCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
-const afterSoloPage = await afterSoloCtx.newPage();
-await captureSolo(afterSoloPage, 'http://127.0.0.1:4190', 'after');
-await afterSoloPage.close();
-await afterSoloCtx.close();
-const beforeSabrinaCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
-const beforeSabrinaPage = await beforeSabrinaCtx.newPage();
-await captureSet(beforeSabrinaPage, 'http://127.0.0.1:4191', 'before_sabrina', sabrinaState());
-await beforeSabrinaPage.close();
-await beforeSabrinaCtx.close();
-const afterSabrinaCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 1280, height: 800 } });
-const afterSabrinaPage = await afterSabrinaCtx.newPage();
-await captureSet(afterSabrinaPage, 'http://127.0.0.1:4190', 'after_sabrina', sabrinaState());
-await afterSabrinaPage.close();
-await afterSabrinaCtx.close();
+await captureSet(browser, 'http://127.0.0.1:4191', 'before');
+await captureSolo(browser, 'http://127.0.0.1:4191', 'before');
+await captureSet(browser, 'http://127.0.0.1:4190', 'after');
+await captureSolo(browser, 'http://127.0.0.1:4190', 'after');
+await captureSet(browser, 'http://127.0.0.1:4191', 'before_sabrina', sabrinaState());
+await captureSet(browser, 'http://127.0.0.1:4190', 'after_sabrina', sabrinaState());
 await browser.close();
 basePreview.stop();
 fixPreview.stop();
