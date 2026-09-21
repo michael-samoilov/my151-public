@@ -345,6 +345,13 @@ export function ExportPreview3D({
         const restAt = restAtRef.current;
         if (restAt !== null && now < restAt) {
           paint(lastPoseRef.current);
+        } else if (!tiltRef.current) {
+          // Live overlay: idle after the leave delay. Workshop keeps the flatten spring.
+          restAtRef.current = null;
+          orbitRef.current = 'idle';
+          releaseRef.current = { from: { ...lastPoseRef.current }, t0: now };
+          const idle = idleAt(now);
+          paint(lerpPose(releaseRef.current.from, idle, 0));
         } else {
           applySpringOpts(springXRef.current, HOVER_TILT_EXIT_SPRING);
           applySpringOpts(springYRef.current, HOVER_TILT_EXIT_SPRING);

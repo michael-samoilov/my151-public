@@ -607,12 +607,12 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const restStatic = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
      if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
-     document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:8,clientY:8,pointerType:'mouse',pointerId:1}));
+     document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:12,clientY:12,pointerType:'mouse',pointerId:1}));
      return {ok:true,reason:card.getAttribute('data-export-orbit')||''};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
-  await sleep(240);
+  await sleep(350);
   const restHold = await readDexPreviewMotion(s);
-  await sleep(1100);
+  await sleep(1600);
   const restAfter = await readDexPreviewMotion(s);
   const restOk =
     restHold.orbit !== 'pointer' &&
