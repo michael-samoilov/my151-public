@@ -163,7 +163,7 @@ export function ExportPreviewShell({
             }}
             data-export-preview-layer
           >
-            <div className="grid h-full w-full min-h-0 min-w-0 place-items-center">
+            <div className="grid h-full w-full min-h-0 min-w-0 place-items-center overflow-visible">
               <ExportPreview3D
                 src={activeSrc}
                 frames={frames}

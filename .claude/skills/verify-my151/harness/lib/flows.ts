@@ -367,6 +367,7 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      if(!shadow || shadow==='none') return {ok:false,reason:'no lift shadow'};
      const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
      if(hitStyle && hitStyle.boxShadow!=='none' && hitStyle.boxShadow!=='') return {ok:false,reason:'hit still shadowed'};
+     if(hitStyle && parseFloat(hitStyle.paddingTop||'0')<32) return {ok:false,reason:'hit pad '+hitStyle.paddingTop};
      const cv=document.createElement('canvas');
      cv.width=cv.height=8;
      const g=cv.getContext('2d');
@@ -599,7 +600,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
   const desktop = viewW >= 1024;
   const hoverCircle = {
-    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 2.4 && hoverOrbit === 'pointer' && (desktop ? hoverMax < 4.0 : hoverMax <= 5.2),
+    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 2.4 && hoverOrbit === 'pointer' && (desktop ? hoverMax < 4.0 : hoverMax <= 4.0),
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit} w=${viewW}`,
   };
   await s.evalJson(
@@ -661,9 +662,12 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      if(hitCs.overflow!=='visible') return {ok:false,reason:'hit overflow '+hitCs.overflow};
      if(stageCs && stageCs.overflow!=='visible') return {ok:false,reason:'stage overflow '+stageCs.overflow};
      if(layerCs && layerCs.overflow!=='visible') return {ok:false,reason:'layer overflow '+layerCs.overflow};
+     const pad=parseFloat(hitCs.paddingTop||'0');
+     if(pad<32) return {ok:false,reason:'hit pad '+pad};
+     if(hitCs.backgroundColor!=='rgba(0, 0, 0, 0)' && hitCs.backgroundColor!=='transparent' && hitCs.backgroundColor!=='rgba(0,0,0,0)') return {ok:false,reason:'hit fill '+hitCs.backgroundColor};
      const opacity=Number(hit.getAttribute('data-shadow-opacity')||0);
-     if(!(opacity>0.12)) return {ok:false,reason:'opacity '+opacity};
-     return {ok:true,reason:'lift-unclipped op='+opacity.toFixed(2)};`,
+     if(!(opacity>0.10)) return {ok:false,reason:'opacity '+opacity};
+     return {ok:true,reason:'lift-unclipped op='+opacity.toFixed(2)+' pad='+pad};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const shadowPair = {
     ok: rightShadow > leftShadow + 0.2 && shadowPainted.ok,
@@ -714,7 +718,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     restHold.orbit !== 'pointer' &&
     restAfter.orbit === 'idle' &&
     restAfter.hypot > 2 &&
-    (desktop ? restAfter.hypot <= 3.8 : restAfter.hypot <= 5.2);
+    (desktop ? restAfter.hypot <= 3.8 : restAfter.hypot <= 4.0);
   await s.screenshot(ctx.shot('dex-export-hover'));
   await s.click('[data-export-tilt-hit]').catch(() => undefined);
   await sleep(500);
@@ -808,7 +812,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
     ok('dex-export:idle-circular', imgReady && idleCircular, JSON.stringify({ idleA, idleB, idleAlign, idleDelta })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
-    ok('dex-export:tilt-magnitude', hoverCircle.ok && (desktop ? hoverMax <= 3.8 : hoverMax <= 5.2), `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
+    ok('dex-export:tilt-magnitude', hoverCircle.ok && (desktop ? hoverMax <= 3.8 : hoverMax <= 4.0), `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
     ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
     ok('dex-export:tilt-corner-margin', cornerMargin.ok, cornerMargin.reason),
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
@@ -1682,7 +1686,7 @@ export async function runLeagueGymExportFoilSuite(
   }
   const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
   const desktop = viewW >= 1024;
-  const hypotOk = (h: number) => (desktop ? h > 2.4 && h <= 3.8 : h > 2.4 && h <= 5.2);
+  const hypotOk = (h: number) => (desktop ? h > 2.4 && h <= 3.8 : h > 2.4 && h <= 4.0);
 
   const openLeague = await s.evalJson<boolean>(
     `const b=document.querySelector('[data-league-export]');

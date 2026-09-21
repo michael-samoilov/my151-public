@@ -7,6 +7,7 @@ import {
   previewMaxHypot,
   PREVIEW_PERSPECTIVE_PX,
   PREVIEW_REST_PAD,
+  PREVIEW_SHADOW_PAD_PX,
   PREVIEW_TILT_INSET,
   tiltInsetForRestGap,
 } from '@/components/export/exportPreviewFit';
@@ -200,7 +201,7 @@ export function ExportPreview3D({
     const shadowY = ny * 2 - 1;
     const displayedHypot = Math.hypot(rotateX, rotateY);
     const shadowAmt =
-      displayedHypot < 0.4 ? 0.16 : Math.min(0.5, 0.2 + displayedHypot / 16);
+      displayedHypot < 0.4 ? 0.12 : Math.min(0.36, 0.14 + displayedHypot / 20);
     el.style.setProperty('--shadow-x', shadowX.toFixed(4));
     el.style.setProperty('--shadow-y', shadowY.toFixed(4));
     el.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
@@ -599,11 +600,13 @@ export function ExportPreview3D({
         <div
           ref={hitRef}
           className="export-foil-hit pointer-events-auto cursor-pointer touch-none overflow-visible"
+          style={{ padding: PREVIEW_SHADOW_PAD_PX }}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerCancel}
           data-export-tilt-hit
           data-export-shadow
+          data-shadow-pad={String(PREVIEW_SHADOW_PAD_PX)}
           data-tilt-perspective={String(PREVIEW_PERSPECTIVE_PX)}
           data-hover-tilt={tilt ? '1' : undefined}
         >

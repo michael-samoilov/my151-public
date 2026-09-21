@@ -7,11 +7,13 @@ export const PREVIEW_TILT_INSET = 24;
 /**
  * Desktop posters fill the pane. Combined 10°+10° (hypot ~14°) shears them
  * into a diamond even when the AABB still fits. Cap the vector length, not
- * rest size. Mobile uses a higher cap than desktop, still below the 10° orbit.
+ * rest size. Mobile stays near the desktop cap — 5° still shears on a phone.
  */
 export const PREVIEW_DESKTOP_MAX_HYPOT = 3.6;
-export const PREVIEW_MOBILE_MAX_HYPOT = 5.0;
+export const PREVIEW_MOBILE_MAX_HYPOT = 3.8;
 export const PREVIEW_DESKTOP_MIN_PX = 1024;
+/** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
+export const PREVIEW_SHADOW_PAD_PX = 40;
 
 export function previewMaxHypot(widthPx: number): number {
   return widthPx >= PREVIEW_DESKTOP_MIN_PX ? PREVIEW_DESKTOP_MAX_HYPOT : PREVIEW_MOBILE_MAX_HYPOT;

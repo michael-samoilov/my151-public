@@ -173,7 +173,6 @@ test.describe('desktop export preview', () => {
     const holo = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
       const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
-      const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
       if (!card || !layer) return { ok: false, reason: 'missing' };
       const cs = getComputedStyle(layer);
       const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`.replace(/\s+/g, ' ').trim();

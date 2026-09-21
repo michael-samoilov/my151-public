@@ -211,16 +211,19 @@ test.describe('mobile dex export sheet', () => {
       Number(await foil.getAttribute('data-tilt-y')),
     );
     expect(hypot, 'mobile peak hypot').toBeGreaterThan(2.4);
-    expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(5.2);
+    expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(4.0);
     const shadow = await page.evaluate(() => {
       const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
       const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
       const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
       if (!lift || !hitEl) return { ok: false };
+      const hitCs = getComputedStyle(hitEl);
       return {
         ok: true,
         liftBox: getComputedStyle(lift).boxShadow,
-        hitBox: getComputedStyle(hitEl).boxShadow,
+        hitBox: hitCs.boxShadow,
+        hitPad: parseFloat(hitCs.paddingTop || '0'),
+        hitFill: hitCs.backgroundColor,
         liftOverflow: getComputedStyle(lift).overflow,
         layerOverflow: layer ? getComputedStyle(layer).overflow : '',
       };
@@ -228,6 +231,7 @@ test.describe('mobile dex export sheet', () => {
     expect(shadow.ok, JSON.stringify(shadow)).toBe(true);
     expect(shadow.liftBox, JSON.stringify(shadow)).not.toBe('none');
     expect(shadow.hitBox, JSON.stringify(shadow)).toBe('none');
+    expect(shadow.hitPad, JSON.stringify(shadow)).toBeGreaterThanOrEqual(32);
     expect(shadow.liftOverflow, JSON.stringify(shadow)).toBe('visible');
     expect(shadow.layerOverflow, JSON.stringify(shadow)).toBe('visible');
   });
@@ -671,6 +675,7 @@ test.describe('desktop dex export preview', () => {
         cardBox: cardCs.boxShadow,
         liftOverflow: liftCs.overflow,
         hitOverflow: hitCs.overflow,
+        hitPad: parseFloat(hitCs.paddingTop || '0'),
         layerOverflow: layerCs?.overflow ?? '',
         opacity: Number(hit.getAttribute('data-shadow-opacity') || 0),
       };
@@ -681,7 +686,8 @@ test.describe('desktop dex export preview', () => {
     expect(shadow.cardBox, JSON.stringify(shadow)).toBe('none');
     expect(shadow.liftOverflow, JSON.stringify(shadow)).toBe('visible');
     expect(shadow.hitOverflow, JSON.stringify(shadow)).toBe('visible');
+    expect(shadow.hitPad, JSON.stringify(shadow)).toBeGreaterThanOrEqual(32);
     expect(shadow.layerOverflow, JSON.stringify(shadow)).toBe('visible');
-    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.12);
+    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.10);
   });
 });
