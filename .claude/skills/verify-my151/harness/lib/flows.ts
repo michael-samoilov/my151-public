@@ -1093,5 +1093,144 @@ export async function runGymCardExportParitySuite(
       && aceName.mode === 'split' && aceName.partner && aceName.seam,
     `text=${aceName.text} ellipsis=${aceName.ellipsis} lastInside=${aceName.lastInsidePane} mode=${aceName.mode} partner=${aceName.partner} seam=${aceName.seam}`,
   ));
+
+  const STOMPING_LEAGUE = SABRINA_SOLO_LEAGUE.replace('tmMoveId:94', 'tmMoveId:707');
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${STOMPING_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:tm-two-word-wrap', status: 'skip', detail: 'league home never hydrated after Stomping Tantrum seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:tm-two-word-wrap', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const wrap = await s.evalJson<{
+    text: string;
+    ellipsis: boolean;
+    lines: number;
+    topGap: number;
+    bottomGap: number;
+    lastVisible: boolean;
+  }>(
+    `const slot=document.querySelector('[data-testid="slot-tm"]');
+     const name=slot&&(slot.querySelector('[data-tm-name]')||[...slot.querySelectorAll('span')].find(el=>/stomping/i.test(el.textContent||'')&&el.childElementCount===0));
+     const disc=slot&&slot.querySelector('svg[viewBox="0 0 24 24"] circle[r="9"]');
+     const badge=slot&&slot.querySelector('svg[viewBox="0 0 200 40"]');
+     const tm=slot&&slot.querySelector('[data-mark-label="tm"]');
+     if(!slot||!name||!disc||!badge||!tm) return {text:'',ellipsis:true,lines:0,topGap:0,bottomGap:0,lastVisible:false};
+     const cs=getComputedStyle(name);
+     const lineH=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.4;
+     const zoom=name.offsetHeight>0?name.getBoundingClientRect().height/name.offsetHeight:1;
+     const node=[...name.childNodes].find(n=>n.nodeType===3);
+     const tmNode=[...tm.childNodes].find(n=>n.nodeType===3);
+     const inkBottom=(el,textNode)=>{
+       if(!textNode||!(textNode.textContent||'').length) return el.getBoundingClientRect().bottom;
+       const range=document.createRange();
+       range.selectNodeContents(textNode);
+       return range.getBoundingClientRect().bottom;
+     };
+     let lastVisible=false;
+     if(node&&(node.textContent||'').length){
+       const range=document.createRange();
+       range.setStart(node,(node.textContent||'').length-1);
+       range.setEnd(node,(node.textContent||'').length);
+       const last=range.getBoundingClientRect();
+       const sr=slot.getBoundingClientRect();
+       lastVisible=last.width>0.5&&last.right<=sr.right+0.5&&last.bottom<=sr.bottom+0.5;
+     }
+     return {
+       text:(name.textContent||'').replace(/\\s+/g,' ').trim(),
+       ellipsis:cs.textOverflow==='ellipsis'||name.scrollWidth>name.clientWidth+1,
+       lines:lineH>0?Math.round(name.offsetHeight/lineH):0,
+       topGap:(badge.getBoundingClientRect().top-disc.getBoundingClientRect().top)/zoom,
+       bottomGap:(inkBottom(tm,tmNode)-inkBottom(name,node))/zoom,
+       lastVisible,
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-tm-two-word-wrap'));
+  checks.push(ok(
+    'gym-export:tm-two-word-wrap',
+    /stomping tantrum/i.test(wrap.text) && !wrap.ellipsis && wrap.lines === 2 && wrap.lastVisible
+      && Math.abs(wrap.topGap - wrap.bottomGap) <= 1.25,
+    `text=${wrap.text} ellipsis=${wrap.ellipsis} lines=${wrap.lines} lastVisible=${wrap.lastVisible} top=${wrap.topGap.toFixed(1)} bottom=${wrap.bottomGap.toFixed(1)}`,
+  ));
+
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${SABRINA_SOLO_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:tm-one-word-line', status: 'skip', detail: 'league home never hydrated after Psychic seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:tm-one-word-line', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const oneLine = await s.evalJson<{ text: string; lines: number; topGap: number; bottomGap: number }>(
+    `const slot=document.querySelector('[data-testid="slot-tm"]');
+     const name=slot&&(slot.querySelector('[data-tm-name]')||[...slot.querySelectorAll('span')].find(el=>/psychic/i.test(el.textContent||'')&&el.childElementCount===0));
+     const disc=slot&&slot.querySelector('svg[viewBox="0 0 24 24"] circle[r="9"]');
+     const badge=slot&&slot.querySelector('svg[viewBox="0 0 200 40"]');
+     const tm=slot&&slot.querySelector('[data-mark-label="tm"]');
+     if(!slot||!name||!disc||!badge||!tm) return {text:'',lines:0,topGap:0,bottomGap:0};
+     const cs=getComputedStyle(name);
+     const lineH=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.4;
+     const zoom=name.offsetHeight>0?name.getBoundingClientRect().height/name.offsetHeight:1;
+     const tmNode=[...tm.childNodes].find(n=>n.nodeType===3);
+     const nameNode=[...name.childNodes].find(n=>n.nodeType===3);
+     const inkBottom=(el,textNode)=>{
+       if(!textNode||!(textNode.textContent||'').length) return el.getBoundingClientRect().bottom;
+       const range=document.createRange();
+       range.selectNodeContents(textNode);
+       return range.getBoundingClientRect().bottom;
+     };
+     return {
+       text:(name.textContent||'').replace(/\\s+/g,' ').trim(),
+       lines:lineH>0?Math.round(name.offsetHeight/lineH):0,
+       topGap:(badge.getBoundingClientRect().top-disc.getBoundingClientRect().top)/zoom,
+       bottomGap:(inkBottom(tm,tmNode)-inkBottom(name,nameNode))/zoom,
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-tm-one-word-line'));
+  checks.push(ok(
+    'gym-export:tm-one-word-line',
+    /^psychic$/i.test(oneLine.text) && oneLine.lines === 1 && Math.abs(oneLine.topGap - oneLine.bottomGap) <= 1.25,
+    `text=${oneLine.text} lines=${oneLine.lines} top=${oneLine.topGap.toFixed(1)} bottom=${oneLine.bottomGap.toFixed(1)}`,
+  ));
+
+  const BADGE_OVERFLOW_LEAGUE = SABRINA_SOLO_LEAGUE.replace("badgeName:'Marsh'", "badgeName:'Thunder Thunder Thunder'");
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BADGE_OVERFLOW_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:badge-suffix-visible', status: 'skip', detail: 'league home never hydrated after badge overflow seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-badge"]', 40))) {
+    checks.push({ name: 'gym-export:badge-suffix-visible', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const badgeFit = await s.evalJson<{ rendered: string; suffixVisible: boolean; overflows: boolean }>(
+    `const field=document.querySelector('[aria-label="Badge name"]');
+     const suffix=document.querySelector('[data-badge-suffix]');
+     const box=field&&field.parentElement;
+     if(!field||!box) return {rendered:'',suffixVisible:false,overflows:true};
+     const br=box.getBoundingClientRect();
+     const rects=suffix?[...suffix.getClientRects()]:[];
+     const suffixVisible=!!suffix&&rects.length>0&&rects.every(r=>r.width<0.5||(r.left>=br.left-1&&r.right<=br.right+1&&r.top>=br.top-1&&r.bottom<=br.bottom+1));
+     return {rendered:(field.textContent||'').replace(/\\u00a0/g,' '),suffixVisible,overflows:box.scrollHeight>box.clientHeight+1};`,
+  );
+  await s.screenshot(ctx.shot('gym-export-badge-suffix-visible'));
+  checks.push(ok(
+    'gym-export:badge-suffix-visible',
+    /Badge/.test(badgeFit.rendered) && !/Thunder Thunder Thunder/.test(badgeFit.rendered)
+      && badgeFit.suffixVisible && !badgeFit.overflows,
+    `rendered=${badgeFit.rendered} suffixVisible=${badgeFit.suffixVisible} overflows=${badgeFit.overflows}`,
+  ));
   return checks;
 }

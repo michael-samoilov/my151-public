@@ -340,6 +340,24 @@ describe('export layout', () => {
     expect(Math.abs(top - bottom)).toBeLessThanOrEqual(1);
   });
 
+  it('grows the TM stack by one name line when a two-word name wraps', () => {
+    const one = L.tmMoveBody(100, 1);
+    const two = L.tmMoveBody(100, 2);
+    expect(two.height - one.height).toBeCloseTo(L.NAME_LINE);
+  });
+
+  it('keeps equal TM ink gaps when the move name wraps to two lines', () => {
+    const { top, bottom } = L.tmInkGaps(100, 2);
+    expect(Math.abs(top - bottom)).toBeLessThanOrEqual(1);
+  });
+
+  it('wraps a two-word TM name and leaves a one-word name on one line', () => {
+    expect(L.tmNameWraps('Stomping Tantrum')).toBe(true);
+    expect(L.tmNameWraps('Psychic')).toBe(false);
+    expect(L.tmNameWraps('Self-Destruct')).toBe(false);
+    expect(L.tmNameWraps('Power-Up Punch')).toBe(true);
+  });
+
   it('paints ace/partner at a whole multiple of the 96px source', () => {
     // Team cells paint at 96. Ace/partner may be 1×, 2×, or 3× of that.
     // css×K (~118) is not an integer scale and aliases the 96px asset.

@@ -594,9 +594,14 @@ function drawTmSlot(
 
   const badgeH = L.tmBadgeH();
   const name = L.moveExportName(move.name);
-  const body = L.tmMoveBody(cy);
-
   ctx.save();
+  ctx.font = font(L.NAME_PX, 800);
+  const wrapName = L.tmNameWraps(move.name);
+  const lines = wrapName
+    ? name.trim().split(/\s+/).filter(Boolean)
+    : [name];
+  const body = L.tmMoveBody(cy, lines.length);
+
   ctx.beginPath();
   ctx.rect(bodyX, y, bodyW, h);
   ctx.clip();
@@ -631,17 +636,18 @@ function drawTmSlot(
     );
   }
 
-  ctx.font = font(L.NAME_PX, 800);
   ctx.fillStyle = moveShades.band;
   const emAscent = ctx.measureText('H').emHeightAscent || capHeight(ctx);
   ctx.textBaseline = 'alphabetic';
-  fillTracked(
-    ctx,
-    name,
-    bodyX,
-    L.cssLineAlphabetic(body.nameTop, L.NAME_LINE, L.NAME_PX, emAscent),
-    L.NAME_TRACK,
-  );
+  lines.forEach((line, i) => {
+    fillTracked(
+      ctx,
+      line,
+      bodyX,
+      L.cssLineAlphabetic(body.nameTop + i * L.NAME_LINE, L.NAME_LINE, L.NAME_PX, emAscent),
+      L.NAME_TRACK,
+    );
+  });
   ctx.restore();
 }
 
@@ -669,18 +675,32 @@ function drawBadgeSlot(
 
   if (!name) return;
 
-  const phrase = L.badgeExportPhrase(name);
   ctx.save();
   ctx.font = font(L.NAME_PX, 800);
   ctx.fillStyle = shades.band;
   ctx.textBaseline = 'middle';
-  const lines = wrapLines(ctx, phrase, bodyW, 3);
+  let next = name;
+  let lines = wrapLines(ctx, L.badgeExportPhrase(next), bodyW, 3, false);
+  while (next && !badgeLinesKeepSuffix(lines, bodyW, ctx)) {
+    next = next.slice(0, -1).replace(/[\s\u00a0]+$/u, '');
+    lines = wrapLines(ctx, L.badgeExportPhrase(next), bodyW, 3, false);
+  }
   const lineH = L.NAME_LINE;
   const top = cy - (lines.length * lineH) / 2;
   lines.forEach((line, i) => {
     fillTracked(ctx, line, bodyX, top + (i + 0.5) * lineH, L.NAME_TRACK);
   });
   ctx.restore();
+}
+
+function badgeLinesKeepSuffix(
+  lines: string[],
+  maxW: number,
+  ctx: CanvasRenderingContext2D,
+): boolean {
+  if (lines.length === 0) return false;
+  const last = lines[lines.length - 1] ?? '';
+  return last.endsWith('BADGE') && ctx.measureText(last).width <= maxW + 0.5;
 }
 
 function drawBand(

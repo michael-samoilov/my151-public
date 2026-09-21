@@ -243,6 +243,11 @@ export const TM_DISC_PAD = 2 / 24;
  */
 export const LATIN_EM_ASCENT = 0.73;
 
+/** Two or more whitespace-separated tokens wrap. A single token stays one line. */
+export function tmNameWraps(name: string): boolean {
+  return name.trim().split(/\s+/).filter(Boolean).length >= 2;
+}
+
 export function tmBadgeH(): number {
   return TM_BADGE_W / TYPE_BADGE_ASPECT;
 }
@@ -275,11 +280,14 @@ export function tmMarkColumn(cy: number): {
 
 function tmInkGapsFrom(
   mark: ReturnType<typeof tmMarkColumn>,
-  body: { badgeY: number; nameTop: number },
+  body: { badgeY: number; nameTop: number; nameLines: number },
 ): { top: number; bottom: number } {
   const discTop = mark.top + TM_DISC_PAD * mark.glyph;
   const nameBottom =
-    body.nameTop + (NAME_LINE - NAME_PX) / 2 + LATIN_EM_ASCENT * NAME_PX;
+    body.nameTop
+    + (body.nameLines - 1) * NAME_LINE
+    + (NAME_LINE - NAME_PX) / 2
+    + LATIN_EM_ASCENT * NAME_PX;
   const tmBottom =
     mark.labelCy + LATIN_EM_ASCENT * MARK_LABEL_PX - MARK_LABEL_PX / 2;
   return {
@@ -292,23 +300,28 @@ function tmInkGapsFrom(
  * Type badge + category chip + move name, as CardGrid's TM slot lays them
  * out: a column beside the disc. Badge top and disc-icon top leave the same
  * gap as name bottom and the “TM” label bottom.
+ *
+ * `nameLines` is 2 when a two-word name wraps, 1 otherwise.
  */
-export function tmMoveBody(cy: number): {
+export function tmMoveBody(cy: number, nameLines = 1): {
   top: number;
   height: number;
   badgeY: number;
   chipY: number;
   nameTop: number;
   nameCy: number;
+  nameLines: number;
 } {
+  const lines = Math.max(1, nameLines);
   const badgeH = tmBadgeH();
   const typeRowH = Math.max(badgeH, TM_CHIP_H);
-  const height = typeRowH + TM_STACK_GAP + NAME_LINE;
+  const height = typeRowH + TM_STACK_GAP + lines * NAME_LINE;
   const naturalTop = cy - height / 2;
   const mark = tmMarkColumn(cy);
   const { top: topGap, bottom: bottomGap } = tmInkGapsFrom(mark, {
     badgeY: naturalTop + (typeRowH - badgeH) / 2,
     nameTop: naturalTop + typeRowH + TM_STACK_GAP,
+    nameLines: lines,
   });
   const top = naturalTop + (bottomGap - topGap) / 2;
   const nameTop = top + typeRowH + TM_STACK_GAP;
@@ -319,7 +332,24 @@ export function tmMoveBody(cy: number): {
     chipY: top + (typeRowH - TM_CHIP_H) / 2,
     nameTop,
     nameCy: nameTop + NAME_LINE / 2,
+    nameLines: lines,
   };
+}
+
+/** Live-card rem nudge so badge→disc matches name→TM the way export does. */
+export function tmBodyShiftRem(nameLines = 1): number {
+  const cy = 100;
+  const lines = Math.max(1, nameLines);
+  const badgeH = tmBadgeH();
+  const typeRowH = Math.max(badgeH, TM_CHIP_H);
+  const height = typeRowH + TM_STACK_GAP + lines * NAME_LINE;
+  const naturalTop = cy - height / 2;
+  const { top: topGap, bottom: bottomGap } = tmInkGapsFrom(tmMarkColumn(cy), {
+    badgeY: naturalTop + (typeRowH - badgeH) / 2,
+    nameTop: naturalTop + typeRowH + TM_STACK_GAP,
+    nameLines: lines,
+  });
+  return ((bottomGap - topGap) / 4) / (16 * K);
 }
 
 /**
@@ -341,8 +371,9 @@ export function cssLineAlphabetic(
  * Distances Michael named: type-badge top → disc-icon top, and move-name
  * bottom → “TM” label bottom. They must match within 1px.
  */
-export function tmInkGaps(cy: number): { top: number; bottom: number } {
-  return tmInkGapsFrom(tmMarkColumn(cy), tmMoveBody(cy));
+export function tmInkGaps(cy: number, nameLines = 1): { top: number; bottom: number } {
+  const body = tmMoveBody(cy, nameLines);
+  return tmInkGapsFrom(tmMarkColumn(cy), body);
 }
 
 /** Top of a row inside the grid box, which starts at the first band. */

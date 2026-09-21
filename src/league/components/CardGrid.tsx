@@ -42,14 +42,8 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyp
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
-import {
-  BALL_OF_SPRITE,
-  RING_OF_SPRITE,
-  SLOT_PAD_REM,
-  SPRITE_REM,
-  pairSpriteScale,
-  seamEnds,
-} from '../slotLayout';
+import { BALL_OF_SPRITE, RING_OF_SPRITE, pairSpriteScale, seamEnds, SLOT_PAD_REM, SPRITE_REM } from '../slotLayout';
+import { tmBodyShiftRem, tmNameWraps } from '../export/layout';
 import { useSlotLab } from '../slotLab';
 
 /**
@@ -1221,7 +1215,10 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         </span>
       </span>
       {move ? (
-        <span className="flex min-w-0 flex-col items-start gap-[2px] overflow-hidden">
+        <span
+          className="flex min-w-0 flex-col items-start gap-[2px] overflow-hidden"
+          style={{ transform: `translateY(${tmBodyShiftRem()}rem)` }}
+        >
           {/* Clipped rather than spilling. At 320px the type badge and the
               category chip together are wider than the box's text column, and
               a chip painted over the cell beside it is worse than one cut. */}
@@ -1243,15 +1240,19 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink overflow-visible" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
-          {/* Truncated, not wrapped: a twelve-letter move is one word, so
-              a wrap would break it mid-syllable. Below about 340px of
-              viewport the box cannot hold the longest of them however far
-              left the text starts. */}
+          {/* A one-word move stays on one line. A two-word move always
+              wraps at the space so both words stay visible. The one-word
+              case can still ellipsize when the box cannot hold it. */}
           <span
-            className={cn('min-w-0 max-w-full truncate text-left', NAME_CLASS)}
+            data-tm-name=""
+            className={cn(
+              'min-w-0 w-full max-w-full text-left',
+              NAME_CLASS,
+              tmNameWraps(move.name) ? 'whitespace-pre-line break-normal' : 'truncate',
+            )}
             style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band }}
           >
-            {move.name}
+            {tmNameWraps(move.name) ? move.name.trim().split(/\s+/).join('\n') : move.name}
           </span>
         </span>
       ) : (
@@ -1312,6 +1313,33 @@ function writeBadgeField(field: HTMLElement, next: string) {
   }
 }
 
+function badgeSuffixVisible(box: HTMLElement, field: HTMLElement): boolean {
+  if (box.scrollHeight > box.clientHeight + 1) return false;
+  const suffix = badgeSuffixEl(field);
+  if (!suffix) return true;
+  const br = box.getBoundingClientRect();
+  return [...suffix.getClientRects()].every((r) => (
+    r.width < 0.5
+    || (r.left >= br.left - 1 && r.right <= br.right + 1 && r.top >= br.top - 1 && r.bottom <= br.bottom + 1)
+  ));
+}
+
+function clampBadgeName(field: HTMLElement, box: HTMLElement, name: string): string {
+  let next = name;
+  writeBadgeField(field, next);
+  while (next && !badgeSuffixVisible(box, field)) {
+    next = next.slice(0, -1);
+    writeBadgeField(field, next);
+  }
+  const trimmed = next.replace(/[\s\u00a0]+$/u, '');
+  if (trimmed !== next) {
+    writeBadgeField(field, trimmed);
+    if (badgeSuffixVisible(box, field)) return trimmed;
+    writeBadgeField(field, next);
+  }
+  return next;
+}
+
 function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setBadgeName = useLeagueStore((s) => s.setBadgeName);
   const fieldRef = useRef<HTMLSpanElement>(null);
@@ -1330,10 +1358,12 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   // a change made elsewhere: opening a different card, or a reset.
   useLayoutEffect(() => {
     const el = fieldRef.current;
-    if (!el || document.activeElement === el) return;
-    writeBadgeField(el, name);
-    accepted.current = name;
-  }, [name]);
+    const box = textRef.current;
+    if (!el || !box || document.activeElement === el) return;
+    const clamped = clampBadgeName(el, box, name);
+    accepted.current = clamped;
+    if (clamped !== name) setBadgeName(cardIndex, clamped);
+  }, [name, cardIndex, setBadgeName]);
 
   const putCaretAtEnd = () => {
     const el = fieldRef.current;
@@ -1370,7 +1400,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     // scrambles its own text the moment you type two words.
     // The suffix is already in the box by the second character, so the box
     // measures the phrase the reader will see, not just the name.
-    const fits = next.length <= BADGE_NAME_CEILING && box.scrollHeight <= box.clientHeight + 1;
+    const fits = next.length <= BADGE_NAME_CEILING && badgeSuffixVisible(box, el);
     if (!fits) {
       writeBadgeField(el, accepted.current);
       putCaretAtEnd();
