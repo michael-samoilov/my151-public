@@ -8,8 +8,7 @@ import {
   PREVIEW_PERSPECTIVE_PX,
   PREVIEW_REST_PAD,
   PREVIEW_SHADOW_PAD_PX,
-  PREVIEW_TILT_INSET,
-  tiltInsetForRestGap,
+  tiltPadForScaledCard,
 } from '@/components/export/exportPreviewFit';
 import {
   applySpringOpts,
@@ -150,11 +149,13 @@ export function ExportPreview3D({
     const tiltNowEarly = tiltRef.current ?? DEFAULT_HOVER_TILT_RECIPE;
     const activation = Math.min(1, Math.max(0, springARef.current.value));
     const liveScale = 1 + (tiltNowEarly.scaleFactor - 1) * activation;
-    const tiltPad = (() => {
-      if (stageSize.w <= 0 || cardW <= 0) return PREVIEW_TILT_INSET;
-      const restGap = Math.min((stageSize.w - cardW) / 2, (stageSize.h - cardH) / 2);
-      return tiltInsetForRestGap(restGap);
-    })();
+    const tiltPad = tiltPadForScaledCard({
+      stageWidth: stageSize.w,
+      stageHeight: stageSize.h,
+      cardWidth: cardW,
+      cardHeight: cardH,
+      liveScale,
+    });
     if (stageSize.w > 0 && cardW > 0 && cardH > 0) {
       const clamped = clampTiltToBox({
         tiltX: rotateX,

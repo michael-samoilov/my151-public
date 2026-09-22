@@ -246,6 +246,25 @@ export function tiltInsetForRestGap(restGap: number, want = PREVIEW_TILT_INSET):
   return Math.min(want, Math.max(8, restGap - 20));
 }
 
+/**
+ * Live clamp pad. Measure the gap from the scaled card.
+ * A pad taken from the unscaled layout stays 24px on a phone and the clamp returns 0°.
+ */
+export function tiltPadForScaledCard(opts: {
+  stageWidth: number;
+  stageHeight: number;
+  cardWidth: number;
+  cardHeight: number;
+  liveScale: number;
+}): number {
+  if (opts.stageWidth <= 0 || opts.cardWidth <= 0) return PREVIEW_TILT_INSET;
+  const visualW = opts.cardWidth * opts.liveScale;
+  const visualH = opts.cardHeight * opts.liveScale;
+  const restGap = Math.min((opts.stageWidth - visualW) / 2, (opts.stageHeight - visualH) / 2);
+  if (restGap < 8) return 0;
+  return tiltInsetForRestGap(restGap);
+}
+
 export function paintedBoxOverflow(
   card: { left: number; top: number; right: number; bottom: number },
   box: { left: number; top: number; right: number; bottom: number },

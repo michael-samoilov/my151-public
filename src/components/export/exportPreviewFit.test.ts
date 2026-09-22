@@ -17,6 +17,7 @@ import {
   PREVIEW_TILT_INSET,
   paintedBoxOverflow,
   tiltInsetForRestGap,
+  tiltPadForScaledCard,
   previewCoverRatio,
   projectedCardAabb,
   projectedCardSize,
@@ -271,6 +272,43 @@ describe('exportPreviewFit', () => {
     expect(tiltInsetForRestGap(80)).toBe(PREVIEW_TILT_INSET);
     expect(tiltInsetForRestGap(25.5)).toBe(8);
     expect(tiltInsetForRestGap(10)).toBe(8);
+  });
+
+  it('keeps a phone tilt when the popped card already fills the pane', () => {
+    const stage = { width: 390, height: 360 };
+    const visual = { width: 342.15, height: 163.3 };
+    const liveScale = 1.15;
+    const layout = { width: visual.width / liveScale, height: visual.height / liveScale };
+    const unscaledGap = Math.min(
+      (stage.width - layout.width) / 2,
+      (stage.height - layout.height) / 2,
+    );
+    const crushed = clampTiltToBox({
+      tiltX: 7,
+      tiltY: 7,
+      cardWidth: visual.width,
+      cardHeight: visual.height,
+      boxWidth: stage.width,
+      boxHeight: stage.height,
+      pad: tiltInsetForRestGap(unscaledGap),
+    });
+    expect(Math.hypot(crushed.x, crushed.y)).toBeLessThan(1);
+    const kept = clampTiltToBox({
+      tiltX: 7,
+      tiltY: 7,
+      cardWidth: visual.width,
+      cardHeight: visual.height,
+      boxWidth: stage.width,
+      boxHeight: stage.height,
+      pad: tiltPadForScaledCard({
+        stageWidth: stage.width,
+        stageHeight: stage.height,
+        cardWidth: layout.width,
+        cardHeight: layout.height,
+        liveScale,
+      }),
+    });
+    expect(Math.hypot(kept.x, kept.y)).toBeGreaterThan(4);
   });
 
   it('caps combined hypot at the library 10° edge without shrinking rest', () => {

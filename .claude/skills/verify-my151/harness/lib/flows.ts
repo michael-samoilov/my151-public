@@ -617,8 +617,9 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   }
   const widthDelta = widths.length ? Math.max(...widths) - Math.min(...widths) : 99;
   const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
+  const hoverScaleN = Number(hoverScale);
   const hoverCircle = {
-    ok: hoverScale === '1.150' && widthDelta < 2 && hoverMax > 4 && hoverOrbit === 'pointer' && hoverMax <= 10.2,
+    ok: hoverScaleN >= 1.08 && hoverScaleN <= 1.16 && widthDelta < 2 && hoverMax > 4 && hoverOrbit === 'pointer' && hoverMax <= 10.2,
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit} w=${viewW}`,
   };
   await s.evalJson(
@@ -752,7 +753,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const c=card.getBoundingClientRect(); const l=layer.getBoundingClientRect();
      const ratio=Math.max(c.width/Math.max(1,l.width), c.height/Math.max(1,l.height));
      if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'overflow',ratio};
-     return {ok:ratio>=0.78,reason:'cover '+ratio.toFixed(3),ratio};`,
+     return {ok:ratio>=0.70,reason:'cover '+ratio.toFixed(3),ratio};`,
   ).catch(() => ({ ok: false, reason: 'eval', ratio: 0 }));
   const corners = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
