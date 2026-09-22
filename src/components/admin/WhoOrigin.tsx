@@ -1,4 +1,5 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { FlagIcon, TooltipScope, useTooltipChip } from '@/components/admin/platformIcons';
 import { countryName, langName } from '@/components/admin/userPreview';
 import type { WhoBucket } from '../../../api/_aggregate';
@@ -9,6 +10,7 @@ import {
   FLAG_W,
   MARKER_GAP,
   OTHER_KEY,
+  amongTitle,
   balanceRailRows,
   captionKind,
   countryItems,
@@ -213,7 +215,7 @@ function OtherRail({
 
   if (!segment || folded.length === 0) return null;
   return (
-    <div className="relative" data-who-other={kind}>
+    <div className="relative min-w-0" data-who-other={kind}>
       {span && (
         <div
           aria-hidden
@@ -222,9 +224,9 @@ function OtherRail({
           style={{ left: span.left, width: span.width }}
         />
       )}
-      <div ref={hostRef} className="flex flex-col gap-y-1 pt-1">
+      <div ref={hostRef} className="flex w-full min-w-0 flex-col gap-y-1 pt-1">
         {rows.map((row) => (
-          <div key={row.join('-')} data-who-rail-row className="flex justify-end gap-x-2.5">
+          <div key={row.join('-')} data-who-rail-row className="flex w-full min-w-0 justify-end gap-x-2.5">
             {row.map((index) => {
               const item: FitItem = folded[index];
               return (
@@ -285,6 +287,8 @@ export function WhoOrigin({
   const measureRef = useRef<HTMLSpanElement>(null);
   const [barW, setBarW] = useState(0);
   const [widths, setWidths] = useState<Record<string, number>>({});
+  const [langOpen, setLangOpen] = useState(false);
+  const langPanelId = useId();
 
   useLayoutEffect(() => {
     const el = colRef.current;
@@ -451,7 +455,7 @@ export function WhoOrigin({
     const colors = shadeRamp(base);
     return langSegs.map((seg, i) => ({ ...seg, color: colors[i] }));
   }, [langSegs, langColor]);
-  const regionTitle = filter && filter.dim !== 'region' ? `Region among ${filter.value}` : 'Region';
+  const regionTitle = amongTitle('Region', filter, 'region');
 
   return (
     <TooltipScope>
@@ -494,9 +498,9 @@ export function WhoOrigin({
           </div>
         </div>
 
-        <div data-who-countries>
+        <div className="min-w-0" data-who-countries>
           <div className="mb-1 flex items-baseline gap-1.5 text-xs font-bold" data-who-countries-header>
-            <span className={TITLE}>Countries</span>
+            <span className={TITLE}>{amongTitle('Countries', filter)}</span>
             <span className="tabular-nums text-foreground">{headerCounts.all}</span>
             <span className="tabular-nums text-foreground">
               {headerCounts.week}
@@ -532,8 +536,21 @@ export function WhoOrigin({
           ) : null}
         </div>
 
-        <div data-who-languages>
-          <div className={cn(TITLE, 'mb-1')}>Languages</div>
+        <div className="min-w-0" data-who-languages data-who-languages-open={langOpen ? 'true' : 'false'}>
+          <button
+            type="button"
+            className="mb-1 flex w-full cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-left outline-none"
+            aria-expanded={langOpen}
+            aria-controls={langPanelId}
+            data-who-languages-toggle
+            onClick={() => setLangOpen((open) => !open)}
+          >
+            <span className={TITLE}>{amongTitle('Languages', filter)}</span>
+            <ChevronDown
+              aria-hidden
+              className={cn('h-3 w-3 shrink-0 text-muted-foreground transition-transform', langOpen && 'rotate-180')}
+            />
+          </button>
           {sharePainted.length > 0 ? (
             <>
               <ShareBar testId="languages" segments={sharePainted} showShare />
@@ -557,60 +574,64 @@ export function WhoOrigin({
           ) : (
             <div className="h-8 w-full rounded bg-neutral-100" data-who-bar="languages" />
           )}
-        </div>
-
-        <div data-who-unshipped>
-          <div className={cn(TITLE, 'mb-1')}>Unshipped</div>
-          {langSegs.length > 0 ? (
+          <div id={langPanelId} className={langOpen ? 'mt-3 flex min-w-0 flex-col gap-3' : undefined}>
+            {langOpen ? (
             <>
-              <ShareBar testId="unshipped" segments={langPainted} showShare />
-              {markerRow(langSegs, (seg) => {
-                const name = langName(seg.key) ?? seg.key;
-                const paint = langPainted.find((item) => item.key === seg.key);
-                return (
-                  <span
-                    data-who-code={seg.key}
-                    data-who-lang-label="name"
-                    className="whitespace-nowrap text-xs font-semibold leading-none"
-                    style={{ color: paint?.color ?? langColor.get(seg.key) ?? '#404040' }}
-                  >
-                    {name}
-                  </span>
-                );
-              })}
-              <OtherRail
-                segment={langSegs.find((s) => s.folded)}
-                total={tagTotal}
-                kind="lang"
-                textFor={(key) => langName(key) ?? key}
-              />
+              <div className="min-w-0" data-who-unshipped>
+                <div className={cn(TITLE, 'mb-1')}>Unshipped</div>
+                {langSegs.length > 0 ? (
+                  <>
+                    <ShareBar testId="unshipped" segments={langPainted} showShare />
+                    {markerRow(langSegs, (seg) => {
+                      const name = langName(seg.key) ?? seg.key;
+                      const paint = langPainted.find((item) => item.key === seg.key);
+                      return (
+                        <span
+                          data-who-code={seg.key}
+                          data-who-lang-label="name"
+                          className="whitespace-nowrap text-xs font-semibold leading-none"
+                          style={{ color: paint?.color ?? langColor.get(seg.key) ?? '#404040' }}
+                        >
+                          {name}
+                        </span>
+                      );
+                    })}
+                    <OtherRail
+                      segment={langSegs.find((s) => s.folded)}
+                      total={tagTotal}
+                      kind="lang"
+                      textFor={(key) => langName(key) ?? key}
+                    />
+                  </>
+                ) : (
+                  <div className="h-8 w-full rounded bg-neutral-100" data-who-bar="unshipped" />
+                )}
+              </div>
+              <div data-who-overrides>
+                <div className={cn(TITLE, 'mb-1')}>Overrides</div>
+                {overrides.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No language overrides in this window.</p>
+                ) : (
+                  <div className="flex flex-col gap-1">
+                    {overrides.map((row) => (
+                      <div
+                        key={`${row.lang}\t${row.switched}\t${row.country}`}
+                        className="flex items-center gap-2 text-xs font-semibold"
+                        data-who-override={`${row.lang}-${row.switched}`}
+                      >
+                        <span className="tabular-nums">
+                          {row.lang} → {row.switched}
+                        </span>
+                        <span className="tabular-nums">{row.n}</span>
+                        {row.country ? <FlagTip country={row.country} /> : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </>
-          ) : (
-            <div className="h-8 w-full rounded bg-neutral-100" data-who-bar="unshipped" />
-          )}
-        </div>
-
-        <div data-who-overrides>
-          <div className={cn(TITLE, 'mb-1')}>Overrides</div>
-          {overrides.length === 0 ? (
-            <p className="text-xs text-muted-foreground">No language overrides in this window.</p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {overrides.map((row) => (
-                <div
-                  key={`${row.lang}\t${row.switched}\t${row.country}`}
-                  className="flex items-center gap-2 text-xs font-semibold"
-                  data-who-override={`${row.lang}-${row.switched}`}
-                >
-                  <span className="tabular-nums">
-                    {row.lang} → {row.switched}
-                  </span>
-                  <span className="tabular-nums">{row.n}</span>
-                  {row.country ? <FlagTip country={row.country} /> : null}
-                </div>
-              ))}
-            </div>
-          )}
+            ) : null}
+          </div>
         </div>
       </div>
     </TooltipScope>

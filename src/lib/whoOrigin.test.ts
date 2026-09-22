@@ -3,6 +3,7 @@ import { negotiateLocale } from '@/i18n/detect';
 import {
   FLAG_W,
   OTHER_KEY,
+  amongTitle,
   balanceRailRows,
   captionKind,
   countryCounts,
@@ -129,6 +130,16 @@ describe('fitBar', () => {
     expect(unlabeled.ES).toBe(80 - (FLAG_W + 4));
   });
 
+  it('names the slice and the pressed filter', () => {
+    const windows = { dim: 'os' as const, value: 'Windows' };
+    expect(amongTitle('Region', null, 'region')).toBe('Region');
+    expect(amongTitle('Region', windows, 'region')).toBe('Region among Windows');
+    expect(amongTitle('Region', { dim: 'region', value: 'Europe' }, 'region')).toBe('Region');
+    expect(amongTitle('Countries', windows)).toBe('Countries among Windows');
+    expect(amongTitle('Languages', windows)).toBe('Languages among Windows');
+    expect(amongTitle('Countries', null)).toBe('Countries');
+  });
+
   it('lists Other for a region and hides it for a platform slice', () => {
     expect(countryOtherLabeled(null)).toBe(true);
     expect(countryOtherLabeled({ dim: 'region', value: 'Europe' })).toBe(true);
@@ -159,6 +170,16 @@ describe('fitBar', () => {
     expect(balanceRailRows([10, 10, 10, 10, 10, 10], 0, 40)).toEqual([
       [0, 1, 2, 3],
       [4, 5],
+    ]);
+  });
+
+  it('wraps the top rail row inside the container', () => {
+    expect(balanceRailRows([10, 10, 10, 10, 10, 10], 0, 25)).toEqual([
+      [0, 1],
+      [2],
+      [3],
+      [4],
+      [5],
     ]);
   });
 

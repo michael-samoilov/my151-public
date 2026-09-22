@@ -122,6 +122,12 @@ export function countryOtherLabeled(filter: WhoFilter | null): boolean {
   return filter == null || filter.dim === 'region';
 }
 
+/** Header for a Who slice. The pressed bar keeps its own name. */
+export function amongTitle(label: string, filter: WhoFilter | null, ownDim?: WhoDim): string {
+  if (!filter || filter.dim === ownDim) return label;
+  return `${label} among ${filter.value}`;
+}
+
 export function bucketValue(bucket: WhoBucket, dim: WhoDim): string {
   if (dim === 'region') return regionOf(bucket.country);
   if (dim === 'device') return bucket.device || 'Unknown';
@@ -466,8 +472,7 @@ function betterRank(next: number[], prev: number[]): boolean {
 
 /**
  * Contiguous rows of similar width. One row when everything fits.
- * The top row is the longest. It may run wider than the most even split
- * so the rows under it stay shorter. A lower row stays inside the container
+ * The top row is the longest. Every row stays inside the container
  * unless it is a single item.
  */
 export function balanceRailRows(widths: readonly number[], gapPx: number, containerPx: number): number[][] {
@@ -485,37 +490,50 @@ export function balanceRailRows(widths: readonly number[], gapPx: number, contai
     }
   }
 
-  let bestRows: number[][] | null = null;
-  let bestRank: number[] | null = null;
-  const consider = (groups: number[][]) => {
-    const rowWidths = groups.map((group) => spanWidth(widths, gapPx, group[0], group[group.length - 1] + 1));
-    const top = rowWidths[0];
-    const lowerMax = rowWidths.length > 1 ? Math.max(...rowWidths.slice(1)) : -1;
-    const topLongest = rowWidths.length === 1 || top > lowerMax + 0.5;
-    const lowerOverflow = groups.slice(1).some((group, i) => rowWidths[i + 1] > containerPx + 0.5 && group.length > 1);
-    if (lowerOverflow) return;
-    const maxW = Math.max(...rowWidths);
-    const topOverflow = top > containerPx + 0.5 && groups[0].length > 1 ? 1 : 0;
-    const rank = [topLongest ? 0 : 1, topOverflow, maxW, ...rowWidths.map((width) => -width)];
-    if (!bestRank || betterRank(rank, bestRank)) {
-      bestRank = rank;
-      bestRows = groups;
-    }
+  const rowFits = (group: number[]) =>
+    group.length <= 1 || spanWidth(widths, gapPx, group[0], group[group.length - 1] + 1) <= containerPx + 0.5;
+
+  const walk = (rowsLeft: number) => {
+    let bestRows: number[][] | null = null;
+    let bestRank: number[] | null = null;
+    let bestLongest = false;
+    const consider = (groups: number[][]) => {
+      if (groups.some((group) => !rowFits(group))) return;
+      const rowWidths = groups.map((group) => spanWidth(widths, gapPx, group[0], group[group.length - 1] + 1));
+      const top = rowWidths[0];
+      const lowerMax = rowWidths.length > 1 ? Math.max(...rowWidths.slice(1)) : -1;
+      const topLongest = rowWidths.length === 1 || top > lowerMax + 0.5;
+      const maxW = Math.max(...rowWidths);
+      const rank = [topLongest ? 0 : 1, maxW, ...rowWidths.map((width) => -width)];
+      if (!bestRank || betterRank(rank, bestRank)) {
+        bestRank = rank;
+        bestRows = groups;
+        bestLongest = topLongest;
+      }
+    };
+    const place = (from: number, left: number, acc: number[][]) => {
+      if (left === 1) {
+        consider([...acc, all.slice(from)]);
+        return;
+      }
+      const lastStart = n - (left - 1);
+      for (let end = from + 1; end <= lastStart; end++) {
+        const group = all.slice(from, end);
+        if (!rowFits(group)) continue;
+        place(end, left - 1, [...acc, group]);
+      }
+    };
+    place(0, rowsLeft, []);
+    return { bestRows, bestLongest };
   };
-  const walk = (from: number, rowsLeft: number, acc: number[][]) => {
-    if (rowsLeft === 1) {
-      consider([...acc, all.slice(from)]);
-      return;
-    }
-    const lastStart = n - (rowsLeft - 1);
-    for (let end = from + 1; end <= lastStart; end++) {
-      const width = spanWidth(widths, gapPx, from, end);
-      if (acc.length > 0 && width > containerPx + 0.5 && end - from > 1) continue;
-      walk(end, rowsLeft - 1, [...acc, all.slice(from, end)]);
-    }
-  };
-  walk(0, minRows, []);
-  return bestRows ?? [all];
+
+  let fallback: number[][] | null = null;
+  for (let rows = minRows; rows <= n; rows++) {
+    const { bestRows, bestLongest } = walk(rows);
+    if (bestRows) fallback = bestRows;
+    if (bestRows && bestLongest) return bestRows;
+  }
+  return fallback ?? [all];
 }
 
 /** Left-align each name on its segment. A name may hang past a short segment. */

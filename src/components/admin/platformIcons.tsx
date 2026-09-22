@@ -55,7 +55,11 @@ export function FlagIcon({ country, className }: { country?: string; className?:
         alt={code}
         className="h-full w-full rounded-[2px] object-cover"
       />
-      <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[2px] ring-1 ring-inset ring-[#d4d4d4]" />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[2px]"
+        style={{ boxShadow: 'inset 0 0 0 0.5px #d4d4d4' }}
+      />
     </span>
   );
 }
