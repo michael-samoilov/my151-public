@@ -55,11 +55,11 @@ describe('hover-tilt recipe', () => {
     expect(isHoverTiltMaskId('rainbow')).toBe(false);
   });
 
-  it('defaults match hover-tilt tiltFactor 1, scale 1, exitDelay 200', () => {
+  it('defaults match hover-tilt tiltFactor 1, credit-card scale 1.15, exitDelay 200', () => {
     expect(DEFAULT_TILT_FACTOR).toBe(1);
     expect(DEFAULT_HOVER_TILT_RECIPE.tiltFactor).toBe(1);
     expect(DEFAULT_HOVER_TILT_RECIPE.tiltFactorY).toBe(1);
-    expect(DEFAULT_HOVER_TILT_RECIPE.scaleFactor).toBe(1);
+    expect(DEFAULT_HOVER_TILT_RECIPE.scaleFactor).toBeCloseTo(1.15);
     expect(DEFAULT_HOVER_TILT_RECIPE.exitDelay).toBe(200);
     expect(DEFAULT_HOVER_TILT_RECIPE.shadow).toBe(true);
     expect(DEFAULT_HOVER_TILT_RECIPE.glareIntensity).toBeCloseTo(0.6);

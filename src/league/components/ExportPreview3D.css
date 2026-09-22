@@ -68,9 +68,18 @@
       calc(var(--hover-tilt-shadow-blur) * 0.25px)
       calc(var(--hover-tilt-shadow-blur) * -0.125px)
       rgb(0 0 0 / var(--hover-tilt-shadow-opacity, 0));
-  transform: none;
-  -webkit-transform: none;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  -webkit-transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y))
+    translate3d(0, 0, 0.01px);
+  transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y))
+    translate3d(0, 0, 0.01px);
   box-shadow: var(--hover-tilt-custom-shadow, var(--hover-tilt-default-shadow));
+}
+
+.export-foil-hit[data-hover-tilt='1'][data-tilt-active='0'] .export-foil-lift {
+  -webkit-transform: none;
+  transform: none;
 }
 
 .export-foil-hit[data-hover-tilt='1'][data-hover-tilt-shadow='0'] .export-foil-lift {
@@ -404,13 +413,11 @@
     hsla(var(--hover-tilt-glare-hue), 10%, 5%, calc(var(--hover-tilt-glare-intensity) * 0.25)) 90%
   );
   isolation: auto;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  -webkit-transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x))
-    rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
-  transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x))
-    rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
-  will-change: transform, box-shadow, opacity;
+  transform-style: flat;
+  -webkit-transform-style: flat;
+  -webkit-transform: none;
+  transform: none;
+  will-change: auto;
 }
 
 .export-foil[data-hover-tilt='1']::before {
@@ -437,10 +444,6 @@
   mask-composite: var(--hover-tilt-glare-mask-composite, intersect);
 }
 
-.export-foil[data-hover-tilt='1'][data-tilt-active='0'] {
-  -webkit-transform: none;
-  transform: none;
-}
 
 .export-foil[data-hover-tilt='1']::after {
   content: '';

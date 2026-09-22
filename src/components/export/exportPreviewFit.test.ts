@@ -273,15 +273,12 @@ describe('exportPreviewFit', () => {
     expect(tiltInsetForRestGap(10)).toBe(8);
   });
 
-  it('caps combined hypot below the 5.5° diamond without shrinking rest', () => {
-    expect(PREVIEW_DESKTOP_MAX_HYPOT).toBeLessThan(5.5);
-    expect(PREVIEW_DESKTOP_MAX_HYPOT).toBeGreaterThan(2);
+  it('caps combined hypot at the library 10° edge without shrinking rest', () => {
+    expect(PREVIEW_DESKTOP_MAX_HYPOT).toBe(10);
+    expect(PREVIEW_MOBILE_MAX_HYPOT).toBe(10);
     const corner = clampHypot(10, -10, PREVIEW_DESKTOP_MAX_HYPOT);
-    expect(Math.hypot(corner.x, corner.y)).toBeCloseTo(PREVIEW_DESKTOP_MAX_HYPOT, 5);
-    expect(PREVIEW_DESKTOP_MAX_HYPOT).toBe(3.6);
-    expect(PREVIEW_MOBILE_MAX_HYPOT).toBeGreaterThan(PREVIEW_DESKTOP_MAX_HYPOT);
-    expect(PREVIEW_MOBILE_MAX_HYPOT).toBeGreaterThan(4.0);
-    expect(PREVIEW_MOBILE_MAX_HYPOT).toBeLessThan(5.0);
+    expect(Math.hypot(corner.x, corner.y)).toBeCloseTo(10, 5);
+    expect(Math.hypot(10, 0)).toBe(PREVIEW_DESKTOP_MAX_HYPOT);
     expect(previewShadowOpacity(0)).toBe(0.14);
     expect(previewShadowOpacity(PREVIEW_MOBILE_MAX_HYPOT)).toBeGreaterThan(0.36);
     expect(previewShadowOpacity(PREVIEW_MOBILE_MAX_HYPOT)).toBeLessThan(0.5);

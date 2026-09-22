@@ -5,13 +5,12 @@ export const PREVIEW_REST_PAD = 8;
 /** Live tilt must keep this many CSS px between the painted AABB and the pane. */
 export const PREVIEW_TILT_INSET = 24;
 /**
- * Desktop posters fill the pane. Combined 10°+10° (hypot ~14°) shears them
- * into a diamond even when the AABB still fits. Cap the vector length, not
- * rest size. Mobile 5° still shears into the corner. 4.4° sits halfway from
- * the 3.8° rest-rock and that shear, with gutter left.
+ * hover-tilt ROTATION is 10° on one axis. A corner is ~14°. Cap the vector
+ * at 10° so an edge matches the library and a corner does not become a diamond.
+ * clampTiltToBox still keeps the painted card inside the pane.
  */
-export const PREVIEW_DESKTOP_MAX_HYPOT = 3.6;
-export const PREVIEW_MOBILE_MAX_HYPOT = 4.4;
+export const PREVIEW_DESKTOP_MAX_HYPOT = 10;
+export const PREVIEW_MOBILE_MAX_HYPOT = 10;
 export const PREVIEW_DESKTOP_MIN_PX = 1024;
 /** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;

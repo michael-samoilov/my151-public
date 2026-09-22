@@ -133,11 +133,11 @@ test.describe('export foil workshop', () => {
     const lift = page.locator('[data-export-foil-lift]');
     const box = await lift.boundingBox();
     expect(box, 'workshop lift has no box').toBeTruthy();
-    const tl = { x: box!.x + 12, y: box!.y + 12 };
-    const br = { x: box!.x + box!.width - 12, y: box!.y + box!.height - 12 };
-    await page.mouse.move(tl.x - 24, tl.y - 24);
+    const tl = { x: box!.x + box!.width * 0.18, y: box!.y + box!.height * 0.18 };
+    const br = { x: box!.x + box!.width * 0.82, y: box!.y + box!.height * 0.82 };
+    await page.mouse.move(tl.x, tl.y);
     await page.mouse.down();
-    await page.mouse.move(tl.x, tl.y, { steps: 8 });
+    await page.mouse.move(tl.x + 28, tl.y + 8, { steps: 6 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
     await expect.poll(async () => {
       const x = Number(await foil.getAttribute('data-tilt-x'));
@@ -167,18 +167,43 @@ test.describe('export foil workshop', () => {
     await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 }).toBe('1');
     await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('1');
     const lift = page.locator('[data-export-foil-lift]');
+    await expect.poll(async () => foil.getAttribute('data-tilt-scale')).toBe('1.150');
+    await expect.poll(async () => lift.evaluate((el) => getComputedStyle(el).transform)).not.toBe('none');
+    const popped = await lift.boundingBox();
     if ((await foil.getAttribute('data-paused')) !== '1') {
-      await lift.click();
+      await page.evaluate(() => {
+        const hit = document.querySelector('[data-export-tilt-hit]');
+        if (!(hit instanceof HTMLElement)) return;
+        const r = hit.getBoundingClientRect();
+        const x = r.left + r.width / 2;
+        const y = r.top + r.height / 2;
+        const opts = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse' };
+        hit.dispatchEvent(new PointerEvent('pointerdown', opts));
+        hit.dispatchEvent(new PointerEvent('pointerup', opts));
+      });
     }
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
     await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('0');
-    await expect.poll(async () => foil.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+    await expect.poll(async () => lift.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+    await expect.poll(async () => foil.getAttribute('data-tilt-scale')).toBe('1');
+    const flat = await lift.boundingBox();
+    expect(popped && flat && popped.width > flat.width * 1.08, 'tilt scale paints larger than rest').toBeTruthy();
     await expect
       .poll(async () => lift.evaluate((el) => getComputedStyle(el).boxShadow))
       .toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|rgb\(0,\s*0,\s*0\)\s*\/\s*0|none/);
-    await lift.click();
+    await page.evaluate(() => {
+      const hit = document.querySelector('[data-export-tilt-hit]');
+      if (!(hit instanceof HTMLElement)) return;
+      const r = hit.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      const opts = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse' };
+      hit.dispatchEvent(new PointerEvent('pointerdown', opts));
+      hit.dispatchEvent(new PointerEvent('pointerup', opts));
+    });
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
     await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('1');
+    await expect.poll(async () => foil.getAttribute('data-tilt-scale')).toBe('1.150');
   });
 });
 

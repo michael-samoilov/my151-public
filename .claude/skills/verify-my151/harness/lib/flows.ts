@@ -617,9 +617,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   }
   const widthDelta = widths.length ? Math.max(...widths) - Math.min(...widths) : 99;
   const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
-  const desktop = viewW >= 1024;
   const hoverCircle = {
-    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 2.4 && hoverOrbit === 'pointer' && (desktop ? hoverMax < 4.0 : hoverMax <= 4.6),
+    ok: hoverScale === '1.150' && widthDelta < 2 && hoverMax > 4 && hoverOrbit === 'pointer' && hoverMax <= 10.2,
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit} w=${viewW}`,
   };
   await s.evalJson(
@@ -741,7 +740,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     restHold.orbit !== 'pointer' &&
     restAfter.orbit === 'idle' &&
     restAfter.hypot > 2 &&
-    (desktop ? restAfter.hypot <= 3.8 : restAfter.hypot <= 4.6);
+    restAfter.hypot <= 10.2;
   await s.screenshot(ctx.shot('dex-export-hover'));
   await s.click('[data-export-tilt-hit]').catch(() => undefined);
   await sleep(500);
@@ -834,7 +833,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
     ok('dex-export:idle-circular', imgReady && idleCircular, JSON.stringify({ idleA, idleB, idleAlign, idleDelta })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
-    ok('dex-export:tilt-magnitude', hoverCircle.ok && (desktop ? hoverMax <= 3.8 : hoverMax > 3.8 && hoverMax <= 4.6), `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
+    ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax > 4 && hoverMax <= 10.2, `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
     ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
     ok('dex-export:tilt-corner-margin', cornerMargin.ok, cornerMargin.reason),
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
@@ -1550,9 +1549,7 @@ export async function runLeagueGymExportFoilSuite(
     checks.push({ name: 'gym-export:rainbow-foil', status: 'skip', detail: 'league home never hydrated' });
     return checks;
   }
-  const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
-  const desktop = viewW >= 1024;
-  const hypotOk = (h: number) => (desktop ? h > 2.4 && h <= 3.8 : h > 2.4 && h <= 4.6);
+  const hypotOk = (h: number) => h > 2.4 && h <= 10.2;
 
   const openLeague = await s.evalJson<boolean>(
     `const b=document.querySelector('[data-league-export]');

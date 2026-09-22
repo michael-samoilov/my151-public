@@ -92,7 +92,7 @@ export const DEFAULT_TILT_FACTOR = 1;
 export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   tiltFactor: DEFAULT_TILT_FACTOR,
   tiltFactorY: DEFAULT_TILT_FACTOR,
-  scaleFactor: 1,
+  scaleFactor: 1.15,
   enterDelay: 0,
   exitDelay: 200,
   shadow: true,
@@ -151,7 +151,7 @@ export function parseHoverTiltRecipe(input: unknown): HoverTiltRecipe {
   return {
     tiltFactor: readTiltFactor(rec.tiltFactor, base.tiltFactor),
     tiltFactorY: readTiltFactor(rec.tiltFactorY, base.tiltFactorY),
-    scaleFactor: readNumber(rec.scaleFactor, base.scaleFactor, 1, 1.12),
+    scaleFactor: readNumber(rec.scaleFactor, base.scaleFactor, 1, 1.5),
     enterDelay: readNumber(rec.enterDelay, base.enterDelay, 0, 600),
     exitDelay: readNumber(rec.exitDelay, base.exitDelay, 0, 1200),
     shadow: typeof rec.shadow === 'boolean' ? rec.shadow : base.shadow,

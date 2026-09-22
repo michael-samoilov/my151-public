@@ -255,12 +255,12 @@ test.describe('mobile dex export sheet', () => {
     await expect.poll(async () => Math.hypot(
       Number(await foil.getAttribute('data-tilt-x')),
       Number(await foil.getAttribute('data-tilt-y')),
-    ), { timeout: 2000 }).toBeGreaterThan(3.8);
+    ), { timeout: 2000 }).toBeGreaterThan(4);
     const hypot = Math.hypot(
       Number(await foil.getAttribute('data-tilt-x')),
       Number(await foil.getAttribute('data-tilt-y')),
     );
-    expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(4.6);
+    expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(10.2);
     const shadow = await page.evaluate(() => {
       const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
       const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
@@ -612,7 +612,7 @@ test.describe('desktop dex export preview', () => {
     expect(resume.paused, JSON.stringify(resume)).toBe('0');
     expect(resume.sameTick, 're-enable must ease, not snap to orbit start').toBeLessThan(1.2);
     expect(resume.frame1, JSON.stringify(resume)).toBeLessThan(2.4);
-    expect(resume.frame2, JSON.stringify(resume)).toBeLessThanOrEqual(3.8);
+    expect(resume.frame2, JSON.stringify(resume)).toBeLessThanOrEqual(10.2);
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
   });
 
@@ -655,7 +655,7 @@ test.describe('desktop dex export preview', () => {
       Number(await foil.getAttribute('data-tilt-x')),
       Number(await foil.getAttribute('data-tilt-y')),
     );
-    expect(after, 'parked desktop idle hypot').toBeLessThanOrEqual(3.8);
+    expect(after, 'parked desktop idle hypot').toBeLessThanOrEqual(10.2);
   });
 
   test('keeps the tilted card AABB off the overlay corner', async ({ page }, testInfo) => {
@@ -716,8 +716,8 @@ test.describe('desktop dex export preview', () => {
       Number(await foil.getAttribute('data-tilt-x')),
       Number(await foil.getAttribute('data-tilt-y')),
     );
-    expect(hypot, 'desktop peak hypot').toBeGreaterThan(2.4);
-    expect(hypot, 'desktop peak hypot').toBeLessThanOrEqual(3.8);
+    expect(hypot, 'desktop peak hypot').toBeGreaterThan(4);
+    expect(hypot, 'desktop peak hypot').toBeLessThanOrEqual(10.2);
   });
 
   test('paints rainbow holographic foil on the live overlay', async ({ page }, testInfo) => {

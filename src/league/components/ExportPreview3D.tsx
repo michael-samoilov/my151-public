@@ -147,6 +147,9 @@ export function ExportPreview3D({
     const stageSize = stageSizeRef.current;
     const cardW = cardMaxRef.current.w;
     const cardH = cardMaxRef.current.h;
+    const tiltNowEarly = tiltRef.current ?? DEFAULT_HOVER_TILT_RECIPE;
+    const activation = Math.min(1, Math.max(0, springARef.current.value));
+    const liveScale = 1 + (tiltNowEarly.scaleFactor - 1) * activation;
     const tiltPad = (() => {
       if (stageSize.w <= 0 || cardW <= 0) return PREVIEW_TILT_INSET;
       const restGap = Math.min((stageSize.w - cardW) / 2, (stageSize.h - cardH) / 2);
@@ -156,8 +159,8 @@ export function ExportPreview3D({
       const clamped = clampTiltToBox({
         tiltX: rotateX,
         tiltY: rotateY,
-        cardWidth: cardW,
-        cardHeight: cardH,
+        cardWidth: cardW * liveScale,
+        cardHeight: cardH * liveScale,
         boxWidth: stageSize.w,
         boxHeight: stageSize.h,
         pad: tiltPad,
@@ -187,11 +190,10 @@ export function ExportPreview3D({
     el.style.setProperty('--gradient-x', `${pointerX}%`);
     el.style.setProperty('--gradient-y', `${pointerY}%`);
     const recipeNow = recipeRef.current;
-    const tiltNow = tiltRef.current ?? DEFAULT_HOVER_TILT_RECIPE;
+    const tiltNow = tiltNowEarly;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
     const foil =
       foilMag <= recipeNow.deadDeg ? 0 : Math.min(1, (foilMag - recipeNow.deadDeg) / span);
-    const activation = Math.min(1, Math.max(0, springARef.current.value));
     el.style.setProperty('--foil-opacity', foil.toFixed(3));
     el.style.setProperty('--hover-tilt-opacity', activation.toFixed(3));
     const angle = (Math.atan2(ny - 0.5, nx - 0.5) * 180) / Math.PI;
@@ -202,7 +204,6 @@ export function ExportPreview3D({
     const shadowY = ny * 2 - 1;
     const shadowOn = tiltNow.shadow && tiltNow.shadowBlur > 0;
     const shadowAmt = shadowOn ? activation * 0.125 : 0;
-    const liveScale = 1 + (tiltNow.scaleFactor - 1) * activation;
     el.style.setProperty('--shadow-x', shadowX.toFixed(4));
     el.style.setProperty('--shadow-y', shadowY.toFixed(4));
     el.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
@@ -220,6 +221,7 @@ export function ExportPreview3D({
       hit.setAttribute('data-shadow-x', shadowX.toFixed(2));
       hit.setAttribute('data-shadow-y', shadowY.toFixed(2));
       hit.setAttribute('data-shadow-opacity', shadowAmt.toFixed(3));
+      hit.setAttribute('data-tilt-active', activation > 0.02 ? '1' : '0');
     }
     if (!el.style.getPropertyValue('--foil-pointLight')) {
       const vars = foilRecipeCssVars(recipeNow);
@@ -323,10 +325,13 @@ export function ExportPreview3D({
         tiltDeg: recipeRef.current.idleTilt,
         pad: PREVIEW_REST_PAD,
       });
-      cardMaxRef.current = { w: size.width, h: size.height };
+      const pop = Math.max(1, tiltRef.current?.scaleFactor ?? 1);
+      const restW = size.width / pop;
+      const restH = size.height / pop;
+      cardMaxRef.current = { w: restW, h: restH };
       setCardMax((prev) => {
-        if (Math.abs(prev.w - size.width) < 1 && Math.abs(prev.h - size.height) < 1) return prev;
-        return { w: size.width, h: size.height };
+        if (Math.abs(prev.w - restW) < 1 && Math.abs(prev.h - restH) < 1) return prev;
+        return { w: restW, h: restH };
       });
     };
     measureRef.current = apply;
@@ -628,6 +633,7 @@ export function ExportPreview3D({
           data-tilt-perspective={String(PREVIEW_PERSPECTIVE_PX)}
           data-hover-tilt="1"
           data-hover-tilt-shadow="1"
+          data-tilt-active="0"
           data-pointer-box="rest"
         >
           <div className="export-foil-lift" data-export-foil-lift>
