@@ -51,20 +51,10 @@ export function GymBadges({ n, size = 7 }: { n: number; size?: number }) {
   );
 }
 
-/** Elite Four stars: one to three on a single row; four as a fixed 2×2 grid. */
 export function Stars({ n, size = 10 }: { n: number; size?: number }) {
   const marks = Array.from({ length: n }, (_, i) => starMark(size, i));
-  if (n <= 3) {
-    return (
-      <span className="inline-flex shrink-0 flex-nowrap items-center" style={{ gap: GAP_PX }}>
-        {marks}
-      </span>
-    );
-  }
-  const cols = 2;
-  const width = cols * size + (cols - 1) * GAP_PX;
   return (
-    <span className="inline-grid shrink-0 grid-cols-2" style={{ width, gap: GAP_PX }}>
+    <span className="inline-flex shrink-0 flex-nowrap items-center" style={{ gap: GAP_PX }}>
       {marks}
     </span>
   );

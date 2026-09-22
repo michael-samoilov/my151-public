@@ -43,8 +43,9 @@ two rows up with synthetic `TouchEvent`s, reading the boundary and the
 `[data-stage-tint]` cells while the touch is down. It then sets the gym type
 to Fire, opens the TM picker, types `surf`, and asserts Surf is listed
 (`league-change:tm-search-ignores-type-chip`) even though the Fire chip is
-still selected. The oracle is the store:
-`state.cards[i].lines[j].branch` and `.boundaries`, and `.powerups[row]`.
+still selected. It also measures the four Elite Four stars on the open card
+(`league:elite-stars-one-row`): one y, four increasing x. The oracle is the
+store: `state.cards[i].lines[j].branch` and `.boundaries`, and `.powerups[row]`.
 
 ## Gotchas
 
