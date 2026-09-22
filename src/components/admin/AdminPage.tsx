@@ -11,7 +11,8 @@ import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
 import { Panel, Seg, Kpi } from '@/components/admin/ui';
 import { ClampChip, PlatformStacks } from '@/components/admin/PlatformStacks';
 import { WhoOrigin } from '@/components/admin/WhoOrigin';
-import { clampedN, type PlatformClamp, type PlatformJoint } from '@/lib/platformStacks';
+import { clampedN, type PlatformJoint } from '@/lib/platformStacks';
+import { filteredN, type WhoFilter } from '@/lib/whoOrigin';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { cn, displayName } from '@/lib/utils';
@@ -1594,7 +1595,7 @@ export function AdminPage() {
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
   const [page, setPage] = useState<'analytics' | 'feedback'>('analytics');
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
-  const [whoClamp, setWhoClamp] = useState<PlatformClamp | null>(null);
+  const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -1713,7 +1714,7 @@ export function AdminPage() {
   );
 
   const pickTool = useCallback((next: ToolSlice) => {
-    setWhoClamp(null);
+    setWhoFilter(null);
     setTool(next);
     try {
       localStorage.setItem(TOOL_KEY, next);
@@ -1894,7 +1895,14 @@ export function AdminPage() {
           const whoJoints = whoSrc.joints ?? [];
           const whoOs = whoSrc.os ?? {};
           const whoN = whoSrc.users;
-          const whoClampedN = whoClamp && whoJoints.length ? clampedN(whoJoints, whoClamp) : null;
+          const whoBuckets = slice.whoBuckets ?? [];
+          const whoFilteredN = !whoFilter
+            ? null
+            : whoBuckets.length
+              ? filteredN(whoBuckets, whoFilter)
+              : whoFilter.dim !== 'region' && whoJoints.length
+                ? clampedN(whoJoints, { dim: whoFilter.dim, value: whoFilter.value })
+                : null;
 
           // Build depth: device split when available, else the slice total.
           const depthCurve =
@@ -2029,13 +2037,13 @@ export function AdminPage() {
             <Panel
               title="Who"
               sub={
-                whoClampedN != null
-                  ? [`${whoClampedN} of ${whoN}`]
+                whoFilteredN != null
+                  ? [`${whoFilteredN} of ${whoN}`]
                   : [TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(whoN)]
               }
               actions={
-                whoClamp && whoJoints.length > 0 ? (
-                  <ClampChip clamp={whoClamp} onClear={() => setWhoClamp(null)} />
+                whoFilter ? (
+                  <ClampChip clamp={whoFilter} onClear={() => setWhoFilter(null)} />
                 ) : undefined
               }
             >
@@ -2045,13 +2053,16 @@ export function AdminPage() {
                   os={whoOs}
                   browsers={whoSrc.browsers}
                   joints={whoJoints}
-                  clamp={whoClamp}
-                  onClamp={setWhoClamp}
+                  buckets={whoBuckets}
+                  filter={whoFilter}
+                  onFilter={setWhoFilter}
                 />
                 <WhoOrigin
                   countries={whoSrc.countries}
-                  buckets={slice.whoBuckets ?? []}
+                  buckets={whoBuckets}
                   countries7d={slice.countries7d ?? 0}
+                  filter={whoFilter}
+                  onFilter={setWhoFilter}
                 />
               </div>
             </Panel>

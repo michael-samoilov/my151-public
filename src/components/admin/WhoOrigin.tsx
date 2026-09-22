@@ -2,7 +2,8 @@ import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'reac
 import { FlagIcon, TooltipScope, useTooltipChip } from '@/components/admin/platformIcons';
 import { countryName } from '@/components/admin/userPreview';
 import type { WhoBucket } from '../../../api/_aggregate';
-import type { Region } from '@/lib/countryRegions';
+import { REGION_COLORS, regionOf, type Region } from '@/lib/countryRegions';
+import { inBarKind, inkOn, muteColor } from '@/lib/platformStacks';
 import { cn } from '@/lib/utils';
 import {
   FLAG_W,
@@ -13,13 +14,16 @@ import {
   formatShare,
   languageOverrides,
   layoutNameLabels,
+  mixWho,
   regionBar,
   unshippedTags,
+  visibleBuckets,
   type FitSegment,
+  type WhoFilter,
 } from '@/lib/whoOrigin';
 
-const RING = 'inset 0 0 0 2px #fff, inset 0 0 0 4px #0a0a0a';
 const TITLE = 'text-xs font-bold uppercase tracking-wide text-muted-foreground';
+const PRESSED_INSET = 3;
 
 function FlagTip({ country }: { country: string }) {
   const { open, toggle, onPointerEnter, onPointerLeave } = useTooltipChip();
@@ -51,45 +55,82 @@ function FlagTip({ country }: { country: string }) {
 function ShareBar({
   segments,
   color,
-  selectedKey,
+  pressedKey,
   onSelect,
   testId,
+  showShare,
 }: {
-  segments: { key: string; label?: string; leftPx: number; widthPx: number; color?: string }[];
+  segments: { key: string; label?: string; leftPx: number; widthPx: number; color?: string; pct?: number }[];
   color?: string;
-  selectedKey?: string;
+  pressedKey?: string;
   onSelect?: (key: string) => void;
   testId: string;
+  showShare?: boolean;
 }) {
+  const kinds = showShare
+    ? inBarKind(
+        segments.map((s) => ({
+          key: s.key,
+          n: 0,
+          pct: s.pct ?? 0,
+          leftPx: s.leftPx,
+          widthPx: s.widthPx,
+          fill: s.color ?? color ?? '#404040',
+        })),
+      )
+    : [];
   return (
     <div className="relative h-8 w-full overflow-hidden rounded" data-who-bar={testId}>
       {segments.map((seg, i) => {
-        const fill = seg.color ?? color ?? '#404040';
-        const on = selectedKey === seg.key;
-        const shadows = [
-          on ? RING : '',
-          i < segments.length - 1 ? 'inset -1px 0 0 #fff' : '',
-        ].filter(Boolean);
+        const on = pressedKey === seg.key;
+        const base = seg.color ?? color ?? '#404040';
+        const fill = pressedKey && !on ? muteColor(base) : base;
+        const inset = on ? PRESSED_INSET : 0;
+        const kind = kinds[i] ?? 'none';
+        const pct = seg.pct ?? 0;
+        const label = kind === 'pct' ? `${pct}%` : kind === 'int' ? String(pct) : '';
         const style = {
-          left: seg.leftPx,
-          width: i === segments.length - 1 ? `calc(100% - ${seg.leftPx}px)` : Math.max(0, seg.widthPx),
+          top: inset,
+          height: `calc(100% - ${inset * 2}px)`,
+          left: seg.leftPx + inset,
+          width:
+            i === segments.length - 1
+              ? `calc(100% - ${seg.leftPx + inset * 2}px)`
+              : Math.max(0, seg.widthPx - inset * 2),
           backgroundColor: fill,
-          boxShadow: shadows.join(', ') || undefined,
+          color: inkOn(fill),
+          boxShadow: !on && i < segments.length - 1 ? 'inset -1px 0 0 #fff' : undefined,
+          paddingLeft: label ? '0.375rem' : 0,
+          paddingRight: label ? '0.375rem' : 0,
         };
+        const body = <span className="truncate">{label}</span>;
         if (!onSelect) {
-          return <div key={seg.key} className="absolute top-0 h-full" style={style} />;
+          return (
+            <div
+              key={seg.key}
+              data-who-seg={seg.key}
+              className="absolute box-border flex items-center overflow-hidden text-xs font-bold tabular-nums"
+              style={style}
+            >
+              {body}
+            </div>
+          );
         }
         return (
           <button
             key={seg.key}
             type="button"
             data-who-region={seg.key}
+            data-who-seg={seg.key}
+            data-who-pressed={on ? 'true' : 'false'}
             aria-pressed={on}
             aria-label={seg.label ?? seg.key}
             onClick={() => onSelect(seg.key)}
-            className="absolute top-0 h-full cursor-pointer border-0 p-0"
+            className="absolute box-border flex cursor-pointer items-center overflow-hidden rounded-sm border-0 text-left text-xs font-bold tabular-nums outline-none focus:outline-none focus-visible:outline-none"
             style={style}
-          />
+          >
+            {body}
+          </button>
         );
       })}
     </div>
@@ -108,13 +149,14 @@ function OtherRail({
   const folded = segment?.folded ?? [];
   if (!segment || folded.length === 0) return null;
   return (
-    <div className="relative mt-1" data-who-other={kind}>
+    <div className="relative" data-who-other={kind}>
       <div
         aria-hidden
+        data-who-leader="rail"
         className="absolute top-0 h-px bg-neutral-400"
         style={{ left: segment.leftPx, right: 0 }}
       />
-      <div className="flex flex-wrap justify-end gap-x-2.5 gap-y-1 pt-1.5">
+      <div className="flex flex-wrap justify-end gap-x-2.5 gap-y-1 pt-1">
         {folded.map((item, i) => (
           <span key={item.key} className="inline-flex items-center gap-1 text-xs font-semibold tabular-nums">
             {kind === 'flag' ? <FlagTip country={item.key} /> : <span>{item.key}</span>}
@@ -127,8 +169,17 @@ function OtherRail({
 }
 
 function markerRow(segments: FitSegment[], render: (seg: FitSegment) => ReactNode) {
+  const other = segments.find((seg) => seg.key === OTHER_KEY);
   return (
     <div className="relative mt-1.5 h-[22px] overflow-visible">
+      {other && other.folded && other.folded.length > 0 && (
+        <div
+          aria-hidden
+          data-who-leader="stem"
+          className="pointer-events-none absolute w-px bg-neutral-400"
+          style={{ left: other.leftPx, top: -7, bottom: -1 }}
+        />
+      )}
       {segments.map((seg) =>
         seg.key === OTHER_KEY ? null : (
           <div key={seg.key} className="absolute top-0 flex h-[22px] items-center" style={{ left: seg.leftPx }}>
@@ -144,16 +195,19 @@ export function WhoOrigin({
   countries,
   buckets,
   countries7d,
+  filter,
+  onFilter,
 }: {
   countries: Record<string, number>;
   buckets: readonly WhoBucket[];
   countries7d: number;
+  filter: WhoFilter | null;
+  onFilter: (next: WhoFilter | null) => void;
 }) {
   const colRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [barW, setBarW] = useState(0);
   const [widths, setWidths] = useState<Record<string, number>>({});
-  const [selected, setSelected] = useState<Region | null>(null);
 
   useLayoutEffect(() => {
     const el = colRef.current;
@@ -165,17 +219,53 @@ export function WhoOrigin({
     return () => ro.disconnect();
   }, []);
 
-  const regions = useMemo(() => regionBar(countries, barW), [countries, barW]);
-  const active = regions.some((r) => r.key === selected) ? selected : (regions[0]?.key ?? null);
-  const countryList = useMemo(
-    () => (active ? countryItems(countries, active) : []),
-    [countries, active],
+  const platformReady = buckets.length > 0 && buckets.every((b) => typeof b.device === 'string');
+  const regionCounts = useMemo(
+    () => (platformReady ? mixWho(buckets, 'region', filter) : countries),
+    [platformReady, buckets, filter, countries],
   );
-  const tags = useMemo(() => (active ? unshippedTags(buckets, active) : []), [buckets, active]);
+  const regions = useMemo(() => regionBar(regionCounts, barW), [regionCounts, barW]);
+  const defaultRegion = useMemo(() => {
+    const base = platformReady ? mixWho(buckets, 'region', null) : countries;
+    const ranked = regionBar(base, 100);
+    return ranked[0]?.key ?? null;
+  }, [platformReady, buckets, countries]);
+  const openRegion: Region | null =
+    filter?.dim === 'region' ? (filter.value as Region) : defaultRegion;
+  const visible = useMemo(
+    () => (platformReady ? visibleBuckets(buckets, filter, defaultRegion) : []),
+    [platformReady, buckets, filter, defaultRegion],
+  );
+  const countryList = useMemo(() => {
+    if (platformReady) {
+      const counts = new Map<string, number>();
+      for (const bucket of visible) {
+        if (!bucket.country) continue;
+        const key = bucket.country.toUpperCase();
+        counts.set(key, (counts.get(key) ?? 0) + bucket.n);
+      }
+      return [...counts.entries()].map(([key, n]) => ({ key, n }));
+    }
+    return openRegion ? countryItems(countries, openRegion) : [];
+  }, [platformReady, visible, openRegion, countries]);
+  const tags = useMemo(
+    () => (platformReady ? unshippedTags(visible, null) : openRegion ? unshippedTags(buckets, openRegion) : []),
+    [platformReady, visible, buckets, openRegion],
+  );
   const overrides = useMemo(
-    () => (active ? languageOverrides(buckets, active) : []),
-    [buckets, active],
+    () =>
+      platformReady
+        ? languageOverrides(visible, null)
+        : openRegion
+          ? languageOverrides(buckets, openRegion)
+          : [],
+    [platformReady, visible, buckets, openRegion],
   );
+  const pressedRegion = filter?.dim === 'region' ? filter.value : undefined;
+  const pressRegion = (key: string) => {
+    if (filter?.dim === 'region' && filter.value === key) onFilter(null);
+    else onFilter({ dim: 'region', value: key });
+  };
 
   const measureKey = `${regions.map((r) => r.label).join('|')}\n${tags.map((t) => t.key).join('|')}`;
   useLayoutEffect(() => {
@@ -214,7 +304,16 @@ export function WhoOrigin({
   const countryTotal = countryList.reduce((sum, it) => sum + it.n, 0);
   const tagTotal = tags.reduce((sum, it) => sum + it.n, 0);
   const allTime = distinctCountries(countries);
-  const regionColor = regions.find((r) => r.key === active)?.color;
+  const singleRegion = filter?.dim === 'region' || !filter ? openRegion : null;
+  const countrySegsPainted = countrySegs.map((seg) => ({
+    ...seg,
+    color: singleRegion
+      ? REGION_COLORS[singleRegion]
+      : seg.key === OTHER_KEY
+        ? '#737373'
+        : (REGION_COLORS[regionOf(seg.key)] ?? '#737373'),
+  }));
+  const regionTitle = filter && filter.dim !== 'region' ? `Region among ${filter.value}` : 'Region';
 
   return (
     <TooltipScope>
@@ -226,7 +325,7 @@ export function WhoOrigin({
         />
         <div data-who-region-module>
           <div className="mb-1 flex items-baseline justify-between gap-3">
-            <div className={TITLE}>Region</div>
+            <div className={TITLE}>{regionTitle}</div>
             <div className="flex items-baseline gap-1.5 text-xs font-bold" data-who-countries-header>
               <span className={TITLE}>Countries</span>
               <span className="tabular-nums text-foreground">{allTime}</span>
@@ -239,8 +338,9 @@ export function WhoOrigin({
           <ShareBar
             testId="region"
             segments={regions}
-            selectedKey={active ?? undefined}
-            onSelect={(key) => setSelected(key as Region)}
+            pressedKey={pressedRegion}
+            onSelect={pressRegion}
+            showShare
           />
           <div className="relative mt-1.5 h-[22px] overflow-visible">
             {nameLabels.map((lab) => {
@@ -251,10 +351,13 @@ export function WhoOrigin({
                   key={lab.key}
                   type="button"
                   data-who-region-label={lab.key}
-                  aria-pressed={lab.key === active}
-                  onClick={() => setSelected(region.key)}
-                  className="absolute top-0 h-[22px] cursor-pointer whitespace-nowrap text-xs font-semibold leading-[22px]"
-                  style={{ left: lab.leftPx, color: region.color }}
+                  aria-pressed={lab.key === pressedRegion}
+                  onClick={() => pressRegion(region.key)}
+                  className="absolute top-0 h-[22px] cursor-pointer whitespace-nowrap text-xs font-semibold leading-[22px] outline-none focus:outline-none focus-visible:outline-none"
+                  style={{
+                    left: lab.leftPx,
+                    color: pressedRegion && region.key !== pressedRegion ? muteColor(region.color) : region.color,
+                  }}
                 >
                   {region.label}
                 </button>
@@ -264,7 +367,7 @@ export function WhoOrigin({
         </div>
 
         <div data-who-countries>
-          <ShareBar testId="countries" segments={countrySegs} color={regionColor} />
+          <ShareBar testId="countries" segments={countrySegsPainted} showShare />
           {markerRow(countrySegs, (seg) => (
             <FlagTip country={seg.key} />
           ))}

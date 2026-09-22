@@ -361,12 +361,15 @@ export function heatmap(records: SessionRecord[]): { hours: number[]; matrix: nu
   return { hours, matrix };
 }
 
-/** One bucket of browsers that share a country, browser language, served locale, and pin. */
+/** One bucket of browsers that share a country, language, pin, and platform. */
 export interface WhoBucket {
   country: string;
   lang: string;
   locale: string;
   switched: string;
+  device: string;
+  os: string;
+  browser: string;
   n: number;
 }
 
@@ -417,7 +420,7 @@ export function aggregate(records: SessionRecord[], now: number): Aggregates {
 
 const WINDOW_7D_MS = 7 * DAY_MS;
 
-/** Group records so Who can split language and pins by country. */
+/** Group records so Who can split language, pins, and platform by country. */
 export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
   const map = new Map<string, WhoBucket>();
   for (const r of records) {
@@ -425,10 +428,13 @@ export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
     const lang = r.lang ?? '';
     const locale = r.locale ?? '';
     const switched = r.switched ?? '';
-    const k = `${country}\t${lang}\t${locale}\t${switched}`;
+    const device = r.device || 'Unknown';
+    const os = r.os || 'Unknown';
+    const browser = r.browser || 'Unknown';
+    const k = `${country}\t${lang}\t${locale}\t${switched}\t${device}\t${os}\t${browser}`;
     const cur = map.get(k);
     if (cur) cur.n += 1;
-    else map.set(k, { country, lang, locale, switched, n: 1 });
+    else map.set(k, { country, lang, locale, switched, device, os, browser, n: 1 });
   }
   return [...map.values()].sort(
     (a, b) => b.n - a.n || a.country.localeCompare(b.country) || a.lang.localeCompare(b.lang),

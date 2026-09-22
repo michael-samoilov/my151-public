@@ -8,9 +8,12 @@ import {
   fitBar,
   formatShare,
   languageOverrides,
+  mixWho,
   regionBar,
   unshippedTags,
+  visibleBuckets,
   type FitItem,
+  type WhoBucket,
 } from '@/lib/whoOrigin';
 
 const EUROPE: FitItem[] = [
@@ -45,6 +48,21 @@ describe('fitBar', () => {
     expect(segs.at(-1)?.folded?.map((f) => f.key)[0]).toBe('CZ');
   });
 
+  it('keeps a flag that hangs past its segment when it clears the previous flag', () => {
+    const items = [
+      { key: 'GB', n: 60 },
+      { key: 'ES', n: 22 },
+      { key: 'NL', n: 10 },
+      { key: 'CH', n: 8 },
+    ];
+    const segs = fitBar(items, 100, () => FLAG_W);
+    expect(segs.map((s) => s.key)).toEqual(['GB', 'ES', 'NL', OTHER_KEY]);
+    const nl = segs.find((s) => s.key === 'NL');
+    expect(nl && nl.widthPx).toBeLessThan(FLAG_W);
+    const es = segs.find((s) => s.key === 'ES');
+    expect(es && nl && nl.leftPx - (es.leftPx + FLAG_W)).toBeCloseTo(4, 5);
+  });
+
   it('folds a code when the previous code does not clear 4px', () => {
     const items = [
       { key: 'pt-BR', n: 10 },
@@ -67,12 +85,12 @@ describe('formatShare', () => {
 });
 
 describe('language modules', () => {
-  const buckets = [
-    { country: 'FR', lang: 'fr', locale: 'fr', switched: 'en', n: 1 },
-    { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', n: 1 },
-    { country: 'US', lang: 'pt-BR', locale: 'en', switched: '', n: 4 },
-    { country: 'GB', lang: 'nl', locale: 'en', switched: '', n: 2 },
-    { country: 'DE', lang: 'de', locale: 'de', switched: '', n: 3 },
+  const buckets: WhoBucket[] = [
+    { country: 'FR', lang: 'fr', locale: 'fr', switched: 'en', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 1 },
+    { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
+    { country: 'US', lang: 'pt-BR', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 4 },
+    { country: 'GB', lang: 'nl', locale: 'en', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 2 },
+    { country: 'DE', lang: 'de', locale: 'de', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 3 },
   ];
 
   it('drops a pin that matches negotiation', () => {
@@ -87,6 +105,25 @@ describe('language modules', () => {
   it('counts only unshipped tags in the selected region', () => {
     expect(unshippedTags(buckets, 'North America').map((t) => t.key)).toEqual(['pt-BR']);
     expect(unshippedTags(buckets, 'Europe').map((t) => t.key)).toEqual(['nl']);
+  });
+
+  it('redraws other charts inside the pressed segment', () => {
+    expect(mixWho(buckets, 'region', { dim: 'device', value: 'Mobile' })).toEqual({
+      'North America': 4,
+      Europe: 1,
+    });
+    expect(mixWho(buckets, 'device', { dim: 'region', value: 'Europe' })).toEqual({
+      Mobile: 1,
+      Desktop: 5,
+    });
+    expect(mixWho(buckets, 'device', { dim: 'device', value: 'Mobile' })).toEqual({
+      Mobile: 5,
+      Desktop: 6,
+    });
+    const mobile = visibleBuckets(buckets, { dim: 'device', value: 'Mobile' }, 'North America');
+    expect(mobile.map((b) => b.country).sort()).toEqual(['FR', 'US']);
+    const europe = visibleBuckets(buckets, { dim: 'region', value: 'Europe' }, 'North America');
+    expect(europe.map((b) => b.country).sort()).toEqual(['DE', 'FR', 'GB']);
   });
 
   it('builds country children from the same country tally', () => {

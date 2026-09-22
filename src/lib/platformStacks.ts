@@ -78,8 +78,12 @@ export function brandFill(value: string): string {
   return BRAND[value] ?? FALLBACK_FILL;
 }
 
+export function muteColor(color: string): string {
+  return mixHex(color, TRACK, MUTE_MIX);
+}
+
 export function muteFill(value: string): string {
-  return mixHex(brandFill(value), TRACK, MUTE_MIX);
+  return muteColor(brandFill(value));
 }
 
 export function sliceFill(key: string, dim: PlatformDim, clamp: PlatformClamp | null): string {
@@ -249,14 +253,15 @@ export function layoutLabels(
   return labels;
 }
 
-export function dimTitle(dim: PlatformDim, clamp: PlatformClamp | null): string {
+export function dimTitle(dim: PlatformDim, clamp: { dim: string; value: string } | null): string {
   const name = dim === 'os' ? 'OS' : dim === 'device' ? 'Device' : 'Browser';
   if (!clamp || clamp.dim === dim) return name;
   return `${name} among ${clamp.value}`;
 }
 
-export function clampChipLabel(clamp: PlatformClamp): string {
-  const dim = clamp.dim === 'device' ? 'Device' : clamp.dim === 'os' ? 'OS' : 'Browser';
+export function clampChipLabel(clamp: { dim: string; value: string }): string {
+  const dim =
+    clamp.dim === 'device' ? 'Device' : clamp.dim === 'os' ? 'OS' : clamp.dim === 'browser' ? 'Browser' : 'Region';
   return `${dim}: ${clamp.value}`;
 }
 

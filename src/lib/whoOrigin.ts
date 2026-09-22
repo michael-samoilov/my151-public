@@ -27,6 +27,7 @@ export interface FitItem {
 export interface FitSegment {
   key: string;
   n: number;
+  pct: number;
   leftPx: number;
   widthPx: number;
   folded?: FitItem[];
@@ -45,11 +46,40 @@ export interface OverrideRow {
   n: number;
 }
 
+function placeSegments(shown: FitItem[], folded: FitItem[], barWidthPx: number): FitSegment[] {
+  const shownTotal = shown.reduce((sum, it) => sum + it.n, 0);
+  let x = 0;
+  return shown.map((it, i) => {
+    const widthPx = i === shown.length - 1 ? Math.max(0, barWidthPx - x) : (it.n / shownTotal) * barWidthPx;
+    const seg: FitSegment = {
+      key: it.key,
+      n: it.n,
+      pct: shownTotal > 0 ? Math.round((it.n / shownTotal) * 100) : 0,
+      leftPx: x,
+      widthPx,
+    };
+    if (it.key === OTHER_KEY) seg.folded = folded;
+    x += widthPx;
+    return seg;
+  });
+}
+
+/** Kept items stay separate. Everything after them is one Other segment. */
+function trialBar(ranked: readonly FitItem[], keepCount: number, barWidthPx: number): FitSegment[] {
+  const kept = ranked.slice(0, keepCount);
+  const folded = ranked.slice(keepCount);
+  const shown: FitItem[] = folded.length
+    ? [...kept, { key: OTHER_KEY, n: folded.reduce((sum, it) => sum + it.n, 0) }]
+    : kept;
+  return placeSegments(shown, folded, barWidthPx);
+}
+
 /**
- * Walk largest to smaller. Keep the next marker while the gap in front of it
- * is at least 4px. That gap is the previous segment width minus the previous
- * marker width. The first item that would overlap, and every smaller item,
- * folds into one Other segment. Widths are drawn again after that cut.
+ * Walk largest to smaller. Try the next item as its own segment, with Other
+ * holding only the items after it, and draw those widths. Keep it while its
+ * marker, left-aligned on that segment, clears the previous marker by 4px.
+ * A marker may hang past its segment. The first overlap, and every smaller
+ * item, folds into Other.
  */
 export function fitBar(
   items: readonly FitItem[],
@@ -60,30 +90,16 @@ export function fitBar(
     .filter((it) => it.n > 0 && it.key !== OTHER_KEY)
     .sort((a, b) => b.n - a.n || a.key.localeCompare(b.key));
   if (ranked.length === 0 || barWidthPx <= 0) return [];
-  const total = ranked.reduce((sum, it) => sum + it.n, 0);
-  const widths = ranked.map((it) => (it.n / total) * barWidthPx);
-  let cut = ranked.length;
+  let keep = 1;
   for (let i = 1; i < ranked.length; i++) {
-    const gap = widths[i - 1] - markerWidth(ranked[i - 1].key);
-    if (gap < MARKER_GAP) {
-      cut = i;
-      break;
-    }
+    const segs = trialBar(ranked, i + 1, barWidthPx);
+    const prev = segs[i - 1];
+    const curr = segs[i];
+    const gap = curr.leftPx - (prev.leftPx + markerWidth(prev.key));
+    if (gap < MARKER_GAP) break;
+    keep = i + 1;
   }
-  const kept = ranked.slice(0, cut);
-  const folded = ranked.slice(cut);
-  const shown: FitItem[] = folded.length
-    ? [...kept, { key: OTHER_KEY, n: folded.reduce((sum, it) => sum + it.n, 0) }]
-    : kept;
-  const shownTotal = shown.reduce((sum, it) => sum + it.n, 0);
-  let x = 0;
-  return shown.map((it, i) => {
-    const widthPx = i === shown.length - 1 ? Math.max(0, barWidthPx - x) : (it.n / shownTotal) * barWidthPx;
-    const seg: FitSegment = { key: it.key, n: it.n, leftPx: x, widthPx };
-    if (it.key === OTHER_KEY) seg.folded = folded;
-    x += widthPx;
-    return seg;
-  });
+  return trialBar(ranked, keep, barWidthPx);
 }
 
 /** A share under 10% keeps one decimal. The % sign is optional. */
@@ -91,6 +107,65 @@ export function formatShare(n: number, total: number, withSign: boolean): string
   const pct = total > 0 ? (n / total) * 100 : 0;
   const text = pct < 10 ? (Math.round(pct * 10) / 10).toFixed(1) : String(Math.round(pct));
   return withSign ? `${text}%` : text;
+}
+
+export type WhoDim = 'device' | 'os' | 'browser' | 'region';
+
+export interface WhoFilter {
+  dim: WhoDim;
+  value: string;
+}
+
+export function bucketValue(bucket: WhoBucket, dim: WhoDim): string {
+  if (dim === 'region') return regionOf(bucket.country);
+  if (dim === 'device') return bucket.device || 'Unknown';
+  if (dim === 'os') return bucket.os || 'Unknown';
+  return bucket.browser || 'Unknown';
+}
+
+/** True when the bucket belongs in this chart. The driving chart keeps its full mix. */
+export function bucketInFilter(bucket: WhoBucket, filter: WhoFilter | null, driving?: WhoDim): boolean {
+  if (!filter || filter.dim === driving) return true;
+  return bucketValue(bucket, filter.dim) === filter.value;
+}
+
+export function mixWho(
+  buckets: readonly WhoBucket[],
+  dim: WhoDim,
+  filter: WhoFilter | null,
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const bucket of buckets) {
+    if (bucket.n <= 0 || !bucketInFilter(bucket, filter, dim)) continue;
+    const key = bucketValue(bucket, dim);
+    if (!key) continue;
+    out[key] = (out[key] ?? 0) + bucket.n;
+  }
+  return out;
+}
+
+export function filteredN(buckets: readonly WhoBucket[], filter: WhoFilter | null): number {
+  return buckets.reduce((sum, bucket) => sum + (bucketInFilter(bucket, filter) ? bucket.n : 0), 0);
+}
+
+/**
+ * Buckets for the country bar, Unshipped, and Overrides.
+ * A platform filter keeps every country in that slice.
+ * A region filter, or no filter, keeps one region. The default region is the largest.
+ */
+export function visibleBuckets(
+  buckets: readonly WhoBucket[],
+  filter: WhoFilter | null,
+  defaultRegion: Region | null,
+): WhoBucket[] {
+  const platform = filter != null && filter.dim !== 'region';
+  const region = filter?.dim === 'region' ? filter.value : defaultRegion;
+  return buckets.filter((bucket) => {
+    if (bucket.n <= 0 || !bucketInFilter(bucket, filter)) return false;
+    if (platform) return true;
+    if (!region) return true;
+    return regionOf(bucket.country) === region;
+  });
 }
 
 export function distinctCountries(countries: Record<string, number>): number {
@@ -105,6 +180,7 @@ export interface RegionSlice {
   key: Region;
   label: string;
   n: number;
+  pct: number;
   leftPx: number;
   widthPx: number;
   color: string;
@@ -132,6 +208,7 @@ export function regionBar(countries: Record<string, number>, barWidthPx: number)
       key,
       label: REGION_SHORT[key],
       n,
+      pct: Math.round((n / total) * 100),
       leftPx: x,
       widthPx,
       color: REGION_COLORS[key],
@@ -151,12 +228,12 @@ export function countryItems(countries: Record<string, number>, region: Region):
   return items;
 }
 
-/** Browser tags the app does not ship, inside one region. */
-export function unshippedTags(buckets: readonly WhoBucket[], region: Region): FitItem[] {
+/** Browser tags the app does not ship. `region` null keeps every country in the list. */
+export function unshippedTags(buckets: readonly WhoBucket[], region: Region | null): FitItem[] {
   const counts = new Map<string, number>();
   for (const bucket of buckets) {
     if (!bucket.lang || bucket.n <= 0) continue;
-    if (regionOf(bucket.country) !== region) continue;
+    if (region != null && regionOf(bucket.country) !== region) continue;
     if (matchLocale(bucket.lang) !== null) continue;
     counts.set(bucket.lang, (counts.get(bucket.lang) ?? 0) + bucket.n);
   }
@@ -167,11 +244,11 @@ export function unshippedTags(buckets: readonly WhoBucket[], region: Region): Fi
  * A pin is an override only when `switched` differs from the locale negotiation
  * would serve for that browser tag. A pin that matches negotiation stays out.
  */
-export function languageOverrides(buckets: readonly WhoBucket[], region: Region): OverrideRow[] {
+export function languageOverrides(buckets: readonly WhoBucket[], region: Region | null): OverrideRow[] {
   const map = new Map<string, OverrideRow>();
   for (const bucket of buckets) {
     if (!bucket.switched || !bucket.lang || bucket.n <= 0) continue;
-    if (regionOf(bucket.country) !== region) continue;
+    if (region != null && regionOf(bucket.country) !== region) continue;
     if (negotiateLocale([bucket.lang]) === bucket.switched) continue;
     const country = bucket.country.toUpperCase();
     const k = `${bucket.lang}\t${bucket.switched}\t${country}`;
