@@ -4,8 +4,9 @@ import { matchLocale, negotiateLocale } from '@/i18n/detect';
 
 export type { WhoBucket };
 
-/** Flag art is 18×12. A later flag stays when it clears the previous one by this gap. */
+/** Flag art is 18×12. A later flag stays unless it overlaps the previous one. */
 export const FLAG_W = 18;
+/** Names stay this far apart so the words do not collide. */
 export const MARKER_GAP = 4;
 
 export const OTHER_KEY = '\0other';
@@ -14,7 +15,7 @@ export const REGION_SHORT: Record<Region, string> = {
   'North America': 'North America',
   Europe: 'Europe',
   'Asia-Pacific': 'APAC',
-  'Latin America': 'Latin America',
+  'Latin America': 'LATAM',
   'Middle East & Africa': 'ME&A',
   Unknown: 'Unknown',
 };
@@ -77,7 +78,7 @@ function trialBar(ranked: readonly FitItem[], keepCount: number, barWidthPx: num
 /**
  * Walk largest to smaller. Try the next item as its own segment, with Other
  * holding only the items after it, and draw those widths. Keep it while its
- * marker, left-aligned on that segment, clears the previous marker by 4px.
+ * marker, left-aligned on that segment, does not overlap the previous marker.
  * A marker may hang past its segment. The first overlap, and every smaller
  * item, folds into Other.
  */
@@ -96,7 +97,7 @@ export function fitBar(
     const prev = segs[i - 1];
     const curr = segs[i];
     const gap = curr.leftPx - (prev.leftPx + markerWidth(prev.key));
-    if (gap < MARKER_GAP) break;
+    if (gap < 0) break;
     keep = i + 1;
   }
   return trialBar(ranked, keep, barWidthPx);
@@ -272,7 +273,7 @@ export function languageOverrides(buckets: readonly WhoBucket[], region: Region 
   );
 }
 
-/** Place each name on its segment. A name that does not fit extends to the left. */
+/** Left-align each name on its segment. A name may hang past a short segment. */
 export function layoutNameLabels(
   slices: readonly { key: string; leftPx: number; widthPx: number }[],
   widths: readonly number[],
@@ -280,11 +281,13 @@ export function layoutNameLabels(
 ): NameLabel[] {
   const placed = slices.map((slice, i) => {
     const widthPx = widths[i] ?? 0;
-    const fits = widthPx <= slice.widthPx;
-    const preferred = fits ? slice.leftPx + (slice.widthPx - widthPx) / 2 : slice.leftPx + slice.widthPx - widthPx;
-    return { key: slice.key, leftPx: preferred, widthPx };
+    return { key: slice.key, leftPx: slice.leftPx, widthPx };
   });
   if (placed.length === 0 || barWidthPx <= 0) return placed;
+  for (let i = 1; i < placed.length; i++) {
+    const minLeft = placed[i - 1].leftPx + placed[i - 1].widthPx + MARKER_GAP;
+    if (placed[i].leftPx < minLeft) placed[i].leftPx = minLeft;
+  }
   const last = placed[placed.length - 1];
   if (last.leftPx + last.widthPx > barWidthPx) last.leftPx = barWidthPx - last.widthPx;
   for (let i = placed.length - 2; i >= 0; i--) {

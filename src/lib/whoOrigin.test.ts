@@ -9,6 +9,7 @@ import {
   fitBar,
   formatShare,
   languageOverrides,
+  layoutNameLabels,
   mixWho,
   regionBar,
   unshippedTags,
@@ -36,17 +37,23 @@ const EUROPE: FitItem[] = [
 ].map(([key, n]) => ({ key: String(key), n: Number(n) }));
 
 describe('fitBar', () => {
-  it('keeps Europe through Spain at the phone sketch width', () => {
+  it('keeps a flag whose gap is under 4px when the flags do not overlap', () => {
     const segs = fitBar(EUROPE, 342, () => FLAG_W);
-    expect(segs.map((s) => s.key)).toEqual(['GB', 'IT', 'FR', 'NL', 'DE', 'ES', OTHER_KEY]);
-    expect(segs.at(-1)?.folded?.map((f) => f.key)).toEqual(['CH', 'IE', 'SE', 'DK', 'CZ', 'HR', 'NO', 'GR', 'PL']);
-    expect(segs[0].widthPx).toBeCloseTo((65 / 164) * 342, 5);
+    expect(segs.map((s) => s.key)).toEqual(['GB', 'IT', 'FR', 'NL', 'DE', 'ES', 'CH', OTHER_KEY]);
+    const es = segs.find((s) => s.key === 'ES');
+    const ch = segs.find((s) => s.key === 'CH');
+    const gap = es && ch ? ch.leftPx - (es.leftPx + FLAG_W) : -1;
+    expect(gap).toBeGreaterThan(0);
+    expect(gap).toBeLessThan(4);
+    expect(segs.at(-1)?.folded?.map((f) => f.key)[0]).toBe('IE');
   });
 
-  it('also keeps Switzerland through Denmark at the desktop content width', () => {
+  it('keeps Czechia when its flag clears Denmark without a 4px margin', () => {
     const segs = fitBar(EUROPE, 992, () => FLAG_W);
-    expect(segs.map((s) => s.key)).toEqual(['GB', 'IT', 'FR', 'NL', 'DE', 'ES', 'CH', 'IE', 'SE', 'DK', OTHER_KEY]);
-    expect(segs.at(-1)?.folded?.map((f) => f.key)[0]).toBe('CZ');
+    expect(segs.map((s) => s.key)).toEqual([
+      'GB', 'IT', 'FR', 'NL', 'DE', 'ES', 'CH', 'IE', 'SE', 'DK', 'CZ', OTHER_KEY,
+    ]);
+    expect(segs.at(-1)?.folded?.map((f) => f.key)[0]).toBe('HR');
   });
 
   it('keeps a flag that hangs past its segment when it clears the previous flag', () => {
@@ -64,7 +71,29 @@ describe('fitBar', () => {
     expect(es && nl && nl.leftPx - (es.leftPx + FLAG_W)).toBeCloseTo(4, 5);
   });
 
-  it('folds a code when the previous code does not clear 4px', () => {
+  it('left-aligns a region name and shifts the next name when they would overlap', () => {
+    const clear = layoutNameLabels(
+      [
+        { key: 'NA', leftPx: 0, widthPx: 80 },
+        { key: 'EU', leftPx: 80, widthPx: 40 },
+      ],
+      [30, 20],
+      200,
+    );
+    expect(clear.map((l) => l.leftPx)).toEqual([0, 80]);
+    const hung = layoutNameLabels(
+      [
+        { key: 'LATAM', leftPx: 100, widthPx: 20 },
+        { key: 'MEA', leftPx: 120, widthPx: 16 },
+      ],
+      [48, 36],
+      200,
+    );
+    expect(hung[0].leftPx).toBe(100);
+    expect(hung[1].leftPx).toBe(152);
+  });
+
+  it('folds a code when its marker overlaps the previous marker', () => {
     const items = [
       { key: 'pt-BR', n: 10 },
       { key: 'nl', n: 4 },

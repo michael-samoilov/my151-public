@@ -147,18 +147,50 @@ function OtherRail({
   kind: 'flag' | 'code';
 }) {
   const folded = segment?.folded ?? [];
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [span, setSpan] = useState<{ left: number; width: number } | null>(null);
+  const labelKey = folded.map((item) => item.key).join('|');
+
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    if (!row) return;
+    const read = () => {
+      const labels = [...row.querySelectorAll<HTMLElement>('[data-who-rail-label]')];
+      const host = row.parentElement;
+      if (labels.length === 0 || !host) {
+        setSpan(null);
+        return;
+      }
+      const origin = host.getBoundingClientRect().left;
+      const left = Math.min(...labels.map((el) => el.getBoundingClientRect().left)) - origin;
+      const right = Math.max(...labels.map((el) => el.getBoundingClientRect().right)) - origin;
+      const next = { left, width: Math.max(0, right - left) };
+      setSpan((prev) => (prev && prev.left === next.left && prev.width === next.width ? prev : next));
+    };
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(row);
+    return () => ro.disconnect();
+  }, [labelKey]);
+
   if (!segment || folded.length === 0) return null;
   return (
     <div className="relative" data-who-other={kind}>
-      <div
-        aria-hidden
-        data-who-leader="rail"
-        className="absolute top-0 h-px bg-neutral-400"
-        style={{ left: segment.leftPx, right: 0 }}
-      />
-      <div className="flex flex-wrap justify-end gap-x-2.5 gap-y-1 pt-1">
+      {span && (
+        <div
+          aria-hidden
+          data-who-leader="rail"
+          className="absolute top-0 h-px bg-neutral-400"
+          style={{ left: span.left, width: span.width }}
+        />
+      )}
+      <div ref={rowRef} className="flex flex-wrap justify-end gap-x-2.5 gap-y-1 pt-1">
         {folded.map((item, i) => (
-          <span key={item.key} className="inline-flex items-center gap-1 text-xs font-semibold tabular-nums">
+          <span
+            key={item.key}
+            data-who-rail-label
+            className="inline-flex items-center gap-1 text-xs font-semibold tabular-nums"
+          >
             {kind === 'flag' ? <FlagTip country={item.key} /> : <span>{item.key}</span>}
             <span>{formatShare(item.n, total, i === 0)}</span>
           </span>
@@ -177,7 +209,7 @@ function markerRow(segments: FitSegment[], render: (seg: FitSegment) => ReactNod
           aria-hidden
           data-who-leader="stem"
           className="pointer-events-none absolute w-px bg-neutral-400"
-          style={{ left: other.leftPx, top: -7, bottom: -1 }}
+          style={{ left: other.leftPx + Math.max(0, other.widthPx - 6), top: -7, bottom: -1 }}
         />
       )}
       {segments.map((seg) =>
