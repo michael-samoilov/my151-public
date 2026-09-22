@@ -3,6 +3,7 @@ import { negotiateLocale } from '@/i18n/detect';
 import {
   FLAG_W,
   OTHER_KEY,
+  countryCounts,
   countryItems,
   distinctCountries,
   fitBar,
@@ -124,6 +125,10 @@ describe('language modules', () => {
     expect(mobile.map((b) => b.country).sort()).toEqual(['FR', 'US']);
     const europe = visibleBuckets(buckets, { dim: 'region', value: 'Europe' }, 'North America');
     expect(europe.map((b) => b.country).sort()).toEqual(['DE', 'FR', 'GB']);
+    expect(regionBar(countryCounts(buckets, { dim: 'device', value: 'Mobile' }), 100).map((r) => r.key)).toEqual([
+      'North America',
+      'Europe',
+    ]);
   });
 
   it('builds country children from the same country tally', () => {

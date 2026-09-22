@@ -14,7 +14,7 @@ import {
   formatShare,
   languageOverrides,
   layoutNameLabels,
-  mixWho,
+  countryCounts,
   regionBar,
   unshippedTags,
   visibleBuckets,
@@ -221,12 +221,12 @@ export function WhoOrigin({
 
   const platformReady = buckets.length > 0 && buckets.every((b) => typeof b.device === 'string');
   const regionCounts = useMemo(
-    () => (platformReady ? mixWho(buckets, 'region', filter) : countries),
+    () => (platformReady ? countryCounts(buckets, filter) : countries),
     [platformReady, buckets, filter, countries],
   );
   const regions = useMemo(() => regionBar(regionCounts, barW), [regionCounts, barW]);
   const defaultRegion = useMemo(() => {
-    const base = platformReady ? mixWho(buckets, 'region', null) : countries;
+    const base = platformReady ? countryCounts(buckets, null) : countries;
     const ranked = regionBar(base, 100);
     return ranked[0]?.key ?? null;
   }, [platformReady, buckets, countries]);

@@ -144,6 +144,17 @@ export function mixWho(
   return out;
 }
 
+/** Country totals inside the filter. A region press does not hide the other regions. */
+export function countryCounts(buckets: readonly WhoBucket[], filter: WhoFilter | null): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const bucket of buckets) {
+    if (bucket.n <= 0 || !bucket.country || !bucketInFilter(bucket, filter, 'region')) continue;
+    const key = bucket.country.toUpperCase();
+    out[key] = (out[key] ?? 0) + bucket.n;
+  }
+  return out;
+}
+
 export function filteredN(buckets: readonly WhoBucket[], filter: WhoFilter | null): number {
   return buckets.reduce((sum, bucket) => sum + (bucketInFilter(bucket, filter) ? bucket.n : 0), 0);
 }
