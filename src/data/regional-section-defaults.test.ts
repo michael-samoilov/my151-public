@@ -6,17 +6,18 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { en } from '@/i18n/catalogs/en';
 import { fitLabel, getSectionLabel, getSectionLabelChain, measureLabelWidth } from '@/lib/sectionOutlines';
 
-/** First-stage faces for Regional Bird: Michael's grid, minus Rowlet, plus Natu and Chatot. */
-const REGIONAL_BIRD_ROOTS = [16, 21, 163, 177, 276, 278, 396, 441, 519, 661, 731, 931, 940];
+/** First-stage faces for Regional Bird: screenshot lines plus Natu, Chatot, and Rookidee. */
+const REGIONAL_BIRD_ROOTS = [16, 21, 163, 177, 276, 278, 396, 441, 519, 661, 731, 821, 931, 940];
 
-/** First-stage faces from Michael's Regional Bug screenshot, national-dex order. */
-const REGIONAL_BUG_ROOTS = [10, 13, 165, 167, 265, 401, 540, 543, 664, 736, 917, 919, 953];
+/** First-stage faces for Regional Bug: screenshot lines plus Blipbug. */
+const REGIONAL_BUG_ROOTS = [10, 13, 165, 167, 265, 401, 540, 543, 664, 736, 824, 917, 919, 953];
 
 const LILLIPUP_LINE = [506, 507, 508];
 const ROWLET_LINE = [722, 723, 724];
 const NATU_LINE = [177, 178];
 const CHATOT = 441;
-const ROOKIDEE = 821;
+const ROOKIDEE_LINE = [821, 822, 823];
+const BLIPBUG_LINE = [824, 825, 826];
 
 function arch(id: string) {
   const found = ARCHETYPES.find((a) => a.id === id);
@@ -91,7 +92,15 @@ describe('regional section defaults', () => {
   it('sets Regional Bird and Regional Bug to the screenshot evo lines, exclusively', () => {
     expect(rootsOf(arch('early-bird').pokemonIds)).toEqual(REGIONAL_BIRD_ROOTS);
     expect(rootsOf(arch('early-bug').pokemonIds)).toEqual(REGIONAL_BUG_ROOTS);
-    expect(arch('early-bird').pokemonIds).not.toContain(ROOKIDEE);
+
+    for (const id of ROOKIDEE_LINE) {
+      expect(arch('early-bird').pokemonIds, `bird ${id}`).toContain(id);
+      expect(archetypeGroupIdsHolding(id), `rookidee ${id}`).toEqual(['early-bird']);
+    }
+    for (const id of BLIPBUG_LINE) {
+      expect(arch('early-bug').pokemonIds, `bug ${id}`).toContain(id);
+      expect(archetypeGroupIdsHolding(id), `blipbug ${id}`).toEqual(['early-bug']);
+    }
 
     for (const id of arch('early-bird').pokemonIds) {
       expect(archetypeGroupIdsHolding(id), `bird ${id}`).toEqual(['early-bird']);
