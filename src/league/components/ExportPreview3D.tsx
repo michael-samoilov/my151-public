@@ -254,12 +254,23 @@ export function ExportPreview3D({
     });
   }, []);
 
+  /** Unrotated box. The lift's transformed rect inverts left and right. */
   const restPointerBox = useCallback((): DOMRect | null => {
     const hit = hitRef.current;
-    const lift = hit?.querySelector('[data-export-foil-lift]');
-    if (lift instanceof HTMLElement && lift.offsetWidth > 0) return lift.getBoundingClientRect();
-    if (hit && hit.offsetWidth > 0) return hit.getBoundingClientRect();
-    return null;
+    if (!hit || hit.offsetWidth <= 0) return null;
+    const lift = hit.querySelector('[data-export-foil-lift]');
+    const width = lift instanceof HTMLElement && lift.offsetWidth > 0 ? lift.offsetWidth : hit.clientWidth;
+    const height = lift instanceof HTMLElement && lift.offsetHeight > 0 ? lift.offsetHeight : hit.clientHeight;
+    const hitRect = hit.getBoundingClientRect();
+    const scale = Number(getComputedStyle(hit).getPropertyValue('--hover-tilt-scale')) || 1;
+    const visualW = width * scale;
+    const visualH = height * scale;
+    return new DOMRect(
+      hitRect.left + (hit.offsetWidth - visualW) / 2,
+      hitRect.top + (hit.offsetHeight - visualH) / 2,
+      visualW,
+      visualH,
+    );
   }, []);
 
   const beginPointer = useCallback((clientX: number, clientY: number) => {

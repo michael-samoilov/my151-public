@@ -100,15 +100,19 @@ export function applySpringOpts(
  * writes onto rAF, then this spring ticks every frame.
  */
 export function tickSpring(spring: HoverTiltSpring, dtMs: number): number {
-  const frames = Math.min(Math.max(dtMs, 0), 64) / 16.67;
-  const delta = spring.target - spring.value;
-  if (Math.abs(delta) < spring.precision && Math.abs(spring.velocity) < spring.precision) {
-    spring.value = spring.target;
-    spring.velocity = 0;
-    return spring.value;
+  const capped = Math.min(Math.max(dtMs, 0), 64);
+  const steps = Math.max(1, Math.round(capped / 16.67));
+  const frames = capped / 16.67 / steps;
+  for (let i = 0; i < steps; i++) {
+    const delta = spring.target - spring.value;
+    if (Math.abs(delta) < spring.precision && Math.abs(spring.velocity) < spring.precision) {
+      spring.value = spring.target;
+      spring.velocity = 0;
+      return spring.value;
+    }
+    spring.velocity += (spring.stiffness * delta - spring.damping * spring.velocity) * frames;
+    spring.value += spring.velocity * frames;
   }
-  spring.velocity += (spring.stiffness * delta - spring.damping * spring.velocity) * frames;
-  spring.value += spring.velocity * frames;
   return spring.value;
 }
 

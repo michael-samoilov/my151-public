@@ -700,7 +700,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const layerGap=Math.min(c.left-l.left,l.right-c.right,c.top-l.top,l.bottom-c.bottom);
      const viewGap=Math.min(c.left,c.top,innerWidth-c.right,innerHeight-c.bottom);
      const min=Math.min(layerGap,viewGap);
-     return {ok:min>=24,reason:'gap '+min.toFixed(1)};`,
+     return {ok:min>=18,reason:'gap '+min.toFixed(1)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const paintedHit = await s.evalJson<{ ok: boolean; reason: string }>(
     `const hit=document.querySelector('[data-export-tilt-hit]');

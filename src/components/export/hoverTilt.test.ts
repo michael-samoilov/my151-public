@@ -92,6 +92,15 @@ describe('hover-tilt springs', () => {
     expect(spring.value).toBeCloseTo(1, 2);
   });
 
+  it('stays finite when a frame is slow', () => {
+    const spring = createSpring(0);
+    spring.target = 1;
+    for (let i = 0; i < 40; i++) tickSpring(spring, 64);
+    expect(Number.isFinite(spring.value)).toBe(true);
+    expect(spring.value).toBeGreaterThan(0.5);
+    expect(spring.value).toBeLessThan(1.5);
+  });
+
   it('exit opts ease back to rest instead of jumping to 0', () => {
     const spring = createSpring(0.9);
     applySpringOpts(spring, HOVER_TILT_EXIT_SPRING);
