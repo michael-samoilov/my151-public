@@ -343,7 +343,12 @@ export function BottomSheet({
           // space available — a percentage height needs a definite ancestor, and
           // with `maxHeight` alone the chain stays `auto` and the form can only
           // overflow and scroll, which is the fold the tail was hiding behind.
-          height: size === 'full' || keyboardOpen ? `calc(100% - ${gap}px)` : undefined,
+          height:
+            exportChrome && maxHeightPx != null
+              ? `${maxHeightPx}px`
+              : size === 'full' || keyboardOpen
+                ? `calc(100% - ${gap}px)`
+                : undefined,
           maxHeight:
             maxHeightPx != null
               ? `${maxHeightPx}px`
@@ -376,7 +381,13 @@ export function BottomSheet({
         {/* Its own scroll container: a long form scrolls here, and
             `overscroll-contain` stops that scroll continuing into the app once
             it reaches an end. */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div
+          className={
+            exportChrome
+              ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+              : 'min-h-0 flex-1 overflow-y-auto overscroll-contain'
+          }
+        >
           <SheetKeyboardContext.Provider value={keyboardOpen}>{children}</SheetKeyboardContext.Provider>
         </div>
       </div>

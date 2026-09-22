@@ -15,7 +15,6 @@ export function DexExportFoilControls({
   onTilt,
   holoBlend,
   onHoloBlend,
-  mobileSheet = false,
 }: {
   recipe: FoilRecipe;
   onRecipe: (next: FoilRecipe) => void;
@@ -23,97 +22,93 @@ export function DexExportFoilControls({
   onTilt: (next: HoverTiltRecipe) => void;
   holoBlend: FoilHoloBlend;
   onHoloBlend: (next: FoilHoloBlend) => void;
-  mobileSheet?: boolean;
 }) {
   const holo = recipe.layers.holographic;
-  const pad = mobileSheet ? 'px-2 py-1.5' : 'px-3 py-2';
 
   return (
-    <div className="space-y-3">
-      <fieldset className={`space-y-2 rounded-md ${pad}`} data-export-foil-rainbow>
-        <legend className="text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
-          Rainbow
-        </legend>
-        <label className="flex items-center gap-2 text-sm text-foreground">
+    <div className="shrink-0 space-y-1 border-b px-3 py-2" data-export-foil-pinned>
+      <div className="grid grid-cols-[4.75rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
+        <RowLabel name="rainbow">Rainbow</RowLabel>
+        <div className="flex min-w-0 items-center gap-2" data-export-foil-rainbow>
           <input
             type="checkbox"
             checked={holo.on}
+            aria-label="Rainbow on ink"
             data-foil-on="holographic"
             onChange={(e) => onRecipe(withFoilLayer(recipe, 'holographic', { on: e.target.checked }))}
           />
-          Rainbow on ink
-        </label>
-        <Range
-          label="Amount"
-          min={0}
-          max={1}
-          step={0.01}
-          value={holo.amount}
-          testId="holographic"
-          onChange={(amount) => onRecipe(withFoilLayer(recipe, 'holographic', { amount }))}
-        />
-      </fieldset>
+          <Range
+            label="Amount"
+            min={0}
+            max={1}
+            step={0.01}
+            value={holo.amount}
+            testId="holographic"
+            onChange={(amount) => onRecipe(withFoilLayer(recipe, 'holographic', { amount }))}
+          />
+        </div>
 
-      <fieldset className={`space-y-2 rounded-md ${pad}`} data-export-foil-glare>
-        <legend className="text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
-          Glare
-        </legend>
-        <Range
-          label="Intensity"
-          min={0}
-          max={1}
-          step={0.01}
-          value={tilt.glareIntensity}
-          testId="glareIntensity"
-          onChange={(glareIntensity) => onTilt({ ...tilt, glareIntensity })}
-        />
-      </fieldset>
+        <RowLabel name="glare">Glare</RowLabel>
+        <div className="min-w-0" data-export-foil-glare>
+          <Range
+            label="Intensity"
+            min={0}
+            max={1}
+            step={0.01}
+            value={tilt.glareIntensity}
+            testId="glareIntensity"
+            onChange={(glareIntensity) => onTilt({ ...tilt, glareIntensity })}
+          />
+        </div>
 
-      <fieldset className={`space-y-2 rounded-md ${pad}`} data-export-foil-shadow>
-        <legend className="text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
-          Shadow
-        </legend>
-        <label className="flex items-center gap-2 text-sm text-foreground">
+        <RowLabel name="shadow">Shadow</RowLabel>
+        <div className="flex min-w-0 items-center gap-2" data-export-foil-shadow>
           <input
             type="checkbox"
             checked={tilt.shadow}
+            aria-label="Drop shadow"
             data-export-shadow-toggle
             onChange={(e) => onTilt({ ...tilt, shadow: e.target.checked })}
           />
-          Drop shadow
-        </label>
-        <Range
-          label="Blur"
-          min={0}
-          max={80}
-          step={1}
-          value={tilt.shadowBlur}
-          suffix=" px"
-          testId="shadowBlur"
-          onChange={(shadowBlur) => onTilt({ ...tilt, shadowBlur })}
-        />
-      </fieldset>
+          <Range
+            label="Blur"
+            min={0}
+            max={80}
+            step={1}
+            value={tilt.shadowBlur}
+            suffix=" px"
+            testId="shadowBlur"
+            onChange={(shadowBlur) => onTilt({ ...tilt, shadowBlur })}
+          />
+        </div>
 
-      <fieldset className={`space-y-2 rounded-md ${pad}`} data-export-foil-blend>
-        <legend className="text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
-          Blend
-        </legend>
-        <BlendSelect
-          label="Rainbow"
-          testId="holoBlend"
-          value={holoBlend}
-          options={FOIL_HOLO_BLEND_CANDIDATES}
-          onChange={onHoloBlend}
-        />
-        <BlendSelect
-          label="Glare"
-          testId="blendMode"
-          value={tilt.blendMode}
-          options={HOVER_TILT_BLEND_MODES}
-          onChange={(blendMode) => onTilt({ ...tilt, blendMode })}
-        />
-      </fieldset>
+        <RowLabel name="blend">Blend</RowLabel>
+        <div className="grid min-w-0 grid-cols-2 gap-1" data-export-foil-blend>
+          <BlendSelect
+            label="Rainbow"
+            testId="holoBlend"
+            value={holoBlend}
+            options={FOIL_HOLO_BLEND_CANDIDATES}
+            onChange={onHoloBlend}
+          />
+          <BlendSelect
+            label="Glare"
+            testId="blendMode"
+            value={tilt.blendMode}
+            options={HOVER_TILT_BLEND_MODES}
+            onChange={(blendMode) => onTilt({ ...tilt, blendMode })}
+          />
+        </div>
+      </div>
     </div>
+  );
+}
+
+function RowLabel({ name, children }: { name: string; children: string }) {
+  return (
+    <span className="text-sm font-semibold leading-none text-foreground" data-export-foil-label={name}>
+      {children}
+    </span>
   );
 }
 
@@ -138,24 +133,23 @@ function Range({
 }) {
   const shown = Number.isInteger(step) && step >= 1 ? value.toFixed(0) : value.toFixed(2);
   return (
-    <label className="block text-xs text-muted-foreground">
-      <span className="flex justify-between gap-2">
-        <span>{label}</span>
-        <span className="tabular-nums text-foreground">
-          {shown}
-          {suffix}
-        </span>
-      </span>
+    <label className="flex min-w-0 flex-1 items-center gap-2 text-xs text-muted-foreground">
+      <span className="sr-only">{label}</span>
       <input
         type="range"
         min={min}
         max={max}
         step={step}
         value={value}
+        aria-label={label}
         data-foil-slider={testId}
-        className="mt-1 w-full"
+        className="min-w-0 flex-1"
         onChange={(e) => onChange(Number(e.target.value))}
       />
+      <span className="w-12 shrink-0 text-right tabular-nums text-foreground">
+        {shown}
+        {suffix}
+      </span>
     </label>
   );
 }
@@ -174,23 +168,21 @@ function BlendSelect<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <label className="block text-xs text-muted-foreground">
-      <span className="mb-1 block">{label}</span>
-      <select
-        className="w-full rounded-md border bg-background px-2 py-1 text-sm text-foreground"
-        value={value}
-        data-export-foil-select={testId}
-        onChange={(e) => {
-          const next = options.find((opt) => opt === e.target.value);
-          if (next) onChange(next);
-        }}
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-    </label>
+    <select
+      className="w-full min-w-0 rounded-md border bg-background px-1 py-1 text-sm text-foreground"
+      value={value}
+      aria-label={label}
+      data-export-foil-select={testId}
+      onChange={(e) => {
+        const next = options.find((opt) => opt === e.target.value);
+        if (next) onChange(next);
+      }}
+    >
+      {options.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
+    </select>
   );
 }

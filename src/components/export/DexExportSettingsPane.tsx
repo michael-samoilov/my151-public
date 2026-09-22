@@ -73,7 +73,7 @@ export function DexExportSettingsPane({
   };
 
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-background">
+    <div className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-background">
       {!mobileSheet && (
         <div className="shrink-0 border-b">
           <div className="flex h-11 items-center justify-between px-3 py-2">
@@ -90,17 +90,17 @@ export function DexExportSettingsPane({
         </div>
       )}
 
+      <DexExportFoilControls
+        recipe={recipe}
+        onRecipe={onRecipe}
+        tilt={tilt}
+        onTilt={onTilt}
+        holoBlend={holoBlend}
+        onHoloBlend={onHoloBlend}
+      />
+
       <ExportSettingsScroll>
         <div className={mobileSheet ? 'space-y-2 px-3 pb-2 pt-1' : 'space-y-4 px-3 pb-2 pt-3'}>
-          <DexExportFoilControls
-            recipe={recipe}
-            onRecipe={onRecipe}
-            tilt={tilt}
-            onTilt={onTilt}
-            holoBlend={holoBlend}
-            onHoloBlend={onHoloBlend}
-            mobileSheet={mobileSheet}
-          />
           <div>
             <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
               {t('viewSettings.sortHeading')}

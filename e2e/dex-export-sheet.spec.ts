@@ -30,6 +30,49 @@ async function waitPreviewReady(page: Page) {
   });
 }
 
+async function foilLabelsInPane(page: Page): Promise<{ ok: boolean; reason: string }> {
+  return page.evaluate(() => {
+    const chrome = document.querySelector('[data-export-chrome]');
+    const sort = document.querySelector('[data-export-sort="build-order"]');
+    if (!(chrome instanceof HTMLElement) || !(sort instanceof HTMLElement)) {
+      return { ok: false, reason: 'missing pane' };
+    }
+    const pane = chrome.getBoundingClientRect();
+    const names = ['rainbow', 'glare', 'shadow', 'blend'] as const;
+    const expectLabel = { rainbow: 'Rainbow', glare: 'Glare', shadow: 'Shadow', blend: 'Blend' };
+    const rows: string[] = [];
+    let lowest = pane.top;
+    for (const name of names) {
+      const label = document.querySelector(`[data-export-foil-label="${name}"]`);
+      const control = document.querySelector(`[data-export-foil-${name}]`);
+      if (!(label instanceof HTMLElement) || !(control instanceof HTMLElement)) {
+        return { ok: false, reason: `missing ${name}` };
+      }
+      if (label.textContent?.trim() !== expectLabel[name]) {
+        return { ok: false, reason: `label ${name} ${label.textContent}` };
+      }
+      const box = label.getBoundingClientRect();
+      const ctrl = control.getBoundingClientRect();
+      const top = Math.min(box.top, ctrl.top);
+      const bottom = Math.max(box.bottom, ctrl.bottom);
+      if (box.height < 8 || top < pane.top - 1 || bottom > pane.bottom + 1) {
+        return {
+          ok: false,
+          reason: `${name} outside pane top=${top.toFixed(0)} bottom=${bottom.toFixed(0)} pane=${pane.top.toFixed(0)}-${pane.bottom.toFixed(0)}`,
+        };
+      }
+      lowest = Math.max(lowest, bottom);
+      rows.push(name);
+    }
+    const sortTop = sort.getBoundingClientRect().top;
+    const scroll = document.querySelector('[data-export-settings-scroll]');
+    const scrollTop = scroll instanceof HTMLElement ? scroll.scrollTop : 0;
+    if (scrollTop > 1) return { ok: false, reason: `scrolled ${scrollTop}` };
+    if (sortTop < lowest - 1) return { ok: false, reason: `sort above foil ${sortTop.toFixed(0)}<${lowest.toFixed(0)}` };
+    return { ok: true, reason: rows.join(',') };
+  });
+}
+
 async function parkPreview(page: Page) {
   const foil = page.locator('[data-export-preview]');
   if ((await foil.getAttribute('data-paused')) === '1') return;
@@ -179,6 +222,8 @@ test.describe('mobile dex export sheet', () => {
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.2);
     const rainbow = await paintedInkRainbow(page);
     expect(rainbow.ok, rainbow.reason).toBe(true);
+    const placed = await foilLabelsInPane(page);
+    expect(placed.ok, placed.reason).toBe(true);
   });
 
   test('keeps the preview above the settings sheet', async ({ page }) => {
@@ -333,10 +378,8 @@ test.describe('desktop dex export preview', () => {
     const rainbow = await paintedInkRainbow(page);
     expect(rainbow.ok, rainbow.reason).toBe(true);
 
-    await expect(page.locator('[data-export-foil-rainbow]')).toBeVisible();
-    await expect(page.locator('[data-export-foil-glare]')).toBeVisible();
-    await expect(page.locator('[data-export-foil-shadow]')).toBeVisible();
-    await expect(page.locator('[data-export-foil-blend]')).toBeVisible();
+    const placed = await foilLabelsInPane(page);
+    expect(placed.ok, placed.reason).toBe(true);
 
     const cssVar = (name: string) =>
       page.locator('[data-export-preview]').evaluate((el, prop) => getComputedStyle(el).getPropertyValue(prop).trim(), name);
