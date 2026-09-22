@@ -1,7 +1,6 @@
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
-import { Trash2 } from 'lucide-react';
 import type { TypeName } from '@/types/pokemon';
 import { EXTRA_COLOR, ROMAN, type ExtraGenAxis, type ExtraTypeAxis, type GenNumber } from '../model/cells';
 
@@ -84,17 +83,6 @@ export function EmptyBall({ className }: { className?: string }) {
       <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
       <circle cx="12" cy="12" r="1.5" fill="currentColor" />
     </svg>
-  );
-}
-
-export function TrashSlot({ size = 36 }: { size?: number }) {
-  return (
-    <span
-      className="inline-flex items-center justify-center rounded-md bg-red-50 text-red-600"
-      style={{ width: size, height: size }}
-    >
-      <Trash2 size={18} aria-hidden />
-    </span>
   );
 }
 

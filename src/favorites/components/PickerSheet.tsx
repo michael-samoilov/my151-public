@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { useDevicePixelRatio, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
-import { pickerSpriteCssPx } from '../model/pickerSprite';
+import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
+import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PanelRightClose } from 'lucide-react';
 import { isGenNumber, isTypeName, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
-import { getPickerMon, type PickerMon } from '../model/catalog';
+import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
 import {
   enumeratePaths,
   packingNeeded,
@@ -42,8 +42,10 @@ export function PickerSheet({
 }) {
   const t = useT();
   const desktop = useIsDesktop();
-  const spritePx = pickerSpriteCssPx(useDevicePixelRatio(), useLayoutViewportCssPx());
-  const paneWidth = spritePx * 6 + 4 * 5 + 24;
+  const viewportPx = useLayoutViewportCssPx();
+  const spritePx = pickerSpriteCssPx(viewportPx);
+  const inset = pickerRowInsetPx(viewportPx, spritePx);
+  const paneWidth = spritePx * 6 + inset * 2 + 2;
   const kind = kindFor(type, gen);
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);
 
@@ -103,11 +105,17 @@ export function PickerSheet({
       </button>
     </div>
   ) : (
-    <div className="px-3 pb-4">
+    <div className="pb-4" style={{ paddingLeft: inset, paddingRight: inset }}>
       {mons.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('favorites.empty')}</p>
       ) : (
-        <PrettySpriteGrid mons={mons} maxCols={maxCols} selectedId={currentId} onPick={pick} />
+        <PrettySpriteGrid
+          mons={mons}
+          maxCols={maxCols}
+          lineKey={type === 'starter' ? evolutionLineKey : undefined}
+          selectedId={currentId}
+          onPick={pick}
+        />
       )}
       {currentId != null ? (
         <button

@@ -1,8 +1,8 @@
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import { cn } from '@/lib/utils';
+import { Trash2 } from 'lucide-react';
 import type { ChainSlot } from '../model/packing';
-import { TrashSlot } from './marks';
 
 export function PackingChain({
   slots,
@@ -45,15 +45,9 @@ export function PackingChain({
 }
 
 function PackSlot({ slot }: { slot: ChainSlot }) {
-  if (slot.role === 'trash') {
-    return (
-      <span data-role="trash" data-testid="favorites-pack-slot">
-        <TrashSlot />
-      </span>
-    );
-  }
-  const color = slot.type ? TYPE_COLORS[slot.type] : '#737373';
-  const faded = slot.role === 'vacate';
+  const trash = slot.role === 'trash';
+  const color = trash ? '#000000' : slot.type ? TYPE_COLORS[slot.type] : '#737373';
+  const faded = slot.role === 'vacate' || trash;
   return (
     <span
       className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border-2 bg-background"
@@ -61,7 +55,14 @@ function PackSlot({ slot }: { slot: ChainSlot }) {
       data-role={slot.role}
       data-testid="favorites-pack-slot"
     >
-      {slot.type ? (
+      {trash ? (
+        <span
+          data-testid="favorites-trash-mark"
+          className="absolute top-0.5 right-0.5 inline-flex h-3 w-3 items-center justify-center rounded-[2px] bg-red-600 text-white"
+        >
+          <Trash2 size={8} strokeWidth={2.5} aria-hidden />
+        </span>
+      ) : slot.type ? (
         <img
           src={typeIconPath(slot.type)}
           alt=""

@@ -1,34 +1,36 @@
 import { tileImageCssPx } from '@/lib/tileImage';
-import { SPRITE_NATIVE, useDevicePixelRatio, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
+import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { cn } from '@/lib/utils';
 
-const GAP_PX = 4;
+const ROW_GAP_PX = 4;
 
 export function PrettySpriteGrid({
   mons,
   maxCols,
+  lineKey,
   selectedId,
   onPick,
 }: {
   mons: readonly PickerMon[];
   maxCols: number;
+  lineKey?: (mon: PickerMon) => number;
   selectedId?: number;
   onPick: (mon: PickerMon) => void;
 }) {
   useNamesVersion();
   const viewportPx = useLayoutViewportCssPx();
-  const spritePx = pickerSpriteCssPx(useDevicePixelRatio(), viewportPx);
+  const spritePx = pickerSpriteCssPx(viewportPx);
   const dexPx = tileImageCssPx(viewportPx);
-  const rows = prettyRows(mons, maxCols);
+  const rows = prettyRows(mons, maxCols, lineKey);
 
   return (
     <div
       className="mx-auto flex w-max flex-col"
-      style={{ gap: GAP_PX }}
+      style={{ gap: ROW_GAP_PX }}
       data-testid="favorites-pretty-grid"
       data-sprite-px={spritePx}
       data-sprite-dex={dexPx}
@@ -38,7 +40,6 @@ export function PrettySpriteGrid({
           <div
             key={r}
             className="flex justify-center"
-            style={{ gap: GAP_PX }}
             data-pretty-row={r}
             data-pretty-len={row.length}
           >

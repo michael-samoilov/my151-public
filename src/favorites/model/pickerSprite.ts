@@ -1,19 +1,26 @@
 import { tileImageCssPx } from '@/lib/tileImage';
-import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
+import { SELECTOR_MAX_COLS } from './prettyWrap';
+
+/** Side inset used when the viewport has room. Matches the dex row's px-2. */
+export const PICKER_INSET_MAX = 8;
 
 /**
- * CSS px for every picker sprite on this viewport.
+ * CSS px for every picker sprite.
  *
- * The size is the dex image in a six-sprite row. An integer bitmap scale
- * (`n * 96 / dpr`) replaces it only when that scale is at least as large
- * and no more than 4% larger. A smaller scale, including 1×, is not used.
+ * This is the dex image size in a six-sprite row. A larger snap, such as
+ * 64px on a 3× phone, puts six sprites past the sheet edge.
  */
-export function pickerSpriteCssPx(dpr: number, viewportCssPx: number): number {
-  const target = tileImageCssPx(viewportCssPx);
-  const safe = dpr > 0 && Number.isFinite(dpr) ? dpr : 1;
-  for (let n = 1; n <= 4; n++) {
-    const crisp = (n * SPRITE_NATIVE) / safe;
-    if (crisp + 1e-6 >= target && crisp <= target * 1.04 + 1e-6) return crisp;
-  }
-  return target;
+export function pickerSpriteCssPx(viewportCssPx: number): number {
+  return tileImageCssPx(viewportCssPx);
+}
+
+/**
+ * Horizontal inset, CSS px, so six sprites stay inside a phone sheet.
+ * The desktop pane is sized to the row, so it keeps the full inset.
+ */
+export function pickerRowInsetPx(viewportCssPx: number, spritePx: number): number {
+  const width = viewportCssPx > 0 && Number.isFinite(viewportCssPx) ? viewportCssPx : 1024;
+  if (width >= 1024) return PICKER_INSET_MAX;
+  const spare = width - spritePx * SELECTOR_MAX_COLS;
+  return Math.max(0, Math.min(PICKER_INSET_MAX, Math.floor(spare / 2)));
 }

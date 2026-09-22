@@ -36,6 +36,7 @@ function asGen(n: number): GenNumber {
 
 const ALL: PickerMon[] = [];
 const BY_ID = new Map<number, PickerMon>();
+const LINE_BY_ID = new Map<number, number>();
 
 function pushMon(mon: PickerMon): void {
   if (BY_ID.has(mon.id)) return;
@@ -44,6 +45,7 @@ function pushMon(mon: PickerMon): void {
 }
 
 for (const p of SPECIES) {
+  LINE_BY_ID.set(p.id, p.evolutionChainId);
   pushMon({
     id: p.id,
     name: p.name,
@@ -96,6 +98,11 @@ export function isPowerupForm(mon: PickerMon): boolean {
 
 export function isStarter(mon: PickerMon): boolean {
   return STARTER_IDS.has(mon.id);
+}
+
+/** Evolution chain for this form. Members of one chain stay on one picker row. */
+export function evolutionLineKey(mon: PickerMon): number {
+  return LINE_BY_ID.get(mon.id) ?? LINE_BY_ID.get(mon.ownerId) ?? mon.id;
 }
 
 const LEGENDARY_OWNER_IDS = new Set<number>();

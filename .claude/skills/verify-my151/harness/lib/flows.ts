@@ -1050,10 +1050,10 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     ));
     await s.screenshot(ctx.shot('favorites-picker-last-row'));
     const sprite = await s.evalJson<{
-      css: number; dex: number; w: number; dpr: number; natural: number; max: number; same: boolean;
+      css: number; dex: number; w: number; dpr: number; natural: number; max: number; same: boolean; inside: boolean;
     }>(`
       const el = document.querySelector('[data-testid="favorites-pretty-grid"]');
-      if (!el) return { css:0, dex:0, w:0, dpr:1, natural:96, max:0, same:false };
+      if (!el) return { css:0, dex:0, w:0, dpr:1, natural:96, max:0, same:false, inside:false };
       const imgs = [...el.querySelectorAll('img')];
       const widths = imgs.map((node) => node.getBoundingClientRect().width);
       const rows = [...el.querySelectorAll('[data-pretty-row]')].map((row) => row.querySelectorAll('button').length);
@@ -1063,7 +1063,12 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       const natural = Number(el.getAttribute('data-sprite-native')) || 96;
       const w = widths[0] || 0;
       const same = widths.every((n) => Math.abs(n - w) < 0.6);
-      return { css, dex, w, dpr, natural, max: Math.max(...rows, 0), same };
+      const six = el.querySelector('[data-pretty-len="6"]');
+      const host = document.querySelector('[role="dialog"]') || document.querySelector('[data-testid="favorites-picker"]');
+      const sb = six ? six.getBoundingClientRect() : null;
+      const hb = host ? host.getBoundingClientRect() : null;
+      const inside = !!sb && !!hb && sb.left >= hb.left - 0.5 && sb.right <= hb.right + 0.5;
+      return { css, dex, w, dpr, natural, max: Math.max(...rows, 0), same, inside };
     `);
     const oneX = sprite.natural / Math.max(sprite.dpr, 1);
     const notShrunk = sprite.dex <= oneX + 1 || sprite.css > oneX + 1;
@@ -1071,16 +1076,33 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       'favorites:sprite-matches-six-col',
       sprite.same && sprite.max <= 6 && sprite.max > 0
         && Math.abs(sprite.w - sprite.css) < 0.6
-        && sprite.css + 0.01 >= sprite.dex
-        && sprite.css <= sprite.dex * 1.04 + 0.01
+        && Math.abs(sprite.css - sprite.dex) < 0.6
+        && sprite.inside
         && notShrunk,
-      `css=${sprite.css} dex=${sprite.dex} w=${sprite.w.toFixed(1)} dpr=${sprite.dpr} oneX=${oneX.toFixed(1)}`,
+      `css=${sprite.css} dex=${sprite.dex} w=${sprite.w.toFixed(1)} inside=${sprite.inside} dpr=${sprite.dpr} oneX=${oneX.toFixed(1)}`,
     ));
     checks.push(await auditRender(s, 'favorites:render-picker'));
 
+    const rowLens = () => s.evalJson<number[]>(`
+      return [...document.querySelectorAll('[data-pretty-row]')].map((row) => Number(row.getAttribute('data-pretty-len')));
+    `);
+    const closePicker = async () => {
+      const dialog = await s.evalJson<boolean>(`return !!document.querySelector('[role="dialog"]');`);
+      if (dialog) {
+        await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
+      } else {
+        await s.click('[data-testid="favorites-picker"] > div:first-child button');
+      }
+      await sleep(250);
+    };
+
     const sheetOpen = await s.evalJson<boolean>(`return !!document.querySelector('[role="dialog"]');`);
+    let starterRows: number[] = [];
     if (!sheetOpen) {
       checks.push({ name: 'favorites:short-sheet', status: 'skip', detail: 'desktop pane' });
+      await closePicker();
+      await s.click('[data-testid="favorites-cell-starter-1"]');
+      if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) starterRows = await rowLens();
     } else {
       await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
       await sleep(300);
@@ -1112,8 +1134,16 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
           sheet.sheetH < sheet.max - 40 && sheet.gridTop < sheet.sheetTop - 8 && sheet.scrollH <= sheet.clientH + 2,
           `sheetH=${Math.round(sheet.sheetH)} max=${Math.round(sheet.max)} gridTop=${Math.round(sheet.gridTop)} sheetTop=${Math.round(sheet.sheetTop)}`,
         ));
+        starterRows = await rowLens();
       }
     }
+    checks.push(ok('favorites:starter-lines', starterRows.join('+') === '6+3', starterRows.join('+')));
+    await closePicker();
+    await s.click('[data-testid="favorites-cell-legendary-4"]');
+    const legendOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    const legendRows = legendOpen ? await rowLens() : [];
+    checks.push(ok('favorites:legend-spread', legendRows.join('+') === '5+5+4', legendRows.join('+')));
+    await closePicker();
   }
 
   await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);
@@ -1151,6 +1181,36 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       'favorites:vacate-faded-sprite',
       vacate.found && vacate.hasSprite && vacate.opacity < 0.5,
       `found=${vacate.found} sprite=${vacate.hasSprite} opacity=${vacate.opacity}`,
+    ));
+    const trash = await s.evalJson<{
+      found: boolean; opacity: number; alt: string; black: boolean; red: boolean; white: boolean; border: string; mark: string;
+    }>(`
+      const slot = document.querySelector('[data-testid="favorites-pack-slot"][data-role="trash"]');
+      if (!slot) return { found:false, opacity:1, alt:'', black:false, red:false, white:false, border:'', mark:'' };
+      const sprite = slot.querySelector('img[alt]');
+      const mark = slot.querySelector('[data-testid="favorites-trash-mark"]');
+      const border = getComputedStyle(slot).borderTopColor;
+      const bg = mark ? getComputedStyle(mark).backgroundColor : '';
+      const icon = mark ? getComputedStyle(mark).color : '';
+      const oklch = bg.match(/oklch\\(([\\d.]+)\\s+([\\d.]+)\\s+([\\d.]+)/);
+      const rgb = bg.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+      const hue = oklch ? Number(oklch[3]) : -1;
+      const red = (hue >= 0 && (hue <= 40 || hue >= 350)) || (rgb ? Number(rgb[1]) > 150 && Number(rgb[2]) < 90 && Number(rgb[3]) < 90 : false);
+      return {
+        found: true,
+        opacity: sprite ? Number(getComputedStyle(sprite).opacity) : 1,
+        alt: sprite ? sprite.getAttribute('alt') || '' : '',
+        black: border === 'rgb(0, 0, 0)',
+        red,
+        white: icon === 'rgb(255, 255, 255)',
+        border,
+        mark: bg,
+      };
+    `);
+    checks.push(ok(
+      'favorites:trash-kicked-sprite',
+      trash.found && trash.opacity < 0.5 && trash.alt.length > 0 && trash.black && trash.red && trash.white,
+      `alt=${trash.alt} opacity=${trash.opacity} border=${trash.border} mark=${trash.mark}`,
     ));
     await s.screenshot(ctx.shot('favorites-packing-vacate'));
     // Filled type×gen cells clip their 120% sprites on purpose (same as the

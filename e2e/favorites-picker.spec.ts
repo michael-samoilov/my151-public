@@ -78,8 +78,9 @@ test.describe('favorite Pokémon picker', () => {
     await page.goto('/favorite-pokemon-by-type');
     const cells = [
       { id: 'favorites-cell-normal-1', rows: [6, 6, 5, 5] },
-      { id: 'favorites-cell-water-1', rows: [6, 6, 6, 6, 4, 4] },
-      { id: 'favorites-cell-starter-1', rows: [5, 4] },
+      { id: 'favorites-cell-water-1', rows: [6, 6, 5, 5, 5, 5] },
+      { id: 'favorites-cell-starter-1', rows: [6, 3] },
+      { id: 'favorites-cell-legendary-4', rows: [5, 5, 4] },
     ];
     const widths: number[] = [];
     for (const cell of cells) {
@@ -98,13 +99,18 @@ test.describe('favorite Pokémon picker', () => {
         const box = img?.getBoundingClientRect();
         const w = box?.width ?? 0;
         const widths = [...el.querySelectorAll('img')].map((node) => node.getBoundingClientRect().width);
-        return { css, dex, w, dpr, natural, rows, widths, max: Math.max(...rows, 0) };
+        const six = el.querySelector('[data-pretty-len="6"]');
+        const host = document.querySelector('[role="dialog"]') || document.querySelector('[data-testid="favorites-picker"]');
+        const sb = six?.getBoundingClientRect();
+        const hb = host?.getBoundingClientRect();
+        const inside = !sb || !hb || (sb.left >= hb.left - 0.5 && sb.right <= hb.right + 0.5);
+        return { css, dex, w, dpr, natural, rows, widths, max: Math.max(...rows, 0), inside };
       });
       expect(spec.rows, cell.id).toEqual(cell.rows);
       expect(spec.max, cell.id).toBeLessThanOrEqual(6);
       expect(spec.dex, cell.id).toBeGreaterThan(0);
-      expect(spec.css, cell.id).toBeGreaterThanOrEqual(spec.dex - 0.01);
-      expect(spec.css, cell.id).toBeLessThanOrEqual(spec.dex * 1.04 + 0.01);
+      expect(spec.css, cell.id).toBeCloseTo(spec.dex, 0);
+      expect(spec.inside, cell.id).toBe(true);
       if (spec.dex > spec.natural / Math.max(spec.dpr, 1) + 1) {
         expect(spec.css, cell.id).toBeGreaterThan(spec.natural / Math.max(spec.dpr, 1) + 1);
       }
