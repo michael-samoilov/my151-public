@@ -21,7 +21,6 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
 import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
-import { useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
 import { useGridDragSensors } from '@/lib/dragSensors';
 import { warmImages } from '@/lib/warmImages';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
@@ -43,13 +42,8 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyp
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
-import {
-  BALL_OF_SPRITE,
-  RING_OF_SPRITE,
-  SLOT_PAD_REM,
-  pairSprite,
-  seamEnds,
-} from '../slotLayout';
+import { BALL_OF_SPRITE, RING_OF_SPRITE, pairSpriteScale, seamEnds, SLOT_PAD_REM, SPRITE_REM } from '../slotLayout';
+import { tmBodyShiftRem, tmNameWraps } from '../export/layout';
 import { useSlotLab } from '../slotLab';
 
 /**
@@ -67,8 +61,6 @@ const PAD_X = 0.5; // 8px
 const PAD_Y = 0.6875; // 11px
 const INSET_Y = 0.375; // 6px
 const INSET_X = 0.1875; // 3px
-/** Cell sprite size; larger than the cell on purpose, as on the boards. */
-const SPRITE_REM = 3.25;
 
 /**
  * How far a carried column lifts off the card.
@@ -879,7 +871,8 @@ function SlotHalf({
   );
   const name = (
     <span
-      className={cn('relative block max-w-[var(--slot-sprite)] truncate', NAME_CLASS)}
+      data-slot-name={half}
+      className={cn('relative block w-max shrink-0 whitespace-nowrap', NAME_CLASS)}
       style={{ color: pokemon ? 'var(--lg-band)' : undefined }}
     >
       {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0'}
@@ -1049,11 +1042,10 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const partner = card.partnerId != null ? getPokemonById(card.partnerId) : undefined;
   const slotRef = useRef<HTMLDivElement>(null);
   const box = useSlotBox(slotRef);
-  const dpr = useDevicePixelRatio();
   const labSprite = useSlotLab((st) => (st.enabled ? st.sprite : 0));
-  const spritePx = labSprite > 0
-    ? labSprite
-    : pairSprite(box[0], box[1], dpr, getAppliedRootFontSizePx());
+  const remPx = getAppliedRootFontSizePx();
+  const scale = pairSpriteScale(box[0], box[1], remPx);
+  const spritePx = labSprite > 0 ? labSprite : scale * SPRITE_REM * remPx;
   const seam = seamEnds(box[0], box[1]);
   const pos = {
     ...slotX(1, 3),
@@ -1064,11 +1056,14 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
     <div
       ref={slotRef}
       data-ace-partner-slot
+      data-showcase={ace && partner ? 'pair' : ace || partner ? 'split' : 'empty'}
       data-slot-sprite={spritePx}
       className="absolute z-[5] overflow-hidden rounded-lg"
       style={{
         ...pos,
-        ['--slot-sprite' as string]: `${spritePx}px`,
+        ['--slot-sprite' as string]: labSprite > 0
+          ? `${labSprite}px`
+          : `${scale * SPRITE_REM}rem`,
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
@@ -1220,7 +1215,10 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         </span>
       </span>
       {move ? (
-        <span className="flex min-w-0 flex-col items-start gap-[2px] overflow-hidden">
+        <span
+          className="flex min-w-0 flex-col items-start gap-[2px] overflow-hidden"
+          style={{ transform: `translateY(${tmBodyShiftRem()}rem)` }}
+        >
           {/* Clipped rather than spilling. At 320px the type badge and the
               category chip together are wider than the box's text column, and
               a chip painted over the cell beside it is worse than one cut. */}
@@ -1242,15 +1240,19 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink overflow-visible" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
-          {/* Truncated, not wrapped: a twelve-letter move is one word, so
-              a wrap would break it mid-syllable. Below about 340px of
-              viewport the box cannot hold the longest of them however far
-              left the text starts. */}
+          {/* A one-word move stays on one line. A two-word move always
+              wraps at the space so both words stay visible. The one-word
+              case can still ellipsize when the box cannot hold it. */}
           <span
-            className={cn('min-w-0 max-w-full truncate text-left', NAME_CLASS)}
+            data-tm-name=""
+            className={cn(
+              'min-w-0 w-full max-w-full text-left',
+              NAME_CLASS,
+              tmNameWraps(move.name) ? 'whitespace-pre-line break-normal' : 'truncate',
+            )}
             style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band }}
           >
-            {move.name}
+            {tmNameWraps(move.name) ? move.name.trim().split(/\s+/).join('\n') : move.name}
           </span>
         </span>
       ) : (
@@ -1311,6 +1313,33 @@ function writeBadgeField(field: HTMLElement, next: string) {
   }
 }
 
+function badgeSuffixVisible(box: HTMLElement, field: HTMLElement): boolean {
+  if (box.scrollHeight > box.clientHeight + 1) return false;
+  const suffix = badgeSuffixEl(field);
+  if (!suffix) return true;
+  const br = box.getBoundingClientRect();
+  return [...suffix.getClientRects()].every((r) => (
+    r.width < 0.5
+    || (r.left >= br.left - 1 && r.right <= br.right + 1 && r.top >= br.top - 1 && r.bottom <= br.bottom + 1)
+  ));
+}
+
+function clampBadgeName(field: HTMLElement, box: HTMLElement, name: string): string {
+  let next = name;
+  writeBadgeField(field, next);
+  while (next && !badgeSuffixVisible(box, field)) {
+    next = next.slice(0, -1);
+    writeBadgeField(field, next);
+  }
+  const trimmed = next.replace(/[\s\u00a0]+$/u, '');
+  if (trimmed !== next) {
+    writeBadgeField(field, trimmed);
+    if (badgeSuffixVisible(box, field)) return trimmed;
+    writeBadgeField(field, next);
+  }
+  return next;
+}
+
 function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setBadgeName = useLeagueStore((s) => s.setBadgeName);
   const fieldRef = useRef<HTMLSpanElement>(null);
@@ -1329,10 +1358,12 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   // a change made elsewhere: opening a different card, or a reset.
   useLayoutEffect(() => {
     const el = fieldRef.current;
-    if (!el || document.activeElement === el) return;
-    writeBadgeField(el, name);
-    accepted.current = name;
-  }, [name]);
+    const box = textRef.current;
+    if (!el || !box || document.activeElement === el) return;
+    const clamped = clampBadgeName(el, box, name);
+    accepted.current = clamped;
+    if (clamped !== name) setBadgeName(cardIndex, clamped);
+  }, [name, cardIndex, setBadgeName]);
 
   const putCaretAtEnd = () => {
     const el = fieldRef.current;
@@ -1369,7 +1400,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     // scrambles its own text the moment you type two words.
     // The suffix is already in the box by the second character, so the box
     // measures the phrase the reader will see, not just the name.
-    const fits = next.length <= BADGE_NAME_CEILING && box.scrollHeight <= box.clientHeight + 1;
+    const fits = next.length <= BADGE_NAME_CEILING && badgeSuffixVisible(box, el);
     if (!fits) {
       writeBadgeField(el, accepted.current);
       putCaretAtEnd();

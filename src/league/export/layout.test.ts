@@ -5,7 +5,6 @@ import { emptyCard, type GymCard } from '../store/useLeagueStore';
 import { makePlacedLine } from '../model/engine';
 import { TEAM_SIZES, slotRow } from '../model/constants';
 import { kantoCards } from '../data/kantoLeague';
-import { pairSprite } from '../slotLayout';
 import { DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT } from './exportOptions';
 
 /**
@@ -92,7 +91,7 @@ describe('export layout', () => {
     const box = L.showcaseBox();
     const head = 2 * L.HEAD_LINE;
     const pad = 0.5 * 16 * L.K;
-    const sprite = pairSprite(box.width, box.height);
+    const sprite = L.pairExportSprite(box.width, box.height);
     const aceTop = pad;
     const aceBottom = pad + head + sprite;
     const partnerTop = box.height - pad - head - sprite;
@@ -138,8 +137,15 @@ describe('export layout', () => {
     expect(2 * L.HEAD_LINE + 12 + L.SIG_SPRITE).toBeLessThan(box.height);
   });
 
-  it('draws the solo showcase sprite at a whole multiple of the source', () => {
-    expect(L.SIG_SPRITE % 96).toBe(0);
+  it('draws the solo showcase sprite at a whole multiple of the source, larger than the pair', () => {
+    const box = L.showcaseBox();
+    const sprite = L.soloExportSprite(box.width, box.height);
+    expect(sprite % 96).toBe(0);
+    expect(sprite).toBeGreaterThanOrEqual(96);
+    expect(sprite).toBeGreaterThan(L.pairExportSprite(box.width, box.height));
+    const pad = 0.5 * 16 * L.K;
+    expect(sprite).toBeLessThanOrEqual(box.width - 2 * pad);
+    expect(2 * L.HEAD_LINE + L.NAME_LINE + sprite + 2 * pad).toBeLessThanOrEqual(box.height);
   });
 
   it('gives the TM and badge slots the same box', () => {
@@ -295,6 +301,95 @@ describe('export layout', () => {
     const tm = L.slotX(1, 2);
     const body = tm.width - 3 * L.MARK_PAD - L.MARK_COL;
     expect(body).toBeGreaterThan(6.6 * L.MOVE_PX);
+  });
+
+  it('sets TM name and badge name at the ACE POKÉMON spacer size', () => {
+    expect(L.MOVE_PX).toBe(L.HEAD_PX);
+    expect(L.NAME_PX).toBe(L.HEAD_PX);
+    expect(L.MOVE_MIN_PX).toBe(L.HEAD_PX);
+  });
+
+  it('keeps the TM type badge at the in-app 2.75rem width', () => {
+    expect(L.TM_BADGE_W).toBeCloseTo(2.75 * 16 * L.K);
+  });
+
+  it('stacks the TM type badge and category above the move name', () => {
+    expect(L.TM_TYPE_ABOVE_NAME).toBe(true);
+  });
+
+  it('centers the TM type/name stack on the disc+label the way the live card flexes', () => {
+    // CardGrid TmSlot: parent `flex items-center`; body is a column of
+    // (type row `items-center` + 2px gap + NAME_CLASS). The type row's box
+    // is the taller child — the category chip, not the 5:1 type badge.
+    // NAME_CLASS is `leading-[1.4]`, so the name box is NAME_LINE.
+    const badgeH = L.tmBadgeH();
+    expect(L.TM_CHIP_H).toBeGreaterThan(badgeH);
+    const typeRowH = Math.max(badgeH, L.TM_CHIP_H);
+    const slotH = 1.5 * L.ROW - 2 * L.INY;
+    const cy = slotH / 2;
+    const body = L.tmMoveBody(cy);
+    expect(body.height).toBeCloseTo(typeRowH + L.TM_STACK_GAP + L.NAME_LINE);
+    expect(body.badgeY + badgeH / 2).toBeCloseTo(body.chipY + L.TM_CHIP_H / 2);
+    expect(body.nameTop).toBeCloseTo(body.top + typeRowH + L.TM_STACK_GAP);
+    expect(body.top).toBeGreaterThan(0);
+    expect(body.top + body.height).toBeLessThan(slotH);
+  });
+
+  it('matches the type-badge→disc-top gap to the name-bottom→TM-bottom gap', () => {
+    const { top, bottom } = L.tmInkGaps(100);
+    expect(Math.abs(top - bottom)).toBeLessThanOrEqual(1);
+  });
+
+  it('grows the TM stack by one name line when a two-word name wraps', () => {
+    const one = L.tmMoveBody(100, 1);
+    const two = L.tmMoveBody(100, 2);
+    expect(two.height - one.height).toBeCloseTo(L.NAME_LINE);
+  });
+
+  it('keeps equal TM ink gaps when the move name wraps to two lines', () => {
+    const { top, bottom } = L.tmInkGaps(100, 2);
+    expect(Math.abs(top - bottom)).toBeLessThanOrEqual(1);
+  });
+
+  it('wraps a two-word TM name and leaves a one-word name on one line', () => {
+    expect(L.tmNameWraps('Stomping Tantrum')).toBe(true);
+    expect(L.tmNameWraps('Psychic')).toBe(false);
+    expect(L.tmNameWraps('Self-Destruct')).toBe(false);
+    expect(L.tmNameWraps('Power-Up Punch')).toBe(true);
+  });
+
+  it('paints ace/partner at a whole multiple of the 96px source', () => {
+    // Team cells paint at 96. Ace/partner may be 1×, 2×, or 3× of that.
+    // css×K (~118) is not an integer scale and aliases the 96px asset.
+    const box = L.showcaseBox();
+    const sprite = L.pairExportSprite(box.width, box.height);
+    expect([96, 192, 288]).toContain(sprite);
+    expect(sprite % 96).toBe(0);
+    expect(sprite).not.toBe(Math.round(64 * L.K));
+    const pad = 0.5 * 16 * L.K;
+    const aceRight = pad + sprite;
+    const partnerLeft = box.width - pad - sprite;
+    expect(aceRight).toBeLessThanOrEqual(partnerLeft);
+  });
+
+  it('labels the showcase ACE POKÉMON, not SIGNATURE', () => {
+    expect(L.ACE_HEAD).toEqual(['ACE', 'POKÉMON']);
+    expect(L.ACE_HEAD.join(' ')).not.toMatch(/SIGNATURE/i);
+  });
+
+  it('exports badge and move names in the same caps as ACE POKÉMON', () => {
+    expect(L.badgeExportPhrase('Marsh')).toBe('MARSH BADGE');
+    expect(L.moveExportName('Psychic')).toBe('PSYCHIC');
+  });
+
+  it('pins ace and partner sprite centres as a 180° mirror', () => {
+    const box = L.showcaseBox();
+    const pad = 0.5 * 16 * L.K;
+    const sprite = L.pairExportSprite(box.width, box.height);
+    const head = 2 * L.HEAD_LINE;
+    const aceCy = pad + head + sprite / 2;
+    const partnerCy = box.height - pad - head - sprite / 2;
+    expect(aceCy + partnerCy).toBeCloseTo(box.height);
   });
 
   it('names a vacancy for every slot kind', () => {

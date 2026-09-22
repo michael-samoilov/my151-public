@@ -904,3 +904,333 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
   }
   return checks;
 }
+
+const NIMBUS_LEAGUE =
+  "JSON.stringify({state:{name:'',cards:(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,signatureId:null,partnerId:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const cards=Array.from({length:14},empty);cards[0]={type:'flying',theme:'Clouds',lines:[{branch:[333,334],boundaries:[1,6]},{branch:[179,180,181],boundaries:[1,4,8]}],signatureSeat:1,signatureId:334,partnerId:179,tmMoveId:538,badgeName:'Nimbus',legend:null,powerup:null};return cards;})()},version:1})";
+const NIMBUS_SOLO_LEAGUE = NIMBUS_LEAGUE.replace('partnerId:179', 'partnerId:null');
+const SABRINA_SOLO_LEAGUE =
+  "JSON.stringify({state:{name:'',cards:(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,signatureId:null,partnerId:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const cards=Array.from({length:14},empty);cards[0]={type:'psychic',theme:'Sabrina',lines:[{branch:[63,64,65],boundaries:[1,4,8]}],signatureSeat:1,signatureId:65,partnerId:null,tmMoveId:94,badgeName:'Marsh',legend:null,powerup:null};return cards;})()},version:1})";
+
+/**
+ * Gym-card export preview for the Nimbus/Cotton Guard card. Proves the overlay
+ * paints a real PNG of that card; layout parity lives in layout.test.ts.
+ */
+export async function runGymCardExportParitySuite(
+  s: Session,
+  _persona: PersonaName | null,
+  ctx: FlowContext,
+): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${NIMBUS_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'skip', detail: 'league home never hydrated after seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(600);
+  const scale = await s.evalJson<{ css: number; n: number; integer: boolean }>(
+    `const pane=document.querySelector('[data-ace-partner-slot]');
+     const art=pane&&pane.querySelector('[data-slot-art]');
+     const rem=parseFloat(getComputedStyle(document.documentElement).fontSize);
+     const css=art?art.offsetWidth:0;
+     const n=css/(3.25*rem);
+     return {css,n,integer:[1,2,3].some(s=>Math.abs(n-s)<0.02)};`,
+  );
+  checks.push(ok(
+    'gym-export:ace-integer-scale',
+    scale.integer,
+    `css=${scale.css} n=${scale.n.toFixed(3)} (want 1, 2, or 3 × 3.25rem)`,
+  ));
+  const tmFit = await s.evalJson<{ tmW: number; chipRight: number; tmRight: number; inside: boolean }>(
+    `const tm=document.querySelector('[data-testid="slot-tm"]');
+     const chip=tm&&tm.querySelector('img[src*="/sprites/moves/"]');
+     const box=chip&&chip.parentElement;
+     const r=tm&&tm.getBoundingClientRect();
+     const c=box&&box.getBoundingClientRect();
+     const tmRight=r?r.right:0;
+     const chipRight=c?c.right:0;
+     return {tmW:r?r.width:0,chipRight,tmRight,inside:!!c&&chipRight<=tmRight+0.5};`,
+  );
+  checks.push(ok(
+    'gym-export:tm-chip-inside-cell',
+    tmFit.inside && tmFit.tmW > 70,
+    `tmW=${tmFit.tmW.toFixed(1)} chipRight=${tmFit.chipRight.toFixed(1)} tmRight=${tmFit.tmRight.toFixed(1)}`,
+  ));
+  await s.click('[data-league-export]');
+  if (!(await waitFor(s, '[data-export-preview] img', 60))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'export preview image never mounted' });
+    return checks;
+  }
+  await sleep(800);
+  const painted = await s.evalJson<{ w: number; complete: boolean }>(
+    `const img=document.querySelector('[data-export-preview] img');
+     return { w: img?.naturalWidth ?? 0, complete: !!img?.complete };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-nimbus-preview'));
+  checks.push(ok(
+    'gym-export:nimbus-preview',
+    painted.complete && painted.w > 800,
+    `preview naturalWidth=${painted.w} complete=${painted.complete}`,
+  ));
+
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${NIMBUS_SOLO_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:solo-ace-panel', status: 'skip', detail: 'league home never hydrated after solo seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:solo-ace-panel', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(600);
+  const solo = await s.evalJson<{
+    mode: string | null;
+    seam: boolean;
+    arts: number;
+    heads: string;
+    cx: number;
+    cy: number;
+    integer: boolean;
+    n: number;
+  }>(
+    `const pane=document.querySelector('[data-ace-partner-slot]');
+     const cluster=document.querySelector('[data-testid="slot-ace"]');
+     const art=pane&&pane.querySelector('[data-slot-art]');
+     if(!pane||!cluster) return {mode:null,seam:true,arts:0,heads:'',cx:0,cy:0,integer:false,n:0};
+     const pr=pane.getBoundingClientRect();
+     const cr=cluster.getBoundingClientRect();
+     const rem=parseFloat(getComputedStyle(document.documentElement).fontSize);
+     const css=art?art.offsetWidth:0;
+     const n=css/(3.25*rem);
+     return {
+       mode: pane.getAttribute('data-showcase'),
+       seam: !!pane.querySelector(':scope > svg line'),
+       arts: pane.querySelectorAll('[data-slot-art] img').length,
+       heads: [...pane.querySelectorAll('[data-slot-head]')].map(e=>e.getAttribute('data-slot-head')).join(','),
+       cx: (cr.left+cr.width/2-pr.left)/pr.width,
+       cy: (cr.top+cr.height/2-pr.top)/pr.height,
+       integer: [1,2,3].some(s=>Math.abs(n-s)<0.02),
+       n,
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-solo-ace'));
+  const centred = Math.abs(solo.cx - 0.5) < 0.08 && Math.abs(solo.cy - 0.5) < 0.08;
+  const heads = solo.heads.split(',');
+  checks.push(ok(
+    'gym-export:solo-ace-panel',
+    solo.mode === 'split' && solo.seam && solo.arts === 1 && heads.includes('ace') && heads.includes('partner') && !centred,
+    `mode=${solo.mode} seam=${solo.seam} arts=${solo.arts} heads=${solo.heads} cx=${solo.cx.toFixed(2)} cy=${solo.cy.toFixed(2)}`,
+  ));
+  checks.push(ok(
+    'gym-export:solo-ace-integer-scale',
+    solo.integer,
+    `n=${solo.n.toFixed(3)} (want 1, 2, or 3 × 3.25rem)`,
+  ));
+
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${SABRINA_SOLO_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:ace-name-inside-pane', status: 'skip', detail: 'league home never hydrated after Alakazam seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-ace"]', 40))) {
+    checks.push({ name: 'gym-export:ace-name-inside-pane', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const aceName = await s.evalJson<{
+    text: string;
+    ellipsis: boolean;
+    lastInsidePane: boolean;
+    mode: string | null;
+    partner: boolean;
+    seam: boolean;
+  }>(
+    `const pane=document.querySelector('[data-ace-partner-slot]');
+     const cluster=pane&&pane.querySelector('[data-testid="slot-ace"]');
+     if(!pane||!cluster) return {text:'',ellipsis:true,lastInsidePane:false,mode:null,partner:false,seam:false};
+     const name=[...cluster.querySelectorAll('span')].find(el=>/alakaz/i.test(el.textContent||'')&&el.childElementCount===0);
+     if(!name) return {text:'',ellipsis:true,lastInsidePane:false,mode:pane.getAttribute('data-showcase'),partner:!!pane.querySelector('[data-testid="slot-partner"]'),seam:!!pane.querySelector(':scope > svg line')};
+     const raw=(name.textContent||'').replace(/\\s+/g,'');
+     const cs=getComputedStyle(name);
+     const node=[...name.childNodes].find(n=>n.nodeType===3);
+     let lastInsidePane=false;
+     if(node&&raw.length){
+       const range=document.createRange();
+       range.setStart(node, raw.length-1);
+       range.setEnd(node, raw.length);
+       const last=range.getBoundingClientRect();
+       const pr=pane.getBoundingClientRect();
+       lastInsidePane=last.width>0.5&&last.left>=pr.left-0.5&&last.right<=pr.right+0.5&&last.top>=pr.top-0.5&&last.bottom<=pr.bottom+0.5;
+     }
+     return {
+       text: raw,
+       ellipsis: cs.textOverflow==='ellipsis',
+       lastInsidePane,
+       mode: pane.getAttribute('data-showcase'),
+       partner: !!pane.querySelector('[data-testid="slot-partner"]'),
+       seam: !!pane.querySelector(':scope > svg line'),
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-ace-name-inside-pane'));
+  checks.push(ok(
+    'gym-export:ace-name-inside-pane',
+    aceName.text.toUpperCase() === 'ALAKAZAM' && !aceName.ellipsis && aceName.lastInsidePane
+      && aceName.mode === 'split' && aceName.partner && aceName.seam,
+    `text=${aceName.text} ellipsis=${aceName.ellipsis} lastInside=${aceName.lastInsidePane} mode=${aceName.mode} partner=${aceName.partner} seam=${aceName.seam}`,
+  ));
+
+  const STOMPING_LEAGUE = SABRINA_SOLO_LEAGUE.replace('tmMoveId:94', 'tmMoveId:707');
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${STOMPING_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:tm-two-word-wrap', status: 'skip', detail: 'league home never hydrated after Stomping Tantrum seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:tm-two-word-wrap', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const wrap = await s.evalJson<{
+    text: string;
+    ellipsis: boolean;
+    lines: number;
+    topGap: number;
+    bottomGap: number;
+    lastVisible: boolean;
+  }>(
+    `const slot=document.querySelector('[data-testid="slot-tm"]');
+     const name=slot&&(slot.querySelector('[data-tm-name]')||[...slot.querySelectorAll('span')].find(el=>/stomping/i.test(el.textContent||'')&&el.childElementCount===0));
+     const disc=slot&&slot.querySelector('svg[viewBox="0 0 24 24"] circle[r="9"]');
+     const badge=slot&&slot.querySelector('svg[viewBox="0 0 200 40"]');
+     const tm=slot&&slot.querySelector('[data-mark-label="tm"]');
+     if(!slot||!name||!disc||!badge||!tm) return {text:'',ellipsis:true,lines:0,topGap:0,bottomGap:0,lastVisible:false};
+     const cs=getComputedStyle(name);
+     const lineH=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.4;
+     const zoom=name.offsetHeight>0?name.getBoundingClientRect().height/name.offsetHeight:1;
+     const node=[...name.childNodes].find(n=>n.nodeType===3);
+     const tmNode=[...tm.childNodes].find(n=>n.nodeType===3);
+     const inkBottom=(el,textNode)=>{
+       if(!textNode||!(textNode.textContent||'').length) return el.getBoundingClientRect().bottom;
+       const range=document.createRange();
+       range.selectNodeContents(textNode);
+       return range.getBoundingClientRect().bottom;
+     };
+     let lastVisible=false;
+     if(node&&(node.textContent||'').length){
+       const range=document.createRange();
+       range.setStart(node,(node.textContent||'').length-1);
+       range.setEnd(node,(node.textContent||'').length);
+       const last=range.getBoundingClientRect();
+       const sr=slot.getBoundingClientRect();
+       lastVisible=last.width>0.5&&last.right<=sr.right+0.5&&last.bottom<=sr.bottom+0.5;
+     }
+     return {
+       text:(name.textContent||'').replace(/\\s+/g,' ').trim(),
+       ellipsis:cs.textOverflow==='ellipsis'||name.scrollWidth>name.clientWidth+1,
+       lines:lineH>0?Math.round(name.offsetHeight/lineH):0,
+       topGap:(badge.getBoundingClientRect().top-disc.getBoundingClientRect().top)/zoom,
+       bottomGap:(inkBottom(tm,tmNode)-inkBottom(name,node))/zoom,
+       lastVisible,
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-tm-two-word-wrap'));
+  checks.push(ok(
+    'gym-export:tm-two-word-wrap',
+    /stomping tantrum/i.test(wrap.text) && !wrap.ellipsis && wrap.lines === 2 && wrap.lastVisible
+      && Math.abs(wrap.topGap - wrap.bottomGap) <= 1.25,
+    `text=${wrap.text} ellipsis=${wrap.ellipsis} lines=${wrap.lines} lastVisible=${wrap.lastVisible} top=${wrap.topGap.toFixed(1)} bottom=${wrap.bottomGap.toFixed(1)}`,
+  ));
+
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${SABRINA_SOLO_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:tm-one-word-line', status: 'skip', detail: 'league home never hydrated after Psychic seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:tm-one-word-line', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const oneLine = await s.evalJson<{ text: string; lines: number; topGap: number; bottomGap: number }>(
+    `const slot=document.querySelector('[data-testid="slot-tm"]');
+     const name=slot&&(slot.querySelector('[data-tm-name]')||[...slot.querySelectorAll('span')].find(el=>/psychic/i.test(el.textContent||'')&&el.childElementCount===0));
+     const disc=slot&&slot.querySelector('svg[viewBox="0 0 24 24"] circle[r="9"]');
+     const badge=slot&&slot.querySelector('svg[viewBox="0 0 200 40"]');
+     const tm=slot&&slot.querySelector('[data-mark-label="tm"]');
+     if(!slot||!name||!disc||!badge||!tm) return {text:'',lines:0,topGap:0,bottomGap:0};
+     const cs=getComputedStyle(name);
+     const lineH=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.4;
+     const zoom=name.offsetHeight>0?name.getBoundingClientRect().height/name.offsetHeight:1;
+     const tmNode=[...tm.childNodes].find(n=>n.nodeType===3);
+     const nameNode=[...name.childNodes].find(n=>n.nodeType===3);
+     const inkBottom=(el,textNode)=>{
+       if(!textNode||!(textNode.textContent||'').length) return el.getBoundingClientRect().bottom;
+       const range=document.createRange();
+       range.selectNodeContents(textNode);
+       return range.getBoundingClientRect().bottom;
+     };
+     return {
+       text:(name.textContent||'').replace(/\\s+/g,' ').trim(),
+       lines:lineH>0?Math.round(name.offsetHeight/lineH):0,
+       topGap:(badge.getBoundingClientRect().top-disc.getBoundingClientRect().top)/zoom,
+       bottomGap:(inkBottom(tm,tmNode)-inkBottom(name,nameNode))/zoom,
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-tm-one-word-line'));
+  checks.push(ok(
+    'gym-export:tm-one-word-line',
+    /^psychic$/i.test(oneLine.text) && oneLine.lines === 1 && Math.abs(oneLine.topGap - oneLine.bottomGap) <= 1.25,
+    `text=${oneLine.text} lines=${oneLine.lines} top=${oneLine.topGap.toFixed(1)} bottom=${oneLine.bottomGap.toFixed(1)}`,
+  ));
+
+  const BADGE_OVERFLOW_LEAGUE = SABRINA_SOLO_LEAGUE.replace("badgeName:'Marsh'", "badgeName:'Thunder Thunder Thunder'");
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BADGE_OVERFLOW_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:badge-suffix-visible', status: 'skip', detail: 'league home never hydrated after badge overflow seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-badge"]', 40))) {
+    checks.push({ name: 'gym-export:badge-suffix-visible', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const badgeFit = await s.evalJson<{ rendered: string; suffixVisible: boolean; overflows: boolean }>(
+    `const field=document.querySelector('[aria-label="Badge name"]');
+     const suffix=document.querySelector('[data-badge-suffix]');
+     const box=field&&field.parentElement;
+     if(!field||!box) return {rendered:'',suffixVisible:false,overflows:true};
+     const br=box.getBoundingClientRect();
+     const rects=suffix?[...suffix.getClientRects()]:[];
+     const suffixVisible=!!suffix&&rects.length>0&&rects.every(r=>r.width<0.5||(r.left>=br.left-1&&r.right<=br.right+1&&r.top>=br.top-1&&r.bottom<=br.bottom+1));
+     return {rendered:(field.textContent||'').replace(/\\u00a0/g,' '),suffixVisible,overflows:box.scrollHeight>box.clientHeight+1};`,
+  );
+  await s.screenshot(ctx.shot('gym-export-badge-suffix-visible'));
+  checks.push(ok(
+    'gym-export:badge-suffix-visible',
+    /Badge/.test(badgeFit.rendered) && !/Thunder Thunder Thunder/.test(badgeFit.rendered)
+      && badgeFit.suffixVisible && !badgeFit.overflows,
+    `rendered=${badgeFit.rendered} suffixVisible=${badgeFit.suffixVisible} overflows=${badgeFit.overflows}`,
+  ));
+  return checks;
+}

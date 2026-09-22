@@ -149,6 +149,7 @@ export function wrapLines(
   text: string,
   maxW: number,
   maxLines: number,
+  ellipsizeLast = true,
 ): string[] {
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -167,7 +168,7 @@ export function wrapLines(
   if (lines.length === 0) return [];
   const last = lines.length - 1;
   const spilled = lines.length === maxLines && words.join(' ') !== lines.join(' ');
-  if (spilled || ctx.measureText(lines[last]).width > maxW) {
+  if (ellipsizeLast && (spilled || ctx.measureText(lines[last]).width > maxW)) {
     lines[last] = ellipsize(ctx, lines[last], maxW);
   }
   return lines;

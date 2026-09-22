@@ -140,18 +140,31 @@ test.describe('the ace and partner slot', () => {
     const measured = await page.evaluate(() => {
       const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
       const art = pane.querySelector<HTMLElement>('[data-slot-art]')!;
+      const team = document.querySelector<HTMLElement>('[data-testid="card-cell-1-1"] img');
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const css = art.offsetWidth;
+      const n = css / (3.25 * rem);
+      const teamW = team?.offsetWidth ?? 0;
       return {
-        layout: art.offsetWidth,
+        layout: css,
         attr: Number(pane.dataset.slotSprite),
-        dpr: window.devicePixelRatio,
+        rem,
+        n,
+        teamW,
+        vsTeam: teamW > 0 ? css / teamW : 0,
+        integer: [1, 2, 3].some((s) => Math.abs(n - s) < 0.02),
         style: getComputedStyle(art).width,
       };
     });
-    const one = Math.round(96 / measured.dpr);
-    const two = Math.round(192 / measured.dpr);
-    expect([one, two], `layout ${measured.layout} at dpr ${measured.dpr}`).toContain(measured.layout);
-    expect(measured.attr).toBe(measured.layout);
+    expect(measured.integer, `n=${measured.n} css=${measured.layout} rem=${measured.rem}`).toBe(true);
+    expect(measured.attr).toBeCloseTo(measured.layout, 0);
     expect(measured.style).not.toContain('cqw');
+    if (measured.teamW > 0) {
+      expect(
+        [1, 2, 3].some((s) => Math.abs(measured.vsTeam - s) < 0.05),
+        `ace ${measured.layout} vs team ${measured.teamW}`,
+      ).toBe(true);
+    }
     for (const half of halves) {
       expect(half.sprite, `${half.id} painted`).toBeGreaterThan(8);
     }
@@ -197,19 +210,29 @@ test.describe('the ace and partner slot', () => {
         }),
       );
 
+    const pick = async (slot: string, query: string, throughOverlay = false) => {
+      await page.click(
+        `[data-testid="${slot}"]`,
+        throughOverlay ? { position: { x: 8, y: 8 }, force: true } : {},
+      );
+      await page.waitForSelector('[data-filter-chip="my-dex"]');
+      await page.evaluate((q) => {
+        const inputs = [...document.querySelectorAll('input')];
+        const el = inputs[inputs.length - 1];
+        const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+        set.call(el, q);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }, query);
+      await page.waitForTimeout(700);
+      await page.click('[data-testid="verify-evo-card"]');
+      await page.waitForTimeout(700);
+    };
+
     const empty = await runs();
-    await page.click('[data-testid="slot-partner"]');
-    await page.waitForSelector('[data-filter-chip="my-dex"]');
-    await page.evaluate(() => {
-      const inputs = [...document.querySelectorAll('input')];
-      const el = inputs[inputs.length - 1];
-      const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
-      set.call(el, 'pikachu');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await page.waitForTimeout(700);
-    await page.click('[data-testid="verify-evo-card"]');
-    await page.waitForTimeout(700);
+    // One Pokémon centres itself. Fill both so this check stays on the
+    // corner pair, which is the layout empty and filled must share.
+    await pick('slot-partner', 'pikachu');
+    await pick('slot-ace', 'bulbasaur', true);
     const filled = await runs();
 
     // The partner half is the one that changed state; its runs must not move.
@@ -252,6 +275,7 @@ test.describe('the ace and partner slot', () => {
   });
 
   test('both halves get the same sprite', async ({ page }) => {
+    await blankLeague(page);
     await openCard(page);
     const { halves } = await slotGeometry(page);
     const ace = halves.find((h) => h.id === 'slot-ace')!;
@@ -260,5 +284,141 @@ test.describe('the ace and partner slot', () => {
     // so sizing each half to its own room made the partner read as the lesser
     // one; the pair is one size and the slot's width sets it.
     expect(Math.abs(ace.sprite - partner.sprite), 'the two match').toBeLessThanOrEqual(1);
+  });
+
+  test('a lone ace keeps the empty partner half and the diagonal', async ({ page }) => {
+    await pairLeague(page, 334, null);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(600);
+
+    const got = await page.evaluate(() => {
+      const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
+      const cluster = pane.querySelector<HTMLElement>('[data-testid="slot-ace"]')!;
+      const art = pane.querySelector<HTMLElement>('[data-slot-art]')!;
+      const slot = pane.getBoundingClientRect();
+      const box = cluster.getBoundingClientRect();
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const css = art.offsetWidth;
+      const n = css / (3.25 * rem);
+      return {
+        mode: pane.dataset.showcase,
+        seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
+        arts: pane.querySelectorAll('[data-slot-art] img').length,
+        heads: [...pane.querySelectorAll('[data-slot-head]')].map((el) => el.getAttribute('data-slot-head')),
+        cx: (box.left + box.width / 2 - slot.left) / slot.width,
+        cy: (box.top + box.height / 2 - slot.top) / slot.height,
+        css,
+        attr: Number(pane.dataset.slotSprite),
+        integer: [1, 2, 3].some((s) => Math.abs(n - s) < 0.02),
+        partner: !!pane.querySelector('[data-testid="slot-partner"]'),
+      };
+    });
+    expect(got.mode, 'one filled seat is still a split pane').toBe('split');
+    expect(got.seam, 'the diagonal stays').toBe(true);
+    expect(got.arts, 'one sprite').toBe(1);
+    expect(got.heads, 'both headings').toEqual(['ace', 'partner']);
+    expect(got.partner, 'empty partner half stays').toBe(true);
+    expect(got.cx, 'ace stays in its corner').toBeLessThan(0.42);
+    expect(got.css).toBeCloseTo(got.attr, 0);
+    expect(got.integer, `css ${got.css} is n×3.25rem`).toBe(true);
+
+    await page.locator('[data-testid="slot-partner"]').click({ position: { x: 8, y: 8 }, force: true });
+    await expect(page.locator('[data-filter-chip="my-dex"]')).toBeVisible();
+  });
+
+  test('a lone ace shows the full name inside the pane', async ({ page }) => {
+    // Squat phone is where the sprite-width cap cuts ALAKAZAM. CSS truncate
+    // keeps the full string in the DOM, so this check reads paint: no
+    // ellipsis, and the last letter's box inside the pane.
+    await page.setViewportSize({ width: 390, height: 667 });
+    await pairLeague(page, 65, null);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="slot-ace"]');
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+
+    const got = await page.evaluate(() => {
+      const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
+      const cluster = pane.querySelector<HTMLElement>('[data-testid="slot-ace"]')!;
+      const name = [...cluster.querySelectorAll('span')].find(
+        (el) => /alakaz/i.test(el.textContent ?? '') && el.childElementCount === 0,
+      );
+      if (!name) {
+        return {
+          text: '',
+          ellipsis: true,
+          lastInsidePane: false,
+          partner: false,
+          seam: false,
+          mode: null as string | null,
+        };
+      }
+      const raw = (name.textContent ?? '').replace(/\s+/g, '');
+      const cs = getComputedStyle(name);
+      const node = [...name.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
+      let lastInsidePane = false;
+      if (node && raw.length > 0) {
+        const range = document.createRange();
+        range.setStart(node, raw.length - 1);
+        range.setEnd(node, raw.length);
+        const last = range.getBoundingClientRect();
+        const pr = pane.getBoundingClientRect();
+        lastInsidePane = last.width > 0.5
+          && last.left >= pr.left - 0.5
+          && last.right <= pr.right + 0.5
+          && last.top >= pr.top - 0.5
+          && last.bottom <= pr.bottom + 0.5;
+      }
+      return {
+        text: raw,
+        ellipsis: cs.textOverflow === 'ellipsis',
+        lastInsidePane,
+        partner: !!pane.querySelector('[data-testid="slot-partner"]'),
+        seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
+        mode: pane.dataset.showcase ?? null,
+      };
+    });
+    expect(got.text.toUpperCase(), 'the DOM still holds ALAKAZAM').toBe('ALAKAZAM');
+    expect(got.ellipsis, 'the name must not clip with an ellipsis').toBe(false);
+    expect(got.lastInsidePane, 'the last letter stays inside the pane').toBe(true);
+    expect(got.mode, 'one filled seat is still a split pane').toBe('split');
+    expect(got.partner, 'empty partner half stays').toBe(true);
+    expect(got.seam, 'the diagonal stays').toBe(true);
+  });
+
+  test('a lone partner keeps the empty ace half and the diagonal', async ({ page }) => {
+    await pairLeague(page, null, 179);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="slot-tm"]');
+    await page.waitForTimeout(600);
+
+    const got = await page.evaluate(() => {
+      const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
+      const cluster = pane.querySelector<HTMLElement>('[data-testid="slot-partner"]')!;
+      const box = cluster.getBoundingClientRect();
+      const slot = pane.getBoundingClientRect();
+      return {
+        mode: pane.dataset.showcase,
+        seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
+        arts: pane.querySelectorAll('[data-slot-art] img').length,
+        heads: [...pane.querySelectorAll('[data-slot-head]')].map((el) => el.getAttribute('data-slot-head')),
+        cx: (box.left + box.width / 2 - slot.left) / slot.width,
+        cy: (box.top + box.height / 2 - slot.top) / slot.height,
+        ace: !!pane.querySelector('[data-testid="slot-ace"]'),
+      };
+    });
+    expect(got.mode).toBe('split');
+    expect(got.seam).toBe(true);
+    expect(got.arts).toBe(1);
+    expect(got.heads).toEqual(['ace', 'partner']);
+    expect(got.ace).toBe(true);
+    expect(got.cx, 'partner stays in its corner').toBeGreaterThan(0.58);
   });
 });
