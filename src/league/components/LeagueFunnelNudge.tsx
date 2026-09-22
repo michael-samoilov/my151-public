@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import { useT, type NoArgKey } from '@/i18n';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { leagueNudgeEvent, type LeagueNudgeId } from '../model/funnelNudges';
-import { pickVisibleAnchor } from '../model/nudgeAnchor';
+import { pickVisibleAnchor, revealToolbarButton } from '../model/nudgeAnchor';
 import { useLeagueUi } from '../store/useLeagueUi';
 
 /**
@@ -82,7 +82,7 @@ export function LeagueFunnelNudge() {
         raf = requestAnimationFrame(capture);
         return;
       }
-      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      revealToolbarButton(el);
       setAnchor({ id, rect: el.getBoundingClientRect() });
     };
     capture();
