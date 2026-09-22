@@ -51,6 +51,7 @@ import {
   type FoilRecipe,
 } from '../export/foilRecipe';
 import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
+import { FOIL_HOLO_BLEND, type FoilHoloBlend } from '../export/foilBlend';
 import './ExportPreview3D.css';
 
 const TAP_MS = 320;
@@ -90,6 +91,7 @@ export function ExportPreview3D({
   tilt,
   maskContext = DEFAULT_MASK_CONTEXT,
   darkCard = false,
+  holoBlend = FOIL_HOLO_BLEND,
 }: {
   src: string | null;
   alt: string;
@@ -100,8 +102,8 @@ export function ExportPreview3D({
   /** Native hover-tilt knobs and masks. Omit on the live overlay. */
   tilt?: HoverTiltRecipe;
   maskContext?: HoverTiltMaskContext;
-  /** Workshop-only: invert the poster so white glare is readable. */
   darkCard?: boolean;
+  holoBlend?: FoilHoloBlend;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
@@ -425,6 +427,7 @@ export function ExportPreview3D({
     for (const [key, value] of Object.entries(tiltVars)) {
       el.style.setProperty(key, value);
     }
+    el.style.setProperty('--foil-holo-blend', holoBlend);
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
     if (!tilt) {
       if (!releaseRef.current) {
@@ -454,7 +457,7 @@ export function ExportPreview3D({
     return () => {
       cancelled = true;
     };
-  }, [activeSrc, idleAt, maskContext, paint, recipe, tilt]);
+  }, [activeSrc, holoBlend, idleAt, maskContext, paint, recipe, tilt]);
 
   useEffect(() => {
     const el = cardRef.current;

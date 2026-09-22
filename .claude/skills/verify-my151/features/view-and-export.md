@@ -13,14 +13,12 @@ display options, exportable as a PNG.
   pane, 3D tiltable preview card, then share or download. Export settings do
   not write the View store.
 - Preview-only `/foil-workshop` (gated off production) drives the same
-  `ExportPreview3D` card with native hover-tilt knobs and selectable
-  glare/sparkle masks (one undistorted primary-type glyph per sprite at Poké Ball
-  size, tiled `my151.app` wordmark, fine-grain Pokémon-card sparkles, Poké Ball
-  tile, per-sprite national Dex numbers). There is no featured-mon mask.
-  Mask texels stay glued to the card (`mask-position` is a fixed point, not
-  the pointer). The stage uses the live export overlay scrim (dimmed
-  `bg-background` page + `bg-slate-950/50` blur). A Dark card toggle inverts
-  the poster so white glare is visible.
+  `ExportPreview3D` card. The pane exposes only holo/rainbow amount, glare
+  intensity, drop shadow, and blend mode (rainbow `FOIL_HOLO_BLEND` plus glare
+  `blendMode`). Sparkle, mask, tilt, spring, and parallax dials are gone. Hidden
+  recipe fields stay at the live export defaults so the card matches the preview.
+  The stage uses the live export overlay scrim (dimmed `bg-background` page +
+  `bg-slate-950/50` blur).
 - Desktop auto-tilt (idle orbit) parks on press and resumes on a second press.
   Foil shine is visible while the card is tilted. Rest size fills the pane.
   Hover tilt matches poke-holo / hover-tilt: CSS `--rotate-x` / `--rotate-y`
@@ -66,13 +64,14 @@ or `<a download="my151.png">`); the repo's own e2e checks a >50KB blob in
 `e2e/dev/poster-export.spec.ts`.
 
 The foil workshop is a separate MPA at `/foil-workshop`. Navigate there, wait
-for `[data-foil-workshop]` and the preview image, then click
-`[data-hover-tilt-mask="wordmark"]` and read `--hover-tilt-glare-mask` on
-`[data-export-preview]`. `--hover-tilt-glare-mask-position` must not contain
-`--pointer` and must stay equal across two pointer corners. A glareIntensity
-slider write must update `--hover-tilt-glare-intensity`. The stage page is
-`bg-background` under `[data-workshop-overlay]` (`bg-slate-950/50` + blur).
-`[data-workshop-dark-card-toggle]` inverts the poster.
+for `[data-foil-workshop]` and the preview image. Assert the four keeper
+controls (`[data-foil-slider="holographic"]`, `glareIntensity`,
+`[data-workshop-shadow-toggle]`, `[data-hover-tilt-select="holoBlend"]` and
+`blendMode`) and that mask, sparkle, tilt, and parallax sliders are absent.
+`--foil-holographic` starts at `1` and `--foil-holo-blend` starts at `hue`.
+A glareIntensity slider write must update `--hover-tilt-glare-intensity`.
+The stage page is `bg-background` under `[data-workshop-overlay]`
+(`bg-slate-950/50` + blur).
 
 ## Gotchas
 

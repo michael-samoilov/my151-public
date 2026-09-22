@@ -1412,7 +1412,6 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
   return checks;
 }
 
-/** Preview-only /foil-workshop: native hover-tilt knobs and selectable glare masks. */
 export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
   const checks: Check[] = [];
   await s.navigate(ctx.base + '/foil-workshop');
@@ -1432,190 +1431,44 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     await sleep(250);
   }
   checks.push(ok('foil-workshop:preview-img', imgReady, imgReady ? 'preview painted' : 'no preview img'));
-  const tiltVars = await s.evalJson<{ rot: string; holo: string; hx: string }>(
+  const tiltVars = await s.evalJson<{ rot: string; holo: string; blend: string }>(
     `const el=document.querySelector('[data-export-preview]');
-     if(!(el instanceof HTMLElement)) return {rot:'',holo:'',hx:''};
+     if(!(el instanceof HTMLElement)) return {rot:'',holo:'',blend:''};
      const s=getComputedStyle(el);
      return {
        rot: s.getPropertyValue('--hover-tilt-rotation-x').trim(),
        holo: s.getPropertyValue('--foil-holographic').trim(),
-       hx: s.getPropertyValue('--hover-tilt-x').trim(),
+       blend: s.getPropertyValue('--foil-holo-blend').trim(),
      };`,
-  ).catch(() => ({ rot: '', holo: '', hx: '' }));
+  ).catch(() => ({ rot: '', holo: '', blend: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^10(\.0+)?deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
   checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 1) < 0.02, `holo=${tiltVars.holo}`));
+  checks.push(ok('foil-workshop:prod-blend', tiltVars.blend === 'hue' || tiltVars.blend === '', `blend=${tiltVars.blend}`));
   await s.screenshot(ctx.shot('foil-workshop'));
 
-  const labels = await s.evalJson<string[]>(
-    `return [...document.querySelectorAll('[data-hover-tilt-mask]')].map((el) => el.getAttribute('data-hover-tilt-mask')||'');`,
-  ).catch(() => [] as string[]);
-  checks.push(ok('foil-workshop:mask-list', labels.length >= 6, `mask controls: ${labels.length}`));
-  const needed = ['typeIcon', 'wordmark', 'cardSparkle', 'pokeBall', 'dexNumber'];
-  checks.push(ok('foil-workshop:mask-ids', needed.every((id) => labels.includes(id)), `ids: ${labels.join(',')}`));
-
-  try {
-    await s.click('[data-hover-tilt-mask="wordmark"]');
-    await sleep(400);
-  } catch {
-    /* base build has no mask picker */
-  }
-  const afterClick = await s.evalJson<{ mask: string; css: string }>(
-    `const el=document.querySelector('[data-export-preview]');
-     if(!(el instanceof HTMLElement)) return {mask:'',css:''};
-     return {
-       mask: el.getAttribute('data-hover-tilt-glare-mask')||'',
-       css: getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask').trim(),
-     };`,
-  ).catch(() => ({ mask: '', css: '' }));
-  let decoded = afterClick.css;
-  try { decoded = decodeURIComponent(afterClick.css); } catch { /* already decoded */ }
-  const wordmarkOn = afterClick.mask === 'wordmark' && (afterClick.css.includes('svg+xml') || decoded.includes('my151.app'));
-  checks.push(ok('foil-workshop:mask-applies', wordmarkOn, `mask=${afterClick.mask}`));
-  await s.screenshot(ctx.shot('foil-workshop-wordmark'));
-
-  await s.evalJson(
-    `const input=document.querySelector('[data-foil-slider="glareIntensity"]');
-     if(!(input instanceof HTMLInputElement)) return false;
-     const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;
-     setter?.call(input,'0.91');
-     input.dispatchEvent(new Event('input',{bubbles:true}));
-     input.dispatchEvent(new Event('change',{bubbles:true}));
-     return true;`,
-  ).catch(() => false);
-  await s.evalJson(
-    `const hit=document.querySelector('[data-export-tilt-hit]');
-     if(!(hit instanceof HTMLElement)) return false;
-     const r=hit.getBoundingClientRect();
-     const fire=(u,v)=>{
-       hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:r.left+r.width*u,clientY:r.top+r.height*v,pointerType:'mouse',pointerId:1}));
-     };
-     fire(0.5, 0.5);
-     fire(0.92, 0.08);
-     return true;`,
-  ).catch(() => false);
-  await sleep(250);
-  const firstMask = await s.evalJson<string>(
-    `const card=document.querySelector('[data-export-preview]');
-     if(!(card instanceof HTMLElement)) return '';
-     return getComputedStyle(card).getPropertyValue('--hover-tilt-glare-mask-position').trim();`,
-  ).catch(() => '');
-  await s.evalJson(
-    `const hit=document.querySelector('[data-export-tilt-hit]');
-     if(!(hit instanceof HTMLElement)) return false;
-     const r=hit.getBoundingClientRect();
-     hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:r.left+r.width*0.18,clientY:r.top+r.height*0.82,pointerType:'mouse',pointerId:1}));
-     return true;`,
-  ).catch(() => false);
-  await sleep(200);
-  const secondMask = await s.evalJson<string>(
-    `const card=document.querySelector('[data-export-preview]');
-     if(!(card instanceof HTMLElement)) return '';
-     return getComputedStyle(card).getPropertyValue('--hover-tilt-glare-mask-position').trim();`,
-  ).catch(() => '');
-  const glued =
-    firstMask.length > 0 &&
-    firstMask === secondMask &&
-    !/pointer/.test(firstMask);
-  checks.push(ok('foil-workshop:mask-glued', glued, `pos=${firstMask} then ${secondMask}`));
-  const maskOnCard = await s.evalJson<{
-    ok: boolean;
-    reason: string;
-    hypot: number;
+  const controls = await s.evalJson<{
+    holo: boolean;
+    glare: boolean;
+    shadow: boolean;
+    holoBlend: boolean;
+    glareBlend: boolean;
+    extras: string[];
   }>(
-    `const card=document.querySelector('[data-export-preview]');
-     if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing',hypot:0};
-     const hypot=Math.hypot(Number(card.dataset.tiltX||0),Number(card.dataset.tiltY||0));
-     if(card.querySelector('[data-hover-tilt-layer]')) return {ok:false,reason:'child-layer',hypot};
-     if(card.querySelector('[data-export-foil-face]')) return {ok:false,reason:'face-wrapper',hypot};
-     const style=getComputedStyle(card);
-     if(!style.transformStyle.includes('preserve-3d')) return {ok:false,reason:'tilt not preserve-3d',hypot};
-     const glare=getComputedStyle(card,'::before');
-     if(glare.content==='none'||glare.content==='') return {ok:false,reason:'no ::before glare',hypot};
-     if(glare.position!=='absolute') return {ok:false,reason:'glare position '+glare.position,hypot};
-     if(glare.transform.includes('matrix3d')) return {ok:false,reason:'glare matrix3d',hypot};
-     const mask=(glare.getPropertyValue('-webkit-mask-image')+' '+glare.maskImage).trim();
-     if(!mask.includes('svg+xml') && !mask.includes('url(')) return {ok:false,reason:'glare mask '+mask.slice(0,80),hypot};
-     if(hypot<2.5) return {ok:false,reason:'weak-tilt '+hypot.toFixed(2),hypot};
-     const pos=getComputedStyle(card).getPropertyValue('--hover-tilt-glare-mask-position').trim();
-     if(/pointer/.test(pos)) return {ok:false,reason:'mask follows pointer '+pos,hypot};
-     const glarePos=(glare.getPropertyValue('-webkit-mask-position')+' '+glare.maskPosition).trim();
-     return {ok:true,reason:'::before-glued '+pos+' / '+glarePos,hypot};`,
-  ).catch(() => ({ ok: false, reason: 'eval', hypot: 0 }));
-  checks.push(ok('foil-workshop:mask-on-card', maskOnCard.ok, `${maskOnCard.reason} hypot=${maskOnCard.hypot.toFixed(1)}`));
-  await s.screenshot(ctx.shot('foil-workshop-wordmark-tilt'));
-
-  try {
-    await s.click('[data-hover-tilt-mask="typeIcon"]');
-    await sleep(900);
-  } catch {
-    /* base build has no mask picker */
-  }
-  const typeIcon = await s.evalJson<{
-    count: string;
-    types: string;
-    size: string;
-    mask: string;
-    featured: boolean;
-  }>(
-    `const el=document.querySelector('[data-export-preview]');
-     const active=document.querySelector('[data-hover-tilt-mask-active]');
-     if(!(el instanceof HTMLElement)) return {count:'',types:'',size:'',mask:'',featured:false};
-     let mask=getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask').trim();
-     try { mask=decodeURIComponent(mask); } catch { /* already decoded */ }
-     const copy=active?.textContent||'';
+    `const has=(sel)=>!!document.querySelector(sel);
+     const extras=[...document.querySelectorAll('[data-foil-slider],[data-hover-tilt-mask],[data-workshop-dark-card-toggle]')]
+       .map((el)=>el.getAttribute('data-foil-slider')||el.getAttribute('data-hover-tilt-mask')||el.getAttribute('data-workshop-dark-card-toggle')||el.tagName)
+       .filter((id)=>!['holographic','glareIntensity','shadowBlur'].includes(id));
      return {
-       count: el.getAttribute('data-mask-sprite-count')||'',
-       types: el.getAttribute('data-mask-sprite-types')||'',
-       size: getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask-size').trim(),
-       mask,
-       featured: /featured/i.test(copy),
+       holo: has('[data-foil-slider="holographic"]'),
+       glare: has('[data-foil-slider="glareIntensity"]'),
+       shadow: has('[data-workshop-shadow-toggle]') && has('[data-foil-slider="shadowBlur"]'),
+       holoBlend: has('[data-hover-tilt-select="holoBlend"]'),
+       glareBlend: has('[data-hover-tilt-select="blendMode"]'),
+       extras,
      };`,
-  ).catch(() => ({ count: '', types: '', size: '', mask: '', featured: false }));
-  const typeGlyphs =
-    Number(typeIcon.count) >= 9 &&
-    typeIcon.types.includes('grass') &&
-    typeIcon.types.includes('fire') &&
-    typeIcon.types.includes('water') &&
-    typeIcon.size === '100% 100%' &&
-    !typeIcon.featured &&
-    !typeIcon.size.includes('28%') &&
-    (typeIcon.mask.includes('image/png') ||
-      (typeIcon.mask.includes('/sprites/types/glyph/12') &&
-        typeIcon.mask.includes('/sprites/types/glyph/10') &&
-        typeIcon.mask.includes('/sprites/types/glyph/11')));
-  checks.push(ok(
-    'foil-workshop:type-icon-per-sprite',
-    typeGlyphs,
-    `count=${typeIcon.count} types=${typeIcon.types.slice(0, 80)} size=${typeIcon.size} featured=${typeIcon.featured}`,
-  ));
-  await s.screenshot(ctx.shot('foil-workshop-type-icon'));
-
-  try {
-    await s.click('[data-hover-tilt-mask="cardSparkle"]');
-    await sleep(400);
-  } catch {
-    /* base build has no mask picker */
-  }
-  const sparkle = await s.evalJson<{ size: string; mask: string; dots: number }>(
-    `const el=document.querySelector('[data-export-preview]');
-     if(!(el instanceof HTMLElement)) return {size:'',mask:'',dots:0};
-     const size=getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask-size').trim();
-     let mask=getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask').trim();
-     try { mask=decodeURIComponent(mask); } catch { /* already decoded */ }
-     return {size, mask, dots:(mask.match(/<circle/g)||[]).length};`,
-  ).catch(() => ({ size: '', mask: '', dots: 0 }));
-  const sparklePct = Number((sparkle.size.match(/^([\d.]+)%/) || [])[1] || 999);
-  const sparkleOk =
-    sparkle.dots > 80 &&
-    sparklePct > 0 &&
-    sparklePct <= 16 &&
-    !sparkle.size.includes('180%');
-  checks.push(ok(
-    'foil-workshop:sparkle-grain',
-    sparkleOk,
-    `size=${sparkle.size} dots=${sparkle.dots}`,
-  ));
-  await s.screenshot(ctx.shot('foil-workshop-sparkle'));
+  ).catch(() => ({ holo: false, glare: false, shadow: false, holoBlend: false, glareBlend: false, extras: ['eval'] }));
+  checks.push(ok('foil-workshop:keepers', controls.holo && controls.glare && controls.shadow && controls.holoBlend && controls.glareBlend, JSON.stringify(controls)));
+  checks.push(ok('foil-workshop:no-extras', controls.extras.length === 0, `extras=${controls.extras.join(',')}`));
 
   await s.evalJson(
     `const input=document.querySelector('[data-foil-slider="glareIntensity"]');
@@ -1633,6 +1486,28 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
      return getComputedStyle(el).getPropertyValue('--hover-tilt-glare-intensity').trim();`,
   ).catch(() => '');
   checks.push(ok('foil-workshop:glare-intensity', intensity === '0.910', `intensity=${intensity}`));
+
+  await s.evalJson(
+    `const sel=document.querySelector('[data-hover-tilt-select="holoBlend"]');
+     if(!(sel instanceof HTMLSelectElement)) return false;
+     sel.value='soft-light';
+     sel.dispatchEvent(new Event('change',{bubbles:true}));
+     return true;`,
+  ).catch(() => false);
+  await sleep(200);
+  const blendAfter = await s.evalJson<string>(
+    `const el=document.querySelector('[data-export-preview]');
+     if(!(el instanceof HTMLElement)) return '';
+     return getComputedStyle(el).getPropertyValue('--foil-holo-blend').trim();`,
+  ).catch(() => '');
+  checks.push(ok('foil-workshop:holo-blend', blendAfter === 'soft-light', `blend=${blendAfter}`));
+  await s.evalJson(
+    `const sel=document.querySelector('[data-hover-tilt-select="holoBlend"]');
+     if(!(sel instanceof HTMLSelectElement)) return false;
+     sel.value='hue';
+     sel.dispatchEvent(new Event('change',{bubbles:true}));
+     return true;`,
+  ).catch(() => false);
   await s.screenshot(ctx.shot('foil-workshop-glare-intensity'));
 
   const overlay = await s.evalJson<{ pageBg: string; blur: string; scrimBg: string }>(
@@ -1654,40 +1529,6 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     overlay.scrimBg !== 'rgb(0, 0, 0)' &&
     /0\.5/.test(overlay.scrimBg);
   checks.push(ok('foil-workshop:overlay-scrim', overlayOk, `page=${overlay.pageBg} blur=${overlay.blur} scrim=${overlay.scrimBg}`));
-
-  try {
-    await s.click('[data-workshop-dark-card-toggle]');
-    await sleep(200);
-  } catch {
-    /* base build has no dark-card toggle */
-  }
-  const dark = await s.evalJson<{ root: string; card: string; filter: string }>(
-    `const root=document.querySelector('[data-foil-workshop]');
-     const card=document.querySelector('[data-export-preview]');
-     const img=card?.querySelector('img');
-     return {
-       root: root instanceof HTMLElement ? (root.getAttribute('data-workshop-dark-card')||'') : '',
-       card: card instanceof HTMLElement ? (card.getAttribute('data-workshop-dark-card')||'') : '',
-       filter: img instanceof HTMLElement ? getComputedStyle(img).filter : '',
-     };`,
-  ).catch(() => ({ root: '', card: '', filter: '' }));
-  checks.push(ok('foil-workshop:dark-card', dark.root === '1' && dark.card === '1' && /invert/.test(dark.filter), `root=${dark.root} filter=${dark.filter}`));
-  await s.screenshot(ctx.shot('foil-workshop-dark-card'));
-
-  try {
-    await s.click('[data-hover-tilt-mask="typeIcon"]');
-    await sleep(800);
-  } catch {
-    /* base build has no mask picker */
-  }
-  await s.screenshot(ctx.shot('foil-workshop-type-icon-dark'));
-  try {
-    await s.click('[data-hover-tilt-mask="cardSparkle"]');
-    await sleep(400);
-  } catch {
-    /* base build has no mask picker */
-  }
-  await s.screenshot(ctx.shot('foil-workshop-sparkle-dark'));
   return checks;
 }
 

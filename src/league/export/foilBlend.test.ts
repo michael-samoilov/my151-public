@@ -3,10 +3,12 @@ import {
   chroma,
   FOIL_HOLO_AMOUNT,
   FOIL_HOLO_BLEND,
+  FOIL_HOLO_BLEND_CANDIDATES,
   FOIL_HOLO_STRIPES,
   FOIL_HOLO_TINT,
   FOIL_POSTER_INKS,
   foilComposite,
+  isFoilHoloBlend,
   luma,
   pickHoloBlend,
   scoreHoloBlend,
@@ -22,6 +24,8 @@ describe('foil holographic blend', () => {
   it('hue keeps chroma and luma on every poster ink', () => {
     expect(FOIL_HOLO_BLEND).toBe('hue');
     expect(FOIL_HOLO_AMOUNT).toBe(1);
+    expect(isFoilHoloBlend(FOIL_HOLO_BLEND)).toBe(true);
+    expect(FOIL_HOLO_BLEND_CANDIDATES).toContain('hue');
     for (const ink of FOIL_POSTER_INKS) {
       let maxShift = 0;
       for (const stripe of FOIL_HOLO_STRIPES) {

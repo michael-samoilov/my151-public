@@ -14,6 +14,10 @@ export const FOIL_HOLO_BLEND_CANDIDATES = [
 
 export type FoilHoloBlend = (typeof FOIL_HOLO_BLEND_CANDIDATES)[number];
 
+export function isFoilHoloBlend(value: unknown): value is FoilHoloBlend {
+  return typeof value === 'string' && (FOIL_HOLO_BLEND_CANDIDATES as readonly string[]).includes(value);
+}
+
 /** Rainbow swatch from the live holographic grating. */
 export const FOIL_HOLO_TINT = { r: 255, g: 118, b: 117 };
 

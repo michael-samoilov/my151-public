@@ -230,7 +230,7 @@
   background-position:
     calc(10% + var(--pointer-from-left) * 80%) calc(10% + var(--pointer-from-top) * 80%),
     calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%);
-  mix-blend-mode: hue;
+  mix-blend-mode: var(--foil-holo-blend, hue);
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-holographic));
 }
