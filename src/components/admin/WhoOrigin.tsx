@@ -12,14 +12,14 @@ import {
   balanceRailRows,
   captionKind,
   countryItems,
+  countryHeaderCounts,
   countryOtherLabeled,
   countryRooms,
-  distinctCountries,
   fitBar,
   formatShare,
   languageOverrides,
-  languageUsesName,
   layoutNameLabels,
+  primaryLanguageRegion,
   countryCounts,
   regionBar,
   unshippedTags,
@@ -93,9 +93,11 @@ function ShareBar({
         const base = seg.color ?? color ?? '#404040';
         const fill = pressedKey && !on ? muteColor(base) : base;
         const inset = on ? PRESSED_INSET : 0;
-        const kind = kinds[i] ?? 'none';
+        let kind = kinds[i] ?? 'none';
         const pct = seg.pct ?? 0;
+        if (kind === 'none' && pct > 0 && pct < 10 && seg.widthPx >= 12) kind = 'int';
         const label = kind === 'pct' ? `${pct}%` : kind === 'int' ? String(pct) : '';
+        const tight = kind === 'int' && seg.widthPx < 28;
         const style = {
           top: inset,
           height: `calc(100% - ${inset * 2}px)`,
@@ -107,8 +109,9 @@ function ShareBar({
           backgroundColor: fill,
           color: inkOn(fill),
           boxShadow: !on && i < segments.length - 1 ? 'inset -1px 0 0 #fff' : undefined,
-          paddingLeft: label ? '0.375rem' : 0,
-          paddingRight: label ? '0.375rem' : 0,
+          justifyContent: tight ? 'center' : 'flex-start',
+          paddingLeft: !label || tight ? (label ? 1 : 0) : '0.375rem',
+          paddingRight: !label || tight ? (label ? 1 : 0) : '0.375rem',
         };
         const body = <span className="truncate">{label}</span>;
         if (!onSelect) {
@@ -170,9 +173,10 @@ function OtherRail({
     const host = hostRef.current;
     if (!host) return;
     const read = () => {
+      const topRow = host.querySelector('[data-who-rail-row]');
       const labels = [...host.querySelectorAll<HTMLElement>('[data-who-rail-label]')];
-      const row = host.querySelector<HTMLElement>('[data-who-rail-row]');
-      const gap = row ? Number.parseFloat(getComputedStyle(row).columnGap) || 0 : 0;
+      const topLabels = [...(topRow?.querySelectorAll<HTMLElement>('[data-who-rail-label]') ?? [])];
+      const gap = topRow ? Number.parseFloat(getComputedStyle(topRow).columnGap) || 0 : 0;
       const widths = labels.map((el) => el.getBoundingClientRect().width);
       const container = host.clientWidth;
       setMetrics((prev) =>
@@ -184,13 +188,13 @@ function OtherRail({
           ? prev
           : { widths, gap, container },
       );
-      if (labels.length === 0) {
+      if (topLabels.length === 0) {
         setSpan(null);
         return;
       }
       const origin = host.getBoundingClientRect().left;
-      const left = Math.min(...labels.map((el) => el.getBoundingClientRect().left)) - origin;
-      const right = Math.max(...labels.map((el) => el.getBoundingClientRect().right)) - origin;
+      const left = Math.min(...topLabels.map((el) => el.getBoundingClientRect().left)) - origin;
+      const right = Math.max(...topLabels.map((el) => el.getBoundingClientRect().right)) - origin;
       const next = { left, width: Math.max(0, right - left) };
       setSpan((prev) => (prev && prev.left === next.left && prev.width === next.width ? prev : next));
     };
@@ -374,9 +378,18 @@ export function WhoOrigin({
     [countrySegs, barW, labelCountryOther],
   );
   const langSegs = useMemo(
-    () => fitBar(tags, barW, (key) => widths[key] ?? key.length * 7.2),
+    () =>
+      fitBar(tags, barW, (key) => {
+        const name = langName(key) ?? key;
+        return widths[name] ?? name.length * 7.2;
+      }),
     [tags, barW, widths],
   );
+  const langColor = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const tag of tags) map.set(tag.key, REGION_COLORS[primaryLanguageRegion(visible, tag.key)]);
+    return map;
+  }, [tags, visible]);
   const nameLabels = useMemo(
     () =>
       layoutNameLabels(
@@ -388,7 +401,13 @@ export function WhoOrigin({
   );
   const countryTotal = countryList.reduce((sum, it) => sum + it.n, 0);
   const tagTotal = tags.reduce((sum, it) => sum + it.n, 0);
-  const allTime = distinctCountries(countries);
+  const headerCounts = useMemo(
+    () =>
+      platformReady
+        ? countryHeaderCounts(buckets, filter, defaultRegion)
+        : { all: countryList.length, week: countries7d },
+    [platformReady, buckets, filter, defaultRegion, countryList.length, countries7d],
+  );
   const singleRegion = filter?.dim === 'region' || !filter ? openRegion : null;
   const countrySegsPainted = countrySegs.map((seg) => ({
     ...seg,
@@ -409,17 +428,7 @@ export function WhoOrigin({
           aria-hidden="true"
         />
         <div data-who-region-module>
-          <div className="mb-1 flex items-baseline justify-between gap-3">
-            <div className={TITLE}>{regionTitle}</div>
-            <div className="flex items-baseline gap-1.5 text-xs font-bold" data-who-countries-header>
-              <span className={TITLE}>Countries</span>
-              <span className="tabular-nums text-foreground">{allTime}</span>
-              <span className="tabular-nums text-foreground">
-                {countries7d}
-                <sub className="ml-px text-[0.65em] font-semibold text-muted-foreground">7d</sub>
-              </span>
-            </div>
-          </div>
+          <div className={cn(TITLE, 'mb-1')}>{regionTitle}</div>
           <ShareBar
             testId="region"
             segments={regions}
@@ -452,6 +461,14 @@ export function WhoOrigin({
         </div>
 
         <div data-who-countries>
+          <div className="mb-1 flex items-baseline gap-1.5 text-xs font-bold" data-who-countries-header>
+            <span className={TITLE}>Countries</span>
+            <span className="tabular-nums text-foreground">{headerCounts.all}</span>
+            <span className="tabular-nums text-foreground">
+              {headerCounts.week}
+              <sub className="ml-px text-[0.65em] font-semibold text-muted-foreground">7d</sub>
+            </span>
+          </div>
           <ShareBar testId="countries" segments={countrySegsPainted} showShare />
           {markerRow(countrySegs, (seg) => {
             const name = countryName(seg.key) ?? seg.key;
@@ -485,23 +502,24 @@ export function WhoOrigin({
           <div className={cn(TITLE, 'mb-1')}>Unshipped</div>
           {langSegs.length > 0 ? (
             <>
-              <ShareBar testId="unshipped" segments={langSegs} color="#404040" />
+              <ShareBar
+                testId="unshipped"
+                segments={langSegs.map((seg) => ({
+                  ...seg,
+                  color: seg.key === OTHER_KEY ? '#737373' : (langColor.get(seg.key) ?? '#404040'),
+                }))}
+                showShare
+              />
               {markerRow(langSegs, (seg) => {
                 const name = langName(seg.key) ?? seg.key;
-                const index = langSegs.findIndex((item) => item.key === seg.key);
-                const next = langSegs[index + 1];
-                const spelled = languageUsesName(
-                  widths[name] ?? name.length * 7.2,
-                  seg.widthPx,
-                  next != null && next.key !== OTHER_KEY,
-                );
                 return (
                   <span
                     data-who-code={seg.key}
-                    data-who-lang-label={spelled ? 'name' : 'code'}
+                    data-who-lang-label="name"
                     className="whitespace-nowrap text-xs font-semibold leading-none"
+                    style={{ color: langColor.get(seg.key) ?? '#404040' }}
                   >
-                    {spelled ? name : seg.key}
+                    {name}
                   </span>
                 );
               })}
@@ -509,11 +527,7 @@ export function WhoOrigin({
                 segment={langSegs.find((s) => s.folded)}
                 total={tagTotal}
                 kind="lang"
-                textFor={(key) => {
-                  const name = langName(key) ?? key;
-                  const namePx = widths[name] ?? name.length * 7.2;
-                  return namePx <= barW ? name : key;
-                }}
+                textFor={(key) => langName(key) ?? key}
               />
             </>
           ) : (

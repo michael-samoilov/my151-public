@@ -307,9 +307,9 @@ describe('aggregate', () => {
     const agg = aggregate([pinned, match, stale], T0);
     expect(agg.countries7d).toBe(2);
     expect(agg.whoBuckets).toEqual([
-      { country: 'FR', lang: 'fr', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
-      { country: 'GB', lang: 'en-GB', locale: 'en', switched: '', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
-      { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
+      { country: 'FR', lang: 'fr', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1, n7d: 1 },
+      { country: 'GB', lang: 'en-GB', locale: 'en', switched: '', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1, n7d: 0 },
+      { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1, n7d: 1 },
     ]);
   });
 });

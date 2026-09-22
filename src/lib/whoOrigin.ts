@@ -312,10 +312,41 @@ export function countryRooms(
   return rooms;
 }
 
-/** A spelled language replaces its code when the word fits in the segment. */
-export function languageUsesName(namePx: number, segmentPx: number, followedByLabel: boolean): boolean {
-  const budget = segmentPx - (followedByLabel ? MARKER_GAP : 0);
-  return namePx <= budget;
+/** Distinct countries on the country bar, and how many of them appear in the 7-day window. */
+export function countryHeaderCounts(
+  buckets: readonly WhoBucket[],
+  filter: WhoFilter | null,
+  defaultRegion: Region | null,
+): { all: number; week: number } {
+  const all = new Set<string>();
+  const week = new Set<string>();
+  for (const bucket of visibleBuckets(buckets, filter, defaultRegion)) {
+    if (!bucket.country || bucket.n <= 0) continue;
+    const code = bucket.country.toUpperCase();
+    all.add(code);
+    if (bucket.n7d > 0) week.add(code);
+  }
+  return { all: all.size, week: week.size };
+}
+
+/** Region with the most users of this language in the buckets already sliced. */
+export function primaryLanguageRegion(buckets: readonly WhoBucket[], lang: string): Region {
+  const totals = new Map<Region, number>();
+  for (const bucket of buckets) {
+    if (bucket.lang !== lang || bucket.n <= 0) continue;
+    const region = regionOf(bucket.country);
+    totals.set(region, (totals.get(region) ?? 0) + bucket.n);
+  }
+  let best: Region = 'Unknown';
+  let bestN = 0;
+  for (const region of [...REGIONS, 'Unknown' as const]) {
+    const n = totals.get(region) ?? 0;
+    if (n > bestN) {
+      best = region;
+      bestN = n;
+    }
+  }
+  return best;
 }
 
 function spanWidth(widths: readonly number[], gapPx: number, from: number, to: number): number {
@@ -324,9 +355,18 @@ function spanWidth(widths: readonly number[], gapPx: number, from: number, to: n
   return width;
 }
 
+function betterRank(next: number[], prev: number[]): boolean {
+  for (let i = 0; i < next.length; i++) {
+    if (next[i] !== prev[i]) return next[i] < prev[i];
+  }
+  return false;
+}
+
 /**
  * Contiguous rows of similar width. One row when everything fits.
- * A row may exceed the container only when it holds a single item.
+ * The top row is the longest. It may run wider than the most even split
+ * so the rows under it stay shorter. A lower row stays inside the container
+ * unless it is a single item.
  */
 export function balanceRailRows(widths: readonly number[], gapPx: number, containerPx: number): number[][] {
   const n = widths.length;
@@ -337,43 +377,43 @@ export function balanceRailRows(widths: readonly number[], gapPx: number, contai
   let minRows = 1;
   let start = 0;
   for (let i = 1; i <= n; i++) {
-    const overflows = spanWidth(widths, gapPx, start, i) > containerPx + 0.5;
-    if (overflows && i - 1 > start) {
+    if (spanWidth(widths, gapPx, start, i) > containerPx + 0.5 && i - 1 > start) {
       minRows += 1;
       start = i - 1;
     }
   }
 
-  const best: number[][] = Array.from({ length: minRows + 1 }, () => Array(n + 1).fill(Number.POSITIVE_INFINITY));
-  const choice: number[][] = Array.from({ length: minRows + 1 }, () => Array(n + 1).fill(-1));
-  best[0][0] = 0;
-  for (let rows = 1; rows <= minRows; rows++) {
-    for (let end = 1; end <= n; end++) {
-      for (let cut = rows - 1; cut < end; cut++) {
-        if (best[rows - 1][cut] === Number.POSITIVE_INFINITY) continue;
-        const width = spanWidth(widths, gapPx, cut, end);
-        if (width > containerPx + 0.5 && end - cut > 1) continue;
-        const cost = Math.max(best[rows - 1][cut], width);
-        if (cost < best[rows][end]) {
-          best[rows][end] = cost;
-          choice[rows][end] = cut;
-        }
-      }
+  let bestRows: number[][] | null = null;
+  let bestRank: number[] | null = null;
+  const consider = (groups: number[][]) => {
+    const rowWidths = groups.map((group) => spanWidth(widths, gapPx, group[0], group[group.length - 1] + 1));
+    const top = rowWidths[0];
+    const lowerMax = rowWidths.length > 1 ? Math.max(...rowWidths.slice(1)) : -1;
+    const topLongest = rowWidths.length === 1 || top > lowerMax + 0.5;
+    const lowerOverflow = groups.slice(1).some((group, i) => rowWidths[i + 1] > containerPx + 0.5 && group.length > 1);
+    if (lowerOverflow) return;
+    const maxW = Math.max(...rowWidths);
+    const topOverflow = top > containerPx + 0.5 && groups[0].length > 1 ? 1 : 0;
+    const rank = [topLongest ? 0 : 1, topOverflow, maxW, ...rowWidths.map((width) => -width)];
+    if (!bestRank || betterRank(rank, bestRank)) {
+      bestRank = rank;
+      bestRows = groups;
     }
-  }
-
-  const out: number[][] = [];
-  let rows = minRows;
-  let end = n;
-  while (rows > 0) {
-    const cut = choice[rows][end];
-    if (cut < 0) return [all];
-    out.push(all.slice(cut, end));
-    end = cut;
-    rows -= 1;
-  }
-  out.reverse();
-  return out;
+  };
+  const walk = (from: number, rowsLeft: number, acc: number[][]) => {
+    if (rowsLeft === 1) {
+      consider([...acc, all.slice(from)]);
+      return;
+    }
+    const lastStart = n - (rowsLeft - 1);
+    for (let end = from + 1; end <= lastStart; end++) {
+      const width = spanWidth(widths, gapPx, from, end);
+      if (acc.length > 0 && width > containerPx + 0.5 && end - from > 1) continue;
+      walk(end, rowsLeft - 1, [...acc, all.slice(from, end)]);
+    }
+  };
+  walk(0, minRows, []);
+  return bestRows ?? [all];
 }
 
 /** Left-align each name on its segment. A name may hang past a short segment. */

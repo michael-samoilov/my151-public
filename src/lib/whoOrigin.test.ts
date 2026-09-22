@@ -6,6 +6,7 @@ import {
   balanceRailRows,
   captionKind,
   countryCounts,
+  countryHeaderCounts,
   countryOtherLabeled,
   countryItems,
   countryRooms,
@@ -13,8 +14,8 @@ import {
   fitBar,
   formatShare,
   languageOverrides,
-  languageUsesName,
   layoutNameLabels,
+  primaryLanguageRegion,
   mixWho,
   regionBar,
   unshippedTags,
@@ -134,19 +135,29 @@ describe('fitBar', () => {
     expect(countryOtherLabeled({ dim: 'browser', value: 'Chrome' })).toBe(false);
   });
 
-  it('spells a language only when the word fits in the segment', () => {
-    expect(languageUsesName(40, 50, true)).toBe(true);
-    expect(languageUsesName(48, 50, true)).toBe(false);
-    expect(languageUsesName(48, 50, false)).toBe(true);
+  it('keeps a spelled language that hangs into Other', () => {
+    const items = [
+      { key: 'pt-BR', n: 20 },
+      { key: 'he-IL', n: 3 },
+      { key: 'cs', n: 1 },
+    ];
+    const width = (key: string) => (key === 'pt-BR' ? 70 : key === 'he-IL' ? 48 : 40);
+    const segs = fitBar(items, 220, width);
+    expect(segs.map((s) => s.key)).toEqual(['pt-BR', 'he-IL', OTHER_KEY]);
+    const hebrew = segs.find((s) => s.key === 'he-IL');
+    expect(hebrew && hebrew.widthPx).toBeLessThan(48);
   });
 
-  it('splits a wrapping rail so the rows have similar width', () => {
+  it('makes the top rail row the longest', () => {
     expect(balanceRailRows([10, 10], 4, 100)).toEqual([[0, 1]]);
-    const rows = balanceRailRows([10, 10, 10, 10, 10], 0, 40);
-    const widths = rows.map((row) => row.length * 10);
-    expect(rows.flat()).toEqual([0, 1, 2, 3, 4]);
-    expect(Math.max(...widths)).toBe(30);
-    expect(Math.min(...widths)).toBe(20);
+    expect(balanceRailRows([10, 10, 10, 10, 10], 0, 40)).toEqual([
+      [0, 1, 2],
+      [3, 4],
+    ]);
+    expect(balanceRailRows([10, 10, 10, 10, 10, 10], 0, 40)).toEqual([
+      [0, 1, 2, 3],
+      [4, 5],
+    ]);
   });
 
   it('folds a code when its marker overlaps the previous marker', () => {
@@ -172,11 +183,11 @@ describe('formatShare', () => {
 
 describe('language modules', () => {
   const buckets: WhoBucket[] = [
-    { country: 'FR', lang: 'fr', locale: 'fr', switched: 'en', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 1 },
-    { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
-    { country: 'US', lang: 'pt-BR', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 4 },
-    { country: 'GB', lang: 'nl', locale: 'en', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 2 },
-    { country: 'DE', lang: 'de', locale: 'de', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 3 },
+    { country: 'FR', lang: 'fr', locale: 'fr', switched: 'en', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 1, n7d: 1 },
+    { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1, n7d: 0 },
+    { country: 'US', lang: 'pt-BR', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 4, n7d: 4 },
+    { country: 'GB', lang: 'nl', locale: 'en', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 2, n7d: 0 },
+    { country: 'DE', lang: 'de', locale: 'de', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 3, n7d: 3 },
   ];
 
   it('drops a pin that matches negotiation', () => {
@@ -186,6 +197,22 @@ describe('language modules', () => {
       { lang: 'fr', switched: 'en', country: 'FR', n: 1 },
     ]);
     expect(languageOverrides(buckets, 'North America')).toEqual([]);
+  });
+
+  it('counts countries in the pressed slice, including the 7-day window', () => {
+    expect(countryHeaderCounts(buckets, { dim: 'device', value: 'Mobile' }, 'North America')).toEqual({
+      all: 2,
+      week: 2,
+    });
+    expect(countryHeaderCounts(buckets, { dim: 'region', value: 'Europe' }, 'North America')).toEqual({
+      all: 3,
+      week: 2,
+    });
+  });
+
+  it('colors a language by the region with the most users', () => {
+    expect(primaryLanguageRegion(buckets, 'pt-BR')).toBe('North America');
+    expect(primaryLanguageRegion(buckets, 'nl')).toBe('Europe');
   });
 
   it('counts only unshipped tags in the selected region', () => {

@@ -371,6 +371,8 @@ export interface WhoBucket {
   os: string;
   browser: string;
   n: number;
+  /** Browsers in this bucket with a session in the 7-day window. */
+  n7d: number;
 }
 
 /** Everything the dashboard shows for one tool's records. */
@@ -421,7 +423,20 @@ export function aggregate(records: SessionRecord[], now: number): Aggregates {
 const WINDOW_7D_MS = 7 * DAY_MS;
 
 /** Group records so Who can split language, pins, and platform by country. */
+function sevenDayBounds(records: SessionRecord[]): { start: number; end: number } {
+  let end = 0;
+  for (const r of records) {
+    for (const ts of activeTimestamps(r)) if (ts > end) end = ts;
+  }
+  return { start: end - WINDOW_7D_MS, end };
+}
+
+function inSevenDayWindow(record: SessionRecord, start: number, end: number): boolean {
+  return end > 0 && activeTimestamps(record).some((ts) => ts > start && ts <= end);
+}
+
 export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
+  const { start, end } = sevenDayBounds(records);
   const map = new Map<string, WhoBucket>();
   for (const r of records) {
     const country = (r.country ?? '').toUpperCase();
@@ -431,10 +446,15 @@ export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
     const device = r.device || 'Unknown';
     const os = r.os || 'Unknown';
     const browser = r.browser || 'Unknown';
+    const recent = inSevenDayWindow(r, start, end);
     const k = `${country}\t${lang}\t${locale}\t${switched}\t${device}\t${os}\t${browser}`;
     const cur = map.get(k);
-    if (cur) cur.n += 1;
-    else map.set(k, { country, lang, locale, switched, device, os, browser, n: 1 });
+    if (cur) {
+      cur.n += 1;
+      if (recent) cur.n7d += 1;
+    } else {
+      map.set(k, { country, lang, locale, switched, device, os, browser, n: 1, n7d: recent ? 1 : 0 });
+    }
   }
   return [...map.values()].sort(
     (a, b) => b.n - a.n || a.country.localeCompare(b.country) || a.lang.localeCompare(b.lang),
@@ -446,17 +466,12 @@ export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
  * at the latest session in this set. The window follows the data, not `now`.
  */
 export function distinctCountries7d(records: SessionRecord[]): number {
-  let end = 0;
-  for (const r of records) {
-    for (const ts of activeTimestamps(r)) if (ts > end) end = ts;
-  }
+  const { start, end } = sevenDayBounds(records);
   if (end <= 0) return 0;
-  const start = end - WINDOW_7D_MS;
   const seen = new Set<string>();
   for (const r of records) {
-    if (!r.country) continue;
-    const hit = activeTimestamps(r).some((ts) => ts > start && ts <= end);
-    if (hit) seen.add(r.country.toUpperCase());
+    if (!r.country || !inSevenDayWindow(r, start, end)) continue;
+    seen.add(r.country.toUpperCase());
   }
   return seen.size;
 }
