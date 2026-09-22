@@ -20,7 +20,7 @@ import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
-import { exportSurveySkipMarks, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
+import { exportSurveySkipMarks, leagueSittingEv, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
@@ -229,7 +229,7 @@ export interface LeagueUser {
   exportsLeague: number;
   exportedCardAt?: string;
   exportedLeagueAt?: string;
-  sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[] }[];
+  sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[]; events?: string[] }[];
   exportSurveySkips?: ExportSurveySkip[];
   order?: 'dex-first' | 'league-first' | 'same-day';
   gapDays?: number;
@@ -1049,6 +1049,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
         added,
         removed,
         dur: ms[k] != null ? ms[k] / 1000 : undefined,
+        ev: leagueSittingEv(s.events),
       };
     });
   }, [log, ms]);
