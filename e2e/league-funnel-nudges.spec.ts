@@ -114,6 +114,7 @@ test.describe('league funnel export nudges', () => {
     expect(Math.abs(geo.arrowX! - geo.exportX!)).toBeLessThan(24);
     await expect(nudge).toContainText('League ready');
     await expect(nudge).not.toContainText(/gym leaders?/i);
+    await expect(nudge).not.toContainText(/toolbar/i);
     await expect(nudge.getByRole('button', { name: 'Export league' })).toBeVisible();
     await expect.poll(() => nudgeEvents(events).map((e) => e.event)).toEqual([
       'league-nudge-league-shown',

@@ -238,7 +238,7 @@ export const enUi = {
   'nudge.card.body': 'Export this trainer card as an image and share it. The Export button is in the toolbar.',
   'nudge.card.cta': 'Export trainer card',
   'nudge.card.title': 'Trainer card complete',
-  'nudge.gyms.body': 'Export the league as an image and share it. The Export button is in the toolbar.',
+  'nudge.gyms.body': 'Export the league as an image and share it.',
   'nudge.gyms.cta': 'Export league',
   'nudge.gyms.title': 'League ready',
   'poster.balanced': 'perfectly balanced dex',

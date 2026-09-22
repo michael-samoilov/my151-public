@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { en } from '@/i18n/catalogs/en';
 import { SLOT_COUNT, slotKind, TEAM_SIZES, BOSS_ROW } from './constants';
 import {
   GYM_LEADER_SLOTS,
@@ -111,5 +112,15 @@ describe('leagueNudgeEvent', () => {
     expect(leagueNudgeEvent('league', 'shown')).toBe('league-nudge-league-shown');
     expect(leagueNudgeEvent('league', 'cta')).toBe('league-nudge-league-cta');
     expect(leagueNudgeEvent('league', 'dismiss')).toBe('league-nudge-league-dismiss');
+  });
+});
+
+describe('roster nudge copy', () => {
+  it('keeps League ready / Export league and does not mention the toolbar', () => {
+    expect(en['nudge.gyms.title']).toBe('League ready');
+    expect(en['nudge.gyms.cta']).toBe('Export league');
+    expect(en['nudge.gyms.body']).toBe('Export the league as an image and share it.');
+    expect(en['nudge.gyms.body']).not.toMatch(/toolbar/i);
+    expect(en['nudge.gyms.body']).not.toMatch(/gym leaders?/i);
   });
 });
