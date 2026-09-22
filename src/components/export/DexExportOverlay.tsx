@@ -10,9 +10,16 @@ import { computeViewSort } from '@/hooks/useViewSort';
 import { DEFAULT_STATS_HEIGHTS, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { previewExportHighlight, type ExportHighlight } from '@/league/export/exportPersonalization';
+import { FOIL_HOLO_BLEND, type FoilHoloBlend } from '@/league/export/foilBlend';
+import { DEFAULT_FOIL_RECIPE, cloneFoilRecipe, type FoilRecipe } from '@/league/export/foilRecipe';
 import { LeagueExportSurvey } from '@/league/components/LeagueExportSurvey';
 import { LeagueExportSurveyIntro } from '@/league/components/LeagueExportSurveyIntro';
 import { DexExportSettingsPane } from './DexExportSettingsPane';
+import {
+  DEFAULT_HOVER_TILT_RECIPE,
+  cloneHoverTiltRecipe,
+  type HoverTiltRecipe,
+} from './hoverTiltRecipe';
 import { hoverTiltMaskContextFromDex } from './hoverTiltMasks';
 import { ExportPreviewShell, type ExportPreviewPhase } from './ExportPreviewShell';
 import { dexExportFrameKey, dexExportLiveJobs, type DexExportDraft } from './dexExportDraft';
@@ -32,6 +39,9 @@ function seedDraft(): DexExportDraft {
 export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   const sections = usePokedexStore((s) => s.sections);
   const [draft, setDraft] = useState<DexExportDraft>(seedDraft);
+  const [recipe, setRecipe] = useState<FoilRecipe>(() => cloneFoilRecipe(DEFAULT_FOIL_RECIPE));
+  const [tilt, setTilt] = useState<HoverTiltRecipe>(() => cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE));
+  const [holoBlend, setHoloBlend] = useState<FoilHoloBlend>(FOIL_HOLO_BLEND);
   const [phase, setPhase] = useState<ExportPreviewPhase>('settings');
   const [exportBusy, setExportBusy] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
@@ -150,12 +160,21 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
       previewAlt="Pokedex export preview"
       frames={{ activeKey, urls, busy: busy || exportBusy }}
       maskContext={maskContext}
+      recipe={recipe}
+      tilt={tilt}
+      holoBlend={holoBlend}
       settings={
         <DexExportSettingsPane
           draft={draft}
           onDraft={setDraft}
           placedCount={placedCount}
           seedCustomIds={seedCustomIds}
+          recipe={recipe}
+          onRecipe={setRecipe}
+          tilt={tilt}
+          onTilt={setTilt}
+          holoBlend={holoBlend}
+          onHoloBlend={setHoloBlend}
           busy={exportBusy || busy}
           onExport={() => void runExport()}
           onClose={onClose}

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { paintedInkRainbow } from './support/paintedRainbow';
 import { seedDex, TUNE_URL } from './support/dexSeed';
 
 const MOBILE = { width: 390, height: 844 } as const;
@@ -176,18 +177,7 @@ test.describe('mobile dex export sheet', () => {
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 8000 }).toBe('1');
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.2);
-    const rainbow = await page.evaluate(() => {
-      const card = document.querySelector<HTMLElement>('[data-export-preview]');
-      const holo = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
-      if (!card || !holo) return { ok: false, reason: 'missing' };
-      const cs = getComputedStyle(holo);
-      const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`;
-      if (card.getAttribute('data-foil-maps') !== '1') return { ok: false, reason: 'maps' };
-      if (cs.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
-      if (Number(cs.opacity) <= 0.04) return { ok: false, reason: `opacity ${cs.opacity}` };
-      if (!mask.includes('url(')) return { ok: false, reason: 'unmasked' };
-      return { ok: true, reason: 'open' };
-    });
+    const rainbow = await paintedInkRainbow(page);
     expect(rainbow.ok, rainbow.reason).toBe(true);
   });
 
@@ -340,22 +330,30 @@ test.describe('desktop dex export preview', () => {
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 8000 }).toBe('1');
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.2);
-    const rainbow = await page.evaluate(() => {
-      const card = document.querySelector<HTMLElement>('[data-export-preview]');
-      const holo = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
-      if (!card || !holo) return { ok: false, reason: 'missing' };
-      const cs = getComputedStyle(holo);
-      const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`;
-      if (card.getAttribute('data-foil-maps') !== '1') return { ok: false, reason: 'maps' };
-      if (cs.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
-      if (Number(cs.opacity) <= 0.04) return { ok: false, reason: `opacity ${cs.opacity}` };
-      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 0.25) > 0.02) {
-        return { ok: false, reason: 'amount' };
-      }
-      if (!mask.includes('url(')) return { ok: false, reason: 'unmasked' };
-      return { ok: true, reason: 'open' };
-    });
+    const rainbow = await paintedInkRainbow(page);
     expect(rainbow.ok, rainbow.reason).toBe(true);
+
+    await expect(page.locator('[data-export-foil-rainbow]')).toBeVisible();
+    await expect(page.locator('[data-export-foil-glare]')).toBeVisible();
+    await expect(page.locator('[data-export-foil-shadow]')).toBeVisible();
+    await expect(page.locator('[data-export-foil-blend]')).toBeVisible();
+
+    const cssVar = (name: string) =>
+      page.locator('[data-export-preview]').evaluate((el, prop) => getComputedStyle(el).getPropertyValue(prop).trim(), name);
+
+    await page.locator('[data-export-foil-select="holoBlend"]').selectOption('overlay');
+    await expect
+      .poll(() =>
+        page.locator('[data-foil-layer="holographic"]').evaluate((el) => getComputedStyle(el).mixBlendMode),
+      )
+      .toBe('overlay');
+    await page.locator('[data-export-foil-glare] [data-foil-slider="glareIntensity"]').fill('0.1');
+    await expect.poll(() => cssVar('--hover-tilt-glare-intensity')).toBe('0.100');
+    await page.locator('[data-export-shadow-toggle]').click();
+    await expect.poll(() => foil.getAttribute('data-hover-tilt-shadow')).toBe('0');
+    await page.locator('[data-export-foil-rainbow] [data-foil-slider="holographic"]').fill('0');
+    await expect.poll(() => cssVar('--foil-holographic')).toBe('0.000');
+    await expect(page.locator('[data-export-preview-layer]')).toBeVisible();
   });
 
   test('tilts only near the card and keeps the export in view', async ({ page }, testInfo) => {

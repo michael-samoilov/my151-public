@@ -467,19 +467,6 @@
   mask-mode: var(--hover-tilt-mask-mode, match-source);
 }
 
-.export-foil[data-hover-tilt-glare-mask='dexBorder'] .export-foil-holographic {
-  -webkit-mask-image: var(--hover-tilt-glare-mask);
-  mask-image: var(--hover-tilt-glare-mask);
-  -webkit-mask-size: var(--hover-tilt-glare-mask-size);
-  mask-size: var(--hover-tilt-glare-mask-size);
-  -webkit-mask-position: var(--hover-tilt-glare-mask-position);
-  mask-position: var(--hover-tilt-glare-mask-position);
-  -webkit-mask-repeat: var(--hover-tilt-glare-mask-repeat);
-  mask-repeat: var(--hover-tilt-glare-mask-repeat);
-  -webkit-mask-composite: var(--hover-tilt-glare-mask-composite-webkit, source-in);
-  mask-composite: var(--hover-tilt-glare-mask-composite, intersect);
-}
-
 .export-foil[data-hover-tilt-sparkle-mask='none']::after {
   content: none;
 }

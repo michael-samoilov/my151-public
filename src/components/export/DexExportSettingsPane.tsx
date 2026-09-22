@@ -1,11 +1,15 @@
 import { Check, Download, Loader2, Lock, RotateCcw, X } from 'lucide-react';
+import type { HoverTiltRecipe } from '@/components/export/hoverTiltRecipe';
 import { Button } from '@/components/ui/button';
-import type { ViewSortOption } from '@/store/usePokedexStore';
 import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
-import { ExportSettingsScroll } from './ExportSettingsScroll';
+import { useT, type MessageKey } from '@/i18n';
+import type { FoilHoloBlend } from '@/league/export/foilBlend';
+import type { FoilRecipe } from '@/league/export/foilRecipe';
+import type { ViewSortOption } from '@/store/usePokedexStore';
+import { DexExportFoilControls } from './DexExportFoilControls';
 import type { DexExportDraft } from './dexExportDraft';
 import { DEX_EXPORT_SORTS } from './dexExportDraft';
-import { useT, type MessageKey } from '@/i18n';
+import { ExportSettingsScroll } from './ExportSettingsScroll';
 
 const SORT_KEYS = {
   'build-order': { label: 'sort.build-order', desc: 'sort.build-order.desc' },
@@ -20,6 +24,12 @@ export function DexExportSettingsPane({
   onDraft,
   placedCount,
   seedCustomIds,
+  recipe,
+  onRecipe,
+  tilt,
+  onTilt,
+  holoBlend,
+  onHoloBlend,
   busy,
   onExport,
   onClose,
@@ -29,6 +39,12 @@ export function DexExportSettingsPane({
   onDraft: (next: DexExportDraft) => void;
   placedCount: number;
   seedCustomIds: number[];
+  recipe: FoilRecipe;
+  onRecipe: (next: FoilRecipe) => void;
+  tilt: HoverTiltRecipe;
+  onTilt: (next: HoverTiltRecipe) => void;
+  holoBlend: FoilHoloBlend;
+  onHoloBlend: (next: FoilHoloBlend) => void;
   busy: boolean;
   onExport: () => void;
   onClose: () => void;
@@ -76,6 +92,15 @@ export function DexExportSettingsPane({
 
       <ExportSettingsScroll>
         <div className={mobileSheet ? 'space-y-2 px-3 pb-2 pt-1' : 'space-y-4 px-3 pb-2 pt-3'}>
+          <DexExportFoilControls
+            recipe={recipe}
+            onRecipe={onRecipe}
+            tilt={tilt}
+            onTilt={onTilt}
+            holoBlend={holoBlend}
+            onHoloBlend={onHoloBlend}
+            mobileSheet={mobileSheet}
+          />
           <div>
             <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
               {t('viewSettings.sortHeading')}

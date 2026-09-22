@@ -359,6 +359,8 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      if(Math.abs(amount-0.25)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
      if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
+     if(mask.includes('image/svg')) return {ok:false,reason:'frame mask hides ink'};
+     if(!mask.includes('image/png')) return {ok:false,reason:'ink mask missing'};
      if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no grating'};
      if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
      const lift=document.querySelector('[data-export-foil-lift]');
