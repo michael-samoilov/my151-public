@@ -94,6 +94,26 @@ test.describe('league funnel export nudges', () => {
     const nudge = page.getByTestId('league-nudge');
     await expect(nudge).toBeVisible({ timeout: 5000 });
     await expect(nudge).toHaveAttribute('data-league-nudge', 'league');
+    const geo = await page.evaluate(() => {
+      const mid = (el: Element | null) => {
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return r.left + r.width / 2;
+      };
+      return {
+        exportX: mid(document.querySelector('[data-league-export="league"]')),
+        nameX: mid(document.querySelector('[aria-label="League name"]')),
+        arrowX: mid(document.querySelector('[data-nudge-arrow]')),
+      };
+    });
+    expect(geo.exportX).toBeGreaterThan(0);
+    expect(geo.nameX).toBeGreaterThan(0);
+    expect(geo.arrowX).toBeGreaterThan(0);
+    expect(Math.abs(geo.arrowX! - geo.exportX!)).toBeLessThan(Math.abs(geo.arrowX! - geo.nameX!));
+    expect(Math.abs(geo.arrowX! - geo.exportX!)).toBeLessThan(24);
+    await expect(nudge).toContainText('League ready');
+    await expect(nudge).not.toContainText(/gym leaders?/i);
+    await expect(nudge.getByRole('button', { name: 'Export league' })).toBeVisible();
     await expect.poll(() => nudgeEvents(events).map((e) => e.event)).toEqual([
       'league-nudge-league-shown',
     ]);

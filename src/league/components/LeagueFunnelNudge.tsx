@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useT, type NoArgKey } from '@/i18n';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { leagueNudgeEvent, type LeagueNudgeId } from '../model/funnelNudges';
+import { pickVisibleAnchor } from '../model/nudgeAnchor';
 import { useLeagueUi } from '../store/useLeagueUi';
 
 /**
@@ -46,7 +47,7 @@ export function LeagueFunnelNudge() {
   const browserOpen = useLeagueUi((s) => s.browserOpen);
   const exportOpen = useLeagueUi((s) => s.exportOpen);
   const copy = id ? COPY[id] : null;
-  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const [anchor, setAnchor] = useState<{ id: LeagueNudgeId; rect: DOMRect } | null>(null);
 
   const [armed, setArmed] = useState(false);
   useEffect(() => {
@@ -65,16 +66,36 @@ export function LeagueFunnelNudge() {
 
   useLayoutEffect(() => {
     if (!id) return;
-    const el = document.querySelector(`[data-league-export="${id}"]`);
-    if (!el) return;
-    el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    const update = () => setAnchor(el.getBoundingClientRect());
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
+    let cancelled = false;
+    let raf = 0;
+    let frames = 0;
+    const selector = `[data-league-export="${id}"]`;
+    const capture = () => {
+      if (cancelled) return;
+      const nodes = [...document.querySelectorAll(selector)];
+      const el =
+        pickVisibleAnchor(nodes, window.innerWidth, window.innerHeight) ??
+        (frames > 40 ? nodes[0] ?? null : null);
+      if (!el) {
+        frames += 1;
+        if (frames > 40 && nodes.length === 0) return;
+        raf = requestAnimationFrame(capture);
+        return;
+      }
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      setAnchor({ id, rect: el.getBoundingClientRect() });
+    };
+    capture();
+    const track = document.querySelector('.p151-pane-track');
+    track?.addEventListener('transitionend', capture);
+    window.addEventListener('resize', capture);
+    window.addEventListener('scroll', capture, true);
     return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      track?.removeEventListener('transitionend', capture);
+      window.removeEventListener('resize', capture);
+      window.removeEventListener('scroll', capture, true);
     };
   }, [id]);
 
@@ -96,16 +117,17 @@ export function LeagueFunnelNudge() {
     return () => clearTimeout(timer);
   }, [copy, ready, finish]);
 
-  if (!copy || !anchor || !ready || !id) return null;
+  if (!copy || !anchor || anchor.id !== id || !ready || !id) return null;
 
-  const centerX = anchor.left + anchor.width / 2;
+  const box = anchor.rect;
+  const centerX = box.left + box.width / 2;
   const left = Math.max(8, Math.min(centerX - CARD_W / 2, window.innerWidth - CARD_W - 8));
   const arrowLeft = Math.max(14, Math.min(centerX - left, CARD_W - 14));
   const estimatedH = 148;
-  const below = anchor.bottom + 10 + estimatedH <= window.innerHeight - 8;
+  const below = box.bottom + 10 + estimatedH <= window.innerHeight - 8;
   const top = below
-    ? Math.max(8, anchor.bottom + 10)
-    : Math.max(8, anchor.top - estimatedH - 10);
+    ? Math.max(8, box.bottom + 10)
+    : Math.max(8, box.top - estimatedH - 10);
 
   return createPortal(
     <div
@@ -117,6 +139,7 @@ export function LeagueFunnelNudge() {
     >
       <div className="relative rounded-lg border bg-popover shadow-xl p-3 milestone-nudge-in">
         <div
+          data-nudge-arrow
           className={
             below
               ? 'absolute z-10 rotate-45 bg-popover border-l border-t'
