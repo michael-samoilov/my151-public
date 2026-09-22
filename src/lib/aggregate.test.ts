@@ -273,6 +273,45 @@ describe('aggregate', () => {
     expect(agg.heatmap).toHaveLength(7);
     expect(agg.hours).toHaveLength(24);
   });
+
+  it('tallies country, browser language, served locale, and pin together', () => {
+    const pinned = dex({
+      cid: 'fr-pin',
+      country: 'fr',
+      lang: 'fr',
+      locale: 'en',
+      switched: 'en',
+      firstTs: T0,
+      lastTs: T0,
+      sessionLog: [{ ts: T0 }],
+    });
+    const match = dex({
+      cid: 'us-pin',
+      country: 'US',
+      lang: 'en-US',
+      locale: 'en',
+      switched: 'en',
+      firstTs: T0,
+      lastTs: T0,
+      sessionLog: [{ ts: T0 }],
+    });
+    const stale = dex({
+      cid: 'old-gb',
+      country: 'GB',
+      lang: 'en-GB',
+      locale: 'en',
+      firstTs: T0 - 30 * DAY_MS,
+      lastTs: T0 - 20 * DAY_MS,
+      sessionLog: [{ ts: T0 - 20 * DAY_MS }],
+    });
+    const agg = aggregate([pinned, match, stale], T0);
+    expect(agg.countries7d).toBe(2);
+    expect(agg.whoBuckets).toEqual([
+      { country: 'FR', lang: 'fr', locale: 'en', switched: 'en', n: 1 },
+      { country: 'GB', lang: 'en-GB', locale: 'en', switched: '', n: 1 },
+      { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', n: 1 },
+    ]);
+  });
 });
 
 describe('tallyCohort', () => {

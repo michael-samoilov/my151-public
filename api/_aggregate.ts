@@ -42,6 +42,8 @@ export interface SessionRecord {
   tz?: string;
   lang?: string;
   locale?: string;
+  /** Locale pinned in the language picker. Absent when the browser still follows negotiation. */
+  switched?: string;
   device?: string;
   os?: string;
   browser?: string;
@@ -359,6 +361,15 @@ export function heatmap(records: SessionRecord[]): { hours: number[]; matrix: nu
   return { hours, matrix };
 }
 
+/** One bucket of browsers that share a country, browser language, served locale, and pin. */
+export interface WhoBucket {
+  country: string;
+  lang: string;
+  locale: string;
+  switched: string;
+  n: number;
+}
+
 /** Everything the dashboard shows for one tool's records. */
 export interface Aggregates {
   users: number;
@@ -373,6 +384,10 @@ export interface Aggregates {
   os: Record<string, number>;
   browsers: Record<string, number>;
   joints: PlatformJoint[];
+  /** Country × browser language × served locale × picker pin. */
+  whoBuckets: WhoBucket[];
+  /** Distinct countries with a session in the 168 hours ending at the latest session. */
+  countries7d: number;
   hours: number[];
   heatmap: number[][];
 }
@@ -393,9 +408,51 @@ export function aggregate(records: SessionRecord[], now: number): Aggregates {
     os: tallies(records, 'os'),
     browsers: tallies(records, 'browser'),
     joints: tallyJoints(records),
+    whoBuckets: tallyWhoBuckets(records),
+    countries7d: distinctCountries7d(records),
     hours: hm.hours,
     heatmap: hm.matrix,
   };
+}
+
+const WINDOW_7D_MS = 7 * DAY_MS;
+
+/** Group records so Who can split language and pins by country. */
+export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
+  const map = new Map<string, WhoBucket>();
+  for (const r of records) {
+    const country = (r.country ?? '').toUpperCase();
+    const lang = r.lang ?? '';
+    const locale = r.locale ?? '';
+    const switched = r.switched ?? '';
+    const k = `${country}\t${lang}\t${locale}\t${switched}`;
+    const cur = map.get(k);
+    if (cur) cur.n += 1;
+    else map.set(k, { country, lang, locale, switched, n: 1 });
+  }
+  return [...map.values()].sort(
+    (a, b) => b.n - a.n || a.country.localeCompare(b.country) || a.lang.localeCompare(b.lang),
+  );
+}
+
+/**
+ * Distinct countries among browsers with a session in the 168 hours that end
+ * at the latest session in this set. The window follows the data, not `now`.
+ */
+export function distinctCountries7d(records: SessionRecord[]): number {
+  let end = 0;
+  for (const r of records) {
+    for (const ts of activeTimestamps(r)) if (ts > end) end = ts;
+  }
+  if (end <= 0) return 0;
+  const start = end - WINDOW_7D_MS;
+  const seen = new Set<string>();
+  for (const r of records) {
+    if (!r.country) continue;
+    const hit = activeTimestamps(r).some((ts) => ts > start && ts <= end);
+    if (hit) seen.add(r.country.toUpperCase());
+  }
+  return seen.size;
 }
 
 export interface PlatformJoint {

@@ -6,15 +6,15 @@ import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { dexFunnelSankey, leagueFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
-import type { DexUsageFunnel, LeagueUsageFunnel } from '../../../api/_aggregate';
+import type { DexUsageFunnel, LeagueUsageFunnel, WhoBucket } from '../../../api/_aggregate';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
-import { Panel, Seg, Kpi, Rollup, type RollupRow } from '@/components/admin/ui';
+import { Panel, Seg, Kpi } from '@/components/admin/ui';
 import { ClampChip, PlatformStacks } from '@/components/admin/PlatformStacks';
+import { WhoOrigin } from '@/components/admin/WhoOrigin';
 import { clampedN, type PlatformClamp, type PlatformJoint } from '@/lib/platformStacks';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { cn, displayName } from '@/lib/utils';
-import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
@@ -83,13 +83,6 @@ export type ToolSlice = 'all' | 'dex' | 'league';
 
 export type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
 
-interface BarGroup {
-  label: string;
-  count: number;
-  color?: string;
-  children: { label: string; count: number }[];
-}
-
 const TOOL_TABS: { key: ToolSlice; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'dex', label: 'Dex builder' },
@@ -120,6 +113,8 @@ function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
     os: data.os,
     browsers: {},
     joints: [],
+    whoBuckets: [],
+    countries7d: 0,
     hours: data.hours,
     heatmap: data.heatmap,
     hourly: [],
@@ -194,6 +189,8 @@ export interface Aggregates {
   os: Record<string, number>;
   browsers: Record<string, number>;
   joints?: PlatformJoint[];
+  whoBuckets?: WhoBucket[];
+  countries7d?: number;
   hours: number[];
   heatmap: number[][];
   hourly?: { hour: number; unique: number }[];
@@ -429,13 +426,6 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
     stamps.push(rec.firstTs, rec.lastTs);
   }
   return distinctCalendarDays(stamps, rec.tz);
-}
-
-function flag(country?: string): string {
-  if (!country || country.length !== 2) return '';
-  const cc = country.toUpperCase();
-  if (!/^[A-Z]{2}$/.test(cc)) return '';
-  return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
 async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
@@ -1146,23 +1136,6 @@ function UserDetailPage({
       {tool === 'league' && league && <LeagueDetailBody league={league} />}
     </div>
   );
-}
-
-function regionGroups(countries: Record<string, number>): BarGroup[] {
-  const byRegion = new Map<string, { label: string; count: number }[]>();
-  for (const [cc, n] of Object.entries(countries)) {
-    const list = byRegion.get(regionOf(cc)) ?? [];
-    list.push({ label: `${flag(cc)} ${cc}`, count: n });
-    byRegion.set(regionOf(cc), list);
-  }
-  return [...byRegion.entries()]
-    .map(([label, children]) => ({
-      label,
-      count: children.reduce((sum, c) => sum + c.count, 0),
-      color: REGION_COLORS[label as Region],
-      children: children.sort((a, b) => b.count - a.count),
-    }))
-    .sort((a, b) => b.count - a.count);
 }
 
 function MetricChip({
@@ -1909,12 +1882,6 @@ export function AdminPage() {
 
           const xt = data.tools;
 
-          const regionRollup = (countries: Record<string, number>): RollupRow[] => {
-            const groups = regionGroups(countries);
-            const total = groups.reduce((s, g) => s + g.count, 0) || 1;
-            return groups.slice(0, 5).map((g) => ({ label: g.label, pct: Math.round((g.count / total) * 100) }));
-          };
-
           // The selected tool's whole population, not a built/incomplete/completed slice.
           const whoSrc = {
             devices: slice.devices,
@@ -2072,7 +2039,7 @@ export function AdminPage() {
                 ) : undefined
               }
             >
-              <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-[minmax(0,1fr)_16rem]">
+              <div className="flex min-w-0 flex-col gap-3">
                 <PlatformStacks
                   devices={whoSrc.devices}
                   os={whoOs}
@@ -2081,10 +2048,11 @@ export function AdminPage() {
                   clamp={whoClamp}
                   onClamp={setWhoClamp}
                 />
-                <div>
-                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Region</div>
-                  <Rollup rows={regionRollup(whoSrc.countries)} />
-                </div>
+                <WhoOrigin
+                  countries={whoSrc.countries}
+                  buckets={slice.whoBuckets ?? []}
+                  countries7d={slice.countries7d ?? 0}
+                />
               </div>
             </Panel>
 
