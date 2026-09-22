@@ -168,7 +168,8 @@ export function filteredN(buckets: readonly WhoBucket[], filter: WhoFilter | nul
 /**
  * Buckets for the country bar, Unshipped, and Overrides.
  * A platform filter keeps every country in that slice.
- * A region filter, or no filter, keeps one region. The default region is the largest.
+ * A region filter keeps that region.
+ * No filter keeps every country. `defaultRegion` limits the bar only when it is set.
  */
 export function visibleBuckets(
   buckets: readonly WhoBucket[],
@@ -235,26 +236,123 @@ export function regionBar(countries: Record<string, number>, barWidthPx: number)
   });
 }
 
-export function countryItems(countries: Record<string, number>, region: Region): FitItem[] {
+export function countryItems(countries: Record<string, number>, region: Region | null): FitItem[] {
   const items: FitItem[] = [];
   for (const [code, n] of Object.entries(countries)) {
     if (n <= 0) continue;
-    if (regionOf(code) !== region) continue;
+    if (region != null && regionOf(code) !== region) continue;
     items.push({ key: code.toUpperCase(), n });
   }
   return items;
 }
 
-/** Browser tags the app does not ship. `region` null keeps every country in the list. */
+const LEGACY_LANG = new Set(['iw', 'in', 'ji', 'jw']);
+
+let spelledNames: Intl.DisplayNames | null | undefined;
+
+/** The name the bar spells. `he`, `he-IL`, and `iw` are one language. */
+export function spelledLanguage(tag: string): string {
+  const base = tag.toLowerCase().split('-')[0] || tag;
+  if (spelledNames === undefined) {
+    try {
+      spelledNames = new Intl.DisplayNames(['en'], { type: 'language' });
+    } catch {
+      spelledNames = null;
+    }
+  }
+  try {
+    const name = spelledNames?.of(base);
+    if (name) return name;
+  } catch {
+    /* keep the tag */
+  }
+  return base;
+}
+
+function tagRank(tag: string): [number, number, number, string] {
+  const raw = tag.toLowerCase();
+  const base = raw.split('-')[0] || raw;
+  return [LEGACY_LANG.has(base) ? 1 : 0, raw === base ? 0 : 1, raw.length, raw];
+}
+
+function preferTag(a: string, b: string): string {
+  const ra = tagRank(a);
+  const rb = tagRank(b);
+  for (let i = 0; i < ra.length; i++) {
+    if (ra[i] < rb[i]) return a;
+    if (ra[i] > rb[i]) return b;
+  }
+  return a;
+}
+
+/** A pin that differs from the locale the tag would negotiate. */
+export function isLanguageOverride(bucket: WhoBucket): boolean {
+  return Boolean(bucket.switched && bucket.lang && negotiateLocale([bucket.lang]) !== bucket.switched);
+}
+
+export const LANGUAGE_SHARE_LABEL = {
+  served: 'Served',
+  unshipped: 'Unshipped',
+  overrides: 'Overrides',
+} as const;
+
+/**
+ * One 100% bar of the slice. Served leads. Unshipped and Overrides are the
+ * problem share of everyone, and a user lands in only one of the three.
+ */
+export function languageShare(buckets: readonly WhoBucket[], region: Region | null): FitItem[] {
+  let served = 0;
+  let unshipped = 0;
+  let overrides = 0;
+  for (const bucket of buckets) {
+    if (bucket.n <= 0) continue;
+    if (region != null && regionOf(bucket.country) !== region) continue;
+    if (isLanguageOverride(bucket)) overrides += bucket.n;
+    else if (bucket.lang && matchLocale(bucket.lang) === null) unshipped += bucket.n;
+    else served += bucket.n;
+  }
+  const items: FitItem[] = [];
+  if (served > 0) items.push({ key: 'served', n: served });
+  if (unshipped > 0) items.push({ key: 'unshipped', n: unshipped });
+  if (overrides > 0) items.push({ key: 'overrides', n: overrides });
+  return items;
+}
+
+/** Lay every item across the full width. Nothing folds into Other. */
+export function proportionBar(items: readonly FitItem[], barWidthPx: number): FitSegment[] {
+  const total = items.reduce((sum, it) => sum + it.n, 0);
+  if (total <= 0 || barWidthPx <= 0) return [];
+  let x = 0;
+  return items.map((it, i) => {
+    const widthPx = i === items.length - 1 ? Math.max(0, barWidthPx - x) : (it.n / total) * barWidthPx;
+    const seg: FitSegment = {
+      key: it.key,
+      n: it.n,
+      pct: Math.round((it.n / total) * 100),
+      leftPx: x,
+      widthPx,
+    };
+    x += widthPx;
+    return seg;
+  });
+}
+
+/** Browser tags the app does not ship. Tags that spell the same language are one segment. */
 export function unshippedTags(buckets: readonly WhoBucket[], region: Region | null): FitItem[] {
-  const counts = new Map<string, number>();
+  const groups = new Map<string, { n: number; tag: string }>();
   for (const bucket of buckets) {
     if (!bucket.lang || bucket.n <= 0) continue;
     if (region != null && regionOf(bucket.country) !== region) continue;
+    if (isLanguageOverride(bucket)) continue;
     if (matchLocale(bucket.lang) !== null) continue;
-    counts.set(bucket.lang, (counts.get(bucket.lang) ?? 0) + bucket.n);
+    const spell = spelledLanguage(bucket.lang);
+    const cur = groups.get(spell);
+    if (cur) {
+      cur.n += bucket.n;
+      cur.tag = preferTag(cur.tag, bucket.lang);
+    } else groups.set(spell, { n: bucket.n, tag: bucket.lang });
   }
-  return [...counts.entries()].map(([key, n]) => ({ key, n }));
+  return [...groups.values()].map((group) => ({ key: group.tag, n: group.n }));
 }
 
 /**
@@ -266,12 +364,15 @@ export function languageOverrides(buckets: readonly WhoBucket[], region: Region 
   for (const bucket of buckets) {
     if (!bucket.switched || !bucket.lang || bucket.n <= 0) continue;
     if (region != null && regionOf(bucket.country) !== region) continue;
-    if (negotiateLocale([bucket.lang]) === bucket.switched) continue;
+    if (!isLanguageOverride(bucket)) continue;
     const country = bucket.country.toUpperCase();
-    const k = `${bucket.lang}\t${bucket.switched}\t${country}`;
+    const k = `${spelledLanguage(bucket.lang)}\t${spelledLanguage(bucket.switched)}\t${country}`;
     const cur = map.get(k);
-    if (cur) cur.n += bucket.n;
-    else map.set(k, { lang: bucket.lang, switched: bucket.switched, country, n: bucket.n });
+    if (cur) {
+      cur.n += bucket.n;
+      cur.lang = preferTag(cur.lang, bucket.lang);
+      cur.switched = preferTag(cur.switched, bucket.switched);
+    } else map.set(k, { lang: bucket.lang, switched: bucket.switched, country, n: bucket.n });
   }
   return [...map.values()].sort(
     (a, b) => b.n - a.n || a.lang.localeCompare(b.lang) || a.country.localeCompare(b.country),
@@ -332,8 +433,9 @@ export function countryHeaderCounts(
 /** Region with the most users of this language in the buckets already sliced. */
 export function primaryLanguageRegion(buckets: readonly WhoBucket[], lang: string): Region {
   const totals = new Map<Region, number>();
+  const spell = spelledLanguage(lang);
   for (const bucket of buckets) {
-    if (bucket.lang !== lang || bucket.n <= 0) continue;
+    if (!bucket.lang || bucket.n <= 0 || spelledLanguage(bucket.lang) !== spell) continue;
     const region = regionOf(bucket.country);
     totals.set(region, (totals.get(region) ?? 0) + bucket.n);
   }

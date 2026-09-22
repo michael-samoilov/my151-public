@@ -2037,6 +2037,7 @@ export function AdminPage() {
 
             <Panel
               title="Who"
+              pinHeader
               sub={
                 whoFilteredN != null
                   ? [`${whoFilteredN} of ${whoN}`]
