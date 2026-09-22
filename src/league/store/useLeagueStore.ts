@@ -1,8 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } from './seedLeague';
+import { LEAGUE_PERSIST_VERSION, LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } from './seedLeague';
 import type { TypeName } from '@/types/pokemon';
 import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW } from '../model/constants';
+import {
+  parseCelebratedNudges,
+  reachedNudges,
+  type LeagueNudgeId,
+} from '../model/funnelNudges';
 import {
   POWERUP_ROWS,
   cyclePowerup,
@@ -107,6 +112,11 @@ export interface LeagueState {
   cards: GymCard[];
   /** Which row of each card the league home draws. Not part of a card. */
   view: LeagueView;
+  /**
+   * Export nudges already shown. Persisted so a reload does not replay them,
+   * the way the dex builder persists `milestoneCelebrated`.
+   */
+  celebratedNudges: LeagueNudgeId[];
 
   setName: (name: string) => void;
   setView: (view: LeagueView) => void;
@@ -145,6 +155,7 @@ export interface LeagueState {
   /** Trade two seats' legendaries, which is what a drop onto an occupied seat does. */
   swapLegends: (card: number, fromSeat: number, toSeat: number) => void;
   moveSlot: (fromIndex: number, toIndex: number) => void;
+  markNudgeCelebrated: (id: LeagueNudgeId) => void;
 }
 
 export function emptyCard(): GymCard {
@@ -300,6 +311,7 @@ export const useLeagueStore = create<LeagueState>()(
       name: '',
       cards: Array.from({ length: SLOT_COUNT }, emptyCard),
       view: 'challenge',
+      celebratedNudges: [],
 
       setName: (name) => set({ name }),
 
@@ -500,10 +512,33 @@ export const useLeagueStore = create<LeagueState>()(
             emptyCard,
           ),
         })),
+
+      markNudgeCelebrated: (id) =>
+        set((s) =>
+          s.celebratedNudges.includes(id) ? {} : { celebratedNudges: [...s.celebratedNudges, id] },
+        ),
     }),
     {
       name: LEAGUE_STORAGE_KEY,
-      version: 1,
+      version: LEAGUE_PERSIST_VERSION,
+      migrate: (persisted, version) => {
+        const state = (persisted ?? {}) as {
+          name?: string;
+          cards?: GymCard[];
+          view?: LeagueView;
+          celebratedNudges?: unknown;
+        };
+        if (version < 2 || state.celebratedNudges === undefined) {
+          return {
+            ...state,
+            celebratedNudges: reachedNudges(state.cards ?? []),
+          };
+        }
+        return {
+          ...state,
+          celebratedNudges: parseCelebratedNudges(state.celebratedNudges),
+        };
+      },
     },
   ),
 );

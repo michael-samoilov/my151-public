@@ -900,6 +900,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
             <span className="text-primary">{sectionName}</span>
           </h2>
           <button type="button"
+            data-testid="browser-close"
             onClick={handleDesktopClose}
             className="text-muted-foreground hover:text-foreground cursor-pointer p-1"
           >

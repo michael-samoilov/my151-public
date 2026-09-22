@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, type EngineName } from './lib/engines.ts';
 import type { PersonaName } from './lib/personas.ts';
-import { runGymCardExportParitySuite, runLeagueChangeSuite, runLeagueColumnHoverSuite, runLeagueHomeSlotMoveProof, runLeagueSuite, runStandardSuite } from './lib/flows.ts';
+import { runGymCardExportParitySuite, runLeagueChangeSuite, runLeagueColumnHoverSuite, runLeagueFunnelNudgeSuite, runLeagueHomeSlotMoveProof, runLeagueSuite, runStandardSuite } from './lib/flows.ts';
 import { probeEngines } from './doctor.ts';
 import { buildIn, startPreview, addWorktree, REPO_ROOT, type Preview, type Worktree } from './lib/servers.ts';
 import { Evidence, rollup, type SurfaceResult, type RunReport, type Check } from './lib/evidence.ts';
@@ -47,12 +47,23 @@ async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: st
       surface: `${def.surface}--${tag}`,
       shot: (label: string) => ev.shotPath(`${def.surface}-${tag}`, label),
     };
-    const checks = await runStandardSuite(s, def.persona, ctx);
-    checks.push(...(await runLeagueSuite(s, def.persona, ctx)));
-    checks.push(...(await runLeagueChangeSuite(s, def.persona, ctx)));
-    checks.push(...(await runLeagueColumnHoverSuite(s, def.persona, ctx)));
-    checks.push(...(await runLeagueHomeSlotMoveProof(s, def.persona, ctx)));
-    checks.push(...(await runGymCardExportParitySuite(s, def.persona, ctx)));
+    const checks: Check[] = [];
+    const suites: Array<[string, () => Promise<Check[]>]> = [
+      ['standard', () => runStandardSuite(s, def.persona, ctx)],
+      ['league', () => runLeagueSuite(s, def.persona, ctx)],
+      ['league-change', () => runLeagueChangeSuite(s, def.persona, ctx)],
+      ['league-hover', () => runLeagueColumnHoverSuite(s, def.persona, ctx)],
+      ['league-home', () => runLeagueHomeSlotMoveProof(s, def.persona, ctx)],
+      ['gym-card-export', () => runGymCardExportParitySuite(s, def.persona, ctx)],
+      ['league-funnel', () => runLeagueFunnelNudgeSuite(s, def.persona, ctx)],
+    ];
+    for (const [name, fn] of suites) {
+      try {
+        checks.push(...(await fn()));
+      } catch (e) {
+        checks.push({ name: `${name}:uncaught`, status: 'fail', detail: (e as Error).message });
+      }
+    }
     return { checks, video: videoFile ?? null };
   } finally { await s.close(); }
 }

@@ -40,8 +40,12 @@ rows around Eevee and asserts no empty cell sits before a tile, presses the
 Mega button twice and reads `state.cards[9].powerups`, replaces a Lapras seat
 with the Charizard line already on the card, and flicks Charizard's top cell
 two rows up with synthetic `TouchEvent`s, reading the boundary and the
-`[data-stage-tint]` cells while the touch is down. The oracle is the store:
-`state.cards[i].lines[j].branch` and `.boundaries`, and `.powerups[row]`.
+`[data-stage-tint]` cells while the touch is down. It then sets the gym type
+to Fire, opens the TM picker, types `surf`, and asserts Surf is listed
+(`league-change:tm-search-ignores-type-chip`) even though the Fire chip is
+still selected. It also measures the four Elite Four stars on the open card
+(`league:elite-stars-one-row`): one y, four increasing x. The oracle is the
+store: `state.cards[i].lines[j].branch` and `.boundaries`, and `.powerups[row]`.
 
 ## Gotchas
 

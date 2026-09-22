@@ -47,7 +47,18 @@ export const FUNNEL_LABEL: Record<string, string> = {
   'milestone-100': '100',
   'milestone-151': '151',
   'view-visit': 'view',
+  'league-nudge-card-shown': 'card nudge',
+  'league-nudge-card-cta': 'card go',
+  'league-nudge-card-dismiss': 'card skip',
+  'league-nudge-league-shown': '8 gyms',
+  'league-nudge-league-cta': '8 gyms go',
+  'league-nudge-league-dismiss': '8 gyms skip',
 };
+
+/** Event names stored on one league sitting, for the timeline funnel marks. */
+export function leagueSittingEv(events: readonly string[] | undefined): string[] | undefined {
+  return events?.length ? [...events] : undefined;
+}
 
 /** Horizontal gap when a sitting has both a diamond and a funnel circle. */
 export const FUNNEL_OFFSET_PX = 8;

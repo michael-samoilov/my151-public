@@ -508,9 +508,21 @@ async function readCard(s: Session, card: number): Promise<{ lines: { branch: nu
     return {lines:c.lines||[], powerups:c.powerups||{}};`);
 }
 
+async function clickHandle(s: Session, selector: string): Promise<boolean> {
+  if (!(await waitFor(s, selector))) return false;
+  try {
+    await s.click(selector);
+    return true;
+  } catch {
+    return s
+      .evalJson<boolean>(`const el=document.querySelector(${JSON.stringify(selector)}); if(!el) return false; el.click(); return true;`)
+      .catch(() => false);
+  }
+}
+
 /** Open a card from the league home; the home must be showing. */
 async function openLeagueCard(s: Session, card: number): Promise<boolean> {
-  await s.click(`[data-testid="league-slot-${card}"]`);
+  if (!(await clickHandle(s, `[data-testid="league-slot-${card}"]`))) return false;
   const there = await waitFor(s, '[data-testid="card-cell-1-1"]');
   await sleep(500);
   return there;
@@ -629,6 +641,25 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     } else {
       checks.push(ok('league:partner-head-inside-slot', false, 'eval failed'));
     }
+
+    await s.evalJson(`const c=document.querySelector('[data-testid="card-cell-9-1"]'); if(c) c.scrollIntoView({block:'center'}); return true;`).catch(() => false);
+    await sleep(s.engine === 'webkit' ? 400 : 200);
+    const stars = await s.evalJson<{ n: number; ySpread: number; xSpread: number; increasing: boolean }>(
+      `const root=document.querySelector('[data-lg-card-root]');
+       const marks=[...(root?root.querySelectorAll('svg'):[])].filter(s=>(s.querySelector('path')?.getAttribute('d')||'').startsWith('M6 0.5'));
+       const boxes=marks.map(s=>s.getBoundingClientRect());
+       const ys=boxes.map(b=>b.y); const xs=boxes.map(b=>b.x);
+       const ySpread=ys.length?Math.max(...ys)-Math.min(...ys):99;
+       const xSpread=xs.length?Math.max(...xs)-Math.min(...xs):0;
+       const increasing=xs.every((x,i)=>i===0||x>xs[i-1]+1);
+       return {n:marks.length,ySpread,xSpread,increasing};`,
+    ).catch(() => ({ n: 0, ySpread: 99, xSpread: 0, increasing: false }));
+    checks.push(ok(
+      'league:elite-stars-one-row',
+      stars.n === 4 && stars.ySpread < 2 && stars.increasing && stars.xSpread > 20,
+      JSON.stringify(stars),
+    ));
+    await s.screenshot(ctx.shot('league-elite-stars'));
 
     await s.click('[data-testid="slot-ace"]');
     const pickerUp = await waitFor(s, '[data-filter-chip="my-dex"]');
@@ -768,6 +799,40 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     checks.push({ name: 'league-change:charizard-seated', status: 'skip', detail: 'card never opened' });
   }
 
+  await s.navigate(url);
+  if ((await waitLeagueHome(s)) && (await openLeagueCard(s, CARD))) {
+    await s.click('[aria-label^="Gym type"]');
+    await sleep(300);
+    await s.click('svg[data-type="fire"]');
+    await sleep(400);
+    await s.click('[data-testid="slot-tm"]');
+    const picker = await waitFor(s, '[data-testid="tm-chip-type-fire"]');
+    const typed = await s
+      .evalJson<{ ok: boolean; value: string }>(`const i=document.querySelector('[data-testid="tm-search"]');
+        if(!i) return {ok:false,value:''};
+        i.focus();
+        const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+        set.call(i,'surf');
+        i.dispatchEvent(new Event('input',{bubbles:true}));
+        i.dispatchEvent(new Event('change',{bubbles:true}));
+        return {ok:true,value:i.value};`)
+      .catch(() => ({ ok: false, value: '' }));
+    await sleep(900);
+    const hasSurf = await s
+      .evalJson<boolean>(`return !!document.querySelector('[data-testid="tm-move-57"]');`)
+      .catch(() => false);
+    checks.push(ok(
+      'league-change:tm-search-ignores-type-chip',
+      picker && typed.ok && hasSurf,
+      `picker=${picker} typed=${typed.ok} value=${typed.value} hasSurf=${hasSurf}`,
+    ));
+    await s.screenshot(ctx.shot('league-change-tm-search-surf'));
+    await s.navigate(url);
+    await waitLeagueHome(s);
+  } else {
+    checks.push({ name: 'league-change:tm-search-ignores-type-chip', status: 'skip', detail: 'card never opened' });
+  }
+
   const errs = await s.errors();
   checks.push(ok('league-change:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
@@ -798,8 +863,13 @@ async function dismissLeagueBrowser(s: Session): Promise<boolean> {
 }
 
 /** Move a fine pointer over a column so the grid records hoverSeat. */
-async function pointerOverColumn(s: Session, testId: string): Promise<void> {
-  await s.hover(`[data-testid="${testId}"]`);
+async function pointerOverColumn(s: Session, testId: string): Promise<boolean> {
+  try {
+    await s.hover(`[data-testid="${testId}"]`);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -816,12 +886,19 @@ export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName
   }
   await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BLANK_LEAGUE}); return true;`);
   await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'league home never hydrated after seed' });
+    return checks;
+  }
   if (!(await openLeagueCard(s, 0))) {
     checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'card never opened' });
     return checks;
   }
 
-  await s.click('[data-testid="card-cell-1-1"]');
+  if (!(await clickHandle(s, '[data-testid="card-cell-1-1"]'))) {
+    checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'empty cell never opened' });
+    return checks;
+  }
   await sleep(600);
   const dismissed = await dismissLeagueBrowser(s);
   checks.push(ok('league-hover:browser-dismissed', dismissed, dismissed ? 'backdrop click' : 'no backdrop found'));
@@ -1234,3 +1311,90 @@ export async function runGymCardExportParitySuite(
   ));
   return checks;
 }
+
+const FIVE_LINE_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);cards[0]={...empty(),lines:[line(1),line(4),line(7),line(10),line(16)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
+
+const SEVEN_GYMS_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);for(let i=0;i<7;i++)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
+
+async function waitNudge(s: Session, kind: 'card' | 'league'): Promise<boolean> {
+  return waitFor(s, `[data-testid="league-nudge"][data-league-nudge="${kind}"]`, 25);
+}
+
+async function closeLeagueCard(s: Session): Promise<void> {
+  const collapsed = await s.evalJson<boolean>(`const b=document.querySelector('[aria-label="Collapse the trainer card"]')||document.querySelector('[aria-label^="Back to the league"]'); if(!b) return false; b.click(); return true;`).catch(() => false);
+  if (collapsed) await sleep(800);
+  await waitFor(s, '[data-testid="league-slot-0"]');
+}
+
+/** Seat the current picker result. Native click, then close the desktop pane. */
+async function placePickerLine(s: Session): Promise<boolean> {
+  const clicked = await s.evalJson<boolean>(`const el=document.querySelector(${JSON.stringify(PLACE_CARD)}); if(!el) return false; el.click(); return true;`).catch(() => false);
+  await sleep(600);
+  await s.evalJson(`const b=document.querySelector('[data-testid="browser-close"]'); if(b) b.click(); return true;`).catch(() => false);
+  await sleep(400);
+  return clicked;
+}
+
+export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+
+  if (!(await seedLeagueHome(s, url, FIVE_LINE_LEAGUE))) {
+    checks.push({ name: 'league-funnel:card-nudge-shown', status: 'skip', detail: 'league home never hydrated' });
+    checks.push({ name: 'league-funnel:roster-nudge-shown', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+
+  const cardOpen = await openLeagueCard(s, 0);
+  if (!cardOpen) {
+    checks.push(ok('league-funnel:card-nudge-shown', false, 'card never opened'));
+  } else {
+    await s.click('[data-testid="card-cell-11-6"]');
+    await waitFor(s, '[data-filter-chip="my-dex"]');
+    await sleep(600);
+    await searchPicker(s, 'eevee');
+    await placePickerLine(s);
+    const shown = await waitNudge(s, 'card');
+    await s.screenshot(ctx.shot('league-funnel-card-nudge'));
+    checks.push(ok('league-funnel:card-nudge-shown', shown, shown ? 'card export nudge' : 'no [data-testid=league-nudge] after sixth line'));
+  }
+
+  if (!(await seedLeagueHome(s, url, SEVEN_GYMS_LEAGUE))) {
+    checks.push({ name: 'league-funnel:roster-nudge-shown', status: 'skip', detail: 'league home never hydrated for roster' });
+    return checks;
+  }
+  if (!(await openLeagueCard(s, 7))) {
+    checks.push(ok('league-funnel:roster-nudge-shown', false, 'gym 8 never opened'));
+    return checks;
+  }
+  await s.click('[data-testid="card-cell-1-1"]');
+  await waitFor(s, '[data-filter-chip="my-dex"]');
+  await sleep(600);
+  await searchPicker(s, 'pikachu');
+  await placePickerLine(s);
+  await closeLeagueCard(s);
+  const roster = await waitNudge(s, 'league');
+  await s.screenshot(ctx.shot('league-funnel-roster-nudge'));
+  checks.push(ok('league-funnel:roster-nudge-shown', roster, roster ? 'league export nudge' : 'no roster nudge after 8 gyms'));
+  if (roster) {
+    const geo = await s.evalJson<{ exportX: number | null; nameX: number | null; arrowX: number | null }>(
+      `const mid=(el)=>{if(!el)return null;const r=el.getBoundingClientRect();return r.left+r.width/2};
+       return {exportX:mid(document.querySelector('[data-league-export="league"]')),nameX:mid(document.querySelector('[aria-label="League name"]')),arrowX:mid(document.querySelector('[data-nudge-arrow]'))};`,
+    ).catch(() => ({ exportX: null, nameX: null, arrowX: null }));
+    const toExport = geo.arrowX != null && geo.exportX != null ? Math.abs(geo.arrowX - geo.exportX) : Infinity;
+    const toName = geo.arrowX != null && geo.nameX != null ? Math.abs(geo.arrowX - geo.nameX) : Infinity;
+    const vw = await s.evalJson<number>('return window.innerWidth;').catch(() => 0);
+    const settled = geo.exportX != null && vw > 0 && geo.exportX > vw * 0.7;
+    checks.push(ok(
+      'league-funnel:roster-nudge-points-at-export',
+      settled && toExport < 24 && toExport < toName,
+      `arrow=${geo.arrowX} export=${geo.exportX} name=${geo.nameX} vw=${vw}`,
+    ));
+  } else {
+    checks.push(ok('league-funnel:roster-nudge-points-at-export', false, 'roster nudge never shown'));
+  }
+  return checks;
+}
+

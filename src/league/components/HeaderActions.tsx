@@ -70,7 +70,7 @@ export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
       type="button"
       onClick={() => openLeagueExport(cardIndex)}
       aria-label={cardIndex === undefined ? 'Export league' : 'Export trainer card'}
-      data-league-export
+      data-league-export={cardIndex === undefined ? 'league' : 'card'}
       className="shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
     >
       <Download className="h-4 w-4" />
