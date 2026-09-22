@@ -48,6 +48,9 @@ test.describe('export foil workshop', () => {
       .poll(async () => foilVar(foil, '--foil-holographic'))
       .toBe('0.250');
     await expect
+      .poll(async () => foilVar(foil, '--hover-tilt-glare-intensity'))
+      .toBe('0.600');
+    await expect
       .poll(async () => foilVar(foil, '--foil-holo-blend'))
       .toBe('hue');
     await expect

@@ -731,8 +731,12 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await sleep(350);
   const restHold = await readDexPreviewMotion(s);
-  await sleep(1600);
-  const restAfter = await readDexPreviewMotion(s);
+  let restAfter = restHold;
+  for (let i = 0; i < 40; i++) {
+    await sleep(200);
+    restAfter = await readDexPreviewMotion(s);
+    if (restAfter.orbit === 'idle' && restAfter.hypot > 2) break;
+  }
   const restOk =
     restHold.orbit !== 'pointer' &&
     restAfter.orbit === 'idle' &&
@@ -1430,18 +1434,20 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     await sleep(250);
   }
   checks.push(ok('foil-workshop:preview-img', imgReady, imgReady ? 'preview painted' : 'no preview img'));
-  const tiltVars = await s.evalJson<{ rot: string; holo: string; blend: string }>(
+  const tiltVars = await s.evalJson<{ rot: string; holo: string; glare: string; blend: string }>(
     `const el=document.querySelector('[data-export-preview]');
-     if(!(el instanceof HTMLElement)) return {rot:'',holo:'',blend:''};
+     if(!(el instanceof HTMLElement)) return {rot:'',holo:'',glare:'',blend:''};
      const s=getComputedStyle(el);
      return {
        rot: s.getPropertyValue('--hover-tilt-rotation-x').trim(),
        holo: s.getPropertyValue('--foil-holographic').trim(),
+       glare: s.getPropertyValue('--hover-tilt-glare-intensity').trim(),
        blend: s.getPropertyValue('--foil-holo-blend').trim(),
      };`,
-  ).catch(() => ({ rot: '', holo: '', blend: '' }));
+  ).catch(() => ({ rot: '', holo: '', glare: '', blend: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^10(\.0+)?deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
-  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 1) < 0.02, `holo=${tiltVars.holo}`));
+  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.25) < 0.02, `holo=${tiltVars.holo}`));
+  checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 0.6) < 0.02, `glare=${tiltVars.glare}`));
   checks.push(ok('foil-workshop:prod-blend', tiltVars.blend === 'hue' || tiltVars.blend === '', `blend=${tiltVars.blend}`));
   await s.screenshot(ctx.shot('foil-workshop'));
 
