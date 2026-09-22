@@ -29,6 +29,11 @@ import {
   DEX_EXPORT_TILE as TILE,
   layoutDexExportGrid,
 } from '@/lib/dexExportLayout';
+import { FRAME } from '@/league/export/layout';
+
+/** Same stroke as the trainer-card export (`layout.FRAME`). */
+export const DEX_EXPORT_FRAME = FRAME;
+export const DEX_EXPORT_FRAME_RED = '#DC2626';
 
 const SPRITE_SRC = 96; // native sprite resolution
 const SPRITE = SPRITE_SRC / 2; // logical draw size = 48px (1:1 with tile)
@@ -371,24 +376,27 @@ export async function generateExportImage(
   footerTop = my + dexCardH;
   h = footerTop + (stats ? my : PAD_BOTTOM);
 
+  const framedW = canvasW + 2 * DEX_EXPORT_FRAME;
+  const framedH = h + 2 * DEX_EXPORT_FRAME;
+
   // Cap the backing store to the iOS canvas-area limit. At 151 + stats this pulls
   // SCALE 4 down to ~3.4; grid-only stays at 4 (it's well under the cap).
-  const expScale = Math.min(SCALE, Math.sqrt(MAX_CANVAS_AREA / (canvasW * h)));
+  const expScale = Math.min(SCALE, Math.sqrt(MAX_CANVAS_AREA / (framedW * framedH)));
 
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(canvasW * expScale);
-  canvas.height = Math.round(h * expScale);
+  canvas.width = Math.round(framedW * expScale);
+  canvas.height = Math.round(framedH * expScale);
   const ctx = canvas.getContext('2d')!;
 
   // Scale everything for sharp rendering (≤ SCALE, lowered when capped above).
   ctx.scale(expScale, expScale);
   ctx.imageSmoothingEnabled = false;
 
-  // Background. With the stats panel present, use the app's muted page background
-  // (not pure white) so the white cards read as cards — matching the website. A
-  // grid-only export stays white.
+  ctx.fillStyle = DEX_EXPORT_FRAME_RED;
+  ctx.fillRect(0, 0, framedW, framedH);
   ctx.fillStyle = stats ? PAGE_BG : BG;
-  ctx.fillRect(0, 0, canvasW, h);
+  ctx.fillRect(DEX_EXPORT_FRAME, DEX_EXPORT_FRAME, canvasW, h);
+  ctx.translate(DEX_EXPORT_FRAME, DEX_EXPORT_FRAME);
 
   // Dex card behind the grid (white rounded rect + soft shadow), matching the
   // stat cards. Drawn before the grid; the grid is then shifted in by cardPad.

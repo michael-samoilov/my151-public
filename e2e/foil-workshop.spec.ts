@@ -46,7 +46,7 @@ test.describe('export foil workshop', () => {
     await expect(page.locator('[data-workshop-dark-card-toggle]')).toHaveCount(0);
     await expect
       .poll(async () => foilVar(foil, '--foil-holographic'))
-      .toBe('1.000');
+      .toBe('0.250');
     await expect
       .poll(async () => foilVar(foil, '--foil-holo-blend'))
       .toBe('hue');
@@ -81,6 +81,14 @@ test.describe('export foil workshop', () => {
     await expect(foil).toHaveAttribute('data-hover-tilt-shadow', '1');
     await setRange(page, 'shadowBlur', '32');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-shadow-blur')).toBe('32');
+    const shadowAt32 = await page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow);
+    expect(shadowAt32).not.toBe('none');
+    await setRange(page, 'shadowBlur', '8');
+    await expect.poll(async () => foilVar(foil, '--hover-tilt-shadow-blur')).toBe('8');
+    await expect.poll(async () => {
+      const next = await page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow);
+      return next !== shadowAt32 && next !== 'none';
+    }).toBe(true);
 
     await page.locator('[data-hover-tilt-select="holoBlend"]').selectOption('soft-light');
     await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('soft-light');
@@ -111,6 +119,68 @@ test.describe('export foil workshop', () => {
     expect(overlay.blur).toMatch(/blur\(/);
     expect(overlay.bg).not.toBe('rgb(0, 0, 0)');
     expect(overlay.bg).toMatch(/0\.5/);
+  });
+
+  test('opposite corners raise opposite corners', async ({ page }) => {
+    await page.goto('/foil-workshop');
+    const img = page.locator('[data-export-tilt-hit] img');
+    await img.waitFor({ timeout: 60_000 });
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 }).toBe('1');
+    const lift = page.locator('[data-export-foil-lift]');
+    if ((await foil.getAttribute('data-paused')) !== '1') {
+      await lift.click();
+      await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
+      await page.waitForTimeout(400);
+    }
+    const box = await lift.boundingBox();
+    expect(box, 'workshop lift has no box').toBeTruthy();
+    const tl = { x: box!.x + 10, y: box!.y + 10 };
+    const br = { x: box!.x + box!.width - 10, y: box!.y + box!.height - 10 };
+    await page.mouse.move(tl.x, tl.y);
+    await page.mouse.down();
+    await page.mouse.move(tl.x, tl.y);
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await expect.poll(async () => {
+      const x = Number(await foil.getAttribute('data-tilt-x'));
+      const y = Number(await foil.getAttribute('data-tilt-y'));
+      return Number.isFinite(x) && Number.isFinite(y) && Math.hypot(x, y) >= 1;
+    }).toBe(true);
+    const tlPose = {
+      x: Number(await foil.getAttribute('data-tilt-x')),
+      y: Number(await foil.getAttribute('data-tilt-y')),
+    };
+    expect(tlPose.x, 'top-left rotateX').not.toBe(0);
+    expect(tlPose.y, 'top-left rotateY').not.toBe(0);
+    await page.mouse.move(br.x, br.y, { steps: 12 });
+    await expect.poll(async () => {
+      const x = Number(await foil.getAttribute('data-tilt-x'));
+      const y = Number(await foil.getAttribute('data-tilt-y'));
+      return Math.sign(x) === -Math.sign(tlPose.x) && Math.sign(y) === -Math.sign(tlPose.y) ? 'opp' : `${x},${y}`;
+    }, { timeout: 4000 }).toBe('opp');
+    await page.mouse.up();
+  });
+
+  test('sits flat at rest and pops only while tilting', async ({ page }) => {
+    await page.goto('/foil-workshop');
+    const img = page.locator('[data-export-tilt-hit] img');
+    await img.waitFor({ timeout: 60_000 });
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 }).toBe('1');
+    await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('1');
+    const lift = page.locator('[data-export-foil-lift]');
+    if ((await foil.getAttribute('data-paused')) !== '1') {
+      await lift.click();
+    }
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
+    await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('0');
+    await expect.poll(async () => foil.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+    await expect
+      .poll(async () => lift.evaluate((el) => getComputedStyle(el).boxShadow))
+      .toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|rgb\(0,\s*0,\s*0\)\s*\/\s*0|none/);
+    await lift.click();
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
+    await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('1');
   });
 });
 

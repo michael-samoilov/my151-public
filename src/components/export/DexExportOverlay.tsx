@@ -13,6 +13,7 @@ import { previewExportHighlight, type ExportHighlight } from '@/league/export/ex
 import { LeagueExportSurvey } from '@/league/components/LeagueExportSurvey';
 import { LeagueExportSurveyIntro } from '@/league/components/LeagueExportSurveyIntro';
 import { DexExportSettingsPane } from './DexExportSettingsPane';
+import { hoverTiltMaskContextFromDex } from './hoverTiltMasks';
 import { ExportPreviewShell, type ExportPreviewPhase } from './ExportPreviewShell';
 import { dexExportFrameKey, dexExportLiveJobs, type DexExportDraft } from './dexExportDraft';
 import { useExportPreviewCache } from './useExportPreviewCache';
@@ -136,6 +137,11 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     urls,
   ]);
 
+  const maskContext = useMemo(
+    () => hoverTiltMaskContextFromDex(sorted, showSectionOverlays ? sections : null),
+    [sections, showSectionOverlays, sorted],
+  );
+
   return (
     <ExportPreviewShell
       phase={phase}
@@ -143,6 +149,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
       overlayMarker="data-dex-export-overlay"
       previewAlt="Pokedex export preview"
       frames={{ activeKey, urls, busy: busy || exportBusy }}
+      maskContext={maskContext}
       settings={
         <DexExportSettingsPane
           draft={draft}

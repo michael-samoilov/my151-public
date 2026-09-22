@@ -13,6 +13,7 @@ export const HOVER_TILT_MASK_IDS = [
   'cardSparkle',
   'pokeBall',
   'dexNumber',
+  'dexBorder',
 ] as const;
 
 export type HoverTiltMaskId = (typeof HOVER_TILT_MASK_IDS)[number];
@@ -77,6 +78,10 @@ export const HOVER_TILT_MASK_META = {
     title: 'National Dex number',
     blurb: 'Each Pokémon\'s national Dex number, centered on its sprite.',
   },
+  dexBorder: {
+    title: 'Export frame',
+    blurb: 'Trainer-card FRAME stroke. Tiled holo on the red border, not one stretched glyph.',
+  },
 } as const satisfies Record<HoverTiltMaskId, { title: string; blurb: string }>;
 
 export const HOVER_TILT_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-tilt';
@@ -93,9 +98,9 @@ export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   shadow: true,
   shadowBlur: 48,
   blendMode: 'overlay',
-  glareIntensity: 0.55,
+  glareIntensity: 0.6,
   glareHue: 40,
-  glareMask: 'cardSparkle',
+  glareMask: 'dexBorder',
   glareMaskMode: 'alpha',
   glareMaskComposite: 'intersect',
   sparkleMask: 'cardSparkle',

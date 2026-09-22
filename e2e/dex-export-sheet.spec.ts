@@ -78,7 +78,31 @@ test.describe('dex export overlay', () => {
     await expect(page.locator('[data-export-team]')).toHaveCount(0);
     await expect(page.locator('[data-export-survey-host]')).toHaveCount(0);
     expect(downloads, 'old Dex export started a download before settings').toEqual([]);
+  });
 
+  test('paints a trainer-card-width red frame on the export', async ({ page }) => {
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const edge = await page.locator('[data-export-preview] img').evaluate((el: HTMLImageElement) => {
+      const cv = document.createElement('canvas');
+      cv.width = el.naturalWidth;
+      cv.height = el.naturalHeight;
+      const g = cv.getContext('2d');
+      if (!g || el.naturalWidth < 8) return { ok: false, r: 0, g: 0, b: 0, innerR: 0, innerG: 0, innerB: 0 };
+      g.drawImage(el, 0, 0);
+      const px = g.getImageData(2, 2, 1, 1).data;
+      const inner = g.getImageData(Math.floor(el.naturalWidth / 2), Math.floor(el.naturalHeight / 2), 1, 1).data;
+      return { ok: true, r: px[0] ?? 0, g: px[1] ?? 0, b: px[2] ?? 0, innerR: inner[0] ?? 0, innerG: inner[1] ?? 0, innerB: inner[2] ?? 0 };
+    });
+    expect(edge.ok).toBe(true);
+    expect(edge.r, JSON.stringify(edge)).toBeGreaterThan(180);
+    expect(edge.g, JSON.stringify(edge)).toBeLessThan(80);
+    expect(edge.b, JSON.stringify(edge)).toBeLessThan(80);
+    expect(edge.r - edge.innerR, JSON.stringify(edge)).toBeGreaterThan(40);
+  });
+
+  test('rebuilds the preview when sort changes', async ({ page }) => {
+    await openDexExport(page);
     await waitPreviewReady(page);
     const firstSrc = await page.locator('[data-export-preview] img').getAttribute('src');
     expect(firstSrc).toBeTruthy();
@@ -159,7 +183,7 @@ test.describe('mobile dex export sheet', () => {
       const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`;
       if (card.getAttribute('data-foil-maps') !== '1') return { ok: false, reason: 'maps' };
       if (cs.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
-      if (Number(cs.opacity) <= 0.15) return { ok: false, reason: `opacity ${cs.opacity}` };
+      if (Number(cs.opacity) <= 0.04) return { ok: false, reason: `opacity ${cs.opacity}` };
       if (!mask.includes('url(')) return { ok: false, reason: 'unmasked' };
       return { ok: true, reason: 'open' };
     });
@@ -212,11 +236,11 @@ test.describe('mobile dex export sheet', () => {
       if (holoStyle.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
-      if (Math.abs(holoAmt - 1) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
+      if (Math.abs(holoAmt - 0.25) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
-      if (style.overflow !== 'hidden' || style.transformStyle.includes('preserve-3d')) {
+      if (style.overflow !== 'hidden' || !/round/i.test(clip)) {
         return { ok: false, reason: 'clipper' };
       }
       return { ok: true, reason: `cover ${cover.toFixed(3)}` };
@@ -322,8 +346,8 @@ test.describe('desktop dex export preview', () => {
       const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`;
       if (card.getAttribute('data-foil-maps') !== '1') return { ok: false, reason: 'maps' };
       if (cs.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
-      if (Number(cs.opacity) <= 0.15) return { ok: false, reason: `opacity ${cs.opacity}` };
-      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 1) > 0.02) {
+      if (Number(cs.opacity) <= 0.04) return { ok: false, reason: `opacity ${cs.opacity}` };
+      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 0.25) > 0.02) {
         return { ok: false, reason: 'amount' };
       }
       if (!mask.includes('url(')) return { ok: false, reason: 'unmasked' };
@@ -502,10 +526,9 @@ test.describe('desktop dex export preview', () => {
         holoAmt,
         ok:
           style.overflow === 'hidden' &&
-          !style.transformStyle.includes('preserve-3d') &&
           overflowLayers.length === 0 &&
           mask.includes('url(') &&
-          Math.abs(holoAmt - 1) < 0.02 &&
+          Math.abs(holoAmt - 0.25) < 0.02 &&
           !(bloom instanceof HTMLElement && getComputedStyle(bloom).inset.includes('-')),
       };
     });
@@ -729,8 +752,8 @@ test.describe('desktop dex export preview', () => {
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('hue');
-    expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.15);
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
+    expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.04);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.25, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);

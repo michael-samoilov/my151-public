@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ExportPreview3D } from '@/league/components/ExportPreview3D';
 import { EXPORT_OVERLAY_SCRIM_CLASS, EXPORT_OVERLAY_SCRIM_STYLE } from '@/components/export/exportOverlayScrim';
+import { DEFAULT_HOVER_TILT_RECIPE } from '@/components/export/hoverTiltRecipe';
+import { DEFAULT_MASK_CONTEXT, type HoverTiltMaskContext } from '@/components/export/hoverTiltMasks';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 
 export type ExportPreviewPhase = 'settings' | 'surveyIntro' | 'survey';
@@ -97,6 +99,7 @@ export function ExportPreviewShell({
   previewAlt,
   frames,
   overlayMarker,
+  maskContext = DEFAULT_MASK_CONTEXT,
 }: {
   phase: ExportPreviewPhase;
   onClose: () => void;
@@ -106,6 +109,7 @@ export function ExportPreviewShell({
   previewAlt: string;
   frames: { activeKey: string; urls: Record<string, string>; busy: boolean };
   overlayMarker?: string;
+  maskContext?: HoverTiltMaskContext;
 }) {
   const isDesktop = useViewportAtLeast(1024);
   const sheetCap = useSettingsSheetCap(!isDesktop && phase === 'settings');
@@ -169,6 +173,8 @@ export function ExportPreviewShell({
                 frames={frames}
                 alt={previewAlt}
                 busy={frames.busy}
+                tilt={DEFAULT_HOVER_TILT_RECIPE}
+                maskContext={maskContext}
               />
             </div>
           </div>,

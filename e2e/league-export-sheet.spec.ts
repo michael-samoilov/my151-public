@@ -177,8 +177,8 @@ test.describe('desktop export preview', () => {
       if (!card || !layer) return { ok: false, reason: 'missing' };
       const cs = getComputedStyle(layer);
       if (cs.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
-      if (Number(cs.opacity) <= 0.15) return { ok: false, reason: `opacity ${cs.opacity}` };
-      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 1) > 0.02) {
+      if (Number(cs.opacity) <= 0.04) return { ok: false, reason: `opacity ${cs.opacity}` };
+      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 0.25) > 0.02) {
         return { ok: false, reason: 'amount' };
       }
       return { ok: true, reason: 'open' };
@@ -211,7 +211,7 @@ test.describe('desktop export preview', () => {
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('hue');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.25, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.shadow, JSON.stringify(holo)).not.toBe('none');
@@ -253,7 +253,7 @@ test.describe('gym trainer-card export', () => {
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('hue');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.25, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2.4);
     expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(3.8);

@@ -4,6 +4,7 @@ import { typeGlyphPath } from '@/data/type-ids';
 import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { DEX_EXPORT_POKEBALL_R_FRAC, DEX_EXPORT_TILE } from '@/lib/dexExportLayout';
 import {
+  dexBorderInsets,
   hoverTiltMaskContextFromDex,
   hoverTiltMaskCssVars,
   hoverTiltMaskPaint,
@@ -11,6 +12,7 @@ import {
   SPARKLE_MASK_SIZE,
   typeIconGlyphBoxes,
 } from './hoverTiltMasks';
+import { FRAME } from '@/league/export/layout';
 import {
   DEFAULT_HOVER_TILT_RECIPE,
   DEFAULT_TILT_FACTOR,
@@ -47,6 +49,7 @@ describe('hover-tilt recipe', () => {
       'cardSparkle',
       'pokeBall',
       'dexNumber',
+      'dexBorder',
     ]);
     expect(isHoverTiltMaskId('wordmark')).toBe(true);
     expect(isHoverTiltMaskId('rainbow')).toBe(false);
@@ -59,7 +62,8 @@ describe('hover-tilt recipe', () => {
     expect(DEFAULT_HOVER_TILT_RECIPE.scaleFactor).toBe(1);
     expect(DEFAULT_HOVER_TILT_RECIPE.exitDelay).toBe(200);
     expect(DEFAULT_HOVER_TILT_RECIPE.shadow).toBe(true);
-    expect(DEFAULT_HOVER_TILT_RECIPE.glareMask).toBe('cardSparkle');
+    expect(DEFAULT_HOVER_TILT_RECIPE.glareIntensity).toBeCloseTo(0.6);
+    expect(DEFAULT_HOVER_TILT_RECIPE.glareMask).toBe('dexBorder');
     expect(DEFAULT_HOVER_TILT_RECIPE.sparkleMask).toBe('cardSparkle');
   });
 
@@ -74,7 +78,7 @@ describe('hover-tilt recipe', () => {
     });
     expect(parsed.tiltFactor).toBeCloseTo(4);
     expect(parsed.scaleFactor).toBe(1);
-    expect(parsed.glareMask).toBe('cardSparkle');
+    expect(parsed.glareMask).toBe('dexBorder');
     expect(parsed.sparkleMask).toBe('wordmark');
     expect(parsed.blendMode).toBe('overlay');
   });
@@ -115,6 +119,13 @@ describe('hover-tilt recipe', () => {
     expect(rest.startsWith('0.0px')).toBe(true);
     expect(right.startsWith('48.0px')).toBe(true);
     expect(right).not.toBe(rest);
+    const idle = hoverTiltBoxShadow(DEFAULT_HOVER_TILT_RECIPE, { nx: 0.5, ny: 0.5, opacity: 0 });
+    expect(idle).toContain('rgb(0 0 0 / 0.000)');
+    const fat = hoverTiltBoxShadow({ ...DEFAULT_HOVER_TILT_RECIPE, shadowBlur: 80 }, { nx: 1, ny: 0.5, opacity: 1 });
+    const thin = hoverTiltBoxShadow({ ...DEFAULT_HOVER_TILT_RECIPE, shadowBlur: 8 }, { nx: 1, ny: 0.5, opacity: 1 });
+    expect(fat).not.toBe(thin);
+    expect(fat.startsWith('80.0px')).toBe(true);
+    expect(thin.startsWith('8.0px')).toBe(true);
   });
 });
 
@@ -193,6 +204,20 @@ describe('hover-tilt masks', () => {
     expect(decoded).toContain('#0656');
     expect(paint.size).toBe('100% 100%');
     expect(paint.repeat).toBe('no-repeat');
+  });
+
+  it('tiles a frame-stroke holo mask instead of stretching one glyph', () => {
+    const ctx = workshopMaskContext();
+    const paint = hoverTiltMaskPaint('dexBorder', ctx);
+    expect(paint.repeat).toBe('no-repeat, repeat');
+    expect(paint.size).toBe('100% 100%, 12% 12%');
+    expect(paint.image.split('url(').length - 1).toBe(2);
+    expect(paint.size).not.toBe('100% 100%');
+    const inset = dexBorderInsets(ctx);
+    expect(inset.x).toBeCloseTo(FRAME / ctx.width);
+    expect(inset.y).toBeCloseTo(FRAME / ctx.height);
+    expect(inset.x).toBeGreaterThan(0);
+    expect(inset.x).toBeLessThan(0.08);
   });
 
   it('applies separate glare and sparkle mask CSS vars', () => {

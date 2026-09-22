@@ -199,4 +199,4 @@ export function pickHoloBlend(amount: number): BlendScore {
 
 /** Live overlay winner: hue-shift ink, keep poster luma and chroma. */
 export const FOIL_HOLO_BLEND: FoilHoloBlend = 'hue';
-export const FOIL_HOLO_AMOUNT = 1;
+export const FOIL_HOLO_AMOUNT = 0.25;

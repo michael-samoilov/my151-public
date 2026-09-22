@@ -355,8 +355,8 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
      if(mix!=='hue') return {ok:false,reason:'blend '+mix};
-     if(!(opacity>0.15)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
-     if(Math.abs(amount-1)>0.02) return {ok:false,reason:'amount '+amount};
+     if(!(opacity>0.04)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
+     if(Math.abs(amount-0.25)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
      if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
      if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no grating'};
@@ -768,7 +768,6 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
      const style=getComputedStyle(card);
      if(style.overflow!=='hidden') return {ok:false,reason:'overflow '+style.overflow};
-     if(style.transformStyle.includes('preserve-3d')) return {ok:false,reason:'preserve-3d on clipper'};
      const bloom=document.querySelector('[data-foil-layer="bloom"]');
      if(bloom instanceof HTMLElement){
        const inset=getComputedStyle(bloom).inset;
@@ -788,7 +787,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        }
      }
      const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
-     if(Math.abs(holoAmt-1)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
+     if(Math.abs(holoAmt-0.25)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
      return {ok:true,reason:bloom?'ink-holo-clipped':'ink-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));

@@ -166,8 +166,8 @@ export function hoverTiltFromNormalized(
 }
 
 /**
- * Live hover pose. `box` must be the painted card
- * (`getBoundingClientRect` of the rotator), not the rest hit box.
+ * Live hover pose. `box` is hover-tilt `readElementBox`: the untransformed
+ * container. The rotated card AABB inverts opposite corners.
  */
 export function hoverTiltFromPointer(
   clientX: number,

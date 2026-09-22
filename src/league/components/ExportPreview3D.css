@@ -57,8 +57,23 @@
 }
 
 .export-foil-hit[data-hover-tilt='1'] .export-foil-lift {
+  --hover-tilt-default-shadow:
+    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 1px)
+      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.5px + var(--hover-tilt-shadow-blur) * 0.25px)
+      calc(var(--hover-tilt-shadow-blur) * 0.5px)
+      calc(var(--hover-tilt-shadow-blur) * -0.25px)
+      rgb(0 0 0 / var(--hover-tilt-shadow-opacity, 0)),
+    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 0.5px)
+      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.25px + var(--hover-tilt-shadow-blur) * 0.125px)
+      calc(var(--hover-tilt-shadow-blur) * 0.25px)
+      calc(var(--hover-tilt-shadow-blur) * -0.125px)
+      rgb(0 0 0 / var(--hover-tilt-shadow-opacity, 0));
   transform: none;
   -webkit-transform: none;
+  box-shadow: var(--hover-tilt-custom-shadow, var(--hover-tilt-default-shadow));
+}
+
+.export-foil-hit[data-hover-tilt='1'][data-hover-tilt-shadow='0'] .export-foil-lift {
   box-shadow: none;
 }
 
@@ -377,7 +392,7 @@
   --hover-tilt-sparkle-mask-position: center;
   --hover-tilt-mask-mode: match-source;
   --hover-tilt-blend-mode: overlay;
-  --hover-tilt-glare-intensity: 0.55;
+  --hover-tilt-glare-intensity: 0.6;
   --hover-tilt-sparkle-intensity: 0.55;
   --hover-tilt-glare-hue: 40;
   --gradient-x: var(--pointer-x);
@@ -418,6 +433,13 @@
   mask-repeat: var(--hover-tilt-glare-mask-repeat, no-repeat);
   -webkit-mask-mode: var(--hover-tilt-mask-mode, match-source);
   mask-mode: var(--hover-tilt-mask-mode, match-source);
+  -webkit-mask-composite: var(--hover-tilt-glare-mask-composite-webkit, source-in);
+  mask-composite: var(--hover-tilt-glare-mask-composite, intersect);
+}
+
+.export-foil[data-hover-tilt='1'][data-tilt-active='0'] {
+  -webkit-transform: none;
+  transform: none;
 }
 
 .export-foil[data-hover-tilt='1']::after {
@@ -440,6 +462,19 @@
   mask-repeat: var(--hover-tilt-sparkle-mask-repeat, no-repeat);
   -webkit-mask-mode: var(--hover-tilt-mask-mode, match-source);
   mask-mode: var(--hover-tilt-mask-mode, match-source);
+}
+
+.export-foil[data-hover-tilt-glare-mask='dexBorder'] .export-foil-holographic {
+  -webkit-mask-image: var(--hover-tilt-glare-mask);
+  mask-image: var(--hover-tilt-glare-mask);
+  -webkit-mask-size: var(--hover-tilt-glare-mask-size);
+  mask-size: var(--hover-tilt-glare-mask-size);
+  -webkit-mask-position: var(--hover-tilt-glare-mask-position);
+  mask-position: var(--hover-tilt-glare-mask-position);
+  -webkit-mask-repeat: var(--hover-tilt-glare-mask-repeat);
+  mask-repeat: var(--hover-tilt-glare-mask-repeat);
+  -webkit-mask-composite: var(--hover-tilt-glare-mask-composite-webkit, source-in);
+  mask-composite: var(--hover-tilt-glare-mask-composite, intersect);
 }
 
 .export-foil[data-hover-tilt-sparkle-mask='none']::after {

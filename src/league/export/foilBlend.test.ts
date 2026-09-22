@@ -23,13 +23,13 @@ describe('foil holographic blend', () => {
 
   it('hue keeps chroma and luma on every poster ink', () => {
     expect(FOIL_HOLO_BLEND).toBe('hue');
-    expect(FOIL_HOLO_AMOUNT).toBe(1);
+    expect(FOIL_HOLO_AMOUNT).toBe(0.25);
     expect(isFoilHoloBlend(FOIL_HOLO_BLEND)).toBe(true);
     expect(FOIL_HOLO_BLEND_CANDIDATES).toContain('hue');
     for (const ink of FOIL_POSTER_INKS) {
       let maxShift = 0;
       for (const stripe of FOIL_HOLO_STRIPES) {
-        const hue = foilComposite(ink, stripe, 'hue', FOIL_HOLO_AMOUNT);
+        const hue = foilComposite(ink, stripe, 'hue', 1);
         const baseChroma = chroma(ink.r, ink.g, ink.b);
         const hueChroma = chroma(hue.r, hue.g, hue.b);
         const wall = hue.r === 0 || hue.r === 255 || hue.g === 0 || hue.g === 255 || hue.b === 0 || hue.b === 255;
@@ -48,14 +48,14 @@ describe('foil holographic blend', () => {
   });
 
   it('picks a bright visible blend and rejects multiply', () => {
-    const winner = pickHoloBlend(FOIL_HOLO_AMOUNT);
+    const winner = pickHoloBlend(1);
     expect(winner.mode).not.toBe('multiply');
     expect(winner.bright).toBe(true);
     expect(winner.visible).toBe(true);
     expect(winner.mode).toBe(FOIL_HOLO_BLEND);
     expect(scoreHoloBlend('multiply', 0.4).bright).toBe(false);
-    expect(scoreHoloBlend('soft-light', FOIL_HOLO_AMOUNT).satDelta).toBeGreaterThan(
-      scoreHoloBlend('hue', FOIL_HOLO_AMOUNT).satDelta,
+    expect(scoreHoloBlend('soft-light', 1).satDelta).toBeGreaterThan(
+      scoreHoloBlend('hue', 1).satDelta,
     );
   });
 });

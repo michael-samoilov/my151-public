@@ -47,6 +47,25 @@ describe('hoverTiltFromPointer', () => {
     expect(pose.rotateX).toBeCloseTo(-HOVER_TILT_ROTATION);
   });
 
+  it('raises opposite corners at opposite pointers', () => {
+    const tl = hoverTiltFromPointer(0, 0, box);
+    const br = hoverTiltFromPointer(400, 400, box);
+    const tr = hoverTiltFromPointer(400, 0, box);
+    const bl = hoverTiltFromPointer(0, 400, box);
+    expect(tl.rotateX).toBeCloseTo(-HOVER_TILT_ROTATION);
+    expect(tl.rotateY).toBeCloseTo(HOVER_TILT_ROTATION);
+    expect(br.rotateX).toBeCloseTo(HOVER_TILT_ROTATION);
+    expect(br.rotateY).toBeCloseTo(-HOVER_TILT_ROTATION);
+    expect(Math.sign(tl.rotateX)).toBe(-Math.sign(br.rotateX));
+    expect(Math.sign(tl.rotateY)).toBe(-Math.sign(br.rotateY));
+    expect(tr.rotateX).toBeCloseTo(-HOVER_TILT_ROTATION);
+    expect(tr.rotateY).toBeCloseTo(-HOVER_TILT_ROTATION);
+    expect(bl.rotateX).toBeCloseTo(HOVER_TILT_ROTATION);
+    expect(bl.rotateY).toBeCloseTo(HOVER_TILT_ROTATION);
+    expect(tl.rotateX).toBeCloseTo(-br.rotateX);
+    expect(tl.rotateY).toBeCloseTo(-br.rotateY);
+  });
+
   it('scales with native hover-tilt tiltFactor, not degree-as-factor', () => {
     const pose = hoverTiltFromNormalized(1, 0.5, { tiltFactor: 2, tiltFactorY: 0.5 });
     expect(pose.rotateY).toBeCloseTo(-20);

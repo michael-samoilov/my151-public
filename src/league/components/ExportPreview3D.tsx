@@ -5,7 +5,6 @@ import {
   clampTiltToBox,
   fitCardInPreviewBox,
   previewMaxHypot,
-  previewShadowOpacity,
   PREVIEW_PERSPECTIVE_PX,
   PREVIEW_REST_PAD,
   PREVIEW_SHADOW_PAD_PX,
@@ -88,7 +87,7 @@ export function ExportPreview3D({
   className,
   recipe = DEFAULT_FOIL_RECIPE,
   frames,
-  tilt,
+  tilt = DEFAULT_HOVER_TILT_RECIPE,
   maskContext = DEFAULT_MASK_CONTEXT,
   darkCard = false,
   holoBlend = FOIL_HOLO_BLEND,
@@ -99,7 +98,7 @@ export function ExportPreview3D({
   className?: string;
   recipe?: FoilRecipe;
   frames?: { activeKey: string; urls: Record<string, string> };
-  /** Native hover-tilt knobs and masks. Omit on the live overlay. */
+  /** Native hover-tilt knobs and masks. Live overlay uses the default recipe. */
   tilt?: HoverTiltRecipe;
   maskContext?: HoverTiltMaskContext;
   darkCard?: boolean;
@@ -166,11 +165,9 @@ export function ExportPreview3D({
       rotateX = clamped.x;
       rotateY = clamped.y;
     }
-    if (!tiltRef.current) {
-      const capped = clampHypot(rotateX, rotateY, previewMaxHypot(window.innerWidth));
-      rotateX = capped.x;
-      rotateY = capped.y;
-    }
+    const capped = clampHypot(rotateX, rotateY, previewMaxHypot(window.innerWidth));
+    rotateX = capped.x;
+    rotateY = capped.y;
     const pointerX = pose.pointerX;
     const pointerY = pose.pointerY;
     const nx = pose.nx;
@@ -194,27 +191,32 @@ export function ExportPreview3D({
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
     const foil =
       foilMag <= recipeNow.deadDeg ? 0 : Math.min(1, (foilMag - recipeNow.deadDeg) / span);
+    const activation = springARef.current.value;
     el.style.setProperty('--foil-opacity', foil.toFixed(3));
-    el.style.setProperty('--hover-tilt-opacity', foil.toFixed(3));
+    el.style.setProperty('--hover-tilt-opacity', activation.toFixed(3));
     const angle = (Math.atan2(ny - 0.5, nx - 0.5) * 180) / Math.PI;
     el.style.setProperty('--hover-tilt-angle', `${angle.toFixed(1)}deg`);
     el.style.setProperty('--hover-tilt-from-center', Math.min(1, Math.hypot(nx - 0.5, ny - 0.5) / 0.5).toFixed(3));
     el.style.setProperty('--hover-tilt-at-edge', Math.min(1, Math.max(Math.abs(nx - 0.5), Math.abs(ny - 0.5)) * 2).toFixed(3));
     const shadowX = nx * 2 - 1;
     const shadowY = ny * 2 - 1;
-    const displayedHypot = Math.hypot(rotateX, rotateY);
-    const shadowAmt = previewShadowOpacity(displayedHypot);
+    const shadowOn = tiltNow.shadow && tiltNow.shadowBlur > 0;
+    const shadowAmt = shadowOn ? activation * 0.125 : 0;
+    const liveScale = 1 + (tiltNow.scaleFactor - 1) * activation;
     el.style.setProperty('--shadow-x', shadowX.toFixed(4));
     el.style.setProperty('--shadow-y', shadowY.toFixed(4));
     el.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
+    el.style.setProperty('--hover-tilt-scale', liveScale.toFixed(3));
     const hit = hitRef.current;
     if (hit) {
       hit.style.setProperty('--rotation-x', `${rotateX}deg`);
       hit.style.setProperty('--rotation-y', `${rotateY}deg`);
-      hit.style.setProperty('--hover-tilt-scale', tiltRef.current ? String(tiltRef.current.scaleFactor) : '1');
+      hit.style.setProperty('--hover-tilt-scale', liveScale.toFixed(3));
       hit.style.setProperty('--shadow-x', shadowX.toFixed(4));
       hit.style.setProperty('--shadow-y', shadowY.toFixed(4));
       hit.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
+      hit.style.setProperty('--hover-tilt-shadow-blur', String(Math.round(tiltNow.shadowBlur)));
+      hit.dataset.hoverTiltShadow = shadowOn ? '1' : '0';
       hit.setAttribute('data-shadow-x', shadowX.toFixed(2));
       hit.setAttribute('data-shadow-y', shadowY.toFixed(2));
       hit.setAttribute('data-shadow-opacity', shadowAmt.toFixed(3));
@@ -227,7 +229,8 @@ export function ExportPreview3D({
     }
     el.setAttribute('data-tilt-x', rotateX.toFixed(1));
     el.setAttribute('data-tilt-y', rotateY.toFixed(1));
-    el.setAttribute('data-tilt-scale', tiltNow.scaleFactor === 1 ? '1' : tiltNow.scaleFactor.toFixed(3));
+    el.setAttribute('data-tilt-active', activation > 0.02 ? '1' : '0');
+    el.setAttribute('data-tilt-scale', liveScale === 1 ? '1' : liveScale.toFixed(3));
     el.setAttribute('data-foil-opacity', foil.toFixed(3));
     el.setAttribute('data-paused', pausedRef.current ? '1' : '0');
     el.setAttribute('data-export-orbit', orbitRef.current);
@@ -248,15 +251,16 @@ export function ExportPreview3D({
     });
   }, []);
 
-  const paintedBox = useCallback((): DOMRect | null => {
-    const card = cardRef.current;
-    if (card && card.offsetWidth > 0) return card.getBoundingClientRect();
+  const restPointerBox = useCallback((): DOMRect | null => {
     const hit = hitRef.current;
-    return hit ? hit.getBoundingClientRect() : null;
+    const lift = hit?.querySelector('[data-export-foil-lift]');
+    if (lift instanceof HTMLElement && lift.offsetWidth > 0) return lift.getBoundingClientRect();
+    if (hit && hit.offsetWidth > 0) return hit.getBoundingClientRect();
+    return null;
   }, []);
 
   const beginPointer = useCallback((clientX: number, clientY: number) => {
-    const box = paintedBox();
+    const box = restPointerBox();
     if (!box || box.width === 0) return;
     const pose = hoverTiltFromPointer(clientX, clientY, box, tiltAxes(tiltRef.current));
     const last = lastPoseRef.current;
@@ -273,7 +277,7 @@ export function ExportPreview3D({
     orbitRef.current = 'pointer';
     restAtRef.current = null;
     releaseRef.current = null;
-  }, [paintedBox]);
+  }, [restPointerBox]);
 
   const schedulePointer = useCallback((clientX: number, clientY: number) => {
     pendingPointerRef.current = { x: clientX, y: clientY };
@@ -282,7 +286,7 @@ export function ExportPreview3D({
       moveFrameRef.current = null;
       const pending = pendingPointerRef.current;
       if (!pending || orbitRef.current !== 'pointer') return;
-      const box = paintedBox();
+      const box = restPointerBox();
       if (!box || box.width === 0) return;
       const pose = hoverTiltFromPointer(pending.x, pending.y, box, tiltAxes(tiltRef.current));
       springXRef.current.target = pose.nx;
@@ -290,7 +294,7 @@ export function ExportPreview3D({
       springARef.current.target = 1;
       pointerPoseRef.current = pose;
     });
-  }, [paintedBox]);
+  }, [restPointerBox]);
 
   const beginRest = useCallback((now: number) => {
     if (orbitRef.current !== 'pointer') return;
@@ -352,13 +356,6 @@ export function ExportPreview3D({
         const restAt = restAtRef.current;
         if (restAt !== null && now < restAt) {
           paint(lastPoseRef.current);
-        } else if (!tiltRef.current) {
-          // Live overlay: idle after the leave delay. Workshop keeps the flatten spring.
-          restAtRef.current = null;
-          orbitRef.current = 'idle';
-          releaseRef.current = { from: { ...lastPoseRef.current }, t0: now };
-          const idle = idleAt(now);
-          paint(lerpPose(releaseRef.current.from, idle, 0));
         } else {
           applySpringOpts(springXRef.current, HOVER_TILT_EXIT_SPRING);
           applySpringOpts(springYRef.current, HOVER_TILT_EXIT_SPRING);
@@ -383,6 +380,9 @@ export function ExportPreview3D({
         }
       } else if (pausedRef.current) {
         orbitRef.current = 'paused';
+        applySpringOpts(springARef.current, HOVER_TILT_EXIT_SPRING);
+        springARef.current.target = 0;
+        tickSpring(springARef.current, dt);
         const release = releaseRef.current;
         const releaseMs = tiltRef.current?.exitDelay ?? HOVER_TILT_EXIT_DELAY_MS;
         if (release) {
@@ -395,6 +395,9 @@ export function ExportPreview3D({
         }
       } else {
         orbitRef.current = 'idle';
+        applySpringOpts(springARef.current, HOVER_TILT_SPRING);
+        springARef.current.target = 1;
+        tickSpring(springARef.current, dt);
         const idle = idleAt(now);
         const release = releaseRef.current;
         if (release) {
@@ -429,24 +432,19 @@ export function ExportPreview3D({
     }
     el.style.setProperty('--foil-holo-blend', holoBlend);
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
-    if (!tilt) {
-      if (!releaseRef.current) {
-        paint(pausedRef.current ? REST_POSE : idleAt(performance.now()));
-      }
-      return;
-    }
+    el.dataset.hoverTilt = '1';
     el.dataset.maskSpriteCount = String(maskContext.sprites.length);
     el.dataset.maskSpriteTypes = hoverTiltMaskSpriteTypes(maskContext);
-    const syncGlare = hoverTiltMaskPaint(tilt.glareMask, maskContext);
-    const syncSparkle = hoverTiltMaskPaint(tilt.sparkleMask, maskContext);
+    const syncGlare = hoverTiltMaskPaint(tiltNow.glareMask, maskContext);
+    const syncSparkle = hoverTiltMaskPaint(tiltNow.sparkleMask, maskContext);
     const syncVars = hoverTiltMaskCssVars(syncGlare, syncSparkle);
     for (const [key, value] of Object.entries(syncVars)) {
       el.style.setProperty(key, value);
     }
     let cancelled = false;
     void Promise.all([
-      resolveHoverTiltMaskPaint(tilt.glareMask, maskContext),
-      resolveHoverTiltMaskPaint(tilt.sparkleMask, maskContext),
+      resolveHoverTiltMaskPaint(tiltNow.glareMask, maskContext),
+      resolveHoverTiltMaskPaint(tiltNow.sparkleMask, maskContext),
     ]).then(([glare, sparkle]) => {
       if (cancelled || cardRef.current !== el) return;
       const maskVars = hoverTiltMaskCssVars(glare, sparkle);
@@ -628,7 +626,9 @@ export function ExportPreview3D({
           data-export-shadow
           data-shadow-pad={String(PREVIEW_SHADOW_PAD_PX)}
           data-tilt-perspective={String(PREVIEW_PERSPECTIVE_PX)}
-          data-hover-tilt={tilt ? '1' : undefined}
+          data-hover-tilt="1"
+          data-hover-tilt-shadow="1"
+          data-pointer-box="rest"
         >
           <div className="export-foil-lift" data-export-foil-lift>
           <div
@@ -643,12 +643,13 @@ export function ExportPreview3D({
             }}
             data-export-preview
             data-export-orbit="idle"
-            data-tilt-scale={tilt ? tilt.scaleFactor.toFixed(3) : '1'}
+            data-tilt-scale="1"
+            data-tilt-active="0"
             data-paused="0"
-            data-hover-tilt={tilt ? '1' : undefined}
+            data-hover-tilt="1"
             data-hover-tilt-shadow="1"
-            data-hover-tilt-glare-mask={tilt?.glareMask}
-            data-hover-tilt-sparkle-mask={tilt?.sparkleMask}
+            data-hover-tilt-glare-mask={tilt.glareMask}
+            data-hover-tilt-sparkle-mask={tilt.sparkleMask}
             data-mask-sprite-count={String(maskContext.sprites.length)}
             data-mask-sprite-types={hoverTiltMaskSpriteTypes(maskContext)}
             data-workshop-dark-card={darkCard ? '1' : undefined}
