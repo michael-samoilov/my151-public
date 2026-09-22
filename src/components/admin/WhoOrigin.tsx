@@ -1,23 +1,30 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FlagIcon, TooltipScope, useTooltipChip } from '@/components/admin/platformIcons';
-import { countryName } from '@/components/admin/userPreview';
+import { countryName, langName } from '@/components/admin/userPreview';
 import type { WhoBucket } from '../../../api/_aggregate';
 import { REGION_COLORS, regionOf, type Region } from '@/lib/countryRegions';
 import { inBarKind, inkOn, muteColor } from '@/lib/platformStacks';
 import { cn } from '@/lib/utils';
 import {
   FLAG_W,
+  MARKER_GAP,
   OTHER_KEY,
+  balanceRailRows,
+  captionKind,
   countryItems,
+  countryOtherLabeled,
+  countryRooms,
   distinctCountries,
   fitBar,
   formatShare,
   languageOverrides,
+  languageUsesName,
   layoutNameLabels,
   countryCounts,
   regionBar,
   unshippedTags,
   visibleBuckets,
+  type FitItem,
   type FitSegment,
   type WhoFilter,
 } from '@/lib/whoOrigin';
@@ -141,23 +148,43 @@ function OtherRail({
   segment,
   total,
   kind,
+  textFor,
 }: {
   segment: FitSegment | undefined;
   total: number;
-  kind: 'flag' | 'code';
+  kind: 'flag' | 'lang';
+  textFor?: (key: string) => string;
 }) {
   const folded = segment?.folded ?? [];
-  const rowRef = useRef<HTMLDivElement>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
   const [span, setSpan] = useState<{ left: number; width: number } | null>(null);
+  const [metrics, setMetrics] = useState<{ widths: number[]; gap: number; container: number } | null>(null);
   const labelKey = folded.map((item) => item.key).join('|');
+  const fitted = metrics && metrics.widths.length === folded.length ? metrics : null;
+  const rows = fitted
+    ? balanceRailRows(fitted.widths, fitted.gap, fitted.container)
+    : [folded.map((_, index) => index)];
+  const rowKey = rows.map((row) => row.length).join('.');
 
   useLayoutEffect(() => {
-    const row = rowRef.current;
-    if (!row) return;
+    const host = hostRef.current;
+    if (!host) return;
     const read = () => {
-      const labels = [...row.querySelectorAll<HTMLElement>('[data-who-rail-label]')];
-      const host = row.parentElement;
-      if (labels.length === 0 || !host) {
+      const labels = [...host.querySelectorAll<HTMLElement>('[data-who-rail-label]')];
+      const row = host.querySelector<HTMLElement>('[data-who-rail-row]');
+      const gap = row ? Number.parseFloat(getComputedStyle(row).columnGap) || 0 : 0;
+      const widths = labels.map((el) => el.getBoundingClientRect().width);
+      const container = host.clientWidth;
+      setMetrics((prev) =>
+        prev &&
+        prev.gap === gap &&
+        prev.container === container &&
+        prev.widths.length === widths.length &&
+        prev.widths.every((width, i) => width === widths[i])
+          ? prev
+          : { widths, gap, container },
+      );
+      if (labels.length === 0) {
         setSpan(null);
         return;
       }
@@ -169,9 +196,9 @@ function OtherRail({
     };
     read();
     const ro = new ResizeObserver(read);
-    ro.observe(row);
+    ro.observe(host);
     return () => ro.disconnect();
-  }, [labelKey]);
+  }, [labelKey, rowKey]);
 
   if (!segment || folded.length === 0) return null;
   return (
@@ -184,27 +211,34 @@ function OtherRail({
           style={{ left: span.left, width: span.width }}
         />
       )}
-      <div ref={rowRef} className="flex flex-wrap justify-end gap-x-2.5 gap-y-1 pt-1">
-        {folded.map((item, i) => (
-          <span
-            key={item.key}
-            data-who-rail-label
-            className="inline-flex items-center gap-1 text-xs font-semibold tabular-nums"
-          >
-            {kind === 'flag' ? <FlagTip country={item.key} /> : <span>{item.key}</span>}
-            <span>{formatShare(item.n, total, i === 0)}</span>
-          </span>
+      <div ref={hostRef} className="flex flex-col gap-y-1 pt-1">
+        {rows.map((row) => (
+          <div key={row.join('-')} data-who-rail-row className="flex justify-end gap-x-2.5">
+            {row.map((index) => {
+              const item: FitItem = folded[index];
+              return (
+                <span
+                  key={item.key}
+                  data-who-rail-label
+                  className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold tabular-nums"
+                >
+                  {kind === 'flag' ? <FlagTip country={item.key} /> : <span>{textFor?.(item.key) ?? item.key}</span>}
+                  <span>{formatShare(item.n, total, index === 0)}</span>
+                </span>
+              );
+            })}
+          </div>
         ))}
       </div>
     </div>
   );
 }
 
-function markerRow(segments: FitSegment[], render: (seg: FitSegment) => ReactNode) {
+function markerRow(segments: FitSegment[], render: (seg: FitSegment) => ReactNode, showOther = true) {
   const other = segments.find((seg) => seg.key === OTHER_KEY);
   return (
     <div className="relative mt-1.5 h-[22px] overflow-visible">
-      {other && other.folded && other.folded.length > 0 && (
+      {showOther && other && other.folded && other.folded.length > 0 && (
         <div
           aria-hidden
           data-who-leader="stem"
@@ -299,13 +333,27 @@ export function WhoOrigin({
     else onFilter({ dim: 'region', value: key });
   };
 
-  const measureKey = `${regions.map((r) => r.label).join('|')}\n${tags.map((t) => t.key).join('|')}`;
+  const measureWords = useMemo(() => {
+    const words = new Set<string>();
+    for (const region of regions) words.add(region.label);
+    for (const item of countryList) {
+      words.add(item.key);
+      const name = countryName(item.key);
+      if (name) words.add(name);
+    }
+    for (const item of tags) {
+      words.add(item.key);
+      const name = langName(item.key);
+      if (name) words.add(name);
+    }
+    return [...words];
+  }, [regions, countryList, tags]);
+  const measureKey = measureWords.join('\n');
   useLayoutEffect(() => {
     const el = measureRef.current;
     if (!el) return;
     const next: Record<string, number> = {};
-    const words = measureKey.split('\n').flatMap((line) => (line ? line.split('|') : []));
-    for (const word of words) {
+    for (const word of measureWords) {
       el.textContent = word;
       next[word] = el.getBoundingClientRect().width;
     }
@@ -314,11 +362,16 @@ export function WhoOrigin({
       if (keys.length === Object.keys(prev).length && keys.every((k) => prev[k] === next[k])) return prev;
       return next;
     });
-  }, [measureKey]);
+  }, [measureKey, measureWords]);
 
   const countrySegs = useMemo(
     () => fitBar(countryList, barW, () => FLAG_W),
     [countryList, barW],
+  );
+  const labelCountryOther = countryOtherLabeled(filter);
+  const rooms = useMemo(
+    () => countryRooms(countrySegs, barW, labelCountryOther),
+    [countrySegs, barW, labelCountryOther],
   );
   const langSegs = useMemo(
     () => fitBar(tags, barW, (key) => widths[key] ?? key.length * 7.2),
@@ -400,10 +453,32 @@ export function WhoOrigin({
 
         <div data-who-countries>
           <ShareBar testId="countries" segments={countrySegsPainted} showShare />
-          {markerRow(countrySegs, (seg) => (
-            <FlagTip country={seg.key} />
-          ))}
-          <OtherRail segment={countrySegs.find((s) => s.folded)} total={countryTotal} kind="flag" />
+          {markerRow(countrySegs, (seg) => {
+            const name = countryName(seg.key) ?? seg.key;
+            const kind = captionKind(
+              widths[name] ?? name.length * 7.2,
+              widths[seg.key] ?? seg.key.length * 7.2,
+              rooms[seg.key] ?? 0,
+            );
+            const text = kind === 'full' ? name : kind === 'short' ? seg.key : null;
+            return (
+              <span
+                className="inline-flex items-center whitespace-nowrap"
+                style={{ gap: text ? MARKER_GAP : 0 }}
+                data-who-country={seg.key}
+              >
+                <FlagTip country={seg.key} />
+                {text ? (
+                  <span data-who-country-label={seg.key} className="text-xs font-semibold leading-none">
+                    {text}
+                  </span>
+                ) : null}
+              </span>
+            );
+          }, labelCountryOther)}
+          {labelCountryOther ? (
+            <OtherRail segment={countrySegs.find((s) => s.folded)} total={countryTotal} kind="flag" />
+          ) : null}
         </div>
 
         <div data-who-unshipped>
@@ -411,12 +486,35 @@ export function WhoOrigin({
           {langSegs.length > 0 ? (
             <>
               <ShareBar testId="unshipped" segments={langSegs} color="#404040" />
-              {markerRow(langSegs, (seg) => (
-                <span data-who-code={seg.key} className="whitespace-nowrap text-xs font-semibold leading-none">
-                  {seg.key}
-                </span>
-              ))}
-              <OtherRail segment={langSegs.find((s) => s.folded)} total={tagTotal} kind="code" />
+              {markerRow(langSegs, (seg) => {
+                const name = langName(seg.key) ?? seg.key;
+                const index = langSegs.findIndex((item) => item.key === seg.key);
+                const next = langSegs[index + 1];
+                const spelled = languageUsesName(
+                  widths[name] ?? name.length * 7.2,
+                  seg.widthPx,
+                  next != null && next.key !== OTHER_KEY,
+                );
+                return (
+                  <span
+                    data-who-code={seg.key}
+                    data-who-lang-label={spelled ? 'name' : 'code'}
+                    className="whitespace-nowrap text-xs font-semibold leading-none"
+                  >
+                    {spelled ? name : seg.key}
+                  </span>
+                );
+              })}
+              <OtherRail
+                segment={langSegs.find((s) => s.folded)}
+                total={tagTotal}
+                kind="lang"
+                textFor={(key) => {
+                  const name = langName(key) ?? key;
+                  const namePx = widths[name] ?? name.length * 7.2;
+                  return namePx <= barW ? name : key;
+                }}
+              />
             </>
           ) : (
             <div className="h-8 w-full rounded bg-neutral-100" data-who-bar="unshipped" />

@@ -117,6 +117,11 @@ export interface WhoFilter {
   value: string;
 }
 
+/** A region slice lists Other. A device, OS, or browser slice leaves the remainder unlabeled. */
+export function countryOtherLabeled(filter: WhoFilter | null): boolean {
+  return filter == null || filter.dim === 'region';
+}
+
 export function bucketValue(bucket: WhoBucket, dim: WhoDim): string {
   if (dim === 'region') return regionOf(bucket.country);
   if (dim === 'device') return bucket.device || 'Unknown';
@@ -271,6 +276,104 @@ export function languageOverrides(buckets: readonly WhoBucket[], region: Region 
   return [...map.values()].sort(
     (a, b) => b.n - a.n || a.lang.localeCompare(b.lang) || a.country.localeCompare(b.country),
   );
+}
+
+/** Full name, short code, or nothing. The short code is the fallback. */
+export function captionKind(fullPx: number, shortPx: number, roomPx: number): 'full' | 'short' | 'none' {
+  if (fullPx <= roomPx) return 'full';
+  if (shortPx <= roomPx) return 'short';
+  return 'none';
+}
+
+/** Pixels between a marker's right edge and the next limit, after the word gap. */
+export function markerRoom(markerLeft: number, markerWidth: number, limitPx: number): number {
+  return limitPx - (markerLeft + markerWidth + MARKER_GAP);
+}
+
+/**
+ * Room for a country name after its flag. The limit is the next flag, or the
+ * Other stem when this flag is the last one on the bar.
+ */
+export function countryRooms(
+  segments: readonly FitSegment[],
+  barWidthPx: number,
+  labelOther = true,
+): Record<string, number> {
+  const shown = segments.filter((seg) => seg.key !== OTHER_KEY);
+  const other = segments.find((seg) => seg.key === OTHER_KEY);
+  let end = barWidthPx;
+  if (other) end = labelOther ? other.leftPx + Math.max(0, other.widthPx - 6) : other.leftPx;
+  const rooms: Record<string, number> = {};
+  for (let i = 0; i < shown.length; i++) {
+    const seg = shown[i];
+    const limit = i + 1 < shown.length ? shown[i + 1].leftPx : end;
+    rooms[seg.key] = markerRoom(seg.leftPx, FLAG_W, limit);
+  }
+  return rooms;
+}
+
+/** A spelled language replaces its code when the word fits in the segment. */
+export function languageUsesName(namePx: number, segmentPx: number, followedByLabel: boolean): boolean {
+  const budget = segmentPx - (followedByLabel ? MARKER_GAP : 0);
+  return namePx <= budget;
+}
+
+function spanWidth(widths: readonly number[], gapPx: number, from: number, to: number): number {
+  let width = 0;
+  for (let i = from; i < to; i++) width += widths[i] + (i > from ? gapPx : 0);
+  return width;
+}
+
+/**
+ * Contiguous rows of similar width. One row when everything fits.
+ * A row may exceed the container only when it holds a single item.
+ */
+export function balanceRailRows(widths: readonly number[], gapPx: number, containerPx: number): number[][] {
+  const n = widths.length;
+  if (n === 0) return [];
+  const all = widths.map((_, i) => i);
+  if (!(containerPx > 0) || spanWidth(widths, gapPx, 0, n) <= containerPx + 0.5) return [all];
+
+  let minRows = 1;
+  let start = 0;
+  for (let i = 1; i <= n; i++) {
+    const overflows = spanWidth(widths, gapPx, start, i) > containerPx + 0.5;
+    if (overflows && i - 1 > start) {
+      minRows += 1;
+      start = i - 1;
+    }
+  }
+
+  const best: number[][] = Array.from({ length: minRows + 1 }, () => Array(n + 1).fill(Number.POSITIVE_INFINITY));
+  const choice: number[][] = Array.from({ length: minRows + 1 }, () => Array(n + 1).fill(-1));
+  best[0][0] = 0;
+  for (let rows = 1; rows <= minRows; rows++) {
+    for (let end = 1; end <= n; end++) {
+      for (let cut = rows - 1; cut < end; cut++) {
+        if (best[rows - 1][cut] === Number.POSITIVE_INFINITY) continue;
+        const width = spanWidth(widths, gapPx, cut, end);
+        if (width > containerPx + 0.5 && end - cut > 1) continue;
+        const cost = Math.max(best[rows - 1][cut], width);
+        if (cost < best[rows][end]) {
+          best[rows][end] = cost;
+          choice[rows][end] = cut;
+        }
+      }
+    }
+  }
+
+  const out: number[][] = [];
+  let rows = minRows;
+  let end = n;
+  while (rows > 0) {
+    const cut = choice[rows][end];
+    if (cut < 0) return [all];
+    out.push(all.slice(cut, end));
+    end = cut;
+    rows -= 1;
+  }
+  out.reverse();
+  return out;
 }
 
 /** Left-align each name on its segment. A name may hang past a short segment. */

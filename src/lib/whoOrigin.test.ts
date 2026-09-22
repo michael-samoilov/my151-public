@@ -3,12 +3,17 @@ import { negotiateLocale } from '@/i18n/detect';
 import {
   FLAG_W,
   OTHER_KEY,
+  balanceRailRows,
+  captionKind,
   countryCounts,
+  countryOtherLabeled,
   countryItems,
+  countryRooms,
   distinctCountries,
   fitBar,
   formatShare,
   languageOverrides,
+  languageUsesName,
   layoutNameLabels,
   mixWho,
   regionBar,
@@ -91,6 +96,57 @@ describe('fitBar', () => {
     );
     expect(hung[0].leftPx).toBe(100);
     expect(hung[1].leftPx).toBe(152);
+  });
+
+  it('picks a full name, then a code, then nothing', () => {
+    expect(captionKind(40, 16, 50)).toBe('full');
+    expect(captionKind(40, 16, 20)).toBe('short');
+    expect(captionKind(40, 16, 10)).toBe('none');
+  });
+
+  it('measures country-name room up to the next flag or the Other stem', () => {
+    const rooms = countryRooms(
+      [
+        { key: 'GB', n: 1, pct: 50, leftPx: 0, widthPx: 50 },
+        { key: 'NL', n: 1, pct: 30, leftPx: 50, widthPx: 30 },
+        { key: OTHER_KEY, n: 1, pct: 20, leftPx: 80, widthPx: 20, folded: [{ key: 'SE', n: 1 }] },
+      ],
+      100,
+    );
+    expect(rooms.GB).toBe(50 - (FLAG_W + 4));
+    expect(rooms.NL).toBe(94 - (50 + FLAG_W + 4));
+    const unlabeled = countryRooms(
+      [
+        { key: 'ES', n: 1, pct: 80, leftPx: 0, widthPx: 80 },
+        { key: OTHER_KEY, n: 1, pct: 20, leftPx: 80, widthPx: 20, folded: [{ key: 'SE', n: 1 }] },
+      ],
+      100,
+      false,
+    );
+    expect(unlabeled.ES).toBe(80 - (FLAG_W + 4));
+  });
+
+  it('lists Other for a region and hides it for a platform slice', () => {
+    expect(countryOtherLabeled(null)).toBe(true);
+    expect(countryOtherLabeled({ dim: 'region', value: 'Europe' })).toBe(true);
+    expect(countryOtherLabeled({ dim: 'device', value: 'Mobile' })).toBe(false);
+    expect(countryOtherLabeled({ dim: 'os', value: 'iOS' })).toBe(false);
+    expect(countryOtherLabeled({ dim: 'browser', value: 'Chrome' })).toBe(false);
+  });
+
+  it('spells a language only when the word fits in the segment', () => {
+    expect(languageUsesName(40, 50, true)).toBe(true);
+    expect(languageUsesName(48, 50, true)).toBe(false);
+    expect(languageUsesName(48, 50, false)).toBe(true);
+  });
+
+  it('splits a wrapping rail so the rows have similar width', () => {
+    expect(balanceRailRows([10, 10], 4, 100)).toEqual([[0, 1]]);
+    const rows = balanceRailRows([10, 10, 10, 10, 10], 0, 40);
+    const widths = rows.map((row) => row.length * 10);
+    expect(rows.flat()).toEqual([0, 1, 2, 3, 4]);
+    expect(Math.max(...widths)).toBe(30);
+    expect(Math.min(...widths)).toBe(20);
   });
 
   it('folds a code when its marker overlaps the previous marker', () => {
