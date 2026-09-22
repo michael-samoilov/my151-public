@@ -127,6 +127,21 @@ describe('mergeLeagueRecord', () => {
     expect(rec.sessionLog[0].events).toEqual(['league-export-card']);
   });
 
+  it('attaches league nudge shown/cta/dismiss to the sitting', () => {
+    let rec = mergeLeagueRecord(
+      null,
+      beacon({ events: ['league-nudge-card-shown'] }),
+    );
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({ now: 1_000_500, events: ['league-nudge-card-cta'] }),
+    );
+    expect(rec.sessionLog[0].events).toEqual([
+      'league-nudge-card-shown',
+      'league-nudge-card-cta',
+    ]);
+  });
+
   it('does not mutate the record it was given', () => {
     const first = mergeLeagueRecord(null, beacon());
     const snapshot = JSON.stringify(first);

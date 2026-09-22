@@ -67,6 +67,52 @@ export async function pairLeague(
   }, { aceId, partnerId });
 }
 
+/** Start the league builder on a gym card one line short of a full team. */
+export async function fiveLineCardLeague(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const empty = {
+      type: null as string | null,
+      theme: '',
+      lines: [] as { branch: number[]; boundaries: number[] }[],
+      signatureSeat: null as number | null,
+      tmMoveId: null as number | null,
+      badgeName: '',
+      legend: null,
+      powerup: null,
+    };
+    const line = (id: number) => ({ branch: [id], boundaries: [1] });
+    const cards = Array.from({ length: 14 }, () => ({ ...empty, lines: [] as typeof empty.lines }));
+    cards[0] = { ...empty, lines: [line(1), line(4), line(7), line(10), line(16)] };
+    window.localStorage.setItem(
+      'league-builder',
+      JSON.stringify({ state: { name: '', cards }, version: 1 }),
+    );
+  });
+}
+
+/** Start with seven gym-leader slots filled, so the eighth crossing is live. */
+export async function sevenGymsLeague(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const empty = {
+      type: null as string | null,
+      theme: '',
+      lines: [] as { branch: number[]; boundaries: number[] }[],
+      signatureSeat: null as number | null,
+      tmMoveId: null as number | null,
+      badgeName: '',
+      legend: null,
+      powerup: null,
+    };
+    const line = (id: number) => ({ branch: [id], boundaries: [1] });
+    const cards = Array.from({ length: 14 }, () => ({ ...empty, lines: [] as typeof empty.lines }));
+    for (let i = 0; i < 7; i++) cards[i] = { ...empty, lines: [line(i + 1)] };
+    window.localStorage.setItem(
+      'league-builder',
+      JSON.stringify({ state: { name: '', cards }, version: 1 }),
+    );
+  });
+}
+
 /** Start the league builder on the seeded Kanto league, whatever the visit. */
 export async function seededLeague(page: Page): Promise<void> {
   await page.addInitScript(() => window.localStorage.removeItem('league-builder'));

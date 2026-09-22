@@ -1311,3 +1311,90 @@ export async function runGymCardExportParitySuite(
   ));
   return checks;
 }
+
+const FIVE_LINE_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);cards[0]={...empty(),lines:[line(1),line(4),line(7),line(10),line(16)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
+
+const SEVEN_GYMS_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);for(let i=0;i<7;i++)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
+
+async function waitNudge(s: Session, kind: 'card' | 'league'): Promise<boolean> {
+  return waitFor(s, `[data-testid="league-nudge"][data-league-nudge="${kind}"]`, 25);
+}
+
+async function closeLeagueCard(s: Session): Promise<void> {
+  const collapsed = await s.evalJson<boolean>(`const b=document.querySelector('[aria-label="Collapse the trainer card"]')||document.querySelector('[aria-label^="Back to the league"]'); if(!b) return false; b.click(); return true;`).catch(() => false);
+  if (collapsed) await sleep(800);
+  await waitFor(s, '[data-testid="league-slot-0"]');
+}
+
+/** Seat the current picker result. Native click, then close the desktop pane. */
+async function placePickerLine(s: Session): Promise<boolean> {
+  const clicked = await s.evalJson<boolean>(`const el=document.querySelector(${JSON.stringify(PLACE_CARD)}); if(!el) return false; el.click(); return true;`).catch(() => false);
+  await sleep(600);
+  await s.evalJson(`const b=document.querySelector('[data-testid="browser-close"]'); if(b) b.click(); return true;`).catch(() => false);
+  await sleep(400);
+  return clicked;
+}
+
+export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+
+  if (!(await seedLeagueHome(s, url, FIVE_LINE_LEAGUE))) {
+    checks.push({ name: 'league-funnel:card-nudge-shown', status: 'skip', detail: 'league home never hydrated' });
+    checks.push({ name: 'league-funnel:roster-nudge-shown', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+
+  const cardOpen = await openLeagueCard(s, 0);
+  if (!cardOpen) {
+    checks.push(ok('league-funnel:card-nudge-shown', false, 'card never opened'));
+  } else {
+    await s.click('[data-testid="card-cell-11-6"]');
+    await waitFor(s, '[data-filter-chip="my-dex"]');
+    await sleep(600);
+    await searchPicker(s, 'eevee');
+    await placePickerLine(s);
+    const shown = await waitNudge(s, 'card');
+    await s.screenshot(ctx.shot('league-funnel-card-nudge'));
+    checks.push(ok('league-funnel:card-nudge-shown', shown, shown ? 'card export nudge' : 'no [data-testid=league-nudge] after sixth line'));
+  }
+
+  if (!(await seedLeagueHome(s, url, SEVEN_GYMS_LEAGUE))) {
+    checks.push({ name: 'league-funnel:roster-nudge-shown', status: 'skip', detail: 'league home never hydrated for roster' });
+    return checks;
+  }
+  if (!(await openLeagueCard(s, 7))) {
+    checks.push(ok('league-funnel:roster-nudge-shown', false, 'gym 8 never opened'));
+    return checks;
+  }
+  await s.click('[data-testid="card-cell-1-1"]');
+  await waitFor(s, '[data-filter-chip="my-dex"]');
+  await sleep(600);
+  await searchPicker(s, 'pikachu');
+  await placePickerLine(s);
+  await closeLeagueCard(s);
+  const roster = await waitNudge(s, 'league');
+  await s.screenshot(ctx.shot('league-funnel-roster-nudge'));
+  checks.push(ok('league-funnel:roster-nudge-shown', roster, roster ? 'league export nudge' : 'no roster nudge after 8 gyms'));
+  if (roster) {
+    const geo = await s.evalJson<{ exportX: number | null; nameX: number | null; arrowX: number | null }>(
+      `const mid=(el)=>{if(!el)return null;const r=el.getBoundingClientRect();return r.left+r.width/2};
+       return {exportX:mid(document.querySelector('[data-league-export="league"]')),nameX:mid(document.querySelector('[aria-label="League name"]')),arrowX:mid(document.querySelector('[data-nudge-arrow]'))};`,
+    ).catch(() => ({ exportX: null, nameX: null, arrowX: null }));
+    const toExport = geo.arrowX != null && geo.exportX != null ? Math.abs(geo.arrowX - geo.exportX) : Infinity;
+    const toName = geo.arrowX != null && geo.nameX != null ? Math.abs(geo.arrowX - geo.nameX) : Infinity;
+    const vw = await s.evalJson<number>('return window.innerWidth;').catch(() => 0);
+    const settled = geo.exportX != null && vw > 0 && geo.exportX > vw * 0.7;
+    checks.push(ok(
+      'league-funnel:roster-nudge-points-at-export',
+      settled && toExport < 24 && toExport < toName,
+      `arrow=${geo.arrowX} export=${geo.exportX} name=${geo.nameX} vw=${vw}`,
+    ));
+  } else {
+    checks.push(ok('league-funnel:roster-nudge-points-at-export', false, 'roster nudge never shown'));
+  }
+  return checks;
+}
+

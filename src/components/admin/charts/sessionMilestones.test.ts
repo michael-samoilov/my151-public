@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   exportSurveySkipMarks,
+  FUNNEL_LABEL,
   FUNNEL_OFFSET_PX,
   milestoneFill,
   plotSittings,
@@ -124,5 +125,34 @@ describe('plotSittings', () => {
     );
     expect(plots[0].diamond).toBeUndefined();
     expect(plots[1].diamond?.tone).toBe('export');
+  });
+
+  it('overlays league nudge shown/cta/dismiss on the sitting that carried them', () => {
+    const plots = plotSittings(
+      [
+        { t: 10, ev: ['league-nudge-card-shown', 'league-nudge-card-cta'] },
+        { t: 80, ev: ['league-nudge-league-shown', 'league-nudge-league-dismiss'] },
+      ],
+      [],
+    );
+    expect(plots[0].funnel).toBe(true);
+    expect(plots[0].label).toBe('card nudge · card go');
+    expect(plots[1].funnel).toBe(true);
+    expect(plots[1].label).toBe('8 gyms · 8 gyms skip');
+  });
+
+  it('allowlists all six league-nudge events so the timeline paints each', () => {
+    const events = [
+      'league-nudge-card-shown',
+      'league-nudge-card-cta',
+      'league-nudge-card-dismiss',
+      'league-nudge-league-shown',
+      'league-nudge-league-cta',
+      'league-nudge-league-dismiss',
+    ] as const;
+    for (const ev of events) expect(FUNNEL_LABEL[ev], ev).toMatch(/\S/);
+    const plots = plotSittings([{ t: 1, ev: [...events] }], []);
+    expect(plots[0].funnel).toBe(true);
+    expect(plots[0].label).toBe('card nudge · card go · card skip · 8 gyms · 8 gyms go · 8 gyms skip');
   });
 });
