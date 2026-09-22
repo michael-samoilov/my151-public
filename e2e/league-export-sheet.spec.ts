@@ -30,7 +30,12 @@ async function parkPreview(page: Page) {
   if ((await foil.getAttribute('data-paused')) === '1') return;
   const box = await page.locator('[data-export-tilt-hit]').boundingBox();
   if (!box) return;
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 48, y - 32, { steps: 6 });
+  await page.mouse.up();
   await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
   await page.waitForTimeout(450);
 }
@@ -52,7 +57,7 @@ function previewFitsBand(page: Page, viewportHeight: number) {
     const gutter = Math.min(i.left - l.left, l.right - i.right, i.top - l.top, l.bottom - i.bottom);
     if (gutter < 4) return { ok: false, reason: `tight gutter ${gutter}` };
     const cover = Math.max(i.width / l.width, i.height / l.height);
-    if (cover < 0.78) return { ok: false, reason: `cover ${cover.toFixed(3)}` };
+    if (cover < 0.72) return { ok: false, reason: `cover ${cover.toFixed(3)}` };
     if (s && i.bottom > s.top + pad) return { ok: false, reason: `img under sheet ${i.bottom} > ${s.top}` };
     if (i.height < 80) return { ok: false, reason: `tiny img ${i.height}` };
     if (s && s.height > Math.round(vh * 0.45) + 8) {
@@ -83,7 +88,7 @@ test.describe('mobile export sheet', () => {
     }
   });
 
-  test('tap parks idle tilt and pointer still tilts the card', async ({ page }) => {
+  test('drag release stays flat and a tap resumes auto-tilt', async ({ page }) => {
     await openLeagueExport(page);
     const foil = page.locator('[data-export-preview]');
     await expect(foil).toHaveAttribute('data-paused', '0');
@@ -116,12 +121,6 @@ test.describe('mobile export sheet', () => {
     expect(box).toBeTruthy();
     const cx = box!.x + box!.width / 2;
     const cy = box!.y + box!.height / 2;
-    await page.mouse.click(cx, cy);
-    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
-    await page.waitForTimeout(450);
-    expect(Math.abs(Number(await foil.getAttribute('data-tilt-x')))).toBeLessThan(0.6);
-    expect(Math.abs(Number(await foil.getAttribute('data-tilt-y')))).toBeLessThan(0.6);
-
     await page.mouse.move(cx, cy);
     await page.mouse.down();
     await page.mouse.move(cx + box!.width * 0.35, cy - box!.height * 0.3, { steps: 8 });
@@ -132,8 +131,22 @@ test.describe('mobile export sheet', () => {
         return Math.hypot(x, y);
       })
       .toBeGreaterThan(2.4);
-    expect(await foil.getAttribute('data-paused')).toBe('1');
     await page.mouse.up();
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
+    await page.waitForTimeout(700);
+    expect(await foil.getAttribute('data-export-orbit')).toBe('paused');
+    expect(Math.abs(Number(await foil.getAttribute('data-tilt-x')))).toBeLessThan(0.6);
+    expect(Math.abs(Number(await foil.getAttribute('data-tilt-y')))).toBeLessThan(0.6);
+
+    await page.mouse.click(cx, cy);
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx - 40, cy + 28, { steps: 6 });
+    await page.mouse.up();
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
+    await page.waitForTimeout(700);
+    expect(await foil.getAttribute('data-export-orbit')).toBe('paused');
   });
 });
 

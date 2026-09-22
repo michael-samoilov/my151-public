@@ -26,7 +26,11 @@ export function DexExportFoilControls({
   const holo = recipe.layers.holographic;
 
   return (
-    <div className="shrink-0 space-y-1 border-b px-3 py-2" data-export-foil-pinned>
+    <div
+      className="shrink-0 touch-auto space-y-1 border-b px-3 py-2"
+      data-export-foil-pinned
+      onPointerDown={(e) => e.stopPropagation()}
+    >
       <div className="grid grid-cols-[4.75rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
         <RowLabel name="rainbow">Rainbow</RowLabel>
         <div className="flex min-w-0 items-center gap-2" data-export-foil-rainbow>
@@ -143,7 +147,7 @@ function Range({
         value={value}
         aria-label={label}
         data-foil-slider={testId}
-        className="min-w-0 flex-1"
+        className="min-w-0 flex-1 touch-pan-x"
         onChange={(e) => onChange(Number(e.target.value))}
       />
       <span className="w-12 shrink-0 text-right tabular-nums text-foreground">

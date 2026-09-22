@@ -322,6 +322,32 @@ export function ExportPreview3D({
     }
   }, []);
 
+  const parkFlat = useCallback((now: number) => {
+    pausedRef.current = true;
+    orbitRef.current = 'paused';
+    releaseRef.current = { from: { ...lastPoseRef.current }, t0: now };
+    pendingPointerRef.current = null;
+    restAtRef.current = null;
+    enterSinceRef.current = null;
+    lastPointerRef.current = null;
+    if (moveFrameRef.current !== null) {
+      cancelAnimationFrame(moveFrameRef.current);
+      moveFrameRef.current = null;
+    }
+    paint(lerpPose(releaseRef.current.from, REST_POSE, 0));
+  }, [paint]);
+
+  const resumeAuto = useCallback((now: number) => {
+    pausedRef.current = false;
+    orbitRef.current = 'idle';
+    releaseRef.current = { from: { ...lastPoseRef.current }, t0: now };
+    pendingPointerRef.current = null;
+    restAtRef.current = null;
+    enterSinceRef.current = null;
+    if (originRef.current === null) originRef.current = now;
+    paint(lerpPose(releaseRef.current.from, idleAt(now), 0));
+  }, [idleAt, paint]);
+
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -513,6 +539,13 @@ export function ExportPreview3D({
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       if (e.pointerType !== 'mouse' && !downRef.current) return;
+      const target = e.target;
+      if (
+        target instanceof Element &&
+        target.closest('[data-export-foil-pinned], [data-export-chrome] input, [data-export-chrome] select, [data-export-chrome] textarea')
+      ) {
+        return;
+      }
       const card = cardRef.current;
       const hit = hitRef.current;
       if (!card) return;
@@ -582,39 +615,36 @@ export function ExportPreview3D({
       performance.now() - down.t < TAP_MS &&
       Math.hypot(e.clientX - down.x, e.clientY - down.y) <= TAP_PX;
 
-    if (tap) {
+    const now = performance.now();
+    if (tap || (down && !down.dragged)) {
       lastPointerRef.current = null;
       pendingPointerRef.current = null;
       restAtRef.current = null;
       enterSinceRef.current = null;
-      pausedRef.current = !pausedRef.current;
-      const now = performance.now();
-      releaseRef.current = { from: { ...lastPoseRef.current }, t0: now };
-      if (pausedRef.current) {
-        orbitRef.current = 'paused';
-        paint(lerpPose(releaseRef.current.from, REST_POSE, 0));
-      } else {
-        orbitRef.current = 'idle';
-        if (originRef.current === null) originRef.current = now;
-        paint(lerpPose(releaseRef.current.from, idleAt(now), 0));
+      if (pausedRef.current || orbitRef.current === 'pointer' || orbitRef.current === 'rest' || orbitRef.current === 'paused') {
+        resumeAuto(now);
       }
       return;
     }
 
-    if (orbitRef.current !== 'pointer') return;
-    if (pausedRef.current) {
-      orbitRef.current = 'paused';
-      releaseRef.current = { from: { ...lastPoseRef.current }, t0: performance.now() };
-      pendingPointerRef.current = null;
+    if (down?.dragged) {
+      parkFlat(now);
       return;
     }
-    beginRest(performance.now());
-  }, [beginRest, idleAt, paint]);
+
+    if (orbitRef.current === 'pointer' && !pausedRef.current) beginRest(now);
+  }, [beginRest, parkFlat, resumeAuto]);
 
   const onPointerCancel = useCallback(() => {
+    const down = downRef.current;
     downRef.current = null;
-    if (orbitRef.current === 'pointer') beginRest(performance.now());
-  }, [beginRest]);
+    const now = performance.now();
+    if (down?.dragged) {
+      parkFlat(now);
+      return;
+    }
+    if (orbitRef.current === 'pointer' && !pausedRef.current) beginRest(now);
+  }, [beginRest, parkFlat]);
 
   const maxW = cardMax.w > 0 ? `${Math.round(cardMax.w)}px` : '100%';
   const maxH = cardMax.h > 0 ? `${Math.round(cardMax.h)}px` : '100%';

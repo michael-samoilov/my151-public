@@ -221,6 +221,11 @@ export function BottomSheet({
     const swallow = (e: Event) => {
       const overlay = overlayRef.current;
       if (!overlay) return;
+      const target = e.target;
+      if (target instanceof Element) {
+        const owner = target.closest('input, select, textarea, [data-export-foil-pinned]');
+        if (owner instanceof HTMLElement && overlay.contains(owner)) return;
+      }
 
       let horizontal: boolean;
       if (e.type === 'wheel') {

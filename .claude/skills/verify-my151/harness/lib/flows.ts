@@ -745,8 +745,20 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     restAfter.hypot > 2 &&
     restAfter.hypot <= 10.2;
   await s.screenshot(ctx.shot('dex-export-hover'));
-  await s.click('[data-export-tilt-hit]').catch(() => undefined);
-  await sleep(500);
+  await s.evalJson(
+    `(() => {
+       const hit=document.querySelector('[data-export-tilt-hit]');
+       if(!(hit instanceof HTMLElement)) return false;
+       const r=hit.getBoundingClientRect();
+       const x=r.left+r.width/2, y=r.top+r.height/2;
+       const base={bubbles:true,cancelable:true,pointerId:1,pointerType:'mouse',buttons:1};
+       hit.dispatchEvent(new PointerEvent('pointerdown',{...base,clientX:x,clientY:y}));
+       document.dispatchEvent(new PointerEvent('pointermove',{...base,clientX:x+48,clientY:y-32}));
+       hit.dispatchEvent(new PointerEvent('pointerup',{...base,clientX:x+48,clientY:y-32,buttons:0}));
+       return true;
+     })()`,
+  ).catch(() => false);
+  await sleep(700);
   const locked = await readDexPreviewMotion(s);
   const fill = await s.evalJson<{ ok: boolean; reason: string; ratio: number }>(
     `const card=document.querySelector('[data-export-preview]');

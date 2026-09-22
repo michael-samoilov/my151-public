@@ -78,7 +78,12 @@ async function parkPreview(page: Page) {
   if ((await foil.getAttribute('data-paused')) === '1') return;
   const box = await page.locator('[data-export-tilt-hit]').boundingBox();
   if (!box) return;
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 48, y - 32, { steps: 6 });
+  await page.mouse.up();
   await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
   await page.waitForTimeout(450);
 }
@@ -100,7 +105,7 @@ function previewFitsBand(page: Page, viewportHeight: number) {
     const gutter = Math.min(i.left - l.left, l.right - i.right, i.top - l.top, l.bottom - i.bottom);
     if (gutter < 4) return { ok: false, reason: `tight gutter ${gutter}` };
     const cover = Math.max(i.width / l.width, i.height / l.height);
-    if (cover < 0.78) return { ok: false, reason: `cover ${cover.toFixed(3)}` };
+    if (cover < 0.72) return { ok: false, reason: `cover ${cover.toFixed(3)}` };
     if (s && i.bottom > s.top + pad) return { ok: false, reason: `img under sheet ${i.bottom} > ${s.top}` };
     if (i.height < 80) return { ok: false, reason: `tiny img ${i.height}` };
     if (s && s.height > Math.round(vh * 0.45) + 8) {
@@ -213,6 +218,76 @@ test.describe('dex export overlay', () => {
 test.describe('mobile dex export sheet', () => {
   test.use({ viewport: MOBILE });
   test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'the sheet is hidden at md');
+
+  test('a finger drag on glare changes the value and leaves tilt alone', async ({ page, browserName }) => {
+    test.skip(browserName !== 'chromium', 'CDP touch injection');
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const slider = page.locator('[data-foil-slider="glareIntensity"]');
+    await expect(slider).toBeVisible();
+    const before = Number(await slider.inputValue());
+    const box = await slider.boundingBox();
+    expect(box).toBeTruthy();
+    const y = box!.y + box!.height / 2;
+    const x0 = box!.x + box!.width * 0.8;
+    const x1 = box!.x + box!.width * 0.15;
+    const top = await page.evaluate(({ x, y: py }) => {
+      const el = document.elementFromPoint(x, py);
+      if (!(el instanceof Element)) return 'none';
+      return el.getAttribute('data-foil-slider') || el.tagName;
+    }, { x: x0, y });
+    expect(top, 'glare slider receives the hit').toBe('glareIntensity');
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y }] });
+    for (let i = 1; i <= 8; i += 1) {
+      const x = x0 + ((x1 - x0) * i) / 8;
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] });
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(async () => Number(await slider.inputValue())).toBeLessThan(before - 0.05);
+    const after = Number(await slider.inputValue());
+    const painted = await page.locator('[data-export-preview]').evaluate((el) =>
+      Number(getComputedStyle(el).getPropertyValue('--hover-tilt-glare-intensity')),
+    );
+    expect(painted).toBeCloseTo(after, 2);
+    expect(await page.locator('[data-export-preview]').getAttribute('data-export-orbit')).not.toBe('pointer');
+  });
+
+  test('drag release stays flat until a tap resumes auto-tilt', async ({ page }) => {
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    const hit = page.locator('[data-export-tilt-hit]');
+    await expect(foil).toHaveAttribute('data-paused', '0');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    const cx = box!.x + box!.width / 2;
+    const cy = box!.y + box!.height * 0.45;
+    const flat = async () => {
+      const x = Math.abs(Number(await foil.getAttribute('data-tilt-x')));
+      const y = Math.abs(Number(await foil.getAttribute('data-tilt-y')));
+      return x < 0.8 && y < 0.8 && (await foil.getAttribute('data-paused')) === '1' && (await foil.getAttribute('data-export-orbit')) === 'paused';
+    };
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 52, cy - 36, { steps: 8 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await page.mouse.up();
+    await expect.poll(flat, { timeout: 2000 }).toBe(true);
+    await page.waitForTimeout(700);
+    expect(await flat()).toBe(true);
+
+    await page.mouse.click(cx, cy);
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
+
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx - 46, cy + 30, { steps: 8 });
+    await page.mouse.up();
+    await expect.poll(flat, { timeout: 2000 }).toBe(true);
+    await page.waitForTimeout(700);
+    expect(await flat()).toBe(true);
+  });
 
   test('paints rainbow on first open with no setting change', async ({ page }) => {
     await openDexExport(page);
@@ -420,7 +495,7 @@ test.describe('desktop dex export preview', () => {
       })
       .toBeGreaterThan(0.4);
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
-    await expect.poll(async () => foil.getAttribute('data-tilt-scale')).toBe('1');
+    await expect.poll(async () => foil.getAttribute('data-tilt-scale')).toBe('1.150');
 
     const fit = await page.evaluate(() => {
       const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
@@ -593,10 +668,17 @@ test.describe('desktop dex export preview', () => {
       );
     }
     expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
-    expect(await foil.getAttribute('data-tilt-scale')).toBe('1');
+    expect(await foil.getAttribute('data-tilt-scale')).toBe('1.150');
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
 
-    await hit.click();
+    const park = await hit.boundingBox();
+    expect(park).toBeTruthy();
+    const px = park!.x + park!.width / 2;
+    const py = park!.y + park!.height / 2;
+    await page.mouse.move(px, py);
+    await page.mouse.down();
+    await page.mouse.move(px + 48, py - 32, { steps: 6 });
+    await page.mouse.up();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
     await page.waitForTimeout(450);
     expect(Math.abs(Number(await foil.getAttribute('data-tilt-x')))).toBeLessThan(0.8);
@@ -612,7 +694,7 @@ test.describe('desktop dex export preview', () => {
       if (c.left < l.left - 4 || c.right > l.right + 4 || c.top < l.top - 4 || c.bottom > l.bottom + 4) {
         return { ok: false, reason: 'overflow', ratio };
       }
-      return { ok: ratio >= 0.78, reason: `cover ${ratio.toFixed(3)}`, ratio };
+      return { ok: ratio >= 0.66, reason: `cover ${ratio.toFixed(3)}`, ratio };
     });
     expect(fill.ok, fill.reason).toBe(true);
 

@@ -177,9 +177,10 @@ test.describe('export foil workshop', () => {
         const r = hit.getBoundingClientRect();
         const x = r.left + r.width / 2;
         const y = r.top + r.height / 2;
-        const opts = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse' };
-        hit.dispatchEvent(new PointerEvent('pointerdown', opts));
-        hit.dispatchEvent(new PointerEvent('pointerup', opts));
+        const down = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse', buttons: 1 };
+        hit.dispatchEvent(new PointerEvent('pointerdown', down));
+        document.dispatchEvent(new PointerEvent('pointermove', { ...down, clientX: x + 48, clientY: y - 32 }));
+        hit.dispatchEvent(new PointerEvent('pointerup', { ...down, clientX: x + 48, clientY: y - 32, buttons: 0 }));
       });
     }
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
