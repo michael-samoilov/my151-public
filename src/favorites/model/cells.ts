@@ -58,6 +58,25 @@ export function isTypeCell(type: TypeAxisId, gen: GenAxisId): boolean {
   return isTypeName(type) && isGenNumber(gen);
 }
 
+/** Type of the other cell that already holds `id`, if that cell is one of the 18 types. */
+export function typeSlottedElsewhere(
+  fills: Record<string, number>,
+  id: number,
+  hereType: TypeAxisId,
+  hereGen: GenAxisId,
+): TypeName | null {
+  const here = cellKey(hereType, hereGen);
+  let otherGen: TypeName | null = null;
+  for (const [key, filled] of Object.entries(fills)) {
+    if (filled !== id || key === here) continue;
+    const parsed = parseCellKey(key);
+    if (!parsed || !isTypeName(parsed.type)) continue;
+    if (parsed.gen === hereGen) return parsed.type;
+    if (!otherGen) otherGen = parsed.type;
+  }
+  return otherGen;
+}
+
 export const ROMAN: Record<GenNumber, string> = {
   1: 'I',
   2: 'II',

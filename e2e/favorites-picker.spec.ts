@@ -98,7 +98,9 @@ test.describe('favorite Pokémon picker', () => {
         const dex = Number(el.getAttribute('data-sprite-dex'));
         const box = img?.getBoundingClientRect();
         const w = box?.width ?? 0;
-        const widths = [...el.querySelectorAll('img')].map((node) => node.getBoundingClientRect().width);
+        const widths = [...el.querySelectorAll('img[alt]:not([alt=""])')].map(
+          (node) => node.getBoundingClientRect().width,
+        );
         const six = el.querySelector('[data-pretty-len="6"]');
         const host = document.querySelector('[role="dialog"]') || document.querySelector('[data-testid="favorites-picker"]');
         const sb = six?.getBoundingClientRect();
@@ -242,5 +244,45 @@ test.describe('favorite Pokémon picker', () => {
     await expect(sprite).toBeVisible();
     const opacity = await sprite.evaluate((el) => getComputedStyle(el).opacity);
     expect(Number(opacity)).toBeLessThan(0.5);
+  });
+
+  test('an empty cell takes a move without a packing sheet', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-poison-1').click();
+    await page.getByTestId('favorites-pick-34').click();
+    await page.getByTestId('favorites-cell-ground-1').click();
+    await page.getByTestId('favorites-pick-76').click();
+    await expect(page.getByTestId('favorites-picker')).toBeHidden();
+    await page.getByTestId('favorites-cell-rock-1').click();
+    await page.getByTestId('favorites-pick-76').click();
+    await expect(page.getByTestId('favorites-packing')).toHaveCount(0);
+    await expect(page.getByTestId('favorites-picker')).toBeHidden();
+    await expect(page.getByTestId('favorites-cell-rock-1').locator('img[alt]')).toHaveAttribute('alt', /golem/i);
+    await expect(page.getByTestId('favorites-cell-ground-1').locator('img[alt]')).toHaveCount(0);
+    await expect(page.getByTestId('favorites-cell-poison-1').locator('img[alt]')).toHaveAttribute('alt', /nidoking/i);
+  });
+
+  test('a trash chain writes the incoming Pokémon into the opened cell', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-fairy-2').click();
+    await page.getByTestId('favorites-pick-176').click();
+    await page.getByTestId('favorites-cell-water-2').click();
+    await page.getByTestId('favorites-pick-184').click();
+    await page.getByTestId('favorites-cell-fairy-2').click();
+    await page.getByTestId('favorites-pick-184').click();
+    await expect(page.getByTestId('favorites-packing')).toBeVisible();
+    const trash = page.locator('[data-testid="favorites-pack-option"]').filter({
+      has: page.locator('[data-role="trash"]'),
+    });
+    await trash.first().click();
+    await expect(page.getByTestId('favorites-picker')).toBeHidden();
+    const fills = await page.evaluate(() => {
+      const raw = localStorage.getItem('favorite-picker');
+      const state = raw ? JSON.parse(raw).state.fills : {};
+      return state as Record<string, number>;
+    });
+    expect(fills['fairy|2']).toBe(184);
+    expect(fills['water|2']).toBeUndefined();
+    expect(Object.values(fills)).not.toContain(176);
   });
 });

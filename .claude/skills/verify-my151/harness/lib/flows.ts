@@ -1054,7 +1054,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     }>(`
       const el = document.querySelector('[data-testid="favorites-pretty-grid"]');
       if (!el) return { css:0, dex:0, w:0, dpr:1, natural:96, max:0, same:false, inside:false };
-      const imgs = [...el.querySelectorAll('img')];
+      const imgs = [...el.querySelectorAll('img[alt]:not([alt=""])')];
       const widths = imgs.map((node) => node.getBoundingClientRect().width);
       const rows = [...el.querySelectorAll('[data-pretty-row]')].map((row) => row.querySelectorAll('button').length);
       const dpr = window.devicePixelRatio || 1;
@@ -1168,8 +1168,46 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   if (placedAzu) {
     await s.click('[data-testid="favorites-cell-fairy-2"]');
     if (await waitFor(s, '[data-testid="favorites-pick-184"]')) {
+      const used = await s.evalJson<{
+        opacity: number; mark: string | null; freeOpacity: number; freeMark: boolean;
+      }>(`
+        const used = document.querySelector('[data-testid="favorites-pick-184"]');
+        const sprite = used ? used.querySelector('img[alt]:not([alt=""])') : null;
+        const mark = used ? used.querySelector('[data-testid="favorites-used-mark"]') : null;
+        const free = [...document.querySelectorAll('[data-testid^="favorites-pick-"]')].find((node) => node.getAttribute('data-testid') !== 'favorites-pick-184');
+        const freeSprite = free ? free.querySelector('img[alt]:not([alt=""])') : null;
+        const freeMark = free ? !!free.querySelector('[data-testid="favorites-used-mark"]') : true;
+        return {
+          opacity: sprite ? Number(getComputedStyle(sprite).opacity) : 1,
+          mark: mark ? mark.getAttribute('data-used-type') : null,
+          freeOpacity: freeSprite ? Number(getComputedStyle(freeSprite).opacity) : 0,
+          freeMark,
+        };
+      `);
+      checks.push(ok(
+        'favorites:used-elsewhere-mark',
+        used.opacity < 0.5 && used.mark === 'water' && used.freeOpacity > 0.9 && !used.freeMark,
+        `opacity=${used.opacity} mark=${used.mark} freeOpacity=${used.freeOpacity} freeMark=${used.freeMark}`,
+      ));
+      const types = await s.evalJson<{ icons: string[]; same: boolean }>(`
+        const btn = document.querySelector('[data-testid="favorites-pick-184"]');
+        if (!btn) return { icons: [], same: false };
+        const icons = [...btn.querySelectorAll('[data-testid="favorites-type-icon"]')].map((node) => node.getAttribute('data-type') || '');
+        const sprite = btn.querySelector('img[alt]:not([alt=""])');
+        const same = !!sprite && Math.abs(btn.getBoundingClientRect().height - sprite.getBoundingClientRect().height) < 1;
+        return { icons, same };
+      `);
+      const iconSet = types.icons.slice().sort().join(',');
+      checks.push(ok(
+        'favorites:selector-type-icons',
+        iconSet === 'fairy,water' && types.same,
+        `icons=${types.icons.join(',')} same=${types.same}`,
+      ));
       await s.click('[data-testid="favorites-pick-184"]');
       openedPack = await waitFor(s, '[data-testid="favorites-packing"]');
+    } else {
+      checks.push({ name: 'favorites:used-elsewhere-mark', status: 'fail', detail: 'fairy picker did not list Azumarill' });
+      checks.push({ name: 'favorites:selector-type-icons', status: 'fail', detail: 'fairy picker did not list Azumarill' });
     }
   }
   checks.push(ok('favorites:packing-opens', openedPack, `togetic=${placedTogetic} azu=${placedAzu}`));
@@ -1247,6 +1285,165 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     Boolean(oracle.has && oracle.fairy === 176 && oracle.water === 184),
     `fairy=${oracle.fairy} water=${oracle.water}`,
   ));
+
+  if (openedPack) {
+    const applied = await s.evalJson<boolean>(`
+      const options = [...document.querySelectorAll('[data-testid="favorites-pack-option"]')];
+      const trash = options.find((node) => node.querySelector('[data-role="trash"]'));
+      const target = trash || options[0];
+      if (!target) return false;
+      target.click();
+      return true;
+    `);
+    await sleep(350);
+    const landed = await s.evalJson<{ fairy?: number; water?: number; togetic: boolean }>(`
+      const raw = localStorage.getItem(${JSON.stringify(FAV_KEY)});
+      const fills = raw ? (JSON.parse(raw).state?.fills || {}) : {};
+      const values = Object.values(fills);
+      return { fairy: fills['fairy|2'], water: fills['water|2'], togetic: values.includes(176) };
+    `);
+    checks.push(ok(
+      'favorites:pack-lands-in-opened-cell',
+      Boolean(applied && landed.fairy === 184 && landed.water !== 184 && !landed.togetic),
+      `applied=${applied} fairy=${landed.fairy} water=${landed.water} togetic=${landed.togetic}`,
+    ));
+  } else {
+    checks.push({ name: 'favorites:pack-lands-in-opened-cell', status: 'fail', detail: 'packing sheet was not open' });
+  }
+
+  const dismiss = async () => {
+    const open = await s.evalJson<boolean>(`return !!document.querySelector('[data-testid="favorites-picker"]');`);
+    if (!open) return;
+    const dialog = await s.evalJson<boolean>(`return !!document.querySelector('[role="dialog"]');`);
+    if (dialog) {
+      await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
+    } else {
+      await s.click('[data-testid="favorites-picker"] > div:first-child button');
+    }
+    await sleep(250);
+  };
+
+  await dismiss();
+  await s.click('[data-testid="favorites-cell-normal-1"]');
+  if (await waitFor(s, '[data-testid="favorites-picker"]')) {
+    const emptyRing = await s.evalJson<{ ring: string; ball: string }>(`
+      const cell = document.querySelector('[data-testid="favorites-cell-normal-1"]');
+      const ring = cell ? cell.querySelector('[data-testid="favorites-focus-ring"]') : null;
+      const ball = cell ? cell.querySelector('[data-testid="favorites-empty-ball"]') : null;
+      return {
+        ring: ring ? getComputedStyle(ring).zIndex : '',
+        ball: ball ? getComputedStyle(ball).zIndex : '',
+      };
+    `);
+    const ballUnder = emptyRing.ball === 'auto' || Number(emptyRing.ball) < Number(emptyRing.ring);
+    checks.push(ok(
+      'favorites:empty-ring-above-ball',
+      Number(emptyRing.ring) >= 5 && ballUnder,
+      `ring=${emptyRing.ring} ball=${emptyRing.ball}`,
+    ));
+  } else {
+    checks.push({ name: 'favorites:empty-ring-above-ball', status: 'fail', detail: 'empty cell did not open' });
+  }
+  await dismiss();
+
+  await s.click('[data-testid="favorites-cell-fairy-2"]');
+  if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) {
+    const filled = await s.evalJson<{
+      ring: string; sprite: string; top: number; scrollTop: number; clearW: number; pickW: number; inGrid: boolean; text: string;
+    }>(`
+      const cell = document.querySelector('[data-testid="favorites-cell-fairy-2"]');
+      const ring = cell ? cell.querySelector('[data-testid="favorites-focus-ring"]') : null;
+      const sprite = cell ? cell.querySelector('img[alt]') : null;
+      const btn = document.querySelector('[data-testid^="favorites-pick-"]');
+      const scroller = btn ? btn.closest('.overflow-y-auto') : null;
+      const br = btn ? btn.getBoundingClientRect() : null;
+      const sr = scroller ? scroller.getBoundingClientRect() : null;
+      const clear = document.querySelector('[data-testid="favorites-clear"]');
+      const pick = document.querySelector('[data-testid^="favorites-pick-"]');
+      return {
+        ring: ring ? getComputedStyle(ring).zIndex : '',
+        sprite: sprite ? getComputedStyle(sprite).zIndex : '',
+        top: br && sr ? br.top - 3 - sr.top : -1,
+        scrollTop: sr ? sr.top : 0,
+        clearW: clear ? clear.getBoundingClientRect().width : 0,
+        pickW: pick ? pick.getBoundingClientRect().width : 0,
+        inGrid: !!(clear && clear.closest('[data-testid="favorites-pretty-grid"]')),
+        text: clear ? (clear.textContent || '').trim() : '',
+      };
+    `);
+    checks.push(ok(
+      'favorites:filled-sprite-above-ring',
+      Number(filled.sprite) > Number(filled.ring) && Number(filled.ring) >= 5,
+      `sprite=${filled.sprite} ring=${filled.ring}`,
+    ));
+    checks.push(ok(
+      'favorites:selector-ring-inside',
+      filled.top >= -0.5,
+      `ringTopGap=${filled.top.toFixed(1)}`,
+    ));
+    checks.push(ok(
+      'favorites:clear-is-cell',
+      filled.inGrid && filled.text.length < 3 && Math.abs(filled.clearW - filled.pickW) < 1 && filled.pickW > 20,
+      `inGrid=${filled.inGrid} text=${JSON.stringify(filled.text)} clearW=${filled.clearW.toFixed(1)} pickW=${filled.pickW.toFixed(1)}`,
+    ));
+  } else {
+    checks.push({ name: 'favorites:filled-sprite-above-ring', status: 'fail', detail: 'filled picker did not open' });
+    checks.push({ name: 'favorites:selector-ring-inside', status: 'fail', detail: 'filled picker did not open' });
+    checks.push({ name: 'favorites:clear-is-cell', status: 'fail', detail: 'filled picker did not open' });
+  }
+  await dismiss();
+
+  await s.evalJson(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
+    if (el) el.scrollLeft = Math.round(el.clientWidth * 0.85);
+    return true;
+  `);
+  await sleep(200);
+  const mini = await s.evalJson<{ overflow: boolean; shown: boolean; vpNarrower: boolean }>(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    const vp = document.querySelector('[data-testid="favorites-minimap-viewport"]');
+    const overflow = !!el && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
+    const shown = !!map && getComputedStyle(map).display !== 'none';
+    const vpNarrower = !!(map && vp && vp.getBoundingClientRect().width < map.getBoundingClientRect().width - 1 && vp.getBoundingClientRect().width > 2);
+    return { overflow, shown, vpNarrower };
+  `);
+  checks.push(ok(
+    'favorites:minimap-when-overflow',
+    mini.overflow ? mini.shown && mini.vpNarrower : !mini.shown,
+    `overflow=${mini.overflow} shown=${mini.shown} vp=${mini.vpNarrower}`,
+  ));
+
+  await s.click('[data-testid="favorites-cell-poison-1"]');
+  const poisonOpen = await waitFor(s, '[data-testid="favorites-pick-34"]');
+  if (poisonOpen) await s.click('[data-testid="favorites-pick-34"]');
+  await sleep(250);
+  await dismiss();
+  await s.click('[data-testid="favorites-cell-ground-1"]');
+  const groundOpen = await waitFor(s, '[data-testid="favorites-pick-76"]');
+  if (groundOpen) await s.click('[data-testid="favorites-pick-76"]');
+  await sleep(300);
+  await dismiss();
+  await s.click('[data-testid="favorites-cell-rock-1"]');
+  const rockOpen = await waitFor(s, '[data-testid="favorites-pick-76"]');
+  if (rockOpen) await s.click('[data-testid="favorites-pick-76"]');
+  await sleep(350);
+  const moved = await s.evalJson<{ packing: boolean; rock?: number; ground?: number; poison?: number }>(`
+    const raw = localStorage.getItem(${JSON.stringify(FAV_KEY)});
+    const fills = raw ? (JSON.parse(raw).state?.fills || {}) : {};
+    return {
+      packing: !!document.querySelector('[data-testid="favorites-packing"]'),
+      rock: fills['rock|1'],
+      ground: fills['ground|1'],
+      poison: fills['poison|1'],
+    };
+  `);
+  checks.push(ok(
+    'favorites:empty-dest-moves',
+    Boolean(poisonOpen && groundOpen && rockOpen && !moved.packing && moved.rock === 76 && moved.ground == null && moved.poison === 34),
+    `packing=${moved.packing} rock=${moved.rock} ground=${moved.ground} poison=${moved.poison}`,
+  ));
+  await dismiss();
 
   const errs = await s.errors();
   checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));

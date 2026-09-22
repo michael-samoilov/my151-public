@@ -22,10 +22,6 @@ export interface ChainSlot {
 
 export type TypeFills = Partial<Record<TypeName, PickerMon>>;
 
-const MAX_SHOW_PATHS = 8;
-const MAX_COUNT = 80;
-const MAX_DEPTH = 18;
-
 function otherTypes(mon: PickerMon, fromType: TypeName): TypeName[] {
   return mon.types.filter((t) => t !== fromType && (TYPES18 as readonly string[]).includes(t));
 }
@@ -81,129 +77,64 @@ export function placeIncoming(
   return { map: next, moves, vacantFrom: from && from !== dest ? from : null, occupant, hole: dest };
 }
 
-function enumerateBumpResolutions(
-  map: TypeFills,
-  displaced: PickerMon | null,
-  hole: TypeName,
-  moves: PackMove[],
-  dest: TypeName,
-  depth: number,
-  caps: { maxBump: number; truncated: boolean },
-): { map: TypeFills; moves: PackMove[] }[] {
-  const out: { map: TypeFills; moves: PackMove[] }[] = [];
-  if (caps.truncated) return out;
-  if (!displaced) {
-    out.push({ map, moves });
-    return out;
-  }
-  if (depth >= caps.maxBump) {
-    out.push({
-      map,
-      moves: [...moves, { mon: displaced, from: hole, to: null, kind: 'leave' }],
-    });
-    return out;
-  }
-  const seats = otherTypes(displaced, hole).filter((s) => s !== dest);
-  out.push({
-    map: cloneMap(map),
-    moves: [...moves, { mon: displaced, from: hole, to: null, kind: 'leave' }],
-  });
-  for (const seat of seats) {
-    if (caps.truncated) break;
-    const next = cloneMap(map);
-    const there = next[seat] && next[seat]!.id !== displaced.id ? next[seat]! : null;
-    next[seat] = displaced;
-    const step: PackMove = {
-      mon: displaced,
-      from: hole,
-      to: seat,
-      kind: there ? 'bump' : 'slide',
-    };
-    out.push(...enumerateBumpResolutions(next, there, seat, [...moves, step], dest, depth + 1, caps));
-  }
-  return out;
+function hasLeave(path: PackMove[]): boolean {
+  return path.some((step) => step.kind === 'leave' || step.to == null);
 }
 
-export function fillersFor(map: TypeFills, vacantType: TypeName, lockedType: TypeName) {
-  const out: PackMove[] = [];
-  for (const t of TYPES18) {
-    if (t === vacantType || t === lockedType) continue;
-    const mon = map[t];
-    if (!mon) continue;
-    if (mon.types.includes(vacantType) && mon.types.includes(t)) {
-      out.push({ mon, from: t, to: vacantType, kind: 'fill' });
-    }
-  }
-  return out;
-}
-
-function fillDfs(
-  cur: TypeFills,
-  vacant: TypeName | null,
-  dest: TypeName,
-  soFar: PackMove[],
-  movedIds: Set<number>,
-  depth: number,
-  caps: { maxDepth: number; truncated: boolean },
-  record: (list: PackMove[]) => void,
-): void {
-  if (caps.truncated) return;
-  if (!vacant || depth >= caps.maxDepth) {
-    record(soFar);
-    return;
-  }
-  const optsFill = fillersFor(cur, vacant, dest).filter((f) => !movedIds.has(f.mon.id));
-  record(soFar);
-  if (caps.truncated) return;
-  for (const f of optsFill) {
-    if (caps.truncated) return;
-    const next = cloneMap(cur);
-    if (f.from) delete next[f.from];
-    if (f.to) next[f.to] = f.mon;
-    const nextMoved = new Set(movedIds);
-    nextMoved.add(f.mon.id);
-    fillDfs(next, f.from, dest, [...soFar, f], nextMoved, depth + 1, caps, record);
-  }
-}
-
+/**
+ * Keep-everyone chains, shortest first, plus the direct trash swap.
+ * A later Pokémon is listed only when the previous seat is theirs, so
+ * someone who can move but does not have to make space stays off the list.
+ * Every length stays. Nothing is dropped for being long.
+ */
 export function enumeratePaths(
   map: TypeFills,
   dest: TypeName,
   incoming: PickerMon,
-  opts: { maxShow?: number; maxCount?: number; maxDepth?: number } = {},
 ): { paths: PackMove[][]; total: number; vacantFrom: TypeName | null } {
-  const maxShow = opts.maxShow ?? MAX_SHOW_PATHS;
-  const maxCount = opts.maxCount ?? MAX_COUNT;
-  const maxDepth = opts.maxDepth ?? MAX_DEPTH;
   const placed = placeIncoming(map, dest, incoming);
-  const caps = { maxDepth, maxBump: maxDepth, truncated: false };
   const paths: PackMove[][] = [];
-  let total = 0;
 
-  function record(list: PackMove[]) {
-    total += 1;
-    if (paths.length < maxShow) paths.push(list);
-    if (total >= maxCount) caps.truncated = true;
+  if (placed.occupant) {
+    paths.push([
+      ...placed.moves,
+      { mon: placed.occupant, from: placed.hole, to: null, kind: 'leave' },
+    ]);
   }
 
-  const resolutions = enumerateBumpResolutions(
-    placed.map,
-    placed.occupant,
-    placed.hole,
-    placed.moves,
-    dest,
-    0,
-    caps,
-  );
-
-  for (const res of resolutions) {
-    if (caps.truncated) break;
-    const movedIds = new Set(res.moves.map((s) => s.mon.id));
-    fillDfs(res.map, placed.vacantFrom, dest, res.moves, movedIds, 0, caps, record);
+  function walk(
+    cur: TypeFills,
+    displaced: PickerMon | null,
+    hole: TypeName,
+    moves: PackMove[],
+    seen: Set<number>,
+  ): void {
+    if (!displaced) {
+      paths.push(moves);
+      return;
+    }
+    const seats = otherTypes(displaced, hole).filter((seat) => seat !== dest);
+    for (const seat of seats) {
+      const there = cur[seat] && cur[seat]!.id !== displaced.id ? cur[seat]! : null;
+      if (there && seen.has(there.id)) continue;
+      const next = cloneMap(cur);
+      next[seat] = displaced;
+      const step: PackMove = {
+        mon: displaced,
+        from: hole,
+        to: seat,
+        kind: there ? 'bump' : 'slide',
+      };
+      const nextSeen = new Set(seen);
+      nextSeen.add(displaced.id);
+      walk(next, there, seat, [...moves, step], nextSeen);
+    }
   }
 
-  paths.sort((a, b) => a.length - b.length);
-  return { paths, total, vacantFrom: placed.vacantFrom };
+  walk(placed.map, placed.occupant, placed.hole, placed.moves, new Set([incoming.id]));
+
+  paths.sort((a, b) => a.length - b.length || Number(hasLeave(a)) - Number(hasLeave(b)));
+  return { paths, total: paths.length, vacantFrom: placed.vacantFrom };
 }
 
 /**
@@ -232,15 +163,17 @@ export function selectorChain(path: PackMove[]): ChainSlot[] {
 }
 
 export function packingNeeded(map: TypeFills, dest: TypeName, incoming: PickerMon): boolean {
-  const from = occupantType(map, incoming.id);
-  const occupant = map[dest] && map[dest]!.id !== incoming.id ? map[dest] : null;
-  return Boolean((from && from !== dest) || occupant);
+  // An empty destination takes the Pokémon directly. The sheet opens
+  // only when a different Pokémon already sits in that cell.
+  return Boolean(map[dest] && map[dest]!.id !== incoming.id);
 }
 
 export function applyPathToTypeMap(map: TypeFills, path: PackMove[]): TypeFills {
   const next = cloneMap(map);
   for (const step of path) {
-    if (step.from) delete next[step.from];
+    // `from` is the cell this Pokémon left. Skip the delete when an earlier
+    // step already put someone else there, or the kick erases the arrival.
+    if (step.from && next[step.from]?.id === step.mon.id) delete next[step.from];
     if (step.to) next[step.to] = step.mon;
   }
   return next;
@@ -259,6 +192,48 @@ export function applyTypeMapToFills(
     else delete next[key];
   }
   return next;
+}
+
+const PACK_PAGE = 2;
+const PACK_FULL_MAX = 4;
+
+export function chainSlotKey(slot: ChainSlot): string {
+  return `${slot.role}:${slot.type ?? ''}:${slot.mon?.id ?? ''}`;
+}
+
+export function packListMode(chains: { slots: ChainSlot[] }[]): 'full' | 'stepped' {
+  return chains.some((chain) => chain.slots.length > PACK_FULL_MAX) ? 'stepped' : 'full';
+}
+
+/** The next two links of each branch under `prefix`. `path` is set when the branch ends there. */
+export function packStepOptions(
+  chains: { path: PackMove[]; slots: ChainSlot[] }[],
+  prefix: string,
+): { key: string; slots: ChainSlot[]; path: PackMove[] | null; prefix: string }[] {
+  const committed = prefix === '' ? 0 : prefix.split('|').length;
+  const active = chains.filter((chain) => {
+    const head = chain.slots.map(chainSlotKey).join('|');
+    return prefix === '' || head === prefix || head.startsWith(`${prefix}|`);
+  });
+  const groups = new Map<string, { slots: ChainSlot[]; path: PackMove[] | null; longer: boolean }>();
+  for (const chain of active) {
+    const next = chain.slots.slice(committed, committed + PACK_PAGE);
+    if (next.length === 0) continue;
+    const key = next.map(chainSlotKey).join('|');
+    let group = groups.get(key);
+    if (!group) {
+      group = { slots: next, path: null, longer: false };
+      groups.set(key, group);
+    }
+    if (chain.slots.length > committed + next.length) group.longer = true;
+    else group.path = chain.path;
+  }
+  return [...groups.entries()].map(([key, group]) => ({
+    key,
+    slots: group.slots,
+    path: group.longer ? null : group.path,
+    prefix: prefix === '' ? key : `${prefix}|${key}`,
+  }));
 }
 
 export function uniqueChains(paths: PackMove[][]): { path: PackMove[]; slots: ChainSlot[] }[] {

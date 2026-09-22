@@ -5,12 +5,14 @@ import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PanelRightClose } from 'lucide-react';
-import { isGenNumber, isTypeName, type GenAxisId, type TypeAxisId } from '../model/cells';
+import { isGenNumber, isTypeName, typeSlottedElsewhere, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
 import {
   enumeratePaths,
   packingNeeded,
+  packListMode,
+  packStepOptions,
   typeMapFromFills,
   uniqueChains,
   type ChainSlot,
@@ -48,6 +50,7 @@ export function PickerSheet({
   const paneWidth = spritePx * 6 + inset * 2 + 2;
   const kind = kindFor(type, gen);
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);
+  const [packStack, setPackStack] = useState<string[]>(['']);
 
   const mons = useMemo(() => {
     if (kind === 'pointer') {
@@ -70,11 +73,7 @@ export function PickerSheet({
       if (packingNeeded(map, type, mon)) {
         const { paths } = enumeratePaths(map, type, mon);
         const chains = uniqueChains(paths);
-        if (chains.length === 1 && !map[type]) {
-          onApplyPack(chains[0].path);
-          onClose();
-          return;
-        }
+        setPackStack(['']);
         setPacking({ incoming: mon, chains });
         return;
       }
@@ -84,29 +83,21 @@ export function PickerSheet({
   }
 
   const body = packing ? (
-    <div className="flex flex-col gap-2 px-3 pb-4" data-testid="favorites-packing">
-      <p className="text-sm text-muted-foreground">{t('favorites.packing.heading')}</p>
-      {packing.chains.map((c, i) => (
-        <PackingChain
-          key={i}
-          slots={c.slots}
-          onSelect={() => {
-            onApplyPack(c.path);
-            onClose();
-          }}
-        />
-      ))}
-      <button
-        type="button"
-        className="self-start text-sm text-muted-foreground underline"
-        onClick={() => setPacking(null)}
-      >
-        {t('favorites.packing.back')}
-      </button>
-    </div>
+    <PackList
+      chains={packing.chains}
+      stack={packStack}
+      onStack={setPackStack}
+      onApply={(path) => {
+        onApplyPack(path);
+        onClose();
+      }}
+      onBack={() => setPacking(null)}
+      heading={t('favorites.packing.heading')}
+      backLabel={t('favorites.packing.back')}
+    />
   ) : (
-    <div className="pb-4" style={{ paddingLeft: inset, paddingRight: inset }}>
-      {mons.length === 0 ? (
+    <div className="pb-4" style={{ paddingTop: 4, paddingLeft: inset, paddingRight: inset }}>
+      {mons.length === 0 && currentId == null ? (
         <p className="text-sm text-muted-foreground">{t('favorites.empty')}</p>
       ) : (
         <PrettySpriteGrid
@@ -115,21 +106,18 @@ export function PickerSheet({
           lineKey={type === 'starter' ? evolutionLineKey : undefined}
           selectedId={currentId}
           onPick={pick}
+          usedIn={(id) => typeSlottedElsewhere(fills, id, type, gen)}
+          onClear={
+            currentId != null
+              ? () => {
+                  onClear();
+                  onClose();
+                }
+              : undefined
+          }
+          clearLabel={t('favorites.clear')}
         />
       )}
-      {currentId != null ? (
-        <button
-          type="button"
-          data-testid="favorites-clear"
-          className="mt-3 text-sm text-muted-foreground underline"
-          onClick={() => {
-            onClear();
-            onClose();
-          }}
-        >
-          {t('favorites.clear')}
-        </button>
-      ) : null}
     </div>
   );
 
@@ -157,5 +145,60 @@ export function PickerSheet({
     <BottomSheet onClose={onClose} title={title} closeLabel={t('favorites.close')} size="content">
       <div data-testid="favorites-picker">{body}</div>
     </BottomSheet>
+  );
+}
+
+function PackList({
+  chains,
+  stack,
+  onStack,
+  onApply,
+  onBack,
+  heading,
+  backLabel,
+}: {
+  chains: { path: PackMove[]; slots: ChainSlot[] }[];
+  stack: string[];
+  onStack: (next: string[]) => void;
+  onApply: (path: PackMove[]) => void;
+  onBack: () => void;
+  heading: string;
+  backLabel: string;
+}) {
+  const mode = packListMode(chains);
+  const prefix = stack[stack.length - 1] ?? '';
+  const options = mode === 'stepped' ? packStepOptions(chains, prefix) : [];
+  return (
+    <div className="flex flex-col gap-2 px-3 pb-4" data-testid="favorites-packing" data-pack-mode={mode}>
+      <p className="text-sm text-muted-foreground">{heading}</p>
+      {mode === 'full'
+        ? chains.map((chain) => (
+            <PackingChain
+              key={chain.slots.map((slot) => `${slot.role}:${slot.type ?? ''}:${slot.mon?.id ?? ''}`).join('|')}
+              slots={chain.slots}
+              onSelect={() => onApply(chain.path)}
+            />
+          ))
+        : options.map((option) => (
+            <PackingChain
+              key={option.key}
+              slots={option.slots}
+              onSelect={() => {
+                if (option.path) onApply(option.path);
+                else onStack([...stack, option.prefix]);
+              }}
+            />
+          ))}
+      <button
+        type="button"
+        className="self-start text-sm text-muted-foreground underline"
+        onClick={() => {
+          if (mode === 'stepped' && stack.length > 1) onStack(stack.slice(0, -1));
+          else onBack();
+        }}
+      >
+        {backLabel}
+      </button>
+    </div>
   );
 }
