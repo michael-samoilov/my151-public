@@ -35,7 +35,7 @@ const COPY: Record<LeagueNudgeId, NudgeCopy> = {
 
 const AUTO_DISMISS_MS = 10000;
 const CARD_W = 264;
-const REVEAL_DELAY_MS = 260;
+const REVEAL_DELAY_MS = 360;
 
 export function LeagueFunnelNudge() {
   const t = useT();
@@ -65,7 +65,7 @@ export function LeagueFunnelNudge() {
   }, [id]);
 
   useLayoutEffect(() => {
-    if (!id) return;
+    if (!id || !armed) return;
     let cancelled = false;
     let raf = 0;
     let frames = 0;
@@ -97,7 +97,7 @@ export function LeagueFunnelNudge() {
       window.removeEventListener('resize', capture);
       window.removeEventListener('scroll', capture, true);
     };
-  }, [id]);
+  }, [id, armed]);
 
   const finish = useCallback(
     (action: 'cta' | 'dismiss') => {

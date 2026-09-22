@@ -109,6 +109,7 @@ test.describe('league funnel export nudges', () => {
     expect(geo.exportX).toBeGreaterThan(0);
     expect(geo.nameX).toBeGreaterThan(0);
     expect(geo.arrowX).toBeGreaterThan(0);
+    expect(geo.exportX!).toBeGreaterThan(page.viewportSize()!.width * 0.7);
     expect(Math.abs(geo.arrowX! - geo.exportX!)).toBeLessThan(Math.abs(geo.arrowX! - geo.nameX!));
     expect(Math.abs(geo.arrowX! - geo.exportX!)).toBeLessThan(24);
     await expect(nudge).toContainText('League ready');

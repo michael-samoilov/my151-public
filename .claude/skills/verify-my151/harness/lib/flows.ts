@@ -1385,10 +1385,12 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
     ).catch(() => ({ exportX: null, nameX: null, arrowX: null }));
     const toExport = geo.arrowX != null && geo.exportX != null ? Math.abs(geo.arrowX - geo.exportX) : Infinity;
     const toName = geo.arrowX != null && geo.nameX != null ? Math.abs(geo.arrowX - geo.nameX) : Infinity;
+    const vw = await s.evalJson<number>('return window.innerWidth;').catch(() => 0);
+    const settled = geo.exportX != null && vw > 0 && geo.exportX > vw * 0.7;
     checks.push(ok(
       'league-funnel:roster-nudge-points-at-export',
-      toExport < 24 && toExport < toName,
-      `arrow=${geo.arrowX} export=${geo.exportX} name=${geo.nameX}`,
+      settled && toExport < 24 && toExport < toName,
+      `arrow=${geo.arrowX} export=${geo.exportX} name=${geo.nameX} vw=${vw}`,
     ));
   } else {
     checks.push(ok('league-funnel:roster-nudge-points-at-export', false, 'roster nudge never shown'));
