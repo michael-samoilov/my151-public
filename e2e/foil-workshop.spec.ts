@@ -128,18 +128,13 @@ test.describe('export foil workshop', () => {
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 }).toBe('1');
     const lift = page.locator('[data-export-foil-lift]');
-    if ((await foil.getAttribute('data-paused')) !== '1') {
-      await lift.click();
-      await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
-      await page.waitForTimeout(400);
-    }
     const box = await lift.boundingBox();
     expect(box, 'workshop lift has no box').toBeTruthy();
-    const tl = { x: box!.x + 10, y: box!.y + 10 };
-    const br = { x: box!.x + box!.width - 10, y: box!.y + box!.height - 10 };
-    await page.mouse.move(tl.x, tl.y);
+    const tl = { x: box!.x + 12, y: box!.y + 12 };
+    const br = { x: box!.x + box!.width - 12, y: box!.y + box!.height - 12 };
+    await page.mouse.move(tl.x - 24, tl.y - 24);
     await page.mouse.down();
-    await page.mouse.move(tl.x, tl.y);
+    await page.mouse.move(tl.x, tl.y, { steps: 8 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
     await expect.poll(async () => {
       const x = Number(await foil.getAttribute('data-tilt-x'));

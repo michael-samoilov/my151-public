@@ -191,7 +191,7 @@ export function ExportPreview3D({
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
     const foil =
       foilMag <= recipeNow.deadDeg ? 0 : Math.min(1, (foilMag - recipeNow.deadDeg) / span);
-    const activation = springARef.current.value;
+    const activation = Math.min(1, Math.max(0, springARef.current.value));
     el.style.setProperty('--foil-opacity', foil.toFixed(3));
     el.style.setProperty('--hover-tilt-opacity', activation.toFixed(3));
     const angle = (Math.atan2(ny - 0.5, nx - 0.5) * 180) / Math.PI;

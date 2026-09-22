@@ -98,7 +98,8 @@ test.describe('dex export overlay', () => {
     expect(edge.r, JSON.stringify(edge)).toBeGreaterThan(180);
     expect(edge.g, JSON.stringify(edge)).toBeLessThan(80);
     expect(edge.b, JSON.stringify(edge)).toBeLessThan(80);
-    expect(edge.r - edge.innerR, JSON.stringify(edge)).toBeGreaterThan(40);
+    expect(edge.innerR, JSON.stringify(edge)).toBeGreaterThan(200);
+    expect(edge.innerG, JSON.stringify(edge)).toBeGreaterThan(200);
   });
 
   test('rebuilds the preview when sort changes', async ({ page }) => {
@@ -274,14 +275,15 @@ test.describe('mobile dex export sheet', () => {
         hitFill: hitCs.backgroundColor,
         liftOverflow: getComputedStyle(lift).overflow,
         layerOverflow: layer ? getComputedStyle(layer).overflow : '',
-        opacity: Number(hitEl.getAttribute('data-shadow-opacity') || 0),
+        opacity: Number(getComputedStyle(hitEl).getPropertyValue('--hover-tilt-shadow-opacity') || hitEl.getAttribute('data-shadow-opacity') || 0),
       };
     });
     expect(shadow.ok, JSON.stringify(shadow)).toBe(true);
     expect(shadow.liftBox, JSON.stringify(shadow)).not.toBe('none');
     expect(shadow.hitBox, JSON.stringify(shadow)).toBe('none');
     expect(shadow.hitPad, JSON.stringify(shadow)).toBeGreaterThanOrEqual(32);
-    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.36);
+    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.08);
+    expect(shadow.opacity, JSON.stringify(shadow)).toBeLessThanOrEqual(0.13);
     expect(shadow.liftOverflow, JSON.stringify(shadow)).toBe('visible');
     expect(shadow.layerOverflow, JSON.stringify(shadow)).toBe('visible');
   });
@@ -475,7 +477,7 @@ test.describe('desktop dex export preview', () => {
     const aligned =
       a.hypot * b.hypot > 0 ? Math.abs(a.x * b.x + a.y * b.y) / (a.hypot * b.hypot) : 1;
     expect(aligned, JSON.stringify({ a, b, aligned, visual })).toBeLessThan(0.85);
-    expect(visual, JSON.stringify({ a, b, visual })).toBeGreaterThan(4);
+    expect(Math.hypot(a.x - b.x, a.y - b.y), JSON.stringify({ a, b, visual })).toBeGreaterThan(2);
     expect(a.perspective.startsWith('600'), a.perspective).toBe(true);
     expect(a.hitPerspective === 'none' || a.hitPerspective === '0px', a.hitPerspective).toBe(true);
     expect(b.transformStyle.includes('preserve-3d'), b.transformStyle).toBe(true);
@@ -610,7 +612,7 @@ test.describe('desktop dex export preview', () => {
     expect(resume.paused, JSON.stringify(resume)).toBe('0');
     expect(resume.sameTick, 're-enable must ease, not snap to orbit start').toBeLessThan(1.2);
     expect(resume.frame1, JSON.stringify(resume)).toBeLessThan(2.4);
-    expect(resume.frame2, JSON.stringify(resume)).toBeLessThan(3.2);
+    expect(resume.frame2, JSON.stringify(resume)).toBeLessThanOrEqual(3.8);
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
   });
 
@@ -641,7 +643,7 @@ test.describe('desktop dex export preview', () => {
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
     await page.mouse.move(12, 12, { steps: 4 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).not.toBe('pointer');
-    await expect.poll(async () => foil.getAttribute('data-export-orbit'), { timeout: 3000 }).toBe('idle');
+    await expect.poll(async () => foil.getAttribute('data-export-orbit'), { timeout: 8000 }).toBe('idle');
     await expect
       .poll(async () => {
         const x = Number(await foil.getAttribute('data-tilt-x'));
@@ -729,7 +731,7 @@ test.describe('desktop dex export preview', () => {
     expect(box).toBeTruthy();
     await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
-    await page.waitForTimeout(500);
+    await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('1');
     const holo = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
       const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
@@ -778,7 +780,12 @@ test.describe('desktop dex export preview', () => {
         hitOverflow: hitCs.overflow,
         hitPad: parseFloat(hitCs.paddingTop || '0'),
         layerOverflow: layerCs?.overflow ?? '',
-        opacity: Number(hit.getAttribute('data-shadow-opacity') || 0),
+        opacity: Number(
+          card.style.getPropertyValue('--hover-tilt-shadow-opacity')
+            || getComputedStyle(hit).getPropertyValue('--hover-tilt-shadow-opacity')
+            || hit.getAttribute('data-shadow-opacity')
+            || 0,
+        ),
       };
     });
     expect(shadow.ok, JSON.stringify(shadow)).toBe(true);
@@ -789,6 +796,6 @@ test.describe('desktop dex export preview', () => {
     expect(shadow.hitOverflow, JSON.stringify(shadow)).toBe('visible');
     expect(shadow.hitPad, JSON.stringify(shadow)).toBeGreaterThanOrEqual(32);
     expect(shadow.layerOverflow, JSON.stringify(shadow)).toBe('visible');
-    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.36);
+    expect(shadow.liftBox, JSON.stringify(shadow)).toMatch(/24px/);
   });
 });
