@@ -1144,6 +1144,11 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     const legendRows = legendOpen ? await rowLens() : [];
     checks.push(ok('favorites:legend-spread', legendRows.join('+') === '5+5+4', legendRows.join('+')));
     await closePicker();
+    await s.click('[data-testid="favorites-cell-water-1"]');
+    const waterOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    const waterRows = waterOpen ? await rowLens() : [];
+    checks.push(ok('favorites:water-tail', waterRows.join('+') === '6+6+6+6+4+4', waterRows.join('+')));
+    await closePicker();
   }
 
   await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);

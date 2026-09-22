@@ -77,8 +77,8 @@ test.describe('favorite Pokémon picker', () => {
   test('selector sprites stay one size', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     const cells = [
-      { id: 'favorites-cell-normal-1', rows: [6, 6, 5, 5] },
-      { id: 'favorites-cell-water-1', rows: [6, 6, 5, 5, 5, 5] },
+      { id: 'favorites-cell-normal-1', rows: [6, 6, 6, 4] },
+      { id: 'favorites-cell-water-1', rows: [6, 6, 6, 6, 4, 4] },
       { id: 'favorites-cell-starter-1', rows: [6, 3] },
       { id: 'favorites-cell-legendary-4', rows: [5, 5, 4] },
     ];
