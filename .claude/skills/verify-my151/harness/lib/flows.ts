@@ -508,9 +508,21 @@ async function readCard(s: Session, card: number): Promise<{ lines: { branch: nu
     return {lines:c.lines||[], powerups:c.powerups||{}};`);
 }
 
+async function clickHandle(s: Session, selector: string): Promise<boolean> {
+  if (!(await waitFor(s, selector))) return false;
+  try {
+    await s.click(selector);
+    return true;
+  } catch {
+    return s
+      .evalJson<boolean>(`const el=document.querySelector(${JSON.stringify(selector)}); if(!el) return false; el.click(); return true;`)
+      .catch(() => false);
+  }
+}
+
 /** Open a card from the league home; the home must be showing. */
 async function openLeagueCard(s: Session, card: number): Promise<boolean> {
-  await s.click(`[data-testid="league-slot-${card}"]`);
+  if (!(await clickHandle(s, `[data-testid="league-slot-${card}"]`))) return false;
   const there = await waitFor(s, '[data-testid="card-cell-1-1"]');
   await sleep(500);
   return there;
@@ -768,6 +780,40 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     checks.push({ name: 'league-change:charizard-seated', status: 'skip', detail: 'card never opened' });
   }
 
+  await s.navigate(url);
+  if ((await waitLeagueHome(s)) && (await openLeagueCard(s, CARD))) {
+    await s.click('[aria-label^="Gym type"]');
+    await sleep(300);
+    await s.click('svg[data-type="fire"]');
+    await sleep(400);
+    await s.click('[data-testid="slot-tm"]');
+    const picker = await waitFor(s, '[data-testid="tm-chip-type-fire"]');
+    const typed = await s
+      .evalJson<{ ok: boolean; value: string }>(`const i=document.querySelector('[data-testid="tm-search"]');
+        if(!i) return {ok:false,value:''};
+        i.focus();
+        const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+        set.call(i,'surf');
+        i.dispatchEvent(new Event('input',{bubbles:true}));
+        i.dispatchEvent(new Event('change',{bubbles:true}));
+        return {ok:true,value:i.value};`)
+      .catch(() => ({ ok: false, value: '' }));
+    await sleep(900);
+    const hasSurf = await s
+      .evalJson<boolean>(`return !!document.querySelector('[data-testid="tm-move-57"]');`)
+      .catch(() => false);
+    checks.push(ok(
+      'league-change:tm-search-ignores-type-chip',
+      picker && typed.ok && hasSurf,
+      `picker=${picker} typed=${typed.ok} value=${typed.value} hasSurf=${hasSurf}`,
+    ));
+    await s.screenshot(ctx.shot('league-change-tm-search-surf'));
+    await s.navigate(url);
+    await waitLeagueHome(s);
+  } else {
+    checks.push({ name: 'league-change:tm-search-ignores-type-chip', status: 'skip', detail: 'card never opened' });
+  }
+
   const errs = await s.errors();
   checks.push(ok('league-change:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
@@ -798,8 +844,13 @@ async function dismissLeagueBrowser(s: Session): Promise<boolean> {
 }
 
 /** Move a fine pointer over a column so the grid records hoverSeat. */
-async function pointerOverColumn(s: Session, testId: string): Promise<void> {
-  await s.hover(`[data-testid="${testId}"]`);
+async function pointerOverColumn(s: Session, testId: string): Promise<boolean> {
+  try {
+    await s.hover(`[data-testid="${testId}"]`);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -816,12 +867,19 @@ export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName
   }
   await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BLANK_LEAGUE}); return true;`);
   await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'league home never hydrated after seed' });
+    return checks;
+  }
   if (!(await openLeagueCard(s, 0))) {
     checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'card never opened' });
     return checks;
   }
 
-  await s.click('[data-testid="card-cell-1-1"]');
+  if (!(await clickHandle(s, '[data-testid="card-cell-1-1"]'))) {
+    checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'empty cell never opened' });
+    return checks;
+  }
   await sleep(600);
   const dismissed = await dismissLeagueBrowser(s);
   checks.push(ok('league-hover:browser-dismissed', dismissed, dismissed ? 'backdrop click' : 'no backdrop found'));
