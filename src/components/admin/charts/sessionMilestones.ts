@@ -55,6 +55,11 @@ export const FUNNEL_LABEL: Record<string, string> = {
   'league-nudge-league-dismiss': '8 gyms skip',
 };
 
+/** Event names stored on one league sitting, for the timeline funnel marks. */
+export function leagueSittingEv(events: readonly string[] | undefined): string[] | undefined {
+  return events?.length ? [...events] : undefined;
+}
+
 /** Horizontal gap when a sitting has both a diamond and a funnel circle. */
 export const FUNNEL_OFFSET_PX = 8;
 

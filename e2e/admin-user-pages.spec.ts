@@ -433,8 +433,8 @@ test.describe('admin user pages', () => {
       input.value = '1';
       input.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    await expect(label).toHaveText('');
-    await expect(label).toHaveAttribute('visibility', 'hidden');
+    await expect(label).toHaveText('card nudge · card go');
+    await expect(label).toHaveAttribute('visibility', 'visible');
     await expect(page.getByTestId('session-playhead-milestone')).toHaveCount(1);
   });
 
