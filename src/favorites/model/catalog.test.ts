@@ -18,6 +18,7 @@ describe('alternate picker forms', () => {
       if (form.id !== 10191) expect(dexIds.has(form.id), String(form.id)).toBe(false);
     }
     expect(new Set(allPickerMons().map((m) => m.id)).size).toBe(allPickerMons().length);
+    expect(allPickerMons().filter((mon) => /shiny/i.test(mon.name) || /\/shiny\//i.test(mon.sprite))).toEqual([]);
   });
 
   it('separates regular and Gigantamax Urshifu forms by ID and cell', () => {

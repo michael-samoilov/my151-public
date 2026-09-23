@@ -12,7 +12,7 @@ Pick one Pokémon per type-by-generation cell, plus starter, gimmick, legendary,
 1. Open `/favorite-pokemon-by-type`.
 2. Tap `[data-testid="favorites-cell-<type>-<gen>"]`.
 3. Tap `[data-testid="favorites-pick-<id>"]` in `[data-testid="favorites-picker"]`.
-4. Relocate a dual-type onto an occupied cell with a keep-everyone route to open `[data-testid="favorites-packing"]`. The origin slot is `[data-role="vacate"]` and shows its Pokémon faded. A replacement with only a direct trash route applies without opening packing.
+4. Relocate a dual-type onto an occupied cell with a keep-everyone route to open `[data-testid="favorites-packing"]`. Each Pokémon appears once with its old type at top-left and its destination at top-right. A replacement with only a direct trash route applies without opening packing.
 
 ## Oracle
 
@@ -20,7 +20,7 @@ Pick one Pokémon per type-by-generation cell, plus starter, gimmick, legendary,
 - Grid: `[data-testid="favorites-grid"]`. Filled sprites may extend beyond their cell borders.
 - The last `[data-pretty-row]` is centered when shorter than the row above. A tall selector shrinks sprite cells to fit the mobile pane without scrolling.
 - An empty destination does not open packing. The Pokémon moves, and its old cell clears.
-- Packing options show unoutlined sprites with old/new type or trash marks above the sprites. Vacating and trashed sprites are faded.
+- Packing options show unoutlined sprites with old type, arrow, and new type or trash marks above them. Only trashed Pokémon are faded.
 - `[data-testid="favorites-clear"]` is a same-size cell at the end of the grid with a visible Clear label.
 - Species type badges appear only in type-column selectors. Already-used type badges may also appear in pointer selectors, without fading those Pokémon.
 - Pointer source badges identify starter, gimmick, legendary, generation, and type sources. The overall favorite pool includes the legendary favorite.

@@ -12,12 +12,10 @@ export interface PackMove {
   kind: PackKind;
 }
 
-export type SlotRole = 'vacate' | 'place' | 'to' | 'cycle' | 'trash';
-
 export interface ChainSlot {
-  type: TypeName | null;
-  mon: PickerMon | null;
-  role: SlotRole;
+  mon: PickerMon;
+  from: TypeName | null;
+  to: TypeName | null;
 }
 
 export type TypeFills = Partial<Record<TypeName, PickerMon>>;
@@ -137,29 +135,8 @@ export function enumeratePaths(
   return { paths, total: paths.length, vacantFrom: placed.vacantFrom };
 }
 
-/**
- * Selector chain. The origin slot shows the incoming Pokémon faded when that
- * form already sat on this generation — not a blank ball.
- */
 export function selectorChain(path: PackMove[]): ChainSlot[] {
-  const slots: ChainSlot[] = [];
-  if (!path.length) return slots;
-  const incoming = path[0].mon;
-  const origin = path[0].from;
-  if (origin) slots.push({ type: origin, mon: incoming, role: 'vacate' });
-  for (const step of path) {
-    if (step.mon.id === incoming.id) {
-      if (step.to) slots.push({ type: step.to, mon: step.mon, role: 'place' });
-      continue;
-    }
-    if (!step.to) {
-      slots.push({ type: null, mon: step.mon, role: 'trash' });
-      continue;
-    }
-    const cycle = Boolean(origin && step.to === origin);
-    slots.push({ type: step.to, mon: step.mon, role: cycle ? 'cycle' : 'to' });
-  }
-  return slots;
+  return path.map(({ mon, from, to }) => ({ mon, from, to }));
 }
 
 export function packingNeeded(map: TypeFills, dest: TypeName, incoming: PickerMon): boolean {
@@ -200,7 +177,7 @@ const PACK_PAGE = 2;
 const PACK_FULL_MAX = 4;
 
 export function chainSlotKey(slot: ChainSlot): string {
-  return `${slot.role}:${slot.type ?? ''}:${slot.mon?.id ?? ''}`;
+  return `${slot.mon.id}:${slot.from ?? ''}:${slot.to ?? ''}`;
 }
 
 export function packListMode(chains: { slots: ChainSlot[] }[]): 'full' | 'stepped' {
@@ -243,9 +220,7 @@ export function uniqueChains(paths: PackMove[][]): { path: PackMove[]; slots: Ch
   const out: { path: PackMove[]; slots: ChainSlot[] }[] = [];
   for (const path of paths) {
     const slots = selectorChain(path);
-    const key = slots
-      .map((s) => `${s.role}:${s.type ?? ''}:${s.mon?.id ?? ''}`)
-      .join('|');
+    const key = slots.map(chainSlotKey).join('|');
     if (seen.has(key)) continue;
     seen.add(key);
     out.push({ path, slots });

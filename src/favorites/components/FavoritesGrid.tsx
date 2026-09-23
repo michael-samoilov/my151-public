@@ -269,7 +269,7 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => setScrolling(false), 700);
     };
-    const read = (reveal = false) => {
+    const read = () => {
       const grid = el.firstElementChild as HTMLElement | null;
       const next = {
         scrollLeft: el.scrollLeft,
@@ -282,15 +282,14 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
         gridHeight: grid?.offsetHeight ?? el.scrollHeight,
       };
       setFrame(next);
-      if (reveal && chartOverflows(next)) show();
     };
     const onScroll = () => {
       read();
       show();
     };
-    read(true);
+    read();
     el.addEventListener('scroll', onScroll, { passive: true });
-    const observer = new ResizeObserver(() => read(true));
+    const observer = new ResizeObserver(read);
     observer.observe(el);
     if (el.firstElementChild) observer.observe(el.firstElementChild);
     return () => {

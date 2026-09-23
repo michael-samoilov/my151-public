@@ -9,6 +9,7 @@ import { isGenNumber, isTypeName, typeSlottedElsewhere, type GenAxisId, type Typ
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
 import {
+  chainSlotKey,
   enumeratePaths,
   packingNeeded,
   packListMode,
@@ -198,7 +199,7 @@ function PackList({
       {mode === 'full'
         ? chains.map((chain) => (
             <PackingChain
-              key={chain.slots.map((slot) => `${slot.role}:${slot.type ?? ''}:${slot.mon?.id ?? ''}`).join('|')}
+              key={chain.slots.map(chainSlotKey).join('|')}
               slots={chain.slots}
               onSelect={() => onApply(chain.path)}
             />

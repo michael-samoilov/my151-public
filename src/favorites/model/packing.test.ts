@@ -30,15 +30,27 @@ function mon(id: number, fallback: Partial<PickerMon> = {}): PickerMon {
 }
 
 describe('selectorChain', () => {
-  it('shows the incoming Pokémon faded in the vacated origin, not a blank', () => {
+  it('shows one move per Pokémon with its origin and destination', () => {
     const azu = mon(184);
     const path = [
       { mon: azu, from: 'water' as const, to: 'fairy' as const, kind: 'slide' as const },
     ];
     const slots = selectorChain(path);
-    expect(slots[0]).toMatchObject({ type: 'water', role: 'vacate', mon: azu });
-    expect(slots[0].mon?.id).toBe(184);
-    expect(slots[1]).toMatchObject({ type: 'fairy', role: 'place', mon: azu });
+    expect(slots).toHaveLength(1);
+    expect(slots[0]).toMatchObject({ from: 'water', to: 'fairy', mon: azu });
+  });
+
+  it('keeps a removed Pokémon only at the trash destination', () => {
+    const azu = mon(184);
+    const togetic = mon(176);
+    const path = [
+      { mon: azu, from: 'water' as const, to: 'fairy' as const, kind: 'slide' as const },
+      { mon: togetic, from: 'fairy' as const, to: null, kind: 'leave' as const },
+    ];
+    expect(selectorChain(path)).toEqual([
+      { mon: azu, from: 'water', to: 'fairy' },
+      { mon: togetic, from: 'fairy', to: null },
+    ]);
   });
 });
 

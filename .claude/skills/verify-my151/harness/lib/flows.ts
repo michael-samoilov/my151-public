@@ -905,12 +905,6 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
   return checks;
 }
 
-// ---------------------------------------------------------------------------
-// Favorite Pokémon picker (/favorite-pokemon-by-type). Skip until the MPA
-// page is in the build (production still serves the SPA fallback). The
-// checks are the ship-1 invariants: hub card, grid boot, last picker row
-// centred when it is short, packing vacate shows the incoming Pokémon
-// faded, and the favorite-picker store holds the placements.
 const FAV_PATH = '/favorite-pokemon-by-type';
 const FAV_KEY = 'favorite-picker';
 
@@ -1250,27 +1244,50 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   }
   checks.push(ok('favorites:packing-opens', openedPack, `togetic=${placedTogetic} azu=${placedAzu}`));
   if (openedPack) {
-    const vacate = await s.evalJson<{ found: boolean; opacity: number; hasSprite: boolean }>(`
-      const slot = document.querySelector('[data-testid="favorites-pack-slot"][data-role="vacate"]');
-      if (!slot) return { found:false, opacity:1, hasSprite:false };
-      const imgs = [...slot.querySelectorAll('img')];
-      const sprite = imgs[imgs.length-1];
-      const opacity = sprite ? Number(getComputedStyle(sprite).opacity) : 1;
-      return { found:true, opacity, hasSprite: !!sprite };
+    const moved = await s.evalJson<{
+      count: number; azu: number; opacity: number; oldLeft: boolean; arrowBetween: boolean; newRight: boolean; layered: boolean;
+    }>(`
+      const options = [...document.querySelectorAll('[data-testid="favorites-pack-option"]')];
+      const option = options.find((node) => !node.querySelector('[data-role="trash"]'));
+      const slot = option?.querySelector('[data-testid="favorites-pack-slot"]');
+      const sprites = [...(option?.querySelectorAll('[data-testid="favorites-pack-sprite"]') || [])];
+      const sprite = slot?.querySelector('[data-testid="favorites-pack-sprite"]');
+      const old = slot?.querySelector('[data-testid="favorites-pack-old-mark"]');
+      const arrow = slot?.querySelector('[data-testid="favorites-pack-move-arrow"]');
+      const next = slot?.querySelector('[data-testid="favorites-pack-new-mark"]');
+      const box = slot?.getBoundingClientRect();
+      const a = old?.getBoundingClientRect();
+      const b = arrow?.getBoundingClientRect();
+      const c = next?.getBoundingClientRect();
+      return {
+        count: sprites.length,
+        azu: sprites.filter((node) => /azumarill/i.test(node.getAttribute('alt') || '')).length,
+        opacity: sprite ? Number(getComputedStyle(sprite).opacity) : 0,
+        oldLeft: !!(a && box && a.left <= box.left + 1),
+        arrowBetween: !!(a && b && c && a.right < b.left && b.right < c.left),
+        newRight: !!(c && box && c.right >= box.right - 1),
+        layered: !!(old && next && sprite && Number(getComputedStyle(old).zIndex) > Number(getComputedStyle(sprite).zIndex) && Number(getComputedStyle(next).zIndex) > Number(getComputedStyle(sprite).zIndex)),
+      };
     `);
     checks.push(ok(
-      'favorites:vacate-faded-sprite',
-      vacate.found && vacate.hasSprite && vacate.opacity < 0.5,
-      `found=${vacate.found} sprite=${vacate.hasSprite} opacity=${vacate.opacity}`,
+      'favorites:pack-one-solid-move',
+      moved.count === 2 && moved.azu === 1 && moved.opacity === 1 && moved.oldLeft && moved.arrowBetween && moved.newRight && moved.layered,
+      `sprites=${moved.count} azumarill=${moved.azu} opacity=${moved.opacity} oldLeft=${moved.oldLeft} arrow=${moved.arrowBetween} newRight=${moved.newRight} layered=${moved.layered}`,
     ));
     const trash = await s.evalJson<{
       found: boolean; opacity: number; alt: string; outlined: boolean;
-      red: boolean; white: boolean; layered: boolean; mark: string;
+      red: boolean; white: boolean; layered: boolean; oldLeft: boolean; arrowBetween: boolean; trashRight: boolean; mark: string;
     }>(`
       const slot = document.querySelector('[data-testid="favorites-pack-slot"][data-role="trash"]');
-      if (!slot) return { found:false, opacity:1, alt:'', outlined:true, red:false, white:false, layered:false, mark:'' };
+      if (!slot) return { found:false, opacity:1, alt:'', outlined:true, red:false, white:false, layered:false, oldLeft:false, arrowBetween:false, trashRight:false, mark:'' };
       const sprite = slot.querySelector('[data-testid="favorites-pack-sprite"]');
+      const old = slot.querySelector('[data-testid="favorites-pack-old-mark"]');
+      const arrow = slot.querySelector('[data-testid="favorites-pack-move-arrow"]');
       const mark = slot.querySelector('[data-testid="favorites-trash-mark"]');
+      const box = slot.getBoundingClientRect();
+      const a = old?.getBoundingClientRect();
+      const b = arrow?.getBoundingClientRect();
+      const c = mark?.getBoundingClientRect();
       const outlined = Number.parseFloat(getComputedStyle(slot).borderTopWidth) > 0;
       const bg = mark ? getComputedStyle(mark).backgroundColor : '';
       const icon = mark ? getComputedStyle(mark).color : '';
@@ -1286,15 +1303,18 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
         red,
         white: icon === 'rgb(255, 255, 255)',
         layered: !!(mark && sprite && Number(getComputedStyle(mark).zIndex) > Number(getComputedStyle(sprite).zIndex)),
+        oldLeft: !!(a && a.left <= box.left + 1),
+        arrowBetween: !!(a && b && c && a.right < b.left && b.right < c.left),
+        trashRight: !!(c && c.right >= box.right - 1),
         mark: bg,
       };
     `);
     checks.push(ok(
       'favorites:trash-kicked-sprite',
-      trash.found && trash.opacity < 0.5 && trash.alt.length > 0 && !trash.outlined && trash.red && trash.white && trash.layered,
-      `alt=${trash.alt} opacity=${trash.opacity} outlined=${trash.outlined} layered=${trash.layered} mark=${trash.mark}`,
+      trash.found && trash.opacity < 0.5 && trash.alt.length > 0 && !trash.outlined && trash.red && trash.white && trash.layered && trash.oldLeft && trash.arrowBetween && trash.trashRight,
+      `alt=${trash.alt} opacity=${trash.opacity} outlined=${trash.outlined} layered=${trash.layered} oldLeft=${trash.oldLeft} arrow=${trash.arrowBetween} trashRight=${trash.trashRight} mark=${trash.mark}`,
     ));
-    await s.screenshot(ctx.shot('favorites-packing-vacate'));
+    await s.screenshot(ctx.shot('favorites-packing-moves'));
     // Keep this audit scoped to the packing sheet so grid findings stay separate.
     try {
       const result = await s.evalJson<{ findings: AuditFinding[] }>(auditBody({ minFont: 8, annotate: false, checkFrame: false, offCanvasOk: true }));
@@ -1385,6 +1405,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
 
   await s.click('[data-testid="favorites-cell-fairy-2"]');
   if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) {
+    await s.screenshot(ctx.shot('favorites-selector-clear'));
     const filled = await s.evalJson<{
       ring: string; sprite: string; top: number; scrollTop: number; clearW: number; pickW: number; inGrid: boolean; text: string;
     }>(`
@@ -1449,7 +1470,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   await sleep(200);
   const mini = await s.evalJson<{
     overflow: boolean; shown: boolean; vpNarrower: boolean;
-    cells: number; filled: number; empty: number; border: string;
+    cells: number; filled: number; empty: number; border: string; primary: string;
   }>(`
     const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
     const map = document.querySelector('[data-testid="favorites-minimap"]');
@@ -1457,12 +1478,18 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     const overflow = !!el && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
     const shown = !!map && Number(getComputedStyle(map).opacity) > 0.05;
     const vpNarrower = !!(map && vp && vp.getBoundingClientRect().width < map.getBoundingClientRect().width - 1 && vp.getBoundingClientRect().width > 2);
+    const sample = document.createElement('span');
+    sample.style.color = 'var(--color-primary)';
+    document.body.appendChild(sample);
+    const primary = getComputedStyle(sample).color;
+    sample.remove();
     return {
       overflow, shown, vpNarrower,
       cells: map?.querySelectorAll('[data-kind]').length || 0,
       filled: map?.querySelectorAll('[data-filled="true"]').length || 0,
       empty: map?.querySelectorAll('[data-filled="false"]').length || 0,
       border: vp ? getComputedStyle(vp).borderTopColor : '',
+      primary,
     };
   `);
   checks.push(ok(
@@ -1472,9 +1499,10 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   ));
   checks.push(ok(
     'favorites:minimap-body-cells',
-    !mini.overflow || (mini.cells === 22 * 11 && mini.filled > 0 && mini.empty > 0 && mini.border !== 'rgb(0, 0, 0)'),
-    `cells=${mini.cells} filled=${mini.filled} empty=${mini.empty} border=${mini.border}`,
+    !mini.overflow || (mini.cells === 22 * 11 && mini.filled > 0 && mini.empty > 0 && mini.border === mini.primary),
+    `cells=${mini.cells} filled=${mini.filled} empty=${mini.empty} border=${mini.border} primary=${mini.primary}`,
   ));
+  if (mini.shown) await s.screenshot(ctx.shot('favorites-minimap-scrolling'));
   await sleep(1200);
   const miniIdle = await s.evalJson<number>(`
     const map = document.querySelector('[data-testid="favorites-minimap"]');
