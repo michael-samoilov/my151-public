@@ -1,7 +1,6 @@
-import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import { cn } from '@/lib/utils';
-import { Trash2 } from 'lucide-react';
+import { ArrowRight, Trash2 } from 'lucide-react';
 import type { ChainSlot } from '../model/packing';
 
 export function PackingChain({
@@ -14,13 +13,11 @@ export function PackingChain({
   onSelect?: () => void;
 }) {
   const inner = (
-    <div className="flex flex-nowrap items-center gap-1" data-testid="favorites-pack-chain">
+    <div className="flex flex-nowrap items-center gap-1.5" data-testid="favorites-pack-chain">
       {slots.map((slot, i) => (
-        <span key={`${slot.role}-${slot.type ?? 'x'}-${slot.mon?.id ?? i}`} className="flex items-center gap-1">
+        <span key={`${slot.role}-${slot.type ?? 'x'}-${slot.mon?.id ?? i}`} className="flex items-center gap-1.5">
           {i > 0 ? (
-            <span className="text-muted-foreground" aria-hidden>
-              →
-            </span>
+            <ArrowRight size={13} className="shrink-0 text-muted-foreground" aria-hidden />
           ) : null}
           <PackSlot slot={slot} />
         </span>
@@ -46,27 +43,27 @@ export function PackingChain({
 
 function PackSlot({ slot }: { slot: ChainSlot }) {
   const trash = slot.role === 'trash';
-  const color = trash ? '#000000' : slot.type ? TYPE_COLORS[slot.type] : '#737373';
   const faded = slot.role === 'vacate' || trash;
+  const oldType = slot.role === 'vacate';
   return (
     <span
-      className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border-2 bg-background"
-      style={{ borderColor: color }}
+      className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center"
       data-role={slot.role}
       data-testid="favorites-pack-slot"
     >
       {trash ? (
         <span
           data-testid="favorites-trash-mark"
-          className="absolute top-0.5 right-0.5 inline-flex h-3 w-3 items-center justify-center rounded-[2px] bg-red-600 text-white"
+          className="absolute top-0 right-0 z-10 inline-flex h-4 w-4 items-center justify-center rounded-[2px] bg-red-600 text-white"
         >
-          <Trash2 size={8} strokeWidth={2.5} aria-hidden />
+          <Trash2 size={11} strokeWidth={2.5} aria-hidden />
         </span>
       ) : slot.type ? (
         <img
           src={typeIconPath(slot.type)}
           alt=""
-          className="absolute top-0.5 right-0.5 h-3 w-3 rounded-[2px]"
+          data-testid={oldType ? 'favorites-pack-old-mark' : 'favorites-pack-new-mark'}
+          className={cn('absolute top-0 z-10 h-4 w-4 rounded-[2px]', oldType ? 'left-0' : 'right-0')}
           draggable={false}
         />
       ) : null}
@@ -74,7 +71,8 @@ function PackSlot({ slot }: { slot: ChainSlot }) {
         <img
           src={slot.mon.sprite}
           alt={slot.mon.name}
-          className={cn('h-[28px] w-[28px]', faded && 'opacity-35')}
+          data-testid="favorites-pack-sprite"
+          className={cn('relative z-0 h-11 w-11', faded && 'opacity-35')}
           style={{ imageRendering: 'pixelated' }}
           draggable={false}
         />

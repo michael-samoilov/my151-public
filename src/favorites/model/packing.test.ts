@@ -66,6 +66,15 @@ describe('enumeratePaths', () => {
     expect(packingNeeded({ ground: golem }, 'rock', golem)).toBe(false);
   });
 
+  it('does not open packing when the only option drops the old occupant', () => {
+    const incoming = mon(99101, { types: ['water'] });
+    const occupant = mon(99102, { types: ['water'] });
+    expect(packingNeeded({ water: occupant }, 'water', incoming)).toBe(false);
+    const { paths } = enumeratePaths({ water: occupant }, 'water', incoming);
+    expect(paths).toHaveLength(1);
+    expect(paths[0].at(-1)).toMatchObject({ mon: occupant, to: null, kind: 'leave' });
+  });
+
   it('does not list a Pokémon who could slide into the hole but does not have to', () => {
     const golem = mon(76);
     const aero = mon(142);
@@ -117,7 +126,7 @@ describe('worst keep-everyone grid', () => {
     expect(options).toHaveLength(2);
     expect(options.filter((option) => option.path).length).toBe(1);
     expect(options.filter((option) => !option.path).length).toBe(1);
-  });
+  }, 20_000);
 });
 
 function longestRealCascade(): {

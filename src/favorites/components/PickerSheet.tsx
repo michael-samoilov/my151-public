@@ -4,7 +4,7 @@ import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { PanelRightClose } from 'lucide-react';
+import { ChevronLeft, PanelRightClose } from 'lucide-react';
 import { isGenNumber, isTypeName, typeSlottedElsewhere, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
@@ -52,6 +52,11 @@ export function PickerSheet({
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);
   const [packStack, setPackStack] = useState<string[]>(['']);
 
+  function backFromPack() {
+    if (packStack.length > 1) setPackStack(packStack.slice(0, -1));
+    else setPacking(null);
+  }
+
   const mons = useMemo(() => {
     if (kind === 'pointer') {
       return pointerPool(type, gen, fills)
@@ -91,12 +96,12 @@ export function PickerSheet({
         onApplyPack(path);
         onClose();
       }}
-      onBack={() => setPacking(null)}
+      onBack={backFromPack}
       heading={t('favorites.packing.heading')}
       backLabel={t('favorites.packing.back')}
     />
   ) : (
-    <div className="pb-4" style={{ paddingTop: 4, paddingLeft: inset, paddingRight: inset }}>
+    <div className="pb-4" style={{ paddingLeft: inset, paddingRight: inset }}>
       {mons.length === 0 && currentId == null ? (
         <p className="text-sm text-muted-foreground">{t('favorites.empty')}</p>
       ) : (
@@ -122,6 +127,14 @@ export function PickerSheet({
   );
 
   const title = <PickerTitle type={type} gen={gen} />;
+  const mobileTitle = (
+    <span className="flex w-full items-center gap-1.5 px-2 py-0.5 text-left">
+      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-primary text-primary">
+        <ChevronLeft size={15} aria-hidden />
+      </span>
+      {title}
+    </span>
+  );
 
   if (desktop) {
     return (
@@ -142,7 +155,14 @@ export function PickerSheet({
   }
 
   return (
-    <BottomSheet onClose={onClose} title={title} closeLabel={t('favorites.close')} size="content">
+    <BottomSheet
+      onClose={onClose}
+      onHeaderClick={packing ? backFromPack : undefined}
+      headerLabel={packing ? t('favorites.packing.back') : undefined}
+      title={mobileTitle}
+      closeLabel={t('favorites.close')}
+      size="content"
+    >
       <div data-testid="favorites-picker">{body}</div>
     </BottomSheet>
   );
@@ -192,10 +212,7 @@ function PackList({
       <button
         type="button"
         className="self-start text-sm text-muted-foreground underline"
-        onClick={() => {
-          if (mode === 'stepped' && stack.length > 1) onStack(stack.slice(0, -1));
-          else onBack();
-        }}
+        onClick={onBack}
       >
         {backLabel}
       </button>

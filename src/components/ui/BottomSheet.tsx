@@ -7,6 +7,10 @@ const DISMISS_THRESHOLD = 120;
 
 interface BottomSheetProps {
   onClose: () => void;
+  /** Optional header action. Drag, Escape, and the scrim still dismiss the sheet. */
+  onHeaderClick?: () => void;
+  /** Accessible name when the header action differs from dismissal. */
+  headerLabel?: string;
   /** Header content beside the grab handle. Rich nodes are fine. */
   title: React.ReactNode;
   /** Accessible name for the grab-handle button, which also closes on tap. */
@@ -51,6 +55,8 @@ interface BottomSheetProps {
  */
 export function BottomSheet({
   onClose,
+  onHeaderClick,
+  headerLabel,
   title,
   closeLabel,
   size = 'content',
@@ -90,8 +96,8 @@ export function BottomSheet({
 
   // Tap-to-close, but not as the tail of a drag gesture.
   const handleTap = useCallback(() => {
-    if (!isDragging.current) onClose();
-  }, [onClose]);
+    if (!isDragging.current) (onHeaderClick ?? onClose)();
+  }, [onClose, onHeaderClick]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -360,7 +366,8 @@ export function BottomSheet({
             just not something to spend 24px of a third of a screen on. */}
         <button
           type="button"
-          aria-label={closeLabel}
+          data-testid="bottom-sheet-header"
+          aria-label={headerLabel ?? closeLabel}
           className={`w-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none ${
             keyboardOpen ? 'py-1.5' : 'py-3'
           }`}
@@ -370,7 +377,7 @@ export function BottomSheet({
           onClick={handleTap}
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
-          <span className="text-sm font-semibold">{title}</span>
+          <span className="w-full text-sm font-semibold">{title}</span>
         </button>
         <div className="border-b" />
         {/* Its own scroll container: a long form scrolls here, and

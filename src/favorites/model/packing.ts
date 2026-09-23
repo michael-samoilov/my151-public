@@ -163,9 +163,11 @@ export function selectorChain(path: PackMove[]): ChainSlot[] {
 }
 
 export function packingNeeded(map: TypeFills, dest: TypeName, incoming: PickerMon): boolean {
-  // An empty destination takes the Pokémon directly. The sheet opens
-  // only when a different Pokémon already sits in that cell.
-  return Boolean(map[dest] && map[dest]!.id !== incoming.id);
+  const occupant = map[dest];
+  if (!occupant || occupant.id === incoming.id) return false;
+  return enumeratePaths(map, dest, incoming).paths.some((path) =>
+    path.every((step) => step.kind !== 'leave'),
+  );
 }
 
 export function applyPathToTypeMap(map: TypeFills, path: PackMove[]): TypeFills {
