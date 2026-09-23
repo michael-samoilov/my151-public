@@ -18,6 +18,23 @@
 - Integrate compatible worker results, run final verification on the combined change, and report the shipped result and evidence in the coordinator chat.
 - Never claim a worker is running, finished, verified, or merged unless you have checked its actual state.
 
+## ChatGPT Mobile Remote and cloud workers
+
+- Run the six user-facing coordinator tasks through ChatGPT Mobile Remote on the owner's computer.
+- Use the clean coordinator worktree for coordination. Never modify Michael's dirty primary checkout.
+- Before new work, fetch GitHub and start an isolated worktree from the latest `origin/claude/pokedex-region-builder-AviYF`.
+- Give each feature or fix its own branch and worktree. Never share a working tree between concurrent workers.
+- Push a branch before a cloud worker receives it. Every commit, base, and ref in a cloud prompt must exist on GitHub.
+- Never use `/cursor/stores`, `/opt/cursor/artifacts`, or another temporary local path as a durable handoff.
+- Store durable handoffs in the repository, a GitHub branch or pull request, or the coordinator chat itself.
+- If the prompt contains the handoff details, use them. Do not require a missing duplicate file or redo completed work.
+- Use Codex Cloud environment `6ab2ececdf948191bc57a7c781fc7b15` for Linux and full browser verification.
+- Dispatch with `codex cloud exec --env 6ab2ececdf948191bc57a7c781fc7b15 --branch <pushed-branch> <prompt>`.
+- Monitor with `codex cloud status`, inspect with `codex cloud diff`, then apply or integrate the verified result locally.
+- Treat desktop GitHub credentials as local-only. Do not assume the cloud worker can push, merge, or read private refs.
+- After integration, run the required final checks, push the branch, and use its Vercel preview for review.
+- Keep the worker ledger in the coordinator chat. The user must not need to open worker tasks to get status or results.
+
 ## 1. Verify before you show
 
 - Run `/verify-my151` on the change. If that command is unavailable, read `.claude/skills/verify-my151/SKILL.md` and follow it.
