@@ -216,7 +216,7 @@ function BodyCell({
         locked
           ? 'cursor-default bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]'
           : mon ? 'z-[2] cursor-pointer bg-transparent' : 'cursor-pointer bg-card',
-        kind === 'pointer' && !mon && 'bg-amber-50',
+        kind === 'pointer' && (mon ? 'bg-amber-50/50' : 'bg-amber-50'),
         isSel && (mon ? 'z-[3]' : 'z-[1]'),
       )}
     >
