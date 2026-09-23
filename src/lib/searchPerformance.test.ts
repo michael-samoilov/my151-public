@@ -1,8 +1,11 @@
+import { createVerify, generateKeyPairSync } from 'node:crypto';
+
 import { describe, expect, it } from 'vitest';
 import {
   bingDailyRows,
   bingDimensionRows,
   buildSearchPerformanceSnapshot,
+  createGoogleServiceAccountAssertion,
   googleDailyRows,
   googleDimensionRows,
   parseBingDate,
@@ -53,8 +56,33 @@ describe('search performance normalization', () => {
     ]);
   });
 
+  it('creates a valid service-account JWT assertion for Search Console', () => {
+    const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const assertion = createGoogleServiceAccountAssertion(
+      'my151-search@example-project.iam.gserviceaccount.com',
+      privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+      1_800_000_000,
+    );
+    const [headerPart, claimsPart, signaturePart] = assertion.split('.');
+    expect(JSON.parse(Buffer.from(headerPart, 'base64url').toString())).toEqual({ alg: 'RS256', typ: 'JWT' });
+    expect(JSON.parse(Buffer.from(claimsPart, 'base64url').toString())).toEqual({
+      iss: 'my151-search@example-project.iam.gserviceaccount.com',
+      scope: 'https://www.googleapis.com/auth/webmasters.readonly',
+      aud: 'https://oauth2.googleapis.com/token',
+      iat: 1_800_000_000,
+      exp: 1_800_003_600,
+    });
+    expect(
+      createVerify('RSA-SHA256')
+        .update(`${headerPart}.${claimsPart}`)
+        .end()
+        .verify(publicKey, Buffer.from(signaturePart, 'base64url')),
+    ).toBe(true);
+  });
+
   it('returns independent not-connected states when server credentials are absent', async () => {
     const names = [
+      'GOOGLE_SEARCH_SERVICE_ACCOUNT_JSON',
       'GOOGLE_SEARCH_CLIENT_ID',
       'GOOGLE_SEARCH_CLIENT_SECRET',
       'GOOGLE_SEARCH_REFRESH_TOKEN',

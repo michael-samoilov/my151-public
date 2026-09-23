@@ -1,3 +1,5 @@
+import { createSign } from 'node:crypto';
+
 import type {
   SearchDailyPoint,
   SearchDimensionRow,
@@ -9,6 +11,7 @@ import type {
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_SEARCH_URL = 'https://www.googleapis.com/webmasters/v3/sites';
+const GOOGLE_SEARCH_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
 const BING_API_URL = 'https://ssl.bing.com/webmaster/api.svc/json';
 const REQUEST_TIMEOUT_MS = 15_000;
 const DAY_MS = 86_400_000;
@@ -162,6 +165,40 @@ async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
   return response.json() as Promise<unknown>;
 }
 
+function base64UrlJson(value: unknown): string {
+  return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+
+/** Build the signed JWT assertion used by Google's service-account OAuth flow. */
+export function createGoogleServiceAccountAssertion(
+  clientEmail: string,
+  privateKey: string,
+  issuedAtSeconds = Math.floor(Date.now() / 1_000),
+): string {
+  const encodedHeader = base64UrlJson({ alg: 'RS256', typ: 'JWT' });
+  const encodedClaims = base64UrlJson({
+    iss: clientEmail,
+    scope: GOOGLE_SEARCH_SCOPE,
+    aud: GOOGLE_TOKEN_URL,
+    iat: issuedAtSeconds,
+    exp: issuedAtSeconds + 3_600,
+  });
+  const unsigned = `${encodedHeader}.${encodedClaims}`;
+  const signature = createSign('RSA-SHA256').update(unsigned).end().sign(privateKey).toString('base64url');
+  return `${unsigned}.${signature}`;
+}
+
+async function tokenFromGoogle(body: URLSearchParams): Promise<string> {
+  const payload = await fetchJson(GOOGLE_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+  const token = payload && typeof payload === 'object' ? (payload as { access_token?: unknown }).access_token : undefined;
+  if (typeof token !== 'string' || !token) throw new Error('Google did not return an access token');
+  return token;
+}
+
 function notConfigured(provider: SearchProviderKey): SearchProviderSnapshot {
   return {
     provider,
@@ -174,20 +211,36 @@ function notConfigured(provider: SearchProviderKey): SearchProviderSnapshot {
 }
 
 async function googleAccessToken(clientId: string, clientSecret: string, refreshToken: string): Promise<string> {
-  const body = new URLSearchParams({
+  return tokenFromGoogle(new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
     refresh_token: refreshToken,
     grant_type: 'refresh_token',
-  });
-  const payload = await fetchJson(GOOGLE_TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  });
-  const token = payload && typeof payload === 'object' ? (payload as { access_token?: unknown }).access_token : undefined;
-  if (typeof token !== 'string' || !token) throw new Error('Google did not return an access token');
-  return token;
+  }));
+}
+
+async function googleServiceAccountAccessToken(credentialsJson: string): Promise<string> {
+  let credentials: unknown;
+  try {
+    credentials = JSON.parse(credentialsJson);
+  } catch {
+    throw new Error('Google service-account credentials are not valid JSON');
+  }
+  if (!credentials || typeof credentials !== 'object') {
+    throw new Error('Google service-account credentials are incomplete');
+  }
+  const { client_email: clientEmail, private_key: privateKey } = credentials as {
+    client_email?: unknown;
+    private_key?: unknown;
+  };
+  if (typeof clientEmail !== 'string' || !clientEmail || typeof privateKey !== 'string' || !privateKey) {
+    throw new Error('Google service-account credentials are incomplete');
+  }
+  const assertion = createGoogleServiceAccountAssertion(clientEmail, privateKey);
+  return tokenFromGoogle(new URLSearchParams({
+    grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+    assertion,
+  }));
 }
 
 async function fetchGoogleQuery(
@@ -213,10 +266,12 @@ async function fetchGoogleQuery(
 }
 
 export async function fetchGoogleSearchPerformance(): Promise<SearchProviderSnapshot> {
+  const serviceAccountJson = process.env.GOOGLE_SEARCH_SERVICE_ACCOUNT_JSON?.trim();
   const clientId = process.env.GOOGLE_SEARCH_CLIENT_ID?.trim();
   const clientSecret = process.env.GOOGLE_SEARCH_CLIENT_SECRET?.trim();
   const refreshToken = process.env.GOOGLE_SEARCH_REFRESH_TOKEN?.trim();
-  if (!clientId || !clientSecret || !refreshToken) return notConfigured('google');
+  const hasUserOAuth = !!clientId && !!clientSecret && !!refreshToken;
+  if (!serviceAccountJson && !hasUserOAuth) return notConfigured('google');
 
   const siteUrl = process.env.GOOGLE_SEARCH_CONSOLE_SITE_URL?.trim() || 'sc-domain:my151.app';
   // Search Console commonly settles after a short delay. Stop three days back
@@ -224,7 +279,9 @@ export async function fetchGoogleSearchPerformance(): Promise<SearchProviderSnap
   const endMs = todayUtcMs() - 3 * DAY_MS;
   const endDate = utcDate(endMs);
   const startDate = utcDate(endMs - 89 * DAY_MS);
-  const accessToken = await googleAccessToken(clientId, clientSecret, refreshToken);
+  const accessToken = serviceAccountJson
+    ? await googleServiceAccountAccessToken(serviceAccountJson)
+    : await googleAccessToken(clientId!, clientSecret!, refreshToken!);
   const [dailyPayload, pagePayload, queryPayload] = await Promise.all([
     fetchGoogleQuery(accessToken, siteUrl, startDate, endDate, 'date'),
     fetchGoogleQuery(accessToken, siteUrl, utcDate(endMs - 27 * DAY_MS), endDate, 'page'),
