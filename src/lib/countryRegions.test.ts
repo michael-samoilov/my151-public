@@ -9,6 +9,7 @@ describe('regionOf', () => {
     expect(regionOf('IT')).toBe('Europe');
     expect(regionOf('VU')).toBe('Asia-Pacific');
     expect(regionOf('IL')).toBe('Middle East & Africa');
+    expect(regionOf('MR')).toBe('Middle East & Africa');
   });
 
   it('accepts lower-case codes', () => {

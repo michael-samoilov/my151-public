@@ -47,7 +47,7 @@ export const REGION_MEMBERS: Record<(typeof REGIONS)[number], string[]> = {
   'Middle East & Africa': [
     'IL', 'PS', 'TR', 'SA', 'AE', 'QA', 'KW', 'BH', 'OM', 'YE', 'JO', 'LB', 'SY', 'IQ',
     'IR', 'GE', 'AM', 'AZ',
-    'EG', 'LY', 'TN', 'DZ', 'MA', 'EH', 'SD', 'SS', 'ET', 'ER', 'DJ', 'SO', 'KE', 'UG',
+    'EG', 'LY', 'TN', 'DZ', 'MA', 'MR', 'EH', 'SD', 'SS', 'ET', 'ER', 'DJ', 'SO', 'KE', 'UG',
     'TZ', 'RW', 'BI', 'NG', 'GH', 'CI', 'SN', 'ML', 'BF', 'NE', 'TD', 'CM', 'CF', 'GA',
     'CG', 'CD', 'AO', 'ZM', 'ZW', 'MW', 'MZ', 'BW', 'NA', 'ZA', 'LS', 'SZ', 'MG', 'MU',
     'SC', 'KM', 'CV', 'GM', 'GN', 'GW', 'LR', 'SL', 'TG', 'BJ', 'ST', 'GQ', 'RE', 'YT',
