@@ -6,6 +6,7 @@ import type { Pokemon } from '@/types/pokemon';
 import {
   GEN_AXIS,
   TYPE_AXIS,
+  EXTRA_COLOR,
   cellKey,
   isGenNumber,
   isTypeName,
@@ -34,7 +35,7 @@ export function FavoritesGrid({
 }) {
   const cells = (
     <>
-      <Corner pin={!desktop} />
+      <Corner pin />
       {TYPE_AXIS.map((id) => (
         <HeaderCell key={`h-${String(id)}`} id={id} />
       ))}
@@ -42,7 +43,7 @@ export function FavoritesGrid({
         <GenRow
           key={String(gen)}
           gen={gen}
-          pin={!desktop}
+          pin
           fills={fills}
           resolve={resolve}
           selected={selected}
@@ -52,14 +53,22 @@ export function FavoritesGrid({
     </>
   );
 
-  if (desktop) {
-    return <DesktopChart>{cells}</DesktopChart>;
-  }
-
-  return <TypeColumnScroller>{cells}</TypeColumnScroller>;
+  return (
+    <TypeColumnScroller desktop={desktop} fills={fills}>
+      {cells}
+    </TypeColumnScroller>
+  );
 }
 
-function TypeColumnScroller({ children }: { children: ReactNode }) {
+function TypeColumnScroller({
+  children,
+  desktop,
+  fills,
+}: {
+  children: ReactNode;
+  desktop: boolean;
+  fills: Record<string, number>;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [cell, setCell] = useState(0);
   const { frame, scrolling } = useChartFrame(ref);
@@ -75,7 +84,7 @@ function TypeColumnScroller({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="relative h-full min-h-0 w-full">
+    <div className={desktop ? 'relative flex min-h-0 w-full flex-1' : 'relative h-full min-h-0 w-full'}>
       <div
         ref={ref}
         className="h-full min-h-0 w-full overflow-x-auto overflow-y-hidden overscroll-x-contain bg-card"
@@ -87,8 +96,10 @@ function TypeColumnScroller({ children }: { children: ReactNode }) {
           style={{
             height: cell > 0 ? cell * ROWS : '100%',
             gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
-            gridTemplateColumns: cell > 0 ? `repeat(${COLS}, ${cell}px)` : `repeat(${COLS}, minmax(0, 1fr))`,
-            width: cell > 0 ? cell * COLS : '100%',
+            gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
+            width: cell > 0
+              ? desktop ? Math.max(cell * COLS, frame?.clientWidth ?? 0) : cell * COLS
+              : '100%',
           }}
           data-testid="favorites-grid"
           data-axis="gen-major"
@@ -96,29 +107,7 @@ function TypeColumnScroller({ children }: { children: ReactNode }) {
           {children}
         </div>
       </div>
-      <ChartMinimap frame={frame} scrolling={scrolling} />
-    </div>
-  );
-}
-
-function DesktopChart({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { frame, scrolling } = useChartFrame(ref);
-  return (
-    <div className="relative flex min-h-0 w-full flex-1">
-      <div
-        ref={ref}
-        className="grid min-h-0 w-full flex-1 overflow-auto bg-card"
-        style={{
-          gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
-        }}
-        data-testid="favorites-grid"
-        data-axis="gen-major"
-      >
-        {children}
-      </div>
-      <ChartMinimap frame={frame} scrolling={scrolling} />
+      <ChartMinimap frame={frame} scrolling={scrolling} fills={fills} />
     </div>
   );
 }
@@ -223,10 +212,12 @@ function BodyCell({
       data-testid={`favorites-cell-${type}-${gen}`}
       data-kind={kind}
       className={cn(
-        'relative min-h-0 min-w-0 overflow-hidden border-[0.5px] border-neutral-200 p-0 [container-type:size]',
-        locked ? 'cursor-default bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]' : 'cursor-pointer bg-card',
-        kind === 'pointer' && 'bg-amber-50',
-        isSel && 'z-[1]',
+        'relative min-h-0 min-w-0 overflow-visible border-[0.5px] border-neutral-200 p-0 [container-type:size]',
+        locked
+          ? 'cursor-default bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]'
+          : mon ? 'z-[2] cursor-pointer bg-transparent' : 'cursor-pointer bg-card',
+        kind === 'pointer' && !mon && 'bg-amber-50',
+        isSel && (mon ? 'z-[3]' : 'z-[1]'),
       )}
     >
       {mon ? (
@@ -261,6 +252,8 @@ interface ChartMetrics {
   scrollHeight: number;
   clientWidth: number;
   clientHeight: number;
+  gridWidth: number;
+  gridHeight: number;
 }
 
 function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
@@ -271,25 +264,33 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
     const el = ref.current;
     if (!el) return;
     let timer = 0;
-    const read = () => {
-      setFrame({
+    const show = () => {
+      setScrolling(true);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setScrolling(false), 700);
+    };
+    const read = (reveal = false) => {
+      const grid = el.firstElementChild as HTMLElement | null;
+      const next = {
         scrollLeft: el.scrollLeft,
         scrollTop: el.scrollTop,
         scrollWidth: el.scrollWidth,
         scrollHeight: el.scrollHeight,
         clientWidth: el.clientWidth,
         clientHeight: el.clientHeight,
-      });
+        gridWidth: grid?.offsetWidth ?? el.scrollWidth,
+        gridHeight: grid?.offsetHeight ?? el.scrollHeight,
+      };
+      setFrame(next);
+      if (reveal && chartOverflows(next)) show();
     };
     const onScroll = () => {
       read();
-      setScrolling(true);
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => setScrolling(false), 700);
+      show();
     };
-    read();
+    read(true);
     el.addEventListener('scroll', onScroll, { passive: true });
-    const observer = new ResizeObserver(read);
+    const observer = new ResizeObserver(() => read(true));
     observer.observe(el);
     if (el.firstElementChild) observer.observe(el.firstElementChild);
     return () => {
@@ -306,10 +307,22 @@ function chartOverflows(frame: ChartMetrics): boolean {
   return frame.scrollWidth > frame.clientWidth + 1 || frame.scrollHeight > frame.clientHeight + 1;
 }
 
-function ChartMinimap({ frame, scrolling }: { frame: ChartMetrics | null; scrolling: boolean }) {
-  if (!frame || (!scrolling && !chartOverflows(frame))) return null;
+function ChartMinimap({
+  frame,
+  scrolling,
+  fills,
+}: {
+  frame: ChartMetrics | null;
+  scrolling: boolean;
+  fills: Record<string, number>;
+}) {
+  if (!frame || !chartOverflows(frame)) return null;
   const max = 84;
-  const aspect = frame.scrollWidth / Math.max(frame.scrollHeight, 1);
+  const cellWidth = frame.gridWidth / COLS;
+  const cellHeight = frame.gridHeight / ROWS;
+  const bodyWidth = frame.gridWidth - cellWidth;
+  const bodyHeight = frame.gridHeight - cellHeight;
+  const aspect = bodyWidth / Math.max(bodyHeight, 1);
   let mapW = max;
   let mapH = Math.round(max / aspect);
   if (mapH > max) {
@@ -318,51 +331,59 @@ function ChartMinimap({ frame, scrolling }: { frame: ChartMetrics | null; scroll
   }
   mapW = Math.max(48, mapW);
   mapH = Math.max(28, mapH);
-  const sx = mapW / Math.max(frame.scrollWidth, 1);
-  const sy = mapH / Math.max(frame.scrollHeight, 1);
+  const sx = mapW / Math.max(bodyWidth, 1);
+  const sy = mapH / Math.max(bodyHeight, 1);
+  const viewportWidth = Math.min(mapW, Math.max(2, (frame.clientWidth - cellWidth) * sx));
+  const viewportHeight = Math.min(mapH, Math.max(2, (frame.clientHeight - cellHeight) * sy));
   const cells: ReactNode[] = [];
-  for (let row = 0; row < ROWS; row += 1) {
-    for (let col = 0; col < COLS; col += 1) {
-      cells.push(<div key={`${col}-${row}`} style={{ background: minimapFill(col, row) }} />);
+  for (const gen of GEN_AXIS) {
+    for (const type of TYPE_AXIS) {
+      const kind = kindFor(type, gen);
+      const filled = fills[cellKey(type, gen)] != null;
+      let background = '#e4e4e7';
+      if (kind === 'disabled' || kind === 'null') background = 'transparent';
+      else if (filled) background = isTypeName(type) ? TYPE_COLORS[type] : EXTRA_COLOR[type];
+      cells.push(
+        <div
+          key={cellKey(type, gen)}
+          data-kind={kind}
+          data-filled={String(filled)}
+          style={{ background }}
+        />,
+      );
     }
   }
   return (
     <div
       data-testid="favorites-minimap"
       aria-hidden
-      className="pointer-events-none absolute right-2 bottom-2 z-30 rounded-sm bg-background/75 p-[3px]"
-      style={{ opacity: 0.62 }}
+      className="pointer-events-none absolute right-2 bottom-2 z-30 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-300"
+      style={{ opacity: scrolling ? 0.95 : 0 }}
     >
       <div className="relative" style={{ width: mapW, height: mapH }}>
         <div
           className="grid h-full w-full"
           style={{
-            gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-            gridTemplateRows: `repeat(${ROWS}, 1fr)`,
+            gridTemplateColumns: `repeat(${TYPE_AXIS.length}, 1fr)`,
+            gridTemplateRows: `repeat(${GEN_AXIS.length}, 1fr)`,
+            gap: 1,
           }}
         >
           {cells}
         </div>
         <div
           data-testid="favorites-minimap-viewport"
-          className="absolute border border-neutral-900/80 bg-neutral-900/15"
+          className="absolute border-2 border-primary bg-primary/10"
           style={{
-            left: frame.scrollLeft * sx,
-            top: frame.scrollTop * sy,
-            width: Math.max(2, frame.clientWidth * sx),
-            height: Math.max(2, frame.clientHeight * sy),
+            left: Math.min(mapW - viewportWidth, frame.scrollLeft * sx),
+            top: Math.min(mapH - viewportHeight, frame.scrollTop * sy),
+            width: viewportWidth,
+            height: viewportHeight,
           }}
         />
       </div>
     </div>
   );
-}
-
-function minimapFill(col: number, row: number): string {
-  if (col === 0 || row === 0) return 'rgba(23,23,23,0.28)';
-  const id = TYPE_AXIS[col - 1];
-  if (id && isTypeName(id)) return `${TYPE_COLORS[id]}66`;
-  return 'rgba(23,23,23,0.16)';
 }
 
 function Filled({ mon }: { mon: PickerMon }) {
