@@ -45,6 +45,18 @@ test.describe('favorite Pokémon picker', () => {
     }
 
     const scroll = page.getByTestId('favorites-grid-scroll');
+    const fixed = page.getByTestId('favorites-grid-generation-headers');
+    const [scrollBox, fixedBox] = await Promise.all([scroll.boundingBox(), fixed.boundingBox()]);
+    expect(scrollBox).toBeTruthy();
+    expect(fixedBox).toBeTruthy();
+    // The native horizontal scrollbar belongs to the body scroller, not the
+    // generation-header column, so its track starts at this exact boundary.
+    expect(Math.abs(scrollBox!.x - (fixedBox!.x + fixedBox!.width))).toBeLessThan(1);
+    const backgrounds = await scroll.evaluate((el) => ({
+      table: getComputedStyle(el).backgroundColor,
+      app: getComputedStyle(document.body).backgroundColor,
+    }));
+    expect(backgrounds.table).toBe(backgrounds.app);
     const metrics = await scroll.evaluate((el) => ({
       scrollWidth: el.scrollWidth,
       clientWidth: el.clientWidth,
@@ -745,8 +757,10 @@ test.describe('favorite Pokémon picker', () => {
     const layers = await selected.evaluate((el) => ({
       badge: Number(getComputedStyle(el.querySelector('[data-testid="favorites-pointer-mark"]')!.parentElement!).zIndex),
       ring: Number(getComputedStyle(el.querySelector('[data-testid="favorites-selection-ring"]')!).zIndex),
+      sprite: Number(getComputedStyle(el.querySelector('img[alt]:not([alt=""])')!).zIndex),
     }));
     expect(layers.badge).toBeGreaterThan(layers.ring);
+    expect(layers.sprite).toBeGreaterThan(layers.ring);
     await page.screenshot({ path: testInfo.outputPath('picker-rings.png') });
   });
 
@@ -775,5 +789,31 @@ test.describe('favorite Pokémon picker', () => {
     await expect(legendary.locator('[data-testid="favorites-pointer-mark"][data-source="legendary"]')).toBeVisible();
     const opacity = await both.locator('img').first().evaluate((el) => Number(getComputedStyle(el).opacity));
     expect(opacity).toBe(1);
+  });
+
+  test('Gen 8 wolves have base and Crowned picks while Ogerpon keeps only matching pixel forms', async ({ page }, testInfo) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-legendary-8').click();
+    for (const id of [888, 10188, 889, 10189]) {
+      const pick = page.getByTestId(`favorites-pick-${id}`);
+      await expect(pick).toBeVisible();
+      await expect.poll(() => pick.locator('img[alt]:not([alt=""])').evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    }
+    const order = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
+      (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
+    );
+    expect(order.indexOf(10188)).toBe(order.indexOf(888) + 1);
+    expect(order.indexOf(10189)).toBe(order.indexOf(889) + 1);
+    expect(order.indexOf(10246)).toBeGreaterThan(order.indexOf(892));
+    await page.getByRole('button', { name: 'Close picker' }).click();
+
+    await page.getByTestId('favorites-cell-grass-9').click();
+    for (const id of [1017, 10273, 10274, 10275]) {
+      await expect(page.getByTestId(`favorites-pick-${id}`)).toBeVisible();
+    }
+    for (const id of [11014, 11015, 11016, 11017]) {
+      await expect(page.getByTestId(`favorites-pick-${id}`)).toHaveCount(0);
+    }
+    await page.screenshot({ path: testInfo.outputPath('ogerpon-pixel-forms.png') });
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { eligibleFor, isEmptyTypeGen, kindFor, regionalPickerTier } from './eligibility';
-import { isPowerupForm, isRegional } from './catalog';
+import { isLegendaryEligible, isPowerupForm } from './catalog';
 import { TYPE_NAMES } from '@/types/pokemon';
 
 describe('eligibleFor', () => {
@@ -49,22 +49,37 @@ describe('eligibleFor', () => {
     expect(eligibleFor('gimmick', 'legendary').length).toBeGreaterThan(0);
   });
 
-  it('puts regional forms between native and special entries in applicable selectors', () => {
-    for (const gen of [7, 8, 9] as const) {
+  it('orders native, older-family, legendary, and older legendary families consistently', () => {
+    for (const gen of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
       for (const type of [...TYPE_NAMES, 'gimmick', 'legendary'] as const) {
         const mons = eligibleFor(type, gen);
-        if (!mons.some(isRegional)) continue;
         const tiers = mons.map(regionalPickerTier);
         expect(tiers, `${type}|${gen}`).toEqual(tiers.slice().sort((a, b) => a - b));
+        const firstLegendary = mons.findIndex(isLegendaryEligible);
+        if (firstLegendary >= 0) {
+          expect(mons.slice(firstLegendary).every(isLegendaryEligible), `${type}|${gen} legendary tail`).toBe(true);
+        }
       }
     }
   });
 
-  it('places alternate legendary forms at the very end', () => {
-    const mons = eligibleFor('legendary', 7);
-    const tiers = mons.map(regionalPickerTier);
-    expect(tiers.slice(tiers.indexOf(3)).every((tier) => tier === 3)).toBe(true);
-    expect(mons.findIndex((m) => m.id === 10181)).toBeGreaterThan(mons.findIndex((m) => m.id === 785));
+  it('keeps same-generation legendary forms together before older legendary families', () => {
+    const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
+      eligibleFor(type, gen).map((mon) => mon.id);
+    const contiguous = (list: number[], family: number[]) => {
+      const positions = family.map((id) => list.indexOf(id));
+      expect(positions.every((position) => position >= 0), String(family)).toBe(true);
+      expect(Math.max(...positions) - Math.min(...positions)).toBe(family.length - 1);
+    };
+    contiguous(ids('legendary', 8), [892, 10191]);
+    contiguous(ids('legendary', 8), [893, 10192]);
+    contiguous(ids('legendary', 8), [898, 10193, 10194]);
+    contiguous(ids('legendary', 8), [905, 10249]);
+    contiguous(ids('legendary', 6), [716, 11001]);
+    contiguous(ids('legendary', 7), [800, 10155, 10156, 10157]);
+    contiguous(ids('legendary', 7), [801, 10147]);
+    expect(ids('legendary', 8).indexOf(10246)).toBeGreaterThan(ids('legendary', 8).indexOf(892));
+    expect(ids('legendary', 7).indexOf(10181)).toBeGreaterThan(ids('legendary', 7).indexOf(785));
   });
 
   it('offers Ultra Necrozma in the Gen 7 and legendary gimmick selectors', () => {

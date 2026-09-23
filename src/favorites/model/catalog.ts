@@ -57,7 +57,7 @@ const LINE_BY_ID = new Map<number, number>();
 const STAGE_BY_ID = new Map<number, number>();
 const FIRST_BY_LINE = new Map<number, number>();
 const OGERPON_FORM_ORDER = new Map(
-  [1017, 11014, 10273, 11015, 10274, 11016, 10275, 11017].map((id, index) => [id, index]),
+  [1017, 10273, 10274, 10275].map((id, index) => [id, index]),
 );
 
 for (const p of SPECIES) {
@@ -78,7 +78,7 @@ for (const p of SPECIES) {
   pushMon({
     id: pickerId,
     name: p.id === 892 ? 'urshifu-single-strike' : p.name,
-    types: p.types,
+    types: p.id === 888 ? ['fairy'] : p.id === 889 ? ['fighting'] : p.types,
     generation: asGen(p.generation),
     sprite: [746, 964, 1024].includes(p.id) ? `/sprites/pokemon/${p.id}.png` : pickerId === 10191 ? '/sprites/pokemon/10191.png' : p.sprite,
     source: 'dex',
@@ -155,7 +155,7 @@ export function isPowerupForm(mon: PickerMon): boolean {
   return mon.source === 'powerup';
 }
 
-const TERASTAL_FORM_IDS = new Set([10276, 10277, 11014, 11015, 11016, 11017]);
+const TERASTAL_FORM_IDS = new Set([10276, 10277]);
 
 export function isTerastalForm(mon: PickerMon): boolean {
   return TERASTAL_FORM_IDS.has(mon.id);

@@ -12,8 +12,8 @@ import {
   allPickerMons,
   comparePickerOrder,
   CONVERGENT_IDS,
+  getPickerMon,
   isLegendaryEligible,
-  isRegional,
   isRegionalFamily,
   isNewDexRiff,
   isPowerupForm,
@@ -22,13 +22,14 @@ import {
   type PickerMon,
 } from './catalog';
 
-/** Keep native species before regional arrivals, with special picks at the end. */
+/** Native families precede arrivals from older generations within each section. */
 export function regionalPickerTier(mon: PickerMon): number {
   const legendary = isLegendaryEligible(mon);
-  if (legendary && (mon.id !== mon.ownerId || isRegionalFamily(mon))) return 3;
-  if (legendary || PARADOX_IDS.has(mon.id) || CONVERGENT_IDS.has(mon.id)) return 2;
-  if (isRegionalFamily(mon)) return 1;
-  return 0;
+  const owner = getPickerMon(mon.ownerId);
+  const olderFamily = isRegionalFamily(mon) || (owner != null && owner.generation < mon.generation);
+  if (legendary) return 3 + Number(olderFamily);
+  if (PARADOX_IDS.has(mon.id) || CONVERGENT_IDS.has(mon.id)) return 2;
+  return Number(olderFamily);
 }
 
 export function eligibleFor(type: TypeAxisId, gen: GenAxisId): PickerMon[] {
@@ -53,20 +54,15 @@ export function eligibleFor(type: TypeAxisId, gen: GenAxisId): PickerMon[] {
     out = [];
   }
 
-  const regionalLayout = out.some(isRegional);
   return out.slice().sort((a, b) => {
     if (type === 'starter' && gen === 8) {
       const hisuiA = a.name.endsWith('-hisui') ? 1 : 0;
       const hisuiB = b.name.endsWith('-hisui') ? 1 : 0;
       if (hisuiA !== hisuiB) return hisuiA - hisuiB;
     } else if (type !== 'starter') {
-      // Legendary variants are the final group even if no regional species
-      // happens to be eligible for this particular cell.
       const tierA = regionalPickerTier(a);
       const tierB = regionalPickerTier(b);
-      if (tierA === 3 || tierB === 3 || regionalLayout) {
-        if (tierA !== tierB) return tierA - tierB;
-      }
+      if (tierA !== tierB) return tierA - tierB;
     }
     return comparePickerOrder(a, b);
   });

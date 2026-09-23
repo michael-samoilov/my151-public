@@ -170,12 +170,12 @@ function PickCell({
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}
-        className={usedType && !pointer ? 'opacity-35' : undefined}
+        className={usedType && !pointer ? 'relative z-10 opacity-35' : 'relative z-10'}
         style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx }}
         decoding="sync"
         draggable={false}
       />
-      {selected ? <span className="pointer-events-none absolute inset-[2px] z-[11] rounded-md border-2 border-primary" data-testid="favorites-selection-ring" /> : null}
+      {selected ? <span className="pointer-events-none absolute inset-[2px] z-[1] rounded-md border-2 border-primary" data-testid="favorites-selection-ring" /> : null}
       {showTypes ? <span
         className="pointer-events-none absolute inset-x-0 z-[12] flex items-end justify-center"
         style={{ gap: 1, bottom: inset, height: Math.round(spritePx * 0.22) }}

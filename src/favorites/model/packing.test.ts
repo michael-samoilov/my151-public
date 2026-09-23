@@ -138,7 +138,7 @@ describe('worst keep-everyone grid', () => {
     expect(options).toHaveLength(2);
     expect(options.filter((option) => option.path).length).toBe(1);
     expect(options.filter((option) => !option.path).length).toBe(1);
-  }, 20_000);
+  }, 45_000); // Exhaustive 18-type search takes about 20 seconds on Windows CI.
 });
 
 function longestRealCascade(): {

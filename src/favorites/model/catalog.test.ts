@@ -43,7 +43,8 @@ describe('alternate picker forms', () => {
       ['normal', 9, 10277], ['dragon', 8, 10190], ['electric', 7, 10123],
       ['psychic', 7, 10124], ['ghost', 7, 10125], ['ground', 4, 10004],
       ['steel', 4, 10005], ['fairy', 6, 11001],
-      ['grass', 9, 11014], ['water', 9, 11015], ['fire', 9, 11016], ['rock', 9, 11017],
+      ['grass', 9, 1017], ['water', 9, 10273], ['fire', 9, 10274], ['rock', 9, 10275],
+      ['steel', 8, 10188], ['steel', 8, 10189],
     ] as const;
     for (const [type, gen, id] of cases) {
       expect(eligibleFor(type, gen).some((m) => m.id === id), `${type}|${gen}:${id}`).toBe(true);
@@ -53,7 +54,7 @@ describe('alternate picker forms', () => {
     expect(getPickerMon(1024)?.sprite).toBe('/sprites/pokemon/1024.png');
     expect(getPickerMon(10276)?.sprite).toBe('/sprites/pokemon/10276.png');
     expect(readFileSync('public/sprites/pokemon/1024.png').equals(readFileSync('public/sprites/pokemon/10276.png'))).toBe(false);
-    for (const id of [10276, 10277, 11014, 11015, 11016, 11017]) {
+    for (const id of [10276, 10277]) {
       expect(eligibleFor('gimmick', 9).some((m) => m.id === id), `gimmick|9:${id}`).toBe(true);
       expect(eligibleFor('gimmick', 'legendary').some((m) => m.id === id), `gimmick|legendary:${id}`).toBe(true);
     }
@@ -84,17 +85,19 @@ describe('alternate picker forms', () => {
     together(ids('normal', 5), [585, 11008, 11009, 11010, 586, 11011, 11012, 11013]);
     together(ids('water', 7), [746, 10127]);
     expect(ids('fighting', 8).indexOf(10191)).toBeGreaterThan(ids('fighting', 8).indexOf(892));
-    expect(ids('grass', 9).indexOf(11014)).toBeGreaterThan(ids('grass', 9).indexOf(1017));
-    together(ids('water', 9), [10273, 11015]);
-    together(ids('fire', 9), [10274, 11016]);
-    together(ids('rock', 9), [10275, 11017]);
+    expect(getPickerMon(1017)?.sprite).toBe('/sprites/pokemon/1017.png');
+    for (const id of [11014, 11015, 11016, 11017]) expect(getPickerMon(id)).toBeUndefined();
+    together(ids('fairy', 8), [888, 10188]);
+    together(ids('fighting', 8), [889, 10189]);
+    expect(getPickerMon(888)?.types).toEqual(['fairy']);
+    expect(getPickerMon(889)?.types).toEqual(['fighting']);
     expect(getPickerMon(746)?.sprite).toBe('/sprites/pokemon/746.png');
   });
 
   it('removes alternate sprites that duplicate the same form', () => {
     for (const id of [10028, 10029, 10031, 10032, 10093, 10116, 10119, 10121, 10122,
       10128, 10129, 10130, 10131, 10132, 10133, 10134, 10135, 10144, 10145,
-      10146, 10149, 10150, 10151, 10153, 10154, 10188, 10189, 10228]) {
+      10146, 10149, 10150, 10151, 10153, 10154, 10228]) {
       expect(getPickerMon(id), String(id)).toBeUndefined();
     }
     const seen = new Set<string>();

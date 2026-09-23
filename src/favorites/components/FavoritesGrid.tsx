@@ -19,7 +19,6 @@ import type { PickerMon } from '../model/catalog';
 import { minimapViewportX } from '../model/minimap';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 
-const COLS = TYPE_AXIS.length + 1;
 const ROWS = GEN_AXIS.length + 1;
 const INITIAL_DPR = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
 
@@ -38,7 +37,6 @@ export function FavoritesGrid({
 }) {
   const cells = (
     <>
-      <Corner pin />
       {TYPE_AXIS.map((id) => (
         <HeaderCell key={`h-${String(id)}`} id={id} />
       ))}
@@ -46,7 +44,6 @@ export function FavoritesGrid({
         <GenRow
           key={String(gen)}
           gen={gen}
-          pin
           fills={fills}
           resolve={resolve}
           selected={selected}
@@ -87,10 +84,23 @@ function TypeColumnScroller({
   }, []);
 
   return (
-    <div className={desktop ? 'relative flex min-h-0 w-full flex-1' : 'relative h-full min-h-0 w-full'}>
+    <div className={desktop ? 'relative flex min-h-0 w-full flex-1 bg-background' : 'relative flex h-full min-h-0 w-full bg-background'}>
+      <div
+        data-testid="favorites-grid-generation-headers"
+        className="relative z-20 grid h-full shrink-0 bg-background"
+        style={{
+          width: cell > 0 ? cell : undefined,
+          gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
+        }}
+      >
+        <Corner />
+        {GEN_AXIS.map((gen) => (
+          <HeaderCell key={String(gen)} id={gen} pin banded={gen !== 'favorite' && GEN_AXIS.indexOf(gen) % 2 === 1} />
+        ))}
+      </div>
       <div
         ref={ref}
-        className="h-full min-h-0 w-full overflow-x-auto overflow-y-hidden overscroll-x-contain bg-card"
+        className="h-full min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain bg-background"
         style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
         data-testid="favorites-grid-scroll"
       >
@@ -99,9 +109,9 @@ function TypeColumnScroller({
           style={{
             height: cell > 0 ? cell * ROWS : '100%',
             gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
-            gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
+            gridTemplateColumns: `repeat(${TYPE_AXIS.length}, minmax(0, 1fr))`,
             width: cell > 0
-              ? desktop ? Math.max(cell * COLS, frame?.clientWidth ?? 0) : cell * COLS
+              ? desktop ? Math.max(cell * TYPE_AXIS.length, frame?.clientWidth ?? 0) : cell * TYPE_AXIS.length
               : '100%',
           }}
           data-testid="favorites-grid"
@@ -122,14 +132,12 @@ function TypeColumnScroller({
 
 function GenRow({
   gen,
-  pin,
   fills,
   resolve,
   selected,
   onSelect,
 }: {
   gen: GenAxisId;
-  pin: boolean;
   fills: Record<string, number>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
@@ -138,7 +146,6 @@ function GenRow({
   const banded = gen !== 'favorite' && GEN_AXIS.indexOf(gen) % 2 === 1;
   return (
     <>
-      <HeaderCell id={gen} pin={pin} banded={banded} />
       {TYPE_AXIS.map((type) => (
         <BodyCell
           key={cellKey(type, gen)}
@@ -155,13 +162,10 @@ function GenRow({
   );
 }
 
-function Corner({ pin }: { pin: boolean }) {
+function Corner() {
   return (
     <div
-      className={cn(
-        'border-[0.5px] border-neutral-200 bg-neutral-50',
-        pin && 'sticky left-0 z-20',
-      )}
+      className="border-[0.5px] border-neutral-200 bg-background"
     />
   );
 }
@@ -378,9 +382,8 @@ function ChartMinimap({
 }) {
   if (!frame || !frame.visible || !chartOverflows(frame)) return null;
   const max = 84;
-  const cellWidth = frame.gridWidth / COLS;
   const cellHeight = frame.gridHeight / ROWS;
-  const bodyWidth = frame.gridWidth - cellWidth;
+  const bodyWidth = frame.gridWidth;
   const bodyHeight = frame.gridHeight - cellHeight;
   const aspect = bodyWidth / Math.max(bodyHeight, 1);
   let mapW = max;
@@ -393,9 +396,9 @@ function ChartMinimap({
   mapH = Math.max(28, mapH);
   const sx = mapW / Math.max(bodyWidth, 1);
   const sy = mapH / Math.max(bodyHeight, 1);
-  const bodyLeft = frame.scrollLeft + Math.max(0, frame.visibleLeft - cellWidth);
+  const bodyLeft = frame.scrollLeft + frame.visibleLeft;
   const bodyTop = frame.scrollTop + Math.max(0, frame.visibleTop - cellHeight);
-  const bodyVisibleWidth = Math.max(0, frame.visibleRight - Math.max(cellWidth, frame.visibleLeft));
+  const bodyVisibleWidth = Math.max(0, frame.visibleRight - frame.visibleLeft);
   const bodyVisibleHeight = Math.max(0, frame.visibleBottom - Math.max(cellHeight, frame.visibleTop));
   const viewportWidth = Math.min(mapW, Math.max(2, bodyVisibleWidth * sx));
   const viewportHeight = Math.min(mapH, Math.max(2, bodyVisibleHeight * sy));
