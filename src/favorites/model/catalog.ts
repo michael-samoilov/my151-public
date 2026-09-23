@@ -9,6 +9,7 @@ import powerupForms from '@/league/data/powerupForms.json';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import type { PowerupForms } from '@/league/model/powerups';
 import { GEN_NUMBERS, type GenNumber } from './cells';
+import { ALTERNATE_PICKER_FORMS } from './alternateForms';
 
 export const CONVERGENT_IDS = new Set([948, 949, 960, 961]);
 
@@ -45,15 +46,31 @@ function pushMon(mon: PickerMon): void {
 }
 
 for (const p of SPECIES) {
-  LINE_BY_ID.set(p.id, p.evolutionChainId);
+  const pickerId = p.id === 10178 ? 10179 : p.id === 10179 ? 10180 : p.id === 10227 ? 10191 : p.id;
+  LINE_BY_ID.set(pickerId, p.evolutionChainId);
   pushMon({
-    id: p.id,
-    name: p.name,
+    id: pickerId,
+    name: p.id === 892 ? 'urshifu-single-strike' : p.name,
     types: p.types,
     generation: asGen(p.generation),
-    sprite: p.sprite,
+    sprite: pickerId === 10191 ? '/sprites/pokemon/10191.png' : p.sprite,
     source: 'dex',
-    ownerId: p.id,
+    ownerId: pickerId,
+  });
+}
+
+for (const form of ALTERNATE_PICKER_FORMS) {
+  const owner = BY_ID.get(form.ownerId);
+  if (!owner) continue;
+  LINE_BY_ID.set(form.id, LINE_BY_ID.get(owner.id) ?? owner.id);
+  pushMon({
+    id: form.id,
+    name: form.name,
+    types: form.types,
+    generation: form.generation ?? owner.generation,
+    sprite: `/sprites/pokemon/${form.id}.png`,
+    source: form.id === 10228 ? 'powerup' : 'dex',
+    ownerId: owner.id,
   });
 }
 
@@ -74,6 +91,17 @@ for (const [ownerRaw, kinds] of Object.entries(FORMS)) {
       });
     }
   }
+}
+
+const rapidStrike = BY_ID.get(10191);
+if (rapidStrike) {
+  pushMon({
+    ...rapidStrike,
+    id: 10227,
+    name: 'Gigantamax Urshifu Rapid Strike',
+    sprite: '/sprites/pokemon/10227.png',
+    source: 'powerup',
+  });
 }
 
 export function allPickerMons(): readonly PickerMon[] {
@@ -97,7 +125,7 @@ export function isPowerupForm(mon: PickerMon): boolean {
 }
 
 export function isStarter(mon: PickerMon): boolean {
-  return STARTER_IDS.has(mon.id);
+  return STARTER_IDS.has(mon.id) || mon.id === 10158 || mon.id === 10159;
 }
 
 /** Evolution chain for this form. Members of one chain stay on one picker row. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { tileImageCssPx } from '@/lib/tileImage';
-import { pickerRowInsetPx, pickerSpriteCssPx, PICKER_INSET_MAX } from './pickerSprite';
+import { fitPickerSpriteCssPx, pickerRowInsetPx, pickerSpriteCssPx, PICKER_INSET_MAX } from './pickerSprite';
 
 describe('pickerSpriteCssPx', () => {
   it('uses the dex six-column image, including on a 3× phone', () => {
@@ -24,5 +24,13 @@ describe('pickerSpriteCssPx', () => {
     }
     expect(pickerRowInsetPx(390, 62)).toBe(PICKER_INSET_MAX);
     expect(pickerRowInsetPx(1280, 96)).toBe(PICKER_INSET_MAX);
+  });
+});
+
+describe('fitPickerSpriteCssPx', () => {
+  it('keeps normal lists at dex size and shrinks tall lists to the pane', () => {
+    expect(fitPickerSpriteCssPx(62, 3, 600, 4)).toBe(62);
+    expect(fitPickerSpriteCssPx(62, 10, 500, 4)).toBe(46);
+    expect(10 * 46 + 9 * 4).toBeLessThanOrEqual(500);
   });
 });

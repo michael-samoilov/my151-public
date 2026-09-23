@@ -24,3 +24,9 @@ export function pickerRowInsetPx(viewportCssPx: number, spritePx: number): numbe
   const spare = width - spritePx * SELECTOR_MAX_COLS;
   return Math.max(0, Math.min(PICKER_INSET_MAX, Math.floor(spare / 2)));
 }
+
+export function fitPickerSpriteCssPx(basePx: number, rows: number, availablePx: number, gapPx: number): number {
+  if (rows <= 0) return basePx;
+  const fit = Math.floor((availablePx - gapPx * (rows - 1)) / rows);
+  return Math.min(basePx, Math.max(1, fit));
+}
