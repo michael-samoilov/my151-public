@@ -11,6 +11,7 @@
     "shade-report": "tsx --tsconfig tsconfig.node.json scripts/shade-report.ts",
     "og-image": "node scripts/generate-og-image.mjs",
     "indexnow": "NODE_USE_ENV_PROXY=1 node scripts/indexnow.mjs",
+    "search:connect-google": "node scripts/connect-google-search-console.mjs",
     "build": "npm run i18n:verify && tsc -b && vite build",
     "lint": "eslint . --suppressions-location eslint-suppressions.json",
     "preview": "vite preview",
