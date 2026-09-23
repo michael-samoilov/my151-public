@@ -97,9 +97,7 @@ export function PickerSheet({
         onApplyPack(path);
         onClose();
       }}
-      onBack={backFromPack}
       heading={t('favorites.packing.heading')}
-      backLabel={t('favorites.packing.back')}
     />
   ) : (
     <div className="pb-4" style={{ paddingTop: currentId != null ? 4 : 0, paddingLeft: inset, paddingRight: inset }}>
@@ -109,10 +107,11 @@ export function PickerSheet({
         <PrettySpriteGrid
           mons={mons}
           maxCols={maxCols}
-          lineKey={type === 'starter' ? evolutionLineKey : undefined}
+          lineKey={evolutionLineKey}
+          formKey={(mon) => mon.ownerId}
           selectedId={currentId}
           onPick={pick}
-          usedIn={kind === 'pointer' || isTypeName(type) ? (id) => typeSlottedElsewhere(fills, id, type, gen) : undefined}
+          usedIn={kind === 'pick' && isTypeName(type) ? (id) => typeSlottedElsewhere(fills, id, type, gen) : undefined}
           showTypes={isTypeName(type)}
           pointer={kind === 'pointer'}
           sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}
@@ -134,9 +133,7 @@ export function PickerSheet({
   const title = <PickerTitle type={type} gen={gen} />;
   const mobileTitle = (
     <span className="flex w-full items-center gap-1.5 px-2 py-0.5 text-left">
-      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-primary text-primary">
-        <ChevronLeft size={15} aria-hidden />
-      </span>
+      <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
       {title}
     </span>
   );
@@ -149,7 +146,14 @@ export function PickerSheet({
         data-testid="favorites-picker"
       >
         <div className="flex h-11 items-center justify-between border-b px-3">
-          {title}
+          <div className="flex min-w-0 items-center gap-1.5">
+            {packing ? (
+              <button type="button" onClick={backFromPack} aria-label={t('favorites.packing.back')} className="cursor-pointer text-muted-foreground hover:text-foreground">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            ) : null}
+            {title}
+          </div>
           <button type="button" onClick={onClose} aria-label={t('favorites.close')} className="cursor-pointer p-1 text-muted-foreground">
             <PanelRightClose size={16} />
           </button>
@@ -178,17 +182,13 @@ function PackList({
   stack,
   onStack,
   onApply,
-  onBack,
   heading,
-  backLabel,
 }: {
   chains: { path: PackMove[]; slots: ChainSlot[] }[];
   stack: string[];
   onStack: (next: string[]) => void;
   onApply: (path: PackMove[]) => void;
-  onBack: () => void;
   heading: string;
-  backLabel: string;
 }) {
   const mode = packListMode(chains);
   const prefix = stack[stack.length - 1] ?? '';
@@ -214,13 +214,6 @@ function PackList({
               }}
             />
           ))}
-      <button
-        type="button"
-        className="self-start text-sm text-muted-foreground underline"
-        onClick={onBack}
-      >
-        {backLabel}
-      </button>
     </div>
   );
 }

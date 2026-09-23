@@ -21,10 +21,11 @@ describe('pointerPool', () => {
     expect(pointerMarks('favorite', 'favorite', fills, 144)).toEqual([{ source: 'legendary' }]);
   });
 
-  it('marks special columns on generation pointers', () => {
-    expect(pointerMarks('favorite', 1, fills, 4)).toEqual([{ source: 'starter' }]);
-    expect(pointerMarks('favorite', 1, fills, 6)).toEqual([{ source: 'gimmick' }]);
-    expect(pointerMarks('favorite', 1, fills, 144)).toEqual([{ source: 'legendary' }]);
+  it('marks a row pointer with its generation and a column pointer with its source', () => {
+    for (const id of [4, 6, 144]) {
+      expect(pointerMarks('favorite', 1, fills, id)).toEqual([{ source: 'gen', value: 1 }]);
+    }
+    expect(pointerMarks('fire', 'favorite', fills, 4)).toEqual([{ source: 'type', value: 'fire' }]);
   });
 
   it('retains the overall favorite when its legendary source is still filled', () => {

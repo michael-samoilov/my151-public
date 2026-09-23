@@ -76,12 +76,14 @@ export function TypeIcon({ type, size = 24 }: { type: TypeName; size?: number })
 
 export function EmptyBall({ className }: { className?: string }) {
   return (
-    <svg viewBox="-4 -4 32 32" className={className} aria-hidden overflow="visible">
-      <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
-      <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    <svg viewBox="0 0 40 40" className={className} aria-hidden overflow="visible">
+      <g transform="rotate(-30 20 20)">
+        <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="2" y1="20" x2="14" y2="20" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="26" y1="20" x2="38" y2="20" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="20" cy="20" r="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="20" cy="20" r="2.5" fill="currentColor" />
+      </g>
     </svg>
   );
 }

@@ -38,6 +38,16 @@ function asGen(n: number): GenNumber {
 const ALL: PickerMon[] = [];
 const BY_ID = new Map<number, PickerMon>();
 const LINE_BY_ID = new Map<number, number>();
+const STAGE_BY_ID = new Map<number, number>();
+const FIRST_BY_LINE = new Map<number, number>();
+const OGERPON_FORM_ORDER = new Map(
+  [1017, 11014, 10273, 11015, 10274, 11016, 10275, 11017].map((id, index) => [id, index]),
+);
+
+for (const p of SPECIES) {
+  const first = FIRST_BY_LINE.get(p.evolutionChainId);
+  if (first == null || p.id < first) FIRST_BY_LINE.set(p.evolutionChainId, p.id);
+}
 
 function pushMon(mon: PickerMon): void {
   if (BY_ID.has(mon.id)) return;
@@ -48,12 +58,13 @@ function pushMon(mon: PickerMon): void {
 for (const p of SPECIES) {
   const pickerId = p.id === 10178 ? 10179 : p.id === 10179 ? 10180 : p.id === 10227 ? 10191 : p.id;
   LINE_BY_ID.set(pickerId, p.evolutionChainId);
+  STAGE_BY_ID.set(pickerId, p.evolutionStage);
   pushMon({
     id: pickerId,
     name: p.id === 892 ? 'urshifu-single-strike' : p.name,
     types: p.types,
     generation: asGen(p.generation),
-    sprite: pickerId === 10191 ? '/sprites/pokemon/10191.png' : p.sprite,
+    sprite: [746, 964, 1024].includes(p.id) ? `/sprites/pokemon/${p.id}.png` : pickerId === 10191 ? '/sprites/pokemon/10191.png' : p.sprite,
     source: 'dex',
     ownerId: pickerId,
   });
@@ -124,6 +135,12 @@ export function isPowerupForm(mon: PickerMon): boolean {
   return mon.source === 'powerup';
 }
 
+const TERASTAL_FORM_IDS = new Set([10276, 10277, 11014, 11015, 11016, 11017]);
+
+export function isTerastalForm(mon: PickerMon): boolean {
+  return TERASTAL_FORM_IDS.has(mon.id);
+}
+
 export function isStarter(mon: PickerMon): boolean {
   return STARTER_IDS.has(mon.id) || mon.id === 10158 || mon.id === 10159;
 }
@@ -131,6 +148,19 @@ export function isStarter(mon: PickerMon): boolean {
 /** Evolution chain for this form. Members of one chain stay on one picker row. */
 export function evolutionLineKey(mon: PickerMon): number {
   return LINE_BY_ID.get(mon.id) ?? LINE_BY_ID.get(mon.ownerId) ?? mon.id;
+}
+
+export function comparePickerOrder(a: PickerMon, b: PickerMon): number {
+  const lineA = evolutionLineKey(a);
+  const lineB = evolutionLineKey(b);
+  const firstA = FIRST_BY_LINE.get(lineA) ?? a.ownerId;
+  const firstB = FIRST_BY_LINE.get(lineB) ?? b.ownerId;
+  const stageA = STAGE_BY_ID.get(a.id) ?? STAGE_BY_ID.get(a.ownerId) ?? 1;
+  const stageB = STAGE_BY_ID.get(b.id) ?? STAGE_BY_ID.get(b.ownerId) ?? 1;
+  const ogerponOrder = a.ownerId === 1017 && b.ownerId === 1017
+    ? (OGERPON_FORM_ORDER.get(a.id) ?? 99) - (OGERPON_FORM_ORDER.get(b.id) ?? 99)
+    : 0;
+  return firstA - firstB || stageA - stageB || a.ownerId - b.ownerId || ogerponOrder || a.id - b.id;
 }
 
 const LEGENDARY_OWNER_IDS = new Set<number>();

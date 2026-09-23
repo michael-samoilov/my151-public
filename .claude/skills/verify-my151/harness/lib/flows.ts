@@ -966,6 +966,13 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   await s.navigate(url);
   const hydrated = await waitFavoritesGrid(s);
   checks.push(ok('favorites:hydrated-grid', hydrated));
+  await s.evalJson(`
+    window.scrollTo(0, 0);
+    if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+    const scroller = document.querySelector('[data-testid="favorites-grid-scroll"]');
+    if (scroller) scroller.scrollLeft = 0;
+    return true;
+  `);
   await s.screenshot(ctx.shot('favorites-grid'));
   if (hydrated) {
     const balls = await s.evalJson<{ count: number; inside: number; centered: number }>(`
@@ -1470,7 +1477,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   await sleep(200);
   const mini = await s.evalJson<{
     overflow: boolean; shown: boolean; vpNarrower: boolean;
-    cells: number; filled: number; empty: number; border: string; primary: string;
+    cells: number; filled: number; empty: number; stroke: string; offset: string; primary: string; tinted: boolean;
   }>(`
     const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
     const map = document.querySelector('[data-testid="favorites-minimap"]');
@@ -1483,12 +1490,16 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     document.body.appendChild(sample);
     const primary = getComputedStyle(sample).color;
     sample.remove();
+    const filledCell = map?.querySelector('[data-type="fairy"][data-filled="true"]');
+    const emptyCell = map?.querySelector('[data-type="fairy"][data-filled="false"]');
     return {
       overflow, shown, vpNarrower,
       cells: map?.querySelectorAll('[data-kind]').length || 0,
       filled: map?.querySelectorAll('[data-filled="true"]').length || 0,
       empty: map?.querySelectorAll('[data-filled="false"]').length || 0,
-      border: vp ? getComputedStyle(vp).borderTopColor : '',
+      stroke: vp ? getComputedStyle(vp).outlineColor : '',
+      offset: vp ? getComputedStyle(vp).outlineOffset : '',
+      tinted: !!filledCell && !!emptyCell && getComputedStyle(filledCell).backgroundColor !== getComputedStyle(emptyCell).backgroundColor,
       primary,
     };
   `);
@@ -1499,8 +1510,8 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   ));
   checks.push(ok(
     'favorites:minimap-body-cells',
-    !mini.overflow || (mini.cells === 22 * 11 && mini.filled > 0 && mini.empty > 0 && mini.border === mini.primary),
-    `cells=${mini.cells} filled=${mini.filled} empty=${mini.empty} border=${mini.border} primary=${mini.primary}`,
+    !mini.overflow || (mini.cells === 22 * 11 && mini.filled > 0 && mini.empty > 0 && mini.stroke === mini.primary && mini.offset === '1px' && mini.tinted),
+    `cells=${mini.cells} filled=${mini.filled} empty=${mini.empty} stroke=${mini.stroke} offset=${mini.offset} tinted=${mini.tinted} primary=${mini.primary}`,
   ));
   if (mini.shown) await s.screenshot(ctx.shot('favorites-minimap-scrolling'));
   await sleep(1200);

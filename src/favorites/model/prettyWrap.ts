@@ -100,10 +100,29 @@ function lineGroups<T>(items: readonly T[], lineKey: (item: T) => number): T[][]
   return groups;
 }
 
-function packLines<T>(lines: readonly (readonly T[])[], cap: number): T[][] {
+function packLines<T>(lines: readonly (readonly T[])[], cap: number, formKey?: (item: T) => number): T[][] {
   const rows: T[][] = [];
   let row: T[] = [];
   for (const line of lines) {
+    if (line.length > cap) {
+      if (row.length > 0) rows.push(row);
+      row = [];
+      for (const form of formKey ? lineGroups(line, formKey) : [line]) {
+        if (row.length > 0 && row.length + form.length > cap) {
+          rows.push(row);
+          row = [];
+        }
+        for (let at = 0; at < form.length; at += cap) {
+          const chunk = form.slice(at, at + cap);
+          if (row.length + chunk.length > cap) {
+            rows.push(row);
+            row = [];
+          }
+          row = row.concat(chunk);
+        }
+      }
+      continue;
+    }
     if (row.length > 0 && row.length + line.length > cap) {
       rows.push(row);
       row = [];
@@ -119,9 +138,10 @@ export function prettyRows<T>(
   items: readonly T[],
   maxCols = SELECTOR_MAX_COLS,
   lineKey?: (item: T) => number,
+  formKey?: (item: T) => number,
 ): T[][] {
   const cap = clampCap(maxCols);
-  if (lineKey) return packLines(lineGroups(items, lineKey), cap);
+  if (lineKey) return packLines(lineGroups(items, lineKey), cap, formKey);
 
   const sizes = prettyRowSizes(items.length, cap);
   const rows: T[][] = [];

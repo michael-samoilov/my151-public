@@ -218,6 +218,24 @@ test.describe('favorite Pokémon picker', () => {
     expect(fit.maxWidth - fit.minWidth).toBeLessThan(0.6);
   });
 
+  test('generation discs match type badge area and alternating rows are subtly banded', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    const grid = page.getByTestId('favorites-grid');
+    const typeBadge = grid.locator(':scope > div').nth(1).locator('img');
+    const genDisc = page.getByRole('img', { name: 'Generation I', exact: true });
+    const typeBox = await typeBadge.boundingBox();
+    const genBox = await genDisc.boundingBox();
+    expect(typeBox).toBeTruthy();
+    expect(genBox).toBeTruthy();
+    const squareArea = typeBox!.width ** 2;
+    const discArea = Math.PI * (genBox!.width * 15 / 32) ** 2;
+    expect(Math.abs(discArea - squareArea) / squareArea).toBeLessThan(0.03);
+
+    for (const [gen, banded] of [[1, 'false'], [2, 'true'], [3, 'false'], ['legendary', 'true'], ['favorite', 'false']] as const) {
+      await expect(page.getByTestId(`favorites-cell-normal-${gen}`)).toHaveAttribute('data-row-banded', banded);
+    }
+  });
+
   test('every Gen 8 gimmick sprite loads with visible pixels', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-gimmick-8').click();
@@ -412,7 +430,9 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-fire-1').click();
     await page.getByTestId('favorites-pick-4').click();
     const scroller = page.getByTestId('favorites-grid-scroll');
+    await expect(page.getByTestId('favorites-scroll-cue')).toBeVisible();
     await scroller.evaluate((el) => { el.scrollLeft = 200; });
+    await expect(page.getByTestId('favorites-scroll-cue')).toHaveCount(0);
     await expect(map).toBeVisible();
     expect(await map.locator('[data-kind]').count()).toBe(22 * 11);
     await expect(map.locator('[data-filled="true"]')).not.toHaveCount(0);
@@ -424,16 +444,33 @@ test.describe('favorite Pokémon picker', () => {
       document.body.appendChild(sample);
       const primary = getComputedStyle(sample).color;
       sample.remove();
-      return { border: getComputedStyle(el).borderTopColor, primary };
+      return { outline: getComputedStyle(el).outlineColor, width: getComputedStyle(el).outlineWidth, offset: getComputedStyle(el).outlineOffset, primary };
     });
-    expect(colors.border).toBe(colors.primary);
+    expect(colors.outline).toBe(colors.primary);
+    expect(colors.width).toBe('1px');
+    expect(colors.offset).toBe('1px');
+    const shades = await map.evaluate((el) => {
+      const filled = el.querySelector('[data-type="fire"][data-filled="true"]');
+      const empty = el.querySelector('[data-type="fire"][data-filled="false"]');
+      return [getComputedStyle(filled!).backgroundColor, getComputedStyle(empty!).backgroundColor];
+    });
+    expect(shades[0]).not.toBe(shades[1]);
+    expect(shades[1]).not.toBe('rgb(228, 228, 231)');
     await expect.poll(() => map.evaluate((el) => Number(getComputedStyle(el).opacity)), { timeout: 2_500 }).toBeLessThan(0.05);
+    await page.reload();
+    await expect(page.getByTestId('favorites-scroll-cue')).toHaveCount(0);
   });
 
   test('filled sprites can paint outside the cell boundary', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fire-1').click();
     await page.getByTestId('favorites-pick-4').click();
+    await page.getByTestId('favorites-cell-water-1').click();
+    await page.getByTestId('favorites-pick-7').click();
+    await page.getByTestId('favorites-cell-water-1').locator('img[alt]:not([alt=""])').evaluate((el) => {
+      (el as HTMLElement).style.width = '90%';
+      (el as HTMLElement).style.height = '90%';
+    });
     const overflow = await page.getByTestId('favorites-cell-fire-1').evaluate((el) => {
       const style = getComputedStyle(el);
       const sprite = el.querySelector('img[alt]:not([alt=""])');
@@ -485,7 +522,8 @@ test.describe('favorite Pokémon picker', () => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fire-1').click();
     const header = page.getByTestId('bottom-sheet-header');
-    await expect(header.locator('[class*="border-primary"] svg')).toBeVisible();
+    await expect(header.locator('svg.lucide-chevron-left')).toBeVisible();
+    await expect(header.locator('[class*="border-primary"]')).toHaveCount(0);
     await expect(header.getByTestId('favorites-picker-title').locator('img')).toHaveCount(2);
     expect(await header.getByTestId('favorites-picker-title').textContent()).toBe('');
     await header.click();
@@ -496,9 +534,11 @@ test.describe('favorite Pokémon picker', () => {
     const clear = page.getByTestId('favorites-clear');
     await expect(clear).toContainText('Clear');
     await expect(clear.locator('svg')).toBeVisible();
+    const clearColors = await clear.evaluate((el) => ({ border: getComputedStyle(el).borderColor, x: getComputedStyle(el.querySelector('svg')!).color }));
+    expect(clearColors.border).not.toBe(clearColors.x);
   });
 
-  test('generation pointer shows starter, gimmick, and legendary sources on solid sprites', async ({ page }, testInfo) => {
+  test('generation pointer shows its row origin on solid sprites', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/favorite-pokemon-by-type');
     await page.evaluate(() => {
@@ -509,13 +549,45 @@ test.describe('favorite Pokémon picker', () => {
     });
     await page.reload();
     await page.getByTestId('favorites-cell-favorite-1').click();
-    for (const [id, source] of [[4, 'starter'], [6, 'gimmick'], [144, 'legendary']] as const) {
+    for (const id of [4, 6, 144]) {
       const pick = page.getByTestId(`favorites-pick-${id}`);
-      await expect(pick.locator(`[data-testid="favorites-pointer-mark"][data-source="${source}"]`)).toBeVisible();
+      await expect(pick.locator('[data-testid="favorites-pointer-mark"][data-source="gen"]')).toBeVisible();
+      await expect(pick.getByTestId('favorites-type-icon')).toHaveCount(0);
+      await expect(pick.getByTestId('favorites-used-mark')).toHaveCount(0);
       const opacity = await pick.locator('img[alt]').first().evaluate((el) => Number(getComputedStyle(el).opacity));
       expect(opacity).toBe(1);
     }
     await page.screenshot({ path: testInfo.outputPath('pointer-sources.png') });
+  });
+
+  test('selection and clear outlines stay inside their tiles and leave source badges on top', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/favorite-pokemon-by-type');
+    await page.evaluate(() => {
+      localStorage.setItem('favorite-picker', JSON.stringify({
+        state: { fills: { 'starter|1': 4, 'gimmick|1': 6, 'legendary|1': 144, 'favorite|1': 6 } },
+        version: 1,
+      }));
+    });
+    await page.reload();
+    await page.getByTestId('favorites-cell-favorite-1').click();
+    const selected = page.getByTestId('favorites-pick-6');
+    const ring = selected.getByTestId('favorites-selection-ring');
+    const clear = page.getByTestId('favorites-clear');
+    const boxes = await Promise.all([selected.boundingBox(), ring.boundingBox(), clear.boundingBox(), page.getByTestId('favorites-pick-144').boundingBox(), selected.getByTestId('favorites-pointer-mark').boundingBox()]);
+    expect(boxes.every(Boolean)).toBe(true);
+    expect(boxes[1]!.x).toBeGreaterThan(boxes[0]!.x);
+    expect(boxes[1]!.x + boxes[1]!.width).toBeLessThan(boxes[0]!.x + boxes[0]!.width);
+    expect(boxes[1]!.x + boxes[1]!.width).toBeLessThanOrEqual(boxes[2]!.x);
+    expect(boxes[1]!.x + boxes[1]!.width).toBeLessThanOrEqual(boxes[3]!.x);
+    expect(boxes[4]!.x + boxes[4]!.width).toBeLessThanOrEqual(boxes[0]!.x + boxes[0]!.width);
+    await expect(selected.getByTestId('favorites-pointer-mark')).toHaveAttribute('data-source', 'gen');
+    const layers = await selected.evaluate((el) => ({
+      badge: Number(getComputedStyle(el.querySelector('[data-testid="favorites-pointer-mark"]')!.parentElement!).zIndex),
+      ring: Number(getComputedStyle(el.querySelector('[data-testid="favorites-selection-ring"]')!).zIndex),
+    }));
+    expect(layers.badge).toBeGreaterThan(layers.ring);
+    await page.screenshot({ path: testInfo.outputPath('picker-rings.png') });
   });
 
   test('overall favorite includes both category favorites and the legendary favorite', async ({ page }) => {

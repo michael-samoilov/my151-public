@@ -10,6 +10,7 @@ import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { cellKey, type GenAxisId, type TypeAxisId } from './model/cells';
 import { getPickerMon } from './model/catalog';
+import { prewarmPickerSprites } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
@@ -45,6 +46,8 @@ export function FavoritesApp() {
 
   useEffect(() => {
     sendEventBeacon('favorites-open', { once: true });
+    const timer = window.setTimeout(prewarmPickerSprites, 350);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function open(type: TypeAxisId, gen: GenAxisId) {

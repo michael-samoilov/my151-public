@@ -6,7 +6,6 @@ import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
-import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ExtraMark, RomanDisc, TypeIcon } from './marks';
@@ -19,6 +18,7 @@ export function PrettySpriteGrid({
   maxCols,
   spritePx: requestedSpritePx,
   lineKey,
+  formKey,
   selectedId,
   onPick,
   usedIn,
@@ -33,6 +33,7 @@ export function PrettySpriteGrid({
   maxCols: number;
   spritePx?: number;
   lineKey?: (mon: PickerMon) => number;
+  formKey?: (mon: PickerMon) => number;
   selectedId?: number;
   onPick: (mon: PickerMon) => void;
   usedIn?: (id: number) => TypeName | null;
@@ -47,7 +48,7 @@ export function PrettySpriteGrid({
   const viewportPx = useLayoutViewportCssPx();
   const baseSpritePx = requestedSpritePx ?? pickerSpriteCssPx(viewportPx);
   const dexPx = tileImageCssPx(viewportPx);
-  const rows = prettyRows(mons, maxCols, lineKey);
+  const rows = prettyRows(mons, maxCols, lineKey, formKey);
   const lastLen = rows.length > 0 ? rows[rows.length - 1].length : maxCols;
   const fitRows = rows.length + (onClear && (rows.length === 0 || lastLen >= maxCols) ? 1 : 0);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -150,10 +151,7 @@ function PickCell({
       onClick={() => onPick(mon)}
       data-testid={`favorites-pick-${mon.id}`}
       aria-pressed={selected}
-      className={cn(
-        'relative flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent p-0',
-        selected && 'ring-2 ring-primary ring-offset-1',
-      )}
+      className="relative flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent p-0"
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
       <img
@@ -163,8 +161,10 @@ function PickCell({
         height={spritePx}
         className={usedType && !pointer ? 'opacity-35' : undefined}
         style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx }}
+        decoding="sync"
         draggable={false}
       />
+      {selected ? <span className="pointer-events-none absolute inset-[2px] z-[11] rounded-md border-2 border-primary" data-testid="favorites-selection-ring" /> : null}
       {showTypes ? <span
         className="pointer-events-none absolute inset-x-0 bottom-0 z-[12] flex items-end justify-center"
         style={{ gap: 1, height: Math.round(spritePx * 0.22) }}
@@ -184,7 +184,7 @@ function PickCell({
       </span> : null}
       {sourceMarks.length > 0 ? (
         <span
-          className="pointer-events-none absolute right-0 top-0 z-[16] flex"
+          className="pointer-events-none absolute right-[3px] top-[3px] z-[16] flex"
           style={{ gap: 1 }}
         >
           {sourceMarks.map((source) => (
@@ -200,14 +200,14 @@ function PickCell({
           ))}
         </span>
       ) : null}
-      {usedType ? (
+      {usedType && !pointer ? (
         <img
           src={typeIconPath(usedType)}
           alt=""
           data-testid="favorites-used-mark"
           data-used-type={usedType}
           className="pointer-events-none absolute z-[15] rounded-[4px]"
-          style={pointer ? { bottom: inset, right: inset, width: mark, height: mark } : { top: inset, right: inset, width: mark, height: mark }}
+          style={{ top: inset, right: inset, width: mark, height: mark }}
           draggable={false}
         />
       ) : null}
@@ -232,10 +232,10 @@ function ClearCell({
       data-testid="favorites-clear"
       aria-label={label}
       onClick={onClear}
-      className="relative flex shrink-0 cursor-pointer flex-col items-center justify-center rounded-md border border-red-500 bg-transparent p-0 text-red-500"
+      className="relative flex shrink-0 cursor-pointer flex-col items-center justify-center rounded-md border border-neutral-300 bg-transparent p-0 text-red-500"
       style={{ width: spritePx, height: spritePx }}
     >
-      <X size={Math.round(spritePx * 0.38)} strokeWidth={2.25} aria-hidden />
+      <X size={Math.round(spritePx * 0.38)} strokeWidth={2.25} className="text-red-400" aria-hidden />
       <span style={{ fontSize: Math.max(9, Math.round(spritePx * 0.15)), lineHeight: 1 }}>{text ?? label}</span>
     </button>
   );

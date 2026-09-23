@@ -15,6 +15,7 @@ import {
 } from '../model/cells';
 import { kindFor } from '../model/eligibility';
 import type { PickerMon } from '../model/catalog';
+import { minimapViewportX } from '../model/minimap';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 
 const COLS = TYPE_AXIS.length + 1;
@@ -71,7 +72,7 @@ function TypeColumnScroller({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [cell, setCell] = useState(0);
-  const { frame, scrolling } = useChartFrame(ref);
+  const { frame, scrolling, showScrollCue } = useChartFrame(ref);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -108,6 +109,11 @@ function TypeColumnScroller({
         </div>
       </div>
       <ChartMinimap frame={frame} scrolling={scrolling} fills={fills} />
+      {frame && chartOverflows(frame) && showScrollCue ? (
+        <div data-testid="favorites-scroll-cue" className="pointer-events-none absolute bottom-3 right-3 z-30 flex items-center gap-1 rounded-full bg-card/95 px-2 py-1 text-xs text-muted-foreground shadow-sm">
+          <span>Scroll for more</span><span aria-hidden>→</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -127,14 +133,16 @@ function GenRow({
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
   onSelect: (type: TypeAxisId, gen: GenAxisId) => void;
 }) {
+  const banded = gen !== 'favorite' && GEN_AXIS.indexOf(gen) % 2 === 1;
   return (
     <>
-      <HeaderCell id={gen} pin={pin} />
+      <HeaderCell id={gen} pin={pin} banded={banded} />
       {TYPE_AXIS.map((type) => (
         <BodyCell
           key={cellKey(type, gen)}
           type={type}
           gen={gen}
+          banded={banded}
           fills={fills}
           resolve={resolve}
           selected={selected}
@@ -156,18 +164,21 @@ function Corner({ pin }: { pin: boolean }) {
   );
 }
 
-function HeaderCell({ id, pin = false }: { id: TypeAxisId | GenAxisId; pin?: boolean }) {
+function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenAxisId; pin?: boolean; banded?: boolean }) {
+  const iconSize = isGenNumber(id) ? 87 : 72;
   return (
     <div
+      data-row-banded={pin ? banded : undefined}
       className={cn(
         'relative min-h-0 min-w-0 overflow-hidden border-[0.5px] border-neutral-200 bg-card',
         pin && 'sticky left-0 z-20',
       )}
     >
+      {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.018]" /> : null}
       <div className="absolute inset-0" style={{ containerType: 'size' }}>
         <div
           className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain [&_span]:!h-full [&_span]:!w-full [&_span]:!text-[0.62em]"
-          style={{ width: '72cqmin', height: '72cqmin', fontSize: '72cqmin' }}
+          style={{ width: `${iconSize}cqmin`, height: `${iconSize}cqmin`, fontSize: `${iconSize}cqmin` }}
         >
           {isTypeName(id) ? (
             <TypeIcon type={id} size={32} />
@@ -185,6 +196,7 @@ function HeaderCell({ id, pin = false }: { id: TypeAxisId | GenAxisId; pin?: boo
 function BodyCell({
   type,
   gen,
+  banded,
   fills,
   resolve,
   selected,
@@ -192,6 +204,7 @@ function BodyCell({
 }: {
   type: TypeAxisId;
   gen: GenAxisId;
+  banded: boolean;
   fills: Record<string, number>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
@@ -211,24 +224,24 @@ function BodyCell({
       onClick={() => onSelect(type, gen)}
       data-testid={`favorites-cell-${type}-${gen}`}
       data-kind={kind}
+      data-row-banded={banded}
       className={cn(
-        'relative min-h-0 min-w-0 overflow-visible border-[0.5px] border-neutral-200 p-0 [container-type:size]',
+        'relative min-h-0 min-w-0 overflow-visible border-[0.5px] border-neutral-200 p-0',
         locked
           ? 'cursor-default bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]'
-          : mon ? 'z-[2] cursor-pointer bg-transparent' : 'cursor-pointer bg-card',
+          : mon ? 'cursor-pointer bg-transparent' : 'cursor-pointer bg-card',
         kind === 'pointer' && (mon ? 'bg-amber-50/50' : 'bg-amber-50'),
-        isSel && (mon ? 'z-[3]' : 'z-[1]'),
       )}
     >
+      {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.018]" /> : null}
       {mon ? (
         <Filled mon={mon} />
       ) : locked ? null : (
         <span
           data-testid="favorites-empty-ball"
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{ width: '64cqmin', height: '64cqmin' }}
+          className="pointer-events-none absolute left-[5%] top-[5%] h-[90%] w-[90%]"
         >
-          <EmptyBall className="block h-full w-full overflow-visible text-muted-foreground/20 -rotate-[30deg]" />
+          <EmptyBall className="block h-full w-full overflow-visible text-muted-foreground/20" />
         </span>
       )}
       {tint && !mon && !locked ? (
@@ -259,6 +272,10 @@ interface ChartMetrics {
 function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
   const [frame, setFrame] = useState<ChartMetrics | null>(null);
   const [scrolling, setScrolling] = useState(false);
+  const [showScrollCue, setShowScrollCue] = useState(() => {
+    try { return sessionStorage.getItem('favorites-scroll-cue-seen') !== '1'; }
+    catch { return true; }
+  });
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -267,7 +284,7 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
     const show = () => {
       setScrolling(true);
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => setScrolling(false), 700);
+      timer = window.setTimeout(() => setScrolling(false), 350);
     };
     const read = () => {
       const grid = el.firstElementChild as HTMLElement | null;
@@ -286,6 +303,9 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
     const onScroll = () => {
       read();
       show();
+      setShowScrollCue(false);
+      try { sessionStorage.setItem('favorites-scroll-cue-seen', '1'); }
+      catch { /* Storage can be unavailable in private browsing. */ }
     };
     read();
     el.addEventListener('scroll', onScroll, { passive: true });
@@ -299,7 +319,7 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
     };
   }, [ref]);
 
-  return { frame, scrolling };
+  return { frame, scrolling, showScrollCue };
 }
 
 function chartOverflows(frame: ChartMetrics): boolean {
@@ -339,12 +359,13 @@ function ChartMinimap({
     for (const type of TYPE_AXIS) {
       const kind = kindFor(type, gen);
       const filled = fills[cellKey(type, gen)] != null;
-      let background = '#e4e4e7';
+      const tint = isTypeName(type) ? TYPE_COLORS[type] : EXTRA_COLOR[type];
+      let background = `color-mix(in srgb, ${tint} ${filled ? 45 : 18}%, white)`;
       if (kind === 'disabled' || kind === 'null') background = 'transparent';
-      else if (filled) background = isTypeName(type) ? TYPE_COLORS[type] : EXTRA_COLOR[type];
       cells.push(
         <div
           key={cellKey(type, gen)}
+          data-type={type}
           data-kind={kind}
           data-filled={String(filled)}
           style={{ background }}
@@ -356,7 +377,7 @@ function ChartMinimap({
     <div
       data-testid="favorites-minimap"
       aria-hidden
-      className="pointer-events-none absolute right-2 bottom-2 z-30 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-300"
+      className="pointer-events-none absolute right-3 bottom-3 z-30 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200"
       style={{ opacity: scrolling ? 0.95 : 0 }}
     >
       <div className="relative" style={{ width: mapW, height: mapH }}>
@@ -372,12 +393,14 @@ function ChartMinimap({
         </div>
         <div
           data-testid="favorites-minimap-viewport"
-          className="absolute border-2 border-primary bg-primary/10"
+          className="absolute bg-primary/10"
           style={{
-            left: Math.min(mapW - viewportWidth, frame.scrollLeft * sx),
+            left: minimapViewportX(frame.scrollLeft, sx, mapW, viewportWidth),
             top: Math.min(mapH - viewportHeight, frame.scrollTop * sy),
             width: viewportWidth,
             height: viewportHeight,
+            outline: '1px solid var(--color-primary)',
+            outlineOffset: 1,
           }}
         />
       </div>

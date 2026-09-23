@@ -83,4 +83,14 @@ describe('prettyGridCols', () => {
       }
     }
   });
+
+  it('keeps seasonal forms beside their own base species when a family exceeds six tiles', () => {
+    const mons = eligibleFor('normal', 5);
+    const rows = prettyRows(mons, 6, evolutionLineKey, (mon) => mon.ownerId);
+    const deerling = rows.find((row) => row.some((mon) => mon.id === 585));
+    const sawsbuck = rows.find((row) => row.some((mon) => mon.id === 586));
+    expect(deerling?.map((mon) => mon.id)).toContain(11010);
+    expect(sawsbuck?.map((mon) => mon.id)).toContain(11013);
+    expect(rows.every((row) => row.length <= 6)).toBe(true);
+  });
 });

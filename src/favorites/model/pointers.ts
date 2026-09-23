@@ -77,6 +77,11 @@ export function pointerMarks(
     } else if (type === 'favorite' && gen === 'favorite') {
       if (isTypeName(source.type)) add({ source: 'type', value: source.type });
       if (isGenNumber(source.gen)) add({ source: 'gen', value: source.gen });
+    } else if (type === 'favorite' && isGenNumber(gen)) {
+      add({ source: 'gen', value: gen });
+    } else if (gen === 'favorite') {
+      if (isTypeName(type)) add({ source: 'type', value: type });
+      else if (type === 'starter' || type === 'gimmick' || type === 'legendary') add({ source: type });
     } else {
       if (source.type === 'starter' || source.type === 'gimmick' || source.type === 'legendary') {
         add({ source: source.type });

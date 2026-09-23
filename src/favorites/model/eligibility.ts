@@ -9,16 +9,14 @@ import {
 } from './cells';
 import {
   allPickerMons,
+  comparePickerOrder,
   isLegendaryEligible,
   isNewDexRiff,
   isPowerupForm,
+  isTerastalForm,
   isStarter,
   type PickerMon,
 } from './catalog';
-
-function byId(a: PickerMon, b: PickerMon): number {
-  return a.id - b.id;
-}
 
 export function eligibleFor(type: TypeAxisId, gen: GenAxisId): PickerMon[] {
   const list = allPickerMons();
@@ -30,19 +28,19 @@ export function eligibleFor(type: TypeAxisId, gen: GenAxisId): PickerMon[] {
     out = list.filter((m) => isStarter(m) && m.generation === gen);
   } else if (type === 'gimmick' && isGenNumber(gen)) {
     out = list.filter(
-      (m) => (isPowerupForm(m) && m.generation === gen) || (isNewDexRiff(m) && m.generation === gen),
+      (m) => (isPowerupForm(m) || isNewDexRiff(m) || isTerastalForm(m)) && m.generation === gen,
     );
   } else if (type === 'legendary' && isGenNumber(gen)) {
     out = list.filter((m) => isLegendaryEligible(m) && m.generation === gen && !isPowerupForm(m));
   } else if (isTypeName(type) && gen === 'legendary') {
     out = list.filter((m) => isLegendaryEligible(m) && m.types.includes(type) && !isPowerupForm(m));
   } else if (type === 'gimmick' && gen === 'legendary') {
-    out = list.filter((m) => isPowerupForm(m) && isLegendaryEligible(m));
+    out = list.filter((m) => (isPowerupForm(m) || isTerastalForm(m)) && isLegendaryEligible(m));
   } else if (type === 'starter' && gen === 'legendary') {
     out = [];
   }
 
-  return out.slice().sort(byId);
+  return out.slice().sort(comparePickerOrder);
 }
 
 const EMPTY_TYPE_GEN = new Set<string>();
