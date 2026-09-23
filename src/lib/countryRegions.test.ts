@@ -12,6 +12,13 @@ describe('regionOf', () => {
     expect(regionOf('MR')).toBe('Middle East & Africa');
   });
 
+  it('places the remaining ISO territories in their UN regions', () => {
+    for (const code of ['BV', 'GS']) expect(regionOf(code)).toBe('Latin America');
+    for (const code of ['CC', 'CX', 'HM', 'PN', 'UM']) expect(regionOf(code)).toBe('Asia-Pacific');
+    for (const code of ['IO', 'SH', 'TF']) expect(regionOf(code)).toBe('Middle East & Africa');
+    expect(regionOf('AQ')).toBe('Unknown');
+  });
+
   it('accepts lower-case codes', () => {
     expect(regionOf('gb')).toBe('Europe');
   });
