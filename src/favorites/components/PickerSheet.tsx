@@ -23,6 +23,7 @@ import { pointerMarks, pointerPool } from '../model/pointers';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
+import { EmptyBall } from './marks';
 
 export function PickerSheet({
   type,
@@ -68,6 +69,11 @@ export function PickerSheet({
   }, [kind, type, gen, fills]);
 
   const maxCols = 6;
+  const emptyHint = kind !== 'pointer' ? t('favorites.empty.unavailable')
+    : type === 'favorite' && gen === 'favorite' ? t('favorites.empty.overall')
+      : type === 'legendary' && gen === 'legendary' ? t('favorites.empty.legendary')
+        : type === 'favorite' ? t('favorites.empty.row')
+          : t('favorites.empty.column');
 
   function pick(mon: PickerMon) {
     if (mon.id === currentId) {
@@ -102,17 +108,16 @@ export function PickerSheet({
   ) : (
     <div className="pb-4" style={{ paddingTop: currentId != null ? 4 : 0, paddingLeft: inset, paddingRight: inset }}>
       {mons.length === 0 && currentId == null ? (
-        <p className="text-sm text-muted-foreground">{t('favorites.empty')}</p>
+        <PickerEmptyState title={t('favorites.empty.title')} hint={emptyHint} backLabel={t('favorites.empty.back')} onBack={onClose} />
       ) : (
         <PrettySpriteGrid
           mons={mons}
           maxCols={maxCols}
-          lineKey={evolutionLineKey}
-          formKey={(mon) => mon.ownerId}
+          lineKey={kind === 'pick' && type === 'starter' ? evolutionLineKey : undefined}
           selectedId={currentId}
           onPick={pick}
           usedIn={kind === 'pick' && isTypeName(type) ? (id) => typeSlottedElsewhere(fills, id, type, gen) : undefined}
-          showTypes={isTypeName(type)}
+          showTypes={kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
           pointer={kind === 'pointer'}
           sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}
           onClear={
@@ -190,6 +195,10 @@ function PackList({
   onApply: (path: PackMove[]) => void;
   heading: string;
 }) {
+  const t = useT();
+  if (chains.length === 0) {
+    return <PickerEmptyState title={t('favorites.empty.packing.title')} hint={t('favorites.empty.packing.hint')} />;
+  }
   const mode = packListMode(chains);
   const prefix = stack[stack.length - 1] ?? '';
   const options = mode === 'stepped' ? packStepOptions(chains, prefix) : [];
@@ -215,5 +224,39 @@ function PackList({
             />
           ))}
     </div>
+  );
+}
+
+function PickerEmptyState({
+  title,
+  hint,
+  backLabel,
+  onBack,
+}: {
+  title: string;
+  hint: string;
+  backLabel?: string;
+  onBack?: () => void;
+}) {
+  return (
+    <section
+      data-testid="favorites-picker-empty"
+      className="mx-auto flex w-full max-w-[270px] flex-col items-center rounded-2xl border border-primary/10 bg-gradient-to-b from-primary/[0.045] to-transparent px-5 pb-6 pt-5 text-center"
+    >
+      <div className="relative mb-4 grid h-[76px] w-[76px] place-items-center rounded-full border border-primary/15 bg-card shadow-sm">
+        <EmptyBall className="h-11 w-11 text-primary/35" />
+        <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[3px] border-card bg-primary/30" aria-hidden />
+      </div>
+      <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
+      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{hint}</p>
+      {backLabel && onBack ? <button
+        type="button"
+        onClick={onBack}
+        className="mt-5 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-primary/20 bg-card px-3.5 py-2 text-xs font-medium text-primary shadow-sm hover:bg-primary/5"
+      >
+        <ChevronLeft size={14} aria-hidden />
+        {backLabel}
+      </button> : null}
+    </section>
   );
 }

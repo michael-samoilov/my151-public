@@ -12,6 +12,19 @@ import { prunePointers } from '../model/pointers';
 
 export const FAVORITES_STORAGE_KEY = 'favorite-picker';
 
+/** Retire the LGPE-only form IDs without leaving invisible saved picks behind. */
+export function migrateFavoriteFills(saved: Record<string, number>): Record<string, number> {
+  const fills = { ...saved };
+  const lgpeStarter = fills['starter|7'];
+  if (fills['starter|1'] == null && (lgpeStarter === 10158 || lgpeStarter === 10159)) {
+    fills['starter|1'] = lgpeStarter === 10158 ? 25 : 133;
+  }
+  for (const [key, id] of Object.entries(fills)) {
+    if (id === 10158 || id === 10159) delete fills[key];
+  }
+  return prunePointers(fills);
+}
+
 export interface FavoritesState {
   fills: Record<string, number>;
   place: (type: TypeAxisId, gen: GenAxisId, id: number) => void;
@@ -60,6 +73,13 @@ export const useFavoritesStore = create<FavoritesState>()(
           return { fills: prunePointers(next) };
         }),
     }),
-    { name: FAVORITES_STORAGE_KEY, version: 1 },
+    {
+      name: FAVORITES_STORAGE_KEY,
+      version: 2,
+      migrate: (saved) => {
+        const previous = saved as { fills?: Record<string, number> };
+        return { ...previous, fills: migrateFavoriteFills(previous.fills ?? {}) } as FavoritesState;
+      },
+    },
   ),
 );

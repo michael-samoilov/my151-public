@@ -78,10 +78,13 @@ export function pointerMarks(
       if (isTypeName(source.type)) add({ source: 'type', value: source.type });
       if (isGenNumber(source.gen)) add({ source: 'gen', value: source.gen });
     } else if (type === 'favorite' && isGenNumber(gen)) {
-      add({ source: 'gen', value: gen });
+      if (isTypeName(source.type)) add({ source: 'type', value: source.type });
+      else if (source.type === 'starter' || source.type === 'gimmick' || source.type === 'legendary') {
+        add({ source: source.type });
+      }
     } else if (gen === 'favorite') {
-      if (isTypeName(type)) add({ source: 'type', value: type });
-      else if (type === 'starter' || type === 'gimmick' || type === 'legendary') add({ source: type });
+      if (isGenNumber(source.gen)) add({ source: 'gen', value: source.gen });
+      else if (source.gen === 'legendary') add({ source: 'legendary' });
     } else {
       if (source.type === 'starter' || source.type === 'gimmick' || source.type === 'legendary') {
         add({ source: source.type });

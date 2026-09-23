@@ -64,9 +64,9 @@ describe('prettyGridCols', () => {
   it('keeps a starter evolution line whole and prefers two lines on a row', () => {
     const starters = eligibleFor('starter', 1);
     const rows = prettyRows(starters, 6, evolutionLineKey);
-    expect(rows.map((row) => row.length)).toEqual([6, 3]);
+    expect(rows.map((row) => row.length)).toEqual([6, 5]);
     expect(rows[0].map((mon) => mon.id)).toEqual([1, 2, 3, 4, 5, 6]);
-    expect(rows[1].map((mon) => mon.id)).toEqual([7, 8, 9]);
+    expect(rows[1].map((mon) => mon.id)).toEqual([7, 8, 9, 25, 133]);
   });
 
   it('packs a leftover starter line with the regional forms that fit', () => {

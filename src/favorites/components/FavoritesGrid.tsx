@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { cn } from '@/lib/utils';
@@ -20,6 +21,7 @@ import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 
 const COLS = TYPE_AXIS.length + 1;
 const ROWS = GEN_AXIS.length + 1;
+const INITIAL_DPR = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
 
 export function FavoritesGrid({
   fills,
@@ -89,7 +91,7 @@ function TypeColumnScroller({
       <div
         ref={ref}
         className="h-full min-h-0 w-full overflow-x-auto overflow-y-hidden overscroll-x-contain bg-card"
-        style={{ touchAction: 'pan-x pan-y' }}
+        style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
         data-testid="favorites-grid-scroll"
       >
         <div
@@ -174,7 +176,7 @@ function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenA
         pin && 'sticky left-0 z-20',
       )}
     >
-      {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.018]" /> : null}
+      {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
       <div className="absolute inset-0" style={{ containerType: 'size' }}>
         <div
           className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain [&_span]:!h-full [&_span]:!w-full [&_span]:!text-[0.62em]"
@@ -233,7 +235,7 @@ function BodyCell({
         kind === 'pointer' && (mon ? 'bg-amber-50/50' : 'bg-amber-50'),
       )}
     >
-      {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.018]" /> : null}
+      {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
       {mon ? (
         <Filled mon={mon} />
       ) : locked ? null : (
@@ -267,6 +269,14 @@ interface ChartMetrics {
   clientHeight: number;
   gridWidth: number;
   gridHeight: number;
+  visibleLeft: number;
+  visibleRight: number;
+  visibleTop: number;
+  visibleBottom: number;
+  anchorRight: number;
+  anchorBottom: number;
+  visualScale: number;
+  visible: boolean;
 }
 
 function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
@@ -288,6 +298,17 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
     };
     const read = () => {
       const grid = el.firstElementChild as HTMLElement | null;
+      const visual = window.visualViewport;
+      const bounds = el.getBoundingClientRect();
+      const host = el.parentElement?.getBoundingClientRect() ?? bounds;
+      const viewLeft = visual?.offsetLeft ?? 0;
+      const viewTop = visual?.offsetTop ?? 0;
+      const viewRight = viewLeft + (visual?.width ?? window.innerWidth);
+      const viewBottom = viewTop + (visual?.height ?? window.innerHeight);
+      const visibleLeft = Math.max(0, Math.min(el.clientWidth, viewLeft - bounds.left));
+      const visibleRight = Math.max(0, Math.min(el.clientWidth, viewRight - bounds.left));
+      const visibleTop = Math.max(0, Math.min(el.clientHeight, viewTop - bounds.top));
+      const visibleBottom = Math.max(0, Math.min(el.clientHeight, viewBottom - bounds.top));
       const next = {
         scrollLeft: el.scrollLeft,
         scrollTop: el.scrollTop,
@@ -297,8 +318,20 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
         clientHeight: el.clientHeight,
         gridWidth: grid?.offsetWidth ?? el.scrollWidth,
         gridHeight: grid?.offsetHeight ?? el.scrollHeight,
+        visibleLeft,
+        visibleRight,
+        visibleTop,
+        visibleBottom,
+        anchorRight: Math.min(host.right, viewRight),
+        anchorBottom: Math.min(host.bottom, viewBottom),
+        visualScale: Math.max(1, (visual?.scale ?? 1) * window.devicePixelRatio / INITIAL_DPR),
+        visible: visibleRight > visibleLeft && visibleBottom > visibleTop,
       };
       setFrame(next);
+    };
+    const onVisualChange = () => {
+      read();
+      if ((window.visualViewport?.scale ?? 1) > 1.01 || window.devicePixelRatio > INITIAL_DPR * 1.01) show();
     };
     const onScroll = () => {
       read();
@@ -309,11 +342,17 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
     };
     read();
     el.addEventListener('scroll', onScroll, { passive: true });
+    window.visualViewport?.addEventListener('resize', onVisualChange);
+    window.visualViewport?.addEventListener('scroll', onVisualChange);
+    window.addEventListener('resize', onVisualChange);
     const observer = new ResizeObserver(read);
     observer.observe(el);
     if (el.firstElementChild) observer.observe(el.firstElementChild);
     return () => {
       el.removeEventListener('scroll', onScroll);
+      window.visualViewport?.removeEventListener('resize', onVisualChange);
+      window.visualViewport?.removeEventListener('scroll', onVisualChange);
+      window.removeEventListener('resize', onVisualChange);
       observer.disconnect();
       window.clearTimeout(timer);
     };
@@ -323,7 +362,9 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
 }
 
 function chartOverflows(frame: ChartMetrics): boolean {
-  return frame.scrollWidth > frame.clientWidth + 1 || frame.scrollHeight > frame.clientHeight + 1;
+  return frame.scrollWidth > frame.clientWidth + 1 || frame.scrollHeight > frame.clientHeight + 1
+    || frame.visibleRight - frame.visibleLeft < frame.clientWidth - 1
+    || frame.visibleBottom - frame.visibleTop < frame.clientHeight - 1;
 }
 
 function ChartMinimap({
@@ -335,7 +376,7 @@ function ChartMinimap({
   scrolling: boolean;
   fills: Record<string, number>;
 }) {
-  if (!frame || !chartOverflows(frame)) return null;
+  if (!frame || !frame.visible || !chartOverflows(frame)) return null;
   const max = 84;
   const cellWidth = frame.gridWidth / COLS;
   const cellHeight = frame.gridHeight / ROWS;
@@ -352,8 +393,12 @@ function ChartMinimap({
   mapH = Math.max(28, mapH);
   const sx = mapW / Math.max(bodyWidth, 1);
   const sy = mapH / Math.max(bodyHeight, 1);
-  const viewportWidth = Math.min(mapW, Math.max(2, (frame.clientWidth - cellWidth) * sx));
-  const viewportHeight = Math.min(mapH, Math.max(2, (frame.clientHeight - cellHeight) * sy));
+  const bodyLeft = frame.scrollLeft + Math.max(0, frame.visibleLeft - cellWidth);
+  const bodyTop = frame.scrollTop + Math.max(0, frame.visibleTop - cellHeight);
+  const bodyVisibleWidth = Math.max(0, frame.visibleRight - Math.max(cellWidth, frame.visibleLeft));
+  const bodyVisibleHeight = Math.max(0, frame.visibleBottom - Math.max(cellHeight, frame.visibleTop));
+  const viewportWidth = Math.min(mapW, Math.max(2, bodyVisibleWidth * sx));
+  const viewportHeight = Math.min(mapH, Math.max(2, bodyVisibleHeight * sy));
   const cells: ReactNode[] = [];
   for (const gen of GEN_AXIS) {
     for (const type of TYPE_AXIS) {
@@ -373,12 +418,18 @@ function ChartMinimap({
       );
     }
   }
-  return (
+  return createPortal(
     <div
       data-testid="favorites-minimap"
       aria-hidden
-      className="pointer-events-none absolute right-3 bottom-3 z-30 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200"
-      style={{ opacity: scrolling ? 0.95 : 0 }}
+      className="pointer-events-none fixed z-30 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200"
+      style={{
+        opacity: scrolling ? 0.95 : 0,
+        left: frame.anchorRight - (mapW + 18) / frame.visualScale,
+        top: frame.anchorBottom - (mapH + 18) / frame.visualScale,
+        transform: `scale(${1 / frame.visualScale})`,
+        transformOrigin: 'top left',
+      }}
     >
       <div className="relative" style={{ width: mapW, height: mapH }}>
         <div
@@ -395,8 +446,8 @@ function ChartMinimap({
           data-testid="favorites-minimap-viewport"
           className="absolute bg-primary/10"
           style={{
-            left: minimapViewportX(frame.scrollLeft, sx, mapW, viewportWidth),
-            top: Math.min(mapH - viewportHeight, frame.scrollTop * sy),
+            left: minimapViewportX(bodyLeft, sx, mapW, viewportWidth),
+            top: Math.max(0, Math.min(mapH - viewportHeight, bodyTop * sy)),
             width: viewportWidth,
             height: viewportHeight,
             outline: '1px solid var(--color-primary)',
@@ -404,7 +455,8 @@ function ChartMinimap({
           }}
         />
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

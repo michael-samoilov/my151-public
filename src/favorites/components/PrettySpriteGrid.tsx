@@ -3,7 +3,7 @@ import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSpri
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
 import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
-import { prettyRows } from '../model/prettyWrap';
+import { prettyRowSizes, prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { X } from 'lucide-react';
@@ -48,9 +48,20 @@ export function PrettySpriteGrid({
   const viewportPx = useLayoutViewportCssPx();
   const baseSpritePx = requestedSpritePx ?? pickerSpriteCssPx(viewportPx);
   const dexPx = tileImageCssPx(viewportPx);
-  const rows = prettyRows(mons, maxCols, lineKey, formKey);
+  // Clear participates in the row count. Appending it after wrapping can leave
+  // a lone tile on an otherwise balanced selector (e.g. 11 picks + Clear).
+  const rows = onClear && !lineKey
+    ? (() => {
+        let at = 0;
+        return prettyRowSizes(mons.length + 1, maxCols).map((size) => {
+          const row = mons.slice(at, at + size);
+          at += size;
+          return row;
+        });
+      })()
+    : prettyRows(mons, maxCols, lineKey, formKey);
   const lastLen = rows.length > 0 ? rows[rows.length - 1].length : maxCols;
-  const fitRows = rows.length + (onClear && (rows.length === 0 || lastLen >= maxCols) ? 1 : 0);
+  const fitRows = rows.length + (onClear && lineKey && (rows.length === 0 || lastLen >= maxCols) ? 1 : 0);
   const gridRef = useRef<HTMLDivElement>(null);
   const [fitPx, setFitPx] = useState(baseSpritePx);
   const spritePx = Math.min(baseSpritePx, fitPx);
@@ -78,7 +89,7 @@ export function PrettySpriteGrid({
     };
   }, [baseSpritePx, fitRows]);
   const clear = onClear ? <ClearCell spritePx={spritePx} label={clearLabel} text={clearText} onClear={onClear} /> : null;
-  const clearInLast = Boolean(clear) && rows.length > 0 && lastLen < maxCols;
+  const clearInLast = Boolean(clear) && rows.length > 0 && (!lineKey || lastLen < maxCols);
   const clearOwnRow = Boolean(clear) && !clearInLast;
 
   return (
@@ -97,7 +108,7 @@ export function PrettySpriteGrid({
             key={r}
             className="flex justify-center"
             data-pretty-row={r}
-            data-pretty-len={row.length}
+            data-pretty-len={row.length + (clearInLast && r === rows.length - 1 ? 1 : 0)}
           >
             {row.map((mon) => (
               <PickCell
@@ -144,7 +155,7 @@ function PickCell({
   onPick: (mon: PickerMon) => void;
 }) {
   const mark = Math.round(spritePx * 0.28);
-  const inset = Math.round(spritePx * 0.05);
+  const inset = Math.max(5, Math.round(spritePx * 0.05));
   return (
     <button
       type="button"
@@ -166,8 +177,8 @@ function PickCell({
       />
       {selected ? <span className="pointer-events-none absolute inset-[2px] z-[11] rounded-md border-2 border-primary" data-testid="favorites-selection-ring" /> : null}
       {showTypes ? <span
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-[12] flex items-end justify-center"
-        style={{ gap: 1, height: Math.round(spritePx * 0.22) }}
+        className="pointer-events-none absolute inset-x-0 z-[12] flex items-end justify-center"
+        style={{ gap: 1, bottom: inset, height: Math.round(spritePx * 0.22) }}
       >
         {mon.types.slice(0, 2).map((type) => (
           <img
@@ -184,8 +195,8 @@ function PickCell({
       </span> : null}
       {sourceMarks.length > 0 ? (
         <span
-          className="pointer-events-none absolute right-[3px] top-[3px] z-[16] flex"
-          style={{ gap: 1 }}
+          className="pointer-events-none absolute z-[16] flex"
+          style={{ gap: 1, right: inset, top: inset }}
         >
           {sourceMarks.map((source) => (
             <span

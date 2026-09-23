@@ -18,15 +18,6 @@ preload.crossOrigin = 'anonymous';
 preload.href = interLatinUrl;
 document.head.prepend(preload);
 
-const isIos =
-  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-if (isIos) {
-  document
-    .querySelector('meta[name="viewport"]')
-    ?.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0');
-}
-
 installLayoutFontSize();
 installOptOut();
 

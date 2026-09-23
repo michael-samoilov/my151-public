@@ -21,11 +21,29 @@ describe('pointerPool', () => {
     expect(pointerMarks('favorite', 'favorite', fills, 144)).toEqual([{ source: 'legendary' }]);
   });
 
-  it('marks a row pointer with its generation and a column pointer with its source', () => {
-    for (const id of [4, 6, 144]) {
-      expect(pointerMarks('favorite', 1, fills, id)).toEqual([{ source: 'gen', value: 1 }]);
-    }
-    expect(pointerMarks('fire', 'favorite', fills, 4)).toEqual([{ source: 'type', value: 'fire' }]);
+  it('marks a row pointer by source column and a column pointer by source generation', () => {
+    expect(pointerMarks('favorite', 1, fills, 4)).toEqual([
+      { source: 'type', value: 'fire' },
+      { source: 'starter' },
+    ]);
+    expect(pointerMarks('favorite', 1, fills, 6)).toEqual([{ source: 'gimmick' }]);
+    expect(pointerMarks('favorite', 1, fills, 144)).toEqual([{ source: 'legendary' }]);
+    expect(pointerMarks('fire', 'favorite', fills, 4)).toEqual([{ source: 'gen', value: 1 }]);
+  });
+
+  it('keeps pointer picks in template order rather than grouping forms by species', () => {
+    const ordered = {
+      'fighting|6': 701,
+      'starter|6': 650,
+      'gimmick|6': 10300,
+      'legendary|6': 716,
+      'fire|1': 4,
+      'fire|2': 155,
+    };
+    expect(pointerPool('favorite', 6, ordered)).toEqual([701, 650, 10300, 716]);
+    expect(pointerPool('fire', 'favorite', ordered)).toEqual([4, 155]);
+    expect(pointerMarks('favorite', 6, ordered, 10300)).toEqual([{ source: 'gimmick' }]);
+    expect(pointerMarks('fire', 'favorite', ordered, 155)).toEqual([{ source: 'gen', value: 2 }]);
   });
 
   it('retains the overall favorite when its legendary source is still filled', () => {

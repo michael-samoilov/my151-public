@@ -367,6 +367,91 @@ test.describe('favorite Pokémon picker', () => {
     expect(trashMarks).toEqual({ oldLeft: true, arrowBetween: true, trashRight: true, iconAboveFade: true });
   });
 
+  test('balances Clear with picks and keeps legendary rows contiguous', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.evaluate(() => localStorage.setItem('favorite-picker', JSON.stringify({
+      state: { fills: { 'grass|6': 650, 'legendary|7': 718 } }, version: 1,
+    })));
+    await page.reload();
+    await page.getByTestId('favorites-cell-grass-6').click();
+    const rows = page.getByTestId('favorites-pretty-grid').locator('[data-pretty-row]');
+    // The two removed pumpkin near-duplicates leave 9 picks + Clear.
+    expect(await rows.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-pretty-len'))))).toEqual([6, 4]);
+    await expect(page.getByTestId('favorites-clear-row')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.getByTestId('favorites-cell-legendary-7').click();
+    const legendaryRows = await rows.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-pretty-len'))));
+    expect(legendaryRows.reduce((sum, len) => sum + len, 0)).toBe(await page.locator('[data-testid^="favorites-pick-"]').count() + 1);
+    const firstShort = legendaryRows.findIndex((len) => len < 6);
+    if (firstShort >= 0) expect(legendaryRows.slice(firstShort).every((len) => len < 6)).toBe(true);
+    expect(legendaryRows.every((len) => len <= 6)).toBe(true);
+    await expect(page.getByTestId('favorites-pick-10118')).toHaveCount(0);
+    await expect(page.getByTestId('favorites-pick-10181')).toHaveCount(1);
+  });
+
+  test('selection ring encloses Vivillon type badges', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.evaluate(() => localStorage.setItem('favorite-picker', JSON.stringify({
+      state: { fills: { 'bug|6': 666 } }, version: 1,
+    })));
+    await page.reload();
+    await page.getByTestId('favorites-cell-bug-6').click();
+    for (const id of [666, ...Array.from({ length: 19 }, (_, i) => 11018 + i)]) {
+      await expect(page.getByTestId(`favorites-pick-${id}`)).toHaveCount(1);
+    }
+    const selected = page.getByTestId('favorites-pick-666');
+    const ring = await selected.getByTestId('favorites-selection-ring').boundingBox();
+    const badges = await selected.getByTestId('favorites-type-icon').all();
+    expect(ring).toBeTruthy();
+    expect(badges).toHaveLength(2);
+    for (const badge of badges) {
+      const box = await badge.boundingBox();
+      expect(box).toBeTruthy();
+      expect(box!.x).toBeGreaterThanOrEqual(ring!.x);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(ring!.x + ring!.width);
+      expect(box!.y + box!.height).toBeLessThanOrEqual(ring!.y + ring!.height);
+    }
+  });
+
+  test('Gen 1 starter includes regular Pikachu and Eevee while Hisuian forms finish Gen 8', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-starter-1').click();
+    await expect(page.getByTestId('favorites-pick-25')).toHaveCount(1);
+    await expect(page.getByTestId('favorites-pick-133')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.getByTestId('favorites-cell-starter-7').click();
+    await expect(page.getByTestId('favorites-pick-10158')).toHaveCount(0);
+    await expect(page.getByTestId('favorites-pick-10159')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.getByTestId('favorites-cell-starter-8').click();
+    const ids = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
+      (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
+    );
+    expect(ids.slice(-3)).toEqual([10233, 10236, 10244]);
+  });
+
+  test('Ultra Necrozma is selectable as a Gen 7 and legendary gimmick', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-gimmick-7').click();
+    await expect(page.getByTestId('favorites-pick-10157')).toBeVisible();
+    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.getByTestId('favorites-cell-gimmick-legendary').click();
+    await expect(page.getByTestId('favorites-pick-10157')).toBeVisible();
+  });
+
+  test('empty favorite pickers explain the next step and return to the grid', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-favorite-1').click();
+    const empty = page.getByTestId('favorites-picker-empty');
+    await expect(empty.getByRole('heading', { name: 'Nothing to choose yet' })).toBeVisible();
+    await expect(empty.locator('svg')).toHaveCount(2); // ball plus back chevron
+    await expect(empty).toContainText('generation');
+    await empty.getByRole('button', { name: 'Back to grid' }).click();
+    await expect(page.getByTestId('favorites-picker')).toBeHidden();
+    await page.getByTestId('favorites-cell-fire-favorite').click();
+    await expect(page.getByTestId('favorites-picker-empty')).toContainText('column');
+  });
+
   test('an empty cell takes a move without a packing sheet', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-poison-1').click();
@@ -461,6 +546,50 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-scroll-cue')).toHaveCount(0);
   });
 
+  test('mobile pinch zoom keeps the minimap screen-sized and tracks the smaller viewport', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'mobile pinch-zoom geometry');
+    await page.goto('/favorite-pokemon-by-type');
+    const map = page.getByTestId('favorites-minimap');
+    await map.waitFor();
+    await expect(page.getByTestId('favorites-grid-scroll')).toHaveCSS('touch-action', 'manipulation');
+    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
+      el.scrollLeft = 250;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    const before = await map.boundingBox();
+    const beforeWindow = await page.getByTestId('favorites-minimap-viewport').boundingBox();
+    expect(before).toBeTruthy();
+    expect(beforeWindow).toBeTruthy();
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
+    await expect.poll(() => page.evaluate(() => window.visualViewport?.scale ?? 1)).toBeGreaterThan(1.9);
+    await expect.poll(async () => (await map.boundingBox())?.width ?? 0).toBeLessThan(before!.width * 0.75);
+    const after = await map.boundingBox();
+    const afterWindow = await page.getByTestId('favorites-minimap-viewport').boundingBox();
+    const visual = await page.evaluate(() => ({
+      left: window.visualViewport?.offsetLeft ?? 0,
+      top: window.visualViewport?.offsetTop ?? 0,
+      width: window.visualViewport?.width ?? innerWidth,
+      height: window.visualViewport?.height ?? innerHeight,
+      meta: document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? '',
+    }));
+    expect(visual.meta).not.toContain('maximum-scale');
+    expect(after).toBeTruthy();
+    expect(afterWindow).toBeTruthy();
+    expect(after!.width * 2).toBeCloseTo(before!.width, 0);
+    expect(after!.height * 2).toBeCloseTo(before!.height, 0);
+    expect(after!.x + after!.width).toBeLessThanOrEqual(visual.left + visual.width);
+    expect(after!.y + after!.height).toBeLessThanOrEqual(visual.top + visual.height);
+    expect(afterWindow!.width).toBeLessThan(beforeWindow!.width / 2);
+    const oldLeft = afterWindow!.x;
+    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
+      el.scrollLeft = 450;
+      el.dispatchEvent(new Event('scroll'));
+    });
+    await expect.poll(async () => (await page.getByTestId('favorites-minimap-viewport').boundingBox())?.x ?? 0).toBeGreaterThan(oldLeft + 3);
+    await page.screenshot({ path: testInfo.outputPath('pinch-zoom-minimap.png') });
+  });
+
   test('filled sprites can paint outside the cell boundary', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fire-1').click();
@@ -538,7 +667,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(clearColors.border).not.toBe(clearColors.x);
   });
 
-  test('generation pointer shows its row origin on solid sprites', async ({ page }, testInfo) => {
+  test('generation pointer shows its column origin on solid sprites', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/favorite-pokemon-by-type');
     await page.evaluate(() => {
@@ -549,15 +678,46 @@ test.describe('favorite Pokémon picker', () => {
     });
     await page.reload();
     await page.getByTestId('favorites-cell-favorite-1').click();
-    for (const id of [4, 6, 144]) {
+    for (const [id, source] of [[4, 'starter'], [6, 'gimmick'], [144, 'legendary']] as const) {
       const pick = page.getByTestId(`favorites-pick-${id}`);
-      await expect(pick.locator('[data-testid="favorites-pointer-mark"][data-source="gen"]')).toBeVisible();
+      await expect(pick.locator(`[data-testid="favorites-pointer-mark"][data-source="${source}"]`)).toBeVisible();
       await expect(pick.getByTestId('favorites-type-icon')).toHaveCount(0);
       await expect(pick.getByTestId('favorites-used-mark')).toHaveCount(0);
       const opacity = await pick.locator('img[alt]').first().evaluate((el) => Number(getComputedStyle(el).opacity));
       expect(opacity).toBe(1);
     }
     await page.screenshot({ path: testInfo.outputPath('pointer-sources.png') });
+  });
+
+  test('pointer picks follow template order, show opposite-axis origin, and never show bottom types', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.evaluate(() => localStorage.setItem('favorite-picker', JSON.stringify({
+      state: { fills: {
+        'fighting|6': 701,
+        'starter|6': 650,
+        'gimmick|6': 10300,
+        'legendary|6': 716,
+        'fire|1': 4,
+        'fire|2': 155,
+      } }, version: 1,
+    })));
+    await page.reload();
+    await page.getByTestId('favorites-cell-favorite-6').click();
+    const rowIds = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
+      (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
+    );
+    expect(rowIds).toEqual([701, 650, 10300, 716]);
+    await expect(page.getByTestId('favorites-pick-701').locator('[data-source="type"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-pick-10300').locator('[data-source="gimmick"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.getByTestId('favorites-cell-fire-favorite').click();
+    const colIds = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
+      (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
+    );
+    expect(colIds).toEqual([4, 155]);
+    await expect(page.getByTestId('favorites-pick-4').locator('[data-source="gen"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
   });
 
   test('selection and clear outlines stay inside their tiles and leave source badges on top', async ({ page }, testInfo) => {
@@ -581,7 +741,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(boxes[1]!.x + boxes[1]!.width).toBeLessThanOrEqual(boxes[2]!.x);
     expect(boxes[1]!.x + boxes[1]!.width).toBeLessThanOrEqual(boxes[3]!.x);
     expect(boxes[4]!.x + boxes[4]!.width).toBeLessThanOrEqual(boxes[0]!.x + boxes[0]!.width);
-    await expect(selected.getByTestId('favorites-pointer-mark')).toHaveAttribute('data-source', 'gen');
+    await expect(selected.getByTestId('favorites-pointer-mark')).toHaveAttribute('data-source', 'gimmick');
     const layers = await selected.evaluate((el) => ({
       badge: Number(getComputedStyle(el.querySelector('[data-testid="favorites-pointer-mark"]')!.parentElement!).zIndex),
       ring: Number(getComputedStyle(el.querySelector('[data-testid="favorites-selection-ring"]')!).zIndex),

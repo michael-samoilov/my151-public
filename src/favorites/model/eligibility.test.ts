@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { eligibleFor, isEmptyTypeGen, kindFor } from './eligibility';
-import { isPowerupForm } from './catalog';
+import { eligibleFor, isEmptyTypeGen, kindFor, regionalPickerTier } from './eligibility';
+import { isPowerupForm, isRegional } from './catalog';
+import { TYPE_NAMES } from '@/types/pokemon';
 
 describe('eligibleFor', () => {
   it('leaves Gen I Dark empty and Gen I Fire holding Charmander', () => {
@@ -24,6 +25,17 @@ describe('eligibleFor', () => {
     expect(g8.some((m) => m.id === 10233)).toBe(true);
     expect(g2.some((m) => m.id === 10233)).toBe(false);
     expect(g2.some((m) => m.id === 155)).toBe(true);
+    expect(g8.slice(-3).map((m) => m.id)).toEqual([10233, 10236, 10244]);
+  });
+
+  it('uses regular Gen 1 Pikachu and Eevee as starters without duplicating LGPE variants in Gen 7', () => {
+    const g1 = eligibleFor('starter', 1).map((m) => m.id);
+    expect(g1.slice(-2)).toEqual([25, 133]);
+    expect(eligibleFor('starter', 7).some((m) => m.id === 25 || m.id === 133 || m.id === 10158 || m.id === 10159)).toBe(false);
+    expect(eligibleFor('electric', 1).filter((m) => m.id === 25)).toHaveLength(1);
+    expect(eligibleFor('normal', 1).filter((m) => m.id === 133)).toHaveLength(1);
+    expect(eligibleFor('electric', 7).some((m) => m.id === 10158)).toBe(false);
+    expect(eligibleFor('normal', 7).some((m) => m.id === 10159)).toBe(false);
   });
 
   it('keeps gens 1–5 gimmick pickers non-empty', () => {
@@ -35,5 +47,28 @@ describe('eligibleFor', () => {
   it('offers a gimmick × legendary pick', () => {
     expect(kindFor('gimmick', 'legendary')).toBe('pick');
     expect(eligibleFor('gimmick', 'legendary').length).toBeGreaterThan(0);
+  });
+
+  it('puts regional forms between native and special entries in applicable selectors', () => {
+    for (const gen of [7, 8, 9] as const) {
+      for (const type of [...TYPE_NAMES, 'gimmick', 'legendary'] as const) {
+        const mons = eligibleFor(type, gen);
+        if (!mons.some(isRegional)) continue;
+        const tiers = mons.map(regionalPickerTier);
+        expect(tiers, `${type}|${gen}`).toEqual(tiers.slice().sort((a, b) => a - b));
+      }
+    }
+  });
+
+  it('places alternate legendary forms at the very end', () => {
+    const mons = eligibleFor('legendary', 7);
+    const tiers = mons.map(regionalPickerTier);
+    expect(tiers.slice(tiers.indexOf(3)).every((tier) => tier === 3)).toBe(true);
+    expect(mons.findIndex((m) => m.id === 10181)).toBeGreaterThan(mons.findIndex((m) => m.id === 785));
+  });
+
+  it('offers Ultra Necrozma in the Gen 7 and legendary gimmick selectors', () => {
+    expect(eligibleFor('gimmick', 7).some((mon) => mon.id === 10157)).toBe(true);
+    expect(eligibleFor('gimmick', 'legendary').some((mon) => mon.id === 10157)).toBe(true);
   });
 });

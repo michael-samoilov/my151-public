@@ -29,6 +29,22 @@ const SPECIES = pokemonData as Pokemon[];
 const FORMS = powerupForms as PowerupForms;
 
 const REGIONAL_RE = /-(alola|galar|hisui|paldea)(?:-|$)/;
+const SPECIES_BY_ID = new Map(SPECIES.map((p) => [p.id, p]));
+const REGIONAL_FAMILY_IDS = new Set<number>();
+for (const p of SPECIES) {
+  let parent = p.evolvesFrom;
+  const visited = new Set<number>();
+  while (parent != null && !visited.has(parent)) {
+    visited.add(parent);
+    const ancestor = SPECIES_BY_ID.get(parent);
+    if (!ancestor) break;
+    if (REGIONAL_RE.test(ancestor.name)) {
+      REGIONAL_FAMILY_IDS.add(p.id);
+      break;
+    }
+    parent = ancestor.evolvesFrom;
+  }
+}
 
 function asGen(n: number): GenNumber {
   if ((GEN_NUMBERS as readonly number[]).includes(n)) return n as GenNumber;
@@ -66,7 +82,7 @@ for (const p of SPECIES) {
     generation: asGen(p.generation),
     sprite: [746, 964, 1024].includes(p.id) ? `/sprites/pokemon/${p.id}.png` : pickerId === 10191 ? '/sprites/pokemon/10191.png' : p.sprite,
     source: 'dex',
-    ownerId: pickerId,
+    ownerId: p.id === 10227 ? 892 : pickerId,
   });
 }
 
@@ -127,6 +143,10 @@ export function isRegional(mon: PickerMon): boolean {
   return REGIONAL_RE.test(mon.name);
 }
 
+export function isRegionalFamily(mon: PickerMon): boolean {
+  return isRegional(mon) || REGIONAL_FAMILY_IDS.has(mon.id) || REGIONAL_FAMILY_IDS.has(mon.ownerId);
+}
+
 export function isNewDexRiff(mon: PickerMon): boolean {
   return isRegional(mon) || CONVERGENT_IDS.has(mon.id) || PARADOX_IDS.has(mon.id);
 }
@@ -141,8 +161,13 @@ export function isTerastalForm(mon: PickerMon): boolean {
   return TERASTAL_FORM_IDS.has(mon.id);
 }
 
+export function isGimmickForm(mon: PickerMon): boolean {
+  // Ultra Necrozma is reached with Ultranecrozium Z, not Mega Evolution.
+  return isPowerupForm(mon) || isTerastalForm(mon) || mon.id === 10157;
+}
+
 export function isStarter(mon: PickerMon): boolean {
-  return STARTER_IDS.has(mon.id) || mon.id === 10158 || mon.id === 10159;
+  return STARTER_IDS.has(mon.id) || mon.id === 25 || mon.id === 133;
 }
 
 /** Evolution chain for this form. Members of one chain stay on one picker row. */

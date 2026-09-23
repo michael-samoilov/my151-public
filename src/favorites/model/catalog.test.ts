@@ -59,6 +59,16 @@ describe('alternate picker forms', () => {
     }
   });
 
+  it('offers twenty distinct Vivillon patterns in Gen 6 Bug without near-duplicate forms', () => {
+    const vivillon = eligibleFor('bug', 6).filter((mon) => mon.ownerId === 666);
+    expect(vivillon).toHaveLength(20);
+    expect(vivillon[0].id).toBe(666); // Meadow, the base form.
+    expect(vivillon.map((mon) => mon.id)).toEqual([666, ...Array.from({ length: 19 }, (_, i) => 11018 + i)]);
+    expect(new Set(vivillon.map((mon) => createHash('sha256').update(readFileSync(`public${mon.sprite}`)).digest('hex'))).size).toBe(20);
+    for (const id of [10027, 10030, 10118]) expect(getPickerMon(id)).toBeUndefined();
+    expect(eligibleFor('legendary', 7).filter((mon) => mon.id === 10181)).toHaveLength(1);
+  });
+
   it('keeps forms next to their species and regional evolutions in line order', () => {
     const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
       eligibleFor(type, gen).map((mon) => mon.id);
@@ -70,11 +80,11 @@ describe('alternate picker forms', () => {
     together(ids('water', 5), [550, 10016]);
     together(ids('water', 5), [647, 10024]);
     together(ids('ghost', 4), [487, 10007]);
-    together(ids('fighting', 8), [892, 10191]);
     together(ids('poison', 8), [10235, 903]);
     together(ids('normal', 5), [585, 11008, 11009, 11010, 586, 11011, 11012, 11013]);
     together(ids('water', 7), [746, 10127]);
-    together(ids('grass', 9), [1017, 11014]);
+    expect(ids('fighting', 8).indexOf(10191)).toBeGreaterThan(ids('fighting', 8).indexOf(892));
+    expect(ids('grass', 9).indexOf(11014)).toBeGreaterThan(ids('grass', 9).indexOf(1017));
     together(ids('water', 9), [10273, 11015]);
     together(ids('fire', 9), [10274, 11016]);
     together(ids('rock', 9), [10275, 11017]);

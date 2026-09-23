@@ -1138,7 +1138,31 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
         starterRows = await rowLens();
       }
     }
-    checks.push(ok('favorites:starter-lines', starterRows.join('+') === '6+3', starterRows.join('+')));
+    checks.push(ok('favorites:starter-lines', starterRows.join('+') === '6+5', starterRows.join('+')));
+    const kantoPartners = await s.evalJson<boolean>(`
+      return !!document.querySelector('[data-testid="favorites-pick-25"]')
+        && !!document.querySelector('[data-testid="favorites-pick-133"]');
+    `);
+    checks.push(ok('favorites:kanto-starter-partners', kantoPartners));
+    await closePicker();
+    await s.click('[data-testid="favorites-cell-starter-8"]');
+    await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    const hisuiLast = await s.evalJson<boolean>(`
+      const ids = [...document.querySelectorAll('[data-testid^="favorites-pick-"]')]
+        .map((el) => Number(el.getAttribute('data-testid').slice('favorites-pick-'.length)));
+      return ids.slice(-3).join(',') === '10233,10236,10244';
+    `);
+    checks.push(ok('favorites:hisui-starters-last', hisuiLast));
+    await closePicker();
+    await s.click('[data-testid="favorites-cell-favorite-1"]');
+    await waitFor(s, '[data-testid="favorites-picker"]');
+    const emptyCard = await s.evalJson<boolean>(`
+      const empty = document.querySelector('[data-testid="favorites-picker-empty"]');
+      return !!empty && !!empty.querySelector('svg') && !!empty.querySelector('button');
+    `);
+    checks.push(ok('favorites:pointer-empty-guidance', emptyCard));
+    await s.screenshot(ctx.shot('favorites-pointer-empty'));
+    checks.push(await auditRender(s, 'favorites:render-pointer-empty'));
     await closePicker();
     await s.click('[data-testid="favorites-cell-legendary-4"]');
     const legendOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
