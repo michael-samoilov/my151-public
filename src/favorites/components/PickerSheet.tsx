@@ -18,7 +18,7 @@ import {
   type ChainSlot,
   type PackMove,
 } from '../model/packing';
-import { pointerPool } from '../model/pointers';
+import { pointerMarks, pointerPool } from '../model/pointers';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
@@ -101,7 +101,7 @@ export function PickerSheet({
       backLabel={t('favorites.packing.back')}
     />
   ) : (
-    <div className="pb-4" style={{ paddingLeft: inset, paddingRight: inset }}>
+    <div className="pb-4" style={{ paddingTop: currentId != null ? 4 : 0, paddingLeft: inset, paddingRight: inset }}>
       {mons.length === 0 && currentId == null ? (
         <p className="text-sm text-muted-foreground">{t('favorites.empty')}</p>
       ) : (
@@ -111,7 +111,10 @@ export function PickerSheet({
           lineKey={type === 'starter' ? evolutionLineKey : undefined}
           selectedId={currentId}
           onPick={pick}
-          usedIn={(id) => typeSlottedElsewhere(fills, id, type, gen)}
+          usedIn={kind === 'pointer' || isTypeName(type) ? (id) => typeSlottedElsewhere(fills, id, type, gen) : undefined}
+          showTypes={isTypeName(type)}
+          pointer={kind === 'pointer'}
+          sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}
           onClear={
             currentId != null
               ? () => {
@@ -121,6 +124,7 @@ export function PickerSheet({
               : undefined
           }
           clearLabel={t('favorites.clear')}
+          clearText={t('browser.clear')}
         />
       )}
     </div>

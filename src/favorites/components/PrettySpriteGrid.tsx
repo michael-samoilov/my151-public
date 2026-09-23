@@ -27,6 +27,7 @@ export function PrettySpriteGrid({
   sourceMarks,
   onClear,
   clearLabel,
+  clearText,
 }: {
   mons: readonly PickerMon[];
   maxCols: number;
@@ -40,6 +41,7 @@ export function PrettySpriteGrid({
   sourceMarks?: (id: number) => PointerMark[];
   onClear?: () => void;
   clearLabel?: string;
+  clearText?: string;
 }) {
   useNamesVersion();
   const viewportPx = useLayoutViewportCssPx();
@@ -74,7 +76,7 @@ export function PrettySpriteGrid({
       window.visualViewport?.removeEventListener('resize', resize);
     };
   }, [baseSpritePx, fitRows]);
-  const clear = onClear ? <ClearCell spritePx={spritePx} label={clearLabel} onClear={onClear} /> : null;
+  const clear = onClear ? <ClearCell spritePx={spritePx} label={clearLabel} text={clearText} onClear={onClear} /> : null;
   const clearInLast = Boolean(clear) && rows.length > 0 && lastLen < maxCols;
   const clearOwnRow = Boolean(clear) && !clearInLast;
 
@@ -84,6 +86,7 @@ export function PrettySpriteGrid({
       className="mx-auto flex w-max flex-col"
       style={{ gap: ROW_GAP_PX }}
       data-testid="favorites-pretty-grid"
+      data-audit-scale="intended"
       data-sprite-px={spritePx}
       data-sprite-dex={dexPx}
       data-sprite-native={SPRITE_NATIVE}
@@ -215,10 +218,12 @@ function PickCell({
 function ClearCell({
   spritePx,
   label,
+  text,
   onClear,
 }: {
   spritePx: number;
   label?: string;
+  text?: string;
   onClear: () => void;
 }): ReactNode {
   return (
@@ -231,7 +236,7 @@ function ClearCell({
       style={{ width: spritePx, height: spritePx }}
     >
       <X size={Math.round(spritePx * 0.38)} strokeWidth={2.25} aria-hidden />
-      <span style={{ fontSize: Math.max(9, Math.round(spritePx * 0.15)), lineHeight: 1 }}>{label}</span>
+      <span style={{ fontSize: Math.max(9, Math.round(spritePx * 0.15)), lineHeight: 1 }}>{text ?? label}</span>
     </button>
   );
 }

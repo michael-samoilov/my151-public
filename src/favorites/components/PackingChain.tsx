@@ -63,7 +63,7 @@ function PackSlot({ slot }: { slot: ChainSlot }) {
           src={typeIconPath(slot.type)}
           alt=""
           data-testid={oldType ? 'favorites-pack-old-mark' : 'favorites-pack-new-mark'}
-          className={cn('absolute top-0 z-10 h-4 w-4 rounded-[2px]', oldType ? 'left-0' : 'right-0')}
+          className="absolute right-0 top-0 z-10 h-4 w-4 rounded-[2px]"
           draggable={false}
         />
       ) : null}

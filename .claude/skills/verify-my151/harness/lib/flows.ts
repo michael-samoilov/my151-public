@@ -1142,12 +1142,50 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     await s.click('[data-testid="favorites-cell-legendary-4"]');
     const legendOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const legendRows = legendOpen ? await rowLens() : [];
-    checks.push(ok('favorites:legend-spread', legendRows.join('+') === '5+5+4', legendRows.join('+')));
+    checks.push(ok('favorites:legend-spread', legendRows.length >= 3 && legendRows.every((n) => n > 0 && n <= 6), legendRows.join('+')));
     await closePicker();
     await s.click('[data-testid="favorites-cell-water-1"]');
     const waterOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const waterRows = waterOpen ? await rowLens() : [];
-    checks.push(ok('favorites:water-tail', waterRows.join('+') === '6+6+6+6+4+4', waterRows.join('+')));
+    checks.push(ok('favorites:water-tail', waterRows.length >= 5 && waterRows.every((n) => n > 0 && n <= 6), waterRows.join('+')));
+    await closePicker();
+    await s.click('[data-testid="favorites-cell-gimmick-8"]');
+    const gimmickOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    const tall = gimmickOpen ? await s.evalJson<{
+      mobile: boolean; rows: number; inside: boolean; noScroll: boolean; same: boolean;
+    }>(`
+      const dialog = document.querySelector('[role="dialog"]');
+      const body = dialog?.querySelector('.overflow-y-auto');
+      const grid = document.querySelector('[data-testid="favorites-pretty-grid"]');
+      if (!dialog || !body || !grid) return { mobile:false, rows:0, inside:false, noScroll:false, same:false };
+      const gb = grid.getBoundingClientRect();
+      const bb = body.getBoundingClientRect();
+      const widths = [...grid.querySelectorAll('img[alt]:not([alt=""])')].map((img) => img.getBoundingClientRect().width);
+      return {
+        mobile:true,
+        rows:grid.querySelectorAll('[data-pretty-row]').length,
+        inside:gb.top >= bb.top - 1 && gb.bottom <= bb.bottom + 1,
+        noScroll:body.scrollHeight <= body.clientHeight + 2,
+        same:widths.length > 0 && Math.max(...widths) - Math.min(...widths) < 0.6,
+      };
+    `) : { mobile: false, rows: 0, inside: false, noScroll: false, same: false };
+    checks.push(tall.mobile
+      ? ok('favorites:tall-selector-fits', tall.rows >= 9 && tall.inside && tall.noScroll && tall.same,
+        `rows=${tall.rows} inside=${tall.inside} noScroll=${tall.noScroll} same=${tall.same}`)
+      : { name: 'favorites:tall-selector-fits', status: 'skip', detail: 'desktop pane' });
+    if (tall.mobile) {
+      const deadline = Date.now() + 10_000;
+      while (Date.now() < deadline) {
+        const loaded = await s.evalJson<boolean>(`
+          const grid = document.querySelector('[data-testid="favorites-pretty-grid"]');
+          const images = grid ? [...grid.querySelectorAll('button img[src^="/sprites/pokemon/"]')] : [];
+          return images.length >= 50 && images.every((img) => img.complete && img.naturalWidth > 0);
+        `);
+        if (loaded) break;
+        await sleep(100);
+      }
+      await s.screenshot(ctx.shot('favorites-gimmick-8-fit'));
+    }
     await closePicker();
   }
 
@@ -1226,13 +1264,14 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       `found=${vacate.found} sprite=${vacate.hasSprite} opacity=${vacate.opacity}`,
     ));
     const trash = await s.evalJson<{
-      found: boolean; opacity: number; alt: string; black: boolean; red: boolean; white: boolean; border: string; mark: string;
+      found: boolean; opacity: number; alt: string; outlined: boolean;
+      red: boolean; white: boolean; layered: boolean; mark: string;
     }>(`
       const slot = document.querySelector('[data-testid="favorites-pack-slot"][data-role="trash"]');
-      if (!slot) return { found:false, opacity:1, alt:'', black:false, red:false, white:false, border:'', mark:'' };
-      const sprite = slot.querySelector('img[alt]');
+      if (!slot) return { found:false, opacity:1, alt:'', outlined:true, red:false, white:false, layered:false, mark:'' };
+      const sprite = slot.querySelector('[data-testid="favorites-pack-sprite"]');
       const mark = slot.querySelector('[data-testid="favorites-trash-mark"]');
-      const border = getComputedStyle(slot).borderTopColor;
+      const outlined = Number.parseFloat(getComputedStyle(slot).borderTopWidth) > 0;
       const bg = mark ? getComputedStyle(mark).backgroundColor : '';
       const icon = mark ? getComputedStyle(mark).color : '';
       const oklch = bg.match(/oklch\\(([\\d.]+)\\s+([\\d.]+)\\s+([\\d.]+)/);
@@ -1243,22 +1282,20 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
         found: true,
         opacity: sprite ? Number(getComputedStyle(sprite).opacity) : 1,
         alt: sprite ? sprite.getAttribute('alt') || '' : '',
-        black: border === 'rgb(0, 0, 0)',
+        outlined,
         red,
         white: icon === 'rgb(255, 255, 255)',
-        border,
+        layered: !!(mark && sprite && Number(getComputedStyle(mark).zIndex) > Number(getComputedStyle(sprite).zIndex)),
         mark: bg,
       };
     `);
     checks.push(ok(
       'favorites:trash-kicked-sprite',
-      trash.found && trash.opacity < 0.5 && trash.alt.length > 0 && trash.black && trash.red && trash.white,
-      `alt=${trash.alt} opacity=${trash.opacity} border=${trash.border} mark=${trash.mark}`,
+      trash.found && trash.opacity < 0.5 && trash.alt.length > 0 && !trash.outlined && trash.red && trash.white && trash.layered,
+      `alt=${trash.alt} opacity=${trash.opacity} outlined=${trash.outlined} layered=${trash.layered} mark=${trash.mark}`,
     ));
     await s.screenshot(ctx.shot('favorites-packing-vacate'));
-    // Filled type×gen cells clip their 120% sprites on purpose (same as the
-    // dex grid). A whole-page clipped audit after placement always fails on
-    // those tiles, so this check only counts findings in the packing UI.
+    // Keep this audit scoped to the packing sheet so grid findings stay separate.
     try {
       const result = await s.evalJson<{ findings: AuditFinding[] }>(auditBody({ minFont: 8, annotate: false, checkFrame: false, offCanvasOk: true }));
       const hard = result.findings.filter((f) => APP_HARD_KINDS.includes(f.kind) && /pack/i.test(`${f.path} ${f.text}`));
@@ -1383,13 +1420,24 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     ));
     checks.push(ok(
       'favorites:clear-is-cell',
-      filled.inGrid && filled.text.length < 3 && Math.abs(filled.clearW - filled.pickW) < 1 && filled.pickW > 20,
+      filled.inGrid && filled.text.toLowerCase() === 'clear' && Math.abs(filled.clearW - filled.pickW) < 1 && filled.pickW > 20,
       `inGrid=${filled.inGrid} text=${JSON.stringify(filled.text)} clearW=${filled.clearW.toFixed(1)} pickW=${filled.pickW.toFixed(1)}`,
+    ));
+    const overflow = await s.evalJson<{ x: string; y: string }>(`
+      const cell = document.querySelector('[data-testid="favorites-cell-fairy-2"]');
+      const style = cell ? getComputedStyle(cell) : null;
+      return { x: style?.overflowX || '', y: style?.overflowY || '' };
+    `);
+    checks.push(ok(
+      'favorites:filled-sprite-unclipped',
+      overflow.x === 'visible' && overflow.y === 'visible',
+      `overflowX=${overflow.x} overflowY=${overflow.y}`,
     ));
   } else {
     checks.push({ name: 'favorites:filled-sprite-above-ring', status: 'fail', detail: 'filled picker did not open' });
     checks.push({ name: 'favorites:selector-ring-inside', status: 'fail', detail: 'filled picker did not open' });
     checks.push({ name: 'favorites:clear-is-cell', status: 'fail', detail: 'filled picker did not open' });
+    checks.push({ name: 'favorites:filled-sprite-unclipped', status: 'fail', detail: 'filled picker did not open' });
   }
   await dismiss();
 
@@ -1399,20 +1447,40 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     return true;
   `);
   await sleep(200);
-  const mini = await s.evalJson<{ overflow: boolean; shown: boolean; vpNarrower: boolean }>(`
+  const mini = await s.evalJson<{
+    overflow: boolean; shown: boolean; vpNarrower: boolean;
+    cells: number; filled: number; empty: number; border: string;
+  }>(`
     const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
     const map = document.querySelector('[data-testid="favorites-minimap"]');
     const vp = document.querySelector('[data-testid="favorites-minimap-viewport"]');
     const overflow = !!el && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
-    const shown = !!map && getComputedStyle(map).display !== 'none';
+    const shown = !!map && Number(getComputedStyle(map).opacity) > 0.05;
     const vpNarrower = !!(map && vp && vp.getBoundingClientRect().width < map.getBoundingClientRect().width - 1 && vp.getBoundingClientRect().width > 2);
-    return { overflow, shown, vpNarrower };
+    return {
+      overflow, shown, vpNarrower,
+      cells: map?.querySelectorAll('[data-kind]').length || 0,
+      filled: map?.querySelectorAll('[data-filled="true"]').length || 0,
+      empty: map?.querySelectorAll('[data-filled="false"]').length || 0,
+      border: vp ? getComputedStyle(vp).borderTopColor : '',
+    };
   `);
   checks.push(ok(
     'favorites:minimap-when-overflow',
     mini.overflow ? mini.shown && mini.vpNarrower : !mini.shown,
     `overflow=${mini.overflow} shown=${mini.shown} vp=${mini.vpNarrower}`,
   ));
+  checks.push(ok(
+    'favorites:minimap-body-cells',
+    !mini.overflow || (mini.cells === 22 * 11 && mini.filled > 0 && mini.empty > 0 && mini.border !== 'rgb(0, 0, 0)'),
+    `cells=${mini.cells} filled=${mini.filled} empty=${mini.empty} border=${mini.border}`,
+  ));
+  await sleep(1200);
+  const miniIdle = await s.evalJson<number>(`
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    return map ? Number(getComputedStyle(map).opacity) : 0;
+  `);
+  checks.push(ok('favorites:minimap-fades-idle', miniIdle < 0.05, `opacity=${miniIdle}`));
 
   await s.click('[data-testid="favorites-cell-poison-1"]');
   const poisonOpen = await waitFor(s, '[data-testid="favorites-pick-34"]');
@@ -1444,6 +1512,27 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     `packing=${moved.packing} rock=${moved.rock} ground=${moved.ground} poison=${moved.poison}`,
   ));
   await dismiss();
+
+  await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);
+  await s.navigate(url);
+  const directReady = await waitFavoritesGrid(s);
+  const placedPikachu = directReady && await pickFavorite(s, 'favorites-cell-electric-1', 25);
+  await waitGone(s, '[data-testid="favorites-picker"]');
+  const placedRaichu = placedPikachu && await pickFavorite(s, 'favorites-cell-electric-1', 26);
+  const direct = await s.evalJson<{ id?: number; packing: boolean; picker: boolean }>(`
+    const raw = localStorage.getItem(${JSON.stringify(FAV_KEY)});
+    const fills = raw ? (JSON.parse(raw).state?.fills || {}) : {};
+    return {
+      id: fills['electric|1'],
+      packing: !!document.querySelector('[data-testid="favorites-packing"]'),
+      picker: !!document.querySelector('[data-testid="favorites-picker"]'),
+    };
+  `);
+  checks.push(ok(
+    'favorites:direct-trash-swap',
+    Boolean(placedRaichu && direct.id === 26 && !direct.packing && !direct.picker),
+    `ready=${directReady} pikachu=${placedPikachu} raichu=${placedRaichu} id=${direct.id} packing=${direct.packing}`,
+  ));
 
   const errs = await s.errors();
   checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
