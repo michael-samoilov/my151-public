@@ -2,14 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { cellKind, cellKey, parseCellKey, typeSlottedElsewhere, TYPE_AXIS, GEN_AXIS } from './cells';
 
 describe('cellKind', () => {
+  it('disables both Gimmick and Favorite intersections', () => {
+    expect(cellKind('favorite', 'gimmick', false)).toBe('disabled');
+    expect(cellKind('gimmick', 'favorite', false)).toBe('disabled');
+    expect(cellKind('gimmick', 'gimmick', false)).toBe('pointer');
+  });
+  it('places legendary before gimmick on both axes', () => {
+    expect(TYPE_AXIS.slice(-4)).toEqual(['starter', 'legendary', 'gimmick', 'favorite']);
+    expect(GEN_AXIS.slice(-3)).toEqual(['legendary', 'gimmick', 'favorite']);
+  });
   it('disables starter × legendary and both favorite × legendary cells', () => {
     expect(cellKind('starter', 'legendary', false)).toBe('disabled');
     expect(cellKind('favorite', 'legendary', false)).toBe('disabled');
     expect(cellKind('legendary', 'favorite', false)).toBe('disabled');
   });
 
-  it('keeps gimmick × legendary as a pick', () => {
-    expect(cellKind('gimmick', 'legendary', false)).toBe('pick');
+  it('keeps only the Legendary-column, Gimmick-row intersection selectable', () => {
+    expect(cellKind('gimmick', 'legendary', false)).toBe('disabled');
+    expect(cellKind('legendary', 'gimmick', false)).toBe('pick');
   });
 
   it('treats legendary × legendary as a pointer', () => {

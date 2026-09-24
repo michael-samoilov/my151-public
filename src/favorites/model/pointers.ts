@@ -1,4 +1,4 @@
-import { TYPE_AXIS, GEN_AXIS, cellKey, isFavoriteLegendary, isGenNumber, isTypeName, parseCellKey, type GenAxisId, type GenNumber, type TypeAxisId } from './cells';
+import { TYPE_AXIS, GEN_AXIS, cellKey, isDisabledFavoriteIntersection, isGenNumber, isTypeName, parseCellKey, type GenAxisId, type GenNumber, type TypeAxisId } from './cells';
 import type { TypeName } from '@/types/pokemon';
 
 export type PointerMark =
@@ -7,12 +7,18 @@ export type PointerMark =
   | { source: 'starter' | 'gimmick' | 'legendary' };
 
 function pointerSourceKeys(type: TypeAxisId, gen: GenAxisId): string[] {
-  if (isFavoriteLegendary(type, gen)) return [];
+  if (isDisabledFavoriteIntersection(type, gen)) return [];
   if (type === 'legendary' && gen === 'legendary') {
     return [
       ...GEN_AXIS.filter(isGenNumber).map((g) => cellKey('legendary', g)),
       ...TYPE_AXIS.filter(isTypeName).map((t) => cellKey(t, 'legendary')),
-      cellKey('gimmick', 'legendary'),
+      cellKey('legendary', 'gimmick'),
+    ];
+  }
+  if (type === 'gimmick' && gen === 'gimmick') {
+    return [
+      ...GEN_AXIS.filter(isGenNumber).map((g) => cellKey('gimmick', g)),
+      ...TYPE_AXIS.filter((t) => t !== 'gimmick' && t !== 'favorite').map((t) => cellKey(t, 'gimmick')),
     ];
   }
   if (gen === 'favorite' && type !== 'favorite') {
@@ -23,8 +29,10 @@ function pointerSourceKeys(type: TypeAxisId, gen: GenAxisId): string[] {
   }
   if (type === 'favorite' && gen === 'favorite') {
     return [
-      ...TYPE_AXIS.filter((t) => t !== 'favorite' && t !== 'legendary').map((t) => cellKey(t, 'favorite')),
-      ...GEN_AXIS.filter((g) => g !== 'favorite' && g !== 'legendary').map((g) => cellKey('favorite', g)),
+      ...TYPE_AXIS.filter(isTypeName).map((t) => cellKey(t, 'favorite')),
+      ...GEN_AXIS.filter(isGenNumber).map((g) => cellKey('favorite', g)),
+      cellKey('starter', 'favorite'),
+      cellKey('gimmick', 'gimmick'),
       cellKey('legendary', 'legendary'),
     ];
   }
@@ -74,13 +82,22 @@ export function pointerMarks(
     if (!source) continue;
     if (source.type === 'legendary' && source.gen === 'legendary') {
       add({ source: 'legendary' });
+    } else if (source.type === 'gimmick' && source.gen === 'gimmick' && type === 'favorite' && gen === 'favorite') {
+      add({ source: 'gimmick' });
     } else if (type === 'legendary' && gen === 'legendary') {
       if (source.type === 'legendary' && isGenNumber(source.gen)) add({ source: 'gen', value: source.gen });
       else if (isTypeName(source.type) && source.gen === 'legendary') add({ source: 'type', value: source.type });
-      else if (source.type === 'gimmick') add({ source: 'gimmick' });
+      else if (source.type === 'gimmick' || source.gen === 'gimmick') add({ source: 'gimmick' });
+    } else if (type === 'gimmick' && gen === 'gimmick') {
+      if (isGenNumber(source.gen)) add({ source: 'gen', value: source.gen });
+      else if (isTypeName(source.type)) add({ source: 'type', value: source.type });
+      else if (source.type === 'starter' || source.type === 'legendary' || source.gen === 'legendary') {
+        add({ source: source.type === 'starter' ? 'starter' : 'legendary' });
+      }
     } else if (type === 'favorite' && gen === 'favorite') {
       if (isTypeName(source.type)) add({ source: 'type', value: source.type });
       if (isGenNumber(source.gen)) add({ source: 'gen', value: source.gen });
+      if (source.type === 'starter' || source.type === 'gimmick') add({ source: source.type });
     } else if (type === 'favorite' && isGenNumber(gen)) {
       if (isTypeName(source.type)) add({ source: 'type', value: source.type });
       else if (source.type === 'starter' || source.type === 'gimmick' || source.type === 'legendary') {
@@ -103,7 +120,9 @@ export function prunePointers(fills: Record<string, number>): Record<string, num
   const next = { ...fills };
   for (const type of TYPE_AXIS) {
     for (const gen of GEN_AXIS) {
-      if (type !== 'favorite' && gen !== 'favorite' && !(type === 'legendary' && gen === 'legendary')) {
+      if (type !== 'favorite' && gen !== 'favorite'
+        && !(type === 'legendary' && gen === 'legendary')
+        && !(type === 'gimmick' && gen === 'gimmick')) {
         continue;
       }
       const key = cellKey(type, gen);

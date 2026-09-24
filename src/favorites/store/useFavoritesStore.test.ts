@@ -2,6 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { migrateFavoriteFills } from './useFavoritesStore';
 
 describe('favorite picker saved-form migration', () => {
+  it('moves an existing Gimmick favorite to the new overall Gimmick pointer', () => {
+    expect(migrateFavoriteFills({ 'gimmick|1': 6, 'gimmick|favorite': 6 })).toEqual({
+      'gimmick|1': 6,
+      'gimmick|gimmick': 6,
+    });
+    expect(migrateFavoriteFills({ 'gimmick|favorite': 6 })).toEqual({});
+  });
+
+  it('moves a saved legendary gimmick out of the retired duplicate cell', () => {
+    expect(migrateFavoriteFills({ 'gimmick|legendary': 10157 })).toEqual({
+      'legendary|gimmick': 10157,
+    });
+  });
   it('moves an LGPE starter pick to the regular Gen 1 species if the cell is empty', () => {
     expect(migrateFavoriteFills({ 'starter|7': 10158, 'fire|1': 4 })).toEqual({
       'starter|1': 25,

@@ -8,7 +8,7 @@ import {
   typeMapFromFills,
   type PackMove,
 } from '../model/packing';
-import { prunePointers } from '../model/pointers';
+import { pointerPool, prunePointers } from '../model/pointers';
 
 export const FAVORITES_STORAGE_KEY = 'favorite-picker';
 
@@ -21,6 +21,18 @@ export function migrateFavoriteFills(saved: Record<string, number>): Record<stri
   }
   for (const [key, id] of Object.entries(fills)) {
     if (id === 10158 || id === 10159) delete fills[key];
+  }
+  const previousGimmickLegendary = fills['gimmick|legendary'];
+  delete fills['gimmick|legendary'];
+  if (fills['legendary|gimmick'] == null && previousGimmickLegendary != null) {
+    fills['legendary|gimmick'] = previousGimmickLegendary;
+  }
+  const previousGimmickFavorite = fills['gimmick|favorite'] ?? fills['favorite|gimmick'];
+  delete fills['gimmick|favorite'];
+  delete fills['favorite|gimmick'];
+  if (fills['gimmick|gimmick'] == null && previousGimmickFavorite != null
+    && pointerPool('gimmick', 'gimmick', fills).includes(previousGimmickFavorite)) {
+    fills['gimmick|gimmick'] = previousGimmickFavorite;
   }
   return prunePointers(fills);
 }
@@ -75,7 +87,7 @@ export const useFavoritesStore = create<FavoritesState>()(
     }),
     {
       name: FAVORITES_STORAGE_KEY,
-      version: 2,
+      version: 3,
       migrate: (saved) => {
         const previous = saved as { fills?: Record<string, number> };
         return { ...previous, fills: migrateFavoriteFills(previous.fills ?? {}) } as FavoritesState;

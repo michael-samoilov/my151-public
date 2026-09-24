@@ -1501,7 +1501,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   await sleep(200);
   const mini = await s.evalJson<{
     overflow: boolean; shown: boolean; vpNarrower: boolean;
-    cells: number; filled: number; empty: number; stroke: string; offset: string; primary: string; tinted: boolean;
+    cells: number; gridCells: number; filled: number; empty: number; stroke: string; offset: string; primary: string; tinted: boolean;
   }>(`
     const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
     const map = document.querySelector('[data-testid="favorites-minimap"]');
@@ -1519,6 +1519,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     return {
       overflow, shown, vpNarrower,
       cells: map?.querySelectorAll('[data-kind]').length || 0,
+      gridCells: document.querySelectorAll('[data-testid="favorites-grid"] [data-testid^="favorites-cell-"]').length,
       filled: map?.querySelectorAll('[data-filled="true"]').length || 0,
       empty: map?.querySelectorAll('[data-filled="false"]').length || 0,
       stroke: vp ? getComputedStyle(vp).outlineColor : '',
@@ -1534,8 +1535,8 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   ));
   checks.push(ok(
     'favorites:minimap-body-cells',
-    !mini.overflow || (mini.cells === 22 * 11 && mini.filled > 0 && mini.empty > 0 && mini.stroke === mini.primary && mini.offset === '1px' && mini.tinted),
-    `cells=${mini.cells} filled=${mini.filled} empty=${mini.empty} stroke=${mini.stroke} offset=${mini.offset} tinted=${mini.tinted} primary=${mini.primary}`,
+    !mini.overflow || (mini.gridCells > 0 && mini.cells === mini.gridCells && mini.filled > 0 && mini.empty > 0 && mini.stroke === mini.primary && mini.offset === '1px' && mini.tinted),
+    `cells=${mini.cells} gridCells=${mini.gridCells} filled=${mini.filled} empty=${mini.empty} stroke=${mini.stroke} offset=${mini.offset} tinted=${mini.tinted} primary=${mini.primary}`,
   ));
   if (mini.shown) await s.screenshot(ctx.shot('favorites-minimap-scrolling'));
   await sleep(1200);

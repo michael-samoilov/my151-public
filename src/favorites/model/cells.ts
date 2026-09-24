@@ -1,6 +1,6 @@
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 
-export const EXTRA_TYPE_AXIS = ['starter', 'gimmick', 'legendary', 'favorite'] as const;
+export const EXTRA_TYPE_AXIS = ['starter', 'legendary', 'gimmick', 'favorite'] as const;
 export type ExtraTypeAxis = (typeof EXTRA_TYPE_AXIS)[number];
 export type TypeAxisId = TypeName | ExtraTypeAxis;
 
@@ -8,7 +8,7 @@ export const TYPE_AXIS: readonly TypeAxisId[] = [...TYPE_NAMES, ...EXTRA_TYPE_AX
 
 export const GEN_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 export type GenNumber = (typeof GEN_NUMBERS)[number];
-export const EXTRA_GEN_AXIS = ['legendary', 'favorite'] as const;
+export const EXTRA_GEN_AXIS = ['legendary', 'gimmick', 'favorite'] as const;
 export type ExtraGenAxis = (typeof EXTRA_GEN_AXIS)[number];
 export type GenAxisId = GenNumber | ExtraGenAxis;
 
@@ -41,16 +41,18 @@ export function parseCellKey(key: string): { type: TypeAxisId; gen: GenAxisId } 
 
 export type CellKind = 'pick' | 'pointer' | 'disabled' | 'null';
 
-export function isFavoriteLegendary(type: TypeAxisId, gen: GenAxisId): boolean {
-  return (type === 'favorite' && gen === 'legendary') || (type === 'legendary' && gen === 'favorite');
+export function isDisabledFavoriteIntersection(type: TypeAxisId, gen: GenAxisId): boolean {
+  return (type === 'favorite' && (gen === 'legendary' || gen === 'gimmick'))
+    || (gen === 'favorite' && (type === 'legendary' || type === 'gimmick'));
 }
 
 export function cellKind(type: TypeAxisId, gen: GenAxisId, empty: boolean): CellKind {
   if (type === 'starter' && gen === 'legendary') return 'disabled';
-  if (isFavoriteLegendary(type, gen)) return 'disabled';
+  if (type === 'gimmick' && gen === 'legendary') return 'disabled';
+  if (isDisabledFavoriteIntersection(type, gen)) return 'disabled';
   if (empty) return 'null';
   if (type === 'favorite' || gen === 'favorite') return 'pointer';
-  if (type === 'legendary' && gen === 'legendary') return 'pointer';
+  if ((type === 'legendary' && gen === 'legendary') || (type === 'gimmick' && gen === 'gimmick')) return 'pointer';
   return 'pick';
 }
 

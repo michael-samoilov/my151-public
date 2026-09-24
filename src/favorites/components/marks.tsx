@@ -16,7 +16,7 @@ function buildRomanDisc(label: string, stops: { offset: string; color: string }[
   const svg = [
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">',
     `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">${gradStops(stops)}</linearGradient></defs>`,
-    '<circle cx="16" cy="16" r="15" fill="url(#g)"/>',
+    '<circle cx="16" cy="16" r="15" fill="url(#g)" stroke="#d4d4d8" stroke-width="0.5"/>',
     `<text x="16" y="16.5" text-anchor="middle" dominant-baseline="central" fill="white" font-size="${ROMAN_DISC_FS}" font-weight="800" font-family="system-ui,sans-serif" stroke="rgba(0,0,0,0.85)" stroke-width="${ROMAN_DISC_STROKE}" paint-order="stroke" letter-spacing="${ROMAN_DISC_TRACKING}">${label}</text>`,
     '</svg>',
   ].join('');

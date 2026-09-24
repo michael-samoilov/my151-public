@@ -56,7 +56,7 @@ describe('alternate picker forms', () => {
     expect(readFileSync('public/sprites/pokemon/1024.png').equals(readFileSync('public/sprites/pokemon/10276.png'))).toBe(false);
     for (const id of [10276, 10277]) {
       expect(eligibleFor('gimmick', 9).some((m) => m.id === id), `gimmick|9:${id}`).toBe(true);
-      expect(eligibleFor('gimmick', 'legendary').some((m) => m.id === id), `gimmick|legendary:${id}`).toBe(true);
+      expect(eligibleFor('legendary', 'gimmick').some((m) => m.id === id), `legendary|gimmick:${id}`).toBe(true);
     }
   });
 

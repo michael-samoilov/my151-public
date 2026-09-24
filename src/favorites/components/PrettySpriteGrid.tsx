@@ -195,7 +195,7 @@ function PickCell({
       </span> : null}
       {sourceMarks.length > 0 ? (
         <span
-          className="pointer-events-none absolute z-[16] flex items-start leading-none"
+          className="pointer-events-none absolute z-[16] flex items-start leading-none opacity-[0.85]"
           style={{ gap: 1, right: inset, top: inset }}
         >
           {sourceMarks.map((source) => (

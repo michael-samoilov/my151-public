@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { eligibleFor, isEmptyTypeGen, kindFor, regionalPickerTier } from './eligibility';
+import { eligibleFor, isEmptyTypePicker, kindFor, regionalPickerTier } from './eligibility';
 import { isLegendaryEligible, isPowerupForm } from './catalog';
 import { TYPE_NAMES } from '@/types/pokemon';
 
 describe('eligibleFor', () => {
   it('leaves Gen I Dark empty and Gen I Fire holding Charmander', () => {
-    expect(isEmptyTypeGen('dark', 1)).toBe(true);
+    expect(isEmptyTypePicker('dark', 1)).toBe(true);
     expect(kindFor('dark', 1)).toBe('null');
     const fire = eligibleFor('fire', 1);
     expect(fire.some((m) => m.id === 4)).toBe(true);
@@ -28,6 +28,30 @@ describe('eligibleFor', () => {
     expect(g8.slice(-3).map((m) => m.id)).toEqual([10233, 10236, 10244]);
   });
 
+  it('uses the Gimmick column candidate set across the new type-filtered row', () => {
+    for (const type of TYPE_NAMES) {
+      const picks = eligibleFor(type, 'gimmick');
+      expect(picks.every((mon) => mon.types.includes(type)), type).toBe(true);
+      expect(kindFor(type, 'gimmick')).toBe(picks.length ? 'pick' : 'null');
+    }
+    const allGimmicks = new Set(
+      ([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).flatMap((gen) => eligibleFor('gimmick', gen).map((mon) => mon.id)),
+    );
+    for (const type of TYPE_NAMES) {
+      expect(eligibleFor(type, 'gimmick').every((mon) => allGimmicks.has(mon.id)), type).toBe(true);
+    }
+  });
+
+  it('offers gimmick forms of starter species, including Pikachu and Eevee but not Raichu', () => {
+    const ids = eligibleFor('starter', 'gimmick').map((mon) => mon.id);
+    expect(kindFor('starter', 'gimmick')).toBe('pick');
+    expect(ids).toContain(10034); // Mega Charizard X
+    expect(ids).toContain(10199); // Gigantamax Pikachu
+    expect(ids).toContain(10205); // Gigantamax Eevee
+    expect(ids).not.toContain(10304); // Mega Raichu X
+    expect(ids).not.toContain(10305); // Mega Raichu Y
+  });
+
   it('uses regular Gen 1 Pikachu and Eevee as starters without duplicating LGPE variants in Gen 7', () => {
     const g1 = eligibleFor('starter', 1).map((m) => m.id);
     expect(g1.slice(-2)).toEqual([25, 133]);
@@ -44,9 +68,10 @@ describe('eligibleFor', () => {
     }
   });
 
-  it('offers a gimmick × legendary pick', () => {
-    expect(kindFor('gimmick', 'legendary')).toBe('pick');
-    expect(eligibleFor('gimmick', 'legendary').length).toBeGreaterThan(0);
+  it('keeps only the Legendary-column, Gimmick-row intersection selectable', () => {
+    expect(kindFor('gimmick', 'legendary')).toBe('disabled');
+    expect(kindFor('legendary', 'gimmick')).toBe('pick');
+    expect(eligibleFor('legendary', 'gimmick').length).toBeGreaterThan(0);
   });
 
   it('orders native, older-family, legendary, and older legendary families consistently', () => {
@@ -84,6 +109,6 @@ describe('eligibleFor', () => {
 
   it('offers Ultra Necrozma in the Gen 7 and legendary gimmick selectors', () => {
     expect(eligibleFor('gimmick', 7).some((mon) => mon.id === 10157)).toBe(true);
-    expect(eligibleFor('gimmick', 'legendary').some((mon) => mon.id === 10157)).toBe(true);
+    expect(eligibleFor('legendary', 'gimmick').some((mon) => mon.id === 10157)).toBe(true);
   });
 });
