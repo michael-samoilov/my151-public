@@ -236,10 +236,10 @@ function BodyCell({
         locked
           ? 'cursor-default bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]'
           : mon ? 'cursor-pointer bg-transparent' : 'cursor-pointer bg-card',
-        kind === 'pointer' && (mon ? 'bg-amber-50/50' : 'bg-amber-50'),
+        !locked && kind === 'pointer' && (mon ? 'bg-amber-50/50' : 'bg-amber-50'),
       )}
     >
-      {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
+      {banded && !locked ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
       {mon ? (
         <Filled mon={mon} />
       ) : locked ? null : (
@@ -277,8 +277,8 @@ interface ChartMetrics {
   visibleRight: number;
   visibleTop: number;
   visibleBottom: number;
-  anchorRight: number;
-  anchorBottom: number;
+  pageRight: number;
+  pageBottom: number;
   visualScale: number;
   visible: boolean;
 }
@@ -304,14 +304,19 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
       const grid = el.firstElementChild as HTMLElement | null;
       const visual = window.visualViewport;
       const bounds = el.getBoundingClientRect();
-      const viewLeft = visual?.offsetLeft ?? 0;
-      const viewTop = visual?.offsetTop ?? 0;
-      const viewRight = viewLeft + (visual?.width ?? window.innerWidth);
-      const viewBottom = viewTop + (visual?.height ?? window.innerHeight);
-      const visibleLeft = Math.max(0, Math.min(el.clientWidth, viewLeft - bounds.left));
-      const visibleRight = Math.max(0, Math.min(el.clientWidth, viewRight - bounds.left));
-      const visibleTop = Math.max(0, Math.min(el.clientHeight, viewTop - bounds.top));
-      const visibleBottom = Math.max(0, Math.min(el.clientHeight, viewBottom - bounds.top));
+      // Compare both rectangles in document coordinates. Comparing visual
+      // viewport offsets directly with getBoundingClientRect mixes coordinate
+      // spaces in WebKit after the document itself has scrolled while zoomed.
+      const pageLeft = visual?.pageLeft ?? window.scrollX;
+      const pageTop = visual?.pageTop ?? window.scrollY;
+      const pageRight = pageLeft + (visual?.width ?? window.innerWidth);
+      const pageBottom = pageTop + (visual?.height ?? window.innerHeight);
+      const frameLeft = bounds.left + window.scrollX;
+      const frameTop = bounds.top + window.scrollY;
+      const visibleLeft = Math.max(0, Math.min(el.clientWidth, pageLeft - frameLeft));
+      const visibleRight = Math.max(0, Math.min(el.clientWidth, pageRight - frameLeft));
+      const visibleTop = Math.max(0, Math.min(el.clientHeight, pageTop - frameTop));
+      const visibleBottom = Math.max(0, Math.min(el.clientHeight, pageBottom - frameTop));
       const next = {
         scrollLeft: el.scrollLeft,
         scrollTop: el.scrollTop,
@@ -325,10 +330,10 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
         visibleRight,
         visibleTop,
         visibleBottom,
-        // The minimap lives in a body portal, so anchor it to the visual
-        // viewport, never to the chart (which moves during pinch/pan).
-        anchorRight: viewRight,
-        anchorBottom: viewBottom,
+        // The portal is absolutely positioned in document coordinates. This
+        // avoids WebKit's zoomed position:fixed compensation moving it twice.
+        pageRight,
+        pageBottom,
         visualScale: Math.max(1, (visual?.scale ?? 1) * window.devicePixelRatio / INITIAL_DPR),
         visible: visibleRight > visibleLeft && visibleBottom > visibleTop,
       };
@@ -428,11 +433,11 @@ function ChartMinimap({
     <div
       data-testid="favorites-minimap"
       aria-hidden
-      className="pointer-events-none fixed z-30 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200"
+      className="pointer-events-none absolute z-30 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200"
       style={{
         opacity: scrolling ? 0.95 : 0,
-        left: frame.anchorRight - (mapW + 18) / frame.visualScale,
-        top: frame.anchorBottom - (mapH + 18) / frame.visualScale,
+        left: frame.pageRight - (mapW + 18) / frame.visualScale,
+        top: frame.pageBottom - (mapH + 18) / frame.visualScale,
         transform: `scale(${1 / frame.visualScale})`,
         transformOrigin: 'top left',
       }}

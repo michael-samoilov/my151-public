@@ -185,7 +185,10 @@ export function comparePickerOrder(a: PickerMon, b: PickerMon): number {
   const ogerponOrder = a.ownerId === 1017 && b.ownerId === 1017
     ? (OGERPON_FORM_ORDER.get(a.id) ?? 99) - (OGERPON_FORM_ORDER.get(b.id) ?? 99)
     : 0;
-  return firstA - firstB || stageA - stageB || a.ownerId - b.ownerId || ogerponOrder || a.id - b.id;
+  const floetteEternalLast = a.ownerId === 670 && b.ownerId === 670
+    ? Number(a.id === 10061) - Number(b.id === 10061)
+    : 0;
+  return firstA - firstB || stageA - stageB || a.ownerId - b.ownerId || ogerponOrder || floetteEternalLast || a.id - b.id;
 }
 
 const LEGENDARY_OWNER_IDS = new Set<number>();

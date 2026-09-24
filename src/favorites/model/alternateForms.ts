@@ -7,7 +7,30 @@ export interface AlternatePickerForm {
   name: string;
   types: TypeName[];
   generation?: GenNumber;
+  /** Source filename in Pokémon Showdown's Gen 5-style sprite directory. */
+  spriteSlug?: string;
 }
+
+const unownLetters: AlternatePickerForm[] = Array.from('BCDEFGHIJKLMNOPQRSTUVWXYZ', (letter, index) => ({
+  id: 11037 + index,
+  ownerId: 201,
+  name: `unown-${letter.toLowerCase()}`,
+  types: ['psychic'],
+  spriteSlug: `unown-${letter.toLowerCase()}`,
+}));
+
+const flowerColors: AlternatePickerForm[] = [
+  [669, 'flabebe', 11082],
+  [670, 'floette', 11086],
+  [671, 'florges', 11090],
+].flatMap(([ownerId, species, firstId]) =>
+  ['blue', 'orange', 'white', 'yellow'].map((color, index): AlternatePickerForm => ({
+    id: Number(firstId) + index,
+    ownerId: Number(ownerId),
+    name: `${species}-${color}`,
+    types: ['fairy'],
+    spriteSlug: `${species}-${color}`,
+  })));
 
 /** Picker-only forms keep dex evolution lines unchanged. IDs above 11000 identify locally sourced sprite variants. */
 export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
@@ -135,4 +158,17 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11034, ownerId: 666, name: 'vivillon-savanna', types: ['bug', 'flying'] },
   { id: 11035, ownerId: 666, name: 'vivillon-sun', types: ['bug', 'flying'] },
   { id: 11036, ownerId: 666, name: 'vivillon-tundra', types: ['bug', 'flying'] },
+  ...unownLetters,
+  { id: 11062, ownerId: 201, name: 'unown-exclamation', types: ['psychic'], generation: 3, spriteSlug: 'unown-em' },
+  { id: 11063, ownerId: 201, name: 'unown-question', types: ['psychic'], generation: 3, spriteSlug: 'unown-qm' },
+  { id: 11064, ownerId: 172, name: 'pichu-spiky-eared', types: ['electric'], generation: 4, spriteSlug: 'pichu-spikyeared' },
+  { id: 11065, ownerId: 422, name: 'shellos-east', types: ['water'], spriteSlug: 'shellos-east' },
+  { id: 11066, ownerId: 423, name: 'gastrodon-east', types: ['water', 'ground'], spriteSlug: 'gastrodon-east' },
+  { id: 11067, ownerId: 449, name: 'hippopotas-female', types: ['ground'], spriteSlug: 'hippopotas-f' },
+  { id: 11068, ownerId: 450, name: 'hippowdon-female', types: ['ground'], spriteSlug: 'hippowdon-f' },
+  { id: 11069, ownerId: 592, name: 'frillish-female', types: ['water', 'ghost'], spriteSlug: 'frillish-f' },
+  { id: 11070, ownerId: 593, name: 'jellicent-female', types: ['water', 'ghost'], spriteSlug: 'jellicent-f' },
+  { id: 11071, ownerId: 668, name: 'pyroar-female', types: ['fire', 'normal'], spriteSlug: 'pyroar-f' },
+  { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spriteSlug: 'darmanitan-galarzen' },
+  ...flowerColors,
 ];

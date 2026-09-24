@@ -3,11 +3,11 @@ import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSpri
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
 import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
-import { prettyRowSizes, prettyRows } from '../model/prettyWrap';
+import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { X } from 'lucide-react';
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ExtraMark, RomanDisc, TypeIcon } from './marks';
 import type { PointerMark } from '../model/pointers';
 
@@ -48,20 +48,8 @@ export function PrettySpriteGrid({
   const viewportPx = useLayoutViewportCssPx();
   const baseSpritePx = requestedSpritePx ?? pickerSpriteCssPx(viewportPx);
   const dexPx = tileImageCssPx(viewportPx);
-  // Clear participates in the row count. Appending it after wrapping can leave
-  // a lone tile on an otherwise balanced selector (e.g. 11 picks + Clear).
-  const rows = onClear && !lineKey
-    ? (() => {
-        let at = 0;
-        return prettyRowSizes(mons.length + 1, maxCols).map((size) => {
-          const row = mons.slice(at, at + size);
-          at += size;
-          return row;
-        });
-      })()
-    : prettyRows(mons, maxCols, lineKey, formKey);
-  const lastLen = rows.length > 0 ? rows[rows.length - 1].length : maxCols;
-  const fitRows = rows.length + (onClear && lineKey && (rows.length === 0 || lastLen >= maxCols) ? 1 : 0);
+  const rows = prettyRows(mons, maxCols, lineKey, formKey);
+  const fitRows = rows.length;
   const gridRef = useRef<HTMLDivElement>(null);
   const [fitPx, setFitPx] = useState(baseSpritePx);
   const spritePx = Math.min(baseSpritePx, fitPx);
@@ -88,10 +76,6 @@ export function PrettySpriteGrid({
       window.visualViewport?.removeEventListener('resize', resize);
     };
   }, [baseSpritePx, fitRows]);
-  const clear = onClear ? <ClearCell spritePx={spritePx} label={clearLabel} text={clearText} onClear={onClear} /> : null;
-  const clearInLast = Boolean(clear) && rows.length > 0 && (!lineKey || lastLen < maxCols);
-  const clearOwnRow = Boolean(clear) && !clearInLast;
-
   return (
     <div
       ref={gridRef}
@@ -108,7 +92,7 @@ export function PrettySpriteGrid({
             key={r}
             className="flex justify-center"
             data-pretty-row={r}
-            data-pretty-len={row.length + (clearInLast && r === rows.length - 1 ? 1 : 0)}
+            data-pretty-len={row.length}
           >
             {row.map((mon) => (
               <PickCell
@@ -121,16 +105,13 @@ export function PrettySpriteGrid({
                 pointer={pointer}
                 sourceMarks={sourceMarks?.(mon.id) ?? []}
                 onPick={onPick}
+                onClear={onClear}
+                clearLabel={clearLabel}
+                clearText={clearText}
               />
             ))}
-            {clearInLast && r === rows.length - 1 ? clear : null}
           </div>
         ))}
-        {clearOwnRow ? (
-          <div className="flex justify-center" data-testid="favorites-clear-row">
-            {clear}
-          </div>
-        ) : null}
     </div>
   );
 }
@@ -144,6 +125,9 @@ function PickCell({
   pointer,
   sourceMarks,
   onPick,
+  onClear,
+  clearLabel,
+  clearText,
 }: {
   mon: PickerMon;
   spritePx: number;
@@ -153,15 +137,19 @@ function PickCell({
   pointer: boolean;
   sourceMarks: PointerMark[];
   onPick: (mon: PickerMon) => void;
+  onClear?: () => void;
+  clearLabel?: string;
+  clearText?: string;
 }) {
   const mark = Math.round(spritePx * 0.28);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   return (
     <button
       type="button"
-      onClick={() => onPick(mon)}
+      onClick={() => selected && onClear ? onClear() : onPick(mon)}
       data-testid={`favorites-pick-${mon.id}`}
       aria-pressed={selected}
+      aria-label={selected && onClear ? `${clearLabel ?? 'Clear'} ${labelOf(mon)}` : labelOf(mon)}
       className="relative flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent p-0"
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
@@ -224,32 +212,16 @@ function PickCell({
           draggable={false}
         />
       ) : null}
-    </button>
-  );
-}
-
-function ClearCell({
-  spritePx,
-  label,
-  text,
-  onClear,
-}: {
-  spritePx: number;
-  label?: string;
-  text?: string;
-  onClear: () => void;
-}): ReactNode {
-  return (
-    <button
-      type="button"
-      data-testid="favorites-clear"
-      aria-label={label}
-      onClick={onClear}
-      className="relative flex shrink-0 cursor-pointer flex-col items-center justify-center rounded-md border border-neutral-300 bg-transparent p-0 text-red-500"
-      style={{ width: spritePx, height: spritePx }}
-    >
-      <X size={Math.round(spritePx * 0.38)} strokeWidth={2.25} className="text-red-400" aria-hidden />
-      <span style={{ fontSize: Math.max(9, Math.round(spritePx * 0.15)), lineHeight: 1 }}>{text ?? label}</span>
+      {selected && onClear ? (
+        <span
+          data-testid="favorites-clear"
+          className="absolute z-[18] inline-flex items-center gap-0.5 rounded-full border border-neutral-300 bg-white/95 px-1 py-0.5 leading-none text-red-500 shadow-sm"
+          style={{ left: inset, [pointer ? 'bottom' : 'top']: inset, fontSize: Math.max(9, Math.round(spritePx * 0.13)) }}
+        >
+          <X size={Math.max(10, Math.round(spritePx * 0.16))} strokeWidth={2.25} className="text-red-400" aria-hidden />
+          {clearText ?? clearLabel}
+        </span>
+      ) : null}
     </button>
   );
 }

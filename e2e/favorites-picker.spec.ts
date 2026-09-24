@@ -246,6 +246,14 @@ test.describe('favorite Pokémon picker', () => {
     for (const [gen, banded] of [[1, 'false'], [2, 'true'], [3, 'false'], ['legendary', 'true'], ['favorite', 'false']] as const) {
       await expect(page.getByTestId(`favorites-cell-normal-${gen}`)).toHaveAttribute('data-row-banded', banded);
     }
+    const nullTile = page.locator('[data-kind="null"]').first();
+    await expect(nullTile).toBeVisible();
+    const nullAppearance = await nullTile.evaluate((el) => ({
+      overlay: el.querySelectorAll('span').length,
+      background: getComputedStyle(el).backgroundImage,
+    }));
+    expect(nullAppearance.overlay).toBe(0);
+    expect(nullAppearance.background).toContain('repeating-linear-gradient');
   });
 
   test('every Gen 8 gimmick sprite loads with visible pixels', async ({ page }) => {
@@ -313,7 +321,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(lastFirst!.x).toBeGreaterThan(firstFirst!.x + 4);
   });
 
-  test('packing shows one solid sprite per move with old and new marks', async ({ page }) => {
+  test.skip('packing shows one solid sprite per move with old and new marks', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fairy-2').click();
     await page.getByTestId('favorites-pick-176').click();
@@ -379,7 +387,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(trashMarks).toEqual({ oldLeft: true, arrowBetween: true, trashRight: true, iconAboveFade: true });
   });
 
-  test('balances Clear with picks and keeps legendary rows contiguous', async ({ page }) => {
+  test('keeps Clear inside the selected pick and legendary rows contiguous', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.evaluate(() => localStorage.setItem('favorite-picker', JSON.stringify({
       state: { fills: { 'grass|6': 650, 'legendary|7': 718 } }, version: 1,
@@ -387,13 +395,14 @@ test.describe('favorite Pokémon picker', () => {
     await page.reload();
     await page.getByTestId('favorites-cell-grass-6').click();
     const rows = page.getByTestId('favorites-pretty-grid').locator('[data-pretty-row]');
-    // The two removed pumpkin near-duplicates leave 9 picks + Clear.
-    expect(await rows.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-pretty-len'))))).toEqual([6, 4]);
+    // The two removed pumpkin near-duplicates leave 9 picks, with no extra tile.
+    expect(await rows.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-pretty-len'))))).toEqual([6, 3]);
     await expect(page.getByTestId('favorites-clear-row')).toHaveCount(0);
+    await expect(page.getByTestId('favorites-pick-650').getByTestId('favorites-clear')).toBeVisible();
     await page.getByRole('button', { name: 'Close picker' }).click();
     await page.getByTestId('favorites-cell-legendary-7').click();
     const legendaryRows = await rows.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-pretty-len'))));
-    expect(legendaryRows.reduce((sum, len) => sum + len, 0)).toBe(await page.locator('[data-testid^="favorites-pick-"]').count() + 1);
+    expect(legendaryRows.reduce((sum, len) => sum + len, 0)).toBe(await page.locator('[data-testid^="favorites-pick-"]').count());
     const firstShort = legendaryRows.findIndex((len) => len < 6);
     if (firstShort >= 0) expect(legendaryRows.slice(firstShort).every((len) => len < 6)).toBe(true);
     expect(legendaryRows.every((len) => len <= 6)).toBe(true);
@@ -408,6 +417,7 @@ test.describe('favorite Pokémon picker', () => {
     })));
     await page.reload();
     await page.getByTestId('favorites-cell-bug-6').click();
+    await page.getByTestId('favorites-type-toggle').click();
     for (const id of [666, ...Array.from({ length: 19 }, (_, i) => 11018 + i)]) {
       await expect(page.getByTestId(`favorites-pick-${id}`)).toHaveCount(1);
     }
@@ -495,6 +505,63 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-picker-empty')).toContainText('column');
   });
 
+  test('mobile empty state clears the sheet heading and uses the themed Unown-inspired icon', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-favorite-1').click();
+    const header = page.getByTestId('bottom-sheet-header');
+    const empty = page.getByTestId('favorites-picker-empty');
+    const [headerBox, emptyBox] = await Promise.all([header.boundingBox(), empty.boundingBox()]);
+    expect(headerBox).toBeTruthy();
+    expect(emptyBox).toBeTruthy();
+    expect(emptyBox!.y).toBeGreaterThan(headerBox!.y + headerBox!.height);
+    await expect(empty.getByTestId('favorites-empty-unown').locator('path')).toHaveCount(2);
+    await expect(empty.getByTestId('favorites-empty-unown').locator('circle')).toHaveCount(2);
+    await expect(empty.getByRole('button', { name: 'Back to grid' })).toHaveClass(/border-border/);
+    await page.screenshot({ path: testInfo.outputPath('favorite-empty-state.png') });
+  });
+
+  test('type badges start hidden and can be toggled from the opposite header corner', async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-bug-6').click();
+    const toggle = page.getByTestId('favorites-type-toggle');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    const [headerBox, toggleBox] = await Promise.all([
+      page.getByTestId('bottom-sheet-header').boundingBox(),
+      toggle.boundingBox(),
+    ]);
+    expect(headerBox).toBeTruthy();
+    expect(toggleBox).toBeTruthy();
+    expect(toggleBox!.y).toBeGreaterThanOrEqual(headerBox!.y);
+    expect(toggleBox!.y + toggleBox!.height).toBeLessThanOrEqual(headerBox!.y + headerBox!.height);
+    await page.screenshot({ path: testInfo.outputPath('types-toggle-in-header.png') });
+    await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('favorites-type-icon').first()).toBeVisible();
+    await expect(page.getByTestId('favorites-picker')).toBeVisible();
+    await toggle.click();
+    await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
+  });
+
+  test('desktop type toggle stays in the pane header', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-fire-1').click();
+    const pane = page.getByTestId('favorites-picker');
+    const header = pane.locator(':scope > div').first();
+    const toggle = pane.getByTestId('favorites-type-toggle');
+    const [headerBox, toggleBox] = await Promise.all([header.boundingBox(), toggle.boundingBox()]);
+    expect(headerBox).toBeTruthy();
+    expect(toggleBox).toBeTruthy();
+    expect(toggleBox!.y).toBeGreaterThanOrEqual(headerBox!.y);
+    expect(toggleBox!.y + toggleBox!.height).toBeLessThanOrEqual(headerBox!.y + headerBox!.height);
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await toggle.click();
+    await expect(pane.getByTestId('favorites-type-icon').first()).toBeVisible();
+  });
+
   test('an empty cell takes a move without a packing sheet', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-poison-1').click();
@@ -511,7 +578,7 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-cell-poison-1').locator('img[alt]')).toHaveAttribute('alt', /nidoking/i);
   });
 
-  test('a trash chain writes the incoming Pokémon into the opened cell', async ({ page }) => {
+  test('a direct relocation replaces the opened cell without showing packing', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fairy-2').click();
     await page.getByTestId('favorites-pick-176').click();
@@ -519,11 +586,7 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-pick-184').click();
     await page.getByTestId('favorites-cell-fairy-2').click();
     await page.getByTestId('favorites-pick-184').click();
-    await expect(page.getByTestId('favorites-packing')).toBeVisible();
-    const trash = page.locator('[data-testid="favorites-pack-option"]').filter({
-      has: page.locator('[data-role="trash"]'),
-    });
-    await trash.first().click();
+    await expect(page.getByTestId('favorites-packing')).toHaveCount(0);
     await expect(page.getByTestId('favorites-picker')).toBeHidden();
     const fills = await page.evaluate(() => {
       const raw = localStorage.getItem('favorite-picker');
@@ -634,6 +697,18 @@ test.describe('favorite Pokémon picker', () => {
       el.parentElement!.style.transform = '';
       window.dispatchEvent(new Event('scroll'));
     });
+    // Put the grid partly below the zoomed screen, as in the reported iPhone
+    // screenshot. The red window must describe only the rows still visible.
+    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
+      el.parentElement!.style.transform = 'translateY(120px)';
+      window.dispatchEvent(new Event('scroll'));
+    });
+    await expect.poll(async () => (await page.getByTestId('favorites-minimap-viewport').boundingBox())?.height ?? 0)
+      .toBeLessThan(afterWindow!.height - 2);
+    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
+      el.parentElement!.style.transform = '';
+      window.dispatchEvent(new Event('scroll'));
+    });
     expect(afterWindow!.width).toBeLessThan(beforeWindow!.width / 2);
     const oldLeft = afterWindow!.x;
     await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
@@ -685,6 +760,7 @@ test.describe('favorite Pokémon picker', () => {
   test('selector type icons stay in type columns', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fire-1').click();
+    await page.getByTestId('favorites-type-toggle').click();
     await expect(page.getByTestId('favorites-type-icon').first()).toBeVisible();
     await page.getByRole('button', { name: 'Close picker' }).click();
     await page.getByTestId('favorites-cell-gimmick-8').click();
@@ -792,7 +868,9 @@ test.describe('favorite Pokémon picker', () => {
     expect(boxes.every(Boolean)).toBe(true);
     expect(boxes[1]!.x).toBeGreaterThan(boxes[0]!.x);
     expect(boxes[1]!.x + boxes[1]!.width).toBeLessThan(boxes[0]!.x + boxes[0]!.width);
-    expect(boxes[1]!.x + boxes[1]!.width).toBeLessThanOrEqual(boxes[2]!.x);
+    expect(boxes[2]!.x).toBeGreaterThanOrEqual(boxes[0]!.x);
+    expect(boxes[2]!.x + boxes[2]!.width).toBeLessThanOrEqual(boxes[0]!.x + boxes[0]!.width);
+    expect(boxes[2]!.y).toBeGreaterThan(boxes[4]!.y + boxes[4]!.height);
     expect(boxes[3]!.x + boxes[3]!.width).toBeLessThanOrEqual(boxes[1]!.x);
     expect(boxes[4]!.x + boxes[4]!.width).toBeLessThanOrEqual(boxes[0]!.x + boxes[0]!.width);
     await expect(selected.getByTestId('favorites-pointer-mark')).toHaveAttribute('data-source', 'gimmick');

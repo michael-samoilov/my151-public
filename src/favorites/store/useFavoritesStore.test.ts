@@ -27,4 +27,16 @@ describe('favorite picker saved-form migration', () => {
       'starter|1': 1,
     });
   });
+
+  it('keeps previously filled type, category, and favorite cells during a version migration', () => {
+    const saved = {
+      'fire|1': 6,
+      'water|4': 423,
+      'starter|8': 813,
+      'legendary|3': 384,
+      'fire|favorite': 6,
+      'favorite|1': 6,
+    };
+    expect(migrateFavoriteFills(saved)).toEqual(saved);
+  });
 });

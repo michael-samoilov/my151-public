@@ -1217,7 +1217,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);
   await s.navigate(url);
   if (!(await waitFavoritesGrid(s))) {
-    checks.push({ name: 'favorites:packing-opens', status: 'fail', detail: 'grid missing after reload' });
+    checks.push({ name: 'favorites:packing-disabled', status: 'fail', detail: 'grid missing after reload' });
     const errs = await s.errors();
     checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
     return checks;
@@ -1252,6 +1252,8 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
         used.opacity < 0.5 && used.mark === 'water' && used.freeOpacity > 0.9 && !used.freeMark,
         `opacity=${used.opacity} mark=${used.mark} freeOpacity=${used.freeOpacity} freeMark=${used.freeMark}`,
       ));
+      const typeToggle = await s.evalJson<boolean>(`return !!document.querySelector('[data-testid="favorites-type-toggle"]');`);
+      if (typeToggle) await s.click('[data-testid="favorites-type-toggle"]');
       const types = await s.evalJson<{ icons: string[]; same: boolean }>(`
         const btn = document.querySelector('[data-testid="favorites-pick-184"]');
         if (!btn) return { icons: [], same: false };
@@ -1273,7 +1275,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       checks.push({ name: 'favorites:selector-type-icons', status: 'fail', detail: 'fairy picker did not list Azumarill' });
     }
   }
-  checks.push(ok('favorites:packing-opens', openedPack, `togetic=${placedTogetic} azu=${placedAzu}`));
+  checks.push(ok('favorites:packing-disabled', placedTogetic && placedAzu && !openedPack, `togetic=${placedTogetic} azu=${placedAzu} packing=${openedPack}`));
   if (openedPack) {
     const moved = await s.evalJson<{
       count: number; azu: number; opacity: number; oldLeft: boolean; arrowBetween: boolean; newRight: boolean; layered: boolean;
@@ -1370,7 +1372,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   `);
   checks.push(ok(
     'favorites:store-has-placements',
-    Boolean(oracle.has && oracle.fairy === 176 && oracle.water === 184),
+    Boolean(oracle.has && oracle.fairy === 184 && oracle.water == null),
     `fairy=${oracle.fairy} water=${oracle.water}`,
   ));
 
@@ -1396,7 +1398,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       `applied=${applied} fairy=${landed.fairy} water=${landed.water} togetic=${landed.togetic}`,
     ));
   } else {
-    checks.push({ name: 'favorites:pack-lands-in-opened-cell', status: 'fail', detail: 'packing sheet was not open' });
+    checks.push(ok('favorites:direct-replacement', oracle.fairy === 184 && oracle.water == null, `fairy=${oracle.fairy} water=${oracle.water}`));
   }
 
   const dismiss = async () => {
@@ -1471,8 +1473,8 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       `ringTopGap=${filled.top.toFixed(1)}`,
     ));
     checks.push(ok(
-      'favorites:clear-is-cell',
-      filled.inGrid && filled.text.toLowerCase() === 'clear' && Math.abs(filled.clearW - filled.pickW) < 1 && filled.pickW > 20,
+      'favorites:clear-inside-selected-cell',
+      filled.inGrid && filled.text.toLowerCase() === 'clear' && filled.clearW < filled.pickW && filled.pickW > 20,
       `inGrid=${filled.inGrid} text=${JSON.stringify(filled.text)} clearW=${filled.clearW.toFixed(1)} pickW=${filled.pickW.toFixed(1)}`,
     ));
     const overflow = await s.evalJson<{ x: string; y: string }>(`
@@ -1488,17 +1490,20 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   } else {
     checks.push({ name: 'favorites:filled-sprite-above-ring', status: 'fail', detail: 'filled picker did not open' });
     checks.push({ name: 'favorites:selector-ring-inside', status: 'fail', detail: 'filled picker did not open' });
-    checks.push({ name: 'favorites:clear-is-cell', status: 'fail', detail: 'filled picker did not open' });
+    checks.push({ name: 'favorites:clear-inside-selected-cell', status: 'fail', detail: 'filled picker did not open' });
     checks.push({ name: 'favorites:filled-sprite-unclipped', status: 'fail', detail: 'filled picker did not open' });
   }
   await dismiss();
 
   await s.evalJson(`
     const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
-    if (el) el.scrollLeft = Math.round(el.clientWidth * 0.85);
+    if (el) {
+      el.scrollLeft = Math.round(el.clientWidth * 0.85);
+      el.dispatchEvent(new Event('scroll'));
+    }
     return true;
   `);
-  await sleep(200);
+  await sleep(40);
   const mini = await s.evalJson<{
     overflow: boolean; shown: boolean; vpNarrower: boolean;
     cells: number; gridCells: number; filled: number; empty: number; stroke: string; offset: string; primary: string; tinted: boolean;

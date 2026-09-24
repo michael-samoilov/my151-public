@@ -70,6 +70,42 @@ describe('alternate picker forms', () => {
     expect(eligibleFor('legendary', 7).filter((mon) => mon.id === 10181)).toHaveLength(1);
   });
 
+  it('offers the Unown alphabet in Gen 2 and its punctuation in Gen 3', () => {
+    const gen2 = eligibleFor('psychic', 2).filter((mon) => mon.ownerId === 201).map((mon) => mon.id);
+    expect(gen2).toEqual([201, ...Array.from({ length: 25 }, (_, i) => 11037 + i)]);
+    const gen3 = eligibleFor('psychic', 3).filter((mon) => mon.ownerId === 201).map((mon) => mon.id);
+    expect(gen3).toEqual([11062, 11063]);
+    expect(eligibleFor('electric', 4).some((mon) => mon.id === 11064)).toBe(true);
+    expect(eligibleFor('electric', 2).some((mon) => mon.id === 11064)).toBe(false);
+  });
+
+  it('offers distinct sea, gender, flower, and regional Zen forms without nonmatching trims', () => {
+    const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
+      eligibleFor(type, gen).map((mon) => mon.id);
+    for (const [type, gen, expected] of [
+      ['water', 4, [422, 11065, 423, 11066]],
+      ['ground', 4, [449, 11067, 450, 11068]],
+      ['water', 5, [592, 11069, 593, 11070]],
+      ['fire', 6, [668, 11071]],
+      ['fairy', 6, [669, 11082, 11083, 11084, 11085, 670, 11086, 11087, 11088, 11089]],
+    ] as const) {
+      const list = ids(type, gen);
+      const start = list.indexOf(expected[0]);
+      expect(start, `${type}|${gen}`).toBeGreaterThanOrEqual(0);
+      expect(list.slice(start, start + expected.length), `${type}|${gen}`).toEqual(expected);
+    }
+    expect(ids('fairy', 6).slice(ids('fairy', 6).indexOf(671), ids('fairy', 6).indexOf(671) + 5)).toEqual([
+      671, 11090, 11091, 11092, 11093,
+    ]);
+    expect(ids('ice', 8)).toContain(11072);
+    expect(ids('fire', 8)).toContain(11072);
+    expect(ids('gimmick', 8)).toContain(11072);
+    expect(ids('psychic', 8)).toContain(10186); // Indeedee female already existed.
+    expect(ids('dragon', 9)).toEqual(expect.arrayContaining([978, 11006, 11007]));
+    expect(ids('normal', 6)).toContain(676);
+    for (let id = 11073; id <= 11081; id += 1) expect(getPickerMon(id)).toBeUndefined();
+  });
+
   it('keeps forms next to their species and regional evolutions in line order', () => {
     const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
       eligibleFor(type, gen).map((mon) => mon.id);

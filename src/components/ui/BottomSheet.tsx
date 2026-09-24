@@ -13,6 +13,8 @@ interface BottomSheetProps {
   headerLabel?: string;
   /** Header content beside the grab handle. Rich nodes are fine. */
   title: React.ReactNode;
+  /** Optional independent action opposite the title, outside the drag button. */
+  headerAccessory?: React.ReactNode;
   /** Accessible name for the grab-handle button, which also closes on tap. */
   closeLabel: string;
   /**
@@ -58,6 +60,7 @@ export function BottomSheet({
   onHeaderClick,
   headerLabel,
   title,
+  headerAccessory,
   closeLabel,
   size = 'content',
   topGap = 56,
@@ -379,6 +382,7 @@ export function BottomSheet({
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
           <span className="w-full text-sm font-semibold">{title}</span>
         </button>
+        {headerAccessory ? <div className="absolute right-2 top-6 z-10">{headerAccessory}</div> : null}
         <div className="border-b" />
         {/* Its own scroll container: a long form scrolls here, and
             `overscroll-contain` stops that scroll continuing into the app once

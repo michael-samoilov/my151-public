@@ -23,7 +23,10 @@ import { pointerMarks, pointerPool } from '../model/pointers';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
-import { EmptyBall } from './marks';
+
+// Keep the chain picker available for a possible future opt-in, but default to
+// the direct replacement flow until its choices are understandable at a glance.
+const PACKING_UI_ENABLED = false;
 
 export function PickerSheet({
   type,
@@ -53,6 +56,7 @@ export function PickerSheet({
   const kind = kindFor(type, gen);
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);
   const [packStack, setPackStack] = useState<string[]>(['']);
+  const [showTypeIcons, setShowTypeIcons] = useState(false);
 
   function backFromPack() {
     if (packStack.length > 1) setPackStack(packStack.slice(0, -1));
@@ -80,7 +84,7 @@ export function PickerSheet({
       onClose();
       return;
     }
-    if (kind === 'pick' && isTypeName(type) && isGenNumber(gen)) {
+    if (PACKING_UI_ENABLED && kind === 'pick' && isTypeName(type) && isGenNumber(gen)) {
       const map = typeMapFromFills(fills, gen, getPickerMon);
       if (packingNeeded(map, type, mon)) {
         const { paths } = enumeratePaths(map, type, mon);
@@ -106,7 +110,7 @@ export function PickerSheet({
       heading={t('favorites.packing.heading')}
     />
   ) : (
-    <div className="pb-4" style={{ paddingTop: currentId != null ? 4 : 0, paddingLeft: inset, paddingRight: inset }}>
+    <div className={mons.length === 0 && currentId == null ? 'pb-4 pt-3' : 'pb-4'} style={{ paddingTop: mons.length > 0 && currentId != null ? 4 : undefined, paddingLeft: inset, paddingRight: inset }}>
       {mons.length === 0 && currentId == null ? (
         <PickerEmptyState title={t('favorites.empty.title')} hint={emptyHint} backLabel={t('favorites.empty.back')} onBack={onClose} />
       ) : (
@@ -117,7 +121,7 @@ export function PickerSheet({
           selectedId={currentId}
           onPick={pick}
           usedIn={kind === 'pick' && isTypeName(type) ? (id) => typeSlottedElsewhere(fills, id, type, gen) : undefined}
-          showTypes={kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
+          showTypes={showTypeIcons && kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
           pointer={kind === 'pointer'}
           sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}
           onClear={
@@ -136,6 +140,18 @@ export function PickerSheet({
   );
 
   const title = <PickerTitle type={type} gen={gen} />;
+  const typeToggle = kind === 'pick' && isTypeName(type) && isGenNumber(gen) ? (
+    <button
+      type="button"
+      data-testid="favorites-type-toggle"
+      aria-pressed={showTypeIcons}
+      aria-label={showTypeIcons ? t('favorites.types.hide') : t('favorites.types.show')}
+      onClick={() => setShowTypeIcons((value) => !value)}
+      className={`inline-flex min-h-8 cursor-pointer items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showTypeIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
+    >
+      {t('favorites.types.label')}
+    </button>
+  ) : null;
   const mobileTitle = (
     <span className="flex w-full items-center gap-1.5 px-2 py-0.5 text-left">
       <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -159,9 +175,12 @@ export function PickerSheet({
             ) : null}
             {title}
           </div>
-          <button type="button" onClick={onClose} aria-label={t('favorites.close')} className="cursor-pointer p-1 text-muted-foreground">
-            <PanelRightClose size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            {typeToggle}
+            <button type="button" onClick={onClose} aria-label={t('favorites.close')} className="cursor-pointer p-1 text-muted-foreground">
+              <PanelRightClose size={16} />
+            </button>
+          </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
       </aside>
@@ -174,6 +193,7 @@ export function PickerSheet({
       onHeaderClick={packing ? backFromPack : undefined}
       headerLabel={packing ? t('favorites.packing.back') : undefined}
       title={mobileTitle}
+      headerAccessory={typeToggle}
       closeLabel={t('favorites.close')}
       size="content"
     >
@@ -241,18 +261,22 @@ function PickerEmptyState({
   return (
     <section
       data-testid="favorites-picker-empty"
-      className="mx-auto flex w-full max-w-[270px] flex-col items-center rounded-2xl border border-primary/10 bg-gradient-to-b from-primary/[0.045] to-transparent px-5 pb-6 pt-5 text-center"
+      className="mx-auto flex w-full max-w-[270px] flex-col items-center rounded-xl border border-border bg-muted/30 px-5 py-5 text-center"
     >
-      <div className="relative mb-4 grid h-[76px] w-[76px] place-items-center rounded-full border border-primary/15 bg-card shadow-sm">
-        <EmptyBall className="h-11 w-11 text-primary/35" />
-        <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-[3px] border-card bg-primary/30" aria-hidden />
+      <div className="mb-3 grid h-[76px] w-[76px] place-items-center rounded-2xl border border-border bg-card" aria-hidden>
+        <svg data-testid="favorites-empty-unown" viewBox="0 0 500 900" className="h-[68px] w-[40px] text-foreground" fill="none">
+          <path d="M172 109C245 73 347 99 392 176C455 284 388 401 246 421V521" stroke="currentColor" strokeWidth="90" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="246" cy="680" r="208" fill="currentColor" />
+          <path d="M130 680C130 746 181 796 246 796S362 746 362 680Z" fill="var(--color-card)" />
+          <circle cx="246" cy="680" r="49" fill="currentColor" />
+        </svg>
       </div>
       <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
       <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{hint}</p>
       {backLabel && onBack ? <button
         type="button"
         onClick={onBack}
-        className="mt-5 inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-primary/20 bg-card px-3.5 py-2 text-xs font-medium text-primary shadow-sm hover:bg-primary/5"
+        className="mt-5 inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground hover:border-primary/40 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <ChevronLeft size={14} aria-hidden />
         {backLabel}
