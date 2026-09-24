@@ -719,6 +719,64 @@ test.describe('favorite Pokémon picker', () => {
     await page.screenshot({ path: testInfo.outputPath('pinch-zoom-minimap.png') });
   });
 
+  test('minimap stays at the viewport edge through repeated zoomed page scrolls', async ({ page, context }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'mobile pinch-zoom geometry');
+    await page.goto('/favorite-pokemon-by-type');
+    await page.evaluate(() => { document.body.style.minHeight = '1800px'; });
+    const map = page.getByTestId('favorites-minimap');
+    await expect(map).toBeAttached();
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
+    await expect.poll(() => page.evaluate(() => visualViewport?.scale ?? 1)).toBeGreaterThan(1.9);
+    await expect.poll(() => page.evaluate(() => {
+      const visual = window.visualViewport!;
+      const rect = document.querySelector('[data-testid="favorites-minimap"]')!.getBoundingClientRect();
+      return visual.offsetTop + visual.height - rect.bottom;
+    })).toBeCloseTo(6, 0);
+
+    const samples = [];
+    for (const scrollTop of [80, 160, 240, 120, 300, 40]) {
+      samples.push(await page.evaluate((top) => {
+        window.scrollTo(0, top);
+        const visual = window.visualViewport!;
+        const rect = document.querySelector('[data-testid="favorites-minimap"]')!.getBoundingClientRect();
+        return {
+          scrollY: window.scrollY,
+          gap: visual.offsetTop + visual.height - rect.bottom,
+          position: getComputedStyle(document.querySelector('[data-testid="favorites-minimap"]')!).position,
+        };
+      }, scrollTop));
+    }
+    expect(new Set(samples.map((sample) => sample.scrollY)).size).toBeGreaterThan(3);
+    expect(samples.every((sample) => sample.position === 'fixed')).toBe(true);
+    expect(Math.max(...samples.map((sample) => sample.gap)) - Math.min(...samples.map((sample) => sample.gap))).toBeLessThan(1);
+
+    const visualPan = await page.evaluate(() => {
+      const visual = window.visualViewport!;
+      const map = document.querySelector('[data-testid="favorites-minimap"]') as HTMLElement;
+      const before = parseFloat(map.style.top);
+      Object.defineProperty(visual, 'offsetTop', { configurable: true, value: 24 });
+      visual.dispatchEvent(new Event('scroll'));
+      const after = parseFloat(map.style.top);
+      Reflect.deleteProperty(visual, 'offsetTop');
+      visual.dispatchEvent(new Event('scroll'));
+      return after - before;
+    });
+    expect(visualPan).toBeCloseTo(24, 0);
+  });
+
+  test('large grid artwork shrinks while small artwork keeps its size', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.getByTestId('favorites-cell-electric-1').click();
+    await page.getByTestId('favorites-pick-25').click();
+    await page.getByTestId('favorites-cell-electric-5').click();
+    await page.getByTestId('favorites-pick-644').click();
+    const small = page.getByTestId('favorites-cell-electric-1').locator('img[data-grid-sprite-size]');
+    const large = page.getByTestId('favorites-cell-electric-5').locator('img[data-grid-sprite-size]');
+    await expect(small).toHaveAttribute('data-grid-sprite-size', '120');
+    await expect(large).toHaveAttribute('data-grid-sprite-size', '88.9');
+  });
+
   test('filled sprites can paint outside the cell boundary', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fire-1').click();

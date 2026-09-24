@@ -70,6 +70,10 @@ export function eligibleFor(type: TypeAxisId, gen: GenAxisId): PickerMon[] {
   }
 
   return out.slice().sort((a, b) => {
+    if (type === 'psychic' && (gen === 2 || gen === 3)) {
+      const unownOrder = Number(a.ownerId === 201) - Number(b.ownerId === 201);
+      if (unownOrder !== 0) return unownOrder;
+    }
     if (type === 'starter' && gen === 8) {
       const hisuiA = a.name.endsWith('-hisui') ? 1 : 0;
       const hisuiB = b.name.endsWith('-hisui') ? 1 : 0;

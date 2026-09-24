@@ -71,10 +71,13 @@ describe('alternate picker forms', () => {
   });
 
   it('offers the Unown alphabet in Gen 2 and its punctuation in Gen 3', () => {
-    const gen2 = eligibleFor('psychic', 2).filter((mon) => mon.ownerId === 201).map((mon) => mon.id);
-    expect(gen2).toEqual([201, ...Array.from({ length: 25 }, (_, i) => 11037 + i)]);
-    const gen3 = eligibleFor('psychic', 3).filter((mon) => mon.ownerId === 201).map((mon) => mon.id);
-    expect(gen3).toEqual([11062, 11063]);
+    const gen2 = eligibleFor('psychic', 2).map((mon) => mon.id);
+    const gen2Unown = [201, ...Array.from({ length: 25 }, (_, i) => 11037 + i)];
+    expect(gen2.filter((id) => gen2Unown.includes(id))).toEqual(gen2Unown);
+    expect(gen2.slice(-gen2Unown.length)).toEqual(gen2Unown);
+    const gen3 = eligibleFor('psychic', 3).map((mon) => mon.id);
+    expect(gen3.filter((id) => [11062, 11063].includes(id))).toEqual([11062, 11063]);
+    expect(gen3.slice(-2)).toEqual([11062, 11063]);
     expect(eligibleFor('electric', 4).some((mon) => mon.id === 11064)).toBe(true);
     expect(eligibleFor('electric', 2).some((mon) => mon.id === 11064)).toBe(false);
   });

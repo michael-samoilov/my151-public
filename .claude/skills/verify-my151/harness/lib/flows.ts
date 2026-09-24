@@ -1497,6 +1497,12 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
 
   await s.evalJson(`
     const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    const seen = { shown: false };
+    window.__verifyFavoritesMinimap = seen;
+    if (map) new MutationObserver(() => {
+      if (Number(map.style.opacity) > 0.05) seen.shown = true;
+    }).observe(map, { attributes: true, attributeFilter: ['style'] });
     if (el) {
       el.scrollLeft = Math.round(el.clientWidth * 0.85);
       el.dispatchEvent(new Event('scroll'));
@@ -1512,7 +1518,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     const map = document.querySelector('[data-testid="favorites-minimap"]');
     const vp = document.querySelector('[data-testid="favorites-minimap-viewport"]');
     const overflow = !!el && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
-    const shown = !!map && Number(getComputedStyle(map).opacity) > 0.05;
+    const shown = !!map && (window.__verifyFavoritesMinimap?.shown || Number(getComputedStyle(map).opacity) > 0.05);
     const vpNarrower = !!(map && vp && vp.getBoundingClientRect().width < map.getBoundingClientRect().width - 1 && vp.getBoundingClientRect().width > 2);
     const sample = document.createElement('span');
     sample.style.color = 'var(--color-primary)';

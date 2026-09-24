@@ -16,6 +16,7 @@ import {
 } from '../model/cells';
 import { kindFor } from '../model/eligibility';
 import type { PickerMon } from '../model/catalog';
+import { gridSpriteSizePercent } from '../model/gridSpriteSize';
 import { minimapViewportX } from '../model/minimap';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 
@@ -70,8 +71,9 @@ function TypeColumnScroller({
   fills: Record<string, number>;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const minimapRef = useRef<HTMLDivElement>(null);
   const [cell, setCell] = useState(0);
-  const { frame, scrolling, showScrollCue } = useChartFrame(ref);
+  const { frame, scrolling, showScrollCue } = useChartFrame(ref, minimapRef);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -120,7 +122,7 @@ function TypeColumnScroller({
           {children}
         </div>
       </div>
-      <ChartMinimap frame={frame} scrolling={scrolling} fills={fills} />
+      <ChartMinimap frame={frame} scrolling={scrolling} fills={fills} mapRef={minimapRef} />
       {frame && chartOverflows(frame) && showScrollCue ? (
         <div data-testid="favorites-scroll-cue" className="pointer-events-none absolute bottom-3 right-3 z-30 flex items-center gap-1 rounded-full bg-card/95 px-2 py-1 text-xs text-muted-foreground shadow-sm">
           <span>Scroll for more</span><span aria-hidden>→</span>
@@ -277,13 +279,13 @@ interface ChartMetrics {
   visibleRight: number;
   visibleTop: number;
   visibleBottom: number;
-  pageRight: number;
-  pageBottom: number;
+  viewportRight: number;
+  viewportBottom: number;
   visualScale: number;
   visible: boolean;
 }
 
-function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
+function useChartFrame(ref: RefObject<HTMLDivElement | null>, minimapRef: RefObject<HTMLDivElement | null>) {
   const [frame, setFrame] = useState<ChartMetrics | null>(null);
   const [scrolling, setScrolling] = useState(false);
   const [showScrollCue, setShowScrollCue] = useState(() => {
@@ -295,6 +297,15 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
     const el = ref.current;
     if (!el) return;
     let timer = 0;
+    const pinMinimap = () => {
+      const map = minimapRef.current;
+      if (!map) return;
+      const visual = window.visualViewport;
+      const scale = Math.max(1, (visual?.scale ?? 1) * window.devicePixelRatio / INITIAL_DPR);
+      map.style.left = `${(visual?.offsetLeft ?? 0) + (visual?.width ?? window.innerWidth) - (map.offsetWidth + 12) / scale}px`;
+      map.style.top = `${(visual?.offsetTop ?? 0) + (visual?.height ?? window.innerHeight) - (map.offsetHeight + 12) / scale}px`;
+      map.style.transform = `scale(${1 / scale})`;
+    };
     const show = () => {
       setScrolling(true);
       window.clearTimeout(timer);
@@ -330,16 +341,17 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
         visibleRight,
         visibleTop,
         visibleBottom,
-        // The portal is absolutely positioned in document coordinates. This
-        // avoids WebKit's zoomed position:fixed compensation moving it twice.
-        pageRight,
-        pageBottom,
+        // Fixed positioning handles document scroll. Only the visual viewport's
+        // offset within the layout viewport needs compensation during zoom.
+        viewportRight: (visual?.offsetLeft ?? 0) + (visual?.width ?? window.innerWidth),
+        viewportBottom: (visual?.offsetTop ?? 0) + (visual?.height ?? window.innerHeight),
         visualScale: Math.max(1, (visual?.scale ?? 1) * window.devicePixelRatio / INITIAL_DPR),
         visible: visibleRight > visibleLeft && visibleBottom > visibleTop,
       };
       setFrame(next);
     };
     const onVisualChange = () => {
+      pinMinimap();
       read();
       if ((window.visualViewport?.scale ?? 1) > 1.01 || window.devicePixelRatio > INITIAL_DPR * 1.01) show();
     };
@@ -368,7 +380,7 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
       observer.disconnect();
       window.clearTimeout(timer);
     };
-  }, [ref]);
+  }, [ref, minimapRef]);
 
   return { frame, scrolling, showScrollCue };
 }
@@ -383,10 +395,12 @@ function ChartMinimap({
   frame,
   scrolling,
   fills,
+  mapRef,
 }: {
   frame: ChartMetrics | null;
   scrolling: boolean;
   fills: Record<string, number>;
+  mapRef: RefObject<HTMLDivElement | null>;
 }) {
   if (!frame || !frame.visible || !chartOverflows(frame)) return null;
   const max = 84;
@@ -431,13 +445,14 @@ function ChartMinimap({
   }
   return createPortal(
     <div
+      ref={mapRef}
       data-testid="favorites-minimap"
       aria-hidden
-      className="pointer-events-none absolute z-30 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200"
+      className="pointer-events-none fixed z-30 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200"
       style={{
         opacity: scrolling ? 0.95 : 0,
-        left: frame.pageRight - (mapW + 18) / frame.visualScale,
-        top: frame.pageBottom - (mapH + 18) / frame.visualScale,
+        left: frame.viewportRight - (mapW + 18) / frame.visualScale,
+        top: frame.viewportBottom - (mapH + 18) / frame.visualScale,
         transform: `scale(${1 / frame.visualScale})`,
         transformOrigin: 'top left',
       }}
@@ -473,14 +488,16 @@ function ChartMinimap({
 
 function Filled({ mon }: { mon: PickerMon }) {
   const pokemon = { types: mon.types } as Pokemon;
+  const size = gridSpriteSizePercent(mon.sprite);
   return (
     <>
       <PokeballBg pokemon={pokemon} />
       <img
         src={mon.sprite}
         alt={mon.name}
-        className="absolute left-1/2 top-1/2 z-10 max-h-[120%] max-w-[120%] -translate-x-1/2 -translate-y-1/2"
-        style={{ imageRendering: 'pixelated' }}
+        className="absolute left-1/2 top-1/2 z-10 h-auto max-w-none -translate-x-1/2 -translate-y-1/2"
+        style={{ imageRendering: 'pixelated', width: `${size}%` }}
+        data-grid-sprite-size={size}
         draggable={false}
       />
     </>

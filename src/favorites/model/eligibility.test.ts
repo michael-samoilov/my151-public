@@ -78,11 +78,14 @@ describe('eligibleFor', () => {
     for (const gen of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
       for (const type of [...TYPE_NAMES, 'gimmick', 'legendary'] as const) {
         const mons = eligibleFor(type, gen);
-        const tiers = mons.map(regionalPickerTier);
+        const tieredMons = type === 'psychic' && (gen === 2 || gen === 3)
+          ? mons.filter((mon) => mon.ownerId !== 201)
+          : mons;
+        const tiers = tieredMons.map(regionalPickerTier);
         expect(tiers, `${type}|${gen}`).toEqual(tiers.slice().sort((a, b) => a - b));
-        const firstLegendary = mons.findIndex(isLegendaryEligible);
+        const firstLegendary = tieredMons.findIndex(isLegendaryEligible);
         if (firstLegendary >= 0) {
-          expect(mons.slice(firstLegendary).every(isLegendaryEligible), `${type}|${gen} legendary tail`).toBe(true);
+          expect(tieredMons.slice(firstLegendary).every(isLegendaryEligible), `${type}|${gen} legendary tail`).toBe(true);
         }
       }
     }
