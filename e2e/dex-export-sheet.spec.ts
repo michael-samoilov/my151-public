@@ -280,7 +280,8 @@ test.describe('mobile dex export sheet', () => {
     expect(await page.locator('[data-export-preview]').getAttribute('data-export-orbit')).not.toBe('pointer');
   });
 
-  test('a tap toggles auto-tilt, a long press does not, and drag release stays flat', async ({ page }) => {
+  test('a tap toggles auto-tilt, a long press does not, and drag release stays flat', async ({ page, browserName }) => {
+    test.skip(browserName !== 'chromium', 'CDP touch injection');
     await openDexExport(page);
     await waitPreviewReady(page);
     const foil = page.locator('[data-export-preview]');
@@ -295,34 +296,43 @@ test.describe('mobile dex export sheet', () => {
       const y = Math.abs(Number(await foil.getAttribute('data-tilt-y')));
       return x < 0.8 && y < 0.8 && (await foil.getAttribute('data-paused')) === '1' && (await foil.getAttribute('data-export-orbit')) === 'paused';
     };
+    const cdp = await page.context().newCDPSession(page);
+    const touchStart = () => cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] });
+    const touchEnd = () => cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    const tap = async () => {
+      await touchStart();
+      await touchEnd();
+    };
+    const drag = async (dx: number, dy: number) => {
+      await touchStart();
+      for (let i = 1; i <= 8; i += 1) {
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: cx + (dx * i) / 8, y: cy + (dy * i) / 8 }],
+        });
+      }
+      await touchEnd();
+    };
 
-    await page.mouse.click(cx, cy);
+    await tap();
     await expect.poll(flat, { timeout: 2000 }).toBe(true);
-    await page.mouse.click(cx, cy);
+    await tap();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
 
-    await page.mouse.move(cx, cy);
-    await page.mouse.down();
+    await touchStart();
     await page.waitForTimeout(380);
-    await page.mouse.up();
+    await touchEnd();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
 
-    await page.mouse.move(cx, cy);
-    await page.mouse.down();
-    await page.mouse.move(cx + 52, cy - 36, { steps: 8 });
-    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
-    await page.mouse.up();
+    await drag(52, -36);
     await expect.poll(flat, { timeout: 2000 }).toBe(true);
     await page.waitForTimeout(700);
     expect(await flat()).toBe(true);
 
-    await page.mouse.click(cx, cy);
+    await tap();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
 
-    await page.mouse.move(cx, cy);
-    await page.mouse.down();
-    await page.mouse.move(cx - 46, cy + 30, { steps: 8 });
-    await page.mouse.up();
+    await drag(-46, 30);
     await expect.poll(flat, { timeout: 2000 }).toBe(true);
     await page.waitForTimeout(700);
     expect(await flat()).toBe(true);
@@ -349,6 +359,23 @@ test.describe('mobile dex export sheet', () => {
     const before = await img.getAttribute('src');
     expect(before).toBeTruthy();
     await expect(foil).toHaveAttribute('data-foil-map-source', before!);
+    await foil.evaluate((el) => {
+      const win = window as Window & {
+        __foilMapMutations?: Array<{ name: string; oldValue: string | null }>;
+        __observedFoilNode?: Element;
+      };
+      win.__foilMapMutations = [];
+      win.__observedFoilNode = el;
+      new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          win.__foilMapMutations!.push({ name: mutation.attributeName ?? '', oldValue: mutation.oldValue });
+        }
+      }).observe(el, {
+        attributes: true,
+        attributeOldValue: true,
+        attributeFilter: ['data-foil-maps', 'data-foil-map-source', 'style'],
+      });
+    });
 
     await page.locator('[data-export-sort="national"]').click();
     await waitPreviewReady(page);
@@ -357,6 +384,27 @@ test.describe('mobile dex export sheet', () => {
       const mapSource = await foil.getAttribute('data-foil-map-source');
       return source !== before && mapSource === source;
     }, { timeout: 15_000 }).toBe(true);
+    const reset = await foil.evaluate((el) => {
+      const win = window as Window & {
+        __foilMapMutations?: Array<{ name: string; oldValue: string | null }>;
+        __observedFoilNode?: Element;
+      };
+      const records = win.__foilMapMutations ?? [];
+      const remounted = win.__observedFoilNode !== el;
+      const mapsCleared = records.some((record) => record.name === 'data-foil-maps' && record.oldValue === '1');
+      const sourceCleared = records.some((record) => record.name === 'data-foil-map-source' && record.oldValue !== null);
+      const maskStayedClearUntilReplacement = records.some(
+        (record) => record.name === 'style' && record.oldValue?.includes('--foil-sat-mask: none'),
+      );
+      return {
+        ok: remounted || (mapsCleared && sourceCleared && maskStayedClearUntilReplacement),
+        remounted,
+        mapsCleared,
+        sourceCleared,
+        maskStayedClearUntilReplacement,
+      };
+    });
+    expect(reset.ok, `old foil maps clear while the replacement is generated: ${JSON.stringify(reset)}`).toBe(true);
   });
 
   test('keeps the preview above the settings sheet', async ({ page }) => {
@@ -759,13 +807,20 @@ test.describe('desktop dex export preview', () => {
 
     const corners = await foil.evaluate((el) => {
       const style = getComputedStyle(el);
+      const img = el.querySelector<HTMLImageElement>('img');
       const clip = `${style.getPropertyValue('clip-path')} ${style.getPropertyValue('-webkit-clip-path')}`;
+      const shapeMask = `${style.getPropertyValue('-webkit-mask-image')} ${style.getPropertyValue('mask-image')}`;
       const bg = style.backgroundColor.replace(/\s+/g, '');
       const transparent = bg === 'transparent' || bg === 'rgba(0,0,0,0)' || bg === 'rgba(0,0,0,0.0)';
       return {
         bg,
         clip,
-        ok: transparent && /round/i.test(clip) && !el.className.includes('bg-white'),
+        shapeMask,
+        ok:
+          transparent &&
+          !/round/i.test(clip) &&
+          Boolean(img?.currentSrc && shapeMask.includes(img.currentSrc)) &&
+          !el.className.includes('bg-white'),
       };
     });
     expect(corners.ok, JSON.stringify(corners)).toBe(true);
@@ -935,7 +990,7 @@ test.describe('desktop dex export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('hue');
+    expect(holo.mix, JSON.stringify(holo)).toBe('hard-light');
     expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.04);
     expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.25, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);

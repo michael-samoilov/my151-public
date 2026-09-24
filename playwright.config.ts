@@ -15,8 +15,8 @@ import path from 'node:path';
  * The previous root-level harnesses each hardcoded a different URL (:5173 and
  * :5199) and needed a server started by hand, so one of them could never pass.
  */
-const PREVIEW_PORT = 4173;
-const DEV_PORT = 4174;
+const PREVIEW_PORT = Number(process.env.PLAYWRIGHT_PREVIEW_PORT ?? 4173);
+const DEV_PORT = Number(process.env.PLAYWRIGHT_DEV_PORT ?? 4174);
 
 /**
  * Find a Chromium this machine actually has, without assuming a revision.

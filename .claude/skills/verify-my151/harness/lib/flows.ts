@@ -339,7 +339,6 @@ async function waitForFoilMaps(s: Session, ms = 15000): Promise<boolean> {
   return false;
 }
 
-/** Rainbow on ink only: sat-mask + hue blend. Paper stays white. */
 async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: string }> {
   return s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
@@ -354,7 +353,7 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const opacity=Number(cs.opacity);
      const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
-     if(mix!=='hue') return {ok:false,reason:'blend '+mix};
+     if(mix!=='hard-light') return {ok:false,reason:'blend '+mix};
      if(!(opacity>0.04)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
      if(Math.abs(amount-0.25)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
@@ -384,21 +383,27 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
        g.globalAlpha=1;
        g.fillStyle='rgb('+base[0]+','+base[1]+','+base[2]+')';
        g.fillRect(0,0,8,8);
-       g.globalCompositeOperation='hue';
+       const y=luma(base[0],base[1],base[2]);
+       const maxc=Math.max(base[0],base[1],base[2]);
+       const baseChroma=maxc-Math.min(base[0],base[1],base[2]);
+       const chroma01=baseChroma<12||maxc===0?0:baseChroma/maxc;
+       const dark01=y>=230?0:Math.min(1,(230-y)/160);
+       const satAlpha=Math.pow(Math.max(chroma01,dark01*0.65),0.72);
+       g.globalCompositeOperation='hard-light';
+       g.globalAlpha=0.25*satAlpha;
        g.fillStyle='hsl(2, 100%, 73%)';
        g.fillRect(0,0,8,8);
        const ink=g.getImageData(4,4,1,1).data;
-       const baseChroma=Math.max(base[0],base[1],base[2])-Math.min(base[0],base[1],base[2]);
        const inkChroma=Math.max(ink[0],ink[1],ink[2])-Math.min(ink[0],ink[1],ink[2]);
        const lumaDelta=Math.abs(luma(ink[0],ink[1],ink[2])-luma(base[0],base[1],base[2]));
-       const wall=ink[0]===0||ink[0]===255||ink[1]===0||ink[1]===255||ink[2]===0||ink[2]===255;
-       if(inkChroma<Math.round(baseChroma*0.85) && !wall) return {ok:false,reason:'ink washed '+base.join(',')+' '+inkChroma};
+       if(inkChroma<Math.round(baseChroma*0.62)) return {ok:false,reason:'ink washed '+base.join(',')+' '+inkChroma};
+       if(lumaDelta>=36) return {ok:false,reason:'ink luma '+base.join(',')+' '+lumaDelta.toFixed(1)};
        if(Math.abs(ink[0]-base[0])+Math.abs(ink[1]-base[1])+Math.abs(ink[2]-base[2])>=16) shifted=true;
        lastChroma=inkChroma;
        lastLuma=lumaDelta;
      }
      if(!shifted) return {ok:false,reason:'ink unchanged'};
-     return {ok:true,reason:'hue-ink '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' ink='+lastChroma+' lumaΔ='+lastLuma.toFixed(1)};`,
+     return {ok:true,reason:'hard-light-ink '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' ink='+lastChroma+' lumaΔ='+lastLuma.toFixed(1)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
 }
 

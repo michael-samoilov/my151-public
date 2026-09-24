@@ -1,12 +1,3 @@
-/* Lighting layers for the export preview.
- *
- * Layers read a FoilRecipe through CSS variables (`--foil-pointLight`, …)
- * and clip to maps derived from the PNG (`--foil-sat-mask`, edge, gloss).
- * Holographic uses the sat map so rainbow sits on ink, not white paper.
- * Hue-blend tints sprites without the luminance drop of multiply
- * or the chroma wash of soft-light.
- */
-
 /* poke-holo .card__translater: perspective lives on the parent of the rotator. */
 .export-foil-hit {
   --shadow-x: 0;
