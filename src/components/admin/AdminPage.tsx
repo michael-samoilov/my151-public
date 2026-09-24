@@ -6,29 +6,31 @@ import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { dexFunnelSankey, leagueFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
-import type { DexUsageFunnel, LeagueUsageFunnel } from '../../../api/_aggregate';
+import type { DexUsageFunnel, LeagueUsageFunnel, WhoBucket } from '../../../api/_aggregate';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
-import { Panel, Seg, Kpi, Rollup, type RollupRow } from '@/components/admin/ui';
+import { Panel, Seg, Kpi } from '@/components/admin/ui';
 import { ClampChip, PlatformStacks } from '@/components/admin/PlatformStacks';
-import { clampedN, type PlatformClamp, type PlatformJoint } from '@/lib/platformStacks';
+import { WhoOrigin } from '@/components/admin/WhoOrigin';
+import { clampedN, type PlatformJoint } from '@/lib/platformStacks';
+import { filteredN, type WhoFilter } from '@/lib/whoOrigin';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { cn, displayName } from '@/lib/utils';
-import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
+import { exportSurveySkipMarks, leagueSittingEv, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
+import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import {
   ARCHIVE_FILTER_OPTIONS,
   bareCid,
-  countryName,
   dexChipLabel,
   dexPokemonCount,
   FACET_KEYS,
@@ -46,6 +48,8 @@ import {
   previewLanguage,
   PREVIEW_FIT,
   sameBaseLang,
+  geoChipLabel,
+  uiLanguage,
   sessionChipParts,
   TOOL_FILTER_OPTIONS,
   toolKind,
@@ -60,6 +64,7 @@ import { FitNowrap, PreviewChipZoomProvider } from '@/components/admin/FitNowrap
 import { useHostZoom } from '@/components/admin/previewChipZoom';
 import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
+import type { ExportSurveySkip } from '../../../api/_events';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -78,13 +83,6 @@ const PAGE_SIZE = 50;
 export type ToolSlice = 'all' | 'dex' | 'league';
 
 export type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
-
-interface BarGroup {
-  label: string;
-  count: number;
-  color?: string;
-  children: { label: string; count: number }[];
-}
 
 const TOOL_TABS: { key: ToolSlice; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -116,8 +114,11 @@ function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
     os: data.os,
     browsers: {},
     joints: [],
+    whoBuckets: [],
+    countries7d: 0,
     hours: data.hours,
     heatmap: data.heatmap,
+    hourly: [],
   };
 }
 
@@ -170,6 +171,7 @@ export interface ClientRecord {
     groupSpecial: boolean;
     showStats?: boolean;
   };
+  exportSurveySkips?: ExportSurveySkip[];
   /** Dropped from dashboard aggregates; still listed when the archive filter asks. */
   archived?: boolean;
 }
@@ -188,8 +190,11 @@ export interface Aggregates {
   os: Record<string, number>;
   browsers: Record<string, number>;
   joints?: PlatformJoint[];
+  whoBuckets?: WhoBucket[];
+  countries7d?: number;
   hours: number[];
   heatmap: number[][];
+  hourly?: { hour: number; unique: number }[];
 }
 
 /** One browser's gym leader maker record. Attached to their dex card when
@@ -222,7 +227,8 @@ export interface LeagueUser {
   exportsLeague: number;
   exportedCardAt?: string;
   exportedLeagueAt?: string;
-  sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[] }[];
+  sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[]; events?: string[] }[];
+  exportSurveySkips?: ExportSurveySkip[];
   order?: 'dex-first' | 'league-first' | 'same-day';
   gapDays?: number;
   archived?: boolean;
@@ -421,13 +427,6 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
     stamps.push(rec.firstTs, rec.lastTs);
   }
   return distinctCalendarDays(stamps, rec.tz);
-}
-
-function flag(country?: string): string {
-  if (!country || country.length !== 2) return '';
-  const cc = country.toUpperCase();
-  if (!/^[A-Z]{2}$/.test(cc)) return '';
-  return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
 async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
@@ -663,38 +662,23 @@ const POKEBALL_SVG = (
   </svg>
 );
 
-/** The languages chip, abbreviated with a press/hover tooltip. Three sources —
- *  the browser default (globe), the language we served (poké ball), and any
- *  manual switch (translation) — collapse to one code when they agree, else list
- *  browser › served › switched; the tooltip spells the full names. */
+/** One UI language on the chip. Extra sources and the path live in the tooltip. */
 function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: string; switched?: string }) {
   const items = [
     lang ? { tag: lang, name: langName(lang), kind: 'browser' as const } : null,
     locale ? { tag: locale, name: langName(locale), kind: 'served' as const } : null,
     switched ? { tag: switched, name: langName(switched), kind: 'switched' as const } : null,
   ].filter(Boolean) as { tag: string; name?: string; kind: 'browser' | 'served' | 'switched' }[];
-  if (items.length === 0) return null;
+  const current = uiLanguage(lang, locale, switched);
+  if (items.length === 0 || !current) return null;
   const allSame = items.every((it) => sameBaseLang(it.tag, items[0].tag));
-  if (allSame) {
-    return (
-      <InfoChip label={items[0].name ?? items[0].tag}>
-        <Globe className="h-[13px] w-[13px]" />
-        <span className="text-xs font-medium">{langAbbr(items[0].tag)}</span>
-      </InfoChip>
-    );
-  }
-  const label = items.map((it) => `${KIND_WORD[it.kind]} ${it.name ?? it.tag}`).join(' › ');
+  const label = allSame
+    ? (items[0].name ?? items[0].tag)
+    : items.map((it) => `${KIND_WORD[it.kind]} ${it.name ?? it.tag}`).join(' › ');
   return (
     <InfoChip label={label}>
-      {items.map((it, i) => (
-        <span key={it.kind} className="flex items-center gap-0.5">
-          {i > 0 && <span className="px-0.5 text-muted-foreground/50">›</span>}
-          {it.kind === 'browser' && <Globe className="h-[13px] w-[13px]" />}
-          {it.kind === 'served' && <span className="[&>svg]:h-[13px] [&>svg]:w-[13px]">{POKEBALL_SVG}</span>}
-          {it.kind === 'switched' && <Languages className="h-[13px] w-[13px]" />}
-          <span className="text-xs font-medium">{langAbbr(it.tag)}</span>
-        </span>
-      ))}
+      <Globe className="h-[13px] w-[13px] shrink-0" />
+      <span className="text-xs font-medium">{langAbbr(current)}</span>
     </InfoChip>
   );
 }
@@ -807,7 +791,7 @@ function DetailHeader({
       <TooltipScope>
         <div className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-x-auto">
           {rec.country && (
-            <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
+            <InfoChip label={geoChipLabel(rec.country, rec.region)}>
               <FlagIcon country={rec.country} />
             </InfoChip>
           )}
@@ -951,12 +935,11 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
   const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
-  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] =
+  const milestones: ChartMilestone[] =
     rec.exported && rec.exportedAt
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
-      : log.length
-        ? [{ t: t1, label: 'no exports', tone: 'muted' }]
-        : [];
+      : [];
+  milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT, 'dex'));
 
   const snapshot = (
     <div ref={presenceRef}>
@@ -989,7 +972,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
     return (
       <div className="flex min-h-0 flex-1 flex-col gap-1.5">
         <p className="text-xs text-muted-foreground">No session history.</p>
-        <div className="min-h-0 flex-1 overflow-auto">{snapshot}</div>
+        <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto">{snapshot}</div>
       </div>
     );
   }
@@ -1057,44 +1040,35 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
         added,
         removed,
         dur: ms[k] != null ? ms[k] / 1000 : undefined,
+        ev: leagueSittingEv(s.events),
       };
     });
   }, [log, ms]);
   const idx = Math.min(i, Math.max(0, log.length - 1));
-  const cur = log[idx];
   const peak = Math.max(0, ...points.map((p) => p.net));
   const totalMs = ms.reduce((a, b) => a + b, 0);
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
   const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
   const days = Math.max(1, distinctCalendarDays(log.map((s) => s.ts), league.tz));
-  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] = [];
+  const milestones: ChartMilestone[] = [];
   if (league.exportedCardAt) {
     milestones.push({ t: clampT(Date.parse(league.exportedCardAt)), label: 'card', tone: 'export' });
   }
   if (league.exportedLeagueAt) {
     milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
   }
-  if (milestones.length === 0 && log.length) {
-    milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
-  }
+  milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT, 'league'));
 
-  const sessionMemberIds = useMemo(
-    () => log.map((s) => (s.cards && s.cards.length > 0 ? leagueSessionIds(s) : null)),
-    [log],
-  );
-  const layoutCards =
-    league.latestCards && league.latestCards.length > 0
-      ? league.latestCards
-      : cur?.cards && cur.cards.length > 0
-        ? cur.cards
-        : null;
-  const presentIds = sessionMemberIds[idx] ?? undefined;
-
-  const board = layoutCards ? (
-    <LeagueVisitBoard cards={layoutCards} presentIds={presentIds} sessionMemberIds={sessionMemberIds} />
-  ) : (
-    <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
+  const snapshots = useMemo(() => {
+    if (log.length === 0) {
+      const latest = sessionCards(league.latestCards);
+      return latest ? [latest] : [];
+    }
+    return log.map((s) => sessionCards(s.cards));
+  }, [log, league.latestCards]);
+  const board = (
+    <LeagueVisitBoard sessions={snapshots} playhead={idx} />
   );
 
   if (points.length === 0) {
@@ -1164,23 +1138,6 @@ function UserDetailPage({
       {tool === 'league' && league && <LeagueDetailBody league={league} />}
     </div>
   );
-}
-
-function regionGroups(countries: Record<string, number>): BarGroup[] {
-  const byRegion = new Map<string, { label: string; count: number }[]>();
-  for (const [cc, n] of Object.entries(countries)) {
-    const list = byRegion.get(regionOf(cc)) ?? [];
-    list.push({ label: `${flag(cc)} ${cc}`, count: n });
-    byRegion.set(regionOf(cc), list);
-  }
-  return [...byRegion.entries()]
-    .map(([label, children]) => ({
-      label,
-      count: children.reduce((sum, c) => sum + c.count, 0),
-      color: REGION_COLORS[label as Region],
-      children: children.sort((a, b) => b.count - a.count),
-    }))
-    .sort((a, b) => b.count - a.count);
 }
 
 function MetricChip({
@@ -1466,7 +1423,7 @@ function UserPreviewCard({
           <PreviewPlatformSlot
             colClass={FACET_COL.country}
             empty={!rec.country}
-            label={rec.country ? `${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}` : 'Unknown'}
+            label={rec.country ? geoChipLabel(rec.country, rec.region) : 'Unknown'}
           >
             {rec.country ? <FlagIcon country={rec.country} /> : <Globe className="h-[13px] w-[13px]" />}
           </PreviewPlatformSlot>
@@ -1639,8 +1596,7 @@ export function AdminPage() {
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
   const [page, setPage] = useState<'analytics' | 'feedback'>('analytics');
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
-  const [cohort, setCohort] = useState<'built' | 'incomplete' | 'completed'>('built');
-  const [whoClamp, setWhoClamp] = useState<PlatformClamp | null>(null);
+  const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -1759,7 +1715,7 @@ export function AdminPage() {
   );
 
   const pickTool = useCallback((next: ToolSlice) => {
-    setWhoClamp(null);
+    setWhoFilter(null);
     setTool(next);
     try {
       localStorage.setItem(TOOL_KEY, next);
@@ -1825,7 +1781,7 @@ export function AdminPage() {
   return (
     <div className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-1">
+        <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockUser ? 'max-w-none' : 'max-w-5xl')}>
           <h1 className="whitespace-nowrap text-sm font-bold">
 
             <span className="text-primary">my151</span> · Analytics
@@ -1845,7 +1801,8 @@ export function AdminPage() {
 
       <main
         className={cn(
-          'mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col px-4',
+          'mx-auto flex w-full min-w-0 flex-1 flex-col px-4',
+          lockUser ? 'max-w-none' : 'max-w-5xl',
           lockUser
             ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-nav-h,5rem)] md:pb-8'
             : cn('gap-4 pt-4 md:pb-8', detail?.kind === 'picks' ? 'pb-8' : 'pb-24'),
@@ -1927,37 +1884,26 @@ export function AdminPage() {
 
           const xt = data.tools;
 
-          const regionRollup = (countries: Record<string, number>): RollupRow[] => {
-            const groups = regionGroups(countries);
-            const total = groups.reduce((s, g) => s + g.count, 0) || 1;
-            return groups.slice(0, 5).map((g) => ({ label: g.label, pct: Math.round((g.count / total) * 100) }));
+          // The selected tool's whole population, not a built/incomplete/completed slice.
+          const whoSrc = {
+            devices: slice.devices,
+            os: slice.os,
+            countries: slice.countries,
+            browsers: slice.browsers,
+            users: slice.users,
+            joints: slice.joints,
           };
-
-          // Who: use cohort breakdowns when the endpoint provides them, else the
-          // slice's own rollups (league, or an older deploy).
-          const cohorts = showDex ? data.cohorts : undefined;
-          const whoSrc = cohorts
-            ? cohorts[cohort]
-            : {
-                devices: slice.devices,
-                os: slice.os,
-                countries: slice.countries,
-                browsers: slice.browsers,
-                users: slice.users,
-                joints: slice.joints,
-              };
           const whoJoints = whoSrc.joints ?? [];
-          const whoOs = whoSrc.os ?? slice.os ?? {};
-          const whoN = whoSrc.users ?? slice.users;
-          const whoClampedN = whoClamp && whoJoints.length ? clampedN(whoJoints, whoClamp) : null;
-          const whoBuilt = cohorts?.built;
-          const deltaVs = (rows: RollupRow[], baseRows: RollupRow[] | null): RollupRow[] =>
-            !baseRows ? rows : rows.map((r) => {
-              const b = baseRows.find((x) => x.label === r.label);
-              return { ...r, delta: b ? r.pct - b.pct : undefined };
-            });
-          const baseGeo = whoBuilt ? regionRollup(whoBuilt.countries) : null;
-          const showDelta = !!cohorts && cohort !== 'built';
+          const whoOs = whoSrc.os ?? {};
+          const whoN = whoSrc.users;
+          const whoBuckets = slice.whoBuckets ?? [];
+          const whoFilteredN = !whoFilter
+            ? null
+            : whoBuckets.length
+              ? filteredN(whoBuckets, whoFilter)
+              : whoFilter.dim !== 'region' && whoJoints.length
+                ? clampedN(whoJoints, { dim: whoFilter.dim, value: whoFilter.value })
+                : null;
 
           // Build depth: device split when available, else the slice total.
           const depthCurve =
@@ -1989,6 +1935,7 @@ export function AdminPage() {
                     ? applyActivityLabels(slice.activity, loadedAt, data.lastPointLabels)
                     : slice.activity
                 }
+                hourly={slice.hourly ?? []}
                 nowMs={loadedAt}
               />
             )}
@@ -2090,51 +2037,35 @@ export function AdminPage() {
 
             <Panel
               title="Who"
+              pinHeader
               sub={
-                whoClampedN != null
-                  ? [`${whoClampedN} of ${whoN}`]
-                  : cohorts
-                    ? [cohort, String(whoN)]
-                    : [TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(slice.users)]
+                whoFilteredN != null
+                  ? [`${whoFilteredN} of ${whoN}`]
+                  : [TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(whoN)]
               }
               actions={
-                (whoClamp && whoJoints.length > 0) || cohorts ? (
-                <div className="flex flex-wrap items-center justify-end gap-1">
-                  {whoClamp && whoJoints.length > 0 && (
-                    <ClampChip clamp={whoClamp} onClear={() => setWhoClamp(null)} />
-                  )}
-                  {cohorts ? (
-                    <Seg
-                      ariaLabel="Cohort"
-                      options={[
-                        { key: 'built', label: 'Built' },
-                        { key: 'incomplete', label: 'Incomplete' },
-                        { key: 'completed', label: 'Completed' },
-                      ]}
-                      value={cohort}
-                      onChange={(next) => {
-                        setWhoClamp(null);
-                        setCohort(next);
-                      }}
-                    />
-                  ) : undefined}
-                </div>
+                whoFilter ? (
+                  <ClampChip clamp={whoFilter} onClear={() => setWhoFilter(null)} />
                 ) : undefined
               }
             >
-              <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-[minmax(0,1fr)_16rem]">
+              <div className="flex min-w-0 flex-col gap-3">
                 <PlatformStacks
                   devices={whoSrc.devices}
                   os={whoOs}
                   browsers={whoSrc.browsers}
                   joints={whoJoints}
-                  clamp={whoClamp}
-                  onClamp={setWhoClamp}
+                  buckets={whoBuckets}
+                  filter={whoFilter}
+                  onFilter={setWhoFilter}
                 />
-                <div>
-                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Region</div>
-                  <Rollup rows={showDelta ? deltaVs(regionRollup(whoSrc.countries), baseGeo) : regionRollup(whoSrc.countries)} />
-                </div>
+                <WhoOrigin
+                  countries={whoSrc.countries}
+                  buckets={whoBuckets}
+                  countries7d={slice.countries7d ?? 0}
+                  filter={whoFilter}
+                  onFilter={setWhoFilter}
+                />
               </div>
             </Panel>
 

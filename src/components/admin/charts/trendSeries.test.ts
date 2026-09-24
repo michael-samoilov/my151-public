@@ -1,17 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_MS } from '../../../../api/_aggregate';
 import { dayStart } from '../../../../api/_aggregate';
+import type { HourlyActivityPoint } from '../../../../api/_aggregate';
 import {
+  CHART_RANGE_PRESETS,
   chartDailyValues,
+  chartRangeWindowMs,
   chartWeeklyValues,
   countLabelLayout,
   applyActivityLabels,
   extendThroughToday,
+  dailyWeekdayTicks,
+  isHourlyRange,
   monthDividerIndices,
   monthLabelTicks,
+  sliceActivityRange,
+  sliceHourlyRange,
+  sliceLastUtcDays,
   splitProvisional,
   weekLineIndices,
   windowCounts,
+  type DailyPoint,
 } from './trendSeries';
 
 const day = (n: number) => Date.UTC(2026, 8, n);
@@ -138,7 +147,133 @@ describe('chartDailyValues', () => {
       { day: day(2), dau: 5, rolling7: 6, label24h: 7 },
     ];
     expect(chartDailyValues(series)).toEqual([2, 7]);
-    expect(chartWeeklyValues([...series.slice(0, 1), { ...series[1], label168h: 8 }])).toEqual([2, 8]);
+  });
+});
+
+function denseSeries(fromDay: number, count: number): DailyPoint[] {
+  return Array.from({ length: count }, (_, i) => ({
+    day: fromDay + i * DAY_MS,
+    dau: i + 1,
+    rolling7: 10 + i,
+  }));
+}
+
+describe('chartWeeklyValues', () => {
+  it('does not plot the first 6 days of history and keeps later weekly points', () => {
+    const series = denseSeries(day(1), 10);
+    series[9] = { ...series[9], label168h: 88 };
+    expect(chartWeeklyValues(series, series[0].day)).toEqual([null, null, null, null, null, null, 16, 17, 18, 88]);
+  });
+
+  it('keeps the last-point label168h even when history is shorter than a week', () => {
+    const series = [
+      { day: day(1), dau: 2, rolling7: 2 },
+      { day: day(2), dau: 5, rolling7: 6, label168h: 8 },
+    ];
+    expect(chartWeeklyValues(series, series[0].day)).toEqual([null, 8]);
+  });
+
+  it('does not blank a 30d slice whose days already have a full week behind them', () => {
+    const full = denseSeries(day(1), 40);
+    full[39] = { ...full[39], label168h: 99 };
+    const origin = full[0].day;
+    const now = day(40) + 12 * 3600_000;
+    const visible = sliceActivityRange(full, now, chartRangeWindowMs('30d'));
+    expect(visible).toHaveLength(31);
+    const weekly = chartWeeklyValues(visible, origin);
+    expect(weekly.slice(0, 6).every((v) => v != null)).toBe(true);
+    expect(weekly[weekly.length - 1]).toBe(99);
+  });
+});
+
+describe('sliceActivityRange', () => {
+  it('defaults All to the full series', () => {
+    const series = denseSeries(day(1), 20);
+    expect(sliceActivityRange(series, day(20) + 1, chartRangeWindowMs('all'))).toEqual(series);
+  });
+
+  it('keeps days that overlap the last 24 hours and at least two points for a line', () => {
+    const series = denseSeries(day(1), 10);
+    const now = day(10) + 18 * 3600_000;
+    const visible = sliceActivityRange(series, now, chartRangeWindowMs('24h'));
+    expect(visible.map((p) => p.day)).toEqual([day(9), day(10)]);
+  });
+});
+
+function denseHourly(fromHour: number, count: number): HourlyActivityPoint[] {
+  const hour = DAY_MS / 24;
+  return Array.from({ length: count }, (_, i) => ({
+    hour: fromHour + i * hour,
+    unique: (i % 5) + 1,
+  }));
+}
+
+describe('sliceHourlyRange', () => {
+  it('keeps 24 hourly points for the 24h chip, not two daily points', () => {
+    const hour = DAY_MS / 24;
+    const now = Date.UTC(2026, 8, 10, 18, 0, 0);
+    const series = denseHourly(now - 7 * DAY_MS, 7 * 24 + 1);
+    const visible = sliceHourlyRange(series, now);
+    expect(visible).toHaveLength(24);
+    expect(visible[0].hour).toBe(now - 23 * hour);
+    expect(visible[23].hour).toBe(now);
+    expect(new Set(visible.map((p) => p.unique)).size).toBeGreaterThan(1);
+  });
+});
+
+describe('sliceLastUtcDays', () => {
+  it('keeps one calendar DAU point per UTC day for the last seven days', () => {
+    const now = Date.UTC(2026, 8, 19, 3, 11, 0);
+    const series = denseSeries(day(1), 20);
+    const visible = sliceLastUtcDays(series, now, 7);
+    expect(visible).toHaveLength(7);
+    expect(visible[0].day).toBe(dayStart(now) - 6 * DAY_MS);
+    expect(visible[6].day).toBe(dayStart(now));
+    expect(visible.every((p, i) => p.day === visible[0].day + i * DAY_MS)).toBe(true);
+    expect(visible.map((p) => p.dau)).toEqual([13, 14, 15, 16, 17, 18, 19]);
+  });
+
+  it('uses calendar dau, not rolling 24h or weekly unique', () => {
+    const now = Date.UTC(2026, 8, 19, 3, 11, 0);
+    const series = denseSeries(day(1), 20);
+    const todayIdx = series.findIndex((p) => p.day === dayStart(now));
+    series[todayIdx] = { ...series[todayIdx], label24h: 99, label168h: 88 };
+    const visible = sliceLastUtcDays(series, now, 7);
+    expect(visible.map((p) => p.dau)).toEqual([13, 14, 15, 16, 17, 18, 19]);
+    expect(visible[6].label24h).toBe(99);
+    expect(visible.map((p) => p.dau)).not.toContain(99);
+  });
+});
+
+describe('dailyWeekdayTicks', () => {
+  it('labels each of the last seven UTC days with Sun through Sat', () => {
+    const now = Date.UTC(2026, 8, 19, 3, 11, 0);
+    const series = sliceLastUtcDays(denseSeries(day(1), 20), now, 7);
+    const ticks = dailyWeekdayTicks(series);
+    expect(ticks.map((t) => t.weekday)).toEqual(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+    expect(ticks.map((t) => t.idx)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+});
+
+describe('CHART_RANGE_PRESETS', () => {
+  it('lists 24h through all history with All as the last key', () => {
+    expect(CHART_RANGE_PRESETS.map((p) => p.key)).toEqual([
+      '24h',
+      '7d',
+      '30d',
+      '90d',
+      '180d',
+      '365d',
+      'all',
+    ]);
+    expect(chartRangeWindowMs('all')).toBeNull();
+  });
+
+  it('treats only 24h as an hourly range', () => {
+    expect(isHourlyRange('24h')).toBe(true);
+    expect(isHourlyRange('7d')).toBe(false);
+    expect(isHourlyRange('30d')).toBe(false);
+    expect(isHourlyRange('all')).toBe(false);
   });
 });
 

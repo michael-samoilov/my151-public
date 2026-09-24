@@ -1,19 +1,37 @@
-import { Panel } from '@/components/admin/ui';
+import { useMemo, useState } from 'react';
+import { Panel, Seg } from '@/components/admin/ui';
 import { useECharts, cssVar, topTooltip, type EChartsOption } from './useECharts';
 import { tipDataIndex } from './scrubPlot';
 import {
+  CHART_RANGE_PRESETS,
+  chartDailyValues,
+  chartRangeWindowMs,
+  chartWeeklyValues,
+  dailyWeekdayTicks,
   extendThroughToday,
+  lastPointIsCurrentHour,
   lastPointIsToday,
   monthDividerIndices,
   monthLabelTicks,
-  chartDailyValues,
-  chartWeeklyValues,
+  sliceActivityRange,
+  sliceHourlyRange,
+  sliceLastUtcDays,
   splitProvisional,
   windowCounts,
+  type ChartRangeKey,
   type DailyPoint,
+  type HourlyPoint,
 } from './trendSeries';
 
 const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+function fmtHour(ms: number): string {
+  return `${String(new Date(ms).getUTCHours()).padStart(2, '0')}:00`;
+}
+
+function fmtWeekday(ms: number): string {
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(ms).getUTCDay()];
+}
 
 /** Left plot inset. Holds the y-axis labels. */
 const GRID_LEFT = 36;
@@ -21,6 +39,7 @@ const GRID_LEFT = 36;
 const GRID_BOTTOM = 22;
 /** Gap from the last plotted x into the gutter. */
 const LABEL_INSET = 6;
+const GRID_TOP = 8;
 /** Gap from the end of the longest window label to the canvas edge. */
 const LABEL_TAIL = 10;
 const LABEL_FACE = 'ui-sans-serif, system-ui, sans-serif';
@@ -84,10 +103,18 @@ function LegendSwatch({ color }: { color: string }) {
   return <span className="block h-[2px] w-3 shrink-0" style={{ backgroundColor: color }} />;
 }
 
-function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) {
+function TrendChart({
+  series,
+  historyOriginDay,
+  nowMs,
+}: {
+  series: DailyPoint[];
+  historyOriginDay: number;
+  nowMs: number;
+}) {
   const days = series.map((p) => p.day);
   const daily = chartDailyValues(series);
-  const weekly = chartWeeklyValues(series);
+  const weekly = chartWeeklyValues(series, historyOriginDay);
   const labels = days.map(fmtDay);
   const provisional = lastPointIsToday(series, nowMs);
   const dailySplit = splitProvisional(daily, provisional);
@@ -112,7 +139,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
 
       return {
         animation: false,
-        grid: { left: GRID_LEFT, right, top: 36, bottom: GRID_BOTTOM },
+        grid: { left: GRID_LEFT, right, top: GRID_TOP, bottom: GRID_BOTTOM },
         tooltip: {
           ...topTooltip(el),
           trigger: 'axis',
@@ -253,8 +280,9 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
                 countLabel('24h', counts.hours24, faint, x, api.coord([last, daily[last]])[1], numSize),
               ];
               if (counts.days7 != null) {
+                const weeklyY = weekly[last] ?? counts.days7;
                 children.push(
-                  countLabel('7d', counts.days7, red, x, api.coord([last, weekly[last]])[1], numSize),
+                  countLabel('7d', counts.days7, red, x, api.coord([last, weeklyY])[1], numSize),
                 );
               }
               return { type: 'group', children };
@@ -263,7 +291,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
         ],
       };
     },
-    [series, nowMs],
+    [series, nowMs, historyOriginDay],
     { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
   );
 
@@ -283,27 +311,246 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   );
 }
 
-export function ActiveUsersPanel({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) {
-  const padded = extendThroughToday(series, nowMs);
+function UniqueUsersLineChart({
+  values,
+  axisLabels,
+  showTick,
+  scrubLabel,
+  ariaLabel,
+  seriesName,
+  provisional,
+  counts,
+  source,
+}: {
+  values: number[];
+  axisLabels: string[];
+  showTick: (i: number, last: number) => boolean;
+  scrubLabel: (i: number) => string;
+  ariaLabel: string;
+  seriesName: 'hourly' | 'daily';
+  provisional: boolean;
+  counts: { hours24: number };
+  source: DailyPoint[] | HourlyPoint[];
+}) {
+  const split = splitProvisional(values, provisional);
+  const ref = useECharts(
+    (el): EChartsOption => {
+      const faint = cssVar(el, '--color-muted-foreground', '#737373');
+      const grid = cssVar(el, '--color-muted', '#f5f5f5');
+      const axisFont = el.clientWidth < 600 ? 8 : 9;
+      const numSize = el.clientWidth < 600 ? 14 : 16;
+      const right = Math.ceil(LABEL_INSET + measureWindowLabelPx('24h', counts.hours24, numSize) + LABEL_TAIL);
+      const last = Math.max(values.length - 1, 1);
+      return {
+        animation: false,
+        grid: { left: GRID_LEFT, right, top: GRID_TOP, bottom: GRID_BOTTOM },
+        tooltip: {
+          ...topTooltip(el),
+          trigger: 'axis',
+          axisPointer: { type: 'none' },
+          formatter: (params: unknown) => scrubLabel(tipDataIndex(params)),
+        },
+        xAxis: {
+          type: 'category',
+          data: axisLabels,
+          boundaryGap: false,
+          axisPointer: { show: false },
+          axisLine: { lineStyle: { color: grid } },
+          axisTick: { show: false },
+          axisLabel: {
+            color: faint,
+            fontSize: axisFont,
+            interval: (i: number) => showTick(i, last),
+          },
+        },
+        yAxis: {
+          type: 'value',
+          min: 0,
+          axisLabel: { color: faint, fontSize: 9 },
+          splitLine: { show: true, lineStyle: { color: grid, width: 1, type: 'solid' } },
+        },
+        series: [
+          {
+            name: seriesName,
+            type: 'line',
+            data: split.complete,
+            lineStyle: { color: faint, width: 1.6 },
+            itemStyle: { color: faint },
+            symbol: 'none',
+            z: 2,
+          },
+          {
+            name: `${seriesName} now`,
+            type: 'line',
+            data: split.provisional,
+            lineStyle: { color: faint, width: 1.6, type: 'dotted' },
+            itemStyle: { color: faint },
+            symbol: 'none',
+            z: 2,
+          },
+          {
+            type: 'custom' as const,
+            name: 'window counts',
+            silent: true,
+            clip: false,
+            tooltip: { show: false },
+            z: 5,
+            data: [0],
+            renderItem: (
+              _params: unknown,
+              api: { coord: (v: number[]) => number[] },
+            ) => {
+              const i = values.length - 1;
+              const x = api.coord([i, 0])[0] + LABEL_INSET;
+              return {
+                type: 'group',
+                children: [countLabel('24h', counts.hours24, faint, x, api.coord([i, values[i] ?? 0])[1], numSize)],
+              };
+            },
+          },
+        ],
+      };
+    },
+    [source, seriesName, provisional, counts.hours24],
+    { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
+  );
+
+  if (values.length < 2) {
+    return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
+  }
+  return (
+    <div
+      ref={ref}
+      className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
+      role="img"
+      aria-label={ariaLabel}
+    />
+  );
+}
+
+function HourlyTrendChart({
+  series,
+  counts,
+  nowMs,
+}: {
+  series: HourlyPoint[];
+  counts: { hours24: number; days7: number | null };
+  nowMs: number;
+}) {
+  const values = series.map((p) => p.unique);
+  const hourLabels = series.map((p) => fmtHour(p.hour));
+  const last = Math.max(values.length - 1, 1);
+  const lo = values.length ? Math.min(...values) : 0;
+  const hi = values.length ? Math.max(...values) : 0;
+  return (
+    <UniqueUsersLineChart
+      values={values}
+      axisLabels={hourLabels}
+      showTick={(i) => i === 0 || i === last || i % 6 === 0}
+      scrubLabel={(i) => `${hourLabels[i]} · <b>${values[i]}</b> hourly`}
+      ariaLabel={`Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}.`}
+      seriesName="hourly"
+      provisional={lastPointIsCurrentHour(series, nowMs)}
+      counts={counts}
+      source={series}
+    />
+  );
+}
+
+function DailyWeekdayChart({
+  series,
+  counts,
+  nowMs,
+}: {
+  series: DailyPoint[];
+  counts: { hours24: number; days7: number | null };
+  nowMs: number;
+}) {
+  const values = series.map((p) => p.dau);
+  const ticks = dailyWeekdayTicks(series);
+  const tickAt = new Map(ticks.map((t) => [t.idx, t.weekday]));
+  const axisLabels = series.map((_, i) => tickAt.get(i) ?? '');
+  const lo = values.length ? Math.min(...values) : 0;
+  const hi = values.length ? Math.max(...values) : 0;
+  const weekdayList = ticks.map((t) => t.weekday).join(', ');
+  return (
+    <UniqueUsersLineChart
+      values={values}
+      axisLabels={axisLabels}
+      showTick={(i) => tickAt.has(i)}
+      scrubLabel={(i) => `${fmtWeekday(series[i].day)} · <b>${values[i]}</b> daily`}
+      ariaLabel={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}. ${weekdayList}.`}
+      seriesName="daily"
+      provisional={lastPointIsToday(series, nowMs)}
+      counts={counts}
+      source={series}
+    />
+  );
+}
+
+export function ActiveUsersPanel({
+  series,
+  hourly,
+  nowMs,
+}: {
+  series: DailyPoint[];
+  hourly: HourlyPoint[];
+  nowMs: number;
+}) {
+  const [range, setRange] = useState<ChartRangeKey>('all');
+  const padded = useMemo(() => extendThroughToday(series, nowMs), [series, nowMs]);
+  const visible = useMemo(
+    () => sliceActivityRange(padded, nowMs, chartRangeWindowMs(range)),
+    [padded, nowMs, range],
+  );
+  const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);
+  const daily7 = useMemo(() => sliceLastUtcDays(padded, nowMs, 7), [padded, nowMs]);
+  const counts = windowCounts(padded);
   const faint = 'var(--color-muted-foreground)';
+  const legend =
+    range === '24h' ? (
+      <span className="inline-flex items-center gap-1">
+        <LegendSwatch color={faint} />
+        hourly
+      </span>
+    ) : range === '7d' ? (
+      <span className="inline-flex items-center gap-1">
+        <LegendSwatch color={faint} />
+        daily
+      </span>
+    ) : (
+      <>
+        <span className="inline-flex items-center gap-1">
+          <LegendSwatch color={faint} />
+          daily
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <LegendSwatch color="var(--color-primary)" />
+          weekly
+        </span>
+      </>
+    );
   return (
     <Panel
       className="overflow-visible"
       title="Active users"
-      legend={
-        <span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <LegendSwatch color={faint} />
-            daily
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <LegendSwatch color="var(--color-primary)" />
-            weekly
-          </span>
-        </span>
-      }
+      legend={<span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">{legend}</span>}
     >
-      <TrendChart series={padded} nowMs={nowMs} />
+      <div className="-mt-1 mb-1.5">
+        <Seg
+          ariaLabel="Chart range"
+          options={CHART_RANGE_PRESETS.map((p) => ({ key: p.key, label: p.label }))}
+          value={range}
+          onChange={setRange}
+        />
+      </div>
+      {range === '24h' ? (
+        <HourlyTrendChart series={hourly24} counts={counts} nowMs={nowMs} />
+      ) : range === '7d' ? (
+        <DailyWeekdayChart series={daily7} counts={counts} nowMs={nowMs} />
+      ) : (
+        <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} />
+      )}
     </Panel>
   );
 }

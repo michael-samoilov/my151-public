@@ -157,6 +157,13 @@ export function BottomSheet({
    *  browsers especially). A focused field is itself the signal that a keyboard
    *  is coming, so the sheet expands immediately and the field sits at the top. */
   const [textFocus, setTextFocus] = useState(false);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (blurTimer.current !== null) clearTimeout(blurTimer.current);
+    },
+    [],
+  );
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -299,6 +306,8 @@ export function BottomSheet({
       onFocusCapture={(e) => {
         const t = e.target;
         if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+          if (blurTimer.current !== null) clearTimeout(blurTimer.current);
+          blurTimer.current = null;
           setTextFocus(true);
         }
       }}
@@ -311,7 +320,14 @@ export function BottomSheet({
         ) {
           return;
         }
-        setTextFocus(false);
+        // A tap moves focus before it dispatches `click`. Shrinking a
+        // content-sized sheet during that blur moves the tapped control out
+        // from under the pointer, so the browser cancels the click. Let the
+        // click finish before the sheet leaves its keyboard layout.
+        blurTimer.current = setTimeout(() => {
+          blurTimer.current = null;
+          setTextFocus(false);
+        }, 0);
       }}
       // Bounded to the visible area rather than `inset-0`, so "the bottom" is
       // the top of the keyboard when one is open and the bottom of the screen

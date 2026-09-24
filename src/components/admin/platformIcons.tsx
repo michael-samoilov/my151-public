@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useId, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import {
   FaDesktop, FaMobileScreenButton, FaTabletScreenButton,
@@ -40,16 +41,26 @@ export function BrowserIcon({ value }: { value?: string }) {
 }
 
 /** Real flag icon (inline SVG, no network) for an ISO 3166-1 alpha-2 code. */
-export function FlagIcon({ country }: { country?: string }) {
+export function FlagIcon({ country, className }: { country?: string; className?: string }) {
   const code = (country ?? '').toUpperCase();
   const svg = (Flags as Record<string, string>)[code];
   if (!svg) return <FaGlobe size={SZ} />;
   return (
-    <img
-      src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
-      alt={code}
-      className="h-[12px] w-[16px] rounded-[2px] object-cover"
-    />
+    <span
+      data-flag-stroke
+      className={cn('relative inline-flex h-[12px] w-[16px] shrink-0 items-center justify-center', className)}
+    >
+      <img
+        src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
+        alt={code}
+        className="h-full w-full rounded-[2px] object-cover"
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[2px]"
+        style={{ boxShadow: 'inset 0 0 0 0.5px #d4d4d4' }}
+      />
+    </span>
   );
 }
 
@@ -110,13 +121,32 @@ export function InfoChip({
   fillMd?: boolean;
 }) {
   const { open, toggle, onPointerEnter, onPointerLeave } = useTooltipChip();
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const tipRef = useRef<HTMLSpanElement>(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const btn = btnRef.current;
+    const tip = tipRef.current;
+    if (!btn || !tip) return;
+    const place = () => {
+      const r = btn.getBoundingClientRect();
+      tip.style.left = `${r.left + r.width / 2}px`;
+      tip.style.top = `${r.bottom + 4}px`;
+    };
+    place();
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
+  }, [open]);
+
   return (
-    <span className={cn('relative inline-flex', fillMd && 'md:w-full')} data-tooltip-chip>
+    <span className={cn('relative inline-flex shrink-0', fillMd && 'md:w-full')} data-tooltip-chip>
       <button
+        ref={btnRef}
         type="button"
         data-tooltip-chip
         className={cn(
-          'flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground',
+          'flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground outline-none hover:text-foreground focus:outline-none focus-visible:outline-none focus-visible:ring-0 [-webkit-tap-highlight-color:transparent]',
           fillMd && 'md:w-full md:justify-center',
         )}
         aria-label={label}
@@ -126,11 +156,19 @@ export function InfoChip({
       >
         {children}
       </button>
-      {open && (
-        <span className="absolute left-1/2 top-full z-30 mt-1 max-w-[min(70vw,240px)] -translate-x-1/2 whitespace-normal break-words rounded-md border border-border bg-card px-2 py-1 text-center text-[0.7rem] font-medium leading-snug text-foreground shadow-md">
-          {label}
-        </span>
-      )}
+      {open &&
+        createPortal(
+          <span
+            ref={tipRef}
+            role="tooltip"
+            data-tooltip-chip
+            data-info-chip-tip
+            className="fixed z-30 max-w-[min(70vw,240px)] -translate-x-1/2 whitespace-normal break-words rounded-md border border-border bg-card px-2 py-1 text-center text-[0.7rem] font-medium leading-snug text-foreground shadow-md"
+          >
+            {label}
+          </span>,
+          document.body,
+        )}
     </span>
   );
 }

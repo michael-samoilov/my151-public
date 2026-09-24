@@ -8,31 +8,32 @@
  * Branched families split by leaf: Eevee→Vaporeon is not Eevee→Jolteon.
  * A lone Eevee joins whichever branch `getEvolutionLine(133)` walks first.
  *
- * Line pick count `p` is the max per-species placement count among members
- * of that line in the section. Species totals cannot name unique dexes, so
- * the max is the lower bound on "this line appeared."
+ * Each species keeps its own pick count. The over/under-index is that count
+ * against the uniform rate among default species in the section:
  *
- * Let `L` be the number of default evo lines in the section, and `S` the
- * sum of those lines' pick counts. Random choice among those lines gives
- * each an expected count of `S / L`. The over/under-index is
+ *     expected = T / N
+ *     index = picks / expected
  *
- *     index = p / (S / L) = p × L / S
+ * `N` is the number of default species in the section. `T` is the sum of
+ * their pick counts. `1.0×` is the uniform rate. Unpicked defaults are `0×`.
+ * Most picked lists every default species in that section, ordered by its
+ * own ×, high to low. A lower-× stage does not ride with a higher-× evo-line
+ * mate. There is no Most/Least split and no 1.10× / 0.90× cutoff. Other
+ * Areas is not a default-member dump: it lists only species with at least
+ * 1 pick, ordered by ×, and sits last on the page.
+ * In-section Starters still show one first-stage face per chain, indexed
+ * from that chain's max picks against the line-level uniform rate (`S / L`).
  *
- * `1.0×` is the uniform rate. `2.0×` is twice that. Unpicked defaults are
- * `0×`. The Other catch-all uses lines that were actually placed there,
- * not the whole dex.
- *
- * Most-picked ranks default lines only, and only lines above 1.10×.
- * Least-picked is only lines below 0.90×. In-section Starters list every
- * first-stage Pokémon across the full row, split grass / fire / water, with
- * no most/least split and no 1.10× cutoff. The starter grid uses one full-width
- * row per type with column count = starter generation count from the Starter
- * category (today nine). Other in-section sections use the 6+3 combined row.
- * Rowlet) share one first-stage face. Off-section has no least column, shows
- * raw dex counts, never uses the starter type split or first-stage-only
- * faces, lays the sprite grid across the full width (12 columns on desktop,
- * 6 on mobile), and does not cap rows. One-off off-section placements stay
- * visible unless Exclude one-offs is on.
+ * In-section Starters list every first-stage Pokémon across the full row,
+ * split grass / fire / water, with no most/least split. The starter grid
+ * uses one full-width row per type with column count = starter generation
+ * count from the Starter category (today nine). Other in-section sections
+ * use one 9-column grid. Sprite packing wraps mid-line to fill the row.
+ * Off-section has no least column, shows raw dex counts, never uses the
+ * starter type split or first-stage-only faces, lays the sprite grid 9
+ * columns wide, and does not cap rows. Off-section placements never appear
+ * in Most picked. One-off off-section placements stay visible unless
+ * Exclude one-offs is on.
  */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
@@ -52,17 +53,19 @@ export const PICKS_LEAST_DESKTOP_COLS = 3;
 /** Least column width in the combined most|least row (all viewports). */
 export const PICKS_LEAST_COLS = PICKS_LEAST_DESKTOP_COLS;
 export const PICKS_COMBINED_COLS = PICKS_MOST_COLS + PICKS_LEAST_DESKTOP_COLS;
-/** 12 columns across the section (starters and off-section desktop). */
+/** Legacy 12-col track count; off-section and the suite strip use 9. */
 export const PICKS_PAIR_COLS = 12;
-export const PICKS_OFF_DESKTOP_COLS = PICKS_PAIR_COLS;
+/** Off-section grid: 9 columns on phone and desktop, matching Most picked. */
+export const PICKS_OFF_COLS = PICKS_COMBINED_COLS;
+export const PICKS_OFF_DESKTOP_COLS = PICKS_OFF_COLS;
 export const PICKS_MAX_ROWS = 4;
 export const PICKS_GRID_CAP = { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS } as const;
 
 type GridCap = { maxRows: number; cols: number } | { maxLines: number };
 
-/** Desktop uses a full-width 12-col grid when there is no least column. */
-export function picksGridCols(wide: boolean, desktop: boolean): number {
-  return wide && desktop ? PICKS_PAIR_COLS : PICKS_COLS;
+/** Full-width grids (Most picked and off-section) are 9 columns. */
+export function picksGridCols(wide: boolean, _desktop: boolean): number {
+  return wide ? PICKS_OFF_COLS : PICKS_COLS;
 }
 
 /** In-section starter row width: one column per main-series generation in the Starter category. */
@@ -81,10 +84,10 @@ export function picksStarterCols(): number {
   return starterGenerationCount();
 }
 
-export function picksGridCap(offSection: boolean, desktop: boolean): { maxRows: number; cols: number } {
+export function picksGridCap(_offSection: boolean, desktop: boolean): { maxRows: number; cols: number } {
   return {
-    maxRows: offSection ? Number.POSITIVE_INFINITY : PICKS_MAX_ROWS,
-    cols: picksGridCols(offSection, desktop),
+    maxRows: Number.POSITIVE_INFINITY,
+    cols: picksGridCols(true, desktop),
   };
 }
 
@@ -92,20 +95,13 @@ export type PicksSplitCap =
   | { kind: 'single'; cap: GridCap }
   | { kind: 'dual'; most: GridCap; least: GridCap };
 
-/** Row caps for most/least lists on the What people pick page. */
-export function picksSplitCap(offSection: boolean, desktop: boolean): PicksSplitCap {
-  if (offSection) {
-    return {
-      kind: 'single',
-      cap: { maxRows: Number.POSITIVE_INFINITY, cols: picksGridCols(true, desktop) },
-    };
-  }
-  const most: GridCap = PICKS_GRID_CAP;
-  const least: GridCap = { maxRows: PICKS_MAX_ROWS, cols: PICKS_LEAST_COLS };
-  return { kind: 'dual', most, least };
+/** Row cap: one 9-column grid, no Most/Least split, no row cap. */
+export function picksSplitCap(_offSection: boolean, desktop: boolean): PicksSplitCap {
+  return {
+    kind: 'single',
+    cap: { maxRows: Number.POSITIVE_INFINITY, cols: picksGridCols(true, desktop) },
+  };
 }
-export const MOST_MIN_INDEX = 1.1;
-export const LEAST_MAX_INDEX = 0.9;
 export const STARTER_TYPES = ['grass', 'fire', 'water'] as const;
 
 export type StarterType = (typeof STARTER_TYPES)[number] | 'other';
@@ -115,6 +111,7 @@ export interface LineMember {
   name: string;
   sprite: string;
   picks: number;
+  index: number;
 }
 
 export interface RankedLine {
@@ -224,8 +221,8 @@ export function indexBarPct(index: number, max: number): number {
   return Math.min(100, (index / max) * 100);
 }
 
-function memberOf(p: Pokemon, picks: number): LineMember {
-  return { id: p.id, name: p.name, sprite: p.sprite, picks };
+function memberOf(p: Pokemon, picks: number, index: number): LineMember {
+  return { id: p.id, name: p.name, sprite: p.sprite, picks, index };
 }
 
 function firstStageOf(ids: number[]): Pokemon | null {
@@ -261,73 +258,12 @@ function sortMembers(ids: number[]): Pokemon[] {
   return mons;
 }
 
-/** How many 6-wide rows `lines` occupy, packing like the sprite grid. */
+/** How many rows `lines` occupy when members wrap mid-line. */
 export function rowsUsed(lines: { members: readonly unknown[] }[], cols = PICKS_COLS): number {
-  let rows = 0;
-  let col = 0;
-  const close = () => {
-    rows += 1;
-    col = 0;
-  };
-  for (const line of lines) {
-    let remaining = line.members.length;
-    if (remaining === 0) continue;
-    while (remaining > 0) {
-      const piece = Math.min(remaining, cols);
-      if (col > 0 && col + piece > cols) close();
-      col += piece;
-      remaining -= piece;
-      if (col === cols) close();
-    }
-  }
-  if (col > 0) rows += 1;
-  return rows;
-}
-
-function takeUntilCap<T extends { key: string; members: readonly unknown[] }>(
-  lines: T[],
-  cap: GridCap,
-): T[] {
-  if ('maxLines' in cap) return lines.slice(0, cap.maxLines);
-  if (!Number.isFinite(cap.maxRows)) return [...lines];
-  const kept: T[] = [];
-  for (const line of lines) {
-    const next = [...kept, line];
-    if (rowsUsed(next, cap.cols) > cap.maxRows) break;
-    kept.push(line);
-  }
-  return kept;
-}
-
-/**
- * Split ranked-desc lines into most and least sprite-grid lists.
- *
- * `most` is the highest-index lines that fit the cap. When `minMostIndex` is
- * set, a line must sit strictly above that index. `least` is the lowest-index
- * lines that are not in most, strictly below `maxLeastIndex` when set, ordered
- * so the lowest sits last. Off-section passes `includeLeast: false`.
- */
-export function splitMostLeast<T extends { key: string; index: number; members: readonly unknown[] }>(
-  rankedDesc: T[],
-  cap: GridCap | PicksSplitCap,
-  opts: { minMostIndex?: number; maxLeastIndex?: number; includeLeast?: boolean } = {},
-): { most: T[]; least: T[] } {
-  const includeLeast = opts.includeLeast !== false;
-  const minMost = opts.minMostIndex;
-  const maxLeast = opts.maxLeastIndex;
-  const mostCap =
-    'kind' in cap && cap.kind === 'single' ? cap.cap : 'kind' in cap ? cap.most : cap;
-  const leastCap =
-    'kind' in cap && cap.kind === 'single' ? cap.cap : 'kind' in cap ? cap.least : cap;
-  let over = minMost == null ? rankedDesc : rankedDesc.filter((l) => roundedIndex(l.index) > minMost);
-  if (maxLeast != null) over = over.filter((l) => roundedIndex(l.index) >= maxLeast);
-  const most = takeUntilCap(over, mostCap);
-  if (!includeLeast) return { most, least: [] };
-  const mostKeys = new Set(most.map((l) => l.key));
-  let rest = rankedDesc.filter((l) => !mostKeys.has(l.key));
-  if (maxLeast != null) rest = rest.filter((l) => roundedIndex(l.index) < maxLeast);
-  const least = takeUntilCap(rest.toReversed(), leastCap).toReversed();
-  return { most, least };
+  let n = 0;
+  for (const line of lines) n += line.members.length;
+  if (n === 0) return 0;
+  return Math.ceil(n / cols);
 }
 
 function countsFrom(rows: [string, number][]): Map<number, number> {
@@ -351,9 +287,38 @@ function groupByLine(ids: Iterable<number>): Map<string, number[]> {
   return groups;
 }
 
+function indexOfCount(picks: number, expected: number | null): number {
+  if (expected === null) return picks > 0 ? 1 : 0;
+  return picks / expected;
+}
+
+function lineExpected(universe: Map<string, number[]>, counts: Map<number, number>): number | null {
+  let S = 0;
+  let L = 0;
+  for (const memberIds of universe.values()) {
+    L += 1;
+    S += linePicks(memberIds, counts);
+  }
+  return L > 0 && S > 0 ? S / L : null;
+}
+
+function speciesExpected(universe: Map<string, number[]>, counts: Map<number, number>): number | null {
+  let T = 0;
+  let N = 0;
+  for (const memberIds of universe.values()) {
+    for (const id of memberIds) {
+      N += 1;
+      T += counts.get(id) ?? 0;
+    }
+  }
+  return N > 0 && T > 0 ? T / N : null;
+}
+
 /**
- * Index `groups` against expected count `S / L` from `universe`.
- * Off-section lines use the section's default universe as the 1× baseline.
+ * Index `groups` against the section universe.
+ * Species (default) use `T / N` and rank as one entry each.
+ * First-stage starter faces use `S / L`.
+ * Off-section species use the section's default universe as the 1× baseline.
  */
 export function indexGroups(
   groups: Map<string, number[]>,
@@ -361,36 +326,37 @@ export function indexGroups(
   universe: Map<string, number[]>,
   opts: { firstStageOnly?: boolean } = {},
 ): RankedLine[] {
-  let S = 0;
-  let L = 0;
-  for (const memberIds of universe.values()) {
-    L += 1;
-    S += linePicks(memberIds, counts);
-  }
-  const expected = L > 0 && S > 0 ? S / L : null;
+  const expected = opts.firstStageOnly
+    ? lineExpected(universe, counts)
+    : speciesExpected(universe, counts);
   const ranked: RankedLine[] = [];
   for (const [key, memberIds] of groups) {
-    const picks = linePicks(memberIds, counts);
-    const index = expected === null ? (picks > 0 ? 1 : 0) : picks / expected;
-    let members: LineMember[];
-    let typeId: number;
-    if (opts.firstStageOnly) {
-      const face = firstStageOf(memberIds);
-      if (!face) continue;
-      members = [memberOf(face, picks)];
-      typeId = face.id;
-    } else {
+    if (!opts.firstStageOnly) {
       const mons = sortMembers(memberIds);
       if (mons.length === 0) continue;
-      members = mons.map((p) => memberOf(p, counts.get(p.id) ?? 0));
-      typeId = mons[0].id;
+      for (const p of mons) {
+        const n = counts.get(p.id) ?? 0;
+        const speciesIndex = indexOfCount(n, expected);
+        ranked.push({
+          key: String(p.id),
+          members: [memberOf(p, n, speciesIndex)],
+          picks: n,
+          index: speciesIndex,
+          starterType: starterTypeOf(p.id),
+        });
+      }
+      continue;
     }
+    const face = firstStageOf(memberIds);
+    if (!face) continue;
+    const picks = linePicks(memberIds, counts);
+    const index = indexOfCount(picks, expected);
     ranked.push({
       key,
-      members,
+      members: [memberOf(face, picks, index)],
       picks,
       index,
-      starterType: starterTypeOf(typeId),
+      starterType: starterTypeOf(face.id),
     });
   }
   ranked.sort((a, b) => b.index - a.index || b.picks - a.picks || a.members[0].id - b.members[0].id);
@@ -423,8 +389,10 @@ export function sectionPicksView(
   }
 
   const group = BUILD_GROUPS.find((g) => g.id === sectionId);
-  const catchAll = group?.filterType === null;
-  const pool = catchAll ? [...counts.keys()] : [...poolIdsForSection(sectionId)];
+  const catchAll = sectionId === 'other' || group?.filterType === null;
+  const pool = catchAll
+    ? [...counts.keys()].filter((id) => (counts.get(id) ?? 0) >= 1)
+    : [...poolIdsForSection(sectionId)];
   const starters = sectionId === 'starter';
   const inSectionStarters = starters && !opts.offSection;
   const grouper = starters ? groupByChain : groupByLine;
@@ -449,23 +417,6 @@ export function sectionPicksView(
   if (ranked.length === 0) return null;
   if (!opts.offSection && ranked.every((l) => l.picks === 0)) return null;
 
-  const cap: GridCap | PicksSplitCap = opts.offSection
-    ? opts.cap && 'kind' in opts.cap
-      ? opts.cap
-      : {
-          kind: 'single',
-          cap: {
-            maxRows: Number.POSITIVE_INFINITY,
-            cols: opts.cap && 'cols' in opts.cap ? opts.cap.cols : PICKS_COLS,
-          },
-        }
-    : (opts.cap ?? { kind: 'dual', most: PICKS_GRID_CAP, least: PICKS_GRID_CAP });
-  const splitOpts = {
-    minMostIndex: starters || opts.offSection ? undefined : MOST_MIN_INDEX,
-    maxLeastIndex: opts.offSection ? undefined : LEAST_MAX_INDEX,
-    includeLeast: !opts.offSection,
-  };
-
   if (inSectionStarters) {
     const groups: StarterGroup[] = [];
     for (const type of [...STARTER_TYPES, 'other'] as const) {
@@ -480,7 +431,7 @@ export function sectionPicksView(
   return {
     kind: 'plain',
     sectionId,
-    columns: splitMostLeast(ranked, cap, splitOpts),
+    columns: { most: ranked, least: [] },
   };
 }
 
@@ -493,10 +444,14 @@ export function viewsForPicks(
   } = {},
 ): SectionPicksView[] {
   const out: SectionPicksView[] = [];
+  let other: SectionPicksView | null = null;
   for (const g of BUILD_GROUPS) {
     const view = sectionPicksView(g.id, bySection[g.id] ?? [], opts);
-    if (view) out.push(view);
+    if (!view) continue;
+    if (g.id === 'other') other = view;
+    else out.push(view);
   }
+  if (other) out.push(other);
   return out;
 }
 

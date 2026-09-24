@@ -58,14 +58,17 @@ function shortestAvailable(groupId: string, prefix: 'sectionShort' | 'sectionTin
 }
 
 export function getSectionLabel(groupId: string): string {
-  return shortestAvailable(groupId, 'sectionShort') ?? sectionName(groupId);
+  return sectionName(groupId);
 }
 
 /** Progressive label fallbacks, longest → shortest. */
 export function getSectionLabelChain(groupId: string): string[] {
-  const chain = [getSectionLabel(groupId)];
-  const tiny = shortestAvailable(groupId, 'sectionTiny');
-  if (tiny && tiny !== chain[0]) chain.push(tiny);
+  const chain: string[] = [sectionName(groupId)];
+  const push = (value: string | null) => {
+    if (value && value !== chain[chain.length - 1]) chain.push(value);
+  };
+  push(shortestAvailable(groupId, 'sectionShort'));
+  push(shortestAvailable(groupId, 'sectionTiny'));
   return chain;
 }
 

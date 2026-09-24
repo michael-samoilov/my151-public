@@ -800,6 +800,11 @@ function drawTile(
   ctx.restore();
 }
 
+/** True when the user cancelled the share sheet. Not a failed export. */
+export function isShareAbort(err: unknown): boolean {
+  return err instanceof DOMException && err.name === 'AbortError';
+}
+
 /** Share via native share sheet (mobile gallery save) or fall back to file download. */
 export async function shareOrDownload(blob: Blob, filename: string) {
   const file = new File([blob], filename, { type: blob.type });

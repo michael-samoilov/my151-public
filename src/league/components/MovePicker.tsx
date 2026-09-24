@@ -9,11 +9,11 @@ import { cn } from '@/lib/utils';
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 import { slotLabel } from '../model/constants';
 import { TYPE_COLORS } from '@/data/type-colors';
+import { movesForPicker } from '../filterMoves';
 import {
   CATEGORY_COLORS,
   CONTEST_COLORS,
   CONTEST_TYPES,
-  MOVES,
   type ContestType,
   type Move,
 } from '../moves';
@@ -158,6 +158,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   const toggleContest = (c: ContestType) =>
     setContests((cur) => (cur.includes(c) ? cur.filter((x) => x !== c) : [...cur, c]));
 
+  const isSearching = search.trim().length > 0;
   const hasActiveFilters = !!typeFilter || categories.length > 0 || contests.length > 0;
   const clearFilters = () => {
     setTypeFilter(null);
@@ -166,14 +167,10 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   };
 
   const results = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const filtered = MOVES.filter((m) => {
-      const typeOk =
-        !typeFilter ||
-        typeFilter.includes(m.type);
-      const catOk = categories.length === 0 || categories.includes(m.category);
-      const contestOk = contests.length === 0 || (m.contest !== null && contests.includes(m.contest));
-      return typeOk && catOk && contestOk && (!q || m.name.toLowerCase().includes(q));
+    const filtered = movesForPicker(search, {
+      types: typeFilter,
+      categories,
+      contests,
     });
     const dir = sortDir === 'asc' ? 1 : -1;
     const num = (v: number | null) => (v === null ? 101 : v); // always-hits above 100%
@@ -219,7 +216,13 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
       <div className="flex items-center gap-2 p-3 pb-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search moves" className="pl-9" />
+          <Input
+            data-testid="tm-search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search moves"
+            className="pl-9"
+          />
         </div>
         <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">{results.length} found</span>
       </div>
@@ -228,7 +231,10 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           load-bearing: `overflow-x-auto` sets this flex child's automatic
           minimum size to zero, so without it the column's flex-shrink crushed
           the row below its content and clipped the chips top and bottom. */}
-      <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto px-3 pb-2 no-scrollbar">
+      <div className={cn(
+        'flex shrink-0 items-center gap-1.5 overflow-x-auto px-3 pb-2 no-scrollbar transition-opacity',
+        isSearching && hasActiveFilters && 'opacity-40',
+      )}>
         {/* No match-mode control: a move has exactly one type, so "all of
             these types" can only ever be empty. Several types selected always
             means any of them. */}
@@ -379,6 +385,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           <button
             key={m.id}
             type="button"
+            data-testid={`tm-move-${m.id}`}
             onClick={() => {
               setTm(cardIndex, m.id);
               onClose();

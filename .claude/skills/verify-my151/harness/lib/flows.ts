@@ -1058,9 +1058,21 @@ async function readCard(s: Session, card: number): Promise<{ lines: { branch: nu
     return {lines:c.lines||[], powerups:c.powerups||{}};`);
 }
 
+async function clickHandle(s: Session, selector: string): Promise<boolean> {
+  if (!(await waitFor(s, selector))) return false;
+  try {
+    await s.click(selector);
+    return true;
+  } catch {
+    return s
+      .evalJson<boolean>(`const el=document.querySelector(${JSON.stringify(selector)}); if(!el) return false; el.click(); return true;`)
+      .catch(() => false);
+  }
+}
+
 /** Open a card from the league home; the home must be showing. */
 async function openLeagueCard(s: Session, card: number): Promise<boolean> {
-  await s.click(`[data-testid="league-slot-${card}"]`);
+  if (!(await clickHandle(s, `[data-testid="league-slot-${card}"]`))) return false;
   const there = await waitFor(s, '[data-testid="card-cell-1-1"]');
   await sleep(500);
   return there;
@@ -1094,6 +1106,32 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
   const blank = (await waitLeagueHome(s)) && (await readCard(s, CARD)).lines.length === 0;
   checks.push(ok('league-change:blank-league', blank));
   if (!blank) return checks;
+
+  // Story / Rematch is the shared pill tab set, not a lone primary button.
+  // Lives here because runLeagueSuite returns early on the static SEO skip
+  // (the shell title is "Custom Gym Leader", not "League Builder").
+  const tabset = await s.evalJson<{ ok: boolean; detail: string }>(
+    `const TRANSPARENT=new Set(['rgba(0, 0, 0, 0)','transparent','']);
+     const list=document.querySelector('[data-testid="league-nav"]');
+     const tabs=[...document.querySelectorAll('[data-testid="league-nav"] [data-league-view]')];
+     const primary=getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+     const parse=(css)=>{const rgb=css.match(/rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);if(rgb)return[Number(rgb[1]),Number(rgb[2]),Number(rgb[3])];return null;};
+     const hex=primary.startsWith('#')?(primary.length===4?primary.slice(1).split('').map(c=>c+c).join(''):primary.slice(1)):null;
+     const primaryRgb=hex?[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)]:parse(primary);
+     const selected=tabs.filter(b=>b.getAttribute('aria-selected')==='true');
+     const active=selected[0]||tabs[0];
+     const activeBg=active?getComputedStyle(active).backgroundColor.trim():'';
+     const activeRgb=parse(activeBg);
+     const othersGhost=tabs.filter(b=>b!==active).every(b=>TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim()));
+     const lone=othersGhost&&activeRgb&&primaryRgb&&activeRgb.every((v,i)=>Math.abs(v-primaryRgb[i])<=2);
+     const inList=!!list&&tabs.every(n=>list.contains(n));
+     const track=!!list&&!TRANSPARENT.has(getComputedStyle(list).backgroundColor.trim());
+     const roles=tabs.every(b=>b.getAttribute('role')==='tab');
+     const ok=tabs.length===2&&inList&&track&&roles&&selected.length===1&&!lone;
+     return {ok,detail:'tabs='+tabs.length+' inList='+inList+' track='+track+' roles='+roles+' selected='+selected.length+' lone='+lone};`,
+  );
+  checks.push(ok('league:story-rematch-tabset', tabset.ok, tabset.detail));
+  await s.screenshot(ctx.shot('league-story-rematch-tabs'));
 
   if (await openLeagueCard(s, CARD)) {
     await sleep(s.engine === 'webkit' ? 1000 : 500);
@@ -1153,6 +1191,25 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     } else {
       checks.push(ok('league:partner-head-inside-slot', false, 'eval failed'));
     }
+
+    await s.evalJson(`const c=document.querySelector('[data-testid="card-cell-9-1"]'); if(c) c.scrollIntoView({block:'center'}); return true;`).catch(() => false);
+    await sleep(s.engine === 'webkit' ? 400 : 200);
+    const stars = await s.evalJson<{ n: number; ySpread: number; xSpread: number; increasing: boolean }>(
+      `const root=document.querySelector('[data-lg-card-root]');
+       const marks=[...(root?root.querySelectorAll('svg'):[])].filter(s=>(s.querySelector('path')?.getAttribute('d')||'').startsWith('M6 0.5'));
+       const boxes=marks.map(s=>s.getBoundingClientRect());
+       const ys=boxes.map(b=>b.y); const xs=boxes.map(b=>b.x);
+       const ySpread=ys.length?Math.max(...ys)-Math.min(...ys):99;
+       const xSpread=xs.length?Math.max(...xs)-Math.min(...xs):0;
+       const increasing=xs.every((x,i)=>i===0||x>xs[i-1]+1);
+       return {n:marks.length,ySpread,xSpread,increasing};`,
+    ).catch(() => ({ n: 0, ySpread: 99, xSpread: 0, increasing: false }));
+    checks.push(ok(
+      'league:elite-stars-one-row',
+      stars.n === 4 && stars.ySpread < 2 && stars.increasing && stars.xSpread > 20,
+      JSON.stringify(stars),
+    ));
+    await s.screenshot(ctx.shot('league-elite-stars'));
 
     await s.click('[data-testid="slot-ace"]');
     const pickerUp = await waitFor(s, '[data-filter-chip="my-dex"]');
@@ -1292,6 +1349,40 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     checks.push({ name: 'league-change:charizard-seated', status: 'skip', detail: 'card never opened' });
   }
 
+  await s.navigate(url);
+  if ((await waitLeagueHome(s)) && (await openLeagueCard(s, CARD))) {
+    await s.click('[aria-label^="Gym type"]');
+    await sleep(300);
+    await s.click('svg[data-type="fire"]');
+    await sleep(400);
+    await s.click('[data-testid="slot-tm"]');
+    const picker = await waitFor(s, '[data-testid="tm-chip-type-fire"]');
+    const typed = await s
+      .evalJson<{ ok: boolean; value: string }>(`const i=document.querySelector('[data-testid="tm-search"]');
+        if(!i) return {ok:false,value:''};
+        i.focus();
+        const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+        set.call(i,'surf');
+        i.dispatchEvent(new Event('input',{bubbles:true}));
+        i.dispatchEvent(new Event('change',{bubbles:true}));
+        return {ok:true,value:i.value};`)
+      .catch(() => ({ ok: false, value: '' }));
+    await sleep(900);
+    const hasSurf = await s
+      .evalJson<boolean>(`return !!document.querySelector('[data-testid="tm-move-57"]');`)
+      .catch(() => false);
+    checks.push(ok(
+      'league-change:tm-search-ignores-type-chip',
+      picker && typed.ok && hasSurf,
+      `picker=${picker} typed=${typed.ok} value=${typed.value} hasSurf=${hasSurf}`,
+    ));
+    await s.screenshot(ctx.shot('league-change-tm-search-surf'));
+    await s.navigate(url);
+    await waitLeagueHome(s);
+  } else {
+    checks.push({ name: 'league-change:tm-search-ignores-type-chip', status: 'skip', detail: 'card never opened' });
+  }
+
   const errs = await s.errors();
   checks.push(ok('league-change:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
@@ -1322,8 +1413,13 @@ async function dismissLeagueBrowser(s: Session): Promise<boolean> {
 }
 
 /** Move a fine pointer over a column so the grid records hoverSeat. */
-async function pointerOverColumn(s: Session, testId: string): Promise<void> {
-  await s.hover(`[data-testid="${testId}"]`);
+async function pointerOverColumn(s: Session, testId: string): Promise<boolean> {
+  try {
+    await s.hover(`[data-testid="${testId}"]`);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -1340,12 +1436,19 @@ export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName
   }
   await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BLANK_LEAGUE}); return true;`);
   await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'league home never hydrated after seed' });
+    return checks;
+  }
   if (!(await openLeagueCard(s, 0))) {
     checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'card never opened' });
     return checks;
   }
 
-  await s.click('[data-testid="card-cell-1-1"]');
+  if (!(await clickHandle(s, '[data-testid="card-cell-1-1"]'))) {
+    checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'empty cell never opened' });
+    return checks;
+  }
   await sleep(600);
   const dismissed = await dismissLeagueBrowser(s);
   checks.push(ok('league-hover:browser-dismissed', dismissed, dismissed ? 'backdrop click' : 'no backdrop found'));
@@ -1616,5 +1719,421 @@ export async function runLeagueGymExportFoilSuite(
     `${gym.rainbow.reason} hypot=${gym.hypot.toFixed(1)} orbit=${gym.orbit} maps=${gym.maps}`,
   ));
   await closeExportOverlay(s);
+  return checks;
+}
+
+const NIMBUS_LEAGUE =
+  "JSON.stringify({state:{name:'',cards:(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,signatureId:null,partnerId:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const cards=Array.from({length:14},empty);cards[0]={type:'flying',theme:'Clouds',lines:[{branch:[333,334],boundaries:[1,6]},{branch:[179,180,181],boundaries:[1,4,8]}],signatureSeat:1,signatureId:334,partnerId:179,tmMoveId:538,badgeName:'Nimbus',legend:null,powerup:null};return cards;})()},version:1})";
+const NIMBUS_SOLO_LEAGUE = NIMBUS_LEAGUE.replace('partnerId:179', 'partnerId:null');
+const SABRINA_SOLO_LEAGUE =
+  "JSON.stringify({state:{name:'',cards:(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,signatureId:null,partnerId:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const cards=Array.from({length:14},empty);cards[0]={type:'psychic',theme:'Sabrina',lines:[{branch:[63,64,65],boundaries:[1,4,8]}],signatureSeat:1,signatureId:65,partnerId:null,tmMoveId:94,badgeName:'Marsh',legend:null,powerup:null};return cards;})()},version:1})";
+
+/**
+ * Gym-card export preview for the Nimbus/Cotton Guard card. Proves the overlay
+ * paints a real PNG of that card; layout parity lives in layout.test.ts.
+ */
+export async function runGymCardExportParitySuite(
+  s: Session,
+  _persona: PersonaName | null,
+  ctx: FlowContext,
+): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${NIMBUS_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'skip', detail: 'league home never hydrated after seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(600);
+  const scale = await s.evalJson<{ css: number; n: number; integer: boolean }>(
+    `const pane=document.querySelector('[data-ace-partner-slot]');
+     const art=pane&&pane.querySelector('[data-slot-art]');
+     const rem=parseFloat(getComputedStyle(document.documentElement).fontSize);
+     const css=art?art.offsetWidth:0;
+     const n=css/(3.25*rem);
+     return {css,n,integer:[1,2,3].some(s=>Math.abs(n-s)<0.02)};`,
+  );
+  checks.push(ok(
+    'gym-export:ace-integer-scale',
+    scale.integer,
+    `css=${scale.css} n=${scale.n.toFixed(3)} (want 1, 2, or 3 × 3.25rem)`,
+  ));
+  const tmFit = await s.evalJson<{ tmW: number; chipRight: number; tmRight: number; inside: boolean }>(
+    `const tm=document.querySelector('[data-testid="slot-tm"]');
+     const chip=tm&&tm.querySelector('img[src*="/sprites/moves/"]');
+     const box=chip&&chip.parentElement;
+     const r=tm&&tm.getBoundingClientRect();
+     const c=box&&box.getBoundingClientRect();
+     const tmRight=r?r.right:0;
+     const chipRight=c?c.right:0;
+     return {tmW:r?r.width:0,chipRight,tmRight,inside:!!c&&chipRight<=tmRight+0.5};`,
+  );
+  checks.push(ok(
+    'gym-export:tm-chip-inside-cell',
+    tmFit.inside && tmFit.tmW > 70,
+    `tmW=${tmFit.tmW.toFixed(1)} chipRight=${tmFit.chipRight.toFixed(1)} tmRight=${tmFit.tmRight.toFixed(1)}`,
+  ));
+  await s.click('[data-league-export]');
+  if (!(await waitFor(s, '[data-export-preview] img', 60))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'export preview image never mounted' });
+    return checks;
+  }
+  await sleep(800);
+  const painted = await s.evalJson<{ w: number; complete: boolean }>(
+    `const img=document.querySelector('[data-export-preview] img');
+     return { w: img?.naturalWidth ?? 0, complete: !!img?.complete };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-nimbus-preview'));
+  checks.push(ok(
+    'gym-export:nimbus-preview',
+    painted.complete && painted.w > 800,
+    `preview naturalWidth=${painted.w} complete=${painted.complete}`,
+  ));
+
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${NIMBUS_SOLO_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:solo-ace-panel', status: 'skip', detail: 'league home never hydrated after solo seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:solo-ace-panel', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(600);
+  const solo = await s.evalJson<{
+    mode: string | null;
+    seam: boolean;
+    arts: number;
+    heads: string;
+    cx: number;
+    cy: number;
+    integer: boolean;
+    n: number;
+  }>(
+    `const pane=document.querySelector('[data-ace-partner-slot]');
+     const cluster=document.querySelector('[data-testid="slot-ace"]');
+     const art=pane&&pane.querySelector('[data-slot-art]');
+     if(!pane||!cluster) return {mode:null,seam:true,arts:0,heads:'',cx:0,cy:0,integer:false,n:0};
+     const pr=pane.getBoundingClientRect();
+     const cr=cluster.getBoundingClientRect();
+     const rem=parseFloat(getComputedStyle(document.documentElement).fontSize);
+     const css=art?art.offsetWidth:0;
+     const n=css/(3.25*rem);
+     return {
+       mode: pane.getAttribute('data-showcase'),
+       seam: !!pane.querySelector(':scope > svg line'),
+       arts: pane.querySelectorAll('[data-slot-art] img').length,
+       heads: [...pane.querySelectorAll('[data-slot-head]')].map(e=>e.getAttribute('data-slot-head')).join(','),
+       cx: (cr.left+cr.width/2-pr.left)/pr.width,
+       cy: (cr.top+cr.height/2-pr.top)/pr.height,
+       integer: [1,2,3].some(s=>Math.abs(n-s)<0.02),
+       n,
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-solo-ace'));
+  const centred = Math.abs(solo.cx - 0.5) < 0.08 && Math.abs(solo.cy - 0.5) < 0.08;
+  const heads = solo.heads.split(',');
+  checks.push(ok(
+    'gym-export:solo-ace-panel',
+    solo.mode === 'split' && solo.seam && solo.arts === 1 && heads.includes('ace') && heads.includes('partner') && !centred,
+    `mode=${solo.mode} seam=${solo.seam} arts=${solo.arts} heads=${solo.heads} cx=${solo.cx.toFixed(2)} cy=${solo.cy.toFixed(2)}`,
+  ));
+  checks.push(ok(
+    'gym-export:solo-ace-integer-scale',
+    solo.integer,
+    `n=${solo.n.toFixed(3)} (want 1, 2, or 3 × 3.25rem)`,
+  ));
+
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${SABRINA_SOLO_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:ace-name-inside-pane', status: 'skip', detail: 'league home never hydrated after Alakazam seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-ace"]', 40))) {
+    checks.push({ name: 'gym-export:ace-name-inside-pane', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const aceName = await s.evalJson<{
+    text: string;
+    ellipsis: boolean;
+    lastInsidePane: boolean;
+    mode: string | null;
+    partner: boolean;
+    seam: boolean;
+  }>(
+    `const pane=document.querySelector('[data-ace-partner-slot]');
+     const cluster=pane&&pane.querySelector('[data-testid="slot-ace"]');
+     if(!pane||!cluster) return {text:'',ellipsis:true,lastInsidePane:false,mode:null,partner:false,seam:false};
+     const name=[...cluster.querySelectorAll('span')].find(el=>/alakaz/i.test(el.textContent||'')&&el.childElementCount===0);
+     if(!name) return {text:'',ellipsis:true,lastInsidePane:false,mode:pane.getAttribute('data-showcase'),partner:!!pane.querySelector('[data-testid="slot-partner"]'),seam:!!pane.querySelector(':scope > svg line')};
+     const raw=(name.textContent||'').replace(/\\s+/g,'');
+     const cs=getComputedStyle(name);
+     const node=[...name.childNodes].find(n=>n.nodeType===3);
+     let lastInsidePane=false;
+     if(node&&raw.length){
+       const range=document.createRange();
+       range.setStart(node, raw.length-1);
+       range.setEnd(node, raw.length);
+       const last=range.getBoundingClientRect();
+       const pr=pane.getBoundingClientRect();
+       lastInsidePane=last.width>0.5&&last.left>=pr.left-0.5&&last.right<=pr.right+0.5&&last.top>=pr.top-0.5&&last.bottom<=pr.bottom+0.5;
+     }
+     return {
+       text: raw,
+       ellipsis: cs.textOverflow==='ellipsis',
+       lastInsidePane,
+       mode: pane.getAttribute('data-showcase'),
+       partner: !!pane.querySelector('[data-testid="slot-partner"]'),
+       seam: !!pane.querySelector(':scope > svg line'),
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-ace-name-inside-pane'));
+  checks.push(ok(
+    'gym-export:ace-name-inside-pane',
+    aceName.text.toUpperCase() === 'ALAKAZAM' && !aceName.ellipsis && aceName.lastInsidePane
+      && aceName.mode === 'split' && aceName.partner && aceName.seam,
+    `text=${aceName.text} ellipsis=${aceName.ellipsis} lastInside=${aceName.lastInsidePane} mode=${aceName.mode} partner=${aceName.partner} seam=${aceName.seam}`,
+  ));
+
+  const STOMPING_LEAGUE = SABRINA_SOLO_LEAGUE.replace('tmMoveId:94', 'tmMoveId:707');
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${STOMPING_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:tm-two-word-wrap', status: 'skip', detail: 'league home never hydrated after Stomping Tantrum seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:tm-two-word-wrap', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const wrap = await s.evalJson<{
+    text: string;
+    ellipsis: boolean;
+    lines: number;
+    topGap: number;
+    bottomGap: number;
+    lastVisible: boolean;
+  }>(
+    `const slot=document.querySelector('[data-testid="slot-tm"]');
+     const name=slot&&(slot.querySelector('[data-tm-name]')||[...slot.querySelectorAll('span')].find(el=>/stomping/i.test(el.textContent||'')&&el.childElementCount===0));
+     const disc=slot&&slot.querySelector('svg[viewBox="0 0 24 24"] circle[r="9"]');
+     const badge=slot&&slot.querySelector('svg[viewBox="0 0 200 40"]');
+     const tm=slot&&slot.querySelector('[data-mark-label="tm"]');
+     if(!slot||!name||!disc||!badge||!tm) return {text:'',ellipsis:true,lines:0,topGap:0,bottomGap:0,lastVisible:false};
+     const cs=getComputedStyle(name);
+     const lineH=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.4;
+     const zoom=name.offsetHeight>0?name.getBoundingClientRect().height/name.offsetHeight:1;
+     const node=[...name.childNodes].find(n=>n.nodeType===3);
+     const tmNode=[...tm.childNodes].find(n=>n.nodeType===3);
+     const inkBottom=(el,textNode)=>{
+       if(!textNode||!(textNode.textContent||'').length) return el.getBoundingClientRect().bottom;
+       const range=document.createRange();
+       range.selectNodeContents(textNode);
+       return range.getBoundingClientRect().bottom;
+     };
+     let lastVisible=false;
+     if(node&&(node.textContent||'').length){
+       const range=document.createRange();
+       range.setStart(node,(node.textContent||'').length-1);
+       range.setEnd(node,(node.textContent||'').length);
+       const last=range.getBoundingClientRect();
+       const sr=slot.getBoundingClientRect();
+       lastVisible=last.width>0.5&&last.right<=sr.right+0.5&&last.bottom<=sr.bottom+0.5;
+     }
+     return {
+       text:(name.textContent||'').replace(/\\s+/g,' ').trim(),
+       ellipsis:cs.textOverflow==='ellipsis'||name.scrollWidth>name.clientWidth+1,
+       lines:lineH>0?Math.round(name.offsetHeight/lineH):0,
+       topGap:(badge.getBoundingClientRect().top-disc.getBoundingClientRect().top)/zoom,
+       bottomGap:(inkBottom(tm,tmNode)-inkBottom(name,node))/zoom,
+       lastVisible,
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-tm-two-word-wrap'));
+  checks.push(ok(
+    'gym-export:tm-two-word-wrap',
+    /stomping tantrum/i.test(wrap.text) && !wrap.ellipsis && wrap.lines === 2 && wrap.lastVisible
+      && Math.abs(wrap.topGap - wrap.bottomGap) <= 1.25,
+    `text=${wrap.text} ellipsis=${wrap.ellipsis} lines=${wrap.lines} lastVisible=${wrap.lastVisible} top=${wrap.topGap.toFixed(1)} bottom=${wrap.bottomGap.toFixed(1)}`,
+  ));
+
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${SABRINA_SOLO_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:tm-one-word-line', status: 'skip', detail: 'league home never hydrated after Psychic seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:tm-one-word-line', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const oneLine = await s.evalJson<{ text: string; lines: number; topGap: number; bottomGap: number }>(
+    `const slot=document.querySelector('[data-testid="slot-tm"]');
+     const name=slot&&(slot.querySelector('[data-tm-name]')||[...slot.querySelectorAll('span')].find(el=>/psychic/i.test(el.textContent||'')&&el.childElementCount===0));
+     const disc=slot&&slot.querySelector('svg[viewBox="0 0 24 24"] circle[r="9"]');
+     const badge=slot&&slot.querySelector('svg[viewBox="0 0 200 40"]');
+     const tm=slot&&slot.querySelector('[data-mark-label="tm"]');
+     if(!slot||!name||!disc||!badge||!tm) return {text:'',lines:0,topGap:0,bottomGap:0};
+     const cs=getComputedStyle(name);
+     const lineH=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)*1.4;
+     const zoom=name.offsetHeight>0?name.getBoundingClientRect().height/name.offsetHeight:1;
+     const tmNode=[...tm.childNodes].find(n=>n.nodeType===3);
+     const nameNode=[...name.childNodes].find(n=>n.nodeType===3);
+     const inkBottom=(el,textNode)=>{
+       if(!textNode||!(textNode.textContent||'').length) return el.getBoundingClientRect().bottom;
+       const range=document.createRange();
+       range.selectNodeContents(textNode);
+       return range.getBoundingClientRect().bottom;
+     };
+     return {
+       text:(name.textContent||'').replace(/\\s+/g,' ').trim(),
+       lines:lineH>0?Math.round(name.offsetHeight/lineH):0,
+       topGap:(badge.getBoundingClientRect().top-disc.getBoundingClientRect().top)/zoom,
+       bottomGap:(inkBottom(tm,tmNode)-inkBottom(name,nameNode))/zoom,
+     };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-tm-one-word-line'));
+  checks.push(ok(
+    'gym-export:tm-one-word-line',
+    /^psychic$/i.test(oneLine.text) && oneLine.lines === 1 && Math.abs(oneLine.topGap - oneLine.bottomGap) <= 1.25,
+    `text=${oneLine.text} lines=${oneLine.lines} top=${oneLine.topGap.toFixed(1)} bottom=${oneLine.bottomGap.toFixed(1)}`,
+  ));
+
+  const BADGE_OVERFLOW_LEAGUE = SABRINA_SOLO_LEAGUE.replace("badgeName:'Marsh'", "badgeName:'Thunder Thunder Thunder'");
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BADGE_OVERFLOW_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:badge-suffix-visible', status: 'skip', detail: 'league home never hydrated after badge overflow seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-badge"]', 40))) {
+    checks.push({ name: 'gym-export:badge-suffix-visible', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await sleep(800);
+  const badgeFit = await s.evalJson<{ rendered: string; suffixVisible: boolean; overflows: boolean }>(
+    `const field=document.querySelector('[aria-label="Badge name"]');
+     const suffix=document.querySelector('[data-badge-suffix]');
+     const box=field&&field.parentElement;
+     if(!field||!box) return {rendered:'',suffixVisible:false,overflows:true};
+     const br=box.getBoundingClientRect();
+     const rects=suffix?[...suffix.getClientRects()]:[];
+     const suffixVisible=!!suffix&&rects.length>0&&rects.every(r=>r.width<0.5||(r.left>=br.left-1&&r.right<=br.right+1&&r.top>=br.top-1&&r.bottom<=br.bottom+1));
+     return {rendered:(field.textContent||'').replace(/\\u00a0/g,' '),suffixVisible,overflows:box.scrollHeight>box.clientHeight+1};`,
+  );
+  await s.screenshot(ctx.shot('gym-export-badge-suffix-visible'));
+  checks.push(ok(
+    'gym-export:badge-suffix-visible',
+    /Badge/.test(badgeFit.rendered) && !/Thunder Thunder Thunder/.test(badgeFit.rendered)
+      && badgeFit.suffixVisible && !badgeFit.overflows,
+    `rendered=${badgeFit.rendered} suffixVisible=${badgeFit.suffixVisible} overflows=${badgeFit.overflows}`,
+  ));
+  return checks;
+}
+
+const FIVE_LINE_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);cards[0]={...empty(),lines:[line(1),line(4),line(7),line(10),line(16)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
+
+const SEVEN_GYMS_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);for(let i=0;i<7;i++)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
+
+async function waitNudge(s: Session, kind: 'card' | 'league'): Promise<boolean> {
+  return waitFor(s, `[data-testid="league-nudge"][data-league-nudge="${kind}"]`, 25);
+}
+
+async function closeLeagueCard(s: Session): Promise<void> {
+  const collapsed = await s.evalJson<boolean>(`const b=document.querySelector('[aria-label="Collapse the trainer card"]')||document.querySelector('[aria-label^="Back to the league"]'); if(!b) return false; b.click(); return true;`).catch(() => false);
+  if (collapsed) await sleep(800);
+  await waitFor(s, '[data-testid="league-slot-0"]');
+}
+
+/** Seat the current picker result. Native click, then close the desktop pane. */
+async function placePickerLine(s: Session): Promise<boolean> {
+  const clicked = await s.evalJson<boolean>(`const el=document.querySelector(${JSON.stringify(PLACE_CARD)}); if(!el) return false; el.click(); return true;`).catch(() => false);
+  await sleep(600);
+  await s.evalJson(`const b=document.querySelector('[data-testid="browser-close"]'); if(b) b.click(); return true;`).catch(() => false);
+  await sleep(400);
+  return clicked;
+}
+
+export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+
+  if (!(await seedLeagueHome(s, url, FIVE_LINE_LEAGUE))) {
+    checks.push({ name: 'league-funnel:card-nudge-shown', status: 'skip', detail: 'league home never hydrated' });
+    checks.push({ name: 'league-funnel:roster-nudge-shown', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+
+  const cardOpen = await openLeagueCard(s, 0);
+  if (!cardOpen) {
+    checks.push(ok('league-funnel:card-nudge-shown', false, 'card never opened'));
+  } else {
+    await s.click('[data-testid="card-cell-11-6"]');
+    await waitFor(s, '[data-filter-chip="my-dex"]');
+    await sleep(600);
+    await searchPicker(s, 'eevee');
+    await placePickerLine(s);
+    const shown = await waitNudge(s, 'card');
+    await s.screenshot(ctx.shot('league-funnel-card-nudge'));
+    checks.push(ok('league-funnel:card-nudge-shown', shown, shown ? 'card export nudge' : 'no [data-testid=league-nudge] after sixth line'));
+  }
+
+  if (!(await seedLeagueHome(s, url, SEVEN_GYMS_LEAGUE))) {
+    checks.push({ name: 'league-funnel:roster-nudge-shown', status: 'skip', detail: 'league home never hydrated for roster' });
+    return checks;
+  }
+  if (!(await openLeagueCard(s, 7))) {
+    checks.push(ok('league-funnel:roster-nudge-shown', false, 'gym 8 never opened'));
+    return checks;
+  }
+  await s.click('[data-testid="card-cell-1-1"]');
+  await waitFor(s, '[data-filter-chip="my-dex"]');
+  await sleep(600);
+  await searchPicker(s, 'pikachu');
+  await placePickerLine(s);
+  await closeLeagueCard(s);
+  const roster = await waitNudge(s, 'league');
+  await s.screenshot(ctx.shot('league-funnel-roster-nudge'));
+  checks.push(ok('league-funnel:roster-nudge-shown', roster, roster ? 'league export nudge' : 'no roster nudge after 8 gyms'));
+  if (roster) {
+    const geo = await s.evalJson<{ exportX: number | null; nameX: number | null; arrowX: number | null }>(
+      `const mid=(el)=>{if(!el)return null;const r=el.getBoundingClientRect();return r.left+r.width/2};
+       return {exportX:mid(document.querySelector('[data-league-export="league"]')),nameX:mid(document.querySelector('[aria-label="League name"]')),arrowX:mid(document.querySelector('[data-nudge-arrow]'))};`,
+    ).catch(() => ({ exportX: null, nameX: null, arrowX: null }));
+    const toExport = geo.arrowX != null && geo.exportX != null ? Math.abs(geo.arrowX - geo.exportX) : Infinity;
+    const toName = geo.arrowX != null && geo.nameX != null ? Math.abs(geo.arrowX - geo.nameX) : Infinity;
+    const vw = await s.evalJson<number>('return window.innerWidth;').catch(() => 0);
+    const settled = geo.exportX != null && vw > 0 && geo.exportX > vw * 0.7;
+    checks.push(ok(
+      'league-funnel:roster-nudge-points-at-export',
+      settled && toExport < 24 && toExport < toName,
+      `arrow=${geo.arrowX} export=${geo.exportX} name=${geo.nameX} vw=${vw}`,
+    ));
+  } else {
+    checks.push(ok('league-funnel:roster-nudge-points-at-export', false, 'roster nudge never shown'));
+  }
   return checks;
 }

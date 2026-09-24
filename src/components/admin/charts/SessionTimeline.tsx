@@ -8,22 +8,16 @@ import {
   weekBoundaries,
   type TimelinePoint,
 } from './sessionTimelineMath';
+import { applyPlayheadMilestone, applySessionChip } from './sessionChip';
+import { FUNNEL_OFFSET_PX, milestoneFill, plotSittings, type ChartMilestone } from './sessionMilestones';
 
 export type { TimelinePoint };
+export type { ChartMilestone };
 
 /** Native range thumb size. Dot centers use half of this so they sit under the thumb. */
 const SCRUB_THUMB_PX = 22;
 const CHART_PAD_L = 6;
 const CHART_PAD_R = 6;
-
-const EV_LABEL: Record<string, string> = {
-  'intro-shown': 'intro',
-  'intro-cta': 'start',
-  'milestone-25': '25',
-  'milestone-100': '100',
-  'milestone-151': '151',
-  'view-visit': 'view',
-};
 
 /**
  * Bespoke session-history diff timeline. Each session is placed by timestamp (so
@@ -57,7 +51,7 @@ export function SessionTimeline({
   extra?: string;
   leftChip?: ReactNode;
   rightChip?: ReactNode;
-  milestones?: { t: number; label: string; tone?: 'export' | 'muted' }[];
+  milestones?: ChartMilestone[];
   tz?: string;
   /** Snapshot under the chart. On a phone the scrubber docks flush with the
    *  bottom nav. Desktop keeps the slider under the chart. */
@@ -76,9 +70,11 @@ export function SessionTimeline({
   const dateRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pointsRef = useRef(points);
+  const plotsRef = useRef(plotSittings(points, milestones));
   const wRef = useRef(W);
   const tzRef = useRef(tz);
   const countUnitRef = useRef(countUnit);
+  const deltaUnitRef = useRef(deltaUnit);
   const applyPlayhead = useCallback((next: number) => {
     const pts = pointsRef.current;
     const p = pts[next];
@@ -87,29 +83,31 @@ export function SessionTimeline({
     const t0 = pts[0]?.t ?? 0;
     const t1 = pts[pts.length - 1]?.t ?? t0;
     const span = t1 - t0 || 1;
-    const px = (CHART_PAD_L + (width - CHART_PAD_L - CHART_PAD_R) * ((p.t - t0) / span)).toFixed(1);
+    const xPix = CHART_PAD_L + (width - CHART_PAD_L - CHART_PAD_R) * ((p.t - t0) / span);
+    const px = xPix.toFixed(1);
     const line = document.querySelector('[data-testid="session-playhead-line"]');
     if (line) {
       line.setAttribute('x1', px);
       line.setAttribute('x2', px);
     }
-    const count = document.querySelector('[data-testid="session-playhead-count"]');
-    if (count) count.textContent = String(p.count);
-    const date = document.querySelector('[data-testid="session-playhead-date"]');
-    if (date) date.textContent = fmtDay(p.t, tzRef.current);
-    const slider = document.querySelector('input[aria-label="Scrub sessions"]');
-    if (slider instanceof HTMLInputElement) {
-      slider.setAttribute(
-        'aria-valuetext',
-        `${fmtDay(p.t, tzRef.current)}: ${p.count} ${countUnitRef.current}`,
-      );
-    }
+    applySessionChip(document, p, {
+      tz: tzRef.current,
+      countUnit: countUnitRef.current,
+      deltaUnit: deltaUnitRef.current,
+    });
+    applyPlayheadMilestone(document, {
+      label: plotsRef.current[next]?.label ?? '',
+      x: xPix,
+      width,
+    });
   }, []);
   useLayoutEffect(() => {
     pointsRef.current = points;
+    plotsRef.current = plotSittings(points, milestones);
     wRef.current = W;
     tzRef.current = tz;
     countUnitRef.current = countUnit;
+    deltaUnitRef.current = deltaUnit;
     applyPlayhead(playheadRef.current);
   });
   useLayoutEffect(() => {
@@ -150,7 +148,7 @@ export function SessionTimeline({
     return (
       <div className="flex min-h-0 flex-1 flex-col gap-1.5">
         <p className="text-xs text-muted-foreground">No sessions yet.</p>
-        {children && <div className="min-h-0 flex-1 overflow-auto">{children}</div>}
+        {children && <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto">{children}</div>}
       </div>
     );
   }
@@ -196,18 +194,7 @@ export function SessionTimeline({
     setPlayhead(next);
     queueSnapshot(next);
   };
-  const marks: { t: number; label: string; tone?: 'export' | 'muted'; bx: number }[] = [];
-  for (const m of milestones) {
-    const bx = x(m.t);
-    const prev = marks[marks.length - 1];
-    if (prev && Math.abs(bx - prev.bx) < 36) {
-      prev.label = `${prev.label} · ${m.label}`;
-      prev.bx = (prev.bx + bx) / 2;
-      if (m.tone === 'export') prev.tone = 'export';
-    } else {
-      marks.push({ ...m, bx });
-    }
-  }
+  const plots = plotSittings(points, milestones);
 
   const chart = (
     <>
@@ -258,35 +245,38 @@ export function SessionTimeline({
         })}
         <line x1={padL} x2={W - padR} y1={zeroY.toFixed(1)} y2={zeroY.toFixed(1)} stroke="var(--color-border)" />
         <path d={netPath} fill="none" stroke="var(--color-foreground)" strokeWidth={1.2} strokeLinejoin="round" />
-        {points.map((p, i) => {
-          if (!p.ev || p.ev.length === 0) return null;
-          const bx = x(p.t);
-          const label = p.ev.map((e) => EV_LABEL[e]).filter(Boolean)[0] ?? '';
-          const anchor = bx < 24 ? 'start' : bx > W - 24 ? 'end' : 'middle';
-          const lx = bx < 24 ? bx - 2 : bx > W - 24 ? bx + 2 : bx;
+        {plots.map((plot, i) => {
+          if (!plot.funnel) return null;
+          const bx = x(points[i].t) + (plot.diamond ? FUNNEL_OFFSET_PX : 0);
           return (
-            <g key={`ev-${i}`}>
-              <circle cx={bx.toFixed(1)} cy={railY} r={2.4} fill="var(--color-info)" />
-              <text x={lx.toFixed(1)} y={railY - 4} fontSize={6.5} fill="var(--color-info)" textAnchor={anchor}>
-                {label}
-              </text>
-            </g>
+            <circle
+              key={`ev-${i}`}
+              cx={bx.toFixed(1)}
+              cy={railY}
+              r={2.4}
+              fill="var(--color-info)"
+            />
           );
         })}
-        {marks.map((m, i) => {
-          const bx = m.bx;
-          const color = m.tone === 'muted' ? 'var(--color-muted-foreground)' : 'var(--color-success)';
-          const anchor = bx < 24 ? 'start' : bx > W - 24 ? 'end' : 'middle';
-          const lx = bx < 24 ? bx - 2 : bx > W - 24 ? bx + 2 : bx;
+        {plots.map((plot, i) => {
+          if (!plot.diamond) return null;
+          const bx = x(points[i].t);
+          const color = milestoneFill(plot.diamond.tone);
           return (
-            <g key={`ms-${i}`}>
+            <g key={`ms-${i}`} data-testid="session-milestone" data-tone={plot.diamond.tone}>
+              {plot.diamond.title && <title>{plot.diamond.title}</title>}
               <rect x={(bx - 2.4).toFixed(1)} y={railY - 2.4} width={4.8} height={4.8} rx={0.8} transform={`rotate(45 ${bx.toFixed(1)} ${railY})`} fill={color} />
-              <text x={lx.toFixed(1)} y={railY - 4} fontSize={6.5} fill={color} textAnchor={anchor}>
-                {m.label}
-              </text>
             </g>
           );
         })}
+        <text
+          data-testid="session-playhead-milestone"
+          y={railY - 4}
+          fontSize={6.5}
+          fill="var(--color-foreground)"
+          textAnchor="middle"
+          visibility="hidden"
+        />
         <line data-testid="session-playhead-line" ref={lineRef} x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={svgH - 2} stroke="var(--color-primary)" strokeWidth={1.5} />
       </svg>
       </div>
@@ -362,29 +352,25 @@ export function SessionTimeline({
       <span className="shrink-0 text-muted-foreground">{countUnit}</span>
       <span className="text-muted-foreground">·</span>
       <span data-testid="session-playhead-date" ref={dateRef} className="font-semibold">{fmtDay(cur.t, tz)}</span>
-      {meta.window && (
-        <>
-          <span className="text-muted-foreground">·</span>
-          <span className="font-semibold">{meta.window}</span>
-        </>
-      )}
-      {meta.diff && (
-        <>
-          <span className="text-muted-foreground">·</span>
-          {meta.added != null && (
-            <span className="font-bold text-[var(--color-success)]">
-              +{meta.added}
-              {deltaUnit}
-            </span>
-          )}
-          {meta.removed != null && (
-            <span className="font-bold text-[var(--color-primary)]">
-              {meta.added != null ? ' ' : ''}−{meta.removed}
-              {deltaUnit}
-            </span>
-          )}
-        </>
-      )}
+      <span data-testid="session-playhead-window-sep" hidden={!meta.window} className="text-muted-foreground">·</span>
+      <span data-testid="session-playhead-window" hidden={!meta.window} className="font-semibold">
+        {meta.window ?? ''}
+      </span>
+      <span data-testid="session-playhead-diff-sep" hidden={!meta.diff} className="text-muted-foreground">·</span>
+      <span
+        data-testid="session-playhead-added"
+        hidden={meta.added == null}
+        className="font-bold text-[var(--color-success)]"
+      >
+        {meta.added != null ? `+${meta.added}${deltaUnit}` : ''}
+      </span>
+      <span
+        data-testid="session-playhead-removed"
+        hidden={meta.removed == null}
+        className="font-bold text-[var(--color-primary)]"
+      >
+        {meta.removed != null ? `${meta.added != null ? ' ' : ''}−${meta.removed}${deltaUnit}` : ''}
+      </span>
       {extra && <span className="text-muted-foreground">· {extra}</span>}
     </div>
   );
@@ -403,7 +389,7 @@ export function SessionTimeline({
     <div className="flex min-h-0 flex-1 flex-col gap-1.5">
       <div className="order-1 shrink-0">{chart}</div>
       <div className="order-2 shrink-0 md:order-3">{readout}</div>
-      <div className="order-3 flex min-h-0 flex-1 flex-col overflow-auto md:order-4">{children}</div>
+      <div className="order-3 flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-auto md:order-4">{children}</div>
       <div
         data-testid="session-scrubber-dock"
         className={cn(

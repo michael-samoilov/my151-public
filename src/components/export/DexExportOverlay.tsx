@@ -156,6 +156,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     <ExportPreviewShell
       phase={phase}
       onClose={onClose}
+      surveyTool="pokedex"
       overlayMarker="data-dex-export-overlay"
       previewAlt="Pokedex export preview"
       frames={{ activeKey, urls, busy: busy || exportBusy }}
@@ -181,15 +182,17 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
           mobileSheet={!isDesktop}
         />
       }
-      surveyIntro={
+      surveyIntro={({ dismiss }) => (
         <LeagueExportSurveyIntro
           tool="pokedex"
           highlight={highlight}
           onContinue={() => setPhase('survey')}
-          onSkip={onClose}
+          onSkip={() => dismiss('not_now')}
         />
-      }
-      survey={<LeagueExportSurvey exportKind="pokedex" openedAt={surveyOpenedAt} onDone={onClose} />}
+      )}
+      survey={({ finish }) => (
+        <LeagueExportSurvey exportKind="pokedex" openedAt={surveyOpenedAt} onDone={finish} />
+      )}
     />
   );
 }

@@ -107,6 +107,41 @@ describe('mergeLeagueRecord', () => {
     expect(rec.exportedCardAt).toBeDefined();
   });
 
+  it('attaches funnel events to the sitting, including a later skip', () => {
+    let rec = mergeLeagueRecord(
+      null,
+      beacon({ kind: 'export', exportKind: 'league', events: ['league-export-league'] }),
+    );
+    expect(rec.sessionLog[0].events).toEqual(['league-export-league']);
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({ now: 1_000_500, events: ['export_survey_skipped'] }),
+    );
+    expect(rec.sessionLog).toHaveLength(1);
+    expect(rec.sessionLog[0].events).toEqual(['league-export-league', 'export_survey_skipped']);
+  });
+
+  it('does not duplicate an event already on the sitting', () => {
+    let rec = mergeLeagueRecord(null, beacon({ events: ['league-export-card'] }));
+    rec = mergeLeagueRecord(rec, beacon({ now: 1_000_500, events: ['league-export-card'] }));
+    expect(rec.sessionLog[0].events).toEqual(['league-export-card']);
+  });
+
+  it('attaches league nudge shown/cta/dismiss to the sitting', () => {
+    let rec = mergeLeagueRecord(
+      null,
+      beacon({ events: ['league-nudge-card-shown'] }),
+    );
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({ now: 1_000_500, events: ['league-nudge-card-cta'] }),
+    );
+    expect(rec.sessionLog[0].events).toEqual([
+      'league-nudge-card-shown',
+      'league-nudge-card-cta',
+    ]);
+  });
+
   it('does not mutate the record it was given', () => {
     const first = mergeLeagueRecord(null, beacon());
     const snapshot = JSON.stringify(first);
@@ -420,5 +455,21 @@ describe('peakFullGyms', () => {
       beacon({ summary: summary({ cards: 1, seats: 4 }), cards: [{ i: 8, l: lines(4) }] }),
     );
     expect(peakFullGyms(eliteShort)).toBe(0);
+  });
+
+  it('stores a picker-pinned locale as switched', () => {
+    const rec = mergeLeagueRecord(
+      null,
+      beacon({ locale: 'en', switched: 'en', lang: 'fr-FR' }),
+    );
+    expect(rec.locale).toBe('en');
+    expect(rec.switched).toBe('en');
+    expect(rec.lang).toBe('fr-FR');
+  });
+
+  it('keeps switched sticky when a later beacon omits it', () => {
+    let rec = mergeLeagueRecord(null, beacon({ locale: 'en', switched: 'en' }));
+    rec = mergeLeagueRecord(rec, beacon({ now: 1_000_000 + 60_000, locale: 'en' }));
+    expect(rec.switched).toBe('en');
   });
 });

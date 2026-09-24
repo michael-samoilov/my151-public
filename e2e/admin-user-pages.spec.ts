@@ -42,24 +42,98 @@ test.describe('admin user pages', () => {
     expect(last).toBeTruthy();
     expect(first).not.toEqual(last);
 
-    const occupancy = await page.evaluate(() => {
+    const chipText = () =>
+      page.evaluate(() =>
+        (document.querySelector('[data-testid="session-playhead-count"]')?.parentElement?.innerText ?? '')
+          .replace(/\s+/g, ' ')
+          .trim(),
+      );
+    const restChip = await chipText();
+    await page.evaluate(() => {
       const board = document.querySelector('[data-testid="league-visit-board"]');
-      const keep = board?.querySelector('[data-testid="admin-gym-card"], [data-testid^="admin-slot-"]') ?? null;
-      (board as HTMLElement & { __keep?: Element | null }).__keep = keep;
-      return { keep: !!keep };
+      (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard = board;
     });
-    expect(occupancy.keep).toBe(true);
+    await scrub.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = '0';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(page.getByTestId('league-uncaptured')).toBeVisible();
+    await expect(page.getByTestId('league-visit-board')).toBeHidden();
+    expect(await page.getByTestId('league-visit-board').count()).toBe(1);
+    const input0 = await page.evaluate(() => {
+      const board = document.querySelector('[data-testid="league-visit-board"]');
+      const keep = (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard;
+      const vis = document.querySelector('[data-session-board]:not([hidden])');
+      return {
+        sameNode: keep != null && keep === board,
+        tiles: board?.querySelectorAll('[data-member-id]').length ?? 0,
+        hidden: board instanceof HTMLElement ? board.hidden : false,
+        visTiles: vis?.querySelectorAll('[data-member-id]').length ?? 0,
+        sessionBoards: document.querySelectorAll('[data-session-board]').length,
+      };
+    });
+    expect(input0.sameNode).toBe(true);
+    expect(input0.hidden).toBe(true);
+    expect(input0.tiles).toBeGreaterThan(0);
+    expect(input0.visTiles).toBe(0);
+    expect(input0.sessionBoards).toBeGreaterThan(0);
+    const input0Chip = await chipText();
+    expect(input0Chip).not.toEqual(restChip);
+    await scrub.fill('0');
+    expect(await chipText()).toBe(input0Chip);
+    await expect(page.getByTestId('league-uncaptured')).toBeVisible();
+    await expect(page.getByTestId('league-visit-board')).toBeHidden();
+
     await scrub.fill('1');
+    await expect(page.getByTestId('league-visit-board')).toBeVisible();
+    await expect(page.getByTestId('league-uncaptured')).toBeHidden();
     const mid = await page.evaluate(() => {
       const board = document.querySelector('[data-testid="league-visit-board"]');
-      const keep = (board as HTMLElement & { __keep?: Element | null }).__keep;
-      const now = board?.querySelector('[data-testid="admin-gym-card"], [data-testid^="admin-slot-"]') ?? null;
-      const tiles = document.querySelectorAll('[data-member-id]').length;
-      return { sameNode: keep != null && keep === now, tiles };
+      const keep = (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard;
+      const vis = document.querySelector('[data-session-board]:not([hidden])');
+      const visTiles = [...(vis?.querySelectorAll('[data-member-id]') ?? [])];
+      return {
+        sameNode: keep != null && keep === board,
+        tiles: board?.querySelectorAll('[data-member-id]').length ?? 0,
+        visTiles: visTiles.length,
+        visFaded: visTiles.filter((n) => (n as HTMLElement).style.opacity === '0.14').length,
+        slots: vis?.querySelectorAll('[data-testid^="admin-slot-"]').length ?? 0,
+        gyms: vis?.querySelectorAll('[data-testid="admin-gym-card"]').length ?? 0,
+      };
     });
     expect(mid.sameNode).toBe(true);
-    expect(mid.tiles).toBeGreaterThan(0);
+    expect(mid.tiles).toBe(input0.tiles);
+    expect(mid.visTiles).toBeGreaterThan(0);
+    expect(mid.visFaded).toBe(0);
+
     await scrub.fill('2');
+    await expect(page.getByTestId('league-visit-board')).toBeVisible();
+    const end = await page.evaluate(() => {
+      const board = document.querySelector('[data-testid="league-visit-board"]');
+      const keep = (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard;
+      const vis = document.querySelector('[data-session-board]:not([hidden])');
+      const visTiles = [...(vis?.querySelectorAll('[data-member-id]') ?? [])];
+      return {
+        sameNode: keep != null && keep === board,
+        tiles: board?.querySelectorAll('[data-member-id]').length ?? 0,
+        visTiles: visTiles.length,
+        visFaded: visTiles.filter((n) => (n as HTMLElement).style.opacity === '0.14').length,
+        gyms: [...(vis?.querySelectorAll('[data-testid="admin-gym-card"]') ?? [])].filter((n) =>
+          n.querySelector('[data-member-id]'),
+        ).length,
+      };
+    });
+    expect(end.sameNode).toBe(true);
+    expect(end.tiles).toBe(mid.tiles);
+    expect(end.visTiles).toBeGreaterThan(0);
+    expect(end.visFaded).toBe(0);
+    expect(end.visTiles).not.toBe(mid.visTiles);
+    if (info.project.name !== 'desktop') {
+      expect(mid.slots).toBe(14);
+    } else {
+      expect(end.gyms).toBe(14);
+    }
 
     if (info.project.name !== 'desktop') {
       const overflow = await page.evaluate(() => {
@@ -82,9 +156,10 @@ test.describe('admin user pages', () => {
       expect(gap).toBeGreaterThanOrEqual(-2);
       expect(gap).toBeLessThan(6);
 
-      const gym = await page.getByTestId('admin-slot-0').boundingBox();
-      const champ = await page.getByTestId('admin-slot-12').boundingBox();
-      const boss = await page.getByTestId('admin-slot-13').boundingBox();
+      const vis = page.locator('[data-session-board]:not([hidden])');
+      const gym = await vis.getByTestId('admin-slot-0').boundingBox();
+      const champ = await vis.getByTestId('admin-slot-12').boundingBox();
+      const boss = await vis.getByTestId('admin-slot-13').boundingBox();
       const navBox = await page.getByRole('navigation', { name: 'Admin section' }).boundingBox();
       expect(gym && champ && boss && navBox).toBeTruthy();
       expect(champ!.y + champ!.height).toBeLessThanOrEqual(navBox!.y + 2);
@@ -93,10 +168,11 @@ test.describe('admin user pages', () => {
       expect(Math.abs(champ!.width - boss!.width)).toBeLessThan(4);
     } else {
       const board = page.getByTestId('league-visit-board');
+      const vis = page.locator('[data-session-board]:not([hidden])');
       await expect(board).toBeVisible();
-      await expect(board).toHaveAttribute('data-cols', /^(7|14)$/);
-      await expect(page.getByTestId('admin-gym-card')).toHaveCount(14);
-      const first = page.getByTestId('admin-gym-card').first();
+      await expect(vis.locator('[data-cols]')).toHaveAttribute('data-cols', /^(7|14)$/);
+      await expect(vis.getByTestId('admin-gym-card')).toHaveCount(14);
+      const first = vis.getByTestId('admin-gym-card').first();
       const late = first.locator('[data-row="10"], [data-row="11"]');
       await expect(late.first()).toBeVisible();
       await expect(first.getByTestId('admin-gym-stage-row')).toBeVisible();
@@ -117,7 +193,7 @@ test.describe('admin user pages', () => {
       expect(washBox!.width).toBeLessThan(cardBox!.width * 0.45);
       expect(washBox!.x).toBeGreaterThan(badgeBox!.x + badgeBox!.width - 1);
       expect(cardBox!.x + cardBox!.width - (washBox!.x + washBox!.width)).toBeLessThan(8);
-      const champ = page.getByTestId('admin-gym-card').nth(12);
+      const champ = vis.getByTestId('admin-gym-card').nth(12);
       await expect(champ.getByTestId('admin-gym-stage-row')).toHaveAttribute('data-span', '6');
       const champWash = await champ.getByTestId('admin-gym-stage-row').boundingBox();
       const champBox = await champ.boundingBox();
@@ -162,10 +238,25 @@ test.describe('admin user pages', () => {
       });
       expect(thumb).toBeTruthy();
       expect(Math.abs(thumb!.cx - thumb!.last)).toBeLessThan(3);
-      const last = await page.getByTestId('admin-gym-card').nth(13).boundingBox();
-      const vh = page.viewportSize()?.height ?? 0;
+      const last = await vis.getByTestId('admin-gym-card').nth(13).boundingBox();
       expect(last).toBeTruthy();
-      expect(last!.y + last!.height).toBeLessThanOrEqual(vh);
+      const pageOverflow = await page.evaluate(() => {
+        const de = document.documentElement;
+        const member = document.querySelector('[data-session-board]:not([hidden]) [data-row="10"] [data-member-id], [data-session-board]:not([hidden]) [data-row="11"] [data-member-id]');
+        const mb = member?.getBoundingClientRect();
+        return {
+          scrollH: de.scrollHeight,
+          innerH: window.innerHeight,
+          scrollW: de.scrollWidth,
+          innerW: window.innerWidth,
+          cellW: mb ? +mb.width.toFixed(2) : 0,
+          cellH: mb ? +mb.height.toFixed(2) : 0,
+        };
+      });
+      expect(pageOverflow.scrollH).toBeLessThanOrEqual(pageOverflow.innerH + 2);
+      expect(pageOverflow.scrollW).toBeLessThanOrEqual(pageOverflow.innerW + 1);
+      expect(pageOverflow.cellW).toBeGreaterThan(8);
+      expect(Math.abs(pageOverflow.cellW - pageOverflow.cellH)).toBeLessThan(2);
     }
   });
 
@@ -232,6 +323,27 @@ test.describe('admin user pages', () => {
     expect(dragged.off.tiles).toBe(rest.off.tiles);
     expect(dragged.off.count).toBe(String(rest.off.tiles));
     expect(dragged.off.faded).toBeGreaterThan(rest.off.faded);
+
+    const hOverflow = await page.evaluate(() => {
+      const de = document.documentElement;
+      const snap = document.querySelector('[data-testid="admin-dex-snapshot"]');
+      const pane = snap?.closest('.overflow-y-auto') ?? de;
+      const tryScroll = (el: Element) => {
+        const before = el.scrollLeft;
+        el.scrollLeft = before + 80;
+        const moved = el.scrollLeft !== before;
+        el.scrollLeft = before;
+        return moved;
+      };
+      return {
+        doc: de.scrollWidth - de.clientWidth,
+        docMoved: tryScroll(de),
+        paneMoved: tryScroll(pane),
+        bodyMoved: tryScroll(document.body),
+      };
+    });
+    expect(hOverflow.docMoved || hOverflow.paneMoved || hOverflow.bodyMoved).toBe(false);
+    expect(hOverflow.doc, 'dex user-detail must not scroll sideways').toBeLessThanOrEqual(1);
   });
 
   test('a user page toggles between dex and league', async ({ page }) => {
@@ -256,4 +368,118 @@ test.describe('admin user pages', () => {
     await expect(tools.getByRole('button', { name: 'League' })).toBeEnabled();
     await expect(tools.getByRole('button', { name: 'Dex' })).toBeDisabled();
   });
+
+  test('header chips open an unclipped tooltip on press', async ({ page }) => {
+    await openDemo(page);
+    await userCard(page, '74d5').click();
+    await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
+
+    await page.getByRole('button', { name: /United States/ }).dispatchEvent('click');
+    await expect(page.locator('[data-info-chip-tip]')).toHaveText(/United States/);
+    const flag = await readChipTooltip(page);
+    expect(flag.clipped).toBe(false);
+    expect(flag.h).toBeGreaterThan(10);
+
+    await page.getByRole('button', { name: 'Desktop', exact: true }).dispatchEvent('click');
+    await expect(page.locator('[data-info-chip-tip]')).toHaveText('Desktop');
+    const device = await readChipTooltip(page);
+    expect(device.text).toBe('Desktop');
+    expect(device.clipped).toBe(false);
+  });
+
+  test('dex user-detail shows a red export+skip diamond and a playhead label', async ({ page }) => {
+    await openDemo(page);
+    await userCard(page, '14c0').click();
+    const mark = page.locator('[data-testid="session-milestone"]');
+    await expect(mark).toHaveCount(1);
+    await expect(mark).toHaveAttribute('data-tone', 'skip');
+    await expect(mark.locator('text')).toHaveCount(0);
+    await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
+    await expect(mark.locator('title')).toHaveText('export_survey_skipped · pokedex · not_now');
+    const label = page.getByTestId('session-playhead-milestone');
+    await expect(label).toHaveCount(1);
+    await expect(label).toHaveText(/export · not now/);
+    await expect(label).not.toHaveText(/pokedex/);
+    await expect(label).toHaveAttribute('visibility', 'visible');
+  });
+
+  test('league user-detail shows one playhead label for the scrubbed sitting', async ({ page }) => {
+    await openDemo(page);
+    await page.getByRole('button', { name: 'League' }).click();
+    await userCard(page, '70cd').click();
+    const marks = page.locator('[data-testid="session-milestone"]');
+    await expect(marks).toHaveCount(1);
+    await expect(marks).toHaveAttribute('data-tone', 'skip');
+    await expect(marks.locator('text')).toHaveCount(0);
+    await expect(marks.locator('title')).toHaveText('export_survey_skipped · league · close');
+    const label = page.getByTestId('session-playhead-milestone');
+    await expect(label).toHaveCount(1);
+    await expect(label).toHaveText('card · league · league · close');
+    await expect(label).toHaveAttribute('visibility', 'visible');
+
+    const scrub = page.getByRole('slider', { name: 'Scrub sessions' });
+    await scrub.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = '0';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(label).toHaveText('card · abandon');
+    await expect(label).toHaveAttribute('visibility', 'visible');
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveCount(1);
+    await expect(marks.locator('text')).toHaveCount(0);
+
+    await scrub.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = '1';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(label).toHaveText('card nudge · card go');
+    await expect(label).toHaveAttribute('visibility', 'visible');
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveCount(1);
+  });
+
+  test('header chips stay one row with one language and no focus ring', async ({ page }) => {
+    await openDemo(page);
+    await userCard(page, '4eab').click();
+    await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
+
+    const lang = page.locator('[data-tooltip-chip] button').last();
+    await expect(lang).toHaveText(/^EN$/);
+    await expect(lang).toHaveAttribute('aria-label', /Browser Greek.*Served English/);
+
+    const rowH = await page.locator('[data-tooltip-chip] button').first().evaluate((el) => {
+      const row = el.closest('.ml-auto');
+      return row instanceof HTMLElement ? row.getBoundingClientRect().height : 0;
+    });
+    expect(rowH).toBeGreaterThan(20);
+    expect(rowH).toBeLessThan(40);
+
+    const flag = page.getByRole('button', { name: /United Kingdom/ });
+    const focus = await flag.evaluate((el) => {
+      el.focus();
+      const s = getComputedStyle(el);
+      return { outlineStyle: s.outlineStyle, boxShadow: s.boxShadow };
+    });
+    expect(focus.outlineStyle).toBe('none');
+    expect(focus.boxShadow === 'none' || focus.boxShadow === '').toBe(true);
+  });
 });
+
+async function readChipTooltip(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    const el = document.querySelector('[data-info-chip-tip]');
+    if (!(el instanceof HTMLElement)) return { text: '', clipped: true, h: 0 };
+    const r = el.getBoundingClientRect();
+    let clipped = false;
+    for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+      const cs = getComputedStyle(p);
+      if (!/hidden|clip|auto|scroll/.test(cs.overflowX + cs.overflowY)) continue;
+      const pr = p.getBoundingClientRect();
+      if (r.top < pr.top - 0.5 || r.bottom > pr.bottom + 0.5 || r.left < pr.left - 0.5 || r.right > pr.right + 0.5) {
+        clipped = true;
+        break;
+      }
+    }
+    return { text: (el.innerText || '').replace(/\s+/g, ' ').trim(), clipped, h: r.height };
+  });
+}

@@ -9,6 +9,7 @@ import {
   inkOn,
   layoutLabels,
   mixCounts,
+  shadeRamp,
   sliceFill,
   sliceGeometry,
   type LabelLayout,
@@ -16,6 +17,7 @@ import {
   type PlatformDim,
   type PlatformJoint,
 } from '@/lib/platformStacks';
+import { mixWho, type WhoBucket, type WhoFilter } from '@/lib/whoOrigin';
 
 function Mark({ dim, value }: { dim: PlatformDim; value: string }) {
   if (dim === 'device') return <DeviceIcon value={value} />;
@@ -95,16 +97,18 @@ function LogoLabel({
   );
 }
 
+const PRESSED_INSET = 3;
+
 function StackBar({
   dim,
   counts,
-  clamp,
+  filter,
   canClamp,
   onToggle,
 }: {
   dim: PlatformDim;
   counts: Record<string, number>;
-  clamp: PlatformClamp | null;
+  filter: WhoFilter | null;
   canClamp: boolean;
   onToggle: (value: string) => void;
 }) {
@@ -129,12 +133,14 @@ function StackBar({
   useLayoutEffect(() => {
     setLabels(layoutLabels(slices, barW, measureFactory(measureRef.current)));
   }, [slices, barW]);
-  const driving = clamp?.dim === dim;
+  const driving = filter?.dim === dim;
+  const fillClamp: PlatformClamp | null = driving ? { dim, value: filter.value } : null;
+  const fills = shadeRamp(slices.map((s) => sliceFill(s.key, dim, fillClamp)));
 
   return (
     <div className="min-w-0">
       <div className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-        {dimTitle(dim, clamp)}
+        {dimTitle(dim, filter)}
       </div>
       <div
         ref={trackRef}
@@ -142,32 +148,33 @@ function StackBar({
         data-who-stack={dim}
       >
         {slices.map((s, i) => {
-          const on = driving && clamp?.value === s.key;
-          const fill = sliceFill(s.key, dim, clamp);
+          const on = driving && filter?.value === s.key;
+          const fill = fills[i];
           const kind = kinds[i];
           const label =
             kind === 'pct' ? `${s.pct}%` : kind === 'int' ? String(s.pct) : '';
+          const inset = on ? PRESSED_INSET : 0;
+          const width = i === slices.length - 1 ? `calc(100% - ${s.leftPx}px)` : s.widthPx;
           return (
             <button
               key={s.key}
               type="button"
               disabled={!canClamp}
               aria-pressed={on}
+              data-who-pressed={on ? 'true' : 'false'}
               aria-label={`${s.key} ${s.pct}%`}
               onClick={() => canClamp && onToggle(s.key)}
-              className="absolute top-0 box-border flex h-full min-w-0 cursor-pointer items-center overflow-hidden rounded-sm border-0 text-left text-xs font-bold tabular-nums transition-[left,width,background-color] duration-300 disabled:cursor-default disabled:opacity-100"
+              className="absolute box-border flex min-w-0 cursor-pointer items-center overflow-hidden rounded-sm border-0 text-left text-xs font-bold tabular-nums outline-none transition-[top,left,width,height,background-color] duration-300 focus:outline-none focus-visible:outline-none disabled:cursor-default disabled:opacity-100"
               style={{
+                top: inset,
+                height: `calc(100% - ${inset * 2}px)`,
                 left: s.leftPx,
-                width:
-                  i === slices.length - 1
-                    ? `calc(100% - ${s.leftPx}px)`
-                    : Math.max(0, s.widthPx),
+                width,
                 maxWidth: `calc(100% - ${s.leftPx}px)`,
                 paddingLeft: kind === 'none' ? 0 : '0.375rem',
                 paddingRight: kind === 'none' ? 0 : '0.375rem',
                 backgroundColor: fill,
                 color: inkOn(fill),
-                boxShadow: on ? 'inset 0 0 0 2px #fff, inset 0 0 0 4px #0a0a0a' : undefined,
               }}
             >
               {label}
@@ -196,38 +203,59 @@ function StackBar({
   );
 }
 
+function bucketsHavePlatform(buckets: readonly WhoBucket[] | undefined): buckets is readonly WhoBucket[] {
+  return !!buckets?.length && buckets.every((b) => typeof b.device === 'string');
+}
+
 export function PlatformStacks({
   devices,
   os,
   browsers,
   joints,
-  clamp,
-  onClamp,
+  buckets,
+  filter,
+  onFilter,
 }: {
   devices: Record<string, number>;
   os: Record<string, number>;
   browsers: Record<string, number>;
   joints?: PlatformJoint[];
-  clamp: PlatformClamp | null;
-  onClamp: (next: PlatformClamp | null) => void;
+  buckets?: readonly WhoBucket[];
+  filter: WhoFilter | null;
+  onFilter: (next: WhoFilter | null) => void;
 }) {
-  const canClamp = (joints?.length ?? 0) > 0;
-  const deviceCounts = joints?.length ? mixCounts(joints, 'device', clamp) : devices;
-  const osCounts = joints?.length ? mixCounts(joints, 'os', clamp) : os;
-  const browserCounts = joints?.length ? mixCounts(joints, 'browser', clamp) : browsers;
+  const fromBuckets = bucketsHavePlatform(buckets);
+  const platformClamp: PlatformClamp | null =
+    filter && filter.dim !== 'region' ? { dim: filter.dim, value: filter.value } : null;
+  const canClamp = fromBuckets || (joints?.length ?? 0) > 0;
+  const deviceCounts = fromBuckets
+    ? mixWho(buckets, 'device', filter)
+    : joints?.length
+      ? mixCounts(joints, 'device', platformClamp)
+      : devices;
+  const osCounts = fromBuckets
+    ? mixWho(buckets, 'os', filter)
+    : joints?.length
+      ? mixCounts(joints, 'os', platformClamp)
+      : os;
+  const browserCounts = fromBuckets
+    ? mixWho(buckets, 'browser', filter)
+    : joints?.length
+      ? mixCounts(joints, 'browser', platformClamp)
+      : browsers;
 
   const toggle = (dim: PlatformDim, value: string) => {
     if (!canClamp) return;
-    if (clamp && clamp.dim === dim && clamp.value === value) onClamp(null);
-    else onClamp({ dim, value });
+    if (filter && filter.dim === dim && filter.value === value) onFilter(null);
+    else onFilter({ dim, value });
   };
 
   return (
     <TooltipScope>
       <div className="flex min-w-0 flex-col gap-3" data-who-platform>
-        <StackBar dim="device" counts={deviceCounts} clamp={clamp} canClamp={canClamp} onToggle={(v) => toggle('device', v)} />
-        <StackBar dim="os" counts={osCounts} clamp={clamp} canClamp={canClamp} onToggle={(v) => toggle('os', v)} />
-        <StackBar dim="browser" counts={browserCounts} clamp={clamp} canClamp={canClamp} onToggle={(v) => toggle('browser', v)} />
+        <StackBar dim="device" counts={deviceCounts} filter={filter} canClamp={canClamp} onToggle={(v) => toggle('device', v)} />
+        <StackBar dim="os" counts={osCounts} filter={filter} canClamp={canClamp} onToggle={(v) => toggle('os', v)} />
+        <StackBar dim="browser" counts={browserCounts} filter={filter} canClamp={canClamp} onToggle={(v) => toggle('browser', v)} />
       </div>
     </TooltipScope>
   );
@@ -237,7 +265,7 @@ export function ClampChip({
   clamp,
   onClear,
 }: {
-  clamp: PlatformClamp;
+  clamp: WhoFilter;
   onClear: () => void;
 }): ReactNode {
   const label = clampChipLabel(clamp);
@@ -245,7 +273,7 @@ export function ClampChip({
     <button
       type="button"
       onClick={onClear}
-      className="rounded-full border border-foreground bg-foreground px-2.5 py-1 text-[0.7rem] font-semibold text-card"
+      className="inline-flex h-[1.09375rem] items-center rounded-full border border-foreground bg-foreground px-2 text-[0.7rem] font-semibold leading-none text-card"
       aria-label={`Clear ${label} clamp`}
       data-who-clamp
     >

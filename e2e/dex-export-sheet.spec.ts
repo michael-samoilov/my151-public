@@ -4,6 +4,12 @@ import { seedDex, TUNE_URL } from './support/dexSeed';
 
 const MOBILE = { width: 390, height: 844 } as const;
 
+// Rendering several full-card PNG variants is intentionally allowed up to
+// 45 seconds below. Keep the test budget above that readiness budget so a
+// loaded parallel run cannot time out while the preview is still validly
+// rendering.
+test.setTimeout(60_000);
+
 async function openDexExport(page: Page) {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'canShare', { value: () => false });
@@ -12,7 +18,8 @@ async function openDexExport(page: Page) {
   await seedDex(page);
   await page.locator('[data-nav="view"]').click();
   await page.getByRole('button', { name: 'View settings' }).waitFor();
-  const exportBtn = page.locator('[data-dex-export], [data-testid="tool-actions"] button:not([aria-label="View settings"])').first();
+  const exportBtn = page.locator('[data-dex-export]');
+  await expect(exportBtn).toBeEnabled();
   await exportBtn.click();
 }
 

@@ -77,7 +77,9 @@ test.describe('drag hold', () => {
 
   test('a league row is carried in the slot it would fill', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'mouse-driven drag needs the desktop project');
-    await blankLeague(page);
+    // Empty rows are add targets and deliberately do not drag. Seed the
+    // league so this test measures a row that can actually be reordered.
+    await seededLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(300);

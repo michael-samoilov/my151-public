@@ -11,6 +11,7 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useLeagueBeacon } from './hooks/useLeagueBeacon';
+import { useLeagueFunnelNudges } from './hooks/useLeagueFunnelNudges';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
 import { LeagueExportOverlay } from './components/LeagueExportOverlay';
+import { LeagueFunnelNudge } from './components/LeagueFunnelNudge';
 import { usePencilRoom } from './components/usePencilRoom';
 import { confirmOnEnter } from './components/confirmOnEnter';
 
@@ -171,6 +173,7 @@ export function LeagueApp() {
   // store without subscribing to it.
   useNamesVersion();
   useLeagueBeacon();
+  useLeagueFunnelNudges();
   useJsErrorCounter();
   useEffect(() => {
     sendEventBeacon('league-open', { once: true });
@@ -403,6 +406,7 @@ export function LeagueApp() {
             one would be clipped, or unreachable, half the time. */}
         <FeedbackHost route={openCard === null ? 'league' : 'league-card'} />
         {exportOpen && <LeagueExportOverlay />}
+        <LeagueFunnelNudge />
       </div>
     </TooltipProvider>
   );

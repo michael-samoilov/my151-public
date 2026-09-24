@@ -1,6 +1,7 @@
-import { DAY_MS, dayStart, type DailyActivityPoint } from '../../../../api/_aggregate';
+import { DAY_MS, HOUR_MS, dayStart, hourStart, type DailyActivityPoint, type HourlyActivityPoint } from '../../../../api/_aggregate';
 
 export type DailyPoint = DailyActivityPoint;
+export type HourlyPoint = HourlyActivityPoint;
 
 export function extendThroughToday(series: DailyPoint[], nowMs: number): DailyPoint[] {
   if (series.length === 0) return series;
@@ -43,12 +44,85 @@ export function chartDailyValues(series: DailyPoint[]): number[] {
   });
 }
 
-/** Calendar `rolling7`; last point uses `label168h` when the API set it (rolling 168h at now). */
-export function chartWeeklyValues(series: DailyPoint[]): number[] {
+export const INCOMPLETE_WEEKLY_DAYS = 6;
+
+export const CHART_RANGE_PRESETS = [
+  { key: '24h', label: '24h', windowMs: DAY_MS },
+  { key: '7d', label: '7d', windowMs: 7 * DAY_MS },
+  { key: '30d', label: '30d', windowMs: 30 * DAY_MS },
+  { key: '90d', label: '90d', windowMs: 90 * DAY_MS },
+  { key: '180d', label: '180d', windowMs: 180 * DAY_MS },
+  { key: '365d', label: '365d', windowMs: 365 * DAY_MS },
+  { key: 'all', label: 'All', windowMs: null },
+] as const;
+
+export type ChartRangeKey = (typeof CHART_RANGE_PRESETS)[number]['key'];
+
+export function isHourlyRange(key: ChartRangeKey): key is '24h' {
+  return key === '24h';
+}
+
+export function chartRangeWindowMs(key: ChartRangeKey): number | null {
+  const preset = CHART_RANGE_PRESETS.find((p) => p.key === key);
+  if (preset) return preset.windowMs;
+  throw new Error(`unknown chart range: ${key}`);
+}
+
+export function sliceActivityRange(
+  series: DailyPoint[],
+  nowMs: number,
+  windowMs: number | null,
+): DailyPoint[] {
+  if (windowMs == null || series.length === 0) return series;
+  const start = nowMs - windowMs;
+  const sliced = series.filter((p) => p.day + DAY_MS > start);
+  if (sliced.length >= 2 || sliced.length === series.length) return sliced;
+  return series.slice(Math.max(0, series.length - 2));
+}
+
+export function sliceHourlyRange(series: HourlyPoint[], nowMs: number): HourlyPoint[] {
+  if (series.length === 0) return series;
+  const last = hourStart(nowMs);
+  const first = last - 23 * HOUR_MS;
+  return series.filter((p) => p.hour >= first && p.hour <= last);
+}
+
+export function sliceLastUtcDays(series: DailyPoint[], nowMs: number, days: number): DailyPoint[] {
+  if (series.length === 0 || days <= 0) return [];
+  const last = dayStart(nowMs);
+  const first = last - (days - 1) * DAY_MS;
+  return series.filter((p) => p.day >= first && p.day <= last);
+}
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+export interface WeekdayTick {
+  idx: number;
+  weekday: (typeof WEEKDAYS)[number];
+}
+
+export function dailyWeekdayTicks(series: DailyPoint[]): WeekdayTick[] {
+  return series.map((p, i) => ({
+    idx: i,
+    weekday: WEEKDAYS[new Date(p.day).getUTCDay()],
+  }));
+}
+
+export function lastPointIsCurrentHour(series: HourlyPoint[], nowMs: number): boolean {
+  const last = series[series.length - 1];
+  return last != null && last.hour === hourStart(nowMs);
+}
+
+export function chartWeeklyValues(
+  series: DailyPoint[],
+  historyOriginDay: number,
+): (number | null)[] {
   if (series.length === 0) return [];
   const last = series.length - 1;
+  const completeFrom = historyOriginDay + INCOMPLETE_WEEKLY_DAYS * DAY_MS;
   return series.map((p, i) => {
     if (i === last && p.label168h != null) return p.label168h;
+    if (p.day < completeFrom) return null;
     return p.rolling7;
   });
 }

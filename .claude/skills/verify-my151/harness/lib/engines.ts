@@ -96,22 +96,6 @@ export interface Session {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function pointerDragEval(s: Session, fromSelector: string, toSelector: string): Promise<void> {
-  await s.evalJson(`const from=document.querySelector(${JSON.stringify(fromSelector)});
-    const to=document.querySelector(${JSON.stringify(toSelector)});
-    if(!from||!to) return false;
-    const fr=from.getBoundingClientRect(), tr=to.getBoundingClientRect();
-    const fx=fr.left+fr.width/2, fy=fr.top+fr.height/2, tx=tr.left+tr.width/2, ty=tr.top+tr.height/2;
-    const down=(x,y)=>from.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',buttons:1}));
-    const move=(x,y)=>document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',buttons:1}));
-    const up=(x,y)=>document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse'}));
-    down(fx,fy);
-    for(let i=1;i<=12;i++){ move(fx+(tx-fx)*i/12, fy+(ty-fy)*i/12); }
-    up(tx,ty);
-    return true;`);
-  await sleep(400);
-}
-
 // ---------- Blink (Playwright) ----------
 
 class BlinkSession implements Session {
@@ -129,7 +113,23 @@ class BlinkSession implements Session {
     const out = await this.page.evaluate(`JSON.stringify((()=>{ ${body} })())`);
     return JSON.parse(out as string) as T;
   }
-  async click(selector: string) { await this.page.click(selector, { timeout: 10000 }); }
+  async click(selector: string) {
+    const matches = await this.page.locator(selector).all();
+    const viewport = this.page.viewportSize();
+    let firstVisible: (typeof matches)[number] | undefined;
+    for (const match of matches) {
+      if (!(await match.isVisible())) continue;
+      firstVisible ??= match;
+      const box = await match.boundingBox();
+      if (box && viewport && box.x < viewport.width && box.y < viewport.height
+        && box.x + box.width > 0 && box.y + box.height > 0) {
+        await match.click({ timeout: 10000 });
+        return;
+      }
+    }
+    if (firstVisible) { await firstVisible.click({ timeout: 10000 }); return; }
+    throw new Error(`click: no visible element for ${selector}`);
+  }
   async hover(selector: string) { await this.page.locator(selector).hover({ timeout: 10000 }); }
   async dragPointer(fromSelector: string, toSelector: string) {
     const from = this.page.locator(fromSelector);
@@ -170,6 +170,9 @@ const CHROMIUM_LAYOUTS = [
 
 function resolveChromium(): string | undefined {
   if (process.env.PLAYWRIGHT_CHROMIUM_PATH) return process.env.PLAYWRIGHT_CHROMIUM_PATH;
+  for (const bin of ['/usr/bin/google-chrome-stable', '/usr/bin/google-chrome', '/usr/bin/chromium']) {
+    if (fs.existsSync(bin)) return bin;
+  }
   const root = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
   try {
     // The unversioned symlink beside the revision directories is the one name
@@ -217,7 +220,8 @@ export async function openBlinkPlaywright(persona: PersonaName | null, videoFile
 
 export type BlinkDriver = 'agent-browser' | 'playwright';
 
-// agent-browser is the default Blink driver; Playwright is the fallback. Force
+// Playwright is the default Blink driver. agent-browser remains opt-in because
+// its synthetic pointer drag does not drive dnd-kit reliably. Force
 // either with VERIFY_BLINK_DRIVER. Nothing here can change WebKit or Gecko:
 // agent-browser drives chrome and lightpanda only, so those two lanes stay on
 // WebDriver and Marionette and remain the only proof of real iOS and Firefox
@@ -230,8 +234,7 @@ export function blinkDriverChoice(): { driver: BlinkDriver; detail: string } {
     if (!bin) throw new Error('VERIFY_BLINK_DRIVER=agent-browser but the CLI is not installed (run setup-engines.sh)');
     return { driver: 'agent-browser', detail: bin };
   }
-  if (bin) return { driver: 'agent-browser', detail: bin };
-  return { driver: 'playwright', detail: 'agent-browser not installed; using Playwright' };
+  return { driver: 'playwright', detail: resolveChromium() ?? 'Playwright browser resolution' };
 }
 
 export async function openBlink(persona: PersonaName | null, videoFile?: string): Promise<Session> {
@@ -327,7 +330,22 @@ class WebKitSession implements Session {
     await sleep(150);
   }
   async dragPointer(fromSelector: string, toSelector: string) {
-    await pointerDragEval(this, fromSelector, toSelector);
+    const from = await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/element`, { using: 'css selector', value: fromSelector });
+    const fromId = (from.value as Record<string, string>)[W3C_ELEMENT];
+    const fromRect = await this.evalJson<{ x: number; y: number }>(`const r=document.querySelector(${JSON.stringify(fromSelector)}).getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2};`);
+    const toRect = await this.evalJson<{ x: number; y: number }>(`const r=document.querySelector(${JSON.stringify(toSelector)}).getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2};`);
+    const moves = Array.from({ length: 12 }, (_, index) => ({
+      type: 'pointerMove', origin: 'viewport',
+      x: Math.round(fromRect.x + ((toRect.x - fromRect.x) * (index + 1)) / 12),
+      y: Math.round(fromRect.y + ((toRect.y - fromRect.y) * (index + 1)) / 12), duration: 50,
+    }));
+    await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/actions`, { actions: [{ type: 'pointer', id: 'drag', parameters: { pointerType: 'mouse' }, actions: [
+      { type: 'pointerMove', origin: { [W3C_ELEMENT]: fromId }, x: 0, y: 0, duration: 100 },
+      { type: 'pointerDown', button: 0 }, { type: 'pause', duration: 350 }, ...moves,
+      { type: 'pause', duration: 250 }, { type: 'pointerUp', button: 0 },
+    ] }] });
+    await w3c('DELETE', ENGINE_PATHS.webkitPort, `/session/${this.sid}/actions`).catch(() => {});
+    await sleep(400);
   }
   async screenshot(file: string) {
     const r = await w3c('GET', ENGINE_PATHS.webkitPort, `/session/${this.sid}/screenshot`);
@@ -364,9 +382,9 @@ export async function openWebKit(videoFile?: string): Promise<Session> {
   const sess = await w3c('POST', ENGINE_PATHS.webkitPort, '/session', caps);
   const sid = (sess.value as { sessionId: string }).sessionId;
   if (!sid) { killGroup(driver); killProc(xvfb); throw new Error('webkit: session create failed'); }
+  await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${sid}/window/rect`, { x: 0, y: 0, width: 1280, height: 900 }).catch(() => {});
   let ffmpeg: ChildProcess | null = null;
   if (videoFile) {
-    await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${sid}/window/rect`, { x: 0, y: 0, width: 1280, height: 900 }).catch(() => {});
     ffmpeg = startFfmpeg(WEBKIT_DISPLAY, videoFile);
   }
   return new WebKitSession(driver, sid, xvfb, ffmpeg);
@@ -429,7 +447,21 @@ class GeckoSession implements Session {
     await sleep(150);
   }
   async dragPointer(fromSelector: string, toSelector: string) {
-    await pointerDragEval(this, fromSelector, toSelector);
+    const from = await this.cmd<{ value: Record<string, string> }>('WebDriver:FindElement', { using: 'css selector', value: fromSelector });
+    const fromRect = await this.evalJson<{ x: number; y: number }>(`const r=document.querySelector(${JSON.stringify(fromSelector)}).getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2};`);
+    const toRect = await this.evalJson<{ x: number; y: number }>(`const r=document.querySelector(${JSON.stringify(toSelector)}).getBoundingClientRect(); return {x:r.left+r.width/2,y:r.top+r.height/2};`);
+    const moves = Array.from({ length: 12 }, (_, index) => ({
+      type: 'pointerMove', origin: 'viewport',
+      x: Math.round(fromRect.x + ((toRect.x - fromRect.x) * (index + 1)) / 12),
+      y: Math.round(fromRect.y + ((toRect.y - fromRect.y) * (index + 1)) / 12), duration: 50,
+    }));
+    await this.cmd('WebDriver:PerformActions', { actions: [{ type: 'pointer', id: 'drag', parameters: { pointerType: 'mouse' }, actions: [
+      { type: 'pointerMove', origin: { [W3C_ELEMENT]: from.value[W3C_ELEMENT] }, x: 0, y: 0, duration: 100 },
+      { type: 'pointerDown', button: 0 }, { type: 'pause', duration: 350 }, ...moves,
+      { type: 'pause', duration: 250 }, { type: 'pointerUp', button: 0 },
+    ] }] });
+    await this.cmd('WebDriver:ReleaseActions', {}).catch(() => {});
+    await sleep(400);
   }
   async screenshot(file: string) {
     const r = await this.cmd<{ value: string }>('WebDriver:TakeScreenshot', { full: true });
@@ -491,10 +523,10 @@ export async function openGecko(videoFile?: string): Promise<Session> {
     const resp = await Promise.race([conn.next(), deadline]); // [1, id, error, result]
     if (resp[2]) throw new Error(`gecko NewSession: ${JSON.stringify(resp[2])}`);
     let msgId = 2;
+    conn.send([0, msgId++, 'WebDriver:SetWindowRect', { x: 0, y: 0, width: 1280, height: 900 }]);
+    await Promise.race([conn.next(), deadline]).catch(() => {});
     let ffmpeg: ChildProcess | null = null;
     if (videoFile) {
-      conn.send([0, msgId++, 'WebDriver:SetWindowRect', { x: 0, y: 0, width: 1280, height: 900 }]);
-      await Promise.race([conn.next(), deadline]).catch(() => {});
       ffmpeg = startFfmpeg(GECKO_DISPLAY, videoFile);
     }
     return new GeckoSession(ff, conn, profile, msgId, xvfb, ffmpeg);

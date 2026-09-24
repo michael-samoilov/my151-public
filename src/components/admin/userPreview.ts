@@ -1,6 +1,11 @@
 import { bareCid } from '../../../api/_archive';
+import iso31662En from './iso3166-2-en.json';
 
 export { bareCid };
+
+const SUBDIVISION_EN = iso31662En as Record<string, string>;
+const ISO_3166_2 = /^[A-Z]{2}-[A-Z0-9]{1,3}$/;
+const ISO_SUBDIVISION = /^[A-Z0-9]{1,3}$/;
 
 export type ArchiveFilter = 'active' | 'archived' | 'all';
 export type ToolFilter = 'any' | 'dex' | 'league' | 'both';
@@ -134,6 +139,36 @@ export function countryName(code?: string): string | undefined {
     /* unresolvable code */
   }
   return code;
+}
+
+/** Full subregion term from a Vercel ISO 3166-2 code ("VIC" → "Victoria").
+ *  Keeps the short code when the name is unknown, and keeps a display name
+ *  that is not an ISO code (demo "N. America"). */
+export function subregionName(country?: string, region?: string): string | undefined {
+  if (!region) return undefined;
+  const raw = region.trim();
+  if (!raw) return undefined;
+  const upper = raw.toUpperCase();
+  let iso: string | undefined;
+  if (ISO_3166_2.test(upper)) iso = upper;
+  else if (ISO_SUBDIVISION.test(upper) && country && /^[A-Z]{2}$/i.test(country.trim())) {
+    iso = `${country.trim().toUpperCase()}-${upper}`;
+  } else {
+    return raw;
+  }
+  return SUBDIVISION_EN[iso] ?? raw;
+}
+
+export function geoChipLabel(country?: string, region?: string): string {
+  const countryLabel = countryName(country);
+  const sub = subregionName(country, region);
+  if (countryLabel && sub) return `${countryLabel} · ${sub}`;
+  return countryLabel ?? sub ?? '';
+}
+
+/** Language the UI is in: a manual switch, else the locale we served, else the browser. */
+export function uiLanguage(lang?: string, locale?: string, switched?: string): string | undefined {
+  return switched || locale || lang;
 }
 
 export function facetLabel(key: FacetKey, value: string): string {

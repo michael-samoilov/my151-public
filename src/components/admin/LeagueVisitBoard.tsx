@@ -10,7 +10,7 @@ import { ROW_COUNT, TEAM_SIZES, slotKind, slotRow } from '@/league/model/constan
 import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
 import { cardShades } from '@/league/theme';
 import { BossBall, Crown } from '@/league/components/glyphs';
-import { applyMemberPresence } from '@/components/admin/memberPresence';
+import { applyLeaguePlayhead } from '@/components/admin/memberPresence';
 
 /** The fields a visit board reads. Matches `LeagueCard` on AdminPage. */
 interface VisitCard {
@@ -23,7 +23,6 @@ interface VisitCard {
 
 /** 14-across only when each card is wide enough that a row still reads. */
 const MIN_CARD_W = 90;
-const MIN_ROW_PX = 12;
 const COLS = 6;
 
 function slotStageGlyph(i: number, cell: string): ReactNode {
@@ -110,37 +109,30 @@ function MiniTile({ id, ace, fill, wash }: { id: number; ace?: boolean; fill?: b
   );
 }
 
-function useMemberPresence(
+function useSessionBoards(
   rootRef: RefObject<HTMLElement | null>,
-  presentIds: number[] | undefined,
-  sessionMemberIds: (number[] | null)[] | undefined,
+  playhead: number,
+  captured: boolean[],
 ) {
-  const present = useMemo(() => (presentIds ? new Set(presentIds) : null), [presentIds]);
-  const bySession = useMemo(
-    () => sessionMemberIds?.map((ids) => (ids ? new Set(ids) : null)),
-    [sessionMemberIds],
-  );
-
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    applyMemberPresence(root, present);
-  }, [present, rootRef]);
+    applyLeaguePlayhead(root, playhead, captured);
+  }, [playhead, captured, rootRef]);
 
   useLayoutEffect(() => {
-    if (!bySession) return;
     const applyFromSlider = () => {
       const root = rootRef.current;
       const el = document.querySelector('input[aria-label="Scrub sessions"]');
       if (!root || !(el instanceof HTMLInputElement)) return;
       const i = Number(el.value);
-      if (!Number.isFinite(i) || i < 0 || i >= bySession.length) return;
-      applyMemberPresence(root, bySession[i] ?? null);
+      if (!Number.isFinite(i) || i < 0 || i >= captured.length) return;
+      applyLeaguePlayhead(root, i, captured);
     };
     document.addEventListener('input', applyFromSlider, true);
     applyFromSlider();
     return () => document.removeEventListener('input', applyFromSlider, true);
-  }, [bySession, rootRef]);
+  }, [captured, rootRef]);
 }
 
 function placedOf(card: VisitCard | undefined): { lines: PlacedLine[]; legends: { seat: number; pokemonId: number }[] } {
@@ -172,12 +164,13 @@ const MiniGymCard = memo(function MiniGymCard({ index, card }: { index: number; 
     <div
       data-testid="admin-gym-card"
       data-slot={index}
-      className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg p-0.5"
+      className="relative w-full overflow-hidden rounded-lg p-0.5"
       style={{ background: shades.base }}
     >
       <div
-        className="grid min-h-0 flex-1"
+        className="grid w-full"
         style={{
+          aspectRatio: `${COLS} / ${ROW_COUNT}`,
           gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${ROW_COUNT}, minmax(0, 1fr))`,
           gap: 1,
@@ -237,20 +230,18 @@ const MiniGymCard = memo(function MiniGymCard({ index, card }: { index: number; 
   );
 });
 
-function colsThatFit(availW: number, availH: number): 14 | 7 {
+function colsThatFit(availW: number): 14 | 7 {
   const gap = 6;
   const cardW = (availW - 13 * gap) / 14;
-  const rowPx = availH / ROW_COUNT;
-  return cardW >= MIN_CARD_W && rowPx >= MIN_ROW_PX ? 14 : 7;
+  return cardW >= MIN_CARD_W ? 14 : 7;
 }
 
 const DesktopGymStrip = memo(function DesktopGymStrip({
   cards,
-  hostRef,
 }: {
   cards: VisitCard[];
-  hostRef: RefObject<HTMLDivElement | null>;
 }) {
+  const hostRef = useRef<HTMLDivElement>(null);
   const bySlot = useMemo(() => {
     const next = new Map<number, VisitCard>();
     for (const c of cards) next.set(c.i, c);
@@ -262,28 +253,23 @@ const DesktopGymStrip = memo(function DesktopGymStrip({
     const host = hostRef.current;
     if (!host) return;
     const apply = () => {
-      if (host.clientWidth <= 0 || host.clientHeight <= 0) return;
-      const next = colsThatFit(host.clientWidth, host.clientHeight);
+      if (host.clientWidth <= 0) return;
+      const next = colsThatFit(host.clientWidth);
       setCols((cur) => (cur === next ? cur : next));
     };
     apply();
     const ro = new ResizeObserver(apply);
     ro.observe(host);
     return () => ro.disconnect();
-  }, [hostRef]);
+  }, []);
 
   return (
-    <div
-      ref={hostRef}
-      data-testid="league-visit-board"
-      data-cols={cols}
-      className="h-full min-h-0 w-full flex-1 overflow-hidden"
-    >
+    <div ref={hostRef} data-cols={cols} className="w-full">
       <div
-        className="grid h-full min-h-0 w-full"
+        className="grid w-full"
         style={{
           gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-          gridTemplateRows: cols === 14 ? '1fr' : '1fr 1fr',
+          gridTemplateRows: cols === 14 ? 'auto' : 'auto auto',
           gap: '0.35rem',
         }}
       >
@@ -373,10 +359,8 @@ function slotCellStyle(i: number): CSSProperties {
 
 const MobileLeagueBoard = memo(function MobileLeagueBoard({
   cards,
-  hostRef,
 }: {
   cards: VisitCard[];
-  hostRef: RefObject<HTMLDivElement | null>;
 }) {
   const bySlot = useMemo(() => {
     const next = new Map<number, VisitCard>();
@@ -385,8 +369,6 @@ const MobileLeagueBoard = memo(function MobileLeagueBoard({
   }, [cards]);
   return (
     <div
-      ref={hostRef}
-      data-testid="league-visit-board"
       className="grid w-full gap-1"
       style={{
         gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
@@ -402,22 +384,40 @@ const MobileLeagueBoard = memo(function MobileLeagueBoard({
   );
 });
 
-/** The league at one moment: Pokémon-only gym cards on desktop, a compact
- *  3×4 + 2 board on a phone. Layout stays on the latest cards so gyms do not
- *  remount while you scrub. Session occupancy is a presence fade on
- *  `[data-member-id]`, the same split OutlinedDex uses. */
 export const LeagueVisitBoard = memo(function LeagueVisitBoard({
-  cards,
-  presentIds,
-  sessionMemberIds,
+  sessions,
+  playhead,
 }: {
-  cards: VisitCard[];
-  presentIds?: number[];
-  sessionMemberIds?: (number[] | null)[];
+  sessions: (VisitCard[] | null)[];
+  playhead: number;
 }) {
   const desktop = useIsDesktop();
-  const hostRef = useRef<HTMLDivElement>(null);
-  useMemberPresence(hostRef, presentIds, sessionMemberIds);
-  if (desktop) return <DesktopGymStrip cards={cards} hostRef={hostRef} />;
-  return <MobileLeagueBoard cards={cards} hostRef={hostRef} />;
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const captured = useMemo(() => sessions.map((cards) => cards != null), [sessions]);
+  useSessionBoards(wrapRef, playhead, captured);
+  const hideBoard = captured[playhead] !== true;
+  return (
+    <div ref={wrapRef} className="flex min-h-0 w-full flex-1 flex-col">
+      <p
+        data-testid="league-uncaptured"
+        hidden={!hideBoard}
+        className="text-xs text-muted-foreground"
+      >
+        Structure not captured for this session.
+      </p>
+      <div
+        data-testid="league-visit-board"
+        hidden={hideBoard}
+        className="flex min-h-0 w-full flex-1 flex-col"
+      >
+        {sessions.map((cards, i) =>
+          cards ? (
+            <div key={i} data-session-board={i} hidden={i !== playhead} className="flex min-h-0 w-full flex-1 flex-col">
+              {desktop ? <DesktopGymStrip cards={cards} /> : <MobileLeagueBoard cards={cards} />}
+            </div>
+          ) : null,
+        )}
+      </div>
+    </div>
+  );
 });

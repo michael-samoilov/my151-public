@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { blankLeague, seededLeague } from './support/leagueSeed';
+import { blankLeague, pairLeague, seededLeague } from './support/leagueSeed';
 
 /**
  * The gym card's two authored slots: the TM and the badge.
@@ -104,7 +104,6 @@ test.describe('the longest move in the TM box', () => {
     });
   }
 });
-
 test.describe('gym card slots', () => {
   test('the signature pane reads the team as lines, in league order', async ({ page }) => {
     await openCard(page);
@@ -116,7 +115,7 @@ test.describe('gym card slots', () => {
     await seat(page, '[data-testid="card-cell-2-3"]', 'chinchou');   // gen 2, #170
     await seat(page, '[data-testid="card-cell-5-4"]', 'caterpie');   // gen 1, #10
 
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-filter-chip="scope"]');
     await page.click('[data-filter-chip="scope"]');
     await page.waitForTimeout(700);
@@ -143,7 +142,7 @@ test.describe('gym card slots', () => {
     await seat(page, '[data-testid="card-cell-1-1"]', 'scizor');
     await seat(page, '[data-testid="card-cell-1-2"]', 'chinchou');
 
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-filter-chip="scope"]');
     await page.click('[data-filter-chip="scope"]');
     await page.waitForTimeout(700);
@@ -199,7 +198,7 @@ test.describe('gym card slots', () => {
     const chipIsOff = () => page.locator('[data-filter-chip="scope"]').count();
 
     // Nothing seated: there is no team to narrow to, so no chip at all.
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-result-count]');
     await page.waitForTimeout(500);
     expect(await chipIsOff(), 'no chip on an empty card').toBe(0);
@@ -210,7 +209,7 @@ test.describe('gym card slots', () => {
     await seat(page, '[data-testid="card-cell-1-1"]', 'chinchou');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lotad');
 
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-filter-chip="scope"]');
     await page.click('[data-filter-chip="scope"]');
     await page.waitForTimeout(600);
@@ -220,7 +219,7 @@ test.describe('gym card slots', () => {
     // Reopening keeps it on.
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForTimeout(800);
     expect(await chipIsOff(), 'still on after reopening').toBe(0);
     expect(await results()).toBe(scoped);
@@ -232,7 +231,7 @@ test.describe('gym card slots', () => {
       await page.locator('[aria-label^="Remove"]').first().click();
       await page.waitForTimeout(500);
     }
-    await page.click('[data-testid="slot-ace"]');
+    await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForTimeout(800);
     expect(await page.evaluate(() => /Current Team/.test(document.body.innerText))).toBe(false);
     expect(await results()).toBeGreaterThan(100);
@@ -303,6 +302,35 @@ test.describe('gym card slots', () => {
     // Fire, from the Gen IX badge palette. The card has no type set at all
     // here, so a disc wearing the gym colour would be the neutral grey.
     expect(stroke?.toUpperCase()).toBe('#E62829');
+  });
+
+  test('TM search ignores the gym type chip', async ({ page }) => {
+    await page.addInitScript(() => {
+      const cards = Array.from({ length: 14 }, () => ({
+        type: null as string | null,
+        theme: '',
+        lines: [] as unknown[],
+        signatureSeat: null as number | null,
+        tmMoveId: null as number | null,
+        badgeName: '',
+        legend: null as unknown,
+        powerup: null as unknown,
+      }));
+      cards[0].type = 'fire';
+      window.localStorage.setItem(
+        'league-builder',
+        JSON.stringify({ state: { name: '', cards }, version: 1 }),
+      );
+    });
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(500);
+    await page.click('[data-testid="slot-tm"]');
+    await page.waitForSelector('[data-testid="tm-chip-type-fire"]');
+    await page.fill('input[placeholder="Search moves"]', 'surf');
+    await expect(page.getByRole('button', { name: /Surf/ }).first()).toBeVisible();
   });
 
   test('the badge name and the word Badge are one wrapping phrase', async ({ page }) => {
@@ -545,28 +573,51 @@ test.describe('an empty slot and a filled one', () => {
     await openCard(page);
     const empty = await anchors(page);
 
-    // The seeded card 0: an ace, a TM and a badge, and no partner.
+    // Seeded Brock has an ace and no partner. Both halves stay; the empty
+    // partner heading and the diagonal stay with them.
     await seededLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(500);
-    const filled = await anchors(page);
+    const seeded = await page.evaluate(() => {
+      const hex = (c: string) => {
+        const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c);
+        return m ? '#' + [1, 2, 3].map((k) => Number(m[k]).toString(16).padStart(2, '0')).join('') : c;
+      };
+      const pane = document.querySelector('[data-ace-partner-slot]')!;
+      const ace = document.querySelector('[data-testid="slot-ace"]')!;
+      const word = (root: Element, text: string) =>
+        [...root.querySelectorAll('span')].find((el) => el.childElementCount === 0 && el.textContent === text)!;
+      return {
+        mode: pane.getAttribute('data-showcase'),
+        seam: !!pane.querySelector(':scope > svg line'),
+        partnerHead: !!document.querySelector('[data-slot-head="partner"]'),
+        arts: pane.querySelectorAll('[data-slot-art] img').length,
+        aceHead: hex(getComputedStyle(word(ace, 'ACE')).color),
+      };
+    });
+    expect(seeded.mode, 'seeded Brock keeps a split pane').toBe('split');
+    expect(seeded.seam, 'the diagonal stays').toBe(true);
+    expect(seeded.partnerHead, 'empty partner heading stays').toBe(true);
+    expect(seeded.arts).toBe(1);
 
-    for (const key of ['tm', 'badge', 'ace', 'partner'] as const) {
-      expect(Math.abs(filled[key][0] - empty[key][0]), `${key} x`).toBeLessThanOrEqual(0.05);
-      expect(Math.abs(filled[key][1] - empty[key][1]), `${key} y`).toBeLessThanOrEqual(0.05);
-    }
-
-    // Empty, every heading is the hint; the ace and TM read the same shade.
     expect(empty.colours.aceHead).toBe(empty.colours.tmWord);
     expect(empty.colours.partnerHead).toBe(empty.colours.tmWord);
-    // Filled, the ace darkens to the band the BADGE word wears. The partner
-    // half is still empty on this card, so it stays on the hint.
-    expect(filled.colours.aceHead).toBe(filled.colours.badgeWord);
-    expect(filled.colours.aceHead).not.toBe(empty.colours.aceHead);
-    expect(filled.colours.partnerHead).not.toBe(filled.colours.aceHead);
+    expect(seeded.aceHead).not.toBe(empty.colours.aceHead);
+
+    await pairLeague(page, 10240, 797);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(500);
+    const paired = await anchors(page);
+    for (const key of ['ace', 'partner'] as const) {
+      expect(Math.abs(paired[key][0] - empty[key][0]), `${key} x`).toBeLessThanOrEqual(0.05);
+      expect(Math.abs(paired[key][1] - empty[key][1]), `${key} y`).toBeLessThanOrEqual(0.05);
+    }
   });
 });
 
@@ -650,4 +701,176 @@ test.describe('the red marks', () => {
     expect(got.pencils.length, 'the league name and the theme each show a pencil').toBe(2);
     for (const c of got.pencils) expect(c, 'the pencil wears the primary token').toBe(got.primary);
   });
+});
+
+/** Seed gym 1 with a TM and badge, then open the card at a squat phone size. */
+async function openTmCard(
+  page: Page,
+  opts: { tmMoveId: number; badgeName?: string; width?: number; height?: number },
+) {
+  await page.setViewportSize({ width: opts.width ?? 390, height: opts.height ?? 667 });
+  await page.addInitScript(({ tmMoveId, badgeName }) => {
+    const empty = {
+      type: null as string | null,
+      theme: '',
+      lines: [] as unknown[],
+      signatureSeat: null as number | null,
+      tmMoveId: null as number | null,
+      badgeName: '',
+      legend: null as unknown,
+      powerup: null as unknown,
+    };
+    const cards = Array.from({ length: 14 }, () => ({ ...empty }));
+    cards[0] = { ...empty, type: 'psychic', theme: 'Sabrina', tmMoveId, badgeName: badgeName ?? 'Marsh' };
+    window.localStorage.setItem('league-builder', JSON.stringify({ state: { name: '', cards }, version: 1 }));
+  }, { tmMoveId: opts.tmMoveId, badgeName: opts.badgeName ?? 'Marsh' });
+  await page.goto('/custom-gym-leader');
+  await page.waitForSelector('[data-testid="league-slot-0"]');
+  await page.click('[data-testid="league-slot-0"]');
+  await page.waitForSelector('[data-testid="slot-tm"]');
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(300);
+}
+
+function measureTm(source: string) {
+  const needle = new RegExp(source, 'i');
+  const slot = document.querySelector('[data-testid="slot-tm"]');
+  if (!slot) {
+    return { found: false, text: '', ellipsis: true, lines: 0, topGap: 0, bottomGap: 0, lastVisible: false };
+  }
+  const named = slot.querySelector<HTMLElement>('[data-tm-name]');
+  const name = named ?? [...slot.querySelectorAll('span')].find(
+    (el): el is HTMLSpanElement => needle.test(el.textContent ?? '') && el.childElementCount === 0,
+  );
+  const disc = slot.querySelector('svg[viewBox="0 0 24 24"] circle[r="9"]');
+  const badge = slot.querySelector('svg[viewBox="0 0 200 40"]');
+  const tm = slot.querySelector<HTMLElement>('[data-mark-label="tm"]');
+  if (!name || !disc || !badge || !tm) {
+    return { found: false, text: name?.textContent ?? '', ellipsis: true, lines: 0, topGap: 0, bottomGap: 0, lastVisible: false };
+  }
+  const cs = getComputedStyle(name);
+  const lineH = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4;
+  const lines = lineH > 0 ? Math.round(name.offsetHeight / lineH) : 0;
+  const zoom = name.offsetHeight > 0 ? name.getBoundingClientRect().height / name.offsetHeight : 1;
+  const node = [...name.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
+  const tmNode = [...tm.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
+  const inkBottom = (el: Element, textNode: ChildNode | undefined) => {
+    if (!textNode || !(textNode.textContent ?? '').length) return el.getBoundingClientRect().bottom;
+    const range = document.createRange();
+    range.selectNodeContents(textNode);
+    return range.getBoundingClientRect().bottom;
+  };
+  const discTop = disc.getBoundingClientRect().top;
+  const badgeTop = badge.getBoundingClientRect().top;
+  const tmBottom = inkBottom(tm, tmNode);
+  const nameBottom = inkBottom(name, node);
+  const raw = (name.textContent ?? '').replace(/\s+/g, ' ').trim();
+  let lastVisible = false;
+  if (node && raw.length > 0) {
+    const range = document.createRange();
+    range.setStart(node, (node.textContent ?? '').length - 1);
+    range.setEnd(node, (node.textContent ?? '').length);
+    const last = range.getBoundingClientRect();
+    const slotBox = slot.getBoundingClientRect();
+    lastVisible = last.width > 0.5
+      && last.right <= slotBox.right + 0.5
+      && last.bottom <= slotBox.bottom + 0.5;
+  }
+  return {
+    found: true,
+    text: raw,
+    ellipsis: cs.textOverflow === 'ellipsis' || name.scrollWidth > name.clientWidth + 1,
+    lines,
+    topGap: (badgeTop - discTop) / zoom,
+    bottomGap: (tmBottom - nameBottom) / zoom,
+    lastVisible,
+  };
+}
+
+test.describe('two-word TM names wrap', () => {
+  for (const vp of [
+    { width: 390, height: 667, label: 'squat 390×667' },
+    { width: 1280, height: 800, label: '~1280' },
+  ]) {
+    test(`Stomping Tantrum wraps with no ellipsis and equal gaps at ${vp.label}`, async ({ page }) => {
+      await openTmCard(page, { tmMoveId: 707, width: vp.width, height: vp.height });
+      const got = await page.evaluate(measureTm, 'stomping');
+      expect(got.found, 'the move is on the card').toBe(true);
+      expect(got.text).toMatch(/Stomping Tantrum/i);
+      expect(got.ellipsis, 'a two-word name must not ellipsize').toBe(false);
+      expect(got.lines, 'the two words wrap onto two lines').toBe(2);
+      expect(got.lastVisible, 'the last letter stays inside the slot').toBe(true);
+      expect(Math.abs(got.topGap - got.bottomGap), `top=${got.topGap.toFixed(1)} bottom=${got.bottomGap.toFixed(1)}`)
+        .toBeLessThanOrEqual(1.25);
+    });
+
+    test(`Psychic stays one line with equal gaps at ${vp.label}`, async ({ page }) => {
+      await openTmCard(page, { tmMoveId: 94, width: vp.width, height: vp.height });
+      const got = await page.evaluate(measureTm, 'psychic');
+      expect(got.found, 'the move is on the card').toBe(true);
+      expect(got.text).toMatch(/^Psychic$/i);
+      expect(got.lines, 'a one-word name stays one line').toBe(1);
+      expect(Math.abs(got.topGap - got.bottomGap), `top=${got.topGap.toFixed(1)} bottom=${got.bottomGap.toFixed(1)}`)
+        .toBeLessThanOrEqual(1.25);
+    });
+  }
+});
+
+function badgeVisibility() {
+  const field = document.querySelector<HTMLElement>('[aria-label="Badge name"]');
+  const suffix = document.querySelector<HTMLElement>('[data-badge-suffix]');
+  const box = field?.parentElement;
+  if (!field || !box) {
+    return { rendered: '', stored: '', suffixVisible: false, overflows: true };
+  }
+  const br = box.getBoundingClientRect();
+  const rects = suffix ? [...suffix.getClientRects()] : [];
+  const suffixVisible = !!suffix && rects.length > 0 && rects.every((r) => (
+    r.width < 0.5
+    || (r.left >= br.left - 1 && r.right <= br.right + 1 && r.top >= br.top - 1 && r.bottom <= br.bottom + 1)
+  ));
+  const stored = (JSON.parse(localStorage.getItem('league-builder') ?? '{}').state?.cards?.[0]?.badgeName ?? '') as string;
+  return {
+    rendered: (field.textContent ?? '').replace(/\u00a0/g, ' '),
+    stored,
+    suffixVisible,
+    overflows: box.scrollHeight > box.clientHeight + 1,
+  };
+}
+
+test.describe('the badge word stays fully visible', () => {
+  for (const vp of [
+    { width: 390, height: 667, label: 'squat 390×667' },
+    { width: 1280, height: 800, label: '~1280' },
+  ]) {
+    test(`Thunder Thunder Badge fits and Thunder Thunder Thunder is refused at ${vp.label}`, async ({ page }) => {
+      await openTmCard(page, { tmMoveId: 94, badgeName: '', width: vp.width, height: vp.height });
+      const field = page.locator('[aria-label="Badge name"]');
+      await field.click();
+      await page.keyboard.type('Thunder Thunder');
+      await page.waitForTimeout(200);
+      const fit = await page.evaluate(badgeVisibility);
+      expect(fit.rendered).toMatch(/Thunder Thunder\s+Badge/);
+      expect(fit.suffixVisible, 'Badge stays fully inside the box on the longest accepted name').toBe(true);
+      expect(fit.overflows).toBe(false);
+
+      await page.keyboard.type(' Thunder');
+      await page.waitForTimeout(200);
+      const refused = await page.evaluate(badgeVisibility);
+      expect(refused.rendered, 'the third Thunder does not land').not.toMatch(/Thunder Thunder Thunder/);
+      expect(refused.stored).not.toMatch(/Thunder Thunder Thunder/);
+      expect(refused.suffixVisible, 'Badge stays fully visible after the rejected character').toBe(true);
+      expect(refused.overflows).toBe(false);
+    });
+
+    test(`a stored name that hid Badge is clamped so Badge paints at ${vp.label}`, async ({ page }) => {
+      await openTmCard(page, { tmMoveId: 94, badgeName: 'Thunder Thunder Thunder', width: vp.width, height: vp.height });
+      const got = await page.evaluate(badgeVisibility);
+      expect(got.rendered).toMatch(/Badge/);
+      expect(got.suffixVisible, 'Badge is fully inside the box after clamp').toBe(true);
+      expect(got.overflows).toBe(false);
+      expect(got.stored).not.toBe('Thunder Thunder Thunder');
+      expect(got.rendered).not.toMatch(/Thunder Thunder Thunder/);
+    });
+  }
 });

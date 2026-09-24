@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  LEAST_MAX_INDEX,
-  MOST_MIN_INDEX,
   PICKS_GRID_CAP,
   formatIndex,
   indexBarPct,
@@ -15,8 +13,8 @@ import {
   poolIdsForSection,
   rowsUsed,
   sectionPicksView,
-  splitMostLeast,
   starterTypeOf,
+  viewsForPicks,
 } from './picksStats';
 
 const PICHU = 172;
@@ -117,7 +115,7 @@ describe('isOffSection / evil team', () => {
 });
 
 describe('index: Pichu dropped from a popular line', () => {
-  it('counts the line once at max(Pikachu, Raichu), not as an under-picked Pichu', () => {
+  it('ranks Pichu as its own species, not on Pikachu\'s line', () => {
     const view = sectionPicksView('pikachu-clone', [
       count(PICHU, 20),
       count(PIKACHU, 80),
@@ -125,19 +123,83 @@ describe('index: Pichu dropped from a popular line', () => {
     ]);
     expect(view?.kind).toBe('plain');
     if (view?.kind !== 'plain') return;
-    const line =
-      view.columns.most.find((l) => l.members.some((m) => m.id === PIKACHU)) ??
-      view.columns.least.find((l) => l.members.some((m) => m.id === PIKACHU));
-    expect(line).toBeTruthy();
-    expect(line?.picks).toBe(80);
-    expect(line?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual(
-      [PICHU, PIKACHU, RAICHU].sort((a, b) => a - b),
-    );
-    const pichu = line?.members.find((m) => m.id === PICHU);
-    expect(pichu?.picks).toBe(20);
-    expect(view.columns.least.some((l) => l.members.length === 1 && l.members[0].id === PICHU)).toBe(
-      false,
-    );
+    const all = [...view.columns.most, ...view.columns.least];
+    const pikaLine = all.find((l) => l.members.some((m) => m.id === PIKACHU));
+    const pichuLine = all.find((l) => l.members.some((m) => m.id === PICHU));
+    expect(pikaLine?.picks).toBe(80);
+    expect(pikaLine?.members.map((m) => m.id)).toEqual([PIKACHU]);
+    expect(pichuLine?.picks).toBe(20);
+    expect(pichuLine?.members.map((m) => m.id)).toEqual([PICHU]);
+    expect(pichuLine?.key).not.toBe(pikaLine?.key);
+    expect(pichuLine!.index).toBeLessThan(pikaLine!.index);
+  });
+
+  it('indexes Pichu below Pikachu when Pichu has fewer picks', () => {
+    const view = sectionPicksView('pikachu-clone', [
+      count(PICHU, 94),
+      count(PIKACHU, 109),
+      count(RAICHU, 108),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    const all = [...view.columns.most, ...view.columns.least];
+    const pichu = all.find((l) => l.members.some((m) => m.id === PICHU));
+    const pikachu = all.find((l) => l.members.some((m) => m.id === PIKACHU));
+    const raichu = all.find((l) => l.members.some((m) => m.id === RAICHU));
+    expect(pichu?.members.map((m) => m.id)).toEqual([PICHU]);
+    expect(pikachu?.members.map((m) => m.id)).toEqual([PIKACHU]);
+    expect(raichu?.members.map((m) => m.id)).toEqual([RAICHU]);
+    expect(pichu!.index).toBeLessThan(pikachu!.index);
+    expect(pichu!.index / pikachu!.index).toBeCloseTo(94 / 109);
+    expect(raichu!.index / pikachu!.index).toBeCloseTo(108 / 109);
+    expect(formatIndex(pichu!.index)).not.toBe(formatIndex(pikachu!.index));
+  });
+
+  it('orders Most picked by each species own × so Pikachu sits before Pichu', () => {
+    const view = sectionPicksView('pikachu-clone', [
+      count(PICHU, 85),
+      count(PIKACHU, 100),
+      count(RAICHU, 100),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    const mostIds = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    const pika = mostIds.indexOf(PIKACHU);
+    const raichu = mostIds.indexOf(RAICHU);
+    const pichu = mostIds.indexOf(PICHU);
+    expect(pika).toBeGreaterThanOrEqual(0);
+    expect(raichu).toBeGreaterThanOrEqual(0);
+    expect(pichu).toBeGreaterThanOrEqual(0);
+    expect(pika).toBeLessThan(pichu);
+    expect(raichu).toBeLessThan(pichu);
+    const pikaLine = view.columns.most.find((l) => l.members.some((m) => m.id === PIKACHU));
+    const pichuLine = view.columns.most.find((l) => l.members.some((m) => m.id === PICHU));
+    expect(pikaLine?.members.map((m) => m.id)).toEqual([PIKACHU]);
+    expect(pichuLine?.members.map((m) => m.id)).toEqual([PICHU]);
+    expect(pikaLine?.key).not.toBe(pichuLine?.key);
+  });
+
+  it('lists every default Pikaclone species in one grid, including Pichu and 0×', () => {
+    const view = sectionPicksView('pikachu-clone', [
+      count(PICHU, 85),
+      count(PIKACHU, 100),
+      count(RAICHU, 100),
+      count(MAGIKARP, 50),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    expect(view.columns.least).toEqual([]);
+    const mostIds = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    const pool = [...poolIdsForSection('pikachu-clone')];
+    expect(mostIds).toHaveLength(pool.length);
+    expect(new Set(mostIds)).toEqual(new Set(pool));
+    expect(mostIds).toContain(PICHU);
+    expect(mostIds).toContain(PIKACHU);
+    expect(mostIds).not.toContain(MAGIKARP);
+    expect(mostIds.indexOf(PIKACHU)).toBeLessThan(mostIds.indexOf(PICHU));
+    expect(view.columns.most.every((l) => l.members.length === 1)).toBe(true);
+    const last = view.columns.most.at(-1);
+    expect(last?.index).toBe(0);
   });
 
   it('is 2.0× when a line is picked twice the uniform rate among two lines', () => {
@@ -159,70 +221,10 @@ describe('index: Pichu dropped from a popular line', () => {
     );
     expect(pika).toBeTruthy();
     expect(plusle).toBeTruthy();
-    // L includes every default pikaclone line, so the ratio is 80:40 between
-    // these two, which is 2:1, even though the absolute × depends on L.
+    // These two species sit at 80 vs 40 against the same T/N, so the ratio is 2:1.
     expect(pika!.picks / plusle!.picks).toBe(2);
     expect(pika!.index / plusle!.index).toBeCloseTo(2);
     expect(pika!.index).toBeGreaterThan(plusle!.index);
-  });
-});
-
-describe('splitMostLeast', () => {
-  const line = (key: string, index: number, n = 1) => ({
-    key,
-    index,
-    members: Array.from({ length: n }, () => ({})),
-  });
-  const cap12 = { maxLines: 12 };
-
-  it('caps most and puts the lowest-index remainder last in least', () => {
-    const ranked = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'].map(
-      (k, i) => line(k, 20 - i),
-    );
-    const { most, least } = splitMostLeast(ranked, cap12);
-    expect(most.map((l) => l.key)).toEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']);
-    expect(least.map((l) => l.key)).toEqual(['m', 'n', 'o']);
-    expect(least.at(-1)?.key).toBe('o');
-  });
-
-  it('keeps a small set in most and leaves least empty', () => {
-    const ranked = [line('a', 3), line('b', 2)];
-    const { most, least } = splitMostLeast(ranked, cap12);
-    expect(most.map((l) => l.key)).toEqual(['a', 'b']);
-    expect(least).toEqual([]);
-  });
-
-  it('omits most at or below 1.10× and least at or above 0.90×', () => {
-    const ranked = [
-      line('hot', 2.4),
-      line('warm', 1.2),
-      line('edge', 1.1),
-      line('mid', 1.0),
-      line('cool', 0.9),
-      line('cold', 0.84),
-      line('zero', 0),
-    ];
-    const { most, least } = splitMostLeast(ranked, cap12, {
-      minMostIndex: MOST_MIN_INDEX,
-      maxLeastIndex: LEAST_MAX_INDEX,
-    });
-    expect(most.map((l) => l.key)).toEqual(['hot', 'warm']);
-    expect(least.map((l) => l.key)).toEqual(['cold', 'zero']);
-    expect(least.at(-1)?.key).toBe('zero');
-  });
-
-  it('drops least when includeLeast is false', () => {
-    const ranked = [line('a', 2), line('b', 0.1)];
-    const { most, least } = splitMostLeast(ranked, cap12, { includeLeast: false });
-    expect(most.map((l) => l.key)).toEqual(['a', 'b']);
-    expect(least).toEqual([]);
-  });
-
-  it('takes the lowest cap of remainder, not the lines just below most', () => {
-    const ranked = Array.from({ length: 20 }, (_, i) => line(`k${i}`, 20 - i));
-    const { most, least } = splitMostLeast(ranked, { maxLines: 3 });
-    expect(most.map((l) => l.key)).toEqual(['k0', 'k1', 'k2']);
-    expect(least.map((l) => l.key)).toEqual(['k17', 'k18', 'k19']);
   });
 });
 
@@ -250,6 +252,11 @@ describe('rowsUsed', () => {
     expect(rowsUsed(lines, 6)).toBe(2);
     expect(rowsUsed(lines, 12)).toBe(1);
   });
+
+  it('packs three 4-member lines onto two 6-wide rows by splitting lines', () => {
+    const lines = Array.from({ length: 3 }, () => ({ members: [0, 0, 0, 0] }));
+    expect(rowsUsed(lines, 6)).toBe(2);
+  });
 });
 
 describe('starterGenerationCount', () => {
@@ -260,28 +267,30 @@ describe('starterGenerationCount', () => {
 });
 
 describe('picksGridCols', () => {
-  it('widens desktop only when the grid is full width', () => {
+  it('uses 9 columns for Most picked and off-section on phone and desktop', () => {
     expect(picksGridCols(false, true)).toBe(6);
-    expect(picksGridCols(true, false)).toBe(6);
-    expect(picksGridCols(true, true)).toBe(12);
+    expect(picksGridCols(true, false)).toBe(9);
+    expect(picksGridCols(true, true)).toBe(9);
     expect(picksStarterCols()).toBe(9);
-    expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 12 });
-    expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 6 });
-    expect(picksGridCap(false, true)).toEqual({ maxRows: 4, cols: 6 });
+    expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
+    expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
+    expect(picksGridCap(false, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
   });
 });
 
 describe('picksSplitCap', () => {
-  it('uses a narrower least cap on desktop most-picked', () => {
+  it('uses one uncapped 9-column grid on Most picked and off-section', () => {
     expect(picksSplitCap(false, true)).toEqual({
-      kind: 'dual',
-      most: PICKS_GRID_CAP,
-      least: { maxRows: 4, cols: 3 },
+      kind: 'single',
+      cap: { maxRows: Number.POSITIVE_INFINITY, cols: 9 },
     });
     expect(picksSplitCap(false, false)).toEqual({
-      kind: 'dual',
-      most: PICKS_GRID_CAP,
-      least: { maxRows: 4, cols: 3 },
+      kind: 'single',
+      cap: { maxRows: Number.POSITIVE_INFINITY, cols: 9 },
+    });
+    expect(picksSplitCap(true, true)).toEqual({
+      kind: 'single',
+      cap: { maxRows: Number.POSITIVE_INFINITY, cols: 9 },
     });
   });
 });
@@ -381,19 +390,27 @@ describe('sectionPicksView off-section', () => {
     expect(ids).not.toContain(IVYSAUR);
     expect(ids).not.toContain(VENUSAUR);
     const magikarp = view.columns.most.find((l) => l.members.some((m) => m.id === MAGIKARP));
-    expect(magikarp?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([MAGIKARP, GYARADOS]);
+    expect(magikarp?.members.map((m) => m.id)).toEqual([MAGIKARP]);
+    const gyarados = view.columns.most.find((l) => l.members.some((m) => m.id === GYARADOS));
+    expect(gyarados?.members.map((m) => m.id)).toEqual([GYARADOS]);
+    const mostIds = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    expect(mostIds.indexOf(MAGIKARP)).toBeLessThan(mostIds.indexOf(GYARADOS));
     const litwick = view.columns.most.find((l) => l.members.some((m) => m.id === LITWICK));
-    expect(litwick?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([
-      LITWICK,
-      LAMPENT,
-      CHANDELURE,
-    ]);
+    expect(litwick?.members.map((m) => m.id)).toEqual([LITWICK]);
+    expect(view.columns.most.find((l) => l.members.some((m) => m.id === LAMPENT))?.members.map((m) => m.id)).toEqual(
+      [LAMPENT],
+    );
+    expect(
+      view.columns.most.find((l) => l.members.some((m) => m.id === CHANDELURE))?.members.map((m) => m.id),
+    ).toEqual([CHANDELURE]);
     const applin = view.columns.most.find((l) => l.members.some((m) => m.id === APPLIN));
-    expect(applin?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([
-      APPLIN,
-      DIPPLIN,
-      HYDRAPPLE,
-    ]);
+    expect(applin?.members.map((m) => m.id)).toEqual([APPLIN]);
+    expect(view.columns.most.find((l) => l.members.some((m) => m.id === DIPPLIN))?.members.map((m) => m.id)).toEqual(
+      [DIPPLIN],
+    );
+    expect(
+      view.columns.most.find((l) => l.members.some((m) => m.id === HYDRAPPLE))?.members.map((m) => m.id),
+    ).toEqual([HYDRAPPLE]);
   });
 
   it('keeps n=1 off-section lines unless excludeOneOffs is on', () => {
@@ -439,7 +456,10 @@ describe('sectionPicksView off-section', () => {
     expect(view.columns.least).toEqual([]);
     const magikarp = view.columns.most.find((l) => l.members.some((m) => m.id === MAGIKARP));
     expect(magikarp?.picks).toBe(15);
-    expect(magikarp?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([MAGIKARP, GYARADOS]);
+    expect(magikarp?.members.map((m) => m.id)).toEqual([MAGIKARP]);
+    const gyarados = view.columns.most.find((l) => l.members.some((m) => m.id === GYARADOS));
+    expect(gyarados?.picks).toBe(6);
+    expect(gyarados?.members.map((m) => m.id)).toEqual([GYARADOS]);
     const ids = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
     expect(ids).not.toContain(RHYHORN);
     expect(ids).not.toContain(RHYDON);
@@ -454,5 +474,53 @@ describe('poolIdsForSection', () => {
     expect(pool).toContain(RHYHORN);
     expect(pool).toContain(RHYPERIOR);
     expect(pool).not.toContain(MAGIKARP);
+  });
+});
+
+describe('Other Areas', () => {
+  it('lists only species with at least 1 pick, ordered by ×, and omits 0×', () => {
+    const view = sectionPicksView('other', [
+      count(MAGIKARP, 10),
+      count(GYARADOS, 5),
+      count(PICHU, 0),
+      count(LITWICK, 1),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    expect(view.columns.least).toEqual([]);
+    const ids = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    expect(ids).toEqual([MAGIKARP, GYARADOS, LITWICK]);
+    expect(ids).not.toContain(PICHU);
+    expect(view.columns.most.every((l) => l.picks >= 1)).toBe(true);
+    expect(view.columns.most.every((l) => l.members.length === 1)).toBe(true);
+  });
+
+  it('keeps a 1-pick species even when its × is below 1.10', () => {
+    const view = sectionPicksView('other', [
+      count(MAGIKARP, 100),
+      count(GYARADOS, 1),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    const gyarados = view.columns.most.find((l) => l.members.some((m) => m.id === GYARADOS));
+    expect(gyarados?.picks).toBe(1);
+    expect(gyarados!.index).toBeLessThan(1.1);
+    expect(view.columns.most.map((l) => l.members[0].id)).toEqual([MAGIKARP, GYARADOS]);
+  });
+
+  it('puts Other Areas last on Most picked, after fossil and endgame', () => {
+    const views = viewsForPicks({
+      starter: [count(BULBASAUR, 2)],
+      other: [count(MAGIKARP, 3), count(PICHU, 0)],
+      fossil: [count(140, 4)],
+      legendary: [count(150, 5)],
+    });
+    expect(views.map((v) => v.sectionId)).toEqual(['starter', 'fossil', 'legendary', 'other']);
+    const other = views.at(-1);
+    expect(other?.kind).toBe('plain');
+    if (other?.kind !== 'plain') return;
+    const ids = other.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    expect(ids).toEqual([MAGIKARP]);
+    expect(ids).not.toContain(PICHU);
   });
 });

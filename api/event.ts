@@ -2,7 +2,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, getClientIp } from './_shared.js';
 import {
+  appendExportSurveySkip,
+  EXPORT_SURVEY_SKIP_EVENT,
+  EXPORT_SURVEY_SKIPS_KEY,
   isFunnelEvent,
+  isLeagueExportEvent,
+  parseExportSurveySkipFields,
+  parseExportSurveySkipList,
+  parseExportSurveyToolField,
   parsePage,
   parseTool,
   JOURNAL_MAX_PER_DAY,
@@ -58,15 +65,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   try {
-    const body = (req.body ?? {}) as { cid?: unknown; event?: unknown; tool?: unknown; page?: unknown };
+    const body = (req.body ?? {}) as {
+      cid?: unknown;
+      event?: unknown;
+      tool?: unknown;
+      page?: unknown;
+      exportTool?: unknown;
+      reason?: unknown;
+    };
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
       return res.status(400).json({ error: 'invalid cid' });
     }
     if (!isFunnelEvent(body.event)) {
       return res.status(400).json({ error: 'invalid event' });
     }
+    const skipFields =
+      body.event === EXPORT_SURVEY_SKIP_EVENT ? parseExportSurveySkipFields(body) : null;
+    if (body.event === EXPORT_SURVEY_SKIP_EVENT && !skipFields) {
+      return res.status(400).json({ error: 'invalid skip' });
+    }
     const tool = parseTool(body.tool);
     const page = parsePage(body.page);
+    const exportTool =
+      skipFields?.tool ??
+      (isLeagueExportEvent(body.event) ? parseExportSurveyToolField(body.exportTool) : undefined);
 
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
@@ -84,12 +106,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const day = dayKey(now);
     const dailyKey = `${FUNNEL_KEY}:${day}`;
     const journalKey = `${JOURNAL_PREFIX}:${day}`;
-    const entry = JSON.stringify({ t: now, cid: body.cid, tool, ev: body.event, ...(page ? { page } : {}) });
-    await Promise.all([
+    const entry = JSON.stringify({
+      t: now,
+      cid: body.cid,
+      tool,
+      ev: body.event,
+      ...(page ? { page } : {}),
+      ...(exportTool ? { exportTool } : {}),
+      ...(skipFields ? { reason: skipFields.reason } : {}),
+    });
+    const writes: Promise<unknown>[] = [
       redis.hincrby(FUNNEL_KEY, body.event, 1),
       redis.hincrby(dailyKey, body.event, 1),
       redis.rpush(journalKey, entry),
-    ]);
+    ];
+    if (skipFields) {
+      const prev = parseExportSurveySkipList(await redis.hget(EXPORT_SURVEY_SKIPS_KEY, body.cid));
+      const next = appendExportSurveySkip(prev, {
+        t: now,
+        tool: skipFields.tool,
+        reason: skipFields.reason,
+      });
+      writes.push(redis.hset(EXPORT_SURVEY_SKIPS_KEY, { [body.cid]: JSON.stringify(next) }));
+    }
+    await Promise.all(writes);
     await Promise.all([
       redis.expire(dailyKey, DAILY_TTL_S),
       redis.expire(journalKey, JOURNAL_TTL_S),

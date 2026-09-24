@@ -1,0 +1,128 @@
+import type { ExportSurveySkip } from '../../../../api/_events';
+
+export type MilestoneTone = 'export' | 'muted' | 'skip';
+
+export interface ChartMilestone {
+  t: number;
+  label: string;
+  tone?: MilestoneTone;
+  title?: string;
+}
+
+export function milestoneFill(tone?: MilestoneTone): string {
+  if (tone === 'muted') return 'var(--color-muted-foreground)';
+  if (tone === 'skip') return 'var(--color-primary)';
+  return 'var(--color-success)';
+}
+
+export type SkipLabelPage = 'dex' | 'league';
+
+export function skipReasonLabel(
+  tool: ExportSurveySkip['tool'],
+  reason: ExportSurveySkip['reason'],
+  page: SkipLabelPage,
+): string {
+  const reasonLabel = reason.replaceAll('_', ' ');
+  if (page === 'dex') return reasonLabel;
+  return `${tool} · ${reasonLabel}`;
+}
+
+export function exportSurveySkipMarks(
+  skips: ExportSurveySkip[] | undefined,
+  clampT: (t: number) => number,
+  page: SkipLabelPage,
+): ChartMilestone[] {
+  return (skips ?? []).map((s) => ({
+    t: clampT(s.t),
+    label: skipReasonLabel(s.tool, s.reason, page),
+    tone: 'skip',
+    title: `export_survey_skipped · ${s.tool} · ${s.reason}`,
+  }));
+}
+
+export const FUNNEL_LABEL: Record<string, string> = {
+  'intro-shown': 'intro',
+  'intro-cta': 'start',
+  'milestone-25': '25',
+  'milestone-100': '100',
+  'milestone-151': '151',
+  'view-visit': 'view',
+  'league-nudge-card-shown': 'card nudge',
+  'league-nudge-card-cta': 'card go',
+  'league-nudge-card-dismiss': 'card skip',
+  'league-nudge-league-shown': '8 gyms',
+  'league-nudge-league-cta': '8 gyms go',
+  'league-nudge-league-dismiss': '8 gyms skip',
+};
+
+/** Event names stored on one league sitting, for the timeline funnel marks. */
+export function leagueSittingEv(events: readonly string[] | undefined): string[] | undefined {
+  return events?.length ? [...events] : undefined;
+}
+
+/** Horizontal gap when a sitting has both a diamond and a funnel circle. */
+export const FUNNEL_OFFSET_PX = 8;
+
+export interface SittingPlot {
+  diamond?: { tone: 'export' | 'skip'; title?: string };
+  funnel: boolean;
+  label: string;
+}
+
+function nearestSitting(t: number, sittings: readonly { t: number }[]): number {
+  let best = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < sittings.length; i++) {
+    const d = Math.abs(sittings[i].t - t);
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  return best;
+}
+
+function pushUnique(list: string[], value: string): void {
+  if (value && !list.includes(value)) list.push(value);
+}
+
+export function plotSittings(
+  sittings: readonly { t: number; ev?: readonly string[] }[],
+  milestones: readonly ChartMilestone[],
+): SittingPlot[] {
+  const n = sittings.length;
+  const exportLabels: string[][] = Array.from({ length: n }, () => []);
+  const skipLabels: string[][] = Array.from({ length: n }, () => []);
+  const skipTitles: string[][] = Array.from({ length: n }, () => []);
+  const hasExport = Array<boolean>(n).fill(false);
+  const hasSkip = Array<boolean>(n).fill(false);
+
+  for (const m of milestones) {
+    if (n === 0 || m.tone === 'muted') continue;
+    const i = nearestSitting(m.t, sittings);
+    if (m.tone === 'skip') {
+      hasSkip[i] = true;
+      pushUnique(skipLabels[i], m.label);
+      if (m.title) pushUnique(skipTitles[i], m.title);
+    } else {
+      hasExport[i] = true;
+      pushUnique(exportLabels[i], m.label);
+    }
+  }
+
+  return sittings.map((s, i) => {
+    const funnelLabels: string[] = [];
+    for (const ev of s.ev ?? []) pushUnique(funnelLabels, FUNNEL_LABEL[ev] ?? '');
+    const label = [...exportLabels[i], ...skipLabels[i], ...funnelLabels].join(' · ');
+    const funnel = (s.ev ?? []).some((ev) => FUNNEL_LABEL[ev]);
+    if (hasExport[i] && hasSkip[i]) {
+      return {
+        funnel,
+        label,
+        diamond: { tone: 'skip', title: skipTitles[i].join(' · ') || undefined },
+      };
+    }
+    if (hasExport[i]) return { funnel, label, diamond: { tone: 'export' } };
+    return { funnel, label };
+  });
+}

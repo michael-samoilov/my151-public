@@ -1,12 +1,19 @@
-import { useLayoutEffect, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { ExportPreview3D } from '@/league/components/ExportPreview3D';
 import { EXPORT_OVERLAY_SCRIM_CLASS, EXPORT_OVERLAY_SCRIM_STYLE } from '@/components/export/exportOverlayScrim';
 import { DEFAULT_HOVER_TILT_RECIPE, type HoverTiltRecipe } from '@/components/export/hoverTiltRecipe';
 import { DEFAULT_MASK_CONTEXT, type HoverTiltMaskContext } from '@/components/export/hoverTiltMasks';
 import { FOIL_HOLO_BLEND, type FoilHoloBlend } from '@/league/export/foilBlend';
 import { DEFAULT_FOIL_RECIPE, type FoilRecipe } from '@/league/export/foilRecipe';
+import {
+  createExportSurveySkipReporter,
+  exportSurveySkipReason,
+  type ExportSurveySkipAction,
+  type ExportSurveyTool,
+} from '@/lib/exportSurvey';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 
 export type ExportPreviewPhase = 'settings' | 'surveyIntro' | 'survey';
@@ -15,6 +22,11 @@ const SCRIM_Z = 200;
 const PREVIEW_Z = 201;
 const PANE_Z = 210;
 const SETTINGS_SHEET_FRACTION = 0.45;
+
+type ExportSurveyActions = {
+  dismiss: (action: ExportSurveySkipAction) => void;
+  finish: () => void;
+};
 
 function useSettingsSheetCap(active: boolean): number | undefined {
   const [cap, setCap] = useState<number | undefined>(() => {
@@ -95,6 +107,7 @@ function useExportChrome(isDesktop: boolean) {
 export function ExportPreviewShell({
   phase,
   onClose,
+  surveyTool,
   settings,
   surveyIntro,
   survey,
@@ -108,9 +121,10 @@ export function ExportPreviewShell({
 }: {
   phase: ExportPreviewPhase;
   onClose: () => void;
+  surveyTool: ExportSurveyTool;
   settings: ReactNode;
-  surveyIntro: ReactNode;
-  survey: ReactNode;
+  surveyIntro: (actions: ExportSurveyActions) => ReactNode;
+  survey: (actions: ExportSurveyActions) => ReactNode;
   previewAlt: string;
   frames: { activeKey: string; urls: Record<string, string>; busy: boolean };
   overlayMarker?: string;
@@ -122,9 +136,39 @@ export function ExportPreviewShell({
   const isDesktop = useViewportAtLeast(1024);
   const sheetCap = useSettingsSheetCap(!isDesktop && phase === 'settings');
   const chrome = useExportChrome(isDesktop);
+  const [skipReporter] = useState(() =>
+    createExportSurveySkipReporter({
+      exportTool: surveyTool,
+      send: (event, payload) => sendEventBeacon(event, payload),
+    }),
+  );
+  const surveyPhase = phase === 'survey' ? 'form' : 'intro';
+
+  useEffect(() => {
+    if (phase === 'settings') return;
+    const onHide = () => skipReporter.onPageHide(surveyPhase);
+    window.addEventListener('pagehide', onHide);
+    return () => window.removeEventListener('pagehide', onHide);
+  }, [phase, skipReporter, surveyPhase]);
+
+  const dismissSurvey = (action: ExportSurveySkipAction) => {
+    skipReporter.skip(exportSurveySkipReason({ phase: surveyPhase, action }));
+    onClose();
+  };
+  const finishSurvey = () => {
+    skipReporter.markSent();
+    onClose();
+  };
+  const surveyActions = { dismiss: dismissSurvey, finish: finishSurvey };
+  const closeOverlay = phase === 'settings' ? onClose : () => dismissSurvey('dismiss');
   const paneTitle =
     phase === 'settings' ? 'Export' : phase === 'surveyIntro' ? 'Your export' : 'Quick question';
-  const paneBody = phase === 'settings' ? settings : phase === 'surveyIntro' ? surveyIntro : survey;
+  const paneBody =
+    phase === 'settings'
+      ? settings
+      : phase === 'surveyIntro'
+        ? surveyIntro(surveyActions)
+        : survey(surveyActions);
   const activeSrc = frames.urls[frames.activeKey] ?? null;
 
   const settingsPane = isDesktop ? (
@@ -145,7 +189,7 @@ export function ExportPreviewShell({
     )
   ) : (
     <BottomSheet
-      onClose={onClose}
+      onClose={closeOverlay}
       title={paneTitle}
       closeLabel={paneTitle}
       size="content"
@@ -161,7 +205,7 @@ export function ExportPreviewShell({
 
   return (
     <>
-      <ExportScrim onClose={onClose} />
+      <ExportScrim onClose={closeOverlay} />
       {phase === 'settings' &&
         createPortal(
           <div

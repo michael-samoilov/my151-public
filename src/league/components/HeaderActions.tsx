@@ -1,15 +1,13 @@
 import { Download } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLeagueStore, type LeagueView } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 
 /**
- * The summary's two readings, as a pair of buttons.
+ * The summary's two readings, as the shared pill tab set (PR 79).
  *
- * This is the dex builder's own view nav — a filled button for where you are
- * and a ghost one for where you could go — without the icons, which the two
- * words carry on their own. It replaces a gear whose menu held nothing else:
- * one press instead of open, choose, dismiss.
+ * Story and Rematch name themselves; the gym-leaders export spacer is the
+ * only place that adds "story teams" / "rematch teams".
  */
 const VIEWS: { value: LeagueView; label: string }[] = [
   { value: 'challenge', label: 'Story' },
@@ -32,23 +30,18 @@ export function LeagueViewToggle() {
   const view = useLeagueStore((s) => s.view);
   const setView = useLeagueStore((s) => s.setView);
   return (
-    <div role="group" aria-label="League summary shows" className="flex shrink-0 items-center gap-0.5">
+    <TabsList aria-label="League summary shows" data-testid="league-nav" className="shrink-0">
       {VIEWS.map((v) => (
-        <Button
+        <TabsTrigger
           key={v.value}
-          type="button"
-          variant={view === v.value ? 'default' : 'ghost'}
-          // The same pill as the dex builder's view nav, so the two tool
-          // bars carry one control at one height.
-          size="pill"
+          selected={view === v.value}
           data-league-view={v.value}
-          aria-pressed={view === v.value}
           onClick={() => setView(v.value)}
         >
           {v.label}
-        </Button>
+        </TabsTrigger>
       ))}
-    </div>
+    </TabsList>
   );
 }
 
@@ -77,7 +70,7 @@ export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
       type="button"
       onClick={() => openLeagueExport(cardIndex)}
       aria-label={cardIndex === undefined ? 'Export league' : 'Export trainer card'}
-      data-league-export
+      data-league-export={cardIndex === undefined ? 'league' : 'card'}
       className="shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
     >
       <Download className="h-4 w-4" />

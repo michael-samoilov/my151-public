@@ -1,0 +1,60 @@
+import { formatSessionMeta, type TimelinePoint } from './sessionTimelineMath';
+
+function setHidden(node: Element | null, hidden: boolean): void {
+  if (node) (node as HTMLElement).hidden = hidden;
+}
+
+function setText(node: Element | null, text: string): void {
+  if (node) node.textContent = text;
+}
+
+export function applySessionChip(
+  root: ParentNode,
+  point: TimelinePoint,
+  args: { tz?: string; countUnit: string; deltaUnit: string },
+): void {
+  const meta = formatSessionMeta(point, args.tz);
+  setText(root.querySelector('[data-testid="session-playhead-count"]'), String(point.count));
+  setText(root.querySelector('[data-testid="session-playhead-date"]'), meta.date);
+  const windowEl = root.querySelector('[data-testid="session-playhead-window"]');
+  setText(windowEl, meta.window ?? '');
+  setHidden(windowEl, !meta.window);
+  setHidden(root.querySelector('[data-testid="session-playhead-window-sep"]'), !meta.window);
+  const added = root.querySelector('[data-testid="session-playhead-added"]');
+  setText(added, meta.added != null ? `+${meta.added}${args.deltaUnit}` : '');
+  setHidden(added, meta.added == null);
+  const removed = root.querySelector('[data-testid="session-playhead-removed"]');
+  const gap = meta.added != null ? ' ' : '';
+  setText(removed, meta.removed != null ? `${gap}−${meta.removed}${args.deltaUnit}` : '');
+  setHidden(removed, meta.removed == null);
+  setHidden(root.querySelector('[data-testid="session-playhead-diff-sep"]'), !meta.diff);
+  const slider = root.querySelector('input[aria-label="Scrub sessions"]');
+  if (slider) {
+    slider.setAttribute('aria-valuetext', `${meta.date}: ${point.count} ${args.countUnit}`);
+  }
+}
+
+const LABEL_EDGE_PX = 24;
+const LABEL_PAD_PX = 8;
+
+export function applyPlayheadMilestone(
+  root: ParentNode,
+  args: { label: string; x: number; width: number },
+): void {
+  const el = root.querySelector('[data-testid="session-playhead-milestone"]');
+  if (!el) return;
+  const text = args.label;
+  if (!text) {
+    el.textContent = '';
+    el.setAttribute('visibility', 'hidden');
+    return;
+  }
+  const bx = args.x;
+  const w = args.width;
+  const anchor = bx < LABEL_EDGE_PX ? 'start' : bx > w - LABEL_EDGE_PX ? 'end' : 'middle';
+  const lx = bx < LABEL_EDGE_PX ? LABEL_PAD_PX : bx > w - LABEL_EDGE_PX ? w - LABEL_PAD_PX : bx;
+  el.textContent = text;
+  el.setAttribute('x', lx.toFixed(1));
+  el.setAttribute('text-anchor', anchor);
+  el.setAttribute('visibility', 'visible');
+}

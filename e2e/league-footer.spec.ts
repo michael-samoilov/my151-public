@@ -44,22 +44,38 @@ async function lowestPainted(page: Page) {
 
 /** Each scrolling pane, with where its footer starts relative to the fold. */
 async function footers(page: Page) {
-  return page.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>('[data-lg-viewport]')]
+  return page.evaluate(() => {
+    const panes = [...document.querySelectorAll<HTMLElement>('[data-lg-viewport]')]
       // Only the pane actually on screen; the mobile shell keeps both mounted.
-      .filter((vp) => !vp.hasAttribute('inert'))
-      .map((vp) => {
+      .filter((vp) => !vp.hasAttribute('inert'));
+
+    // Desktop deliberately has one stable page footer below the whole pane
+    // row. Mobile gives each independently scrolling pane its own footer.
+    if (window.matchMedia('(min-width: 1024px)').matches) {
+      const globalFooters = [...document.querySelectorAll<HTMLElement>('span')].filter((el) =>
+        (el.textContent ?? '').includes('Nintendo / Game Freak')
+        && panes.every((pane) => !pane.contains(el)));
+      const fold = Math.max(...panes.map((pane) => pane.getBoundingClientRect().bottom));
+      return [{
+        hasFooter: globalFooters.length === 1,
+        belowFold: globalFooters[0]
+          ? globalFooters[0].getBoundingClientRect().top - fold
+          : NaN,
+      }];
+    }
+
+    return panes.map((vp) => {
         const foot = [...vp.querySelectorAll<HTMLElement>('div')].find((d) =>
           (d.textContent ?? '').includes('Nintendo / Game Freak'));
         if (!foot) return { hasFooter: false, belowFold: NaN };
         const v = vp.getBoundingClientRect();
         return { hasFooter: true, belowFold: foot.getBoundingClientRect().top - v.bottom };
-      }),
-  );
+      });
+  });
 }
 
 test.describe('the league footer', () => {
-  test('the summary carries it, just below the fold', async ({ page }) => {
+  test('the summary puts it just below the fold', async ({ page }) => {
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(700);
@@ -98,7 +114,7 @@ test.describe('the league footer', () => {
     }
   });
 
-  test('a gym card carries it too', async ({ page }) => {
+  test('a gym card keeps it there too', async ({ page }) => {
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');

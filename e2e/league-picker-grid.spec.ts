@@ -28,7 +28,10 @@ const openCard = async (page: Page, slot: number) => {
 };
 
 const openPicker = async (page: Page, slot: 'slot-ace' | 'slot-partner') => {
-  await page.click(`[data-testid="${slot}"]`);
+  await page.click(
+    `[data-testid="${slot}"]`,
+    slot === 'slot-ace' ? { position: { x: 8, y: 8 } } : {},
+  );
   await page.waitForSelector('[data-filter-chip="my-dex"]');
   await page.waitForTimeout(600);
 };

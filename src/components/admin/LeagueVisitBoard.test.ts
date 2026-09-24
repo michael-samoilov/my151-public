@@ -1,24 +1,43 @@
 import { describe, expect, it } from 'vitest';
-import { applyMemberPresence } from './memberPresence';
+import { applyLeaguePlayhead } from './memberPresence';
 
-function tile(id: number) {
-  return { dataset: { memberId: String(id) }, style: { opacity: '' } };
+function playheadRoot(indexes: number[]) {
+  const board = { hidden: false };
+  const msg = { hidden: true };
+  const sessionBoards = indexes.map((i) => ({
+    hidden: false,
+    getAttribute: (name: string) => (name === 'data-session-board' ? String(i) : null),
+  }));
+  return {
+    board,
+    msg,
+    sessionBoards,
+    root: {
+      querySelectorAll: (sel: string) => (sel.includes('data-session-board') ? sessionBoards : []),
+      querySelector: (sel: string) => {
+        if (sel.includes('league-visit-board')) return board;
+        if (sel.includes('league-uncaptured')) return msg;
+        return null;
+      },
+    } as unknown as ParentNode,
+  };
 }
 
-describe('applyMemberPresence', () => {
-  it('fades ids that are not in the session set', () => {
-    const nodes = [tile(1), tile(4), tile(9)];
-    applyMemberPresence(
-      { querySelectorAll: () => nodes } as unknown as ParentNode,
-      new Set([1, 9]),
-    );
-    expect(nodes.map((n) => n.style.opacity)).toEqual(['1', '0.14', '1']);
+describe('applyLeaguePlayhead', () => {
+  it('hides the board wrap and every snapshot when the sitting has no cards', () => {
+    const { root, board, msg, sessionBoards } = playheadRoot([3, 13]);
+    applyLeaguePlayhead(root, 0, [false, false, false, true]);
+    expect(board.hidden).toBe(true);
+    expect(msg.hidden).toBe(false);
+    expect(sessionBoards.map((n) => n.hidden)).toEqual([true, true]);
   });
 
-  it('shows every tile when present is null', () => {
-    const nodes = [tile(1), tile(2)];
-    nodes[0].style.opacity = '0.14';
-    applyMemberPresence({ querySelectorAll: () => nodes } as unknown as ParentNode, null);
-    expect(nodes.map((n) => n.style.opacity)).toEqual(['1', '1']);
+  it('shows only the playhead snapshot', () => {
+    const { root, board, msg, sessionBoards } = playheadRoot([3, 12]);
+    applyLeaguePlayhead(root, 0, [false, false, false, true]);
+    applyLeaguePlayhead(root, 3, [false, false, false, true, false, false, false, false, false, false, false, false, true]);
+    expect(board.hidden).toBe(false);
+    expect(msg.hidden).toBe(true);
+    expect(sessionBoards.map((n) => n.hidden)).toEqual([false, true]);
   });
 });

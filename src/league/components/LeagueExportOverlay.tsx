@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ExportPreviewShell, type ExportPreviewPhase } from '@/components/export/ExportPreviewShell';
 import { useExportPreviewCache } from '@/components/export/useExportPreviewCache';
-import { shareOrDownload } from '@/lib/exportImage';
+import { leagueExportEventBody } from '../../../api/_events';
+import { isShareAbort, shareOrDownload } from '@/lib/exportImage';
 import { hasSeenExportSurvey, markExportSurveySeen, shouldShowExportSurvey } from '@/lib/exportSurvey';
 import { isOptedOut } from '@/lib/clientId';
 import { PREVIEW_DEPLOY } from '@/lib/demoMode';
@@ -79,13 +80,9 @@ export function LeagueExportOverlay() {
   const runExport = useCallback(async () => {
     if (exportBusy) return;
     setExportBusy(true);
-    sendEventBeacon(isLeague ? 'league-export-league' : 'league-export-card');
     try {
       const { name, cards, view } = useLeagueStore.getState();
       const ids = exportPokemonIds(isLeague ? cards : [cards[exportCardIndex!]]);
-      const nextHighlight =
-        (await sendLeagueExportBeacon(exportKind, ids)) ?? previewExportHighlight(exportKind, ids);
-      setHighlight(nextHighlight);
       const cached = urls[activeKey];
       const blob = cached
         ? await fetch(cached).then((r) => r.blob())
@@ -94,6 +91,11 @@ export function LeagueExportOverlay() {
           : await exportGymCard(cards[exportCardIndex!]);
       await shareOrDownload(blob, isLeague ? HOME_FILENAME : CARD_FILENAME);
       incrementLeagueExportCount();
+      const { event, exportTool } = leagueExportEventBody(exportKind);
+      sendEventBeacon(event, { exportTool });
+      const nextHighlight =
+        (await sendLeagueExportBeacon(exportKind, ids)) ?? previewExportHighlight(exportKind, ids);
+      setHighlight(nextHighlight);
       if (
         !shouldShowExportSurvey({
           optedOut: isOptedOut(),
@@ -109,7 +111,7 @@ export function LeagueExportOverlay() {
       setSurveyOpenedAt(Date.now());
       setExportPhase('surveyIntro');
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
+      if (isShareAbort(err)) return;
       console.error('League export failed:', err);
     } finally {
       setExportBusy(false);
@@ -130,6 +132,7 @@ export function LeagueExportOverlay() {
     <ExportPreviewShell
       phase={exportPhase}
       onClose={closeLeagueExport}
+      surveyTool={exportKind}
       previewAlt={isLeague ? 'League export preview' : 'Trainer card export preview'}
       frames={{ activeKey, urls, busy: busy || exportBusy }}
       settings={
@@ -143,21 +146,21 @@ export function LeagueExportOverlay() {
           mobileSheet={!isDesktop}
         />
       }
-      surveyIntro={
+      surveyIntro={({ dismiss }) => (
         <LeagueExportSurveyIntro
           tool={exportKind}
           highlight={highlight}
           onContinue={() => setExportPhase('survey')}
-          onSkip={closeLeagueExport}
+          onSkip={() => dismiss('not_now')}
         />
-      }
-      survey={
+      )}
+      survey={({ finish }) => (
         <LeagueExportSurvey
           exportKind={exportKind}
           openedAt={surveyOpenedAt}
-          onDone={closeLeagueExport}
+          onDone={finish}
         />
-      }
+      )}
     />
   );
 }

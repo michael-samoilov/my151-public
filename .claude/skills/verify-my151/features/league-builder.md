@@ -8,6 +8,9 @@ powerups on the top three rows, and a legendary on the endgame boss row.
 
 - A league home lists the fourteen slots; a first visit seeds a Kanto league
   with two blank cards (slots 6 and 9).
+- Story / Rematch tabs (`[data-testid="league-nav"]`, the shared pill tab
+  set) switch every row between the challenge team and the rematch team.
+  Active tab = `aria-selected="true"` on `[data-league-view]`.
 - A card seats evolution lines from the Pokémon browser, opened from an empty
   cell; a filled cell opens the browser to replace that seat's line.
 - The ace and partner slots open one-Pokémon pickers with standalone tiles.
@@ -37,8 +40,12 @@ rows around Eevee and asserts no empty cell sits before a tile, presses the
 Mega button twice and reads `state.cards[9].powerups`, replaces a Lapras seat
 with the Charizard line already on the card, and flicks Charizard's top cell
 two rows up with synthetic `TouchEvent`s, reading the boundary and the
-`[data-stage-tint]` cells while the touch is down. The oracle is the store:
-`state.cards[i].lines[j].branch` and `.boundaries`, and `.powerups[row]`.
+`[data-stage-tint]` cells while the touch is down. It then sets the gym type
+to Fire, opens the TM picker, types `surf`, and asserts Surf is listed
+(`league-change:tm-search-ignores-type-chip`) even though the Fire chip is
+still selected. It also measures the four Elite Four stars on the open card
+(`league:elite-stars-one-row`): one y, four increasing x. The oracle is the
+store: `state.cards[i].lines[j].branch` and `.boundaries`, and `.powerups[row]`.
 
 ## Gotchas
 
