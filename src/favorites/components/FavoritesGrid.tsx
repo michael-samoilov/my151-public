@@ -304,7 +304,6 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
       const grid = el.firstElementChild as HTMLElement | null;
       const visual = window.visualViewport;
       const bounds = el.getBoundingClientRect();
-      const host = el.parentElement?.getBoundingClientRect() ?? bounds;
       const viewLeft = visual?.offsetLeft ?? 0;
       const viewTop = visual?.offsetTop ?? 0;
       const viewRight = viewLeft + (visual?.width ?? window.innerWidth);
@@ -326,8 +325,10 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
         visibleRight,
         visibleTop,
         visibleBottom,
-        anchorRight: Math.min(host.right, viewRight),
-        anchorBottom: Math.min(host.bottom, viewBottom),
+        // The minimap lives in a body portal, so anchor it to the visual
+        // viewport, never to the chart (which moves during pinch/pan).
+        anchorRight: viewRight,
+        anchorBottom: viewBottom,
         visualScale: Math.max(1, (visual?.scale ?? 1) * window.devicePixelRatio / INITIAL_DPR),
         visible: visibleRight > visibleLeft && visibleBottom > visibleTop,
       };
@@ -349,6 +350,7 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
     window.visualViewport?.addEventListener('resize', onVisualChange);
     window.visualViewport?.addEventListener('scroll', onVisualChange);
     window.addEventListener('resize', onVisualChange);
+    window.addEventListener('scroll', onVisualChange, { passive: true });
     const observer = new ResizeObserver(read);
     observer.observe(el);
     if (el.firstElementChild) observer.observe(el.firstElementChild);
@@ -357,6 +359,7 @@ function useChartFrame(ref: RefObject<HTMLDivElement | null>) {
       window.visualViewport?.removeEventListener('resize', onVisualChange);
       window.visualViewport?.removeEventListener('scroll', onVisualChange);
       window.removeEventListener('resize', onVisualChange);
+      window.removeEventListener('scroll', onVisualChange);
       observer.disconnect();
       window.clearTimeout(timer);
     };

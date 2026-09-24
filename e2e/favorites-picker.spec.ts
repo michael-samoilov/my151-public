@@ -592,6 +592,17 @@ test.describe('favorite Pokémon picker', () => {
     expect(after!.height * 2).toBeCloseTo(before!.height, 0);
     expect(after!.x + after!.width).toBeLessThanOrEqual(visual.left + visual.width);
     expect(after!.y + after!.height).toBeLessThanOrEqual(visual.top + visual.height);
+    // Moving the chart within the page must never drag its viewport HUD.
+    const anchored = await map.boundingBox();
+    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
+      el.parentElement!.style.transform = 'translateY(-40px)';
+      window.dispatchEvent(new Event('scroll'));
+    });
+    await expect.poll(async () => (await map.boundingBox())?.y ?? -1).toBeCloseTo(anchored!.y, 0);
+    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
+      el.parentElement!.style.transform = '';
+      window.dispatchEvent(new Event('scroll'));
+    });
     expect(afterWindow!.width).toBeLessThan(beforeWindow!.width / 2);
     const oldLeft = afterWindow!.x;
     await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
@@ -791,6 +802,34 @@ test.describe('favorite Pokémon picker', () => {
     expect(opacity).toBe(1);
   });
 
+  test('overall legendary pointer badges show all origins on one aligned top edge', async ({ page }, testInfo) => {
+    await page.goto('/favorite-pokemon-by-type');
+    await page.evaluate(() => {
+      localStorage.setItem('favorite-picker', JSON.stringify({
+        state: { fills: {
+          'legendary|5': 643,
+          'fire|legendary': 643,
+          'dragon|legendary': 643,
+        } },
+        version: 1,
+      }));
+    });
+    await page.reload();
+    await page.getByTestId('favorites-cell-legendary-legendary').click();
+    const marks = page.getByTestId('favorites-pick-643').getByTestId('favorites-pointer-mark');
+    await expect(marks).toHaveCount(3);
+    await expect(marks.nth(0)).toHaveAttribute('data-source', 'gen');
+    await expect(marks.nth(1)).toHaveAttribute('data-source', 'type');
+    await expect(marks.nth(2)).toHaveAttribute('data-source', 'type');
+    const boxes = await marks.evaluateAll((items) => items.map((item) => {
+      const { top, height } = item.getBoundingClientRect();
+      return { top, height };
+    }));
+    expect(Math.max(...boxes.map((box) => box.top)) - Math.min(...boxes.map((box) => box.top))).toBeLessThan(1);
+    expect(Math.max(...boxes.map((box) => box.height)) - Math.min(...boxes.map((box) => box.height))).toBeLessThan(1);
+    await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('legendary-origins.png') });
+  });
+
   test('Gen 8 wolves have base and Crowned picks while Ogerpon keeps only matching pixel forms', async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-legendary-8').click();
@@ -805,6 +844,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(order.indexOf(10188)).toBe(order.indexOf(888) + 1);
     expect(order.indexOf(10189)).toBe(order.indexOf(889) + 1);
     expect(order.indexOf(10246)).toBeGreaterThan(order.indexOf(892));
+    await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('base-and-crowned-wolves.png') });
     await page.getByRole('button', { name: 'Close picker' }).click();
 
     await page.getByTestId('favorites-cell-grass-9').click();

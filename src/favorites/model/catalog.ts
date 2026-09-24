@@ -80,7 +80,7 @@ for (const p of SPECIES) {
     name: p.id === 892 ? 'urshifu-single-strike' : p.name,
     types: p.id === 888 ? ['fairy'] : p.id === 889 ? ['fighting'] : p.types,
     generation: asGen(p.generation),
-    sprite: [746, 964, 1024].includes(p.id) ? `/sprites/pokemon/${p.id}.png` : pickerId === 10191 ? '/sprites/pokemon/10191.png' : p.sprite,
+    sprite: [746, 888, 889, 964, 1024].includes(p.id) ? `/sprites/pokemon/${p.id}.png` : pickerId === 10191 ? '/sprites/pokemon/10191.png' : p.sprite,
     source: 'dex',
     ownerId: p.id === 10227 ? 892 : pickerId,
   });

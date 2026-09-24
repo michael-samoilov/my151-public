@@ -195,7 +195,7 @@ function PickCell({
       </span> : null}
       {sourceMarks.length > 0 ? (
         <span
-          className="pointer-events-none absolute z-[16] flex"
+          className="pointer-events-none absolute z-[16] flex items-start leading-none"
           style={{ gap: 1, right: inset, top: inset }}
         >
           {sourceMarks.map((source) => (
@@ -203,6 +203,8 @@ function PickCell({
               key={`${source.source}:${'value' in source ? source.value : ''}`}
               data-testid="favorites-pointer-mark"
               data-source={source.source}
+              className="flex shrink-0 items-center justify-center leading-none"
+              style={{ width: mark, height: mark }}
             >
               {source.source === 'gen' ? <RomanDisc gen={source.value} size={mark} />
                 : source.source === 'type' ? <TypeIcon type={source.value} size={mark} />

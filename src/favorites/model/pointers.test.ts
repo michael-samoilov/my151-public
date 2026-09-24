@@ -31,6 +31,26 @@ describe('pointerPool', () => {
     expect(pointerMarks('fire', 'favorite', fills, 4)).toEqual([{ source: 'gen', value: 1 }]);
   });
 
+  it('shows every type and generation that supplied the overall legendary pointer', () => {
+    const legendaryFills = {
+      'legendary|5': 643,
+      'dragon|legendary': 643,
+      'fire|legendary': 643,
+      'legendary|3': 384,
+      'gimmick|legendary': 384,
+    };
+    expect(pointerPool('legendary', 'legendary', legendaryFills)).toEqual([384, 643]);
+    expect(pointerMarks('legendary', 'legendary', legendaryFills, 643)).toEqual([
+      { source: 'gen', value: 5 },
+      { source: 'type', value: 'fire' },
+      { source: 'type', value: 'dragon' },
+    ]);
+    expect(pointerMarks('legendary', 'legendary', legendaryFills, 384)).toEqual([
+      { source: 'gen', value: 3 },
+      { source: 'gimmick' },
+    ]);
+  });
+
   it('keeps pointer picks in template order rather than grouping forms by species', () => {
     const ordered = {
       'fighting|6': 701,
