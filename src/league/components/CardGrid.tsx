@@ -62,6 +62,8 @@ const PAD_Y = 0.6875; // 11px
 const INSET_Y = 0.375; // 6px
 const INSET_X = 0.1875; // 3px
 
+const CARD_LABEL_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
+
 /**
  * How far a carried column lifts off the card.
  *
@@ -121,7 +123,7 @@ function GlyphCell({ row, span, cell }: { row: number; span: number; cell: strin
   if (row === 1) {
     inner = (
       <span className="flex flex-col items-center gap-[3px]">
-        <span className="text-[0.59375rem] font-semibold text-white">No badges</span>
+        <span className={cn(CARD_LABEL_CLASS, 'text-white')}>No badges</span>
         <GymBadges n={1} size={8} />
       </span>
     );
@@ -976,7 +978,7 @@ function EmptyOutline() {
 
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
-const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
+const HEAD_CLASS = CARD_LABEL_CLASS;
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
 // words that a wide track sets off, while the name is one long word that the
@@ -1127,7 +1129,7 @@ const MARK_ROWS = 1.5;
  * keeps the glyph from eating the text it labels; both slots use the same
  * expression, so the disc and the hexagon stay on one axis whatever binds.
  */
-const MARK_COL = 'min(2.75rem, 26%)';
+const MARK_COL = 'min(2.75rem, 48%)';
 /**
  * The box's left pad and the gap after the glyph column: equal, on purpose.
  *
@@ -1164,7 +1166,7 @@ const MARK_TRAIL = '0.0625rem';
 // resolves against the column, so repeating the box fraction here multiplies
 // the two and collapses the glyph to a few pixels.
 const MARK_GLYPH = '72%';
-const MARK_LABEL_CLASS = 'shrink-0 whitespace-nowrap text-[0.4rem] font-extrabold tracking-normal';
+const MARK_LABEL_CLASS = `shrink-0 whitespace-nowrap ${CARD_LABEL_CLASS}`;
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
@@ -1217,7 +1219,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       {move ? (
         <span
           className="flex min-w-0 flex-col items-start gap-[2px] overflow-hidden"
-          style={{ transform: `translateY(${tmBodyShiftRem()}rem)` }}
+          style={{ transform: `translateY(${tmBodyShiftRem() + 0.0625}rem)` }}
         >
           {/* Clipped rather than spilling. At 320px the type badge and the
               category chip together are wider than the box's text column, and
@@ -1467,7 +1469,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             to 0fr takes its height smoothly whatever it measures — and the
             hexagon, centred in the column, eases into the space it leaves. */}
         <span
-          className="grid w-full justify-items-center transition-[grid-template-rows] duration-300 ease-out"
+          className="grid w-full min-w-0 justify-items-center transition-[grid-template-rows] duration-300 ease-out"
           style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
           <span
@@ -1507,8 +1509,8 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           // sibling: an empty inline span is zero-wide, which leaves nothing
           // to tap and nowhere obvious for the caret to sit.
           data-badge-field
-          data-placeholder="Name"
-          className="outline-none"
+          data-placeholder="NAME"
+          className={cn('outline-none', !name && MARK_LABEL_CLASS)}
         />
       </div>
       {name && (

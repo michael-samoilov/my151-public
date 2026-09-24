@@ -105,6 +105,71 @@ test.describe('the longest move in the TM box', () => {
   }
 });
 
+test.describe('the card detail labels', () => {
+  test('match the showcase typography and keep the badge rail balanced', async ({ page }) => {
+    await openCard(page);
+
+    const result = await page.evaluate(() => {
+      const byText = (root: ParentNode, text: string) =>
+        [...root.querySelectorAll('span')].find((el) => el.childElementCount === 0 && el.textContent === text)!;
+      const style = (el: Element, pseudo?: string) => {
+        const computed = getComputedStyle(el, pseudo);
+        return {
+          fontFamily: computed.fontFamily,
+          fontSize: parseFloat(computed.fontSize),
+          fontWeight: computed.fontWeight,
+        };
+      };
+      const centre = (el: Element) => {
+        const rect = el.getBoundingClientRect();
+        return rect.left + rect.width / 2;
+      };
+
+      const ace = document.querySelector('[data-slot-head="ace"]')!;
+      const tm = document.querySelector('[data-testid="slot-tm"]')!;
+      const badge = document.querySelector('[data-testid="slot-badge"]')!;
+      const tmLabel = tm.querySelector('[data-mark-label="tm"]')!;
+      const badgeLabel = badge.querySelector('[data-mark-label="badge"]')!;
+      const badgeField = badge.querySelector('[data-badge-field]')!;
+      const noBadges = byText(document, 'No badges');
+      const badgeBox = badge.getBoundingClientRect();
+      const badgeWord = badgeLabel.getBoundingClientRect();
+      const badgeInput = badgeField.getBoundingClientRect();
+
+      return {
+        reference: style(ace),
+        labels: {
+          pickMove: style(byText(tm, 'Pick a move')),
+          tm: style(tmLabel),
+          badge: style(badgeLabel),
+          badgeName: style(badgeField, '::before'),
+          noBadges: style(noBadges),
+        },
+        centres: {
+          tm: Math.abs(centre(tmLabel) - centre(tmLabel.parentElement!.querySelector('svg')!)),
+          badge: Math.abs(centre(badgeLabel) - centre(badgeLabel.parentElement!.parentElement!.querySelector('svg')!)),
+        },
+        badgeGutters: {
+          outer: badgeWord.left - badgeBox.left,
+          inner: badgeInput.left - badgeWord.right,
+        },
+      };
+    });
+
+    for (const [label, typography] of Object.entries(result.labels)) {
+      expect(typography.fontFamily, `${label} uses the showcase typeface`).toBe(result.reference.fontFamily);
+      expect(typography.fontSize, `${label} uses the showcase font size`).toBeCloseTo(result.reference.fontSize, 2);
+      expect(typography.fontWeight, `${label} uses the showcase weight`).toBe(result.reference.fontWeight);
+    }
+    expect(result.centres.tm, 'the TM icon and label share one axis').toBeLessThanOrEqual(0.5);
+    expect(result.centres.badge, 'the badge icon and label share one axis').toBeLessThanOrEqual(0.5);
+    expect(
+      Math.abs(result.badgeGutters.outer - result.badgeGutters.inner),
+      'BADGE has balanced space before the box edge and after the word',
+    ).toBeLessThanOrEqual(1.5);
+  });
+});
+
 test.describe('gym card slots', () => {
   test('the signature pane reads the team as lines, in league order', async ({ page }) => {
     await openCard(page);
