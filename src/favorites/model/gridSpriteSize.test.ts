@@ -4,15 +4,16 @@ import spriteInk from './spriteInk.json';
 import { gridSpriteSizePercent } from './gridSpriteSize';
 
 describe('grid sprite sizing', () => {
-  it('preserves small artwork and shrinks edge-to-edge artwork', () => {
+  it('preserves small artwork and caps large visible artwork at the cell edge', () => {
     expect(gridSpriteSizePercent('/sprites/pokemon/25.png')).toBe(120);
-    expect(gridSpriteSizePercent('/sprites/pokemon/644.png')).toBeLessThan(90);
-    expect(gridSpriteSizePercent('/sprites/pokemon/888.png')).toBeLessThan(95);
+    expect(gridSpriteSizePercent('/sprites/pokemon/644.png')).toBeLessThan(120);
+    expect(gridSpriteSizePercent('/sprites/pokemon/888.png')).toBeLessThan(120);
     expect(gridSpriteSizePercent('/sprites/pokemon/644.png')).toBeLessThan(gridSpriteSizePercent('/sprites/pokemon/718.png'));
+    expect(gridSpriteSizePercent('/sprites/pokemon/644.png') * (spriteInk as Record<string, number>)['644']).toBeCloseTo(100, 0);
   });
 
-  it('uses a conservative cap for a sprite missing from the measured catalog', () => {
-    expect(gridSpriteSizePercent('/sprites/pokemon/999999.png')).toBe(88);
+  it('keeps an unmeasured sprite inside the cell', () => {
+    expect(gridSpriteSizePercent('/sprites/pokemon/999999.png')).toBe(100);
   });
 
   it('measures every selectable local sprite', () => {

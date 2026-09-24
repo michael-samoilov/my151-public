@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
+import { prettyRows } from '../model/prettyWrap';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { ChevronLeft, PanelRightClose } from 'lucide-react';
@@ -28,11 +29,21 @@ import { PackingChain } from './PackingChain';
 // the direct replacement flow until its choices are understandable at a glance.
 const PACKING_UI_ENABLED = false;
 
+export type PickerAnchor = { cell: HTMLElement; table: HTMLElement };
+type PopoverPosition = { left: number; top: number; width: number; maxHeight: number };
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
 export function PickerSheet({
   type,
   gen,
   fills,
   currentId,
+  anchor,
+  showTypes,
+  onToggleTypes,
   onClose,
   onPlace,
   onApplyPack,
@@ -42,6 +53,9 @@ export function PickerSheet({
   gen: GenAxisId;
   fills: Record<string, number>;
   currentId?: number;
+  anchor: PickerAnchor | null;
+  showTypes: boolean;
+  onToggleTypes: () => void;
   onClose: () => void;
   onPlace: (id: number) => void;
   onApplyPack: (path: PackMove[]) => void;
@@ -52,11 +66,11 @@ export function PickerSheet({
   const viewportPx = useLayoutViewportCssPx();
   const spritePx = pickerSpriteCssPx(viewportPx);
   const inset = pickerRowInsetPx(viewportPx, spritePx);
-  const paneWidth = spritePx * 6 + inset * 2 + 2;
   const kind = kindFor(type, gen);
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);
   const [packStack, setPackStack] = useState<string[]>(['']);
-  const [showTypeIcons, setShowTypeIcons] = useState(false);
+  const popoverRef = useRef<HTMLElement>(null);
+  const [position, setPosition] = useState<PopoverPosition | null>(null);
 
   function backFromPack() {
     if (packStack.length > 1) setPackStack(packStack.slice(0, -1));
@@ -73,6 +87,62 @@ export function PickerSheet({
   }, [kind, type, gen, fills]);
 
   const maxCols = 6;
+  const lineKey = kind === 'pick' && type === 'starter' ? evolutionLineKey : undefined;
+  const widestRow = Math.max(0, ...prettyRows(mons, maxCols, lineKey).map((row) => row.length));
+  const paneWidth = Math.max(
+    mons.length === 0 ? 290 : kind === 'pick' && isTypeName(type) && isGenNumber(gen) ? 200 : 150,
+    spritePx * widestRow + inset * 2 + 2,
+  );
+
+  useLayoutEffect(() => {
+    const popover = popoverRef.current;
+    if (!desktop || !anchor || !popover) return;
+    const update = () => {
+      const table = anchor.table.getBoundingClientRect();
+      const cell = anchor.cell.getBoundingClientRect();
+      const visual = window.visualViewport;
+      const leftBound = Math.max(table.left, visual?.offsetLeft ?? 0);
+      const rightBound = Math.min(table.right, (visual?.offsetLeft ?? 0) + (visual?.width ?? window.innerWidth));
+      const topBound = Math.max(table.top, visual?.offsetTop ?? 0);
+      const bottomBound = Math.min(table.bottom, (visual?.offsetTop ?? 0) + (visual?.height ?? window.innerHeight));
+      if (rightBound <= leftBound || bottomBound <= topBound) return;
+      const width = Math.min(paneWidth, rightBound - leftBound);
+      // scrollHeight excludes the outer border and rounds to an integer, so
+      // reserve a few pixels before clamping against the table/viewport edge.
+      const maxHeight = Math.max(0, bottomBound - topBound - 4);
+      const height = Math.min(popover.scrollHeight + 4, maxHeight);
+      const gap = 8;
+      const below = cell.bottom + gap;
+      const above = cell.top - height - gap;
+      const preferredTop = below + height <= bottomBound ? below
+        : above >= topBound ? above : below;
+      const next = {
+        left: clamp(cell.left, leftBound, rightBound - width),
+        top: clamp(preferredTop, topBound, bottomBound - height),
+        width,
+        maxHeight,
+      };
+      setPosition((current) => current?.left === next.left && current.top === next.top
+        && current.width === next.width && current.maxHeight === next.maxHeight
+        ? current : next);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(anchor.table);
+    observer.observe(anchor.cell);
+    observer.observe(popover);
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    window.visualViewport?.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('scroll', update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+      window.visualViewport?.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('scroll', update);
+    };
+  }, [desktop, anchor, paneWidth]);
   const emptyHint = kind !== 'pointer' ? t('favorites.empty.unavailable')
     : type === 'favorite' && gen === 'favorite' ? t('favorites.empty.overall')
       : type === 'legendary' && gen === 'legendary' ? t('favorites.empty.legendary')
@@ -117,11 +187,11 @@ export function PickerSheet({
         <PrettySpriteGrid
           mons={mons}
           maxCols={maxCols}
-          lineKey={kind === 'pick' && type === 'starter' ? evolutionLineKey : undefined}
+          lineKey={lineKey}
           selectedId={currentId}
           onPick={pick}
           usedIn={kind === 'pick' && isTypeName(type) ? (id) => typeSlottedElsewhere(fills, id, type, gen) : undefined}
-          showTypes={showTypeIcons && kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
+          showTypes={showTypes && kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
           pointer={kind === 'pointer'}
           sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}
           onClear={
@@ -144,12 +214,11 @@ export function PickerSheet({
     <button
       type="button"
       data-testid="favorites-type-toggle"
-      aria-pressed={showTypeIcons}
-      aria-label={showTypeIcons ? t('favorites.types.hide') : t('favorites.types.show')}
-      onClick={() => setShowTypeIcons((value) => !value)}
-      className={`inline-flex min-h-8 cursor-pointer items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showTypeIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
+      aria-pressed={showTypes}
+      onClick={onToggleTypes}
+      className={`inline-flex min-h-8 shrink-0 cursor-pointer items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showTypes ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
     >
-      {t('favorites.types.label')}
+      {showTypes ? t('favorites.types.hide') : t('favorites.types.show')}
     </button>
   ) : null;
   const mobileTitle = (
@@ -162,11 +231,18 @@ export function PickerSheet({
   if (desktop) {
     return (
       <aside
-        className="flex h-full shrink-0 flex-col border-l bg-card"
-        style={{ width: paneWidth }}
+        ref={popoverRef}
+        className="fixed z-40 flex flex-col overflow-hidden rounded-xl border bg-card shadow-xl"
+        style={{
+          left: position?.left ?? 0,
+          top: position?.top ?? 0,
+          width: position?.width ?? paneWidth,
+          maxHeight: position?.maxHeight,
+          visibility: position ? 'visible' : 'hidden',
+        }}
         data-testid="favorites-picker"
       >
-        <div className="flex h-11 items-center justify-between border-b px-3">
+        <div className="flex h-11 shrink-0 items-center justify-between border-b px-3">
           <div className="flex min-w-0 items-center gap-1.5">
             {packing ? (
               <button type="button" onClick={backFromPack} aria-label={t('favorites.packing.back')} className="cursor-pointer text-muted-foreground hover:text-foreground">

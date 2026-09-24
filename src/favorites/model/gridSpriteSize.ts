@@ -1,7 +1,7 @@
 import spriteInk from './spriteInk.json';
 
 const MAX_CANVAS_PERCENT = 120;
-const MAX_VISIBLE_PERCENT = 88;
+const MAX_VISIBLE_PERCENT = 100;
 
 /** Cap visible artwork, not its 96px transparent canvas. */
 export function gridSpriteSizePercent(sprite: string): number {

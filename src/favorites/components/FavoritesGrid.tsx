@@ -21,6 +21,7 @@ import { minimapViewportX } from '../model/minimap';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 
 const ROWS = GEN_AXIS.length + 1;
+const DESKTOP_CELL_PX = 96;
 const INITIAL_DPR = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
 
 export function FavoritesGrid({
@@ -49,6 +50,7 @@ export function FavoritesGrid({
           resolve={resolve}
           selected={selected}
           onSelect={onSelect}
+          desktop={desktop}
         />
       ))}
     </>
@@ -72,26 +74,29 @@ function TypeColumnScroller({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const minimapRef = useRef<HTMLDivElement>(null);
-  const [cell, setCell] = useState(0);
+  const [mobileCell, setMobileCell] = useState(0);
+  const cell = desktop ? DESKTOP_CELL_PX : mobileCell;
   const { frame, scrolling, showScrollCue } = useChartFrame(ref, minimapRef);
 
   useLayoutEffect(() => {
+    if (desktop) return;
     const el = ref.current;
     if (!el) return;
-    const apply = () => setCell(el.clientHeight / ROWS);
+    const apply = () => setMobileCell(el.clientHeight / ROWS);
     apply();
     const observer = new ResizeObserver(apply);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [desktop]);
 
   return (
-    <div className={desktop ? 'relative flex min-h-0 w-full flex-1 bg-background' : 'relative flex h-full min-h-0 w-full bg-background'}>
+    <div className={desktop ? 'relative flex w-full flex-none items-start bg-background' : 'relative flex h-full min-h-0 w-full bg-background'}>
       <div
         data-testid="favorites-grid-generation-headers"
-        className="relative z-20 grid h-full shrink-0 bg-background"
+        className={desktop ? 'relative z-20 grid shrink-0 bg-background' : 'relative z-20 grid h-full shrink-0 bg-background'}
         style={{
           width: cell > 0 ? cell : undefined,
+          height: desktop ? cell * ROWS : undefined,
           gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
         }}
       >
@@ -102,7 +107,9 @@ function TypeColumnScroller({
       </div>
       <div
         ref={ref}
-        className="h-full min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain bg-background"
+        className={desktop
+          ? 'min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain bg-background'
+          : 'h-full min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain bg-background'}
         style={{ touchAction: 'pan-x pan-y pinch-zoom' }}
         data-testid="favorites-grid-scroll"
       >
@@ -112,9 +119,7 @@ function TypeColumnScroller({
             height: cell > 0 ? cell * ROWS : '100%',
             gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
             gridTemplateColumns: `repeat(${TYPE_AXIS.length}, minmax(0, 1fr))`,
-            width: cell > 0
-              ? desktop ? Math.max(cell * TYPE_AXIS.length, frame?.clientWidth ?? 0) : cell * TYPE_AXIS.length
-              : '100%',
+            width: cell > 0 ? cell * TYPE_AXIS.length : '100%',
           }}
           data-testid="favorites-grid"
           data-axis="gen-major"
@@ -122,7 +127,7 @@ function TypeColumnScroller({
           {children}
         </div>
       </div>
-      <ChartMinimap frame={frame} scrolling={scrolling} fills={fills} mapRef={minimapRef} />
+      <ChartMinimap frame={frame} scrolling={scrolling} fills={fills} mapRef={minimapRef} desktop={desktop} />
       {frame && chartOverflows(frame) && showScrollCue ? (
         <div data-testid="favorites-scroll-cue" className="pointer-events-none absolute bottom-3 right-3 z-30 flex items-center gap-1 rounded-full bg-card/95 px-2 py-1 text-xs text-muted-foreground shadow-sm">
           <span>Scroll for more</span><span aria-hidden>→</span>
@@ -138,12 +143,14 @@ function GenRow({
   resolve,
   selected,
   onSelect,
+  desktop,
 }: {
   gen: GenAxisId;
   fills: Record<string, number>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
   onSelect: (type: TypeAxisId, gen: GenAxisId) => void;
+  desktop: boolean;
 }) {
   const banded = gen !== 'favorite' && GEN_AXIS.indexOf(gen) % 2 === 1;
   return (
@@ -158,6 +165,7 @@ function GenRow({
           resolve={resolve}
           selected={selected}
           onSelect={onSelect}
+          desktop={desktop}
         />
       ))}
     </>
@@ -209,6 +217,7 @@ function BodyCell({
   resolve,
   selected,
   onSelect,
+  desktop,
 }: {
   type: TypeAxisId;
   gen: GenAxisId;
@@ -217,6 +226,7 @@ function BodyCell({
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
   onSelect: (type: TypeAxisId, gen: GenAxisId) => void;
+  desktop: boolean;
 }) {
   const kind = kindFor(type, gen);
   const id = fills[cellKey(type, gen)];
@@ -233,6 +243,7 @@ function BodyCell({
       data-testid={`favorites-cell-${type}-${gen}`}
       data-kind={kind}
       data-row-banded={banded}
+      style={{ containerType: 'size' }}
       className={cn(
         'relative min-h-0 min-w-0 overflow-visible border-[0.5px] border-neutral-200 p-0',
         locked
@@ -243,7 +254,7 @@ function BodyCell({
     >
       {banded && !locked ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
       {mon ? (
-        <Filled mon={mon} />
+        <Filled mon={mon} desktop={desktop} />
       ) : locked ? null : (
         <span
           data-testid="favorites-empty-ball"
@@ -396,14 +407,16 @@ function ChartMinimap({
   scrolling,
   fills,
   mapRef,
+  desktop,
 }: {
   frame: ChartMetrics | null;
   scrolling: boolean;
   fills: Record<string, number>;
   mapRef: RefObject<HTMLDivElement | null>;
+  desktop: boolean;
 }) {
   if (!frame || !frame.visible || !chartOverflows(frame)) return null;
-  const max = 84;
+  const max = desktop ? 180 : 112;
   const cellHeight = frame.gridHeight / ROWS;
   const bodyWidth = frame.gridWidth;
   const bodyHeight = frame.gridHeight - cellHeight;
@@ -486,7 +499,7 @@ function ChartMinimap({
   );
 }
 
-function Filled({ mon }: { mon: PickerMon }) {
+function Filled({ mon, desktop }: { mon: PickerMon; desktop: boolean }) {
   const pokemon = { types: mon.types } as Pokemon;
   const size = gridSpriteSizePercent(mon.sprite);
   return (
@@ -496,8 +509,8 @@ function Filled({ mon }: { mon: PickerMon }) {
         src={mon.sprite}
         alt={mon.name}
         className="absolute left-1/2 top-1/2 z-10 h-auto max-w-none -translate-x-1/2 -translate-y-1/2"
-        style={{ imageRendering: 'pixelated', width: `${size}%` }}
-        data-grid-sprite-size={size}
+        style={{ imageRendering: 'pixelated', width: desktop ? DESKTOP_CELL_PX : `${size}cqmin` }}
+        data-grid-sprite-size={desktop ? DESKTOP_CELL_PX : size}
         draggable={false}
       />
     </>

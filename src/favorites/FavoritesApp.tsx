@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -14,10 +14,18 @@ import { prewarmPickerSprites } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
-import { PickerSheet } from './components/PickerSheet';
+import { PickerSheet, type PickerAnchor } from './components/PickerSheet';
 import type { PackMove } from './model/packing';
 
 const TOOL_NAME = 'Favorite Pokémon Picker by Type and Generation';
+const TYPES_STORAGE_KEY = 'personal-151-favorites-show-types-v1';
+
+type Selection = { type: TypeAxisId; gen: GenAxisId; anchor: PickerAnchor | null };
+
+function savedShowTypes(): boolean {
+  try { return window.localStorage.getItem(TYPES_STORAGE_KEY) === '1'; }
+  catch { return false; }
+}
 
 function GlobalHeader() {
   return (
@@ -42,7 +50,14 @@ export function FavoritesApp() {
   const place = useFavoritesStore((s) => s.place);
   const applyPack = useFavoritesStore((s) => s.applyPack);
   const clear = useFavoritesStore((s) => s.clear);
-  const [sel, setSel] = useState<{ type: TypeAxisId; gen: GenAxisId } | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const [sel, setSel] = useState<Selection | null>(null);
+  const [showTypes, setShowTypes] = useState(savedShowTypes);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(TYPES_STORAGE_KEY, showTypes ? '1' : '0'); }
+    catch { /* Storage can be unavailable in private browsing. */ }
+  }, [showTypes]);
 
   useEffect(() => {
     sendEventBeacon('favorites-open', { once: true });
@@ -53,7 +68,9 @@ export function FavoritesApp() {
   function open(type: TypeAxisId, gen: GenAxisId) {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
-    setSel({ type, gen });
+    const cell = mainRef.current?.querySelector<HTMLElement>(`[data-testid="favorites-cell-${type}-${gen}"]`);
+    const table = mainRef.current?.querySelector<HTMLElement>('[data-testid="favorites-grid-scroll"]')?.parentElement;
+    setSel({ type, gen, anchor: cell && table ? { cell, table } : null });
   }
 
   return (
@@ -65,8 +82,8 @@ export function FavoritesApp() {
             {TOOL_NAME}
           </h1>
         </div>
-        <div className={desktop ? 'flex min-h-0 flex-1' : 'h-[calc(100dvh-2*2.75rem)] shrink-0'}>
-          <main className={desktop ? 'flex min-h-0 min-w-0 flex-1 flex-col p-1 sm:p-2' : 'h-full min-h-0 p-1'}>
+        <div className={desktop ? 'flex-1' : 'h-[calc(100dvh-2*2.75rem)] shrink-0'}>
+          <main ref={mainRef} className={desktop ? 'p-1 sm:p-2' : 'h-full min-h-0 p-1'}>
             <FavoritesGrid
               fills={fills}
               resolve={getPickerMon}
@@ -81,6 +98,9 @@ export function FavoritesApp() {
               gen={sel.gen}
               fills={fills}
               currentId={fills[cellKey(sel.type, sel.gen)]}
+              anchor={sel.anchor}
+              showTypes={showTypes}
+              onToggleTypes={() => setShowTypes((value) => !value)}
               onClose={() => setSel(null)}
               onPlace={(id) => place(sel.type, sel.gen, id)}
               onApplyPack={(path: PackMove[]) => {
@@ -96,6 +116,9 @@ export function FavoritesApp() {
             gen={sel.gen}
             fills={fills}
             currentId={fills[cellKey(sel.type, sel.gen)]}
+            anchor={sel.anchor}
+            showTypes={showTypes}
+            onToggleTypes={() => setShowTypes((value) => !value)}
             onClose={() => setSel(null)}
             onPlace={(id) => place(sel.type, sel.gen, id)}
             onApplyPack={(path: PackMove[]) => {

@@ -27,7 +27,7 @@ test.describe('favorite Pokémon picker', () => {
     });
   });
 
-  test('type columns fit under the header', async ({ page }) => {
+  test('type columns keep their header alignment while the chart scrolls', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     const grid = page.getByTestId('favorites-grid');
     await expect(grid).toHaveAttribute('data-axis', 'gen-major');
@@ -36,13 +36,20 @@ test.describe('favorite Pokémon picker', () => {
     const box = await grid.boundingBox();
     expect(box).toBeTruthy();
     expect(box!.y).toBeGreaterThan(40);
-    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height + 1);
-
     if (viewport!.width >= 1024) {
-      const wide = await grid.evaluate((el) => el.scrollWidth <= el.clientWidth + 2);
-      expect(wide).toBe(true);
+      // Native-size sprites make the desktop chart taller than the viewport.
+      // Scrolling the page is preferable to shrinking every sprite to fit.
+      expect(box!.y + box!.height).toBeGreaterThan(viewport!.height);
+      const scroll = page.getByTestId('favorites-grid-scroll');
+      const metrics = await scroll.evaluate((el) => ({
+        scrollWidth: el.scrollWidth,
+        clientWidth: el.clientWidth,
+      }));
+      expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth + 8);
       return;
     }
+
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height + 1);
 
     const scroll = page.getByTestId('favorites-grid-scroll');
     const fixed = page.getByTestId('favorites-grid-generation-headers');
@@ -545,7 +552,7 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
   });
 
-  test('desktop type toggle stays in the pane header', async ({ page }) => {
+  test('desktop type toggle stays in the popover header', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fire-1').click();
@@ -765,7 +772,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(visualPan).toBeCloseTo(24, 0);
   });
 
-  test('large grid artwork shrinks while small artwork keeps its size', async ({ page }) => {
+  test('desktop grid sprites stay native and mobile artwork reaches the cell edge', async ({ page }) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-electric-1').click();
     await page.getByTestId('favorites-pick-25').click();
@@ -773,8 +780,13 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-pick-644').click();
     const small = page.getByTestId('favorites-cell-electric-1').locator('img[data-grid-sprite-size]');
     const large = page.getByTestId('favorites-cell-electric-5').locator('img[data-grid-sprite-size]');
-    await expect(small).toHaveAttribute('data-grid-sprite-size', '120');
-    await expect(large).toHaveAttribute('data-grid-sprite-size', '88.9');
+    if ((page.viewportSize()?.width ?? 0) >= 1024) {
+      await expect(small).toHaveAttribute('data-grid-sprite-size', '96');
+      await expect(large).toHaveAttribute('data-grid-sprite-size', '96');
+    } else {
+      await expect(small).toHaveAttribute('data-grid-sprite-size', '120');
+      await expect(large).toHaveAttribute('data-grid-sprite-size', '101');
+    }
   });
 
   test('filled sprites can paint outside the cell boundary', async ({ page }) => {
