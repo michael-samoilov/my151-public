@@ -25,6 +25,28 @@ async function waitPreviewReady(page: Page) {
   await img.waitFor({ timeout: 45_000 });
 }
 
+async function exportShapePixels(page: Page) {
+  return page.locator('[data-export-preview] img').evaluate((el: HTMLImageElement) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = el.naturalWidth;
+    canvas.height = el.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || el.naturalWidth < 8 || el.naturalHeight < 8) {
+      return { ok: false, cornerA: 255, edgeA: 0, innerA: 0 };
+    }
+    ctx.drawImage(el, 0, 0);
+    const corner = ctx.getImageData(0, 0, 1, 1).data;
+    const edge = ctx.getImageData(Math.floor(el.naturalWidth / 2), 2, 1, 1).data;
+    const inner = ctx.getImageData(Math.floor(el.naturalWidth / 2), Math.floor(el.naturalHeight / 2), 1, 1).data;
+    return {
+      ok: true,
+      cornerA: corner[3] ?? 255,
+      edgeA: edge[3] ?? 0,
+      innerA: inner[3] ?? 0,
+    };
+  });
+}
+
 async function parkPreview(page: Page) {
   const foil = page.locator('[data-export-preview]');
   if ((await foil.getAttribute('data-paused')) === '1') return;
@@ -178,6 +200,16 @@ test.describe('desktop export preview', () => {
     }
   });
 
+  test('exports rounded league corners without clearing edges or content', async ({ page }) => {
+    await openLeagueExport(page);
+    await waitPreviewReady(page);
+    const pixels = await exportShapePixels(page);
+    expect(pixels.ok, JSON.stringify(pixels)).toBe(true);
+    expect(pixels.cornerA, JSON.stringify(pixels)).toBe(0);
+    expect(pixels.edgeA, JSON.stringify(pixels)).toBe(255);
+    expect(pixels.innerA, JSON.stringify(pixels)).toBe(255);
+  });
+
   test('paints ink-only rainbow on the live league overlay', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
     await openLeagueExport(page);
@@ -244,6 +276,11 @@ test.describe('gym trainer-card export', () => {
     await page.locator('[data-testid="league-slot-0"]').click();
     await page.locator('[aria-label="Export trainer card"]').click();
     await page.locator('[data-export-preview] img').waitFor({ timeout: 45_000 });
+    const pixels = await exportShapePixels(page);
+    expect(pixels.ok, JSON.stringify(pixels)).toBe(true);
+    expect(pixels.cornerA, JSON.stringify(pixels)).toBe(0);
+    expect(pixels.edgeA, JSON.stringify(pixels)).toBe(255);
+    expect(pixels.innerA, JSON.stringify(pixels)).toBe(255);
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 }).toBe('1');
     const hit = page.locator('[data-export-tilt-hit]');

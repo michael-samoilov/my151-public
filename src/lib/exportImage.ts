@@ -30,6 +30,7 @@ import {
   layoutDexExportGrid,
 } from '@/lib/dexExportLayout';
 import { FRAME } from '@/league/export/layout';
+import { clipExportCanvas } from '@/lib/exportPngShape';
 
 /** Same stroke as the trainer-card export (`layout.FRAME`). */
 export const DEX_EXPORT_FRAME = FRAME;
@@ -391,6 +392,7 @@ export async function generateExportImage(
   // Scale everything for sharp rendering (≤ SCALE, lowered when capped above).
   ctx.scale(expScale, expScale);
   ctx.imageSmoothingEnabled = false;
+  clipExportCanvas(ctx, framedW, framedH);
 
   ctx.fillStyle = DEX_EXPORT_FRAME_RED;
   ctx.fillRect(0, 0, framedW, framedH);

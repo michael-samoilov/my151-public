@@ -20,6 +20,7 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { expandTemplate } from '@/lib/richTemplate';
+import { clipExportCanvas } from '@/lib/exportPngShape';
 import { localeUppercase, pokemonLabel, raw } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
@@ -1293,6 +1294,7 @@ async function render(
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D context unavailable');
   ctx.scale(scale, scale);
+  clipExportCanvas(ctx, w, h);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   paint(ctx);

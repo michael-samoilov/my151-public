@@ -136,7 +136,7 @@ test.describe('dex export overlay', () => {
     expect(downloads, 'old Dex export started a download before settings').toEqual([]);
   });
 
-  test('paints a trainer-card-width red frame on the export', async ({ page }) => {
+  test('paints a rounded trainer-card-width red frame on the export', async ({ page }) => {
     await openDexExport(page);
     await waitPreviewReady(page);
     const edge = await page.locator('[data-export-preview] img').evaluate((el: HTMLImageElement) => {
@@ -144,16 +144,33 @@ test.describe('dex export overlay', () => {
       cv.width = el.naturalWidth;
       cv.height = el.naturalHeight;
       const g = cv.getContext('2d');
-      if (!g || el.naturalWidth < 8) return { ok: false, r: 0, g: 0, b: 0, innerR: 0, innerG: 0, innerB: 0 };
+      if (!g || el.naturalWidth < 8) {
+        return { ok: false, cornerA: 255, edgeA: 0, r: 0, g: 0, b: 0, innerA: 0, innerR: 0, innerG: 0, innerB: 0 };
+      }
       g.drawImage(el, 0, 0);
-      const px = g.getImageData(2, 2, 1, 1).data;
+      const corner = g.getImageData(0, 0, 1, 1).data;
+      const px = g.getImageData(Math.floor(el.naturalWidth / 2), 2, 1, 1).data;
       const inner = g.getImageData(Math.floor(el.naturalWidth / 2), Math.floor(el.naturalHeight / 2), 1, 1).data;
-      return { ok: true, r: px[0] ?? 0, g: px[1] ?? 0, b: px[2] ?? 0, innerR: inner[0] ?? 0, innerG: inner[1] ?? 0, innerB: inner[2] ?? 0 };
+      return {
+        ok: true,
+        cornerA: corner[3] ?? 255,
+        edgeA: px[3] ?? 0,
+        r: px[0] ?? 0,
+        g: px[1] ?? 0,
+        b: px[2] ?? 0,
+        innerA: inner[3] ?? 0,
+        innerR: inner[0] ?? 0,
+        innerG: inner[1] ?? 0,
+        innerB: inner[2] ?? 0,
+      };
     });
     expect(edge.ok).toBe(true);
+    expect(edge.cornerA, JSON.stringify(edge)).toBe(0);
+    expect(edge.edgeA, JSON.stringify(edge)).toBe(255);
     expect(edge.r, JSON.stringify(edge)).toBeGreaterThan(180);
     expect(edge.g, JSON.stringify(edge)).toBeLessThan(80);
     expect(edge.b, JSON.stringify(edge)).toBeLessThan(80);
+    expect(edge.innerA, JSON.stringify(edge)).toBe(255);
     expect(edge.innerR, JSON.stringify(edge)).toBeGreaterThan(200);
     expect(edge.innerG, JSON.stringify(edge)).toBeGreaterThan(200);
   });
@@ -322,7 +339,7 @@ test.describe('mobile dex export sheet', () => {
     expect(fitNational.ok, `national: ${fitNational.reason}`).toBe(true);
   });
 
-  test('fills the overlay, shows clipped holo, and leaves corner radii open', async ({ page }) => {
+  test('fills the overlay and masks foil to the active PNG shape', async ({ page }) => {
     await openDexExport(page);
     await waitPreviewReady(page);
     await expect.poll(async () => page.locator('[data-export-preview]').getAttribute('data-foil-maps'), { timeout: 15_000 }).toBe('1');
@@ -332,7 +349,8 @@ test.describe('mobile dex export sheet', () => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
       const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
       const holo = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
-      if (!card || !layer || !holo) return { ok: false, reason: 'missing' };
+      const img = card?.querySelector<HTMLImageElement>('img');
+      if (!card || !layer || !holo || !img) return { ok: false, reason: 'missing' };
       const c = card.getBoundingClientRect();
       const l = layer.getBoundingClientRect();
       const h = holo.getBoundingClientRect();
@@ -341,6 +359,7 @@ test.describe('mobile dex export sheet', () => {
       const holoStyle = getComputedStyle(holo);
       const bg = style.backgroundColor.replace(/\s+/g, '');
       const clip = `${style.getPropertyValue('clip-path')} ${style.getPropertyValue('-webkit-clip-path')}`;
+      const shapeMask = `${style.getPropertyValue('-webkit-mask-image')} ${style.getPropertyValue('mask-image')}`.replace(/\s+/g, ' ').trim();
       const mask = `${holoStyle.getPropertyValue('-webkit-mask-image')} ${holoStyle.getPropertyValue('mask-image')}`.replace(/\s+/g, ' ').trim();
       if (cover < 0.78) return { ok: false, reason: `cover ${cover.toFixed(3)}` };
       if (c.left < l.left - 4 || c.right > l.right + 4 || c.top < l.top - 4 || c.bottom > l.bottom + 4) {
@@ -349,7 +368,8 @@ test.describe('mobile dex export sheet', () => {
       if (bg !== 'transparent' && bg !== 'rgba(0,0,0,0)' && bg !== 'rgba(0,0,0,0.0)') {
         return { ok: false, reason: `corner fill ${bg}` };
       }
-      if (!/round/i.test(clip)) return { ok: false, reason: `clip ${clip}` };
+      if (/round/i.test(clip)) return { ok: false, reason: `independent clip ${clip}` };
+      if (!shapeMask.includes(img.currentSrc)) return { ok: false, reason: `shape mask ${shapeMask}` };
       if (!mask.includes('url(')) return { ok: false, reason: `holo unmasked ${mask}` };
       if (holoStyle.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
@@ -358,9 +378,7 @@ test.describe('mobile dex export sheet', () => {
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
-      if (style.overflow !== 'hidden' || !/round/i.test(clip)) {
-        return { ok: false, reason: 'clipper' };
-      }
+      if (style.overflow !== 'hidden') return { ok: false, reason: 'overflow' };
       return { ok: true, reason: `cover ${cover.toFixed(3)}` };
     });
     expect(measure.ok, measure.reason).toBe(true);

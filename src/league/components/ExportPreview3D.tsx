@@ -473,6 +473,7 @@ export function ExportPreview3D({
     for (const [key, value] of Object.entries(tiltVars)) {
       el.style.setProperty(key, value);
     }
+    el.style.setProperty('--export-shape-mask', foilMaskCss(activeSrc ?? ''));
     el.style.setProperty('--foil-holo-blend', holoBlend);
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
     el.dataset.hoverTilt = '1';
@@ -681,7 +682,7 @@ export function ExportPreview3D({
           <div className="export-foil-lift" data-export-foil-lift>
           <div
             ref={cardRef}
-            className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden rounded-lg bg-transparent select-none"
+            className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden bg-transparent select-none"
             style={{
               transformOrigin: 'center center',
               maxHeight: maxH,

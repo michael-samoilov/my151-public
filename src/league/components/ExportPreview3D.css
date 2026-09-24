@@ -134,8 +134,14 @@
   isolation: isolate;
   background-color: transparent;
   overflow: hidden;
-  -webkit-clip-path: inset(0 round 0.5rem);
-  clip-path: inset(0 round 0.5rem);
+  -webkit-mask-image: var(--export-shape-mask);
+  mask-image: var(--export-shape-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
   box-shadow: none;
   /* Live overlay (no hover-tilt): flatten so Safari clips shine.
      Hover-tilt overrides this to preserve-3d + ::before glare, matching
