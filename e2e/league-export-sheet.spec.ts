@@ -115,9 +115,10 @@ test.describe('mobile export sheet', () => {
     const foil = page.locator('[data-export-preview]');
     await expect(foil).toHaveAttribute('data-paused', '0');
 
-    await expect(page.locator('[data-foil-layer]')).toHaveCount(5);
+    await expect(page.locator('[data-foil-layer]')).toHaveCount(4);
     await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
-    await expect(page.locator('[data-foil-layer="sparkle"]')).toHaveCount(1);
+    await expect(page.locator('[data-foil-layer="sparkle"]')).toHaveCount(0);
+    expect(await foil.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('none');
     await expect(page.locator('[data-foil-layer="ambient"]')).toHaveCount(0);
     await expect(page.locator('[data-foil-layer="emboss"]')).toHaveCount(0);
     const idleA = Number(await foil.getAttribute('data-tilt-x'));

@@ -8,8 +8,6 @@ import {
   hoverTiltMaskContextFromDex,
   hoverTiltMaskCssVars,
   hoverTiltMaskPaint,
-  SPARKLE_FIELD_URL,
-  SPARKLE_MASK_SIZE,
   typeIconGlyphBoxes,
 } from './hoverTiltMasks';
 import { FRAME } from '@/league/export/layout';
@@ -41,17 +39,17 @@ function workshopMaskContext() {
 }
 
 describe('hover-tilt recipe', () => {
-  it('names every glare/sparkle mask and rejects unknown ids', () => {
+  it('names every glare mask and rejects removed or unknown ids', () => {
     expect(HOVER_TILT_MASK_IDS).toEqual([
       'none',
       'typeIcon',
       'wordmark',
-      'cardSparkle',
       'pokeBall',
       'dexNumber',
       'dexBorder',
     ]);
     expect(isHoverTiltMaskId('wordmark')).toBe(true);
+    expect(isHoverTiltMaskId('cardSparkle')).toBe(false);
     expect(isHoverTiltMaskId('rainbow')).toBe(false);
   });
 
@@ -64,7 +62,6 @@ describe('hover-tilt recipe', () => {
     expect(DEFAULT_HOVER_TILT_RECIPE.shadow).toBe(true);
     expect(DEFAULT_HOVER_TILT_RECIPE.glareIntensity).toBeCloseTo(0.6);
     expect(DEFAULT_HOVER_TILT_RECIPE.glareMask).toBe('dexBorder');
-    expect(DEFAULT_HOVER_TILT_RECIPE.sparkleMask).toBe('cardSparkle');
   });
 
   it('drops unknown keys and clamps at the parse boundary', () => {
@@ -79,8 +76,8 @@ describe('hover-tilt recipe', () => {
     expect(parsed.tiltFactor).toBeCloseTo(4);
     expect(parsed.scaleFactor).toBe(1);
     expect(parsed.glareMask).toBe('dexBorder');
-    expect(parsed.sparkleMask).toBe('wordmark');
-    expect(parsed.blendMode).toBe('overlay');
+    expect('sparkleMask' in parsed).toBe(false);
+    expect('blendMode' in parsed).toBe(false);
   });
 
   it('round-trips through the workshop search string', () => {
@@ -90,6 +87,17 @@ describe('hover-tilt recipe', () => {
     expect(again.glareHue).toBe(210);
     expect(parseHoverTiltRecipeFromSearch('')).toEqual(DEFAULT_HOVER_TILT_RECIPE);
     expect(parseHoverTiltRecipeFromSearch('?t=not-json')).toEqual(DEFAULT_HOVER_TILT_RECIPE);
+
+    const legacy = encodeURIComponent(JSON.stringify({
+      ...tuned,
+      blendMode: 'soft-light',
+      sparkleMask: 'wordmark',
+      sparkleIntensity: 0.9,
+    }));
+    const fromLegacyUrl = parseHoverTiltRecipeFromSearch(`?t=${legacy}`);
+    expect(fromLegacyUrl.glareHue).toBe(210);
+    expect('blendMode' in fromLegacyUrl).toBe(false);
+    expect('sparkleMask' in fromLegacyUrl).toBe(false);
   });
 
   it('writes the documented hover-tilt CSS custom properties', () => {
@@ -102,7 +110,8 @@ describe('hover-tilt recipe', () => {
     expect(vars['--hover-tilt-glare-intensity']).toBe('0.800');
     expect(vars['--hover-tilt-glare-hue']).toBe('200');
     expect(vars['--hover-tilt-scale']).toBe('1.050');
-    expect(vars['--hover-tilt-blend-mode']).toBe('overlay');
+    expect(vars['--hover-tilt-blend-mode']).toBeUndefined();
+    expect(vars['--hover-tilt-sparkle-intensity']).toBeUndefined();
     expect(vars['--hover-tilt-shadow-blur']).toBe('48');
     expect(vars['--hover-tilt-rotation-x']).toBe('10.00deg');
   });
@@ -165,26 +174,12 @@ describe('hover-tilt masks', () => {
     expect(paint.repeat).toBe('repeat');
   });
 
-  it('uses a fine repeating pokemon-card sparkle grain', () => {
-    const paint = hoverTiltMaskPaint('cardSparkle');
-    expect(paint.image).toBe(SPARKLE_FIELD_URL);
-    expect(paint.size).toBe(SPARKLE_MASK_SIZE);
-    expect(paint.size).not.toBe('180% 180%');
-    const pct = Number(paint.size.split('%')[0]);
-    expect(pct).toBeGreaterThan(0);
-    expect(pct).toBeLessThanOrEqual(16);
-    const decoded = decodeURIComponent(paint.image);
-    const circles = decoded.match(/<circle/g) ?? [];
-    expect(circles.length).toBeGreaterThan(80);
-  });
-
   it('glues every mask to a fixed card point, not the pointer', () => {
     const ctx = workshopMaskContext();
     for (const id of HOVER_TILT_MASK_IDS) {
       const paint = hoverTiltMaskPaint(id, ctx);
-      const vars = hoverTiltMaskCssVars(paint, paint);
+      const vars = hoverTiltMaskCssVars(paint);
       expect(vars['--hover-tilt-glare-mask-position'], id).not.toMatch(/pointer/);
-      expect(vars['--hover-tilt-sparkle-mask-position'], id).not.toMatch(/pointer/);
       expect(vars['--hover-tilt-glare-mask-position'], id).toBe(paint.position);
     }
   });
@@ -220,15 +215,10 @@ describe('hover-tilt masks', () => {
     expect(inset.x).toBeLessThan(0.08);
   });
 
-  it('applies separate glare and sparkle mask CSS vars', () => {
-    const vars = hoverTiltMaskCssVars(
-      hoverTiltMaskPaint('wordmark'),
-      hoverTiltMaskPaint('cardSparkle'),
-    );
+  it('applies glare mask CSS vars without sparkle state', () => {
+    const vars = hoverTiltMaskCssVars(hoverTiltMaskPaint('wordmark'));
     expect(vars['--hover-tilt-glare-mask']).toContain('svg+xml');
     expect(decodeURIComponent(vars['--hover-tilt-glare-mask'] ?? '')).toContain('my151.app');
-    expect(vars['--hover-tilt-sparkle-mask']).toBe(SPARKLE_FIELD_URL);
-    expect(vars['--hover-tilt-sparkle-mask-size']).toBe(SPARKLE_MASK_SIZE);
-    expect(vars['--hover-tilt-sparkle-field']).toBe(SPARKLE_FIELD_URL);
+    expect(Object.keys(vars).some((key) => key.includes('sparkle'))).toBe(false);
   });
 });

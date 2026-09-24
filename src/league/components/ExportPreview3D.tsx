@@ -49,7 +49,7 @@ import {
   type FoilRecipe,
 } from '../export/foilRecipe';
 import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
-import { FOIL_HOLO_BLEND, type FoilHoloBlend } from '../export/foilBlend';
+import { FOIL_HOLO_BLEND } from '../export/foilBlend';
 import './ExportPreview3D.css';
 
 const TAP_MS = 320;
@@ -89,7 +89,6 @@ export function ExportPreview3D({
   tilt = DEFAULT_HOVER_TILT_RECIPE,
   maskContext = DEFAULT_MASK_CONTEXT,
   darkCard = false,
-  holoBlend = FOIL_HOLO_BLEND,
 }: {
   src: string | null;
   alt: string;
@@ -101,7 +100,6 @@ export function ExportPreview3D({
   tilt?: HoverTiltRecipe;
   maskContext?: HoverTiltMaskContext;
   darkCard?: boolean;
-  holoBlend?: FoilHoloBlend;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
@@ -474,24 +472,20 @@ export function ExportPreview3D({
       el.style.setProperty(key, value);
     }
     el.style.setProperty('--export-shape-mask', foilMaskCss(activeSrc ?? ''));
-    el.style.setProperty('--foil-holo-blend', holoBlend);
+    el.style.setProperty('--foil-holo-blend', FOIL_HOLO_BLEND);
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
     el.dataset.hoverTilt = '1';
     el.dataset.maskSpriteCount = String(maskContext.sprites.length);
     el.dataset.maskSpriteTypes = hoverTiltMaskSpriteTypes(maskContext);
     const syncGlare = hoverTiltMaskPaint(tiltNow.glareMask, maskContext);
-    const syncSparkle = hoverTiltMaskPaint(tiltNow.sparkleMask, maskContext);
-    const syncVars = hoverTiltMaskCssVars(syncGlare, syncSparkle);
+    const syncVars = hoverTiltMaskCssVars(syncGlare);
     for (const [key, value] of Object.entries(syncVars)) {
       el.style.setProperty(key, value);
     }
     let cancelled = false;
-    void Promise.all([
-      resolveHoverTiltMaskPaint(tiltNow.glareMask, maskContext),
-      resolveHoverTiltMaskPaint(tiltNow.sparkleMask, maskContext),
-    ]).then(([glare, sparkle]) => {
+    void resolveHoverTiltMaskPaint(tiltNow.glareMask, maskContext).then((glare) => {
       if (cancelled || cardRef.current !== el) return;
-      const maskVars = hoverTiltMaskCssVars(glare, sparkle);
+      const maskVars = hoverTiltMaskCssVars(glare);
       for (const [key, value] of Object.entries(maskVars)) {
         el.style.setProperty(key, value);
       }
@@ -499,7 +493,17 @@ export function ExportPreview3D({
     return () => {
       cancelled = true;
     };
-  }, [activeSrc, holoBlend, idleAt, maskContext, paint, recipe, tilt]);
+  }, [activeSrc, idleAt, maskContext, paint, recipe, tilt]);
+
+  useLayoutEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    delete el.dataset.foilMaps;
+    delete el.dataset.foilMapSource;
+    el.style.setProperty('--foil-sat-mask', 'none');
+    el.style.setProperty('--foil-edge-mask', 'none');
+    el.style.setProperty('--foil-gloss-mask', 'none');
+  }, [activeSrc]);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -507,6 +511,7 @@ export function ExportPreview3D({
     if (!el || !activeSrc) return;
     if (!needSat && !needEdge && !needGloss) {
       el.dataset.foilMaps = '1';
+      el.dataset.foilMapSource = activeSrc;
       return;
     }
     let cancelled = false;
@@ -522,6 +527,7 @@ export function ExportPreview3D({
           card.style.setProperty('--foil-edge-mask', foilMaskCss(maps.edge));
           card.style.setProperty('--foil-gloss-mask', foilMaskCss(maps.gloss));
           card.dataset.foilMaps = '1';
+          card.dataset.foilMapSource = activeSrc;
         })
         .catch(() => {
           if (cancelled || tries >= 6) return;
@@ -617,19 +623,23 @@ export function ExportPreview3D({
       Math.hypot(e.clientX - down.x, e.clientY - down.y) <= TAP_PX;
 
     const now = performance.now();
-    if (tap || (down && !down.dragged)) {
+    if (tap) {
       lastPointerRef.current = null;
       pendingPointerRef.current = null;
       restAtRef.current = null;
       enterSinceRef.current = null;
-      if (pausedRef.current || orbitRef.current === 'pointer' || orbitRef.current === 'rest' || orbitRef.current === 'paused') {
-        resumeAuto(now);
-      }
+      if (pausedRef.current) resumeAuto(now);
+      else parkFlat(now);
       return;
     }
 
     if (down?.dragged) {
       parkFlat(now);
+      return;
+    }
+
+    if (down && !down.dragged) {
+      if (orbitRef.current === 'pointer' && !pausedRef.current) beginRest(now);
       return;
     }
 
@@ -698,7 +708,6 @@ export function ExportPreview3D({
             data-hover-tilt="1"
             data-hover-tilt-shadow="1"
             data-hover-tilt-glare-mask={tilt.glareMask}
-            data-hover-tilt-sparkle-mask={tilt.sparkleMask}
             data-mask-sprite-count={String(maskContext.sprites.length)}
             data-mask-sprite-types={hoverTiltMaskSpriteTypes(maskContext)}
             data-workshop-dark-card={darkCard ? '1' : undefined}

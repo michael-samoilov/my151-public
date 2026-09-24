@@ -45,8 +45,8 @@ async function foilLabelsInPane(page: Page): Promise<{ ok: boolean; reason: stri
       return { ok: false, reason: 'missing pane' };
     }
     const pane = chrome.getBoundingClientRect();
-    const names = ['rainbow', 'glare', 'shadow', 'blend'] as const;
-    const expectLabel = { rainbow: 'Rainbow', glare: 'Glare', shadow: 'Shadow', blend: 'Blend' };
+    const names = ['rainbow', 'glare', 'shadow'] as const;
+    const expectLabel = { rainbow: 'Rainbow', glare: 'Glare', shadow: 'Shadow' };
     const rows: string[] = [];
     let lowest = pane.top;
     for (const name of names) {
@@ -72,6 +72,9 @@ async function foilLabelsInPane(page: Page): Promise<{ ok: boolean; reason: stri
       rows.push(name);
     }
     const sortTop = sort.getBoundingClientRect().top;
+    if (document.querySelector('[data-export-foil-blend], [data-export-foil-select]')) {
+      return { ok: false, reason: 'blend controls remain' };
+    }
     const scroll = document.querySelector('[data-export-settings-scroll]');
     const scrollTop = scroll instanceof HTMLElement ? scroll.scrollTop : 0;
     if (scrollTop > 1) return { ok: false, reason: `scrolled ${scrollTop}` };
@@ -277,7 +280,7 @@ test.describe('mobile dex export sheet', () => {
     expect(await page.locator('[data-export-preview]').getAttribute('data-export-orbit')).not.toBe('pointer');
   });
 
-  test('drag release stays flat until a tap resumes auto-tilt', async ({ page }) => {
+  test('a tap toggles auto-tilt, a long press does not, and drag release stays flat', async ({ page }) => {
     await openDexExport(page);
     await waitPreviewReady(page);
     const foil = page.locator('[data-export-preview]');
@@ -292,6 +295,18 @@ test.describe('mobile dex export sheet', () => {
       const y = Math.abs(Number(await foil.getAttribute('data-tilt-y')));
       return x < 0.8 && y < 0.8 && (await foil.getAttribute('data-paused')) === '1' && (await foil.getAttribute('data-export-orbit')) === 'paused';
     };
+
+    await page.mouse.click(cx, cy);
+    await expect.poll(flat, { timeout: 2000 }).toBe(true);
+    await page.mouse.click(cx, cy);
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
+
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.waitForTimeout(380);
+    await page.mouse.up();
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
+
     await page.mouse.move(cx, cy);
     await page.mouse.down();
     await page.mouse.move(cx + 52, cy - 36, { steps: 8 });
@@ -323,6 +338,25 @@ test.describe('mobile dex export sheet', () => {
     expect(rainbow.ok, rainbow.reason).toBe(true);
     const placed = await foilLabelsInPane(page);
     expect(placed.ok, placed.reason).toBe(true);
+  });
+
+  test('rebuilds foil maps when the preview source changes', async ({ page }) => {
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    const img = page.locator('[data-export-preview] img');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 8000 }).toBe('1');
+    const before = await img.getAttribute('src');
+    expect(before).toBeTruthy();
+    await expect(foil).toHaveAttribute('data-foil-map-source', before!);
+
+    await page.locator('[data-export-sort="national"]').click();
+    await waitPreviewReady(page);
+    await expect.poll(async () => {
+      const source = await img.getAttribute('src');
+      const mapSource = await foil.getAttribute('data-foil-map-source');
+      return source !== before && mapSource === source;
+    }, { timeout: 15_000 }).toBe(true);
   });
 
   test('keeps the preview above the settings sheet', async ({ page }) => {
@@ -371,7 +405,7 @@ test.describe('mobile dex export sheet', () => {
       if (/round/i.test(clip)) return { ok: false, reason: `independent clip ${clip}` };
       if (!shapeMask.includes(img.currentSrc)) return { ok: false, reason: `shape mask ${shapeMask}` };
       if (!mask.includes('url(')) return { ok: false, reason: `holo unmasked ${mask}` };
-      if (holoStyle.mixBlendMode !== 'hue') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
+      if (holoStyle.mixBlendMode !== 'hard-light') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
       if (Math.abs(holoAmt - 0.25) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
@@ -484,12 +518,12 @@ test.describe('desktop dex export preview', () => {
     const cssVar = (name: string) =>
       page.locator('[data-export-preview]').evaluate((el, prop) => getComputedStyle(el).getPropertyValue(prop).trim(), name);
 
-    await page.locator('[data-export-foil-select="holoBlend"]').selectOption('overlay');
+    await expect(page.locator('[data-export-foil-select]')).toHaveCount(0);
     await expect
       .poll(() =>
         page.locator('[data-foil-layer="holographic"]').evaluate((el) => getComputedStyle(el).mixBlendMode),
       )
-      .toBe('overlay');
+      .toBe('hard-light');
     await page.locator('[data-export-foil-glare] [data-foil-slider="glareIntensity"]').fill('0.1');
     await expect.poll(() => cssVar('--hover-tilt-glare-intensity')).toBe('0.100');
     await page.locator('[data-export-shadow-toggle]').click();

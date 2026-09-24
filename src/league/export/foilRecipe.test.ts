@@ -18,7 +18,7 @@ import {
 
 describe('foil recipe', () => {
   it('names every lighting layer and rejects unknown ids', () => {
-    expect(FOIL_LAYER_IDS).toHaveLength(10);
+    expect(FOIL_LAYER_IDS).toHaveLength(9);
     expect(isFoilLayerId('holographic')).toBe(true);
     expect(isFoilLayerId('rainbow')).toBe(false);
     expect(foilLayerClassName('pointLight')).toBe('export-foil-point-light');
@@ -37,7 +37,6 @@ describe('foil recipe', () => {
       'pointLight',
       'holographic',
       'iridescence',
-      'sparkle',
       'bloom',
     ]);
     expect(foilMapsNeeded(DEFAULT_FOIL_RECIPE)).toEqual({
@@ -50,7 +49,6 @@ describe('foil recipe', () => {
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.25);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.on).toBe(true);
     expect(DEFAULT_FOIL_RECIPE.layers.iridescence.amount).toBe(0.15);
-    expect(DEFAULT_FOIL_RECIPE.layers.sparkle.amount).toBe(0.52);
     expect(DEFAULT_FOIL_RECIPE.layers.bloom.on).toBe(true);
     expect(DEFAULT_FOIL_RECIPE.layers.bloom.amount).toBe(0.36);
     const withEmboss = withFoilLayer(DEFAULT_FOIL_RECIPE, 'emboss', { on: true, amount: 0.6 });
@@ -59,7 +57,7 @@ describe('foil recipe', () => {
     expect(foilMapsNeeded(holoOnly)).toEqual({ sat: true, edge: false, gloss: false });
   });
 
-  it('sat-masked hue tints ink and the sat map keeps paper at zero', () => {
+  it('sat-masked hard-light tints ink and the sat map keeps paper at zero', () => {
     expect(foilMapsNeeded(DEFAULT_FOIL_RECIPE).sat).toBe(true);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.25);
   });
@@ -70,12 +68,14 @@ describe('foil recipe', () => {
       extra: true,
       layers: {
         holographic: { on: false, amount: 4 },
+        sparkle: { on: true, amount: 1 },
         rainbow: { on: true, amount: 1 },
       },
     });
     expect(parsed.idleTilt).toBe(30);
     expect(parsed.layers.holographic).toEqual({ on: false, amount: 1 });
     expect(parsed.layers.pointLight).toEqual(DEFAULT_FOIL_RECIPE.layers.pointLight);
+    expect('sparkle' in parsed.layers).toBe(false);
     expect('rainbow' in parsed.layers).toBe(false);
   });
 
@@ -88,10 +88,10 @@ describe('foil recipe', () => {
   });
 
   it('zeros a layer that is off and solos one layer for the workshop', () => {
-    const off = withFoilLayer(DEFAULT_FOIL_RECIPE, 'sparkle', { on: false });
-    expect(foilLayerAmount(off, 'sparkle')).toBe(0);
-    const solo = recipeWithSolo(off, 'sparkle');
-    expect(foilLayerAmount(solo, 'sparkle')).toBeGreaterThan(0);
+    const off = withFoilLayer(DEFAULT_FOIL_RECIPE, 'bloom', { on: false });
+    expect(foilLayerAmount(off, 'bloom')).toBe(0);
+    const solo = recipeWithSolo(off, 'holographic');
+    expect(foilLayerAmount(solo, 'holographic')).toBeGreaterThan(0);
     expect(foilLayerAmount(solo, 'bloom')).toBe(0);
   });
 

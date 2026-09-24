@@ -10,24 +10,12 @@ export const HOVER_TILT_MASK_IDS = [
   'none',
   'typeIcon',
   'wordmark',
-  'cardSparkle',
   'pokeBall',
   'dexNumber',
   'dexBorder',
 ] as const;
 
 export type HoverTiltMaskId = (typeof HOVER_TILT_MASK_IDS)[number];
-
-export const HOVER_TILT_BLEND_MODES = [
-  'overlay',
-  'soft-light',
-  'screen',
-  'color-dodge',
-  'color-burn',
-  'plus-lighter',
-] as const;
-
-export type HoverTiltBlendMode = (typeof HOVER_TILT_BLEND_MODES)[number];
 
 export const HOVER_TILT_MASK_MODES = ['alpha', 'luminance'] as const;
 export type HoverTiltMaskMode = (typeof HOVER_TILT_MASK_MODES)[number];
@@ -43,20 +31,17 @@ export type HoverTiltRecipe = {
   exitDelay: number;
   shadow: boolean;
   shadowBlur: number;
-  blendMode: HoverTiltBlendMode;
   glareIntensity: number;
   glareHue: number;
   glareMask: HoverTiltMaskId;
   glareMaskMode: HoverTiltMaskMode;
   glareMaskComposite: HoverTiltMaskComposite;
-  sparkleMask: HoverTiltMaskId;
-  sparkleIntensity: number;
 };
 
 export const HOVER_TILT_MASK_META = {
   none: {
     title: 'None',
-    blurb: 'Full-card glare and sparkle. No texture clip.',
+    blurb: 'Full-card glare. No texture clip.',
   },
   typeIcon: {
     title: 'Primary type icon',
@@ -65,10 +50,6 @@ export const HOVER_TILT_MASK_META = {
   wordmark: {
     title: 'my151.app wordmark',
     blurb: 'Brand wordmark tiled across the export.',
-  },
-  cardSparkle: {
-    title: 'Pokémon-card sparkles',
-    blurb: 'Fine-grain hover-tilt pokemon-cards sparkle field. Small repeating grains, not one smear.',
   },
   pokeBall: {
     title: 'Poké Ball tile',
@@ -97,22 +78,15 @@ export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   exitDelay: 200,
   shadow: true,
   shadowBlur: 48,
-  blendMode: 'overlay',
   glareIntensity: 0.6,
   glareHue: 40,
   glareMask: 'dexBorder',
   glareMaskMode: 'alpha',
   glareMaskComposite: 'intersect',
-  sparkleMask: 'cardSparkle',
-  sparkleIntensity: 0.55,
 };
 
 export function isHoverTiltMaskId(value: unknown): value is HoverTiltMaskId {
   return typeof value === 'string' && (HOVER_TILT_MASK_IDS as readonly string[]).includes(value);
-}
-
-export function isHoverTiltBlendMode(value: unknown): value is HoverTiltBlendMode {
-  return typeof value === 'string' && (HOVER_TILT_BLEND_MODES as readonly string[]).includes(value);
 }
 
 export function isHoverTiltMaskMode(value: unknown): value is HoverTiltMaskMode {
@@ -156,7 +130,6 @@ export function parseHoverTiltRecipe(input: unknown): HoverTiltRecipe {
     exitDelay: readNumber(rec.exitDelay, base.exitDelay, 0, 1200),
     shadow: typeof rec.shadow === 'boolean' ? rec.shadow : base.shadow,
     shadowBlur: readNumber(rec.shadowBlur, base.shadowBlur, 0, 80),
-    blendMode: isHoverTiltBlendMode(rec.blendMode) ? rec.blendMode : base.blendMode,
     glareIntensity: readNumber(rec.glareIntensity, base.glareIntensity, 0, 1),
     glareHue: readNumber(rec.glareHue, base.glareHue, 0, 360),
     glareMask: isHoverTiltMaskId(rec.glareMask) ? rec.glareMask : base.glareMask,
@@ -164,8 +137,6 @@ export function parseHoverTiltRecipe(input: unknown): HoverTiltRecipe {
     glareMaskComposite: isHoverTiltMaskComposite(rec.glareMaskComposite)
       ? rec.glareMaskComposite
       : base.glareMaskComposite,
-    sparkleMask: isHoverTiltMaskId(rec.sparkleMask) ? rec.sparkleMask : base.sparkleMask,
-    sparkleIntensity: readNumber(rec.sparkleIntensity, base.sparkleIntensity, 0, 1),
   };
 }
 
@@ -199,8 +170,6 @@ export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string
     '--hover-tilt-glare-intensity': recipe.glareIntensity.toFixed(3),
     '--hover-tilt-glare-hue': String(Math.round(recipe.glareHue)),
     '--hover-tilt-shadow-blur': String(Math.round(recipe.shadowBlur)),
-    '--hover-tilt-blend-mode': recipe.blendMode,
-    '--hover-tilt-sparkle-intensity': recipe.sparkleIntensity.toFixed(3),
     '--hover-tilt-mask-mode': recipe.glareMaskMode,
     '--hover-tilt-glare-mask-composite': recipe.glareMaskComposite,
     '--hover-tilt-glare-mask-composite-webkit': MASK_COMPOSITE_WEBKIT[recipe.glareMaskComposite],

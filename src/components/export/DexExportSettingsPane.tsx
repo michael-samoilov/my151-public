@@ -3,7 +3,6 @@ import type { HoverTiltRecipe } from '@/components/export/hoverTiltRecipe';
 import { Button } from '@/components/ui/button';
 import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { useT, type MessageKey } from '@/i18n';
-import type { FoilHoloBlend } from '@/league/export/foilBlend';
 import type { FoilRecipe } from '@/league/export/foilRecipe';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { DexExportFoilControls } from './DexExportFoilControls';
@@ -28,8 +27,6 @@ export function DexExportSettingsPane({
   onRecipe,
   tilt,
   onTilt,
-  holoBlend,
-  onHoloBlend,
   busy,
   onExport,
   onClose,
@@ -43,8 +40,6 @@ export function DexExportSettingsPane({
   onRecipe: (next: FoilRecipe) => void;
   tilt: HoverTiltRecipe;
   onTilt: (next: HoverTiltRecipe) => void;
-  holoBlend: FoilHoloBlend;
-  onHoloBlend: (next: FoilHoloBlend) => void;
   busy: boolean;
   onExport: () => void;
   onClose: () => void;
@@ -95,8 +90,6 @@ export function DexExportSettingsPane({
         onRecipe={onRecipe}
         tilt={tilt}
         onTilt={onTilt}
-        holoBlend={holoBlend}
-        onHoloBlend={onHoloBlend}
       />
 
       <ExportSettingsScroll>

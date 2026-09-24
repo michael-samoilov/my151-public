@@ -17,7 +17,7 @@ async function foilVar(foil: Locator, name: string): Promise<string> {
 test.describe('export foil workshop', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test('keeps only holo, glare, shadow, and blend dials', async ({ page }) => {
+  test('keeps only holo, glare, and shadow dials', async ({ page }) => {
     await page.goto('/foil-workshop');
     await expect(page.locator('[data-foil-workshop]')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Export foil workshop' })).toBeVisible();
@@ -36,8 +36,7 @@ test.describe('export foil workshop', () => {
     await expect(page.locator('[data-foil-slider="glareIntensity"]')).toBeVisible();
     await expect(page.locator('[data-workshop-shadow-toggle]')).toBeVisible();
     await expect(page.locator('[data-foil-slider="shadowBlur"]')).toBeVisible();
-    await expect(page.locator('[data-hover-tilt-select="holoBlend"]')).toBeVisible();
-    await expect(page.locator('[data-hover-tilt-select="blendMode"]')).toBeVisible();
+    await expect(page.locator('[data-hover-tilt-select]')).toHaveCount(0);
     await expect(page.locator('[data-hover-tilt-mask]')).toHaveCount(0);
     await expect(page.locator('[data-foil-slider="sparkleIntensity"]')).toHaveCount(0);
     await expect(page.locator('[data-foil-slider="parallaxPx"]')).toHaveCount(0);
@@ -52,7 +51,7 @@ test.describe('export foil workshop', () => {
       .toBe('0.600');
     await expect
       .poll(async () => foilVar(foil, '--foil-holo-blend'))
-      .toBe('hue');
+      .toBe('hard-light');
     await expect
       .poll(async () => {
         const x = Number(await foil.getAttribute('data-tilt-x'));
@@ -65,7 +64,7 @@ test.describe('export foil workshop', () => {
     await expect.poll(async () => foilVar(foil, '--foil-holographic')).toBe('0.910');
   });
 
-  test('glare, shadow, and blend write through to the shared preview', async ({ page }) => {
+  test('glare and shadow write through with fixed credit-card blends', async ({ page }) => {
     await page.goto('/foil-workshop');
     await expect(page.locator('[data-foil-workshop]')).toBeVisible();
     const img = page.locator('[data-export-tilt-hit] img');
@@ -93,13 +92,8 @@ test.describe('export foil workshop', () => {
       return next !== shadowAt32 && next !== 'none';
     }).toBe(true);
 
-    await page.locator('[data-hover-tilt-select="holoBlend"]').selectOption('soft-light');
-    await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('soft-light');
-    await page.locator('[data-hover-tilt-select="holoBlend"]').selectOption('hue');
-    await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('hue');
-
-    await page.locator('[data-hover-tilt-select="blendMode"]').selectOption('soft-light');
-    await expect.poll(async () => foilVar(foil, '--hover-tilt-blend-mode')).toBe('soft-light');
+    await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('hard-light');
+    await expect.poll(async () => foilVar(foil, '--hover-tilt-blend-mode')).toBe('overlay');
   });
 
   test('overlay scrim matches the export backdrop', async ({ page }) => {

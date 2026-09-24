@@ -6,7 +6,6 @@ import { ExportPreview3D } from '@/league/components/ExportPreview3D';
 import { EXPORT_OVERLAY_SCRIM_CLASS, EXPORT_OVERLAY_SCRIM_STYLE } from '@/components/export/exportOverlayScrim';
 import { DEFAULT_HOVER_TILT_RECIPE, type HoverTiltRecipe } from '@/components/export/hoverTiltRecipe';
 import { DEFAULT_MASK_CONTEXT, type HoverTiltMaskContext } from '@/components/export/hoverTiltMasks';
-import { FOIL_HOLO_BLEND, type FoilHoloBlend } from '@/league/export/foilBlend';
 import { DEFAULT_FOIL_RECIPE, type FoilRecipe } from '@/league/export/foilRecipe';
 import {
   createExportSurveySkipReporter,
@@ -117,7 +116,6 @@ export function ExportPreviewShell({
   maskContext = DEFAULT_MASK_CONTEXT,
   recipe = DEFAULT_FOIL_RECIPE,
   tilt = DEFAULT_HOVER_TILT_RECIPE,
-  holoBlend = FOIL_HOLO_BLEND,
 }: {
   phase: ExportPreviewPhase;
   onClose: () => void;
@@ -131,7 +129,6 @@ export function ExportPreviewShell({
   maskContext?: HoverTiltMaskContext;
   recipe?: FoilRecipe;
   tilt?: HoverTiltRecipe;
-  holoBlend?: FoilHoloBlend;
 }) {
   const isDesktop = useViewportAtLeast(1024);
   const sheetCap = useSettingsSheetCap(!isDesktop && phase === 'settings');
@@ -227,7 +224,6 @@ export function ExportPreviewShell({
                 busy={frames.busy}
                 recipe={recipe}
                 tilt={tilt}
-                holoBlend={holoBlend}
                 maskContext={maskContext}
               />
             </div>

@@ -5,7 +5,7 @@ import type { FoilMapNeed } from './foilRecipe';
  *
  * sat  — ink. Chroma plus dark-on-paper. White paper stays 0.
  * edge — Sobel magnitude of luminance. Type, frames, sprite outlines.
- * gloss — chroma on mid-bright pixels. Specular and sparkle land here.
+ * gloss — chroma on mid-bright pixels. Specular and bloom land here.
  *
  * Maps are RGBA with white RGB and the signal in alpha, so CSS
  * `mask-mode: alpha` can clip each lighting layer.

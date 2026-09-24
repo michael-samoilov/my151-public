@@ -1,11 +1,4 @@
-import {
-  HOVER_TILT_BLEND_MODES,
-  type HoverTiltRecipe,
-} from '@/components/export/hoverTiltRecipe';
-import {
-  FOIL_HOLO_BLEND_CANDIDATES,
-  type FoilHoloBlend,
-} from '@/league/export/foilBlend';
+import type { HoverTiltRecipe } from '@/components/export/hoverTiltRecipe';
 import { withFoilLayer, type FoilRecipe } from '@/league/export/foilRecipe';
 
 export function DexExportFoilControls({
@@ -13,15 +6,11 @@ export function DexExportFoilControls({
   onRecipe,
   tilt,
   onTilt,
-  holoBlend,
-  onHoloBlend,
 }: {
   recipe: FoilRecipe;
   onRecipe: (next: FoilRecipe) => void;
   tilt: HoverTiltRecipe;
   onTilt: (next: HoverTiltRecipe) => void;
-  holoBlend: FoilHoloBlend;
-  onHoloBlend: (next: FoilHoloBlend) => void;
 }) {
   const holo = recipe.layers.holographic;
 
@@ -85,24 +74,6 @@ export function DexExportFoilControls({
             onChange={(shadowBlur) => onTilt({ ...tilt, shadowBlur })}
           />
         </div>
-
-        <RowLabel name="blend">Blend</RowLabel>
-        <div className="grid min-w-0 grid-cols-2 gap-1" data-export-foil-blend>
-          <BlendSelect
-            label="Rainbow"
-            testId="holoBlend"
-            value={holoBlend}
-            options={FOIL_HOLO_BLEND_CANDIDATES}
-            onChange={onHoloBlend}
-          />
-          <BlendSelect
-            label="Glare"
-            testId="blendMode"
-            value={tilt.blendMode}
-            options={HOVER_TILT_BLEND_MODES}
-            onChange={(blendMode) => onTilt({ ...tilt, blendMode })}
-          />
-        </div>
       </div>
     </div>
   );
@@ -155,38 +126,5 @@ function Range({
         {suffix}
       </span>
     </label>
-  );
-}
-
-function BlendSelect<T extends string>({
-  label,
-  testId,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  testId: string;
-  value: T;
-  options: readonly T[];
-  onChange: (value: T) => void;
-}) {
-  return (
-    <select
-      className="w-full min-w-0 rounded-md border bg-background px-1 py-1 text-sm text-foreground"
-      value={value}
-      aria-label={label}
-      data-export-foil-select={testId}
-      onChange={(e) => {
-        const next = options.find((opt) => opt === e.target.value);
-        if (next) onChange(next);
-      }}
-    >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
-        </option>
-      ))}
-    </select>
   );
 }

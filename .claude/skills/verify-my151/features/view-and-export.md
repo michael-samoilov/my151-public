@@ -14,8 +14,8 @@ display options, exportable as a PNG.
   not write the View store.
 - Preview-only `/foil-workshop` (gated off production) drives the same
   `ExportPreview3D` card. The pane exposes only holo/rainbow amount, glare
-  intensity, drop shadow, and blend mode (rainbow `FOIL_HOLO_BLEND` plus glare
-  `blendMode`). Sparkle, mask, tilt, spring, and parallax dials are gone. Hidden
+  intensity, and drop shadow. Rainbow uses fixed `hard-light`; glare uses fixed
+  `overlay`. Sparkle, blend, mask, tilt, spring, and parallax dials are gone. Hidden
   recipe fields stay at the live export defaults so the card matches the preview.
   The stage uses the live export overlay scrim (dimmed `bg-background` page +
   `bg-slate-950/50` blur).
@@ -64,11 +64,11 @@ or `<a download="my151.png">`); the repo's own e2e checks a >50KB blob in
 `e2e/dev/poster-export.spec.ts`.
 
 The foil workshop is a separate MPA at `/foil-workshop`. Navigate there, wait
-for `[data-foil-workshop]` and the preview image. Assert the four keeper
-controls (`[data-foil-slider="holographic"]`, `glareIntensity`,
-`[data-workshop-shadow-toggle]`, `[data-hover-tilt-select="holoBlend"]` and
-`blendMode`) and that mask, sparkle, tilt, and parallax sliders are absent.
-`--foil-holographic` starts at `1` and `--foil-holo-blend` starts at `hue`.
+for `[data-foil-workshop]` and the preview image. Assert the three keeper
+controls (`[data-foil-slider="holographic"]`, `glareIntensity`, and
+`[data-workshop-shadow-toggle]`) and that blend selectors, masks, sparkles,
+tilt, and parallax sliders are absent. `--foil-holographic` starts at `0.25`;
+the holographic layer uses `hard-light` and the glare pseudo-element uses `overlay`.
 A glareIntensity slider write must update `--hover-tilt-glare-intensity`.
 The stage page is `bg-background` under `[data-workshop-overlay]`
 (`bg-slate-950/50` + blur).

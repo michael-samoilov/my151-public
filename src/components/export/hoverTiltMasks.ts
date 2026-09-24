@@ -51,47 +51,6 @@ function svgUrl(svg: string): string {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
-const SPARKLE_VIEW = 128;
-const SPARKLE_DOT_COUNT = 160;
-const SPARKLE_STAR_COUNT = 24;
-/** Small repeating tile so grains stay visible instead of one smeared field. */
-export const SPARKLE_MASK_SIZE = '10% 10%';
-
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function starPath(cx: number, cy: number, r: number): string {
-  const n = r * 0.2;
-  return `M${cx} ${cy - r} L${cx + n} ${cy - n} L${cx + r} ${cy} L${cx + n} ${cy + n} L${cx} ${cy + r} L${cx - n} ${cy + n} L${cx - r} ${cy} L${cx - n} ${cy - n} Z`;
-}
-
-function sparkleSvg(): string {
-  const rnd = mulberry32(0xc0ffee);
-  const dots: string[] = [];
-  for (let i = 0; i < SPARKLE_DOT_COUNT; i++) {
-    const x = rnd() * SPARKLE_VIEW;
-    const y = rnd() * SPARKLE_VIEW;
-    const r = 2.2 + rnd() * 1.8;
-    dots.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r.toFixed(2)}" fill="white"/>`);
-  }
-  const stars: string[] = [];
-  for (let i = 0; i < SPARKLE_STAR_COUNT; i++) {
-    const x = rnd() * SPARKLE_VIEW;
-    const y = rnd() * SPARKLE_VIEW;
-    const r = 2.6 + rnd() * 1.2;
-    stars.push(`<path d="${starPath(x, y, r)}" fill="white"/>`);
-  }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${SPARKLE_VIEW}" height="${SPARKLE_VIEW}" viewBox="0 0 ${SPARKLE_VIEW} ${SPARKLE_VIEW}" data-sparkle-dots="${SPARKLE_DOT_COUNT}">${dots.join('')}${stars.join('')}</svg>`;
-}
-
 function wordmarkSvg(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="48" viewBox="0 0 220 48"><text x="110" y="32" text-anchor="middle" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="700" fill="white">my151.app</text></svg>`;
 }
@@ -118,8 +77,6 @@ const NONE_PAINT: HoverTiltMaskPaint = {
   image: 'none',
   ...CARD_MASK,
 };
-
-export const SPARKLE_FIELD_URL = svgUrl(sparkleSvg());
 
 export function hoverTiltMaskContextFromDex(
   pokemon: Pokemon[],
@@ -198,13 +155,6 @@ export function hoverTiltMaskPaint(
       return {
         image: svgUrl(wordmarkSvg()),
         size: '38% auto',
-        repeat: 'repeat',
-        position: '0 0',
-      };
-    case 'cardSparkle':
-      return {
-        image: SPARKLE_FIELD_URL,
-        size: SPARKLE_MASK_SIZE,
         repeat: 'repeat',
         position: '0 0',
       };
@@ -312,18 +262,12 @@ export async function resolveHoverTiltMaskPaint(
 
 export function hoverTiltMaskCssVars(
   glare: HoverTiltMaskPaint,
-  sparkle: HoverTiltMaskPaint,
 ): Record<string, string> {
   return {
     '--hover-tilt-glare-mask': glare.image,
     '--hover-tilt-glare-mask-size': glare.size,
     '--hover-tilt-glare-mask-repeat': glare.repeat,
     '--hover-tilt-glare-mask-position': glare.position,
-    '--hover-tilt-sparkle-mask': sparkle.image,
-    '--hover-tilt-sparkle-mask-size': sparkle.size,
-    '--hover-tilt-sparkle-mask-repeat': sparkle.repeat,
-    '--hover-tilt-sparkle-mask-position': sparkle.position,
-    '--hover-tilt-sparkle-field': SPARKLE_FIELD_URL,
   };
 }
 

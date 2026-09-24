@@ -18,7 +18,6 @@ export const FOIL_LAYER_IDS = [
   'iridescence',
   'emboss',
   'parallax',
-  'sparkle',
   'bloom',
 ] as const;
 
@@ -74,10 +73,6 @@ export const FOIL_LAYER_META = {
     title: 'Parallax',
     blurb: 'Colored ink slides a few pixels above the paper.',
   },
-  sparkle: {
-    title: 'Specular glints / sparkles',
-    blurb: 'Tiny glints on glossy and ridged pixels.',
-  },
   bloom: {
     title: 'Bloom / glow',
     blurb: 'Blurred copy of the hotspot.',
@@ -95,7 +90,6 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   iridescence: { on: true, amount: 0.15 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
-  sparkle: { on: true, amount: 0.52 },
   bloom: { on: true, amount: 0.36 },
 };
 
@@ -114,7 +108,7 @@ export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
 
 const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holographic', 'iridescence', 'parallax'];
 const EDGE_MASK_LAYERS: readonly FoilLayerId[] = ['emboss', 'rim'];
-const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'sparkle', 'bloom'];
+const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'bloom'];
 
 export type FoilMapNeed = {
   sat: boolean;

@@ -113,7 +113,6 @@
   --foil-iridescence: 0;
   --foil-emboss: 0;
   --foil-parallax: 0;
-  --foil-sparkle: 0;
   --foil-bloom: 0;
   --foil-parallax-px: 7px;
   --foil-bloom-blur: 14px;
@@ -191,7 +190,6 @@
 }
 
 .export-foil-specular,
-.export-foil-sparkle,
 .export-foil-bloom {
   -webkit-mask-image: var(--foil-gloss-mask);
   mask-image: var(--foil-gloss-mask);
@@ -206,7 +204,6 @@
 .export-foil:not([data-foil-maps='1']) .export-foil-emboss,
 .export-foil:not([data-foil-maps='1']) .export-foil-rim,
 .export-foil:not([data-foil-maps='1']) .export-foil-specular,
-.export-foil:not([data-foil-maps='1']) .export-foil-sparkle,
 .export-foil:not([data-foil-maps='1']) .export-foil-bloom,
 .export-foil:not([data-foil-maps='1']) .export-foil-parallax {
   opacity: 0;
@@ -260,7 +257,7 @@
   background-position:
     calc(10% + var(--pointer-from-left) * 80%) calc(10% + var(--pointer-from-top) * 80%),
     calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%);
-  mix-blend-mode: var(--foil-holo-blend, hue);
+  mix-blend-mode: var(--foil-holo-blend, hard-light);
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-holographic));
 }
@@ -344,53 +341,6 @@
   opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--pointer-from-center)));
 }
 
-.export-foil-sparkle {
-  z-index: 10;
-  background-image:
-    radial-gradient(1.1px 1.1px at 12% 18%, hsla(0, 0%, 100%, 0.95), transparent),
-    radial-gradient(1.4px 1.4px at 38% 8%, hsla(50, 100%, 92%, 0.9), transparent),
-    radial-gradient(1px 1px at 62% 22%, hsla(0, 0%, 100%, 0.85), transparent),
-    radial-gradient(1.6px 1.6px at 84% 14%, hsla(280, 100%, 95%, 0.8), transparent),
-    radial-gradient(1.2px 1.2px at 8% 48%, hsla(180, 100%, 94%, 0.85), transparent),
-    radial-gradient(1px 1px at 28% 62%, hsla(0, 0%, 100%, 0.8), transparent),
-    radial-gradient(1.5px 1.5px at 54% 44%, hsla(50, 100%, 90%, 0.9), transparent),
-    radial-gradient(1.1px 1.1px at 76% 58%, hsla(0, 0%, 100%, 0.88), transparent),
-    radial-gradient(1.3px 1.3px at 92% 72%, hsla(200, 100%, 94%, 0.8), transparent),
-    radial-gradient(1px 1px at 18% 82%, hsla(0, 0%, 100%, 0.75), transparent),
-    radial-gradient(1.4px 1.4px at 46% 88%, hsla(50, 100%, 92%, 0.85), transparent),
-    radial-gradient(1.2px 1.2px at 70% 86%, hsla(0, 0%, 100%, 0.8), transparent);
-  background-size:
-    180% 180%,
-    160% 160%,
-    200% 200%,
-    140% 140%,
-    170% 170%,
-    190% 190%,
-    150% 150%,
-    210% 210%,
-    165% 165%,
-    185% 185%,
-    155% 155%,
-    175% 175%;
-  background-position:
-    calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%),
-    calc(20% + var(--pointer-from-left) * 60%) calc(15% + var(--pointer-from-top) * 70%),
-    calc(var(--pointer-from-left) * 80%) calc(var(--pointer-from-top) * 90%),
-    calc(10% + var(--pointer-from-left) * 70%) calc(var(--pointer-from-top) * 80%),
-    calc(var(--pointer-from-left) * 90%) calc(20% + var(--pointer-from-top) * 60%),
-    calc(30% + var(--pointer-from-left) * 50%) calc(var(--pointer-from-top) * 100%),
-    calc(var(--pointer-from-left) * 70%) calc(10% + var(--pointer-from-top) * 80%),
-    calc(15% + var(--pointer-from-left) * 75%) calc(var(--pointer-from-top) * 85%),
-    calc(var(--pointer-from-left) * 95%) calc(25% + var(--pointer-from-top) * 55%),
-    calc(5% + var(--pointer-from-left) * 85%) calc(var(--pointer-from-top) * 75%),
-    calc(var(--pointer-from-left) * 60%) calc(5% + var(--pointer-from-top) * 90%),
-    calc(25% + var(--pointer-from-left) * 65%) calc(var(--pointer-from-top) * 70%);
-  mix-blend-mode: overlay;
-  transform: translate(var(--foil-shift-x), var(--foil-shift-y));
-  opacity: calc(var(--foil-opacity) * var(--foil-sparkle) * (0.65 + 0.35 * var(--pointer-from-center)));
-  filter: brightness(1.12) contrast(1.12);
-}
-
 /* hover-tilt credit-card stacking: glare is ::before of the SAME element
    that rotates. translate3d(0,0,0.01px) keeps that face on one compositor
    layer. Child overlay divs become a second altitude. */
@@ -398,17 +348,12 @@
   --hover-tilt-from-center: var(--pointer-from-center);
   --hover-tilt-at-edge: var(--pointer-from-center);
   --hover-tilt-glare-mask: none;
-  --hover-tilt-sparkle-mask: none;
   --hover-tilt-glare-mask-size: cover;
-  --hover-tilt-sparkle-mask-size: cover;
   --hover-tilt-glare-mask-repeat: no-repeat;
-  --hover-tilt-sparkle-mask-repeat: no-repeat;
   --hover-tilt-glare-mask-position: center;
-  --hover-tilt-sparkle-mask-position: center;
   --hover-tilt-mask-mode: match-source;
   --hover-tilt-blend-mode: overlay;
   --hover-tilt-glare-intensity: 0.6;
-  --hover-tilt-sparkle-intensity: 0.55;
   --hover-tilt-glare-hue: 40;
   --gradient-x: var(--pointer-x);
   --gradient-y: var(--pointer-y);
@@ -451,43 +396,12 @@
 }
 
 
-.export-foil[data-hover-tilt='1']::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background-image: var(--hover-tilt-default-gradient);
-  mix-blend-mode: var(--hover-tilt-blend-mode, overlay);
-  opacity: calc(var(--hover-tilt-opacity, 0) * var(--hover-tilt-sparkle-intensity, 0.55));
-  will-change: background-image, opacity;
-  -webkit-mask-image: var(--hover-tilt-sparkle-mask, none);
-  mask-image: var(--hover-tilt-sparkle-mask, none);
-  -webkit-mask-size: var(--hover-tilt-sparkle-mask-size, cover);
-  mask-size: var(--hover-tilt-sparkle-mask-size, cover);
-  -webkit-mask-position: var(--hover-tilt-sparkle-mask-position, center);
-  mask-position: var(--hover-tilt-sparkle-mask-position, center);
-  -webkit-mask-repeat: var(--hover-tilt-sparkle-mask-repeat, no-repeat);
-  mask-repeat: var(--hover-tilt-sparkle-mask-repeat, no-repeat);
-  -webkit-mask-mode: var(--hover-tilt-mask-mode, match-source);
-  mask-mode: var(--hover-tilt-mask-mode, match-source);
-}
-
-.export-foil[data-hover-tilt-sparkle-mask='none']::after {
-  content: none;
-}
-
 .export-foil[data-hover-tilt='1'] .export-foil-layer {
   z-index: auto;
 }
 
 .export-foil[data-workshop-dark-card='1'] > img {
   filter: invert(1) hue-rotate(180deg);
-}
-
-.export-foil[data-workshop-dark-card='1'][data-hover-tilt='1']::before,
-.export-foil[data-workshop-dark-card='1'][data-hover-tilt='1']::after {
-  mix-blend-mode: plus-lighter;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -3,59 +3,35 @@ import {
   chroma,
   FOIL_HOLO_AMOUNT,
   FOIL_HOLO_BLEND,
-  FOIL_HOLO_BLEND_CANDIDATES,
   FOIL_HOLO_STRIPES,
-  FOIL_HOLO_TINT,
   FOIL_POSTER_INKS,
   foilComposite,
-  isFoilHoloBlend,
   luma,
-  pickHoloBlend,
-  scoreHoloBlend,
 } from './foilBlend';
 
-describe('foil holographic blend', () => {
-  it('multiply at 0.40 darkens grass ink by more than a poster match', () => {
-    const grass = FOIL_POSTER_INKS[0]!;
-    const out = foilComposite(grass, FOIL_HOLO_TINT, 'multiply', 0.4);
-    expect(luma(grass.r, grass.g, grass.b) - luma(out.r, out.g, out.b)).toBeGreaterThan(18);
+describe('fixed foil holographic blend', () => {
+  it('uses hard-light at the production 0.25 amount', () => {
+    expect(FOIL_HOLO_BLEND).toBe('hard-light');
+    expect(FOIL_HOLO_AMOUNT).toBe(0.25);
   });
 
-  it('hue keeps chroma and luma on every poster ink', () => {
-    expect(FOIL_HOLO_BLEND).toBe('hue');
-    expect(FOIL_HOLO_AMOUNT).toBe(0.25);
-    expect(isFoilHoloBlend(FOIL_HOLO_BLEND)).toBe(true);
-    expect(FOIL_HOLO_BLEND_CANDIDATES).toContain('hue');
+  it('visibly shifts every representative ink without crushing its color', () => {
     for (const ink of FOIL_POSTER_INKS) {
       let maxShift = 0;
+      let maxLumaDelta = 0;
+      let minChroma = Number.POSITIVE_INFINITY;
       for (const stripe of FOIL_HOLO_STRIPES) {
-        const hue = foilComposite(ink, stripe, 'hue', 1);
-        const baseChroma = chroma(ink.r, ink.g, ink.b);
-        const hueChroma = chroma(hue.r, hue.g, hue.b);
-        const wall = hue.r === 0 || hue.r === 255 || hue.g === 0 || hue.g === 255 || hue.b === 0 || hue.b === 255;
-        expect(Math.abs(luma(hue.r, hue.g, hue.b) - luma(ink.r, ink.g, ink.b)), ink.name).toBeLessThan(12);
-        expect(hueChroma / Math.max(1, baseChroma) >= 0.85 || wall, ink.name).toBe(true);
+        const out = foilComposite(ink, stripe);
         maxShift = Math.max(
           maxShift,
-          Math.abs(hue.r - ink.r) + Math.abs(hue.g - ink.g) + Math.abs(hue.b - ink.b),
+          Math.abs(out.r - ink.r) + Math.abs(out.g - ink.g) + Math.abs(out.b - ink.b),
         );
+        maxLumaDelta = Math.max(maxLumaDelta, Math.abs(luma(out) - luma(ink)));
+        minChroma = Math.min(minChroma, chroma(out));
       }
-      expect(maxShift, ink.name).toBeGreaterThan(16);
+      expect(maxShift, ink.name).toBeGreaterThan(20);
+      expect(maxLumaDelta, ink.name).toBeLessThan(45);
+      expect(minChroma, ink.name).toBeGreaterThan(18);
     }
-    const grass = FOIL_POSTER_INKS[0]!;
-    const faded = foilComposite(grass, FOIL_HOLO_TINT, 'hue', 0.55);
-    expect(chroma(faded.r, faded.g, faded.b) / chroma(grass.r, grass.g, grass.b)).toBeLessThan(0.85);
-  });
-
-  it('picks a bright visible blend and rejects multiply', () => {
-    const winner = pickHoloBlend(1);
-    expect(winner.mode).not.toBe('multiply');
-    expect(winner.bright).toBe(true);
-    expect(winner.visible).toBe(true);
-    expect(winner.mode).toBe(FOIL_HOLO_BLEND);
-    expect(scoreHoloBlend('multiply', 0.4).bright).toBe(false);
-    expect(scoreHoloBlend('soft-light', 1).satDelta).toBeGreaterThan(
-      scoreHoloBlend('hue', 1).satDelta,
-    );
   });
 });

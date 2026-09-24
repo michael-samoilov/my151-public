@@ -1551,29 +1551,32 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     await sleep(250);
   }
   checks.push(ok('foil-workshop:preview-img', imgReady, imgReady ? 'preview painted' : 'no preview img'));
-  const tiltVars = await s.evalJson<{ rot: string; holo: string; glare: string; blend: string }>(
+  const tiltVars = await s.evalJson<{ rot: string; holo: string; glare: string; holoBlend: string; glareBlend: string }>(
     `const el=document.querySelector('[data-export-preview]');
-     if(!(el instanceof HTMLElement)) return {rot:'',holo:'',glare:'',blend:''};
+     const holoEl=document.querySelector('[data-foil-layer="holographic"]');
+     if(!(el instanceof HTMLElement) || !(holoEl instanceof HTMLElement)) return {rot:'',holo:'',glare:'',holoBlend:'',glareBlend:''};
      const s=getComputedStyle(el);
      return {
        rot: s.getPropertyValue('--hover-tilt-rotation-x').trim(),
        holo: s.getPropertyValue('--foil-holographic').trim(),
        glare: s.getPropertyValue('--hover-tilt-glare-intensity').trim(),
-       blend: s.getPropertyValue('--foil-holo-blend').trim(),
+       holoBlend: getComputedStyle(holoEl).mixBlendMode,
+       glareBlend: getComputedStyle(el,'::before').mixBlendMode,
      };`,
-  ).catch(() => ({ rot: '', holo: '', glare: '', blend: '' }));
+  ).catch(() => ({ rot: '', holo: '', glare: '', holoBlend: '', glareBlend: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^10(\.0+)?deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
   checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.25) < 0.02, `holo=${tiltVars.holo}`));
   checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 0.6) < 0.02, `glare=${tiltVars.glare}`));
-  checks.push(ok('foil-workshop:prod-blend', tiltVars.blend === 'hue' || tiltVars.blend === '', `blend=${tiltVars.blend}`));
+  checks.push(ok('foil-workshop:prod-holo-blend', tiltVars.holoBlend === 'hard-light', `blend=${tiltVars.holoBlend}`));
+  checks.push(ok('foil-workshop:prod-glare-blend', tiltVars.glareBlend === 'overlay', `blend=${tiltVars.glareBlend}`));
   await s.screenshot(ctx.shot('foil-workshop'));
 
   const controls = await s.evalJson<{
     holo: boolean;
     glare: boolean;
     shadow: boolean;
-    holoBlend: boolean;
-    glareBlend: boolean;
+    selectors: number;
+    sparkle: boolean;
     extras: string[];
   }>(
     `const has=(sel)=>!!document.querySelector(sel);
@@ -1581,16 +1584,16 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
        .map((el)=>el.getAttribute('data-foil-slider')||el.getAttribute('data-hover-tilt-mask')||el.getAttribute('data-workshop-dark-card-toggle')||el.tagName)
        .filter((id)=>!['holographic','glareIntensity','shadowBlur'].includes(id));
      return {
-       holo: has('[data-foil-slider="holographic"]'),
-       glare: has('[data-foil-slider="glareIntensity"]'),
-       shadow: has('[data-workshop-shadow-toggle]') && has('[data-foil-slider="shadowBlur"]'),
-       holoBlend: has('[data-hover-tilt-select="holoBlend"]'),
-       glareBlend: has('[data-hover-tilt-select="blendMode"]'),
-       extras,
-     };`,
-  ).catch(() => ({ holo: false, glare: false, shadow: false, holoBlend: false, glareBlend: false, extras: ['eval'] }));
-  checks.push(ok('foil-workshop:keepers', controls.holo && controls.glare && controls.shadow && controls.holoBlend && controls.glareBlend, JSON.stringify(controls)));
-  checks.push(ok('foil-workshop:no-extras', controls.extras.length === 0, `extras=${controls.extras.join(',')}`));
+        holo: has('[data-foil-slider="holographic"]'),
+        glare: has('[data-foil-slider="glareIntensity"]'),
+        shadow: has('[data-workshop-shadow-toggle]') && has('[data-foil-slider="shadowBlur"]'),
+        selectors: document.querySelectorAll('[data-hover-tilt-select]').length,
+        sparkle: has('[data-foil-layer="sparkle"]'),
+        extras,
+      };`,
+  ).catch(() => ({ holo: false, glare: false, shadow: false, selectors: 1, sparkle: true, extras: ['eval'] }));
+  checks.push(ok('foil-workshop:keepers', controls.holo && controls.glare && controls.shadow, JSON.stringify(controls)));
+  checks.push(ok('foil-workshop:no-extras', controls.extras.length === 0 && controls.selectors === 0 && !controls.sparkle, JSON.stringify(controls)));
 
   await s.evalJson(
     `const input=document.querySelector('[data-foil-slider="glareIntensity"]');
@@ -1609,27 +1612,6 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
   ).catch(() => '');
   checks.push(ok('foil-workshop:glare-intensity', intensity === '0.910', `intensity=${intensity}`));
 
-  await s.evalJson(
-    `const sel=document.querySelector('[data-hover-tilt-select="holoBlend"]');
-     if(!(sel instanceof HTMLSelectElement)) return false;
-     sel.value='soft-light';
-     sel.dispatchEvent(new Event('change',{bubbles:true}));
-     return true;`,
-  ).catch(() => false);
-  await sleep(200);
-  const blendAfter = await s.evalJson<string>(
-    `const el=document.querySelector('[data-export-preview]');
-     if(!(el instanceof HTMLElement)) return '';
-     return getComputedStyle(el).getPropertyValue('--foil-holo-blend').trim();`,
-  ).catch(() => '');
-  checks.push(ok('foil-workshop:holo-blend', blendAfter === 'soft-light', `blend=${blendAfter}`));
-  await s.evalJson(
-    `const sel=document.querySelector('[data-hover-tilt-select="holoBlend"]');
-     if(!(sel instanceof HTMLSelectElement)) return false;
-     sel.value='hue';
-     sel.dispatchEvent(new Event('change',{bubbles:true}));
-     return true;`,
-  ).catch(() => false);
   await s.screenshot(ctx.shot('foil-workshop-glare-intensity'));
 
   const overlay = await s.evalJson<{ pageBg: string; blur: string; scrimBg: string }>(

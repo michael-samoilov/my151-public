@@ -14,18 +14,11 @@ import {
   withFoilLayer,
   type FoilRecipe,
 } from '@/league/export/foilRecipe';
-import {
-  FOIL_HOLO_BLEND,
-  FOIL_HOLO_BLEND_CANDIDATES,
-  isFoilHoloBlend,
-  type FoilHoloBlend,
-} from '@/league/export/foilBlend';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { generateExportImage } from '@/lib/exportImage';
 import {
   DEFAULT_HOVER_TILT_RECIPE,
-  HOVER_TILT_BLEND_MODES,
   HOVER_TILT_WORKSHOP_STORAGE_KEY,
   cloneHoverTiltRecipe,
   hoverTiltSearch,
@@ -87,19 +80,12 @@ function readStoredSample(): WorkshopSample {
   return 'dex';
 }
 
-function readStoredHoloBlend(): FoilHoloBlend {
-  const fromUrl = new URLSearchParams(window.location.search).get('blend');
-  if (isFoilHoloBlend(fromUrl)) return fromUrl;
-  return FOIL_HOLO_BLEND;
-}
-
 function persistWorkshop(
   recipe: FoilRecipe,
   tilt: HoverTiltRecipe,
   sample: WorkshopSample,
-  holoBlend: FoilHoloBlend,
 ): void {
-  const qs = `${foilRecipeSearch(recipe)}&${hoverTiltSearch(tilt)}&sample=${sample}&blend=${holoBlend}`;
+  const qs = `${foilRecipeSearch(recipe)}&${hoverTiltSearch(tilt)}&sample=${sample}`;
   window.history.replaceState(null, '', `${window.location.pathname}?${qs}`);
   try {
     localStorage.setItem(FOIL_WORKSHOP_STORAGE_KEY, JSON.stringify(recipe));
@@ -122,7 +108,6 @@ export function FoilWorkshopPage() {
   const [recipe, setRecipe] = useState<FoilRecipe>(readStoredFoil);
   const [tilt, setTilt] = useState<HoverTiltRecipe>(readStoredTilt);
   const [sample, setSample] = useState<WorkshopSample>(readStoredSample);
-  const [holoBlend, setHoloBlend] = useState<FoilHoloBlend>(readStoredHoloBlend);
   const [src, setSrc] = useState<string | null>(null);
   const [copied, setCopied] = useState<'json' | 'link' | null>(null);
   const maskContext = useMemo(
@@ -134,8 +119,8 @@ export function FoilWorkshopPage() {
   const holo = recipe.layers.holographic;
 
   useEffect(() => {
-    persistWorkshop(recipe, tilt, sample, holoBlend);
-  }, [holoBlend, recipe, sample, tilt]);
+    persistWorkshop(recipe, tilt, sample);
+  }, [recipe, sample, tilt]);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,7 +184,7 @@ export function FoilWorkshopPage() {
           <div>
             <h1 className="text-sm font-semibold text-zinc-50">Export foil workshop</h1>
             <p className="mt-0.5 hidden max-w-[42rem] md:block">
-              Holo, glare, drop shadow, and blend. Live export defaults stay on the card.
+              Holo, glare, and drop shadow. Live export defaults stay on the card.
             </p>
           </div>
           <a href="/custom-gym-leader" className="pointer-events-auto shrink-0 text-zinc-100 underline">
@@ -214,7 +199,6 @@ export function FoilWorkshopPage() {
             recipe={recipe}
             tilt={tilt}
             maskContext={maskContext}
-            holoBlend={holoBlend}
           />
         </div>
       </section>
@@ -227,7 +211,7 @@ export function FoilWorkshopPage() {
               className="rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-900"
               data-foil-copy-json
               onClick={() => {
-                void copyText(JSON.stringify({ foil: recipe, tilt, holoBlend }, null, 2)).then((ok) => {
+                void copyText(JSON.stringify({ foil: recipe, tilt }, null, 2)).then((ok) => {
                   if (ok) flash('json');
                 });
               }}
@@ -239,7 +223,7 @@ export function FoilWorkshopPage() {
               className="rounded-md bg-zinc-800 px-2 py-1 text-xs font-medium text-zinc-100"
               data-foil-copy-link
               onClick={() => {
-                const href = `${window.location.origin}${window.location.pathname}?${foilRecipeSearch(recipe)}&${hoverTiltSearch(tilt)}&sample=${sample}&blend=${holoBlend}`;
+                const href = `${window.location.origin}${window.location.pathname}?${foilRecipeSearch(recipe)}&${hoverTiltSearch(tilt)}&sample=${sample}`;
                 void copyText(href).then((ok) => {
                   if (ok) flash('link');
                 });
@@ -254,7 +238,6 @@ export function FoilWorkshopPage() {
               onClick={() => {
                 setRecipe(cloneFoilRecipe(DEFAULT_FOIL_RECIPE));
                 setTilt(cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE));
-                setHoloBlend(FOIL_HOLO_BLEND);
                 setSample('dex');
               }}
             >
@@ -346,67 +329,9 @@ export function FoilWorkshopPage() {
               onChange={(shadowBlur) => setTilt({ ...tilt, shadowBlur })}
             />
           </fieldset>
-
-          <fieldset className="space-y-2">
-            <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
-              Blend mode
-            </legend>
-            <Select
-              label="Rainbow"
-              testId="holoBlend"
-              value={holoBlend}
-              options={FOIL_HOLO_BLEND_CANDIDATES}
-              onChange={setHoloBlend}
-            />
-            <Select
-              label="Glare"
-              testId="blendMode"
-              value={tilt.blendMode}
-              options={HOVER_TILT_BLEND_MODES}
-              onChange={(blendMode) => setTilt({ ...tilt, blendMode })}
-            />
-          </fieldset>
         </div>
       </aside>
     </div>
-  );
-}
-
-function Select<T extends string>({
-  label,
-  testId,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  testId: string;
-  value: T;
-  options: readonly T[];
-  onChange: (value: T) => void;
-}) {
-  return (
-    <label className="mt-1 block text-[0.7rem] text-zinc-400">
-      <span className="flex justify-between gap-2">
-        <span>{label}</span>
-        <span className="tabular-nums text-zinc-200">{value}</span>
-      </span>
-      <select
-        className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 px-1 py-1 text-zinc-100"
-        value={value}
-        data-hover-tilt-select={testId}
-        onChange={(e) => {
-          const next = options.find((opt) => opt === e.target.value);
-          if (next) onChange(next);
-        }}
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }
 
