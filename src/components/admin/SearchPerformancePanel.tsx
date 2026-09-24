@@ -1,11 +1,11 @@
-import { Panel } from '@/components/admin/ui';
+import { useState } from 'react';
+import { Delta, Kpi, Panel, Seg } from '@/components/admin/ui';
 import type {
-  SearchIntelligenceView,
   SearchPageEngineView,
+  SearchPerformanceView,
   SearchPeriodComparison,
-  SearchRecommendation,
-} from '@/lib/searchIntelligence';
-import type { SearchProviderKey, SearchProviderStatus } from '@/lib/searchPerformance';
+} from '@/lib/searchPerformanceView';
+import type { SearchDailyPoint, SearchProviderKey, SearchProviderStatus } from '@/lib/searchPerformance';
 import { cn } from '@/lib/utils';
 
 const PROVIDERS: { key: SearchProviderKey; label: string }[] = [
@@ -37,15 +37,19 @@ function position(value: number | null): string {
 }
 
 function shortDate(value: string | undefined): string {
-  if (!value) return 'not available';
+  if (!value) return '—';
   const parsed = Date.parse(value.length === 10 ? `${value}T00:00:00Z` : value);
   if (!Number.isFinite(parsed)) return value;
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
-    year: value.length === 10 ? undefined : 'numeric',
     timeZone: 'UTC',
   }).format(parsed);
+}
+
+function rangeLabel(start: string, end: string): string {
+  if (!start || !end) return '—';
+  return `${shortDate(start)}–${shortDate(end)}`;
 }
 
 function statusLabel(status: SearchProviderStatus): string {
@@ -59,256 +63,140 @@ function statusDot(status: SearchProviderStatus): string {
   return 'bg-muted-foreground/50';
 }
 
-function comparisonDelta(
-  comparison: SearchPeriodComparison,
-  metric: 'clicks' | 'impressions',
-): string {
-  if (!comparison.available) return 'not enough data';
+function MetricDelta({ comparison, metric }: {
+  comparison: SearchPeriodComparison;
+  metric: 'clicks' | 'impressions';
+}) {
+  if (!comparison.available) return <Delta>—</Delta>;
   const absolute = comparison.delta[metric];
   const relative = comparison.delta[`${metric}Pct`];
-  return relative == null
-    ? `${signed(absolute)} · not enough data for %`
-    : `${signed(absolute)} · ${signedPercent(relative)}`;
+  return <Delta>{relative == null ? signed(absolute) : `${signed(absolute)} · ${signedPercent(relative)}`}</Delta>;
 }
 
-function MetricCell({ label, value, detail }: { label: string; value: string; detail: string }) {
+function SearchTrend({ daily }: { daily: SearchDailyPoint[] }) {
+  const rows = daily.slice(-28);
+  const values = rows.map((row) => row.impressions);
+  const high = Math.max(1, ...values);
+  const width = 100;
+  const height = 30;
+  const points = values
+    .map((value, index) => {
+      const x = values.length <= 1 ? 0 : (index / (values.length - 1)) * width;
+      const y = height - (value / high) * (height - 3) - 1.5;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(' ');
+
+  if (rows.length < 2 || values.every((value) => value === 0)) return null;
   return (
-    <div className="min-w-0">
-      <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-lg font-bold tabular-nums leading-none">{value}</p>
-      <p className="mt-1 text-[0.68rem] font-medium leading-tight text-muted-foreground">{detail}</p>
+    <div className="mt-4 border-t border-border pt-3">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        className="h-20 w-full overflow-visible text-primary"
+        role="img"
+        aria-label={`Daily impressions for the latest ${rows.length} reported days.`}
+      >
+        <line x1="0" y1={height - 1} x2={width} y2={height - 1} stroke="var(--color-border)" strokeWidth="0.5" />
+        <polyline
+          points={points}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.25"
+          vectorEffect="non-scaling-stroke"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </svg>
+      <div className="-mt-1 flex justify-between text-[0.65rem] font-semibold text-muted-foreground">
+        <span>{shortDate(rows[0]?.date)}</span>
+        <span>Daily impressions</span>
+        <span>{shortDate(rows[rows.length - 1]?.date)}</span>
+      </div>
     </div>
   );
 }
 
-function ProviderRow({
-  label,
-  provider,
-}: {
-  label: string;
-  provider: SearchIntelligenceView['providers'][SearchProviderKey];
-}) {
-  const { comparison } = provider;
-  const usable = provider.status === 'ready' || provider.status === 'stale';
+function QueryRows({ rows }: { rows: SearchPerformanceView['providers'][SearchProviderKey]['topQueries'] }) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="mt-4 border-t border-border pt-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-3 border-b border-border pb-1.5 text-[0.62rem] font-bold uppercase tracking-wide text-muted-foreground">
+        <span>Query</span>
+        <span className="text-right">Clicks</span>
+        <span className="text-right">Impr.</span>
+        <span className="text-right">Pos.</span>
+      </div>
+      {rows.slice(0, 8).map((row) => (
+        <div key={row.key} className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-baseline gap-3 border-b border-border/60 py-1.5 text-xs last:border-b-0">
+          <span className="truncate" title={row.key}>{row.key}</span>
+          <span className="min-w-8 text-right font-bold tabular-nums">{compact(row.clicks)}</span>
+          <span className="min-w-8 text-right tabular-nums text-muted-foreground">{compact(row.impressions)}</span>
+          <span className="min-w-8 text-right tabular-nums text-muted-foreground">{position(row.position)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EngineRow({ provider, engine }: { provider: string; engine: SearchPageEngineView }) {
+  const metric = engine.current;
+  if (!metric) return null;
+  const direction = engine.direction;
+  return (
+    <div className="grid grid-cols-[3.5rem_repeat(4,minmax(0,1fr))] items-end gap-1.5 border-t border-border py-2 first:border-t-0 sm:grid-cols-[4rem_repeat(4,minmax(0,1fr))] sm:gap-2">
+      <span className="self-center text-xs font-bold">{provider}</span>
+      <PageMetric label="Clicks" value={compact(metric.clicks)} />
+      <PageMetric
+        label="Impr."
+        value={compact(metric.impressions)}
+        delta={direction ? `${signed(direction.impressions)} prev.` : undefined}
+      />
+      <PageMetric label="CTR" value={percent(metric.ctr)} />
+      <PageMetric label="Position" value={position(metric.position)} />
+    </div>
+  );
+}
+
+function PageMetric({ label, value, delta }: { label: string; value: string; delta?: string }) {
+  return (
+    <div className="min-w-0 text-right">
+      <p className="truncate text-xs font-bold tabular-nums">{value}</p>
+      <p className="text-[0.58rem] text-muted-foreground">{label}</p>
+      {delta && <p className="truncate text-[0.58rem] tabular-nums text-muted-foreground">{delta}</p>}
+    </div>
+  );
+}
+
+function PageRow({ page }: { page: SearchPerformanceView['pages'][number] }) {
   return (
     <article
-      aria-label={`${label} ${statusLabel(provider.status)}`}
-      className="grid gap-3 border-t border-border py-3 first:border-t-0 first:pt-0 md:grid-cols-[9rem_repeat(4,minmax(0,1fr))] md:items-start"
+      data-testid={`search-page-${page.path === '/' ? 'home' : page.path.slice(1).replace(/\//g, '-')}`}
+      className="border-t border-border py-3 first:border-t-0 first:pt-0"
     >
-      <div>
-        <div className="flex items-center gap-1.5 text-sm font-bold">
-          <span className={cn('size-1.5 rounded-full', statusDot(provider.status))} />
-          {label}
-          <span className="font-semibold text-muted-foreground">{statusLabel(provider.status)}</span>
-        </div>
-        <p className="mt-1 text-[0.68rem] leading-snug text-muted-foreground">
-          Through {shortDate(provider.dataThrough)}
-          {provider.provider === 'google' ? ' · usual 2–3 day lag' : ''}
-        </p>
+      <div className="mb-1 flex min-w-0 items-baseline justify-between gap-3">
+        <h3 className="truncate text-sm font-bold">{page.label}</h3>
+        <span className="shrink-0 font-mono text-[0.65rem] text-muted-foreground">{page.path}</span>
       </div>
-      {usable ? (
-        <div className="grid grid-cols-2 gap-4 md:contents">
-          <MetricCell
-            label="Clicks"
-            value={compact(comparison.current.metric.clicks)}
-            detail={comparisonDelta(comparison, 'clicks')}
-          />
-          <MetricCell
-            label="Impressions"
-            value={compact(comparison.current.metric.impressions)}
-            detail={comparisonDelta(comparison, 'impressions')}
-          />
-          <MetricCell
-            label="CTR"
-            value={percent(comparison.current.metric.ctr)}
-            detail={
-              comparison.available
-                ? `${comparison.delta.ctrPoints > 0 ? '+' : ''}${(comparison.delta.ctrPoints * 100).toFixed(2)}pt`
-                : 'not enough data'
-            }
-          />
-          <MetricCell
-            label="Position"
-            value={position(comparison.current.metric.position)}
-            detail={
-              comparison.available && comparison.delta.position != null
-                ? `${comparison.delta.position > 0 ? '+' : ''}${comparison.delta.position.toFixed(1)} vs prior`
-                : 'not enough data'
-            }
-          />
+      <EngineRow provider="Google" engine={page.engines.google} />
+      <EngineRow provider="Bing" engine={page.engines.bing} />
+      {page.topQueries.length > 0 && (
+        <div className="border-t border-border pt-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 text-[0.65rem] text-muted-foreground">
+            <span className="font-bold uppercase tracking-wide">Google query</span>
+            <span className="text-right font-bold uppercase tracking-wide">Clicks</span>
+            <span className="text-right font-bold uppercase tracking-wide">Impr.</span>
+          </div>
+          {page.topQueries.slice(0, 3).map((query) => (
+            <div key={`${query.provider}:${query.query}`} className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 py-1 text-xs">
+              <span className="truncate" title={query.query}>{query.query}</span>
+              <span className="min-w-8 text-right font-bold tabular-nums">{compact(query.clicks)}</span>
+              <span className="min-w-8 text-right tabular-nums text-muted-foreground">{compact(query.impressions)}</span>
+            </div>
+          ))}
         </div>
-      ) : (
-        <p className="text-xs text-muted-foreground md:col-span-4">No search metrics are available from this provider.</p>
       )}
     </article>
-  );
-}
-
-function recommendationLabel(kind: SearchRecommendation['kind']): string {
-  if (kind === 'material_decline') return 'Material decline';
-  if (kind === 'emerging_page') return 'Emerging page';
-  if (kind === 'search_engine_gap') return 'Engine gap';
-  if (kind === 'snippet_opportunity') return 'Snippet opportunity';
-  if (kind === 'striking_distance') return 'Striking distance';
-  return 'Wait for data';
-}
-
-function PrimaryFocus({ recommendation }: { recommendation: SearchRecommendation }) {
-  return (
-    <section
-      data-testid="search-primary-focus"
-      className="grid gap-4 border-y border-foreground/20 bg-muted/30 px-3 py-4 md:grid-cols-[4.5rem_minmax(0,1fr)] md:px-4"
-    >
-      <div className="flex items-start justify-between md:block">
-        <span className="text-3xl font-black tabular-nums tracking-tighter">01</span>
-        <span className="rounded-full border border-foreground/20 px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-[0.12em] md:mt-2 md:inline-block">
-          Heuristic
-        </span>
-      </div>
-      <div className="min-w-0">
-        <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-          Recommended focus · {recommendationLabel(recommendation.kind)}
-        </p>
-        <h3 className="mt-1 text-xl font-black leading-tight tracking-tight">{recommendation.title}</h3>
-        <ul className="mt-3 grid gap-1 text-xs leading-relaxed text-muted-foreground">
-          {recommendation.evidence.map((item) => <li key={item}>• {item}</li>)}
-        </ul>
-        <div className="mt-3 border-l-2 border-primary pl-3">
-          <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-primary">Single next action</p>
-          <p className="mt-0.5 text-sm font-bold leading-snug">{recommendation.action}</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SecondaryFocus({ recommendations }: { recommendations: SearchRecommendation[] }) {
-  if (recommendations.length === 0) return null;
-  return (
-    <section className="grid border-b border-border md:grid-cols-3">
-      {recommendations.map((item, index) => (
-        <article
-          key={`${item.kind}:${item.page}`}
-          className="border-b border-border py-3 last:border-b-0 md:border-b-0 md:border-r md:px-3 md:first:pl-0 md:last:border-r-0 md:last:pr-0"
-        >
-          <p className="text-[0.62rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-            0{index + 2} · {recommendationLabel(item.kind)}
-          </p>
-          <p className="mt-1 text-xs font-bold leading-snug">{item.title}</p>
-          <p className="mt-1 text-[0.68rem] leading-snug text-muted-foreground">{item.evidence[0]}</p>
-        </article>
-      ))}
-    </section>
-  );
-}
-
-function EngineMetric({ provider, engine }: { provider: string; engine: SearchPageEngineView }) {
-  const metric = engine.current;
-  if (!metric) {
-    return (
-      <div className="rounded-lg border border-dashed border-border px-3 py-2">
-        <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">{provider}</p>
-        <p className="mt-1 text-xs text-muted-foreground">No page detail reported.</p>
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-lg border border-border px-3 py-2">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-[0.65rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">{provider}</p>
-        <p className="text-[0.68rem] font-semibold tabular-nums text-muted-foreground">
-          {engine.direction
-            ? `${signed(engine.direction.impressions)} imp${engine.direction.impressionsPct == null ? '' : ` · ${signedPercent(engine.direction.impressionsPct)}`}`
-            : 'no prior page window'}
-        </p>
-      </div>
-      <div className="mt-2 grid grid-cols-4 gap-2 text-xs">
-        <PageMetric label="Clicks" value={compact(metric.clicks)} />
-        <PageMetric label="Impr." value={compact(metric.impressions)} />
-        <PageMetric label="CTR" value={percent(metric.ctr)} />
-        <PageMetric label="Pos." value={position(metric.position)} />
-      </div>
-    </div>
-  );
-}
-
-function PageMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="font-bold tabular-nums">{value}</p>
-      <p className="text-[0.62rem] text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
-function PageRow({ page }: { page: SearchIntelligenceView['pages'][number] }) {
-  return (
-    <article
-      data-testid={`search-page-${page.path === '/' ? 'home' : page.path.slice(1)}`}
-      className="border-t border-border py-4 first:border-t-0 first:pt-0"
-    >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <div>
-          <h3 className="text-sm font-black">{page.label}</h3>
-          <p className="font-mono text-[0.68rem] text-muted-foreground">{page.path}</p>
-        </div>
-        <p className="text-xs font-semibold tabular-nums text-muted-foreground">
-          <span className="text-foreground">{compact(page.clicks)}</span> clicks ·{' '}
-          <span className="text-foreground">{compact(page.impressions)}</span> impressions across engines
-        </p>
-      </div>
-      <div className="mt-3 grid gap-2 md:grid-cols-2">
-        <EngineMetric provider="Google" engine={page.engines.google} />
-        <EngineMetric provider="Bing" engine={page.engines.bing} />
-      </div>
-      <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Top Google queries</span>
-        {page.topQueries.length ? page.topQueries.map((query) => (
-          <span key={`${query.provider}:${query.query}`} className="max-w-full rounded-full bg-muted px-2 py-1 text-[0.68rem] font-semibold">
-            {query.query}{' '}
-            <span className="font-normal tabular-nums text-muted-foreground">· {compact(query.impressions)} imp</span>
-          </span>
-        )) : <span className="text-[0.68rem] text-muted-foreground">No page-query pair reported.</span>}
-      </div>
-    </article>
-  );
-}
-
-function ReleaseStrip({ release }: { release: SearchIntelligenceView['release'] }) {
-  return (
-    <section className="my-4 grid gap-2 border-y border-dashed border-border py-3 text-xs md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-      <div className="min-w-0">
-        <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">Current release</p>
-        <p className="mt-1 truncate font-semibold">
-          {release.environment}
-          {release.gitSha ? ` · ${release.gitSha}` : ''}
-          {release.gitRef ? ` · ${release.gitRef}` : ''}
-        </p>
-        {release.gitMessage && <p className="mt-0.5 truncate text-muted-foreground">{release.gitMessage}</p>}
-      </div>
-      <p className="max-w-sm text-[0.68rem] leading-snug text-muted-foreground">
-        Deployment history is not connected, so search changes are not attributed to releases.
-      </p>
-    </section>
-  );
-}
-
-function ChangeLog({ entries }: { entries: SearchIntelligenceView['changeLog']['entries'] }) {
-  return (
-    <section className="mt-4 border-t border-border pt-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-black">SEO change log</h3>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">Read-only foundation</span>
-      </div>
-      {entries.length === 0 ? (
-        <div className="mt-2 rounded-lg border border-dashed border-border p-3">
-          <p className="text-xs font-bold">No SEO changes are recorded.</p>
-          <p className="mt-1 text-[0.68rem] leading-relaxed text-muted-foreground">
-            An authoritative entry needs page, shipped date, exact change, hypothesis, baseline window, and later outcome. Server persistence is deliberately deferred; browser storage is not used as a source of truth.
-          </p>
-        </div>
-      ) : null}
-    </section>
   );
 }
 
@@ -317,54 +205,74 @@ export function SearchPerformancePanel({
   loading,
   error,
 }: {
-  snapshot: SearchIntelligenceView | null;
+  snapshot: SearchPerformanceView | null;
   loading: boolean;
   error: string | null;
 }) {
+  const [provider, setProvider] = useState<SearchProviderKey>('google');
+  const selected = snapshot?.providers[provider] ?? null;
+  const comparison = selected?.comparison ?? null;
+  const statusLegend = snapshot ? (
+    <span className="flex items-center gap-2.5">
+      {PROVIDERS.map(({ key, label }) => (
+        <span key={key} className="inline-flex items-center gap-1">
+          <span className={cn('size-1.5 rounded-full', statusDot(snapshot.providers[key].status))} />
+          {label} {statusLabel(snapshot.providers[key].status)}
+        </span>
+      ))}
+    </span>
+  ) : undefined;
+
   return (
-    <Panel
-      title="Search intelligence"
-      sub={snapshot ? ['28 days vs prior 28', 'page-first'] : undefined}
-      className="overflow-hidden"
-    >
-      <div data-testid="search-intelligence">
-        {!snapshot && loading && <p className="py-8 text-sm text-muted-foreground">Loading search data…</p>}
+    <div data-testid="search-performance" className="grid gap-4">
+      <Panel
+        title="Overview"
+        legend={statusLegend}
+        actions={<Seg ariaLabel="Search provider" options={PROVIDERS} value={provider} onChange={setProvider} />}
+      >
+        {!snapshot && loading && <p className="py-8 text-sm text-muted-foreground">Loading…</p>}
         {!snapshot && error && <p className="py-3 text-sm text-destructive">{error}</p>}
-        {snapshot && (
+        {selected && comparison && (
           <>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[0.68rem] font-semibold text-muted-foreground">
-                Current period ends on each engine's latest complete date. Positions stay engine-specific.
-              </p>
-              <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-1 text-[0.65rem] font-bold text-amber-900">
-                Conversion signal not connected
-              </span>
+            <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-[0.68rem] font-semibold text-muted-foreground">
+              <span>Current {rangeLabel(comparison.current.range.start, comparison.current.range.end)}</span>
+              <span>Previous {rangeLabel(comparison.previous.range.start, comparison.previous.range.end)}</span>
+              <span>Through {shortDate(selected.dataThrough)}</span>
             </div>
-
-            <section aria-label="Provider freshness and matched-period performance">
-              {PROVIDERS.map(({ key, label }) => (
-                <ProviderRow key={key} label={label} provider={snapshot.providers[key]} />
-              ))}
-            </section>
-
-            <ReleaseStrip release={snapshot.release} />
-            <PrimaryFocus recommendation={snapshot.focus.primary} />
-            <SecondaryFocus recommendations={snapshot.focus.secondary} />
-
-            <section className="mt-4">
-              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="text-sm font-black">Pages</h3>
-                <p className="text-[0.68rem] text-muted-foreground">
-                  Page and query detail can omit low-volume rows. Bing does not provide query-to-page pairs here.
-                </p>
-              </div>
-              {snapshot.pages.map((page) => <PageRow key={page.path} page={page} />)}
-            </section>
-
-            <ChangeLog entries={snapshot.changeLog.entries} />
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">
+              <Kpi
+                emphasis
+                value={compact(comparison.current.metric.clicks)}
+                label="Clicks"
+                delta={<MetricDelta comparison={comparison} metric="clicks" />}
+              />
+              <Kpi
+                value={compact(comparison.current.metric.impressions)}
+                label="Impressions"
+                delta={<MetricDelta comparison={comparison} metric="impressions" />}
+              />
+              <Kpi
+                value={percent(comparison.current.metric.ctr)}
+                label="CTR"
+                delta={<Delta>{comparison.available ? `${comparison.delta.ctrPoints > 0 ? '+' : ''}${(comparison.delta.ctrPoints * 100).toFixed(2)}pt` : '—'}</Delta>}
+              />
+              <Kpi
+                value={position(comparison.current.metric.position)}
+                label="Position"
+                delta={<Delta>{comparison.available && comparison.delta.position != null ? `${comparison.delta.position > 0 ? '+' : ''}${comparison.delta.position.toFixed(1)}` : '—'}</Delta>}
+              />
+            </div>
+            <SearchTrend daily={selected.daily} />
+            <QueryRows rows={selected.topQueries} />
           </>
         )}
-      </div>
-    </Panel>
+      </Panel>
+
+      <Panel title="Pages" sub={['28d']}>
+        {snapshot && snapshot.pages.length > 0
+          ? snapshot.pages.map((page) => <PageRow key={page.path} page={page} />)
+          : <p className="py-4 text-sm text-muted-foreground">No page data.</p>}
+      </Panel>
+    </div>
   );
 }

@@ -173,13 +173,13 @@ describe('chartWeeklyValues', () => {
     expect(chartWeeklyValues(series, series[0].day)).toEqual([null, 8]);
   });
 
-  it('does not blank a 30d slice whose days already have a full week behind them', () => {
+  it('does not blank a 28d slice whose days already have a full week behind them', () => {
     const full = denseSeries(day(1), 40);
     full[39] = { ...full[39], label168h: 99 };
     const origin = full[0].day;
     const now = day(40) + 12 * 3600_000;
-    const visible = sliceActivityRange(full, now, chartRangeWindowMs('30d'));
-    expect(visible).toHaveLength(31);
+    const visible = sliceActivityRange(full, now, chartRangeWindowMs('28d'));
+    expect(visible).toHaveLength(29);
     const weekly = chartWeeklyValues(visible, origin);
     expect(weekly.slice(0, 6).every((v) => v != null)).toBe(true);
     expect(weekly[weekly.length - 1]).toBe(99);
@@ -260,7 +260,7 @@ describe('CHART_RANGE_PRESETS', () => {
     expect(CHART_RANGE_PRESETS.map((p) => p.key)).toEqual([
       '24h',
       '7d',
-      '30d',
+      '28d',
       '90d',
       '180d',
       '365d',
@@ -272,7 +272,7 @@ describe('CHART_RANGE_PRESETS', () => {
   it('treats only 24h as an hourly range', () => {
     expect(isHourlyRange('24h')).toBe(true);
     expect(isHourlyRange('7d')).toBe(false);
-    expect(isHourlyRange('30d')).toBe(false);
+    expect(isHourlyRange('28d')).toBe(false);
     expect(isHourlyRange('all')).toBe(false);
   });
 });

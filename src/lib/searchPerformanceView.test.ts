@@ -1,24 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildSearchIntelligenceView,
+  buildSearchPerformanceView,
   compareSearchPeriods,
-  type SearchReleaseContext,
-} from './searchIntelligence';
+} from './searchPerformanceView';
 import type {
   SearchDailyPoint,
   SearchPerformanceSnapshot,
   SearchProviderKey,
   SearchProviderSnapshot,
 } from './searchPerformance';
-
-const RELEASE: SearchReleaseContext = {
-  environment: 'preview',
-  gitRef: 'codex/search-intelligence',
-  gitSha: 'abcdef12',
-  gitMessage: 'feat(admin): add search intelligence',
-  url: 'preview.example.test',
-  deploymentHistory: 'unavailable',
-};
 
 function dailyRows(start: string, impressions: number[]): SearchDailyPoint[] {
   const startMs = Date.parse(`${start}T00:00:00Z`);
@@ -60,7 +50,7 @@ function snapshot(
   };
 }
 
-describe('search intelligence', () => {
+describe('search performance view', () => {
   it('compares two complete, matched 28-day windows', () => {
     const comparison = compareSearchPeriods([
       ...dailyRows('2026-07-27', Array(28).fill(50)),
@@ -88,54 +78,40 @@ describe('search intelligence', () => {
     expect(comparison.current.range).toEqual({ start: '', end: '' });
   });
 
-  it('gates low-volume page changes and recommends waiting', () => {
-    const view = buildSearchIntelligenceView(snapshot(
-      { pages: [{ key: 'https://my151.app/pokedex-builder', clicks: 0, impressions: 12, ctr: 0, position: 8 }] },
-      { pages: [{ key: 'https://my151.app/pokedex-builder', clicks: 0, impressions: 4, ctr: 0, position: 30 }] },
-    ), RELEASE);
-
-    expect(view.focus.primary.kind).toBe('wait_for_data');
-    expect(view.focus.secondary).toEqual([]);
-  });
-
-  it('ranks a material page decline ahead of secondary opportunities', () => {
-    const view = buildSearchIntelligenceView(snapshot(
+  it('groups every reported page and keeps engine metrics separate', () => {
+    const page = 'https://my151.app/pokedex-builder';
+    const other = 'https://my151.app/privacy';
+    const view = buildSearchPerformanceView(snapshot(
       {
         pages: [
-          { key: 'https://my151.app/custom-gym-leader', clicks: 8, impressions: 180, ctr: 8 / 180, position: 10 },
-          { key: 'https://my151.app/pokedex-builder', clicks: 5, impressions: 120, ctr: 5 / 120, position: 8 },
+          { key: page, clicks: 20, impressions: 500, ctr: 0.04, position: 8 },
+          { key: other, clicks: 2, impressions: 50, ctr: 0.04, position: 12 },
         ],
-        previousPages: [
-          { key: 'https://my151.app/custom-gym-leader', clicks: 20, impressions: 360, ctr: 20 / 360, position: 8 },
-          { key: 'https://my151.app/pokedex-builder', clicks: 1, impressions: 40, ctr: 0.025, position: 14 },
+        previousPages: [{ key: page, clicks: 10, impressions: 300, ctr: 0.03, position: 10 }],
+        pageQueries: [
+          { page, query: 'pokemon builder', clicks: 12, impressions: 240, ctr: 0.05, position: 7 },
         ],
       },
-      { pages: [] },
-    ), RELEASE);
-
-    expect(view.focus.primary).toMatchObject({ kind: 'material_decline', page: '/custom-gym-leader' });
-    expect(view.focus.secondary.some((item) => item.kind === 'search_engine_gap')).toBe(true);
-  });
-
-  it('does not treat ordinary lower Bing volume as a search-engine gap', () => {
-    const page = 'https://my151.app/pokedex-builder';
-    const view = buildSearchIntelligenceView(snapshot(
-      { pages: [{ key: page, clicks: 20, impressions: 500, ctr: 0.04, position: 20 }] },
       { pages: [{ key: page, clicks: 3, impressions: 60, ctr: 0.05, position: 20 }] },
-    ), RELEASE);
+    ));
 
-    expect(view.focus.primary.kind).toBe('wait_for_data');
-    expect(view.focus.secondary).toEqual([]);
+    expect(view.pages.map((row) => row.path)).toEqual(['/pokedex-builder', '/privacy']);
+    expect(view.pages[0].engines.google.current?.impressions).toBe(500);
+    expect(view.pages[0].engines.bing.current?.impressions).toBe(60);
+    expect(view.pages[0].engines.google.direction?.impressions).toBe(200);
+    expect(view.pages[0].topQueries[0].query).toBe('pokemon builder');
   });
 
-  it('projects a reusable view without provider messages or refresh controls', () => {
-    const view = buildSearchIntelligenceView(snapshot({ message: 'upstream detail with a secret' }), RELEASE);
+  it('projects provider data without raw provider messages or refresh controls', () => {
+    const view = buildSearchPerformanceView(snapshot({
+      message: 'upstream detail with a secret',
+      queries: [{ key: 'pokemon builder', clicks: 3, impressions: 40, ctr: 0.075, position: 6 }],
+    }));
     const serialized = JSON.stringify(view);
 
     expect(serialized).not.toContain('upstream detail with a secret');
     expect(serialized).not.toContain('refresh');
-    expect(view.release).toEqual(RELEASE);
-    expect(view.changeLog).toEqual({ mode: 'read_only', entries: [] });
-    expect(view.conversionSignal).toBe('not_connected');
+    expect(view.providers.google.topQueries[0].key).toBe('pokemon builder');
+    expect(view.providers.google.daily).toHaveLength(56);
   });
 });

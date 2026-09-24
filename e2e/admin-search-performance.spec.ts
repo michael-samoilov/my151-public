@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 function searchPanel(page: import('@playwright/test').Page) {
-  return page.locator('section', { has: page.getByRole('heading', { name: 'Search intelligence' }) });
+  return page.getByTestId('search-performance');
 }
 
 test.describe('admin search performance', () => {
@@ -10,22 +10,23 @@ test.describe('admin search performance', () => {
     await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
   });
 
-  test('shows one evidence-backed focus with engine-specific page detail', async ({ page }) => {
+  test('keeps search separate from Suite and shows provider and page data', async ({ page }) => {
     const panel = searchPanel(page);
+    await expect(panel).toHaveCount(0);
+    await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Search' }).click();
     await expect(panel).toBeVisible();
-    await expect(panel.getByRole('article', { name: 'Google ready' })).toBeVisible();
-    await expect(panel.getByRole('article', { name: 'Bing ready' })).toBeVisible();
-    await expect(panel.getByText('usual 2–3 day lag')).toBeVisible();
-    await expect(panel.getByText('Conversion signal not connected')).toBeVisible();
-    await expect(panel.getByTestId('search-primary-focus')).toContainText('/custom-gym-leader');
-    await expect(panel.getByTestId('search-primary-focus')).toContainText('Single next action');
-    await expect(panel.getByText('Current release')).toBeVisible();
-    await expect(panel.getByText(/Deployment history is not connected/)).toBeVisible();
-
+    await expect(panel.getByRole('heading', { name: 'Overview' })).toBeVisible();
+    await expect(panel.getByText('Google ready')).toBeVisible();
+    await expect(panel.getByText('Bing ready')).toBeVisible();
+    await expect(panel.getByText(/^Current /)).toBeVisible();
+    await expect(panel.getByText(/^Previous /)).toBeVisible();
+    await expect(panel.getByText(/^Through /)).toBeVisible();
     await expect(panel.getByTestId('search-page-home')).toContainText('Homepage');
-    await expect(panel.getByTestId('search-page-pokedex-builder')).toContainText('pokemon team builder');
-    await expect(panel.getByTestId('search-page-custom-gym-leader')).toContainText('pokemon gym leader maker');
-    await expect(panel.getByText('No SEO changes are recorded.')).toBeVisible();
+    await expect(panel.getByTestId('search-page-pokedex-builder')).toContainText('pokedex builder');
+    await expect(panel.getByTestId('search-page-custom-gym-leader')).toContainText('gym leader maker');
+
+    await panel.getByRole('group', { name: 'Search provider' }).getByRole('button', { name: 'Bing' }).click();
+    await expect(panel.getByText('make a pokedex')).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
