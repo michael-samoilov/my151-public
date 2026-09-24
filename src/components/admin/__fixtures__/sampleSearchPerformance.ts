@@ -1,4 +1,5 @@
 import type { SearchDailyPoint, SearchPerformanceSnapshot } from '@/lib/searchPerformance';
+import { buildSearchIntelligenceView } from '@/lib/searchIntelligence';
 
 function sampleDaily(provider: 'google' | 'bing'): SearchDailyPoint[] {
   const end = Date.UTC(2026, 8, provider === 'google' ? 19 : 21);
@@ -31,10 +32,20 @@ export const sampleSearchPerformance: SearchPerformanceSnapshot = {
         { key: 'https://my151.app/pokedex-builder', clicks: 41, impressions: 693, ctr: 41 / 693, position: 9.7 },
         { key: 'https://my151.app/custom-gym-leader', clicks: 23, impressions: 344, ctr: 23 / 344, position: 12.1 },
       ],
+      previousPages: [
+        { key: 'https://my151.app/', clicks: 70, impressions: 970, ctr: 70 / 970, position: 7.9 },
+        { key: 'https://my151.app/pokedex-builder', clicks: 22, impressions: 420, ctr: 22 / 420, position: 12.8 },
+        { key: 'https://my151.app/custom-gym-leader', clicks: 31, impressions: 610, ctr: 31 / 610, position: 9.4 },
+      ],
       queries: [
         { key: 'pokemon team builder', clicks: 28, impressions: 381, ctr: 28 / 381, position: 7.6 },
         { key: 'personal pokemon 151', clicks: 19, impressions: 224, ctr: 19 / 224, position: 5.2 },
         { key: 'pokemon gym leader maker', clicks: 16, impressions: 197, ctr: 16 / 197, position: 8.8 },
+      ],
+      pageQueries: [
+        { page: 'https://my151.app/', query: 'personal pokemon 151', clicks: 19, impressions: 224, ctr: 19 / 224, position: 5.2 },
+        { page: 'https://my151.app/pokedex-builder', query: 'pokemon team builder', clicks: 28, impressions: 381, ctr: 28 / 381, position: 7.6 },
+        { page: 'https://my151.app/custom-gym-leader', query: 'pokemon gym leader maker', clicks: 16, impressions: 197, ctr: 16 / 197, position: 8.8 },
       ],
     },
     bing: {
@@ -55,4 +66,13 @@ export const sampleSearchPerformance: SearchPerformanceSnapshot = {
     },
   },
 };
+
+export const sampleSearchIntelligence = buildSearchIntelligenceView(sampleSearchPerformance, {
+  environment: 'preview',
+  gitRef: 'codex/search-intelligence',
+  gitSha: 'abcdef12',
+  gitMessage: 'feat(admin): add search intelligence',
+  url: 'preview.my151.app',
+  deploymentHistory: 'unavailable',
+});
 

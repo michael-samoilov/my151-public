@@ -29,7 +29,7 @@ import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { SearchPerformancePanel } from '@/components/admin/SearchPerformancePanel';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
-import type { SearchPerformanceSnapshot } from '@/lib/searchPerformance';
+import type { SearchIntelligenceView } from '@/lib/searchIntelligence';
 import {
   ARCHIVE_FILTER_OPTIONS,
   bareCid,
@@ -442,13 +442,13 @@ async function fetchDashboard(token: string, limit: number, offset: number): Pro
   return res.json() as Promise<ApiResponse>;
 }
 
-async function fetchSearchPerformance(token: string, refresh: boolean): Promise<SearchPerformanceSnapshot> {
+async function fetchSearchPerformance(token: string, refresh: boolean): Promise<SearchIntelligenceView> {
   const qs = refresh ? '?refresh=1' : '';
   const res = await fetch(`/api/search-performance${qs}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`Search data request failed (${res.status}).`);
-  return res.json() as Promise<SearchPerformanceSnapshot>;
+  return res.json() as Promise<SearchIntelligenceView>;
 }
 
 // ---------- presentational bits ----------
@@ -1604,7 +1604,7 @@ export function AdminPage() {
   });
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
-  const [searchPerformance, setSearchPerformance] = useState<SearchPerformanceSnapshot | null>(null);
+  const [searchPerformance, setSearchPerformance] = useState<SearchIntelligenceView | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
@@ -1690,7 +1690,7 @@ export function AdminPage() {
         import('./__fixtures__/sampleSearchPerformance'),
       ]).then(([dashboard, search]) => {
         setData(dashboard.sampleResponse);
-        setSearchPerformance(search.sampleSearchPerformance);
+        setSearchPerformance(search.sampleSearchIntelligence);
         setLoadedAt(Date.now());
         setAuthed(true);
       });
