@@ -111,8 +111,8 @@ export function ExportPreview3D({
   const pointerPoseRef = useRef<HoverTiltPose>(REST_POSE);
   const lastPoseRef = useRef<HoverTiltPose>(REST_POSE);
   const releaseRef = useRef<{ from: HoverTiltPose; t0: number } | null>(null);
-  const reducedMotionRef = useRef(false);
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
+  const hoverBlockedUntilLeaveRef = useRef(false);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const enterSinceRef = useRef<number | null>(null);
   const pendingPointerRef = useRef<{ x: number; y: number } | null>(null);
@@ -191,8 +191,9 @@ export function ExportPreview3D({
     const recipeNow = recipeRef.current;
     const tiltNow = tiltNowEarly;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
-    const foil =
+    const tiltStrength =
       foilMag <= recipeNow.deadDeg ? 0 : Math.min(1, (foilMag - recipeNow.deadDeg) / span);
+    const foil = activation * (0.45 + 0.55 * tiltStrength);
     el.style.setProperty('--foil-opacity', foil.toFixed(3));
     el.style.setProperty('--hover-tilt-opacity', activation.toFixed(3));
     const angle = (Math.atan2(ny - 0.5, nx - 0.5) * 180) / Math.PI;
@@ -240,7 +241,6 @@ export function ExportPreview3D({
   }, []);
 
   const idleAt = useCallback((now: number) => {
-    if (reducedMotionRef.current) return REST_POSE;
     if (originRef.current === null) originRef.current = now;
     const recipeNow = recipeRef.current;
     return pokeHoloIdle({
@@ -382,7 +382,6 @@ export function ExportPreview3D({
   }, [cardMax]);
 
   useEffect(() => {
-    reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let raf = 0;
     const tick = (now: number) => {
       const lastTick = lastTickRef.current ?? now;
@@ -572,6 +571,14 @@ export function ExportPreview3D({
         return;
       }
       if (down) return;
+      if (hoverBlockedUntilLeaveRef.current) {
+        if (!overCard && !overHit) {
+          hoverBlockedUntilLeaveRef.current = false;
+          lastPointerRef.current = null;
+          enterSinceRef.current = null;
+        }
+        return;
+      }
       if (pausedRef.current) return;
       if (e.pointerType !== 'mouse') return;
       if (overCard || (orbitRef.current === 'pointer' && overHit)) {
@@ -624,6 +631,7 @@ export function ExportPreview3D({
 
     const now = performance.now();
     if (tap) {
+      hoverBlockedUntilLeaveRef.current = true;
       lastPointerRef.current = null;
       pendingPointerRef.current = null;
       restAtRef.current = null;

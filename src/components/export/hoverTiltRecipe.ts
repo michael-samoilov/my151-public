@@ -61,7 +61,7 @@ export const HOVER_TILT_MASK_META = {
   },
   dexBorder: {
     title: 'Export frame',
-    blurb: 'Trainer-card FRAME stroke. Tiled holo on the red border, not one stretched glyph.',
+    blurb: 'Trainer-card frame stroke without a repeating texture.',
   },
 } as const satisfies Record<HoverTiltMaskId, { title: string; blurb: string }>;
 
@@ -80,7 +80,7 @@ export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   shadowBlur: 48,
   glareIntensity: 0.6,
   glareHue: 40,
-  glareMask: 'dexBorder',
+  glareMask: 'none',
   glareMaskMode: 'alpha',
   glareMaskComposite: 'intersect',
 };

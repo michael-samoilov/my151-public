@@ -32,17 +32,32 @@ async function exportShapePixels(page: Page) {
     canvas.height = el.naturalHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx || el.naturalWidth < 8 || el.naturalHeight < 8) {
-      return { ok: false, cornerA: 255, edgeA: 0, innerA: 0 };
+      return {
+        ok: false,
+        cornerA: 255,
+        roundedCutA: 255,
+        edgeA: 0,
+        innerA: 0,
+        innerCurveRgb: [0, 0, 0],
+        innerFillRgb: [0, 0, 0],
+      };
     }
     ctx.drawImage(el, 0, 0);
     const corner = ctx.getImageData(0, 0, 1, 1).data;
+    const roundedCut = ctx.getImageData(Math.floor(el.naturalWidth * 0.02), 1, 1, 1).data;
     const edge = ctx.getImageData(Math.floor(el.naturalWidth / 2), 2, 1, 1).data;
     const inner = ctx.getImageData(Math.floor(el.naturalWidth / 2), Math.floor(el.naturalHeight / 2), 1, 1).data;
+    const innerEdge = Math.ceil(el.naturalWidth * 0.014);
+    const innerCurve = ctx.getImageData(innerEdge, el.naturalHeight - innerEdge, 1, 1).data;
+    const innerFill = ctx.getImageData(Math.floor(el.naturalWidth * 0.08), el.naturalHeight - innerEdge, 1, 1).data;
     return {
       ok: true,
       cornerA: corner[3] ?? 255,
+      roundedCutA: roundedCut[3] ?? 255,
       edgeA: edge[3] ?? 0,
       innerA: inner[3] ?? 0,
+      innerCurveRgb: [innerCurve[0], innerCurve[1], innerCurve[2]],
+      innerFillRgb: [innerFill[0], innerFill[1], innerFill[2]],
     };
   });
 }
@@ -115,7 +130,7 @@ test.describe('mobile export sheet', () => {
     const foil = page.locator('[data-export-preview]');
     await expect(foil).toHaveAttribute('data-paused', '0');
 
-    await expect(page.locator('[data-foil-layer]')).toHaveCount(4);
+    await expect(page.locator('[data-foil-layer]')).toHaveCount(1);
     await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
     await expect(page.locator('[data-foil-layer="sparkle"]')).toHaveCount(0);
     expect(await foil.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('none');
@@ -207,12 +222,14 @@ test.describe('desktop export preview', () => {
     const pixels = await exportShapePixels(page);
     expect(pixels.ok, JSON.stringify(pixels)).toBe(true);
     expect(pixels.cornerA, JSON.stringify(pixels)).toBe(0);
+    expect(pixels.roundedCutA, JSON.stringify(pixels)).toBe(0);
     expect(pixels.edgeA, JSON.stringify(pixels)).toBe(255);
     expect(pixels.innerA, JSON.stringify(pixels)).toBe(255);
   });
 
   test('paints ink-only rainbow on the live league overlay', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await openLeagueExport(page);
     await waitPreviewReady(page);
     const foil = page.locator('[data-export-preview]');
@@ -224,6 +241,12 @@ test.describe('desktop export preview', () => {
       const cs = getComputedStyle(layer);
       if (cs.mixBlendMode !== 'hard-light') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
       if (Number(cs.opacity) <= 0.04) return { ok: false, reason: `opacity ${cs.opacity}` };
+      if (cs.backgroundImage.includes('repeating-linear-gradient')) {
+        return { ok: false, reason: 'patterned rainbow' };
+      }
+      const glare = getComputedStyle(card, '::before');
+      const glareMask = `${glare.getPropertyValue('-webkit-mask-image')} ${glare.maskImage}`;
+      if (!glareMask.includes('none')) return { ok: false, reason: `glare mask ${glareMask}` };
       if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 0.25) > 0.02) {
         return { ok: false, reason: 'amount' };
       }
@@ -280,8 +303,10 @@ test.describe('gym trainer-card export', () => {
     const pixels = await exportShapePixels(page);
     expect(pixels.ok, JSON.stringify(pixels)).toBe(true);
     expect(pixels.cornerA, JSON.stringify(pixels)).toBe(0);
+    expect(pixels.roundedCutA, JSON.stringify(pixels)).toBe(0);
     expect(pixels.edgeA, JSON.stringify(pixels)).toBe(255);
     expect(pixels.innerA, JSON.stringify(pixels)).toBe(255);
+    expect(pixels.innerCurveRgb, JSON.stringify(pixels)).not.toEqual(pixels.innerFillRgb);
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 }).toBe('1');
     const hit = page.locator('[data-export-tilt-hit]');

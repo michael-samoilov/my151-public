@@ -20,7 +20,7 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { expandTemplate } from '@/lib/richTemplate';
-import { clipExportCanvas } from '@/lib/exportPngShape';
+import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
 import { localeUppercase, pokemonLabel, raw } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
@@ -792,7 +792,16 @@ function drawGymCard(
   ctx.fillStyle = type ? shades.band : RED;
   ctx.fillRect(0, 0, L.CARD_IMG_W, L.CARD_IMG_H);
   ctx.fillStyle = shades.base;
-  ctx.fillRect(L.FRAME, L.BAR_H, L.CARD_W, L.CARD_IMG_H - L.BAR_H - L.FRAME);
+  ctx.beginPath();
+  const innerRadius = exportInnerCornerRadius(L.CARD_IMG_W, L.CARD_IMG_H, L.FRAME);
+  ctx.roundRect(
+    L.FRAME,
+    L.BAR_H,
+    L.CARD_W,
+    L.CARD_IMG_H - L.BAR_H - L.FRAME,
+    [0, 0, innerRadius, innerRadius],
+  );
+  ctx.fill();
 
   const fx = L.FRAME;
   const ox = fx + L.PADX;

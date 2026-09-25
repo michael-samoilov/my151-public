@@ -30,7 +30,7 @@ import {
   layoutDexExportGrid,
 } from '@/lib/dexExportLayout';
 import { FRAME } from '@/league/export/layout';
-import { clipExportCanvas } from '@/lib/exportPngShape';
+import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
 
 /** Same stroke as the trainer-card export (`layout.FRAME`). */
 export const DEX_EXPORT_FRAME = FRAME;
@@ -397,7 +397,15 @@ export async function generateExportImage(
   ctx.fillStyle = DEX_EXPORT_FRAME_RED;
   ctx.fillRect(0, 0, framedW, framedH);
   ctx.fillStyle = stats ? PAGE_BG : BG;
-  ctx.fillRect(DEX_EXPORT_FRAME, DEX_EXPORT_FRAME, canvasW, h);
+  ctx.beginPath();
+  ctx.roundRect(
+    DEX_EXPORT_FRAME,
+    DEX_EXPORT_FRAME,
+    canvasW,
+    h,
+    exportInnerCornerRadius(framedW, framedH, DEX_EXPORT_FRAME),
+  );
+  ctx.fill();
   ctx.translate(DEX_EXPORT_FRAME, DEX_EXPORT_FRAME);
 
   // Dex card behind the grid (white rounded rect + soft shadow), matching the

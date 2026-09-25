@@ -113,11 +113,6 @@ function dexBorderFrameSvg(ctx: HoverTiltMaskContext): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="${top.toFixed(3)}" fill="white"/><rect x="0" y="${(100 - top).toFixed(3)}" width="100" height="${top.toFixed(3)}" fill="white"/><rect x="0" y="0" width="${left.toFixed(3)}" height="100" fill="white"/><rect x="${(100 - left).toFixed(3)}" y="0" width="${left.toFixed(3)}" height="100" fill="white"/></svg>`;
 }
 
-/** Small repeating grain. Credit-card holo tiles; this is not one stretched glyph. */
-function dexBorderTileSvg(): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><path d="M0 24 L10 8 L24 24 L38 8 L48 24 L38 40 L24 24 L10 40 Z" fill="white"/><circle cx="8" cy="8" r="2.2" fill="white"/><circle cx="40" cy="8" r="2.2" fill="white"/><circle cx="8" cy="40" r="2.2" fill="white"/><circle cx="40" cy="40" r="2.2" fill="white"/><circle cx="24" cy="6" r="1.6" fill="white"/><circle cx="24" cy="42" r="1.6" fill="white"/></svg>`;
-}
-
 /** Square contain-fit box for each sprite's primary-type glyph. Side = pokéball diameter. */
 export function typeIconGlyphBoxes(ctx: HoverTiltMaskContext): TypeIconGlyphBox[] {
   return ctx.sprites.map((s) => ({
@@ -172,10 +167,8 @@ export function hoverTiltMaskPaint(
       };
     case 'dexBorder':
       return {
-        image: `${svgUrl(dexBorderFrameSvg(ctx))}, ${svgUrl(dexBorderTileSvg())}`,
-        size: '100% 100%, 12% 12%',
-        repeat: 'no-repeat, repeat',
-        position: '0 0, 0 0',
+        image: svgUrl(dexBorderFrameSvg(ctx)),
+        ...CARD_MASK,
       };
     default: {
       const _exhaustive: never = id;

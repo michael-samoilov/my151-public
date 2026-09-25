@@ -61,7 +61,7 @@ describe('hover-tilt recipe', () => {
     expect(DEFAULT_HOVER_TILT_RECIPE.exitDelay).toBe(200);
     expect(DEFAULT_HOVER_TILT_RECIPE.shadow).toBe(true);
     expect(DEFAULT_HOVER_TILT_RECIPE.glareIntensity).toBeCloseTo(0.6);
-    expect(DEFAULT_HOVER_TILT_RECIPE.glareMask).toBe('dexBorder');
+    expect(DEFAULT_HOVER_TILT_RECIPE.glareMask).toBe('none');
   });
 
   it('drops unknown keys and clamps at the parse boundary', () => {
@@ -75,7 +75,7 @@ describe('hover-tilt recipe', () => {
     });
     expect(parsed.tiltFactor).toBeCloseTo(4);
     expect(parsed.scaleFactor).toBe(1);
-    expect(parsed.glareMask).toBe('dexBorder');
+    expect(parsed.glareMask).toBe('none');
     expect('sparkleMask' in parsed).toBe(false);
     expect('blendMode' in parsed).toBe(false);
   });
@@ -201,18 +201,21 @@ describe('hover-tilt masks', () => {
     expect(paint.repeat).toBe('no-repeat');
   });
 
-  it('tiles a frame-stroke holo mask instead of stretching one glyph', () => {
+  it('keeps the optional frame mask smooth instead of adding a repeating pattern', () => {
     const ctx = workshopMaskContext();
     const paint = hoverTiltMaskPaint('dexBorder', ctx);
-    expect(paint.repeat).toBe('no-repeat, repeat');
-    expect(paint.size).toBe('100% 100%, 12% 12%');
-    expect(paint.image.split('url(').length - 1).toBe(2);
-    expect(paint.size).not.toBe('100% 100%');
+    expect(paint.repeat).toBe('no-repeat');
+    expect(paint.size).toBe('100% 100%');
+    expect(paint.image.split('url(').length - 1).toBe(1);
     const inset = dexBorderInsets(ctx);
     expect(inset.x).toBeCloseTo(FRAME / ctx.width);
     expect(inset.y).toBeCloseTo(FRAME / ctx.height);
     expect(inset.x).toBeGreaterThan(0);
     expect(inset.x).toBeLessThan(0.08);
+  });
+
+  it('uses unmasked glare by default', () => {
+    expect(DEFAULT_HOVER_TILT_RECIPE.glareMask).toBe('none');
   });
 
   it('applies glare mask CSS vars without sparkle state', () => {

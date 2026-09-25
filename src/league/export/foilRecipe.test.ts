@@ -33,24 +33,19 @@ describe('foil recipe', () => {
   });
 
   it('live default matches production foil amounts and skips the edge map', () => {
-    expect(activeFoilLayerIds(DEFAULT_FOIL_RECIPE)).toEqual([
-      'pointLight',
-      'holographic',
-      'iridescence',
-      'bloom',
-    ]);
+    expect(activeFoilLayerIds(DEFAULT_FOIL_RECIPE)).toEqual(['holographic']);
     expect(foilMapsNeeded(DEFAULT_FOIL_RECIPE)).toEqual({
       sat: true,
       edge: false,
-      gloss: true,
+      gloss: false,
     });
     expect(DEFAULT_FOIL_RECIPE.layers.ambient.on).toBe(false);
     expect(DEFAULT_FOIL_RECIPE.layers.emboss.on).toBe(false);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.25);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.on).toBe(true);
-    expect(DEFAULT_FOIL_RECIPE.layers.iridescence.amount).toBe(0.15);
-    expect(DEFAULT_FOIL_RECIPE.layers.bloom.on).toBe(true);
-    expect(DEFAULT_FOIL_RECIPE.layers.bloom.amount).toBe(0.36);
+    expect(DEFAULT_FOIL_RECIPE.layers.iridescence.on).toBe(false);
+    expect(DEFAULT_FOIL_RECIPE.layers.bloom.on).toBe(false);
+    expect(DEFAULT_FOIL_RECIPE.layers.pointLight.on).toBe(false);
     const withEmboss = withFoilLayer(DEFAULT_FOIL_RECIPE, 'emboss', { on: true, amount: 0.6 });
     expect(foilMapsNeeded(withEmboss).edge).toBe(true);
     const holoOnly = recipeWithSolo(DEFAULT_FOIL_RECIPE, 'holographic');

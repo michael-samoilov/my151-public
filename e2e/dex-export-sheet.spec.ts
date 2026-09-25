@@ -853,6 +853,30 @@ test.describe('desktop dex export preview', () => {
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
   });
 
+  test('keeps auto-tilt after a click until the mouse leaves and re-enters', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    const x = box!.x + box!.width / 2;
+    const y = box!.y + box!.height / 2;
+
+    await page.mouse.click(x, y);
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
+    await page.mouse.click(x, y);
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
+    await page.mouse.move(x + 24, y + 18, { steps: 4 });
+    await expect(foil).toHaveAttribute('data-export-orbit', 'idle');
+
+    await page.mouse.move(8, 8);
+    await expect(foil).toHaveAttribute('data-export-orbit', 'idle');
+    await page.mouse.move(x, y, { steps: 4 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+  });
+
   test('copies hover-tilt rest, painted-card hit, and raised-edge shadow', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
     await openDexExport(page);
