@@ -68,6 +68,47 @@ describe('export uniqueness recording', () => {
     }
   });
 
+  it('spends a fixed number of Redis commands however many Pokémon are exported', async () => {
+    // Upstash bills per command, pipelined or not. The old one-command-per-Pokémon
+    // shape spent 2 × 151 + 2 = 304 on a full Pokédex export.
+    const commands: string[][] = [];
+    const reply = (cmd: string[]) => {
+      switch (cmd[0].toLowerCase()) {
+        case 'smismember':
+          return cmd.slice(2).map(() => 0);
+        case 'hmget':
+          return cmd.slice(2).map(() => null);
+        case 'sadd':
+          return cmd.length - 2;
+        default:
+          return 1;
+      }
+    };
+    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubGlobal('fetch', async (_url: string, init: { body: string }) => {
+      // The SDK auto-pipelines, so a body is one command or a batch of them.
+      const body = JSON.parse(init.body) as string[] | string[][];
+      if (!Array.isArray(body[0])) {
+        commands.push(body as string[]);
+        return new Response(JSON.stringify({ result: reply(body as string[]) }));
+      }
+      const batch = body as string[][];
+      commands.push(...batch);
+      return new Response(JSON.stringify(batch.map((cmd) => ({ result: reply(cmd) }))));
+    });
+    try {
+      const ids = Array.from({ length: 151 }, (_, i) => i + 1);
+      await expect(recordToolExport('pokedex', ids)).resolves.toEqual({
+        ordinal: 1,
+        tool: 'pokedex',
+        firstPokemonId: 1,
+      });
+      expect(commands.map((c) => c[0].toLowerCase())).toEqual(['hincrby', 'smismember', 'hmget', 'sadd']);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('returns a preview highlight for a notme export on production', async () => {
     const prev = process.env.VERCEL_ENV;
     process.env.VERCEL_ENV = 'production';

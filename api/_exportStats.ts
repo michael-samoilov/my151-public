@@ -86,10 +86,10 @@ export async function recordToolExport(
   try {
     const unique = [...new Set(pokemonIds.filter((id) => Number.isInteger(id) && id > 0 && id < 100_000))];
     const ordinal = await redis.hincrby(EXPORT_COUNTS_KEY, tool, 1);
-    const flags =
-      unique.length === 0
-        ? []
-        : await Promise.all(unique.map((id) => redis.sismember(EXPORT_SEEN_KEY, String(id))));
+    // One SMISMEMBER and one SADD for the whole export, not one per Pokémon:
+    // Upstash bills every command, pipelined or not.
+    const flags: unknown[] =
+      unique.length === 0 ? [] : await redis.smismember(EXPORT_SEEN_KEY, unique.map(String));
     const already = unique.filter((_, i) => seenFlag(flags[i]));
     const unseen = unique.filter((_, i) => !seenFlag(flags[i]));
     const dexFreq: Record<number, number> = {};
@@ -104,9 +104,8 @@ export async function recordToolExport(
     }
     const firstPokemonId = pickFirstExportPokemon(unique, already, dexFreq);
     if (unique.length > 0) {
-      const pipe = redis.pipeline();
-      for (const id of unique) pipe.sadd(EXPORT_SEEN_KEY, String(id));
-      await pipe.exec();
+      const [first, ...rest] = unique.map(String);
+      await redis.sadd(EXPORT_SEEN_KEY, first, ...rest);
     }
     return { ordinal: Number(ordinal), tool, firstPokemonId };
   } catch (err) {
