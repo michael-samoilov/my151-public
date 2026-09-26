@@ -28,12 +28,13 @@ const DEV_PORT = 4174;
  * CDN is blocked. So never name a revision. Ask, in order:
  *
  *   1. PLAYWRIGHT_CHROMIUM_PATH, for a machine that keeps Chromium elsewhere.
- *   2. The unversioned `chromium` symlink the image maintains beside the
+ *   2. A system Chrome or Chromium installed by the Cloud engine setup.
+ *   3. The unversioned `chromium` symlink the image maintains beside the
  *      revision directories. This is the one name that survives an image bump.
- *   3. The highest `chromium-<digits>` directory present. That pattern matches
+ *   4. The highest `chromium-<digits>` directory present. That pattern matches
  *      neither chromium_headless_shell-* nor chromium-tip-of-tree-*, which are
  *      a different binary and a different browser.
- *   4. Nothing, which leaves Playwright to resolve its own. That is correct
+ *   5. Nothing, which leaves Playwright to resolve its own. That is correct
  *      wherever `npx playwright install` has run, CI included.
  *
  * Setting executablePath also opts out of the separate headless-shell binary,
@@ -52,6 +53,9 @@ const CHROMIUM_LAYOUTS = [
 
 function resolveChromium(): string | undefined {
   if (process.env.PLAYWRIGHT_CHROMIUM_PATH) return process.env.PLAYWRIGHT_CHROMIUM_PATH;
+  for (const bin of ['/usr/bin/google-chrome-stable', '/usr/bin/google-chrome', '/usr/bin/chromium']) {
+    if (fs.existsSync(bin)) return bin;
+  }
   const root = process.env.PLAYWRIGHT_BROWSERS_PATH;
   if (!root) return undefined;
   try {

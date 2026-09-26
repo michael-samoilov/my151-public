@@ -61,7 +61,7 @@ echo "== apt index =="
 # by whether the install below works, never by this exit code: an unreachable
 # third-party repo makes `apt-get update` exit non-zero even when every Ubuntu
 # list refreshed fine. Skipped when nothing needs apt, so a warm container is fast.
-if [ ! -x "$(find_webkit_browser)" ] || ! command -v ffmpeg >/dev/null; then
+if [ ! -x "$(find_webkit_browser)" ] || ! command -v ffmpeg >/dev/null || ! command -v google-chrome-stable >/dev/null; then
   sudo apt-get update >/tmp/verify-aptupd.log 2>&1
   if disable_unreachable_sources /tmp/verify-aptupd.log; then
     sudo apt-get update >/tmp/verify-aptupd.log 2>&1
@@ -69,6 +69,23 @@ if [ ! -x "$(find_webkit_browser)" ] || ! command -v ffmpeg >/dev/null; then
   echo "  refreshed $(grep -cE '^(Hit|Get)' /tmp/verify-aptupd.log) lists"
 else
   echo "  skipped: webkit and ffmpeg are already present"
+fi
+
+echo "== Blink (system Chrome for Playwright) =="
+if command -v google-chrome-stable >/dev/null; then
+  echo "  present: $(google-chrome-stable --version 2>/dev/null | head -1)"
+else
+  chrome_deb=/tmp/google-chrome-stable_current_amd64.deb
+  if curl -fsSL --retry 4 --retry-delay 2 -o "$chrome_deb" \
+    https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && sudo apt-get install -y "$chrome_deb" >/tmp/verify-chrome.log 2>&1; then
+    rm -f "$chrome_deb"
+    echo "  installed: $(google-chrome-stable --version 2>/dev/null | head -1)"
+  else
+    rm -f "$chrome_deb"
+    echo "  BLOCKED: could not install Chrome (see /tmp/verify-chrome.log); host needed: dl.google.com"
+    status=1
+  fi
 fi
 
 echo "== WebKit (webkit driver + xvfb) =="
@@ -148,9 +165,9 @@ echo "== summary =="
 WEBKIT="$(find_webkit_browser)"
 [ -n "$WEBKIT" ] && [ -x "$WEBKIT" ] && echo "  webkit: UP ($WEBKIT)" || echo "  webkit: DOWN"
 [ -x "$FF_BIN" ] && echo "  gecko:  UP" || echo "  gecko:  DOWN"
-if [ -x "$AB_BIN" ]; then
-  echo "  blink:  UP (agent-browser CLI, Chromium from PLAYWRIGHT_BROWSERS_PATH)"
+if command -v google-chrome-stable >/dev/null; then
+  echo "  blink:  UP (Playwright with system Chrome; agent-browser remains opt-in)"
 else
-  echo "  blink:  UP (Playwright Chromium; agent-browser absent, using the fallback)"
+  echo "  blink:  DOWN"
 fi
 exit $status

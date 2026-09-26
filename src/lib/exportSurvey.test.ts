@@ -282,3 +282,33 @@ describe('league export success journal fields', () => {
     ).toEqual(['league-export-league', 'export_survey_skipped']);
   });
 });
+
+describe('league funnel nudge events', () => {
+  it('accepts shown, cta, and dismiss for card and league nudges', () => {
+    for (const ev of [
+      'league-nudge-card-shown',
+      'league-nudge-card-cta',
+      'league-nudge-card-dismiss',
+      'league-nudge-league-shown',
+      'league-nudge-league-cta',
+      'league-nudge-league-dismiss',
+    ]) {
+      expect(isFunnelEvent(ev), ev).toBe(true);
+    }
+  });
+
+  it('attaches nudge names to a sitting the way export events already do', () => {
+    expect(
+      parseFunnelEventList([
+        'league-nudge-card-shown',
+        'league-nudge-card-cta',
+        'not-an-event',
+        'league-nudge-league-shown',
+      ]),
+    ).toEqual([
+      'league-nudge-card-shown',
+      'league-nudge-card-cta',
+      'league-nudge-league-shown',
+    ]);
+  });
+});

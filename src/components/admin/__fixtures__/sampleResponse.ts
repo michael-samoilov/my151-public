@@ -476,6 +476,7 @@ const leagueUsers: LeagueUser[] = [
   const last = u.sessionLog[u.sessionLog.length - 1];
   const prev = u.sessionLog[u.sessionLog.length - 2];
   prev.summary = { ...last.summary };
+  prev.events = ['league-nudge-card-shown', 'league-nudge-card-cta'];
   u.sessionLog.splice(u.sessionLog.length - 1, 0, {
     ts: Math.round((prev.ts + last.ts) / 2),
     summary: { cards: 1, seats: 1, typed: 0, named: 0, aces: 0, leagueNamed: false },

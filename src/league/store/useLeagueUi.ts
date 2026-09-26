@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { LeagueNudgeId } from '../model/funnelNudges';
 
 /**
  * Transient league-page UI state. Never persisted: a reload lands on the
@@ -32,6 +33,8 @@ interface LeagueUiState {
   replacingId: number | null;
   movePickerOpen: boolean;
   typePickerOpen: boolean;
+  /** Transient export-nudge id, never persisted. */
+  activeNudge: LeagueNudgeId | null;
 
   openCardPage: (card: number) => void;
   closeCardPage: () => void;
@@ -43,6 +46,8 @@ interface LeagueUiState {
   openLeagueExport: (cardIndex?: number) => void;
   closeLeagueExport: () => void;
   setExportPhase: (phase: LeagueExportPhase) => void;
+  armNudge: (id: LeagueNudgeId) => void;
+  dismissNudge: () => void;
 }
 
 export const useLeagueUi = create<LeagueUiState>()((set) => ({
@@ -57,6 +62,7 @@ export const useLeagueUi = create<LeagueUiState>()((set) => ({
   exportOpen: false,
   exportCardIndex: null,
   exportPhase: 'settings',
+  activeNudge: null,
 
   openCardPage: (card) => set({ openCard: card, lastCard: card }),
   closeCardPage: () =>
@@ -76,4 +82,6 @@ export const useLeagueUi = create<LeagueUiState>()((set) => ({
   closeLeagueExport: () =>
     set({ exportOpen: false, exportCardIndex: null, exportPhase: 'settings' }),
   setExportPhase: (phase) => set({ exportPhase: phase }),
+  armNudge: (id) => set({ activeNudge: id }),
+  dismissNudge: () => set({ activeNudge: null }),
 }));

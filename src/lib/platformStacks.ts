@@ -78,8 +78,12 @@ export function brandFill(value: string): string {
   return BRAND[value] ?? FALLBACK_FILL;
 }
 
+export function muteColor(color: string): string {
+  return mixHex(color, TRACK, MUTE_MIX);
+}
+
 export function muteFill(value: string): string {
-  return mixHex(brandFill(value), TRACK, MUTE_MIX);
+  return muteColor(brandFill(value));
 }
 
 export function sliceFill(key: string, dim: PlatformDim, clamp: PlatformClamp | null): string {
@@ -249,14 +253,15 @@ export function layoutLabels(
   return labels;
 }
 
-export function dimTitle(dim: PlatformDim, clamp: PlatformClamp | null): string {
+export function dimTitle(dim: PlatformDim, clamp: { dim: string; value: string } | null): string {
   const name = dim === 'os' ? 'OS' : dim === 'device' ? 'Device' : 'Browser';
   if (!clamp || clamp.dim === dim) return name;
   return `${name} among ${clamp.value}`;
 }
 
-export function clampChipLabel(clamp: PlatformClamp): string {
-  const dim = clamp.dim === 'device' ? 'Device' : clamp.dim === 'os' ? 'OS' : 'Browser';
+export function clampChipLabel(clamp: { dim: string; value: string }): string {
+  const dim =
+    clamp.dim === 'device' ? 'Device' : clamp.dim === 'os' ? 'OS' : clamp.dim === 'browser' ? 'Browser' : 'Region';
   return `${dim}: ${clamp.value}`;
 }
 
@@ -286,4 +291,105 @@ function mixHex(a: string, b: string, t: number): string {
   const B = parseHex(b) ?? [245, 245, 245];
   const m = (i: number) => Math.round(A[i] * t + B[i] * (1 - t));
   return `rgb(${m(0)}, ${m(1)}, ${m(2)})`;
+}
+
+function relLuminance(rgb: [number, number, number]): number {
+  const lin = (c: number) => {
+    const s = c / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+}
+
+function contrastOnWhite(rgb: [number, number, number]): number {
+  return 1.05 / (relLuminance(rgb) + 0.05);
+}
+
+function rgbToHsl(rgb: [number, number, number]): { h: number; s: number; l: number } {
+  const r = rgb[0] / 255;
+  const g = rgb[1] / 255;
+  const b = rgb[2] / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return { h: h * 60, s, l };
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hp = (((h % 360) + 360) % 360) / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+  const m = l - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (hp < 1) [r, g, b] = [c, x, 0];
+  else if (hp < 2) [r, g, b] = [x, c, 0];
+  else if (hp < 3) [r, g, b] = [0, c, x];
+  else if (hp < 4) [r, g, b] = [0, x, c];
+  else if (hp < 5) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  const byte = (v: number) => Math.round((v + m) * 255);
+  return [byte(r), byte(g), byte(b)];
+}
+
+function colorKey(color: string): string {
+  const rgb = parseHex(color);
+  return rgb ? rgb.join(',') : color.trim().toLowerCase();
+}
+
+/** Lightest lightness of this hue that still reads on white. */
+function lightCap(h: number, s: number, baseL: number): number {
+  let lo = baseL;
+  let hi = 0.9;
+  let best = baseL;
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    if (contrastOnWhite(hslToRgb(h, s, mid)) >= 1.55) {
+      best = mid;
+      lo = mid;
+    } else hi = mid;
+  }
+  return best;
+}
+
+function lighterShade(color: string, t: number): string {
+  const rgb = parseHex(color);
+  if (!rgb || t <= 0) return color;
+  const hsl = rgbToHsl(rgb);
+  const cap = lightCap(hsl.h, hsl.s, hsl.l);
+  const l = hsl.l + (cap - hsl.l) * t;
+  const next = hslToRgb(hsl.h, hsl.s, l);
+  return `#${next.map((n) => n.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
+ * Repeated colors become a same-hue ramp. The left copy stays darkest.
+ * A color that appears once is unchanged.
+ */
+export function shadeRamp(colors: readonly string[]): string[] {
+  const groups = new Map<string, number[]>();
+  colors.forEach((color, i) => {
+    const key = colorKey(color);
+    const list = groups.get(key);
+    if (list) list.push(i);
+    else groups.set(key, [i]);
+  });
+  const out = colors.slice();
+  for (const indexes of groups.values()) {
+    if (indexes.length < 2) continue;
+    const base = colors[indexes[0]];
+    indexes.forEach((at, rank) => {
+      if (rank === 0) return;
+      out[at] = lighterShade(base, rank / (indexes.length - 1));
+    });
+  }
+  return out;
 }

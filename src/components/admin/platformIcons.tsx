@@ -41,16 +41,26 @@ export function BrowserIcon({ value }: { value?: string }) {
 }
 
 /** Real flag icon (inline SVG, no network) for an ISO 3166-1 alpha-2 code. */
-export function FlagIcon({ country }: { country?: string }) {
+export function FlagIcon({ country, className }: { country?: string; className?: string }) {
   const code = (country ?? '').toUpperCase();
   const svg = (Flags as Record<string, string>)[code];
   if (!svg) return <FaGlobe size={SZ} />;
   return (
-    <img
-      src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
-      alt={code}
-      className="h-[12px] w-[16px] shrink-0 rounded-[2px] object-cover"
-    />
+    <span
+      data-flag-stroke
+      className={cn('relative inline-flex h-[12px] w-[16px] shrink-0 items-center justify-center', className)}
+    >
+      <img
+        src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
+        alt={code}
+        className="h-full w-full rounded-[2px] object-cover"
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[2px]"
+        style={{ boxShadow: 'inset 0 0 0 0.5px #d4d4d4' }}
+      />
+    </span>
   );
 }
 

@@ -117,3 +117,46 @@ describe('sendEventBeacon league export success', () => {
     expect(takePendingEvents()).toEqual([]);
   });
 });
+
+describe('sendEventBeacon league funnel nudges', () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal(
+      'localStorage',
+      storageStub({ 'p151-cid': 'cid-league-nudge-01' }),
+    );
+    vi.stubGlobal('sessionStorage', storageStub());
+    vi.stubGlobal('window', {
+      location: { pathname: '/custom-gym-leader', search: '' },
+    });
+    fetchMock.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('posts league-nudge-card-shown to /api/event with cid and tool league', () => {
+    sendEventBeacon('league-nudge-card-shown', { once: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/event');
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      event: 'league-nudge-card-shown',
+      tool: 'league',
+      page: '/custom-gym-leader',
+    });
+    expect(takePendingEvents()).toEqual(['league-nudge-card-shown']);
+  });
+
+  it('does not post league nudges when the browser opted out with ?notme', () => {
+    installOptOut('?notme');
+    sendEventBeacon('league-nudge-league-shown', { once: true });
+    sendEventBeacon('league-nudge-league-cta');
+    sendEventBeacon('league-nudge-league-dismiss');
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(takePendingEvents()).toEqual([]);
+  });
+});
