@@ -998,8 +998,20 @@ async function waitFavoritesGrid(s: Session): Promise<boolean> {
   return waitFor(s, '[data-testid="favorites-grid"]');
 }
 
+/**
+ * Click a grid cell after scrolling it into the grid frame.
+ *
+ * The grid scrolls inside its own frame. WebKitGTK's WebDriver scrolls only
+ * the page before a click, so a row below the frame reads as not
+ * interactable there. A user scrolls the frame first, and so does this.
+ */
+async function clickCell(s: Session, selector: string): Promise<void> {
+  await s.evalJson(`document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true;`);
+  await s.click(selector);
+}
+
 async function pickFavorite(s: Session, cell: string, id: number): Promise<boolean> {
-  await s.click(`[data-testid="${cell}"]`);
+  await clickCell(s, `[data-testid="${cell}"]`);
   if (!(await waitFor(s, `[data-testid="favorites-pick-${id}"]`))) return false;
   await s.click(`[data-testid="favorites-pick-${id}"]`);
   await sleep(400);
@@ -1090,7 +1102,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     return checks;
   }
 
-  await s.click('[data-testid="favorites-cell-electric-5"]');
+  await clickCell(s, '[data-testid="favorites-cell-electric-5"]');
   const pretty = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
   checks.push(ok('favorites:picker-opens', pretty));
   await settle(s);
@@ -1179,12 +1191,12 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     if (!sheetOpen) {
       checks.push({ name: 'favorites:short-sheet', status: 'skip', detail: 'desktop pane' });
       await closePicker();
-      await s.click('[data-testid="favorites-cell-starter-1"]');
+      await clickCell(s, '[data-testid="favorites-cell-starter-1"]');
       if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) starterRows = await rowLens();
     } else {
       await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
       await sleep(300);
-      await s.click('[data-testid="favorites-cell-starter-1"]');
+      await clickCell(s, '[data-testid="favorites-cell-starter-1"]');
       const starter = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
       if (!starter) {
         checks.push({ name: 'favorites:short-sheet', status: 'fail', detail: 'starter picker did not open' });
@@ -1222,7 +1234,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     `);
     checks.push(ok('favorites:kanto-starter-partners', kantoPartners));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-starter-8"]');
+    await clickCell(s, '[data-testid="favorites-cell-starter-8"]');
     await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const hisuiLast = await s.evalJson<boolean>(`
       const ids = [...document.querySelectorAll('[data-testid^="favorites-pick-"]')]
@@ -1231,7 +1243,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     `);
     checks.push(ok('favorites:hisui-starters-last', hisuiLast));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-favorite-1"]');
+    await clickCell(s, '[data-testid="favorites-cell-favorite-1"]');
     await waitFor(s, '[data-testid="favorites-picker"]');
     const emptyCard = await s.evalJson<boolean>(`
       const empty = document.querySelector('[data-testid="favorites-picker-empty"]');
@@ -1241,17 +1253,17 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     await s.screenshot(ctx.shot('favorites-pointer-empty'));
     checks.push(await auditRender(s, 'favorites:render-pointer-empty'));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-legendary-4"]');
+    await clickCell(s, '[data-testid="favorites-cell-legendary-4"]');
     const legendOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const legendRows = legendOpen ? await rowLens() : [];
     checks.push(ok('favorites:legend-spread', legendRows.length >= 3 && legendRows.every((n) => n > 0 && n <= 6), legendRows.join('+')));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-water-1"]');
+    await clickCell(s, '[data-testid="favorites-cell-water-1"]');
     const waterOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const waterRows = waterOpen ? await rowLens() : [];
     checks.push(ok('favorites:water-tail', waterRows.length >= 5 && waterRows.every((n) => n > 0 && n <= 6), waterRows.join('+')));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-gimmick-8"]');
+    await clickCell(s, '[data-testid="favorites-cell-gimmick-8"]');
     const gimmickOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const tall = gimmickOpen ? await s.evalJson<{
       mobile: boolean; rows: number; inside: boolean; noScroll: boolean; same: boolean;
@@ -1306,7 +1318,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   await waitGone(s, '[data-testid="favorites-picker"]');
   let openedPack = false;
   if (placedAzu) {
-    await s.click('[data-testid="favorites-cell-fairy-2"]');
+    await clickCell(s, '[data-testid="favorites-cell-fairy-2"]');
     if (await waitFor(s, '[data-testid="favorites-pick-184"]')) {
       const used = await s.evalJson<{
         opacity: number; mark: string | null; freeOpacity: number; freeMark: boolean;
@@ -1491,7 +1503,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   };
 
   await dismiss();
-  await s.click('[data-testid="favorites-cell-normal-1"]');
+  await clickCell(s, '[data-testid="favorites-cell-normal-1"]');
   if (await waitFor(s, '[data-testid="favorites-picker"]')) {
     const emptyRing = await s.evalJson<{ ring: string; ball: string }>(`
       const cell = document.querySelector('[data-testid="favorites-cell-normal-1"]');
@@ -1513,7 +1525,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   }
   await dismiss();
 
-  await s.click('[data-testid="favorites-cell-fairy-2"]');
+  await clickCell(s, '[data-testid="favorites-cell-fairy-2"]');
   if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) {
     await s.screenshot(ctx.shot('favorites-selector-clear'));
     const filled = await s.evalJson<{
@@ -1634,17 +1646,17 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   `);
   checks.push(ok('favorites:minimap-fades-idle', miniIdle < 0.05, `opacity=${miniIdle}`));
 
-  await s.click('[data-testid="favorites-cell-poison-1"]');
+  await clickCell(s, '[data-testid="favorites-cell-poison-1"]');
   const poisonOpen = await waitFor(s, '[data-testid="favorites-pick-34"]');
   if (poisonOpen) await s.click('[data-testid="favorites-pick-34"]');
   await sleep(250);
   await dismiss();
-  await s.click('[data-testid="favorites-cell-ground-1"]');
+  await clickCell(s, '[data-testid="favorites-cell-ground-1"]');
   const groundOpen = await waitFor(s, '[data-testid="favorites-pick-76"]');
   if (groundOpen) await s.click('[data-testid="favorites-pick-76"]');
   await sleep(300);
   await dismiss();
-  await s.click('[data-testid="favorites-cell-rock-1"]');
+  await clickCell(s, '[data-testid="favorites-cell-rock-1"]');
   const rockOpen = await waitFor(s, '[data-testid="favorites-pick-76"]');
   if (rockOpen) await s.click('[data-testid="favorites-pick-76"]');
   await sleep(350);
