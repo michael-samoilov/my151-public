@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, type EngineName } from './lib/engines.ts';
 import type { PersonaName } from './lib/personas.ts';
-import { runGymCardExportParitySuite, runLeagueChangeSuite, runLeagueColumnHoverSuite, runLeagueFunnelNudgeSuite, runLeagueHomeSlotMoveProof, runLeagueSuite, runStandardSuite } from './lib/flows.ts';
+import { runGymCardExportParitySuite, runLeagueChangeSuite, runLeagueExportTeamSuite, runLeagueColumnHoverSuite, runLeagueFunnelNudgeSuite, runLeagueHomeSlotMoveProof, runLeagueSuite, runStandardSuite } from './lib/flows.ts';
 import { probeEngines } from './doctor.ts';
 import { buildIn, startPreview, addWorktree, REPO_ROOT, type Preview, type Worktree } from './lib/servers.ts';
 import { Evidence, rollup, type SurfaceResult, type RunReport, type Check } from './lib/evidence.ts';
@@ -55,6 +55,7 @@ async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: st
       ['league-hover', () => runLeagueColumnHoverSuite(s, def.persona, ctx)],
       ['league-home', () => runLeagueHomeSlotMoveProof(s, def.persona, ctx)],
       ['gym-card-export', () => runGymCardExportParitySuite(s, def.persona, ctx)],
+      ['league-export-team', () => runLeagueExportTeamSuite(s, def.persona, ctx)],
       ['league-funnel', () => runLeagueFunnelNudgeSuite(s, def.persona, ctx)],
     ];
     for (const [name, fn] of suites) {
