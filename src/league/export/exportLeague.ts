@@ -2,7 +2,8 @@
  * The league's two exports, drawn on a canvas.
  *
  * `exportGymCard` renders one trainer's card; `exportLeagueHome` renders the
- * league summary at whichever team toggle is on screen. Both return a PNG blob
+ * league summary at the layout's team mode, which the export pane starts at
+ * the team toggle on screen. Both return a PNG blob
  * for `shareOrDownload`, which is the dex export's own platform path: the iOS
  * share sheet saves to Photos, Android takes the download so the gallery scans
  * it, and desktop gets a file.
@@ -1326,7 +1327,7 @@ export async function exportGymCard(card: GymCard): Promise<Blob> {
   return render(L.CARD_IMG_W, L.CARD_IMG_H, (ctx) => drawGymCard(ctx, card, images));
 }
 
-/** The league summary as a PNG, at whichever team toggle is on screen. */
+/** The league summary as a PNG, at the layout's team mode. `view` fills in for "both". */
 export async function exportLeagueHome(
   name: string,
   cards: GymCard[],

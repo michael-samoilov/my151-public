@@ -44,11 +44,6 @@ function flag(params: URLSearchParams, key: string, fallback: boolean): boolean 
   return fallback;
 }
 
-/**
- * Reads `exportTeamMode`, `exportLeagueName`, per-detail flags, and legacy
- * `exportGymDetails` / `exportSideBySide`. Missing flags keep the defaults
- * (every details box on, story teams).
- */
 export function leagueLayoutFrameKey(layout: LeagueHomeExportLayout): string {
   return [
     layout.teamMode,
@@ -94,10 +89,18 @@ export function leagueLayoutPermutations(base: LeagueHomeExportLayout): LeagueHo
   });
 }
 
-export function parseLeagueHomeExportLayout(search: string): LeagueHomeExportLayout {
+/**
+ * Reads `exportTeamMode`, `exportLeagueName`, per-detail flags, and legacy
+ * `exportGymDetails` / `exportSideBySide`. Missing flags keep the defaults:
+ * every details box on, and `onScreen`, the team the league tab shows.
+ */
+export function parseLeagueHomeExportLayout(
+  search: string,
+  onScreen: LeagueHomeTeamMode,
+): LeagueHomeExportLayout {
   const params = new URLSearchParams(search);
   const teamParam = params.get('exportTeamMode');
-  let teamMode: LeagueHomeTeamMode = 'story';
+  let teamMode: LeagueHomeTeamMode = onScreen;
   if (teamParam === 'rematch' || teamParam === 'both' || teamParam === 'story') {
     teamMode = teamParam;
   } else if (flag(params, 'exportSideBySide', false)) {

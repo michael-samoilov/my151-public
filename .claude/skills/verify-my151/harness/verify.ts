@@ -14,6 +14,7 @@ import {
   runGymCardExportParitySuite,
   runLeagueChangeSuite,
   runLeagueColumnHoverSuite,
+  runLeagueExportTeamSuite,
   runLeagueFunnelNudgeSuite,
   runLeagueGymExportFoilSuite,
   runLeagueHomeSlotMoveProof,
@@ -69,6 +70,7 @@ async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: st
       ['league-hover', () => runLeagueColumnHoverSuite(s, def.persona, ctx)],
       ['league-home', () => runLeagueHomeSlotMoveProof(s, def.persona, ctx)],
       ['gym-card-export', () => runGymCardExportParitySuite(s, def.persona, ctx)],
+      ['league-export-team', () => runLeagueExportTeamSuite(s, def.persona, ctx)],
       ['league-funnel', () => runLeagueFunnelNudgeSuite(s, def.persona, ctx)],
     ];
     for (const [name, fn] of suites) {

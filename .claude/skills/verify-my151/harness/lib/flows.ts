@@ -1752,6 +1752,43 @@ const SABRINA_SOLO_LEAGUE =
  * Gym-card export preview for the Nimbus/Cotton Guard card. Proves the overlay
  * paints a real PNG of that card; layout parity lives in layout.test.ts.
  */
+/**
+ * The league export starts at the team the league tab shows: Rematch on the
+ * Rematch tab, Story on the Story tab. The pane marks its team with a tinted
+ * background, so exactly one `[data-export-team]` paints one.
+ */
+export async function runLeagueExportTeamSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+  for (const [view, team] of [['rematch', 'rematch'], ['challenge', 'story']] as const) {
+    const name = `league-export:starts-at-${view}-tab`;
+    await s.navigate(url);
+    if (!(await waitLeagueHome(s))) {
+      checks.push({ name, status: 'skip', detail: 'league home never hydrated' });
+      continue;
+    }
+    if (!(await clickHandle(s, `[data-league-view="${view}"]`))) {
+      checks.push({ name, status: 'fail', detail: 'tab never rendered' });
+      continue;
+    }
+    await sleep(400);
+    if (!(await clickHandle(s, '[data-league-export="league"]')) || !(await waitFor(s, '[data-export-team]', 40))) {
+      checks.push({ name, status: 'fail', detail: 'export pane never opened' });
+      continue;
+    }
+    await sleep(1000);
+    const tinted = await s.evalJson<string[]>(
+      `const clear=(c)=>c==='transparent'||/rgba\\([^)]*,\\s*0\\)$/.test(c);
+       return [...document.querySelectorAll('[data-export-team]')]
+         .filter((el)=>!clear(getComputedStyle(el).backgroundColor))
+         .map((el)=>el.getAttribute('data-export-team'));`,
+    );
+    checks.push(ok(name, tinted.length === 1 && tinted[0] === team, `tinted=${tinted.join(',') || 'none'} want=${team}`));
+    await s.screenshot(ctx.shot(`league-export-${view}-tab`));
+  }
+  return checks;
+}
+
 export async function runGymCardExportParitySuite(
   s: Session,
   _persona: PersonaName | null,

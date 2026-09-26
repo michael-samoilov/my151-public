@@ -43,7 +43,10 @@ export function LeagueExportOverlay() {
   const exportKind = isLeague ? 'league' : 'card';
 
   const [layout, setLayout] = useState<LeagueHomeExportLayout>(() =>
-    parseLeagueHomeExportLayout(window.location.search),
+    parseLeagueHomeExportLayout(
+      window.location.search,
+      useLeagueStore.getState().view === 'rematch' ? 'rematch' : 'story',
+    ),
   );
   const [exportBusy, setExportBusy] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
