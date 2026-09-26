@@ -5,9 +5,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "D=\"${CLAUDE_PROJECT_DIR:-.}\"; echo '[repo-style] Style and report rules. Apply them to all prose, visible thinking, and end-of-turn reports in this session:'; for s in google-style action-first-replies work-report; do printf '\\n---\\n\\n'; cat \"$D/.claude/skills/$s/SKILL.md\"; done",
+            "command": "D=\"${CLAUDE_PROJECT_DIR:-.}\"; echo '[repo-style] Style and report rules. Apply them to all prose, visible thinking, and end-of-turn reports in this session:'; for s in google-style action-first-replies work-report; do printf '\\n---\\n\\n'; cat \"$D/.claude/skills/$s/SKILL.md\"; done; printf '\\n---\\n\\n'; echo '[repo-tests] Testing rules from AGENTS.md. Apply them before you write, change, or delete a test:'; echo; T=$(awk '/^## /{if(p)exit; p=/^## [0-9. ]*Testing$/} p' \"$D/AGENTS.md\"); [ -n \"$T\" ] && printf '%s\\n' \"$T\" || echo 'AGENTS.md has no Testing section. Read AGENTS.md before you write, change, or delete a test.'",
             "timeout": 15,
-            "statusMessage": "Loading repo style rules"
+            "statusMessage": "Loading repo style and test rules"
           },
           {
             "type": "command",
