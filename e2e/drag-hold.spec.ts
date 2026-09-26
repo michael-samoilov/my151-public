@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { seedDex, TUNE_URL } from './support/dexSeed';
-import { blankLeague, seededLeague } from './support/leagueSeed';
+import { blankLeague, seededLeague, sevenGymsLeague } from './support/leagueSeed';
 
 /**
  * Where a drag puts things, on four surfaces.
@@ -77,7 +77,9 @@ test.describe('drag hold', () => {
 
   test('a league row is carried in the slot it would fill', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'mouse-driven drag needs the desktop project');
-    await blankLeague(page);
+    // A row with a trainer on it. An empty row is not a drag source since
+    // 3c6e321d; it only opens on tap, so a blank league has nothing to carry.
+    await sevenGymsLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(300);
@@ -221,7 +223,7 @@ test.describe('drag hold', () => {
     expect((await audit()).bad, 'dex builder').toEqual([]);
   });
 
-  test('the legendary is carried on a cell face', async ({ page }) => {
+  test('the legendary is carried on a cell face', { tag: '@viewport' }, async ({ page }) => {
     // The copy in hand wears what a cell wears, so a drag reads the same
     // whether it carries a column or the boss's legendary. A bare sprite on
     // the dark band read as a cutout beside the lifted cells.

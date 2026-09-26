@@ -21,7 +21,7 @@ async function openPicks(page: Page) {
 }
 
 test.describe('admin picks page', () => {
-  test('wraps sections in builder chrome and shows index bars', async ({ page }) => {
+  test('wraps sections in builder chrome and shows index bars', { tag: '@viewport' }, async ({ page }) => {
     await openPicks(page);
 
     const starters = page.locator('[data-section-id="starter"]');

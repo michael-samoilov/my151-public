@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Hammer } from 'lucide-react';
-import { useT } from '@/i18n';
+import { useDocumentLocale, useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu, type ToolsCallout } from '@/components/layout/ToolsMenu';
@@ -455,6 +455,7 @@ function reserveByRow(tools: Tool[], cols: number): boolean[] {
 
 export function HomePage() {
   const t = useT();
+  useDocumentLocale();
   useJsErrorCounter();
   useEffect(() => {
     sendEventBeacon('hub-shown', { once: true });

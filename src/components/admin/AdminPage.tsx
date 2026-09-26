@@ -6,11 +6,12 @@ import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { dexFunnelSankey, leagueFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
-import type { DexUsageFunnel, LeagueUsageFunnel, WhoBucket } from '../../../api/_aggregate';
+import type { DexUsageFunnel, HeatmapClock, LeagueUsageFunnel, WhoBucket } from '../../../api/_aggregate';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
 import { Panel, Seg, Kpi } from '@/components/admin/ui';
 import { ClampChip, PlatformStacks } from '@/components/admin/PlatformStacks';
 import { WhoOrigin } from '@/components/admin/WhoOrigin';
+import { HeatmapCard } from '@/components/admin/HeatmapCard';
 import { clampedN, type PlatformJoint } from '@/lib/platformStacks';
 import { filteredN, type WhoFilter } from '@/lib/whoOrigin';
 import { Input } from '@/components/ui/input';
@@ -118,8 +119,6 @@ function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
     joints: [],
     whoBuckets: [],
     countries7d: 0,
-    hours: data.hours,
-    heatmap: data.heatmap,
     hourly: [],
   };
 }
@@ -194,8 +193,8 @@ export interface Aggregates {
   joints?: PlatformJoint[];
   whoBuckets?: WhoBucket[];
   countries7d?: number;
-  hours: number[];
-  heatmap: number[][];
+  /** Absent on a deploy that predates the clock toggle. */
+  heatmaps?: Record<HeatmapClock, number[][]>;
   hourly?: { hour: number; unique: number }[];
 }
 
@@ -360,8 +359,6 @@ export interface ApiResponse {
   languages?: Record<string, number>;
   devices: Record<string, number>;
   os: Record<string, number>;
-  hours: number[];
-  heatmap: number[][];
   popularFinal: [string, number][];
   mostDropped: [string, number][];
   popularMin?: number;
@@ -1976,6 +1973,8 @@ export function AdminPage() {
                 nowMs={loadedAt}
               />
             )}
+
+            {slice.heatmaps && <HeatmapCard heatmaps={slice.heatmaps} />}
 
             {showDex && <BeaconDropNotice events={data.funnelEvents} />}
 

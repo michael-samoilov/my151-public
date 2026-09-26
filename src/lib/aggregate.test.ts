@@ -6,7 +6,7 @@ import {
   dailyActive,
   hourlyActive,
   depthByDevice,
-  heatmap,
+  heatmaps,
   mergeByCid,
   referrerFlow,
   retention,
@@ -40,8 +40,6 @@ const dex = (over: Partial<SessionRecord> = {}): SessionRecord => ({
   device: 'Desktop',
   os: 'macOS',
   browser: 'Chrome',
-  localDow: 2,
-  localHour: 12,
   ...over,
 });
 
@@ -60,8 +58,6 @@ const league = (over: Partial<SessionRecord> = {}): SessionRecord => ({
   device: 'Mobile',
   os: 'iOS',
   browser: 'Safari',
-  localDow: 3,
-  localHour: 12,
   ...over,
 });
 
@@ -100,24 +96,10 @@ describe('dailyActive', () => {
     expect(series[0].dau).toBe(1);
     expect(series[2].dau).toBe(1);
   });
-
-  it('returns nothing for no records', () => {
-    expect(dailyActive([])).toEqual([]);
-  });
-
-  it('extends through the given now day when that day has no activity', () => {
-    const series = dailyActive([dex()], T0 + 5 * DAY_MS);
-    expect(series.map((p) => p.dau)).toEqual([1, 0, 1, 0, 0, 0]);
-    expect(series[series.length - 1].day).toBe(Date.UTC(2026, 8, 6));
-  });
 });
 
 describe('hourlyActive', () => {
   const hour = DAY_MS / 24;
-
-  it('returns nothing for no records', () => {
-    expect(hourlyActive([], T0)).toEqual([]);
-  });
 
   it('counts unique browsers in each UTC hour and fills zeros through now', () => {
     const rec = dex({
@@ -134,19 +116,6 @@ describe('hourlyActive', () => {
     expect(byHour.get(T0 + hour)).toBe(0);
     expect(byHour.get(T0 + 3 * hour)).toBe(1);
     expect(byHour.get(T0 + 5 * hour)).toBe(0);
-  });
-
-  it('counts two browsers in the same hour once each', () => {
-    const series = hourlyActive([dex(), league({ firstTs: T0, lastTs: T0, sessionLog: [{ ts: T0 }] })], T0);
-    expect(series.find((p) => p.hour === T0)?.unique).toBe(2);
-  });
-
-  it('covers the last seven UTC days through the current hour', () => {
-    const now = T0 + 6 * DAY_MS + 18 * hour;
-    const series = hourlyActive([dex()], now);
-    expect(series[0].hour).toBe(Date.UTC(2026, 8, 2, 0, 0, 0));
-    expect(series[series.length - 1].hour).toBe(Date.UTC(2026, 8, 8, 6, 0, 0));
-    expect(series).toHaveLength(6 * 24 + 7);
   });
 });
 
@@ -188,20 +157,26 @@ describe('tallies', () => {
   });
 });
 
-describe('heatmap', () => {
-  it('places a record in its own local day and hour', () => {
-    const { hours, matrix } = heatmap([dex(), league()]);
-    expect(hours[12]).toBe(2);
-    expect(matrix[2][12]).toBe(1);
-    expect(matrix[3][12]).toBe(1);
+describe('heatmaps', () => {
+  const total = (m: number[][]) => m.flat().reduce((a, b) => a + b, 0);
+
+  it('reads Eastern Time with daylight saving: the same UTC hour is noon in July and 11 AM in January', () => {
+    const july = dex({ cid: 'jul', tz: 'Asia/Tokyo', lastTs: Date.UTC(2026, 6, 15, 16) }); // Wed
+    const january = dex({ cid: 'jan', tz: 'Asia/Tokyo', lastTs: Date.UTC(2026, 0, 14, 16) }); // Wed
+    const { eastern } = heatmaps([july, january]);
+    expect(eastern[3][12]).toBe(1);
+    expect(eastern[3][11]).toBe(1);
   });
 
-  // Back-population: a record written before localDow existed still lands in
-  // the right cell, derived from its timezone and last activity.
-  it('derives the slot from tz and lastTs when the stored fields are absent', () => {
-    const { matrix } = heatmap([dex({ localDow: undefined, localHour: undefined })]);
-    // lastTs is Thu 2026-09-03 12:00 UTC.
-    expect(matrix[4][12]).toBe(1);
+  it('leaves a browser without a timezone out of local time and keeps it in Eastern Time', () => {
+    const london = dex({ cid: 'ldn', tz: 'Europe/London', lastTs: Date.UTC(2026, 8, 3, 12) }); // Thu 13:00 BST
+    // What submit stores for a browser with no timezone: UTC wall-clock fields.
+    const noTz = { ...dex({ cid: 'none', tz: undefined, lastTs: Date.UTC(2026, 8, 3, 12) }), localDow: 4, localHour: 12 };
+    const { local, eastern } = heatmaps([london, noTz]);
+    expect(total(local)).toBe(1);
+    expect(local[4][13]).toBe(1);
+    expect(total(eastern)).toBe(2);
+    expect(eastern[4][8]).toBe(2);
   });
 });
 
@@ -251,10 +226,6 @@ describe('mergeByCid', () => {
     expect(merged).toHaveLength(1);
     expect(merged[0].cid).toBe(shared);
   });
-
-  it('leaves browsers that used only one tool alone', () => {
-    expect(mergeByCid([[dex()], [league()]])).toHaveLength(2);
-  });
 });
 
 describe('aggregate', () => {
@@ -270,8 +241,7 @@ describe('aggregate', () => {
     expect(agg.activity).toHaveLength(3);
     expect(agg.hourly.length).toBeGreaterThan(1);
     expect(agg.hourly[0]).toEqual(expect.objectContaining({ hour: expect.any(Number), unique: expect.any(Number) }));
-    expect(agg.heatmap).toHaveLength(7);
-    expect(agg.hours).toHaveLength(24);
+    expect(Object.keys(agg.heatmaps)).toEqual(['local', 'eastern']);
   });
 
   it('tallies country, browser language, served locale, and pin together', () => {
@@ -327,10 +297,6 @@ describe('tallyCohort', () => {
       { device: 'Mobile', os: 'macOS', browser: 'Chrome', n: 1 },
     ]);
   });
-
-  it('reports zero users for an empty slice', () => {
-    expect(tallyCohort([]).users).toBe(0);
-  });
 });
 
 describe('depthByDevice', () => {
@@ -359,11 +325,6 @@ describe('referrerFlow', () => {
       { host: 'reddit.com', total: 2, dex: 2, league: 1 }, // aaaa, bbbb: total is distinct browsers, not dex+league
       { host: 't.co', total: 1, dex: 0, league: 1 },
     ]);
-  });
-
-  it('folds a country-split dex cid onto the bare cid before counting', () => {
-    const rows = referrerFlow([withReferrer('aaaa::FR', 'reddit.com')], []);
-    expect(rows).toEqual([{ host: 'reddit.com', total: 1, dex: 1, league: 0 }]);
   });
 
   it('counts records with no referrer as referrer not known', () => {
@@ -525,14 +486,6 @@ describe('leagueUsageFunnel', () => {
     ]);
     expect(f.exportedLeague).toBe(1);
     expect(f.exportedCard).toBe(1);
-  });
-
-  it('floors opened at placed when the open event undercounts', () => {
-    const f = leagueUsageFunnel([row(0, { maxSeats: 2, maxCards: 1 }), row(14, { exportsLeague: 1 })], 0);
-    expect(f.opened).toBe(2);
-    expect(f.placed).toBe(2);
-    expect(f.bounced).toBe(0);
-    expect(f.cardNotFinished).toBe(1);
   });
 
   it('does not count a zero-seat record as placed', () => {

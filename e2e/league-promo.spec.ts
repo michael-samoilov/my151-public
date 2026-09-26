@@ -15,7 +15,7 @@ test.describe('gym leader maker callout', () => {
     );
   });
 
-  test('a saved dex sees it once, pointing at Tools', async ({ page }) => {
+  test('a saved dex sees it once, pointing at Tools', { tag: '@viewport' }, async ({ page }) => {
     await page.addInitScript(([k, v]) => localStorage.setItem(k, v), [STORE_KEY, SEEDED] as const);
     await page.goto('/pokedex-builder');
     const promo = page.getByTestId('league-promo');

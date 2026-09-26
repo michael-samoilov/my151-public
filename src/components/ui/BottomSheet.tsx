@@ -201,6 +201,63 @@ export function BottomSheet({
       window.removeEventListener('resize', sync);
     };
   }, []);
+
+  /**
+   * Leaving the field collapses the sheet again, but never under a press.
+   *
+   * What takes focus off the field is usually a press on another control in
+   * the same sheet: a category chip, a move in the TM list, a disclosure.
+   * Focus moves at `mousedown`, so collapsing on `blur` pulled that control out
+   * from under the pointer before the release. The release then landed on
+   * whatever had taken its place, and the click went nowhere.
+   *
+   * So the collapse waits until nothing is pressed, and then one frame more.
+   * A release and the click it produces are dispatched in the same task, and a
+   * frame callback only runs after that task. Compatibility mouse events count
+   * as a press as well, because a touch tap releases its pointer first and only
+   * then moves focus, on the `mousedown` the browser synthesizes after it.
+   *
+   * Focus arriving in a field before that frame cancels the collapse. That is
+   * also why moving from one field to the next never collapses at all: the
+   * `focus` follows the `blur` in the same task.
+   */
+  const collapsePending = useRef(false);
+  const pressing = useRef(false);
+  const collapseFrame = useRef(0);
+  const collapseAfterPress = useCallback(() => {
+    cancelAnimationFrame(collapseFrame.current);
+    if (!collapsePending.current || pressing.current) return;
+    collapseFrame.current = requestAnimationFrame(() => {
+      // A new press can start before the frame. Its own release reschedules.
+      if (!collapsePending.current || pressing.current) return;
+      collapsePending.current = false;
+      setTextFocus(false);
+    });
+  }, []);
+  useEffect(() => {
+    const press = () => {
+      pressing.current = true;
+    };
+    const release = () => {
+      pressing.current = false;
+      collapseAfterPress();
+    };
+    const opts = { capture: true } as const;
+    document.addEventListener('pointerdown', press, opts);
+    document.addEventListener('mousedown', press, opts);
+    document.addEventListener('pointerup', release, opts);
+    document.addEventListener('pointercancel', release, opts);
+    document.addEventListener('mouseup', release, opts);
+    return () => {
+      document.removeEventListener('pointerdown', press, opts);
+      document.removeEventListener('mousedown', press, opts);
+      document.removeEventListener('pointerup', release, opts);
+      document.removeEventListener('pointercancel', release, opts);
+      document.removeEventListener('mouseup', release, opts);
+      cancelAnimationFrame(collapseFrame.current);
+    };
+  }, [collapseAfterPress]);
+
   useEffect(() => {
     // Where the current touch began, so a touchmove can be classified as a
     // horizontal or a vertical gesture. A wheel event carries its own deltas
@@ -303,19 +360,13 @@ export function BottomSheet({
       onFocusCapture={(e) => {
         const t = e.target;
         if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+          collapsePending.current = false;
           setTextFocus(true);
         }
       }}
-      onBlurCapture={(e) => {
-        const next = e.relatedTarget;
-        if (
-          next instanceof HTMLElement &&
-          e.currentTarget.contains(next) &&
-          (next.tagName === 'INPUT' || next.tagName === 'TEXTAREA')
-        ) {
-          return;
-        }
-        setTextFocus(false);
+      onBlurCapture={() => {
+        collapsePending.current = true;
+        collapseAfterPress();
       }}
       // Bounded to the visible area rather than `inset-0`, so "the bottom" is
       // the top of the keyboard when one is open and the bottom of the screen
