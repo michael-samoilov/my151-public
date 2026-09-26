@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { seedDex, TUNE_URL } from './support/dexSeed';
-import { blankLeague, seededLeague } from './support/leagueSeed';
+import { blankLeague, seededLeague, sevenGymsLeague } from './support/leagueSeed';
 
 /**
  * Where a drag puts things, on four surfaces.
@@ -77,7 +77,7 @@ test.describe('drag hold', () => {
 
   test('a league row is carried in the slot it would fill', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'mouse-driven drag needs the desktop project');
-    await blankLeague(page);
+    await sevenGymsLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(300);
