@@ -64,7 +64,7 @@ const buttons = (page: Page, row: number, seatNo: number) =>
   );
 
 test.describe('powerups', () => {
-  test('the buttons stay circular', async ({ page }) => {
+  test('the buttons stay circular', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
 
@@ -93,7 +93,7 @@ test.describe('powerups', () => {
     }
   });
 
-  test('a press wide of the disc still toggles, and no two areas meet', async ({ page }) => {
+  test('a press wide of the disc still toggles, and no two areas meet', { tag: '@viewport' }, async ({ page }) => {
     // The disc is 1rem so neighbouring seats' buttons cannot touch. That
     // leaves a 1rem target beside a tap that opens the line picker, so the
     // press area is larger than the paint — and no larger than the room.

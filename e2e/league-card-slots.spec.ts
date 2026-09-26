@@ -285,7 +285,7 @@ test.describe('gym card slots', () => {
     expect(await page.locator('[data-filter-chip="my-dex"]').count(), 'it stayed off').toBe(1);
   });
 
-  test('the TM disc takes the move\'s type, not the gym\'s', async ({ page }) => {
+  test('the TM disc takes the move\'s type, not the gym\'s', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
     await page.click('text=Pick a move');
     await page.waitForSelector('[data-testid="tm-filter-category"]');
@@ -350,7 +350,7 @@ test.describe('gym card slots', () => {
     expect(short.phrase).toBe('Thunder Badge');
   });
 
-  test('the badge refuses text that would spill out of its slot', async ({ page }) => {
+  test('the badge refuses text that would spill out of its slot', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
     const field = page.locator('[aria-label="Badge name"]');
     await field.click();
@@ -411,7 +411,7 @@ test.describe('gym card slots', () => {
  * inside the rectangular box still paints through the corner dash.
  */
 test.describe('the partner heading', () => {
-  test('keeps both words inside the rounded pane', async ({ page }) => {
+  test('keeps both words inside the rounded pane', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
     await page.waitForTimeout(400);
     const got = await page.evaluate(() => {
@@ -547,7 +547,7 @@ test.describe('an empty slot and a filled one', () => {
   // they mounted on opposite sides of the swap. Hold the font back past the
   // window and the placement must still land where it does with the font
   // already resident.
-  test('the placement survives a webfont that lands late', async ({ page }) => {
+  test('the placement survives a webfont that lands late', { tag: '@viewport' }, async ({ page }) => {
     await page.route('**/*.woff2', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 1200));
       await route.continue();
@@ -569,7 +569,7 @@ test.describe('an empty slot and a filled one', () => {
     }
   });
 
-  test('put their content in the same place', async ({ page }) => {
+  test('put their content in the same place', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
     const empty = await anchors(page);
 

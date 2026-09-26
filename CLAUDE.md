@@ -55,7 +55,28 @@ Before you share a rendered mockup, an image export, or a static page, run the f
 
 GitHub Actions is not used. Do not retry Actions. Do not wait for PR checks. The workflow file is `workflow_dispatch` only. Restore `push` / `pull_request` only if billing allows jobs to start.
 
-Before every commit and push, run `bash scripts/ci-local.sh`. That is lint, unit tests, Playwright, then `npm run build`. Never push code that has not passed this script. `npm run build` alone is not enough.
+Verification has two tiers. Run the tier that matches the push.
+
+| Push | Run |
+|---|---|
+| Work branch | `npm run lint`, `npm test`, `npm run build`, and the Playwright specs that cover the change. |
+| Production merge | `bash scripts/ci-local.sh` once, on the merged result. |
+
+A change that touches only Markdown files runs neither tier.
+
+Work-branch tier:
+
+1. Run `npm run lint`, `npm test`, and `npm run build`.
+2. Run only the specs that cover the change, in the `desktop` project: `npx playwright test e2e/<name>.spec.ts --project=desktop`.
+3. For a layout change, also add `--project=mobile --project=narrow`.
+4. When a test fails, fix the cause. Then run `npx playwright test --last-failed`. Do not rerun the whole suite for one failure.
+
+Production tier:
+
+1. Run `bash scripts/ci-local.sh` once, before the merge. That is lint, unit tests, Playwright, then `npm run build`.
+2. A failure outside your change does not block the merge. Report it as pre-existing, with evidence: the same failure on production HEAD.
+
+Test rules: read `AGENTS.md` section 4, "Testing", before you write, change, or delete a test. Those rules apply to every agent in this repository. In short: prove a change with a proof test that fails on the old code and passes on the new code, report both results, and do not commit that test. Prefer E2E tests that end with a repeatable artifact. Keep a unit test only when it catches a bug that E2E misses.
 
 `npm run build` is exactly `npm run i18n:verify && tsc -b && vite build`. The `tsc -b` step covers `src`, `api`, `scripts` and `e2e` via the project references in `tsconfig.json` — note that `api/` is Vercel serverless code that Vite never touches, so this typecheck is its only local gate. **Sprite caching is not part of the build**; it is a separate, manual `npm run cache-sprites`.
 
@@ -67,7 +88,8 @@ The other checks, which `scripts/ci-local.sh` also runs:
 |---|---|
 | `npm run lint` | ESLint. Pre-existing violations are recorded in `eslint-suppressions.json`, so this passes today and any *new* violation fails. Regenerate with `npx eslint . --suppress-all` only when deliberately accepting a new one. **If you *fix* a suppressed violation, run `npx eslint . --prune-suppressions`** — a stale entry exits 2 and fails CI just as loudly as a new violation. |
 | `npm test` | Vitest unit tests (`src/**/*.test.ts`, `scripts/**/*.test.ts`). |
-| `npm run test:e2e` | Playwright. Required for UI changes. Auto-starts `vite preview` on port 4173, so no server needs to be running. Projects: `mobile`, `desktop`, `narrow` (320px). Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
+| `node scripts/check-viewport-tags.mjs` | Fails when a test that is not tagged `@viewport` skips `desktop`. That test runs in no project. Tag a test or describe `@viewport` when its result depends on the project width or device: a measured box, overflow, wrap, scroll, fit, touch, or a sheet-versus-pane branch. Leave a test untagged when it checks only state, copy, storage, or network, or when it pins its own viewport. |
+| `npm run test:e2e` | Playwright. Required for UI changes. Auto-starts isolated preview and development servers on ports derived from the worktree path. Use `PLAYWRIGHT_PREVIEW_PORT` and `PLAYWRIGHT_DEV_PORT` to override them. Projects: `mobile`, `desktop`, `narrow` (320px). `desktop` runs every test; `mobile` and `narrow` run only `@viewport` tests. Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
 
 Against a Vercel preview, skip the local web servers:
 
@@ -87,7 +109,7 @@ Do not wait for Michael to ship low-risk, already-verified work. Merge it to `cl
 The approval rule keeps an untested change that **end users** see out of the live app.
 Judge the change by what it does, not only by which folder the files sit in.
 
-Before every production push, run `npm run build` and `bash scripts/ci-local.sh`. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the compile and deploy signal.
+Before every production push, run the production tier of Build Verification (`bash scripts/ci-local.sh`). GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the compile and deploy signal.
 
 After every production push, check out the work branch again. A merge leaves you on production, so the next commit would land there. Run `git rev-parse --abbrev-ref HEAD` before any later commit.
 

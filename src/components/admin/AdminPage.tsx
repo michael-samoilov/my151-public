@@ -27,7 +27,9 @@ import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/compo
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
+import { SearchPerformancePanel } from '@/components/admin/SearchPerformancePanel';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
+import type { SearchPerformanceSnapshot } from '@/lib/searchPerformance';
 import {
   ARCHIVE_FILTER_OPTIONS,
   bareCid,
@@ -438,6 +440,15 @@ async function fetchDashboard(token: string, limit: number, offset: number): Pro
   if (res.status === 503) throw new Error('Admin access is not configured on the server (ADMIN_TOKEN is not set).');
   if (!res.ok) throw new Error(`Request failed (${res.status}).`);
   return res.json() as Promise<ApiResponse>;
+}
+
+async function fetchSearchPerformance(token: string, refresh: boolean): Promise<SearchPerformanceSnapshot> {
+  const qs = refresh ? '?refresh=1' : '';
+  const res = await fetch(`/api/search-performance${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Search data request failed (${res.status}).`);
+  return res.json() as Promise<SearchPerformanceSnapshot>;
 }
 
 // ---------- presentational bits ----------
@@ -1593,6 +1604,9 @@ export function AdminPage() {
   });
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
+  const [searchPerformance, setSearchPerformance] = useState<SearchPerformanceSnapshot | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
   const [page, setPage] = useState<'analytics' | 'feedback'>('analytics');
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
@@ -1630,7 +1644,19 @@ export function AdminPage() {
   }, [detail]);
   const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
 
-  const load = useCallback(async (tok: string, limit = PAGE_SIZE) => {
+  const loadSearch = useCallback(async (tok: string, refresh = false) => {
+    setSearchLoading(true);
+    setSearchError(null);
+    try {
+      setSearchPerformance(await fetchSearchPerformance(tok, refresh));
+    } catch (e) {
+      setSearchError(e instanceof Error ? e.message : 'Search data could not load.');
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  const load = useCallback(async (tok: string, limit = PAGE_SIZE, refreshSearch = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -1639,6 +1665,7 @@ export function AdminPage() {
       setLoadedAt(Date.now());
       setAuthed(true);
       setToken(tok);
+      void loadSearch(tok, refreshSearch);
       try {
         localStorage.setItem(TOKEN_KEY, tok);
       } catch {
@@ -1650,7 +1677,7 @@ export function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadSearch]);
 
   useEffect(() => {
     // Demo mode (`/?admin&demo`): render the redesign against a fabricated,
@@ -1658,8 +1685,12 @@ export function AdminPage() {
     // is dynamically imported so it never ships in the real admin bundle. Used
     // for preview review of the design; production still requires the token.
     if (new URLSearchParams(window.location.search).has('demo')) {
-      void import('./__fixtures__/sampleResponse').then((m) => {
-        setData(m.sampleResponse);
+      void Promise.all([
+        import('./__fixtures__/sampleResponse'),
+        import('./__fixtures__/sampleSearchPerformance'),
+      ]).then(([dashboard, search]) => {
+        setData(dashboard.sampleResponse);
+        setSearchPerformance(search.sampleSearchPerformance);
         setLoadedAt(Date.now());
         setAuthed(true);
       });
@@ -1733,6 +1764,8 @@ export function AdminPage() {
     setToken(null);
     setAuthed(false);
     setData(null);
+    setSearchPerformance(null);
+    setSearchError(null);
     setTokenInput('');
   }, []);
 
@@ -1787,8 +1820,8 @@ export function AdminPage() {
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token)} disabled={loading}>
-              {loading ? 'Refreshing…' : 'Refresh'}
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, PAGE_SIZE, true)} disabled={loading || searchLoading}>
+              {loading || searchLoading ? 'Refreshing…' : 'Refresh'}
             </Button>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
               Sign out
@@ -1926,6 +1959,10 @@ export function AdminPage() {
               )}
               {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
             </div>
+
+            {tool === 'all' && (
+              <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} />
+            )}
 
             {slice.activity.length > 0 && (
               <ActiveUsersPanel

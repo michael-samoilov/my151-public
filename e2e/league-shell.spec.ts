@@ -39,7 +39,7 @@ const MEASURE = () => {
   } as Paint;
 };
 
-test('the static shell paints the app\'s header and tool bar', async ({ browser, baseURL }, info) => {
+test('the static shell paints the app\'s header and tool bar', { tag: '@viewport' }, async ({ browser, baseURL }, info) => {
   const viewport = info.project.use.viewport ?? { width: 393, height: 852 };
   const scripts = await browser.newContext({ ...info.project.use, viewport, javaScriptEnabled: false });
   const shellPage = await scripts.newPage();

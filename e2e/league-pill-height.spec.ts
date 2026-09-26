@@ -22,7 +22,7 @@ function measurePill({ selector }: { selector: string }) {
   return { height: r.height, target: r.height + above + below, rem: parseFloat(getComputedStyle(document.documentElement).fontSize) };
 }
 
-test('the dex nav pill and the league toggle pill paint alike and press alike', async ({ page }) => {
+test('the dex nav pill and the league toggle pill paint alike and press alike', { tag: '@viewport' }, async ({ page }) => {
   await page.goto('/pokedex-builder');
   await page.waitForSelector('[data-nav="builder"]');
   await page.waitForTimeout(300);

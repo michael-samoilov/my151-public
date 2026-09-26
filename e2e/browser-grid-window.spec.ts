@@ -13,7 +13,7 @@ import { expect, test } from '@playwright/test';
 /** Tiles currently built, regardless of what overlays them. */
 const TILES = '[data-row-cell]';
 
-test.describe('browser result grid windowing', () => {
+test.describe('browser result grid windowing', { tag: '@viewport' }, () => {
   test('a generation filter fills the grid without scrolling', async ({ page }) => {
     await page.goto('/pokedex-builder?lang=en');
     await page.locator('[data-add-slot]').first().click();
