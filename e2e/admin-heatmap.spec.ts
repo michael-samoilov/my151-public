@@ -9,7 +9,7 @@ function whenCard(page: Page) {
   return page.locator('section', { has: page.getByRole('heading', { name: /^When/ }) });
 }
 
-test.describe('admin When heatmap', () => {
+test.describe('admin When heatmap', { tag: '@viewport' }, () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/?admin&demo');
     await expect(whenCard(page)).toBeVisible();

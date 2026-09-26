@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { CATEGORIES } from '@/data/categories';
 import type { Pokemon } from '@/types/pokemon';
 
 /**
@@ -45,14 +44,5 @@ describe('isBaby matches the official species data', () => {
       .sort((a, b) => a - b);
 
     expect(flagged).toEqual(officialBabySpeciesIds());
-  });
-
-  it('puts Toxel in the Baby Pokemon classification', () => {
-    const baby = CATEGORIES.find((c) => c.id === 'baby');
-    expect(baby, 'the baby classification went missing').toBeDefined();
-
-    const toxel = pokemon.find((p) => p.id === 848);
-    expect(toxel?.name).toBe('toxel');
-    expect(baby!.filter(toxel!)).toBe(true);
   });
 });

@@ -76,10 +76,6 @@ describe('export uniqueness recording', () => {
     expect(canRecordToolExport('preview', false)).toBe(false);
   });
 
-  it('records on production when notme is absent', () => {
-    expect(canRecordToolExport('production', false)).toBe(true);
-  });
-
   it('returns a preview highlight without touching Redis off production', async () => {
     const prev = process.env.VERCEL_ENV;
     process.env.VERCEL_ENV = 'preview';

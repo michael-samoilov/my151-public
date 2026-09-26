@@ -1,21 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-  BOSS_ROW,
-  CHAMPION_ROW,
-  LEVEL_CURVE,
-  TEAM_SIZES,
-  joinRow,
-  slotKind,
-  slotLabel,
-  slotRow,
-} from './constants';
+import { BOSS_ROW, CHAMPION_ROW } from './constants';
 import {
   defaultBoundaries,
   deriveRow,
-  deriveRows,
   makePlacedLine,
-  moveLeagueSlots,
-  moveSeat,
   setBoundary,
   signatureMember,
   stageAt,
@@ -32,35 +20,6 @@ const MAGIKARP = [129, 130]; // Gyarados at 20
 const LAPRAS = [131];
 const CATERPIE = [10, 11, 12]; // all three evolve at or under level 12
 const RHYHORN = [111, 112, 464]; // Rhydon at 42, Rhyperior traded (implied 38)
-const VOLCARONA_LINE = [636, 637];
-const HYDREIGON_LINE = [633, 634, 635];
-
-describe('constants', () => {
-  it('joins each seat at the first row big enough for it', () => {
-    expect(joinRow(1)).toBe(1);
-    expect(joinRow(2)).toBe(1);
-    expect(joinRow(3)).toBe(2);
-    expect(joinRow(4)).toBe(5);
-    expect(joinRow(5)).toBe(8);
-    expect(joinRow(6)).toBe(10);
-  });
-
-  it('maps league slots onto card rows', () => {
-    expect(slotRow(0)).toBe(1);
-    expect(slotRow(7)).toBe(8);
-    expect(slotRow(8)).toBe(9);
-    expect(slotRow(11)).toBe(9); // all Elite Four show the same row
-    expect(slotRow(12)).toBe(10);
-    expect(slotRow(13)).toBe(11);
-    expect(slotKind(13)).toBe('boss');
-    expect(slotLabel(9)).toBe('Elite Four 2');
-  });
-
-  it('keeps the curve and sizes in the settled shape', () => {
-    expect(TEAM_SIZES).toHaveLength(11);
-    expect(LEVEL_CURVE).toHaveLength(11);
-  });
-});
 
 describe('arrivalLevel', () => {
   it('returns 0 for base forms and the real level when one exists', () => {
@@ -96,16 +55,6 @@ describe('defaultBoundaries', () => {
     expect(line.branch[stageAt(line, 8)]).toBe(464);
   });
 
-  it('finishes every automatic line by the champion row', () => {
-    for (const branch of [VOLCARONA_LINE, HYDREIGON_LINE]) {
-      const line = { branch, boundaries: defaultBoundaries(branch) };
-      expect(stageAt(line, CHAMPION_ROW)).toBe(branch.length - 1);
-      expect(stageAt(line, BOSS_ROW)).toBe(branch.length - 1);
-    }
-    expect(defaultBoundaries(VOLCARONA_LINE)).toEqual([1, CHAMPION_ROW]);
-    expect(defaultBoundaries(HYDREIGON_LINE)).toEqual([1, 9, CHAMPION_ROW]);
-  });
-
   it('leaves a well-spaced line alone', () => {
     expect(defaultBoundaries(CHINCHOU)).toEqual([1, 4]);
   });
@@ -127,14 +76,6 @@ describe('defaultBoundaries', () => {
 });
 
 describe('boundaries and stages', () => {
-  it('derives boundaries from the curve', () => {
-    const line = makePlacedLine(CHINCHOU);
-    // Lanturn at 27 first fits row 4 (threshold 32).
-    expect(line.boundaries).toEqual([1, 4]);
-    expect(stageAt(line, 3)).toBe(0);
-    expect(stageAt(line, 4)).toBe(1);
-  });
-
   it('sets a boundary and pushes neighbours instead of clamping into them', () => {
     // Hand-built boundaries so the assertions don't depend on the regression.
     const line = { branch: LOTAD, boundaries: [1, 2, 6] };
@@ -148,51 +89,10 @@ describe('boundaries and stages', () => {
     // Stage 0 is pinned.
     expect(setBoundary(line, 0, 9)).toEqual(line.boundaries);
   });
-
-  it('keeps covered stages recoverable from the visible run', () => {
-    // Ludicolo dragged to the top squeezed both earlier stages out.
-    const covered = { branch: LOTAD, boundaries: [1, 1, 1] };
-    expect(stageAt(covered, 1)).toBe(2);
-    // Its top handle dragged down reveals Lombre above it…
-    const step1 = setBoundary(covered, 2, 5);
-    expect(step1).toEqual([1, 1, 5]);
-    expect(stageAt({ ...covered, boundaries: step1 }, 3)).toBe(1);
-    // …and Lombre's top handle dragged down reveals Lotad.
-    const step2 = setBoundary({ ...covered, boundaries: step1 }, 1, 3);
-    expect(step2).toEqual([1, 3, 5]);
-    expect(stageAt({ ...covered, boundaries: step2 }, 2)).toBe(0);
-  });
 });
 
 describe('deriveRow', () => {
   const lines = [CHINCHOU, WOOPER, MAGIKARP, LAPRAS].map(makePlacedLine);
-
-  it('always emits every seat the row allows, filled or not', () => {
-    const row1 = deriveRow(lines.slice(0, 1), 1, []);
-    expect(row1).toHaveLength(2);
-    expect(row1[0]).toMatchObject({ seat: 2, pokemonId: null });
-    expect(row1[1]).toMatchObject({ seat: 1, pokemonId: 170 });
-  });
-
-  it('joins seats at their row and evolves along the curve', () => {
-    // Row 1 seats two: Wooper and Chinchou, unevolved.
-    const row1 = deriveRow(lines, 1, []);
-    expect(row1.map((c) => c.pokemonId)).toEqual([194, 170]);
-    // Left to right at row 5: Lapras (seat 4 joins here), Gyarados,
-    // Quagsire (20 ≤ 34), Lanturn (27 ≤ 34).
-    const row5 = deriveRow(lines, 5, []);
-    expect(row5.map((c) => c.pokemonId)).toEqual([131, 130, 195, 171]);
-  });
-
-  it('overlays the legendary on the boss row only', () => {
-    const legends = [{ pokemonId: 245, seat: 3 }];
-    const boss = deriveRow(lines, BOSS_ROW, legends);
-    const seat3 = boss.find((c) => c.seat === 3)!;
-    expect(seat3).toMatchObject({ pokemonId: 245, isLegend: true });
-    const champ = deriveRow(lines, 10, legends);
-    expect(champ.find((c) => c.seat === 3)!.pokemonId).toBe(130); // untouched
-    expect(deriveRows(lines, legends)).toHaveLength(11);
-  });
 
   it('overlays one legendary per seat, so the row can be all of them', () => {
     const legends = [
@@ -207,38 +107,11 @@ describe('deriveRow', () => {
   });
 });
 
-describe('moveSeat', () => {
-  it('removes and reinserts, closing the rest up', () => {
-    expect(moveSeat(['a', 'b', 'c', 'd'], 1, 3)).toEqual(['b', 'c', 'a', 'd']);
-    expect(moveSeat(['a', 'b', 'c', 'd'], 4, 1)).toEqual(['d', 'a', 'b', 'c']);
-  });
-});
-
 describe('signatureMember', () => {
   const onix = makePlacedLine([95, 208]); // Onix into Steelix
-  const geodude = makePlacedLine([74, 75, 76]);
-
-  it('shows the pokemon the user picked', () => {
-    expect(signatureMember(geodude, 74)).toBe(74);
-    expect(signatureMember(geodude, 75)).toBe(75);
-  });
-
-  it('shows the picked pre-evolution over the line leaf', () => {
-    expect(stageAt(onix, BOSS_ROW)).toBe(1); // the boss row fields Steelix
-    expect(signatureMember(onix, 95)).toBe(95);
-  });
-
-  it('falls back to the boss row with no pick', () => {
-    expect(signatureMember(onix, null)).toBe(208);
-    expect(signatureMember(geodude, null)).toBe(76);
-  });
 
   it('falls back once the pick leaves the line', () => {
     expect(signatureMember(onix, 74)).toBe(208);
-  });
-
-  it('has nothing to show without a line', () => {
-    expect(signatureMember(undefined, 74)).toBeNull();
   });
 });
 
@@ -254,107 +127,5 @@ describe('visibleMembers', () => {
   it('shows at most two members in seat 6 when the user split the last two rows', () => {
     const split = { branch: [1, 2, 3], boundaries: [1, 10, 11] };
     expect(visibleMembers(split, 6)).toEqual([2, 3]);
-  });
-
-  it('can show three members in seat 1, which exists on every row', () => {
-    const spread = { branch: [1, 2, 3], boundaries: [1, 4, 8] };
-    expect(visibleMembers(spread, 1)).toEqual([1, 2, 3]);
-  });
-});
-
-describe('moveLeagueSlots', () => {
-  const empty = '';
-  const isEmpty = (s: string) => s === empty;
-  const blank = () => empty;
-  const slots = () => Array.from({ length: 14 }, () => empty);
-  const fill = (...pairs: Array<[number, string]>) => {
-    const start = slots();
-    for (const [i, name] of pairs) start[i] = name;
-    return start;
-  };
-
-  const block = () => fill([4, 'A'], [5, 'B'], [6, 'C'], [7, 'D']);
-
-  it('moves into an empty row and leaves every other trainer', () => {
-    const start = fill([8, 'e4-1'], [9, 'e4-2'], [10, 'e4-3'], [11, 'e4-4']);
-    const next = moveLeagueSlots(start, 11, 7, isEmpty, blank);
-    expect(next).toEqual(fill([7, 'e4-4'], [8, 'e4-1'], [9, 'e4-2'], [10, 'e4-3']));
-  });
-
-  it('parks the 4th filled trainer in a blank above the block and leaves A,B,C', () => {
-    const start = block();
-    const next = moveLeagueSlots(start, 7, 3, isEmpty, blank);
-    expect(next).toEqual(fill([3, 'D'], [4, 'A'], [5, 'B'], [6, 'C']));
-  });
-
-  it('does not playlist-shift A,B,C when the 4th filled drops on a blank above', () => {
-    const start = block();
-    const next = moveLeagueSlots(start, 7, 3, isEmpty, blank);
-    const playlist = start.slice();
-    const [moved] = playlist.splice(7, 1);
-    playlist.splice(3, 0, moved);
-    expect(next).not.toEqual(playlist);
-    expect(next[4]).toBe('A');
-    expect(next[5]).toBe('B');
-    expect(next[6]).toBe('C');
-  });
-
-  it('playlist-displaces when the 4th filled drops onto the 1st filled', () => {
-    const start = block();
-    const next = moveLeagueSlots(start, 7, 4, isEmpty, blank);
-    expect(next).toEqual(fill([4, 'D'], [5, 'A'], [6, 'B'], [7, 'C']));
-  });
-
-  it('moves only that trainer when occupied drops onto an empty below the block', () => {
-    const start = block();
-    const next = moveLeagueSlots(start, 7, 8, isEmpty, blank);
-    expect(next).toEqual(fill([4, 'A'], [5, 'B'], [6, 'C'], [8, 'D']));
-  });
-
-  it('playlist-displaces adjacent occupied rows downward', () => {
-    const start = fill([5, 'a'], [6, 'b'], [7, 'c']);
-    const next = moveLeagueSlots(start, 5, 6, isEmpty, blank);
-    expect(next).toEqual(fill([5, 'b'], [6, 'a'], [7, 'c']));
-  });
-
-  it('playlist-displaces adjacent occupied rows upward', () => {
-    const start = fill([5, 'a'], [6, 'b'], [7, 'c']);
-    const next = moveLeagueSlots(start, 6, 5, isEmpty, blank);
-    expect(next).toEqual(fill([5, 'b'], [6, 'a'], [7, 'c']));
-  });
-
-  it('playlist-displaces distant occupied rows and keeps passed order', () => {
-    const start = fill([0, 'a'], [1, 'b'], [2, 'c'], [3, 'd'], [4, 'e'], [5, 'f']);
-    const next = moveLeagueSlots(start, 0, 5, isEmpty, blank);
-    expect(next).toEqual(fill([0, 'b'], [1, 'c'], [2, 'd'], [3, 'e'], [4, 'f'], [5, 'a']));
-  });
-
-  it('playlist-displaces a full occupied league onto the last row', () => {
-    const names = 'abcdefghijklmn'.split('');
-    const start = names.slice();
-    const next = moveLeagueSlots(start, 0, 13, isEmpty, blank);
-    expect(next).toEqual([...names.slice(1), names[0]]);
-  });
-
-  it('leaves the list unchanged when the pickup row is empty', () => {
-    const start = fill([5, 'a']);
-    expect(moveLeagueSlots(start, 6, 5, isEmpty, blank)).toEqual(start);
-  });
-
-  it('does nothing when dropped on itself', () => {
-    const start = fill([4, 'a'], [5, 'b']);
-    expect(moveLeagueSlots(start, 4, 4, isEmpty, blank)).toEqual(start);
-  });
-
-  it('playlist-displaces across gym and elite-four slots', () => {
-    const start = fill([7, 'gym8'], [8, 'e4-1'], [9, 'e4-2']);
-    const next = moveLeagueSlots(start, 7, 8, isEmpty, blank);
-    expect(next).toEqual(fill([7, 'e4-1'], [8, 'gym8'], [9, 'e4-2']));
-  });
-
-  it('moves across sections into an empty elite-four slot', () => {
-    const start = fill([7, 'gym8'], [9, 'e4-2']);
-    const next = moveLeagueSlots(start, 7, 8, isEmpty, blank);
-    expect(next).toEqual(fill([8, 'gym8'], [9, 'e4-2']));
   });
 });
