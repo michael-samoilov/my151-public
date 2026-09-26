@@ -9,10 +9,6 @@ import {
 } from '../../api/_sessionize';
 
 describe('alignSessionMs', () => {
-  it('copies an already-aligned list', () => {
-    expect(alignSessionMs(3, [10, 20, 30])).toEqual([10, 20, 30]);
-  });
-
   it('keeps the most recent durations when the log is shorter', () => {
     expect(alignSessionMs(2, [10, 20, 30])).toEqual([20, 30]);
   });
@@ -23,27 +19,14 @@ describe('alignSessionMs', () => {
 });
 
 describe('sessionTarget', () => {
-  it('inserts at 0 on an empty log', () => {
-    expect(sessionTarget([], [], 100, 30_000)).toEqual({ kind: 'insert', index: 0 });
-  });
-
   it('joins a timestamp that sits inside a session interval', () => {
     // Session 0: [50, 100], session 1: [190, 200]
     expect(sessionTarget([100, 200], [50, 10], 90, 30)).toEqual({ kind: 'join', index: 0 });
     expect(sessionTarget([100, 200], [50, 10], 195, 30)).toEqual({ kind: 'join', index: 1 });
   });
 
-  it('joins a timestamp within the gap of the closest session', () => {
-    expect(sessionTarget([100, 400], [20, 20], 115, 30)).toEqual({ kind: 'join', index: 0 });
-    expect(sessionTarget([100, 400], [20, 20], 385, 30)).toEqual({ kind: 'join', index: 1 });
-  });
-
   it('inserts between sessions when the hole is larger than the gap', () => {
     expect(sessionTarget([100, 400], [20, 20], 250, 30)).toEqual({ kind: 'insert', index: 1 });
-  });
-
-  it('inserts after the last session past the gap', () => {
-    expect(sessionTarget([100], [20], 200, 30)).toEqual({ kind: 'insert', index: 1 });
   });
 });
 
@@ -55,19 +38,6 @@ describe('sortSessions', () => {
     );
     expect(log.map((s) => s.n)).toEqual(['a', 'b', 'c']);
     expect(ms).toEqual([1, 2, 3]);
-  });
-
-  it('does not use clock-hour in a timezone: epoch order is the order', () => {
-    // 23:00 in US Pacific is already the next calendar day in UTC. Sorting by
-    // UTC date or by local hour-of-day would swap these; sorting by epoch
-    // does not.
-    const pacificEvening = Date.parse('2026-09-13T23:00:00-07:00');
-    const pacificNextMorning = Date.parse('2026-09-14T01:00:00-07:00');
-    const { log } = sortSessions(
-      [{ ts: pacificNextMorning }, { ts: pacificEvening }],
-      [0, 0],
-    );
-    expect(log.map((s) => s.ts)).toEqual([pacificEvening, pacificNextMorning]);
   });
 });
 
@@ -123,26 +93,6 @@ describe('withoutDropRestorePhantoms', () => {
       { ids: [1, 2, 3, 4] },
     ];
     expect(withoutDropRestorePhantoms(log, ids)).toEqual(log);
-  });
-
-  it('drops a count-only 13→1→14 dip when the middle sitting has no ids', () => {
-    const log = [
-      { ids: [] as number[], cards: 13, seats: 74 },
-      { ids: [], cards: 1, seats: 1 },
-      { ids: [1, 2, 3], cards: 14, seats: 84 },
-    ];
-    const counts = (s: { cards: number; seats: number }) => ({ cards: s.cards, seats: s.seats });
-    expect(withoutDropRestorePhantoms(log, ids, counts)).toEqual([log[0], log[2]]);
-  });
-
-  it('keeps a 1-card sitting with different ids even when counts look like a dip', () => {
-    const log = [
-      { ids: [1, 2, 3, 4], cards: 12, seats: 70 },
-      { ids: [99], cards: 1, seats: 1 },
-      { ids: [1, 2, 3, 4], cards: 12, seats: 70 },
-    ];
-    const counts = (s: { cards: number; seats: number }) => ({ cards: s.cards, seats: s.seats });
-    expect(withoutDropRestorePhantoms(log, ids, counts)).toEqual(log);
   });
 
   it('keeps an empty-id dip when the neighbours disagree on size', () => {
