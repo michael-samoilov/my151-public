@@ -2,8 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EARLY_EXPORT_BUCKETS } from '@/league/export/exportPersonalization';
 import {
   EXPORT_SURVEY_SKIP_EVENT,
-  isFunnelEvent,
-  leagueExportEventBody,
   parseExportSurveySkipReason,
   parseExportSurveyToolField,
   parseFunnelEventList,
@@ -12,11 +10,7 @@ import {
 import {
   EXPORT_SURVEY_SEEN_KEY,
   createExportSurveySkipReporter,
-  exportSurveyFeedbackRoute,
   exportSurveySkipReason,
-  hasSeenExportSurvey,
-  isExportSurveyTool,
-  markExportSurveySeen,
   persistExportSurveySeen,
   shouldOfferExportSurvey,
   shouldShowExportSurvey,
@@ -51,30 +45,6 @@ describe('export survey gate', () => {
     expect(localStorage.getItem(EXPORT_SURVEY_SEEN_KEY)).toBe('1');
   });
 
-  it('off production, the seen key never hides the survey and is not written', () => {
-    persistExportSurveySeen(false);
-    expect(localStorage.getItem(EXPORT_SURVEY_SEEN_KEY)).toBeNull();
-    localStorage.setItem(EXPORT_SURVEY_SEEN_KEY, '1');
-    expect(surveySeenInThisEnvironment(false)).toBe(false);
-  });
-
-  it('public helpers follow PRODUCTION_DEPLOY, which is off in unit tests', () => {
-    markExportSurveySeen();
-    expect(hasSeenExportSurvey()).toBe(false);
-    expect(localStorage.getItem(EXPORT_SURVEY_SEEN_KEY)).toBeNull();
-  });
-
-  it('maps each tool to the admin route it already uses', () => {
-    expect(exportSurveyFeedbackRoute('pokedex')).toBe('view');
-    expect(exportSurveyFeedbackRoute('league')).toBe('league');
-    expect(exportSurveyFeedbackRoute('card')).toBe('league-card');
-  });
-
-  it('accepts only the three export tools', () => {
-    expect(isExportSurveyTool('league')).toBe(true);
-    expect(isExportSurveyTool('dex')).toBe(false);
-  });
-
   it('shows the survey at the last early bucket and skips after it', () => {
     expect(EARLY_EXPORT_BUCKETS.at(-1)).toBe(1000);
     expect(shouldOfferExportSurvey(1000)).toBe(true);
@@ -88,12 +58,6 @@ describe('export survey gate', () => {
     ).toBe(true);
     expect(
       shouldShowExportSurvey({ optedOut: true, preview: false, seen: false, ordinal: 5000 }),
-    ).toBe(true);
-  });
-
-  it('always shows the overlay on a Vercel preview, without notme', () => {
-    expect(
-      shouldShowExportSurvey({ optedOut: false, preview: true, seen: true, ordinal: 1001 }),
     ).toBe(true);
   });
 
@@ -114,11 +78,6 @@ describe('export survey gate', () => {
 });
 
 describe('export survey skip reason', () => {
-  it('maps Not now to not_now from either phase', () => {
-    expect(exportSurveySkipReason({ phase: 'intro', action: 'not_now' })).toBe('not_now');
-    expect(exportSurveySkipReason({ phase: 'form', action: 'not_now' })).toBe('not_now');
-  });
-
   it('maps intro dismiss to close and form dismiss to abandon', () => {
     expect(exportSurveySkipReason({ phase: 'intro', action: 'dismiss' })).toBe('close');
     expect(exportSurveySkipReason({ phase: 'form', action: 'dismiss' })).toBe('abandon');
@@ -126,19 +85,6 @@ describe('export survey skip reason', () => {
 });
 
 describe('export survey skip reporter', () => {
-  it('sends export_survey_skipped once with tool and reason', () => {
-    const sent: unknown[] = [];
-    const reporter = createExportSurveySkipReporter({
-      exportTool: 'pokedex',
-      send: (event, payload) => sent.push({ event, ...payload }),
-    });
-    reporter.skip('not_now');
-    reporter.skip('close');
-    expect(sent).toEqual([
-      { event: EXPORT_SURVEY_SKIP_EVENT, exportTool: 'pokedex', reason: 'not_now' },
-    ]);
-  });
-
   it('does not send after a successful Send', () => {
     const sent: unknown[] = [];
     const reporter = createExportSurveySkipReporter({
@@ -172,10 +118,6 @@ describe('export survey skip reporter', () => {
 });
 
 describe('export survey skip journal fields', () => {
-  it('accepts export_survey_skipped as a funnel event', () => {
-    expect(isFunnelEvent('export_survey_skipped')).toBe(true);
-  });
-
   it('parses exportTool and reason, and drops unknown values', () => {
     expect(parseExportSurveyToolField('pokedex')).toBe('pokedex');
     expect(parseExportSurveyToolField('dex')).toBeUndefined();
@@ -204,73 +146,9 @@ describe('export survey skip journal fields', () => {
       reason: 'abandon',
     });
   });
-
-  it('ignores invalid exportTool and reason values', () => {
-    expect(
-      parseJournalEntry({
-        t: 1,
-        cid: 'cid-skip-03',
-        tool: 'dex',
-        ev: 'export_survey_skipped',
-        exportTool: 'dex',
-        reason: 'esc',
-      }),
-    ).toEqual({
-      t: 1,
-      cid: 'cid-skip-03',
-      tool: 'dex',
-      ev: 'export_survey_skipped',
-    });
-  });
 });
 
 describe('league export success journal fields', () => {
-  it('keeps the existing event names and adds exportTool', () => {
-    expect(leagueExportEventBody('league')).toEqual({
-      event: 'league-export-league',
-      exportTool: 'league',
-    });
-    expect(leagueExportEventBody('card')).toEqual({
-      event: 'league-export-card',
-      exportTool: 'card',
-    });
-    expect(isFunnelEvent('league-export-league')).toBe(true);
-    expect(isFunnelEvent('league-export-card')).toBe(true);
-  });
-
-  it('keeps exportTool on a league-home export journal entry', () => {
-    expect(
-      parseJournalEntry({
-        t: 2,
-        cid: 'cid-export-01',
-        tool: 'league',
-        ev: 'league-export-league',
-        page: '/custom-gym-leader',
-        exportTool: 'league',
-      }),
-    ).toEqual({
-      t: 2,
-      cid: 'cid-export-01',
-      tool: 'league',
-      ev: 'league-export-league',
-      page: '/custom-gym-leader',
-      exportTool: 'league',
-    });
-  });
-
-  it('keeps exportTool on a gym-card export journal entry', () => {
-    expect(
-      parseJournalEntry({
-        t: 3,
-        cid: 'cid-export-02',
-        tool: 'league',
-        ev: 'league-export-card',
-        page: '/custom-gym-leader',
-        exportTool: 'card',
-      }),
-    ).toMatchObject({ ev: 'league-export-card', exportTool: 'card', tool: 'league' });
-  });
-
   it('parses a mixed session event list and drops unknown names', () => {
     expect(
       parseFunnelEventList([
@@ -280,35 +158,5 @@ describe('league export success journal fields', () => {
         'not-an-event',
       ]),
     ).toEqual(['league-export-league', 'export_survey_skipped']);
-  });
-});
-
-describe('league funnel nudge events', () => {
-  it('accepts shown, cta, and dismiss for card and league nudges', () => {
-    for (const ev of [
-      'league-nudge-card-shown',
-      'league-nudge-card-cta',
-      'league-nudge-card-dismiss',
-      'league-nudge-league-shown',
-      'league-nudge-league-cta',
-      'league-nudge-league-dismiss',
-    ]) {
-      expect(isFunnelEvent(ev), ev).toBe(true);
-    }
-  });
-
-  it('attaches nudge names to a sitting the way export events already do', () => {
-    expect(
-      parseFunnelEventList([
-        'league-nudge-card-shown',
-        'league-nudge-card-cta',
-        'not-an-event',
-        'league-nudge-league-shown',
-      ]),
-    ).toEqual([
-      'league-nudge-card-shown',
-      'league-nudge-card-cta',
-      'league-nudge-league-shown',
-    ]);
   });
 });

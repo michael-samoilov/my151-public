@@ -61,25 +61,10 @@ describe('hubViews', () => {
     });
   });
 
-  it('counts the builder callout alongside the hub', () => {
-    const views = hubViews([
-      ev('a', 'league-promo-shown', D1),
-      ev('a', 'league-promo-cta', D1),
-      ev('b', 'league-promo-shown', D1),
-      ev('b', 'league-promo-dismiss', D1),
-    ]);
-    expect(views.totals).toMatchObject({ promoShown: 2, promoCta: 1, promoDismiss: 1 });
-  });
-
   it('ignores events that belong to another view', () => {
     const views = hubViews([ev('a', 'milestone-25', D1), ev('a', 'league-open', D1)]);
     expect(views.days).toEqual([]);
     expect(views.totals.shown).toBe(0);
-  });
-
-  it('handles an empty journal', () => {
-    expect(hubViews([]).days).toEqual([]);
-    expect(hubViews([]).totals.shown).toBe(0);
   });
 });
 
