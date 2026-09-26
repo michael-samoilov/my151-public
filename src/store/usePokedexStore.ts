@@ -159,6 +159,8 @@ interface PokedexState {
   setEggGroupFilter: (groups: string[] | null) => void;
   toggleEggGroup: (group: string) => void;
   setEvoLineSizeFilter: (sizes: number[] | null) => void;
+  /** Clear every browser filter, so the next open of the browser starts fresh. */
+  resetBrowserFilters: () => void;
   openDrillDown: (segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeSpecial?: boolean, dexId?: string | null, newOnly?: boolean) => void;
   expandDrillDown: () => void;
   closeDrillDown: () => void;
@@ -188,21 +190,30 @@ interface PokedexState {
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
 
+/**
+ * The browser's filters with nothing applied. The store starts here, and every
+ * fresh open of the browser returns here, so a filter added to this object is
+ * one that no reset site can forget.
+ */
+const NO_BROWSER_FILTERS = {
+  activeCategoryFilter: null,
+  activeArchetypeFilter: null,
+  searchQuery: '',
+  typeFilter: null,
+  typeFilterMode: 'any',
+  generationFilter: null,
+  shapeFilter: null,
+  colorFilter: null,
+  eggGroupFilter: null,
+  evoLineSizeFilter: null,
+} satisfies Partial<PokedexState>;
+
 export const usePokedexStore = create<PokedexState>()(
   persist(
     (set, get) => ({
       sections: INITIAL_SECTIONS,
       activeSection: null,
-      activeCategoryFilter: null,
-      activeArchetypeFilter: null,
-      searchQuery: '',
-      typeFilter: null,
-      typeFilterMode: 'any' as TypeFilterMode,
-      generationFilter: null,
-      shapeFilter: null,
-      colorFilter: null,
-      eggGroupFilter: null,
-      evoLineSizeFilter: null,
+      ...NO_BROWSER_FILTERS,
       mobileBrowserOpen: false,
       drillDownSegment: null,
       drillDownPeek: true,
@@ -447,6 +458,8 @@ export const usePokedexStore = create<PokedexState>()(
       }),
 
       setEvoLineSizeFilter: (sizes) => set({ evoLineSizeFilter: sizes }),
+
+      resetBrowserFilters: () => set(NO_BROWSER_FILTERS),
 
       openDrillDown: (segment, siblings, excludeSpecial, dexId, newOnly) => set({ drillDownSegment: segment, drillDownPeek: true, drillDownSiblings: siblings ?? [], drillDownExcludeSpecial: excludeSpecial ?? false, drillDownDexId: dexId ?? null, drillDownNewOnly: newOnly ?? false }),
       expandDrillDown: () => set({ drillDownPeek: false }),

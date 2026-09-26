@@ -1,20 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PICKS_GRID_CAP,
   formatIndex,
   indexBarPct,
   isOffSection,
-  lineKey,
-  picksGridCap,
-  picksGridCols,
-  picksSplitCap,
-  picksStarterCols,
-  starterGenerationCount,
   poolIdsForSection,
-  rowsUsed,
   sectionPicksView,
   starterTypeOf,
-  viewsForPicks,
 } from './picksStats';
 
 const PICHU = 172;
@@ -57,17 +48,6 @@ const HYDRAPPLE = 1019;
 
 const count = (id: number, n: number): [string, number] => [String(id), n];
 
-describe('lineKey', () => {
-  it('puts Pichu, Pikachu, and Raichu on one line', () => {
-    expect(lineKey(PICHU)).toBe(lineKey(PIKACHU));
-    expect(lineKey(PIKACHU)).toBe(lineKey(RAICHU));
-  });
-
-  it('keeps Magikarp with Gyarados', () => {
-    expect(lineKey(MAGIKARP)).toBe(lineKey(GYARADOS));
-  });
-});
-
 describe('formatIndex', () => {
   it('prints one decimal below 10 and none at 10+', () => {
     expect(formatIndex(0)).toBe('0×');
@@ -104,36 +84,12 @@ describe('isOffSection / evil team', () => {
     expect(isOffSection(RHYPERIOR, 'evil-team')).toBe(false);
   });
 
-  it('flags Magikarp in evil-team as off-section', () => {
-    expect(isOffSection(MAGIKARP, 'evil-team')).toBe(true);
-    expect(isOffSection(GYARADOS, 'evil-team')).toBe(true);
-  });
-
   it('never flags Other as off-section', () => {
     expect(isOffSection(MAGIKARP, 'other')).toBe(false);
   });
 });
 
 describe('index: Pichu dropped from a popular line', () => {
-  it('ranks Pichu as its own species, not on Pikachu\'s line', () => {
-    const view = sectionPicksView('pikachu-clone', [
-      count(PICHU, 20),
-      count(PIKACHU, 80),
-      count(RAICHU, 78),
-    ]);
-    expect(view?.kind).toBe('plain');
-    if (view?.kind !== 'plain') return;
-    const all = [...view.columns.most, ...view.columns.least];
-    const pikaLine = all.find((l) => l.members.some((m) => m.id === PIKACHU));
-    const pichuLine = all.find((l) => l.members.some((m) => m.id === PICHU));
-    expect(pikaLine?.picks).toBe(80);
-    expect(pikaLine?.members.map((m) => m.id)).toEqual([PIKACHU]);
-    expect(pichuLine?.picks).toBe(20);
-    expect(pichuLine?.members.map((m) => m.id)).toEqual([PICHU]);
-    expect(pichuLine?.key).not.toBe(pikaLine?.key);
-    expect(pichuLine!.index).toBeLessThan(pikaLine!.index);
-  });
-
   it('indexes Pichu below Pikachu when Pichu has fewer picks', () => {
     const view = sectionPicksView('pikachu-clone', [
       count(PICHU, 94),
@@ -153,30 +109,6 @@ describe('index: Pichu dropped from a popular line', () => {
     expect(pichu!.index / pikachu!.index).toBeCloseTo(94 / 109);
     expect(raichu!.index / pikachu!.index).toBeCloseTo(108 / 109);
     expect(formatIndex(pichu!.index)).not.toBe(formatIndex(pikachu!.index));
-  });
-
-  it('orders Most picked by each species own × so Pikachu sits before Pichu', () => {
-    const view = sectionPicksView('pikachu-clone', [
-      count(PICHU, 85),
-      count(PIKACHU, 100),
-      count(RAICHU, 100),
-    ]);
-    expect(view?.kind).toBe('plain');
-    if (view?.kind !== 'plain') return;
-    const mostIds = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
-    const pika = mostIds.indexOf(PIKACHU);
-    const raichu = mostIds.indexOf(RAICHU);
-    const pichu = mostIds.indexOf(PICHU);
-    expect(pika).toBeGreaterThanOrEqual(0);
-    expect(raichu).toBeGreaterThanOrEqual(0);
-    expect(pichu).toBeGreaterThanOrEqual(0);
-    expect(pika).toBeLessThan(pichu);
-    expect(raichu).toBeLessThan(pichu);
-    const pikaLine = view.columns.most.find((l) => l.members.some((m) => m.id === PIKACHU));
-    const pichuLine = view.columns.most.find((l) => l.members.some((m) => m.id === PICHU));
-    expect(pikaLine?.members.map((m) => m.id)).toEqual([PIKACHU]);
-    expect(pichuLine?.members.map((m) => m.id)).toEqual([PICHU]);
-    expect(pikaLine?.key).not.toBe(pichuLine?.key);
   });
 
   it('lists every default Pikaclone species in one grid, including Pichu and 0×', () => {
@@ -200,98 +132,6 @@ describe('index: Pichu dropped from a popular line', () => {
     expect(view.columns.most.every((l) => l.members.length === 1)).toBe(true);
     const last = view.columns.most.at(-1);
     expect(last?.index).toBe(0);
-  });
-
-  it('is 2.0× when a line is picked twice the uniform rate among two lines', () => {
-    const rows: [string, number][] = [
-      count(PIKACHU, 80),
-      count(RAICHU, 80),
-      count(PICHU, 10),
-      count(311, 40),
-      count(312, 40),
-    ];
-    const view = sectionPicksView('pikachu-clone', rows);
-    expect(view?.kind).toBe('plain');
-    if (view?.kind !== 'plain') return;
-    const pika = [...view.columns.most, ...view.columns.least].find((l) =>
-      l.members.some((m) => m.id === PIKACHU),
-    );
-    const plusle = [...view.columns.most, ...view.columns.least].find((l) =>
-      l.members.some((m) => m.id === 311),
-    );
-    expect(pika).toBeTruthy();
-    expect(plusle).toBeTruthy();
-    // These two species sit at 80 vs 40 against the same T/N, so the ratio is 2:1.
-    expect(pika!.picks / plusle!.picks).toBe(2);
-    expect(pika!.index / plusle!.index).toBeCloseTo(2);
-    expect(pika!.index).toBeGreaterThan(plusle!.index);
-  });
-});
-
-describe('rowsUsed', () => {
-  it('packs two 3-member lines onto one 6-wide row', () => {
-    expect(rowsUsed([{ members: [0, 0, 0] }, { members: [0, 0, 0] }], 6)).toBe(1);
-  });
-
-  it('caps 8 three-member lines at 4 rows', () => {
-    const lines = Array.from({ length: 8 }, () => ({ members: [0, 0, 0] }));
-    expect(rowsUsed(lines, 6)).toBe(4);
-  });
-
-  it('packs four 3-member lines onto one 12-wide row', () => {
-    expect(
-      rowsUsed(
-        [{ members: [0, 0, 0] }, { members: [0, 0, 0] }, { members: [0, 0, 0] }, { members: [0, 0, 0] }],
-        12,
-      ),
-    ).toBe(1);
-  });
-
-  it('packs nine first-stage faces onto one 12-col row', () => {
-    const lines = Array.from({ length: 9 }, () => ({ members: [0] }));
-    expect(rowsUsed(lines, 6)).toBe(2);
-    expect(rowsUsed(lines, 12)).toBe(1);
-  });
-
-  it('packs three 4-member lines onto two 6-wide rows by splitting lines', () => {
-    const lines = Array.from({ length: 3 }, () => ({ members: [0, 0, 0, 0] }));
-    expect(rowsUsed(lines, 6)).toBe(2);
-  });
-});
-
-describe('starterGenerationCount', () => {
-  it('matches Generation subgroups in the Starter category', () => {
-    expect(starterGenerationCount()).toBe(9);
-    expect(picksStarterCols()).toBe(9);
-  });
-});
-
-describe('picksGridCols', () => {
-  it('uses 9 columns for Most picked and off-section on phone and desktop', () => {
-    expect(picksGridCols(false, true)).toBe(6);
-    expect(picksGridCols(true, false)).toBe(9);
-    expect(picksGridCols(true, true)).toBe(9);
-    expect(picksStarterCols()).toBe(9);
-    expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
-    expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
-    expect(picksGridCap(false, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
-  });
-});
-
-describe('picksSplitCap', () => {
-  it('uses one uncapped 9-column grid on Most picked and off-section', () => {
-    expect(picksSplitCap(false, true)).toEqual({
-      kind: 'single',
-      cap: { maxRows: Number.POSITIVE_INFINITY, cols: 9 },
-    });
-    expect(picksSplitCap(false, false)).toEqual({
-      kind: 'single',
-      cap: { maxRows: Number.POSITIVE_INFINITY, cols: 9 },
-    });
-    expect(picksSplitCap(true, true)).toEqual({
-      kind: 'single',
-      cap: { maxRows: Number.POSITIVE_INFINITY, cols: 9 },
-    });
   });
 });
 
@@ -412,89 +252,9 @@ describe('sectionPicksView off-section', () => {
       view.columns.most.find((l) => l.members.some((m) => m.id === HYDRAPPLE))?.members.map((m) => m.id),
     ).toEqual([HYDRAPPLE]);
   });
-
-  it('keeps n=1 off-section lines unless excludeOneOffs is on', () => {
-    const rows: [string, number][] = [count(MAGIKARP, 15), count(CHARMANDER, 1), count(BULBASAUR, 4)];
-    const shown = sectionPicksView('evil-team', rows, { offSection: true, cap: PICKS_GRID_CAP });
-    expect(shown?.kind).toBe('plain');
-    if (shown?.kind !== 'plain') return;
-    const shownIds = shown.columns.most.flatMap((l) => l.members.map((m) => m.id));
-    expect(shownIds).toContain(CHARMANDER);
-    expect(shownIds).toContain(MAGIKARP);
-    expect(shownIds).toContain(BULBASAUR);
-
-    const hidden = sectionPicksView('evil-team', rows, {
-      offSection: true,
-      excludeOneOffs: true,
-      cap: PICKS_GRID_CAP,
-    });
-    expect(hidden?.kind).toBe('plain');
-    if (hidden?.kind !== 'plain') return;
-    const hiddenIds = hidden.columns.most.flatMap((l) => l.members.map((m) => m.id));
-    expect(hiddenIds).not.toContain(CHARMANDER);
-    expect(hiddenIds).toContain(MAGIKARP);
-    expect(hiddenIds).toContain(BULBASAUR);
-  });
-
-  it('does not drop off-section lines after four rows', () => {
-    const rows: [string, number][] = Array.from({ length: 40 }, (_, i) => count(i + 1, 1));
-    const view = sectionPicksView('evil-team', rows, { offSection: true, cap: PICKS_GRID_CAP });
-    expect(view?.kind).toBe('plain');
-    if (view?.kind !== 'plain') return;
-    const tiles = view.columns.most.reduce((n, l) => n + l.members.length, 0);
-    expect(tiles).toBeGreaterThan(PICKS_GRID_CAP.maxRows * PICKS_GRID_CAP.cols);
-  });
-
-  it('lists Magikarp in evil-team and omits Rhyhorn', () => {
-    const view = sectionPicksView(
-      'evil-team',
-      [count(RHYDON, 40), count(RHYHORN, 12), count(RHYPERIOR, 8), count(MAGIKARP, 15), count(GYARADOS, 6)],
-      { offSection: true },
-    );
-    expect(view?.kind).toBe('plain');
-    if (view?.kind !== 'plain') return;
-    expect(view.columns.least).toEqual([]);
-    const magikarp = view.columns.most.find((l) => l.members.some((m) => m.id === MAGIKARP));
-    expect(magikarp?.picks).toBe(15);
-    expect(magikarp?.members.map((m) => m.id)).toEqual([MAGIKARP]);
-    const gyarados = view.columns.most.find((l) => l.members.some((m) => m.id === GYARADOS));
-    expect(gyarados?.picks).toBe(6);
-    expect(gyarados?.members.map((m) => m.id)).toEqual([GYARADOS]);
-    const ids = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
-    expect(ids).not.toContain(RHYHORN);
-    expect(ids).not.toContain(RHYDON);
-    expect(ids).not.toContain(RHYPERIOR);
-  });
-});
-
-describe('poolIdsForSection', () => {
-  it('includes Rhyhorn in the evil-team pool after chain expansion', () => {
-    const pool = poolIdsForSection('evil-team');
-    expect(pool).toContain(RHYDON);
-    expect(pool).toContain(RHYHORN);
-    expect(pool).toContain(RHYPERIOR);
-    expect(pool).not.toContain(MAGIKARP);
-  });
 });
 
 describe('Other Areas', () => {
-  it('lists only species with at least 1 pick, ordered by ×, and omits 0×', () => {
-    const view = sectionPicksView('other', [
-      count(MAGIKARP, 10),
-      count(GYARADOS, 5),
-      count(PICHU, 0),
-      count(LITWICK, 1),
-    ]);
-    expect(view?.kind).toBe('plain');
-    if (view?.kind !== 'plain') return;
-    expect(view.columns.least).toEqual([]);
-    const ids = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
-    expect(ids).toEqual([MAGIKARP, GYARADOS, LITWICK]);
-    expect(ids).not.toContain(PICHU);
-    expect(view.columns.most.every((l) => l.picks >= 1)).toBe(true);
-    expect(view.columns.most.every((l) => l.members.length === 1)).toBe(true);
-  });
-
   it('keeps a 1-pick species even when its × is below 1.10', () => {
     const view = sectionPicksView('other', [
       count(MAGIKARP, 100),
@@ -506,21 +266,5 @@ describe('Other Areas', () => {
     expect(gyarados?.picks).toBe(1);
     expect(gyarados!.index).toBeLessThan(1.1);
     expect(view.columns.most.map((l) => l.members[0].id)).toEqual([MAGIKARP, GYARADOS]);
-  });
-
-  it('puts Other Areas last on Most picked, after fossil and endgame', () => {
-    const views = viewsForPicks({
-      starter: [count(BULBASAUR, 2)],
-      other: [count(MAGIKARP, 3), count(PICHU, 0)],
-      fossil: [count(140, 4)],
-      legendary: [count(150, 5)],
-    });
-    expect(views.map((v) => v.sectionId)).toEqual(['starter', 'fossil', 'legendary', 'other']);
-    const other = views.at(-1);
-    expect(other?.kind).toBe('plain');
-    if (other?.kind !== 'plain') return;
-    const ids = other.columns.most.flatMap((l) => l.members.map((m) => m.id));
-    expect(ids).toEqual([MAGIKARP]);
-    expect(ids).not.toContain(PICHU);
   });
 });

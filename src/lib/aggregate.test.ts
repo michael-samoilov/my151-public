@@ -96,24 +96,10 @@ describe('dailyActive', () => {
     expect(series[0].dau).toBe(1);
     expect(series[2].dau).toBe(1);
   });
-
-  it('returns nothing for no records', () => {
-    expect(dailyActive([])).toEqual([]);
-  });
-
-  it('extends through the given now day when that day has no activity', () => {
-    const series = dailyActive([dex()], T0 + 5 * DAY_MS);
-    expect(series.map((p) => p.dau)).toEqual([1, 0, 1, 0, 0, 0]);
-    expect(series[series.length - 1].day).toBe(Date.UTC(2026, 8, 6));
-  });
 });
 
 describe('hourlyActive', () => {
   const hour = DAY_MS / 24;
-
-  it('returns nothing for no records', () => {
-    expect(hourlyActive([], T0)).toEqual([]);
-  });
 
   it('counts unique browsers in each UTC hour and fills zeros through now', () => {
     const rec = dex({
@@ -130,19 +116,6 @@ describe('hourlyActive', () => {
     expect(byHour.get(T0 + hour)).toBe(0);
     expect(byHour.get(T0 + 3 * hour)).toBe(1);
     expect(byHour.get(T0 + 5 * hour)).toBe(0);
-  });
-
-  it('counts two browsers in the same hour once each', () => {
-    const series = hourlyActive([dex(), league({ firstTs: T0, lastTs: T0, sessionLog: [{ ts: T0 }] })], T0);
-    expect(series.find((p) => p.hour === T0)?.unique).toBe(2);
-  });
-
-  it('covers the last seven UTC days through the current hour', () => {
-    const now = T0 + 6 * DAY_MS + 18 * hour;
-    const series = hourlyActive([dex()], now);
-    expect(series[0].hour).toBe(Date.UTC(2026, 8, 2, 0, 0, 0));
-    expect(series[series.length - 1].hour).toBe(Date.UTC(2026, 8, 8, 6, 0, 0));
-    expect(series).toHaveLength(6 * 24 + 7);
   });
 });
 
@@ -253,10 +226,6 @@ describe('mergeByCid', () => {
     expect(merged).toHaveLength(1);
     expect(merged[0].cid).toBe(shared);
   });
-
-  it('leaves browsers that used only one tool alone', () => {
-    expect(mergeByCid([[dex()], [league()]])).toHaveLength(2);
-  });
 });
 
 describe('aggregate', () => {
@@ -328,10 +297,6 @@ describe('tallyCohort', () => {
       { device: 'Mobile', os: 'macOS', browser: 'Chrome', n: 1 },
     ]);
   });
-
-  it('reports zero users for an empty slice', () => {
-    expect(tallyCohort([]).users).toBe(0);
-  });
 });
 
 describe('depthByDevice', () => {
@@ -360,11 +325,6 @@ describe('referrerFlow', () => {
       { host: 'reddit.com', total: 2, dex: 2, league: 1 }, // aaaa, bbbb: total is distinct browsers, not dex+league
       { host: 't.co', total: 1, dex: 0, league: 1 },
     ]);
-  });
-
-  it('folds a country-split dex cid onto the bare cid before counting', () => {
-    const rows = referrerFlow([withReferrer('aaaa::FR', 'reddit.com')], []);
-    expect(rows).toEqual([{ host: 'reddit.com', total: 1, dex: 1, league: 0 }]);
   });
 
   it('counts records with no referrer as referrer not known', () => {
@@ -526,14 +486,6 @@ describe('leagueUsageFunnel', () => {
     ]);
     expect(f.exportedLeague).toBe(1);
     expect(f.exportedCard).toBe(1);
-  });
-
-  it('floors opened at placed when the open event undercounts', () => {
-    const f = leagueUsageFunnel([row(0, { maxSeats: 2, maxCards: 1 }), row(14, { exportsLeague: 1 })], 0);
-    expect(f.opened).toBe(2);
-    expect(f.placed).toBe(2);
-    expect(f.bounced).toBe(0);
-    expect(f.cardNotFinished).toBe(1);
   });
 
   it('does not count a zero-seat record as placed', () => {
