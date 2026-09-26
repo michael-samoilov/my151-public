@@ -28,8 +28,13 @@ then tap save.
 `gym-card-export` (`runGymCardExportParitySuite`) seeds a card, clicks
 `[data-league-export="card"]`, and waits for `[data-export-preview] img`. It
 asserts a complete image wider than 800px with zero `[data-export-detail]`
-toggles (`gym-export:nimbus-preview`). It never presses save, and no suite
-opens the league export.
+toggles (`gym-export:nimbus-preview`). It never presses save.
+
+`league-export-team` (`runLeagueExportTeamSuite`) presses each summary tab
+(`[data-league-view="rematch"|"challenge"]`), opens
+`[data-league-export="league"]`, and asserts that exactly one
+`[data-export-team]` paints a background, and that it matches the tab
+(`league-export:starts-at-rematch-tab`, `league-export:starts-at-challenge-tab`).
 
 Manual drive (a Playwright script, local build):
 
@@ -53,5 +58,6 @@ Manual drive (a Playwright script, local build):
 - The survey opens after every export on a preview or with `?notme`. Elsewhere
   it opens at most once.
 - The layout starts from URL flags (`exportTeamMode`, `exportLeagueName`, and
-  others in `src/league/export/exportOptions.ts`). Without them it starts at
-  Story with every detail on, whatever tab is on screen.
+  others in `src/league/export/exportOptions.ts`). Without them it starts
+  with every detail on, at Rematch when the Rematch tab is on screen and at
+  Story otherwise.
