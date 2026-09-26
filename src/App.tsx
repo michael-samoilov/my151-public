@@ -183,13 +183,7 @@ function App() {
   const prevMobileBrowserOpen = useRef(mobileBrowserOpen);
   useEffect(() => {
     if (prevMobileBrowserOpen.current && !mobileBrowserOpen) {
-      const s = usePokedexStore.getState();
-      s.setSearchQuery('');
-      s.setTypeFilter(null);
-      s.setGenerationFilter(null);
-      s.setEvoLineSizeFilter(null);
-      s.setCategoryFilter(null);
-      s.setArchetypeFilter(null);
+      usePokedexStore.getState().resetBrowserFilters();
     }
     prevMobileBrowserOpen.current = mobileBrowserOpen;
   }, [mobileBrowserOpen]);
