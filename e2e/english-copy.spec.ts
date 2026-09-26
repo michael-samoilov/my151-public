@@ -16,7 +16,7 @@ import { seedDex, TUNE_URL } from './support/dexSeed';
  * in the DOM at once — scoping to the open sheet is what keeps these queries
  * unambiguous.
  */
-test.describe('English copy is unchanged by extraction', () => {
+test.describe('English copy is unchanged by extraction', { tag: '@viewport' }, () => {
   test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'scoped to the mobile sheet');
 
   /** Open the selection sheet and return it, so queries can be scoped to it. */

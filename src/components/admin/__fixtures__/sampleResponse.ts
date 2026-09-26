@@ -182,24 +182,21 @@ function aggregate(kind: 'all' | 'dex' | 'league'): Aggregates {
         : { Windows: 190, iOS: 78, Android: 62, macOS: 46, Linux: 12 },
     browsers: tally(BR_LABELS, c.br, c.base),
     joints: kind === 'league' ? LEAGUE_JOINTS : scaleJoints(DEX_JOINTS, c.base),
-    hours: HOURS,
-    heatmap: HEATMAP,
+    heatmaps: HEATMAPS,
     hourly: HOURLY,
   };
 }
 
-// Local-time heatmap: a plausible evening-and-weekend build pattern.
-const HOURS = Array.from({ length: 24 }, (_, h) => {
-  const evening = Math.exp(-((h - 20) ** 2) / 20);
-  const lunch = 0.5 * Math.exp(-((h - 13) ** 2) / 8);
-  return Math.round((evening + lunch) * 60);
-});
-const HEATMAP: number[][] = Array.from({ length: 7 }, (_, d) =>
-  Array.from({ length: 24 }, (_, h) => {
-    const weekend = d === 0 || d === 6 ? 1.3 : 1;
-    return Math.round(HOURS[h] * weekend * (0.4 + Math.random() * 0.2));
-  }),
+// Heatmaps: an evening-and-lunch pattern, heavier at weekends. Eastern Time
+// is the same week an hour later.
+const HOUR_SHAPE = Array.from({ length: 24 }, (_, h) => Math.exp(-((h - 20) ** 2) / 20) + 0.5 * Math.exp(-((h - 13) ** 2) / 8));
+const LOCAL_WEEK: number[][] = Array.from({ length: 7 }, (_, d) =>
+  Array.from({ length: 24 }, (_, h) => Math.round(HOUR_SHAPE[h] * (d === 0 || d === 6 ? 13 : 10)) + ((d * 5 + h) % 3)),
 );
+const HEATMAPS = {
+  local: LOCAL_WEEK,
+  eastern: LOCAL_WEEK.map((row) => row.map((_, h) => row[(h + 23) % 24])),
+};
 
 const byTool: Record<ToolSlice, Aggregates> = {
   all: aggregate('all'),
@@ -691,8 +688,6 @@ export const sampleResponse: ApiResponse = {
   languages: byTool.dex.languages,
   devices: byTool.dex.devices,
   os: byTool.dex.os,
-  hours: HOURS,
-  heatmap: HEATMAP,
   popularFinal,
   mostDropped,
   popularMin: 40,

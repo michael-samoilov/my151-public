@@ -19,7 +19,7 @@ import { expect, test } from '@playwright/test';
  * not hold a contact still for a timed activation.
  */
 
-test.describe('holding a league row', () => {
+test.describe('holding a league row', { tag: '@viewport' }, () => {
   test('picks it up, keeps it under the thumb, and previews the slot it is over',
     async ({ page, browserName }, testInfo) => {
       test.skip(browserName !== 'chromium', 'CDP touch injection');

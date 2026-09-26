@@ -11,7 +11,7 @@ import { seedDex, TUNE_URL } from './support/dexSeed';
  * Mobile only: the sheet is `md:hidden`, and both callers show something else
  * entirely at desktop widths.
  */
-test.describe('bottom sheet', () => {
+test.describe('bottom sheet', { tag: '@viewport' }, () => {
   // Keyed on width, not on touch emulation — `md:` is a 1024px breakpoint, so
   // the 320px project renders the sheet despite not being a touch device.
   test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'the sheet is hidden at md and up');

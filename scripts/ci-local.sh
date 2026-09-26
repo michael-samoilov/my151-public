@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 
 npm run lint
 npm test
+node scripts/check-viewport-tags.mjs
 
 if [ -n "${PLAYWRIGHT_BASE_URL:-}" ]; then
   npx playwright test -c e2e/preview.config.ts
