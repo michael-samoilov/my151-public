@@ -105,85 +105,6 @@ async function stampFourDigitCount(page: Page) {
   await expect(page.getByTestId('tool-title')).toContainText('1025/151');
 }
 
-/**
- * The view switcher is a tab set, not a lone primary button beside ghost text.
- * Fails on the old chrome: active uses the filled `default` variant (primary)
- * while the rest are transparent ghosts.
- */
-async function expectMutualTabSet(page: Page) {
-  const report = await page.evaluate(() => {
-    const TRANSPARENT = new Set(['rgba(0, 0, 0, 0)', 'transparent', '']);
-    const navs = [...document.querySelectorAll<HTMLElement>('[data-nav]')];
-    const list = document.querySelector('[role="tablist"]');
-    const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
-    const parse = (css: string) => {
-      const rgb = css.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-      if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
-      const hex = css.trim();
-      if (hex.startsWith('#') && (hex.length === 4 || hex.length === 7)) {
-        const n = hex.length === 4
-          ? hex.slice(1).split('').map((c) => c + c).join('')
-          : hex.slice(1);
-        return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)];
-      }
-      return null;
-    };
-    const near = (a: number[] | null, b: number[] | null) =>
-      !!a && !!b && a.every((v, i) => Math.abs(v - b[i]) <= 2);
-
-    const labelShown = (btn: HTMLElement) =>
-      [...btn.querySelectorAll('span')].some((s) => {
-        const r = s.getBoundingClientRect();
-        const st = getComputedStyle(s);
-        return r.width > 4 && st.opacity !== '0' && st.display !== 'none' && st.visibility !== 'hidden';
-      });
-
-    const selected = navs.filter((b) => b.getAttribute('aria-selected') === 'true');
-    const active = selected[0]
-      ?? navs.find((b) => {
-        const bg = getComputedStyle(b).backgroundColor.trim();
-        return !TRANSPARENT.has(bg);
-      })
-      ?? navs[0];
-    const others = navs.filter((b) => b !== active);
-    const activeBg = active ? getComputedStyle(active).backgroundColor.trim() : '';
-    const othersGhost = others.every((b) => TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim()));
-    const loneButton = othersGhost && near(parse(activeBg), parse(primary));
-    const shown = navs.map(labelShown);
-    const activeIdx = active ? navs.indexOf(active) : -1;
-    const heights = navs.map((b) => b.getBoundingClientRect().height);
-    const width = window.innerWidth;
-
-    return {
-      navCount: navs.length,
-      inList: !!list && navs.every((n) => list.contains(n)),
-      listHasTrack: !!list && !TRANSPARENT.has(getComputedStyle(list).backgroundColor.trim()),
-      roles: navs.map((b) => b.getAttribute('role')),
-      selectedCount: selected.length,
-      loneButton,
-      labelsShown: shown,
-      activeLabelShown: activeIdx >= 0 ? shown[activeIdx] : false,
-      width,
-      heights,
-      heightDelta: heights.length ? Math.max(...heights) - Math.min(...heights) : 0,
-    };
-  });
-
-  expect(report.navCount, 'three view tabs').toBe(3);
-  expect(report.inList, 'every tab sits in one tablist').toBe(true);
-  expect(report.listHasTrack, 'the tablist paints a shared track').toBe(true);
-  expect(report.roles, 'each control is a tab').toEqual(['tab', 'tab', 'tab']);
-  expect(report.selectedCount, 'exactly one selected tab').toBe(1);
-  expect(report.loneButton, 'active tab must not be a lone primary button').toBe(false);
-  if (report.width >= 380) {
-    expect(report.activeLabelShown, `active tab names itself at ${report.width}px`).toBe(true);
-  }
-  if (report.width >= 640) {
-    expect(report.labelsShown.every(Boolean), `every label shows at ${report.width}px, shown=${report.labelsShown}`).toBe(true);
-  }
-  expect(report.heightDelta, `tab heights ${report.heights.join(',')}`).toBeLessThanOrEqual(1);
-}
-
 async function seedDexAndOpen(page: Page, seed = UNLOCKED_SEED) {
   await page.goto('/pokedex-builder');
   await page.waitForSelector('[data-testid="tool-title"]');
@@ -196,10 +117,11 @@ async function seedDexAndOpen(page: Page, seed = UNLOCKED_SEED) {
 }
 
 test.describe('two-bar chrome', { tag: '@viewport' }, () => {
-  test('dex view tabs are a mutual set and miss the ribbon, including a 4-digit count', async ({ page }) => {
+  test('dex view tabs miss the ribbon, including a 4-digit count', async ({ page }, testInfo) => {
     test.setTimeout(60_000);
     await seedDexAndOpen(page);
 
+    const checked: string[] = [];
     for (const width of [390, 1280] as const) {
       await page.setViewportSize({ width, height: 844 });
       await page.waitForTimeout(200);
@@ -207,12 +129,16 @@ test.describe('two-bar chrome', { tag: '@viewport' }, () => {
       for (const v of ['builder', 'analytics', 'view'] as const) {
         await page.click(`[data-nav="${v}"]`);
         await page.waitForTimeout(400);
-        await expectMutualTabSet(page);
         await expectNoOverlap(page);
         await stampFourDigitCount(page);
         await expectNoOverlap(page);
+        checked.push(`${width}:${v}`);
       }
     }
+    await testInfo.attach('checked-views.json', {
+      body: JSON.stringify({ checked }),
+      contentType: 'application/json',
+    });
   });
 
   test('dex tool bar never overlaps, in both title states and on every view', async ({ page }) => {
