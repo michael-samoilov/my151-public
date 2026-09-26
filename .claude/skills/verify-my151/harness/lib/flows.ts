@@ -1686,6 +1686,62 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     `ready=${directReady} pikachu=${placedPikachu} raichu=${placedRaichu} id=${direct.id} packing=${direct.packing}`,
   ));
 
+  // App zoom. Synthetic ctrl+wheel events reach the same handler as a
+  // trackpad pinch on every engine. Zoomed and scrolled to the far corner,
+  // the last cell must sit inside the frame, the headers on its edges, and
+  // the minimap inside it without a transform.
+  await s.evalJson(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]');
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    for (let i = 0; i < 4; i++) {
+      el.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -50, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, bubbles: true, cancelable: true }));
+    }
+    return true;
+  `);
+  await sleep(300);
+  const zoom = await s.evalJson<{
+    zoom: number; cellGrew: boolean; lastInside: boolean; headerTop: number; genLeft: number; mapInside: boolean; mapTransform: string;
+  }>(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]');
+    const before = Number(el?.getAttribute('data-zoom') || 0);
+    if (!el) return { zoom: 0, cellGrew: false, lastInside: false, headerTop: -1, genLeft: -1, mapInside: false, mapTransform: '' };
+    el.scrollLeft = el.scrollWidth;
+    el.scrollTop = el.scrollHeight;
+    const frame = el.getBoundingClientRect();
+    const inner = { left: frame.left + el.clientLeft, top: frame.top + el.clientTop };
+    inner.right = inner.left + el.clientWidth;
+    inner.bottom = inner.top + el.clientHeight;
+    const last = document.querySelector('[data-testid="favorites-cell-favorite-favorite"]').getBoundingClientRect();
+    const grid = document.querySelector('[data-testid="favorites-grid"]');
+    const headers = [...grid.querySelectorAll(':scope > div:not([data-row-banded])')].map((h) => h.getBoundingClientRect().top);
+    const gens = [...document.querySelectorAll('div[data-row-banded]')].map((g) => g.getBoundingClientRect().left);
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    const box = map ? map.getBoundingClientRect() : null;
+    return {
+      zoom: before,
+      cellGrew: document.querySelector('[data-testid="favorites-cell-normal-1"]').getBoundingClientRect().width > el.clientHeight / 13 * 1.5,
+      lastInside: last.right <= inner.right + 1 && last.bottom <= inner.bottom + 1 && last.left >= inner.left - 1 && last.top >= inner.top - 1,
+      headerTop: Math.round((Math.min(...headers) - inner.top) * 10) / 10,
+      genLeft: Math.round((Math.min(...gens) - inner.left) * 10) / 10,
+      mapInside: !!box && box.left >= frame.left && box.right <= frame.right && box.top >= frame.top && box.bottom <= frame.bottom,
+      mapTransform: map ? getComputedStyle(map).transform : '',
+    };
+  `);
+  checks.push(ok('favorites:zoom-grows-cells', zoom.zoom > 1.5 && zoom.cellGrew, `data-zoom=${zoom.zoom} cellGrew=${zoom.cellGrew}`));
+  checks.push(ok('favorites:zoom-reaches-far-corner', zoom.zoom > 1.5 && zoom.lastInside, `lastInside=${zoom.lastInside}`));
+  checks.push(ok(
+    'favorites:zoom-sticky-headers',
+    zoom.zoom > 1.5 && Math.abs(zoom.headerTop) < 1 && Math.abs(zoom.genLeft) < 1,
+    `headerTop-frame=${zoom.headerTop} genLeft-frame=${zoom.genLeft}`,
+  ));
+  checks.push(ok(
+    'favorites:zoom-minimap-in-frame',
+    zoom.mapInside && zoom.mapTransform === 'none',
+    `inside=${zoom.mapInside} transform=${zoom.mapTransform}`,
+  ));
+  if (zoom.zoom > 1.5) await s.screenshot(ctx.shot('favorites-zoomed-far-corner'));
+
   const errs = await s.errors();
   checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
