@@ -38,8 +38,10 @@ Manual drive (a Playwright script, local build):
 
 - `?lang=<id>` needs an exact locale id (`zh-Hans`, not `zh`), and the app does
   not save it. It applies to that page load only.
-- Only the dex page sets `<html lang>` from the locale (`useDocumentLocale` in
-  `src/App.tsx`). The hub and the league keep the `lang="en"` of their HTML.
+- The hub, the dex, and the league each set `<html lang>` from the locale
+  (`useDocumentLocale` in `HomePage.tsx`, `App.tsx`, and `LeagueApp.tsx`). The
+  admin page (`/?admin`) is English-only, so it keeps the `lang="en"` of
+  `index.html`.
 - Few strings are translated: game terms (types, egg groups, colors, regions),
   Pokémon names, and the four feedback chips (`src/i18n/catalogs/ui/`). Other
   keys, including the hub's `home.*` copy, fall back to English. Assert a
