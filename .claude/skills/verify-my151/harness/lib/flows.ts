@@ -360,7 +360,8 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
      if(mask.includes('image/svg')) return {ok:false,reason:'frame mask hides ink'};
      if(!mask.includes('image/png')) return {ok:false,reason:'ink mask missing'};
-     if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no grating'};
+     if(cs.backgroundImage.includes('repeating-')) return {ok:false,reason:'grating'};
+     if(!cs.backgroundImage.includes('linear-gradient')) return {ok:false,reason:'no holo gradient'};
      if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
      const lift=document.querySelector('[data-export-foil-lift]');
      const liftStyle=lift instanceof HTMLElement ? getComputedStyle(lift) : null;
@@ -548,7 +549,15 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   ).catch(() => ({ preview: false, confirm: false, surveyHost: true, shell: false, outlines: false }));
   const imgReady = await waitForDexPreviewImg(s);
   const mapsOnOpen = await waitForFoilMaps(s);
-  const rainbowOnOpen = await readInkOnlyRainbow(s);
+  // The foil paints on the next animation frame after the maps land. WebKitGTK
+  // under Xvfb runs near 7 fps here, so allow a few frames, and report the wait.
+  const rainbowStart = Date.now();
+  let rainbowOnOpen = await readInkOnlyRainbow(s);
+  while (!rainbowOnOpen.ok && Date.now() - rainbowStart < 1500) {
+    await sleep(100);
+    rainbowOnOpen = await readInkOnlyRainbow(s);
+  }
+  rainbowOnOpen = { ...rainbowOnOpen, reason: `${rainbowOnOpen.reason} after ${Date.now() - rainbowStart}ms` };
   // Do not move the Playwright mouse. Sit a stationary cursor on the card,
   // the way a person often has it, then require the painted box to change.
   await sitCursorOnDexPreview(s);
@@ -782,9 +791,14 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const clip=style.getPropertyValue('clip-path')+' '+style.getPropertyValue('-webkit-clip-path');
      const transparent=bg==='transparent'||bg==='rgba(0,0,0,0)'||bg==='rgba(0,0,0,0.0)';
      if(!transparent) return {ok:false,reason:'corner fill '+bg};
-     if(!/round/i.test(clip)) return {ok:false,reason:'clip '+clip};
+     // The PNG carries its own rounded corners, and its alpha is the card's mask.
+     // A separate rounded clip would disagree with the exported shape.
+     if(/round/i.test(clip)) return {ok:false,reason:'independent clip '+clip};
+     const img=card.querySelector('img');
+     const shapeMask=(style.getPropertyValue('-webkit-mask-image')+' '+style.getPropertyValue('mask-image')).replace(/\\s+/g,' ');
+     if(!(img instanceof HTMLImageElement) || !shapeMask.includes(img.currentSrc)) return {ok:false,reason:'shape mask '+shapeMask.slice(0,60)};
      if(card.className.includes('bg-white')) return {ok:false,reason:'bg-white'};
-     return {ok:true,reason:bg};`,
+     return {ok:true,reason:bg+' png-shape-mask'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const shineClip = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
