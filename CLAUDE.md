@@ -122,6 +122,7 @@ Ship without asking when the change is:
 - Docs, tests, scripts, `.claude/`, `.github/`, or other files a browser never receives.
 - Admin dashboard (`/?admin`) copy, counts, or small layout, when you already have a measured before/after or a test that failed then passed.
 - Internal refactors, types, and dead-code removal with no user-noticeable behavior.
+- A public-UI bugfix that restores the intended behavior and changes no design, when `/verify-my151` proves it on every engine. Report it with that evidence.
 
 Admin is not public product UI. A verified admin Dex-chip count ships. A verified admin layout tweak ships.
 
@@ -129,7 +130,7 @@ Admin is not public product UI. A verified admin Dex-chip count ships. A verifie
 
 Ask in the current conversation before you merge when any of these apply:
 
-1. **Public product UI.** The pokedex builder, league builder, or export that end users see. Admin `/?admin` copy, counts, or small verified layout is not this.
+1. **Public product UI that needs Michael's judgment.** A new feature, a new or changed look, or a choice between visual options in the pokedex builder, league builder, or export that end users see. A bugfix that `/verify-my151` proves is not this. Admin `/?admin` copy, counts, or small verified layout is not this.
 2. **Data destruction or irreversible writes.** Deletes, schema drops, token or credential changes, anything a revert does not undo.
 3. **Large or ambiguous product changes.** Unclear scope, or a change big enough that Michael should see it first.
 
@@ -138,9 +139,10 @@ When you are unsure, ask. A preview branch costs nothing.
 Work an ask-first change like this:
 
 1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a preview deployment. Verify there.
-2. Report the preview. Do not merge to production until Michael says to ship it.
-3. After he says to ship it, merge into and push `claude/pokedex-region-builder-AviYF`.
-4. Check out the work branch again immediately after that push.
+2. Report the preview. For a visual change, show the review in the chat thread itself: before-and-after screenshots or a video, on mobile (about 390px) and desktop (about 1280px), for the same input. When you offer options, show the after state of each option. Michael reviews on a phone and does not open file paths or previews for this.
+3. Do not merge to production until Michael says to ship it.
+4. After he says to ship it, merge into and push `claude/pokedex-region-builder-AviYF`.
+5. Check out the work branch again immediately after that push.
 
 **Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome. Markup inside `#root` renders until React mounts. The app runs in **light** mode. The `.dark` block in `index.css` exists, but nothing applies the class, so dark-themed additions mismatch the live UI.
 
