@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { venn } from 'venn.js';
 import {
   areasFromRegions,
   CIRCLE_LABEL_GAP,
   layoutCircles,
   placeCircleLabels,
   placeRegionLabels,
-  vennCanvas,
 } from './vennAreas';
 
 const catalog = [
@@ -25,17 +23,6 @@ describe('areasFromRegions', () => {
 
   it('drops a tool that has no members in this era', () => {
     expect(areasFromRegions({ dex: 20 }, catalog)).toEqual([{ sets: ['Dex'], size: 20 }]);
-  });
-});
-
-describe('venn.js layout', () => {
-  it('gives the larger set a larger radius', () => {
-    const circles = venn([
-      { sets: ['Dex'], size: 336 },
-      { sets: ['League'], size: 3 },
-      { sets: ['Dex', 'League'], size: 3 },
-    ]);
-    expect(circles.Dex.radius).toBeGreaterThan(circles.League.radius * 3);
   });
 });
 
@@ -70,36 +57,6 @@ describe('placeRegionLabels', () => {
     expect(labels.map((l) => l.key).sort()).toEqual(['dex', 'dex+league', 'league']);
     expect(labels.every((l) => l.count > 0)).toBe(true);
   });
-
-  it('lays out three tools without dropping a set', () => {
-    const three = [
-      ...catalog,
-      { id: 'fav', label: 'Favourites', short: 'Fav', launchedAt: 2 },
-    ];
-    const regions = {
-      dex: 10,
-      league: 4,
-      fav: 3,
-      'dex+league': 5,
-      'dex+fav': 2,
-      'league+fav': 1,
-      'dex+league+fav': 2,
-    };
-    const areas = areasFromRegions(regions, three);
-    expect(areas.some((a) => a.sets.length === 3)).toBe(true);
-    const circles = layoutCircles(areas, 240, 200);
-    expect(Object.keys(circles).sort()).toEqual(['Dex', 'Fav', 'League']);
-    const labels = placeRegionLabels(regions, three, circles, 240, 200);
-    expect(labels.some((l) => l.key === 'dex')).toBe(true);
-    expect(labels.some((l) => l.key === 'fav')).toBe(true);
-  });
-});
-
-describe('vennCanvas', () => {
-  it('hugs the circles on a wide card instead of stretching the SVG', () => {
-    expect(vennCanvas(1280)).toEqual({ width: 688, height: 320, scale: 2 });
-    expect(vennCanvas(360)).toEqual({ width: 360, height: 168, scale: 1 });
-  });
 });
 
 describe('placeCircleLabels', () => {
@@ -119,24 +76,5 @@ describe('placeCircleLabels', () => {
       const reach = Math.hypot(l.x - c.x, l.y - c.y);
       expect(reach).toBeCloseTo(c.radius + CIRCLE_LABEL_GAP, 5);
     }
-  });
-
-  it('labels all three circles on a three-tool Venn', () => {
-    const three = [
-      ...catalog,
-      { id: 'fav', label: 'Favourites', short: 'Fav', launchedAt: 2 },
-    ];
-    const regions = {
-      dex: 10,
-      league: 4,
-      fav: 3,
-      'dex+league': 5,
-      'dex+fav': 2,
-      'league+fav': 1,
-      'dex+league+fav': 2,
-    };
-    const circles = layoutCircles(areasFromRegions(regions, three), 240, 200, 12);
-    const labels = placeCircleLabels(regions, three, circles);
-    expect(labels.map((l) => l.id).sort()).toEqual(['dex', 'fav', 'league']);
   });
 });

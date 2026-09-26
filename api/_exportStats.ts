@@ -39,11 +39,18 @@ export function pickFirstExportPokemon(
   return unseen[0];
 }
 
+// One script call for the whole batch: a pipeline of HINCRBY is still billed
+// one command per Pokémon, and a first full build places 151 at once.
+const BUMP_FREQ_LUA = `
+for _, id in ipairs(ARGV) do
+  redis.call('HINCRBY', KEYS[1], id, 1)
+end
+return #ARGV
+`;
+
 export async function bumpDexPickFreq(newIds: number[]): Promise<void> {
   if (newIds.length === 0) return;
-  const pipe = redis.pipeline();
-  for (const id of newIds) pipe.hincrby(DEX_EVER_FREQ_KEY, String(id), 1);
-  await pipe.exec();
+  await redis.eval(BUMP_FREQ_LUA, [DEX_EVER_FREQ_KEY], newIds.map(String));
 }
 
 function seenFlag(v: unknown): boolean {

@@ -10,9 +10,11 @@ description: >-
 
 # Verify my151
 
-my151.app is a Vite + React SPA. This skill drives the real app across the three
-engines behind its five target surfaces and returns a pass/fail verdict with
-evidence. It exists so agent work verifies itself, so read it cold and follow it.
+my151.app is a multi-page Vite + React app: the hub at `/`, the pokedex builder
+at `/pokedex-builder`, and the League Builder at `/custom-gym-leader`. This skill
+drives the real app across the three engines behind its five target surfaces
+and returns a pass/fail verdict with evidence. It exists so agent work verifies
+itself, so read it cold and follow it.
 
 **The model is a per-change before/after differential, not a frozen baseline.**
 Assume the current app is correct. On a change, drive the standard surfaces plus
@@ -35,13 +37,13 @@ string.
 Two jobs, kept separate. **Personas** (Blink + init-script stubs for iOS Safari,
 iOS Chrome, Android) assert a platform identity and a mobile viewport, so they can
 prove platform-sniff code branches; they are Blink, so they never prove engine
-rendering. Today this app has no platform-conditional code (only
-`feedbackContext.ts` reads the UA, for telemetry), so the personas currently prove
-identity and viewport, not a branch. Their payoff is forward-looking, for the
-multi-tool buildout. The **real-engine lanes** (WebKit, Gecko) prove rendering,
-layout, and scroll on the actual engine. Every proof asserts its persona/engine
-first (`READ_PERSONA` + `assertPersona`), so a run can never silently verify the
-wrong surface.
+rendering. Three places read the UA: `src/lib/feedbackContext.ts` (telemetry),
+`src/league/main.tsx` (on iOS it caps the viewport's maximum scale), and
+`src/lib/exportImage.ts` (on Android an export downloads instead of opening
+the share sheet). The personas can prove those branches. The **real-engine
+lanes** (WebKit, Gecko) prove rendering, layout, and scroll on the actual
+engine. Every proof asserts its persona/engine first (`READ_PERSONA` +
+`assertPersona`), so a run can never silently verify the wrong surface.
 
 ## Blink drivers
 
@@ -91,8 +93,9 @@ whatever came up.
 
 The app itself is built and served by the harness. `verify.ts` runs `npm run
 build` then `vite preview` on an isolated port (4180 for the change, 4181 for the
-base), so nothing collides with the Playwright e2e ports (4173/4174). Deps must be
-installed first (`npm ci`).
+base). The Playwright e2e servers take ports from 10000 through 29999, derived
+from the worktree path, so the two never collide. Deps must be installed first
+(`npm ci`).
 
 ## Doctor
 
@@ -136,8 +139,11 @@ intentional micro-overlaps; the render audit's overlap rule stays a warning
 for the same reason. The tripwire is authoritative on Blink, where host-side
 `pageerror` and the ErrorBoundary's `[P151] crash` console log are captured, and
 best-effort on WebKit and Gecko via a post-load page trap. A real-placement check
-(`placement:real-add-grows-store`) drives a live add on desktop Blink and skips
-until a `data-testid="verify-evo-card"` lands on the browser card.
+(`placement:real-add-grows-store`) drives a live add on desktop Blink: it opens
+the browser from `[data-section-id="meadow"] [data-add-slot]`, clicks a
+`[data-testid="verify-evo-card"]`, and asserts the store grew. After the
+standard suite, `verify.ts` runs six League Builder suites, listed in
+`features/league-builder.md`.
 
 **Prove the verifier itself.** `harness/discriminate.ts` is a mutation test: it
 injects a known regression (async throw, wide element, clipped chip, broken persist)
@@ -202,8 +208,10 @@ Each run writes to `.claude/skills/verify-my151/evidence/<runId>/` (gitignored):
 `<surface>.json` per surface, and per-step screenshots per surface. Screenshots
 are proof for a human or agent to inspect, not an auto-diff baseline. Observe the
 real user path and its side effects (the localStorage `personal-151-pokedex-v3`
-store is the local oracle; beacons are suppressed locally, so do not wait on the
-network). State plainly what is device-only.
+store is the local oracle). Beacons are not suppressed locally. Only demo mode
+or `?notme` holds them back, and `?notme` still lets an export report through.
+On `vite preview` they POST and get a 404, so do not wait on the network. State
+plainly what is device-only.
 
 ## The hand-off test
 
@@ -263,6 +271,9 @@ survives every cleanup.
 
 `features/` holds one file per user-facing feature, with the four H2s
 (`Sub-features`, `How to get to it (user POV)`, `Driving it with the harness`,
-`Gotchas`). It describes the pokedex builder and the Pokémon League Builder. As
-the favourite picker lands, add one feature file for it and its standard-suite
-coverage. Keep it honest with `/maintain-verification-skill`.
+`Gotchas`). It covers the hub (`hub.md`), the pokedex builder and its tabs, the
+Pokémon League Builder and its export (`league-export.md`), the feedback form
+(`feedback.md`), the language picker (`language.md`), and the admin dashboard
+(`admin.md`). `features/README.md` lists every file with its source owner. The
+favorite picker adds its own file when it ships. Keep the map honest with
+`/maintain-verification-skill`.

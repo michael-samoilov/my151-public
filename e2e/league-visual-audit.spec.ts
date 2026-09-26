@@ -93,7 +93,7 @@ const DISCS = [
   { kind: 'remove', disc: INK.red, mark: INK.whiteOnRed, sweep: 'button[aria-label="Remove TM"]' },
 ] as const;
 
-test.describe('the card paints its controls', () => {
+test.describe('the card paints its controls', { tag: '@viewport' }, () => {
   test.beforeEach(async ({ page }) => {
     await denseCard(page);
   });
@@ -183,7 +183,7 @@ test.describe('the card paints its controls', () => {
  */
 const PILL_DSF = 4;
 
-test.describe('the card paints its TM pill', () => {
+test.describe('the card paints its TM pill', { tag: '@viewport' }, () => {
   test.use({ deviceScaleFactor: PILL_DSF });
   test.beforeEach(async ({ page }) => {
     await denseCard(page);

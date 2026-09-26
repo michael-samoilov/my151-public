@@ -1,41 +1,51 @@
-# Feature map — my151
+# my151 feature map
 
 One file per user-facing feature, from the user's point of view: what it is, how
 to reach it, how to drive it with the harness, and what observable end state
 proves it works. The harness's standard suite (`harness/lib/flows.ts`) re-checks
-`standard-surfaces` on every run; the other files are the per-feature detail a
+`standard-surfaces` on every run. The other files are the per-feature detail a
 change-specific flow builds on.
 
-This map describes **two tools**: the pokedex builder with its view and
-analytics tabs, and the Pokémon League Builder. The favourite picker, when it
-lands, adds one file of its own. Do not treat this list as final; grow it with
-the app and keep it honest with `/maintain-verification-skill`.
+my151.app is a multi-page app. The hub is at `/`, the pokedex builder with its
+view and analytics tabs at `/pokedex-builder`, and the Pokémon League Builder at
+`/custom-gym-leader`. Feedback and the language picker sit in the header of
+every page. The admin dashboard is at `/?admin`. The favorite picker adds its
+own file when it ships. Grow this list with the app and keep it honest with
+`/maintain-verification-skill`.
 
 | Feature | File | Owner (source) |
 | --- | --- | --- |
 | Standard surfaces (the invariant suite) | `standard-surfaces.md` | `src/App.tsx`, `src/components/layout/Header.tsx` |
+| Hub | `hub.md` | `src/home/main.tsx`, `src/components/home/HomePage.tsx` |
 | Build the dex (place Pokémon) | `build-and-place.md` | `src/components/pokedex/PokedexGrid.tsx` |
 | Browse, filter, pick | `browse-and-filter.md` | `src/components/browser/PokemonBrowser.tsx` |
 | View and export the finished dex | `view-and-export.md` | `src/components/view/ViewPage.tsx` |
 | Analytics dashboard | `analytics.md` | `src/components/analytics/AnalyticsDashboard.tsx` |
 | Pokémon League Builder | `league-builder.md` | `src/league/LeagueApp.tsx`, `src/league/components/CardGrid.tsx` |
+| League and trainer card export | `league-export.md` | `src/league/components/LeagueExportOverlay.tsx` |
+| Feedback form | `feedback.md` | `src/components/feedback/FeedbackSheet.tsx` |
+| Language picker | `language.md` | `src/components/layout/LanguagePicker.tsx`, `src/i18n/` |
+| Admin dashboard | `admin.md` | `src/components/admin/AdminPage.tsx` |
 
-## Stable handles (the whole app has few)
+## Stable handles
 
-- Nav tabs: `[data-nav="builder"]`, `[data-nav="analytics"]`, `[data-nav="view"]`.
-  Active tab = the one whose computed `background-color` is non-transparent.
-- Builder scroll container: `[data-build-scroll]`.
-- Type filter: `[data-testid="type-filter"]`.
-- Bottom-sheet overlay: `[data-overlay]`; sheets are `role="dialog"`.
+- Nav tabs (dex page): `[data-nav="builder"]`, `[data-nav="analytics"]`,
+  `[data-nav="view"]`. Active tab = the one whose computed `background-color`
+  is non-transparent. Header lanes: `[data-testid="tool-title"]` and
+  `[data-testid="tool-actions"]`.
+- Builder: the scroll container `[data-build-scroll]`, sections
+  `[data-section-id]`, and each section's `[data-add-slot]` (not Starters).
+- Browser: `[data-testid="type-filter"]`, `[data-result-count]`,
+  `[data-filter-chip]`, `[data-testid="verify-evo-card"]`, and
+  `[data-testid="browser-close"]`.
+- Bottom sheet: `[data-overlay]` around a `role="dialog"`, below 1024px only.
+  Desktop shapes differ by feature.
 - State oracle: localStorage `personal-151-pokedex-v3`, a zustand-persist blob
-  `{state:{sections:{groupId:number[]},…},version:10}`. `sections` is the source
-  of truth for a build.
-- League builder: slots `[data-testid="league-slot-N"]`, cells
-  `[data-testid="card-cell-<row>-<seat>"]`, the ace and partner slots
-  `[data-testid="slot-ace"]` and `[data-testid="slot-partner"]`, Story /
-  Rematch tabs `[data-testid="league-nav"]` / `[data-league-view]`, and the
-  `league-builder` localStorage key as its oracle. See `league-builder.md`.
+  `{state:{sections:{groupId:number[]},locale,…},version:10}`. `sections` is
+  the source of truth for a build. `locale` holds the language picker's choice.
+- League builder: see `league-builder.md`. Its oracle is the `league-builder`
+  localStorage key.
 
-The three tabs are React state, not URL-addressable, so navigate by clicking
-`[data-nav]`, never by deep link. Most `aria-label`s are i18n-templated; do not
+The three dex tabs are React state, not URL-addressable, so navigate by clicking
+`[data-nav]`, never by deep link. Most `aria-label`s are i18n-templated. Do not
 select on their text.

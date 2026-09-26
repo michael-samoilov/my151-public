@@ -221,7 +221,7 @@ function FeedbackForm({
       <label htmlFor="feedback-message" className="text-xs font-medium">
         {t('feedback.message.label')}
         {(category === 'bug' || category === 'idea') && (
-          <span className="mt-0.5 block font-normal text-muted-foreground">
+          <span className="ml-1 font-normal text-muted-foreground">
             {t('feedback.message.readEverything')}
           </span>
         )}
