@@ -567,10 +567,7 @@ function GroupBox({
               insertIndicator={insertIndicator}
               onTypeClick={(type) => {
                 const store = usePokedexStore.getState();
-                store.setSearchQuery('');
-                store.setGenerationFilter(null);
-                store.setEvoLineSizeFilter(null);
-                store.setArchetypeFilter(null);
+                store.resetBrowserFilters();
                 store.setActiveSection('starter');
                 store.setCategoryFilter('starter');
                 store.setTypeFilter([type]);
@@ -693,10 +690,7 @@ export function PokedexGrid() {
   const setActiveSection = usePokedexStore((s) => s.setActiveSection);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const setArchetypeFilter = usePokedexStore((s) => s.setArchetypeFilter);
-  const setSearchQuery = usePokedexStore((s) => s.setSearchQuery);
-  const setTypeFilter = usePokedexStore((s) => s.setTypeFilter);
-  const setGenerationFilter = usePokedexStore((s) => s.setGenerationFilter);
-  const setEvoLineSizeFilter = usePokedexStore((s) => s.setEvoLineSizeFilter);
+  const resetBrowserFilters = usePokedexStore((s) => s.resetBrowserFilters);
   const setCategoryFilter = usePokedexStore((s) => s.setCategoryFilter);
   const clearAll = usePokedexStore((s) => s.clearAll);
   const toolbarSlot = useToolbarSlot('builder');
@@ -922,23 +916,15 @@ export function PokedexGrid() {
 
   const handleAddClick = useCallback((groupId: string) => {
     const group = BUILD_GROUPS.find(g => g.id === groupId);
-    setSearchQuery('');
-    setTypeFilter(null);
-    setGenerationFilter(null);
-    setEvoLineSizeFilter(null);
+    resetBrowserFilters();
     setActiveSection(groupId);
     if (group?.filterType === 'category') {
       setCategoryFilter(group.filterId);
-      setArchetypeFilter(null);
     } else if (group?.filterType === 'archetype') {
       setArchetypeFilter(group.filterId);
-      setCategoryFilter(null);
-    } else {
-      setCategoryFilter(null);
-      setArchetypeFilter(null);
     }
     setMobileBrowserOpen(true);
-  }, [setSearchQuery, setTypeFilter, setGenerationFilter, setEvoLineSizeFilter, setActiveSection, setCategoryFilter, setArchetypeFilter, setMobileBrowserOpen]);
+  }, [resetBrowserFilters, setActiveSection, setCategoryFilter, setArchetypeFilter, setMobileBrowserOpen]);
 
   const dragSet = useMemo(() => new Set(dragLineIds ?? []), [dragLineIds]);
 
