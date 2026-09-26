@@ -40,7 +40,7 @@
 - Run `/verify-my151` on the change. If that command is unavailable, read `.claude/skills/verify-my151/SKILL.md` and follow it.
 - If verification fails, fix the cause and run it again until it passes.
 - Do not bring work for review while verification still fails.
-- For a bugfix, add a test that fails on the old behavior and passes on the fix. Code tests and visual-measurement tests both count.
+- For a bugfix, prove the fix with a proof test that fails on the old behavior and passes on the fix. Report both results, then delete the test. See section 4, "Testing".
 - Show before-and-after evidence for the same input. If you can check it, never ask the user to verify it.
 
 ## 2. Merge low-risk work yourself
@@ -54,3 +54,39 @@
 - For each bugfix or feature with a visual component, capture before-and-after screenshots on desktop and mobile.
 - Use the same input in all screenshots.
 - Show the old behavior first and the new behavior second.
+
+## 4. Testing
+
+These rules apply to every agent and every worker. They exist because agents wrote unit tests that restate the code, never fail, block valid changes, and inflate the codebase.
+
+Write tests in this order:
+
+1. Never write unit tests after you write code.
+2. Highly prefer E2E tests (Playwright, `e2e/`) as the sole testing mechanism. Use them to verify that complex features work.
+3. At the end of each E2E test, produce a verifiable and repeatable artifact. Attach a screenshot or a JSON measurement with `testInfo.attach`. A second run of the same spec must produce the same result.
+4. If you must test a system in isolation, first write down all the ways it could fail. Then write the code. Each unit test names the failure it catches.
+
+Prove each bugfix and feature with a proof test, and then delete it:
+
+1. Before you change the code, write a test that fails on the old code.
+2. Make the change, and run the same test again. It must pass.
+3. Put both results in the work report or the PR as evidence: the command, the failure, and the pass.
+4. Delete the proof test before you commit. Do not keep it in the suite.
+
+Keep a unit test only when it catches a real bug that the E2E tests miss. These areas qualify, because E2E cannot reach them:
+
+- `api/` logic. E2E stubs every API route, so the admin analytics math has no other guard.
+- Build and repository gates in `scripts/`, such as `npm run i18n:verify`.
+- Saved-data migrations. A bug there deletes a user's saved selections.
+- Pure logic with more input combinations than E2E can drive.
+
+Do not write these tests:
+
+- A test that restates the implementation: a constant, a class name, a style value, a formula copied from the source, or an internal data shape.
+- A test that repeats an E2E test that already checks the same outcome.
+
+Maintain the suite this way:
+
+- A test that asserts behavior Michael asked to change is stale. Update it. It is not a regression.
+- Tag a Playwright test or describe `@viewport` when its result depends on the viewport or device. Untagged tests run only in the `desktop` project. `scripts/check-viewport-tags.mjs` enforces the tag on tests that skip `desktop`.
+- Run tests by the two-tier rule in `CLAUDE.md`, "Build Verification".
