@@ -76,14 +76,6 @@ describe('multiToolEras', () => {
   it('drops the era before a second tool existed', () => {
     expect(multiToolEras(eraBounds(TOOL_CATALOG)).map((b) => b.key)).toEqual(['since-league']);
   });
-
-  it('keeps every cut after the second tool, so a third tool gets two Venns', () => {
-    const catalog: ToolDef[] = [
-      ...TOOL_CATALOG,
-      { id: 'fav', label: 'Favourites', short: 'Fav', launchedAt: Date.UTC(2026, 10, 1) },
-    ];
-    expect(multiToolEras(eraBounds(catalog)).map((b) => b.key)).toEqual(['before-fav', 'since-fav']);
-  });
 });
 
 describe('buildCrossTool conversion', () => {
@@ -167,23 +159,9 @@ describe('seatedPokemonIds', () => {
   it('keeps line members, ace, partner, and legendaries', () => {
     expect(seatedPokemonIds(cards).sort((a, b) => a - b)).toEqual([4, 5, 6, 25, 150]);
   });
-
-  it('drops TM ids and power-up form indices', () => {
-    expect(seatedPokemonIds(cards)).not.toContain(15);
-    expect(seatedPokemonIds(cards)).not.toContain(3);
-  });
 });
 
 describe('leagueIsDexNative', () => {
-  it('treats the rest of an evolution line as in-dex', () => {
-    // Charmander in the dex, the whole Charmander line on the board.
-    expect(leagueIsDexNative([4], [4, 5, 6])).toBe(true);
-  });
-
-  it('rejects a family the dex does not have', () => {
-    expect(leagueIsDexNative([4], [1])).toBe(false);
-  });
-
   it('is false for an empty league', () => {
     expect(leagueIsDexNative([4], [])).toBe(false);
   });

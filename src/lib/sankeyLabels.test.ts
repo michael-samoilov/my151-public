@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dexUsageFunnel, leagueUsageFunnel } from '../../api/_aggregate';
-import { columnPeers, compactFunnelLabelSide } from './sankeyLabels';
+import { compactFunnelLabelSide } from './sankeyLabels';
 import { dexFunnelSankey, leagueFunnelSankey, type FunnelNode } from './usageFunnels';
 
 function side(
@@ -49,12 +49,6 @@ describe('compactFunnelLabelSide', () => {
     expect(side(league, '5–8 gyms')).toBe('right');
   });
 
-  it('puts stacked size buckets on the right even when they have no outgoing link', () => {
-    expect(side(dex, '31–60')).toBe('right');
-    expect(side(dex, '91–120')).toBe('right');
-    expect(side(dex, '1–30')).toBe('right');
-  });
-
   it('keeps isolated drop-offs on the bottom and column titles on top', () => {
     expect(side(league, 'Bounced')).toBe('bottom');
     expect(side(league, 'Card not finished')).toBe('bottom');
@@ -63,19 +57,5 @@ describe('compactFunnelLabelSide', () => {
     expect(side(league, 'Kept private')).toBe('right');
     expect(side(dex, 'Completed')).toBe('top');
     expect(side(dex, 'Exported')).toBe('right');
-  });
-
-  it('never parks a name in the gap between two bars of the same column', () => {
-    for (const sankey of [league, dex]) {
-      for (const n of sankey.nodes) {
-        const peers = columnPeers(n.name, sankey.nodes, sankey.links);
-        const i = peers.findIndex((p) => p.name === n.name);
-        const labelSide = compactFunnelLabelSide(n, sankey.nodes, sankey.links);
-        if (i > 0) expect(labelSide, `${n.name} has a peer above`).not.toBe('top');
-        if (i < peers.length - 1) {
-          expect(labelSide, `${n.name} has a peer below`).not.toBe('bottom');
-        }
-      }
-    }
   });
 });

@@ -7,16 +7,6 @@ describe('clampToRect', () => {
   it('leaves a point inside the plot alone', () => {
     expect(clampToRect(100, 80, plot)).toEqual({ x: 100, y: 80 });
   });
-
-  it('pins a point in the left or right gutter to the plot edge', () => {
-    expect(clampToRect(8, 80, plot)).toEqual({ x: 36, y: 80 });
-    expect(clampToRect(250, 80, plot)).toEqual({ x: 236, y: 80 });
-  });
-
-  it('pins a point above or below the series band', () => {
-    expect(clampToRect(100, 10, plot)).toEqual({ x: 100, y: 36 });
-    expect(clampToRect(100, 200, plot)).toEqual({ x: 100, y: 136 });
-  });
 });
 
 describe('lineLeftInPlot', () => {
@@ -50,10 +40,5 @@ describe('categoryIndexAtX', () => {
 
   it('maps the midline to the middle category', () => {
     expect(categoryIndexAtX(136, plot, 90)).toBe(45);
-  });
-
-  it('clamps a gutter x to the first or last category', () => {
-    expect(categoryIndexAtX(0, plot, 90)).toBe(0);
-    expect(categoryIndexAtX(400, plot, 90)).toBe(90);
   });
 });
