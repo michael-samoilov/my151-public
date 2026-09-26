@@ -108,7 +108,7 @@ const rowsAround = (page: Page, name: string) =>
   }, name);
 
 test.describe('the one-Pokémon pickers', () => {
-  test('the ace and partner pickers name their slot', async ({ page }, info) => {
+  test('the ace and partner pickers name their slot', { tag: '@viewport' }, async ({ page }, info) => {
     const desktop = (info.project.use.viewport?.width ?? 0) >= 1024;
     await openCard(page, 9);
     await openPicker(page, 'slot-ace');

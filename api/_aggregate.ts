@@ -47,8 +47,6 @@ export interface SessionRecord {
   device?: string;
   os?: string;
   browser?: string;
-  localHour?: number;
-  localDow?: number;
 }
 
 /** The categorical fields `tallies` can count. */
@@ -319,46 +317,58 @@ export function tallies(records: SessionRecord[], field: TallyField): Record<str
   return out;
 }
 
-/**
- * Local day-of-week (0=Sun) and hour (0-23) for a record, from its timezone and
- * last activity. Prefers the stored fields, and otherwise derives them from
- * `lastTs` + `tz` — which back-populates every record written before those
- * fields existed.
- */
-export function localSlot(r: SessionRecord): { dow: number; hour: number } | null {
-  if (typeof r.localDow === 'number' && typeof r.localHour === 'number') {
-    return { dow: r.localDow % 7, hour: r.localHour % 24 };
+/** The clocks the admin heatmap can read last activity on. */
+const HEATMAP_CLOCKS = ['local', 'eastern'] as const;
+export type HeatmapClock = (typeof HEATMAP_CLOCKS)[number];
+
+/** Each clock's zone for a record. Local is the browser's own zone, so a
+ *  record without `tz` has none there. Eastern is one zone for every record. */
+const CLOCK_ZONE: Record<HeatmapClock, (r: SessionRecord) => string | undefined> = {
+  local: (r) => r.tz,
+  eastern: () => 'America/New_York',
+};
+
+/** One formatter per zone; null for a zone Intl does not know. */
+const weekdayHourFormats = new Map<string, Intl.DateTimeFormat | null>();
+
+function weekdayHourFormat(timeZone: string): Intl.DateTimeFormat | null {
+  let fmt = weekdayHourFormats.get(timeZone);
+  if (fmt === undefined) {
+    try {
+      fmt = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short', hour: 'numeric', hourCycle: 'h23' });
+    } catch {
+      fmt = null;
+    }
+    weekdayHourFormats.set(timeZone, fmt);
   }
-  if (!r.lastTs) return null;
-  try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone: r.tz || 'UTC',
-      weekday: 'short',
-      hour: 'numeric',
-      hour12: false,
-    }).formatToParts(r.lastTs);
-    const wd = parts.find((p) => p.type === 'weekday')?.value ?? '';
-    const hrStr = parts.find((p) => p.type === 'hour')?.value ?? '';
-    const dow = DOW_NAMES.indexOf(wd);
-    const hour = parseInt(hrStr, 10) % 24;
-    if (dow < 0 || !Number.isFinite(hour)) return null;
-    return { dow, hour };
-  } catch {
-    return null;
-  }
+  return fmt;
 }
 
-/** Hour-of-day totals and the 7 x 24 day-by-hour matrix of local activity. */
-export function heatmap(records: SessionRecord[]): { hours: number[]; matrix: number[][] } {
-  const hours = new Array<number>(24).fill(0);
-  const matrix: number[][] = Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
+/** Day of week (0=Sun) and hour (0-23) of `ts` on the zone's wall clock. */
+function weekSlot(ts: number, timeZone: string): { dow: number; hour: number } | null {
+  const parts = weekdayHourFormat(timeZone)?.formatToParts(ts);
+  if (!parts) return null;
+  const dow = DOW_NAMES.indexOf(parts.find((p) => p.type === 'weekday')?.value ?? '');
+  const hour = Number(parts.find((p) => p.type === 'hour')?.value);
+  return dow >= 0 && Number.isInteger(hour) ? { dow, hour } : null;
+}
+
+/**
+ * 7 x 24 day-by-hour counts of browsers, one matrix per clock. Each browser
+ * counts once, in the cell of its last activity. A browser with no zone for a
+ * clock is left out of that clock's matrix.
+ */
+export function heatmaps(records: SessionRecord[]): Record<HeatmapClock, number[][]> {
+  const week = () => Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
+  const out: Record<HeatmapClock, number[][]> = { local: week(), eastern: week() };
   for (const r of records) {
-    const slot = localSlot(r);
-    if (!slot) continue;
-    hours[slot.hour] += 1;
-    matrix[slot.dow][slot.hour] += 1;
+    for (const clock of HEATMAP_CLOCKS) {
+      const zone = CLOCK_ZONE[clock](r);
+      const slot = zone ? weekSlot(r.lastTs, zone) : null;
+      if (slot) out[clock][slot.dow][slot.hour] += 1;
+    }
   }
-  return { hours, matrix };
+  return out;
 }
 
 /** One bucket of browsers that share a country, language, pin, and platform. */
@@ -393,13 +403,11 @@ export interface Aggregates {
   whoBuckets: WhoBucket[];
   /** Distinct countries with a session in the 168 hours ending at the latest session. */
   countries7d: number;
-  hours: number[];
-  heatmap: number[][];
+  heatmaps: Record<HeatmapClock, number[][]>;
 }
 
 /** Every aggregation above, over one record list. */
 export function aggregate(records: SessionRecord[], now: number): Aggregates {
-  const hm = heatmap(records);
   return {
     users: records.length,
     activity: dailyActive(records, now),
@@ -415,8 +423,7 @@ export function aggregate(records: SessionRecord[], now: number): Aggregates {
     joints: tallyJoints(records),
     whoBuckets: tallyWhoBuckets(records),
     countries7d: distinctCountries7d(records),
-    hours: hm.hours,
-    heatmap: hm.matrix,
+    heatmaps: heatmaps(records),
   };
 }
 

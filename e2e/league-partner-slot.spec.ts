@@ -86,7 +86,7 @@ async function slotGeometry(page: Page) {
 }
 
 test.describe('the ace and partner slot', () => {
-  test('the two halves are a mirrored pair, at any width', async ({ page }) => {
+  test('the two halves are a mirrored pair, at any width', { tag: '@viewport' }, async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
     const { halves, slot } = await slotGeometry(page);
@@ -102,7 +102,7 @@ test.describe('the ace and partner slot', () => {
     }
   });
 
-  test('the two sprites cross only at the corner', async ({ page }, testInfo) => {
+  test('the two sprites cross only at the corner', { tag: '@viewport' }, async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name === 'narrow',
       '1× at dpr 1 is 96 CSS px; two squares do not fit a 320 pane',
@@ -116,7 +116,7 @@ test.describe('the ace and partner slot', () => {
     expect(overlap / area, 'the sprites overlap').toBeLessThanOrEqual(0.02);
   });
 
-  test('the placeholder rings stop short of the seam', async ({ page }, testInfo) => {
+  test('the placeholder rings stop short of the seam', { tag: '@viewport' }, async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name === 'narrow',
       '1× at dpr 1 is 96 CSS px; two squares do not fit a 320 pane',
@@ -133,7 +133,7 @@ test.describe('the ace and partner slot', () => {
     }
   });
 
-  test('the sprite is an integer device-pixel scale', async ({ page }) => {
+  test('the sprite is an integer device-pixel scale', { tag: '@viewport' }, async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
     const { halves, slot } = await slotGeometry(page);
@@ -171,7 +171,7 @@ test.describe('the ace and partner slot', () => {
     expect(slot.width).toBeGreaterThan(8);
   });
 
-  test('Hisuian Braviary and Celesteela do not overlap', async ({ page }, testInfo) => {
+  test('Hisuian Braviary and Celesteela do not overlap', { tag: '@viewport' }, async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name === 'narrow',
       '1× at dpr 1 is 96 CSS px; two squares do not fit a 320 pane',
@@ -184,7 +184,7 @@ test.describe('the ace and partner slot', () => {
     expect(overlap / area, 'large sprites overlap').toBeLessThanOrEqual(0.02);
   });
 
-  test('the empty state puts its heading where the filled one does', async ({ page }) => {
+  test('the empty state puts its heading where the filled one does', { tag: '@viewport' }, async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
 
@@ -274,7 +274,7 @@ test.describe('the ace and partner slot', () => {
     expect(state.lines, 'the partner seats itself when there is room').toBeGreaterThan(0);
   });
 
-  test('both halves get the same sprite', async ({ page }) => {
+  test('both halves get the same sprite', { tag: '@viewport' }, async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
     const { halves } = await slotGeometry(page);
@@ -286,7 +286,7 @@ test.describe('the ace and partner slot', () => {
     expect(Math.abs(ace.sprite - partner.sprite), 'the two match').toBeLessThanOrEqual(1);
   });
 
-  test('a lone ace keeps the empty partner half and the diagonal', async ({ page }) => {
+  test('a lone ace keeps the empty partner half and the diagonal', { tag: '@viewport' }, async ({ page }) => {
     await pairLeague(page, 334, null);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
@@ -391,7 +391,7 @@ test.describe('the ace and partner slot', () => {
     expect(got.seam, 'the diagonal stays').toBe(true);
   });
 
-  test('a lone partner keeps the empty ace half and the diagonal', async ({ page }) => {
+  test('a lone partner keeps the empty ace half and the diagonal', { tag: '@viewport' }, async ({ page }) => {
     await pairLeague(page, null, 179);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');

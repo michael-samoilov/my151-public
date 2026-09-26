@@ -195,7 +195,7 @@ async function seedDexAndOpen(page: Page, seed = UNLOCKED_SEED) {
   await expect(page.getByTestId('tool-title')).toContainText('/151');
 }
 
-test.describe('two-bar chrome', () => {
+test.describe('two-bar chrome', { tag: '@viewport' }, () => {
   test('dex view tabs are a mutual set and miss the ribbon, including a 4-digit count', async ({ page }) => {
     test.setTimeout(60_000);
     await seedDexAndOpen(page);
