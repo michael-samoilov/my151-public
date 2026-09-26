@@ -10,7 +10,7 @@ test.describe('admin search performance', () => {
     await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
   });
 
-  test('keeps search separate from Suite and shows provider and page data', async ({ page }) => {
+  test('keeps search separate from Suite and shows provider and page data', { tag: '@viewport' }, async ({ page }) => {
     const panel = searchPanel(page);
     await expect(panel).toHaveCount(0);
     await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Search' }).click();
