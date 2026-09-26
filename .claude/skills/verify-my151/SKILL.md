@@ -91,8 +91,9 @@ whatever came up.
 
 The app itself is built and served by the harness. `verify.ts` runs `npm run
 build` then `vite preview` on an isolated port (4180 for the change, 4181 for the
-base), so nothing collides with the Playwright e2e ports (4173/4174). Deps must be
-installed first (`npm ci`).
+base). The Playwright e2e servers take ports from 10000 through 29999, derived
+from the worktree path, so the two never collide. Deps must be installed first
+(`npm ci`).
 
 ## Doctor
 

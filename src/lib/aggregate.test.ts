@@ -6,7 +6,7 @@ import {
   dailyActive,
   hourlyActive,
   depthByDevice,
-  heatmap,
+  heatmaps,
   mergeByCid,
   referrerFlow,
   retention,
@@ -40,8 +40,6 @@ const dex = (over: Partial<SessionRecord> = {}): SessionRecord => ({
   device: 'Desktop',
   os: 'macOS',
   browser: 'Chrome',
-  localDow: 2,
-  localHour: 12,
   ...over,
 });
 
@@ -60,8 +58,6 @@ const league = (over: Partial<SessionRecord> = {}): SessionRecord => ({
   device: 'Mobile',
   os: 'iOS',
   browser: 'Safari',
-  localDow: 3,
-  localHour: 12,
   ...over,
 });
 
@@ -188,20 +184,26 @@ describe('tallies', () => {
   });
 });
 
-describe('heatmap', () => {
-  it('places a record in its own local day and hour', () => {
-    const { hours, matrix } = heatmap([dex(), league()]);
-    expect(hours[12]).toBe(2);
-    expect(matrix[2][12]).toBe(1);
-    expect(matrix[3][12]).toBe(1);
+describe('heatmaps', () => {
+  const total = (m: number[][]) => m.flat().reduce((a, b) => a + b, 0);
+
+  it('reads Eastern Time with daylight saving: the same UTC hour is noon in July and 11 AM in January', () => {
+    const july = dex({ cid: 'jul', tz: 'Asia/Tokyo', lastTs: Date.UTC(2026, 6, 15, 16) }); // Wed
+    const january = dex({ cid: 'jan', tz: 'Asia/Tokyo', lastTs: Date.UTC(2026, 0, 14, 16) }); // Wed
+    const { eastern } = heatmaps([july, january]);
+    expect(eastern[3][12]).toBe(1);
+    expect(eastern[3][11]).toBe(1);
   });
 
-  // Back-population: a record written before localDow existed still lands in
-  // the right cell, derived from its timezone and last activity.
-  it('derives the slot from tz and lastTs when the stored fields are absent', () => {
-    const { matrix } = heatmap([dex({ localDow: undefined, localHour: undefined })]);
-    // lastTs is Thu 2026-09-03 12:00 UTC.
-    expect(matrix[4][12]).toBe(1);
+  it('leaves a browser without a timezone out of local time and keeps it in Eastern Time', () => {
+    const london = dex({ cid: 'ldn', tz: 'Europe/London', lastTs: Date.UTC(2026, 8, 3, 12) }); // Thu 13:00 BST
+    // What submit stores for a browser with no timezone: UTC wall-clock fields.
+    const noTz = { ...dex({ cid: 'none', tz: undefined, lastTs: Date.UTC(2026, 8, 3, 12) }), localDow: 4, localHour: 12 };
+    const { local, eastern } = heatmaps([london, noTz]);
+    expect(total(local)).toBe(1);
+    expect(local[4][13]).toBe(1);
+    expect(total(eastern)).toBe(2);
+    expect(eastern[4][8]).toBe(2);
   });
 });
 
@@ -270,8 +272,7 @@ describe('aggregate', () => {
     expect(agg.activity).toHaveLength(3);
     expect(agg.hourly.length).toBeGreaterThan(1);
     expect(agg.hourly[0]).toEqual(expect.objectContaining({ hour: expect.any(Number), unique: expect.any(Number) }));
-    expect(agg.heatmap).toHaveLength(7);
-    expect(agg.hours).toHaveLength(24);
+    expect(Object.keys(agg.heatmaps)).toEqual(['local', 'eastern']);
   });
 
   it('tallies country, browser language, served locale, and pin together', () => {

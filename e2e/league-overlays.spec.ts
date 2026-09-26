@@ -96,7 +96,7 @@ async function overlayBoxes(page: Page) {
   );
 }
 
-test.describe('league overlays', () => {
+test.describe('league overlays', { tag: '@viewport' }, () => {
   test('every picker opens onto the viewport, not the pane track', async ({ page }) => {
     await blankLeague(page);
     await page.goto('/custom-gym-leader');
