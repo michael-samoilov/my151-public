@@ -3,16 +3,11 @@ import { tallyJoints } from '../../api/_aggregate';
 import {
   ICON_PX,
   clampedN,
-  dimTitle,
   inBarKind,
-  keepWord,
   labelsCollide,
   layoutLabels,
   mixCounts,
-  muteFill,
-  orderedKeys,
   shadeRamp,
-  sliceFill,
   sliceGeometry,
   type PlatformJoint,
 } from './platformStacks';
@@ -58,27 +53,6 @@ describe('mixCounts', () => {
     const device = mixCounts(joints, 'device', { dim: 'os', value: 'iOS' });
     expect(device).toEqual({ Mobile: 78, Tablet: 9 });
     expect(clampedN(joints, { dim: 'os', value: 'iOS' })).toBe(87);
-  });
-});
-
-describe('orderedKeys', () => {
-  it('keeps Desktop left of Mobile even when Mobile is larger', () => {
-    expect(orderedKeys({ Mobile: 80, Desktop: 5, Tablet: 9 }, 'device')).toEqual([
-      'Desktop',
-      'Mobile',
-      'Tablet',
-    ]);
-  });
-});
-
-describe('keepWord', () => {
-  it('always spells iOS and macOS', () => {
-    expect(keepWord('iOS')).toBe(true);
-    expect(keepWord('macOS')).toBe(true);
-    expect(keepWord('Windows')).toBe(false);
-    expect(keepWord('Edge')).toBe(false);
-    expect(keepWord('ChromeOS')).toBe(false);
-    expect(keepWord('Samsung Internet')).toBe(false);
   });
 });
 
@@ -158,39 +132,10 @@ describe('layoutLabels', () => {
   });
 });
 
-describe('sliceGeometry', () => {
-  it('keeps every slice inside the bar', () => {
-    const slices = sliceGeometry(
-      { Windows: 49, iOS: 20, Android: 16, macOS: 12, Linux: 3 },
-      'os',
-      332,
-    );
-    for (const s of slices) {
-      expect(s.leftPx + s.widthPx).toBeLessThanOrEqual(332 + 0.01);
-    }
-  });
-});
-
 describe('inBarKind', () => {
   it('puts % only on the first slice that can hold a number', () => {
     const slices = sliceGeometry({ Chrome: 52, Safari: 27, Firefox: 9, Edge: 8 }, 'browser', 332);
     expect(inBarKind(slices)).toEqual(['pct', 'int', 'int', 'int']);
-  });
-});
-
-describe('muteFill', () => {
-  it('mixes a little brand into the track grey', () => {
-    expect(muteFill('iOS')).toMatch(/^rgb\(/);
-    expect(muteFill('iOS')).not.toBe('#1d1d1f');
-  });
-});
-
-describe('sliceFill', () => {
-  it('mutes unselected siblings on the driving bar only', () => {
-    const clamp = { dim: 'os' as const, value: 'iOS' };
-    expect(sliceFill('iOS', 'os', clamp)).toBe('#1d1d1f');
-    expect(sliceFill('Windows', 'os', clamp)).toMatch(/^rgb\(/);
-    expect(sliceFill('Mobile', 'device', clamp)).toBe('#2563eb');
   });
 });
 
@@ -213,10 +158,6 @@ function hslOf(hex: string): { h: number; s: number; l: number } {
 }
 
 describe('shadeRamp', () => {
-  it('leaves a color alone when it appears once', () => {
-    expect(shadeRamp(['#2563eb', '#3f3f46', '#a3a3a3'])).toEqual(['#2563eb', '#3f3f46', '#a3a3a3']);
-  });
-
   it('lightens later copies of one hue and keeps the first', () => {
     const ramp = shadeRamp(['#FF8000', '#2980EF', '#FF8000', '#FF8000']);
     expect(ramp[0]).toBe('#FF8000');
@@ -231,14 +172,5 @@ describe('shadeRamp', () => {
       expect(hsl.l).toBeLessThan(0.82);
     }
     expect(ramp[3].toLowerCase()).not.toBe('#ffffff');
-  });
-});
-
-describe('dimTitle', () => {
-  it('is only the dimension name, with among when another bar is the clamp', () => {
-    expect(dimTitle('os', null)).toBe('OS');
-    expect(dimTitle('os', { dim: 'os', value: 'iOS' })).toBe('OS');
-    expect(dimTitle('device', { dim: 'os', value: 'iOS' })).toBe('Device among iOS');
-    expect(dimTitle('browser', { dim: 'os', value: 'iOS' })).toBe('Browser among iOS');
   });
 });

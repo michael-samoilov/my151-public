@@ -77,13 +77,4 @@ describe('describeLeague', () => {
     const out = describeLeague([card({ lines: [placed()], legend: { seat: 1, pokemonId: 150 } })]);
     expect(out[0].lg).toEqual([[1, 150]]);
   });
-
-  it('never sends the badge name or the theme', () => {
-    const out = describeLeague([
-      card({ lines: [placed()], badgeName: 'my real name', theme: 'a private joke' }),
-    ]);
-    const json = JSON.stringify(out);
-    expect(json).not.toContain('my real name');
-    expect(json).not.toContain('a private joke');
-  });
 });

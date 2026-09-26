@@ -1,63 +1,78 @@
 # Pokémon League Builder
 
 A second tool at `/custom-gym-leader`: fourteen gym cards, each a grid of
-evolution lines over twelve level rows, with an ace, a partner, a TM, a badge,
-powerups on the top three rows, and a legendary on the endgame boss row.
+evolution lines over 11 level rows (gyms 1-8, Elite Four, Champion, Endgame
+boss). Each card has an ace, a partner, a TM, a badge, powerups on rows 9-11,
+and a legendary on the boss row.
 
 ## Sub-features
 
-- A league home lists the fourteen slots; a first visit seeds a Kanto league
-  with two blank cards (slots 6 and 9).
-- Story / Rematch tabs (`[data-testid="league-nav"]`, the shared pill tab
-  set) switch every row between the challenge team and the rematch team.
-  Active tab = `aria-selected="true"` on `[data-league-view]`.
-- A card seats evolution lines from the Pokémon browser, opened from an empty
-  cell; a filled cell opens the browser to replace that seat's line.
+- A league home lists the fourteen slots. On a non-production build, a first
+  visit seeds a Kanto league with slots 6 and 9 blank. Production opens empty.
+- Story / Rematch tabs (`[data-testid="league-nav"]`) switch every row between
+  the challenge team and the rematch team. Active tab =
+  `aria-selected="true"` on `[data-league-view]`.
+- An empty cell opens the Pokémon browser to seat a line. A filled cell opens
+  it to replace that seat's line. A filled boss-row cell opens the legendary
+  picker instead.
 - The ace and partner slots open one-Pokémon pickers with standalone tiles.
-- A cell dragged up or down moves an evolution boundary; a press and hold
-  lifts the column to reorder it. The moving stage wears a wash of its
-  primary type while it moves.
-- Mega and Gigantamax buttons on the elite, champion and boss rows; a press
-  sets its row and every row below that shows the same form on that seat.
-- The card persists under the `league-builder` localStorage key.
+- A cell dragged up or down moves an evolution boundary. A press and hold lifts
+  the column to reorder it. The moving stage wears a wash of its primary type.
+- Mega and Gigantamax buttons on rows 9-11, the bottom three. A press sets its
+  row and every row below it that shows the same form on that seat.
+- Desktop (1024px and wider) opens on the league pane alone. Opening a gym
+  splits the width in halves with the card, and the picker makes thirds.
+  Content widths follow the pane. One compact page footer sits below the fold.
+- The league persists under the `league-builder` localStorage key.
 
 ## How to get to it (user POV)
 
-Open `/custom-gym-leader`, tap a slot (`[data-testid="league-slot-N"]`).
-Cells are `[data-testid="card-cell-<row>-<seat>"]`; the ace and partner slots
+Open `/custom-gym-leader` and tap a slot (`[data-testid="league-slot-N"]`).
+Cells are `[data-testid="card-cell-<row>-<seat>"]`. The ace and partner slots
 are `[data-testid="slot-ace"]` and `[data-testid="slot-partner"]`. The browser
-sheet shows a `[data-filter-chip="my-dex"]` chip when open, and its tiles are
+shows a `[data-filter-chip="my-dex"]` chip, and its tiles are
 `[data-testid="verify-evo-card"]`. Powerup buttons sit beside a cell as
-`[data-powerup="mega"|"dynamax"]`.
+`[data-powerup="mega"|"dynamax"]`. Export has its own file, `league-export.md`.
 
 ## Driving it with the harness
 
-`runLeagueSuite` proves boot, the static SEO shell, layout and one desktop
-Blink drive (type, line, TM). `runLeagueChangeSuite` drives the 2026-09
-changes on every engine: it seeds a blank league by writing the store key and
-reloading, then reads the picker heading, packs the ace picker's Generation 1
-rows around Eevee and asserts no empty cell sits before a tile, presses the
-Mega button twice and reads `state.cards[9].powerups`, replaces a Lapras seat
-with the Charizard line already on the card, and flicks Charizard's top cell
-two rows up with synthetic `TouchEvent`s, reading the boundary and the
-`[data-stage-tint]` cells while the touch is down. It then sets the gym type
-to Fire, opens the TM picker, types `surf`, and asserts Surf is listed
-(`league-change:tm-search-ignores-type-chip`) even though the Fire chip is
-still selected. It also measures the four Elite Four stars on the open card
-(`league:elite-stars-one-row`): one y, four increasing x. The oracle is the
-store: `state.cards[i].lines[j].branch` and `.boundaries`, and `.powerups[row]`.
+`verify.ts` runs six league suites after `standard`:
+
+- `league`: checks the served shell's title, h1, and canonical link
+  structurally, then boot, layout, the 44px `[data-testid="league-tool-bar"]`,
+  render audits, and a desktop Blink drive (gym type, one line) read back from
+  the store.
+- `league-change`: on every engine, seeds a blank league, then checks the tab
+  set, the ace picker's rows, powerup presses (`state.cards[9].powerups`), a
+  replace, a synthetic-touch flick and its `[data-stage-tint]` wash, TM search,
+  and the Elite Four stars on one row.
+- `league-hover`: a column wash on desktop hover, and none left behind on touch.
+- `league-home`: slot moves on the home (fill, displace, playlist order).
+- `gym-card-export`: the card export preview, and ace, TM, and badge fit.
+- `league-funnel`: the card and roster nudges (`[data-testid="league-nudge"]`).
+
+The oracle is the store: `state.cards[i].lines[j].branch` and `.boundaries`,
+and `.powerups[row]`.
 
 ## Gotchas
 
-- Seed a blank league before a drive; the Kanto seed fills card 3, so a drive
-  that sets a type on it finds `aria-label="Gym type: <type>"`, not the bare
-  label.
-- The flick is a synthetic touch dispatched on the cell, which the card's
-  own sensor handles. An engine that cannot construct a `Touch` or a
-  `TouchEvent` skips those two checks by name: desktop Gecko under Xvfb has
-  no constructor, and WebKitGTK exposes the names but throws on construction.
-  A real finger on a device is the only proof there.
+- Seed a blank league before a drive. The Kanto seed fills card 3, so a drive
+  that sets its type finds `aria-label="Gym type: <type>"`, not the bare label.
+- An engine that cannot construct a `Touch` or `TouchEvent` skips the two flick
+  checks by name: desktop Gecko under Xvfb has no constructor, and WebKitGTK
+  throws on construction. A real finger on a device is the only proof there.
 - Each check phase reloads the page to close the picker, because the Session
   interface has no keyboard.
 - The ace picker is windowed: Eevee's row is not in the DOM until the results
-  container is scrolled to it, so the check scrolls in steps and re-queries.
+  scroll to it, so the check scrolls in steps and re-queries.
+- WebKitGTK does not scale rem-sized boxes inside the card's CSS `zoom`
+  (`useFitScale`). The fit then drops to its 0.55 floor, the ace sprite
+  overflows its slot, the ace and partner hit boxes overlap, and the TM and
+  badge boxes overflow. On production that fails 6 `gym-export:*` checks, and
+  the `league-change` and `league-home` suites stop at a WebKit click or move
+  error. Safari 26.4 to 26.6 shipped zoom fixes, so check a real Safari
+  before you call it an app bug: with a card open, compare
+  `[data-ace-partner-slot]` height / (12.75 × root rem) with the card's zoom.
+- Headless Firefox reports no hover-capable pointer, so
+  `league-hover:desktop-column-wash` skips on Gecko by name. A desktop
+  browser with a mouse is the proof.

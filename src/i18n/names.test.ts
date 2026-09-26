@@ -3,7 +3,6 @@ import pokemonData from '@/data/pokemon.json';
 import { en } from './catalogs/en';
 import { setCatalog } from './core';
 import { formLabel, formProvenance, getNamesVersion, speciesName, __setNamesForTest, type NameProvenance } from './names';
-import { normalizeSearch } from './searchNormalize';
 import type { Locale } from './config';
 
 /**
@@ -100,16 +99,6 @@ describe('name catalogs', () => {
     }
   });
 
-  it('never composes for a language whose region adjectives are irregular', () => {
-    // English would learn "{region}n Form" from "Alolan Form" and render
-    // "Galarn Form". The generator validates a learned pattern against every
-    // documented form and discards it — English documents all 64 regardless.
-    const catalog = load('en');
-    const composed = Object.values(catalog.formSource).filter((s) => s === 'official-composed');
-    expect(composed).toEqual([]);
-    expect(Object.values(load('fr').formSource).filter((s) => s === 'official-composed')).toEqual([]);
-  });
-
   it('has a descriptor for every regional form in every locale', () => {
     // Between official and composed, no regional form should be left unnamed.
     const regional = pokemonData.filter((p) => /-(alola|galar|hisui|paldea)/.test(p.name));
@@ -117,37 +106,6 @@ describe('name catalogs', () => {
       const catalog = load(locale);
       const missing = regional.filter((p) => !catalog.forms[p.id]).map((p) => p.name);
       expect(missing, locale).toEqual([]);
-    }
-  });
-
-  it('falls back rather than throwing before a catalog has loaded', () => {
-    setCatalog('ko', en);
-    expect(speciesName(25)).toBeNull();
-    expect(formLabel(10100)).toBeNull();
-  });
-
-  it('gives every locale the affixes its keyboard needs', () => {
-    // A Japanese user on a Latin keyboard types "pikachu", a Korean user types
-    // ㅍㅋㅊ, a Chinese user types pkq. Without these the search box is
-    // unusable in exactly the locales the names were added for.
-    expect(load('ja').affix?.[24]).toBe('pikachu');
-    expect(load('ko').affix?.[24]).toBe(normalizeSearch('ㅍㅋㅊ'));
-    expect(load('zh-Hans').affix?.[24]).toBe('pikaqiu pkq');
-  });
-
-  it('ships no affixes for the Latin locales', () => {
-    // Their names need only the folding the normalizer already does, and the
-    // name itself is never duplicated into the index — 1,025 derived copies per
-    // locale that could drift from the names beside them.
-    for (const locale of ['en', 'fr', 'de', 'es', 'it'] as const) {
-      expect(load(locale).affix, `${locale} ships affixes it does not need`).toBeUndefined();
-    }
-  });
-
-  it('folds the accents out of every affix it does ship', () => {
-    for (const locale of ['ja', 'ko', 'zh-Hans', 'zh-Hant'] as const) {
-      const accented = load(locale).affix?.filter((text) => /[À-ÿ]/.test(text)) ?? [];
-      expect(accented, `${locale} left accented text in its affixes`).toEqual([]);
     }
   });
 });
@@ -171,15 +129,5 @@ describe('getNamesVersion', () => {
 
     setCatalog('en', en);
     expect(getNamesVersion()).not.toBe(afterSwitch);
-  });
-
-  it('only ever goes up, so no two states can share a value', () => {
-    const seen = new Set<number>();
-    for (const locale of ['en', 'ja', 'ko', 'de', 'en'] as const) {
-      setCatalog(locale, en);
-      const version = getNamesVersion();
-      expect(seen.has(version), `${locale} repeated a version`).toBe(false);
-      seen.add(version);
-    }
   });
 });

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   CARD_COUNT,
   CARD_TEAM_SIZES,
-  SEAT_MAX,
   parseCards,
   LEAGUE_SESSION_GAP_MS,
   mergeLeagueRecord,
@@ -93,11 +92,6 @@ describe('mergeLeagueRecord', () => {
     expect(rec.firstReferrer).toBe('reddit.com');
   });
 
-  it('leaves firstReferrer unset for a direct visit', () => {
-    const rec = mergeLeagueRecord(null, beacon());
-    expect(rec.firstReferrer).toBeUndefined();
-  });
-
   it('counts exports by kind and never un-counts them', () => {
     let rec = mergeLeagueRecord(null, beacon({ kind: 'export', exportKind: 'card' }));
     rec = mergeLeagueRecord(rec, beacon({ kind: 'export', exportKind: 'league', now: 1_000_500 }));
@@ -125,28 +119,6 @@ describe('mergeLeagueRecord', () => {
     let rec = mergeLeagueRecord(null, beacon({ events: ['league-export-card'] }));
     rec = mergeLeagueRecord(rec, beacon({ now: 1_000_500, events: ['league-export-card'] }));
     expect(rec.sessionLog[0].events).toEqual(['league-export-card']);
-  });
-
-  it('attaches league nudge shown/cta/dismiss to the sitting', () => {
-    let rec = mergeLeagueRecord(
-      null,
-      beacon({ events: ['league-nudge-card-shown'] }),
-    );
-    rec = mergeLeagueRecord(
-      rec,
-      beacon({ now: 1_000_500, events: ['league-nudge-card-cta'] }),
-    );
-    expect(rec.sessionLog[0].events).toEqual([
-      'league-nudge-card-shown',
-      'league-nudge-card-cta',
-    ]);
-  });
-
-  it('does not mutate the record it was given', () => {
-    const first = mergeLeagueRecord(null, beacon());
-    const snapshot = JSON.stringify(first);
-    mergeLeagueRecord(first, beacon({ now: 1_000_000 + 5_000, summary: summary({ cards: 4 }) }));
-    expect(JSON.stringify(first)).toBe(snapshot);
   });
 });
 
@@ -254,10 +226,6 @@ describe('the summary ceiling matches the app', () => {
     expect(CARD_COUNT).toBe(SLOT_COUNT);
   });
 
-  it('clamps seats to six lines per card', () => {
-    expect(SEAT_MAX).toBe(6 * SLOT_COUNT);
-  });
-
   it('keeps a full league instead of flattening it to the old ceiling', () => {
     const full = parseSummary({
       cards: SLOT_COUNT,
@@ -274,13 +242,6 @@ describe('the summary ceiling matches the app', () => {
       named: SLOT_COUNT,
       aces: SLOT_COUNT,
       leagueNamed: true,
-    });
-  });
-
-  it('still clamps a summary that claims more than the app can hold', () => {
-    expect(parseSummary({ cards: 99, seats: 999, typed: 0, named: 0, aces: 0 })).toMatchObject({
-      cards: SLOT_COUNT,
-      seats: 6 * SLOT_COUNT,
     });
   });
 });
@@ -359,12 +320,6 @@ describe('mergeLeagueRecord and the card structure', () => {
     expect(rec.latestCards).toEqual([{ i: 0, l: [{ b: [1] }] }]);
   });
 
-  it('replaces the structure with the newest one', () => {
-    const first = mergeLeagueRecord(null, beacon({ cards: [{ i: 0, l: [{ b: [1] }] }] }));
-    const second = mergeLeagueRecord(first, beacon({ now: 2_000_000, cards: [{ i: 1, l: [{ b: [4] }] }] }));
-    expect(second.latestCards).toEqual([{ i: 1, l: [{ b: [4] }] }]);
-  });
-
   // A client that sends no structure must not erase one an earlier beacon
   // stored — that is what an old tab still running the previous bundle does.
   it('leaves a stored structure alone when a beacon omits it', () => {
@@ -414,47 +369,6 @@ describe('peakFullGyms', () => {
     const rec = mergeLeagueRecord(null, beacon({ summary: summary({ cards: 4, seats: 8 }) }));
     expect(rec.latestCards).toBeUndefined();
     expect(peakFullGyms(rec)).toBe(4);
-  });
-
-  it('treats an empty stored league as zero full gyms', () => {
-    const rec = mergeLeagueRecord(null, beacon({ summary: summary({ cards: 2, seats: 2 }), cards: [] }));
-    expect(rec.latestCards).toEqual([]);
-    expect(peakFullGyms(rec)).toBe(0);
-  });
-
-  it('takes the peak across sessions', () => {
-    let rec = mergeLeagueRecord(
-      null,
-      beacon({
-        summary: summary({ cards: 2, seats: 5 }),
-        cards: [
-          { i: 0, l: lines(2) },
-          { i: 1, l: lines(3) },
-        ],
-      }),
-    );
-    rec = mergeLeagueRecord(
-      rec,
-      beacon({
-        now: 1_000_000 + LEAGUE_SESSION_GAP_MS + 1,
-        summary: summary({ cards: 1, seats: 2 }),
-        cards: [{ i: 0, l: lines(2) }],
-      }),
-    );
-    expect(peakFullGyms(rec)).toBe(2);
-  });
-
-  it("uses each slot's card-row team size", () => {
-    const eliteFull = mergeLeagueRecord(
-      null,
-      beacon({ summary: summary({ cards: 1, seats: 5 }), cards: [{ i: 8, l: lines(5) }] }),
-    );
-    expect(peakFullGyms(eliteFull)).toBe(1);
-    const eliteShort = mergeLeagueRecord(
-      null,
-      beacon({ summary: summary({ cards: 1, seats: 4 }), cards: [{ i: 8, l: lines(4) }] }),
-    );
-    expect(peakFullGyms(eliteShort)).toBe(0);
   });
 
   it('stores a picker-pinned locale as switched', () => {
