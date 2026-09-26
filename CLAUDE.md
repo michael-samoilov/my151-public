@@ -55,7 +55,32 @@ Before you share a rendered mockup, an image export, or a static page, run the f
 
 GitHub Actions is not used. Do not retry Actions. Do not wait for PR checks. The workflow file is `workflow_dispatch` only. Restore `push` / `pull_request` only if billing allows jobs to start.
 
-Before every commit and push, run `bash scripts/ci-local.sh`. That is lint, unit tests, Playwright, then `npm run build`. Never push code that has not passed this script. `npm run build` alone is not enough.
+Verification has two tiers. Run the tier that matches the push.
+
+| Push | Run |
+|---|---|
+| Work branch | `npm run lint`, `npm test`, `npm run build`, and the Playwright specs that cover the change. |
+| Production merge | `bash scripts/ci-local.sh` once, on the merged result. |
+
+A change that touches only Markdown files runs neither tier.
+
+Work-branch tier:
+
+1. Run `npm run lint`, `npm test`, and `npm run build`.
+2. Run only the specs that cover the change, in the `desktop` project: `npx playwright test e2e/<name>.spec.ts --project=desktop`.
+3. For a layout change, also add `--project=mobile --project=narrow`.
+4. When a test fails, fix the cause. Then run `npx playwright test --last-failed`. Do not rerun the whole suite for one failure.
+
+Production tier:
+
+1. Run `bash scripts/ci-local.sh` once, before the merge. That is lint, unit tests, Playwright, then `npm run build`.
+2. A failure outside your change does not block the merge. Report it as pre-existing, with evidence: the same failure on production HEAD.
+
+Test rules:
+
+- A test that asserts behavior Michael asked to change is stale. Update it. It is not a regression.
+- A bugfix gets one test that fails on the old code and passes on the fix.
+- Do not write a test that restates the implementation.
 
 `npm run build` is exactly `npm run i18n:verify && tsc -b && vite build`. The `tsc -b` step covers `src`, `api`, `scripts` and `e2e` via the project references in `tsconfig.json` — note that `api/` is Vercel serverless code that Vite never touches, so this typecheck is its only local gate. **Sprite caching is not part of the build**; it is a separate, manual `npm run cache-sprites`.
 
@@ -87,7 +112,7 @@ Do not wait for Michael to ship low-risk, already-verified work. Merge it to `cl
 The approval rule keeps an untested change that **end users** see out of the live app.
 Judge the change by what it does, not only by which folder the files sit in.
 
-Before every production push, run `npm run build` and `bash scripts/ci-local.sh`. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the compile and deploy signal.
+Before every production push, run the production tier of Build Verification (`bash scripts/ci-local.sh`). GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the compile and deploy signal.
 
 After every production push, check out the work branch again. A merge leaves you on production, so the next commit would land there. Run `git rev-parse --abbrev-ref HEAD` before any later commit.
 
