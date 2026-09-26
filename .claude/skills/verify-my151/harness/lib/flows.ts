@@ -998,8 +998,20 @@ async function waitFavoritesGrid(s: Session): Promise<boolean> {
   return waitFor(s, '[data-testid="favorites-grid"]');
 }
 
+/**
+ * Click a grid cell after scrolling it into the grid frame.
+ *
+ * The grid scrolls inside its own frame. WebKitGTK's WebDriver scrolls only
+ * the page before a click, so a row below the frame reads as not
+ * interactable there. A user scrolls the frame first, and so does this.
+ */
+async function clickCell(s: Session, selector: string): Promise<void> {
+  await s.evalJson(`document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true;`);
+  await s.click(selector);
+}
+
 async function pickFavorite(s: Session, cell: string, id: number): Promise<boolean> {
-  await s.click(`[data-testid="${cell}"]`);
+  await clickCell(s, `[data-testid="${cell}"]`);
   if (!(await waitFor(s, `[data-testid="favorites-pick-${id}"]`))) return false;
   await s.click(`[data-testid="favorites-pick-${id}"]`);
   await sleep(400);
@@ -1090,7 +1102,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     return checks;
   }
 
-  await s.click('[data-testid="favorites-cell-electric-5"]');
+  await clickCell(s, '[data-testid="favorites-cell-electric-5"]');
   const pretty = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
   checks.push(ok('favorites:picker-opens', pretty));
   await settle(s);
@@ -1179,12 +1191,12 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     if (!sheetOpen) {
       checks.push({ name: 'favorites:short-sheet', status: 'skip', detail: 'desktop pane' });
       await closePicker();
-      await s.click('[data-testid="favorites-cell-starter-1"]');
+      await clickCell(s, '[data-testid="favorites-cell-starter-1"]');
       if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) starterRows = await rowLens();
     } else {
       await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
       await sleep(300);
-      await s.click('[data-testid="favorites-cell-starter-1"]');
+      await clickCell(s, '[data-testid="favorites-cell-starter-1"]');
       const starter = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
       if (!starter) {
         checks.push({ name: 'favorites:short-sheet', status: 'fail', detail: 'starter picker did not open' });
@@ -1222,7 +1234,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     `);
     checks.push(ok('favorites:kanto-starter-partners', kantoPartners));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-starter-8"]');
+    await clickCell(s, '[data-testid="favorites-cell-starter-8"]');
     await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const hisuiLast = await s.evalJson<boolean>(`
       const ids = [...document.querySelectorAll('[data-testid^="favorites-pick-"]')]
@@ -1231,7 +1243,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     `);
     checks.push(ok('favorites:hisui-starters-last', hisuiLast));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-favorite-1"]');
+    await clickCell(s, '[data-testid="favorites-cell-favorite-1"]');
     await waitFor(s, '[data-testid="favorites-picker"]');
     const emptyCard = await s.evalJson<boolean>(`
       const empty = document.querySelector('[data-testid="favorites-picker-empty"]');
@@ -1241,17 +1253,17 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     await s.screenshot(ctx.shot('favorites-pointer-empty'));
     checks.push(await auditRender(s, 'favorites:render-pointer-empty'));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-legendary-4"]');
+    await clickCell(s, '[data-testid="favorites-cell-legendary-4"]');
     const legendOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const legendRows = legendOpen ? await rowLens() : [];
     checks.push(ok('favorites:legend-spread', legendRows.length >= 3 && legendRows.every((n) => n > 0 && n <= 6), legendRows.join('+')));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-water-1"]');
+    await clickCell(s, '[data-testid="favorites-cell-water-1"]');
     const waterOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const waterRows = waterOpen ? await rowLens() : [];
     checks.push(ok('favorites:water-tail', waterRows.length >= 5 && waterRows.every((n) => n > 0 && n <= 6), waterRows.join('+')));
     await closePicker();
-    await s.click('[data-testid="favorites-cell-gimmick-8"]');
+    await clickCell(s, '[data-testid="favorites-cell-gimmick-8"]');
     const gimmickOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
     const tall = gimmickOpen ? await s.evalJson<{
       mobile: boolean; rows: number; inside: boolean; noScroll: boolean; same: boolean;
@@ -1306,7 +1318,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   await waitGone(s, '[data-testid="favorites-picker"]');
   let openedPack = false;
   if (placedAzu) {
-    await s.click('[data-testid="favorites-cell-fairy-2"]');
+    await clickCell(s, '[data-testid="favorites-cell-fairy-2"]');
     if (await waitFor(s, '[data-testid="favorites-pick-184"]')) {
       const used = await s.evalJson<{
         opacity: number; mark: string | null; freeOpacity: number; freeMark: boolean;
@@ -1491,7 +1503,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   };
 
   await dismiss();
-  await s.click('[data-testid="favorites-cell-normal-1"]');
+  await clickCell(s, '[data-testid="favorites-cell-normal-1"]');
   if (await waitFor(s, '[data-testid="favorites-picker"]')) {
     const emptyRing = await s.evalJson<{ ring: string; ball: string }>(`
       const cell = document.querySelector('[data-testid="favorites-cell-normal-1"]');
@@ -1513,7 +1525,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   }
   await dismiss();
 
-  await s.click('[data-testid="favorites-cell-fairy-2"]');
+  await clickCell(s, '[data-testid="favorites-cell-fairy-2"]');
   if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) {
     await s.screenshot(ctx.shot('favorites-selector-clear'));
     const filled = await s.evalJson<{
@@ -1634,17 +1646,17 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   `);
   checks.push(ok('favorites:minimap-fades-idle', miniIdle < 0.05, `opacity=${miniIdle}`));
 
-  await s.click('[data-testid="favorites-cell-poison-1"]');
+  await clickCell(s, '[data-testid="favorites-cell-poison-1"]');
   const poisonOpen = await waitFor(s, '[data-testid="favorites-pick-34"]');
   if (poisonOpen) await s.click('[data-testid="favorites-pick-34"]');
   await sleep(250);
   await dismiss();
-  await s.click('[data-testid="favorites-cell-ground-1"]');
+  await clickCell(s, '[data-testid="favorites-cell-ground-1"]');
   const groundOpen = await waitFor(s, '[data-testid="favorites-pick-76"]');
   if (groundOpen) await s.click('[data-testid="favorites-pick-76"]');
   await sleep(300);
   await dismiss();
-  await s.click('[data-testid="favorites-cell-rock-1"]');
+  await clickCell(s, '[data-testid="favorites-cell-rock-1"]');
   const rockOpen = await waitFor(s, '[data-testid="favorites-pick-76"]');
   if (rockOpen) await s.click('[data-testid="favorites-pick-76"]');
   await sleep(350);
@@ -1685,6 +1697,62 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     Boolean(placedRaichu && direct.id === 26 && !direct.packing && !direct.picker),
     `ready=${directReady} pikachu=${placedPikachu} raichu=${placedRaichu} id=${direct.id} packing=${direct.packing}`,
   ));
+
+  // App zoom. Synthetic ctrl+wheel events reach the same handler as a
+  // trackpad pinch on every engine. Zoomed and scrolled to the far corner,
+  // the last cell must sit inside the frame, the headers on its edges, and
+  // the minimap inside it without a transform.
+  await s.evalJson(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]');
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    for (let i = 0; i < 4; i++) {
+      el.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -50, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, bubbles: true, cancelable: true }));
+    }
+    return true;
+  `);
+  await sleep(300);
+  const zoom = await s.evalJson<{
+    zoom: number; cellGrew: boolean; lastInside: boolean; headerTop: number; genLeft: number; mapInside: boolean; mapTransform: string;
+  }>(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]');
+    const before = Number(el?.getAttribute('data-zoom') || 0);
+    if (!el) return { zoom: 0, cellGrew: false, lastInside: false, headerTop: -1, genLeft: -1, mapInside: false, mapTransform: '' };
+    el.scrollLeft = el.scrollWidth;
+    el.scrollTop = el.scrollHeight;
+    const frame = el.getBoundingClientRect();
+    const inner = { left: frame.left + el.clientLeft, top: frame.top + el.clientTop };
+    inner.right = inner.left + el.clientWidth;
+    inner.bottom = inner.top + el.clientHeight;
+    const last = document.querySelector('[data-testid="favorites-cell-favorite-favorite"]').getBoundingClientRect();
+    const grid = document.querySelector('[data-testid="favorites-grid"]');
+    const headers = [...grid.querySelectorAll(':scope > div:not([data-row-banded])')].map((h) => h.getBoundingClientRect().top);
+    const gens = [...document.querySelectorAll('div[data-row-banded]')].map((g) => g.getBoundingClientRect().left);
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    const box = map ? map.getBoundingClientRect() : null;
+    return {
+      zoom: before,
+      cellGrew: document.querySelector('[data-testid="favorites-cell-normal-1"]').getBoundingClientRect().width > el.clientHeight / 13 * 1.5,
+      lastInside: last.right <= inner.right + 1 && last.bottom <= inner.bottom + 1 && last.left >= inner.left - 1 && last.top >= inner.top - 1,
+      headerTop: Math.round((Math.min(...headers) - inner.top) * 10) / 10,
+      genLeft: Math.round((Math.min(...gens) - inner.left) * 10) / 10,
+      mapInside: !!box && box.left >= frame.left && box.right <= frame.right && box.top >= frame.top && box.bottom <= frame.bottom,
+      mapTransform: map ? getComputedStyle(map).transform : '',
+    };
+  `);
+  checks.push(ok('favorites:zoom-grows-cells', zoom.zoom > 1.5 && zoom.cellGrew, `data-zoom=${zoom.zoom} cellGrew=${zoom.cellGrew}`));
+  checks.push(ok('favorites:zoom-reaches-far-corner', zoom.zoom > 1.5 && zoom.lastInside, `lastInside=${zoom.lastInside}`));
+  checks.push(ok(
+    'favorites:zoom-sticky-headers',
+    zoom.zoom > 1.5 && Math.abs(zoom.headerTop) < 1 && Math.abs(zoom.genLeft) < 1,
+    `headerTop-frame=${zoom.headerTop} genLeft-frame=${zoom.genLeft}`,
+  ));
+  checks.push(ok(
+    'favorites:zoom-minimap-in-frame',
+    zoom.mapInside && zoom.mapTransform === 'none',
+    `inside=${zoom.mapInside} transform=${zoom.mapTransform}`,
+  ));
+  if (zoom.zoom > 1.5) await s.screenshot(ctx.shot('favorites-zoomed-far-corner'));
 
   const errs = await s.errors();
   checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));

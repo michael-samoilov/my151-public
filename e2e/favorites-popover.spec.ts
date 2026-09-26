@@ -38,6 +38,25 @@ test('desktop picker stays over the table without changing its width', async ({ 
   await checkBounds(baseWidth);
   await page.evaluate(() => window.scrollBy(0, -100));
   await checkBounds(baseWidth);
+  await page.getByRole('button', { name: 'Close picker' }).click();
+
+  // Zoomed and scrolled, the picker still opens beside the tapped cell.
+  const frame = (await table.boundingBox())!;
+  await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
+  await page.keyboard.down('Control');
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -50);
+  await page.keyboard.up('Control');
+  await expect(table).toHaveAttribute('data-zoom', '2.5');
+  await table.evaluate((el) => { el.scrollLeft = 900; el.scrollTop = 700; });
+  const cell = page.getByTestId('favorites-cell-dragon-9');
+  await cell.click();
+  await checkBounds(baseWidth);
+  const [c, p] = await Promise.all([cell.boundingBox(), page.getByTestId('favorites-picker').boundingBox()]);
+  const gapX = Math.max(p!.x - (c!.x + c!.width), c!.x - (p!.x + p!.width));
+  const gapY = Math.max(p!.y - (c!.y + c!.height), c!.y - (p!.y + p!.height));
+  // The picker does not cover the cell and sits one 8px gap from an edge.
+  expect(Math.max(gapX, gapY)).toBeGreaterThanOrEqual(7);
+  expect(Math.max(gapX, gapY)).toBeLessThan(9);
   await page.setViewportSize({ width: 1050, height: 620 });
   await checkBounds();
 });

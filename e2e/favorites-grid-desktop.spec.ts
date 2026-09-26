@@ -1,17 +1,17 @@
 import { expect, test } from '@playwright/test';
 
-test('desktop grid keeps native sprites, aligned rows, and a larger minimap', async ({ page, context }, testInfo) => {
+test('desktop grid keeps native sprites, aligned rows, and a larger minimap', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'desktop table geometry');
   await page.goto('/favorite-pokemon-by-type');
   await page.screenshot({ path: testInfo.outputPath('desktop-grid.png') });
 
   const scroll = page.getByTestId('favorites-grid-scroll');
-  const header = page.getByTestId('favorites-grid-generation-headers');
   const grid = page.getByTestId('favorites-grid');
   const firstCell = page.getByTestId('favorites-cell-normal-1');
-  const firstHeader = header.locator(':scope > div').nth(1);
+  const firstHeader = page.locator('div[data-row-banded]').first();
   const lastCell = page.getByTestId('favorites-cell-normal-favorite');
-  const lastHeader = header.locator(':scope > div').last();
+  const lastHeader = page.locator('div[data-row-banded]').last();
+  await scroll.evaluate((el) => { el.scrollTop = el.scrollHeight; });
   const [first, firstH, last, lastH] = await Promise.all([
     firstCell.boundingBox(), firstHeader.boundingBox(), lastCell.boundingBox(), lastHeader.boundingBox(),
   ]);
@@ -21,7 +21,12 @@ test('desktop grid keeps native sprites, aligned rows, and a larger minimap', as
   expect(Math.abs(first!.y - firstH!.y)).toBeLessThan(1);
   expect(Math.abs(last!.y - lastH!.y)).toBeLessThan(1);
   expect(Math.abs(last!.height - lastH!.height)).toBeLessThan(1);
+  await scroll.evaluate((el) => { el.scrollTop = 0; });
 
+  // The grid scrolls inside a frame that fills the screen below the headers.
+  const frame = (await scroll.boundingBox())!;
+  expect(frame.y + frame.height).toBeLessThanOrEqual(800);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeGreaterThan(800);
   const footer = page.getByText(/Nintendo/);
   expect((await footer.boundingBox())!.y).toBeGreaterThanOrEqual(800);
   const widthBefore = (await grid.boundingBox())!.width;
@@ -34,24 +39,10 @@ test('desktop grid keeps native sprites, aligned rows, and a larger minimap', as
   expect((await sprite.boundingBox())!.height).toBeCloseTo(96, 0);
   await page.screenshot({ path: testInfo.outputPath('desktop-grid-native-sprite.png') });
 
-  await scroll.evaluate((el) => { el.scrollLeft = 300; el.dispatchEvent(new Event('scroll')); });
-  await page.evaluate(() => window.scrollTo(0, 200));
+  await scroll.evaluate((el) => { el.scrollLeft = 300; el.scrollTop = 200; });
   const minimap = page.getByTestId('favorites-minimap');
-  await expect(minimap).toBeAttached();
+  await expect(minimap).toBeVisible();
   expect((await minimap.boundingBox())!.width).toBeGreaterThanOrEqual(140);
-
-  const cdp = await context.newCDPSession(page);
-  await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
-  await expect.poll(() => page.evaluate(() => visualViewport?.scale ?? 1)).toBeGreaterThan(1.9);
-  expect(await page.evaluate(() => document.documentElement.scrollHeight > innerHeight + 100)).toBe(true);
-  const screenTop = () => minimap.evaluate((el) => {
-    const visual = window.visualViewport;
-    return (el.getBoundingClientRect().top - (visual?.offsetTop ?? 0)) * (visual?.scale ?? 1);
-  });
-  const beforeScroll = await screenTop();
-  await page.evaluate(() => window.scrollTo(0, 350));
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
-  expect(Math.abs(await screenTop() - beforeScroll)).toBeLessThan(3);
 });
 
 test('neighboring desktop sprites stay at native size without overlapping', async ({ page }, testInfo) => {

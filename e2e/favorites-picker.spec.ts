@@ -52,13 +52,6 @@ test.describe('favorite Pokémon picker', () => {
     expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height + 1);
 
     const scroll = page.getByTestId('favorites-grid-scroll');
-    const fixed = page.getByTestId('favorites-grid-generation-headers');
-    const [scrollBox, fixedBox] = await Promise.all([scroll.boundingBox(), fixed.boundingBox()]);
-    expect(scrollBox).toBeTruthy();
-    expect(fixedBox).toBeTruthy();
-    // The native horizontal scrollbar belongs to the body scroller, not the
-    // generation-header column, so its track starts at this exact boundary.
-    expect(Math.abs(scrollBox!.x - (fixedBox!.x + fixedBox!.width))).toBeLessThan(1);
     const backgrounds = await scroll.evaluate((el) => ({
       table: getComputedStyle(el).backgroundColor,
       app: getComputedStyle(document.body).backgroundColor,
@@ -654,122 +647,12 @@ test.describe('favorite Pokémon picker', () => {
     });
     expect(shades[0]).not.toBe(shades[1]);
     expect(shades[1]).not.toBe('rgb(228, 228, 231)');
+    const windowLeft = (await viewport.boundingBox())!.x;
+    await scroller.evaluate((el) => { el.scrollLeft = 450; });
+    await expect.poll(async () => (await viewport.boundingBox())?.x ?? 0).toBeGreaterThan(windowLeft + 3);
     await expect.poll(() => map.evaluate((el) => Number(getComputedStyle(el).opacity)), { timeout: 2_500 }).toBeLessThan(0.05);
     await page.reload();
     await expect(page.getByTestId('favorites-scroll-cue')).toHaveCount(0);
-  });
-
-  test('mobile pinch zoom keeps the minimap screen-sized and tracks the smaller viewport', async ({ page, context }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile', 'mobile pinch-zoom geometry');
-    await page.goto('/favorite-pokemon-by-type');
-    const map = page.getByTestId('favorites-minimap');
-    await map.waitFor();
-    await expect(page.getByTestId('favorites-grid-scroll')).toHaveCSS('touch-action', 'manipulation');
-    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
-      el.scrollLeft = 250;
-      el.dispatchEvent(new Event('scroll'));
-    });
-    const before = await map.boundingBox();
-    const beforeWindow = await page.getByTestId('favorites-minimap-viewport').boundingBox();
-    expect(before).toBeTruthy();
-    expect(beforeWindow).toBeTruthy();
-    const cdp = await context.newCDPSession(page);
-    await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
-    await expect.poll(() => page.evaluate(() => window.visualViewport?.scale ?? 1)).toBeGreaterThan(1.9);
-    await expect.poll(async () => (await map.boundingBox())?.width ?? 0).toBeLessThan(before!.width * 0.75);
-    const after = await map.boundingBox();
-    const afterWindow = await page.getByTestId('favorites-minimap-viewport').boundingBox();
-    const visual = await page.evaluate(() => ({
-      left: window.visualViewport?.offsetLeft ?? 0,
-      top: window.visualViewport?.offsetTop ?? 0,
-      width: window.visualViewport?.width ?? innerWidth,
-      height: window.visualViewport?.height ?? innerHeight,
-      meta: document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? '',
-    }));
-    expect(visual.meta).not.toContain('maximum-scale');
-    expect(after).toBeTruthy();
-    expect(afterWindow).toBeTruthy();
-    expect(after!.width * 2).toBeCloseTo(before!.width, 0);
-    expect(after!.height * 2).toBeCloseTo(before!.height, 0);
-    expect(after!.x + after!.width).toBeLessThanOrEqual(visual.left + visual.width);
-    expect(after!.y + after!.height).toBeLessThanOrEqual(visual.top + visual.height);
-    // Moving the chart within the page must never drag its viewport HUD.
-    const anchored = await map.boundingBox();
-    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
-      el.parentElement!.style.transform = 'translateY(-40px)';
-      window.dispatchEvent(new Event('scroll'));
-    });
-    await expect.poll(async () => (await map.boundingBox())?.y ?? -1).toBeCloseTo(anchored!.y, 0);
-    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
-      el.parentElement!.style.transform = '';
-      window.dispatchEvent(new Event('scroll'));
-    });
-    // Put the grid partly below the zoomed screen, as in the reported iPhone
-    // screenshot. The red window must describe only the rows still visible.
-    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
-      el.parentElement!.style.transform = 'translateY(120px)';
-      window.dispatchEvent(new Event('scroll'));
-    });
-    await expect.poll(async () => (await page.getByTestId('favorites-minimap-viewport').boundingBox())?.height ?? 0)
-      .toBeLessThan(afterWindow!.height - 2);
-    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
-      el.parentElement!.style.transform = '';
-      window.dispatchEvent(new Event('scroll'));
-    });
-    expect(afterWindow!.width).toBeLessThan(beforeWindow!.width / 2);
-    const oldLeft = afterWindow!.x;
-    await page.getByTestId('favorites-grid-scroll').evaluate((el) => {
-      el.scrollLeft = 450;
-      el.dispatchEvent(new Event('scroll'));
-    });
-    await expect.poll(async () => (await page.getByTestId('favorites-minimap-viewport').boundingBox())?.x ?? 0).toBeGreaterThan(oldLeft + 3);
-    await page.screenshot({ path: testInfo.outputPath('pinch-zoom-minimap.png') });
-  });
-
-  test('minimap stays at the viewport edge through repeated zoomed page scrolls', async ({ page, context }, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile', 'mobile pinch-zoom geometry');
-    await page.goto('/favorite-pokemon-by-type');
-    await page.evaluate(() => { document.body.style.minHeight = '1800px'; });
-    const map = page.getByTestId('favorites-minimap');
-    await expect(map).toBeAttached();
-    const cdp = await context.newCDPSession(page);
-    await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 2 });
-    await expect.poll(() => page.evaluate(() => visualViewport?.scale ?? 1)).toBeGreaterThan(1.9);
-    await expect.poll(() => page.evaluate(() => {
-      const visual = window.visualViewport!;
-      const rect = document.querySelector('[data-testid="favorites-minimap"]')!.getBoundingClientRect();
-      return visual.offsetTop + visual.height - rect.bottom;
-    })).toBeCloseTo(6, 0);
-
-    const samples = [];
-    for (const scrollTop of [80, 160, 240, 120, 300, 40]) {
-      samples.push(await page.evaluate((top) => {
-        window.scrollTo(0, top);
-        const visual = window.visualViewport!;
-        const rect = document.querySelector('[data-testid="favorites-minimap"]')!.getBoundingClientRect();
-        return {
-          scrollY: window.scrollY,
-          gap: visual.offsetTop + visual.height - rect.bottom,
-          position: getComputedStyle(document.querySelector('[data-testid="favorites-minimap"]')!).position,
-        };
-      }, scrollTop));
-    }
-    expect(new Set(samples.map((sample) => sample.scrollY)).size).toBeGreaterThan(3);
-    expect(samples.every((sample) => sample.position === 'fixed')).toBe(true);
-    expect(Math.max(...samples.map((sample) => sample.gap)) - Math.min(...samples.map((sample) => sample.gap))).toBeLessThan(1);
-
-    const visualPan = await page.evaluate(() => {
-      const visual = window.visualViewport!;
-      const map = document.querySelector('[data-testid="favorites-minimap"]') as HTMLElement;
-      const before = parseFloat(map.style.top);
-      Object.defineProperty(visual, 'offsetTop', { configurable: true, value: 24 });
-      visual.dispatchEvent(new Event('scroll'));
-      const after = parseFloat(map.style.top);
-      Reflect.deleteProperty(visual, 'offsetTop');
-      visual.dispatchEvent(new Event('scroll'));
-      return after - before;
-    });
-    expect(visualPan).toBeCloseTo(24, 0);
   });
 
   test('desktop grid sprites stay native and mobile artwork reaches the cell edge', async ({ page }) => {
