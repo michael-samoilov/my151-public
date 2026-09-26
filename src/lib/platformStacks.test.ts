@@ -11,6 +11,7 @@ import {
   mixCounts,
   muteFill,
   orderedKeys,
+  shadeRamp,
   sliceFill,
   sliceGeometry,
   type PlatformJoint,
@@ -190,6 +191,46 @@ describe('sliceFill', () => {
     expect(sliceFill('iOS', 'os', clamp)).toBe('#1d1d1f');
     expect(sliceFill('Windows', 'os', clamp)).toMatch(/^rgb\(/);
     expect(sliceFill('Mobile', 'device', clamp)).toBe('#2563eb');
+  });
+});
+
+function hslOf(hex: string): { h: number; s: number; l: number } {
+  const n = parseInt(hex.slice(1), 16);
+  const r = ((n >> 16) & 255) / 255;
+  const g = ((n >> 8) & 255) / 255;
+  const b = (n & 255) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l };
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return { h: h * 60, s, l };
+}
+
+describe('shadeRamp', () => {
+  it('leaves a color alone when it appears once', () => {
+    expect(shadeRamp(['#2563eb', '#3f3f46', '#a3a3a3'])).toEqual(['#2563eb', '#3f3f46', '#a3a3a3']);
+  });
+
+  it('lightens later copies of one hue and keeps the first', () => {
+    const ramp = shadeRamp(['#FF8000', '#2980EF', '#FF8000', '#FF8000']);
+    expect(ramp[0]).toBe('#FF8000');
+    expect(ramp[1]).toBe('#2980EF');
+    const oranges = [ramp[0], ramp[2], ramp[3]].map(hslOf);
+    expect(oranges[1].l).toBeGreaterThan(oranges[0].l);
+    expect(oranges[2].l).toBeGreaterThan(oranges[1].l);
+    for (const hsl of oranges) {
+      expect(hsl.h).toBeGreaterThan(25);
+      expect(hsl.h).toBeLessThan(35);
+      expect(hsl.s).toBeGreaterThan(0.85);
+      expect(hsl.l).toBeLessThan(0.82);
+    }
+    expect(ramp[3].toLowerCase()).not.toBe('#ffffff');
   });
 });
 

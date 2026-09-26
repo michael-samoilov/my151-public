@@ -3,6 +3,7 @@ import { negotiateLocale } from '@/i18n/detect';
 import {
   FLAG_W,
   OTHER_KEY,
+  amongTitle,
   balanceRailRows,
   captionKind,
   countryCounts,
@@ -14,7 +15,9 @@ import {
   fitBar,
   formatShare,
   languageOverrides,
+  languageShare,
   layoutNameLabels,
+  spelledLanguage,
   primaryLanguageRegion,
   mixWho,
   regionBar,
@@ -127,6 +130,16 @@ describe('fitBar', () => {
     expect(unlabeled.ES).toBe(80 - (FLAG_W + 4));
   });
 
+  it('names the slice and the pressed filter', () => {
+    const windows = { dim: 'os' as const, value: 'Windows' };
+    expect(amongTitle('Region', null, 'region')).toBe('Region');
+    expect(amongTitle('Region', windows, 'region')).toBe('Region among Windows');
+    expect(amongTitle('Region', { dim: 'region', value: 'Europe' }, 'region')).toBe('Region');
+    expect(amongTitle('Countries', windows)).toBe('Countries among Windows');
+    expect(amongTitle('Languages', windows)).toBe('Languages among Windows');
+    expect(amongTitle('Countries', null)).toBe('Countries');
+  });
+
   it('lists Other for a region and hides it for a platform slice', () => {
     expect(countryOtherLabeled(null)).toBe(true);
     expect(countryOtherLabeled({ dim: 'region', value: 'Europe' })).toBe(true);
@@ -157,6 +170,16 @@ describe('fitBar', () => {
     expect(balanceRailRows([10, 10, 10, 10, 10, 10], 0, 40)).toEqual([
       [0, 1, 2, 3],
       [4, 5],
+    ]);
+  });
+
+  it('wraps the top rail row inside the container', () => {
+    expect(balanceRailRows([10, 10, 10, 10, 10, 10], 0, 25)).toEqual([
+      [0, 1],
+      [2],
+      [3],
+      [4],
+      [5],
     ]);
   });
 
@@ -215,6 +238,33 @@ describe('language modules', () => {
     expect(primaryLanguageRegion(buckets, 'nl')).toBe('Europe');
   });
 
+  it('merges tags that spell one language and counts each user once', () => {
+    expect(spelledLanguage('he')).toBe(spelledLanguage('he-IL'));
+    expect(spelledLanguage('iw')).toBe('Hebrew');
+    expect(spelledLanguage('tl')).toBe(spelledLanguage('fil'));
+    const hebrew: WhoBucket[] = [
+      { country: 'IL', lang: 'he', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 2, n7d: 2 },
+      { country: 'IL', lang: 'he-IL', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 3, n7d: 3 },
+      { country: 'IL', lang: 'iw', locale: 'en', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 1, n7d: 0 },
+      { country: 'PH', lang: 'fil', locale: 'en', switched: '', device: 'Mobile', os: 'Android', browser: 'Chrome', n: 1, n7d: 1 },
+      { country: 'PH', lang: 'tl', locale: 'en', switched: '', device: 'Mobile', os: 'Android', browser: 'Chrome', n: 1, n7d: 1 },
+      { country: 'IL', lang: 'he', locale: 'en', switched: 'fr', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 4, n7d: 4 },
+    ];
+    expect(unshippedTags(hebrew, null)).toEqual([
+      { key: 'he', n: 6 },
+      { key: 'tl', n: 2 },
+    ]);
+    expect(languageOverrides(hebrew, null)).toEqual([{ lang: 'he', switched: 'fr', country: 'IL', n: 4 }]);
+    expect(primaryLanguageRegion(hebrew, 'iw')).toBe('Middle East & Africa');
+  });
+
+  it('keeps the language bar a share of everyone', () => {
+    const share = languageShare(buckets, null);
+    expect(share.map((item) => item.key)).toEqual(['served', 'unshipped', 'overrides']);
+    expect(share.map((item) => item.n)).toEqual([4, 6, 1]);
+    expect(share.reduce((sum, item) => sum + item.n, 0)).toBe(buckets.reduce((sum, bucket) => sum + bucket.n, 0));
+  });
+
   it('counts only unshipped tags in the selected region', () => {
     expect(unshippedTags(buckets, 'North America').map((t) => t.key)).toEqual(['pt-BR']);
     expect(unshippedTags(buckets, 'Europe').map((t) => t.key)).toEqual(['nl']);
@@ -237,6 +287,9 @@ describe('language modules', () => {
     expect(mobile.map((b) => b.country).sort()).toEqual(['FR', 'US']);
     const europe = visibleBuckets(buckets, { dim: 'region', value: 'Europe' }, 'North America');
     expect(europe.map((b) => b.country).sort()).toEqual(['DE', 'FR', 'GB']);
+    const open = visibleBuckets(buckets, null, null);
+    expect([...new Set(open.map((b) => b.country))].sort()).toEqual(['DE', 'FR', 'GB', 'US']);
+    expect(countryHeaderCounts(buckets, null, null)).toEqual({ all: 4, week: 3 });
     expect(regionBar(countryCounts(buckets, { dim: 'device', value: 'Mobile' }), 100).map((r) => r.key)).toEqual([
       'North America',
       'Europe',
@@ -246,6 +299,7 @@ describe('language modules', () => {
   it('builds country children from the same country tally', () => {
     const countries = { US: 10, CA: 2, FR: 3, GB: 1 };
     expect(countryItems(countries, 'North America').map((c) => c.key).sort()).toEqual(['CA', 'US']);
+    expect(countryItems(countries, null).map((c) => c.key).sort()).toEqual(['CA', 'FR', 'GB', 'US']);
     expect(regionBar(countries, 100).map((r) => r.label)).toEqual(['North America', 'Europe']);
     expect(distinctCountries(countries)).toBe(4);
   });

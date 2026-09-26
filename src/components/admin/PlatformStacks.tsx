@@ -9,6 +9,7 @@ import {
   inkOn,
   layoutLabels,
   mixCounts,
+  shadeRamp,
   sliceFill,
   sliceGeometry,
   type LabelLayout,
@@ -134,6 +135,7 @@ function StackBar({
   }, [slices, barW]);
   const driving = filter?.dim === dim;
   const fillClamp: PlatformClamp | null = driving ? { dim, value: filter.value } : null;
+  const fills = shadeRamp(slices.map((s) => sliceFill(s.key, dim, fillClamp)));
 
   return (
     <div className="min-w-0">
@@ -147,15 +149,12 @@ function StackBar({
       >
         {slices.map((s, i) => {
           const on = driving && filter?.value === s.key;
-          const fill = sliceFill(s.key, dim, fillClamp);
+          const fill = fills[i];
           const kind = kinds[i];
           const label =
             kind === 'pct' ? `${s.pct}%` : kind === 'int' ? String(s.pct) : '';
           const inset = on ? PRESSED_INSET : 0;
-          const width =
-            i === slices.length - 1
-              ? `calc(100% - ${s.leftPx + inset * 2}px)`
-              : Math.max(0, s.widthPx - inset * 2);
+          const width = i === slices.length - 1 ? `calc(100% - ${s.leftPx}px)` : s.widthPx;
           return (
             <button
               key={s.key}
@@ -169,9 +168,9 @@ function StackBar({
               style={{
                 top: inset,
                 height: `calc(100% - ${inset * 2}px)`,
-                left: s.leftPx + inset,
+                left: s.leftPx,
                 width,
-                maxWidth: `calc(100% - ${s.leftPx + inset}px)`,
+                maxWidth: `calc(100% - ${s.leftPx}px)`,
                 paddingLeft: kind === 'none' ? 0 : '0.375rem',
                 paddingRight: kind === 'none' ? 0 : '0.375rem',
                 backgroundColor: fill,
@@ -274,7 +273,7 @@ export function ClampChip({
     <button
       type="button"
       onClick={onClear}
-      className="rounded-full border border-foreground bg-foreground px-2.5 py-1 text-[0.7rem] font-semibold text-card"
+      className="inline-flex h-[1.09375rem] items-center rounded-full border border-foreground bg-foreground px-2 text-[0.7rem] font-semibold leading-none text-card"
       aria-label={`Clear ${label} clamp`}
       data-who-clamp
     >
