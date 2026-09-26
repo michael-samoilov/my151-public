@@ -1020,7 +1020,8 @@ test.describe('desktop dex export preview', () => {
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);
-    expect(holo.bg, JSON.stringify(holo)).toMatch(/repeating-linear-gradient/);
+    expect(holo.bg, JSON.stringify(holo)).toMatch(/linear-gradient/);
+    expect(holo.bg, JSON.stringify(holo)).not.toMatch(/repeating-linear-gradient/);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     const shadow = await page.evaluate(() => {
       const hit = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
