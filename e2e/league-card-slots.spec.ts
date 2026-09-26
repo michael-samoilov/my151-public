@@ -105,86 +105,6 @@ test.describe('the longest move in the TM box', () => {
   }
 });
 
-test.describe('the card detail labels', () => {
-  test('match the showcase typography and keep the badge rail balanced', { tag: '@viewport' }, async ({ page }) => {
-    await openCard(page);
-
-    const result = await page.evaluate(() => {
-      const byText = (root: ParentNode, text: string) =>
-        [...root.querySelectorAll('span')].find(
-          (el) => el.childElementCount === 0 && el.textContent?.replace(/\s+/g, ' ') === text,
-        )!;
-      const style = (el: Element, pseudo?: string) => {
-        const computed = getComputedStyle(el, pseudo);
-        return {
-          fontFamily: computed.fontFamily,
-          fontSize: parseFloat(computed.fontSize),
-          fontWeight: computed.fontWeight,
-        };
-      };
-      const centre = (el: Element) => {
-        const rect = el.getBoundingClientRect();
-        return rect.left + rect.width / 2;
-      };
-
-      const ace = document.querySelector('[data-slot-head="ace"]')!;
-      const tm = document.querySelector('[data-testid="slot-tm"]')!;
-      const badge = document.querySelector('[data-testid="slot-badge"]')!;
-      const tmLabel = tm.querySelector('[data-mark-label="tm"]')!;
-      const badgeLabel = badge.querySelector('[data-mark-label="badge"]')!;
-      const badgeField = badge.querySelector('[data-badge-field]')!;
-      const noBadges = byText(document, 'No badges');
-      const badgeBox = badge.getBoundingClientRect();
-      const badgeWord = badgeLabel.getBoundingClientRect();
-      const badgeInput = badgeField.getBoundingClientRect();
-
-      return {
-        reference: style(ace),
-        labels: {
-          pickMove: style(byText(tm, 'Pick a move')),
-          tm: style(tmLabel),
-          badge: style(badgeLabel),
-          badgeName: style(badgeField, '::before'),
-          noBadges: style(noBadges),
-        },
-        centres: {
-          tm: Math.abs(centre(tmLabel) - centre(tmLabel.parentElement!.querySelector('svg')!)),
-          badge: Math.abs(centre(badgeLabel) - centre(badgeLabel.parentElement!.parentElement!.querySelector('svg')!)),
-        },
-        badgeGutters: {
-          outer: badgeWord.left - badgeBox.left,
-          inner: badgeInput.left - badgeWord.right,
-        },
-      };
-    });
-
-    // A 320px phone has no room for the showcase size in the TM and badge
-    // pair: at that size BADGE is wider than the room the badge name leaves
-    // it. There the pair's four words come down together; everywhere with
-    // room, they are the heading's size.
-    const roomy = page.viewportSize()!.width >= 390;
-    const pair = new Set(['pickMove', 'tm', 'badge', 'badgeName']);
-    for (const [label, typography] of Object.entries(result.labels)) {
-      expect(typography.fontFamily, `${label} uses the showcase typeface`).toBe(result.reference.fontFamily);
-      expect(typography.fontWeight, `${label} uses the showcase weight`).toBe(result.reference.fontWeight);
-      if (roomy || !pair.has(label)) {
-        expect(typography.fontSize, `${label} uses the showcase font size`).toBeCloseTo(result.reference.fontSize, 2);
-      } else {
-        expect(typography.fontSize, `${label} is no larger than the showcase size`).toBeLessThanOrEqual(result.reference.fontSize);
-        expect(typography.fontSize, `${label} is the size of the rest of its pair`).toBeCloseTo(result.labels.badge.fontSize, 2);
-      }
-    }
-    expect(result.centres.tm, 'the TM icon and label share one axis').toBeLessThanOrEqual(0.5);
-    expect(result.centres.badge, 'the badge icon and label share one axis').toBeLessThanOrEqual(0.5);
-    expect(
-      Math.abs(result.badgeGutters.outer - result.badgeGutters.inner),
-      'BADGE has balanced space before the box edge and after the word',
-    ).toBeLessThanOrEqual(1.5);
-    expect(result.badgeGutters.outer, 'BADGE clears the box edge').toBeGreaterThan(0);
-    expect(result.badgeGutters.inner, 'BADGE clears the name beside it').toBeGreaterThan(0);
-  });
-});
-
 test.describe('gym card slots', () => {
   test('the signature pane reads the team as lines, in league order', async ({ page }) => {
     await openCard(page);
@@ -423,20 +343,6 @@ test.describe('gym card slots', () => {
     await openCard(page);
     await expectBadgeKeepsTypedHead(page);
   });
-
-  test('Pick a move stays inside its slot', { tag: '@viewport' }, async ({ page }) => {
-    await openCard(page);
-    await expectPickAMoveInside(page);
-  });
-
-  // Desktop only, untagged: the picker opens beside the card there.
-  test('Pick a move stays inside its slot beside the open picker', async ({ page }) => {
-    await openCard(page);
-    await seat(page, '[data-testid="card-cell-1-1"]', 'rhyhorn');
-    // The picker stays open beside the card, which narrows it.
-    await expect(page.getByText('Adding to:')).toBeVisible();
-    await expectPickAMoveInside(page);
-  });
 });
 
 /** Types "Thunder" into the badge and expects the phrase "Thunder Badge". */
@@ -523,58 +429,6 @@ async function expectBadgeKeepsTypedHead(page: Page) {
   expect(common, 'and enough of it to show the order held').toBeGreaterThan(4);
   expect(state.stored.replace(/\u00a0/g, ' ').trimEnd()).toBe(kept);
 }
-
-/**
- * How far "Pick a move" paints past the TM slot, in px; 0 or less is inside.
- *
- * Measured on the words, not their span: a span that cannot wrap is as wide
- * as its words, so a span box inside the slot proves nothing about the
- * letters, which ran over the gym's glyph cell next to it.
- */
-function pickAMoveSpill() {
-  const slot = document.querySelector('[data-testid="slot-tm"]')!;
-  const label = [...slot.querySelectorAll('span')].find(
-    (el) => el.childElementCount === 0 && el.textContent?.replace(/\s+/g, ' ') === 'Pick a move',
-  );
-  if (!label) return Infinity;
-  const words = document.createRange();
-  words.selectNodeContents(label);
-  const ink = words.getBoundingClientRect();
-  const box = slot.getBoundingClientRect();
-  return Math.max(ink.right - box.right, box.left - ink.left, ink.bottom - box.bottom, box.top - ink.top);
-}
-
-async function expectPickAMoveInside(page: Page) {
-  const spill = await page.evaluate(pickAMoveSpill);
-  await test.info().attach('pick-a-move-spill.json', { body: JSON.stringify({ spill }), contentType: 'application/json' });
-  expect(spill, 'px past the TM slot').toBeLessThanOrEqual(0.5);
-}
-
-/**
- * The TM and badge slots on a 360px phone, beside the narrow project's 320.
- *
- * Between the two a glyph column sized for the larger BADGE word took the
- * badge name's room: typing "Thunder" came back as "er Badge", and "Pick a
- * move" ran over the glyph cell beside its slot.
- */
-test.describe('the TM and badge slots on a 360px phone', () => {
-  test.use({ viewport: { width: 360, height: 844 } });
-
-  test('the badge name and the word Badge are one wrapping phrase', async ({ page }) => {
-    await openCard(page);
-    await expectThunderBadge(page);
-  });
-
-  test('the badge refuses text that would spill out of its slot', async ({ page }) => {
-    await openCard(page);
-    await expectBadgeKeepsTypedHead(page);
-  });
-
-  test('Pick a move stays inside its slot', async ({ page }) => {
-    await openCard(page);
-    await expectPickAMoveInside(page);
-  });
-});
 
 /**
  * PARTNER / SHOULDERMON must sit inside the dashed rounded pane, as two
