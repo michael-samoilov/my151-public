@@ -22,15 +22,18 @@ import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
 const ROWS = GEN_AXIS.length + 1;
 const COLS = TYPE_AXIS.length + 1;
 const DESKTOP_CELL_PX = 96;
-// Zoom multiplies the cell size, so 1 is the unzoomed grid. Mobile cells
-// start small and get more headroom than native-size desktop sprites.
+// Zoom multiplies the body cell size, so 1 is the unzoomed grid. Mobile
+// cells start small and get more headroom than native-size desktop sprites.
 const ZOOM_RANGE = { mobile: { min: 1, max: 4 }, desktop: { min: 1, max: 2.5 } };
+// The header row and generation column stop growing at this zoom, so a
+// zoomed grid keeps most of the frame for body cells.
+const HEAD_MAX_ZOOM = 1.25;
 
-/** A length inside a cell's 0.5px borders, as a fraction of it. A container
- *  unit would give the same size, but 300 size containers make every zoom
- *  frame run a style pass per cell. */
-function cellPart(fraction: number): string {
-  return `calc((var(--cell) - 1px) * ${fraction})`;
+/** A length inside a 0.5px-bordered track of size `track`, as a fraction of
+ *  it. A container unit would give the same size, but 300 size containers
+ *  make every zoom frame run a style pass per cell. */
+function trackPart(track: '--cell' | '--head', fraction: number): string {
+  return `calc((var(${track}) - 1px) * ${fraction})`;
 }
 
 /** Minimap size. Body cells are square, so it keeps the body's aspect ratio. */
@@ -39,10 +42,12 @@ function minimapBox(desktop: boolean): { width: number; height: number } {
   return { width, height: Math.round(width * GEN_AXIS.length / TYPE_AXIS.length) };
 }
 
-/** The zoom to draw next. `u` and `v` are the content point, in cells, that
- *  stays under (x, y); without them it is the point under (x, y) now. */
-type ZoomTarget = { zoom: number; x: number; y: number; u?: number; v?: number };
-type Pinch = { source: 'touch' | 'gesture'; zoom: number; distance: number; u: number; v: number };
+/** A point in the body grid, in cells from its top-left corner. */
+type BodyPoint = { u: number; v: number };
+/** The zoom to draw next. `body` stays under the frame point (x, y); without
+ *  it, the body point under (x, y) now stays there. */
+type ZoomTarget = { zoom: number; x: number; y: number; body?: BodyPoint };
+type Pinch = { source: 'touch' | 'gesture'; zoom: number; distance: number; body: BodyPoint };
 type GestureEventLike = UIEvent & { scale: number; clientX: number; clientY: number };
 
 export function FavoritesGrid({
@@ -112,17 +117,17 @@ function ZoomFrame({
       <div
         ref={ref}
         className="isolate h-full w-full overflow-auto overscroll-contain bg-background"
-        style={{ touchAction: 'pan-x pan-y', scrollPaddingTop: 'var(--cell)', scrollPaddingLeft: 'var(--cell)' }}
+        style={{ touchAction: 'pan-x pan-y', scrollPaddingTop: 'var(--head)', scrollPaddingLeft: 'var(--head)' }}
         data-testid="favorites-grid-scroll"
         data-zoom="1"
       >
         <div
           className="grid"
           style={{
-            width: `calc(var(--cell) * ${COLS})`,
-            height: `calc(var(--cell) * ${ROWS})`,
-            gridTemplateRows: `repeat(${ROWS}, var(--cell))`,
-            gridTemplateColumns: `repeat(${COLS}, var(--cell))`,
+            width: `calc(var(--head) + var(--cell) * ${COLS - 1})`,
+            height: `calc(var(--head) + var(--cell) * ${ROWS - 1})`,
+            gridTemplateRows: `var(--head) repeat(${ROWS - 1}, var(--cell))`,
+            gridTemplateColumns: `var(--head) repeat(${COLS - 1}, var(--cell))`,
           }}
           data-testid="favorites-grid"
           data-axis="gen-major"
@@ -143,7 +148,7 @@ function ZoomFrame({
 /**
  * Sizes cells, applies pinch and ctrl+wheel zoom, and paints the minimap.
  *
- * Gestures write the cell size and scroll offsets straight to the DOM once
+ * Gestures write the track sizes and scroll offsets straight to the DOM once
  * per animation frame. React renders none of it, so a pinch never waits on a
  * render.
  */
@@ -173,14 +178,26 @@ function useZoomFrame(
     let zoom = clampZoom(zoomRef.current);
     let target: ZoomTarget | null = null;
     let pinch: Pinch | null = null;
+    // A run of ctrl+wheel events at one pointer spot keeps one body point
+    // under the pointer, so per-event rounding cannot drift it.
+    let wheel: { x: number; y: number; time: number; body: BodyPoint } | null = null;
     let frame = 0;
     let fadeTimer = 0;
     let scrolled = false;
 
-    const writeCell = () => {
+    // Body cells scale with the zoom. Headers scale up to HEAD_MAX_ZOOM.
+    const tracks = () => ({ cell: base * zoom, head: base * Math.min(zoom, HEAD_MAX_ZOOM) });
+    const writeTracks = () => {
       zoomRef.current = zoom;
-      el.style.setProperty('--cell', `${base * zoom}px`);
+      const { cell, head } = tracks();
+      el.style.setProperty('--cell', `${cell}px`);
+      el.style.setProperty('--head', `${head}px`);
       el.dataset.zoom = String(Math.round(zoom * 1000) / 1000);
+    };
+    /** The body point under a frame-local point. */
+    const bodyAt = (x: number, y: number): BodyPoint => {
+      const { cell, head } = tracks();
+      return { u: (el.scrollLeft + x - head) / cell, v: (el.scrollTop + y - head) / cell };
     };
     const paint = (show: boolean) => {
       const map = mapRef.current;
@@ -193,13 +210,13 @@ function useZoomFrame(
       // Sit in the scrollport corner, clear of classic scrollbars.
       map.style.right = `${el.offsetWidth - el.clientWidth - el.clientLeft + 8}px`;
       map.style.bottom = `${el.offsetHeight - el.clientHeight - el.clientTop + 8}px`;
-      // The sticky headers cover one cell on each axis, so the visible body
-      // starts at the scroll offset and is one cell short of the frame.
-      const cell = base * zoom;
+      // The sticky headers cover the first track on each axis, so the
+      // visible body starts at the scroll offset and is one header short.
+      const { cell, head } = tracks();
       const sx = box.width / (TYPE_AXIS.length * cell);
       const sy = box.height / (GEN_AXIS.length * cell);
-      const width = Math.min(box.width, Math.max(2, (el.clientWidth - cell) * sx));
-      const height = Math.min(box.height, Math.max(2, (el.clientHeight - cell) * sy));
+      const width = Math.min(box.width, Math.max(2, (el.clientWidth - head) * sx));
+      const height = Math.min(box.height, Math.max(2, (el.clientHeight - head) * sy));
       view.style.left = `${minimapViewportX(el.scrollLeft, sx, box.width, width)}px`;
       view.style.top = `${Math.max(0, Math.min(box.height - height, el.scrollTop * sy))}px`;
       view.style.width = `${width}px`;
@@ -212,13 +229,12 @@ function useZoomFrame(
     const draw = () => {
       frame = 0;
       if (!target) return;
-      const cell = base * zoom;
-      const u = target.u ?? (el.scrollLeft + target.x) / cell;
-      const v = target.v ?? (el.scrollTop + target.y) / cell;
+      const { u, v } = target.body ?? bodyAt(target.x, target.y);
       zoom = target.zoom;
-      writeCell();
-      el.scrollLeft = u * base * zoom - target.x;
-      el.scrollTop = v * base * zoom - target.y;
+      writeTracks();
+      const { cell, head } = tracks();
+      el.scrollLeft = u * cell + head - target.x;
+      el.scrollTop = v * cell + head - target.y;
       target = null;
       paint(true);
     };
@@ -232,8 +248,7 @@ function useZoomFrame(
     };
     const startPinch = (source: Pinch['source'], clientX: number, clientY: number, distance: number): Pinch => {
       const point = local(clientX, clientY);
-      const cell = base * zoom;
-      pinch = { source, zoom, distance, u: (el.scrollLeft + point.x) / cell, v: (el.scrollTop + point.y) / cell };
+      pinch = { source, zoom, distance, body: bodyAt(point.x, point.y) };
       return pinch;
     };
     const touchPair = (touches: TouchList) => {
@@ -258,7 +273,7 @@ function useZoomFrame(
       if (event.cancelable) event.preventDefault();
       const pair = touchPair(event.touches);
       const start = pinch?.source === 'touch' ? pinch : startPinch('touch', pair.x, pair.y, pair.distance);
-      zoomTo({ zoom: clampZoom(start.zoom * pair.distance / start.distance), ...local(pair.x, pair.y), u: start.u, v: start.v });
+      zoomTo({ zoom: clampZoom(start.zoom * pair.distance / start.distance), ...local(pair.x, pair.y), body: start.body });
     };
     const onTouchEnd = (event: TouchEvent) => {
       if (event.touches.length < 2 && pinch?.source === 'touch') pinch = null;
@@ -275,7 +290,7 @@ function useZoomFrame(
       event.preventDefault();
       const gesture = event as GestureEventLike;
       if (pinch?.source !== 'gesture') return;
-      zoomTo({ zoom: clampZoom(pinch.zoom * gesture.scale), ...local(gesture.clientX, gesture.clientY), u: pinch.u, v: pinch.v });
+      zoomTo({ zoom: clampZoom(pinch.zoom * gesture.scale), ...local(gesture.clientX, gesture.clientY), body: pinch.body });
     };
     const onGestureEnd = (event: Event) => {
       event.preventDefault();
@@ -291,7 +306,12 @@ function useZoomFrame(
       if (pinch?.source === 'gesture') return;
       const delta = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? event.deltaY : event.deltaY * 33;
       const factor = Math.exp(-Math.max(-50, Math.min(50, delta)) / 100);
-      zoomTo({ zoom: clampZoom((target?.zoom ?? zoom) * factor), ...local(event.clientX, event.clientY) });
+      const point = local(event.clientX, event.clientY);
+      if (!wheel || event.timeStamp - wheel.time > 300 || Math.hypot(point.x - wheel.x, point.y - wheel.y) > 2) {
+        wheel = { ...point, time: 0, body: bodyAt(point.x, point.y) };
+      }
+      wheel.time = event.timeStamp;
+      zoomTo({ zoom: clampZoom((target?.zoom ?? zoom) * factor), ...point, body: wheel.body });
     };
     const onScroll = () => {
       paint(true);
@@ -299,6 +319,7 @@ function useZoomFrame(
       scrolled = true;
       firstScrollRef.current();
     };
+    // Keep the first visible body point in place when the base size changes.
     const onResize = () => {
       const next = baseCell();
       if (next > 0 && Math.abs(next - base) > 0.01) {
@@ -306,14 +327,14 @@ function useZoomFrame(
         const left = el.scrollLeft * ratio;
         const top = el.scrollTop * ratio;
         base = next;
-        writeCell();
+        writeTracks();
         el.scrollLeft = left;
         el.scrollTop = top;
       }
       paint(false);
     };
 
-    writeCell();
+    writeTracks();
     paint(false);
     const observer = new ResizeObserver(onResize);
     observer.observe(el);
@@ -399,7 +420,7 @@ function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenA
       {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
       <div
         className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain [&_span]:!h-full [&_span]:!w-full [&_span]:!text-[0.62em]"
-        style={{ width: cellPart(iconSize / 100), height: cellPart(iconSize / 100), fontSize: cellPart(iconSize / 100) }}
+        style={{ width: trackPart('--head', iconSize / 100), height: trackPart('--head', iconSize / 100), fontSize: trackPart('--head', iconSize / 100) }}
       >
         {isTypeName(id) ? (
           <TypeIcon type={id} size={32} />
@@ -558,7 +579,7 @@ function Filled({ mon, desktop }: { mon: PickerMon; desktop: boolean }) {
         src={mon.sprite}
         alt={mon.name}
         className="absolute left-1/2 top-1/2 z-10 h-auto max-w-none -translate-x-1/2 -translate-y-1/2"
-        style={{ imageRendering: 'pixelated', width: desktop ? 'var(--cell)' : cellPart(size / 100) }}
+        style={{ imageRendering: 'pixelated', width: desktop ? 'var(--cell)' : trackPart('--cell', size / 100) }}
         data-grid-sprite-size={desktop ? DESKTOP_CELL_PX : size}
         draggable={false}
       />

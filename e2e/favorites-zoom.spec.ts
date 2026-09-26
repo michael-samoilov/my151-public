@@ -11,11 +11,18 @@ type Box = { left: number; top: number; right: number; bottom: number };
 
 const nextFrame = (page: Page) => page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
 
-async function pinchGrid(page: Page, testInfo: TestInfo, factor: number) {
+/** The middle of the grid frame's visible part, where every pinch lands. */
+async function pinchPoint(page: Page) {
   const frame = (await page.getByTestId('favorites-grid-scroll').boundingBox())!;
   const viewport = page.viewportSize()!;
-  const x = frame.x + frame.width / 2;
-  const y = (Math.max(frame.y, 0) + Math.min(frame.y + frame.height, viewport.height)) / 2;
+  return {
+    x: frame.x + frame.width / 2,
+    y: (Math.max(frame.y, 0) + Math.min(frame.y + frame.height, viewport.height)) / 2,
+  };
+}
+
+async function pinchGrid(page: Page, testInfo: TestInfo, factor: number) {
+  const { x, y } = await pinchPoint(page);
   const cdp = await page.context().newCDPSession(page);
   if (testInfo.project.use.hasTouch) {
     const fingers = (spread: number) => [{ x: x - spread / 2, y, id: 1 }, { x: x + spread / 2, y, id: 2 }];
@@ -120,29 +127,66 @@ test.describe('favorite picker zoom', () => {
         genLeft: Math.min(...genHeaders.map((box) => box.left)),
         firstLeft: first.left,
         firstTop: first.top,
-        cell: first.width,
+        rowHeight: typeHeaders[typeHeaders.length - 1].height,
+        columnWidth: genHeaders[0].width,
       };
     });
     const visible = await visibleFrame(page);
     await page.screenshot({ path: testInfo.outputPath('zoomed-sticky-headers.png') });
     // The first body cell has moved up and left, so the view is scrolled on
     // both axes and only sticky headers can still be at the edges.
-    expect(edges.firstTop).toBeLessThan(visible.top + edges.cell - 1);
-    expect(edges.firstLeft).toBeLessThan(visible.left + edges.cell - 1);
+    expect(edges.firstTop).toBeLessThan(visible.top + edges.rowHeight - 1);
+    expect(edges.firstLeft).toBeLessThan(visible.left + edges.columnWidth - 1);
     expect.soft(edges.headerTop, 'header row top').toBeCloseTo(visible.top, 0);
     expect.soft(edges.genLeft, 'generation column left').toBeCloseTo(visible.left, 0);
 
     // The headers paint above scrolled body cells and their sprites.
-    const hits = await page.evaluate(({ visible, cell }) => {
+    const hits = await page.evaluate(({ visible, row, column }) => {
       const at = (x: number, y: number) => document.elementFromPoint(x, y);
-      const header = at(visible.left + cell * 1.5, visible.top + cell * 0.9);
-      const gen = at(visible.left + cell * 0.9, visible.top + cell * 1.5);
+      const header = at(visible.left + column * 1.5, visible.top + row * 0.9);
+      const gen = at(visible.left + column * 0.9, visible.top + row * 1.5);
       return {
         header: Boolean(header?.closest('[data-testid="favorites-grid"] > div:not([data-row-banded])')),
         gen: Boolean(gen?.closest('div[data-row-banded]')),
       };
-    }, { visible, cell: edges.cell });
+    }, { visible, row: edges.rowHeight, column: edges.columnWidth });
     expect(hits).toEqual({ header: true, gen: true });
+  });
+
+  test('headers stay compact at maximum zoom and the pinch point holds', async ({ page }, testInfo) => {
+    await page.goto('/favorite-pokemon-by-type');
+    // On-screen header sizes and the body cell under the pinch point, with
+    // where in that cell the point falls.
+    const measure = (point: { x: number; y: number }, testId?: string) => page.evaluate(({ point, testId }) => {
+      const grid = document.querySelector('[data-testid="favorites-grid"]')!;
+      const typeHeader = [...grid.querySelectorAll(':scope > div:not([data-row-banded])')].at(-1)!.getBoundingClientRect();
+      const genHeader = document.querySelector('div[data-row-banded]')!.getBoundingClientRect();
+      const cell = testId
+        ? document.querySelector(`[data-testid="${testId}"]`)!
+        : document.elementFromPoint(point.x, point.y)!.closest('button[data-testid^="favorites-cell-"]')!;
+      const box = cell.getBoundingClientRect();
+      return {
+        rowHeight: typeHeader.height,
+        columnWidth: genHeader.width,
+        cellWidth: box.width,
+        testId: cell.getAttribute('data-testid')!,
+        fx: (point.x - box.left) / box.width,
+        fy: (point.y - box.top) / box.height,
+        box: { left: box.left, top: box.top, width: box.width, height: box.height },
+      };
+    }, { point, testId });
+    const point = await pinchPoint(page);
+    const before = await measure(point);
+    await pinchGrid(page, testInfo, 5);
+    const after = await measure(point, before.testId);
+    await page.screenshot({ path: testInfo.outputPath('max-zoom.png') });
+
+    expect(after.cellWidth).toBeGreaterThan(before.cellWidth * 2.4);
+    expect.soft(after.rowHeight, 'header row height').toBeLessThanOrEqual(before.rowHeight * 1.25 + 1);
+    expect.soft(after.columnWidth, 'generation column width').toBeLessThanOrEqual(before.columnWidth * 1.25 + 1);
+    // The same spot of the same body cell is still under the pinch point.
+    expect(Math.abs(after.box.left + before.fx * after.box.width - point.x), 'pinch point x').toBeLessThan(3);
+    expect(Math.abs(after.box.top + before.fy * after.box.height - point.y), 'pinch point y').toBeLessThan(3);
   });
 
   test('the minimap holds still and unscaled through a pinch', async ({ page }, testInfo) => {
