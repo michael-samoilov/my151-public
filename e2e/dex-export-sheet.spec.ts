@@ -191,7 +191,7 @@ test.describe('dex export overlay', () => {
     await waitPreviewReady(page);
   });
 
-  test('save image opens the early-export survey', async ({ page }) => {
+  test('save image opens the early-export survey', { tag: '@viewport' }, async ({ page }) => {
     await page.route('**/api/submit', async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({

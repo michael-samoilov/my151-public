@@ -104,6 +104,7 @@ test.describe('the longest move in the TM box', () => {
     });
   }
 });
+
 test.describe('gym card slots', () => {
   test('the signature pane reads the team as lines, in league order', async ({ page }) => {
     await openCard(page);
@@ -874,3 +875,4 @@ test.describe('the badge word stays fully visible', () => {
     });
   }
 });
+

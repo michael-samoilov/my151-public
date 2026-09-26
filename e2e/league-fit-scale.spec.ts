@@ -54,11 +54,7 @@ test.describe('the fit', { tag: '@viewport' }, () => {
   });
 
   test('pays for the summary\'s hints out of both sides, and the rest out of height',
-    async ({ page }, testInfo) => {
-      test.skip(
-        testInfo.project.name === 'desktop',
-        'desktop uses uniform grow-fit; its fit math and pane overflow have separate coverage',
-      );
+    async ({ page }) => {
       const { width } = page.viewportSize()!;
       await page.setViewportSize({ width, height: ROOMY });
       await page.goto('/custom-gym-leader');
@@ -78,11 +74,7 @@ test.describe('the fit', { tag: '@viewport' }, () => {
       expect(tight.kept, 'and it is the tail only, not the card').toBeGreaterThan(0.9);
     });
 
-  test('pays for a gym card the same way', async ({ page }, testInfo) => {
-    test.skip(
-      testInfo.project.name === 'desktop',
-      'desktop uses uniform grow-fit; its fit math and pane overflow have separate coverage',
-    );
+  test('pays for a gym card the same way', async ({ page }) => {
     const { width } = page.viewportSize()!;
     await page.setViewportSize({ width, height: TIGHT });
     await page.goto('/custom-gym-leader');
