@@ -69,8 +69,9 @@ export function FavoritesApp() {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
     const cell = mainRef.current?.querySelector<HTMLElement>(`[data-testid="favorites-cell-${type}-${gen}"]`);
-    const table = mainRef.current?.querySelector<HTMLElement>('[data-testid="favorites-grid-scroll"]')?.parentElement;
-    setSel({ type, gen, anchor: cell && table ? { cell, table } : null });
+    const scroller = mainRef.current?.querySelector<HTMLElement>('[data-testid="favorites-grid-scroll"]');
+    const table = scroller?.parentElement;
+    setSel({ type, gen, anchor: cell && scroller && table ? { cell, table, scroller } : null });
   }
 
   return (

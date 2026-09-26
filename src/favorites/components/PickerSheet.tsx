@@ -29,7 +29,9 @@ import { PackingChain } from './PackingChain';
 // the direct replacement flow until its choices are understandable at a glance.
 const PACKING_UI_ENABLED = false;
 
-export type PickerAnchor = { cell: HTMLElement; table: HTMLElement };
+/** The tapped cell, the grid frame that bounds the picker, and the grid's
+ *  scroller inside that frame. */
+export type PickerAnchor = { cell: HTMLElement; table: HTMLElement; scroller: HTMLElement };
 type PopoverPosition = { left: number; top: number; width: number; maxHeight: number };
 
 function clamp(value: number, min: number, max: number): number {
@@ -97,9 +99,9 @@ export function PickerSheet({
   useLayoutEffect(() => {
     const popover = popoverRef.current;
     if (!desktop || !anchor || !popover) return;
+    let nudged = false;
     const update = () => {
       const table = anchor.table.getBoundingClientRect();
-      const cell = anchor.cell.getBoundingClientRect();
       const visual = window.visualViewport;
       const leftBound = Math.max(table.left, visual?.offsetLeft ?? 0);
       const rightBound = Math.min(table.right, (visual?.offsetLeft ?? 0) + (visual?.width ?? window.innerWidth));
@@ -112,6 +114,20 @@ export function PickerSheet({
       const maxHeight = Math.max(0, bottomBound - topBound - 4);
       const height = Math.min(popover.scrollHeight + 4, maxHeight);
       const gap = 8;
+      let cell = anchor.cell.getBoundingClientRect();
+      const fitsBeside = (box: DOMRect) => box.bottom + gap + height <= bottomBound
+        || box.top - height - gap >= topBound
+        || box.right + gap + width <= rightBound
+        || box.left - width - gap >= leftBound;
+      if (!nudged && !fitsBeside(cell)) {
+        // A zoomed cell can leave room on no side. Scroll the grid sideways
+        // once, by the shorter distance that opens room beside the cell.
+        nudged = true;
+        const toLeft = cell.right + gap + width - rightBound;
+        const toRight = leftBound - (cell.left - width - gap);
+        anchor.scroller.scrollBy({ left: toLeft <= toRight ? toLeft : -toRight, behavior: 'instant' });
+        cell = anchor.cell.getBoundingClientRect();
+      }
       const below = cell.bottom + gap;
       const above = cell.top - height - gap;
       const right = cell.right + gap;
