@@ -38,7 +38,7 @@ async function pinchBlockers(page: Page) {
   });
 }
 
-test.describe('pinch to zoom', () => {
+test.describe('pinch to zoom', { tag: '@viewport' }, () => {
   test('nothing large on the league summary swallows it', async ({ page }) => {
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');

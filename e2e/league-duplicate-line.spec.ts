@@ -52,7 +52,7 @@ test.describe('a line picked twice', () => {
     await page.waitForTimeout(500);
   });
 
-  test('the second tap seats the whole line and the sheet goes away', async ({ page }, info) => {
+  test('the second tap seats the whole line and the sheet goes away', { tag: '@viewport' }, async ({ page }, info) => {
     await pick(page, 'geodude');
     const first = await seats(page);
     expect(first, 'the first pick seats Geodude to Golem').toEqual([[74, 75, 76]]);
