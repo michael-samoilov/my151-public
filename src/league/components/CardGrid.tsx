@@ -62,7 +62,9 @@ const PAD_Y = 0.6875; // 11px
 const INSET_Y = 0.375; // 6px
 const INSET_X = 0.1875; // 3px
 
-const CARD_LABEL_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
+/** The card labels' face. Their size is `text-[0.53125rem]` where they fit. */
+const LABEL_FACE = 'font-extrabold tracking-[0.08em] leading-[1.4]';
+const CARD_LABEL_CLASS = `text-[0.53125rem] ${LABEL_FACE}`;
 
 /**
  * How far a carried column lifts off the card.
@@ -1121,16 +1123,6 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
  */
 const MARK_ROWS = 1.5;
 /**
- * The glyph column, capped as a share of the box.
- *
- * A fixed rem width is wrong here: the box is two of the card's seven columns
- * and the card's width is not fixed, so at a 320px viewport a 2.75rem column
- * took most of the box and the badge name was down to two characters. The cap
- * keeps the glyph from eating the text it labels; both slots use the same
- * expression, so the disc and the hexagon stay on one axis whatever binds.
- */
-const MARK_COL = 'min(2.75rem, 48%)';
-/**
  * The box's left pad and the gap after the glyph column: equal, on purpose.
  *
  * The word under the glyph is centred in its column, so the room between
@@ -1166,7 +1158,53 @@ const MARK_TRAIL = '0.0625rem';
 // resolves against the column, so repeating the box fraction here multiplies
 // the two and collapses the glyph to a few pixels.
 const MARK_GLYPH = '72%';
-const MARK_LABEL_CLASS = `shrink-0 whitespace-nowrap ${CARD_LABEL_CLASS}`;
+/**
+ * The room the text beside the glyph keeps before the glyph column may grow.
+ *
+ * 3.5rem is a little over what the badge name had at a 360px phone before
+ * the labels grew. A box that gives the text less than that gives a narrow
+ * phone a shorter badge name than it had: at 48% of the box, a 360px phone
+ * turned "Thunder" into "er Badge" and a 320px one refused every key.
+ */
+const MARK_TEXT_MIN = '3.5rem';
+/**
+ * The glyph column: what the text has beyond `MARK_TEXT_MIN`, between 26% of
+ * the box and 2.75rem.
+ *
+ * A share of the box is wrong on its own. The card's width is not fixed, and
+ * a share large enough to fit the word under the glyph on a wide card takes
+ * the text below one word on a narrow one. So a narrow box splits the way it
+ * always did, 26% to the column, and the column grows only out of the text's
+ * surplus, until 2.75rem.
+ *
+ * In `cqw` of the box, which is an inline-size container, rather than `%`, so
+ * the words can be sized from the same expression. Both slots use it, so the
+ * disc and the hexagon stay on one axis whatever binds.
+ */
+const MARK_COL = `clamp(26cqw, 100cqw - ${MARK_GAP} - ${MARK_TEXT_MIN}, 2.75rem)`;
+/**
+ * The size of the four words in the pair: TM and BADGE under the glyphs, and
+ * the "Pick a move" and NAME placeholders beside them.
+ *
+ * The card's 0.53125rem where it fits, smaller where it does not. The word
+ * under the glyph is centred on the column and may reach into the pad and the
+ * gap, stopping 0.125rem short of the box's edge, where the empty box draws
+ * its dashed outline, and of the text. BADGE, the widest, is 3.92em at this
+ * face, so the size is that room over 3.92. A 390px phone and a desktop card
+ * have room to spare; a 320px phone comes out a little under the 0.4rem
+ * production drew these at. The placeholders take the same size, so the pair
+ * keeps one size of label.
+ */
+const MARK_LABEL_SIZE = `min(0.53125rem, (${MARK_COL} + ${MARK_PAD} + ${MARK_GAP} - 0.25rem) / 3.92)`;
+const MARK_LABEL_TYPE = `text-[length:var(--mark-label)] ${LABEL_FACE}`;
+const MARK_LABEL_CLASS = `shrink-0 whitespace-nowrap ${MARK_LABEL_TYPE}`;
+/** What the TM box and the badge box share. */
+const MARK_BOX_STYLE = {
+  paddingLeft: MARK_PAD,
+  gap: MARK_GAP,
+  containerType: 'inline-size',
+  '--mark-label': MARK_LABEL_SIZE,
+} as React.CSSProperties;
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
@@ -1185,8 +1223,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       className="absolute z-[5] flex cursor-pointer items-center rounded-lg"
       style={{
         ...pos,
-        paddingLeft: MARK_PAD,
-        gap: MARK_GAP,
+        ...MARK_BOX_STYLE,
         background: move ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
@@ -1258,11 +1295,15 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           </span>
         </span>
       ) : (
+        // Free to wrap, unlike the other labels: it is three words beside
+        // the disc, and at the full label size it is wider than the text
+        // column on a phone. The space before "move" does not break, so a
+        // wrap reads "Pick / a move" rather than stranding the noun.
         <span
-          className={cn('min-w-0 whitespace-nowrap text-left normal-case', MARK_LABEL_CLASS)}
+          className={cn('min-w-0 text-left normal-case', MARK_LABEL_TYPE)}
           style={{ color: 'var(--lg-hint)' }}
         >
-          Pick a move
+          Pick a{'\u00a0'}move
         </span>
       )}
       {move && <SlotRemove label="Remove TM" onRemove={() => setTm(cardIndex, null)} />}
@@ -1425,8 +1466,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       className="absolute z-[5] flex cursor-text items-center rounded-lg"
       style={{
         ...pos,
-        paddingLeft: MARK_PAD,
-        gap: MARK_GAP,
+        ...MARK_BOX_STYLE,
         background: name ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
@@ -1467,9 +1507,12 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         {/* The name ends in "Badge", so this word is redundant the moment a
             name is typed. It collapses away then — a grid row eased from 1fr
             to 0fr takes its height smoothly whatever it measures — and the
-            hexagon, centred in the column, eases into the space it leaves. */}
+            hexagon, centred in the column, eases into the space it leaves.
+            `grid-cols-1` holds the one track to the column's width: a BADGE
+            wider than the column then spills evenly on both sides and stays
+            on the hexagon's axis, where an auto track grew to the right. */}
         <span
-          className="grid w-full min-w-0 justify-items-center transition-[grid-template-rows] duration-300 ease-out"
+          className="grid w-full min-w-0 grid-cols-1 justify-items-center transition-[grid-template-rows] duration-300 ease-out"
           style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
           <span

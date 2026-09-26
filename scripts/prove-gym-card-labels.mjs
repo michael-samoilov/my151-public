@@ -80,7 +80,7 @@ async function metrics(page) {
     };
     const badge = document.querySelector('[data-testid="slot-badge"]');
     const tm = document.querySelector('[data-testid="slot-tm"]');
-    const pick = [...document.querySelectorAll('[data-testid="slot-tm"] span')].find((s) => s.textContent === 'Pick a move');
+    const pick = [...document.querySelectorAll('[data-testid="slot-tm"] span')].find((s) => s.textContent?.replace(/\s+/g, ' ') === 'Pick a move');
     const pickCs = pick ? getComputedStyle(pick) : null;
     const disc = document.querySelector('[data-testid="slot-tm"] svg')?.getBoundingClientRect().width;
     const hex = document.querySelector('[data-testid="slot-badge"] svg')?.getBoundingClientRect().width;
