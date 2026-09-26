@@ -106,7 +106,7 @@ test.describe('the longest move in the TM box', () => {
 });
 
 test.describe('the card detail labels', () => {
-  test('match the showcase typography and keep the badge rail balanced', async ({ page }) => {
+  test('match the showcase typography and keep the badge rail balanced', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
 
     const result = await page.evaluate(() => {
@@ -414,7 +414,7 @@ test.describe('gym card slots', () => {
     await expect(page.getByRole('button', { name: /Surf/ }).first()).toBeVisible();
   });
 
-  test('the badge name and the word Badge are one wrapping phrase', async ({ page }) => {
+  test('the badge name and the word Badge are one wrapping phrase', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
     await expectThunderBadge(page);
   });
@@ -424,18 +424,18 @@ test.describe('gym card slots', () => {
     await expectBadgeKeepsTypedHead(page);
   });
 
-  test('Pick a move stays inside its slot', async ({ page }) => {
+  test('Pick a move stays inside its slot', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
-    expect(await page.evaluate(pickAMoveSpill), 'px past the TM slot').toBeLessThanOrEqual(0.5);
+    await expectPickAMoveInside(page);
   });
 
-  test('Pick a move stays inside its slot beside the open picker', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'the picker opens beside the card on desktop only');
+  // Desktop only, untagged: the picker opens beside the card there.
+  test('Pick a move stays inside its slot beside the open picker', async ({ page }) => {
     await openCard(page);
     await seat(page, '[data-testid="card-cell-1-1"]', 'rhyhorn');
     // The picker stays open beside the card, which narrows it.
     await expect(page.getByText('Adding to:')).toBeVisible();
-    expect(await page.evaluate(pickAMoveSpill), 'px past the TM slot').toBeLessThanOrEqual(0.5);
+    await expectPickAMoveInside(page);
   });
 });
 
@@ -462,6 +462,7 @@ async function expectThunderBadge(page: Page) {
     }
     return { field: el.textContent, phrase: box.textContent, lines };
   });
+  await test.info().attach('badge-thunder.json', { body: JSON.stringify(short), contentType: 'application/json' });
   // The suffix lives inside the field now so wrap and caret stay one phrase.
   expect(short.field).toBe('Thunder Badge');
   expect(short.phrase).toBe('Thunder Badge');
@@ -486,6 +487,7 @@ async function expectBadgeKeepsTypedHead(page: Page) {
       insideSlot: box.getBoundingClientRect().bottom <= slot.getBoundingClientRect().bottom + 1,
     };
   });
+  await test.info().attach('badge-long-name.json', { body: JSON.stringify(state), contentType: 'application/json' });
   // Typing kept going long past the limit; the slot stayed intact.
   expect(state.overflows).toBe(false);
   expect(state.insideSlot).toBe(true);
@@ -542,6 +544,12 @@ function pickAMoveSpill() {
   return Math.max(ink.right - box.right, box.left - ink.left, ink.bottom - box.bottom, box.top - ink.top);
 }
 
+async function expectPickAMoveInside(page: Page) {
+  const spill = await page.evaluate(pickAMoveSpill);
+  await test.info().attach('pick-a-move-spill.json', { body: JSON.stringify({ spill }), contentType: 'application/json' });
+  expect(spill, 'px past the TM slot').toBeLessThanOrEqual(0.5);
+}
+
 /**
  * The TM and badge slots on a 360px phone, beside the narrow project's 320.
  *
@@ -564,7 +572,7 @@ test.describe('the TM and badge slots on a 360px phone', () => {
 
   test('Pick a move stays inside its slot', async ({ page }) => {
     await openCard(page);
-    expect(await page.evaluate(pickAMoveSpill), 'px past the TM slot').toBeLessThanOrEqual(0.5);
+    await expectPickAMoveInside(page);
   });
 });
 
