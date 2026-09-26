@@ -76,11 +76,7 @@ Production tier:
 1. Run `bash scripts/ci-local.sh` once, before the merge. That is lint, unit tests, Playwright, then `npm run build`.
 2. A failure outside your change does not block the merge. Report it as pre-existing, with evidence: the same failure on production HEAD.
 
-Test rules:
-
-- A test that asserts behavior Michael asked to change is stale. Update it. It is not a regression.
-- A bugfix gets one test that fails on the old code and passes on the fix.
-- Do not write a test that restates the implementation.
+Test rules: read `AGENTS.md` section 4, "Testing", before you write, change, or delete a test. Those rules apply to every agent in this repository. In short: prove a change with a proof test that fails on the old code and passes on the new code, report both results, and do not commit that test. Prefer E2E tests that end with a repeatable artifact. Keep a unit test only when it catches a bug that E2E misses.
 
 `npm run build` is exactly `npm run i18n:verify && tsc -b && vite build`. The `tsc -b` step covers `src`, `api`, `scripts` and `e2e` via the project references in `tsconfig.json` — note that `api/` is Vercel serverless code that Vite never touches, so this typecheck is its only local gate. **Sprite caching is not part of the build**; it is a separate, manual `npm run cache-sprites`.
 
@@ -92,7 +88,8 @@ The other checks, which `scripts/ci-local.sh` also runs:
 |---|---|
 | `npm run lint` | ESLint. Pre-existing violations are recorded in `eslint-suppressions.json`, so this passes today and any *new* violation fails. Regenerate with `npx eslint . --suppress-all` only when deliberately accepting a new one. **If you *fix* a suppressed violation, run `npx eslint . --prune-suppressions`** — a stale entry exits 2 and fails CI just as loudly as a new violation. |
 | `npm test` | Vitest unit tests (`src/**/*.test.ts`, `scripts/**/*.test.ts`). |
-| `npm run test:e2e` | Playwright. Required for UI changes. Auto-starts `vite preview` on port 4173, so no server needs to be running. Projects: `mobile`, `desktop`, `narrow` (320px). Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
+| `node scripts/check-viewport-tags.mjs` | Fails when a test that is not tagged `@viewport` skips `desktop`. That test runs in no project. Tag a test or describe `@viewport` when its result depends on the project width or device: a measured box, overflow, wrap, scroll, fit, touch, or a sheet-versus-pane branch. Leave a test untagged when it checks only state, copy, storage, or network, or when it pins its own viewport. |
+| `npm run test:e2e` | Playwright. Required for UI changes. Auto-starts isolated preview and development servers on ports derived from the worktree path. Use `PLAYWRIGHT_PREVIEW_PORT` and `PLAYWRIGHT_DEV_PORT` to override them. Projects: `mobile`, `desktop`, `narrow` (320px). `desktop` runs every test; `mobile` and `narrow` run only `@viewport` tests. Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
 
 Against a Vercel preview, skip the local web servers:
 

@@ -15,8 +15,41 @@ import path from 'node:path';
  * The previous root-level harnesses each hardcoded a different URL (:5173 and
  * :5199) and needed a server started by hand, so one of them could never pass.
  */
-const PREVIEW_PORT = 4173;
-const DEV_PORT = 4174;
+
+/**
+ * A port pair of this checkout's own, from 10000 through 29999.
+ *
+ * Two worktrees on one machine each start these servers, and a local run
+ * reuses whatever already answers on the port. On shared fixed ports, the
+ * second worktree's run silently tests the first worktree's build. Hashing
+ * the checkout path (FNV-1a) gives each worktree the same pair on every run
+ * and, barring a hash collision, a different pair from its neighbors.
+ * PLAYWRIGHT_PREVIEW_PORT and PLAYWRIGHT_DEV_PORT override it.
+ */
+function worktreePort(offset: 0 | 1): number {
+  let hash = 2166136261;
+  for (const char of path.resolve(process.cwd()).toLowerCase()) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return 10_000 + ((hash >>> 0) % 10_000) * 2 + offset;
+}
+
+function configuredPort(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (!value) return fallback;
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new Error(`${name} must be an integer from 1 through 65535`);
+  }
+  return port;
+}
+
+const PREVIEW_PORT = configuredPort('PLAYWRIGHT_PREVIEW_PORT', worktreePort(0));
+const DEV_PORT = configuredPort('PLAYWRIGHT_DEV_PORT', worktreePort(1));
+if (PREVIEW_PORT === DEV_PORT) {
+  throw new Error('PLAYWRIGHT_PREVIEW_PORT and PLAYWRIGHT_DEV_PORT must differ');
+}
 
 /**
  * Find a Chromium this machine actually has, without assuming a revision.
@@ -110,6 +143,15 @@ export default defineConfig({
    * exists specifically to guard the header, which is the tightest horizontal
    * budget in the UI and the thing most at risk from longer translated labels.
    *
+   * `desktop` runs every test. `mobile` and `narrow` run only tests tagged
+   * `@viewport`. Tag a test or a describe `@viewport` when its result depends
+   * on the project's width or device: a measured box, overflow, wrap, scroll
+   * offset, fit or scale, `page.viewportSize()`, the project name, touch, or a
+   * sheet-versus-pane branch. A test that checks only state, copy, storage, or
+   * network, or that pins its own viewport, gets the same result from one
+   * desktop run. A test that skips `desktop` must carry the tag, or it runs
+   * nowhere; `scripts/check-viewport-tags.mjs` enforces that.
+   *
    * Specs under e2e/sweeps/ drive their own viewport sizes, so running them
    * under every project would just repeat the same work three times; only the
    * desktop project picks them up. Specs under e2e/dev/ need the dev server and
@@ -119,6 +161,7 @@ export default defineConfig({
     {
       name: 'mobile',
       testIgnore: ['**/sweeps/**', '**/dev/**'],
+      grep: /@viewport/,
       use: { ...devices['Pixel 7'] },
     },
     {
@@ -129,6 +172,7 @@ export default defineConfig({
     {
       name: 'narrow',
       testIgnore: ['**/sweeps/**', '**/dev/**'],
+      grep: /@viewport/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
     },
     // Specs that need the dev server rather than the production bundle:

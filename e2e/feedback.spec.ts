@@ -40,7 +40,7 @@ async function openForm(page: Page) {
 }
 
 test.describe('feedback', () => {
-  test('sends a report and says thank you', async ({ page }) => {
+  test('sends a report and says thank you', { tag: '@viewport' }, async ({ page }) => {
     const api = await stubApi(page);
     await openForm(page);
 
@@ -59,7 +59,7 @@ test.describe('feedback', () => {
     expect(body!.dwellMs).toBeGreaterThan(2000);
   });
 
-  test('attaches the context it shows, and nothing it does not', async ({ page }) => {
+  test('attaches the context it shows, and nothing it does not', { tag: '@viewport' }, async ({ page }) => {
     const api = await stubApi(page);
     await openForm(page);
     await page.getByRole('textbox', { name: 'What happened?' }).fill('Something looks off here.');
