@@ -1,6 +1,7 @@
-import { DAY_MS, dayStart, type DailyActivityPoint } from '../../../../api/_aggregate';
+import { DAY_MS, HOUR_MS, dayStart, hourStart, type DailyActivityPoint, type HourlyActivityPoint } from '../../../../api/_aggregate';
 
 export type DailyPoint = DailyActivityPoint;
+export type HourlyPoint = HourlyActivityPoint;
 
 export function extendThroughToday(series: DailyPoint[], nowMs: number): DailyPoint[] {
   if (series.length === 0) return series;
@@ -57,6 +58,10 @@ export const CHART_RANGE_PRESETS = [
 
 export type ChartRangeKey = (typeof CHART_RANGE_PRESETS)[number]['key'];
 
+export function isHourlyRange(key: ChartRangeKey): key is '24h' {
+  return key === '24h';
+}
+
 export function chartRangeWindowMs(key: ChartRangeKey): number | null {
   const preset = CHART_RANGE_PRESETS.find((p) => p.key === key);
   if (preset) return preset.windowMs;
@@ -73,6 +78,39 @@ export function sliceActivityRange(
   const sliced = series.filter((p) => p.day + DAY_MS > start);
   if (sliced.length >= 2 || sliced.length === series.length) return sliced;
   return series.slice(Math.max(0, series.length - 2));
+}
+
+export function sliceHourlyRange(series: HourlyPoint[], nowMs: number): HourlyPoint[] {
+  if (series.length === 0) return series;
+  const last = hourStart(nowMs);
+  const first = last - 23 * HOUR_MS;
+  return series.filter((p) => p.hour >= first && p.hour <= last);
+}
+
+export function sliceLastUtcDays(series: DailyPoint[], nowMs: number, days: number): DailyPoint[] {
+  if (series.length === 0 || days <= 0) return [];
+  const last = dayStart(nowMs);
+  const first = last - (days - 1) * DAY_MS;
+  return series.filter((p) => p.day >= first && p.day <= last);
+}
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+export interface WeekdayTick {
+  idx: number;
+  weekday: (typeof WEEKDAYS)[number];
+}
+
+export function dailyWeekdayTicks(series: DailyPoint[]): WeekdayTick[] {
+  return series.map((p, i) => ({
+    idx: i,
+    weekday: WEEKDAYS[new Date(p.day).getUTCDay()],
+  }));
+}
+
+export function lastPointIsCurrentHour(series: HourlyPoint[], nowMs: number): boolean {
+  const last = series[series.length - 1];
+  return last != null && last.hour === hourStart(nowMs);
 }
 
 export function chartWeeklyValues(

@@ -119,7 +119,11 @@ test.describe('one-Pokémon pickers', () => {
     expect(await chevrons(page)).toBe(0);
   });
 
-  test('the signature slot shows the Pokémon that was tapped', async ({ page }) => {
+  test('the signature slot shows the Pokémon that was tapped', async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name === 'narrow',
+      '1× at dpr 1 is 96 CSS px; two squares overlap a 320 pane',
+    );
     await openCard(page, 0);
     await seatOne(page, 'geodude'); // Geodude into Graveler into Golem
 

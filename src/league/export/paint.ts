@@ -149,6 +149,7 @@ export function wrapLines(
   text: string,
   maxW: number,
   maxLines: number,
+  ellipsizeLast = true,
 ): string[] {
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -167,7 +168,7 @@ export function wrapLines(
   if (lines.length === 0) return [];
   const last = lines.length - 1;
   const spilled = lines.length === maxLines && words.join(' ') !== lines.join(' ');
-  if (spilled || ctx.measureText(lines[last]).width > maxW) {
+  if (ellipsizeLast && (spilled || ctx.measureText(lines[last]).width > maxW)) {
     lines[last] = ellipsize(ctx, lines[last], maxW);
   }
   return lines;
@@ -266,7 +267,6 @@ export function drawDiamonds(
   }
 }
 
-/** N stars: one to three on one row; four as 2×2. Centred on (cx, cy). */
 export function drawStars(
   ctx: CanvasRenderingContext2D,
   n: number,
@@ -275,19 +275,11 @@ export function drawStars(
   cy: number,
   gap: number,
 ): void {
-  const perLine = n === 4 ? 2 : n;
-  const rows = Math.ceil(n / perLine);
-  const blockW = perLine * size + (perLine - 1) * gap;
-  const blockH = rows * size + (rows - 1) * gap;
+  const blockW = n * size + (n - 1) * gap;
   const left = cx - blockW / 2;
-  const top = cy - blockH / 2;
+  const top = cy - size / 2;
   for (let i = 0; i < n; i++) {
-    const r = Math.floor(i / perLine);
-    const c = i % perLine;
-    const inRow = Math.min(perLine, n - r * perLine);
-    const rowW = inRow * size + (inRow - 1) * gap;
-    const rowLeft = n === 4 ? cx - rowW / 2 : left;
-    inBox(ctx, rowLeft + c * (size + gap), top + r * (size + gap), size, 12, () => {
+    inBox(ctx, left + i * (size + gap), top, size, 12, () => {
       ctx.fillStyle = '#ffffff';
       ctx.fill(path('star'));
     });

@@ -6,27 +6,30 @@ import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { dexFunnelSankey, leagueFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
-import type { DexUsageFunnel, LeagueUsageFunnel } from '../../../api/_aggregate';
+import type { DexUsageFunnel, LeagueUsageFunnel, WhoBucket } from '../../../api/_aggregate';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
-import { Panel, Seg, Kpi, Rollup, type RollupRow } from '@/components/admin/ui';
+import { Panel, Seg, Kpi } from '@/components/admin/ui';
 import { ClampChip, PlatformStacks } from '@/components/admin/PlatformStacks';
-import { clampedN, type PlatformClamp, type PlatformJoint } from '@/lib/platformStacks';
+import { WhoOrigin } from '@/components/admin/WhoOrigin';
+import { clampedN, type PlatformJoint } from '@/lib/platformStacks';
+import { filteredN, type WhoFilter } from '@/lib/whoOrigin';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { cn, displayName } from '@/lib/utils';
-import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
-import { exportSurveySkipMarks, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
+import { exportSurveySkipMarks, leagueSittingEv, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
+import { SearchPerformancePanel } from '@/components/admin/SearchPerformancePanel';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
+import type { SearchPerformanceSnapshot } from '@/lib/searchPerformance';
 import {
   ARCHIVE_FILTER_OPTIONS,
   bareCid,
@@ -83,13 +86,6 @@ export type ToolSlice = 'all' | 'dex' | 'league';
 
 export type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
 
-interface BarGroup {
-  label: string;
-  count: number;
-  color?: string;
-  children: { label: string; count: number }[];
-}
-
 const TOOL_TABS: { key: ToolSlice; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'dex', label: 'Dex builder' },
@@ -120,8 +116,11 @@ function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
     os: data.os,
     browsers: {},
     joints: [],
+    whoBuckets: [],
+    countries7d: 0,
     hours: data.hours,
     heatmap: data.heatmap,
+    hourly: [],
   };
 }
 
@@ -193,8 +192,11 @@ export interface Aggregates {
   os: Record<string, number>;
   browsers: Record<string, number>;
   joints?: PlatformJoint[];
+  whoBuckets?: WhoBucket[];
+  countries7d?: number;
   hours: number[];
   heatmap: number[][];
+  hourly?: { hour: number; unique: number }[];
 }
 
 /** One browser's gym leader maker record. Attached to their dex card when
@@ -227,7 +229,7 @@ export interface LeagueUser {
   exportsLeague: number;
   exportedCardAt?: string;
   exportedLeagueAt?: string;
-  sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[] }[];
+  sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[]; events?: string[] }[];
   exportSurveySkips?: ExportSurveySkip[];
   order?: 'dex-first' | 'league-first' | 'same-day';
   gapDays?: number;
@@ -429,13 +431,6 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
   return distinctCalendarDays(stamps, rec.tz);
 }
 
-function flag(country?: string): string {
-  if (!country || country.length !== 2) return '';
-  const cc = country.toUpperCase();
-  if (!/^[A-Z]{2}$/.test(cc)) return '';
-  return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
-}
-
 async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
   const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   const res = await fetch(`/api/submissions?${qs.toString()}`, {
@@ -445,6 +440,15 @@ async function fetchDashboard(token: string, limit: number, offset: number): Pro
   if (res.status === 503) throw new Error('Admin access is not configured on the server (ADMIN_TOKEN is not set).');
   if (!res.ok) throw new Error(`Request failed (${res.status}).`);
   return res.json() as Promise<ApiResponse>;
+}
+
+async function fetchSearchPerformance(token: string, refresh: boolean): Promise<SearchPerformanceSnapshot> {
+  const qs = refresh ? '?refresh=1' : '';
+  const res = await fetch(`/api/search-performance${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Search data request failed (${res.status}).`);
+  return res.json() as Promise<SearchPerformanceSnapshot>;
 }
 
 // ---------- presentational bits ----------
@@ -945,9 +949,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const milestones: ChartMilestone[] =
     rec.exported && rec.exportedAt
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
-      : log.length
-        ? [{ t: t1, label: 'no exports', tone: 'muted' }]
-        : [];
+      : [];
   milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT, 'dex'));
 
   const snapshot = (
@@ -981,7 +983,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
     return (
       <div className="flex min-h-0 flex-1 flex-col gap-1.5">
         <p className="text-xs text-muted-foreground">No session history.</p>
-        <div className="min-h-0 flex-1 overflow-auto">{snapshot}</div>
+        <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto">{snapshot}</div>
       </div>
     );
   }
@@ -1049,6 +1051,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
         added,
         removed,
         dur: ms[k] != null ? ms[k] / 1000 : undefined,
+        ev: leagueSittingEv(s.events),
       };
     });
   }, [log, ms]);
@@ -1065,9 +1068,6 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   }
   if (league.exportedLeagueAt) {
     milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
-  }
-  if (milestones.length === 0 && log.length) {
-    milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
   }
   milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT, 'league'));
 
@@ -1149,23 +1149,6 @@ function UserDetailPage({
       {tool === 'league' && league && <LeagueDetailBody league={league} />}
     </div>
   );
-}
-
-function regionGroups(countries: Record<string, number>): BarGroup[] {
-  const byRegion = new Map<string, { label: string; count: number }[]>();
-  for (const [cc, n] of Object.entries(countries)) {
-    const list = byRegion.get(regionOf(cc)) ?? [];
-    list.push({ label: `${flag(cc)} ${cc}`, count: n });
-    byRegion.set(regionOf(cc), list);
-  }
-  return [...byRegion.entries()]
-    .map(([label, children]) => ({
-      label,
-      count: children.reduce((sum, c) => sum + c.count, 0),
-      color: REGION_COLORS[label as Region],
-      children: children.sort((a, b) => b.count - a.count),
-    }))
-    .sort((a, b) => b.count - a.count);
 }
 
 function MetricChip({
@@ -1621,11 +1604,13 @@ export function AdminPage() {
   });
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
+  const [searchPerformance, setSearchPerformance] = useState<SearchPerformanceSnapshot | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
   const [page, setPage] = useState<'analytics' | 'feedback'>('analytics');
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
-  const [cohort, setCohort] = useState<'built' | 'incomplete' | 'completed'>('built');
-  const [whoClamp, setWhoClamp] = useState<PlatformClamp | null>(null);
+  const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
   const [detail, setDetail] = useState<Detail | null>(null);
@@ -1659,7 +1644,19 @@ export function AdminPage() {
   }, [detail]);
   const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
 
-  const load = useCallback(async (tok: string, limit = PAGE_SIZE) => {
+  const loadSearch = useCallback(async (tok: string, refresh = false) => {
+    setSearchLoading(true);
+    setSearchError(null);
+    try {
+      setSearchPerformance(await fetchSearchPerformance(tok, refresh));
+    } catch (e) {
+      setSearchError(e instanceof Error ? e.message : 'Search data could not load.');
+    } finally {
+      setSearchLoading(false);
+    }
+  }, []);
+
+  const load = useCallback(async (tok: string, limit = PAGE_SIZE, refreshSearch = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -1668,6 +1665,7 @@ export function AdminPage() {
       setLoadedAt(Date.now());
       setAuthed(true);
       setToken(tok);
+      void loadSearch(tok, refreshSearch);
       try {
         localStorage.setItem(TOKEN_KEY, tok);
       } catch {
@@ -1679,7 +1677,7 @@ export function AdminPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadSearch]);
 
   useEffect(() => {
     // Demo mode (`/?admin&demo`): render the redesign against a fabricated,
@@ -1687,8 +1685,12 @@ export function AdminPage() {
     // is dynamically imported so it never ships in the real admin bundle. Used
     // for preview review of the design; production still requires the token.
     if (new URLSearchParams(window.location.search).has('demo')) {
-      void import('./__fixtures__/sampleResponse').then((m) => {
-        setData(m.sampleResponse);
+      void Promise.all([
+        import('./__fixtures__/sampleResponse'),
+        import('./__fixtures__/sampleSearchPerformance'),
+      ]).then(([dashboard, search]) => {
+        setData(dashboard.sampleResponse);
+        setSearchPerformance(search.sampleSearchPerformance);
         setLoadedAt(Date.now());
         setAuthed(true);
       });
@@ -1744,7 +1746,7 @@ export function AdminPage() {
   );
 
   const pickTool = useCallback((next: ToolSlice) => {
-    setWhoClamp(null);
+    setWhoFilter(null);
     setTool(next);
     try {
       localStorage.setItem(TOOL_KEY, next);
@@ -1762,6 +1764,8 @@ export function AdminPage() {
     setToken(null);
     setAuthed(false);
     setData(null);
+    setSearchPerformance(null);
+    setSearchError(null);
     setTokenInput('');
   }, []);
 
@@ -1810,14 +1814,14 @@ export function AdminPage() {
   return (
     <div className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-1">
+        <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockUser ? 'max-w-none' : 'max-w-5xl')}>
           <h1 className="whitespace-nowrap text-sm font-bold">
 
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token)} disabled={loading}>
-              {loading ? 'Refreshing…' : 'Refresh'}
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, PAGE_SIZE, true)} disabled={loading || searchLoading}>
+              {loading || searchLoading ? 'Refreshing…' : 'Refresh'}
             </Button>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
               Sign out
@@ -1830,7 +1834,8 @@ export function AdminPage() {
 
       <main
         className={cn(
-          'mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col px-4',
+          'mx-auto flex w-full min-w-0 flex-1 flex-col px-4',
+          lockUser ? 'max-w-none' : 'max-w-5xl',
           lockUser
             ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-nav-h,5rem)] md:pb-8'
             : cn('gap-4 pt-4 md:pb-8', detail?.kind === 'picks' ? 'pb-8' : 'pb-24'),
@@ -1912,37 +1917,26 @@ export function AdminPage() {
 
           const xt = data.tools;
 
-          const regionRollup = (countries: Record<string, number>): RollupRow[] => {
-            const groups = regionGroups(countries);
-            const total = groups.reduce((s, g) => s + g.count, 0) || 1;
-            return groups.slice(0, 5).map((g) => ({ label: g.label, pct: Math.round((g.count / total) * 100) }));
+          // The selected tool's whole population, not a built/incomplete/completed slice.
+          const whoSrc = {
+            devices: slice.devices,
+            os: slice.os,
+            countries: slice.countries,
+            browsers: slice.browsers,
+            users: slice.users,
+            joints: slice.joints,
           };
-
-          // Who: use cohort breakdowns when the endpoint provides them, else the
-          // slice's own rollups (league, or an older deploy).
-          const cohorts = showDex ? data.cohorts : undefined;
-          const whoSrc = cohorts
-            ? cohorts[cohort]
-            : {
-                devices: slice.devices,
-                os: slice.os,
-                countries: slice.countries,
-                browsers: slice.browsers,
-                users: slice.users,
-                joints: slice.joints,
-              };
           const whoJoints = whoSrc.joints ?? [];
-          const whoOs = whoSrc.os ?? slice.os ?? {};
-          const whoN = whoSrc.users ?? slice.users;
-          const whoClampedN = whoClamp && whoJoints.length ? clampedN(whoJoints, whoClamp) : null;
-          const whoBuilt = cohorts?.built;
-          const deltaVs = (rows: RollupRow[], baseRows: RollupRow[] | null): RollupRow[] =>
-            !baseRows ? rows : rows.map((r) => {
-              const b = baseRows.find((x) => x.label === r.label);
-              return { ...r, delta: b ? r.pct - b.pct : undefined };
-            });
-          const baseGeo = whoBuilt ? regionRollup(whoBuilt.countries) : null;
-          const showDelta = !!cohorts && cohort !== 'built';
+          const whoOs = whoSrc.os ?? {};
+          const whoN = whoSrc.users;
+          const whoBuckets = slice.whoBuckets ?? [];
+          const whoFilteredN = !whoFilter
+            ? null
+            : whoBuckets.length
+              ? filteredN(whoBuckets, whoFilter)
+              : whoFilter.dim !== 'region' && whoJoints.length
+                ? clampedN(whoJoints, { dim: whoFilter.dim, value: whoFilter.value })
+                : null;
 
           // Build depth: device split when available, else the slice total.
           const depthCurve =
@@ -1966,6 +1960,10 @@ export function AdminPage() {
               {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
             </div>
 
+            {tool === 'all' && (
+              <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} />
+            )}
+
             {slice.activity.length > 0 && (
               <ActiveUsersPanel
                 key={tool}
@@ -1974,6 +1972,7 @@ export function AdminPage() {
                     ? applyActivityLabels(slice.activity, loadedAt, data.lastPointLabels)
                     : slice.activity
                 }
+                hourly={slice.hourly ?? []}
                 nowMs={loadedAt}
               />
             )}
@@ -2075,51 +2074,35 @@ export function AdminPage() {
 
             <Panel
               title="Who"
+              pinHeader
               sub={
-                whoClampedN != null
-                  ? [`${whoClampedN} of ${whoN}`]
-                  : cohorts
-                    ? [cohort, String(whoN)]
-                    : [TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(slice.users)]
+                whoFilteredN != null
+                  ? [`${whoFilteredN} of ${whoN}`]
+                  : [TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(whoN)]
               }
               actions={
-                (whoClamp && whoJoints.length > 0) || cohorts ? (
-                <div className="flex flex-wrap items-center justify-end gap-1">
-                  {whoClamp && whoJoints.length > 0 && (
-                    <ClampChip clamp={whoClamp} onClear={() => setWhoClamp(null)} />
-                  )}
-                  {cohorts ? (
-                    <Seg
-                      ariaLabel="Cohort"
-                      options={[
-                        { key: 'built', label: 'Built' },
-                        { key: 'incomplete', label: 'Incomplete' },
-                        { key: 'completed', label: 'Completed' },
-                      ]}
-                      value={cohort}
-                      onChange={(next) => {
-                        setWhoClamp(null);
-                        setCohort(next);
-                      }}
-                    />
-                  ) : undefined}
-                </div>
+                whoFilter ? (
+                  <ClampChip clamp={whoFilter} onClear={() => setWhoFilter(null)} />
                 ) : undefined
               }
             >
-              <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-[minmax(0,1fr)_16rem]">
+              <div className="flex min-w-0 flex-col gap-3">
                 <PlatformStacks
                   devices={whoSrc.devices}
                   os={whoOs}
                   browsers={whoSrc.browsers}
                   joints={whoJoints}
-                  clamp={whoClamp}
-                  onClamp={setWhoClamp}
+                  buckets={whoBuckets}
+                  filter={whoFilter}
+                  onFilter={setWhoFilter}
                 />
-                <div>
-                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Region</div>
-                  <Rollup rows={showDelta ? deltaVs(regionRollup(whoSrc.countries), baseGeo) : regionRollup(whoSrc.countries)} />
-                </div>
+                <WhoOrigin
+                  countries={whoSrc.countries}
+                  buckets={whoBuckets}
+                  countries7d={slice.countries7d ?? 0}
+                  filter={whoFilter}
+                  onFilter={setWhoFilter}
+                />
               </div>
             </Panel>
 

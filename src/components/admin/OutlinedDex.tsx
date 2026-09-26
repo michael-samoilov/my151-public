@@ -5,6 +5,7 @@ import {
   OUTLINE_PAD,
   OUTLINE_HEAD,
 } from '@/lib/sectionOutlines';
+import { dexTileSize } from '@/components/admin/adminDexFit';
 import { SectionOverlays, StaticViewTile } from '@/components/view/ViewPage';
 import { BUILD_GROUP_IDS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
@@ -85,7 +86,7 @@ export const OutlinedDex = memo(function OutlinedDex({
     return <p className="text-xs text-muted-foreground">No sectioned build to show.</p>;
   }
 
-  const tileSize = Math.max(8, width / (GRID_COLS + (GRID_COLS - 1) * OUTLINE_GAP + 2 * OUTLINE_PAD));
+  const tileSize = dexTileSize(width, GRID_COLS);
   const { gridSlots, allRuns, lastRowGeom, gridStartRows, lastRowStartRows } = layout;
   const gap = tileSize * OUTLINE_GAP;
   const pad = tileSize * OUTLINE_PAD;
@@ -110,8 +111,8 @@ export const OutlinedDex = memo(function OutlinedDex({
   const lastRowHeight = tileSize + (lastRowStartRows.size > 0 ? headroom : 0);
 
   return (
-    <div ref={wrapRef} className="w-full" data-testid="admin-dex-snapshot" data-count={presentIds.length}>
-      <div className="relative mx-auto" style={{ width: gridWidth, padding: pad }}>
+    <div ref={wrapRef} className="w-full overflow-x-clip" data-testid="admin-dex-snapshot" data-count={presentIds.length}>
+      <div className="relative mx-auto" style={{ width: gridWidth, padding: pad, boxSizing: 'content-box' }}>
         <div className="relative">
           <div
             className="grid items-end"

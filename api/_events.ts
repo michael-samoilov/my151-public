@@ -57,6 +57,18 @@ export function isExportSurveySkipReason(v: unknown): v is ExportSurveySkipReaso
 export const LEAGUE_EXPORT_CARD_EVENT = 'league-export-card' as const;
 export const LEAGUE_EXPORT_LEAGUE_EVENT = 'league-export-league' as const;
 
+export const LEAGUE_NUDGE_IDS = ['card', 'league'] as const;
+export type LeagueNudgeId = (typeof LEAGUE_NUDGE_IDS)[number];
+export const LEAGUE_NUDGE_ACTIONS = ['shown', 'cta', 'dismiss'] as const;
+export type LeagueNudgeAction = (typeof LEAGUE_NUDGE_ACTIONS)[number];
+
+export function leagueNudgeEvent(
+  id: LeagueNudgeId,
+  action: LeagueNudgeAction,
+): `league-nudge-${LeagueNudgeId}-${LeagueNudgeAction}` {
+  return `league-nudge-${id}-${action}`;
+}
+
 export const FUNNEL_EVENTS = [
   // Dex builder onboarding.
   'intro-shown',
@@ -79,6 +91,15 @@ export const FUNNEL_EVENTS = [
   'league-card-named',
   LEAGUE_EXPORT_CARD_EVENT,
   LEAGUE_EXPORT_LEAGUE_EVENT,
+  // Export nudges: a full trainer card, then a full gym-leader roster.
+  // shown / cta / dismiss match intro and league-promo so Admin can overlay
+  // which sitting saw the popup and whether they acted.
+  'league-nudge-card-shown',
+  'league-nudge-card-cta',
+  'league-nudge-card-dismiss',
+  'league-nudge-league-shown',
+  'league-nudge-league-cta',
+  'league-nudge-league-dismiss',
   // The callout in the dex builder that points at the gym leader maker.
   'league-promo-shown',
   'league-promo-cta',

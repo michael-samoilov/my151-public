@@ -356,3 +356,15 @@ describe('what a card may now hold', () => {
     expect(legendAt(card0(), 1), 'and left the seat it was in').toBeNull();
   });
 });
+
+describe('export nudge celebration', () => {
+  it('records a nudge once', () => {
+    useLeagueStore.setState({ celebratedNudges: [] });
+    useLeagueStore.getState().markNudgeCelebrated('card');
+    expect(useLeagueStore.getState().celebratedNudges).toEqual(['card']);
+    useLeagueStore.getState().markNudgeCelebrated('card');
+    expect(useLeagueStore.getState().celebratedNudges).toEqual(['card']);
+    useLeagueStore.getState().markNudgeCelebrated('league');
+    expect(useLeagueStore.getState().celebratedNudges).toEqual(['card', 'league']);
+  });
+});

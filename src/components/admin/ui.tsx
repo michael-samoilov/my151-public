@@ -18,6 +18,7 @@ export function Panel({
   actions,
   children,
   className,
+  pinHeader,
 }: {
   title: string;
   sub?: React.ReactNode[];
@@ -25,6 +26,8 @@ export function Panel({
   actions?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  /** Keep the title row at one text-sm line so a chip cannot push the body down. */
+  pinHeader?: boolean;
 }) {
   return (
     <section
@@ -33,8 +36,21 @@ export function Panel({
         className,
       )}
     >
-      <div className={cn('mb-3 flex min-w-0 flex-wrap justify-between gap-3', legend ? 'items-center' : 'items-start')}>
-        <h2 className={cn('min-w-0 text-sm font-bold leading-tight', legend && 'flex items-center gap-2.5')}>
+      <div
+        className={cn(
+          'mb-3 flex min-w-0 justify-between gap-3',
+          pinHeader
+            ? 'h-[1.09375rem] flex-nowrap items-center'
+            : cn('flex-wrap', legend ? 'items-center' : 'items-start'),
+        )}
+      >
+        <h2
+          className={cn(
+            'min-w-0 text-sm font-bold leading-tight',
+            pinHeader && 'truncate',
+            legend && 'flex items-center gap-2.5',
+          )}
+        >
           {title}
           {legend}
           {sub?.map((s, i) => (
@@ -43,7 +59,7 @@ export function Panel({
             </span>
           ))}
         </h2>
-        {actions && <div className="shrink-0">{actions}</div>}
+        {actions && <div className={cn('shrink-0', pinHeader && 'flex h-full items-center')}>{actions}</div>}
       </div>
       {children}
     </section>

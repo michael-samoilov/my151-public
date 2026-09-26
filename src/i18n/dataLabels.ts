@@ -38,7 +38,7 @@ export function categoryColumnLabel(id: string, side: 'left' | 'right'): string 
   return lookup(`category.${id}.col.${side}`);
 }
 
-/** An archetype, e.g. `early-bug` → "Early Route Bug". */
+/** An archetype, e.g. `early-bug` → "Regional Bug". */
 export function archetypeName(id: string): string {
   return lookup(`archetype.${id}`);
 }

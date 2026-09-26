@@ -33,7 +33,8 @@ the app and keep it honest with `/maintain-verification-skill`.
   of truth for a build.
 - League builder: slots `[data-testid="league-slot-N"]`, cells
   `[data-testid="card-cell-<row>-<seat>"]`, the ace and partner slots
-  `[data-testid="slot-ace"]` and `[data-testid="slot-partner"]`, and the
+  `[data-testid="slot-ace"]` and `[data-testid="slot-partner"]`, Story /
+  Rematch tabs `[data-testid="league-nav"]` / `[data-league-view]`, and the
   `league-builder` localStorage key as its oracle. See `league-builder.md`.
 
 The three tabs are React state, not URL-addressable, so navigate by clicking

@@ -11,7 +11,9 @@
  * from these same constants.
  */
 
+import { localeUppercase } from '@/i18n';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
+import { pairSprite, soloSprite } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
 /** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
@@ -153,16 +155,51 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
 export const FRAME = 12;
 
 /**
- * Solo signature sprite is 2×. A pair uses `pairSprite`, which is 1× when
- * two 2× squares do not fit (Hisuian Braviary and Celesteela). Never a
- * pane fraction.
+ * Native 2× source pixels. Export paint size is `pairExportSprite`: 96, 192,
+ * or 288. Never a fraction of 96.
  */
 export const SIG_SPRITE = 192;
+
+/** Showcase headings. Same two-line caps the live card paints. */
+export const ACE_HEAD = ['ACE', 'POKÉMON'];
+export const PARTNER_HEAD = ['PARTNER /', 'SHOULDERMON'];
+
+/** Badge phrase in the same caps as ACE POKÉMON. */
+export function badgeExportPhrase(name: string): string {
+  return localeUppercase(`${name} Badge`);
+}
+
+/** Move name in the same caps as ACE POKÉMON. */
+export function moveExportName(name: string): string {
+  return localeUppercase(name);
+}
+
+/**
+ * Ace/partner edge in export pixels: 1×, 2×, or 3× of the team cell (96).
+ * The live card sizes these as n×SPRITE_REM rem so the fit zoom paints n×96.
+ * Export rem is 16×K, so the same n lands on n×96 canvas px. css×K (~118)
+ * is not an integer scale of the 96px asset and aliases it.
+ */
+export function pairExportSprite(w: number, h: number): number {
+  return pairSprite(w, h, 16 * K);
+}
+
+/**
+ * One ace or one partner, centered. Largest of 1×, 2×, 3× of 96 that still
+ * fits the slot after pad, heading and name.
+ */
+export function soloExportSprite(w: number, h: number): number {
+  return soloSprite(w, h, 16 * K);
+}
 
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */
 export const HEAD_PX = 8.5 * K;
 export const HEAD_TRACK = 0.08 * HEAD_PX;
 export const HEAD_LINE = HEAD_PX * 1.4;
+/** Species, TM, and badge names. Same rem as ACE POKÉMON / CardGrid NAME_CLASS. */
+export const NAME_PX = HEAD_PX;
+export const NAME_TRACK = 0.02 * NAME_PX;
+export const NAME_LINE = NAME_PX * 1.4;
 
 /** The glyph cell spans two columns on rows 1, 8 and 9. */
 export const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
@@ -173,22 +210,171 @@ export const BAND_BEFORE: Record<number, [string, string]> = {
 };
 
 /**
- * Three sizes that have to agree inside the TM and badge boxes: the label
- * column, the label in it, and the TM's type badge beside it.
+ * Glyph column for the TM and badge slots.
  *
- * "BADGE" at the app's own label size is about 52px, which a 45px column let
- * run into the badge's name. Widening the column instead squeezed the type
- * badge until the word inside it fell to 11.2px, under the legibility floor.
- * So the label comes down a size and the column stays where it was.
+ * CardGrid uses `min(2.75rem, 26%)` of the slot. A fixed 45px column made the
+ * disc as short as the type row, so `items-center` pinned their tops together
+ * and the move name sat on the disc.
  */
-export const MARK_COL = 45;
+export const MARK_COL = Math.min(2.75 * 16 * K, 0.26 * (2 * COL - 2 * INX));
 export const MARK_LABEL_PX = 6.7 * K;
 export const MARK_TRACK = 0.06 * MARK_LABEL_PX;
-export const TM_BADGE_W = 2.7 * 16 * K;
+export const TM_BADGE_W = 2.75 * 16 * K;
 export const MARK_PAD = 7;
-/** The move name, at the app's 0.6875rem, and the smallest it may shrink to. */
-export const MOVE_PX = 11 * K;
-export const MOVE_MIN_PX = 12;
+/** Same rem as ACE POKÉMON. The live card does not shrink the move name. */
+export const MOVE_PX = HEAD_PX;
+export const MOVE_MIN_PX = HEAD_PX;
+/** Live card stacks the type badge and category above the move name. */
+export const TM_TYPE_ABOVE_NAME = true;
+/** CardGrid CategoryChip on the TM slot: `h-[0.6875rem] w-[0.9375rem]`. */
+export const TM_CHIP_W = 0.9375 * 16 * K;
+export const TM_CHIP_H = 0.6875 * 16 * K;
+/** CardGrid type-row `gap-[3px]` and stack `gap-[2px]`. */
+export const TM_TYPE_GAP = 3 * K;
+export const TM_STACK_GAP = 2 * K;
+
+/** Circle top inside the TM disc's 24-unit viewBox (r=9, stroke 2 at 12,12). */
+export const TM_DISC_PAD = 2 / 24;
+
+/**
+ * Inter ExtraBold Latin em-ascent. Uppercase ink sits on this baseline, so
+ * the export TM gaps compare badge/disc tops to name/TM ink bottoms, not
+ * the 1.4 line boxes.
+ */
+export const LATIN_EM_ASCENT = 0.73;
+
+/** Two or more whitespace-separated tokens wrap. A single token stays one line. */
+export function tmNameWraps(name: string): boolean {
+  return name.trim().split(/\s+/).filter(Boolean).length >= 2;
+}
+
+export function tmBadgeH(): number {
+  return TM_BADGE_W / TYPE_BADGE_ASPECT;
+}
+
+/**
+ * Disc + TM word, as `drawMarkColumn` paints them: a column centred on `cy`.
+ *
+ * Same grouping as CardGrid's mark `flex-col` (disc at 72% of the column,
+ * label pulled up by one `K` against the disc's viewBox padding).
+ */
+export function tmMarkColumn(cy: number): {
+  top: number;
+  height: number;
+  glyph: number;
+  labelH: number;
+  labelCy: number;
+} {
+  const glyph = MARK_COL * 0.72;
+  const labelH = MARK_LABEL_PX * 1.2;
+  const height = glyph + labelH - K;
+  const top = cy - height / 2;
+  return {
+    top,
+    height,
+    glyph,
+    labelH,
+    labelCy: top + glyph - K + labelH / 2,
+  };
+}
+
+function tmInkGapsFrom(
+  mark: ReturnType<typeof tmMarkColumn>,
+  body: { badgeY: number; nameTop: number; nameLines: number },
+): { top: number; bottom: number } {
+  const discTop = mark.top + TM_DISC_PAD * mark.glyph;
+  const nameBottom =
+    body.nameTop
+    + (body.nameLines - 1) * NAME_LINE
+    + (NAME_LINE - NAME_PX) / 2
+    + LATIN_EM_ASCENT * NAME_PX;
+  const tmBottom =
+    mark.labelCy + LATIN_EM_ASCENT * MARK_LABEL_PX - MARK_LABEL_PX / 2;
+  return {
+    top: body.badgeY - discTop,
+    bottom: tmBottom - nameBottom,
+  };
+}
+
+/**
+ * Type badge + category chip + move name, as CardGrid's TM slot lays them
+ * out: a column beside the disc. Badge top and disc-icon top leave the same
+ * gap as name bottom and the “TM” label bottom.
+ *
+ * `nameLines` is 2 when a two-word name wraps, 1 otherwise.
+ */
+export function tmMoveBody(cy: number, nameLines = 1): {
+  top: number;
+  height: number;
+  badgeY: number;
+  chipY: number;
+  nameTop: number;
+  nameCy: number;
+  nameLines: number;
+} {
+  const lines = Math.max(1, nameLines);
+  const badgeH = tmBadgeH();
+  const typeRowH = Math.max(badgeH, TM_CHIP_H);
+  const height = typeRowH + TM_STACK_GAP + lines * NAME_LINE;
+  const naturalTop = cy - height / 2;
+  const mark = tmMarkColumn(cy);
+  const { top: topGap, bottom: bottomGap } = tmInkGapsFrom(mark, {
+    badgeY: naturalTop + (typeRowH - badgeH) / 2,
+    nameTop: naturalTop + typeRowH + TM_STACK_GAP,
+    nameLines: lines,
+  });
+  const top = naturalTop + (bottomGap - topGap) / 2;
+  const nameTop = top + typeRowH + TM_STACK_GAP;
+  return {
+    top,
+    height,
+    badgeY: top + (typeRowH - badgeH) / 2,
+    chipY: top + (typeRowH - TM_CHIP_H) / 2,
+    nameTop,
+    nameCy: nameTop + NAME_LINE / 2,
+    nameLines: lines,
+  };
+}
+
+/** Live-card rem nudge so badge→disc matches name→TM the way export does. */
+export function tmBodyShiftRem(nameLines = 1): number {
+  const cy = 100;
+  const lines = Math.max(1, nameLines);
+  const badgeH = tmBadgeH();
+  const typeRowH = Math.max(badgeH, TM_CHIP_H);
+  const height = typeRowH + TM_STACK_GAP + lines * NAME_LINE;
+  const naturalTop = cy - height / 2;
+  const { top: topGap, bottom: bottomGap } = tmInkGapsFrom(tmMarkColumn(cy), {
+    badgeY: naturalTop + (typeRowH - badgeH) / 2,
+    nameTop: naturalTop + typeRowH + TM_STACK_GAP,
+    nameLines: lines,
+  });
+  return ((bottomGap - topGap) / 4) / (16 * K);
+}
+
+/**
+ * Alphabetic baseline for a CSS line box of height `lineH` at `fontPx`.
+ *
+ * Canvas `middle` is the em-box centre. CSS `leading-[1.4]` centres the em
+ * square and sits Latin on the alphabetic baseline, below that centre.
+ */
+export function cssLineAlphabetic(
+  lineTop: number,
+  lineH: number,
+  fontPx: number,
+  emAscent: number,
+): number {
+  return lineTop + (lineH - fontPx) / 2 + emAscent;
+}
+
+/**
+ * Distances Michael named: type-badge top → disc-icon top, and move-name
+ * bottom → “TM” label bottom. They must match within 1px.
+ */
+export function tmInkGaps(cy: number, nameLines = 1): { top: number; bottom: number } {
+  const body = tmMoveBody(cy, nameLines);
+  return tmInkGapsFrom(tmMarkColumn(cy), body);
+}
 
 /** Top of a row inside the grid box, which starts at the first band. */
 export function rowTop(row: number): number {

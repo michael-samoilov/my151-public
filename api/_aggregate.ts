@@ -15,9 +15,10 @@
 import { CARD_COUNT } from './_leagueRecord.js';
 
 export const DAY_MS = 86_400_000;
-const HOUR_MS = 3_600_000;
+export const HOUR_MS = 3_600_000;
 const ROLLING_24H_MS = 24 * HOUR_MS;
 const ROLLING_7D_MS = 7 * DAY_MS;
+const HOURLY_WINDOW_DAYS = 7;
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -41,6 +42,8 @@ export interface SessionRecord {
   tz?: string;
   lang?: string;
   locale?: string;
+  /** Locale pinned in the language picker. Absent when the browser still follows negotiation. */
+  switched?: string;
   device?: string;
   os?: string;
   browser?: string;
@@ -61,6 +64,11 @@ export interface SurvivalCurve {
 export function dayStart(ts: number): number {
   const d = new Date(ts);
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+}
+
+/** UTC hour start (ms) of the hour a timestamp falls in. */
+export function hourStart(ts: number): number {
+  return Math.floor(ts / HOUR_MS) * HOUR_MS;
 }
 
 /** Value at quantile q (0..1) of an ascending-sorted array. */
@@ -241,6 +249,33 @@ export function dailyActive(records: SessionRecord[], now?: number): DailyActivi
   return out;
 }
 
+export type HourlyActivityPoint = {
+  hour: number;
+  unique: number;
+};
+
+/**
+ * Dense hourly unique-browser series for the last seven UTC days through the
+ * current hour. `unique` is distinct `cid`s whose activity fell in that hour.
+ */
+export function hourlyActive(records: SessionRecord[], now: number): HourlyActivityPoint[] {
+  if (records.length === 0) return [];
+  const sets: Record<number, Set<string>> = {};
+  for (const r of records) {
+    for (const ts of activeTimestamps(r)) {
+      const hour = hourStart(ts);
+      (sets[hour] ??= new Set()).add(r.cid);
+    }
+  }
+  const lastHour = hourStart(now);
+  const start = dayStart(now) - (HOURLY_WINDOW_DAYS - 1) * DAY_MS;
+  const out: HourlyActivityPoint[] = [];
+  for (let h = start; h <= lastHour; h += HOUR_MS) {
+    out.push({ hour: h, unique: sets[h]?.size ?? 0 });
+  }
+  return out;
+}
+
 /** Returning (active across two calendar days or more), active in the last 7
  *  days, and the remainder as new. */
 export function retention(
@@ -326,10 +361,25 @@ export function heatmap(records: SessionRecord[]): { hours: number[]; matrix: nu
   return { hours, matrix };
 }
 
+/** One bucket of browsers that share a country, language, pin, and platform. */
+export interface WhoBucket {
+  country: string;
+  lang: string;
+  locale: string;
+  switched: string;
+  device: string;
+  os: string;
+  browser: string;
+  n: number;
+  /** Browsers in this bucket with a session in the 7-day window. */
+  n7d: number;
+}
+
 /** Everything the dashboard shows for one tool's records. */
 export interface Aggregates {
   users: number;
   activity: DailyActivityPoint[];
+  hourly: HourlyActivityPoint[];
   retention: { returning: number; activeLast7: number; newUsers: number };
   timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
   countries: Record<string, number>;
@@ -339,6 +389,10 @@ export interface Aggregates {
   os: Record<string, number>;
   browsers: Record<string, number>;
   joints: PlatformJoint[];
+  /** Country × browser language × served locale × picker pin. */
+  whoBuckets: WhoBucket[];
+  /** Distinct countries with a session in the 168 hours ending at the latest session. */
+  countries7d: number;
   hours: number[];
   heatmap: number[][];
 }
@@ -349,6 +403,7 @@ export function aggregate(records: SessionRecord[], now: number): Aggregates {
   return {
     users: records.length,
     activity: dailyActive(records, now),
+    hourly: hourlyActive(records, now),
     retention: retention(records, now),
     timeCurves: sessionCurves(records),
     countries: tallies(records, 'country'),
@@ -358,9 +413,67 @@ export function aggregate(records: SessionRecord[], now: number): Aggregates {
     os: tallies(records, 'os'),
     browsers: tallies(records, 'browser'),
     joints: tallyJoints(records),
+    whoBuckets: tallyWhoBuckets(records),
+    countries7d: distinctCountries7d(records),
     hours: hm.hours,
     heatmap: hm.matrix,
   };
+}
+
+const WINDOW_7D_MS = 7 * DAY_MS;
+
+/** Group records so Who can split language, pins, and platform by country. */
+function sevenDayBounds(records: SessionRecord[]): { start: number; end: number } {
+  let end = 0;
+  for (const r of records) {
+    for (const ts of activeTimestamps(r)) if (ts > end) end = ts;
+  }
+  return { start: end - WINDOW_7D_MS, end };
+}
+
+function inSevenDayWindow(record: SessionRecord, start: number, end: number): boolean {
+  return end > 0 && activeTimestamps(record).some((ts) => ts > start && ts <= end);
+}
+
+export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
+  const { start, end } = sevenDayBounds(records);
+  const map = new Map<string, WhoBucket>();
+  for (const r of records) {
+    const country = (r.country ?? '').toUpperCase();
+    const lang = r.lang ?? '';
+    const locale = r.locale ?? '';
+    const switched = r.switched ?? '';
+    const device = r.device || 'Unknown';
+    const os = r.os || 'Unknown';
+    const browser = r.browser || 'Unknown';
+    const recent = inSevenDayWindow(r, start, end);
+    const k = `${country}\t${lang}\t${locale}\t${switched}\t${device}\t${os}\t${browser}`;
+    const cur = map.get(k);
+    if (cur) {
+      cur.n += 1;
+      if (recent) cur.n7d += 1;
+    } else {
+      map.set(k, { country, lang, locale, switched, device, os, browser, n: 1, n7d: recent ? 1 : 0 });
+    }
+  }
+  return [...map.values()].sort(
+    (a, b) => b.n - a.n || a.country.localeCompare(b.country) || a.lang.localeCompare(b.lang),
+  );
+}
+
+/**
+ * Distinct countries among browsers with a session in the 168 hours that end
+ * at the latest session in this set. The window follows the data, not `now`.
+ */
+export function distinctCountries7d(records: SessionRecord[]): number {
+  const { start, end } = sevenDayBounds(records);
+  if (end <= 0) return 0;
+  const seen = new Set<string>();
+  for (const r of records) {
+    if (!r.country || !inSevenDayWindow(r, start, end)) continue;
+    seen.add(r.country.toUpperCase());
+  }
+  return seen.size;
 }
 
 export interface PlatformJoint {
