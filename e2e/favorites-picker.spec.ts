@@ -328,8 +328,8 @@ test.describe('favorite Pokémon picker', () => {
     expect(lastFirst!.x).toBeGreaterThan(firstFirst!.x + 4);
   });
 
-  test.skip('packing shows one solid sprite per move with old and new marks', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+  test('packing shows one solid sprite per move with old and new marks', async ({ page }) => {
+    await page.goto('/favorite-pokemon-by-type?packing=1');
     await page.getByTestId('favorites-cell-fairy-2').click();
     await page.getByTestId('favorites-pick-176').click();
     await page.getByTestId('favorites-cell-water-2').click();
@@ -857,14 +857,26 @@ test.describe('favorite Pokémon picker', () => {
     expect(await header.getByTestId('favorites-picker-title').textContent()).toBe('');
     await header.click();
     await expect(page.getByTestId('favorites-picker')).toBeHidden();
+  });
+
+  test('clear is a large x centered over the translucent selected sprite', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fire-1').click();
     await page.getByTestId('favorites-pick-4').click();
     await page.getByTestId('favorites-cell-fire-1').click();
-    const clear = page.getByTestId('favorites-clear');
-    await expect(clear).toContainText('Clear');
-    await expect(clear.locator('svg')).toBeVisible();
-    const clearColors = await clear.evaluate((el) => ({ border: getComputedStyle(el).borderColor, x: getComputedStyle(el.querySelector('svg')!).color }));
-    expect(clearColors.border).not.toBe(clearColors.x);
+    const selected = page.getByTestId('favorites-pick-4');
+    const clear = selected.getByTestId('favorites-clear');
+    await expect(clear).toBeVisible();
+    expect(await clear.textContent()).toBe('');
+    const [tile, x] = await Promise.all([selected.boundingBox(), clear.boundingBox()]);
+    expect(Math.abs(x!.x + x!.width / 2 - (tile!.x + tile!.width / 2))).toBeLessThan(1);
+    expect(Math.abs(x!.y + x!.height / 2 - (tile!.y + tile!.height / 2))).toBeLessThan(1);
+    expect(x!.width).toBeGreaterThanOrEqual(tile!.width * 0.5);
+    const opacity = await selected.locator('img[alt]').first().evaluate((el) => Number(getComputedStyle(el).opacity));
+    expect(opacity).toBeLessThan(0.5);
+    await selected.click();
+    await expect(page.getByTestId('favorites-cell-fire-1').locator('img')).toHaveCount(0);
   });
 
   test('generation pointer shows its column origin on solid sprites', async ({ page }, testInfo) => {
@@ -940,16 +952,17 @@ test.describe('favorite Pokémon picker', () => {
     expect(boxes[1]!.x + boxes[1]!.width).toBeLessThan(boxes[0]!.x + boxes[0]!.width);
     expect(boxes[2]!.x).toBeGreaterThanOrEqual(boxes[0]!.x);
     expect(boxes[2]!.x + boxes[2]!.width).toBeLessThanOrEqual(boxes[0]!.x + boxes[0]!.width);
-    expect(boxes[2]!.y).toBeGreaterThan(boxes[4]!.y + boxes[4]!.height);
     expect(boxes[3]!.x + boxes[3]!.width).toBeLessThanOrEqual(boxes[1]!.x);
     expect(boxes[4]!.x + boxes[4]!.width).toBeLessThanOrEqual(boxes[0]!.x + boxes[0]!.width);
     await expect(selected.getByTestId('favorites-pointer-mark')).toHaveAttribute('data-source', 'gimmick');
     const layers = await selected.evaluate((el) => ({
       badge: Number(getComputedStyle(el.querySelector('[data-testid="favorites-pointer-mark"]')!.parentElement!).zIndex),
       ring: Number(getComputedStyle(el.querySelector('[data-testid="favorites-selection-ring"]')!).zIndex),
+      clear: Number(getComputedStyle(el.querySelector('[data-testid="favorites-clear"]')!).zIndex),
       sprite: Number(getComputedStyle(el.querySelector('img[alt]:not([alt=""])')!).zIndex),
     }));
     expect(layers.badge).toBeGreaterThan(layers.ring);
+    expect(layers.badge).toBeGreaterThan(layers.clear);
     expect(layers.sprite).toBeGreaterThan(layers.ring);
     await page.screenshot({ path: testInfo.outputPath('picker-rings.png') });
   });

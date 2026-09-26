@@ -6,7 +6,6 @@ import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
-import { X } from 'lucide-react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { ExtraMark, RomanDisc, TypeIcon } from './marks';
 import type { PointerMark } from '../model/pointers';
@@ -27,7 +26,6 @@ export function PrettySpriteGrid({
   sourceMarks,
   onClear,
   clearLabel,
-  clearText,
 }: {
   mons: readonly PickerMon[];
   maxCols: number;
@@ -42,7 +40,6 @@ export function PrettySpriteGrid({
   sourceMarks?: (id: number) => PointerMark[];
   onClear?: () => void;
   clearLabel?: string;
-  clearText?: string;
 }) {
   useNamesVersion();
   const viewportPx = useLayoutViewportCssPx();
@@ -107,7 +104,6 @@ export function PrettySpriteGrid({
                 onPick={onPick}
                 onClear={onClear}
                 clearLabel={clearLabel}
-                clearText={clearText}
               />
             ))}
           </div>
@@ -127,7 +123,6 @@ function PickCell({
   onPick,
   onClear,
   clearLabel,
-  clearText,
 }: {
   mon: PickerMon;
   spritePx: number;
@@ -139,8 +134,8 @@ function PickCell({
   onPick: (mon: PickerMon) => void;
   onClear?: () => void;
   clearLabel?: string;
-  clearText?: string;
 }) {
+  const clearing = selected && Boolean(onClear);
   const mark = Math.round(spritePx * 0.28);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   return (
@@ -149,7 +144,7 @@ function PickCell({
       onClick={() => selected && onClear ? onClear() : onPick(mon)}
       data-testid={`favorites-pick-${mon.id}`}
       aria-pressed={selected}
-      aria-label={selected && onClear ? `${clearLabel ?? 'Clear'} ${labelOf(mon)}` : labelOf(mon)}
+      aria-label={clearing ? `${clearLabel ?? 'Clear'} ${labelOf(mon)}` : labelOf(mon)}
       className="relative flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent p-0"
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
@@ -158,7 +153,7 @@ function PickCell({
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}
-        className={usedType && !pointer ? 'relative z-10 opacity-35' : 'relative z-10'}
+        className={clearing || (usedType && !pointer) ? 'relative z-10 opacity-35' : 'relative z-10'}
         style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx }}
         decoding="sync"
         draggable={false}
@@ -212,15 +207,20 @@ function PickCell({
           draggable={false}
         />
       ) : null}
-      {selected && onClear ? (
-        <span
+      {clearing ? (
+        <svg
           data-testid="favorites-clear"
-          className="absolute z-[18] inline-flex items-center gap-0.5 rounded-full border border-neutral-300 bg-white/95 px-1 py-0.5 leading-none text-red-500 shadow-sm"
-          style={{ left: inset, [pointer ? 'bottom' : 'top']: inset, fontSize: Math.max(9, Math.round(spritePx * 0.13)) }}
+          viewBox="0 0 24 24"
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 z-[14] -translate-x-1/2 -translate-y-1/2 text-red-500"
+          style={{ width: Math.round(spritePx * 0.62), height: Math.round(spritePx * 0.62), filter: 'drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)' }}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={3}
+          strokeLinecap="round"
         >
-          <X size={Math.max(10, Math.round(spritePx * 0.16))} strokeWidth={2.25} className="text-red-400" aria-hidden />
-          {clearText ?? clearLabel}
-        </span>
+          <path d="M4 4L20 20M20 4L4 20" />
+        </svg>
       ) : null}
     </button>
   );

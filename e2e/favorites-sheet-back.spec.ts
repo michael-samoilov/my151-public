@@ -9,7 +9,7 @@ test('the mobile sheet header returns from packing before it closes the picker',
       version: 1,
     }));
   });
-  await page.goto('/favorite-pokemon-by-type');
+  await page.goto('/favorite-pokemon-by-type?packing=1');
   await page.getByTestId('favorites-cell-fairy-2').click();
   const sheet = page.getByRole('dialog');
   const header = page.getByTestId('bottom-sheet-header');

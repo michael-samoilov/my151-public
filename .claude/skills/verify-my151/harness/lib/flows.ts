@@ -1551,7 +1551,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     ));
     checks.push(ok(
       'favorites:clear-inside-selected-cell',
-      filled.inGrid && filled.text.toLowerCase() === 'clear' && filled.clearW < filled.pickW && filled.pickW > 20,
+      filled.inGrid && filled.text === '' && filled.clearW >= filled.pickW * 0.5 && filled.clearW < filled.pickW && filled.pickW > 20,
       `inGrid=${filled.inGrid} text=${JSON.stringify(filled.text)} clearW=${filled.clearW.toFixed(1)} pickW=${filled.pickW.toFixed(1)}`,
     ));
     const overflow = await s.evalJson<{ x: string; y: string }>(`

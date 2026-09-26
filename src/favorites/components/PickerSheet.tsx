@@ -5,6 +5,7 @@ import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import { ChevronLeft, PanelRightClose } from 'lucide-react';
 import { isGenNumber, isTypeName, typeSlottedElsewhere, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
@@ -27,7 +28,9 @@ import { PackingChain } from './PackingChain';
 
 // Keep the chain picker available for a possible future opt-in, but default to
 // the direct replacement flow until its choices are understandable at a glance.
-const PACKING_UI_ENABLED = false;
+// `?packing=1` turns it on outside production so its specs keep running.
+const PACKING_UI_ENABLED = !PRODUCTION_DEPLOY && typeof window !== 'undefined'
+  && new URLSearchParams(window.location.search).get('packing') === '1';
 
 export type PickerAnchor = { cell: HTMLElement; table: HTMLElement };
 type PopoverPosition = { left: number; top: number; width: number; maxHeight: number };
@@ -203,7 +206,6 @@ export function PickerSheet({
               : undefined
           }
           clearLabel={t('favorites.clear')}
-          clearText={t('browser.clear')}
         />
       )}
     </div>
