@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('the mobile sheet header returns from packing before it closes the picker', async ({ page }) => {
+test('the mobile sheet header returns from packing before it closes the picker', { tag: '@viewport' }, async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 1024, 'desktop uses a side pane');
 
   await page.addInitScript(() => {

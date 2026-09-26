@@ -86,7 +86,7 @@ function cellOnScreen(page: Page) {
   );
 }
 
-test.describe('favorite picker zoom', () => {
+test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
   test('a zoomed grid scrolls until its last column and last row are on screen', async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     const before = await cellOnScreen(page);
@@ -100,6 +100,7 @@ test.describe('favorite picker zoom', () => {
       return { left: box.left, top: box.top, right: box.right, bottom: box.bottom };
     });
     await page.screenshot({ path: testInfo.outputPath('zoomed-far-corner.png') });
+    await testInfo.attach('far-corner.json', { body: JSON.stringify({ visible, last }), contentType: 'application/json' });
     expect(last.right).toBeLessThanOrEqual(visible.right + 1);
     expect(last.bottom).toBeLessThanOrEqual(visible.bottom + 1);
     expect(last.left).toBeGreaterThanOrEqual(visible.left - 1);
@@ -133,6 +134,7 @@ test.describe('favorite picker zoom', () => {
     });
     const visible = await visibleFrame(page);
     await page.screenshot({ path: testInfo.outputPath('zoomed-sticky-headers.png') });
+    await testInfo.attach('sticky-headers.json', { body: JSON.stringify({ visible, edges }), contentType: 'application/json' });
     // The first body cell has moved up and left, so the view is scrolled on
     // both axes and only sticky headers can still be at the edges.
     expect(edges.firstTop).toBeLessThan(visible.top + edges.rowHeight - 1);
@@ -180,6 +182,7 @@ test.describe('favorite picker zoom', () => {
     await pinchGrid(page, testInfo, 5);
     const after = await measure(point, before.testId);
     await page.screenshot({ path: testInfo.outputPath('max-zoom.png') });
+    await testInfo.attach('max-zoom.json', { body: JSON.stringify({ point, before, after }), contentType: 'application/json' });
 
     expect(after.cellWidth).toBeGreaterThan(before.cellWidth * 2.4);
     expect.soft(after.rowHeight, 'header row height').toBeLessThanOrEqual(before.rowHeight * 1.25 + 1);
@@ -218,6 +221,7 @@ test.describe('favorite picker zoom', () => {
       return all.splice(0);
     });
     await page.screenshot({ path: testInfo.outputPath('minimap-after-pinch.png') });
+    await testInfo.attach('minimap-samples.json', { body: JSON.stringify(samples), contentType: 'application/json' });
 
     expect(samples.length).toBeGreaterThan(10);
     const drift = Math.max(...samples.map((sample) => Math.max(
