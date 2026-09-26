@@ -284,6 +284,18 @@ function w3c(method: string, port: number, urlPath: string, body?: unknown): Pro
   });
 }
 
+/** A W3C call whose failure must stop the flow. WebKitWebDriver answers a
+ *  refused click or action with an error status, not an exception, so an
+ *  unchecked call let the next check fail for a reason it never saw. */
+async function w3cOk(method: string, port: number, urlPath: string, body?: unknown): Promise<{ status: number; value: unknown }> {
+  const r = await w3c(method, port, urlPath, body);
+  if (r.status >= 400) {
+    const v = r.value as { error?: string; message?: string } | null;
+    throw new Error(`webkit ${method} ${urlPath.replace(/\/session\/[^/]+/, '')} (${r.status}): ${v?.error ?? ''} ${v?.message ?? ''}`.trim());
+  }
+  return r;
+}
+
 function killGroup(driver: ChildProcess) {
   if (driver.pid) { try { process.kill(-driver.pid, 'SIGKILL'); return; } catch { /* fall back */ } }
   driver.kill('SIGKILL');
@@ -302,7 +314,7 @@ class WebKitSession implements Session {
   readonly persona = null;
   constructor(private driver: ChildProcess, private sid: string, private xvfb: ChildProcess | null, private ffmpeg: ChildProcess | null) {}
   private async injectTrap() { await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/execute/sync`, { script: ERROR_TRAP, args: [] }).catch(() => {}); }
-  async navigate(url: string) { await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/url`, { url }); await this.injectTrap(); }
+  async navigate(url: string) { await w3cOk('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/url`, { url }); await this.injectTrap(); }
   async evalJson<T>(body: string): Promise<T> {
     const r = await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/execute/sync`, { script: `return JSON.stringify((function(){ ${body} })());`, args: [] });
     // A script that throws comes back as an error object, not a string. Name
@@ -318,13 +330,13 @@ class WebKitSession implements Session {
     const el = await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/element`, { using: 'css selector', value: selector });
     const id = (el.value as Record<string, string>)[W3C_ELEMENT];
     if (!id) throw new Error(`webkit: element not found: ${selector}`);
-    await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/element/${id}/click`, {});
+    await w3cOk('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/element/${id}/click`, {});
   }
   async hover(selector: string) {
     const el = await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/element`, { using: 'css selector', value: selector });
     const id = (el.value as Record<string, string>)[W3C_ELEMENT];
     if (!id) throw new Error(`webkit: element not found: ${selector}`);
-    await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/actions`, {
+    await w3cOk('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/actions`, {
       actions: [{ type: 'pointer', id: 'mouse', parameters: { pointerType: 'mouse' }, actions: [{ type: 'pointerMove', origin: { [W3C_ELEMENT]: id }, x: 0, y: 0 }] }],
     });
     await sleep(150);
@@ -339,7 +351,7 @@ class WebKitSession implements Session {
       x: Math.round(fromRect.x + ((toRect.x - fromRect.x) * (index + 1)) / 12),
       y: Math.round(fromRect.y + ((toRect.y - fromRect.y) * (index + 1)) / 12), duration: 50,
     }));
-    await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/actions`, { actions: [{ type: 'pointer', id: 'drag', parameters: { pointerType: 'mouse' }, actions: [
+    await w3cOk('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/actions`, { actions: [{ type: 'pointer', id: 'drag', parameters: { pointerType: 'mouse' }, actions: [
       { type: 'pointerMove', origin: { [W3C_ELEMENT]: fromId }, x: 0, y: 0, duration: 100 },
       { type: 'pointerDown', button: 0 }, { type: 'pause', duration: 350 }, ...moves,
       { type: 'pause', duration: 250 }, { type: 'pointerUp', button: 0 },

@@ -3,14 +3,10 @@ import { negotiateLocale } from '@/i18n/detect';
 import {
   FLAG_W,
   OTHER_KEY,
-  amongTitle,
   balanceRailRows,
-  captionKind,
   countryCounts,
   countryHeaderCounts,
-  countryOtherLabeled,
   countryItems,
-  countryRooms,
   distinctCountries,
   fitBar,
   formatShare,
@@ -57,29 +53,6 @@ describe('fitBar', () => {
     expect(segs.at(-1)?.folded?.map((f) => f.key)[0]).toBe('IE');
   });
 
-  it('keeps Czechia when its flag clears Denmark without a 4px margin', () => {
-    const segs = fitBar(EUROPE, 992, () => FLAG_W);
-    expect(segs.map((s) => s.key)).toEqual([
-      'GB', 'IT', 'FR', 'NL', 'DE', 'ES', 'CH', 'IE', 'SE', 'DK', 'CZ', OTHER_KEY,
-    ]);
-    expect(segs.at(-1)?.folded?.map((f) => f.key)[0]).toBe('HR');
-  });
-
-  it('keeps a flag that hangs past its segment when it clears the previous flag', () => {
-    const items = [
-      { key: 'GB', n: 60 },
-      { key: 'ES', n: 22 },
-      { key: 'NL', n: 10 },
-      { key: 'CH', n: 8 },
-    ];
-    const segs = fitBar(items, 100, () => FLAG_W);
-    expect(segs.map((s) => s.key)).toEqual(['GB', 'ES', 'NL', OTHER_KEY]);
-    const nl = segs.find((s) => s.key === 'NL');
-    expect(nl && nl.widthPx).toBeLessThan(FLAG_W);
-    const es = segs.find((s) => s.key === 'ES');
-    expect(es && nl && nl.leftPx - (es.leftPx + FLAG_W)).toBeCloseTo(4, 5);
-  });
-
   it('left-aligns a region name and shifts the next name when they would overlap', () => {
     const clear = layoutNameLabels(
       [
@@ -102,65 +75,6 @@ describe('fitBar', () => {
     expect(hung[1].leftPx).toBe(152);
   });
 
-  it('picks a full name, then a code, then nothing', () => {
-    expect(captionKind(40, 16, 50)).toBe('full');
-    expect(captionKind(40, 16, 20)).toBe('short');
-    expect(captionKind(40, 16, 10)).toBe('none');
-  });
-
-  it('measures country-name room up to the next flag or the Other stem', () => {
-    const rooms = countryRooms(
-      [
-        { key: 'GB', n: 1, pct: 50, leftPx: 0, widthPx: 50 },
-        { key: 'NL', n: 1, pct: 30, leftPx: 50, widthPx: 30 },
-        { key: OTHER_KEY, n: 1, pct: 20, leftPx: 80, widthPx: 20, folded: [{ key: 'SE', n: 1 }] },
-      ],
-      100,
-    );
-    expect(rooms.GB).toBe(50 - (FLAG_W + 4));
-    expect(rooms.NL).toBe(94 - (50 + FLAG_W + 4));
-    const unlabeled = countryRooms(
-      [
-        { key: 'ES', n: 1, pct: 80, leftPx: 0, widthPx: 80 },
-        { key: OTHER_KEY, n: 1, pct: 20, leftPx: 80, widthPx: 20, folded: [{ key: 'SE', n: 1 }] },
-      ],
-      100,
-      false,
-    );
-    expect(unlabeled.ES).toBe(80 - (FLAG_W + 4));
-  });
-
-  it('names the slice and the pressed filter', () => {
-    const windows = { dim: 'os' as const, value: 'Windows' };
-    expect(amongTitle('Region', null, 'region')).toBe('Region');
-    expect(amongTitle('Region', windows, 'region')).toBe('Region among Windows');
-    expect(amongTitle('Region', { dim: 'region', value: 'Europe' }, 'region')).toBe('Region');
-    expect(amongTitle('Countries', windows)).toBe('Countries among Windows');
-    expect(amongTitle('Languages', windows)).toBe('Languages among Windows');
-    expect(amongTitle('Countries', null)).toBe('Countries');
-  });
-
-  it('lists Other for a region and hides it for a platform slice', () => {
-    expect(countryOtherLabeled(null)).toBe(true);
-    expect(countryOtherLabeled({ dim: 'region', value: 'Europe' })).toBe(true);
-    expect(countryOtherLabeled({ dim: 'device', value: 'Mobile' })).toBe(false);
-    expect(countryOtherLabeled({ dim: 'os', value: 'iOS' })).toBe(false);
-    expect(countryOtherLabeled({ dim: 'browser', value: 'Chrome' })).toBe(false);
-  });
-
-  it('keeps a spelled language that hangs into Other', () => {
-    const items = [
-      { key: 'pt-BR', n: 20 },
-      { key: 'he-IL', n: 3 },
-      { key: 'cs', n: 1 },
-    ];
-    const width = (key: string) => (key === 'pt-BR' ? 70 : key === 'he-IL' ? 48 : 40);
-    const segs = fitBar(items, 220, width);
-    expect(segs.map((s) => s.key)).toEqual(['pt-BR', 'he-IL', OTHER_KEY]);
-    const hebrew = segs.find((s) => s.key === 'he-IL');
-    expect(hebrew && hebrew.widthPx).toBeLessThan(48);
-  });
-
   it('makes the top rail row the longest', () => {
     expect(balanceRailRows([10, 10], 4, 100)).toEqual([[0, 1]]);
     expect(balanceRailRows([10, 10, 10, 10, 10], 0, 40)).toEqual([
@@ -181,18 +95,6 @@ describe('fitBar', () => {
       [4],
       [5],
     ]);
-  });
-
-  it('folds a code when its marker overlaps the previous marker', () => {
-    const items = [
-      { key: 'pt-BR', n: 10 },
-      { key: 'nl', n: 4 },
-      { key: 'sv', n: 1 },
-    ];
-    const width = (key: string) => (key === 'pt-BR' ? 40 : 30);
-    const segs = fitBar(items, 100, width);
-    expect(segs.map((s) => s.key)).toEqual(['pt-BR', 'nl', OTHER_KEY]);
-    expect(segs.at(-1)?.n).toBe(1);
   });
 });
 

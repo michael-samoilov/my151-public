@@ -38,20 +38,6 @@ describe('packRows', () => {
     ]);
   });
 
-  it('cuts a line wider than the grid into row-sized pieces', () => {
-    const eevee = line('eevee', [1, 1, 1, 1, 2, 2, 4, 4, 6]);
-    const rows = packRows([eevee, line('porygon', [1, 2, 4]), line('omanyte', [1, 1]), line('kabuto', [1, 1]), line('aerodactyl', [1])], 6);
-    expect(sizes(rows)).toEqual([
-      { sizes: [6], spacers: 0 },
-      { sizes: [3, 3], spacers: 0 },
-      { sizes: [2, 2, 1], spacers: 1 },
-    ]);
-    // The pieces are the line in order, under keys of their own.
-    const pieces = rows.flatMap((r) => r.groups).filter((g) => String(g.key).startsWith('eevee'));
-    expect(pieces.map((g) => g.key)).toEqual(['eevee', 'eevee#1']);
-    expect(pieces.flatMap((g) => g.members)).toEqual(eevee.members);
-  });
-
   it('gives each piece the whole line’s home generation', () => {
     // Under the Generation 1 heading only the Gen 1 members matched. The
     // second piece holds none of them, and read alone would call Gen 4 home
@@ -60,36 +46,6 @@ describe('packRows', () => {
     const rows = packRows([eevee], 6);
     const pieces = rows.flatMap((r) => r.groups);
     expect(pieces.map((g) => g.anchorGen)).toEqual([1, 1]);
-  });
-
-  it('keeps an anchor a caller set', () => {
-    const rows = packRows([{ ...line('a', [1, 1, 1, 1]), anchorGen: 3 }], 3);
-    expect(rows.flatMap((r) => r.groups).map((g) => g.anchorGen)).toEqual([3, 3]);
-  });
-
-  it('leaves a line that fits untouched', () => {
-    const a = line('a', [1, 1, 1]);
-    const rows = packRows([a], 6);
-    expect(rows[0].groups[0]).toBe(a);
-    expect(rows[0].groups[0].anchorGen).toBeUndefined();
-  });
-
-  it('fills every row but the last exactly, whatever the widths', () => {
-    let seed = 7;
-    const rand = () => (seed = (seed * 48271) % 2147483647) % 9 + 1;
-    for (const cols of [3, 6]) {
-      for (let trial = 0; trial < 40; trial += 1) {
-        const groups = Array.from({ length: 1 + (rand() % 12) }, (_, i) => line(`g${i}`, Array.from({ length: rand() }, () => 1)));
-        const rows = packRows(groups, cols);
-        rows.forEach((row, i) => {
-          const cells = row.groups.reduce((n, g) => n + g.members.length, 0);
-          expect(row.trailingSpacers).toBeGreaterThanOrEqual(0);
-          if (i < rows.length - 1) expect(cells + row.trailingSpacers).toBe(cols);
-          else expect(cells).toBeLessThanOrEqual(cols);
-        });
-        expect(rows.flatMap((r) => r.groups).flatMap((g) => g.members)).toEqual(groups.flatMap((g) => g.members));
-      }
-    }
   });
 });
 

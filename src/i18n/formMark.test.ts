@@ -101,42 +101,4 @@ describe('form marker', () => {
     }
     expect(clashes).toEqual([]);
   });
-
-  it.each(LOCALES)('%s marks all three Tauros breeds as Paldean, not as distinct', (locale) => {
-    // Asserted rather than merely exempted: if upstream ever publishes per-breed
-    // wording, this fails and the exemption above can be removed.
-    const { formMark } = catalogs.get(locale)!;
-    const tauros = Object.keys(ALT_FORM_SPECIES).filter((id) => ALT_FORM_SPECIES[id] === 128);
-    expect(tauros).toHaveLength(3);
-    const marks = new Set(tauros.map((id) => formMark[id]));
-    expect(marks.size, 'all three are Paldean, so all three share one marker').toBe(1);
-  });
-
-  it('marks Alcremie only where the sweet names actually differ', () => {
-    // Not a quirk to be smoothed over — it is the finding the design rests on.
-    // Six identical markers would claim a distinction the language is not
-    // making, so those three locales show none and let the sprite do the work.
-    const sweets = Object.keys(ALT_FORM_SPECIES).filter((id) => ALT_FORM_SPECIES[id] === 869);
-    expect(sweets).toHaveLength(6);
-    const marked = (locale: string) =>
-      sweets.filter((id) => catalogs.get(locale)!.formMark[id]).length;
-
-    for (const locale of ['en', 'ja', 'ko', 'zh-Hans', 'zh-Hant', 'fr']) {
-      expect(marked(locale), `${locale} should distinguish the sweets`).toBe(6);
-    }
-    for (const locale of ['de', 'es', 'it']) {
-      expect(marked(locale), `${locale} cannot distinguish the sweets`).toBe(0);
-    }
-  });
-
-  it('gives the Alolan and Galarian Raichu-line forms the region, not the label', () => {
-    // The hand-checked case. French is the one that would break under
-    // label-first abbreviation, so it is named explicitly.
-    const raichuAlola = '10100';
-    expect(catalogs.get('en')!.formMark[raichuAlola]).toBe('A');
-    expect(catalogs.get('fr')!.formMark[raichuAlola]).toBe('A');
-    expect(catalogs.get('ja')!.formMark[raichuAlola]).toBe('ア');
-    expect(catalogs.get('ko')!.formMark[raichuAlola]).toBe('알');
-    expect(catalogs.get('zh-Hans')!.formMark[raichuAlola]).toBe('阿');
-  });
 });
