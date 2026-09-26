@@ -84,6 +84,10 @@ const PAGE_SIZE = 50;
 // dashboard also refetches on the interval.
 const STALE_ON_RETURN_MS = 60_000;
 const REFRESH_INTERVAL_MS = 5 * 60_000;
+// Each dashboard request takes a number, and only the newest one writes, so a
+// background refresh that answers late cannot undo a later Load more. The admin
+// page mounts once, so one counter serves it.
+let latestLoad = 0;
 
 /** Which tool's records every shared card reads. */
 export type ToolSlice = 'all' | 'dex' | 'league';
@@ -1670,12 +1674,14 @@ export function AdminPage() {
 
   const load = useCallback(
     async (tok: string, { limit = PAGE_SIZE, refreshSearch = false, quiet = false } = {}) => {
+      const seq = ++latestLoad;
       if (!quiet) {
         setLoading(true);
         setError(null);
       }
       try {
         const resp = await fetchDashboard(tok, limit, 0);
+        if (seq !== latestLoad) return;
         setData(resp);
         setLoadedAt(Date.now());
         setAuthed(true);
@@ -1688,6 +1694,7 @@ export function AdminPage() {
           // localStorage may be unavailable
         }
       } catch (e) {
+        if (seq !== latestLoad) return;
         // Only a rejected token signs out. Any other failure keeps the data on screen.
         if (e instanceof UnauthorizedError) setAuthed(false);
         setError(e instanceof Error ? e.message : 'Something went wrong.');
@@ -1716,12 +1723,13 @@ export function AdminPage() {
 
   const loadMore = useCallback(async () => {
     if (!token || !data) return;
+    const seq = ++latestLoad;
     setLoadingMore(true);
     try {
       const resp = await fetchDashboard(token, data.records.length + PAGE_SIZE, 0);
-      setData(resp);
+      if (seq === latestLoad) setData(resp);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      if (seq === latestLoad) setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally {
       setLoadingMore(false);
     }

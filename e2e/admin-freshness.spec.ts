@@ -141,6 +141,48 @@ test.describe('admin dashboard freshness', () => {
     expect(api.searchUrls.every((url) => !url.includes('refresh=1')), 'background refresh never forces providers').toBe(true);
   });
 
+  test('a background refresh that answers after Load more keeps the loaded rows', async ({ page }) => {
+    const record = (i: number) => ({
+      cid: `c${i}`,
+      firstTs: T0 - DAY,
+      firstAt: new Date(T0 - DAY).toISOString(),
+      lastTs: T0 - i * 60_000,
+      lastAt: new Date(T0 - i * 60_000).toISOString(),
+      submits: 1,
+      maxDepth: 1,
+      localHour: 12,
+      everIds: [],
+      latestIds: [],
+      completed: false,
+      exported: false,
+    });
+    let calls = 0;
+    let release = () => {};
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route('**/api/**', (route) => route.fulfill({ status: 404, body: '' }));
+    await page.route('**/api/submissions**', async (route) => {
+      calls += 1;
+      // The second request is the background refresh. Hold it until Load more has answered.
+      if (calls === 2) await held;
+      const limit = Number(new URL(route.request().url()).searchParams.get('limit'));
+      const body = { ...dashboard(200), limit, totalDexRecords: 200, records: Array.from({ length: limit }, (_, i) => record(i)) };
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    await page.goto('/?admin');
+    await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Dex', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Load more (50 / 200)' })).toBeVisible();
+
+    await page.clock.fastForward(61_000);
+    await returnToTab(page);
+    await expect.poll(() => calls).toBe(2);
+    await page.getByRole('button', { name: 'Load more (50 / 200)' }).click();
+    await expect(page.getByRole('button', { name: 'Load more (100 / 200)' })).toBeVisible();
+
+    release();
+    await page.waitForTimeout(500);
+    await expect(page.getByRole('button', { name: 'Load more (100 / 200)' })).toBeVisible();
+  });
+
   test('refetches every five minutes while visible', async ({ page }) => {
     const api = await mockApi(page, [200]);
     await page.goto('/?admin');
