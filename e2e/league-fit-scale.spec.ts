@@ -45,7 +45,7 @@ const settle = (page: Page) => page.waitForTimeout(900);
 const ROOMY = 1400;
 const TIGHT = 700;
 
-test.describe('the fit', () => {
+test.describe('the fit', { tag: '@viewport' }, () => {
   test.beforeEach(() => {
     test.skip(
       test.info().project.name === 'desktop',

@@ -223,7 +223,7 @@ test.describe('drag hold', () => {
     expect((await audit()).bad, 'dex builder').toEqual([]);
   });
 
-  test('the legendary is carried on a cell face', async ({ page }) => {
+  test('the legendary is carried on a cell face', { tag: '@viewport' }, async ({ page }) => {
     // The copy in hand wears what a cell wears, so a drag reads the same
     // whether it carries a column or the boss's legendary. A bare sprite on
     // the dark band read as a cutout beside the lifted cells.

@@ -143,6 +143,15 @@ export default defineConfig({
    * exists specifically to guard the header, which is the tightest horizontal
    * budget in the UI and the thing most at risk from longer translated labels.
    *
+   * `desktop` runs every test. `mobile` and `narrow` run only tests tagged
+   * `@viewport`. Tag a test or a describe `@viewport` when its result depends
+   * on the project's width or device: a measured box, overflow, wrap, scroll
+   * offset, fit or scale, `page.viewportSize()`, the project name, touch, or a
+   * sheet-versus-pane branch. A test that checks only state, copy, storage, or
+   * network, or that pins its own viewport, gets the same result from one
+   * desktop run. A test that skips `desktop` must carry the tag, or it runs
+   * nowhere; `scripts/check-viewport-tags.mjs` enforces that.
+   *
    * Specs under e2e/sweeps/ drive their own viewport sizes, so running them
    * under every project would just repeat the same work three times; only the
    * desktop project picks them up. Specs under e2e/dev/ need the dev server and
@@ -152,6 +161,7 @@ export default defineConfig({
     {
       name: 'mobile',
       testIgnore: ['**/sweeps/**', '**/dev/**'],
+      grep: /@viewport/,
       use: { ...devices['Pixel 7'] },
     },
     {
@@ -162,6 +172,7 @@ export default defineConfig({
     {
       name: 'narrow',
       testIgnore: ['**/sweeps/**', '**/dev/**'],
+      grep: /@viewport/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
     },
     // Specs that need the dev server rather than the production bundle:

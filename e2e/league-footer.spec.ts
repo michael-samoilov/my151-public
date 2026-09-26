@@ -94,7 +94,7 @@ async function expectFooterAtFold(page: Page) {
   }
 }
 
-test.describe('the league footer', () => {
+test.describe('the league footer', { tag: '@viewport' }, () => {
   test('the summary carries it, just below the fold', async ({ page }) => {
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
