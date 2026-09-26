@@ -15,7 +15,7 @@ test.describe('the selected league row', () => {
         legend: null,
         powerup: null,
       };
-      const cards = Array.from({ length: 14 }, () => ({ ...empty, lines: [] }));
+      const cards = Array.from({ length: 14 }, () => ({ ...empty, lines: [] as unknown[] }));
       cards[0] = { ...empty, type: 'none' };
       cards[3] = { ...empty, type: 'fire' };
       window.localStorage.setItem(
