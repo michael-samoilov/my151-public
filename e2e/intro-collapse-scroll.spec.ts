@@ -16,7 +16,7 @@ import { expect, test, type Page } from '@playwright/test';
  * Mobile only: at md and up the browser is a side panel and adds instantly, a
  * different flow. Keyed on width, matching bottom-sheet.spec.ts.
  */
-test.describe('intro card collapse keeps the page still', () => {
+test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, () => {
   test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'mobile sheet flow only');
 
   const SECTION = 'forest';

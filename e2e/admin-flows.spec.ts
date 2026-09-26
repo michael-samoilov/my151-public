@@ -45,7 +45,7 @@ test.describe('admin flows', () => {
     expect(label).toMatch(/kept private/i);
   });
 
-  test('phone dex funnel is a Sankey that stays in the column', async ({ page }, info) => {
+  test('phone dex funnel is a Sankey that stays in the column', { tag: '@viewport' }, async ({ page }, info) => {
     test.skip(info.project.name === 'desktop', 'desktop width is not the pan risk');
     const funnel = page.getByRole('img', { name: /Dex usage funnel/ });
     await expect(funnel).toBeVisible();
@@ -54,7 +54,7 @@ test.describe('admin flows', () => {
     await expectFitsPhoneHeight(funnel);
   });
 
-  test('phone league funnel is a Sankey that stays in the column', async ({ page }, info) => {
+  test('phone league funnel is a Sankey that stays in the column', { tag: '@viewport' }, async ({ page }, info) => {
     test.skip(info.project.name === 'desktop', 'desktop width is not the pan risk');
     await page.getByRole('button', { name: 'League', exact: true }).click();
     const funnel = page.getByRole('img', { name: /League usage funnel/ });
@@ -64,7 +64,7 @@ test.describe('admin flows', () => {
     await expectFitsPhoneHeight(funnel);
   });
 
-  test('phone referrer Sankey stays in the column', async ({ page }, info) => {
+  test('phone referrer Sankey stays in the column', { tag: '@viewport' }, async ({ page }, info) => {
     test.skip(info.project.name === 'desktop', 'desktop width is not the pan risk');
     await page.getByRole('button', { name: 'Referrer → landing' }).click();
     const chart = page.getByRole('img', { name: /Referrer to landing/ });

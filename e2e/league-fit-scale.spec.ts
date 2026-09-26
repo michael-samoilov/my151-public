@@ -39,7 +39,7 @@ const settle = (page: Page) => page.waitForTimeout(900);
 const ROOMY = 1400;
 const TIGHT = 700;
 
-test.describe('the fit', () => {
+test.describe('the fit', { tag: '@viewport' }, () => {
   test('pays for the summary\'s hints out of both sides, and the rest out of height',
     async ({ page }) => {
       const { width } = page.viewportSize()!;

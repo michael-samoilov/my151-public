@@ -24,7 +24,7 @@ function userCard(page: import('@playwright/test').Page, cidPrefix: string) {
 }
 
 test.describe('admin user pages', () => {
-  test('league visits fit the viewport and hide a count-only phantom dip', async ({ page }, info) => {
+  test('league visits fit the viewport and hide a count-only phantom dip', { tag: '@viewport' }, async ({ page }, info) => {
     await openDemo(page);
     await page.getByRole('button', { name: 'League' }).click();
     await userCard(page, '70cd').click();
@@ -260,7 +260,7 @@ test.describe('admin user pages', () => {
     }
   });
 
-  test('dex builds shows a timeline and a snapshot', async ({ page }) => {
+  test('dex builds shows a timeline and a snapshot', { tag: '@viewport' }, async ({ page }) => {
     await openDemo(page);
     await page.getByRole('button', { name: 'Dex' }).click();
     await userCard(page, '74d5').click();
@@ -369,7 +369,7 @@ test.describe('admin user pages', () => {
     await expect(tools.getByRole('button', { name: 'Dex' })).toBeDisabled();
   });
 
-  test('header chips open an unclipped tooltip on press', async ({ page }) => {
+  test('header chips open an unclipped tooltip on press', { tag: '@viewport' }, async ({ page }) => {
     await openDemo(page);
     await userCard(page, '74d5').click();
     await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
@@ -438,7 +438,7 @@ test.describe('admin user pages', () => {
     await expect(page.getByTestId('session-playhead-milestone')).toHaveCount(1);
   });
 
-  test('header chips stay one row with one language and no focus ring', async ({ page }) => {
+  test('header chips stay one row with one language and no focus ring', { tag: '@viewport' }, async ({ page }) => {
     await openDemo(page);
     await userCard(page, '4eab').click();
     await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
