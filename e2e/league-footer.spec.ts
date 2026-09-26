@@ -1,10 +1,18 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Every league surface carries the app footer just below its fold.
+ * Every league surface carries the app footer, just below its own fold.
  *
- * Mobile keeps one footer in each sliding pane. Desktop keeps one footer below
- * the complete pane row, so opening a card does not move or duplicate it.
+ * The dex builder's panes already do this: the footer goes after the fitted
+ * block and is not reserved in the fit, so the block takes the whole viewport
+ * and the footer starts exactly where it ends. A reader who never scrolls
+ * never sees it; a reader who does finds it immediately.
+ *
+ * The phone keeps one footer at the end of each sliding pane. Desktop keeps
+ * one slim footer under the whole pane row, on purpose since f2676ee5 (merged
+ * in 07a820ca), so the cards get the height two per-pane footers used to
+ * reserve. The contract below holds for both: whatever scrolls, its footer
+ * starts at its fold.
  *
  * Both halves of that matter. A footer *above* the fold means the page did not
  * fill the viewport; a footer far below it means something reserved room it
@@ -40,31 +48,50 @@ async function lowestPainted(page: Page) {
   );
 }
 
-/** Each active scrolling surface, with its footer position relative to the fold. */
+/**
+ * Each scroller on screen that ends in the app footer, with where the footer
+ * starts relative to that scroller's fold.
+ *
+ * The footer is the scroller's own child that holds the credit line: the
+ * footer itself at the end of a phone pane, the bar under the pane row on
+ * desktop. `panesCovered` says whether every pane on screen scrolls inside
+ * one of these, so a pane that lost its footer cannot pass unnoticed.
+ */
 async function footers(page: Page) {
   return page.evaluate(() => {
+    const scrollsY = (el: HTMLElement) => /^(auto|scroll)$/.test(getComputedStyle(el).overflowY);
+    // Only what is on screen; the phone shell keeps both panes mounted.
+    const credits = [...document.querySelectorAll<HTMLElement>('span')].filter(
+      (span) => (span.textContent ?? '').includes('Nintendo / Game Freak') && !span.closest('[inert]'),
+    );
+    const found = credits.flatMap((credit) => {
+      let block: HTMLElement = credit;
+      let scroller = credit.parentElement;
+      while (scroller && !scrollsY(scroller)) {
+        block = scroller;
+        scroller = scroller.parentElement;
+      }
+      return scroller ? [{ scroller, block }] : [];
+    });
     const panes = [...document.querySelectorAll<HTMLElement>('[data-lg-viewport]')]
       .filter((vp) => !vp.hasAttribute('inert'));
-    const credit = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('span')].find((span) =>
-      (span.textContent ?? '').includes('Nintendo / Game Freak'));
-    const paneFooters = panes.map((pane) => ({ pane, foot: credit(pane) }));
-    if (paneFooters.some(({ foot }) => foot)) {
-      return paneFooters.map(({ pane, foot }) => ({
-        hasFooter: Boolean(foot),
-        belowFold: foot ? foot.getBoundingClientRect().top - pane.getBoundingClientRect().bottom : NaN,
-      }));
-    }
-
-    const foot = credit(document);
-    let surface = panes[0]?.parentElement ?? null;
-    while (surface && foot && !surface.contains(foot)) surface = surface.parentElement;
-    return [{
-      hasFooter: Boolean(foot && surface),
-      belowFold: foot && surface
-        ? foot.getBoundingClientRect().top - surface.getBoundingClientRect().bottom
-        : NaN,
-    }];
+    return {
+      panesCovered:
+        panes.length > 0 && panes.every((vp) => found.some(({ scroller }) => scroller.contains(vp))),
+      belowFold: found.map(({ scroller, block }) =>
+        block.getBoundingClientRect().top - scroller.getBoundingClientRect().bottom),
+    };
   });
+}
+
+/** The footer contract, the same on every surface. */
+async function expectFooterAtFold(page: Page) {
+  const { panesCovered, belowFold } = await footers(page);
+  expect(panesCovered, 'every pane on screen scrolls to the app footer').toBe(true);
+  for (const top of belowFold) {
+    expect(top, 'and it starts at or below the fold').toBeGreaterThan(-1);
+    expect(top, 'without a gap reserved above it').toBeLessThan(120);
+  }
 }
 
 test.describe('the league footer', () => {
@@ -72,13 +99,7 @@ test.describe('the league footer', () => {
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(700);
-    const panes = await footers(page);
-    expect(panes.length, 'at least one pane on screen').toBeGreaterThan(0);
-    for (const pane of panes) {
-      expect(pane.hasFooter, 'the active surface carries the app footer').toBe(true);
-      expect(pane.belowFold, 'and it starts at or below the fold').toBeGreaterThan(-1);
-      expect(pane.belowFold, 'without a gap reserved above it').toBeLessThan(120);
-    }
+    await expectFooterAtFold(page);
   });
 
   test('the summary paints nothing below its own fold', async ({ page }) => {
@@ -113,12 +134,6 @@ test.describe('the league footer', () => {
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(800);
-    const panes = await footers(page);
-    expect(panes.length, 'at least one pane on screen').toBeGreaterThan(0);
-    for (const pane of panes) {
-      expect(pane.hasFooter, 'the active surface carries the app footer').toBe(true);
-      expect(pane.belowFold, 'and it starts at or below the fold').toBeGreaterThan(-1);
-      expect(pane.belowFold, 'without a gap reserved above it').toBeLessThan(120);
-    }
+    await expectFooterAtFold(page);
   });
 });

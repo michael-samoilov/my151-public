@@ -77,6 +77,8 @@ test.describe('drag hold', () => {
 
   test('a league row is carried in the slot it would fill', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'mouse-driven drag needs the desktop project');
+    // A row with a trainer on it. An empty row is not a drag source since
+    // 3c6e321d; it only opens on tap, so a blank league has nothing to carry.
     await sevenGymsLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');

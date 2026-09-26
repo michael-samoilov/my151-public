@@ -15,6 +15,17 @@ import path from 'node:path';
  * The previous root-level harnesses each hardcoded a different URL (:5173 and
  * :5199) and needed a server started by hand, so one of them could never pass.
  */
+
+/**
+ * A port pair of this checkout's own, from 10000 through 29999.
+ *
+ * Two worktrees on one machine each start these servers, and a local run
+ * reuses whatever already answers on the port. On shared fixed ports, the
+ * second worktree's run silently tests the first worktree's build. Hashing
+ * the checkout path (FNV-1a) gives each worktree the same pair on every run
+ * and, barring a hash collision, a different pair from its neighbors.
+ * PLAYWRIGHT_PREVIEW_PORT and PLAYWRIGHT_DEV_PORT override it.
+ */
 function worktreePort(offset: 0 | 1): number {
   let hash = 2166136261;
   for (const char of path.resolve(process.cwd()).toLowerCase()) {
