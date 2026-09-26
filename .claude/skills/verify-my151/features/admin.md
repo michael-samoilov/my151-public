@@ -10,10 +10,13 @@ public product UI.
 - `/?admin&demo` loads bundled fixtures, signs in without a token, and makes no
   API call.
 - Section nav (`nav[aria-label="Admin section"]`, buttons with
-  `aria-pressed`): Suite, Dex, League, and Feedback. The last tool read saves
-  under `p151-admin-tool` (`all`, `dex`, or `league`).
+  `aria-pressed`): Suite, Dex, League, Search, and Feedback. The last tool read
+  saves under `p151-admin-tool` (`all`, `dex`, or `league`).
 - Each tab is a stack of `main > section` panels, such as active users, flows,
-  build depth, and who. Search performance shows on Suite only.
+  build depth, and who. Suite holds cross-tool panels only. What people pick
+  and Newest browsers sit on Dex and League. Search performance
+  (`[data-testid="search-performance"]`) has its own Search tab, and opening it
+  asks `/api/search-performance?refresh=1`.
 - A user preview (`[data-user-preview][role="link"]`) opens one browser's
   detail: `[data-testid="league-visit-board"]`,
   `[data-testid="admin-gym-card"]`, `[data-testid="admin-slot-N"]`,
