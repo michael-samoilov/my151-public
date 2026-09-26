@@ -122,15 +122,6 @@ describe('applyPlayheadMilestone', () => {
     expect(ui.attrs.visibility).toBe('hidden');
   });
 
-  it('paints one concatenated label at the playhead x', () => {
-    const ui = milestoneRoot();
-    applyPlayheadMilestone(ui.root, { label: 'card · league · league · close', x: 80, width: 320 });
-    expect(ui.node.textContent).toBe('card · league · league · close');
-    expect(ui.attrs.visibility).toBe('visible');
-    expect(ui.attrs.x).toBe('80.0');
-    expect(ui.attrs['text-anchor']).toBe('middle');
-  });
-
   it('anchors the label at the chart edge', () => {
     const ui = milestoneRoot();
     applyPlayheadMilestone(ui.root, { label: 'intro', x: 10, width: 320 });

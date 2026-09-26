@@ -57,13 +57,14 @@ test.describe('beacon delivery', () => {
     // rejects as "cannot fast-forward to the past". Paused from the start, no
     // timer can fire until a test advances it, so a delivered beacon can only
     // have come from an explicit flush.
+    //
+    // Pause a second past the install time, not at it. The installed clock can
+    // tick before `pauseAt` lands, and pausing at the install time itself then
+    // fails the same way (6 of 75 runs under load). No page has loaded yet, so
+    // jumping the second fires no timer.
     const T0 = new Date('2026-08-18T12:00:00Z').getTime();
     await page.clock.install({ time: T0 });
-    // `install()` starts ticking immediately. Pause at a future anchor so the
-    // Playwright round trip can never make this a backwards clock jump under
-    // a busy parallel run. The app has not navigated yet, so no app timer can
-    // observe the fast-forward.
-    await page.clock.pauseAt(T0 + 60_000);
+    await page.clock.pauseAt(T0 + 1000);
     await page.goto('/pokedex-builder');
     await expect(page.locator('[data-build-scroll]')).toBeVisible();
   });

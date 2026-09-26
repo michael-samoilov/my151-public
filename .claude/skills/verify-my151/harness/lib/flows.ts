@@ -26,7 +26,9 @@ const SEED_COUNT = Object.values(SEED_SECTIONS).reduce((n, a) => n + a.length, 0
 function seedValue(sections: Record<string, number[]>): string {
   const count = Object.values(sections).reduce((n, a) => n + a.length, 0);
   return JSON.stringify({
-    state: { sections, milestoneMax: count, milestoneCelebrated: [25].filter((m) => m <= count), localeNoticeSeen: true },
+    // `locale` pins English, so each engine's own navigator.languages cannot
+    // change a label the flows read.
+    state: { sections, milestoneMax: count, milestoneCelebrated: [25].filter((m) => m <= count), localeNoticeSeen: true, locale: 'en' },
     version: STORE_VERSION,
   });
 }
@@ -198,22 +200,24 @@ async function totalPlaced(s: Session): Promise<number> {
 
 // A real user action that mutates the persisted store, not a seed round-trip: open
 // the browser for a seed-free section and click an evo-line card, which on desktop
-// instantly adds the line (PokemonBrowser.tsx handleToggleStage). The browser cards
-// carry no stable handle today, so this activates once a `data-testid="verify-evo-
-// card"` lands on the card (a one-line change); until then it skips, loudly. Runs
-// on desktop-width Blink, where the instant-add path applies.
+// instantly adds the line (PokemonBrowser.tsx handleToggleStage). Runs on
+// desktop-width Blink, where the instant-add path applies; a phone stages the pick
+// and commits it from a floating button instead.
 const PLACE_CARD = '[data-testid="verify-evo-card"]';
+// The section's own "+" by structure. Its aria-label is translated, so a label
+// match skips under any locale but English.
+const MEADOW_ADD = '[data-section-id="meadow"] [data-add-slot]';
 
 async function driveRealPlacement(s: Session): Promise<Check> {
   const name = 'placement:real-add-grows-store';
-  const addBtn = await s.evalJson<boolean>(`return !!document.querySelector('[aria-label="Add a Pokémon to Meadow"]');`).catch(() => false);
-  if (!addBtn) return { name, status: 'skip', detail: 'Meadow add button not found (locale or layout changed)' };
+  const addBtn = await s.evalJson<boolean>(`return !!document.querySelector(${JSON.stringify(MEADOW_ADD)});`).catch(() => false);
+  if (!addBtn) return ok(name, false, `${MEADOW_ADD} not found`);
   const before = await totalPlaced(s);
-  await s.click('[aria-label="Add a Pokémon to Meadow"]');
+  await s.click(MEADOW_ADD);
   await sleep(800);
   // The browser renders its cards only once opened, so check the handle now.
   const cardPresent = await s.evalJson<boolean>(`return !!document.querySelector(${JSON.stringify(PLACE_CARD)});`).catch(() => false);
-  if (!cardPresent) return { name, status: 'skip', detail: `add ${PLACE_CARD} to the browser evo-line card to enable (tier-2 one-liner)` };
+  if (!cardPresent) return ok(name, false, `${PLACE_CARD} not rendered after opening the browser`);
   await s.click(PLACE_CARD);
   await sleep(800);
   const after = await totalPlaced(s);
@@ -891,6 +895,10 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
 // runs on desktop-width Blink (the instant-add path); other surfaces prove
 // boot, layout, and rendering.
 const LEAGUE_PATH = '/custom-gym-leader';
+/** How far the TM text's top and bottom gaps may differ, in px. The gaps come
+ *  from text-box rects, so each engine's font metrics shift them: Blink differs
+ *  by 0.3px on production, Gecko by 1.4px with the same layout. */
+const TM_GAP_SLACK = 1.5;
 const LEAGUE_KEY = 'league-builder';
 
 interface LeagueOracle {
@@ -921,22 +929,22 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
   try {
     const res = await fetch(url);
     const html = await res.text();
-    const hasH1 = /<h1[^>]*>[^<]*League Builder/i.test(html);
-    const hasTitle = /<title>[^<]*League Builder/i.test(html);
-    if (!res.ok) {
-      // A non-200 is a real server failure, not a missing feature.
-      checks.push(ok('league:static-seo-content', false, `status ${res.status}`));
-      return checks;
-    }
-    if (!hasH1 || !hasTitle) {
-      // The league builder page is not in this build yet: /custom-gym-leader
-      // serves the SPA fallback (dex HTML, 200). Skip loudly rather than fail,
-      // matching the placement check's skip-until-present rule; a check that flags
-      // a not-yet-built feature is a false failure on the current app.
-      checks.push({ name: 'league:static-seo-content', status: 'skip', detail: `league builder not in this build yet (SPA fallback at ${LEAGUE_PATH}, h1=${hasH1}, title=${hasTitle})` });
-      return checks;
-    }
-    checks.push(ok('league:static-seo-content', true, `status ${res.status}`));
+    // Structural, not the shell's wording: the title was renamed once, a text
+    // match turned this whole suite into a silent skip, and every run since
+    // reported the league as passing without driving it. The league page is
+    // its own build entry, so its canonical link names its own path.
+    const hasH1 = /<h1[^>]*>[^<]{3,}<\/h1>/i.test(html);
+    const hasTitle = /<title>[^<]{3,}<\/title>/i.test(html);
+    const canonical = html.match(/<link rel="canonical"[^>]*>/i)?.[0] ?? '';
+    const ownEntry = canonical.includes(LEAGUE_PATH);
+    checks.push(
+      ok(
+        'league:static-seo-content',
+        res.ok && hasH1 && hasTitle && ownEntry,
+        `status ${res.status} h1=${hasH1} title=${hasTitle} canonical=${ownEntry}`,
+      ),
+    );
+    if (!res.ok) return checks;
   } catch (e) {
     checks.push({ name: 'league:static-seo-content', status: 'fail', detail: (e as Error).message });
     return checks;
@@ -1127,8 +1135,6 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
   if (!blank) return checks;
 
   // Story / Rematch is the shared pill tab set, not a lone primary button.
-  // Lives here because runLeagueSuite returns early on the static SEO skip
-  // (the shell title is "Custom Gym Leader", not "League Builder").
   const tabset = await s.evalJson<{ ok: boolean; detail: string }>(
     `const TRANSPARENT=new Set(['rgba(0, 0, 0, 0)','transparent','']);
      const list=document.querySelector('[data-testid="league-nav"]');
@@ -1213,7 +1219,7 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
 
     await s.evalJson(`const c=document.querySelector('[data-testid="card-cell-9-1"]'); if(c) c.scrollIntoView({block:'center'}); return true;`).catch(() => false);
     await sleep(s.engine === 'webkit' ? 400 : 200);
-    const stars = await s.evalJson<{ n: number; ySpread: number; xSpread: number; increasing: boolean }>(
+    const stars = await s.evalJson<{ n: number; ySpread: number; xSpread: number; increasing: boolean; zoom: number }>(
       `const root=document.querySelector('[data-lg-card-root]');
        const marks=[...(root?root.querySelectorAll('svg'):[])].filter(s=>(s.querySelector('path')?.getAttribute('d')||'').startsWith('M6 0.5'));
        const boxes=marks.map(s=>s.getBoundingClientRect());
@@ -1221,11 +1227,14 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
        const ySpread=ys.length?Math.max(...ys)-Math.min(...ys):99;
        const xSpread=xs.length?Math.max(...xs)-Math.min(...xs):0;
        const increasing=xs.every((x,i)=>i===0||x>xs[i-1]+1);
-       return {n:marks.length,ySpread,xSpread,increasing};`,
-    ).catch(() => ({ n: 0, ySpread: 99, xSpread: 0, increasing: false }));
+       const zoom=Number(root?.parentElement?.style.zoom)||1;
+       return {n:marks.length,ySpread,xSpread,increasing,zoom};`,
+    ).catch(() => ({ n: 0, ySpread: 99, xSpread: 0, increasing: false, zoom: 1 }));
+    // The stars are px-sized inside the zoomed card, so their spread scales
+    // with the fit: 20px at zoom 1.
     checks.push(ok(
       'league:elite-stars-one-row',
-      stars.n === 4 && stars.ySpread < 2 && stars.increasing && stars.xSpread > 20,
+      stars.n === 4 && stars.ySpread < 2 && stars.increasing && stars.xSpread > 20 * stars.zoom,
       JSON.stringify(stars),
     ));
     await s.screenshot(ctx.shot('league-elite-stars'));
@@ -1480,6 +1489,16 @@ export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName
   }
 
   checks.push(ok('league-hover:mobile-no-sticky-wash', sticky === 0, `washed cells in seat 1 after dismiss: ${sticky}`));
+  // The wash is gated on a hover-capable fine pointer (CardGrid.tsx). Headless
+  // Firefox reports neither, so there is nothing to wash on that engine and a
+  // zero count says nothing about the app.
+  const hoverPointer = await s
+    .evalJson<boolean>(`return matchMedia('(hover: hover) and (pointer: fine)').matches;`)
+    .catch(() => false);
+  if (!hoverPointer) {
+    checks.push({ name: 'league-hover:desktop-column-wash', status: 'skip', detail: 'engine reports no hover-capable fine pointer (headless); a desktop browser with a mouse is the proof' });
+    return checks;
+  }
   await pointerOverColumn(s, 'card-cell-5-2');
   const washed = await columnWashCount(s, 2);
   checks.push(ok('league-hover:desktop-column-wash', washed >= 8, `washed cells in seat 2: ${washed}`));
@@ -1785,21 +1804,25 @@ export async function runGymCardExportParitySuite(
     tmFit.inside && tmFit.tmW > 70,
     `tmW=${tmFit.tmW.toFixed(1)} chipRight=${tmFit.chipRight.toFixed(1)} tmRight=${tmFit.tmRight.toFixed(1)}`,
   ));
-  await s.click('[data-league-export]');
+  // The card's own export, not the league pane's: both carry the attribute, and
+  // the league pane's comes first in the DOM, which WebKit and Gecko pick.
+  await s.click('[data-league-export="card"]');
   if (!(await waitFor(s, '[data-export-preview] img', 60))) {
     checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'export preview image never mounted' });
     return checks;
   }
   await sleep(800);
-  const painted = await s.evalJson<{ w: number; complete: boolean }>(
+  // A card export has no league detail toggles; the league export has four.
+  // That tells the two apart, which a width floor alone did not.
+  const painted = await s.evalJson<{ w: number; complete: boolean; details: number }>(
     `const img=document.querySelector('[data-export-preview] img');
-     return { w: img?.naturalWidth ?? 0, complete: !!img?.complete };`,
+     return { w: img?.naturalWidth ?? 0, complete: !!img?.complete, details: document.querySelectorAll('[data-export-detail]').length };`,
   );
   await s.screenshot(ctx.shot('gym-export-nimbus-preview'));
   checks.push(ok(
     'gym-export:nimbus-preview',
-    painted.complete && painted.w > 800,
-    `preview naturalWidth=${painted.w} complete=${painted.complete}`,
+    painted.complete && painted.w > 800 && painted.details === 0,
+    `preview naturalWidth=${painted.w} complete=${painted.complete} leagueDetailToggles=${painted.details}`,
   ));
 
   await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${NIMBUS_SOLO_LEAGUE}); return true;`);
@@ -1972,7 +1995,7 @@ export async function runGymCardExportParitySuite(
   checks.push(ok(
     'gym-export:tm-two-word-wrap',
     /stomping tantrum/i.test(wrap.text) && !wrap.ellipsis && wrap.lines === 2 && wrap.lastVisible
-      && Math.abs(wrap.topGap - wrap.bottomGap) <= 1.25,
+      && Math.abs(wrap.topGap - wrap.bottomGap) <= TM_GAP_SLACK,
     `text=${wrap.text} ellipsis=${wrap.ellipsis} lines=${wrap.lines} lastVisible=${wrap.lastVisible} top=${wrap.topGap.toFixed(1)} bottom=${wrap.bottomGap.toFixed(1)}`,
   ));
 
@@ -2016,7 +2039,7 @@ export async function runGymCardExportParitySuite(
   await s.screenshot(ctx.shot('gym-export-tm-one-word-line'));
   checks.push(ok(
     'gym-export:tm-one-word-line',
-    /^psychic$/i.test(oneLine.text) && oneLine.lines === 1 && Math.abs(oneLine.topGap - oneLine.bottomGap) <= 1.25,
+    /^psychic$/i.test(oneLine.text) && oneLine.lines === 1 && Math.abs(oneLine.topGap - oneLine.bottomGap) <= TM_GAP_SLACK,
     `text=${oneLine.text} lines=${oneLine.lines} top=${oneLine.topGap.toFixed(1)} bottom=${oneLine.bottomGap.toFixed(1)}`,
   ));
 

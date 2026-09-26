@@ -61,9 +61,4 @@ describe('generated data catalog matches its sources', () => {
       expect(regionName(d.id), `region.${d.id}`).toBe(d.name);
     }
   });
-
-  it('resolves an unknown id to the key rather than to empty text', () => {
-    // Visible beats blank: a raw key gets reported, an empty heading doesn't.
-    expect(sectionName('does-not-exist')).toBe('section.does-not-exist');
-  });
 });

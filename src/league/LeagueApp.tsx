@@ -13,7 +13,7 @@ import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useLeagueBeacon } from './hooks/useLeagueBeacon';
 import { useLeagueFunnelNudges } from './hooks/useLeagueFunnelNudges';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { pokemonLabel, useNamesVersion } from '@/i18n';
+import { pokemonLabel, useDocumentLocale, useNamesVersion } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { slotLabel } from './model/constants';
 import { useLeagueBrowserStore } from './store/browserBridge';
@@ -172,6 +172,7 @@ export function LeagueApp() {
   // The sheet heading names a Pokémon, and `pokemonLabel` reads the name
   // store without subscribing to it.
   useNamesVersion();
+  useDocumentLocale();
   useLeagueBeacon();
   useLeagueFunnelNudges();
   useJsErrorCounter();

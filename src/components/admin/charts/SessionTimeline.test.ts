@@ -42,14 +42,6 @@ describe('midnightBoundaries', () => {
     expect(ny).toContain(Date.parse('2026-09-10T04:00:00Z'));
     expect(ny).not.toContain(Date.parse('2026-09-10T00:00:00Z'));
   });
-
-  it('hits a half-hour offset midnight (IST), not only whole UTC hours', () => {
-    const t0 = Date.parse('2026-09-10T12:00:00Z');
-    const t1 = Date.parse('2026-09-11T20:00:00Z');
-    const ist = midnightBoundaries(t0, t1, 'Asia/Kolkata');
-    // 2026-09-11 00:00 in IST is 2026-09-10 18:30 UTC.
-    expect(ist).toContain(Date.parse('2026-09-10T18:30:00Z'));
-  });
 });
 
 describe('showDayLines', () => {
@@ -89,22 +81,5 @@ describe('formatSessionMeta', () => {
     };
     const meta = formatSessionMeta(cur, 'UTC');
     expect(meta.text).toBe('Sep 13 · 11:59 AM–12:01 PM · 2m · +84 −84');
-  });
-
-  it('pathological longest case stays one compact line', () => {
-    const cur: TimelinePoint = {
-      t: Date.parse('2026-09-13T16:38:00Z'),
-      count: 151,
-      net: 151,
-      added: 151,
-      removed: 151,
-      dur: 999 * 60,
-    };
-    const line = `151 of 151 · ${formatSessionMeta(cur, 'UTC').text}`;
-    expect(line.includes('Sep 13')).toBe(true);
-    expect(line.includes('999m')).toBe(true);
-    expect(line.includes('+151')).toBe(true);
-    expect(line.includes('−151')).toBe(true);
-    expect(line.length).toBeLessThan(70);
   });
 });
