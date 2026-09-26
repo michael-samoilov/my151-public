@@ -114,11 +114,18 @@ export function PickerSheet({
       const gap = 8;
       const below = cell.bottom + gap;
       const above = cell.top - height - gap;
-      const preferredTop = below + height <= bottomBound ? below
-        : above >= topBound ? above : below;
+      const right = cell.right + gap;
+      const left = cell.left - width - gap;
+      // Prefer below or above the cell. A zoomed cell can leave no room for
+      // either, so fall back to its side before covering it.
+      const place = below + height <= bottomBound ? { left: cell.left, top: below }
+        : above >= topBound ? { left: cell.left, top: above }
+          : right + width <= rightBound ? { left: right, top: cell.top }
+            : left >= leftBound ? { left, top: cell.top }
+              : { left: cell.left, top: below };
       const next = {
-        left: clamp(cell.left, leftBound, rightBound - width),
-        top: clamp(preferredTop, topBound, bottomBound - height),
+        left: clamp(place.left, leftBound, rightBound - width),
+        top: clamp(place.top, topBound, bottomBound - height),
         width,
         maxHeight,
       };

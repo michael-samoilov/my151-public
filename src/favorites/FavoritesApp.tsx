@@ -82,8 +82,12 @@ export function FavoritesApp() {
             {TOOL_NAME}
           </h1>
         </div>
-        <div className={desktop ? 'flex-1' : 'h-[calc(100dvh-2*2.75rem)] shrink-0'}>
-          <main ref={mainRef} className={desktop ? 'p-1 sm:p-2' : 'h-full min-h-0 p-1'}>
+        {/* The grid frame fills the screen below both headers. The grid
+            scrolls inside it, and the footer stays below the fold. On
+            desktop the frame runs to the screen edge, as the grid did when
+            the page scrolled. */}
+        <div className="h-[calc(100dvh-2*2.75rem)] shrink-0">
+          <main ref={mainRef} className={desktop ? 'h-full min-h-0 px-2 pt-2' : 'h-full min-h-0 p-1'}>
             <FavoritesGrid
               fills={fills}
               resolve={getPickerMon}
