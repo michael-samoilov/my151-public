@@ -112,6 +112,7 @@ export function ExportPreview3D({
   const lastPoseRef = useRef<HoverTiltPose>(REST_POSE);
   const releaseRef = useRef<{ from: HoverTiltPose; t0: number } | null>(null);
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
+  const reducedMotionRef = useRef(false);
   const hoverBlockedUntilLeaveRef = useRef(false);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const enterSinceRef = useRef<number | null>(null);
@@ -241,6 +242,9 @@ export function ExportPreview3D({
   }, []);
 
   const idleAt = useCallback((now: number) => {
+    // Reduced motion holds the card still. Activation still rises in idle, so
+    // the foil stays on. Hover, drag, and tap are the user's own motion.
+    if (reducedMotionRef.current) return REST_POSE;
     if (originRef.current === null) originRef.current = now;
     const recipeNow = recipeRef.current;
     return pokeHoloIdle({
@@ -380,6 +384,21 @@ export function ExportPreview3D({
   useEffect(() => {
     cardMaxRef.current = cardMax;
   }, [cardMax]);
+
+  useEffect(() => {
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => {
+      if (reducedMotionRef.current === query.matches) return;
+      reducedMotionRef.current = query.matches;
+      // Ease into the new idle pose instead of jumping to it.
+      if (orbitRef.current === 'idle' && !pausedRef.current) {
+        releaseRef.current = { from: { ...lastPoseRef.current }, t0: performance.now() };
+      }
+    };
+    sync();
+    query.addEventListener('change', sync);
+    return () => query.removeEventListener('change', sync);
+  }, []);
 
   useEffect(() => {
     let raf = 0;
