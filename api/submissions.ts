@@ -694,8 +694,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       languages: dexAgg.languages,
       devices: dexAgg.devices,
       os: dexAgg.os,
-      hours: dexAgg.hours,
-      heatmap: dexAgg.heatmap,
       byTool,
       journeys,
       cohorts,
