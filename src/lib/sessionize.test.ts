@@ -19,6 +19,10 @@ describe('alignSessionMs', () => {
 });
 
 describe('sessionTarget', () => {
+  it('inserts at 0 on an empty log', () => {
+    expect(sessionTarget([], [], 100, 30_000)).toEqual({ kind: 'insert', index: 0 });
+  });
+
   it('joins a timestamp that sits inside a session interval', () => {
     // Session 0: [50, 100], session 1: [190, 200]
     expect(sessionTarget([100, 200], [50, 10], 90, 30)).toEqual({ kind: 'join', index: 0 });
@@ -93,6 +97,16 @@ describe('withoutDropRestorePhantoms', () => {
       { ids: [1, 2, 3, 4] },
     ];
     expect(withoutDropRestorePhantoms(log, ids)).toEqual(log);
+  });
+
+  it('drops a count-only 13→1→14 dip when the middle sitting has no ids', () => {
+    const log = [
+      { ids: [] as number[], cards: 13, seats: 74 },
+      { ids: [], cards: 1, seats: 1 },
+      { ids: [1, 2, 3], cards: 14, seats: 84 },
+    ];
+    const counts = (s: { cards: number; seats: number }) => ({ cards: s.cards, seats: s.seats });
+    expect(withoutDropRestorePhantoms(log, ids, counts)).toEqual([log[0], log[2]]);
   });
 
   it('keeps an empty-id dip when the neighbours disagree on size', () => {

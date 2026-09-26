@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EARLY_EXPORT_BUCKETS } from '@/league/export/exportPersonalization';
 import {
   EXPORT_SURVEY_SKIP_EVENT,
+  isFunnelEvent,
+  leagueExportEventBody,
   parseExportSurveySkipReason,
   parseExportSurveyToolField,
   parseFunnelEventList,
@@ -149,6 +151,19 @@ describe('export survey skip journal fields', () => {
 });
 
 describe('league export success journal fields', () => {
+  it('keeps the existing event names and adds exportTool', () => {
+    expect(leagueExportEventBody('league')).toEqual({
+      event: 'league-export-league',
+      exportTool: 'league',
+    });
+    expect(leagueExportEventBody('card')).toEqual({
+      event: 'league-export-card',
+      exportTool: 'card',
+    });
+    expect(isFunnelEvent('league-export-league')).toBe(true);
+    expect(isFunnelEvent('league-export-card')).toBe(true);
+  });
+
   it('parses a mixed session event list and drops unknown names', () => {
     expect(
       parseFunnelEventList([

@@ -17,6 +17,7 @@ const GEODUDE = [74, 75, 76];
 const ONIX = [95, 208];
 const OMANYTE = [138, 139];
 const CHARIZARD = [4, 5, 6];
+const LAPRAS = [131];
 
 function cardWith(lines: number[][]) {
   return { ...emptyCard(), lines: lines.map(makePlacedLine) };
@@ -109,6 +110,37 @@ describe('the powerup', () => {
     // One shared powerup meant both rows, so that is what both rows answer.
     expect(powerupAt(card(), CHAMPION)).toEqual({ seat: 1, kind: 'mega', index: 0 });
     expect(powerupAt(card(), BOSS)).toEqual({ seat: 1, kind: 'mega', index: 0 });
+  });
+});
+
+describe('pressing a powerup', () => {
+  beforeEach(() => {
+    useLeagueStore.setState({ cards: [cardWith([CHARIZARD, LAPRAS]), emptyCard()] });
+  });
+
+  it('sets the rows below it on the first press', () => {
+    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6);
+    expect(powerupAt(card(), CHAMPION_ROW)).toEqual({ seat: 1, kind: 'mega', index: 0 });
+    expect(powerupAt(card(), BOSS_ROW), 'the endgame team gets it too').toEqual({
+      seat: 1, kind: 'mega', index: 0,
+    });
+  });
+
+  it('adds a second seat without touching the first', () => {
+    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6);
+    useLeagueStore.getState().cyclePowerup(0, BOSS_ROW, 2, 'dynamax', 131);
+    expect(powerupAt(card(), CHAMPION_ROW, 1), 'the champion keeps its Mega').toEqual({
+      seat: 1, kind: 'mega', index: 0,
+    });
+    expect(powerupAt(card(), CHAMPION_ROW, 2), 'and gains nothing').toBeNull();
+    // A second seat *adds*: a team may power up as many of its six as it
+    // likes, so pressing on seat 2 does not take seat 1's away.
+    expect(powerupAt(card(), BOSS_ROW, 1), 'the boss row keeps seat 1').toEqual({
+      seat: 1, kind: 'mega', index: 0,
+    });
+    expect(powerupAt(card(), BOSS_ROW, 2), 'and seat 2 joins it').toEqual({
+      seat: 2, kind: 'dynamax', index: 0,
+    });
   });
 });
 

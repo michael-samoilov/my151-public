@@ -27,6 +27,11 @@ const droppingStore = {
 };
 
 describe('resolveCidFrom', () => {
+  it('reuses an id already in the first working storage', () => {
+    const r = resolveCidFrom([workingStore({ 'p151-cid': 'existing-id' })], () => 'fresh');
+    expect(r).toEqual({ cid: 'existing-id', persisted: true });
+  });
+
   it('mints into the first working storage and reports persisted', () => {
     const store = workingStore();
     const r = resolveCidFrom([store], () => 'minted-id');

@@ -4,6 +4,8 @@ import {
   TOOL_CATALOG,
   buildCrossTool,
   eraBounds,
+  multiToolEras,
+  leagueIsDexNative,
   seatedPokemonIds,
   type DexLike,
   type LeagueLike,
@@ -67,6 +69,12 @@ describe('eraBounds', () => {
       '8 Sep to 1 Nov',
       'After 1 Nov',
     ]);
+  });
+});
+
+describe('multiToolEras', () => {
+  it('drops the era before a second tool existed', () => {
+    expect(multiToolEras(eraBounds(TOOL_CATALOG)).map((b) => b.key)).toEqual(['since-league']);
   });
 });
 
@@ -150,6 +158,12 @@ describe('seatedPokemonIds', () => {
 
   it('keeps line members, ace, partner, and legendaries', () => {
     expect(seatedPokemonIds(cards).sort((a, b) => a - b)).toEqual([4, 5, 6, 25, 150]);
+  });
+});
+
+describe('leagueIsDexNative', () => {
+  it('is false for an empty league', () => {
+    expect(leagueIsDexNative([4], [])).toBe(false);
   });
 });
 
