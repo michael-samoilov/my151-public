@@ -244,7 +244,6 @@ test.describe('dex export overlay', () => {
 
 test.describe('mobile dex export sheet', () => {
   test.use({ viewport: MOBILE });
-  test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'the sheet is hidden at md');
 
   test('a finger drag on glare changes the value and leaves tilt alone', async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', 'CDP touch injection');
@@ -537,7 +536,6 @@ test.describe('dex export settings isolation', () => {
 
 test.describe('mobile dex export copy', () => {
   test.use({ viewport: MOBILE });
-  test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'descriptions stay on the sheet');
 
   test('keeps sort-order descriptions on the sheet', async ({ page }) => {
     await openDexExport(page);
