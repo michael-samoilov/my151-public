@@ -76,11 +76,7 @@ Production tier:
 1. Run `bash scripts/ci-local.sh` once, before the merge. That is lint, unit tests, Playwright, then `npm run build`.
 2. A failure outside your change does not block the merge. Report it as pre-existing, with evidence: the same failure on production HEAD.
 
-Test rules:
-
-- A test that asserts behavior Michael asked to change is stale. Update it. It is not a regression.
-- A bugfix gets one test that fails on the old code and passes on the fix.
-- Do not write a test that restates the implementation.
+Test rules: read `AGENTS.md` section 4, "Testing", before you write, change, or delete a test. Those rules apply to every agent in this repository. In short: prove a change with a proof test that fails on the old code and passes on the new code, report both results, and do not commit that test. Prefer E2E tests that end with a repeatable artifact. Keep a unit test only when it catches a bug that E2E misses.
 
 `npm run build` is exactly `npm run i18n:verify && tsc -b && vite build`. The `tsc -b` step covers `src`, `api`, `scripts` and `e2e` via the project references in `tsconfig.json` — note that `api/` is Vercel serverless code that Vite never touches, so this typecheck is its only local gate. **Sprite caching is not part of the build**; it is a separate, manual `npm run cache-sprites`.
 

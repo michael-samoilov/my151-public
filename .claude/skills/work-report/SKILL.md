@@ -120,8 +120,10 @@ full-page screenshot with a numbered box around each finding.
 
 "Verified" means measured, never inferred from reading the code:
 
-- A logic change is verified by a test that fails on the old code and
-  passes on the new code, aimed at the root cause. Name the test file.
+- A logic change is verified by a proof test that fails on the old code
+  and passes on the new code, aimed at the root cause. Report the command
+  and both results. Delete the proof test before you commit; see
+  `AGENTS.md` section 4, "Testing".
 - A visual or behavioral change is verified against the running app:
   Playwright (or the `run` skill) drives it, and screenshots or recordings
   are the evidence. Send them with SendUserFile.
