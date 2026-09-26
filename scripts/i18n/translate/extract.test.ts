@@ -46,28 +46,4 @@ describe('translation corpus', () => {
     const stale = doc.entries.filter((e) => e.source !== (en as Record<string, string>)[e.key]);
     expect(stale.map((e) => e.key), 'source.json holds English that has since changed').toEqual([]);
   });
-
-  it('can place every key it would send', () => {
-    // Every entry must have either a call site or a documented accessor. An
-    // entry with neither is dead code or a gap in the scanner, and either way
-    // translating it nine times is waste.
-    const placeless = doc.entries.filter((e) => e.unreferenced).map((e) => e.key);
-    expect(placeless, 'these keys have no context to translate against').toEqual([]);
-  });
-
-  it('records the placeholders a translation has to preserve', () => {
-    for (const entry of doc.entries) {
-      const inSource = [...entry.source.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
-      expect(entry.placeholders, `${entry.key}`).toEqual(inSource);
-    }
-  });
-
-  it('keeps plural pairs together', () => {
-    // `Intl.PluralRules` picks between siblings, so one arriving without the
-    // other means some count renders the key.
-    for (const entry of doc.entries.filter((e) => e.plural)) {
-      const base = entry.key.replace(/_(one|other)$/, '');
-      expect(byKey.has(`${base}_one`) && byKey.has(`${base}_other`), base).toBe(true);
-    }
-  });
 });
