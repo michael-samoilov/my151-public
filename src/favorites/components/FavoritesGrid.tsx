@@ -287,6 +287,8 @@ function useZoomFrame(
     const onWheel = (event: WheelEvent) => {
       if (!event.ctrlKey) return;
       event.preventDefault();
+      // A Safari trackpad pinch already zooms through gesture events.
+      if (pinch?.source === 'gesture') return;
       const delta = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? event.deltaY : event.deltaY * 33;
       const factor = Math.exp(-Math.max(-50, Math.min(50, delta)) / 100);
       zoomTo({ zoom: clampZoom((target?.zoom ?? zoom) * factor), ...local(event.clientX, event.clientY) });
