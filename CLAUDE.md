@@ -79,7 +79,7 @@ Work-branch tier:
 
 Production tier:
 
-1. Run `bash scripts/ci-local.sh` once, before the merge. That is lint, unit tests, Playwright, then `npm run build`.
+1. Run `bash scripts/ci-local.sh` once, before the merge. That is lint, unit tests, Playwright, `npm run build`, then the bundle budget.
 2. A failure outside your change does not block the merge. Report it as pre-existing, with evidence: the same failure on production HEAD.
 
 Test rules: read `AGENTS.md` section 4, "Testing", before you write, change, or delete a test. Those rules apply to every agent in this repository. In short: prove a change with a proof test that fails on the old code and passes on the new code, report both results, and do not commit that test. Prefer E2E tests that end with a repeatable artifact. Keep a unit test only when it catches a bug that E2E misses.
@@ -96,6 +96,7 @@ The other checks, which `scripts/ci-local.sh` also runs:
 | `npm test` | Vitest unit tests (`src/**/*.test.ts`, `scripts/**/*.test.ts`). |
 | `node scripts/check-viewport-tags.mjs` | Fails when a test that is not tagged `@viewport` skips `desktop`. That test runs in no project. Tag a test or describe `@viewport` when its result depends on the project width or device: a measured box, overflow, wrap, scroll, fit, touch, or a sheet-versus-pane branch. Leave a test untagged when it checks only state, copy, storage, or network, or when it pins its own viewport. |
 | `node scripts/check-test-rules.mjs` | Enforces two rules from `AGENTS.md` section 4. It fails on a committed proof test: a test or spec named `proof-*` or `zz-proof*`, or one with a `// proof:` comment. It also fails on a unit test that is new since the merge base with production, unless the test imports `api/` or `scripts/` code, touches saved data (`store`, `persist`, `migrat`), or has `// keeps: <bug E2E misses>` in its first 5 lines. |
+| `node scripts/check-bundle-budget.mjs` | Fails when the first-load download of the hub, the Pokédex builder, or the league builder grows more than 5% over its baseline in `scripts/performance/budgets.json`. Text is measured with Brotli, images as emitted, every `srcset` size included. It builds its own copy with a Vite manifest, so `dist/` does not change. After a change that shrinks a page, or an increase that was agreed on, run it with `--rebase` and commit the new baselines. |
 | `npm run test:e2e` | Playwright. Required for UI changes. Auto-starts isolated preview and development servers on ports derived from the worktree path. Use `PLAYWRIGHT_PREVIEW_PORT` and `PLAYWRIGHT_DEV_PORT` to override them. Projects: `mobile`, `desktop`, `narrow` (320px). `desktop` runs every test; `mobile` and `narrow` run only `@viewport` tests. Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
 
 Against a Vercel preview, skip the local web servers:
@@ -105,6 +106,10 @@ PLAYWRIGHT_BASE_URL=https://<preview>.vercel.app bash scripts/ci-local.sh
 ```
 
 That uses `e2e/preview.config.ts` (no vite preview/dev; drops the `dev` project, which needs `PREVIEW_FEATURES`).
+
+Speed changes: prove a change meant to make the app faster with `node scripts/performance/lab.mjs`. It builds production and your working tree, loads each page under the Lighthouse mobile and desktop lab profiles, and prints a base-against-candidate table of LCP, blocking time, and per-step INP. Paste that table into the pull request. Timing is noisy on a shared machine, so the script is evidence, not a ci-local gate.
+
+One browser run at a time on a machine: `lab.mjs` takes the lock itself. Wrap other browser commands in `flock "${TMPDIR:-/tmp}/my151-browser.lock" <command>`, so a Playwright run never overlaps a lab run.
 
 Vercel preview Ready/Error is the independent compile check. Visual review is whole-screen mobile (~390px) and desktop (~1280px) screenshots, with before/after when the view already existed. Use live admin data, not demo fixtures.
 

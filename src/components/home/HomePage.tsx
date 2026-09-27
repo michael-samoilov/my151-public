@@ -14,9 +14,13 @@ import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { isMovedNoticeSeen, markLeaguePromoSeen, markMovedNoticeSeen } from '@/lib/launchFlags';
 import dexBack from '@/assets/home/tool-dex-b.webp';
+import dexBack400 from '@/assets/home/tool-dex-b-400.webp';
 import dexFront from '@/assets/home/tool-dex.webp';
+import dexFront400 from '@/assets/home/tool-dex-400.webp';
 import leagueBack from '@/assets/home/tool-league-b.webp';
+import leagueBack400 from '@/assets/home/tool-league-b-400.webp';
 import leagueFront from '@/assets/home/tool-league.webp';
+import leagueFront400 from '@/assets/home/tool-league-400.webp';
 
 /**
  * The router page: one card per tool, plus a call to action.
@@ -76,13 +80,28 @@ const SHOT_TOP = 8;
 const POP_TOP = 56;
 const POP_LEFT = 9.6;
 
+/**
+ * The CSS width a shot renders at in each band of the hub's layout, measured
+ * from 320px to 2560px: 109px on a 390px phone, 164px at 1280. With it, a phone
+ * or a 1x desktop loads the 400px copy instead of the 800px original, which
+ * only a 2x desktop or a landscape phone needs. `scripts/resize-shots.sh`
+ * writes the copies.
+ */
+const SHOT_SIZES =
+  '(min-width: 1024px) calc(13.7vw - 11px), (min-width: 640px) calc(28.5vw - 10px), calc(30vw - 8px)';
+const shot = (small: string, full: string) => ({
+  src: full,
+  srcSet: `${small} 400w, ${full} 800w`,
+  sizes: SHOT_SIZES,
+});
+
 interface Tool {
   key: string;
   /** Absent on a card that opens something in place rather than navigating. */
   href?: string;
   title: string;
   blurb: string;
-  shots?: [string, string];
+  shots?: [ReturnType<typeof shot>, ReturnType<typeof shot>];
   /** One description per shot, back then front. The shots are content, not
    *  decoration: they show what each tool produces. */
   alts?: [string, string];
@@ -105,7 +124,7 @@ function useTools(placed: number): Tool[] {
       // A saved dex turns the blurb into the way back to it. The store is
       // read, never written, from this page: the hub must not touch a dex.
       blurb: placed > 0 ? t('home.dex.continue', { count: placed }) : t('home.dex.blurb'),
-      shots: [dexBack, dexFront],
+      shots: [shot(dexBack400, dexBack), shot(dexFront400, dexFront)],
       alts: [
         'The Pokédex builder’s analytics page: type distribution charts for a custom region against the National Dex',
         'A custom regional Pokédex of 151 Pokémon, exported as an image from the Pokédex builder',
@@ -116,7 +135,7 @@ function useTools(placed: number): Tool[] {
       href: '/custom-gym-leader',
       title: t('home.league.title'),
       blurb: t('home.league.blurb'),
-      shots: [leagueBack, leagueFront],
+      shots: [shot(leagueBack400, leagueBack), shot(leagueFront400, leagueFront)],
       alts: [
         'A whole league exported from the gym leader maker: eight gym leaders, the Elite Four and the Champion with their teams',
         'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
@@ -360,7 +379,7 @@ function Artwork({ tool }: { tool: Tool }) {
             className="hub-float-shot block"
             style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
           >
-            <img src={tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
+            <img {...tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
           </span>
         ))}
       </span>
@@ -377,7 +396,7 @@ function Artwork({ tool }: { tool: Tool }) {
             {/* Not lazy: every card sits in the first viewport at every
                 width, and these are the page's largest paint. */}
             <img
-              src={tool.shots![i]}
+              {...tool.shots![i]}
               alt={tool.alts?.[i] ?? ''}
               draggable={false}
               decoding="async"
@@ -411,7 +430,7 @@ function Artwork({ tool }: { tool: Tool }) {
             {/* An invisible copy of the shot gives the twin the shot's exact
                 height, so the hit area matches the screenshot's footprint. The
                 browser has already decoded this image, so it costs no fetch. */}
-            <img src={tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
+            <img {...tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
           </span>
         ))}
       </span>
