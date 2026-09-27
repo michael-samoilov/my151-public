@@ -851,7 +851,7 @@ test.describe('desktop dex export preview', () => {
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
   });
 
-  test('keeps auto-tilt after a click until the mouse leaves and re-enters', async ({ page }, testInfo) => {
+  test('a click locks the card flat until the next click resumes hover tilt', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
     await openDexExport(page);
     await waitPreviewReady(page);
@@ -864,15 +864,21 @@ test.describe('desktop dex export preview', () => {
 
     await page.mouse.click(x, y);
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
-    await page.mouse.click(x, y);
-    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
-    await page.mouse.move(x + 24, y + 18, { steps: 4 });
-    await expect(foil).toHaveAttribute('data-export-orbit', 'idle');
+    await page.mouse.move(x + 60, y - 40, { steps: 6 });
+    await page.mouse.move(8, 8, { steps: 4 });
+    await page.mouse.move(x - 50, y + 30, { steps: 6 });
+    await expect(foil).toHaveAttribute('data-export-orbit', 'paused');
+    await expect(foil).toHaveAttribute('data-tilt-x', '0.0');
 
-    await page.mouse.move(8, 8);
-    await expect(foil).toHaveAttribute('data-export-orbit', 'idle');
-    await page.mouse.move(x, y, { steps: 4 });
+    await page.mouse.click(x - 50, y + 30);
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await page.mouse.move(8, 8, { steps: 4 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit'), { timeout: 8000 }).toBe('static');
+    await testInfo.attach('tilt-mode.json', {
+      body: JSON.stringify({ mode: await foil.getAttribute('data-tilt-mode') }),
+      contentType: 'application/json',
+    });
   });
 
   test('copies hover-tilt rest, painted-card hit, and raised-edge shadow', async ({ page }, testInfo) => {
@@ -902,19 +908,10 @@ test.describe('desktop dex export preview', () => {
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
     await page.mouse.move(12, 12, { steps: 4 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).not.toBe('pointer');
-    await expect.poll(async () => foil.getAttribute('data-export-orbit'), { timeout: 8000 }).toBe('idle');
-    await expect
-      .poll(async () => {
-        const x = Number(await foil.getAttribute('data-tilt-x'));
-        const y = Number(await foil.getAttribute('data-tilt-y'));
-        return Math.hypot(x, y);
-      })
-      .toBeGreaterThan(2);
-    const after = Math.hypot(
-      Number(await foil.getAttribute('data-tilt-x')),
-      Number(await foil.getAttribute('data-tilt-y')),
-    );
-    expect(after, 'parked desktop idle hypot').toBeLessThanOrEqual(10.2);
+    // Leaving after a hover rests the card; auto-tilt does not come back.
+    await expect.poll(async () => foil.getAttribute('data-export-orbit'), { timeout: 8000 }).toBe('static');
+    await expect(foil).toHaveAttribute('data-tilt-x', '0.0');
+    await expect(foil).toHaveAttribute('data-tilt-y', '0.0');
   });
 
   test('keeps the tilted card AABB off the overlay corner', async ({ page }, testInfo) => {

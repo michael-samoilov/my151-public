@@ -750,18 +750,21 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      return {ok:true,reason:card.getAttribute('data-export-orbit')||''};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await sleep(350);
+  // Leaving after a hover rests the card flat, and auto-tilt does not return.
   const restHold = await readDexPreviewMotion(s);
   let restAfter = restHold;
   for (let i = 0; i < 40; i++) {
     await sleep(200);
     restAfter = await readDexPreviewMotion(s);
-    if (restAfter.orbit === 'idle' && restAfter.hypot > 2) break;
+    if (restAfter.orbit === 'static') break;
   }
+  await sleep(1500);
+  const restLater = await readDexPreviewMotion(s);
   const restOk =
     restHold.orbit !== 'pointer' &&
-    restAfter.orbit === 'idle' &&
-    restAfter.hypot > 2 &&
-    restAfter.hypot <= 10.2;
+    restAfter.orbit === 'static' &&
+    restLater.orbit === 'static' &&
+    restLater.hypot < 0.2;
   await s.screenshot(ctx.shot('dex-export-hover'));
   await s.evalJson(
     `(() => {
@@ -875,7 +878,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
     ok('dex-export:tilt-corner-margin', cornerMargin.ok, cornerMargin.reason),
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
-    ok('dex-export:tilt-park-idle', restOk, `hold=${restHold.orbit}/${restHold.hypot.toFixed(1)} after=${restAfter.orbit}/${restAfter.hypot.toFixed(1)} ${restStatic.reason}`),
+    ok('dex-export:hover-leave-static', restOk, `hold=${restHold.orbit}/${restHold.hypot.toFixed(1)} after=${restAfter.orbit} later=${restLater.orbit}/${restLater.hypot.toFixed(1)} ${restStatic.reason}`),
     ok('dex-export:shine', imgReady && shineOn, JSON.stringify(shineSample)),
     ok('dex-export:rainbow-on-open', imgReady && mapsOnOpen && rainbowOnOpen.ok, rainbowOnOpen.reason),
     ok('dex-export:rainbow-foil', rainbow.ok, rainbow.reason),

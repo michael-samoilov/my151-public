@@ -130,7 +130,6 @@ test.describe('export foil workshop', () => {
     const tl = { x: box!.x + box!.width * 0.18, y: box!.y + box!.height * 0.18 };
     const br = { x: box!.x + box!.width * 0.82, y: box!.y + box!.height * 0.82 };
     await page.mouse.move(tl.x, tl.y);
-    await page.mouse.down();
     await page.mouse.move(tl.x + 28, tl.y + 8, { steps: 6 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
     await expect.poll(async () => {
@@ -150,7 +149,6 @@ test.describe('export foil workshop', () => {
       const y = Number(await foil.getAttribute('data-tilt-y'));
       return Math.sign(x) === -Math.sign(tlPose.x) && Math.sign(y) === -Math.sign(tlPose.y) ? 'opp' : `${x},${y}`;
     }, { timeout: 4000 }).toBe('opp');
-    await page.mouse.up();
   });
 
   test('sits flat at rest and pops only while tilting', async ({ page }) => {

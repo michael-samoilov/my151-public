@@ -55,7 +55,14 @@ import './ExportPreview3D.css';
 const TAP_MS = 320;
 const TAP_PX = 10;
 
-type Orbit = 'idle' | 'pointer' | 'rest' | 'paused';
+type Orbit = 'idle' | 'pointer' | 'rest' | 'paused' | 'static';
+
+/**
+ * `auto` orbits until a mouse first hovers the card. `hover` tilts under the
+ * mouse and rests flat when it leaves. `locked` rests flat and ignores hover
+ * until the next click. Touch toggles between `auto` and `locked`.
+ */
+type TiltMode = 'auto' | 'hover' | 'locked';
 
 function lerpPose(from: HoverTiltPose, to: HoverTiltPose, u: number): HoverTiltPose {
   return {
@@ -108,12 +115,12 @@ export function ExportPreview3D({
   const originRef = useRef<number | null>(null);
   const orbitRef = useRef<Orbit>('idle');
   const pausedRef = useRef(false);
+  const modeRef = useRef<TiltMode>('auto');
   const pointerPoseRef = useRef<HoverTiltPose>(REST_POSE);
   const lastPoseRef = useRef<HoverTiltPose>(REST_POSE);
   const releaseRef = useRef<{ from: HoverTiltPose; t0: number } | null>(null);
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
   const reducedMotionRef = useRef(false);
-  const hoverBlockedUntilLeaveRef = useRef(false);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const enterSinceRef = useRef<number | null>(null);
   const pendingPointerRef = useRef<{ x: number; y: number } | null>(null);
@@ -236,6 +243,7 @@ export function ExportPreview3D({
     el.setAttribute('data-tilt-scale', liveScale === 1 ? '1' : liveScale.toFixed(3));
     el.setAttribute('data-foil-opacity', foil.toFixed(3));
     el.setAttribute('data-paused', pausedRef.current ? '1' : '0');
+    el.setAttribute('data-tilt-mode', modeRef.current);
     el.setAttribute('data-export-orbit', orbitRef.current);
     el.setAttribute('data-shadow-x', shadowX.toFixed(2));
     el.setAttribute('data-shadow-y', shadowY.toFixed(2));
@@ -325,6 +333,7 @@ export function ExportPreview3D({
   }, []);
 
   const parkFlat = useCallback((now: number) => {
+    modeRef.current = 'locked';
     pausedRef.current = true;
     orbitRef.current = 'paused';
     releaseRef.current = { from: { ...lastPoseRef.current }, t0: now };
@@ -340,6 +349,7 @@ export function ExportPreview3D({
   }, [paint]);
 
   const resumeAuto = useCallback((now: number) => {
+    modeRef.current = 'auto';
     pausedRef.current = false;
     orbitRef.current = 'idle';
     releaseRef.current = { from: { ...lastPoseRef.current }, t0: now };
@@ -433,12 +443,12 @@ export function ExportPreview3D({
           ) {
             restAtRef.current = null;
             originRef.current = now;
-            orbitRef.current = 'idle';
+            orbitRef.current = modeRef.current === 'auto' ? 'idle' : 'static';
             paint(REST_POSE);
           }
         }
-      } else if (pausedRef.current) {
-        orbitRef.current = 'paused';
+      } else if (pausedRef.current || modeRef.current !== 'auto') {
+        orbitRef.current = pausedRef.current ? 'paused' : 'static';
         applySpringOpts(springARef.current, HOVER_TILT_EXIT_SPRING);
         springARef.current.target = 0;
         tickSpring(springARef.current, dt);
@@ -582,7 +592,8 @@ export function ExportPreview3D({
         const dist = Math.hypot(e.clientX - down.x, e.clientY - down.y);
         if (dist > TAP_PX) down.dragged = true;
       }
-      const dragging = Boolean(down?.dragged || (down && e.buttons > 0 && e.pointerType !== 'mouse'));
+      // A mouse already tilts by hover, so only a finger or pen drags the card.
+      const dragging = e.pointerType !== 'mouse' && Boolean(down?.dragged || (down && e.buttons > 0));
       if (dragging) {
         lastPointerRef.current = { x: e.clientX, y: e.clientY };
         if (orbitRef.current !== 'pointer') beginPointer(e.clientX, e.clientY);
@@ -590,14 +601,6 @@ export function ExportPreview3D({
         return;
       }
       if (down) return;
-      if (hoverBlockedUntilLeaveRef.current) {
-        if (!overCard && !overHit) {
-          hoverBlockedUntilLeaveRef.current = false;
-          lastPointerRef.current = null;
-          enterSinceRef.current = null;
-        }
-        return;
-      }
       if (pausedRef.current) return;
       if (e.pointerType !== 'mouse') return;
       if (overCard || (orbitRef.current === 'pointer' && overHit)) {
@@ -616,8 +619,12 @@ export function ExportPreview3D({
           if (performance.now() - enterSinceRef.current < enterDelay) return;
         }
         enterSinceRef.current = null;
-        if (orbitRef.current !== 'pointer') beginPointer(e.clientX, e.clientY);
-        else schedulePointer(e.clientX, e.clientY);
+        if (orbitRef.current !== 'pointer') {
+          modeRef.current = 'hover';
+          beginPointer(e.clientX, e.clientY);
+        } else {
+          schedulePointer(e.clientX, e.clientY);
+        }
         return;
       }
       lastPointerRef.current = { x: e.clientX, y: e.clientY };
@@ -642,6 +649,23 @@ export function ExportPreview3D({
   const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const down = downRef.current;
     downRef.current = null;
+    if (e.pointerType === 'mouse') {
+      if (!down) return;
+      pendingPointerRef.current = null;
+      restAtRef.current = null;
+      enterSinceRef.current = null;
+      if (modeRef.current === 'locked') {
+        // Unlock into hover tilt. The mouse is over the card, so it tilts now.
+        modeRef.current = 'hover';
+        pausedRef.current = false;
+        releaseRef.current = null;
+        lastPointerRef.current = { x: e.clientX, y: e.clientY };
+        beginPointer(e.clientX, e.clientY);
+      } else {
+        parkFlat(performance.now());
+      }
+      return;
+    }
     const tap =
       !!down &&
       !down.dragged &&
@@ -650,7 +674,6 @@ export function ExportPreview3D({
 
     const now = performance.now();
     if (tap) {
-      hoverBlockedUntilLeaveRef.current = true;
       lastPointerRef.current = null;
       pendingPointerRef.current = null;
       restAtRef.current = null;
@@ -671,7 +694,7 @@ export function ExportPreview3D({
     }
 
     if (orbitRef.current === 'pointer' && !pausedRef.current) beginRest(now);
-  }, [beginRest, parkFlat, resumeAuto]);
+  }, [beginPointer, beginRest, parkFlat, resumeAuto]);
 
   const onPointerCancel = useCallback(() => {
     const down = downRef.current;

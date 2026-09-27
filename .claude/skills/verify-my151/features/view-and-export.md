@@ -16,9 +16,11 @@ display options, exportable as a PNG.
 - Save produces `my151.png` through the share sheet or a download. The PNG has
   rounded transparent corners (radius 4% of the short edge), and the red frame
   follows the curve.
-- The preview card auto-tilts on open. A click or tap toggles auto-tilt. After
-  a click, pointer moves inside the card are ignored until the pointer leaves.
-  A drag follows the pointer, then settles flat and stays paused.
+- The preview card auto-tilts on open (not with reduced motion). On desktop,
+  the first hover takes manual control and ends auto-tilt: leaving rests the
+  card flat, and each later hover tilts it again. A click locks it flat and
+  ignores hover until the next click, which resumes hover tilt. On touch, a
+  tap toggles auto-tilt, and a drag follows the finger, then settles flat.
 - The holo layer is a smooth gradient with fixed `hard-light`, and the glare is
   fixed `overlay`. There is no blend selector and no repeating pattern.
 - `/foil-workshop` (off in production) drives the same `ExportPreview3D` card
@@ -51,6 +53,8 @@ download. After the preview paints, it checks:
   and stays inside the preview layer and the viewport.
 - `dex-export:hover-no-scale`: hover lifts the card with a stable
   `offsetWidth` (no bounce-zoom).
+- `dex-export:hover-leave-static`: after a hover, leaving settles
+  `data-export-orbit=static` flat, and it is still static 1.5 seconds later.
 - `dex-export:lock-on-press`: a press sets `data-paused=1` and settles flat.
 - `dex-export:no-corner-mask`: the card background is transparent, there is no
   separate rounded `clip-path`, and the card's mask is the active PNG.
