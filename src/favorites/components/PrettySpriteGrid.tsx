@@ -1,7 +1,6 @@
 import { tileImageCssPx } from '@/lib/tileImage';
 import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { typeIconPath } from '@/data/type-ids';
-import type { TypeName } from '@/types/pokemon';
 import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
@@ -20,7 +19,7 @@ export function PrettySpriteGrid({
   formKey,
   selectedId,
   onPick,
-  usedIn,
+  takenMarks,
   showTypes = true,
   pointer = false,
   sourceMarks,
@@ -34,7 +33,8 @@ export function PrettySpriteGrid({
   formKey?: (mon: PickerMon) => number;
   selectedId?: number;
   onPick: (mon: PickerMon) => void;
-  usedIn?: (id: number) => TypeName | null;
+  /** Where each Pokémon is already picked in this cell's row or column. */
+  takenMarks?: (id: number) => PointerMark[];
   showTypes?: boolean;
   pointer?: boolean;
   sourceMarks?: (id: number) => PointerMark[];
@@ -97,7 +97,7 @@ export function PrettySpriteGrid({
                 mon={mon}
                 spritePx={spritePx}
                 selected={selectedId === mon.id}
-                usedType={usedIn?.(mon.id) ?? null}
+                taken={takenMarks?.(mon.id) ?? []}
                 showTypes={showTypes}
                 pointer={pointer}
                 sourceMarks={sourceMarks?.(mon.id) ?? []}
@@ -116,7 +116,7 @@ function PickCell({
   mon,
   spritePx,
   selected,
-  usedType,
+  taken,
   showTypes,
   pointer,
   sourceMarks,
@@ -127,7 +127,7 @@ function PickCell({
   mon: PickerMon;
   spritePx: number;
   selected: boolean;
-  usedType: TypeName | null;
+  taken: PointerMark[];
   showTypes: boolean;
   pointer: boolean;
   sourceMarks: PointerMark[];
@@ -136,6 +136,8 @@ function PickCell({
   clearLabel?: string;
 }) {
   const clearing = selected && Boolean(onClear);
+  // Pointer selectors list only picks from other cells, so they never show taken.
+  const takenHere = pointer ? [] : taken;
   const mark = Math.round(spritePx * 0.28);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   return (
@@ -153,7 +155,7 @@ function PickCell({
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}
-        className={clearing || (usedType && !pointer) ? 'relative z-10 opacity-35' : 'relative z-10'}
+        className={clearing || takenHere.length > 0 ? 'relative z-10 opacity-35' : 'relative z-10'}
         style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx }}
         decoding="sync"
         draggable={false}
@@ -196,16 +198,26 @@ function PickCell({
           ))}
         </span>
       ) : null}
-      {usedType && !pointer ? (
-        <img
-          src={typeIconPath(usedType)}
-          alt=""
-          data-testid="favorites-used-mark"
-          data-used-type={usedType}
-          className="pointer-events-none absolute z-[15] rounded-[4px]"
-          style={{ top: inset, right: inset, width: mark, height: mark }}
-          draggable={false}
-        />
+      {takenHere.length > 0 ? (
+        <span
+          className="pointer-events-none absolute z-[15] flex items-start leading-none"
+          style={{ gap: 1, right: inset, top: inset }}
+        >
+          {takenHere.map((where) => (
+            <span
+              key={`${where.source}:${'value' in where ? where.value : ''}`}
+              data-testid="favorites-used-mark"
+              data-source={where.source}
+              data-value={'value' in where ? where.value : undefined}
+              className="flex shrink-0 items-center justify-center leading-none"
+              style={{ width: mark, height: mark }}
+            >
+              {where.source === 'gen' ? <RomanDisc gen={where.value} size={mark} />
+                : where.source === 'type' ? <TypeIcon type={where.value} size={mark} />
+                : <ExtraMark id={where.source} size={mark} />}
+            </span>
+          ))}
+        </span>
       ) : null}
       {clearing ? (
         <svg

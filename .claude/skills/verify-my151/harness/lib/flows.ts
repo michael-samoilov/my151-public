@@ -1370,7 +1370,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
         const freeMark = free ? !!free.querySelector('[data-testid="favorites-used-mark"]') : true;
         return {
           opacity: sprite ? Number(getComputedStyle(sprite).opacity) : 1,
-          mark: mark ? mark.getAttribute('data-used-type') : null,
+          mark: mark ? mark.getAttribute('data-value') : null,
           freeOpacity: freeSprite ? Number(getComputedStyle(freeSprite).opacity) : 0,
           freeMark,
         };

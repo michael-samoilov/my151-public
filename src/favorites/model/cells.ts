@@ -1,6 +1,6 @@
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 
-export const EXTRA_TYPE_AXIS = ['starter', 'legendary', 'gimmick', 'favorite'] as const;
+export const EXTRA_TYPE_AXIS = ['starter', 'gimmick', 'legendary', 'favorite'] as const;
 export type ExtraTypeAxis = (typeof EXTRA_TYPE_AXIS)[number];
 export type TypeAxisId = TypeName | ExtraTypeAxis;
 
@@ -8,7 +8,7 @@ export const TYPE_AXIS: readonly TypeAxisId[] = [...TYPE_NAMES, ...EXTRA_TYPE_AX
 
 export const GEN_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 export type GenNumber = (typeof GEN_NUMBERS)[number];
-export const EXTRA_GEN_AXIS = ['legendary', 'gimmick', 'favorite'] as const;
+export const EXTRA_GEN_AXIS = ['gimmick', 'legendary', 'favorite'] as const;
 export type ExtraGenAxis = (typeof EXTRA_GEN_AXIS)[number];
 export type GenAxisId = GenNumber | ExtraGenAxis;
 
@@ -58,25 +58,6 @@ export function cellKind(type: TypeAxisId, gen: GenAxisId, empty: boolean): Cell
 
 export function isTypeCell(type: TypeAxisId, gen: GenAxisId): boolean {
   return isTypeName(type) && isGenNumber(gen);
-}
-
-/** Type of the other cell that already holds `id`, if that cell is one of the 18 types. */
-export function typeSlottedElsewhere(
-  fills: Record<string, number>,
-  id: number,
-  hereType: TypeAxisId,
-  hereGen: GenAxisId,
-): TypeName | null {
-  const here = cellKey(hereType, hereGen);
-  let otherGen: TypeName | null = null;
-  for (const [key, filled] of Object.entries(fills)) {
-    if (filled !== id || key === here) continue;
-    const parsed = parseCellKey(key);
-    if (!parsed || !isTypeName(parsed.type)) continue;
-    if (parsed.gen === hereGen) return parsed.type;
-    if (!otherGen) otherGen = parsed.type;
-  }
-  return otherGen;
 }
 
 export const ROMAN: Record<GenNumber, string> = {

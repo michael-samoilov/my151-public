@@ -1,0 +1,103 @@
+import {
+  GEN_AXIS,
+  TYPE_AXIS,
+  cellKey,
+  cellKind,
+  isGenNumber,
+  isTypeName,
+  type GenAxisId,
+  type TypeAxisId,
+} from './cells';
+import type { PointerMark } from './pointers';
+
+type Coordinate = TypeAxisId | GenAxisId;
+type Cell = readonly [TypeAxisId, GenAxisId];
+
+/**
+ * A row or a column of the grid. The legendary row and the legendary column
+ * are one line, and so are the gimmick row and the gimmick column. Every cell
+ * on a line has the `shared` coordinate.
+ */
+type Line = { shared: Coordinate; cells: readonly Cell[] };
+
+function isLinked(id: Coordinate): id is 'legendary' | 'gimmick' {
+  return id === 'legendary' || id === 'gimmick';
+}
+
+function columnCells(type: TypeAxisId): Cell[] {
+  return GEN_AXIS.map((gen) => [type, gen] as const);
+}
+
+function rowCells(gen: GenAxisId): Cell[] {
+  return TYPE_AXIS.map((type) => [type, gen] as const);
+}
+
+function rowLine(gen: GenAxisId): Line {
+  return { shared: gen, cells: isLinked(gen) ? [...columnCells(gen), ...rowCells(gen)] : rowCells(gen) };
+}
+
+function columnLine(type: TypeAxisId): Line {
+  return { shared: type, cells: isLinked(type) ? [...columnCells(type), ...rowCells(type)] : columnCells(type) };
+}
+
+function axisMark(id: Coordinate): PointerMark | null {
+  if (isTypeName(id)) return { source: 'type', value: id };
+  if (isGenNumber(id)) return { source: 'gen', value: id };
+  return id === 'favorite' ? null : { source: id };
+}
+
+type Peer = { key: string; mark: PointerMark };
+
+/**
+ * The pick cells that share a row or a column with a pick cell, each with the
+ * mark for its other coordinate. A pointer cell has no peers.
+ */
+function peersOf(type: TypeAxisId, gen: GenAxisId): Peer[] {
+  if (cellKind(type, gen, false) !== 'pick') return [];
+  const here = cellKey(type, gen);
+  const peers: Peer[] = [];
+  for (const line of [rowLine(gen), columnLine(type)]) {
+    for (const [t, g] of line.cells) {
+      const key = cellKey(t, g);
+      if (key === here || cellKind(t, g, false) !== 'pick') continue;
+      const mark = axisMark(g === line.shared ? t : g);
+      if (mark) peers.push({ key, mark });
+    }
+  }
+  return peers;
+}
+
+function markKey(mark: PointerMark): string {
+  return `${mark.source}:${'value' in mark ? mark.value : ''}`;
+}
+
+/** Each Pokémon a peer of this cell holds, with one mark per peer that holds it. */
+export function takenIn(
+  fills: Record<string, number>,
+  type: TypeAxisId,
+  gen: GenAxisId,
+): Map<number, PointerMark[]> {
+  const taken = new Map<number, PointerMark[]>();
+  for (const { key, mark } of peersOf(type, gen)) {
+    const id = fills[key];
+    if (id == null) continue;
+    const marks = taken.get(id) ?? [];
+    if (!marks.some((m) => markKey(m) === markKey(mark))) marks.push(mark);
+    taken.set(id, marks);
+  }
+  return taken;
+}
+
+/** `fills` without `id` in any peer of this cell. */
+export function withoutRepeats(
+  fills: Record<string, number>,
+  type: TypeAxisId,
+  gen: GenAxisId,
+  id: number,
+): Record<string, number> {
+  const next = { ...fills };
+  for (const { key } of peersOf(type, gen)) {
+    if (next[key] === id) delete next[key];
+  }
+  return next;
+}
