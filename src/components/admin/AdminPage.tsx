@@ -1661,8 +1661,11 @@ export function AdminPage() {
     setDetail(d);
     window.scrollTo(0, 0);
   }, []);
+  // Cards that measure themselves (Who) re-render after this effect, still
+  // before paint. The microtask scrolls once they have, so the page is tall
+  // enough and the reader's row sits where it was.
   useLayoutEffect(() => {
-    if (!detail) window.scrollTo(0, dashScrollY);
+    if (!detail) queueMicrotask(() => window.scrollTo(0, dashScrollY));
   }, [detail, dashScrollY]);
   const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
 
