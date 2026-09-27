@@ -1,6 +1,7 @@
 import { getPokemonById } from '@/hooks/usePokemonData';
 import {
   BOSS_ROW,
+  CHAMPION_ROW,
   LEVEL_CURVE,
   ROW_COUNT,
   TEAM_SIZES,
@@ -25,6 +26,7 @@ export interface PlacedLine {
    * Invariant: non-decreasing.
    */
   boundaries: number[];
+  boundaryMode?: 'auto' | 'manual';
 }
 
 /** A single grid cell in a derived row. */
@@ -38,27 +40,11 @@ export interface CardCell {
 }
 
 /**
- * First row each stage may appear in, from the hidden level curve.
- *
- * A stage whose level does not earn it a row of its own does not get one, and
- * that is the intended behaviour rather than a gap to paper over. Caterpie,
- * Metapod and Butterfree all arrive at or under level 12, so all three claim
- * row 1 and the card shows Butterfree — the highest stage claiming it. Six
- * evolutions go further and arrive *before* their own pre-evolution, because
- * the later stage has no stated level and the implied one lands under the
- * real one below it (Rhydon evolves at 42; Rhyperior is a trade, and its
- * implied level is 38), so the middle stage is squeezed out entirely.
- *
- * Both cases are recoverable by hand: the shelf handle pulls the covered
- * stage back into view, and `setBoundary` restores the ordering as it goes.
- * `/evolution-levels` lists every line this happens to.
- *
- * An earlier pass forced each stage to take at least the row after its
- * pre-evolution's, so that no member could ever be skipped. It was reverted:
- * levels decide, and a skipped member is a fair reading of the levels rather
- * than a defect.
+ * The curve's preferred first row for each stage, before presentation rules.
+ * Kept separate so persisted automatic lines from the old curve-only policy
+ * can be identified during migration without mistaking a manual drag for one.
  */
-export function defaultBoundaries(branch: number[]): number[] {
+export function levelBoundaries(branch: number[]): number[] {
   return branch.map((id, stage) => {
     if (stage === 0) return 1;
     const p = getPokemonById(id);
@@ -72,8 +58,24 @@ export function defaultBoundaries(branch: number[]): number[] {
   });
 }
 
+export function defaultBoundaries(branch: number[]): number[] {
+  const boundaries = levelBoundaries(branch);
+  const lastStage = boundaries.length - 1;
+
+  for (let stage = 1; stage <= lastStage; stage++) {
+    const previous = boundaries[stage - 1];
+    if (boundaries[stage] <= 1 && previous === 1) continue;
+
+    const earliest = previous + 1;
+    const latest = CHAMPION_ROW - (lastStage - stage);
+    boundaries[stage] = Math.min(latest, Math.max(earliest, boundaries[stage]));
+  }
+
+  return boundaries;
+}
+
 export function makePlacedLine(branch: number[]): PlacedLine {
-  return { branch, boundaries: defaultBoundaries(branch) };
+  return { branch, boundaries: defaultBoundaries(branch), boundaryMode: 'auto' };
 }
 
 /** The stage index a line shows at a row, respecting manual boundaries. */
