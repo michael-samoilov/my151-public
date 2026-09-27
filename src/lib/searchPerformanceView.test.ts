@@ -1,3 +1,4 @@
+// keeps: /api/search-performance builds this view on the server, and E2E stubs that route, so a wrong 28-day window or mixed engine rows would pass every spec.
 import { describe, expect, it } from 'vitest';
 import {
   buildSearchPerformanceView,
