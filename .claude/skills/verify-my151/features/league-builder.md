@@ -76,10 +76,15 @@ and `.powerups[row]`.
 - Headless Firefox reports no hover-capable pointer, so
   `league-hover:desktop-column-wash` skips on Gecko by name. A desktop
   browser with a mouse is the proof.
-- At desktop width every league sprite draws at a non-integer scale on all
-  engines, because the fit zoom scales the pixel art (at 1280px a 96px sprite
-  draws 36.48px on Blink and 37.27px on Gecko). Do not report it as an engine
-  difference.
+- The harness's desktop surfaces run at a device pixel ratio of 1. There
+  every league sprite draws at a non-integer scale on all engines, because the
+  fit zoom scales the pixel art (at 1280px a 96px sprite draws 36.48px on
+  Blink and 37.27px on Gecko), and below 1x it is smoothed
+  (`image-rendering: auto`). Do not report either as an engine difference.
+- At a device pixel ratio of 2 or more (a Retina desktop), the league summary
+  holds its sprites at exactly 1x instead, and gives up its own spacing to
+  keep all 14 rows on screen (`src/league/homeLayout.ts`). No harness surface
+  runs there; `e2e/league-sprite-scale.spec.ts` covers it on Blink.
 - The league render audits wait for every visible image to load first. At
   hydration most sprites are still loading, and an early audit counted 6, 51
   or 37 warnings on the same build.
