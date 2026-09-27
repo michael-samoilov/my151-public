@@ -28,7 +28,8 @@ export interface PickerMon {
 const SPECIES = pokemonData as Pokemon[];
 const FORMS = powerupForms as PowerupForms;
 
-const REGIONAL_RE = /-(alola|galar|hisui|paldea)(?:-|$)/;
+// A cap Pikachu names a region but is not a regional form.
+const REGIONAL_RE = /-(alola|galar|hisui|paldea)(?!-cap)(?:-|$)/;
 const SPECIES_BY_ID = new Map(SPECIES.map((p) => [p.id, p]));
 const REGIONAL_FAMILY_IDS = new Set<number>();
 for (const p of SPECIES) {
