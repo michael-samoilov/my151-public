@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Settings } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
@@ -16,7 +16,7 @@ import { prewarmPickerSprites } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
-import { PickerSheet, type PickerAnchor } from './components/PickerSheet';
+import { PickerSheet } from './components/PickerSheet';
 import { SettingsPane } from './components/SettingsPane';
 import type { PackMove } from './model/packing';
 
@@ -24,7 +24,7 @@ const TOOL_NAME = 'Favorite Pokémon Picker by Type and Generation';
 const TYPES_STORAGE_KEY = 'personal-151-favorites-show-types-v1';
 const NO_REPEATS_STORAGE_KEY = 'personal-151-favorites-no-repeats-v1';
 
-type Selection = { type: TypeAxisId; gen: GenAxisId; anchor: PickerAnchor | null };
+type Selection = { type: TypeAxisId; gen: GenAxisId };
 
 function savedShowTypes(): boolean {
   try { return window.localStorage.getItem(TYPES_STORAGE_KEY) === '1'; }
@@ -60,7 +60,6 @@ export function FavoritesApp() {
   const place = useFavoritesStore((s) => s.place);
   const applyPack = useFavoritesStore((s) => s.applyPack);
   const clear = useFavoritesStore((s) => s.clear);
-  const mainRef = useRef<HTMLElement>(null);
   const [sel, setSel] = useState<Selection | null>(null);
   const [showTypes, setShowTypes] = useState(savedShowTypes);
   const [noRepeats, setNoRepeats] = useState(savedNoRepeats);
@@ -86,10 +85,7 @@ export function FavoritesApp() {
   function open(type: TypeAxisId, gen: GenAxisId) {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
-    const cell = mainRef.current?.querySelector<HTMLElement>(`[data-testid="favorites-cell-${type}-${gen}"]`);
-    const scroller = mainRef.current?.querySelector<HTMLElement>('[data-testid="favorites-grid-scroll"]');
-    const table = scroller?.parentElement;
-    setSel({ type, gen, anchor: cell && scroller && table ? { cell, table, scroller } : null });
+    setSel({ type, gen });
   }
 
   const settingsPane = (
@@ -100,6 +96,25 @@ export function FavoritesApp() {
       onClose={() => setSettingsOpen(false)}
     />
   );
+
+  // Desktop shows the picker inside the grid, next to its cell. Mobile shows
+  // it as a bottom sheet.
+  const picker = sel ? (
+    <PickerSheet
+      type={sel.type}
+      gen={sel.gen}
+      fills={fills}
+      currentId={fills[cellKey(sel.type, sel.gen)]}
+      showTypes={showTypes}
+      onToggleTypes={() => setShowTypes((value) => !value)}
+      onClose={() => setSel(null)}
+      onPlace={(id) => place(sel.type, sel.gen, id, noRepeats)}
+      onApplyPack={(path: PackMove[]) => {
+        if (typeof sel.gen === 'number') applyPack(sel.gen, path);
+      }}
+      onClear={() => clear(sel.type, sel.gen)}
+    />
+  ) : null;
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -128,52 +143,20 @@ export function FavoritesApp() {
             desktop the frame runs to the screen edge, as the grid did when
             the page scrolled. */}
         <div className="flex h-[calc(100dvh-2*2.75rem)] shrink-0">
-          <main ref={mainRef} className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
+          <main className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
             <FavoritesGrid
               fills={fills}
               resolve={getPickerMon}
               selected={sel}
               onSelect={open}
               desktop={desktop}
+              pane={desktop ? picker : null}
             />
           </main>
-          {desktop && sel ? (
-            <PickerSheet
-              type={sel.type}
-              gen={sel.gen}
-              fills={fills}
-              currentId={fills[cellKey(sel.type, sel.gen)]}
-              anchor={sel.anchor}
-              showTypes={showTypes}
-              onToggleTypes={() => setShowTypes((value) => !value)}
-              onClose={() => setSel(null)}
-              onPlace={(id) => place(sel.type, sel.gen, id, noRepeats)}
-              onApplyPack={(path: PackMove[]) => {
-                if (typeof sel.gen === 'number') applyPack(sel.gen, path);
-              }}
-              onClear={() => clear(sel.type, sel.gen)}
-            />
-          ) : null}
           {settingsOpen && desktop ? settingsPane : null}
         </div>
         {settingsOpen && !desktop ? settingsPane : null}
-        {!desktop && sel ? (
-          <PickerSheet
-            type={sel.type}
-            gen={sel.gen}
-            fills={fills}
-            currentId={fills[cellKey(sel.type, sel.gen)]}
-            anchor={sel.anchor}
-            showTypes={showTypes}
-            onToggleTypes={() => setShowTypes((value) => !value)}
-            onClose={() => setSel(null)}
-            onPlace={(id) => place(sel.type, sel.gen, id, noRepeats)}
-            onApplyPack={(path: PackMove[]) => {
-              if (typeof sel.gen === 'number') applyPack(sel.gen, path);
-            }}
-            onClear={() => clear(sel.type, sel.gen)}
-          />
-        ) : null}
+        {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
       <FeedbackHost route="/favorite-pokemon-by-type" />

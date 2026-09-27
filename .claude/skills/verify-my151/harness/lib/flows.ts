@@ -1215,13 +1215,9 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     const rowLens = () => s.evalJson<number[]>(`
       return [...document.querySelectorAll('[data-pretty-row]')].map((row) => Number(row.getAttribute('data-pretty-len')));
     `);
+    // Escape closes the mobile sheet and the desktop pane alike.
     const closePicker = async () => {
-      const dialog = await s.evalJson<boolean>(`return !!document.querySelector('[role="dialog"]');`);
-      if (dialog) {
-        await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
-      } else {
-        await s.click('[data-testid="favorites-picker"] > div:first-child button');
-      }
+      await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
       await sleep(250);
     };
 
@@ -1532,12 +1528,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   const dismiss = async () => {
     const open = await s.evalJson<boolean>(`return !!document.querySelector('[data-testid="favorites-picker"]');`);
     if (!open) return;
-    const dialog = await s.evalJson<boolean>(`return !!document.querySelector('[role="dialog"]');`);
-    if (dialog) {
-      await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
-    } else {
-      await s.click('[data-testid="favorites-picker"] > div:first-child button');
-    }
+    await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
     await sleep(250);
   };
 
