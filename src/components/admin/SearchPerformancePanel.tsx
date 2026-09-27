@@ -89,7 +89,7 @@ function windowRows(daily: SearchDailyPoint[], range: ChartRangeKey): SearchDail
 function SearchTrend({ daily, range }: { daily: SearchDailyPoint[]; range: ChartRangeKey }) {
   const rows = windowRows(daily, range);
   const values = rows.map((row) => row.impressions);
-  const scrubLabel = (i: number) => `${shortDate(rows[i].date)} · <b>${compact(values[i])}</b> impressions`;
+  const scrubLabel = (i: number) => [shortDate(rows[i].date), `<b>${compact(values[i])}</b> impressions`];
   const ref = useECharts(
     (el): EChartsOption => {
       const scale = Math.max(1, Math.min(el.clientWidth / 360, 2));

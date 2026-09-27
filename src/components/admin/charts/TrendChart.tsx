@@ -123,7 +123,7 @@ function TrendChart({
   const counts = windowCounts(series);
   const scrubLabel = (i: number) => {
     const w = weekly[i];
-    return `${labels[i]} · <b>${daily[i]}</b> daily${w != null ? ` · <b>${w}</b> weekly` : ''}`;
+    return [labels[i], `<b>${daily[i]}</b> daily`, ...(w != null ? [`<b>${w}</b> weekly`] : [])];
   };
 
   const ref = useECharts(
@@ -317,7 +317,7 @@ function UniqueUsersLineChart({
   values: number[];
   axisLabels: string[];
   showTick: (i: number, last: number) => boolean;
-  scrubLabel: (i: number) => string;
+  scrubLabel: (i: number) => string[];
   ariaLabel: string;
   seriesName: 'hourly' | 'daily';
   provisional: boolean;
@@ -432,7 +432,7 @@ function HourlyTrendChart({
       values={values}
       axisLabels={hourLabels}
       showTick={(i) => i === 0 || i === last || i % 6 === 0}
-      scrubLabel={(i) => `${hourLabels[i]} · <b>${values[i]}</b> hourly`}
+      scrubLabel={(i) => [hourLabels[i], `<b>${values[i]}</b> hourly`]}
       ariaLabel={`Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}.`}
       seriesName="hourly"
       provisional={lastPointIsCurrentHour(series, nowMs)}
@@ -463,7 +463,7 @@ function DailyWeekdayChart({
       values={values}
       axisLabels={axisLabels}
       showTick={(i) => tickAt.has(i)}
-      scrubLabel={(i) => `${fmtWeekday(series[i].day)} · <b>${values[i]}</b> daily`}
+      scrubLabel={(i) => [fmtWeekday(series[i].day), `<b>${values[i]}</b> daily`]}
       ariaLabel={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}. ${weekdayList}.`}
       seriesName="daily"
       provisional={lastPointIsToday(series, nowMs)}

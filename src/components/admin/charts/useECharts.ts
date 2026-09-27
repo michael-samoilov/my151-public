@@ -65,8 +65,9 @@ export function cssVar(el: HTMLElement | null, name: string, fallback = ''): str
  */
 export interface ChartScrub {
   count: number;
-  /** Readout HTML for one x position. */
-  label: (index: number) => string;
+  /** HTML parts of the readout for one x position. The readout joins them
+   *  with " · " and wraps only between parts when the chart is too narrow. */
+  label: (index: number) => string[];
 }
 
 /**
@@ -156,7 +157,7 @@ export function useECharts(
         'display:none',
         'z-index:2',
         'pointer-events:none',
-        'white-space:nowrap',
+        'width:max-content',
         'box-sizing:border-box',
         'max-width:100%',
         'border-radius:8px',
@@ -194,7 +195,10 @@ export function useECharts(
           readout.style.display = 'none';
           return;
         }
-        readout.innerHTML = scrub.label(categoryIndexAtX(pinnedX, plot, scrub.count - 1));
+        readout.innerHTML = scrub
+          .label(categoryIndexAtX(pinnedX, plot, scrub.count - 1))
+          .map((part) => `<span style="white-space:nowrap">${part}</span>`)
+          .join(' · ');
         readout.style.display = 'block';
         const w = readout.offsetWidth;
         const maxX = Math.max(el.clientWidth - w, 0);

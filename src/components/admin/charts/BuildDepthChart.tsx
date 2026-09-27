@@ -32,7 +32,7 @@ export function BuildDepthChart({
   const scrubLabel = (i: number) => {
     const [size, share] = pts[i];
     const count = Math.round((share / 100) * curve.n);
-    return `≥ ${size} ${xLabel} · <b>${share}%</b> still building (${count} of ${curve.n})`;
+    return [`≥ ${size} ${xLabel}`, `<b>${share}%</b> still building (${count} of ${curve.n})`];
   };
 
   const ref = useECharts(
