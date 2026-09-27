@@ -1997,10 +1997,11 @@ export function AdminPage() {
                 ? clampedN(whoJoints, { dim: whoFilter.dim, value: whoFilter.value })
                 : null;
 
-          // Build depth: device split when available, else the slice total.
-          const depthCurve =
-            (showDex && data.depthByDevice?.[depthDevice]) ?? data.monCurves?.total ?? data.depthCurves?.total ??
-            (tool === 'league' ? data.leagueCurves?.cards : undefined);
+          // Build depth: dex tabs use the device split when available, else the dex
+          // total. League uses its own card curve, never the dex curves.
+          const depthCurve = showDex
+            ? data.depthByDevice?.[depthDevice] ?? data.monCurves?.total ?? data.depthCurves?.total
+            : data.leagueCurves?.cards;
 
           return (
           <>

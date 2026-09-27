@@ -48,8 +48,8 @@ export function LeagueViewToggle() {
 /**
  * The export control, in the shape the dex builder's pages give it.
  *
- * One button, two pictures: the league pane's exports the summary at whichever
- * team toggle is on screen, and a card pane's exports that trainer's card.
+ * One button, two pictures: the league pane's opens the summary at the team
+ * toggle on screen, and a card pane's exports that trainer's card.
  * Both go through the dex export's platform path, so iOS offers "Save Image"
  * into Photos, Android takes the download its gallery scans, and desktop gets
  * a file.

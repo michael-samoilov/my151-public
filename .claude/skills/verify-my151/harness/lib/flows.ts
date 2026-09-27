@@ -393,7 +393,10 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
   }
   checks.push(ok('league:hydrated-league-home', hydrated));
   await s.screenshot(ctx.shot('league-home'));
-  if (hydrated) checks.push(await auditRender(s, 'league:render-no-clipped-content'));
+  if (hydrated) {
+    await waitForImages(s);
+    checks.push(await auditRender(s, 'league:render-no-clipped-content'));
+  }
 
   const layout = await s.evalJson<{ scrollWidth: number; innerWidth: number; bodyH: number }>(LAYOUT);
   checks.push(ok('league:no-horizontal-overflow', layout.scrollWidth <= layout.innerWidth + 2, `scrollWidth ${layout.scrollWidth} vs innerWidth ${layout.innerWidth}`));
@@ -448,6 +451,7 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
     await sleep(900);
     await s.click(PLACE_CARD);
     await sleep(700);
+    await waitForImages(s);
     await s.screenshot(ctx.shot('league-card-driven'));
     checks.push(await auditRender(s, 'league:card-render-no-clipped-content'));
     const oracle = await readLeagueOracle(s, CARD);
@@ -491,6 +495,22 @@ async function waitLeagueHome(s: Session): Promise<boolean> {
     await sleep(250);
   }
   return false;
+}
+
+/** Wait until every visible image has loaded, up to about 10s. The render
+ *  audit reads boxes, and a sprite that is still loading has none, so an
+ *  audit taken early saw a different page on each run: on Gecko 54 of 61
+ *  league-home images were still loading at hydration in 2 of 3 runs. */
+async function waitForImages(s: Session): Promise<number> {
+  let pending = 0;
+  for (let i = 0; i < 50; i++) {
+    pending = await s
+      .evalJson<number>(`return [...document.querySelectorAll('img')].filter(im=>im.getClientRects().length&&(!im.complete||!im.naturalWidth)).length;`)
+      .catch(() => 0);
+    if (pending === 0) return 0;
+    await sleep(200);
+  }
+  return pending;
 }
 
 async function waitFor(s: Session, selector: string, tries = 40): Promise<boolean> {
@@ -1011,6 +1031,43 @@ const SABRINA_SOLO_LEAGUE =
  * Gym-card export preview for the Nimbus/Cotton Guard card. Proves the overlay
  * paints a real PNG of that card; layout parity lives in layout.test.ts.
  */
+/**
+ * The league export starts at the team the league tab shows: Rematch on the
+ * Rematch tab, Story on the Story tab. The pane marks its team with a tinted
+ * background, so exactly one `[data-export-team]` paints one.
+ */
+export async function runLeagueExportTeamSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+  for (const [view, team] of [['rematch', 'rematch'], ['challenge', 'story']] as const) {
+    const name = `league-export:starts-at-${view}-tab`;
+    await s.navigate(url);
+    if (!(await waitLeagueHome(s))) {
+      checks.push({ name, status: 'skip', detail: 'league home never hydrated' });
+      continue;
+    }
+    if (!(await clickHandle(s, `[data-league-view="${view}"]`))) {
+      checks.push({ name, status: 'fail', detail: 'tab never rendered' });
+      continue;
+    }
+    await sleep(400);
+    if (!(await clickHandle(s, '[data-league-export="league"]')) || !(await waitFor(s, '[data-export-team]', 40))) {
+      checks.push({ name, status: 'fail', detail: 'export pane never opened' });
+      continue;
+    }
+    await sleep(1000);
+    const tinted = await s.evalJson<string[]>(
+      `const clear=(c)=>c==='transparent'||/rgba\\([^)]*,\\s*0\\)$/.test(c);
+       return [...document.querySelectorAll('[data-export-team]')]
+         .filter((el)=>!clear(getComputedStyle(el).backgroundColor))
+         .map((el)=>el.getAttribute('data-export-team'));`,
+    );
+    checks.push(ok(name, tinted.length === 1 && tinted[0] === team, `tinted=${tinted.join(',') || 'none'} want=${team}`));
+    await s.screenshot(ctx.shot(`league-export-${view}-tab`));
+  }
+  return checks;
+}
+
 export async function runGymCardExportParitySuite(
   s: Session,
   _persona: PersonaName | null,
