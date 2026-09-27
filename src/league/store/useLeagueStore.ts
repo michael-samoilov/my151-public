@@ -16,7 +16,9 @@ import {
   type PowerupKind,
 } from '../model/powerups';
 import {
+  defaultBoundaries,
   leagueSlotIsEmpty,
+  levelBoundaries,
   makePlacedLine,
   moveLeagueSlots,
   moveSeat as reorderSeats,
@@ -24,13 +26,6 @@ import {
   type LegendPick,
   type PlacedLine,
 } from '../model/engine';
-
-/**
- * One league, stored as intent only: which branches sit in which seats, the
- * card identity fields, and where the user dragged things. Displayed teams
- * are always derived (src/league/model/engine.ts) — nothing derived is
- * persisted, so the derivation rules can evolve without a migration.
- */
 
 /** The card's chosen type: a real type, an explicit "no type", or unset. */
 export type CardType = TypeName | 'none' | null;
@@ -268,6 +263,41 @@ function withCard(
   return cards.map((c, i) => (i === index ? fn(c) : c));
 }
 
+function sameBoundaries(a: readonly number[], b: readonly number[]): boolean {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+type PersistedLeagueState = {
+  name?: string;
+  cards?: GymCard[];
+  view?: LeagueView;
+  celebratedNudges?: unknown;
+};
+
+export function migrateLeagueState(persisted: unknown, version: number): PersistedLeagueState {
+  const state = (persisted ?? {}) as PersistedLeagueState;
+  const cards = version < 3 && state.cards
+    ? state.cards.map((card) => ({
+        ...card,
+        lines: card.lines.map((line) => {
+          const automatic = line.boundaryMode === 'auto'
+            || (line.boundaryMode === undefined
+              && sameBoundaries(line.boundaries, levelBoundaries(line.branch)));
+          return {
+            ...line,
+            boundaries: automatic ? defaultBoundaries(line.branch) : [...line.boundaries],
+            boundaryMode: automatic ? 'auto' as const : 'manual' as const,
+          };
+        }),
+      }))
+    : state.cards;
+  const celebratedNudges = version < 2 || state.celebratedNudges === undefined
+    ? reachedNudges(cards ?? [])
+    : parseCelebratedNudges(state.celebratedNudges);
+
+  return { ...state, cards, celebratedNudges };
+}
+
 // Writes a seeded league on a preview build's first visit, before `persist`
 // reads the key. No-op on production and on every later visit.
 seedLeagueOnFirstVisit();
@@ -431,7 +461,7 @@ export const useLeagueStore = create<LeagueState>()(
             if (!line) return c;
             const boundaries = setBoundary(line, stage, row);
             const lines = c.lines.map((l, i) =>
-              i === seat - 1 ? { ...l, boundaries } : l,
+              i === seat - 1 ? { ...l, boundaries, boundaryMode: 'manual' as const } : l,
             );
             return { ...c, lines };
           }),
@@ -442,8 +472,11 @@ export const useLeagueStore = create<LeagueState>()(
           cards: withCard(s.cards, card, (c) => {
             const line = c.lines[seat - 1];
             if (!line || boundaries.length !== line.branch.length) return c;
+            const boundaryMode = sameBoundaries(boundaries, defaultBoundaries(line.branch))
+              ? 'auto' as const
+              : 'manual' as const;
             const lines = c.lines.map((l, i) =>
-              i === seat - 1 ? { ...l, boundaries: [...boundaries] } : l,
+              i === seat - 1 ? { ...l, boundaries: [...boundaries], boundaryMode } : l,
             );
             return { ...c, lines };
           }),
@@ -521,24 +554,7 @@ export const useLeagueStore = create<LeagueState>()(
     {
       name: LEAGUE_STORAGE_KEY,
       version: LEAGUE_PERSIST_VERSION,
-      migrate: (persisted, version) => {
-        const state = (persisted ?? {}) as {
-          name?: string;
-          cards?: GymCard[];
-          view?: LeagueView;
-          celebratedNudges?: unknown;
-        };
-        if (version < 2 || state.celebratedNudges === undefined) {
-          return {
-            ...state,
-            celebratedNudges: reachedNudges(state.cards ?? []),
-          };
-        }
-        return {
-          ...state,
-          celebratedNudges: parseCelebratedNudges(state.celebratedNudges),
-        };
-      },
+      migrate: migrateLeagueState,
     },
   ),
 );

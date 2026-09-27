@@ -131,9 +131,9 @@ function SlotGlyph({ index, cell }: { index: number; cell: string }) {
  * and so does the copy held under the pointer during a drag — one component
  * so the held copy cannot drift from the thing it is a copy of.
  */
-function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
+function SlotRowFace({ position, card, active }: { position: number; card: GymCard; active: boolean }) {
   const view = useLeagueStore((s) => s.view);
-  const shades = card.type ? cardShades(card.type) : null;
+  const shades = card.type || active ? cardShades(card.type) : null;
   const cellColour = shades ? shades.cell : GREY;
   // The gym challenge reads each trainer at the row you meet them; the
   // rematch view reads every trainer at their last row instead.
@@ -227,6 +227,7 @@ function SlotRow({ position, card, held, canDrag }: {
   canDrag: boolean;
 }) {
   const openCardPage = useLeagueUi((s) => s.openCardPage);
+  const active = useLeagueUi((s) => s.openCard === position);
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id: `slot-${position}`,
     data: { index: position },
@@ -253,10 +254,10 @@ function SlotRow({ position, card, held, canDrag }: {
             className="origin-center overflow-hidden rounded-[0.3125rem] shadow-lg ring-1 ring-black/10"
             style={{ transform: `scale(${HELD_ROW_SCALE})` }}
           >
-            <SlotRowFace position={position} card={card} />
+            <SlotRowFace position={position} card={card} active={active} />
           </div>
         ) : (
-          <SlotRowFace position={position} card={card} />
+          <SlotRowFace position={position} card={card} active={active} />
         )}
       </button>
     </div>
