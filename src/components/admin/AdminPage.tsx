@@ -2004,7 +2004,7 @@ export function AdminPage() {
 
       {detail?.kind !== 'picks' && (
         <AdminBar>
-          <RangeRibbon value={range} onChange={pickRange} />
+          {!lockUser && <RangeRibbon value={range} onChange={pickRange} />}
           <AdminNav value={navKey} onChange={onNav} />
         </AdminBar>
       )}
