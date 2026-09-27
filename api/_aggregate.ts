@@ -406,24 +406,26 @@ export interface Aggregates {
   heatmaps: Record<HeatmapClock, number[][]>;
 }
 
-/** Every aggregation above, over one record list. */
-export function aggregate(records: SessionRecord[], now: number): Aggregates {
+/** Every aggregation above. The activity series read every record, so the
+ *  chart keeps its history; the rest read only `inRange`, the records active
+ *  in the dashboard's date range. */
+export function aggregate(records: SessionRecord[], now: number, inRange = records): Aggregates {
   return {
-    users: records.length,
+    users: inRange.length,
     activity: dailyActive(records, now),
     hourly: hourlyActive(records, now),
-    retention: retention(records, now),
-    timeCurves: sessionCurves(records),
-    countries: tallies(records, 'country'),
-    languages: tallies(records, 'lang'),
-    locales: tallies(records, 'locale'),
-    devices: tallies(records, 'device'),
-    os: tallies(records, 'os'),
-    browsers: tallies(records, 'browser'),
-    joints: tallyJoints(records),
-    whoBuckets: tallyWhoBuckets(records),
-    countries7d: distinctCountries7d(records),
-    heatmaps: heatmaps(records),
+    retention: retention(inRange, now),
+    timeCurves: sessionCurves(inRange),
+    countries: tallies(inRange, 'country'),
+    languages: tallies(inRange, 'lang'),
+    locales: tallies(inRange, 'locale'),
+    devices: tallies(inRange, 'device'),
+    os: tallies(inRange, 'os'),
+    browsers: tallies(inRange, 'browser'),
+    joints: tallyJoints(inRange),
+    whoBuckets: tallyWhoBuckets(inRange),
+    countries7d: distinctCountries7d(inRange),
+    heatmaps: heatmaps(inRange),
   };
 }
 

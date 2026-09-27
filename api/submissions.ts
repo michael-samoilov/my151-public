@@ -4,6 +4,7 @@ import { EXPORT_SURVEY_SKIPS_KEY } from './_events.js';
 import { LEAGUE_CLIENTS_KEY } from './_leagueRecord.js';
 import { ARCHIVED_KEY } from './_archive.js';
 import { buildDashboard } from './_dashboard.js';
+import { isDashboardRange } from './_range.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
@@ -17,6 +18,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawOffset = parseInt(firstQueryValue(req.query.offset as string | string[] | undefined), 10);
     const limit = Math.min(Math.max(Number.isNaN(rawLimit) ? 50 : rawLimit, 1), 500);
     const offset = Math.max(Number.isNaN(rawOffset) ? 0 : rawOffset, 0);
+    const range = firstQueryValue(req.query.range as string | string[] | undefined) || 'all';
+    if (!isDashboardRange(range)) return res.status(400).json({ error: 'Invalid range' });
 
     const [clients, archived, funnel, leagueClients, exportSurveySkips] = await Promise.all([
       redis.hgetall(CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
@@ -27,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ]);
     const body = buildDashboard(
       { clients, archived, funnel, leagueClients, exportSurveySkips },
-      { offset, limit },
+      { offset, limit, range },
       Date.now(),
     );
 
