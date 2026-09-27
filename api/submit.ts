@@ -12,6 +12,7 @@ import {
   parseLocale,
   parseReferrerHost,
   isBeaconKind,
+  isReadOnlyDeployment,
   parseRecord,
   CLIENTS_KEY,
   MAX_CLIENTS,
@@ -187,7 +188,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const notme = parseNotmeFlag(body.notme);
-    if (notme) {
+    if (notme || isReadOnlyDeployment(req)) {
       if (kind === 'export') {
         const highlight = await recordToolExport('pokedex', ids, { notme: true });
         return res.status(200).json({ ok: true, highlight });

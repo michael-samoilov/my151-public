@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { redis, requireAdmin } from './_shared.js';
+import { redis, isReadOnlyDeployment, requireAdmin } from './_shared.js';
 import { ARCHIVED_KEY, bareCid } from './_archive.js';
 
 /** Mark a browser archived, or clear that mark. Idempotent. */
@@ -7,6 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Preview deployments are read-only' });
   if (!(await requireAdmin(req, res))) return;
 
   const { cid, archived } = (req.body ?? {}) as { cid?: unknown; archived?: unknown };
