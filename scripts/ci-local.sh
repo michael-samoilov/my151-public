@@ -18,3 +18,4 @@ else
 fi
 
 npm run build
+node scripts/check-bundle-budget.mjs
