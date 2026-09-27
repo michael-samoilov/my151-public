@@ -1852,6 +1852,11 @@ export function AdminPage() {
 
   const navKey: AdminNavKey = page === 'feedback' ? 'feedback' : page === 'search' ? 'search' : tool;
   const onNav = (k: AdminNavKey) => {
+    if (detail) {
+      // A nav press opens the tab at its top; Back is the way to the old place.
+      setDashScrollY(0);
+      setDetail(null);
+    }
     if (k === 'feedback') {
       setPage('feedback');
     } else if (k === 'search') {
