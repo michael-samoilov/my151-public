@@ -26,11 +26,16 @@ display options, exportable as a PNG.
   A second copy (`::after`, `soft-light`) moves its bands the opposite way.
   The glare is fixed `overlay`. There is no blend selector.
 - `/foil-workshop` (off in production) drives the same `ExportPreview3D` card
-  with Shine (the V shine), Rainbow (a rainbow holofoil layer, off in the
-  export), Max tilt, Glare, and Shadow controls. Max tilt sets the hover
-  tilt, the auto-tilt, and the cap together. It restores only those dials
-  from its saved recipe or link; everything else, the 1.15 pop included, is
-  the in-app default.
+  with Shine (the V shine), Rainbow, Point light, Iridescence, Max tilt, Glare
+  (intensity and size), and Shadow controls. Max tilt sets the hover tilt, the
+  auto-tilt, and the cap together. It restores only those dials from its saved
+  recipe or link; everything else, the 1.15 pop included, is the in-app
+  default. Samples: Dex, Dex of all 151, Dex of 151 with stats, league,
+  league filled, league with story and rematch teams, trainer card, and a
+  test card of color swatches.
+- Defaults (Michael's workshop pick, September 27): shine 0.7, rainbow 0.2,
+  point light 1, iridescence 0.1, max and auto tilt 10 degrees, tilt factor
+  10/7, glare 1 at size 0.5, shadow blur 25, exit delay 420 ms, pop 1.15.
 - A survey can follow a save. Its highlight sprite is integer-scaled at 1× or
   more.
 
@@ -68,9 +73,9 @@ download. After the preview paints, it checks:
   the native size.
 
 `runFoilWorkshopSuite` opens `/foil-workshop` and asserts the keeper
-controls (Shine, Rainbow, Max tilt, Glare, Shadow), no blend, mask, sparkle,
-or parallax controls,
-`--foil-holographic` at `1`, and a working glare slider.
+controls (Shine, Rainbow, Point light, Iridescence, Max tilt, Glare, Shadow),
+no blend, mask, sparkle, or parallax controls,
+`--foil-holographic` at `0.7`, and a working glare slider.
 
 Manual drive (a Playwright script, local build): seed 37 with
 `viewSortOption: 'national'`, open the view tab, and expect 37

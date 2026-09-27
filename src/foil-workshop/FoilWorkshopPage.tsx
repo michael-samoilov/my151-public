@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ExportPreview3D } from '@/league/components/ExportPreview3D';
 import { EXPORT_OVERLAY_SCRIM_CLASS, EXPORT_OVERLAY_SCRIM_STYLE } from '@/components/export/exportOverlayScrim';
 import { KANTO_LEAGUE_NAME, kantoCards } from '@/league/data/kantoLeague';
-import { exportLeagueHome } from '@/league/export/exportLeague';
+import { exportGymCard, exportLeagueHome } from '@/league/export/exportLeague';
 import { DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT } from '@/league/export/exportOptions';
 import {
   DEFAULT_FOIL_RECIPE,
@@ -17,6 +17,10 @@ import {
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { generateExportImage } from '@/lib/exportImage';
+import { computeAnalytics } from '@/hooks/useAnalytics';
+import { detailedStatsData } from '@/components/view/useDetailedStatsData';
+import { DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
+import { renderFoilTestCard } from './testCard';
 import {
   DEFAULT_HOVER_TILT_RECIPE,
   HOVER_TILT_WORKSHOP_STORAGE_KEY,
@@ -40,13 +44,57 @@ const WORKSHOP_DEX_SECTIONS: Record<string, number[]> = {
   mythical: DEMO_DEX_SECTIONS.mythical,
 };
 
-type WorkshopSample = 'dex' | 'league';
+/** Every Kanto Pokémon, placed: the fully filled Dex. */
+const FULL_DEX_SECTIONS: Record<string, number[]> = {
+  other: Array.from({ length: 151 }, (_, i) => i + 1),
+};
 
-function workshopDexMaskContext(): HoverTiltMaskContext {
-  return hoverTiltMaskContextFromDex(
-    getPokemonByIds(Object.values(WORKSHOP_DEX_SECTIONS).flat()),
-    WORKSHOP_DEX_SECTIONS,
-  );
+const WORKSHOP_SAMPLES = [
+  { id: 'dex', label: 'Dex export' },
+  { id: 'dex-full', label: 'Dex, all 151' },
+  { id: 'dex-stats', label: 'Dex, 151 + stats' },
+  { id: 'league', label: 'League export' },
+  { id: 'league-full', label: 'League, filled' },
+  { id: 'league-both', label: 'League, story + rematch' },
+  { id: 'trainer', label: 'Trainer card' },
+  { id: 'test', label: 'Test card' },
+] as const;
+
+type WorkshopSample = (typeof WORKSHOP_SAMPLES)[number]['id'];
+
+function isWorkshopSample(value: string | null): value is WorkshopSample {
+  return WORKSHOP_SAMPLES.some((s) => s.id === value);
+}
+
+function sampleDexSections(sample: WorkshopSample): Record<string, number[]> | null {
+  if (sample === 'dex') return WORKSHOP_DEX_SECTIONS;
+  if (sample === 'dex-full' || sample === 'dex-stats') return FULL_DEX_SECTIONS;
+  return null;
+}
+
+function renderSample(sample: WorkshopSample): Promise<Blob> {
+  const dex = sampleDexSections(sample);
+  if (dex) {
+    const stats =
+      sample === 'dex-stats'
+        ? { data: detailedStatsData(dex, computeAnalytics(dex)), heights: DEFAULT_STATS_HEIGHTS }
+        : null;
+    return generateExportImage(getPokemonByIds(Object.values(dex).flat()), { sections: dex, stats });
+  }
+  if (sample === 'trainer') return exportGymCard(kantoCards({ full: true })[12]);
+  if (sample === 'test') return renderFoilTestCard();
+  const full = sample !== 'league';
+  const layout =
+    sample === 'league-both'
+      ? { ...DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT, teamMode: 'both' as const }
+      : DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT;
+  return exportLeagueHome(KANTO_LEAGUE_NAME, kantoCards({ full }), 'challenge', layout);
+}
+
+function sampleMaskContext(sample: WorkshopSample): HoverTiltMaskContext {
+  const dex = sampleDexSections(sample);
+  if (!dex) return EMPTY_MASK_CONTEXT;
+  return hoverTiltMaskContextFromDex(getPokemonByIds(Object.values(dex).flat()), dex);
 }
 
 /**
@@ -54,10 +102,12 @@ function workshopDexMaskContext(): HoverTiltMaskContext {
  * A recipe saved by an older workshop kept values it can no longer show,
  * such as no pop (scaleFactor 1) or an auto-tilt smaller than max tilt.
  */
+/** Foil layers the page has dials for. */
+const WORKSHOP_LAYERS = ['holographic', 'holoRainbow', 'pointLight', 'iridescence'] as const;
+
 function workshopFoil(saved: FoilRecipe): FoilRecipe {
   const next = cloneFoilRecipe(DEFAULT_FOIL_RECIPE);
-  next.layers.holographic = { ...saved.layers.holographic };
-  next.layers.holoRainbow = { ...saved.layers.holoRainbow };
+  for (const id of WORKSHOP_LAYERS) next.layers[id] = { ...saved.layers[id] };
   next.maxTilt = saved.maxTilt;
   next.idleTilt = saved.maxTilt;
   return next;
@@ -67,6 +117,7 @@ function workshopTilt(saved: HoverTiltRecipe): HoverTiltRecipe {
   return {
     ...cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE),
     glareIntensity: saved.glareIntensity,
+    glareSize: saved.glareSize,
     shadow: saved.shadow,
     shadowBlur: saved.shadowBlur,
   };
@@ -99,8 +150,7 @@ function readStoredTilt(): HoverTiltRecipe {
 function readStoredSample(): WorkshopSample {
   const params = new URLSearchParams(window.location.search);
   const fromUrl = params.get('sample');
-  if (fromUrl === 'league' || fromUrl === 'dex') return fromUrl;
-  return 'dex';
+  return isWorkshopSample(fromUrl) ? fromUrl : 'dex';
 }
 
 function persistWorkshop(
@@ -133,10 +183,7 @@ export function FoilWorkshopPage() {
   const [sample, setSample] = useState<WorkshopSample>(readStoredSample);
   const [src, setSrc] = useState<string | null>(null);
   const [copied, setCopied] = useState<'json' | 'link' | null>(null);
-  const maskContext = useMemo(
-    () => (sample === 'dex' ? workshopDexMaskContext() : EMPTY_MASK_CONTEXT),
-    [sample],
-  );
+  const maskContext = useMemo(() => sampleMaskContext(sample), [sample]);
 
   const busy = src === null;
   const holo = recipe.layers.holographic;
@@ -149,13 +196,7 @@ export function FoilWorkshopPage() {
   useEffect(() => {
     let cancelled = false;
     let created: string | null = null;
-    const render =
-      sample === 'dex'
-        ? generateExportImage(getPokemonByIds(Object.values(WORKSHOP_DEX_SECTIONS).flat()), {
-            sections: WORKSHOP_DEX_SECTIONS,
-          })
-        : exportLeagueHome(KANTO_LEAGUE_NAME, kantoCards(), 'challenge', DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT);
-    void render
+    void renderSample(sample)
       .then((blob) => {
         const next = URL.createObjectURL(blob);
         if (cancelled) {
@@ -208,7 +249,7 @@ export function FoilWorkshopPage() {
           <div>
             <h1 className="text-sm font-semibold text-zinc-50">Export foil workshop</h1>
             <p className="mt-0.5 hidden max-w-[42rem] md:block">
-              Shine, rainbow, tilt, glare, and drop shadow. Live export defaults stay on the card.
+              Shine, rainbow, light, tilt, glare, and drop shadow. Live export defaults stay on the card.
             </p>
           </div>
           <a href="/custom-gym-leader" className="pointer-events-auto shrink-0 text-zinc-100 underline">
@@ -218,7 +259,7 @@ export function FoilWorkshopPage() {
         <div className="absolute inset-0 z-[1] px-3 pb-4 pt-12 md:px-10 md:pb-10 md:pt-16">
           <ExportPreview3D
             src={src}
-            alt={sample === 'dex' ? 'Dex export foil workshop' : 'League export foil workshop'}
+            alt={`${WORKSHOP_SAMPLES.find((s) => s.id === sample)?.label ?? 'Export'} foil workshop`}
             busy={busy}
             recipe={recipe}
             tilt={tilt}
@@ -274,7 +315,7 @@ export function FoilWorkshopPage() {
               Sample
             </legend>
             <div className="grid grid-cols-2 gap-1">
-              {(['dex', 'league'] as const).map((id) => (
+              {WORKSHOP_SAMPLES.map(({ id, label }) => (
                 <button
                   key={id}
                   type="button"
@@ -284,7 +325,7 @@ export function FoilWorkshopPage() {
                     sample === id ? 'bg-zinc-100 font-medium text-zinc-950' : 'bg-zinc-800 text-zinc-200'
                   }`}
                 >
-                  {id === 'dex' ? 'Dex export' : 'League export'}
+                  {label}
                 </button>
               ))}
             </div>
@@ -338,6 +379,21 @@ export function FoilWorkshopPage() {
             />
           </fieldset>
 
+          <LayerDial
+            id="pointLight"
+            title="Point light"
+            toggle="Soft light disc at the tilt"
+            recipe={recipe}
+            onRecipe={setRecipe}
+          />
+          <LayerDial
+            id="iridescence"
+            title="Iridescence"
+            toggle="Hue of colored ink shifts with the tilt"
+            recipe={recipe}
+            onRecipe={setRecipe}
+          />
+
           <fieldset className="space-y-2" data-foil-control="maxTilt">
             <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
               Tilt
@@ -366,6 +422,15 @@ export function FoilWorkshopPage() {
               value={tilt.glareIntensity}
               testId="glareIntensity"
               onChange={(glareIntensity) => setTilt({ ...tilt, glareIntensity })}
+            />
+            <Slider
+              label="Size"
+              min={0.2}
+              max={1}
+              step={0.01}
+              value={tilt.glareSize}
+              testId="glareSize"
+              onChange={(glareSize) => setTilt({ ...tilt, glareSize })}
             />
           </fieldset>
 
@@ -396,6 +461,45 @@ export function FoilWorkshopPage() {
         </div>
       </aside>
     </div>
+  );
+}
+
+function LayerDial({
+  id,
+  title,
+  toggle,
+  recipe,
+  onRecipe,
+}: {
+  id: 'pointLight' | 'iridescence';
+  title: string;
+  toggle: string;
+  recipe: FoilRecipe;
+  onRecipe: (next: FoilRecipe) => void;
+}) {
+  const layer = recipe.layers[id];
+  return (
+    <fieldset className="space-y-2" data-foil-control={id}>
+      <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">{title}</legend>
+      <label className="flex items-center gap-2 text-[0.7rem] text-zinc-300">
+        <input
+          type="checkbox"
+          checked={layer.on}
+          data-foil-on={id}
+          onChange={(e) => onRecipe(withFoilLayer(recipe, id, { on: e.target.checked }))}
+        />
+        {toggle}
+      </label>
+      <Slider
+        label="Amount"
+        min={0}
+        max={1}
+        step={0.01}
+        value={layer.amount}
+        testId={id}
+        onChange={(amount) => onRecipe(withFoilLayer(recipe, id, { amount }))}
+      />
+    </fieldset>
   );
 }
 

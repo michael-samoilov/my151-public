@@ -17,7 +17,7 @@ async function foilVar(foil: Locator, name: string): Promise<string> {
 test.describe('export foil workshop', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test('keeps shine, rainbow, tilt, glare, and shadow dials', async ({ page }) => {
+  test('keeps shine, rainbow, light, tilt, glare, and shadow dials', async ({ page }) => {
     await page.goto('/foil-workshop');
     await expect(page.locator('[data-foil-workshop]')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Export foil workshop' })).toBeVisible();
@@ -31,7 +31,10 @@ test.describe('export foil workshop', () => {
       .poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 })
       .toBe('1');
     await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
-    await expect(page.locator('[data-foil-control]')).toHaveCount(3);
+    await expect(page.locator('[data-foil-control]')).toHaveCount(5);
+    for (const id of ['pointLight', 'iridescence', 'glareSize']) {
+      await expect(page.locator(`[data-foil-slider="${id}"]`)).toBeVisible();
+    }
     await expect(page.locator('[data-foil-slider="holographic"]')).toBeVisible();
     await expect(page.locator('[data-foil-slider="holoRainbow"]')).toBeVisible();
     await expect(page.locator('[data-foil-slider="maxTilt"]')).toBeVisible();
@@ -47,10 +50,10 @@ test.describe('export foil workshop', () => {
     await expect(page.locator('[data-workshop-dark-card-toggle]')).toHaveCount(0);
     await expect
       .poll(async () => foilVar(foil, '--foil-holographic'))
-      .toBe('1.000');
+      .toBe('0.700');
     await expect
       .poll(async () => foilVar(foil, '--hover-tilt-glare-intensity'))
-      .toBe('0.600');
+      .toBe('1.000');
     await expect
       .poll(async () => foilVar(foil, '--foil-holo-blend'))
       .toBe('color-dodge');
@@ -65,24 +68,26 @@ test.describe('export foil workshop', () => {
     await setRange(page, 'holographic', '0.91');
     await expect.poll(async () => foilVar(foil, '--foil-holographic')).toBe('0.910');
 
-    // The rainbow is its own layer, off until the workshop turns it on.
-    await expect(page.locator('[data-foil-layer="holoRainbow"]')).toHaveCount(0);
-    await page.locator('[data-foil-on="holoRainbow"]').check();
+    // The rainbow is its own layer, on at 0.2, and toggles without the shine.
     await expect(page.locator('[data-foil-layer="holoRainbow"]')).toHaveCount(1);
-    await expect.poll(async () => foilVar(foil, '--foil-holoRainbow')).toBe('0.500');
+    await expect.poll(async () => foilVar(foil, '--foil-holoRainbow')).toBe('0.200');
+    await page.locator('[data-foil-on="holoRainbow"]').uncheck();
+    await expect(page.locator('[data-foil-layer="holoRainbow"]')).toHaveCount(0);
+    await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
+    await page.locator('[data-foil-on="holoRainbow"]').check();
     await page.locator('[data-foil-on="holographic"]').uncheck();
     await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(0);
     await expect(page.locator('[data-foil-layer="holoRainbow"]')).toHaveCount(1);
 
-    // Max tilt drives the auto-tilt past the default 5 degrees.
-    await setRange(page, 'maxTilt', '12');
+    // Max tilt drives the auto-tilt past the default 10 degrees.
+    await setRange(page, 'maxTilt', '16');
     await expect
       .poll(async () => {
         const x = Number(await foil.getAttribute('data-tilt-x'));
         const y = Number(await foil.getAttribute('data-tilt-y'));
         return Math.hypot(x, y);
       }, { timeout: 15_000 })
-      .toBeGreaterThan(7);
+      .toBeGreaterThan(12);
   });
 
   test('glare and shadow write through with fixed credit-card blends', async ({ page }) => {
@@ -97,6 +102,8 @@ test.describe('export foil workshop', () => {
 
     await setRange(page, 'glareIntensity', '0.91');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-glare-intensity')).toBe('0.910');
+    await setRange(page, 'glareSize', '0.3');
+    await expect.poll(async () => foilVar(foil, '--hover-tilt-glare-size')).toBe('0.300');
 
     await page.locator('[data-workshop-shadow-toggle]').uncheck();
     await expect(foil).toHaveAttribute('data-hover-tilt-shadow', '0');
@@ -104,8 +111,11 @@ test.describe('export foil workshop', () => {
     await expect(foil).toHaveAttribute('data-hover-tilt-shadow', '1');
     await setRange(page, 'shadowBlur', '32');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-shadow-blur')).toBe('32');
+    // The hit's shadow flag follows on the next painted frame.
+    await expect
+      .poll(async () => page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow))
+      .not.toBe('none');
     const shadowAt32 = await page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow);
-    expect(shadowAt32).not.toBe('none');
     await setRange(page, 'shadowBlur', '8');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-shadow-blur')).toBe('8');
     await expect.poll(async () => {
@@ -115,6 +125,21 @@ test.describe('export foil workshop', () => {
 
     await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('color-dodge');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-blend-mode')).toBe('overlay');
+  });
+
+  test('every sample renders a card', async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto('/foil-workshop');
+    const img = page.locator('[data-export-tilt-hit] img');
+    for (const id of ['dex', 'dex-full', 'dex-stats', 'league', 'league-full', 'league-both', 'trainer', 'test']) {
+      await page.locator(`[data-workshop-sample-btn="${id}"]`).click();
+      await expect(page.locator('[data-foil-workshop]')).toHaveAttribute('data-workshop-sample', id);
+      await expect
+        .poll(async () => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0 && el.src.startsWith('blob:')), {
+          timeout: 30_000,
+        })
+        .toBe(true);
+    }
   });
 
   test('overlay scrim matches the export backdrop', async ({ page }) => {
