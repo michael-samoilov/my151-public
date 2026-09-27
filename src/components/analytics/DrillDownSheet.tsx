@@ -8,7 +8,6 @@ import { shapeLabel, typeLabel } from '@/i18n';
 import type { ShapeName, TypeName } from '@/types/pokemon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
-const HEADER_HEIGHT = 49; // app header: py-3 + text + border
 const PEEK_HEIGHT = 68;
 const EXPAND_THRESHOLD = 40;
 const DISMISS_THRESHOLD = 80;
@@ -202,7 +201,9 @@ function CardPanel({
   );
 }
 
-export function DrillDownSheet() {
+/** `topGap` is the space in px above the expanded sheet. App passes the
+ *  header's measured height, so the nav tabs stay visible and tappable. */
+export function DrillDownSheet({ topGap }: { topGap: number }) {
   const expandDrillDown = usePokedexStore((s) => s.expandDrillDown);
   const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
   const navigateDrillDown = usePokedexStore((s) => s.navigateDrillDown);
@@ -464,10 +465,10 @@ export function DrillDownSheet() {
 
   if (!currentData) return null;
 
-  const sheetHeight = `calc(100dvh - ${HEADER_HEIGHT}px)`;
+  const sheetHeight = `calc(100dvh - ${topGap}px)`;
 
   const currentTranslateY = peek
-    ? `calc(100dvh - ${HEADER_HEIGHT}px - ${PEEK_HEIGHT}px + ${Math.max(dragY, -(PEEK_HEIGHT))}px)`
+    ? `calc(100dvh - ${topGap}px - ${PEEK_HEIGHT}px + ${Math.max(dragY, -(PEEK_HEIGHT))}px)`
     : `${Math.max(dragY, 0)}px`;
 
   // At rest (fully expanded, no drag), avoid transform to prevent GPU compositing blur

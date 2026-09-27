@@ -52,19 +52,12 @@ import { whenIdle } from '@/lib/whenIdle';
 declare const __BUILD_TIMESTAMP__: string;
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
 
-// Top gap (px) the mobile selection sheet leaves below the viewport top
-// when fully raised — matches the analytics drilldown sheet
-// (DrillDownSheet HEADER_HEIGHT) so its close handle is always reachable.
-// Uses dvh (not vh) so the dynamic mobile URL bar can't push the top
-// off-screen.
-const SHEET_TOP_GAP_PX = 49;
-
-function MobileSheet({ sectionName, onClose }: { sectionName: string | null; onClose: () => void }) {
+function MobileSheet({ sectionName, topGap, onClose }: { sectionName: string | null; topGap: number; onClose: () => void }) {
   return (
     <BottomSheet
       onClose={onClose}
       size="full"
-      topGap={SHEET_TOP_GAP_PX}
+      topGap={topGap}
       closeLabel={sectionName ? `Adding to ${sectionName}` : 'Browse Pokémon'}
       title={
         sectionName !== null ? (
@@ -101,6 +94,20 @@ function App() {
   const activeSection = usePokedexStore((s) => s.activeSection);
   const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
   const isDesktop = useIsDesktop();
+
+  // The mobile sheets stop at the header's bottom edge, so the nav tabs stay
+  // visible and the sheet's handle stays reachable. The header is two
+  // rem-sized bars that grow with the root font size (layoutFontSize.ts), so
+  // its height is measured here, not pinned.
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setHeaderHeight(el.getBoundingClientRect().height));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Prefetch the route chunks once boot has settled, so the first visit to
   // Analytics or View doesn't wait on a network fetch and the chunk's module
@@ -237,7 +244,7 @@ function App() {
   return (
     <TooltipProvider>
       <div className="h-dvh flex flex-col">
-        <Header currentView={currentView} onViewChange={handleViewChange} toolbarRef={setToolbarEl} />
+        <Header ref={headerRef} currentView={currentView} onViewChange={handleViewChange} toolbarRef={setToolbarEl} />
 
         <ToolbarSlotContext.Provider value={{ el: toolbarEl, view: currentView }}>
         {/* Builder — always mounted to avoid remount cost on tab switch */}
@@ -299,13 +306,13 @@ function App() {
 
       {/* Mobile browser sheet */}
       {currentView === 'builder' && mobileBrowserOpen && (
-        <MobileSheet sectionName={sectionName} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
+        <MobileSheet sectionName={sectionName} topGap={headerHeight} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
       )}
 
       {/* Analytics drill-down sheet — only on analytics view, mobile only.
           The desktop pane above covers >=1024px; mounting both built three
           hidden carousel panels per desktop chart tap. */}
-      {currentView === 'analytics' && drillDownSegment && !isDesktop && <DrillDownSheet />}
+      {currentView === 'analytics' && drillDownSegment && !isDesktop && <DrillDownSheet topGap={headerHeight} />}
 
       {/* The report form's single mount point, outside every page's hidden
           subtree and error boundary, so the footer link and the crash fallback
