@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { TYPE_NAMES } from '../src/types/pokemon';
 
 /**
  * The admin "What people pick" page. Demo fixture, no token.
@@ -188,5 +189,32 @@ test.describe('admin picks page', () => {
     await expect(chip).toHaveAttribute('aria-pressed', 'true');
     await expect(evil.locator('[data-face-id="4"]')).toHaveCount(0);
     await expect(evil.locator('[data-face-id="129"]')).toHaveCount(1);
+  });
+
+  test('league tab opens league picks: aces, then gym types in type order, in league counts', async ({ page }, testInfo) => {
+    await page.route('**/api/event', (route) => route.fulfill({ status: 200, body: '{}' }));
+    await page.goto('/?admin&demo');
+    await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'League', exact: true }).click();
+    await page.getByRole('button', { name: /Most picked/ }).click();
+    await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
+
+    const sections = await page.locator('[data-section-id]').evaluateAll((els) =>
+      els.map((el) => ({
+        id: el.getAttribute('data-section-id') ?? '',
+        counts: [...el.querySelectorAll('[data-index-meter]')].map((m) => m.getAttribute('data-index-meter')),
+      })),
+    );
+    const ids = sections.map((s) => s.id);
+    expect(ids[0]).toBe('ace');
+    expect(ids).toContain('none');
+    expect(ids.slice(1)).toEqual([...TYPE_NAMES, 'none'].filter((t) => ids.includes(t)));
+    for (const s of sections) {
+      expect(s.counts.length).toBeGreaterThan(0);
+      for (const c of s.counts) expect(c).toMatch(/^[1-9]\d*$/);
+      const n = s.counts.map(Number);
+      expect(n).toEqual([...n].sort((a, b) => b - a));
+    }
+    await expect(page.locator('[data-section-id="fire"] [data-picks-side="most"]')).toHaveAttribute('data-picks-cols', '9');
+    await testInfo.attach('league-picks-sections', { body: JSON.stringify(sections), contentType: 'application/json' });
   });
 });
