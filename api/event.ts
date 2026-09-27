@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
-import { redis, getClientIp } from './_shared.js';
+import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
 import {
   appendExportSurveySkip,
   EXPORT_SURVEY_SKIP_EVENT,
@@ -90,6 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       skipFields?.tool ??
       (isLeagueExportEvent(body.event) ? parseExportSurveyToolField(body.exportTool) : undefined);
 
+    if (isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
     if (!burst.success) {

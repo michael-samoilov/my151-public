@@ -30,7 +30,7 @@ import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { SearchPerformancePanel } from '@/components/admin/SearchPerformancePanel';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
-import type { SearchPerformanceSnapshot } from '@/lib/searchPerformance';
+import type { SearchPerformanceView } from '@/lib/searchPerformanceView';
 import {
   ARCHIVE_FILTER_OPTIONS,
   bareCid,
@@ -439,13 +439,13 @@ async function fetchDashboard(token: string, limit: number, offset: number): Pro
   return res.json() as Promise<ApiResponse>;
 }
 
-async function fetchSearchPerformance(token: string, refresh: boolean): Promise<SearchPerformanceSnapshot> {
+async function fetchSearchPerformance(token: string, refresh: boolean): Promise<SearchPerformanceView> {
   const qs = refresh ? '?refresh=1' : '';
   const res = await fetch(`/api/search-performance${qs}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`Search data request failed (${res.status}).`);
-  return res.json() as Promise<SearchPerformanceSnapshot>;
+  return res.json() as Promise<SearchPerformanceView>;
 }
 
 // ---------- presentational bits ----------
@@ -1526,10 +1526,8 @@ function WhatPeoplePick({
   );
 }
 
-export type AdminNavKey = ToolSlice | 'feedback';
+export type AdminNavKey = ToolSlice | 'search' | 'feedback';
 
-/** Section nav: a bottom bar on mobile, an inline row on desktop. Splits the
- *  dashboard into All / Dex / League analytics and the Feedback page. */
 function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: AdminNavKey) => void }) {
   const navRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -1557,6 +1555,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     { key: 'all', label: 'Suite' },
     { key: 'dex', label: 'Dex' },
     { key: 'league', label: 'League' },
+    { key: 'search', label: 'Search' },
     { key: 'feedback', label: 'Feedback' },
   ];
   return (
@@ -1574,7 +1573,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
             aria-pressed={on}
             onClick={() => onChange(it.key)}
             className={cn(
-              'flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors md:flex-none',
+              'min-w-0 flex-1 rounded-lg px-1.5 py-1.5 text-xs font-semibold transition-colors md:flex-none md:px-3 md:text-sm',
               on ? 'bg-foreground text-card' : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -1599,13 +1598,14 @@ export function AdminPage() {
       return null;
     }
   });
+  const [initialToken] = useState(token);
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
-  const [searchPerformance, setSearchPerformance] = useState<SearchPerformanceSnapshot | null>(null);
+  const [searchPerformance, setSearchPerformance] = useState<SearchPerformanceView | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
-  const [page, setPage] = useState<'analytics' | 'feedback'>('analytics');
+  const [page, setPage] = useState<'analytics' | 'search' | 'feedback'>('analytics');
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
   const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
@@ -1630,15 +1630,15 @@ export function AdminPage() {
 
   // Open a detail page from the dashboard, remembering the scroll position so
   // Back returns the reader to exactly where they were, not the top.
-  const dashScrollRef = useRef(0);
+  const [dashScrollY, setDashScrollY] = useState(0);
   const openDetail = useCallback((d: Detail) => {
-    dashScrollRef.current = window.scrollY;
+    setDashScrollY(window.scrollY);
     setDetail(d);
     window.scrollTo(0, 0);
   }, []);
   useLayoutEffect(() => {
-    if (!detail) window.scrollTo(0, dashScrollRef.current);
-  }, [detail]);
+    if (!detail) window.scrollTo(0, dashScrollY);
+  }, [detail, dashScrollY]);
   const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
 
   const loadSearch = useCallback(async (tok: string, refresh = false) => {
@@ -1677,26 +1677,20 @@ export function AdminPage() {
   }, [loadSearch]);
 
   useEffect(() => {
-    // Demo mode (`/?admin&demo`): render the redesign against a fabricated,
-    // self-consistent fixture, with no token and no network. The fixture chunk
-    // is dynamically imported so it never ships in the real admin bundle. Used
-    // for preview review of the design; production still requires the token.
-    if (new URLSearchParams(window.location.search).has('demo')) {
+    if (new URLSearchParams(window.location.search).has('demo') && !initialToken) {
       void Promise.all([
         import('./__fixtures__/sampleResponse'),
         import('./__fixtures__/sampleSearchPerformance'),
       ]).then(([dashboard, search]) => {
         setData(dashboard.sampleResponse);
-        setSearchPerformance(search.sampleSearchPerformance);
+        setSearchPerformance(search.sampleSearchPerformanceView);
         setLoadedAt(Date.now());
         setAuthed(true);
       });
       return;
     }
-    if (token) void load(token);
-    // Run only on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (initialToken) void load(initialToken);
+  }, [initialToken, load]);
 
   const loadMore = useCallback(async () => {
     if (!token || !data) return;
@@ -1797,10 +1791,13 @@ export function AdminPage() {
     );
   }
 
-  const navKey: AdminNavKey = page === 'feedback' ? 'feedback' : tool;
+  const navKey: AdminNavKey = page === 'feedback' ? 'feedback' : page === 'search' ? 'search' : tool;
   const onNav = (k: AdminNavKey) => {
     if (k === 'feedback') {
       setPage('feedback');
+    } else if (k === 'search') {
+      setPage('search');
+      if (token) void loadSearch(token, true);
     } else {
       setPage('analytics');
       pickTool(k);
@@ -1880,6 +1877,10 @@ export function AdminPage() {
         {!detail && page === 'feedback' &&
           (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
 
+        {!detail && page === 'search' && (
+          <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} />
+        )}
+
         {!detail && page === 'analytics' && data && (() => {
           const slice = sliceOf(data, tool);
           const showDex = tool !== 'league';
@@ -1908,7 +1909,7 @@ export function AdminPage() {
           const leagueSankey = data.leagueFunnel ? leagueFunnelSankey(data.leagueFunnel) : null;
           const referrerSankey = data.referrerFlow?.length ? referrerFlowSankey(data.referrerFlow) : null;
 
-          const act = data.activity ?? slice.activity;
+          const act = slice.activity;
           const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
           const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)} · as of ${fmtDate(act[act.length - 1].day)}` : '';
 
@@ -1944,23 +1945,23 @@ export function AdminPage() {
           return (
           <>
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <span className="text-sm">
-                <b className="tabular-nums">{sawIntro}</b> <span className="text-muted-foreground">saw intro</span>
-              </span>
-              <span className="text-sm">
-                <b className="tabular-nums">{built}</b> <span className="text-muted-foreground">built a dex</span>
-              </span>
-              {xt && (
+              {tool !== 'league' && (
+                <>
+                  <span className="text-sm">
+                    <b className="tabular-nums">{sawIntro}</b> <span className="text-muted-foreground">saw intro</span>
+                  </span>
+                  <span className="text-sm">
+                    <b className="tabular-nums">{built}</b> <span className="text-muted-foreground">built a dex</span>
+                  </span>
+                </>
+              )}
+              {tool !== 'dex' && xt && (
                 <span className="text-sm">
-                  <b className="tabular-nums">{xt.league}</b> <span className="text-muted-foreground">league</span>
+                  <b className="tabular-nums">{xt.league}</b> <span className="text-muted-foreground">league browsers</span>
                 </span>
               )}
               {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
             </div>
-
-            {tool === 'all' && (
-              <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} />
-            )}
 
             {slice.activity.length > 0 && (
               <ActiveUsersPanel
@@ -1992,7 +1993,7 @@ export function AdminPage() {
               </Panel>
             )}
 
-            {data.crossTool && <CrossToolCard data={data.crossTool} />}
+            {tool === 'all' && data.crossTool && <CrossToolCard data={data.crossTool} />}
 
             {showFlows && (
               <Panel
@@ -2045,7 +2046,7 @@ export function AdminPage() {
               </Panel>
             )}
 
-            {depthCurve && (
+            {tool !== 'all' && depthCurve && (
               <Panel
                 title="Build depth"
                 sub={['where builders stop', `of ${depthCurve.n}`]}
@@ -2106,11 +2107,11 @@ export function AdminPage() {
               </div>
             </Panel>
 
-            {showDex && (
+            {tool === 'dex' && (
               <WhatPeoplePick mostBySection={data.popularBySection} n={built} onOpen={openPicks} />
             )}
 
-            <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
+            {tool !== 'all' && <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
               {(() => {
                 const archivedOf = (cid: string, flag?: boolean) =>
                   archiveOverride[bareCid(cid)] ?? flag ?? false;
@@ -2228,7 +2229,7 @@ export function AdminPage() {
                   </>
                 );
               })()}
-            </Panel>
+            </Panel>}
           </>
           );
         })()}

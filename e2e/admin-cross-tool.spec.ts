@@ -36,5 +36,15 @@ test.describe('admin cross-tool tile', () => {
       expect(svgBox, 'Venn SVG is on screen').toBeTruthy();
       expect(svgBox!.width).toBeLessThan(tileBox!.width - 80);
     }
+
+    await expect(page.getByRole('heading', { name: /Build depth/ })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: /What people pick/ })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: /Newest browsers/ })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Dex', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /Cross-tool/ })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: /Build depth/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /What people pick/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Newest browsers/ })).toBeVisible();
   });
 });

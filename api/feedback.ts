@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { createHash, randomUUID } from 'node:crypto';
-import { redis, getClientIp } from './_shared.js';
+import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
 
 /**
  * Human-authored feedback: bug reports, translation corrections, ideas.
@@ -163,6 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const cid = str(body.cid, 64);
 
+    if (isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
     const ip = getClientIp(req);
     const perIp = await ipLimiter.limit(ip);
     if (!perIp.success) {

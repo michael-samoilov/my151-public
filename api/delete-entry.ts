@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { redis, requireAdmin, CLIENTS_KEY, VERSION_KEY } from './_shared.js';
+import { redis, isReadOnlyDeployment, requireAdmin, CLIENTS_KEY, VERSION_KEY } from './_shared.js';
 
 // Remove one client's record. Aggregates are computed on read, so a single
 // HDEL is all that's needed — nothing to reconcile.
@@ -7,6 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Preview deployments are read-only' });
   if (!(await requireAdmin(req, res))) return;
 
   const { cid } = (req.body ?? {}) as { cid?: unknown };
