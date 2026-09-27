@@ -1,3 +1,4 @@
+// keeps: prunePointers deleting a saved pick whose source is still filled
 import { describe, expect, it } from 'vitest';
 import { pointerMarks, pointerPool, prunePointers } from './pointers';
 

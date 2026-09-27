@@ -1,3 +1,4 @@
+// keeps: a row-wrap rule break for list sizes that no E2E selector opens
 import { describe, expect, it } from 'vitest';
 import { evolutionLineKey } from './catalog';
 import { eligibleFor } from './eligibility';

@@ -1,3 +1,4 @@
+// keeps: a wrong packing chain in cascades E2E cannot drive, such as the 17-link Gen 3 Normal case
 import { describe, expect, it } from 'vitest';
 import { allPickerMons, getPickerMon } from './catalog';
 import { GEN_NUMBERS, TYPES18, type GenNumber } from './cells';

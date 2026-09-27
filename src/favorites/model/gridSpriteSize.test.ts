@@ -1,3 +1,4 @@
+// keeps: a selectable sprite with no ink measurement, which renders at the fallback size
 import { describe, expect, it } from 'vitest';
 import { allPickerMons } from './catalog';
 import spriteInk from './spriteInk.json';

@@ -1,3 +1,4 @@
+// keeps: a catalog error among 1,000+ picker forms (duplicate or missing sprite, wrong generation) that E2E cannot enumerate
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';

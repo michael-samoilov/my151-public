@@ -1,3 +1,4 @@
+// keeps: a wrong candidate list in one of the 264 grid cells, which E2E cannot open one by one
 import { describe, expect, it } from 'vitest';
 import { eligibleFor, isEmptyTypePicker, kindFor, regionalPickerTier } from './eligibility';
 import { isLegendaryEligible, isPowerupForm } from './catalog';
