@@ -45,6 +45,7 @@ import { LaurelIcon } from './LaurelIcon';
 import { BALL_OF_SPRITE, RING_OF_SPRITE, pairSpriteScale, seamEnds, SLOT_PAD_REM, SPRITE_REM } from '../slotLayout';
 import { tmBodyShiftRem, tmNameWraps } from '../export/layout';
 import { useSlotLab } from '../slotLab';
+import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
 
 /**
  * The 11-row gym leader card. Geometry mirrors the design canvas
@@ -236,6 +237,8 @@ function grabbedCellFace(activatorEvent: Event): {
   radius: number;
   /** One of the card's rem, in the portal's pixels. */
   rem: number;
+  /** How the card draws its sprites, which a portal does not inherit. */
+  rendering: React.CSSProperties['imageRendering'];
 } | null {
   const target = activatorEvent.target;
   const cell = target instanceof Element ? target.closest('[data-testid^="card-cell-"]') : null;
@@ -250,6 +253,7 @@ function grabbedCellFace(activatorEvent: Event): {
     height: box.height,
     radius: parseFloat(style.borderTopLeftRadius) * zoom,
     rem: box.height / (ROW_H - 2 * INSET_Y),
+    rendering: style.getPropertyValue(SPRITE_RENDERING_VAR).trim() as React.CSSProperties['imageRendering'] || undefined,
   };
 }
 
@@ -475,7 +479,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
             src={form ? formSprite(form) : pokemon.sprite}
             alt={form ? form.label : pokemon.name}
             className="pointer-events-none max-w-none"
-            style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: 'pixelated' }}
+            style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: SPRITE_RENDERING }}
           />
         ) : (
           <EmptySlotBall />
@@ -851,7 +855,7 @@ function SlotHalf({
             src={pokemon.sprite}
             alt={pokemon.name}
             className="relative z-[1] h-full w-full max-w-none"
-            style={{ imageRendering: 'pixelated' }}
+            style={{ imageRendering: SPRITE_RENDERING }}
           />
           <SlotRemove label={`Remove ${heading.label.toLowerCase()}`} onRemove={onRemove} />
         </>
@@ -1590,7 +1594,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     ids: number[];
     sprite: number;
     /** The cell face the copy wears, in client pixels. */
-    face: { width: number; height: number; radius: number; shadow: string };
+    face: { width: number; height: number; radius: number; shadow: string; rendering?: React.CSSProperties['imageRendering'] };
   } | null>(null);
 
   const onDragStart = useCallback(
@@ -1609,6 +1613,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         height: cell?.height ?? sprite,
         radius: cell?.radius ?? 0,
         shadow: `0 ${0.5 * rem}px ${rem}px rgba(15,23,42,0.28)`,
+        rendering: cell?.rendering,
       };
       // Which of the card's two gestures this is. They begin identically —
       // a finger on a cell — and part company in what the finger does next.
@@ -2086,7 +2091,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                     src={p.sprite}
                     alt=""
                     className="max-w-none"
-                    style={{ width: held.sprite, height: held.sprite, imageRendering: 'pixelated' }}
+                    style={{ width: held.sprite, height: held.sprite, imageRendering: held.face.rendering ?? 'pixelated' }}
                   />
                 ))}
               </div>

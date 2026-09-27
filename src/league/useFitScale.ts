@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { proposeFit, stabilizeMeasure } from './fitScaleMath';
+import { proposeFit, stabilizeMeasure, type FitProposal } from './fitScaleMath';
+import { SPRITE_RENDERING_VAR } from './spriteScale';
 
 /** How to draw the fitted block: the scale, and the width to hold it at. */
 export interface Fit {
@@ -15,6 +16,12 @@ export interface Fit {
    * exactly the squash keeps that; leaving it alone scales both sides.
    */
   width: number;
+  /**
+   * The height the block may take at `scale`, in its own rem. Set for a
+   * block that holds its sprites (`Grow.shortestRem`); Infinity otherwise,
+   * and before the first measure.
+   */
+  budgetRem: number;
 }
 
 /**
@@ -64,6 +71,14 @@ export interface Grow {
   spriteRem: number;
   /** The largest the sprite may render, in px (the browser's 1x native size). */
   targetSpritePx: number;
+  /**
+   * For a block that holds its sprites at `targetSpritePx` and gives up its
+   * own spacing first: its tightest height at zoom 1, in rem. The zoom then
+   * fits that height instead of the measured one, sits exactly on the
+   * ceiling whenever it can, and `Fit.budgetRem` says what the block may
+   * spend.
+   */
+  shortestRem?: number;
 }
 
 export function useFitScale(
@@ -73,8 +88,9 @@ export function useFitScale(
   /** Desktop only: grow the block up to fill the pane instead of squashing. */
   grow?: Grow,
 ): Fit {
-  const [fit, setFit] = useState<Fit>({ scale: 1, width: 0 });
+  const [fit, setFit] = useState<Fit>({ scale: 1, width: 0, budgetRem: Infinity });
   const scaleRef = useRef(1);
+  const budgetRef = useRef(Infinity);
   const widthRef = useRef(0);
   const availRef = useRef(0);
   const roomRef = useRef(0);
@@ -107,7 +123,12 @@ export function useFitScale(
         avail = window.innerHeight - rect.top - 8;
       }
       // Hold ±a few px of pane flicker so zoom/width cannot chase it every frame.
-      avail = stabilizeMeasure(avail, availRef.current);
+      // A block that holds its sprites takes every shrink at once: its
+      // spacing is sized to the last px, so a held measure spills rows.
+      const pinned = grow?.shortestRem !== undefined;
+      const settle = (next: number, prev: number) =>
+        pinned && next < prev ? next : stabilizeMeasure(next, prev);
+      avail = settle(avail, availRef.current);
       availRef.current = avail;
       // The room the block is drawn in, measured on the parent because the
       // parent is not scaled.
@@ -122,8 +143,15 @@ export function useFitScale(
             - (parseFloat(pad.paddingRight) || 0),
         );
       }
-      room = stabilizeMeasure(room, roomRef.current);
+      room = settle(room, roomRef.current);
       roomRef.current = room;
+      const commit = (next: FitProposal, budgetRem: number) => {
+        scaleRef.current = next.scale;
+        widthRef.current = next.width;
+        budgetRef.current = budgetRem;
+        setFit({ ...next, budgetRem });
+      };
+      const held = { scale: scaleRef.current, width: widthRef.current };
       if (grow) {
         // Uniform grow-fit: the block is laid out at a fixed rem width and
         // zoomed as one, so the whole card — cells, sprites, text — scales
@@ -134,6 +162,25 @@ export function useFitScale(
         const rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
         const baseWidth = grow.baseWidthRem * rootFont;
         const spriteCeil = grow.targetSpritePx / (grow.spriteRem * rootFont);
+        if (grow.shortestRem !== undefined) {
+          const next = proposeFit({
+            mode: 'pin',
+            shortest: grow.shortestRem * rootFont,
+            avail,
+            room,
+            floor,
+            baseWidth,
+            spriteCeil,
+            prevScale: held.scale,
+            prevWidth: held.width,
+          }) ?? held;
+          // The zoom can hold while the pane changes, and the block then has
+          // more or less height to spend.
+          const budgetRem = avail / (next.scale * rootFont);
+          if (next === held && budgetRem === budgetRef.current) return;
+          commit(next, budgetRem);
+          return;
+        }
         const next = proposeFit({
           mode: 'grow',
           natural,
@@ -142,13 +189,12 @@ export function useFitScale(
           floor,
           baseWidth,
           spriteCeil,
-          prevScale: scaleRef.current,
-          prevWidth: widthRef.current,
+          prevScale: held.scale,
+          prevWidth: held.width,
         });
-        if (!next) return;
-        scaleRef.current = next.scale;
-        widthRef.current = next.width;
-        setFit(next);
+        // A block that just stopped holding its sprites still has a budget
+        // to drop, even when its zoom holds.
+        if (next || budgetRef.current !== Infinity) commit(next ?? held, Infinity);
         return;
       }
       // What the block would be scaled to if only its body had to fit. The
@@ -164,13 +210,10 @@ export function useFitScale(
         avail,
         room,
         floor,
-        prevScale: scaleRef.current,
-        prevWidth: widthRef.current,
+        prevScale: held.scale,
+        prevWidth: held.width,
       });
-      if (!next) return;
-      scaleRef.current = next.scale;
-      widthRef.current = next.width;
-      setFit(next);
+      if (next || budgetRef.current !== Infinity) commit(next ?? held, Infinity);
     };
     compute();
     // The parent as well as the block. Pinning the block's width is what
@@ -191,15 +234,20 @@ export function useFitScale(
     // `grow` is a fresh object each render, so depend on its fields, not its
     // identity, or the effect would tear down and rebuild every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref, floor, grow?.baseWidthRem, grow?.spriteRem, grow?.targetSpritePx]);
+  }, [ref, floor, grow?.baseWidthRem, grow?.spriteRem, grow?.targetSpritePx, grow?.shortestRem]);
   return fit;
 }
 
-/** The style a fitted block wears: scaled, and centred on what it left. */
-export function fitStyle(fit: Fit): React.CSSProperties {
+/**
+ * The style a fitted block wears: scaled, and centred on what it left. The
+ * block also tells its sprites how to draw at that scale
+ * (`spriteRendering`), when it has decided.
+ */
+export function fitStyle(fit: Fit, rendering?: 'pixelated' | 'auto'): React.CSSProperties {
   return {
     zoom: fit.scale,
     width: fit.width || undefined,
     marginInline: 'auto',
+    ...(rendering ? { [SPRITE_RENDERING_VAR]: rendering } : null),
   };
 }
