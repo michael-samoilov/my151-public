@@ -18,9 +18,12 @@ test.describe('admin search performance', () => {
     await expect(panel.getByRole('heading', { name: 'Overview' })).toBeVisible();
     await expect(panel.getByText('Google ready')).toBeVisible();
     await expect(panel.getByText('Bing ready')).toBeVisible();
-    await expect(panel.getByText(/^Current /)).toBeVisible();
-    await expect(panel.getByText(/^Previous /)).toBeVisible();
+    await expect(panel.getByText(/^Current \w{3} \d+–\w{3} \d+$/)).toBeVisible();
     await expect(panel.getByText(/^Through /)).toBeVisible();
+    // The demo's 28 days have no full 28 days before them, so nothing compares.
+    await expect(panel.getByText('Previous —', { exact: true })).toBeVisible();
+    await expect(panel.locator('[data-kpi="clicks"]')).toContainText('—');
+    await expect(panel.getByText('28d')).toHaveCount(0);
     await expect(panel.getByTestId('search-page-home')).toContainText('Homepage');
     await expect(panel.getByTestId('search-page-pokedex-builder')).toContainText('pokedex builder');
     await expect(panel.getByTestId('search-page-custom-gym-leader')).toContainText('gym leader maker');
