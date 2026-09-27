@@ -165,7 +165,10 @@ export function LeagueExportOverlay() {
   const chrome = useExportChrome(isDesktop);
 
   const [layout, setLayout] = useState<LeagueHomeExportLayout>(() =>
-    parseLeagueHomeExportLayout(window.location.search),
+    parseLeagueHomeExportLayout(
+      window.location.search,
+      useLeagueStore.getState().view === 'rematch' ? 'rematch' : 'story',
+    ),
   );
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
