@@ -6,8 +6,8 @@ gimmick, legendary, and favorite picks.
 
 ## Sub-features
 
-- Grid: 18 type columns plus starter, legendary, gimmick, and favorite; 9
-  generation rows plus legendary, gimmick, and favorite. Each body cell is a
+- Grid: 18 type columns plus starter, gimmick, legendary, and favorite; 9
+  generation rows plus gimmick, legendary, and favorite. Each body cell is a
   `[data-testid="favorites-cell-<type>-<gen>"]` button whose `data-kind` is
   `pick`, `pointer`, `disabled`, or `null`. Empty cells show a faint Poké Ball.
   Filled sprites may extend past their cell borders.
@@ -35,9 +35,17 @@ gimmick, legendary, and favorite picks.
   from other cells, with source badges `[data-testid="favorites-pointer-mark"]`.
   With nothing to point at, the selector shows a "?" Unown empty state
   `[data-testid="favorites-empty-unown"]`.
-- A form holds at most one of the 18 type cells in a generation. Picking it
-  elsewhere moves it and clears the old cell. The packing sheet
-  `[data-testid="favorites-packing"]` is off for users.
+- Taken: a pick selector fades each Pokémon that another pick cell in its row
+  or column holds, with one `[data-testid="favorites-used-mark"]` per holder.
+  `data-source` and `data-value` name the holder's other coordinate. The
+  legendary row and column are one line, and so are the gimmick row and
+  column. Pointer selectors show no taken marks.
+- Settings: the gear `[data-testid="favorites-settings-open"]` opens a pane
+  (desktop) or sheet (mobile) with
+  `[data-testid="favorites-setting-no-repeats"]` (`aria-pressed`, on by
+  default, saved as `personal-151-favorites-no-repeats-v1`). On, a pick leaves
+  every other pick cell in its row and column. Off, nothing moves. The packing
+  sheet `[data-testid="favorites-packing"]` is off for users.
 
 ## How to get to it (user POV)
 

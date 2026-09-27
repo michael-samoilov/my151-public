@@ -18,6 +18,35 @@ async function sheetBox(page: Page) {
   });
 }
 
+async function seedFills(page: Page, fills: Record<string, number>) {
+  await page.goto('/favorite-pokemon-by-type');
+  await page.evaluate((saved) => {
+    localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: saved }, version: 3 }));
+  }, fills);
+  await page.reload();
+  await expect(page.getByTestId('favorites-grid')).toBeVisible();
+}
+
+/** Each listed pick's taken marks as `source:value`, and whether its sprite is faded. */
+async function takenState(page: Page, ids: number[]) {
+  const out: Record<number, { faded: boolean; marks: string[] }> = {};
+  for (const id of ids) {
+    const pick = page.getByTestId(`favorites-pick-${id}`);
+    await expect(pick).toBeVisible();
+    out[id] = await pick.evaluate((el) => ({
+      faded: Number(getComputedStyle(el.querySelector('img[alt]:not([alt=""])')!).opacity) < 0.5,
+      marks: [...el.querySelectorAll('[data-testid="favorites-used-mark"]')].map(
+        (mark) => `${mark.getAttribute('data-source')}:${mark.getAttribute('data-value') ?? ''}`,
+      ),
+    }));
+  }
+  return out;
+}
+
+async function savedFills(page: Page): Promise<Record<string, number>> {
+  return page.evaluate(() => JSON.parse(localStorage.getItem('favorite-picker') ?? '{}').state?.fills ?? {});
+}
+
 test.describe('favorite Pokémon picker', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
@@ -243,7 +272,7 @@ test.describe('favorite Pokémon picker', () => {
     const discArea = Math.PI * (genBox!.width * 15 / 32) ** 2;
     expect(Math.abs(discArea - squareArea) / squareArea).toBeLessThan(0.03);
 
-    for (const [gen, banded] of [[1, 'false'], [2, 'true'], [3, 'false'], ['legendary', 'true'], ['favorite', 'false']] as const) {
+    for (const [gen, banded] of [[1, 'false'], [2, 'true'], [3, 'false'], ['gimmick', 'true'], ['legendary', 'false'], ['favorite', 'false']] as const) {
       await expect(page.getByTestId(`favorites-cell-normal-${gen}`)).toHaveAttribute('data-row-banded', banded);
     }
     const nullTile = page.locator('[data-kind="null"]').first();
@@ -781,7 +810,7 @@ test.describe('favorite Pokémon picker', () => {
     const rowIds = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
       (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
     );
-    expect(rowIds).toEqual([701, 650, 716, 10300]);
+    expect(rowIds).toEqual([701, 650, 10300, 716]);
     await expect(page.getByTestId('favorites-pick-701').locator('[data-source="type"]')).toBeVisible();
     await expect(page.getByTestId('favorites-pick-10300').locator('[data-source="gimmick"]')).toBeVisible();
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
@@ -809,7 +838,7 @@ test.describe('favorite Pokémon picker', () => {
     const selected = page.getByTestId('favorites-pick-6');
     const ring = selected.getByTestId('favorites-selection-ring');
     const clear = page.getByTestId('favorites-clear');
-    const boxes = await Promise.all([selected.boundingBox(), ring.boundingBox(), clear.boundingBox(), page.getByTestId('favorites-pick-144').boundingBox(), selected.getByTestId('favorites-pointer-mark').boundingBox()]);
+    const boxes = await Promise.all([selected.boundingBox(), ring.boundingBox(), clear.boundingBox(), page.getByTestId('favorites-pick-4').boundingBox(), selected.getByTestId('favorites-pointer-mark').boundingBox()]);
     expect(boxes.every(Boolean)).toBe(true);
     expect(boxes[1]!.x).toBeGreaterThan(boxes[0]!.x);
     expect(boxes[1]!.x + boxes[1]!.width).toBeLessThan(boxes[0]!.x + boxes[0]!.width);
@@ -922,5 +951,73 @@ test.describe('favorite Pokémon picker', () => {
       await expect(page.getByTestId(`favorites-pick-${id}`)).toHaveCount(0);
     }
     await page.screenshot({ path: testInfo.outputPath('ogerpon-pixel-forms.png') });
+  });
+  test('a pick on the same row shows taken with its column mark in the Gen 8 gimmick selector', async ({ page }, testInfo) => {
+    await seedFills(page, { 'steel|8': 10242 });
+    await page.getByTestId('favorites-cell-gimmick-8').click();
+    const taken = await takenState(page, [10242]);
+    expect(taken).toEqual({ 10242: { faded: true, marks: ['type:steel'] } });
+    await testInfo.attach('gen8-gimmick-taken.json', { body: JSON.stringify(taken, null, 2), contentType: 'application/json' });
+  });
+
+  test('the legendary row and column share taken marks, shown with the other coordinate', async ({ page }, testInfo) => {
+    await seedFills(page, { 'legendary|2': 249 });
+    await page.getByTestId('favorites-cell-psychic-legendary').click();
+    const fromRow = await takenState(page, [249]);
+    expect(fromRow).toEqual({ 249: { faded: true, marks: ['gen:2'] } });
+    await seedFills(page, { 'psychic|legendary': 249 });
+    await page.getByTestId('favorites-cell-legendary-2').click();
+    const fromColumn = await takenState(page, [249]);
+    expect(fromColumn).toEqual({ 249: { faded: true, marks: ['type:psychic'] } });
+    await testInfo.attach('legendary-line-taken.json', { body: JSON.stringify({ fromRow, fromColumn }, null, 2), contentType: 'application/json' });
+  });
+
+  test('the normal gimmick selector marks gimmick column picks and leaves picks from other columns free', async ({ page }, testInfo) => {
+    await seedFills(page, { 'dark|8': 10174, 'dark|7': 10092, 'ghost|8': 10239, 'gimmick|1': 10039, 'gimmick|4': 10308 });
+    await page.getByTestId('favorites-cell-normal-gimmick').click();
+    const taken = await takenState(page, [10174, 10092, 10239, 10039, 10308]);
+    expect(taken).toEqual({
+      10174: { faded: false, marks: [] },
+      10092: { faded: false, marks: [] },
+      10239: { faded: false, marks: [] },
+      10039: { faded: true, marks: ['gen:1'] },
+      10308: { faded: true, marks: ['gen:4'] },
+    });
+    await testInfo.attach('normal-gimmick-taken.json', { body: JSON.stringify(taken, null, 2), contentType: 'application/json' });
+  });
+
+  test('the no-repeat setting moves a pick out of its row and column, and off allows doubles', async ({ page }, testInfo) => {
+    await seedFills(page, { 'legendary|2': 249 });
+    await page.getByTestId('favorites-cell-psychic-legendary').click();
+    await page.getByTestId('favorites-pick-249').click();
+    const on = await savedFills(page);
+    expect(on).toEqual({ 'psychic|legendary': 249 });
+
+    await page.getByTestId('favorites-settings-open').click();
+    const toggle = page.getByTestId('favorites-setting-no-repeats');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    await page.getByRole('button', { name: 'Close settings' }).click();
+    await page.getByTestId('favorites-cell-legendary-2').click();
+    await page.getByTestId('favorites-pick-249').click();
+    await page.getByTestId('favorites-cell-grass-1').click();
+    await page.getByTestId('favorites-pick-1').click();
+    await page.getByTestId('favorites-cell-poison-1').click();
+    await page.getByTestId('favorites-pick-1').click();
+    const off = await savedFills(page);
+    expect(off).toEqual({ 'psychic|legendary': 249, 'legendary|2': 249, 'grass|1': 1, 'poison|1': 1 });
+
+    // Turning the setting back on keeps doubles that already exist.
+    await page.getByTestId('favorites-settings-open').click();
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await page.reload();
+    await expect(page.getByTestId('favorites-grid')).toBeVisible();
+    const reopened = await savedFills(page);
+    expect(reopened).toEqual(off);
+    const setting = await page.evaluate(() => localStorage.getItem('personal-151-favorites-no-repeats-v1'));
+    expect(setting).toBe('1');
+    await testInfo.attach('no-repeat-setting.json', { body: JSON.stringify({ on, off, reopened, setting }, null, 2), contentType: 'application/json' });
   });
 });

@@ -7,7 +7,7 @@ import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import { ChevronLeft, PanelRightClose } from 'lucide-react';
-import { isGenNumber, isTypeName, typeSlottedElsewhere, type GenAxisId, type TypeAxisId } from '../model/cells';
+import { isGenNumber, isTypeName, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
 import {
@@ -22,6 +22,7 @@ import {
   type PackMove,
 } from '../model/packing';
 import { pointerMarks, pointerPool } from '../model/pointers';
+import { takenIn } from '../model/taken';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
@@ -90,6 +91,7 @@ export function PickerSheet({
     }
     return eligibleFor(type, gen);
   }, [kind, type, gen, fills]);
+  const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
   const maxCols = 6;
   const lineKey = kind === 'pick' && type === 'starter' ? evolutionLineKey : undefined;
@@ -216,7 +218,7 @@ export function PickerSheet({
           lineKey={lineKey}
           selectedId={currentId}
           onPick={pick}
-          usedIn={kind === 'pick' && isTypeName(type) ? (id) => typeSlottedElsewhere(fills, id, type, gen) : undefined}
+          takenMarks={kind === 'pick' ? (id) => taken.get(id) ?? [] : undefined}
           showTypes={showTypes && kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
           pointer={kind === 'pointer'}
           sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}

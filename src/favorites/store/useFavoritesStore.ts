@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { cellKey, isGenNumber, isTypeName, type GenAxisId, type TypeAxisId } from '../model/cells';
+import { cellKey, isGenNumber, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { getPickerMon, type PickerMon } from '../model/catalog';
 import {
   applyPathToTypeMap,
@@ -9,6 +9,7 @@ import {
   type PackMove,
 } from '../model/packing';
 import { pointerPool, prunePointers } from '../model/pointers';
+import { withoutRepeats } from '../model/taken';
 
 export const FAVORITES_STORAGE_KEY = 'favorite-picker';
 
@@ -39,7 +40,8 @@ export function migrateFavoriteFills(saved: Record<string, number>): Record<stri
 
 export interface FavoritesState {
   fills: Record<string, number>;
-  place: (type: TypeAxisId, gen: GenAxisId, id: number) => void;
+  /** With `noRepeats`, the pick also leaves every other cell in this cell's row and column. */
+  place: (type: TypeAxisId, gen: GenAxisId, id: number, noRepeats: boolean) => void;
   applyPack: (gen: number, path: PackMove[]) => void;
   clear: (type: TypeAxisId, gen: GenAxisId) => void;
 }
@@ -57,19 +59,10 @@ export const useFavoritesStore = create<FavoritesState>()(
   persist(
     (set) => ({
       fills: {},
-      place: (type, gen, id) =>
+      place: (type, gen, id, noRepeats) =>
         set((s) => {
-          const next = { ...s.fills, [cellKey(type, gen)]: id };
-          if (isTypeName(type) && isGenNumber(gen)) {
-            // Uniqueness among the 18 type cells of this generation: a direct
-            // place that relocates clears the origin. Occupied dests go through
-            // applyPack instead.
-            const dest = type;
-            const map = typeMapFromFills(next, gen, getPickerMon);
-            const from = Object.entries(map).find(([t, m]) => m.id === id && t !== dest);
-            if (from) delete next[cellKey(from[0] as TypeAxisId, gen)];
-          }
-          return { fills: prunePointers(next) };
+          const placed = { ...s.fills, [cellKey(type, gen)]: id };
+          return { fills: prunePointers(noRepeats ? withoutRepeats(placed, type, gen, id) : placed) };
         }),
       applyPack: (gen, path) =>
         set((s) => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { migrateFavoriteFills } from './useFavoritesStore';
+import { migrateFavoriteFills, useFavoritesStore } from './useFavoritesStore';
+import type { GenAxisId, TypeAxisId } from '../model/cells';
 
 describe('favorite picker saved-form migration', () => {
   it('moves an existing Gimmick favorite to the new overall Gimmick pointer', () => {
@@ -38,5 +39,50 @@ describe('favorite picker saved-form migration', () => {
       'favorite|1': 6,
     };
     expect(migrateFavoriteFills(saved)).toEqual(saved);
+  });
+});
+
+describe('placing a pick with the no-repeat setting', () => {
+  // Catches a kick that misses a linked legendary or gimmick cell, clears a
+  // pick outside the placed cell's row and column, or leaves a dead pointer.
+  function placeInto(saved: Record<string, number>, cell: string, id: number, noRepeats: boolean) {
+    const [type, gen] = cell.split('|');
+    useFavoritesStore.setState({ fills: saved });
+    useFavoritesStore.getState().place(
+      type as TypeAxisId,
+      (/^\d+$/.test(gen) ? Number(gen) : gen) as GenAxisId,
+      id,
+      noRepeats,
+    );
+    return useFavoritesStore.getState().fills;
+  }
+
+  it.each([
+    ['another type in the generation', { 'grass|1': 1 }, 'poison|1', 1, { 'poison|1': 1 }],
+    ['the starter cell of the generation', { 'grass|1': 1 }, 'starter|1', 1, { 'starter|1': 1 }],
+    ['the legendary cell of the generation', { 'legendary|2': 249 }, 'psychic|2', 249, { 'psychic|2': 249 }],
+    ['the type column', { 'fire|2': 250 }, 'fire|legendary', 250, { 'fire|legendary': 250 }],
+    ['the legendary column, from the legendary row', { 'legendary|2': 249 }, 'psychic|legendary', 249, { 'psychic|legendary': 249 }],
+    ['the legendary row, from the legendary column', { 'flying|legendary': 249 }, 'legendary|2', 249, { 'legendary|2': 249 }],
+    ['the gimmick column, from the gimmick row', { 'gimmick|1': 10039 }, 'normal|gimmick', 10039, { 'normal|gimmick': 10039 }],
+    ['the gimmick row, from the legendary gimmick cell', { 'gimmick|7': 10157 }, 'legendary|gimmick', 10157, { 'legendary|gimmick': 10157 }],
+    ['the legendary column, from the legendary gimmick cell', { 'legendary|7': 10157 }, 'legendary|gimmick', 10157, { 'legendary|gimmick': 10157 }],
+  ])('moves a pick out of %s', (_, saved, cell, id, moved) => {
+    expect(placeInto(saved, cell, id, true)).toEqual(moved);
+    expect(placeInto(saved, cell, id, false)).toEqual({ ...saved, ...moved });
+  });
+
+  it.each([
+    ['a regional form in another type column', { 'dark|8': 10174 }, 'normal|gimmick', 10174],
+    ['a legendary row pick seen from a generation cell', { 'flying|legendary': 249 }, 'psychic|2', 249],
+    ['a source pick when the placed cell is a pointer', { 'fire|1': 6 }, 'fire|favorite', 6],
+  ])('keeps %s', (_, saved, cell, id) => {
+    const key = Object.keys(saved)[0];
+    expect(placeInto(saved, cell, id, true)[key]).toBe(id);
+  });
+
+  it('keeps a pointer that still has a source and drops one that lost it', () => {
+    expect(placeInto({ 'fire|1': 4, 'favorite|1': 4 }, 'starter|1', 4, true)).toEqual({ 'starter|1': 4, 'favorite|1': 4 });
+    expect(placeInto({ 'legendary|2': 249, 'favorite|2': 249 }, 'psychic|legendary', 249, true)).toEqual({ 'psychic|legendary': 249 });
   });
 });
