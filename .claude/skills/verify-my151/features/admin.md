@@ -17,6 +17,10 @@ public product UI.
   and Newest browsers sit on Dex and League. Search performance
   (`[data-testid="search-performance"]`) has its own Search tab, and opening it
   asks `/api/search-performance?refresh=1`.
+- What people pick opens a picks page. On Dex, its sections are the build
+  page sections. On League, the first section is `[data-section-id="ace"]`,
+  then one per card type in type order, then `none`, each capped at 4 rows
+  of 9 faces. League numbers are league counts.
 - A user preview (`[data-user-preview][role="link"]`) opens one browser's
   detail: `[data-testid="league-visit-board"]`,
   `[data-testid="admin-gym-card"]`, `[data-testid="admin-slot-N"]`,
@@ -43,7 +47,7 @@ Manual drive (a Playwright script):
 Other handles: `[data-testid="heatmap-grid"]` and
 `[data-testid="heatmap-cell"]`, `[data-testid="cross-tool-venns"]`,
 `[data-who-*]` on the who panel, and `[data-section-id]` and `[data-face-id]`
-on the picks page.
+on both picks pages.
 
 ## Gotchas
 

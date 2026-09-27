@@ -22,6 +22,7 @@ import type {
   ToolSlice,
 } from '../AdminPage';
 import { lineKey, poolIdsForSection } from '../picksStats';
+import { leaguePicks } from '../../../../api/_leaguePicks';
 import { PREVIEW_FIT } from '../userPreview';
 const DAY = 86_400_000;
 // Anchor "now" to the data window's end so relative times read sensibly.
@@ -391,6 +392,7 @@ function mkCards(n: number): import('../AdminPage').LeagueCard[] {
     };
     if (i % 3 !== 2) {
       const line = l[i % 3].b;
+      card.ace = (i % 3) + 1;
       card.aceId = line[line.length - 1];
     }
     return card;
@@ -635,7 +637,7 @@ export const sampleResponse: ApiResponse = {
     leagueExportersWithDex: 2,
   },
   league: {
-    users: 5,
+    users: leagueUsers.length,
     named: 4,
     typed: 5,
     fullLeague: 1,
@@ -644,6 +646,7 @@ export const sampleResponse: ApiResponse = {
     returning: 3,
     activeLast7: 3,
     activity: ACTIVITY.slice(-30).map((a) => ({ day: a.day, dau: Math.max(0, Math.round(a.dau / 12)) })),
+    picks: leaguePicks(leagueUsers),
     recent: leagueUsers.map((u) => ({
       cid: u.cid,
       firstAt: u.firstAt,
