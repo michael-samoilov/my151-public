@@ -26,7 +26,9 @@ display options, exportable as a PNG.
   A second copy (`::after`, `soft-light`) moves its bands the opposite way.
   The glare is fixed `overlay`. There is no blend selector.
 - `/foil-workshop` (off in production) drives the same `ExportPreview3D` card
-  with only the Rainbow, Glare, and Shadow controls.
+  with Shine (the V shine), Rainbow (a rainbow holofoil layer, off in the
+  export), Max tilt, Glare, and Shadow controls. Max tilt sets the hover
+  tilt, the auto-tilt, and the cap together.
 - A survey can follow a save. Its highlight sprite is integer-scaled at 1× or
   more.
 
@@ -63,8 +65,9 @@ download. After the preview paints, it checks:
 - `dex-export:survey-sprite-scale`: the survey sprite is an integer multiple of
   the native size.
 
-`runFoilWorkshopSuite` opens `/foil-workshop` and asserts the three keeper
-controls, no blend, mask, sparkle, tilt, or parallax controls,
+`runFoilWorkshopSuite` opens `/foil-workshop` and asserts the keeper
+controls (Shine, Rainbow, Max tilt, Glare, Shadow), no blend, mask, sparkle,
+or parallax controls,
 `--foil-holographic` at `1`, and a working glare slider.
 
 Manual drive (a Playwright script, local build): seed 37 with

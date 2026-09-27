@@ -4,7 +4,6 @@ import {
   clampHypot,
   clampTiltToBox,
   fitCardInPreviewBox,
-  previewMaxHypot,
   PREVIEW_PERSPECTIVE_PX,
   PREVIEW_REST_PAD,
   PREVIEW_SHADOW_PAD_PX,
@@ -24,6 +23,7 @@ import {
   REST_POSE,
   springSettled,
   tickSpring,
+  type HoverTiltAxes,
   type HoverTiltPose,
   type HoverTiltSpring,
 } from '@/components/export/hoverTilt';
@@ -76,8 +76,9 @@ function lerpPose(from: HoverTiltPose, to: HoverTiltPose, u: number): HoverTiltP
   };
 }
 
-function tiltAxes(tilt: HoverTiltRecipe | undefined): { tiltFactor: number; tiltFactorY: number } {
+function tiltAxes(tilt: HoverTiltRecipe | undefined, maxTilt: number): HoverTiltAxes {
   return {
+    rotation: maxTilt,
     tiltFactor: tilt?.tiltFactor ?? DEFAULT_HOVER_TILT_RECIPE.tiltFactor,
     tiltFactorY: tilt?.tiltFactorY ?? DEFAULT_HOVER_TILT_RECIPE.tiltFactorY,
   };
@@ -176,7 +177,7 @@ export function ExportPreview3D({
       rotateX = clamped.x;
       rotateY = clamped.y;
     }
-    const capped = clampHypot(rotateX, rotateY, previewMaxHypot(window.innerWidth));
+    const capped = clampHypot(rotateX, rotateY, maxTilt);
     rotateX = capped.x;
     rotateY = capped.y;
     const pointerX = pose.pointerX;
@@ -296,7 +297,7 @@ export function ExportPreview3D({
   const beginPointer = useCallback((clientX: number, clientY: number) => {
     const box = restPointerBox();
     if (!box || box.width === 0) return;
-    const pose = hoverTiltFromPointer(clientX, clientY, box, tiltAxes(tiltRef.current));
+    const pose = hoverTiltFromPointer(clientX, clientY, box, tiltAxes(tiltRef.current, recipeRef.current.maxTilt));
     const last = lastPoseRef.current;
     springXRef.current.value = last.nx;
     springYRef.current.value = last.ny;
@@ -322,7 +323,7 @@ export function ExportPreview3D({
       if (!pending || orbitRef.current !== 'pointer') return;
       const box = restPointerBox();
       if (!box || box.width === 0) return;
-      const pose = hoverTiltFromPointer(pending.x, pending.y, box, tiltAxes(tiltRef.current));
+      const pose = hoverTiltFromPointer(pending.x, pending.y, box, tiltAxes(tiltRef.current, recipeRef.current.maxTilt));
       springXRef.current.target = pose.nx;
       springYRef.current.target = pose.ny;
       springARef.current.target = 1;
@@ -446,7 +447,7 @@ export function ExportPreview3D({
         tickSpring(springXRef.current, dt);
         tickSpring(springYRef.current, dt);
         tickSpring(springARef.current, dt);
-        paint(hoverTiltFromNormalized(springXRef.current.value, springYRef.current.value, tiltAxes(tiltRef.current)));
+        paint(hoverTiltFromNormalized(springXRef.current.value, springYRef.current.value, tiltAxes(tiltRef.current, recipeRef.current.maxTilt)));
       } else if (orbitRef.current === 'rest') {
         const restAt = restAtRef.current;
         if (restAt !== null && now < restAt) {
@@ -461,7 +462,7 @@ export function ExportPreview3D({
           tickSpring(springXRef.current, dt);
           tickSpring(springYRef.current, dt);
           tickSpring(springARef.current, dt);
-          paint(hoverTiltFromNormalized(springXRef.current.value, springYRef.current.value, tiltAxes(tiltRef.current)));
+          paint(hoverTiltFromNormalized(springXRef.current.value, springYRef.current.value, tiltAxes(tiltRef.current, recipeRef.current.maxTilt)));
           if (
             springSettled(springXRef.current) &&
             springSettled(springYRef.current) &&
@@ -548,6 +549,11 @@ export function ExportPreview3D({
       cancelled = true;
     };
   }, [activeSrc, idleAt, maskContext, paint, recipe, tilt]);
+
+  // The fit reserves room for the auto-tilt, so a new amplitude refits the card.
+  useLayoutEffect(() => {
+    measureRef.current();
+  }, [recipe.idleTilt]);
 
   useLayoutEffect(() => {
     const el = cardRef.current;

@@ -117,6 +117,7 @@ export function FoilWorkshopPage() {
 
   const busy = src === null;
   const holo = recipe.layers.holographic;
+  const rainbow = recipe.layers.holoRainbow;
 
   useEffect(() => {
     persistWorkshop(recipe, tilt, sample);
@@ -184,7 +185,7 @@ export function FoilWorkshopPage() {
           <div>
             <h1 className="text-sm font-semibold text-zinc-50">Export foil workshop</h1>
             <p className="mt-0.5 hidden max-w-[42rem] md:block">
-              Holo, glare, and drop shadow. Live export defaults stay on the card.
+              Shine, rainbow, tilt, glare, and drop shadow. Live export defaults stay on the card.
             </p>
           </div>
           <a href="/custom-gym-leader" className="pointer-events-auto shrink-0 text-zinc-100 underline">
@@ -268,7 +269,7 @@ export function FoilWorkshopPage() {
 
           <fieldset className="space-y-2" data-foil-control="holographic">
             <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
-              Holo / rainbow
+              Shine
             </legend>
             <label className="flex items-center gap-2 text-[0.7rem] text-zinc-300">
               <input
@@ -277,7 +278,7 @@ export function FoilWorkshopPage() {
                 data-foil-on="holographic"
                 onChange={(e) => setRecipe(withFoilLayer(recipe, 'holographic', { on: e.target.checked }))}
               />
-              Rainbow on ink
+              Diagonal V shine on ink
             </label>
             <Slider
               label="Amount"
@@ -287,6 +288,46 @@ export function FoilWorkshopPage() {
               value={holo.amount}
               testId="holographic"
               onChange={(amount) => setRecipe(withFoilLayer(recipe, 'holographic', { amount }))}
+            />
+          </fieldset>
+
+          <fieldset className="space-y-2" data-foil-control="holoRainbow">
+            <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
+              Rainbow
+            </legend>
+            <label className="flex items-center gap-2 text-[0.7rem] text-zinc-300">
+              <input
+                type="checkbox"
+                checked={rainbow.on}
+                data-foil-on="holoRainbow"
+                onChange={(e) => setRecipe(withFoilLayer(recipe, 'holoRainbow', { on: e.target.checked }))}
+              />
+              Rainbow holofoil on ink
+            </label>
+            <Slider
+              label="Amount"
+              min={0}
+              max={1}
+              step={0.01}
+              value={rainbow.amount}
+              testId="holoRainbow"
+              onChange={(amount) => setRecipe(withFoilLayer(recipe, 'holoRainbow', { amount }))}
+            />
+          </fieldset>
+
+          <fieldset className="space-y-2" data-foil-control="maxTilt">
+            <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
+              Tilt
+            </legend>
+            <Slider
+              label="Max tilt"
+              min={1}
+              max={20}
+              step={0.5}
+              value={recipe.maxTilt}
+              suffix="°"
+              testId="maxTilt"
+              onChange={(deg) => setRecipe({ ...recipe, maxTilt: deg, idleTilt: deg })}
             />
           </fieldset>
 

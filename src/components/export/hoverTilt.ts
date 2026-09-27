@@ -30,8 +30,15 @@ export type HoverTiltPose = {
   ny: number;
 };
 
-/** Half of hover-tilt's `ROTATION = 10`, per Michael. Edge tilt is this times `tiltFactor`. */
-export const HOVER_TILT_ROTATION = 5;
+/**
+ * Edge tilt is `rotation` times the axis factor. hover-tilt's `ROTATION` is
+ * 10; the preview passes the foil recipe's `maxTilt`.
+ */
+export type HoverTiltAxes = {
+  rotation: number;
+  tiltFactor?: number;
+  tiltFactorY?: number;
+};
 
 /** hover-tilt `defaultSpringOptions`. */
 export const HOVER_TILT_SPRING = {
@@ -151,14 +158,14 @@ export function pointerPercent(clientX: number, clientY: number, box: HoverTiltB
 export function hoverTiltFromNormalized(
   nx: number,
   ny: number,
-  axes?: { tiltFactor?: number; tiltFactorY?: number },
+  axes: HoverTiltAxes,
 ): HoverTiltPose {
   const x = clamp(nx, 0, 1);
   const y = clamp(ny, 0, 1);
-  const fx = axes?.tiltFactor ?? 1;
-  const fy = axes?.tiltFactorY ?? fx;
-  const rotXMax = HOVER_TILT_ROTATION * fy;
-  const rotYMax = HOVER_TILT_ROTATION * fx;
+  const fx = axes.tiltFactor ?? 1;
+  const fy = axes.tiltFactorY ?? fx;
+  const rotXMax = axes.rotation * fy;
+  const rotYMax = axes.rotation * fx;
   return {
     rotateX: y * rotXMax * 2 - rotXMax,
     rotateY: (1 - x) * rotYMax * 2 - rotYMax,
@@ -177,7 +184,7 @@ export function hoverTiltFromPointer(
   clientX: number,
   clientY: number,
   box: HoverTiltBox,
-  axes?: { tiltFactor?: number; tiltFactorY?: number },
+  axes: HoverTiltAxes,
 ): HoverTiltPose {
   const n = pointerNormalized(clientX, clientY, box);
   return hoverTiltFromNormalized(n.x, n.y, axes);

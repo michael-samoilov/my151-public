@@ -14,6 +14,7 @@ export const FOIL_LAYER_IDS = [
   'ambient',
   'specular',
   'rim',
+  'holoRainbow',
   'holographic',
   'iridescence',
   'emboss',
@@ -29,10 +30,12 @@ export type FoilLayer = {
 };
 
 export type FoilRecipe = {
+  /** Auto-tilt amplitude in degrees. The card fit reserves room for it. */
   idleTilt: number;
   idleMsX: number;
   idleMsY: number;
   deadDeg: number;
+  /** Hover tilt at the card edge, and the cap on every tilt, in degrees. */
   maxTilt: number;
   parallaxPx: number;
   bloomBlurPx: number;
@@ -57,9 +60,13 @@ export const FOIL_LAYER_META = {
     title: 'Rim lighting',
     blurb: 'Edge glow opposite the light, masked to ridges.',
   },
+  holoRainbow: {
+    title: 'Rainbow holofoil',
+    blurb: 'Rainbow bands sweep across colored ink as the card tilts.',
+  },
   holographic: {
-    title: 'Foil / holographic sheen',
-    blurb: 'Rainbow on colored ink. White paper stays paper.',
+    title: 'V shine',
+    blurb: 'Diagonal bands cross on colored ink. White paper stays paper.',
   },
   iridescence: {
     title: 'Iridescence / color shift',
@@ -86,6 +93,8 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
+  // Off in the export; the workshop turns it on to compare.
+  holoRainbow: { on: false, amount: 0.5 },
   holographic: { on: true, amount: FOIL_HOLO_AMOUNT },
   iridescence: { on: false, amount: 0 },
   emboss: { on: false, amount: 0 },
@@ -105,7 +114,7 @@ export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
   layers: DEFAULT_LAYERS,
 };
 
-const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holographic', 'iridescence', 'parallax'];
+const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holoRainbow', 'holographic', 'iridescence', 'parallax'];
 const EDGE_MASK_LAYERS: readonly FoilLayerId[] = ['emboss', 'rim'];
 const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'bloom'];
 
@@ -161,7 +170,7 @@ export function parseFoilRecipe(input: unknown): FoilRecipe {
     idleMsX: readNumber(rec.idleMsX, base.idleMsX, 2000, 40000),
     idleMsY: readNumber(rec.idleMsY, base.idleMsY, 2000, 40000),
     deadDeg: readNumber(rec.deadDeg, base.deadDeg, 0, 15),
-    maxTilt: readNumber(rec.maxTilt, base.maxTilt, 4, 35),
+    maxTilt: readNumber(rec.maxTilt, base.maxTilt, 1, 20),
     parallaxPx: readNumber(rec.parallaxPx, base.parallaxPx, 0, 24),
     bloomBlurPx: readNumber(rec.bloomBlurPx, base.bloomBlurPx, 0, 40),
     specSize: readNumber(rec.specSize, base.specSize, 0.08, 0.8),

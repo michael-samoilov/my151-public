@@ -4,24 +4,12 @@ export const PREVIEW_PERSPECTIVE_PX = 600;
 export const PREVIEW_REST_PAD = 8;
 /** Live tilt must keep this many CSS px between the painted AABB and the pane. */
 export const PREVIEW_TILT_INSET = 24;
-/**
- * Half of hover-tilt's 10° ROTATION, per Michael. A corner on both axes would
- * reach ~7°, so cap the vector at 5°: a corner then tilts no further than an
- * edge. clampTiltToBox still keeps the painted card inside the pane.
- */
-export const PREVIEW_DESKTOP_MAX_HYPOT = 5;
-export const PREVIEW_MOBILE_MAX_HYPOT = 5;
-export const PREVIEW_DESKTOP_MIN_PX = 1024;
 /** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;
 export const PREVIEW_SHADOW_REST = 0.14;
 export const PREVIEW_SHADOW_PEAK = 0.44;
 export const PREVIEW_SHADOW_BASE = 0.18;
 export const PREVIEW_SHADOW_HYPOT_DIV = 18;
-
-export function previewMaxHypot(widthPx: number): number {
-  return widthPx >= PREVIEW_DESKTOP_MIN_PX ? PREVIEW_DESKTOP_MAX_HYPOT : PREVIEW_MOBILE_MAX_HYPOT;
-}
 
 /** Raised-edge drop-shadow opacity. Stronger than the 0.36 mild cap, below the old 0.50 slab. */
 export function previewShadowOpacity(hypot: number): number {
