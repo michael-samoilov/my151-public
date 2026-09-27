@@ -18,6 +18,7 @@ import type { PickerMon } from '../model/catalog';
 import { gridSpriteSizePercent } from '../model/gridSpriteSize';
 import { minimapViewportX } from '../model/minimap';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
+import { NameTooltip } from './NameTooltip';
 
 const ROWS = GEN_AXIS.length + 1;
 const COLS = TYPE_AXIS.length + 1;
@@ -460,7 +461,7 @@ function BodyCell({
   const tint = isTypeName(type) ? TYPE_COLORS[type] : undefined;
   const locked = kind === 'disabled' || kind === 'null';
 
-  return (
+  const cell = (
     <button
       type="button"
       disabled={locked}
@@ -477,6 +478,9 @@ function BodyCell({
           ? 'cursor-default bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]'
           : mon ? 'cursor-pointer bg-transparent' : 'cursor-pointer bg-card',
         !locked && kind === 'pointer' && (mon ? 'bg-amber-50/50' : 'bg-amber-50'),
+        // A mouse hover greys the cell. The grey layers over the cell's own
+        // background, so the amber, banding, and type tint show through.
+        !locked && 'hover:bg-linear-to-b hover:from-foreground/5 hover:to-foreground/5',
       )}
     >
       {banded && !locked ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
@@ -502,6 +506,7 @@ function BodyCell({
       ) : null}
     </button>
   );
+  return mon && !locked ? <NameTooltip mon={mon}>{cell}</NameTooltip> : cell;
 }
 
 function ChartMinimap({

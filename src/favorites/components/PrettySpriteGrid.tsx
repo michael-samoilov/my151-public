@@ -5,9 +5,11 @@ import type { TypeName } from '@/types/pokemon';
 import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
-import { pokemonLabel, useNamesVersion } from '@/i18n';
+import { useNamesVersion } from '@/i18n';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { ExtraMark, RomanDisc, TypeIcon } from './marks';
+import { NameTooltip } from './NameTooltip';
+import { labelOf } from './spriteLabel';
 import type { PointerMark } from '../model/pointers';
 
 const ROW_GAP_PX = 4;
@@ -138,14 +140,14 @@ function PickCell({
   const clearing = selected && Boolean(onClear);
   const mark = Math.round(spritePx * 0.28);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
-  return (
+  const tile = (
     <button
       type="button"
       onClick={() => selected && onClear ? onClear() : onPick(mon)}
       data-testid={`favorites-pick-${mon.id}`}
       aria-pressed={selected}
       aria-label={clearing ? `${clearLabel ?? 'Clear'} ${labelOf(mon)}` : labelOf(mon)}
-      className="relative flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent p-0"
+      className="group/pick relative flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent p-0 hover:bg-foreground/5"
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
       <img
@@ -207,12 +209,14 @@ function PickCell({
           draggable={false}
         />
       ) : null}
+      {/* The x paints above the source badges and the used mark. It stays
+          soft until a mouse hovers the tile. */}
       {clearing ? (
         <svg
           data-testid="favorites-clear"
           viewBox="0 0 24 24"
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 z-[14] -translate-x-1/2 -translate-y-1/2 text-red-500"
+          className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-red-500 opacity-50 group-hover/pick:opacity-100"
           style={{ width: Math.round(spritePx * 0.62), height: Math.round(spritePx * 0.62), filter: 'drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)' }}
           fill="none"
           stroke="currentColor"
@@ -224,10 +228,5 @@ function PickCell({
       ) : null}
     </button>
   );
-}
-
-function labelOf(mon: PickerMon): string {
-  if (mon.source === 'powerup') return mon.name;
-  const label = pokemonLabel(mon.id, mon.name);
-  return label.pending ? mon.name : label.full;
+  return <NameTooltip mon={mon}>{tile}</NameTooltip>;
 }

@@ -795,7 +795,7 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
   });
 
-  test('selection and clear outlines stay inside their tiles and leave source badges on top', async ({ page }, testInfo) => {
+  test('selection and clear outlines stay inside their tiles and the clear x paints above source badges', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/favorite-pokemon-by-type');
     await page.evaluate(() => {
@@ -825,7 +825,7 @@ test.describe('favorite Pokémon picker', () => {
       sprite: Number(getComputedStyle(el.querySelector('img[alt]:not([alt=""])')!).zIndex),
     }));
     expect(layers.badge).toBeGreaterThan(layers.ring);
-    expect(layers.badge).toBeGreaterThan(layers.clear);
+    expect(layers.clear).toBeGreaterThan(layers.badge);
     expect(layers.sprite).toBeGreaterThan(layers.ring);
     await page.screenshot({ path: testInfo.outputPath('picker-rings.png') });
   });
