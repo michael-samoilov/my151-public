@@ -15,7 +15,9 @@
  * - `text`: HTML, JavaScript, and CSS, compressed with Brotli quality 11, which
  *   is what Vercel sends.
  * - `images`: image files those modules import, as emitted. They are already
- *   compressed.
+ *   compressed. Every `srcset` size counts, though a browser downloads one
+ *   size of each image, so this is what the page can load, not what one
+ *   visitor does.
  *
  * Fonts are not counted. The CSS names every Inter subset, but a browser
  * downloads only the subsets its text needs.
