@@ -1,14 +1,18 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Seg } from '@/components/admin/ui';
 import { TypeBadge } from '@/components/shared/TypeBadge';
+import { TYPE_COLORS } from '@/data/type-colors';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { sectionName } from '@/i18n';
-import { sectionColor } from '@/lib/sectionColors';
+import { sectionName, typeLabel } from '@/i18n';
+import { NO_TYPE } from '@/league/theme';
+import { deriveSectionColor, sectionColor, type SectionColor } from '@/lib/sectionColors';
 import { cn, displayName } from '@/lib/utils';
+import type { LeaguePicks } from '../../../api/_leaguePicks';
 import {
   formatIndex,
   indexBarPct,
   isStarterTypeName,
+  leaguePicksSections,
   PICKS_COLS,
   PICKS_COMBINED_COLS,
   PICKS_PAIR_COLS,
@@ -17,6 +21,7 @@ import {
   picksStarterCols,
   viewsForPicks,
   type DualColumn,
+  type LeaguePicksSectionId,
   type LineMember,
   type RankedLine,
   type SectionPicksView,
@@ -65,12 +70,15 @@ function maxPicks(lines: RankedLine[]): number {
 
 function SectionBox({
   sectionId,
+  name,
+  color: { fill, stroke },
   children,
 }: {
   sectionId: string;
+  name: string;
+  color: SectionColor;
   children: ReactNode;
 }) {
-  const { fill, stroke } = sectionColor(sectionId);
   return (
     <section
       data-section-id={sectionId}
@@ -84,7 +92,7 @@ function SectionBox({
         className="px-1.5 text-left text-xs font-semibold uppercase tracking-wide"
         style={{ color: stroke, paddingTop: 4, paddingBottom: 2 }}
       >
-        {sectionName(sectionId)}
+        {name}
       </div>
       <div className="min-w-0 px-1.5 pb-1.5">{children}</div>
     </section>
@@ -98,6 +106,7 @@ function SpriteCell({
   max,
   barColor,
   countMode,
+  unit,
 }: {
   member: LineMember;
   index: number;
@@ -105,13 +114,14 @@ function SpriteCell({
   max: number;
   barColor: string;
   countMode: boolean;
+  unit: string;
 }) {
   const label = displayName(member.name);
   const value = countMode ? member.picks : index;
   const shown = countMode ? String(member.picks) : formatIndex(index);
   const title = countMode
-    ? `${label}: ${member.picks} dexes`
-    : `${label}: ${member.picks} dexes · ${formatIndex(index)} expected`;
+    ? `${label}: ${member.picks} ${unit}`
+    : `${label}: ${member.picks} ${unit} · ${formatIndex(index)} expected`;
   const dropped = member.picks === 0 || member.picks < linePicks * 0.5;
   const pct = indexBarPct(value, max);
   return (
@@ -164,12 +174,14 @@ function LineGrid({
   countMode,
   cols = PICKS_COLS,
   uniformFrTracks = false,
+  unit = 'dexes',
 }: {
   lines: RankedLine[];
   max: number;
   barColor: string;
   countMode: boolean;
   cols?: number;
+  unit?: string;
   /** Starter rows: equal fr tracks so nine faces share the row without min-width wrap. */
   uniformFrTracks?: boolean;
 }) {
@@ -203,6 +215,7 @@ function LineGrid({
               max={max}
               barColor={barColor}
               countMode={countMode}
+              unit={unit}
             />
           ))}
           {Array.from({ length: row.spacers }, (_, s) => (
@@ -219,11 +232,13 @@ function DualGrids({
   barColor,
   countMode,
   pairDensity,
+  unit,
 }: {
   columns: DualColumn;
   barColor: string;
   countMode: boolean;
   pairDensity?: boolean;
+  unit?: string;
 }) {
   const isDesktop = useIsDesktop();
   const cols = pairDensity ? picksStarterCols() : picksGridCols(true, isDesktop);
@@ -242,6 +257,7 @@ function DualGrids({
         countMode={countMode}
         cols={cols}
         uniformFrTracks={!!pairDensity}
+        unit={unit}
       />
     </div>
   );
@@ -269,9 +285,10 @@ function SectionBlock({
   view: SectionPicksView;
   countMode: boolean;
 }) {
-  const { stroke } = sectionColor(view.sectionId);
+  const color = sectionColor(view.sectionId);
+  const { stroke } = color;
   return (
-    <SectionBox sectionId={view.sectionId}>
+    <SectionBox sectionId={view.sectionId} name={sectionName(view.sectionId)} color={color}>
       {view.kind === 'starter' ? (
         <div className="flex flex-col gap-2">
           {view.groups.map((g) => (
@@ -297,6 +314,45 @@ function SectionBlock({
   );
 }
 
+function PicksPage({
+  n,
+  unit,
+  onBack,
+  stickyOffset,
+  controls,
+  children,
+}: {
+  n: number;
+  unit: string;
+  onBack: () => void;
+  stickyOffset: number;
+  controls?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      <div
+        className="sticky z-[95] -mx-4 border-b border-border bg-background px-4 py-2"
+        style={{ top: stickyOffset }}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground"
+          >
+            ‹ Back
+          </button>
+          <span className="min-w-0 flex-1 truncate text-center text-sm font-bold">What people pick</span>
+          <span className="hidden shrink-0 text-xs text-muted-foreground md:inline">of {n} {unit}</span>
+        </div>
+        {controls}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export function PicksDetailPage({
   picksBySectionAll,
   n,
@@ -319,54 +375,47 @@ export function PicksDetailPage({
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-3">
-      <div
-        className="sticky z-[95] -mx-4 border-b border-border bg-background px-4 py-2"
-        style={{ top: stickyOffset }}
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground"
-          >
-            ‹ Back
-          </button>
-          <span className="min-w-0 flex-1 truncate text-center text-sm font-bold">What people pick</span>
-          <span className="hidden shrink-0 text-xs text-muted-foreground md:inline">of {n} dexes</span>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Seg
-            ariaLabel="Picks metric"
-            options={[
-              { key: 'most', label: 'Most picked' },
-              { key: 'off', label: 'Off-section' },
-            ]}
-            value={view}
-            onChange={setView}
-          />
-          {offSection && (
-            <button
-              type="button"
-              aria-pressed={excludeOneOffs}
-              onClick={() => setExcludeOneOffs((v) => !v)}
-              className={cn(
-                'h-7 shrink-0 rounded-full border px-2.5 text-xs font-medium',
-                excludeOneOffs
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border bg-card text-muted-foreground hover:text-foreground',
-              )}
-            >
-              Exclude one-offs
-            </button>
-          )}
-        </div>
-        <p className="mt-1.5 text-[0.65rem] leading-snug text-muted-foreground">
-          {offSection
-            ? 'Placed off their default section. Numbers are dex counts. Evil-team chain mates (Rhyhorn with Rhydon) stay in-section.'
-            : '1.0× = random rate among this section\'s Pokémon.'}
-        </p>
-      </div>
+    <PicksPage
+      n={n}
+      unit="dexes"
+      onBack={onBack}
+      stickyOffset={stickyOffset}
+      controls={
+        <>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Seg
+              ariaLabel="Picks metric"
+              options={[
+                { key: 'most', label: 'Most picked' },
+                { key: 'off', label: 'Off-section' },
+              ]}
+              value={view}
+              onChange={setView}
+            />
+            {offSection && (
+              <button
+                type="button"
+                aria-pressed={excludeOneOffs}
+                onClick={() => setExcludeOneOffs((v) => !v)}
+                className={cn(
+                  'h-7 shrink-0 rounded-full border px-2.5 text-xs font-medium',
+                  excludeOneOffs
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-card text-muted-foreground hover:text-foreground',
+                )}
+              >
+                Exclude one-offs
+              </button>
+            )}
+          </div>
+          <p className="mt-1.5 text-[0.65rem] leading-snug text-muted-foreground">
+            {offSection
+              ? 'Placed off their default section. Numbers are dex counts. Evil-team chain mates (Rhyhorn with Rhydon) stay in-section.'
+              : '1.0× = random rate among this section\'s Pokémon.'}
+          </p>
+        </>
+      }
+    >
       {sections.length === 0 ? (
         <p className="text-xs text-muted-foreground">
           {offSection
@@ -386,6 +435,47 @@ export function PicksDetailPage({
           ))}
         </div>
       )}
-    </div>
+    </PicksPage>
+  );
+}
+
+const ACE_COLOR = deriveSectionColor('#404040');
+
+function leagueSectionLook(id: LeaguePicksSectionId): { name: string; color: SectionColor } {
+  if (id === 'ace') return { name: 'Ace Pokémon', color: ACE_COLOR };
+  if (id === 'none') return { name: 'No type', color: deriveSectionColor(NO_TYPE) };
+  return { name: typeLabel(id), color: deriveSectionColor(TYPE_COLORS[id]) };
+}
+
+/** The league's picks: its aces, then one section per chosen card type. */
+export function LeaguePicksPage({
+  picks,
+  n,
+  onBack,
+  stickyOffset,
+}: {
+  picks: LeaguePicks;
+  n: number;
+  onBack: () => void;
+  stickyOffset: number;
+}) {
+  const sections = useMemo(() => leaguePicksSections(picks), [picks]);
+  return (
+    <PicksPage n={n} unit="leagues" onBack={onBack} stickyOffset={stickyOffset}>
+      {sections.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No picks yet.</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {sections.map(({ id, lines }) => {
+            const { name, color } = leagueSectionLook(id);
+            return (
+              <SectionBox key={id} sectionId={id} name={name} color={color}>
+                <DualGrids columns={{ most: lines, least: [] }} barColor={color.stroke} countMode unit="leagues" />
+              </SectionBox>
+            );
+          })}
+        </div>
+      )}
+    </PicksPage>
   );
 }

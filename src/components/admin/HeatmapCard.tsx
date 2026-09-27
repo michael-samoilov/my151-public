@@ -1,7 +1,6 @@
-import { Fragment, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { HeatmapClock } from '../../../api/_aggregate';
 import { Panel, Seg } from '@/components/admin/ui';
-import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
 import { cn } from '@/lib/utils';
 
 const CLOCK_OPTIONS: { key: HeatmapClock; label: string }[] = [
@@ -14,10 +13,6 @@ const hourShort = (h: number) => `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`;
 const hourLong = (h: number) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`;
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
-/** Narrower than this, 24 hour columns leave no room for their totals, so the
- *  hours run down the side and the days across. */
-const LANDSCAPE_MIN_REM = 32;
-
 interface Axis {
   n: number;
   label: (i: number) => string;
@@ -28,52 +23,36 @@ interface Axis {
 
 /**
  * Day-by-hour heatmap of browsers at their last activity, on one of two
- * clocks. Wide containers put days down and hours across; narrow ones swap
- * the axes. Each row and column ends in its total. A mouse reads a cell out on
- * hover; a tap toggles the readout, so it stays up while the clock changes.
+ * clocks. Wide containers put days down and hours across. Below 32rem, 24 hour
+ * columns leave no room for their totals, so the axes swap. Both layouts render
+ * and a container query shows one: a width measured after mount changed the
+ * card's height after Back had already restored the dashboard scroll. Each row
+ * and column ends in its total. A mouse reads a cell out on hover; a tap
+ * toggles the readout, so it stays up while the clock changes.
  */
 export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, number[][]> }) {
   const [clock, setClock] = useState<HeatmapClock>('local');
   const [active, setActive] = useState<{ dow: number; hour: number } | null>(null);
-  const [landscape, setLandscape] = useState(true);
-  const gridRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const el = gridRef.current;
-    if (!el) return;
-    const read = () => setLandscape(el.clientWidth >= LANDSCAPE_MIN_REM * getAppliedRootFontSizePx());
-    read();
-    const ro = new ResizeObserver(read);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
   const matrix = heatmaps[clock];
   const max = Math.max(1, ...matrix.flat());
   const dayTotals = matrix.map(sum);
   const hourTotals = Array.from({ length: 24 }, (_, h) => sum(matrix.map((row) => row[h])));
   const total = sum(dayTotals);
-  const days: Axis = { n: 7, label: (i) => DAYS[i], every: 1, totals: dayTotals };
-  const hours: Axis = { n: 24, label: hourShort, every: landscape ? 3 : 1, totals: hourTotals };
-  const [down, across] = landscape ? [days, hours] : [hours, days];
-  const slotAt = (r: number, c: number) => (landscape ? { dow: r, hour: c } : { dow: c, hour: r });
-
   const label = 'flex items-center text-xs leading-none text-muted-foreground';
   const num = 'flex items-center justify-center text-xs leading-none tabular-nums text-muted-foreground';
 
-  return (
-    <Panel
-      title="When"
-      sub={['last active']}
-      actions={<Seg ariaLabel="Clock" options={CLOCK_OPTIONS} value={clock} onChange={setClock} />}
-    >
+  const grid = (landscape: boolean) => {
+    const days: Axis = { n: 7, label: (i) => DAYS[i], every: 1, totals: dayTotals };
+    const hours: Axis = { n: 24, label: hourShort, every: landscape ? 3 : 1, totals: hourTotals };
+    const [down, across] = landscape ? [days, hours] : [hours, days];
+    const slotAt = (r: number, c: number) => (landscape ? { dow: r, hour: c } : { dow: c, hour: r });
+    return (
       <div
-        ref={gridRef}
         data-testid="heatmap-grid"
         data-layout={landscape ? 'landscape' : 'portrait'}
         role="img"
         aria-label={`${CLOCK_OPTIONS.find((o) => o.key === clock)?.label}: ${total} browsers by day and hour`}
-        className="grid w-full gap-px"
+        className={cn('w-full gap-px', landscape ? 'hidden @min-[32rem]:grid' : 'grid @min-[32rem]:hidden')}
         style={{ gridTemplateColumns: `auto repeat(${across.n}, minmax(0, 1fr)) auto` }}
         onPointerLeave={(e) => e.pointerType === 'mouse' && setActive(null)}
       >
@@ -135,6 +114,19 @@ export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, numbe
           </div>
         ))}
         <div className={cn(num, 'pl-1 pt-0.5 font-bold text-foreground')}>{total}</div>
+      </div>
+    );
+  };
+
+  return (
+    <Panel
+      title="When"
+      sub={['last active']}
+      actions={<Seg ariaLabel="Clock" options={CLOCK_OPTIONS} value={clock} onChange={setClock} />}
+    >
+      <div className="@container">
+        {grid(true)}
+        {grid(false)}
       </div>
     </Panel>
   );

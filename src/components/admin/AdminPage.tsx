@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
-import { PicksDetailPage } from '@/components/admin/PicksDetailPage';
+import { LeaguePicksPage, PicksDetailPage } from '@/components/admin/PicksDetailPage';
 import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
@@ -68,6 +68,7 @@ import { useHostZoom } from '@/components/admin/previewChipZoom';
 import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
 import type { ExportSurveySkip } from '../../../api/_events';
+import type { LeaguePicks } from '../../../api/_leaguePicks';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -310,6 +311,8 @@ export interface ApiResponse {
     returning: number;
     activeLast7: number;
     activity: { day: number; dau: number }[];
+    /** Aces and seated Pokémon by card type, counted in leagues. Absent on an older deploy. */
+    picks?: LeaguePicks;
     recent: {
       cid: string;
       firstAt: string;
@@ -1524,10 +1527,12 @@ function UserPreviewCard({
 function WhatPeoplePick({
   mostBySection,
   n,
+  unit,
   onOpen,
 }: {
   mostBySection: Record<string, [string, number][]>;
   n: number;
+  unit: string;
   onOpen: () => void;
 }) {
   const top = useMemo<[string, number][]>(() => {
@@ -1538,7 +1543,7 @@ function WhatPeoplePick({
   return (
     <Panel
       title="What people pick"
-      sub={[`of ${n} dexes`]}
+      sub={[`of ${n} ${unit}`]}
       actions={
         <Button variant="ghost" size="sm" onClick={onOpen}>
           Most picked ›
@@ -1612,7 +1617,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
 // ---------- main ----------
 
 /** What the detail pane shows: one browser's dex or league, or the picks page. */
-type Detail = { kind: 'dex' | 'league'; cid: string } | { kind: 'picks' };
+type Detail = { kind: 'dex' | 'league'; cid: string } | { kind: 'picks'; tool: 'dex' | 'league' };
 
 export function AdminPage() {
   const [token, setToken] = useState<string | null>(() => {
@@ -1661,10 +1666,14 @@ export function AdminPage() {
     setDetail(d);
     window.scrollTo(0, 0);
   }, []);
+  // Cards that measure themselves (Who) re-render after this effect, still
+  // before paint. The microtask scrolls once they have, so the page is tall
+  // enough and the reader's row sits where it was.
   useLayoutEffect(() => {
-    if (!detail) window.scrollTo(0, dashScrollY);
+    if (!detail) queueMicrotask(() => window.scrollTo(0, dashScrollY));
   }, [detail, dashScrollY]);
-  const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
+  const openDexPicks = useCallback(() => openDetail({ kind: 'picks', tool: 'dex' }), [openDetail]);
+  const openLeaguePicks = useCallback(() => openDetail({ kind: 'picks', tool: 'league' }), [openDetail]);
 
   // A quiet load shows no progress and clears an error only on success, so a
   // background refresh leaves the page as it is until new data arrives.
@@ -1920,6 +1929,16 @@ export function AdminPage() {
           <div className={cn((detail.kind === 'league' || detail.kind === 'dex') && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
           {(() => {
           if (detail.kind === 'picks') {
+            if (detail.tool === 'league') {
+              return data.league?.picks ? (
+                <LeaguePicksPage
+                  picks={data.league.picks}
+                  n={data.league.users}
+                  onBack={() => setDetail(null)}
+                  stickyOffset={pageHeaderH}
+                />
+              ) : null;
+            }
             const nDex = data.tools?.dex ?? data.funnel.users;
             return (
               <PicksDetailPage
@@ -2161,7 +2180,15 @@ export function AdminPage() {
             </Panel>
 
             {tool === 'dex' && (
-              <WhatPeoplePick mostBySection={data.popularBySection} n={built} onOpen={openPicks} />
+              <WhatPeoplePick mostBySection={data.popularBySection} n={built} unit="dexes" onOpen={openDexPicks} />
+            )}
+            {tool === 'league' && data.league?.picks && (
+              <WhatPeoplePick
+                mostBySection={data.league.picks.byType}
+                n={data.league.users}
+                unit="leagues"
+                onOpen={openLeaguePicks}
+              />
             )}
 
             {tool !== 'all' && <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>

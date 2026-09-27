@@ -44,7 +44,8 @@ import {
   getEvolutionLine,
   getPokemonById,
 } from '@/hooks/usePokemonData';
-import type { Pokemon, TypeName } from '@/types/pokemon';
+import { TYPE_NAMES, type Pokemon, type TypeName } from '@/types/pokemon';
+import type { LeaguePickRows, LeaguePicks } from '../../../api/_leaguePicks';
 
 export const PICKS_COLS = 6;
 /** Desktop most|least row: six for most, three for least. */
@@ -58,8 +59,6 @@ export const PICKS_PAIR_COLS = 12;
 /** Off-section grid: 9 columns on phone and desktop, matching Most picked. */
 export const PICKS_OFF_COLS = PICKS_COMBINED_COLS;
 export const PICKS_OFF_DESKTOP_COLS = PICKS_OFF_COLS;
-export const PICKS_MAX_ROWS = 4;
-export const PICKS_GRID_CAP = { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS } as const;
 
 type GridCap = { maxRows: number; cols: number } | { maxLines: number };
 
@@ -82,13 +81,6 @@ export function starterGenerationCount(): number {
 /** In-section starters use one row across the section at generation count. */
 export function picksStarterCols(): number {
   return starterGenerationCount();
-}
-
-export function picksGridCap(_offSection: boolean, desktop: boolean): { maxRows: number; cols: number } {
-  return {
-    maxRows: Number.POSITIVE_INFINITY,
-    cols: picksGridCols(true, desktop),
-  };
 }
 
 export type PicksSplitCap =
@@ -457,4 +449,40 @@ export function viewsForPicks(
 
 export function isStarterTypeName(t: string): t is TypeName {
   return t === 'grass' || t === 'fire' || t === 'water';
+}
+
+/** Rows of faces each league picks section shows, at `PICKS_OFF_COLS` a row. */
+export const LEAGUE_PICKS_MAX_ROWS = 4;
+
+/** The aces, or the cards of one chosen type. `none` is the "no type" choice. */
+export type LeaguePicksSectionId = 'ace' | TypeName | 'none';
+
+export interface LeaguePicksSection {
+  id: LeaguePicksSectionId;
+  lines: RankedLine[];
+}
+
+function countLines(rows: LeaguePickRows): RankedLine[] {
+  const out: RankedLine[] = [];
+  for (const [id, n] of rows) {
+    const p = getPokemonById(Number(id));
+    if (!p) continue;
+    out.push({ key: id, members: [memberOf(p, n, n)], picks: n, index: n, starterType: 'other' });
+  }
+  return out;
+}
+
+/** Aces first, then each type in the app's type order, then "no type". */
+export function leaguePicksSections(picks: LeaguePicks): LeaguePicksSection[] {
+  const order: [LeaguePicksSectionId, LeaguePickRows | undefined][] = [
+    ['ace', picks.ace],
+    ...TYPE_NAMES.map((t): [TypeName, LeaguePickRows | undefined] => [t, picks.byType[t]]),
+    ['none', picks.byType.none],
+  ];
+  const out: LeaguePicksSection[] = [];
+  for (const [id, rows] of order) {
+    const lines = countLines(rows ?? []).slice(0, LEAGUE_PICKS_MAX_ROWS * PICKS_OFF_COLS);
+    if (lines.length > 0) out.push({ id, lines });
+  }
+  return out;
 }
