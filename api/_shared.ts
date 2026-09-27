@@ -158,6 +158,21 @@ export function headerValue(req: VercelRequest, name: string): string | undefine
   return trimmed ? trimmed : undefined;
 }
 
+const LIVE_HOSTS = new Set(['my151.app', 'www.my151.app']);
+
+/**
+ * True when this request must not write to Redis. Vercel previews share the
+ * production Upstash database, so agent and test visits to a preview would
+ * store real analytics. The live hosts are never read-only: my151.app was once
+ * aliased to a preview deployment (PR #81), and blocking there would drop real
+ * users' data. Local dev and `vite preview` have no VERCEL_ENV.
+ */
+export function isReadOnlyDeployment(req: VercelRequest): boolean {
+  if (process.env.VERCEL_ENV !== 'preview') return false;
+  const host = headerValue(req, 'x-forwarded-host') ?? headerValue(req, 'host') ?? '';
+  return !LIVE_HOSTS.has(host.split(',')[0].trim().toLowerCase().replace(/:\d+$/, ''));
+}
+
 /**
  * Best-effort client IP. Prefers `x-real-ip`, which Vercel's edge sets to the
  * actual connecting peer and a client cannot forge, over the leftmost

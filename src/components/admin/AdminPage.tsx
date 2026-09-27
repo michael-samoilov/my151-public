@@ -30,7 +30,7 @@ import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { SearchPerformancePanel } from '@/components/admin/SearchPerformancePanel';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
-import type { SearchPerformanceSnapshot } from '@/lib/searchPerformance';
+import type { SearchPerformanceView } from '@/lib/searchPerformanceView';
 import {
   ARCHIVE_FILTER_OPTIONS,
   bareCid,
@@ -81,6 +81,14 @@ const TOKEN_KEY = 'p151-admin-token';
 // Beside the token, so the dashboard opens on the tool you were last reading.
 const TOOL_KEY = 'p151-admin-tool';
 const PAGE_SIZE = 50;
+// Returning to the tab refetches data older than this; while visible, the
+// dashboard also refetches on the interval.
+const STALE_ON_RETURN_MS = 60_000;
+const REFRESH_INTERVAL_MS = 5 * 60_000;
+// Each dashboard request takes a number, and only the newest one writes, so a
+// background refresh that answers late cannot undo a later Load more. The admin
+// page mounts once, so one counter serves it.
+let latestLoad = 0;
 
 /** Which tool's records every shared card reads. */
 export type ToolSlice = 'all' | 'dex' | 'league';
@@ -428,24 +436,26 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
   return distinctCalendarDays(stamps, rec.tz);
 }
 
+class UnauthorizedError extends Error {}
+
 async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
   const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   const res = await fetch(`/api/submissions?${qs.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (res.status === 401) throw new Error('Invalid admin token.');
+  if (res.status === 401) throw new UnauthorizedError('Invalid admin token.');
   if (res.status === 503) throw new Error('Admin access is not configured on the server (ADMIN_TOKEN is not set).');
   if (!res.ok) throw new Error(`Request failed (${res.status}).`);
   return res.json() as Promise<ApiResponse>;
 }
 
-async function fetchSearchPerformance(token: string, refresh: boolean): Promise<SearchPerformanceSnapshot> {
+async function fetchSearchPerformance(token: string, refresh: boolean): Promise<SearchPerformanceView> {
   const qs = refresh ? '?refresh=1' : '';
   const res = await fetch(`/api/search-performance${qs}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`Search data request failed (${res.status}).`);
-  return res.json() as Promise<SearchPerformanceSnapshot>;
+  return res.json() as Promise<SearchPerformanceView>;
 }
 
 // ---------- presentational bits ----------
@@ -1526,10 +1536,8 @@ function WhatPeoplePick({
   );
 }
 
-export type AdminNavKey = ToolSlice | 'feedback';
+export type AdminNavKey = ToolSlice | 'search' | 'feedback';
 
-/** Section nav: a bottom bar on mobile, an inline row on desktop. Splits the
- *  dashboard into All / Dex / League analytics and the Feedback page. */
 function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: AdminNavKey) => void }) {
   const navRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
@@ -1557,6 +1565,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     { key: 'all', label: 'Suite' },
     { key: 'dex', label: 'Dex' },
     { key: 'league', label: 'League' },
+    { key: 'search', label: 'Search' },
     { key: 'feedback', label: 'Feedback' },
   ];
   return (
@@ -1574,7 +1583,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
             aria-pressed={on}
             onClick={() => onChange(it.key)}
             className={cn(
-              'flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors md:flex-none',
+              'min-w-0 flex-1 rounded-lg px-1.5 py-1.5 text-xs font-semibold transition-colors md:flex-none md:px-3 md:text-sm',
               on ? 'bg-foreground text-card' : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -1599,13 +1608,14 @@ export function AdminPage() {
       return null;
     }
   });
+  const [initialToken] = useState(token);
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
-  const [searchPerformance, setSearchPerformance] = useState<SearchPerformanceSnapshot | null>(null);
+  const [searchPerformance, setSearchPerformance] = useState<SearchPerformanceView | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
-  const [page, setPage] = useState<'analytics' | 'feedback'>('analytics');
+  const [page, setPage] = useState<'analytics' | 'search' | 'feedback'>('analytics');
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
   const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
@@ -1615,7 +1625,8 @@ export function AdminPage() {
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
   const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
   const [archiveOverride, setArchiveOverride] = useState<Record<string, boolean>>({});
-  const [authed, setAuthed] = useState(false);
+  // A stored token counts as signed in until the server rejects it.
+  const [authed, setAuthed] = useState(initialToken !== null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1630,86 +1641,128 @@ export function AdminPage() {
 
   // Open a detail page from the dashboard, remembering the scroll position so
   // Back returns the reader to exactly where they were, not the top.
-  const dashScrollRef = useRef(0);
+  const [dashScrollY, setDashScrollY] = useState(0);
   const openDetail = useCallback((d: Detail) => {
-    dashScrollRef.current = window.scrollY;
+    setDashScrollY(window.scrollY);
     setDetail(d);
     window.scrollTo(0, 0);
   }, []);
   useLayoutEffect(() => {
-    if (!detail) window.scrollTo(0, dashScrollRef.current);
-  }, [detail]);
+    if (!detail) window.scrollTo(0, dashScrollY);
+  }, [detail, dashScrollY]);
   const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
 
-  const loadSearch = useCallback(async (tok: string, refresh = false) => {
-    setSearchLoading(true);
-    setSearchError(null);
+  // A quiet load shows no progress and clears an error only on success, so a
+  // background refresh leaves the page as it is until new data arrives.
+  const loadSearch = useCallback(async (tok: string, { refresh = false, quiet = false } = {}) => {
+    if (!quiet) {
+      setSearchLoading(true);
+      setSearchError(null);
+    }
     try {
       setSearchPerformance(await fetchSearchPerformance(tok, refresh));
+      setSearchError(null);
     } catch (e) {
       setSearchError(e instanceof Error ? e.message : 'Search data could not load.');
     } finally {
-      setSearchLoading(false);
+      if (!quiet) setSearchLoading(false);
     }
   }, []);
 
-  const load = useCallback(async (tok: string, limit = PAGE_SIZE, refreshSearch = false) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resp = await fetchDashboard(tok, limit, 0);
-      setData(resp);
-      setLoadedAt(Date.now());
-      setAuthed(true);
-      setToken(tok);
-      void loadSearch(tok, refreshSearch);
-      try {
-        localStorage.setItem(TOKEN_KEY, tok);
-      } catch {
-        // localStorage may be unavailable
+  const load = useCallback(
+    async (tok: string, { limit = PAGE_SIZE, refreshSearch = false, quiet = false } = {}) => {
+      const seq = ++latestLoad;
+      if (!quiet) {
+        setLoading(true);
+        setError(null);
       }
-    } catch (e) {
-      setAuthed(false);
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
-    } finally {
-      setLoading(false);
-    }
-  }, [loadSearch]);
+      try {
+        const resp = await fetchDashboard(tok, limit, 0);
+        if (seq !== latestLoad) return;
+        setData(resp);
+        setLoadedAt(Date.now());
+        setAuthed(true);
+        setToken(tok);
+        setError(null);
+        void loadSearch(tok, { refresh: refreshSearch, quiet });
+        try {
+          localStorage.setItem(TOKEN_KEY, tok);
+        } catch {
+          // localStorage may be unavailable
+        }
+      } catch (e) {
+        if (seq !== latestLoad) return;
+        // Only a rejected token signs out. Any other failure keeps the data on screen.
+        if (e instanceof UnauthorizedError) setAuthed(false);
+        setError(e instanceof Error ? e.message : 'Something went wrong.');
+      } finally {
+        if (!quiet) setLoading(false);
+      }
+    },
+    [loadSearch],
+  );
 
   useEffect(() => {
-    // Demo mode (`/?admin&demo`): render the redesign against a fabricated,
-    // self-consistent fixture, with no token and no network. The fixture chunk
-    // is dynamically imported so it never ships in the real admin bundle. Used
-    // for preview review of the design; production still requires the token.
-    if (new URLSearchParams(window.location.search).has('demo')) {
+    if (new URLSearchParams(window.location.search).has('demo') && !initialToken) {
       void Promise.all([
         import('./__fixtures__/sampleResponse'),
         import('./__fixtures__/sampleSearchPerformance'),
       ]).then(([dashboard, search]) => {
         setData(dashboard.sampleResponse);
-        setSearchPerformance(search.sampleSearchPerformance);
+        setSearchPerformance(search.sampleSearchPerformanceView);
         setLoadedAt(Date.now());
         setAuthed(true);
       });
       return;
     }
-    if (token) void load(token);
-    // Run only on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (initialToken) void load(initialToken);
+  }, [initialToken, load]);
 
   const loadMore = useCallback(async () => {
     if (!token || !data) return;
+    const seq = ++latestLoad;
     setLoadingMore(true);
     try {
       const resp = await fetchDashboard(token, data.records.length + PAGE_SIZE, 0);
-      setData(resp);
+      if (seq === latestLoad) setData(resp);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      if (seq === latestLoad) setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally {
       setLoadingMore(false);
     }
   }, [token, data]);
+
+  // Keep an open dashboard current: refetch on return to the tab (including an
+  // iOS back-forward restore) and on an interval while visible. The refetch
+  // keeps the loaded pages and never forces a search-provider refresh.
+  const loadedLimit = data?.limit ?? PAGE_SIZE;
+  useEffect(() => {
+    if (!authed || !token || loading || loadingMore) return;
+    let running = false;
+    const refresh = (minAgeMs: number) => {
+      if (running || Date.now() - loadedAt < minAgeMs) return;
+      running = true;
+      void load(token, { limit: loadedLimit, quiet: true }).finally(() => {
+        running = false;
+      });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh(STALE_ON_RETURN_MS);
+    };
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) refresh(STALE_ON_RETURN_MS);
+    };
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refresh(0);
+    }, REFRESH_INTERVAL_MS);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit]);
 
   const setArchived = useCallback(
     async (cid: string, next: boolean) => {
@@ -1724,7 +1777,7 @@ export function AdminPage() {
           body: JSON.stringify({ cid, archived: next }),
         });
         if (!res.ok) throw new Error(`Archive failed (${res.status}).`);
-        await load(token, data?.records.length ?? PAGE_SIZE);
+        await load(token, { limit: data?.records.length ?? PAGE_SIZE });
         setArchiveOverride((prev) => {
           const copy = { ...prev };
           delete copy[key];
@@ -1797,10 +1850,13 @@ export function AdminPage() {
     );
   }
 
-  const navKey: AdminNavKey = page === 'feedback' ? 'feedback' : tool;
+  const navKey: AdminNavKey = page === 'feedback' ? 'feedback' : page === 'search' ? 'search' : tool;
   const onNav = (k: AdminNavKey) => {
     if (k === 'feedback') {
       setPage('feedback');
+    } else if (k === 'search') {
+      setPage('search');
+      if (token) void loadSearch(token, { refresh: true });
     } else {
       setPage('analytics');
       pickTool(k);
@@ -1817,7 +1873,7 @@ export function AdminPage() {
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, PAGE_SIZE, true)} disabled={loading || searchLoading}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, { refreshSearch: true })} disabled={loading || searchLoading}>
               {loading || searchLoading ? 'Refreshing…' : 'Refresh'}
             </Button>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
@@ -1880,6 +1936,10 @@ export function AdminPage() {
         {!detail && page === 'feedback' &&
           (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
 
+        {!detail && page === 'search' && (
+          <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} />
+        )}
+
         {!detail && page === 'analytics' && data && (() => {
           const slice = sliceOf(data, tool);
           const showDex = tool !== 'league';
@@ -1908,9 +1968,11 @@ export function AdminPage() {
           const leagueSankey = data.leagueFunnel ? leagueFunnelSankey(data.leagueFunnel) : null;
           const referrerSankey = data.referrerFlow?.length ? referrerFlowSankey(data.referrerFlow) : null;
 
-          const act = data.activity ?? slice.activity;
+          const act = slice.activity;
           const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)} · as of ${fmtDate(act[act.length - 1].day)}` : '';
+          const fmtDateTime = (ms: number) =>
+            new Date(ms).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)} · as of ${fmtDateTime(loadedAt)}` : '';
 
           const xt = data.tools;
 
@@ -1944,23 +2006,23 @@ export function AdminPage() {
           return (
           <>
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <span className="text-sm">
-                <b className="tabular-nums">{sawIntro}</b> <span className="text-muted-foreground">saw intro</span>
-              </span>
-              <span className="text-sm">
-                <b className="tabular-nums">{built}</b> <span className="text-muted-foreground">built a dex</span>
-              </span>
-              {xt && (
+              {tool !== 'league' && (
+                <>
+                  <span className="text-sm">
+                    <b className="tabular-nums">{sawIntro}</b> <span className="text-muted-foreground">saw intro</span>
+                  </span>
+                  <span className="text-sm">
+                    <b className="tabular-nums">{built}</b> <span className="text-muted-foreground">built a dex</span>
+                  </span>
+                </>
+              )}
+              {tool !== 'dex' && xt && (
                 <span className="text-sm">
-                  <b className="tabular-nums">{xt.league}</b> <span className="text-muted-foreground">league</span>
+                  <b className="tabular-nums">{xt.league}</b> <span className="text-muted-foreground">league browsers</span>
                 </span>
               )}
               {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
             </div>
-
-            {tool === 'all' && (
-              <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} />
-            )}
 
             {slice.activity.length > 0 && (
               <ActiveUsersPanel
@@ -1992,7 +2054,7 @@ export function AdminPage() {
               </Panel>
             )}
 
-            {data.crossTool && <CrossToolCard data={data.crossTool} />}
+            {tool === 'all' && data.crossTool && <CrossToolCard data={data.crossTool} />}
 
             {showFlows && (
               <Panel
@@ -2045,7 +2107,7 @@ export function AdminPage() {
               </Panel>
             )}
 
-            {depthCurve && (
+            {tool !== 'all' && depthCurve && (
               <Panel
                 title="Build depth"
                 sub={['where builders stop', `of ${depthCurve.n}`]}
@@ -2106,11 +2168,11 @@ export function AdminPage() {
               </div>
             </Panel>
 
-            {showDex && (
+            {tool === 'dex' && (
               <WhatPeoplePick mostBySection={data.popularBySection} n={built} onOpen={openPicks} />
             )}
 
-            <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
+            {tool !== 'all' && <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
               {(() => {
                 const archivedOf = (cid: string, flag?: boolean) =>
                   archiveOverride[bareCid(cid)] ?? flag ?? false;
@@ -2228,7 +2290,7 @@ export function AdminPage() {
                   </>
                 );
               })()}
-            </Panel>
+            </Panel>}
           </>
           );
         })()}

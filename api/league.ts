@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { parseFunnelEventList, parsePage } from './_events.js';
-import { redis, getClientIp, getClient, getGeo, getLang, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
+import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
 import { parseCapturedAt } from './_sessionize.js';
 import {
   LEAGUE_CLIENTS_KEY,
@@ -84,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (body.kind === 'export' && !exportKind) return res.status(400).json({ error: 'invalid exportKind' });
     const pokemonIds = body.kind === 'export' ? parsePokemonIds(body.pokemonIds) : [];
     const notme = parseNotmeFlag(body.notme);
-    if (notme) {
+    if (notme || isReadOnlyDeployment(req)) {
       if (exportKind) {
         const highlight = await recordToolExport(
           exportKind === 'card' ? 'card' : 'league',
