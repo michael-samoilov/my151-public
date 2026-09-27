@@ -158,7 +158,7 @@ export function useFitScale(
         budgetRef.current = budgetRem;
         setFit({ ...next, budgetRem, gutterPx });
       };
-      const held = { scale: scaleRef.current, width: widthRef.current };
+      const last = { scale: scaleRef.current, width: widthRef.current };
       if (grow) {
         // Uniform grow-fit: the block is laid out at a fixed rem width and
         // zoomed as one, so the whole card — cells, sprites, text — scales
@@ -181,13 +181,13 @@ export function useFitScale(
             floor,
             baseWidth,
             spriteCeil,
-            prevScale: held.scale,
-            prevWidth: held.width,
-          }) ?? held;
+            prevScale: last.scale,
+            prevWidth: last.width,
+          }) ?? last;
           // The zoom can hold while the pane changes, and the block then has
           // more or less height to spend.
           const budgetRem = spendable / (next.scale * rootFont);
-          if (next === held && budgetRem === budgetRef.current) return;
+          if (next === last && budgetRem === budgetRef.current) return;
           commit(next, budgetRem, padBottom);
           return;
         }
@@ -199,12 +199,12 @@ export function useFitScale(
           floor,
           baseWidth,
           spriteCeil,
-          prevScale: held.scale,
-          prevWidth: held.width,
+          prevScale: last.scale,
+          prevWidth: last.width,
         });
         // A block that just stopped holding its sprites still has a budget
         // to drop, even when its zoom holds.
-        if (next || budgetRef.current !== Infinity) commit(next ?? held, Infinity);
+        if (next || budgetRef.current !== Infinity) commit(next ?? last, Infinity);
         return;
       }
       // What the block would be scaled to if only its body had to fit. The
@@ -220,10 +220,10 @@ export function useFitScale(
         avail,
         room,
         floor,
-        prevScale: held.scale,
-        prevWidth: held.width,
+        prevScale: last.scale,
+        prevWidth: last.width,
       });
-      if (next || budgetRef.current !== Infinity) commit(next ?? held, Infinity);
+      if (next || budgetRef.current !== Infinity) commit(next ?? last, Infinity);
     };
     compute();
     // The parent as well as the block. Pinning the block's width is what
