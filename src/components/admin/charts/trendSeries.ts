@@ -49,7 +49,7 @@ export const INCOMPLETE_WEEKLY_DAYS = 6;
 export const CHART_RANGE_PRESETS = [
   { key: '24h', label: '24h', windowMs: DAY_MS },
   { key: '7d', label: '7d', windowMs: 7 * DAY_MS },
-  { key: '30d', label: '30d', windowMs: 30 * DAY_MS },
+  { key: '28d', label: '28d', windowMs: 28 * DAY_MS },
   { key: '90d', label: '90d', windowMs: 90 * DAY_MS },
   { key: '180d', label: '180d', windowMs: 180 * DAY_MS },
   { key: '365d', label: '365d', windowMs: 365 * DAY_MS },

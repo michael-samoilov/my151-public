@@ -4,6 +4,7 @@ import type {
   SearchDailyPoint,
   SearchDimensionRow,
   SearchMetric,
+  SearchPageQueryRow,
   SearchPerformanceSnapshot,
   SearchProviderKey,
   SearchProviderSnapshot,
@@ -87,6 +88,16 @@ export function googleDimensionRows(payload: unknown): SearchDimensionRow[] {
       return key ? { key, ...metricOf(row) } : null;
     })
     .filter((row): row is SearchDimensionRow => row !== null);
+}
+
+export function googlePageQueryRows(payload: unknown): SearchPageQueryRow[] {
+  return googleRows(payload)
+    .map((row): SearchPageQueryRow | null => {
+      const page = typeof row.keys?.[0] === 'string' ? row.keys[0].trim() : '';
+      const query = typeof row.keys?.[1] === 'string' ? row.keys[1].trim() : '';
+      return page && query ? { page, query, ...metricOf(row) } : null;
+    })
+    .filter((row): row is SearchPageQueryRow => row !== null);
 }
 
 function bingRows(payload: unknown): BingRow[] {
@@ -248,7 +259,7 @@ async function fetchGoogleQuery(
   siteUrl: string,
   startDate: string,
   endDate: string,
-  dimension: 'date' | 'page' | 'query',
+  dimensions: readonly ('date' | 'page' | 'query')[],
 ): Promise<unknown> {
   return fetchJson(`${GOOGLE_SEARCH_URL}/${encodeURIComponent(siteUrl)}/searchAnalytics/query`, {
     method: 'POST',
@@ -259,8 +270,8 @@ async function fetchGoogleQuery(
     body: JSON.stringify({
       startDate,
       endDate,
-      dimensions: [dimension],
-      rowLimit: dimension === 'date' ? 1_000 : 25,
+      dimensions,
+      rowLimit: dimensions.length === 1 && dimensions[0] === 'date' ? 1_000 : 250,
     }),
   });
 }
@@ -279,13 +290,18 @@ export async function fetchGoogleSearchPerformance(): Promise<SearchProviderSnap
   const endMs = todayUtcMs() - 3 * DAY_MS;
   const endDate = utcDate(endMs);
   const startDate = utcDate(endMs - 89 * DAY_MS);
+  const currentStart = utcDate(endMs - 27 * DAY_MS);
+  const previousEnd = utcDate(endMs - 28 * DAY_MS);
+  const previousStart = utcDate(endMs - 55 * DAY_MS);
   const accessToken = serviceAccountJson
     ? await googleServiceAccountAccessToken(serviceAccountJson)
     : await googleAccessToken(clientId!, clientSecret!, refreshToken!);
-  const [dailyPayload, pagePayload, queryPayload] = await Promise.all([
-    fetchGoogleQuery(accessToken, siteUrl, startDate, endDate, 'date'),
-    fetchGoogleQuery(accessToken, siteUrl, utcDate(endMs - 27 * DAY_MS), endDate, 'page'),
-    fetchGoogleQuery(accessToken, siteUrl, utcDate(endMs - 27 * DAY_MS), endDate, 'query'),
+  const [dailyPayload, pagePayload, previousPagePayload, queryPayload, pageQueryPayload] = await Promise.all([
+    fetchGoogleQuery(accessToken, siteUrl, startDate, endDate, ['date']),
+    fetchGoogleQuery(accessToken, siteUrl, currentStart, endDate, ['page']),
+    fetchGoogleQuery(accessToken, siteUrl, previousStart, previousEnd, ['page']),
+    fetchGoogleQuery(accessToken, siteUrl, currentStart, endDate, ['query']),
+    fetchGoogleQuery(accessToken, siteUrl, currentStart, endDate, ['page', 'query']),
   ]);
 
   return {
@@ -295,7 +311,9 @@ export async function fetchGoogleSearchPerformance(): Promise<SearchProviderSnap
     dataThrough: endDate,
     daily: googleDailyRows(dailyPayload),
     pages: googleDimensionRows(pagePayload),
+    previousPages: googleDimensionRows(previousPagePayload),
     queries: googleDimensionRows(queryPayload),
+    pageQueries: googlePageQueryRows(pageQueryPayload),
   };
 }
 

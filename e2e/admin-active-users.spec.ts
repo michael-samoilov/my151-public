@@ -27,7 +27,7 @@ test.describe('admin active users range', () => {
     const range = panel.getByRole('group', { name: 'Chart range' });
     await expect(range.getByRole('button', { name: '24h' })).toBeVisible();
     await expect(range.getByRole('button', { name: '7d' })).toBeVisible();
-    await expect(range.getByRole('button', { name: '30d' })).toBeVisible();
+    await expect(range.getByRole('button', { name: '28d' })).toBeVisible();
     await expect(range.getByRole('button', { name: '90d' })).toBeVisible();
     await expect(range.getByRole('button', { name: '180d' })).toBeVisible();
     await expect(range.getByRole('button', { name: '365d' })).toBeVisible();
@@ -39,12 +39,12 @@ test.describe('admin active users range', () => {
     const allGutter = gutter(allLabel);
     expect(allDays).toBeGreaterThan(32);
 
-    await range.getByRole('button', { name: '30d' }).click();
-    await expect(range.getByRole('button', { name: '30d' })).toHaveAttribute('aria-pressed', 'true');
+    await range.getByRole('button', { name: '28d' }).click();
+    await expect(range.getByRole('button', { name: '28d' })).toHaveAttribute('aria-pressed', 'true');
     const slicedLabel = await chart.getAttribute('aria-label');
     const slicedDays = daysInLabel(slicedLabel);
-    expect(slicedDays).toBeGreaterThanOrEqual(30);
-    expect(slicedDays).toBeLessThanOrEqual(32);
+    expect(slicedDays).toBeGreaterThanOrEqual(28);
+    expect(slicedDays).toBeLessThanOrEqual(30);
     expect(slicedDays).toBeLessThan(allDays);
     expect(gutter(slicedLabel)).toEqual(allGutter);
   });
