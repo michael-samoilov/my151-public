@@ -16,6 +16,8 @@ async function openPicks(page: Page) {
   await page.route('**/api/event', (route) => route.fulfill({ status: 200, body: '{}' }));
   await page.goto('/?admin&demo');
   await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
+  // "What people pick" lives on the Dex tab; Suite holds cross-tool cards only.
+  await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Dex', exact: true }).click();
   await page.getByRole('button', { name: /Most picked/ }).click();
   await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
 }

@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { buildSearchPerformanceView } from '../src/lib/searchPerformanceView.js';
 import type { SearchPerformanceSnapshot } from '../src/lib/searchPerformance.js';
 import { buildSearchPerformanceSnapshot } from './_searchPerformance.js';
 import { firstQueryValue, redis, requireAdmin } from './_shared.js';
@@ -28,7 +29,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const force = ['1', 'true'].includes(firstQueryValue(req.query.refresh).toLowerCase());
-  if (!force && cached && fresh(cached)) return res.status(200).json(cached);
+  if (!force && cached && fresh(cached)) {
+    return res.status(200).json(buildSearchPerformanceView(cached));
+  }
 
   const snapshot = await buildSearchPerformanceSnapshot(cached);
   try {
@@ -37,6 +40,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const detail = error instanceof Error ? error.message : 'Unknown error';
     console.error(`[search-performance] cache write failed: ${detail}`);
   }
-  return res.status(200).json(snapshot);
+  return res.status(200).json(buildSearchPerformanceView(snapshot));
 }
 
