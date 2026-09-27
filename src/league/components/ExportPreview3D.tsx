@@ -17,6 +17,7 @@ import {
   HOVER_TILT_SPRING,
   hoverTiltFromNormalized,
   hoverTiltFromPointer,
+  normalizedForTilt,
   pointInBox,
   pokeHoloIdle,
   pointerMovedFrom,
@@ -297,10 +298,14 @@ export function ExportPreview3D({
   const beginPointer = useCallback((clientX: number, clientY: number) => {
     const box = restPointerBox();
     if (!box || box.width === 0) return;
-    const pose = hoverTiltFromPointer(clientX, clientY, box, tiltAxes(tiltRef.current, recipeRef.current.maxTilt));
+    const axes = tiltAxes(tiltRef.current, recipeRef.current.maxTilt);
+    const pose = hoverTiltFromPointer(clientX, clientY, box, axes);
+    // Start the springs at the tilt on screen, whatever drew it: auto-tilt,
+    // a release, or rest.
     const last = lastPoseRef.current;
-    springXRef.current.value = last.nx;
-    springYRef.current.value = last.ny;
+    const from = normalizedForTilt(last.rotateX, last.rotateY, axes);
+    springXRef.current.value = from.nx;
+    springYRef.current.value = from.ny;
     springXRef.current.target = pose.nx;
     springYRef.current.target = pose.ny;
     springARef.current.target = 1;
@@ -469,8 +474,9 @@ export function ExportPreview3D({
             springARef.current.value < 0.02
           ) {
             restAtRef.current = null;
-            originRef.current = now;
             orbitRef.current = modeRef.current === 'auto' ? 'idle' : 'static';
+            // Auto-tilt never passes through flat, so ease into it.
+            if (orbitRef.current === 'idle') releaseRef.current = { from: REST_POSE, t0: now };
             paint(REST_POSE);
           }
         }

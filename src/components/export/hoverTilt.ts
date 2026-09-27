@@ -176,6 +176,22 @@ export function hoverTiltFromNormalized(
   };
 }
 
+/** Inverse of `hoverTiltFromNormalized`: the pointer spot that gives this tilt. */
+export function normalizedForTilt(
+  rotateX: number,
+  rotateY: number,
+  axes: HoverTiltAxes,
+): { nx: number; ny: number } {
+  const fx = axes.tiltFactor ?? 1;
+  const fy = axes.tiltFactorY ?? fx;
+  const rotXMax = Math.max(0.001, axes.rotation * fy);
+  const rotYMax = Math.max(0.001, axes.rotation * fx);
+  return {
+    nx: clamp(0.5 - rotateY / (2 * rotYMax), 0, 1),
+    ny: clamp(0.5 + rotateX / (2 * rotXMax), 0, 1),
+  };
+}
+
 /**
  * Live hover pose. `box` is hover-tilt `readElementBox`: the untransformed
  * container. The rotated card AABB inverts opposite corners.
@@ -216,8 +232,9 @@ export function pokeHoloIdle(opts: {
   const ry = (t / Math.max(1, opts.idleMsY)) * Math.PI * 2;
   const rotateX = Math.sin(rx) * opts.idleTilt;
   const rotateY = Math.cos(ry) * opts.idleTilt;
-  const nx = clamp(0.5 + (rotateY / Math.max(1, opts.idleTilt)) * 0.45, 0, 1);
-  const ny = clamp(0.5 - (rotateX / Math.max(1, opts.idleTilt)) * 0.45, 0, 1);
+  // The light sits where a pointer would for this tilt, so a hover or a
+  // finger takes over without the pose or the glare jumping.
+  const { nx, ny } = normalizedForTilt(rotateX, rotateY, { rotation: opts.idleTilt });
   return {
     rotateX,
     rotateY,
