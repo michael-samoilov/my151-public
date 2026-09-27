@@ -474,6 +474,12 @@ const leagueUsers: LeagueUser[] = [
   const prev = u.sessionLog[u.sessionLog.length - 2];
   prev.summary = { ...last.summary };
   prev.events = ['league-nudge-card-shown', 'league-nudge-card-cta'];
+  // Changes that keep every line: gym 1 swaps one Eevee branch for another,
+  // and gyms 1 and 2 trade a line. The diff is the 30 lines of the new gyms.
+  if (!prev.cards || !last.cards) throw new Error('70cd fixture missing card structure');
+  prev.cards[0].l[3] = { b: [133, 134] };
+  last.cards[0].l[3] = { b: [133, 136] };
+  [last.cards[0].l[4], last.cards[1].l[4]] = [last.cards[1].l[4], last.cards[0].l[4]];
   u.sessionLog.splice(u.sessionLog.length - 1, 0, {
     ts: Math.round((prev.ts + last.ts) / 2),
     summary: { cards: 1, seats: 1, typed: 0, named: 0, aces: 0, leagueNamed: false },
