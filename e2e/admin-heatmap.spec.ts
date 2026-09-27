@@ -9,6 +9,10 @@ function whenCard(page: Page) {
   return page.locator('section', { has: page.getByRole('heading', { name: /^When/ }) });
 }
 
+function shownGrid(card: Locator) {
+  return card.getByTestId('heatmap-grid').filter({ visible: true });
+}
+
 test.describe('admin When heatmap', { tag: '@viewport' }, () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/?admin&demo');
@@ -17,10 +21,10 @@ test.describe('admin When heatmap', { tag: '@viewport' }, () => {
 
   test('lays out by width and fits every label', async ({ page }) => {
     const card = whenCard(page);
-    const grid = card.getByTestId('heatmap-grid');
+    const grid = shownGrid(card);
     const wide = (page.viewportSize()?.width ?? 0) >= 1024;
     await expect(grid).toHaveAttribute('data-layout', wide ? 'landscape' : 'portrait');
-    await expect(card.getByTestId('heatmap-cell')).toHaveCount(7 * 24);
+    await expect(grid.getByTestId('heatmap-cell')).toHaveCount(7 * 24);
 
     const overflowing = await grid.evaluate((el) =>
       [...el.querySelectorAll<HTMLElement>('div')]
@@ -47,7 +51,7 @@ test.describe('admin When heatmap', { tag: '@viewport' }, () => {
     await expect(clocks.getByRole('button', { name: 'Local time' })).toHaveAttribute('aria-pressed', 'true');
     await expect(card.getByRole('img', { name: /^Local time: \d+ browsers/ })).toBeVisible();
 
-    const cells = card.getByTestId('heatmap-cell');
+    const cells = shownGrid(card).getByTestId('heatmap-cell');
     for (const [cell, slot] of [[cells.first(), 'Sun 12 AM'], [cells.last(), 'Sat 11 PM']] as const) {
       await press(cell);
       const tip = card.getByRole('tooltip');
