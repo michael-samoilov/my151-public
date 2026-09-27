@@ -325,13 +325,19 @@ function rangeView(snapshot: SearchPerformanceSnapshot, range: SearchRangeKey): 
   const google = part.google ?? snapshot.daily.providers.google;
   const bing = part.bing ?? snapshot.daily.providers.bing;
   const details = { google: part.google?.ranges[range], bing: part.bing?.ranges[range] };
+  const providers = {
+    google: providerRangeView(google, details.google, granularity),
+    bing: providerRangeView(bing, details.bing, granularity),
+  };
+  // Page deltas follow the overview: no comparison, no previous page rows.
+  const compared = (key: SearchProviderKey) => {
+    const detail = details[key];
+    return detail && !providers[key].comparison ? { ...detail, previous: undefined } : detail;
+  };
   return {
     granularity,
-    providers: {
-      google: providerRangeView(google, details.google, granularity),
-      bing: providerRangeView(bing, details.bing, granularity),
-    },
-    pages: buildPages(details),
+    providers,
+    pages: buildPages({ google: compared('google'), bing: compared('bing') }),
   };
 }
 
