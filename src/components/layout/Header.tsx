@@ -21,6 +21,8 @@ interface HeaderProps {
   onViewChange: (view: AppView) => void;
   /** Where the active page portals its controls (second row, right cell). */
   toolbarRef: (el: HTMLElement | null) => void;
+  /** The `<header>` itself. App measures it to place the mobile sheets below it. */
+  ref?: React.Ref<HTMLElement>;
 }
 
 // The cap has to be a concrete length for the collapse animation to have
@@ -51,7 +53,7 @@ const LABEL_WIDE = 'sm:max-w-[7rem] sm:opacity-100 sm:ml-1';
  * it did not lift conversion; the milestone popups stay (MilestoneCelebration
  * mounts in App, independent of this chrome).
  */
-export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
+export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderProps) {
   const sections = usePokedexStore((s) => s.sections);
   const milestoneMax = usePokedexStore((s) => s.milestoneMax);
   const count = Object.values(sections).reduce((s, a) => s + a.length, 0);
@@ -85,7 +87,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
     : null;
 
   return (
-    <header className="bg-card">
+    <header ref={ref} className="bg-card">
       <div className="flex h-11 items-center justify-between border-b px-3 sm:px-6">
         {/* The wordmark is not the page's heading: the h1 is the tool bar's
          * eyebrow below, so the heading Google reads names the tool. The sr-only
