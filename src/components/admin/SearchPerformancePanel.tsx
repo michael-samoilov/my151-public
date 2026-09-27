@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Delta, Kpi, Panel, Seg } from '@/components/admin/ui';
+import { chartRangeWindowMs, type ChartRangeKey } from '@/components/admin/charts/trendSeries';
+import { cssVar, useECharts, type EChartsOption } from '@/components/admin/charts/useECharts';
 import type {
   SearchPageEngineView,
   SearchPerformanceView,
@@ -73,42 +75,64 @@ function MetricDelta({ comparison, metric }: {
   return <Delta>{relative == null ? signed(absolute) : `${signed(absolute)} · ${signedPercent(relative)}`}</Delta>;
 }
 
-function SearchTrend({ daily }: { daily: SearchDailyPoint[] }) {
-  const rows = daily.slice(-28);
+const DAY_MS = 86_400_000;
+
+/** Rows inside `range`, counted back from the latest reported day. */
+function windowRows(daily: SearchDailyPoint[], range: ChartRangeKey): SearchDailyPoint[] {
+  const windowMs = chartRangeWindowMs(range);
+  const last = daily[daily.length - 1];
+  if (windowMs == null || !last) return daily;
+  const start = Date.parse(`${last.date}T00:00:00Z`) - windowMs + DAY_MS;
+  return daily.filter((row) => Date.parse(`${row.date}T00:00:00Z`) >= start);
+}
+
+function SearchTrend({ daily, range }: { daily: SearchDailyPoint[]; range: ChartRangeKey }) {
+  const rows = windowRows(daily, range);
   const values = rows.map((row) => row.impressions);
-  const high = Math.max(1, ...values);
-  const width = 100;
-  const height = 30;
-  const points = values
-    .map((value, index) => {
-      const x = values.length <= 1 ? 0 : (index / (values.length - 1)) * width;
-      const y = height - (value / high) * (height - 3) - 1.5;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(' ');
+  const scrubLabel = (i: number) => `${shortDate(rows[i].date)} · <b>${compact(values[i])}</b> impressions`;
+  const ref = useECharts(
+    (el): EChartsOption => {
+      const scale = Math.max(1, Math.min(el.clientWidth / 360, 2));
+      const red = cssVar(el, '--color-primary', '#dc2626');
+      return {
+        animation: false,
+        // The top band holds the scrub readout, so it never covers a line.
+        grid: { left: 2, right: 2, top: 28, bottom: 1 },
+        xAxis: {
+          type: 'category',
+          data: rows.map((row) => row.date),
+          boundaryGap: false,
+          axisLine: { lineStyle: { color: cssVar(el, '--color-border', '#e5e5e5') } },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+        },
+        yAxis: { type: 'value', min: 0, max: 'dataMax', show: false },
+        series: [
+          {
+            name: 'impressions',
+            type: 'line',
+            data: values,
+            symbol: 'none',
+            lineStyle: { color: red, width: 1.5 * scale },
+            itemStyle: { color: red },
+          },
+        ],
+      };
+    },
+    [daily, range],
+    { scrub: { count: rows.length, label: scrubLabel } },
+  );
 
   if (rows.length < 2 || values.every((value) => value === 0)) return null;
   return (
     <div className="mt-4 border-t border-border pt-3">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
-        className="h-20 w-full overflow-visible text-primary"
+      <div
+        ref={ref}
+        className="aspect-[3/1] max-h-[240px] min-h-[120px] w-full"
         role="img"
         aria-label={`Daily impressions for the latest ${rows.length} reported days.`}
-      >
-        <line x1="0" y1={height - 1} x2={width} y2={height - 1} stroke="var(--color-border)" strokeWidth="0.5" />
-        <polyline
-          points={points}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.25"
-          vectorEffect="non-scaling-stroke"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="-mt-1 flex justify-between text-[0.65rem] font-semibold text-muted-foreground">
+      />
+      <div className="mt-1 flex justify-between text-[0.65rem] font-semibold text-muted-foreground">
         <span>{shortDate(rows[0]?.date)}</span>
         <span>Daily impressions</span>
         <span>{shortDate(rows[rows.length - 1]?.date)}</span>
@@ -262,7 +286,7 @@ export function SearchPerformancePanel({
                 delta={<Delta>{comparison.available && comparison.delta.position != null ? `${comparison.delta.position > 0 ? '+' : ''}${comparison.delta.position.toFixed(1)}` : '—'}</Delta>}
               />
             </div>
-            <SearchTrend daily={selected.daily} />
+            <SearchTrend daily={selected.daily} range="28d" />
             <QueryRows rows={selected.topQueries} />
           </>
         )}

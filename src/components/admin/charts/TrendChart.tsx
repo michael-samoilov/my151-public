@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Panel, Seg } from '@/components/admin/ui';
-import { useECharts, cssVar, topTooltip, type EChartsOption } from './useECharts';
-import { tipDataIndex } from './scrubPlot';
+import { useECharts, cssVar, type EChartsOption } from './useECharts';
 import {
   CHART_RANGE_PRESETS,
   chartDailyValues,
@@ -140,17 +139,10 @@ function TrendChart({
       return {
         animation: false,
         grid: { left: GRID_LEFT, right, top: GRID_TOP, bottom: GRID_BOTTOM },
-        tooltip: {
-          ...topTooltip(el),
-          trigger: 'axis',
-          axisPointer: { type: 'none' },
-          formatter: (params: unknown) => scrubLabel(tipDataIndex(params)),
-        },
         xAxis: {
           type: 'category',
           data: labels,
           boundaryGap: false,
-          axisPointer: { show: false },
           z: 0,
           axisLine: { lineStyle: { color: grid } },
           axisTick: { show: false },
@@ -292,7 +284,7 @@ function TrendChart({
       };
     },
     [series, nowMs, historyOriginDay],
-    { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
+    { scrub: { count: labels.length, label: scrubLabel } },
   );
 
   if (series.length < 2) {
@@ -304,7 +296,7 @@ function TrendChart({
   return (
     <div
       ref={ref}
-      className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
+      className="h-[180px] w-full overflow-visible md:h-[220px]"
       role="img"
       aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with trailing 7-day unique active users. Last 24 hours ${counts.hours24}${counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}.`}
     />
@@ -344,17 +336,10 @@ function UniqueUsersLineChart({
       return {
         animation: false,
         grid: { left: GRID_LEFT, right, top: GRID_TOP, bottom: GRID_BOTTOM },
-        tooltip: {
-          ...topTooltip(el),
-          trigger: 'axis',
-          axisPointer: { type: 'none' },
-          formatter: (params: unknown) => scrubLabel(tipDataIndex(params)),
-        },
         xAxis: {
           type: 'category',
           data: axisLabels,
           boundaryGap: false,
-          axisPointer: { show: false },
           axisLine: { lineStyle: { color: grid } },
           axisTick: { show: false },
           axisLabel: {
@@ -412,7 +397,7 @@ function UniqueUsersLineChart({
       };
     },
     [source, seriesName, provisional, counts.hours24],
-    { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
+    { scrub: { count: axisLabels.length, label: scrubLabel } },
   );
 
   if (values.length < 2) {
@@ -421,7 +406,7 @@ function UniqueUsersLineChart({
   return (
     <div
       ref={ref}
-      className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
+      className="h-[180px] w-full overflow-visible md:h-[220px]"
       role="img"
       aria-label={ariaLabel}
     />

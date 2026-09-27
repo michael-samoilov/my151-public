@@ -1,4 +1,4 @@
-import { useECharts, cssVar, topTooltip, type EChartsOption } from './useECharts';
+import { useECharts, cssVar, type EChartsOption } from './useECharts';
 
 interface Curve {
   survival: { t: number; s: number }[];
@@ -29,6 +29,11 @@ export function BuildDepthChart({
   const startCount = pts.length ? Math.round((pts[0][1] / 100) * curve.n) : 0;
   const endCount = pts.length ? Math.round((pts[pts.length - 1][1] / 100) * curve.n) : 0;
   const xMax = pts.length ? pts[pts.length - 1][0] : 1;
+  const scrubLabel = (i: number) => {
+    const [size, share] = pts[i];
+    const count = Math.round((share / 100) * curve.n);
+    return `≥ ${size} ${xLabel} · <b>${share}%</b> still building (${count} of ${curve.n})`;
+  };
 
   const ref = useECharts(
     (el): EChartsOption => {
@@ -40,17 +45,6 @@ export function BuildDepthChart({
       return {
         animation: false,
         grid: { left: 34, right: 14, top: 28, bottom: 22 },
-        tooltip: {
-          ...topTooltip(el),
-          trigger: 'axis',
-          formatter: (params: unknown) => {
-            const arr = params as { data: [number, number] }[];
-            const d = arr[0]?.data;
-            if (!d) return '';
-            const count = Math.round((d[1] / 100) * curve.n);
-            return `≥ ${d[0]} ${xLabel} · <b>${d[1]}%</b> still building (${count} of ${curve.n})`;
-          },
-        },
         xAxis: {
           type: 'value',
           min: 1,
@@ -93,14 +87,16 @@ export function BuildDepthChart({
       };
     },
     [curve, xLabel],
-    { scrub: true },
+    // buildDepthCurve emits one point per integer size, so the points are
+    // evenly spaced from x = 1 to xMax.
+    { scrub: { count: pts.length, label: scrubLabel } },
   );
 
   if (pts.length < 2) return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
   return (
     <div
       ref={ref}
-      className="h-[200px] w-full touch-none md:h-[240px]"
+      className="h-[200px] w-full md:h-[240px]"
       role="img"
       aria-label={`${ariaLabel}: ${startCount} browsers at 1 ${xLabel} down to ${endCount} at ${xMax}.`}
     />
