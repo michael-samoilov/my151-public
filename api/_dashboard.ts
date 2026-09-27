@@ -308,13 +308,26 @@ function crossToolJourneys(dexFirst: Map<string, number>, leagueFirst: Map<strin
   };
 }
 
-/** The five Redis reads the dashboard is computed from, as the SDK returns them. */
+/** The Redis reads the dashboard is computed from, as the SDK returns them. */
 export interface DashboardSource {
   clients: Record<string, unknown> | null;
   archived: unknown;
   funnel: Record<string, unknown> | null;
+  /** The per-day funnel counters of the range's cohort window, summed. `null`
+   *  when the funnels read the all-time `funnel` hash (see funnelDayKeys). */
+  funnelWindow: Record<string, unknown> | null;
   leagueClients: Record<string, unknown> | null;
   exportSurveySkips: Record<string, unknown> | null;
+}
+
+/** A counter hash as numbers, skipping any field that is not one. */
+function counts(hash: Record<string, unknown> | null): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [k, v] of Object.entries(hash ?? {})) {
+    const n = typeof v === 'number' ? v : parseInt(String(v), 10);
+    if (Number.isFinite(n)) out[k] = n;
+  }
+  return out;
 }
 
 /**
@@ -322,8 +335,9 @@ export interface DashboardSource {
  *
  * `range` picks the browsers each card counts. Most cards count the browsers
  * active in the range. Cross-tool cards keep both tools' records of those
- * browsers. The referrer flow counts the browsers first seen in the range.
- * The activity series and the paged user lists keep every browser.
+ * browsers. The funnels and the referrer flow count the browsers first seen
+ * in the range, and the funnels open on the window's day counters. The
+ * activity series and the paged user lists keep every browser.
  */
 export function buildDashboard(
   source: DashboardSource,
@@ -340,11 +354,8 @@ export function buildDashboard(
 
   // Funnel event counters (from api/event.ts) — top-of-funnel signals that
   // fire with zero placements, so they live outside the per-user records.
-  const funnelEvents: Record<string, number> = {};
-  for (const [k, v] of Object.entries(source.funnel ?? {})) {
-    const n = typeof v === 'number' ? v : parseInt(String(v), 10);
-    if (Number.isFinite(n)) funnelEvents[k] = n;
-  }
+  const funnelEvents = counts(source.funnel);
+  const cohortEvents = source.funnelWindow ? counts(source.funnelWindow) : funnelEvents;
 
   // The gym leader maker's records, in their own hash. A person who used
   // both tools is one cid present in both, so overlap is a set
@@ -613,22 +624,22 @@ export function buildDashboard(
 
   const totalUsers = records.length;
   const totalDexRecords = allRecords.length;
-  const dexFunnelRows: DexFunnelRow[] = records.map((r) => ({
+  const dexFunnelRows: DexFunnelRow[] = dexNew.map((r) => ({
     cid: r.cid,
     peakMon: Math.max(0, ...monEndsOf(r)),
     completed: r.completed === true,
     exported: r.exported === true,
   }));
-  const dexFunnel = dexUsageFunnel(dexFunnelRows, funnelEventCount(funnelEvents, 'intro-shown'));
+  const dexFunnel = dexUsageFunnel(dexFunnelRows, funnelEventCount(cohortEvents, 'intro-shown'));
   const leagueFunnel = leagueUsageFunnel(
-    leagueRecords.map((r) => ({
+    leagueNew.map((r) => ({
       maxCards: r.maxCards,
       maxSeats: r.maxSeats,
       fullGyms: peakFullGyms(r),
       exportsCard: r.exportsCard,
       exportsLeague: r.exportsLeague,
     })),
-    funnelEventCount(funnelEvents, 'league-open'),
+    funnelEventCount(cohortEvents, 'league-open'),
   );
   const page = allRecords.slice(offset, offset + limit).map((r) => ({
     ...stampExportSurveySkips(r, skipMap),
