@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { LEAGUE_BOSS_ROW, type LeagueCardShape } from '../../api/_leagueRecord';
 import { leaguePicks } from '../../api/_leaguePicks';
-import { getAllPokemon } from '@/hooks/usePokemonData';
-import { arrivalLevel } from '@/league/model/impliedLevels';
-import { BOSS_ROW, LEVEL_CURVE } from '@/league/model/constants';
+import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
+import { BOSS_ROW } from '@/league/model/constants';
+import { makePlacedLine, stageAt } from '@/league/model/engine';
 
 const league = (...cards: LeagueCardShape[]) => ({ latestCards: cards });
 
@@ -54,7 +54,14 @@ describe('leaguePicks', () => {
 
   it('agrees with the app on which member a line without dragged stages fields at the boss row', () => {
     expect(LEAGUE_BOSS_ROW).toBe(BOSS_ROW);
-    const late = getAllPokemon().filter((p) => p.evolvesFrom != null && arrivalLevel(p) > LEVEL_CURVE[BOSS_ROW - 1]);
-    expect(late.map((p) => p.id)).toEqual([]);
+    const pathTo = (id: number) => {
+      const branch: number[] = [];
+      for (let p = getPokemonById(id); p; p = p.evolvesFrom != null ? getPokemonById(p.evolvesFrom) : undefined) branch.unshift(p.id);
+      return branch;
+    };
+    const short = getAllPokemon()
+      .map((p) => pathTo(p.id))
+      .filter((branch) => stageAt(makePlacedLine(branch), BOSS_ROW) !== branch.length - 1);
+    expect(short).toEqual([]);
   });
 });
