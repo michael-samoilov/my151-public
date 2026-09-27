@@ -22,7 +22,6 @@ import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { IntroCard } from '@/components/pokedex/IntroCard';
-import { UndoToast } from '@/components/pokedex/UndoToast';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
@@ -666,7 +665,6 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
     <div ref={menuRef} className="relative">
       <button type="button"
         onClick={() => { setOpen(!open); setConfirming(false); }}
-        data-testid="builder-settings"
         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
       >
         <Settings className="w-4 h-4" />
@@ -936,7 +934,7 @@ export function PokedexGrid() {
   const dragSet = useMemo(() => new Set(dragLineIds ?? []), [dragLineIds]);
 
   return (
-    <div className="relative flex flex-col h-full">
+    <div className="flex flex-col h-full">
       {/* This page's controls live in the shared tool bar, not a row of its
           own — the count and nav are the header's job now. */}
       {toolbarSlot && createPortal(<SettingsMenu onClear={clearAll} />, toolbarSlot)}
@@ -1002,7 +1000,6 @@ export function PokedexGrid() {
           </div>
           <PageFooter faq="dex" />
       </div>
-      <UndoToast />
     </div>
   );
 }

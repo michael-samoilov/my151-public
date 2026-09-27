@@ -76,20 +76,6 @@ export type DrillDownSegment =
   | { kind: 'typeMatchup'; type: string }
   | { kind: 'shape'; shape: string };
 
-/** A builder removal that the Undo toast can take back. */
-export interface Removal {
-  /** `line`: one press on a tile's X. `all`: Clear All. */
-  kind: 'line' | 'all';
-  /** The ids that went, in section order. */
-  ids: number[];
-  /** The dex before the removal, restored as is by Undo. */
-  before: Record<string, number[]>;
-  /** The dex the removal produced, compared by identity. When `sections` is
-   *  anything else, a newer change has landed, and restoring `before` would
-   *  erase it, so the undo lapses. */
-  after: Record<string, number[]>;
-}
-
 interface PokedexState {
   sections: Record<string, number[]>; // groupId -> ordered pokemon IDs
   activeSection: string | null; // which group the user is adding to
@@ -146,9 +132,6 @@ interface PokedexState {
   /** Transient (never persisted): armed when the 151-milestone celebration's
    *  "Open View" CTA is clicked, pointing the user at the Export button. */
   exportHintArmed: boolean;
-  /** Transient (never persisted): the last builder removal, while its Undo
-   *  toast is up. A newer removal replaces it. */
-  lastRemoval: Removal | null;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -160,12 +143,6 @@ interface PokedexState {
   reorderSection: (groupId: string, orderedIds: number[]) => void;
   setActiveSection: (sectionId: string | null) => void;
   clearAll: () => void;
-  /** Put the dex back as it was before `lastRemoval`, if nothing changed it
-   *  since. Either way, the removal is done with. */
-  undoRemoval: () => void;
-  /** Drop `lastRemoval` without restoring it: the toast timed out, or a newer
-   *  change to the dex voided it. */
-  dismissRemoval: () => void;
   setMobileBrowserOpen: (open: boolean) => void;
   setCategoryFilter: (category: string | null) => void;
   setArchetypeFilter: (archetype: string | null) => void;
@@ -255,7 +232,6 @@ export const usePokedexStore = create<PokedexState>()(
       milestoneCelebration: null,
       statsHintArmed: false,
       exportHintArmed: false,
-      lastRemoval: null,
       locale: null,
       localeNoticeSeen: false,
 
@@ -373,14 +349,9 @@ export const usePokedexStore = create<PokedexState>()(
         set((state) => {
           const sectionIds = state.sections[sectionId] ?? [];
           const removeSet = computeRemovalCascade(pokemonId, sectionIds);
-          const ids = sectionIds.filter((id) => removeSet.has(id));
-          if (ids.length === 0) return {};
           const newSections = { ...state.sections };
           newSections[sectionId] = sectionIds.filter((id) => !removeSet.has(id));
-          return {
-            sections: newSections,
-            lastRemoval: { kind: 'line', ids, before: state.sections, after: newSections },
-          };
+          return { sections: newSections };
         }),
 
       removeEvoLine: (sectionId, pokemonId) =>
@@ -424,25 +395,7 @@ export const usePokedexStore = create<PokedexState>()(
 
       setActiveSection: (sectionId) => set({ activeSection: sectionId }),
 
-      clearAll: () =>
-        set((state) => {
-          const ids = Object.values(state.sections).flat();
-          const sections = createEmptySections();
-          return {
-            sections,
-            lastRemoval: ids.length > 0 ? { kind: 'all', ids, before: state.sections, after: sections } : null,
-          };
-        }),
-
-      undoRemoval: () =>
-        set((state) => {
-          const removal = state.lastRemoval;
-          if (!removal) return {};
-          if (state.sections !== removal.after) return { lastRemoval: null };
-          return { sections: removal.before, lastRemoval: null };
-        }),
-
-      dismissRemoval: () => set({ lastRemoval: null }),
+      clearAll: () => set({ sections: createEmptySections() }),
 
       setMobileBrowserOpen: (open) => set({ mobileBrowserOpen: open }),
 

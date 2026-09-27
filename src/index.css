@@ -389,17 +389,6 @@ img {
   .milestone-nudge-in { animation: none; opacity: 1; transform: none; }
 }
 
-/* The builder's Undo toast rises a few pixels into place. It is short, since
- * the toast itself only stays up for 6 seconds. */
-@keyframes undo-toast-in {
-  0%   { opacity: 0; transform: translateY(0.5rem); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-.undo-toast-in { animation: undo-toast-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-@media (prefers-reduced-motion: reduce) {
-  .undo-toast-in { animation: none; }
-}
-
 /* The press target of a builder tile's remove X. The glyph keeps its painted
  * size; this ::before makes the target at least 1.5rem square, which is 24px at
  * the smallest root font (the WCAG 2.2 target size), and grows with the glyph
