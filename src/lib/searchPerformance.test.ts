@@ -8,6 +8,7 @@ import {
   createGoogleServiceAccountAssertion,
   googleDailyRows,
   googleDimensionRows,
+  googlePageQueryRows,
   parseBingDate,
 } from '../../api/_searchPerformance';
 import { summarizeSearchWindow, type SearchDailyPoint } from './searchPerformance';
@@ -39,6 +40,9 @@ describe('search performance normalization', () => {
     ]);
     expect(googleDimensionRows({ rows: [{ keys: ['/builder'], clicks: 2, impressions: 20, position: 8 }] })).toEqual([
       { key: '/builder', clicks: 2, impressions: 20, ctr: 0.1, position: 8 },
+    ]);
+    expect(googlePageQueryRows({ rows: [{ keys: ['/builder', 'pokemon builder'], clicks: 2, impressions: 20, position: 8 }] })).toEqual([
+      { page: '/builder', query: 'pokemon builder', clicks: 2, impressions: 20, ctr: 0.1, position: 8 },
     ]);
   });
 
