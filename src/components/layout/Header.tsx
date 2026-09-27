@@ -5,6 +5,7 @@ import { BarChart3, Camera, Hammer, Lock } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { isAnalyticsUnlocked, ANALYTICS_UNLOCK_AT } from '@/lib/milestones';
 import { useT } from '@/i18n';
+import { cn } from '@/lib/utils';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu, type ToolsCallout } from '@/components/layout/ToolsMenu';
@@ -32,16 +33,25 @@ interface HeaderProps {
 const LABEL_ANIM = 'overflow-hidden transition-[max-width,opacity] duration-150 ease-out max-w-0 opacity-0';
 
 /**
- * The active tab's label, expanded.
- *
- * Gated at 380px rather than shown unconditionally: below that, the second
- * row's three cells (count, tabs, page controls) need every collapsed pixel
- * to keep the centred nav clear of its neighbours. The filled `default`
- * variant already marks the active tab, so collapsing to icons there loses
- * redundancy rather than information. Above `sm` every label shows.
+ * The active tab's label, expanded. Inactive tabs stay icon-only until `sm`.
+ * Gated at 380px: below that, the count, tabs, and page controls need the
+ * collapsed pixels so a 4-digit count still clears the centred tablist.
  */
 const LABEL_ACTIVE = 'min-[380px]:max-w-[7rem] min-[380px]:opacity-100 min-[380px]:ml-1';
 const LABEL_WIDE = 'sm:max-w-[7rem] sm:opacity-100 sm:ml-1';
+
+function tabLabelClass(selected: boolean) {
+  return cn(LABEL_ANIM, selected && LABEL_ACTIVE, LABEL_WIDE);
+}
+
+function tabTriggerClass(selected: boolean) {
+  return cn(
+    'px-2 sm:px-3',
+    selected
+      ? 'bg-card text-foreground shadow-sm hover:bg-card hover:text-foreground'
+      : 'text-muted-foreground hover:bg-card/70 hover:text-foreground',
+  );
+}
 
 /**
  * The app's two-bar chrome. The top bar is the site's: wordmark left, the
@@ -165,43 +175,60 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
           </span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div
+          role="tablist"
+          aria-label={t('header.toolNameCore')}
+          data-testid="dex-nav"
+          className="inline-flex h-8 items-center rounded-lg bg-muted p-0.5"
+        >
           <Button
-            variant={currentView === 'builder' ? 'default' : 'ghost'}
+            type="button"
+            role="tab"
+            aria-selected={currentView === 'builder'}
+            variant="ghost"
             size="pill"
             onClick={() => onViewChange('builder')}
-            className="px-2 sm:px-3"
+            className={tabTriggerClass(currentView === 'builder')}
             data-nav="builder"
+            data-state={currentView === 'builder' ? 'active' : 'inactive'}
           >
             <Hammer className="h-4 w-4" />
-            <span className={`${LABEL_ANIM} ${currentView === 'builder' ? LABEL_ACTIVE : ''} ${LABEL_WIDE}`}>{t('nav.build')}</span>
+            <span className={tabLabelClass(currentView === 'builder')}>{t('nav.build')}</span>
           </Button>
 
           {analyticsUnlocked ? (
             <Button
-              variant={currentView === 'analytics' ? 'default' : 'ghost'}
+              type="button"
+              role="tab"
+              aria-selected={currentView === 'analytics'}
+              variant="ghost"
               size="pill"
               onClick={() => onViewChange('analytics')}
-              className="px-2 sm:px-3"
+              className={tabTriggerClass(currentView === 'analytics')}
               data-nav="analytics"
+              data-state={currentView === 'analytics' ? 'active' : 'inactive'}
             >
               <BarChart3 className="h-4 w-4" />
-              <span className={`${LABEL_ANIM} ${currentView === 'analytics' ? LABEL_ACTIVE : ''} ${LABEL_WIDE}`}>{t('nav.analytics')}</span>
+              <span className={tabLabelClass(currentView === 'analytics')}>{t('nav.analytics')}</span>
             </Button>
           ) : (
             /* Locked until 25 Pokémon (sticky). Tapping explains rather than navigating. */
             <Tooltip open={lockTip} onOpenChange={setLockTip}>
               <TooltipTrigger asChild>
                 <Button
+                  type="button"
+                  role="tab"
+                  aria-selected={false}
                   variant="ghost"
                   size="pill"
                   onClick={() => setLockTip((o) => !o)}
-                  className="px-2 text-muted-foreground/70 hover:text-muted-foreground sm:px-3"
+                  className="px-2 text-muted-foreground/70 hover:bg-transparent hover:text-muted-foreground sm:px-3"
                   data-nav="analytics"
+                  data-state="inactive"
                   aria-label={t('nav.analyticsLocked', { count: ANALYTICS_UNLOCK_AT })}
                 >
                   <Lock className="h-4 w-4" />
-                  <span className="hidden sm:ml-1 sm:inline">{t('nav.analytics')}</span>
+                  <span className={tabLabelClass(false)}>{t('nav.analytics')}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipPortal>
@@ -215,14 +242,18 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
           )}
 
           <Button
-            variant={currentView === 'view' ? 'default' : 'ghost'}
+            type="button"
+            role="tab"
+            aria-selected={currentView === 'view'}
+            variant="ghost"
             size="pill"
             onClick={() => onViewChange('view')}
-            className="px-2 sm:px-3"
+            className={tabTriggerClass(currentView === 'view')}
             data-nav="view"
+            data-state={currentView === 'view' ? 'active' : 'inactive'}
           >
             <Camera className="h-4 w-4" />
-            <span className={`${LABEL_ANIM} ${currentView === 'view' ? LABEL_ACTIVE : ''} ${LABEL_WIDE}`}>{t('nav.view')}</span>
+            <span className={tabLabelClass(currentView === 'view')}>{t('nav.view')}</span>
           </Button>
         </div>
 
