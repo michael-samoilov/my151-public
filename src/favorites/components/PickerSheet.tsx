@@ -82,7 +82,9 @@ export function PickerSheet({
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
   const maxCols = 6;
-  const lineKey = kind === 'pick' && type === 'starter' ? evolutionLineKey : undefined;
+  // Starter rows keep whole evolution lines. Starter × Gimmick keeps debut
+  // order instead, so a line's forms from later games do not pull forward.
+  const lineKey = kind === 'pick' && type === 'starter' && isGenNumber(gen) ? evolutionLineKey : undefined;
   const widestRow = Math.max(0, ...prettyRows(mons, maxCols, lineKey).map((row) => row.length));
   const paneWidth = Math.max(
     mons.length === 0 ? 290 : kind === 'pick' && isTypeName(type) && isGenNumber(gen) ? 200 : 150,
