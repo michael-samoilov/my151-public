@@ -77,7 +77,7 @@ const BAND_LUMINANCE = { lo: 0.028, hi: 0.165 };
 const LUMINANCE_SCALE = 0.25;
 
 /** The neutral "no type" colour the boards use. */
-const NO_TYPE = '#9CA3AF';
+export const NO_TYPE = '#9CA3AF';
 
 /**
  * How much of the type colour the card body carries: the type at 6.3% over

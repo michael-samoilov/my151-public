@@ -42,6 +42,7 @@ import {
 } from './_aggregate.js';
 import { ARCHIVED_KEY, asArchivedSet, isArchived, withoutArchived } from './_archive.js';
 import { buildCrossTool } from './_crossTool.js';
+import { leaguePicks } from './_leaguePicks.js';
 /** Distinct evolution lines represented by a set of ids (unknown ids count as
  *  their own line). Mirrors the client's countEvoLines so server-derived depth
  *  matches what the beacon reports. */
@@ -387,6 +388,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       activity: Object.entries(leagueDaily)
         .map(([day, set]) => ({ day: Number(day), dau: set.size }))
         .sort((a, b) => a.day - b.day),
+      picks: leaguePicks(leagueRecords),
       recent: leagueRecords
         .sort((a, b) => b.lastTs - a.lastTs)
         .slice(0, 50)
