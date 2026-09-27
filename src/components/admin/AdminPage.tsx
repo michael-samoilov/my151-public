@@ -81,6 +81,14 @@ const TOKEN_KEY = 'p151-admin-token';
 // Beside the token, so the dashboard opens on the tool you were last reading.
 const TOOL_KEY = 'p151-admin-tool';
 const PAGE_SIZE = 50;
+// Returning to the tab refetches data older than this; while visible, the
+// dashboard also refetches on the interval.
+const STALE_ON_RETURN_MS = 60_000;
+const REFRESH_INTERVAL_MS = 5 * 60_000;
+// Each dashboard request takes a number, and only the newest one writes, so a
+// background refresh that answers late cannot undo a later Load more. The admin
+// page mounts once, so one counter serves it.
+let latestLoad = 0;
 
 /** Which tool's records every shared card reads. */
 export type ToolSlice = 'all' | 'dex' | 'league';
@@ -428,12 +436,14 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
   return distinctCalendarDays(stamps, rec.tz);
 }
 
+class UnauthorizedError extends Error {}
+
 async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
   const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   const res = await fetch(`/api/submissions?${qs.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (res.status === 401) throw new Error('Invalid admin token.');
+  if (res.status === 401) throw new UnauthorizedError('Invalid admin token.');
   if (res.status === 503) throw new Error('Admin access is not configured on the server (ADMIN_TOKEN is not set).');
   if (!res.ok) throw new Error(`Request failed (${res.status}).`);
   return res.json() as Promise<ApiResponse>;
@@ -1615,7 +1625,8 @@ export function AdminPage() {
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
   const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
   const [archiveOverride, setArchiveOverride] = useState<Record<string, boolean>>({});
-  const [authed, setAuthed] = useState(false);
+  // A stored token counts as signed in until the server rejects it.
+  const [authed, setAuthed] = useState(initialToken !== null);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1641,40 +1652,55 @@ export function AdminPage() {
   }, [detail, dashScrollY]);
   const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
 
-  const loadSearch = useCallback(async (tok: string, refresh = false) => {
-    setSearchLoading(true);
-    setSearchError(null);
+  // A quiet load shows no progress and clears an error only on success, so a
+  // background refresh leaves the page as it is until new data arrives.
+  const loadSearch = useCallback(async (tok: string, { refresh = false, quiet = false } = {}) => {
+    if (!quiet) {
+      setSearchLoading(true);
+      setSearchError(null);
+    }
     try {
       setSearchPerformance(await fetchSearchPerformance(tok, refresh));
+      setSearchError(null);
     } catch (e) {
       setSearchError(e instanceof Error ? e.message : 'Search data could not load.');
     } finally {
-      setSearchLoading(false);
+      if (!quiet) setSearchLoading(false);
     }
   }, []);
 
-  const load = useCallback(async (tok: string, limit = PAGE_SIZE, refreshSearch = false) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resp = await fetchDashboard(tok, limit, 0);
-      setData(resp);
-      setLoadedAt(Date.now());
-      setAuthed(true);
-      setToken(tok);
-      void loadSearch(tok, refreshSearch);
-      try {
-        localStorage.setItem(TOKEN_KEY, tok);
-      } catch {
-        // localStorage may be unavailable
+  const load = useCallback(
+    async (tok: string, { limit = PAGE_SIZE, refreshSearch = false, quiet = false } = {}) => {
+      const seq = ++latestLoad;
+      if (!quiet) {
+        setLoading(true);
+        setError(null);
       }
-    } catch (e) {
-      setAuthed(false);
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
-    } finally {
-      setLoading(false);
-    }
-  }, [loadSearch]);
+      try {
+        const resp = await fetchDashboard(tok, limit, 0);
+        if (seq !== latestLoad) return;
+        setData(resp);
+        setLoadedAt(Date.now());
+        setAuthed(true);
+        setToken(tok);
+        setError(null);
+        void loadSearch(tok, { refresh: refreshSearch, quiet });
+        try {
+          localStorage.setItem(TOKEN_KEY, tok);
+        } catch {
+          // localStorage may be unavailable
+        }
+      } catch (e) {
+        if (seq !== latestLoad) return;
+        // Only a rejected token signs out. Any other failure keeps the data on screen.
+        if (e instanceof UnauthorizedError) setAuthed(false);
+        setError(e instanceof Error ? e.message : 'Something went wrong.');
+      } finally {
+        if (!quiet) setLoading(false);
+      }
+    },
+    [loadSearch],
+  );
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has('demo') && !initialToken) {
@@ -1694,16 +1720,49 @@ export function AdminPage() {
 
   const loadMore = useCallback(async () => {
     if (!token || !data) return;
+    const seq = ++latestLoad;
     setLoadingMore(true);
     try {
       const resp = await fetchDashboard(token, data.records.length + PAGE_SIZE, 0);
-      setData(resp);
+      if (seq === latestLoad) setData(resp);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong.');
+      if (seq === latestLoad) setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally {
       setLoadingMore(false);
     }
   }, [token, data]);
+
+  // Keep an open dashboard current: refetch on return to the tab (including an
+  // iOS back-forward restore) and on an interval while visible. The refetch
+  // keeps the loaded pages and never forces a search-provider refresh.
+  const loadedLimit = data?.limit ?? PAGE_SIZE;
+  useEffect(() => {
+    if (!authed || !token || loading || loadingMore) return;
+    let running = false;
+    const refresh = (minAgeMs: number) => {
+      if (running || Date.now() - loadedAt < minAgeMs) return;
+      running = true;
+      void load(token, { limit: loadedLimit, quiet: true }).finally(() => {
+        running = false;
+      });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh(STALE_ON_RETURN_MS);
+    };
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) refresh(STALE_ON_RETURN_MS);
+    };
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refresh(0);
+    }, REFRESH_INTERVAL_MS);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit]);
 
   const setArchived = useCallback(
     async (cid: string, next: boolean) => {
@@ -1718,7 +1777,7 @@ export function AdminPage() {
           body: JSON.stringify({ cid, archived: next }),
         });
         if (!res.ok) throw new Error(`Archive failed (${res.status}).`);
-        await load(token, data?.records.length ?? PAGE_SIZE);
+        await load(token, { limit: data?.records.length ?? PAGE_SIZE });
         setArchiveOverride((prev) => {
           const copy = { ...prev };
           delete copy[key];
@@ -1797,7 +1856,7 @@ export function AdminPage() {
       setPage('feedback');
     } else if (k === 'search') {
       setPage('search');
-      if (token) void loadSearch(token, true);
+      if (token) void loadSearch(token, { refresh: true });
     } else {
       setPage('analytics');
       pickTool(k);
@@ -1814,7 +1873,7 @@ export function AdminPage() {
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, PAGE_SIZE, true)} disabled={loading || searchLoading}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, { refreshSearch: true })} disabled={loading || searchLoading}>
               {loading || searchLoading ? 'Refreshing…' : 'Refresh'}
             </Button>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
@@ -1911,7 +1970,9 @@ export function AdminPage() {
 
           const act = slice.activity;
           const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)} · as of ${fmtDate(act[act.length - 1].day)}` : '';
+          const fmtDateTime = (ms: number) =>
+            new Date(ms).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)} · as of ${fmtDateTime(loadedAt)}` : '';
 
           const xt = data.tools;
 
