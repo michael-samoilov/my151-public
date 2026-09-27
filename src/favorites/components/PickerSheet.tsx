@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
@@ -6,7 +6,7 @@ import { prettyRows } from '../model/prettyWrap';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
-import { ChevronLeft, PanelRightClose } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { isGenNumber, isTypeName, typeSlottedElsewhere, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
@@ -25,6 +25,7 @@ import { pointerMarks, pointerPool } from '../model/pointers';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
+import { DesktopPane } from './DesktopPane';
 
 // Keep the chain picker available for a possible future opt-in, but default to
 // the direct replacement flow until its choices are understandable at a glance.
@@ -32,21 +33,11 @@ import { PackingChain } from './PackingChain';
 const PACKING_UI_ENABLED = !PRODUCTION_DEPLOY && typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).get('packing') === '1';
 
-/** The tapped cell, the grid frame that bounds the picker, and the grid's
- *  scroller inside that frame. */
-export type PickerAnchor = { cell: HTMLElement; table: HTMLElement; scroller: HTMLElement };
-type PopoverPosition = { left: number; top: number; width: number; maxHeight: number };
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
 export function PickerSheet({
   type,
   gen,
   fills,
   currentId,
-  anchor,
   showTypes,
   onToggleTypes,
   onClose,
@@ -58,7 +49,6 @@ export function PickerSheet({
   gen: GenAxisId;
   fills: Record<string, number>;
   currentId?: number;
-  anchor: PickerAnchor | null;
   showTypes: boolean;
   onToggleTypes: () => void;
   onClose: () => void;
@@ -74,8 +64,6 @@ export function PickerSheet({
   const kind = kindFor(type, gen);
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);
   const [packStack, setPackStack] = useState<string[]>(['']);
-  const popoverRef = useRef<HTMLElement>(null);
-  const [position, setPosition] = useState<PopoverPosition | null>(null);
 
   function backFromPack() {
     if (packStack.length > 1) setPackStack(packStack.slice(0, -1));
@@ -99,76 +87,6 @@ export function PickerSheet({
     spritePx * widestRow + inset * 2 + 2,
   );
 
-  useLayoutEffect(() => {
-    const popover = popoverRef.current;
-    if (!desktop || !anchor || !popover) return;
-    let nudged = false;
-    const update = () => {
-      const table = anchor.table.getBoundingClientRect();
-      const visual = window.visualViewport;
-      const leftBound = Math.max(table.left, visual?.offsetLeft ?? 0);
-      const rightBound = Math.min(table.right, (visual?.offsetLeft ?? 0) + (visual?.width ?? window.innerWidth));
-      const topBound = Math.max(table.top, visual?.offsetTop ?? 0);
-      const bottomBound = Math.min(table.bottom, (visual?.offsetTop ?? 0) + (visual?.height ?? window.innerHeight));
-      if (rightBound <= leftBound || bottomBound <= topBound) return;
-      const width = Math.min(paneWidth, rightBound - leftBound);
-      // scrollHeight excludes the outer border and rounds to an integer, so
-      // reserve a few pixels before clamping against the table/viewport edge.
-      const maxHeight = Math.max(0, bottomBound - topBound - 4);
-      const height = Math.min(popover.scrollHeight + 4, maxHeight);
-      const gap = 8;
-      let cell = anchor.cell.getBoundingClientRect();
-      const fitsBeside = (box: DOMRect) => box.bottom + gap + height <= bottomBound
-        || box.top - height - gap >= topBound
-        || box.right + gap + width <= rightBound
-        || box.left - width - gap >= leftBound;
-      if (!nudged && !fitsBeside(cell)) {
-        // A zoomed cell can leave room on no side. Scroll the grid sideways
-        // once, by the shorter distance that opens room beside the cell.
-        nudged = true;
-        const toLeft = cell.right + gap + width - rightBound;
-        const toRight = leftBound - (cell.left - width - gap);
-        anchor.scroller.scrollBy({ left: toLeft <= toRight ? toLeft : -toRight, behavior: 'instant' });
-        cell = anchor.cell.getBoundingClientRect();
-      }
-      const below = cell.bottom + gap;
-      const above = cell.top - height - gap;
-      const right = cell.right + gap;
-      const left = cell.left - width - gap;
-      // Prefer below or above the cell. A zoomed cell can leave no room for
-      // either, so fall back to its side before covering it.
-      const place = below + height <= bottomBound ? { left: cell.left, top: below }
-        : above >= topBound ? { left: cell.left, top: above }
-          : right + width <= rightBound ? { left: right, top: cell.top }
-            : left >= leftBound ? { left, top: cell.top }
-              : { left: cell.left, top: below };
-      const next = {
-        left: clamp(place.left, leftBound, rightBound - width),
-        top: clamp(place.top, topBound, bottomBound - height),
-        width,
-        maxHeight,
-      };
-      setPosition((current) => current?.left === next.left && current.top === next.top
-        && current.width === next.width && current.maxHeight === next.maxHeight
-        ? current : next);
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(anchor.table);
-    observer.observe(anchor.cell);
-    observer.observe(popover);
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    window.visualViewport?.addEventListener('resize', update);
-    window.visualViewport?.addEventListener('scroll', update);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-      window.visualViewport?.removeEventListener('resize', update);
-      window.visualViewport?.removeEventListener('scroll', update);
-    };
-  }, [desktop, anchor, paneWidth]);
   const emptyHint = kind !== 'pointer' ? t('favorites.empty.unavailable')
     : type === 'favorite' && gen === 'favorite' ? t('favorites.empty.overall')
       : type === 'legendary' && gen === 'legendary' ? t('favorites.empty.legendary')
@@ -255,19 +173,8 @@ export function PickerSheet({
 
   if (desktop) {
     return (
-      <aside
-        ref={popoverRef}
-        className="fixed z-40 flex flex-col overflow-hidden rounded-xl border bg-card shadow-xl"
-        style={{
-          left: position?.left ?? 0,
-          top: position?.top ?? 0,
-          width: position?.width ?? paneWidth,
-          maxHeight: position?.maxHeight,
-          visibility: position ? 'visible' : 'hidden',
-        }}
-        data-testid="favorites-picker"
-      >
-        <div className="flex h-11 shrink-0 items-center justify-between border-b px-3">
+      <DesktopPane type={type} gen={gen} minWidth={paneWidth} onClose={onClose}>
+        <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b px-3">
           <div className="flex min-w-0 items-center gap-1.5">
             {packing ? (
               <button type="button" onClick={backFromPack} aria-label={t('favorites.packing.back')} className="cursor-pointer text-muted-foreground hover:text-foreground">
@@ -276,15 +183,10 @@ export function PickerSheet({
             ) : null}
             {title}
           </div>
-          <div className="flex items-center gap-2">
-            {typeToggle}
-            <button type="button" onClick={onClose} aria-label={t('favorites.close')} className="cursor-pointer p-1 text-muted-foreground">
-              <PanelRightClose size={16} />
-            </button>
-          </div>
+          {typeToggle}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
-      </aside>
+      </DesktopPane>
     );
   }
 

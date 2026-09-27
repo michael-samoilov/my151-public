@@ -91,6 +91,10 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('selector sprites stay one size', { tag: '@viewport' }, async ({ page }) => {
+    // The desktop pane fits below the sticky header row. A 900px-tall window
+    // leaves room for the tallest of these selectors at the dex sprite size.
+    const width = page.viewportSize()!.width;
+    if (width >= 1024) await page.setViewportSize({ width, height: 900 });
     await page.goto('/favorite-pokemon-by-type');
     const cells = [
       { id: 'favorites-cell-normal-1' },
@@ -136,7 +140,7 @@ test.describe('favorite Pokémon picker', () => {
       expect(Math.abs(spec.w - spec.css), cell.id).toBeLessThan(0.6);
       for (const w of spec.widths) expect(Math.abs(w - spec.w), cell.id).toBeLessThan(0.6);
       widths.push(spec.w);
-      await page.getByRole('button', { name: 'Close picker' }).click();
+      await page.keyboard.press('Escape');
     }
     expect(Math.abs(widths[0] - widths[1])).toBeLessThan(0.6);
     expect(Math.abs(widths[0] - widths[2])).toBeLessThan(0.6);
@@ -198,7 +202,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(starterDialog).toBeTruthy();
     expect(starterGrid!.y).toBeGreaterThanOrEqual(starterDialog!.y);
     expect(starterGrid!.y + starterGrid!.height).toBeLessThanOrEqual(starterDialog!.y + starterDialog!.height + 2);
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
 
     await page.setViewportSize({ width: 390, height: 650 });
     await page.getByTestId('favorites-cell-gimmick-8').click();
@@ -399,7 +403,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(await rows.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-pretty-len'))))).toEqual([6, 3]);
     await expect(page.getByTestId('favorites-clear-row')).toHaveCount(0);
     await expect(page.getByTestId('favorites-pick-650').getByTestId('favorites-clear')).toBeVisible();
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
     await page.getByTestId('favorites-cell-legendary-7').click();
     const legendaryRows = await rows.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-pretty-len'))));
     expect(legendaryRows.reduce((sum, len) => sum + len, 0)).toBe(await page.locator('[data-testid^="favorites-pick-"]').count());
@@ -440,11 +444,11 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-starter-1').click();
     await expect(page.getByTestId('favorites-pick-25')).toHaveCount(1);
     await expect(page.getByTestId('favorites-pick-133')).toHaveCount(1);
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
     await page.getByTestId('favorites-cell-starter-7').click();
     await expect(page.getByTestId('favorites-pick-10158')).toHaveCount(0);
     await expect(page.getByTestId('favorites-pick-10159')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
     await page.getByTestId('favorites-cell-starter-8').click();
     const ids = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
       (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
@@ -456,7 +460,7 @@ test.describe('favorite Pokémon picker', () => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-gimmick-7').click();
     await expect(page.getByTestId('favorites-pick-10157')).toBeVisible();
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
     await expect(page.getByTestId('favorites-cell-gimmick-legendary')).toBeDisabled();
     await page.getByTestId('favorites-cell-legendary-gimmick').click();
     await expect(page.getByTestId('favorites-pick-10157')).toBeVisible();
@@ -472,7 +476,7 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-pick-10199')).toBeVisible();
     await expect(page.getByTestId('favorites-pick-10205')).toBeVisible();
     await expect(page.getByTestId('favorites-pick-10304')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
 
     await page.evaluate(() => localStorage.setItem('favorite-picker', JSON.stringify({
       state: { fills: {
@@ -715,16 +719,16 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-fire-1').click();
     await page.getByTestId('favorites-type-toggle').click();
     await expect(page.getByTestId('favorites-type-icon').first()).toBeVisible();
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
     await page.getByTestId('favorites-cell-gimmick-8').click();
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
     await page.getByTestId('favorites-cell-legendary-1').click();
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
     await page.getByTestId('favorites-cell-starter-1').click();
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
     await page.getByTestId('favorites-cell-favorite-1').click();
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
   });
@@ -785,7 +789,7 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-pick-701').locator('[data-source="type"]')).toBeVisible();
     await expect(page.getByTestId('favorites-pick-10300').locator('[data-source="gimmick"]')).toBeVisible();
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
     await page.getByTestId('favorites-cell-fire-favorite').click();
     const colIds = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
       (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
@@ -912,7 +916,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(order.indexOf(10189)).toBe(order.indexOf(889) + 1);
     expect(order.indexOf(10246)).toBeGreaterThan(order.indexOf(892));
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('base-and-crowned-wolves.png') });
-    await page.getByRole('button', { name: 'Close picker' }).click();
+    await page.keyboard.press('Escape');
 
     await page.getByTestId('favorites-cell-grass-9').click();
     for (const id of [1017, 10273, 10274, 10275]) {

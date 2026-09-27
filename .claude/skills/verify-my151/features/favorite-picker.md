@@ -22,9 +22,13 @@ gimmick, legendary, and favorite picks.
   corner with no transform. It draws body cells only, shows filled and empty
   cells differently, shows while the grid scrolls or zooms, and fades after
   idle. Its window `[data-testid="favorites-minimap-viewport"]` uses the site
-  red. It is hidden when the whole grid fits.
+  red. It is hidden when the whole grid fits. On desktop, a pointer that rests
+  on it for 200 ms shows it, and a drag of its window scrolls the grid. A quick
+  click there still reaches the cell under it.
 - Selector `[data-testid="favorites-picker"]`: a bottom sheet below 1024px, a
-  popover next to the tapped cell on desktop. Sprites
+  pane inside the grid next to the tapped cell on desktop. The pane scrolls
+  with the grid, and the sticky headers paint over it. It has no close button:
+  Escape or a click outside it closes it, and that click opens no cell. Sprites
   `[data-testid="favorites-pick-<id>"]` sit in rows of up to six; a short last
   row is centered. A tall selector shrinks its sprites to fit the phone pane.
 - Clear: the current pick is translucent, with a red x
