@@ -16,6 +16,7 @@ import { useCardView } from '../useCardView';
 import { fitStyle, useFitScale } from '../useFitScale';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { CardGrid } from './CardGrid';
+import { CardHelpButton } from './CardHelp';
 import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
 import { usePencilRoom } from './usePencilRoom';
 import { MovePicker } from './MovePicker';
@@ -306,10 +307,11 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
   );
 }
 
-/** The controls both bars carry on their right. */
+/** The controls both bars carry on their right: how to edit it, and export. */
 export function CardActions({ cardIndex }: { cardIndex: number }) {
   return (
     <span className="ml-auto flex shrink-0 items-center gap-1">
+      <CardHelpButton />
       <LeagueExportButton cardIndex={cardIndex} />
     </span>
   );
