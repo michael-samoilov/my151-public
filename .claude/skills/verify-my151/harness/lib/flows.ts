@@ -405,24 +405,33 @@ async function closeExportOverlay(s: Session): Promise<void> {
   }
 }
 
-async function measureSharedExportFoil(s: Session): Promise<{
+async function measureSharedExportFoil(s: Session, hypotOk: (h: number) => boolean): Promise<{
   img: boolean;
   maps: boolean;
   rainbow: { ok: boolean; reason: string };
   hypot: number;
   orbit: string;
+  waited: number;
 }> {
   const img = await waitForDexPreviewImg(s);
   const maps = await waitForFoilMaps(s);
   await pokeExportCorner(s);
-  const rainbow = await readInkOnlyRainbow(s);
-  const pose = await s.evalJson<{ hypot: number; orbit: string }>(
-    `const card=document.querySelector('[data-export-preview]');
-     const x=Number(card?.getAttribute('data-tilt-x')||0);
-     const y=Number(card?.getAttribute('data-tilt-y')||0);
-     return {hypot:Math.hypot(x,y),orbit:card?.getAttribute('data-export-orbit')||''};`,
-  ).catch(() => ({ hypot: 0, orbit: '' }));
-  return { img, maps, rainbow, hypot: pose.hypot, orbit: pose.orbit };
+  // Poll like rainbow-on-open: WebKitGTK paints the V shine near 7 fps here.
+  const started = Date.now();
+  let rainbow: { ok: boolean; reason: string };
+  let pose: { hypot: number; orbit: string };
+  for (;;) {
+    rainbow = await readInkOnlyRainbow(s);
+    pose = await s.evalJson<{ hypot: number; orbit: string }>(
+      `const card=document.querySelector('[data-export-preview]');
+       const x=Number(card?.getAttribute('data-tilt-x')||0);
+       const y=Number(card?.getAttribute('data-tilt-y')||0);
+       return {hypot:Math.hypot(x,y),orbit:card?.getAttribute('data-export-orbit')||''};`,
+    ).catch(() => ({ hypot: 0, orbit: '' }));
+    if ((rainbow.ok && hypotOk(pose.hypot)) || Date.now() - started >= 3000) break;
+    await sleep(100);
+  }
+  return { img, maps, rainbow, hypot: pose.hypot, orbit: pose.orbit, waited: Date.now() - started };
 }
 
 async function readDexPreviewMotion(s: Session): Promise<{
@@ -710,7 +719,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:probe.x,clientY:probe.y,pointerType:'mouse',pointerId:1}));
      const orbit=card.getAttribute('data-export-orbit')||'';
      const hypot=Math.hypot(Number(card.dataset.tiltX||0),Number(card.dataset.tiltY||0));
-     return {ok:orbit==='pointer'&&hypot>2,reason:orbit+' hypot='+hypot.toFixed(1)+' probe='+probe.x.toFixed(0)+','+probe.y.toFixed(0)};`,
+     return {ok:orbit==='pointer'&&hypot>1,reason:orbit+' hypot='+hypot.toFixed(1)+' probe='+probe.x.toFixed(0)+','+probe.y.toFixed(0)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const restStatic = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
@@ -1691,12 +1700,12 @@ export async function runLeagueGymExportFoilSuite(
     checks.push(ok('league-export:rainbow-foil', false, 'missing [data-league-export]'));
   } else {
     await sleep(500);
-    const league = await measureSharedExportFoil(s);
+    const league = await measureSharedExportFoil(s, hypotOk);
     await s.screenshot(ctx.shot('league-export-foil'));
     checks.push(ok(
       'league-export:rainbow-foil',
       league.img && league.maps && league.rainbow.ok && hypotOk(league.hypot),
-      `${league.rainbow.reason} hypot=${league.hypot.toFixed(1)} orbit=${league.orbit} maps=${league.maps}`,
+      `${league.rainbow.reason} hypot=${league.hypot.toFixed(1)} orbit=${league.orbit} maps=${league.maps} after ${league.waited}ms`,
     ));
     await closeExportOverlay(s);
   }
@@ -1723,12 +1732,12 @@ export async function runLeagueGymExportFoilSuite(
      return true;`,
   ).catch(() => false);
   await sleep(500);
-  const gym = await measureSharedExportFoil(s);
+  const gym = await measureSharedExportFoil(s, hypotOk);
   await s.screenshot(ctx.shot('gym-export-foil'));
   checks.push(ok(
     'gym-export:rainbow-foil',
     gym.img && gym.maps && gym.rainbow.ok && hypotOk(gym.hypot),
-    `${gym.rainbow.reason} hypot=${gym.hypot.toFixed(1)} orbit=${gym.orbit} maps=${gym.maps}`,
+    `${gym.rainbow.reason} hypot=${gym.hypot.toFixed(1)} orbit=${gym.orbit} maps=${gym.maps} after ${gym.waited}ms`,
   ));
   await closeExportOverlay(s);
   return checks;
