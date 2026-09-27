@@ -19,6 +19,9 @@ import { SLOT_COUNT } from './model/constants';
  *    gaps between them, and the card's padding.
  * 3. One hint line under the list, then the second one.
  *
+ * Before any of these, the summary spends the empty gutter under it in its
+ * pane (`useFitScale`), and it gets that gutter back last.
+ *
  * Every other screen uses `ROOMY`, today's layout, and every screen gets
  * `ROOMY` once its window has the room for it.
  *

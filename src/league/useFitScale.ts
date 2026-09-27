@@ -22,6 +22,12 @@ export interface Fit {
    * and before the first measure.
    */
   budgetRem: number;
+  /**
+   * The pane's bottom padding the block spends, in screen px (a block that
+   * holds its sprites only). `fitStyle` hands it back to the pane as a
+   * negative margin, so the pane still does not scroll.
+   */
+  gutterPx: number;
 }
 
 /**
@@ -88,7 +94,7 @@ export function useFitScale(
   /** Desktop only: grow the block up to fill the pane instead of squashing. */
   grow?: Grow,
 ): Fit {
-  const [fit, setFit] = useState<Fit>({ scale: 1, width: 0, budgetRem: Infinity });
+  const [fit, setFit] = useState<Fit>({ scale: 1, width: 0, budgetRem: Infinity, gutterPx: 0 });
   const scaleRef = useRef(1);
   const budgetRef = useRef(Infinity);
   const widthRef = useRef(0);
@@ -108,11 +114,12 @@ export function useFitScale(
       if (natural <= 0) return;
       const rect = el.getBoundingClientRect();
       let avail: number;
+      let padBottom = 0;
       if (viewport instanceof HTMLElement) {
         const vp = viewport.getBoundingClientRect();
         // clientHeight includes the container's own padding, so its bottom
         // padding must come out of the budget or the fit overflows by it.
-        const padBottom = parseFloat(getComputedStyle(viewport).paddingBottom) || 0;
+        padBottom = parseFloat(getComputedStyle(viewport).paddingBottom) || 0;
         avail = viewport.clientHeight - (rect.top - vp.top + viewport.scrollTop) - padBottom - 2;
         // Leave as much room under the block as sits above it. The block's
         // own parent holds that gap as padding-top — between the card and the
@@ -145,11 +152,11 @@ export function useFitScale(
       }
       room = settle(room, roomRef.current);
       roomRef.current = room;
-      const commit = (next: FitProposal, budgetRem: number) => {
+      const commit = (next: FitProposal, budgetRem: number, gutterPx = 0) => {
         scaleRef.current = next.scale;
         widthRef.current = next.width;
         budgetRef.current = budgetRem;
-        setFit({ ...next, budgetRem });
+        setFit({ ...next, budgetRem, gutterPx });
       };
       const held = { scale: scaleRef.current, width: widthRef.current };
       if (grow) {
@@ -163,10 +170,13 @@ export function useFitScale(
         const baseWidth = grow.baseWidthRem * rootFont;
         const spriteCeil = grow.targetSpritePx / (grow.spriteRem * rootFont);
         if (grow.shortestRem !== undefined) {
+          // The empty gutter under the block is the first room it spends:
+          // on a short window, 1x sprites are worth more than the whitespace.
+          const spendable = avail + padBottom;
           const next = proposeFit({
             mode: 'pin',
             shortest: grow.shortestRem * rootFont,
-            avail,
+            avail: spendable,
             room,
             floor,
             baseWidth,
@@ -176,9 +186,9 @@ export function useFitScale(
           }) ?? held;
           // The zoom can hold while the pane changes, and the block then has
           // more or less height to spend.
-          const budgetRem = avail / (next.scale * rootFont);
+          const budgetRem = spendable / (next.scale * rootFont);
           if (next === held && budgetRem === budgetRef.current) return;
-          commit(next, budgetRem);
+          commit(next, budgetRem, padBottom);
           return;
         }
         const next = proposeFit({
@@ -248,6 +258,8 @@ export function fitStyle(fit: Fit, rendering?: 'pixelated' | 'auto'): React.CSSP
     zoom: fit.scale,
     width: fit.width || undefined,
     marginInline: 'auto',
+    // The margin sits on the zoomed block, so it is zoomed too.
+    ...(fit.gutterPx ? { marginBottom: -fit.gutterPx / fit.scale } : null),
     ...(rendering ? { [SPRITE_RENDERING_VAR]: rendering } : null),
   };
 }
