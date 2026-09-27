@@ -2,41 +2,30 @@ import { createVerify, generateKeyPairSync } from 'node:crypto';
 
 import { describe, expect, it } from 'vitest';
 import {
-  bingDailyRows,
-  bingDimensionRows,
-  buildSearchPerformanceSnapshot,
+  bingBucketRows,
+  buildDailySearchSnapshot,
+  buildHourlySearchSnapshot,
   createGoogleServiceAccountAssertion,
-  googleDailyRows,
+  googleBucketRows,
   googleDimensionRows,
   googlePageQueryRows,
   parseBingDate,
+  rollUp,
 } from '../../api/_searchPerformance';
-import { summarizeSearchWindow, type SearchDailyPoint } from './searchPerformance';
 
 describe('search performance normalization', () => {
-  it('sums a trailing window and impression-weights position', () => {
-    const daily: SearchDailyPoint[] = [
-      { date: '2026-01-01', clicks: 1, impressions: 10, ctr: 0.1, position: 20 },
-      { date: '2026-01-02', clicks: 2, impressions: 30, ctr: 2 / 30, position: 10 },
-      { date: '2026-01-03', clicks: 3, impressions: 60, ctr: 0.05, position: 5 },
-    ];
-    expect(summarizeSearchWindow(daily, 2)).toEqual({
-      clicks: 5,
-      impressions: 90,
-      ctr: 5 / 90,
-      position: (30 * 10 + 60 * 5) / 90,
-    });
-  });
-
-  it('normalizes Google daily and dimension rows', () => {
+  it('normalizes Google date, hour, and dimension rows', () => {
     const payload = {
       rows: [
         { keys: ['2026-01-02'], clicks: 4, impressions: 40, ctr: 0.1, position: 7.5 },
         { keys: ['bad-date'], clicks: 99, impressions: 99 },
       ],
     };
-    expect(googleDailyRows(payload)).toEqual([
-      { date: '2026-01-02', clicks: 4, impressions: 40, ctr: 0.1, position: 7.5 },
+    expect(googleBucketRows(payload, 'day')).toEqual([
+      { start: '2026-01-02', keys: [], clicks: 4, impressions: 40, ctr: 0.1, position: 7.5 },
+    ]);
+    expect(googleBucketRows({ rows: [{ keys: ['2026-09-26T14:00:00-07:00', 'pokemon builder'], clicks: 1, impressions: 2 }] }, 'hour')).toEqual([
+      { start: '2026-09-26T21:00:00.000Z', keys: ['pokemon builder'], clicks: 1, impressions: 2, ctr: 0.5, position: null },
     ]);
     expect(googleDimensionRows({ rows: [{ keys: ['/builder'], clicks: 2, impressions: 20, position: 8 }] })).toEqual([
       { key: '/builder', clicks: 2, impressions: 20, ctr: 0.1, position: 8 },
@@ -46,7 +35,7 @@ describe('search performance normalization', () => {
     ]);
   });
 
-  it('parses Bing dates and collapses dated rows by query', () => {
+  it('parses Bing dates and sums dated rows by query inside a window', () => {
     expect(parseBingDate('/Date(1767312000000-0500)/')).toBe('2026-01-02');
     const payload = {
       d: [
@@ -54,9 +43,12 @@ describe('search performance normalization', () => {
         { Date: '/Date(1767398400000-0500)/', Query: 'pokemon builder', Clicks: 3, Impressions: 30, AvgImpressionPosition: 5 },
       ],
     };
-    expect(bingDailyRows(payload)).toHaveLength(2);
-    expect(bingDimensionRows(payload)).toEqual([
-      { key: 'pokemon builder', clicks: 5, impressions: 50, ctr: 0.1, position: 7 },
+    expect(bingBucketRows(payload)).toHaveLength(2);
+    expect(rollUp(bingBucketRows(payload), { start: '2026-01-01', end: '2026-01-31' })).toEqual([
+      { keys: ['pokemon builder'], clicks: 5, impressions: 50, ctr: 0.1, position: 7 },
+    ]);
+    expect(rollUp(bingBucketRows(payload), { start: '2026-01-03', end: '2026-01-31' })).toEqual([
+      { keys: ['pokemon builder'], clicks: 3, impressions: 30, ctr: 0.1, position: 5 },
     ]);
   });
 
@@ -95,9 +87,11 @@ describe('search performance normalization', () => {
     const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
     try {
       for (const name of names) delete process.env[name];
-      const snapshot = await buildSearchPerformanceSnapshot();
-      expect(snapshot.providers.google.status).toBe('not_configured');
-      expect(snapshot.providers.bing.status).toBe('not_configured');
+      const daily = await buildDailySearchSnapshot();
+      const hourly = await buildHourlySearchSnapshot();
+      expect(daily.providers.google.status).toBe('not_configured');
+      expect(daily.providers.bing.status).toBe('not_configured');
+      expect(hourly.providers.google.status).toBe('not_configured');
     } finally {
       for (const name of names) {
         const value = previous[name];
