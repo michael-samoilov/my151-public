@@ -1,0 +1,54 @@
+{
+  "pages": {
+    "hub": {
+      "html": "index.html",
+      "startup": [
+        "src/components/home/HomePage.tsx",
+        "src/i18n/names/en.json"
+      ],
+      "lazy": [
+        "src/components/admin/AdminPage.tsx"
+      ],
+      "text": {
+        "baseline": 164303,
+        "ceiling": 172519
+      },
+      "images": {
+        "baseline": 449084,
+        "ceiling": 471539
+      }
+    },
+    "pokedex": {
+      "html": "pokedex-builder.html",
+      "startup": [
+        "src/i18n/names/en.json"
+      ],
+      "lazy": [
+        "src/components/view/ViewPage.tsx",
+        "src/components/analytics/AnalyticsDashboard.tsx"
+      ],
+      "text": {
+        "baseline": 219546,
+        "ceiling": 230524
+      },
+      "images": {
+        "baseline": 125156,
+        "ceiling": 131414
+      }
+    },
+    "league": {
+      "html": "custom-gym-leader.html",
+      "startup": [
+        "src/i18n/names/en.json"
+      ],
+      "text": {
+        "baseline": 269762,
+        "ceiling": 283251
+      },
+      "images": {
+        "baseline": 0,
+        "ceiling": 0
+      }
+    }
+  }
+}

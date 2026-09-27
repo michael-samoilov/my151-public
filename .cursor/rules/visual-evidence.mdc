@@ -1,0 +1,12 @@
+---
+description: Require matched before-and-after evidence for visual UI changes
+alwaysApply: true
+---
+
+# Visual evidence
+
+- For every visual UI change, capture the same app state and input before and after at both mobile and desktop viewports.
+- Show the resulting images inline in the final handoff, not only as filesystem paths or preview links.
+- Run the repository render audit on every frame before sharing it.
+- Clearly call out when a changed surface genuinely does not exist at one viewport, and show every applicable viewport.
+- Keep `You test` as `Nothing` for visual checks Codex can drive itself.

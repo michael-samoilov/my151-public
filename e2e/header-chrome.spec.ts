@@ -5,8 +5,9 @@ import { blankLeague } from './support/leagueSeed';
  * The two-bar chrome's one hard invariant: the tool bar's three cells —
  * title/count left, view nav centred, page controls right — never overlap,
  * at any project width (320 included) and in both left-cell states (the
- * "Dex Builder" default and the n/151 count). The nav labels collapse to
- * icons below 380px; this is what proves that collapse leaves enough room.
+ * "Dex Builder" default and the n/151 count). The active tab's label
+ * expands from 380px; this is what proves that expansion still leaves
+ * enough room even when the count is four digits.
  *
  * The league builder's tool bar must also hold the same 44px height on the
  * home page and the card page, so switching tools does not jump the chrome.
@@ -26,6 +27,15 @@ const SEED = JSON.stringify({
   version: 10,
 });
 
+/** Same dex with analytics already unlocked, so all three tabs navigate. */
+const UNLOCKED_SEED = JSON.stringify({
+  state: {
+    ...JSON.parse(SEED).state,
+    milestoneMax: 25,
+  },
+  version: 10,
+});
+
 interface Cells {
   title: DOMRect;
   navLeft: number;
@@ -39,13 +49,19 @@ async function readCells(page: Page): Promise<Cells> {
   return page.evaluate(() => {
     const title = document.querySelector('[data-testid="tool-title"]')!.getBoundingClientRect();
     const actions = document.querySelector('[data-testid="tool-actions"]')!.getBoundingClientRect();
+    const list = document.querySelector('[role="tablist"]');
     const navs = [...document.querySelectorAll('[data-nav]')].map((b) => b.getBoundingClientRect());
+    const navBox = list ? list.getBoundingClientRect() : {
+      left: Math.min(...navs.map((r) => r.left)),
+      right: Math.max(...navs.map((r) => r.right)),
+      top: Math.min(...navs.map((r) => r.top)),
+    };
     const bar = document.querySelector('[data-testid="tool-title"]')!.parentElement!.getBoundingClientRect();
     return {
       title: JSON.parse(JSON.stringify(title)),
-      navLeft: Math.min(...navs.map((r) => r.left)),
-      navRight: Math.max(...navs.map((r) => r.right)),
-      navTop: Math.min(...navs.map((r) => r.top)),
+      navLeft: navBox.left,
+      navRight: navBox.right,
+      navTop: navBox.top,
       actions: JSON.parse(JSON.stringify(actions)),
       barHeight: bar.height,
     };
@@ -74,7 +90,57 @@ async function expectNoOverlap(page: Page) {
   expect(Math.abs(c.barHeight - 2.75 * rootPx)).toBeLessThan(1.5);
 }
 
+/**
+ * Stamp a 4-digit count into the header without placing 1025 tiles.
+ * The overlap risk is the glyph width of `1025/151`, not the grid.
+ */
+async function stampFourDigitCount(page: Page) {
+  const ok = await page.evaluate(() => {
+    const n = document.querySelector('[data-testid="tool-title"] .text-primary');
+    if (!n) return false;
+    n.textContent = '1025';
+    return true;
+  });
+  expect(ok).toBe(true);
+  await expect(page.getByTestId('tool-title')).toContainText('1025/151');
+}
+
+async function seedDexAndOpen(page: Page, seed = UNLOCKED_SEED) {
+  await page.goto('/pokedex-builder');
+  await page.waitForSelector('[data-testid="tool-title"]');
+  await page.waitForFunction((k) => !!localStorage.getItem(k), STORE_KEY);
+  await page.evaluate(([k, v]) => localStorage.setItem(k, v), [STORE_KEY, seed]);
+  await page.evaluate(() => localStorage.setItem('p151-league-promo-seen', '1'));
+  await page.reload();
+  await page.waitForSelector('[data-testid="tool-title"]');
+  await expect(page.getByTestId('tool-title')).toContainText('/151');
+}
+
 test.describe('two-bar chrome', { tag: '@viewport' }, () => {
+  test('dex view tabs miss the ribbon, including a 4-digit count', async ({ page }, testInfo) => {
+    test.setTimeout(60_000);
+    await seedDexAndOpen(page);
+
+    const checked: string[] = [];
+    for (const width of [390, 1280] as const) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.waitForTimeout(200);
+
+      for (const v of ['builder', 'analytics', 'view'] as const) {
+        await page.click(`[data-nav="${v}"]`);
+        await page.waitForTimeout(400);
+        await expectNoOverlap(page);
+        await stampFourDigitCount(page);
+        await expectNoOverlap(page);
+        checked.push(`${width}:${v}`);
+      }
+    }
+    await testInfo.attach('checked-views.json', {
+      body: JSON.stringify({ checked }),
+      contentType: 'application/json',
+    });
+  });
+
   test('dex tool bar never overlaps, in both title states and on every view', async ({ page }) => {
     await page.goto('/pokedex-builder');
     await page.waitForSelector('[data-testid="tool-title"]');
