@@ -1,15 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { buildSearchPerformanceView } from '../src/lib/searchPerformanceView.js';
-import type { SearchPerformanceSnapshot } from '../src/lib/searchPerformance.js';
+import type { SearchPerformanceSnapshot, SearchProviderStatus } from '../src/lib/searchPerformance.js';
 import { buildSearchPerformanceSnapshot } from './_searchPerformance.js';
 import { firstQueryValue, redis, requireAdmin } from './_shared.js';
 
 const CACHE_KEY = 'admin:search-performance:v1';
-const CACHE_MAX_AGE_MS = 24 * 60 * 60_000;
+
+// A failed provider expires the snapshot sooner, so the next open retries it.
+const MAX_AGE_MS: Record<SearchProviderStatus, number> = {
+  ready: 24 * 60 * 60_000,
+  not_configured: 24 * 60 * 60_000,
+  stale: 15 * 60_000,
+  error: 15 * 60_000,
+};
 
 function fresh(snapshot: SearchPerformanceSnapshot): boolean {
   const generatedAt = Date.parse(snapshot.generatedAt);
-  return Number.isFinite(generatedAt) && Date.now() - generatedAt < CACHE_MAX_AGE_MS;
+  const maxAge = Math.min(...Object.values(snapshot.providers).map((provider) => MAX_AGE_MS[provider.status]));
+  return Number.isFinite(generatedAt) && Date.now() - generatedAt < maxAge;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
