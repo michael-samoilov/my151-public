@@ -5,9 +5,9 @@ export const PREVIEW_REST_PAD = 8;
 /** Live tilt must keep this many CSS px between the painted AABB and the pane. */
 export const PREVIEW_TILT_INSET = 24;
 /**
- * hover-tilt ROTATION is 10° on one axis. A corner is ~14°. Cap the vector
- * at 10° so an edge matches the library and a corner does not become a diamond.
- * clampTiltToBox still keeps the painted card inside the pane.
+ * Half of hover-tilt's 10° ROTATION, per Michael. A corner on both axes would
+ * reach ~7°, so cap the vector at 5°: a corner then tilts no further than an
+ * edge. clampTiltToBox still keeps the painted card inside the pane.
  */
 export const PREVIEW_DESKTOP_MAX_HYPOT = 5;
 export const PREVIEW_MOBILE_MAX_HYPOT = 5;
