@@ -357,15 +357,18 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const opacity=Number(cs.opacity);
      const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
-     if(mix!=='hard-light') return {ok:false,reason:'blend '+mix};
+     if(mix!=='color-dodge') return {ok:false,reason:'blend '+mix};
      if(!(opacity>0.04)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
-     if(Math.abs(amount-0.25)>0.02) return {ok:false,reason:'amount '+amount};
+     if(Math.abs(amount-1)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
      if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
      if(mask.includes('image/svg')) return {ok:false,reason:'frame mask hides ink'};
      if(!mask.includes('image/png')) return {ok:false,reason:'ink mask missing'};
-     if(cs.backgroundImage.includes('repeating-')) return {ok:false,reason:'grating'};
-     if(!cs.backgroundImage.includes('linear-gradient')) return {ok:false,reason:'no holo gradient'};
+     // The poke-holo V shine: diagonal bands over a sunpillar rainbow, and a
+     // second copy whose bands travel the other way.
+     if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no V bands'};
+     const after=getComputedStyle(holo,'::after');
+     if(after.mixBlendMode!=='soft-light'||!after.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no crossing layer'};
      if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
      const lift=document.querySelector('[data-export-foil-lift]');
      const liftStyle=lift instanceof HTMLElement ? getComputedStyle(lift) : null;
@@ -374,41 +377,7 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
      if(hitStyle && hitStyle.boxShadow!=='none' && hitStyle.boxShadow!=='') return {ok:false,reason:'hit still shadowed'};
      if(hitStyle && parseFloat(hitStyle.paddingTop||'0')<32) return {ok:false,reason:'hit pad '+hitStyle.paddingTop};
-     const cv=document.createElement('canvas');
-     cv.width=cv.height=8;
-     const g=cv.getContext('2d');
-     if(!g) return {ok:false,reason:'canvas'};
-     const luma=(r,gch,b)=>0.2126*r+0.7152*gch+0.0722*b;
-     const inks=[[40,160,40],[48,112,200],[220,72,40],[248,208,48],[196,164,120],[118,22,28]];
-     let lastChroma=0;
-     let lastLuma=0;
-     let shifted=false;
-     for(const base of inks){
-       g.globalCompositeOperation='source-over';
-       g.globalAlpha=1;
-       g.fillStyle='rgb('+base[0]+','+base[1]+','+base[2]+')';
-       g.fillRect(0,0,8,8);
-       const y=luma(base[0],base[1],base[2]);
-       const maxc=Math.max(base[0],base[1],base[2]);
-       const baseChroma=maxc-Math.min(base[0],base[1],base[2]);
-       const chroma01=baseChroma<12||maxc===0?0:baseChroma/maxc;
-       const dark01=y>=230?0:Math.min(1,(230-y)/160);
-       const satAlpha=Math.pow(Math.max(chroma01,dark01*0.65),0.72);
-       g.globalCompositeOperation='hard-light';
-       g.globalAlpha=0.25*satAlpha;
-       g.fillStyle='hsl(2, 100%, 73%)';
-       g.fillRect(0,0,8,8);
-       const ink=g.getImageData(4,4,1,1).data;
-       const inkChroma=Math.max(ink[0],ink[1],ink[2])-Math.min(ink[0],ink[1],ink[2]);
-       const lumaDelta=Math.abs(luma(ink[0],ink[1],ink[2])-luma(base[0],base[1],base[2]));
-       if(inkChroma<Math.round(baseChroma*0.62)) return {ok:false,reason:'ink washed '+base.join(',')+' '+inkChroma};
-       if(lumaDelta>=36) return {ok:false,reason:'ink luma '+base.join(',')+' '+lumaDelta.toFixed(1)};
-       if(Math.abs(ink[0]-base[0])+Math.abs(ink[1]-base[1])+Math.abs(ink[2]-base[2])>=16) shifted=true;
-       lastChroma=inkChroma;
-       lastLuma=lumaDelta;
-     }
-     if(!shifted) return {ok:false,reason:'ink unchanged'};
-     return {ok:true,reason:'hard-light-ink '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' ink='+lastChroma+' lumaΔ='+lastLuma.toFixed(1)};`,
+     return {ok:true,reason:'v-shine '+opacity.toFixed(2)+' foil='+foil.toFixed(2)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
 }
 
@@ -831,7 +800,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        }
      }
      const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
-     if(Math.abs(holoAmt-0.25)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
+     if(Math.abs(holoAmt-1)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
      return {ok:true,reason:bloom?'ink-holo-clipped':'ink-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
@@ -1626,9 +1595,9 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
      };`,
   ).catch(() => ({ rot: '', holo: '', glare: '', holoBlend: '', glareBlend: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^10(\.0+)?deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
-  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.25) < 0.02, `holo=${tiltVars.holo}`));
+  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 1) < 0.02, `holo=${tiltVars.holo}`));
   checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 0.6) < 0.02, `glare=${tiltVars.glare}`));
-  checks.push(ok('foil-workshop:prod-holo-blend', tiltVars.holoBlend === 'hard-light', `blend=${tiltVars.holoBlend}`));
+  checks.push(ok('foil-workshop:prod-holo-blend', tiltVars.holoBlend === 'color-dodge', `blend=${tiltVars.holoBlend}`));
   checks.push(ok('foil-workshop:prod-glare-blend', tiltVars.glareBlend === 'overlay', `blend=${tiltVars.glareBlend}`));
   await s.screenshot(ctx.shot('foil-workshop'));
 

@@ -116,6 +116,8 @@
   --foil-gloss-mask: none;
   --foil-shift-x: calc((var(--pointer-from-left) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
+  --background-x: 50%;
+  --background-y: 50%;
   position: relative;
   border-radius: var(--export-card-radius, 4%);
   isolation: isolate;
@@ -219,14 +221,114 @@
   opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.72 + 0.08 * var(--pointer-from-center)));
 }
 
+/* The poke-holo "V" shine (https://poke-holo.simey.me/#-v): a sunpillar
+   rainbow, diagonal bands, and noise, dodged onto the card. The ::after copy
+   moves its bands the opposite way, so they cross as the card tilts. The ink
+   mask keeps it off paper and pastel fills, which color-dodge washes white. */
 .export-foil-holographic {
+  --sunpillar-1: hsl(2, 100%, 73%);
+  --sunpillar-2: hsl(53, 100%, 69%);
+  --sunpillar-3: hsl(93, 100%, 69%);
+  --sunpillar-4: hsl(176, 100%, 76%);
+  --sunpillar-5: hsl(228, 100%, 74%);
+  --sunpillar-6: hsl(283, 100%, 73%);
+  --holo-clr-1: var(--sunpillar-1);
+  --holo-clr-2: var(--sunpillar-2);
+  --holo-clr-3: var(--sunpillar-3);
+  --holo-clr-4: var(--sunpillar-4);
+  --holo-clr-5: var(--sunpillar-5);
+  --holo-clr-6: var(--sunpillar-6);
+  --holo-space: 5%;
+  --holo-angle: 133deg;
+  --holo-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
   z-index: 3;
-  background-image: linear-gradient(to top left, #f9b3eb, #e2a6fc, #88a2f8, #a2f5a9 90%);
-  background-size: 300% 300%;
-  background-position: var(--gradient-x) var(--gradient-y);
-  mix-blend-mode: var(--foil-holo-blend, hard-light);
-  transform: translate(var(--foil-shift-x), var(--foil-shift-y));
+  background-image:
+    var(--holo-grain),
+    repeating-linear-gradient(
+      0deg,
+      var(--holo-clr-1) calc(var(--holo-space) * 1),
+      var(--holo-clr-2) calc(var(--holo-space) * 2),
+      var(--holo-clr-3) calc(var(--holo-space) * 3),
+      var(--holo-clr-4) calc(var(--holo-space) * 4),
+      var(--holo-clr-5) calc(var(--holo-space) * 5),
+      var(--holo-clr-6) calc(var(--holo-space) * 6),
+      var(--holo-clr-1) calc(var(--holo-space) * 7)
+    ),
+    repeating-linear-gradient(
+      var(--holo-angle),
+      #0e152e 0%,
+      hsl(180, 10%, 60%) 3.8%,
+      hsl(180, 29%, 66%) 4.5%,
+      hsl(180, 10%, 60%) 5.2%,
+      #0e152e 10%,
+      #0e152e 12%
+    ),
+    radial-gradient(
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsla(0, 0%, 0%, 0.1) 12%,
+      hsla(0, 0%, 0%, 0.15) 20%,
+      hsla(0, 0%, 0%, 0.25) 120%
+    );
+  background-blend-mode: screen, hue, hard-light;
+  background-size: 500px 100%, 200% 700%, 300% 100%, 200% 100%;
+  background-position:
+    center,
+    0% var(--background-y),
+    var(--background-x) var(--background-y),
+    var(--background-x) var(--background-y);
+  filter: brightness(0.7) contrast(2) saturate(0.5);
+  mix-blend-mode: var(--foil-holo-blend, color-dodge);
   opacity: calc(var(--foil-opacity) * var(--foil-holographic));
+}
+
+.export-foil-holographic::after {
+  --holo-clr-1: var(--sunpillar-6);
+  --holo-clr-2: var(--sunpillar-1);
+  --holo-clr-3: var(--sunpillar-2);
+  --holo-clr-4: var(--sunpillar-3);
+  --holo-clr-5: var(--sunpillar-4);
+  --holo-clr-6: var(--sunpillar-5);
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Its own gradients: inherit would carry the parent's resolved colors. */
+  background-image:
+    var(--holo-grain),
+    repeating-linear-gradient(
+      0deg,
+      var(--holo-clr-1) calc(var(--holo-space) * 1),
+      var(--holo-clr-2) calc(var(--holo-space) * 2),
+      var(--holo-clr-3) calc(var(--holo-space) * 3),
+      var(--holo-clr-4) calc(var(--holo-space) * 4),
+      var(--holo-clr-5) calc(var(--holo-space) * 5),
+      var(--holo-clr-6) calc(var(--holo-space) * 6),
+      var(--holo-clr-1) calc(var(--holo-space) * 7)
+    ),
+    repeating-linear-gradient(
+      var(--holo-angle),
+      #0e152e 0%,
+      hsl(180, 10%, 60%) 3.8%,
+      hsl(180, 29%, 66%) 4.5%,
+      hsl(180, 10%, 60%) 5.2%,
+      #0e152e 10%,
+      #0e152e 12%
+    ),
+    radial-gradient(
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsla(0, 0%, 0%, 0.1) 12%,
+      hsla(0, 0%, 0%, 0.15) 20%,
+      hsla(0, 0%, 0%, 0.25) 120%
+    );
+  background-blend-mode: screen, hue, hard-light;
+  background-size: 500px 100%, 200% 400%, 195% 100%, 200% 100%;
+  background-position:
+    center,
+    0% var(--background-y),
+    calc(var(--background-x) * -1) calc(var(--background-y) * -1),
+    var(--background-x) var(--background-y);
+  filter: brightness(1) contrast(2.5) saturate(1.75);
+  mix-blend-mode: soft-light;
 }
 
 .export-foil-iridescence {

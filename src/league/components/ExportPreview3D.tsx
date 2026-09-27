@@ -197,6 +197,9 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-y', ny.toFixed(4));
     el.style.setProperty('--gradient-x', `${pointerX}%`);
     el.style.setProperty('--gradient-y', `${pointerY}%`);
+    // poke-holo maps the pointer to 37-63% across and 33-67% down for the shine.
+    el.style.setProperty('--background-x', `${(37 + pointerX * 0.26).toFixed(2)}%`);
+    el.style.setProperty('--background-y', `${(33 + pointerY * 0.34).toFixed(2)}%`);
     const recipeNow = recipeRef.current;
     const tiltNow = tiltNowEarly;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);

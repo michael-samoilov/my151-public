@@ -239,15 +239,15 @@ test.describe('desktop export preview', () => {
       const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
       if (!card || !layer) return { ok: false, reason: 'missing' };
       const cs = getComputedStyle(layer);
-      if (cs.mixBlendMode !== 'hard-light') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
+      if (cs.mixBlendMode !== 'color-dodge') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
       if (Number(cs.opacity) <= 0.04) return { ok: false, reason: `opacity ${cs.opacity}` };
-      if (cs.backgroundImage.includes('repeating-linear-gradient')) {
-        return { ok: false, reason: 'patterned rainbow' };
+      if (!cs.backgroundImage.includes('repeating-linear-gradient')) {
+        return { ok: false, reason: 'no V bands' };
       }
       const glare = getComputedStyle(card, '::before');
       const glareMask = `${glare.getPropertyValue('-webkit-mask-image')} ${glare.maskImage}`;
       if (!glareMask.includes('none')) return { ok: false, reason: `glare mask ${glareMask}` };
-      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 0.25) > 0.02) {
+      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 1) > 0.02) {
         return { ok: false, reason: 'amount' };
       }
       return { ok: true, reason: 'open' };
@@ -279,8 +279,8 @@ test.describe('desktop export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('hard-light');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.25, 2);
+    expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.shadow, JSON.stringify(holo)).not.toBe('none');
@@ -328,8 +328,8 @@ test.describe('gym trainer-card export', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('hard-light');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.25, 2);
+    expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2);
     expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(5.2);

@@ -45,13 +45,13 @@ test.describe('export foil workshop', () => {
     await expect(page.locator('[data-workshop-dark-card-toggle]')).toHaveCount(0);
     await expect
       .poll(async () => foilVar(foil, '--foil-holographic'))
-      .toBe('0.250');
+      .toBe('1.000');
     await expect
       .poll(async () => foilVar(foil, '--hover-tilt-glare-intensity'))
       .toBe('0.600');
     await expect
       .poll(async () => foilVar(foil, '--foil-holo-blend'))
-      .toBe('hard-light');
+      .toBe('color-dodge');
     await expect
       .poll(async () => {
         const x = Number(await foil.getAttribute('data-tilt-x'));
@@ -92,7 +92,7 @@ test.describe('export foil workshop', () => {
       return next !== shadowAt32 && next !== 'none';
     }).toBe(true);
 
-    await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('hard-light');
+    await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('color-dodge');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-blend-mode')).toBe('overlay');
   });
 

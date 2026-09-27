@@ -21,8 +21,10 @@ display options, exportable as a PNG.
   card flat, and each later hover tilts it again. A click locks it flat and
   ignores hover until the next click, which resumes hover tilt. On touch, a
   tap toggles auto-tilt, and a drag follows the finger, then settles flat.
-- The holo layer is a smooth gradient with fixed `hard-light`, and the glare is
-  fixed `overlay`. There is no blend selector and no repeating pattern.
+- The holo layer is the poke-holo "V" shine: a sunpillar rainbow, diagonal
+  bands, and faint noise, blended with `color-dodge` and masked to the ink.
+  A second copy (`::after`, `soft-light`) moves its bands the opposite way.
+  The glare is fixed `overlay`. There is no blend selector.
 - `/foil-workshop` (off in production) drives the same `ExportPreview3D` card
   with only the Rainbow, Glare, and Shadow controls.
 - A survey can follow a save. Its highlight sprite is integer-scaled at 1× or
@@ -45,9 +47,9 @@ header lanes hold, and the render audit is clean.
 `[data-export-preview-layer]` and `[data-dex-export-confirm]` before any
 download. After the preview paints, it checks:
 
-- `dex-export:rainbow-on-open`: the holo layer is `hard-light`, visible, masked
-  to the ink, and has no `repeating-` gradient. It polls up to 1.5 seconds,
-  because WebKitGTK here paints near 7 fps.
+- `dex-export:rainbow-on-open`: the holo layer is `color-dodge`, visible,
+  masked to the ink, and carries the V bands and the crossing `::after` layer.
+  It polls up to 1.5 seconds, because WebKitGTK here paints near 7 fps.
 - `dex-export:auto-tilt` and `idle-circular`: with a stationary cursor on the
   card, `data-export-orbit=idle`, the tilt changes, and the painted box moves
   and stays inside the preview layer and the viewport.
@@ -63,7 +65,7 @@ download. After the preview paints, it checks:
 
 `runFoilWorkshopSuite` opens `/foil-workshop` and asserts the three keeper
 controls, no blend, mask, sparkle, tilt, or parallax controls,
-`--foil-holographic` at `0.25`, and a working glare slider.
+`--foil-holographic` at `1`, and a working glare slider.
 
 Manual drive (a Playwright script, local build): seed 37 with
 `viewSortOption: 'national'`, open the view tab, and expect 37

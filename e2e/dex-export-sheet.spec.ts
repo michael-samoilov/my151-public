@@ -452,10 +452,10 @@ test.describe('mobile dex export sheet', () => {
       if (/round/i.test(clip)) return { ok: false, reason: `independent clip ${clip}` };
       if (!shapeMask.includes(img.currentSrc)) return { ok: false, reason: `shape mask ${shapeMask}` };
       if (!mask.includes('url(')) return { ok: false, reason: `holo unmasked ${mask}` };
-      if (holoStyle.mixBlendMode !== 'hard-light') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
+      if (holoStyle.mixBlendMode !== 'color-dodge') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
-      if (Math.abs(holoAmt - 0.25) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
+      if (Math.abs(holoAmt - 1) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
@@ -569,7 +569,7 @@ test.describe('desktop dex export preview', () => {
       .poll(() =>
         page.locator('[data-foil-layer="holographic"]').evaluate((el) => getComputedStyle(el).mixBlendMode),
       )
-      .toBe('hard-light');
+      .toBe('color-dodge');
     await page.locator('[data-export-foil-glare] [data-foil-slider="glareIntensity"]').fill('0.1');
     await expect.poll(() => cssVar('--hover-tilt-glare-intensity')).toBe('0.100');
     await page.locator('[data-export-shadow-toggle]').click();
@@ -751,7 +751,7 @@ test.describe('desktop dex export preview', () => {
           style.overflow === 'hidden' &&
           overflowLayers.length === 0 &&
           mask.includes('url(') &&
-          Math.abs(holoAmt - 0.25) < 0.02 &&
+          Math.abs(holoAmt - 1) < 0.02 &&
           !(bloom instanceof HTMLElement && getComputedStyle(bloom).inset.includes('-')),
       };
     });
@@ -1009,14 +1009,15 @@ test.describe('desktop dex export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('hard-light');
+    expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
     expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.04);
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.25, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.bg, JSON.stringify(holo)).toMatch(/linear-gradient/);
-    expect(holo.bg, JSON.stringify(holo)).not.toMatch(/repeating-linear-gradient/);
+    // The poke-holo V shine: diagonal bands over a sunpillar rainbow.
+    expect(holo.bg, JSON.stringify(holo)).toMatch(/repeating-linear-gradient/);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     const shadow = await page.evaluate(() => {
       const hit = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
