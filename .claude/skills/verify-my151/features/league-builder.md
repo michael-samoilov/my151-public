@@ -49,7 +49,11 @@ shows a `[data-filter-chip="my-dex"]` chip, and its tiles are
 - `league-hover`: a column wash on desktop hover, and none left behind on touch.
 - `league-home`: slot moves on the home (fill, displace, playlist order).
 - `gym-card-export`: the card export preview, and ace, TM, and badge fit.
-- `league-funnel`: the card and roster nudges (`[data-testid="league-nudge"]`).
+- `league-funnel`: the export nudges (`[data-testid="league-nudge"]`). Its
+  `data-league-nudge` is `card` for a full trainer card, `league` for eight
+  gym leaders with a card still empty, and `complete` for every card filled.
+  It also loads a full v3 save that saw the eight-gym popup and checks the
+  store: version 4, `complete` celebrated, and no popup.
 
 The oracle is the store: `state.cards[i].lines[j].branch` and `.boundaries`,
 and `.powerups[row]`.

@@ -92,7 +92,12 @@ export async function fiveLineCardLeague(page: Page): Promise<void> {
 
 /** Start with seven gym-leader slots filled, so the eighth crossing is live. */
 export async function sevenGymsLeague(page: Page): Promise<void> {
-  await page.addInitScript(() => {
+  await filledSlotsLeague(page, [0, 1, 2, 3, 4, 5, 6]);
+}
+
+/** Start with one line on each listed slot and every other slot empty. */
+export async function filledSlotsLeague(page: Page, slots: readonly number[]): Promise<void> {
+  await page.addInitScript((filled) => {
     const empty = {
       type: null as string | null,
       theme: '',
@@ -105,12 +110,12 @@ export async function sevenGymsLeague(page: Page): Promise<void> {
     };
     const line = (id: number) => ({ branch: [id], boundaries: [1] });
     const cards = Array.from({ length: 14 }, () => ({ ...empty, lines: [] as typeof empty.lines }));
-    for (let i = 0; i < 7; i++) cards[i] = { ...empty, lines: [line(i + 1)] };
+    for (const i of filled) cards[i] = { ...empty, lines: [line(i + 1)] };
     window.localStorage.setItem(
       'league-builder',
       JSON.stringify({ state: { name: '', cards }, version: 1 }),
     );
-  });
+  }, slots);
 }
 
 /** Start the league builder on the seeded Kanto league, whatever the visit. */
