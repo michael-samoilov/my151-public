@@ -897,6 +897,25 @@ function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
   return (s.cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b));
 }
 
+/** Seated lines per evolution chain, across the whole league. A line is its
+ *  chain, so Ivysaur's branch and Venusaur's, or two Eevee branches, are one
+ *  line. One chain can fill several seats, so the value counts seats. */
+function leagueLinesByChain(cards: LeagueCard[]): Map<number, number> {
+  const seats = new Map<number, number>();
+  for (const { b } of cards.flatMap((c) => c.l)) {
+    const chain = getPokemonById(b[0])?.evolutionChainId ?? -b[0];
+    seats.set(chain, (seats.get(chain) ?? 0) + 1);
+  }
+  return seats;
+}
+
+/** Seats `a` fills beyond `b`, chain by chain. */
+function seatsBeyond(a: Map<number, number>, b: Map<number, number>): number {
+  let n = 0;
+  for (const [chain, seats] of a) n += Math.max(0, seats - (b.get(chain) ?? 0));
+  return n;
+}
+
 /** Dex user body: session timeline + the build at the scrubbed moment. */
 function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const { log, ms } = useMemo(
@@ -1030,24 +1049,19 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   );
   const [i, setI] = useState(Math.max(0, log.length - 1));
   const points: TimelinePoint[] = useMemo(() => {
-    const cardsOf = (k: number) => {
-      const c = log[k]?.cards;
-      return c && c.length ? c : null;
-    };
+    const lines = log.map((s) => (s.cards?.length ? leagueLinesByChain(s.cards) : null));
     const nets = log.map((s, k) => {
-      const c = cardsOf(k);
-      return c ? new Set(leagueSessionIds(s)).size : s.summary.seats;
+      const l = lines[k];
+      return l ? [...l.values()].reduce((a, b) => a + b, 0) : s.summary.seats;
     });
     return log.map((s, k) => {
-      const nowCards = cardsOf(k);
-      const prevCards = k > 0 ? cardsOf(k - 1) : null;
+      const now = lines[k];
+      const prev = k > 0 ? lines[k - 1] : null;
       let added = 0;
       let removed = 0;
-      if (nowCards && prevCards) {
-        const now = new Set(leagueSessionIds({ cards: nowCards }));
-        const prev = new Set(leagueSessionIds({ cards: prevCards }));
-        added = [...now].filter((x) => !prev.has(x)).length;
-        removed = [...prev].filter((x) => !now.has(x)).length;
+      if (now && prev) {
+        added = seatsBeyond(now, prev);
+        removed = seatsBeyond(prev, now);
       } else if (k === 0) {
         added = nets[0];
       } else {
@@ -1107,7 +1121,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
       index={idx}
       onIndex={setI}
       countUnit={`of ${CARD_COUNT}`}
-      peakLabel={`${peak} seated`}
+      peakLabel={`${peak} lines`}
       milestones={milestones}
       tz={league.tz}
       leftChip={<SessionsChip sessions={log.length} days={days} full={log.length <= 1} />}
