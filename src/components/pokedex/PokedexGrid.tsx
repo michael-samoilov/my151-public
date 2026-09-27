@@ -194,7 +194,7 @@ function DraggableTile({
           aria-label={t('builder.remove', { name: pokemonLabel(pokemon.id, pokemon.name).full })}
           className={cn(
             TILE_ACTION_BUTTON_CLASS,
-            // The target is wider than the glyph; see index.css.
+            // For a finger, the target is wider than the glyph; see index.css.
             'tile-remove-target cursor-pointer md:opacity-0 md:focus-visible:opacity-100 transition-opacity',
             showX && 'md:!opacity-100',
           )}
