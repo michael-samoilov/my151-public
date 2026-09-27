@@ -210,12 +210,12 @@ function endSentinelId(sectionId: string) { return `${END_SENTINEL}${sectionId}`
 function isEndSentinel(id: string) { return id.startsWith(END_SENTINEL); }
 function parseEndSentinel(id: string) { return id.slice(END_SENTINEL.length); }
 
-function EndDropZone({ sectionId, showIndicator }: { sectionId: string; showIndicator: boolean }) {
+function EndDropZone({ sectionId, showIndicator, aspect }: { sectionId: string; showIndicator: boolean; aspect: string }) {
   const { setNodeRef, isOver } = useDroppable({ id: endSentinelId(sectionId) });
   return (
     <div
       ref={setNodeRef}
-      className={`relative aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-colors ${
+      className={`relative ${aspect} rounded-lg border-2 border-dashed flex items-center justify-center transition-colors ${
         isOver ? 'border-primary/50 bg-primary/5' : 'border-transparent'
       }`}
     >
@@ -228,15 +228,21 @@ function EndDropZone({ sectionId, showIndicator }: { sectionId: string; showIndi
 
 // ---------- add-tile sizing ----------
 
-// The grid is six columns wide, always. A "+" tile fills its row's height, as
-// tall as the Pokémon tiles beside it. But when its row holds no tile — a
-// trailing "+" that starts a fresh row on a section of exactly n*6 Pokémon, or
-// a block of type placeholders under a full row — `md:aspect-auto` would
-// collapse it to a short strip, so it stays a square instead.
+// The grid is six columns wide, always. A dashed cell (a "+", a starter type
+// placeholder, the end-of-section drop zone) that shares its row with a
+// Pokémon tile stretches to that row's height, as tall as the tile, on every
+// width. A row that holds no tile has no height to stretch to, so its dashed
+// cells stay square instead of collapsing to a short strip: a trailing "+"
+// that starts a fresh row on a section of exactly n*6 Pokémon, a block of type
+// placeholders under a full row, or an empty section's lone "+".
 const PLUS_COLS = 6;
-/** The aspect class for a trailing "+", given the count of tiles before it. */
+/** The aspect class for a dashed cell, given whether a tile shares its row. */
+function dashedCellAspect(rowHasTile: boolean): string {
+  return rowHasTile ? '' : 'aspect-square';
+}
+/** The aspect class for a trailing dashed cell, given the count of tiles before it. */
 function trailingPlusAspect(precedingCount: number): string {
-  return precedingCount % PLUS_COLS === 0 ? 'aspect-square' : 'aspect-square md:aspect-auto';
+  return dashedCellAspect(precedingCount % PLUS_COLS !== 0);
 }
 
 // ---------- starter type buttons ----------
@@ -324,7 +330,7 @@ function StarterContent({
               />
             );
           }
-          const aspect = rowHasTile[Math.floor(idx / PLUS_COLS)] ? 'aspect-square md:aspect-auto' : 'aspect-square';
+          const aspect = dashedCellAspect(rowHasTile[Math.floor(idx / PLUS_COLS)] ?? false);
           return (
             <button type="button"
               key={`${s.type}-${s.i}`}
@@ -359,7 +365,11 @@ function StarterContent({
         );
       })}
       {dragLineIds && pokemonIds.length > 0 && (
-        <EndDropZone sectionId="starter" showIndicator={insertIndicator.endSection === 'starter'} />
+        <EndDropZone
+          sectionId="starter"
+          showIndicator={insertIndicator.endSection === 'starter'}
+          aspect={trailingPlusAspect(pokemonIds.length)}
+        />
       )}
       {!dragLineIds && (
         <button type="button"
@@ -534,6 +544,7 @@ function GroupBox({
             <EndDropZone
               sectionId={group.id}
               showIndicator={insertIndicator.endSection === group.id}
+              aspect="aspect-square"
             />
           ) : (
             <button type="button"
@@ -597,6 +608,7 @@ function GroupBox({
                 <EndDropZone
                   sectionId={group.id}
                   showIndicator={insertIndicator.endSection === group.id}
+                  aspect={trailingPlusAspect(pokemonIds.length)}
                 />
               )}
               {!dragLineIds && (
