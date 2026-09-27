@@ -14,6 +14,10 @@ import { useLeagueStore, type CardType } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
 import { fitStyle, useFitScale } from '../useFitScale';
+import { SPRITE_REM } from '../slotLayout';
+import { spriteRendering, spriteScreen } from '../spriteScale';
+import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
+import { useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { CardGrid } from './CardGrid';
 import { CardHelpButton } from './CardHelp';
@@ -334,7 +338,13 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   const fit = useFitScale(
     fitRef,
     0.55,
-    isDesktop && !withBar ? { baseWidthRem: 26, spriteRem: 3.25, targetSpritePx: 96 } : undefined,
+    isDesktop && !withBar ? { baseWidthRem: 26, spriteRem: SPRITE_REM, targetSpritePx: 96 } : undefined,
+  );
+  const dpr = useDevicePixelRatio();
+  const rendering = spriteRendering(
+    spriteScreen(isDesktop, dpr),
+    SPRITE_REM * getAppliedRootFontSizePx() * fit.scale,
+    dpr,
   );
 
   return (
@@ -350,7 +360,7 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
         </div>
       )}
       <div className="px-3 pt-2.5">
-        <div ref={fitRef} style={fitStyle(fit)}>
+        <div ref={fitRef} style={fitStyle(fit, rendering)}>
           <CardGrid cardIndex={cardIndex} view={view} />
         </div>
       </div>

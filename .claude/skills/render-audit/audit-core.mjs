@@ -163,10 +163,13 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
       // Still loading (a lazy image below the fold) is not broken; a finished load with no pixels is.
       if (el.complete && el.naturalWidth === 0) add('image-broken', 'error', el, 'image did not load');
       else if (el.complete && !el.closest('[data-audit-scale="intended"]')) {
-        const scale = r.width / el.naturalWidth;
+        // Device pixels per source pixel. Pixel art is crisp at a whole
+        // number of device pixels, so a 96px sprite drawn 48 CSS px wide on
+        // a 2x screen is 1x, not 0.5x.
+        const scale = (r.width * (window.devicePixelRatio || 1)) / el.naturalWidth;
         const pixel = /pixelated|crisp-edges/.test(cs.imageRendering);
         if (pixel && Math.abs(scale - Math.round(scale)) > 0.01) {
-          add('image-scale', 'error', el, \`pixel art drawn at \${scale.toFixed(2)}× (\${Math.round(r.width)}px from \${el.naturalWidth}px); use an integer scale\`);
+          add('image-scale', 'error', el, \`pixel art drawn at \${scale.toFixed(2)}× device pixels (\${Math.round(r.width)}px from \${el.naturalWidth}px); use an integer scale\`);
         } else if (!pixel && scale > 2.05) {
           add('image-scale', 'warning', el, \`upscaled \${scale.toFixed(2)}× from \${el.naturalWidth}px\`);
         }

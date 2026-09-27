@@ -61,13 +61,31 @@ export interface GrowInput {
   prevWidth: number;
 }
 
-export type FitInput = SquashInput | GrowInput;
+/**
+ * A grow block that holds its sprites at `spriteCeil` and gives up its own
+ * spacing first (the league summary on a Retina desktop). `shortest` is the
+ * height of its tightest layout at zoom 1.
+ */
+export interface PinInput {
+  mode: 'pin';
+  shortest: number;
+  avail: number;
+  room: number;
+  floor: number;
+  baseWidth: number;
+  spriteCeil: number;
+  prevScale: number;
+  prevWidth: number;
+}
+
+export type FitInput = SquashInput | GrowInput | PinInput;
 
 /**
  * Next fit, or `null` when the previous fit already matches within the
  * deadband. Returning null is what stops the ResizeObserver loop.
  */
 export function proposeFit(input: FitInput): FitProposal | null {
+  if (input.mode === 'pin') return proposePin(input);
   if (input.natural <= 0) return null;
 
   let scale: number;
@@ -94,4 +112,23 @@ export function proposeFit(input: FitInput): FitProposal | null {
     return null;
   }
   return { scale, width };
+}
+
+/**
+ * The pinned zoom: the sprite ceiling whenever the tightest layout fits
+ * under it, otherwise the largest zoom at which that layout fits.
+ *
+ * It is neither rounded nor deadbanded. The ceiling is a zoom that puts a
+ * sprite on whole device pixels, and rounding it to thousandths moves it off
+ * them. The deadband exists because a squash reads its own natural height,
+ * so its zoom feeds back into its next measure. This zoom reads only the
+ * pane, never the block, so it has no loop to damp; and a held zoom that is
+ * larger than the pane allows spills rows off the screen.
+ */
+function proposePin(input: PinInput): FitProposal | null {
+  if (input.shortest <= 0) return null;
+  const fits = Math.min(input.room / input.baseWidth, input.avail / input.shortest);
+  const scale = Math.max(input.floor, Math.min(input.spriteCeil, fits));
+  if (scale === input.prevScale && input.baseWidth === input.prevWidth) return null;
+  return { scale, width: input.baseWidth };
 }
