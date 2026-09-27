@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoryIndexAtX, clampToRect, lineLeftInPlot, tipDataIndex } from './scrubPlot';
+import { categoryIndexAtX, clampToRect, lineLeftInPlot } from './scrubPlot';
 
 const plot = { x: 36, y: 36, width: 200, height: 100 };
 
@@ -14,21 +14,6 @@ describe('lineLeftInPlot', () => {
     expect(lineLeftInPlot(100, plot)).toBe(100);
     expect(lineLeftInPlot(8, plot)).toBe(36);
     expect(lineLeftInPlot(250, plot)).toBe(235);
-  });
-});
-
-describe('tipDataIndex', () => {
-  it('prefers a line series over a silent custom series', () => {
-    expect(
-      tipDataIndex([
-        { seriesType: 'custom', dataIndex: 0 },
-        { seriesType: 'line', dataIndex: 41 },
-      ]),
-    ).toBe(41);
-  });
-
-  it('accepts a single payload object', () => {
-    expect(tipDataIndex({ seriesType: 'line', dataIndex: 7 })).toBe(7);
   });
 });
 

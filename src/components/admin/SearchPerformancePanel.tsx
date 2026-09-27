@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { Delta, Kpi, Panel, Seg } from '@/components/admin/ui';
+import { chartRangeWindowMs, type ChartRangeKey } from '@/components/admin/charts/trendSeries';
+import { cssVar, useECharts, type EChartsOption } from '@/components/admin/charts/useECharts';
 import type {
   SearchPageEngineView,
   SearchPerformanceView,
   SearchPeriodComparison,
 } from '@/lib/searchPerformanceView';
-import type { SearchDailyPoint, SearchProviderKey, SearchProviderStatus } from '@/lib/searchPerformance';
+import type { SearchDailyPoint, SearchMetric, SearchProviderKey, SearchProviderStatus } from '@/lib/searchPerformance';
 import { cn } from '@/lib/utils';
 
 const PROVIDERS: { key: SearchProviderKey; label: string }[] = [
@@ -63,57 +65,188 @@ function statusDot(status: SearchProviderStatus): string {
   return 'bg-muted-foreground/50';
 }
 
-function MetricDelta({ comparison, metric }: {
-  comparison: SearchPeriodComparison;
-  metric: 'clicks' | 'impressions';
-}) {
-  if (!comparison.available) return <Delta>—</Delta>;
+function countDelta(comparison: SearchPeriodComparison, metric: 'clicks' | 'impressions'): string {
+  if (!comparison.available) return '—';
   const absolute = comparison.delta[metric];
   const relative = comparison.delta[`${metric}Pct`];
-  return <Delta>{relative == null ? signed(absolute) : `${signed(absolute)} · ${signedPercent(relative)}`}</Delta>;
+  return relative == null ? signed(absolute) : `${signed(absolute)} · ${signedPercent(relative)}`;
 }
 
-function SearchTrend({ daily }: { daily: SearchDailyPoint[] }) {
-  const rows = daily.slice(-28);
-  const values = rows.map((row) => row.impressions);
-  const high = Math.max(1, ...values);
-  const width = 100;
-  const height = 30;
-  const points = values
-    .map((value, index) => {
-      const x = values.length <= 1 ? 0 : (index / (values.length - 1)) * width;
-      const y = height - (value / high) * (height - 3) - 1.5;
-      return `${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(' ');
+type SearchKpiKey = 'clicks' | 'impressions' | 'ctr' | 'position';
 
-  if (rows.length < 2 || values.every((value) => value === 0)) return null;
+/** One Search Console metric: its tile, its line, and its readout part. */
+interface SearchKpi {
+  key: SearchKpiKey;
+  label: string;
+  /** The word after the value in the scrub readout. */
+  unit: string;
+  /** Search Console's color for the metric, on its line and its selected tile. */
+  color: string;
+  emphasis?: boolean;
+  /** Lower is better, so the scale runs down from 1 at the top, as in Search Console. */
+  inverse?: boolean;
+  pick: (metric: SearchMetric) => number | null;
+  format: (value: number) => string;
+  delta: (comparison: SearchPeriodComparison) => string;
+}
+
+const SEARCH_KPIS: SearchKpi[] = [
+  {
+    key: 'clicks',
+    label: 'Clicks',
+    unit: 'clicks',
+    color: '#4285F4',
+    emphasis: true,
+    pick: (m) => m.clicks,
+    format: compact,
+    delta: (c) => countDelta(c, 'clicks'),
+  },
+  {
+    key: 'impressions',
+    label: 'Impressions',
+    unit: 'impr.',
+    color: '#5E35B1',
+    pick: (m) => m.impressions,
+    format: compact,
+    delta: (c) => countDelta(c, 'impressions'),
+  },
+  {
+    key: 'ctr',
+    label: 'CTR',
+    unit: 'CTR',
+    color: '#00897B',
+    pick: (m) => m.ctr,
+    format: percent,
+    delta: (c) => (c.available ? `${c.delta.ctrPoints > 0 ? '+' : ''}${(c.delta.ctrPoints * 100).toFixed(2)}pt` : '—'),
+  },
+  {
+    key: 'position',
+    label: 'Position',
+    unit: 'pos.',
+    color: '#E8710A',
+    inverse: true,
+    pick: (m) => m.position,
+    format: position,
+    delta: (c) =>
+      c.available && c.delta.position != null ? `${c.delta.position > 0 ? '+' : ''}${c.delta.position.toFixed(1)}` : '—',
+  },
+];
+
+/** Search Console opens the chart on these two. */
+const DEFAULT_KPIS: SearchKpiKey[] = ['clicks', 'impressions'];
+
+function shown(kpi: SearchKpi, value: number | null): string {
+  return value == null ? '—' : kpi.format(value);
+}
+
+const DAY_MS = 86_400_000;
+
+/** Rows inside `range`, counted back from the latest reported day. */
+function windowRows(daily: SearchDailyPoint[], range: ChartRangeKey): SearchDailyPoint[] {
+  const windowMs = chartRangeWindowMs(range);
+  const last = daily[daily.length - 1];
+  if (windowMs == null || !last) return daily;
+  const start = Date.parse(`${last.date}T00:00:00Z`) - windowMs + DAY_MS;
+  return daily.filter((row) => Date.parse(`${row.date}T00:00:00Z`) >= start);
+}
+
+function SearchTrend({ daily, range, kpis }: { daily: SearchDailyPoint[]; range: ChartRangeKey; kpis: SearchKpi[] }) {
+  const rows = windowRows(daily, range);
+  const lines = kpis.map((kpi) => ({ kpi, values: rows.map(kpi.pick) }));
+  const drawn = lines.filter((line) => line.values.some((value) => value != null));
+  const scrubLabel = (i: number) => [
+    shortDate(rows[i].date),
+    ...lines.map(({ kpi, values }) => `<b>${shown(kpi, values[i])}</b> ${kpi.unit}`),
+  ];
+  const ref = useECharts(
+    (el): EChartsOption => {
+      const scale = Math.max(1, Math.min(el.clientWidth / 360, 2));
+      return {
+        animation: false,
+        // The top band holds the scrub readout, so it never covers a line.
+        grid: { left: 2, right: 2, top: 28, bottom: 1 },
+        xAxis: {
+          type: 'category',
+          data: rows.map((row) => row.date),
+          boundaryGap: false,
+          axisLine: { lineStyle: { color: cssVar(el, '--color-border', '#e5e5e5') } },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+        },
+        // One hidden scale per metric, as Search Console draws them.
+        yAxis: drawn.length
+          ? drawn.map(({ kpi }) =>
+              kpi.inverse
+                ? { type: 'value' as const, inverse: true, min: 1, max: 'dataMax', show: false }
+                : { type: 'value' as const, min: 0, max: 'dataMax', show: false },
+            )
+          : { type: 'value', show: false },
+        series: drawn.map(({ kpi, values }, i) => ({
+          name: kpi.key,
+          type: 'line' as const,
+          yAxisIndex: i,
+          data: values,
+          symbol: 'none',
+          lineStyle: { color: kpi.color, width: 1.5 * scale },
+          itemStyle: { color: kpi.color },
+        })),
+      };
+    },
+    [daily, range, kpis],
+    { scrub: { count: rows.length, label: scrubLabel } },
+  );
+
+  if (rows.length < 2 || rows.every((row) => row.impressions === 0)) return null;
   return (
     <div className="mt-4 border-t border-border pt-3">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
-        className="h-20 w-full overflow-visible text-primary"
+      <div
+        ref={ref}
+        className="aspect-[3/1] max-h-[240px] min-h-[120px] w-full"
         role="img"
-        aria-label={`Daily impressions for the latest ${rows.length} reported days.`}
-      >
-        <line x1="0" y1={height - 1} x2={width} y2={height - 1} stroke="var(--color-border)" strokeWidth="0.5" />
-        <polyline
-          points={points}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.25"
-          vectorEffect="non-scaling-stroke"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
-      <div className="-mt-1 flex justify-between text-[0.65rem] font-semibold text-muted-foreground">
+        aria-label={`Daily ${lines.map(({ kpi }) => kpi.label).join(', ')} for the latest ${rows.length} reported days.`}
+      />
+      <div className="mt-1 flex justify-between text-[0.65rem] font-semibold text-muted-foreground">
         <span>{shortDate(rows[0]?.date)}</span>
-        <span>Daily impressions</span>
         <span>{shortDate(rows[rows.length - 1]?.date)}</span>
       </div>
     </div>
+  );
+}
+
+/** A KPI tile that toggles its line. Selected, it fills with the line color. */
+function KpiToggle({
+  kpi,
+  comparison,
+  on,
+  onToggle,
+}: {
+  kpi: SearchKpi;
+  comparison: SearchPeriodComparison;
+  on: boolean;
+  onToggle: () => void;
+}) {
+  const fill = {
+    backgroundColor: kpi.color,
+    color: '#ffffff',
+    '--color-muted-foreground': '#ffffff',
+    '--color-muted': 'rgb(255 255 255 / 0.2)',
+  } as CSSProperties;
+  return (
+    <button
+      type="button"
+      data-kpi={kpi.key}
+      aria-pressed={on}
+      onClick={onToggle}
+      className={cn('rounded-lg p-2.5 text-left transition-colors', !on && 'hover:bg-muted/60')}
+      style={on ? fill : undefined}
+    >
+      <Kpi
+        emphasis={kpi.emphasis}
+        value={shown(kpi, kpi.pick(comparison.current.metric))}
+        label={kpi.label}
+        delta={<Delta>{kpi.delta(comparison)}</Delta>}
+      />
+    </button>
   );
 }
 
@@ -210,6 +343,11 @@ export function SearchPerformancePanel({
   error: string | null;
 }) {
   const [provider, setProvider] = useState<SearchProviderKey>('google');
+  const [picked, setPicked] = useState<SearchKpiKey[]>(DEFAULT_KPIS);
+  const kpis = useMemo(() => SEARCH_KPIS.filter((kpi) => picked.includes(kpi.key)), [picked]);
+  // At least one metric stays on the chart.
+  const toggleKpi = (key: SearchKpiKey) =>
+    setPicked((cur) => (cur.includes(key) ? (cur.length > 1 ? cur.filter((k) => k !== key) : cur) : [...cur, key]));
   const selected = snapshot?.providers[provider] ?? null;
   const comparison = selected?.comparison ?? null;
   const statusLegend = snapshot ? (
@@ -239,30 +377,18 @@ export function SearchPerformancePanel({
               <span>Previous {rangeLabel(comparison.previous.range.start, comparison.previous.range.end)}</span>
               <span>Through {shortDate(selected.dataThrough)}</span>
             </div>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">
-              <Kpi
-                emphasis
-                value={compact(comparison.current.metric.clicks)}
-                label="Clicks"
-                delta={<MetricDelta comparison={comparison} metric="clicks" />}
-              />
-              <Kpi
-                value={compact(comparison.current.metric.impressions)}
-                label="Impressions"
-                delta={<MetricDelta comparison={comparison} metric="impressions" />}
-              />
-              <Kpi
-                value={percent(comparison.current.metric.ctr)}
-                label="CTR"
-                delta={<Delta>{comparison.available ? `${comparison.delta.ctrPoints > 0 ? '+' : ''}${(comparison.delta.ctrPoints * 100).toFixed(2)}pt` : '—'}</Delta>}
-              />
-              <Kpi
-                value={position(comparison.current.metric.position)}
-                label="Position"
-                delta={<Delta>{comparison.available && comparison.delta.position != null ? `${comparison.delta.position > 0 ? '+' : ''}${comparison.delta.position.toFixed(1)}` : '—'}</Delta>}
-              />
+            <div className="-mx-2.5 grid grid-cols-2 gap-1 md:grid-cols-4">
+              {SEARCH_KPIS.map((kpi) => (
+                <KpiToggle
+                  key={kpi.key}
+                  kpi={kpi}
+                  comparison={comparison}
+                  on={kpis.includes(kpi)}
+                  onToggle={() => toggleKpi(kpi.key)}
+                />
+              ))}
             </div>
-            <SearchTrend daily={selected.daily} />
+            <SearchTrend daily={selected.daily} range="28d" kpis={kpis} />
             <QueryRows rows={selected.topQueries} />
           </>
         )}
