@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { eligibleFor, isEmptyTypePicker, kindFor, regionalPickerTier } from './eligibility';
 import { isLegendaryEligible, isPowerupForm } from './catalog';
+import { debutRank } from './debut';
 import { TYPE_NAMES } from '@/types/pokemon';
 
 describe('eligibleFor', () => {
@@ -75,24 +76,29 @@ describe('eligibleFor', () => {
     expect(eligibleFor('legendary', 'gimmick').length).toBeGreaterThan(0);
   });
 
-  it('orders native, older-family, legendary, and older legendary families consistently', () => {
+  it('orders by debut game, then native, older-family, legendary, and older legendary families', () => {
     for (const gen of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
       for (const type of [...TYPE_NAMES, 'gimmick', 'legendary'] as const) {
         const mons = eligibleFor(type, gen);
         const tieredMons = type === 'psychic' && (gen === 2 || gen === 3)
           ? mons.filter((mon) => mon.ownerId !== 201)
           : mons;
-        const tiers = tieredMons.map(regionalPickerTier);
-        expect(tiers, `${type}|${gen}`).toEqual(tiers.slice().sort((a, b) => a - b));
-        const firstLegendary = tieredMons.findIndex(isLegendaryEligible);
-        if (firstLegendary >= 0) {
-          expect(tieredMons.slice(firstLegendary).every(isLegendaryEligible), `${type}|${gen} legendary tail`).toBe(true);
+        const ranks = tieredMons.map(debutRank);
+        expect(ranks, `${type}|${gen} debut games`).toEqual(ranks.slice().sort((a, b) => a - b));
+        for (const rank of new Set(ranks)) {
+          const game = tieredMons.filter((mon) => debutRank(mon) === rank);
+          const tiers = game.map(regionalPickerTier);
+          expect(tiers, `${type}|${gen}`).toEqual(tiers.slice().sort((a, b) => a - b));
+          const firstLegendary = game.findIndex(isLegendaryEligible);
+          if (firstLegendary >= 0) {
+            expect(game.slice(firstLegendary).every(isLegendaryEligible), `${type}|${gen} legendary tail`).toBe(true);
+          }
         }
       }
     }
   });
 
-  it('keeps same-generation legendary forms together before older legendary families', () => {
+  it('keeps same-game legendary forms together before older legendary families', () => {
     const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
       eligibleFor(type, gen).map((mon) => mon.id);
     const contiguous = (list: number[], family: number[]) => {
@@ -105,7 +111,8 @@ describe('eligibleFor', () => {
     contiguous(ids('legendary', 8), [898, 10193, 10194]);
     contiguous(ids('legendary', 8), [905, 10249]);
     contiguous(ids('legendary', 6), [716, 11001]);
-    contiguous(ids('legendary', 7), [800, 10155, 10156, 10157]);
+    // Necrozma's fusions and Ultra form debuted in Ultra Sun and Ultra Moon, after every Sun and Moon entry.
+    contiguous(ids('legendary', 7), [10155, 10156, 10157, 803]);
     contiguous(ids('legendary', 7), [801, 10147]);
     expect(ids('legendary', 8).indexOf(10246)).toBeGreaterThan(ids('legendary', 8).indexOf(892));
     expect(ids('legendary', 7).indexOf(10181)).toBeGreaterThan(ids('legendary', 7).indexOf(785));
