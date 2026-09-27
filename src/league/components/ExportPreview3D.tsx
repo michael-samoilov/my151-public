@@ -756,10 +756,6 @@ export function ExportPreview3D({
         'relative flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-visible',
         className,
       )}
-      style={{
-        perspective: `${PREVIEW_PERSPECTIVE_PX}px`,
-        transformStyle: 'preserve-3d',
-      }}
     >
       {activeSrc ? (
         <div
@@ -768,6 +764,7 @@ export function ExportPreview3D({
           style={
             {
               padding: PREVIEW_SHADOW_PAD_PX,
+              '--export-perspective': `${PREVIEW_PERSPECTIVE_PX}px`,
               '--export-lift-scale': 1 / pop,
               '--export-lift-rest': 1 / pop,
             } as React.CSSProperties

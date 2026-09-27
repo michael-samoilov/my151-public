@@ -671,6 +671,7 @@ test.describe('desktop dex export preview', () => {
         const hitStyle = hitEl instanceof HTMLElement ? getComputedStyle(hitEl) : null;
         const stage = hitEl?.parentElement;
         const stageStyle = stage instanceof HTMLElement ? getComputedStyle(stage) : null;
+        const lift = document.querySelector('[data-export-foil-lift]');
         const x = Number(el.getAttribute('data-tilt-x'));
         const y = Number(el.getAttribute('data-tilt-y'));
         return {
@@ -682,9 +683,11 @@ test.describe('desktop dex export preview', () => {
           left: r.left,
           width: r.width,
           height: r.height,
-          perspective: stageStyle?.perspective ?? '',
+          stagePerspective: stageStyle?.perspective ?? '',
+          liftPerspective: hitStyle?.getPropertyValue('--export-perspective').trim() ?? '',
           hitPerspective: hitStyle?.perspective ?? '',
           transformStyle: hitStyle?.transformStyle ?? '',
+          liftTransform: lift instanceof HTMLElement ? getComputedStyle(lift).transform : '',
         };
       });
     };
@@ -699,9 +702,13 @@ test.describe('desktop dex export preview', () => {
       a.hypot * b.hypot > 0 ? Math.abs(a.x * b.x + a.y * b.y) / (a.hypot * b.hypot) : 1;
     expect(aligned, JSON.stringify({ a, b, aligned, visual })).toBeLessThan(0.85);
     expect(Math.hypot(a.x - b.x, a.y - b.y), JSON.stringify({ a, b, visual })).toBeGreaterThan(2);
-    expect(a.perspective.startsWith('600'), a.perspective).toBe(true);
+    // The lift carries perspective() in its own transform, so no element
+    // holds a 3D rendering context (iOS drew one-frame twists with one).
+    expect(a.liftPerspective.startsWith('600'), a.liftPerspective).toBe(true);
+    expect(a.stagePerspective, a.stagePerspective).toBe('none');
     expect(a.hitPerspective === 'none' || a.hitPerspective === '0px', a.hitPerspective).toBe(true);
-    expect(b.transformStyle.includes('preserve-3d'), b.transformStyle).toBe(true);
+    expect(b.transformStyle, b.transformStyle).toBe('flat');
+    expect(b.liftTransform.startsWith('matrix3d'), b.liftTransform).toBe(true);
     expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b })).toBeLessThan(16);
     const inView = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');

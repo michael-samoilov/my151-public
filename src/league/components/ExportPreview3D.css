@@ -1,4 +1,6 @@
-/* poke-holo .card__translater: perspective lives on the parent of the rotator. */
+/* The lift carries its own perspective() (see below), so no element holds a
+   3D rendering context: iOS drew stray one-frame twists while the stage's
+   perspective and the lift's rotation composited as separate layers. */
 .export-foil-hit {
   --shadow-x: 0;
   --shadow-y: 0;
@@ -9,14 +11,15 @@
   --hover-tilt-scale: 1;
   --export-lift-scale: 1;
   --export-lift-rest: 1;
-  /* Perspective lives on the full-size stage. A second perspective on this
-     card-sized box is the iOS clip rect around the drop shadow. */
+  --export-perspective: 600px;
+  /* A perspective property on this card-sized box is the iOS clip rect
+     around the drop shadow. */
   perspective: none;
   -webkit-perspective: none;
   transform-origin: center center;
   -webkit-transform-origin: center center;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
+  transform-style: flat;
+  -webkit-transform-style: flat;
   overflow: visible;
   background: none;
   box-shadow: none;
@@ -38,8 +41,10 @@
   border-radius: var(--export-card-radius, 4%);
   transform-origin: center center;
   -webkit-transform-origin: center center;
-  -webkit-transform: scale(var(--export-lift-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
-  transform: scale(var(--export-lift-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
+  -webkit-transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
+    rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
+  transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
+    rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
   box-shadow:
     calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 1px)
       calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.6px + 6px)
@@ -61,12 +66,14 @@
       calc(var(--hover-tilt-shadow-blur) * 0.25px)
       calc(var(--hover-tilt-shadow-blur) * -0.125px)
       rgb(0 0 0 / var(--hover-tilt-shadow-opacity, 0));
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  -webkit-transform: scale(var(--export-lift-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y))
-    translate3d(0, 0, 0.01px);
-  transform: scale(var(--export-lift-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y))
-    translate3d(0, 0, 0.01px);
+  transform-style: flat;
+  -webkit-transform-style: flat;
+  /* The lift sits centered in the stage, so its own perspective() about its
+     center draws the same picture a stage perspective did. */
+  -webkit-transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
+    rotateX(var(--rotation-x)) rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
+  transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
+    rotateX(var(--rotation-x)) rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
   box-shadow: var(--hover-tilt-custom-shadow, var(--hover-tilt-default-shadow));
 }
 

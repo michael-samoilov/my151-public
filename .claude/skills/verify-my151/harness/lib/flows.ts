@@ -450,7 +450,7 @@ async function readDexPreviewMotion(s: Session): Promise<{
   width: number;
   height: number;
   perspective: string;
-  transformStyle: string;
+  liftTransform: string;
 }> {
   return s.evalJson(
     `const el=document.querySelector('[data-export-preview]');
@@ -461,8 +461,7 @@ async function readDexPreviewMotion(s: Session): Promise<{
      const y=Number(el?.getAttribute('data-tilt-y')||0);
      const r=el instanceof HTMLElement ? el.getBoundingClientRect() : {top:0,left:0,width:0,height:0};
      const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
-     const stage=hit instanceof HTMLElement ? hit.parentElement : null;
-     const stageStyle=stage instanceof HTMLElement ? getComputedStyle(stage) : null;
+     const lift=document.querySelector('[data-export-foil-lift]');
      return {
        x, y,
        hypot: Math.hypot(x,y),
@@ -474,12 +473,12 @@ async function readDexPreviewMotion(s: Session): Promise<{
        holo: holo ? Number(getComputedStyle(holo).opacity) : 0,
        maps: el?.getAttribute('data-foil-maps')||'',
        top: r.top, left: r.left, width: r.width, height: r.height,
-       perspective: stageStyle?.perspective || '',
-       transformStyle: hitStyle?.transformStyle || '',
+       perspective: hitStyle?.getPropertyValue('--export-perspective').trim() || '',
+       liftTransform: lift instanceof HTMLElement ? getComputedStyle(lift).transform : '',
      };`,
   ).catch(() => ({
     x: 0, y: 0, hypot: 0, foil: 0, orbit: '', paused: '', scale: '', light: 0, holo: 0, maps: '',
-    top: 0, left: 0, width: 0, height: 0, perspective: '', transformStyle: '',
+    top: 0, left: 0, width: 0, height: 0, perspective: '', liftTransform: '',
   }));
 }
 
@@ -553,7 +552,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const idleB = await readDexPreviewMotion(s);
   const idleDelta = Math.hypot(idleB.x - idleA.x, idleB.y - idleA.y);
   const visualDelta = visualTiltDelta(idleA, idleB);
-  const perspectiveOn = idleA.perspective.startsWith('600') && idleB.transformStyle.includes('preserve-3d');
+  // The lift projects itself: perspective() is inside its own transform.
+  const perspectiveOn = idleA.perspective.startsWith('600') && idleB.liftTransform.startsWith('matrix3d');
   const idleMoved =
     idleA.orbit === 'idle' &&
     idleB.orbit === 'idle' &&
