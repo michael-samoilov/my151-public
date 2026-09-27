@@ -455,7 +455,7 @@ test.describe('mobile dex export sheet', () => {
       if (holoStyle.mixBlendMode !== 'color-dodge') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
-      if (Math.abs(holoAmt - 1) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
+      if (Math.abs(holoAmt - 0.7) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
@@ -476,7 +476,7 @@ test.describe('mobile dex export sheet', () => {
       Number(await foil.getAttribute('data-tilt-x')),
       Number(await foil.getAttribute('data-tilt-y')),
     );
-    expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(5.2);
+    expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(10.2);
     const shadow = await page.evaluate(() => {
       const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
       const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
@@ -758,7 +758,7 @@ test.describe('desktop dex export preview', () => {
           style.overflow === 'hidden' &&
           overflowLayers.length === 0 &&
           mask.includes('url(') &&
-          Math.abs(holoAmt - 1) < 0.02 &&
+          Math.abs(holoAmt - 0.7) < 0.02 &&
           !(bloom instanceof HTMLElement && getComputedStyle(bloom).inset.includes('-')),
       };
     });
@@ -854,7 +854,7 @@ test.describe('desktop dex export preview', () => {
     expect(resume.paused, JSON.stringify(resume)).toBe('0');
     expect(resume.sameTick, 're-enable must ease, not snap to orbit start').toBeLessThan(1.2);
     expect(resume.frame1, JSON.stringify(resume)).toBeLessThan(2.4);
-    expect(resume.frame2, JSON.stringify(resume)).toBeLessThanOrEqual(5.2);
+    expect(resume.frame2, JSON.stringify(resume)).toBeLessThanOrEqual(10.2);
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
   });
 
@@ -980,7 +980,7 @@ test.describe('desktop dex export preview', () => {
       Number(await foil.getAttribute('data-tilt-y')),
     );
     expect(hypot, 'desktop peak hypot').toBeGreaterThan(2);
-    expect(hypot, 'desktop peak hypot').toBeLessThanOrEqual(5.2);
+    expect(hypot, 'desktop peak hypot').toBeLessThanOrEqual(10.2);
   });
 
   test('paints rainbow holographic foil on the live overlay', async ({ page }, testInfo) => {
@@ -1018,7 +1018,7 @@ test.describe('desktop dex export preview', () => {
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
     expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.04);
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.7, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);

@@ -273,6 +273,7 @@ export function ExportPreview3D({
       idleMsX: recipeNow.idleMsX,
       idleMsY: recipeNow.idleMsY,
       idleTilt: recipeNow.idleTilt,
+      axes: tiltAxes(tiltRef.current, recipeNow.maxTilt),
     });
   }, []);
 

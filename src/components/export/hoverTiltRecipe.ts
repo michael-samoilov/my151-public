@@ -32,6 +32,8 @@ export type HoverTiltRecipe = {
   shadow: boolean;
   shadowBlur: number;
   glareIntensity: number;
+  /** 0.2-1: how far the glare's light reaches. 1 is hover-tilt's full-card glare. */
+  glareSize: number;
   glareHue: number;
   glareMask: HoverTiltMaskId;
   glareMaskMode: HoverTiltMaskMode;
@@ -67,18 +69,23 @@ export const HOVER_TILT_MASK_META = {
 
 export const HOVER_TILT_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-tilt';
 
-/** hover-tilt default `tiltFactor` (multiplier on ROTATION=10). */
-export const DEFAULT_TILT_FACTOR = 1;
+/**
+ * Multiplier on the edge tilt. Above 1 the tilt reaches the max tilt cap
+ * before the pointer reaches the edge: at 10/7 it caps 85% of the way out.
+ */
+export const DEFAULT_TILT_FACTOR = 10 / 7;
 
+/** Michael's workshop pick, September 27, with the pop kept at 1.15. */
 export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   tiltFactor: DEFAULT_TILT_FACTOR,
   tiltFactorY: DEFAULT_TILT_FACTOR,
   scaleFactor: 1.15,
   enterDelay: 0,
-  exitDelay: 200,
+  exitDelay: 420,
   shadow: true,
-  shadowBlur: 48,
-  glareIntensity: 0.6,
+  shadowBlur: 25,
+  glareIntensity: 1,
+  glareSize: 0.5,
   glareHue: 40,
   glareMask: 'none',
   glareMaskMode: 'alpha',
@@ -131,6 +138,7 @@ export function parseHoverTiltRecipe(input: unknown): HoverTiltRecipe {
     shadow: typeof rec.shadow === 'boolean' ? rec.shadow : base.shadow,
     shadowBlur: readNumber(rec.shadowBlur, base.shadowBlur, 0, 80),
     glareIntensity: readNumber(rec.glareIntensity, base.glareIntensity, 0, 1),
+    glareSize: readNumber(rec.glareSize, base.glareSize, 0.2, 1),
     glareHue: readNumber(rec.glareHue, base.glareHue, 0, 360),
     glareMask: isHoverTiltMaskId(rec.glareMask) ? rec.glareMask : base.glareMask,
     glareMaskMode: isHoverTiltMaskMode(rec.glareMaskMode) ? rec.glareMaskMode : base.glareMaskMode,
@@ -168,6 +176,7 @@ export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string
     '--hover-tilt-rotation-x': `${(10 * recipe.tiltFactor).toFixed(2)}deg`,
     '--hover-tilt-rotation-y': `${(10 * recipe.tiltFactorY).toFixed(2)}deg`,
     '--hover-tilt-glare-intensity': recipe.glareIntensity.toFixed(3),
+    '--hover-tilt-glare-size': recipe.glareSize.toFixed(3),
     '--hover-tilt-glare-hue': String(Math.round(recipe.glareHue)),
     '--hover-tilt-shadow-blur': String(Math.round(recipe.shadowBlur)),
     '--hover-tilt-mask-mode': recipe.glareMaskMode,

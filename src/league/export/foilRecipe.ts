@@ -88,26 +88,26 @@ export const FOIL_LAYER_META = {
 
 export const FOIL_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-recipe';
 
+/** Michael's workshop pick, September 27. */
 const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
-  pointLight: { on: false, amount: 0 },
+  pointLight: { on: true, amount: 1 },
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
-  // Off in the export; the workshop turns it on to compare.
-  holoRainbow: { on: false, amount: 0.5 },
+  holoRainbow: { on: true, amount: 0.2 },
   holographic: { on: true, amount: FOIL_HOLO_AMOUNT },
-  iridescence: { on: false, amount: 0 },
+  iridescence: { on: true, amount: 0.1 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
-  bloom: { on: false, amount: 0 },
+  bloom: { on: false, amount: 0.36 },
 };
 
 export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
-  idleTilt: 5,
+  idleTilt: 10,
   idleMsX: 14000,
   idleMsY: 14000,
-  deadDeg: 1.5,
-  maxTilt: 5,
+  deadDeg: 3,
+  maxTilt: 10,
   parallaxPx: 0,
   bloomBlurPx: 34,
   specSize: 0.5,

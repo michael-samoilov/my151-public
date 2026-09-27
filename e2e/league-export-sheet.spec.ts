@@ -130,8 +130,10 @@ test.describe('mobile export sheet', () => {
     const foil = page.locator('[data-export-preview]');
     await expect(foil).toHaveAttribute('data-paused', '0');
 
-    await expect(page.locator('[data-foil-layer]')).toHaveCount(1);
-    await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
+    // The default layers, and only those: point light, rainbow, shine, iridescence.
+    await expect
+      .poll(async () => (await page.locator('[data-foil-layer]').evaluateAll((els) => els.map((el) => el.getAttribute('data-foil-layer')))).sort().join(','))
+      .toBe('holoRainbow,holographic,iridescence,pointLight');
     await expect(page.locator('[data-foil-layer="sparkle"]')).toHaveCount(0);
     expect(await foil.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('none');
     await expect(page.locator('[data-foil-layer="ambient"]')).toHaveCount(0);
@@ -247,7 +249,7 @@ test.describe('desktop export preview', () => {
       const glare = getComputedStyle(card, '::before');
       const glareMask = `${glare.getPropertyValue('-webkit-mask-image')} ${glare.maskImage}`;
       if (!glareMask.includes('none')) return { ok: false, reason: `glare mask ${glareMask}` };
-      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 1) > 0.02) {
+      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 0.7) > 0.02) {
         return { ok: false, reason: 'amount' };
       }
       return { ok: true, reason: 'open' };
@@ -284,12 +286,12 @@ test.describe('desktop export preview', () => {
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.7, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.shadow, JSON.stringify(holo)).not.toBe('none');
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2);
-    expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(5.2);
+    expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(10.2);
   });
 });
 
@@ -337,9 +339,9 @@ test.describe('gym trainer-card export', () => {
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(1, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.7, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2);
-    expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(5.2);
+    expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(10.2);
   });
 });

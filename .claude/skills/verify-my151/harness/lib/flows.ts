@@ -404,7 +404,7 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
      if(mix!=='color-dodge') return {ok:false,reason:'blend '+mix};
      if(!(opacity>0.04)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
-     if(Math.abs(amount-1)>0.02) return {ok:false,reason:'amount '+amount};
+     if(Math.abs(amount-0.7)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
      if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
      if(mask.includes('image/svg')) return {ok:false,reason:'frame mask hides ink'};
@@ -662,7 +662,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
   const hoverScaleN = Number(hoverScale);
   const hoverCircle = {
-    ok: hoverScaleN >= 1.08 && hoverScaleN <= 1.16 && widthDelta < 2 && hoverMax > 2 && hoverOrbit === 'pointer' && hoverMax <= 5.2,
+    ok: hoverScaleN >= 1.08 && hoverScaleN <= 1.16 && widthDelta < 2 && hoverMax > 2 && hoverOrbit === 'pointer' && hoverMax <= 10.2,
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit} w=${viewW}`,
   };
   await s.evalJson(
@@ -911,7 +911,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
     ok('dex-export:idle-circular', imgReady && idleCircular, JSON.stringify({ idleA, idleB, idleAlign, idleDelta })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
-    ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax > 2 && hoverMax <= 5.2, `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
+    ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax > 2 && hoverMax <= 10.2, `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
     ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
     ok('dex-export:tilt-corner-margin', cornerMargin.ok, cornerMargin.reason),
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
@@ -1662,9 +1662,9 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
        glareBlend: getComputedStyle(el,'::before').mixBlendMode,
      };`,
   ).catch(() => ({ rot: '', holo: '', glare: '', holoBlend: '', glareBlend: '' }));
-  checks.push(ok('foil-workshop:hover-tilt-rotation', /^10(\.0+)?deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
-  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 1) < 0.02, `holo=${tiltVars.holo}`));
-  checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 0.6) < 0.02, `glare=${tiltVars.glare}`));
+  checks.push(ok('foil-workshop:hover-tilt-rotation', /^14\.29deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
+  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.7) < 0.02, `holo=${tiltVars.holo}`));
+  checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 1) < 0.02, `glare=${tiltVars.glare}`));
   checks.push(ok('foil-workshop:prod-holo-blend', tiltVars.holoBlend === 'color-dodge', `blend=${tiltVars.holoBlend}`));
   checks.push(ok('foil-workshop:prod-glare-blend', tiltVars.glareBlend === 'overlay', `blend=${tiltVars.glareBlend}`));
   await s.screenshot(ctx.shot('foil-workshop'));
@@ -1680,7 +1680,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     `const has=(sel)=>!!document.querySelector(sel);
      const extras=[...document.querySelectorAll('[data-foil-slider],[data-hover-tilt-mask],[data-workshop-dark-card-toggle]')]
        .map((el)=>el.getAttribute('data-foil-slider')||el.getAttribute('data-hover-tilt-mask')||el.getAttribute('data-workshop-dark-card-toggle')||el.tagName)
-       .filter((id)=>!['holographic','holoRainbow','maxTilt','glareIntensity','shadowBlur'].includes(id));
+       .filter((id)=>!['holographic','holoRainbow','pointLight','iridescence','maxTilt','glareIntensity','glareSize','shadowBlur'].includes(id));
      return {
         holo: has('[data-foil-slider="holographic"]') && has('[data-foil-slider="holoRainbow"]') && has('[data-foil-slider="maxTilt"]'),
         glare: has('[data-foil-slider="glareIntensity"]'),
@@ -1747,7 +1747,7 @@ export async function runLeagueGymExportFoilSuite(
     checks.push({ name: 'gym-export:rainbow-foil', status: 'skip', detail: 'league home never hydrated' });
     return checks;
   }
-  const hypotOk = (h: number) => h > 1.2 && h <= 5.2;
+  const hypotOk = (h: number) => h > 1.2 && h <= 10.2;
 
   const openLeague = await s.evalJson<boolean>(
     `const b=document.querySelector('[data-league-export]');

@@ -226,6 +226,8 @@ export function pokeHoloIdle(opts: {
   idleMsX: number;
   idleMsY: number;
   idleTilt: number;
+  /** The hover mapping, so the light sits where a pointer would for this tilt. */
+  axes?: HoverTiltAxes;
 }): HoverTiltPose {
   const t = opts.now - opts.origin;
   const rx = (t / Math.max(1, opts.idleMsX)) * Math.PI * 2;
@@ -234,7 +236,7 @@ export function pokeHoloIdle(opts: {
   const rotateY = Math.cos(ry) * opts.idleTilt;
   // The light sits where a pointer would for this tilt, so a hover or a
   // finger takes over without the pose or the glare jumping.
-  const { nx, ny } = normalizedForTilt(rotateX, rotateY, { rotation: opts.idleTilt });
+  const { nx, ny } = normalizedForTilt(rotateX, rotateY, opts.axes ?? { rotation: opts.idleTilt });
   return {
     rotateX,
     rotateY,
