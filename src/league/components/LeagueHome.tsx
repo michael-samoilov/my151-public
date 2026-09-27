@@ -189,10 +189,10 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
                     height: `${HOME_SPRITE_REM}rem`,
                     imageRendering: SPRITE_RENDERING,
                     // A trimmed row reserves less than the sprite, and the
-                    // image hangs over its edges, above the rows beside it.
-                    ...(m.trimRem > 0
-                      ? { margin: `-${m.trimRem}rem`, position: 'relative', zIndex: 1 }
-                      : null),
+                    // image hangs over its edges. A grid item paints after
+                    // every row's background, so it lands above the rows and
+                    // bands beside it with no z-index.
+                    ...(m.trimRem > 0 ? { margin: `-${m.trimRem}rem` } : null),
                   }}
                 />
               ) : filled ? (
@@ -351,9 +351,7 @@ export function LeagueHome() {
         <div
           data-lg-league-root
           className="rounded-2xl bg-card shadow-elevated"
-          // Isolated, so a sprite hanging over its row stacks inside the list
-          // and nowhere else.
-          style={{ padding: `${metrics.padRem}rem`, isolation: 'isolate' }}
+          style={{ padding: `${metrics.padRem}rem` }}
         >
           {displayCards.map((card, position) => (
             <div key={position}>
