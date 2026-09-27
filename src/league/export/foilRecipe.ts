@@ -94,11 +94,11 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
 };
 
 export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
-  idleTilt: 10,
+  idleTilt: 5,
   idleMsX: 14000,
   idleMsY: 14000,
-  deadDeg: 3,
-  maxTilt: 10,
+  deadDeg: 1.5,
+  maxTilt: 5,
   parallaxPx: 0,
   bloomBlurPx: 34,
   specSize: 0.5,
@@ -161,7 +161,7 @@ export function parseFoilRecipe(input: unknown): FoilRecipe {
     idleMsX: readNumber(rec.idleMsX, base.idleMsX, 2000, 40000),
     idleMsY: readNumber(rec.idleMsY, base.idleMsY, 2000, 40000),
     deadDeg: readNumber(rec.deadDeg, base.deadDeg, 0, 15),
-    maxTilt: readNumber(rec.maxTilt, base.maxTilt, 8, 35),
+    maxTilt: readNumber(rec.maxTilt, base.maxTilt, 4, 35),
     parallaxPx: readNumber(rec.parallaxPx, base.parallaxPx, 0, 24),
     bloomBlurPx: readNumber(rec.bloomBlurPx, base.bloomBlurPx, 0, 40),
     specSize: readNumber(rec.specSize, base.specSize, 0.08, 0.8),

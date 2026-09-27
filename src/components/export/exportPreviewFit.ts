@@ -9,8 +9,8 @@ export const PREVIEW_TILT_INSET = 24;
  * at 10° so an edge matches the library and a corner does not become a diamond.
  * clampTiltToBox still keeps the painted card inside the pane.
  */
-export const PREVIEW_DESKTOP_MAX_HYPOT = 10;
-export const PREVIEW_MOBILE_MAX_HYPOT = 10;
+export const PREVIEW_DESKTOP_MAX_HYPOT = 5;
+export const PREVIEW_MOBILE_MAX_HYPOT = 5;
 export const PREVIEW_DESKTOP_MIN_PX = 1024;
 /** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;

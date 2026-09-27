@@ -567,7 +567,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   await sitCursorOnDexPreview(s);
   const idleWait = Date.now();
   let idleA = await readDexPreviewMotion(s);
-  while (Date.now() - idleWait < 8000 && idleA.hypot <= 2.5) {
+  while (Date.now() - idleWait < 8000 && idleA.hypot <= 1.25) {
     await sleep(200);
     idleA = await readDexPreviewMotion(s);
   }
@@ -579,9 +579,9 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const idleMoved =
     idleA.orbit === 'idle' &&
     idleB.orbit === 'idle' &&
-    Math.max(idleA.hypot, idleB.hypot) > 2.5 &&
+    Math.max(idleA.hypot, idleB.hypot) > 1.25 &&
     perspectiveOn &&
-    (idleDelta > 2 || visualDelta > 4 || Math.min(idleA.hypot, idleB.hypot) > 4);
+    (idleDelta > 1 || visualDelta > 2 || Math.min(idleA.hypot, idleB.hypot) > 2);
   const idleAlign =
     idleA.hypot * idleB.hypot > 0
       ? Math.abs(idleA.x * idleB.x + idleA.y * idleB.y) / (idleA.hypot * idleB.hypot)
@@ -639,7 +639,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
   const hoverScaleN = Number(hoverScale);
   const hoverCircle = {
-    ok: hoverScaleN >= 1.08 && hoverScaleN <= 1.16 && widthDelta < 2 && hoverMax > 4 && hoverOrbit === 'pointer' && hoverMax <= 10.2,
+    ok: hoverScaleN >= 1.08 && hoverScaleN <= 1.16 && widthDelta < 2 && hoverMax > 2 && hoverOrbit === 'pointer' && hoverMax <= 5.2,
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit} w=${viewW}`,
   };
   await s.evalJson(
@@ -874,7 +874,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
     ok('dex-export:idle-circular', imgReady && idleCircular, JSON.stringify({ idleA, idleB, idleAlign, idleDelta })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
-    ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax > 4 && hoverMax <= 10.2, `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
+    ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax > 2 && hoverMax <= 5.2, `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
     ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
     ok('dex-export:tilt-corner-margin', cornerMargin.ok, cornerMargin.reason),
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
@@ -1710,7 +1710,7 @@ export async function runLeagueGymExportFoilSuite(
     checks.push({ name: 'gym-export:rainbow-foil', status: 'skip', detail: 'league home never hydrated' });
     return checks;
   }
-  const hypotOk = (h: number) => h > 2.4 && h <= 10.2;
+  const hypotOk = (h: number) => h > 1.2 && h <= 5.2;
 
   const openLeague = await s.evalJson<boolean>(
     `const b=document.querySelector('[data-league-export]');

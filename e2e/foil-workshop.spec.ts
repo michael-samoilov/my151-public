@@ -177,7 +177,10 @@ test.describe('export foil workshop', () => {
     }
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
     await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('0');
-    await expect.poll(async () => lift.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+    // Flat at rest: a uniform scale-down from the popped layout, no rotation.
+    await expect
+      .poll(async () => lift.evaluate((el) => getComputedStyle(el).transform))
+      .toMatch(/^matrix\(([\d.]+), 0, 0, \1, 0, 0\)$/);
     await expect.poll(async () => foil.getAttribute('data-tilt-scale')).toBe('1');
     const flat = await lift.boundingBox();
     expect(popped && flat && popped.width > flat.width * 1.08, 'tilt scale paints larger than rest').toBeTruthy();

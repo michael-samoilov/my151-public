@@ -30,8 +30,8 @@ export type HoverTiltPose = {
   ny: number;
 };
 
-/** hover-tilt `ROTATION = 10`. Edge tilt is this times `tiltFactor`. */
-export const HOVER_TILT_ROTATION = 10;
+/** Half of hover-tilt's `ROTATION = 10`, per Michael. Edge tilt is this times `tiltFactor`. */
+export const HOVER_TILT_ROTATION = 5;
 
 /** hover-tilt `defaultSpringOptions`. */
 export const HOVER_TILT_SPRING = {
