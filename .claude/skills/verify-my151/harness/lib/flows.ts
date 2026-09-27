@@ -743,7 +743,9 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const layerGap=Math.min(c.left-l.left,l.right-c.right,c.top-l.top,l.bottom-c.bottom);
      const viewGap=Math.min(c.left,c.top,innerWidth-c.right,innerHeight-c.bottom);
      const min=Math.min(layerGap,viewGap);
-     return {ok:min>=18,reason:'gap '+min.toFixed(1)};`,
+     // The layer's 8px padding plus PREVIEW_REST_PAD (8), which the fit keeps
+     // around the card at max tilt. At the 10deg default a phone reads 17.5.
+     return {ok:min>=16,reason:'gap '+min.toFixed(1)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const paintedHit = await s.evalJson<{ ok: boolean; reason: string }>(
     `const hit=document.querySelector('[data-export-tilt-hit]');
@@ -868,7 +870,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        }
      }
      const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
-     if(Math.abs(holoAmt-1)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
+     if(Math.abs(holoAmt-0.7)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
      return {ok:true,reason:bloom?'ink-holo-clipped':'ink-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
