@@ -89,4 +89,5 @@ Maintain the suite this way:
 
 - A test that asserts behavior Michael asked to change is stale. Update it. It is not a regression.
 - Tag a Playwright test or describe `@viewport` when its result depends on the viewport or device. Untagged tests run only in the `desktop` project. `scripts/check-viewport-tags.mjs` enforces the tag on tests that skip `desktop`.
+- `scripts/check-test-rules.mjs` fails on a committed proof test, and on a new unit test outside `api/`, `scripts/`, or saved-data code unless its first 5 lines hold `// keeps: <bug E2E misses>`.
 - Run tests by the two-tier rule in `CLAUDE.md`, "Build Verification".
