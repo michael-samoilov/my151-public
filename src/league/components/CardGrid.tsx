@@ -1159,44 +1159,45 @@ const MARK_TRAIL = '0.0625rem';
 // the two and collapses the glyph to a few pixels.
 const MARK_GLYPH = '72%';
 /**
- * The room the text beside the glyph keeps before the glyph column may grow.
+ * The glyph column, capped as a share of the box.
  *
- * 3.5rem is a little over what the badge name had at a 360px phone before
- * the labels grew. A box that gives the text less than that gives a narrow
- * phone a shorter badge name than it had: at 48% of the box, a 360px phone
- * turned "Thunder" into "er Badge" and a 320px one refused every key.
- */
-const MARK_TEXT_MIN = '3.5rem';
-/**
- * The glyph column: what the text has beyond `MARK_TEXT_MIN`, between 26% of
- * the box and 2.75rem.
+ * A fixed rem width is wrong here: the box is two of the card's seven columns
+ * and the card's width is not fixed, so at a 320px viewport a 2.75rem column
+ * took most of the box and the badge name was down to two characters. The cap
+ * keeps the glyph from eating the text it labels; both slots use the same
+ * expression, so the disc and the hexagon stay on one axis whatever binds.
  *
- * A share of the box is wrong on its own. The card's width is not fixed, and
- * a share large enough to fit the word under the glyph on a wide card takes
- * the text below one word on a narrow one. So a narrow box splits the way it
- * always did, 26% to the column, and the column grows only out of the text's
- * surplus, until 2.75rem.
+ * The labels do not widen it. A column grown to fit BADGE took the room the
+ * move's type and category need, and cut the category chip at the slot edge.
  *
  * In `cqw` of the box, which is an inline-size container, rather than `%`, so
- * the words can be sized from the same expression. Both slots use it, so the
- * disc and the hexagon stay on one axis whatever binds.
+ * the labels can be sized from the same expression. Both resolve against the
+ * box's content width.
  */
-const MARK_COL = `clamp(26cqw, 100cqw - ${MARK_GAP} - ${MARK_TEXT_MIN}, 2.75rem)`;
+const MARK_COL = 'min(2.75rem, 26cqw)';
 /**
  * The size of the four words in the pair: TM and BADGE under the glyphs, and
  * the "Pick a move" and NAME placeholders beside them.
  *
- * The card's 0.53125rem where it fits, smaller where it does not. The word
- * under the glyph is centred on the column and may reach into the pad and the
- * gap, stopping 0.125rem short of the box's edge, where the empty box draws
- * its dashed outline, and of the text. BADGE, the widest, is 3.92em at this
- * face, so the size is that room over 3.92. A 390px phone and a desktop card
- * have room to spare; a 320px phone comes out a little under the 0.4rem
- * production drew these at. The placeholders take the same size, so the pair
- * keeps one size of label.
+ * As large as fits, from the 0.4rem production drew these at up to the ace
+ * heading's 0.53125rem. The word under the glyph is centred on the column and
+ * may reach into the pad and the gap, stopping 0.125rem short of the box's
+ * edge, where the empty box draws its dashed outline, and of the text. BADGE,
+ * the widest, is 3.92em at this face, so the size is that room over 3.92. The
+ * placeholders take the same size, so the pair keeps one size of label.
  */
-const MARK_LABEL_SIZE = `min(0.53125rem, (${MARK_COL} + ${MARK_PAD} + ${MARK_GAP} - 0.25rem) / 3.92)`;
-const MARK_LABEL_TYPE = `text-[length:var(--mark-label)] ${LABEL_FACE}`;
+const MARK_LABEL_ROOM = `(${MARK_COL} + ${MARK_PAD} + ${MARK_GAP} - 0.25rem)`;
+const MARK_LABEL_SIZE = `clamp(0.4rem, ${MARK_LABEL_ROOM} / 3.92, 0.53125rem)`;
+/**
+ * The labels' tracking: the face's 0.08em wherever the size above fits.
+ *
+ * On a 320px phone the room is under 3.92 × 0.4rem, and the floor would push
+ * BADGE onto the empty box's dashed outline. There the tracking gives way
+ * instead, down to production's none: BADGE is 3.52em untracked, and its five
+ * letters share what the room has left.
+ */
+const MARK_LABEL_TRACK = `clamp(0rem, (${MARK_LABEL_ROOM} - 3.52 * var(--mark-label)) / 5, 0.08em)`;
+const MARK_LABEL_TYPE = 'text-[length:var(--mark-label)] font-extrabold tracking-[var(--mark-track)] leading-[1.4]';
 const MARK_LABEL_CLASS = `shrink-0 whitespace-nowrap ${MARK_LABEL_TYPE}`;
 /** What the TM box and the badge box share. */
 const MARK_BOX_STYLE = {
@@ -1204,6 +1205,7 @@ const MARK_BOX_STYLE = {
   gap: MARK_GAP,
   containerType: 'inline-size',
   '--mark-label': MARK_LABEL_SIZE,
+  '--mark-track': MARK_LABEL_TRACK,
 } as React.CSSProperties;
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
@@ -1256,7 +1258,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       {move ? (
         <span
           className="flex min-w-0 flex-col items-start gap-[2px] overflow-hidden"
-          style={{ transform: `translateY(${tmBodyShiftRem() + 0.0625}rem)` }}
+          style={{ transform: `translateY(${tmBodyShiftRem()}rem)` }}
         >
           {/* Clipped rather than spilling. At 320px the type badge and the
               category chip together are wider than the box's text column, and
