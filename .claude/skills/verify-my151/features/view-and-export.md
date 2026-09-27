@@ -28,7 +28,9 @@ display options, exportable as a PNG.
 - `/foil-workshop` (off in production) drives the same `ExportPreview3D` card
   with Shine (the V shine), Rainbow (a rainbow holofoil layer, off in the
   export), Max tilt, Glare, and Shadow controls. Max tilt sets the hover
-  tilt, the auto-tilt, and the cap together.
+  tilt, the auto-tilt, and the cap together. It restores only those dials
+  from its saved recipe or link; everything else, the 1.15 pop included, is
+  the in-app default.
 - A survey can follow a save. Its highlight sprite is integer-scaled at 1× or
   more.
 

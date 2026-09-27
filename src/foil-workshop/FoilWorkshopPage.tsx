@@ -49,12 +49,35 @@ function workshopDexMaskContext(): HoverTiltMaskContext {
   );
 }
 
+/**
+ * Keep only the dials this page shows; the rest are the export's defaults.
+ * A recipe saved by an older workshop kept values it can no longer show,
+ * such as no pop (scaleFactor 1) or an auto-tilt smaller than max tilt.
+ */
+function workshopFoil(saved: FoilRecipe): FoilRecipe {
+  const next = cloneFoilRecipe(DEFAULT_FOIL_RECIPE);
+  next.layers.holographic = { ...saved.layers.holographic };
+  next.layers.holoRainbow = { ...saved.layers.holoRainbow };
+  next.maxTilt = saved.maxTilt;
+  next.idleTilt = saved.maxTilt;
+  return next;
+}
+
+function workshopTilt(saved: HoverTiltRecipe): HoverTiltRecipe {
+  return {
+    ...cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE),
+    glareIntensity: saved.glareIntensity,
+    shadow: saved.shadow,
+    shadowBlur: saved.shadowBlur,
+  };
+}
+
 function readStoredFoil(): FoilRecipe {
   const params = new URLSearchParams(window.location.search);
-  if (params.has('r')) return parseFoilRecipeFromSearch(window.location.search);
+  if (params.has('r')) return workshopFoil(parseFoilRecipeFromSearch(window.location.search));
   try {
     const stored = localStorage.getItem(FOIL_WORKSHOP_STORAGE_KEY);
-    if (stored) return parseFoilRecipe(JSON.parse(stored) as unknown);
+    if (stored) return workshopFoil(parseFoilRecipe(JSON.parse(stored) as unknown));
   } catch {
     /* quota or private mode */
   }
@@ -63,10 +86,10 @@ function readStoredFoil(): FoilRecipe {
 
 function readStoredTilt(): HoverTiltRecipe {
   const params = new URLSearchParams(window.location.search);
-  if (params.has('t')) return parseHoverTiltRecipeFromSearch(window.location.search);
+  if (params.has('t')) return workshopTilt(parseHoverTiltRecipeFromSearch(window.location.search));
   try {
     const stored = localStorage.getItem(HOVER_TILT_WORKSHOP_STORAGE_KEY);
-    if (stored) return parseHoverTiltRecipe(JSON.parse(stored) as unknown);
+    if (stored) return workshopTilt(parseHoverTiltRecipe(JSON.parse(stored) as unknown));
   } catch {
     /* quota or private mode */
   }

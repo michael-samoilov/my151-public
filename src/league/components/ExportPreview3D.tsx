@@ -384,11 +384,14 @@ export function ExportPreview3D({
       stageSizeRef.current = { w: r.width, h: r.height };
       const img = imgRef.current;
       const aspect = img && img.naturalWidth > 0 ? img.naturalWidth / img.naturalHeight : 1;
+      // Room for the widest tilt a pointer or auto-tilt can reach. A card
+      // sized for less leans on clampTiltToBox, which jumps: the projected
+      // card is tallest mid-tilt, so fitting is not monotonic in the angle.
       const size = fitCardInPreviewBox({
         boxWidth: r.width,
         boxHeight: r.height,
         aspect,
-        tiltDeg: recipeRef.current.idleTilt,
+        tiltDeg: Math.max(recipeRef.current.idleTilt, recipeRef.current.maxTilt),
         pad: PREVIEW_REST_PAD,
       });
       const pop = Math.max(1, tiltRef.current?.scaleFactor ?? 1);
@@ -556,10 +559,10 @@ export function ExportPreview3D({
     };
   }, [activeSrc, idleAt, maskContext, paint, recipe, tilt]);
 
-  // The fit reserves room for the auto-tilt, so a new amplitude refits the card.
+  // The fit reserves room for the tilt, so a new extent refits the card.
   useLayoutEffect(() => {
     measureRef.current();
-  }, [recipe.idleTilt]);
+  }, [recipe.idleTilt, recipe.maxTilt]);
 
   useLayoutEffect(() => {
     const el = cardRef.current;
