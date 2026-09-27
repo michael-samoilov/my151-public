@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOSS_ROW } from './constants';
+import { BOSS_ROW, CHAMPION_ROW } from './constants';
 import {
   defaultBoundaries,
   deriveRow,
@@ -10,7 +10,7 @@ import {
   visibleMembers,
 } from './engine';
 import { arrivalLevel } from './impliedLevels';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getAllPokemon, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 
 // The demo roster the design boards were hand-verified against.
 const CHINCHOU = [170, 171]; // Lanturn evolves at 27
@@ -38,23 +38,40 @@ describe('arrivalLevel', () => {
 });
 
 describe('defaultBoundaries', () => {
-  it('lets the curve skip a member rather than making room for it', () => {
+  it('collapses stages that would already be evolved by the first gym', () => {
     // Caterpie 7, Metapod 7, Butterfree 10 all sit under the first threshold
     // (12), so all three claim row 1 and the highest stage is the one drawn.
-    // The shelf handle is what recovers the other two.
     expect(defaultBoundaries(CATERPIE)).toEqual([1, 1, 1]);
     const line = { branch: CATERPIE, boundaries: defaultBoundaries(CATERPIE) };
     expect(line.branch[stageAt(line, 1)]).toBe(12); // Butterfree
   });
 
-  it('lets an implied level land under the stage below it', () => {
+  it('gives a later middle stage its own row instead of skipping it', () => {
     // Rhydon's real level is 42; Rhyperior has none, and BST implies 38.
     const rows = defaultBoundaries(RHYHORN);
-    expect(rows[2]).toBeLessThan(rows[1]);
+    expect(rows).toEqual([1, 7, 8]);
+    const line = { branch: RHYHORN, boundaries: rows };
+    expect(line.branch[stageAt(line, 7)]).toBe(112);
+    expect(line.branch[stageAt(line, 8)]).toBe(464);
   });
 
   it('leaves a well-spaced line alone', () => {
     expect(defaultBoundaries(CHINCHOU)).toEqual([1, 4]);
+  });
+
+  it('keeps every known automatic branch ordered and final by Champion', () => {
+    const branches = new Map<string, number[]>();
+    for (const pokemon of getAllPokemon()) {
+      const branch = getEvolutionLine(pokemon.id).map((member) => member.id);
+      branches.set(branch.join('-'), branch);
+    }
+
+    for (const branch of branches.values()) {
+      const boundaries = defaultBoundaries(branch);
+      const line = { branch, boundaries };
+      expect(boundaries.every((row, stage) => stage === 0 || row >= boundaries[stage - 1])).toBe(true);
+      expect(stageAt(line, CHAMPION_ROW)).toBe(branch.length - 1);
+    }
   });
 });
 

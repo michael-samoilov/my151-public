@@ -75,6 +75,13 @@ export const enUi = {
   'browser.chip.stages': 'Stages',
   'browser.chip.type': 'Type',
   'browser.clear': 'Clear',
+  'browser.closeAsk.addAction': 'Add',
+  'browser.closeAsk.add_one': 'Add {count} Pokémon to {section}?',
+  'browser.closeAsk.add_other': 'Add {count} Pokémon to {section}?',
+  'browser.closeAsk.discard': 'Discard',
+  'browser.closeAsk.removeAction': 'Remove',
+  'browser.closeAsk.remove_one': 'Remove {count} Pokémon?',
+  'browser.closeAsk.remove_other': 'Remove {count} Pokémon?',
   'browser.count.colors_one': '{count} Color',
   'browser.count.colors_other': '{count} Colors',
   'browser.count.eggGroups_one': '{count} Egg Group',
@@ -123,6 +130,9 @@ export const enUi = {
   'browser.tooMany.hint': 'Add another character, or search by Pokédex number.',
   'browser.tooMany.title': '{count} matches — too many to show.',
   'builder.addToSection': 'Add a Pokémon to {section}',
+  // The red X on a builder tile. One press can remove the whole evolution
+  // line.
+  'builder.remove': 'Remove {name}',
   'chart.header.count': 'COUNT',
   'chart.header.gen': 'GEN',
   'chart.header.overIndexed1': 'OVER-',
