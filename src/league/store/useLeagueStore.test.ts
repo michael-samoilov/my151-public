@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { makePlacedLine } from '../model/engine';
+import { defaultBoundaries, levelBoundaries, makePlacedLine } from '../model/engine';
 import { BOSS_ROW, CHAMPION_ROW } from '../model/constants';
-import { emptyCard, legendAt, legendsOf, powerupAt, useLeagueStore } from './useLeagueStore';
+import { emptyCard, legendAt, legendsOf, migrateLeagueState, powerupAt, useLeagueStore } from './useLeagueStore';
 
 /**
  * The signature mark's two halves.
@@ -18,6 +18,7 @@ const ONIX = [95, 208];
 const OMANYTE = [138, 139];
 const CHARIZARD = [4, 5, 6];
 const LAPRAS = [131];
+const RHYHORN = [111, 112, 464];
 
 function cardWith(lines: number[][]) {
   return { ...emptyCard(), lines: lines.map(makePlacedLine) };
@@ -140,6 +141,39 @@ describe('pressing a powerup', () => {
     });
     expect(powerupAt(card(), BOSS_ROW, 2), 'and seat 2 joins it').toEqual({
       seat: 2, kind: 'dynamax', index: 0,
+    });
+  });
+});
+
+describe('evolution boundary intent', () => {
+  beforeEach(() => {
+    useLeagueStore.setState({ cards: [cardWith([RHYHORN]), emptyCard()] });
+  });
+
+  it('marks a dragged boundary as manual and a reset as automatic', () => {
+    expect(card().lines[0].boundaryMode).toBe('auto');
+    useLeagueStore.getState().setStageBoundary(0, 1, 1, 6);
+    expect(card().lines[0].boundaryMode).toBe('manual');
+    useLeagueStore.getState().setLineBoundaries(0, 1, defaultBoundaries(RHYHORN));
+    expect(card().lines[0].boundaryMode).toBe('auto');
+  });
+
+  it('upgrades old automatic lines without changing old manual progressions', () => {
+    const automatic = { branch: RHYHORN, boundaries: levelBoundaries(RHYHORN) };
+    const manual = { branch: RHYHORN, boundaries: [1, 5, 9] };
+    const migrated = migrateLeagueState({
+      cards: [{ ...emptyCard(), lines: [automatic, manual] }],
+      celebratedNudges: [],
+    }, 2);
+
+    expect(migrated.cards?.[0].lines[0]).toEqual({
+      branch: RHYHORN,
+      boundaries: defaultBoundaries(RHYHORN),
+      boundaryMode: 'auto',
+    });
+    expect(migrated.cards?.[0].lines[1]).toEqual({
+      ...manual,
+      boundaryMode: 'manual',
     });
   });
 });
