@@ -717,10 +717,24 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        probe={x:painted.left+painted.width*0.92,y:painted.top+painted.height*0.12};
      }
      document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:probe.x,clientY:probe.y,pointerType:'mouse',pointerId:1}));
-     const orbit=card.getAttribute('data-export-orbit')||'';
-     const hypot=Math.hypot(Number(card.dataset.tiltX||0),Number(card.dataset.tiltY||0));
-     return {ok:orbit==='pointer'&&hypot>1,reason:orbit+' hypot='+hypot.toFixed(1)+' probe='+probe.x.toFixed(0)+','+probe.y.toFixed(0)};`,
+     return {ok:true,reason:'probe='+probe.x.toFixed(0)+','+probe.y.toFixed(0)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
+  // The pose lands on later frames, so poll instead of reading the frame the
+  // move arrived on.
+  if (paintedHit.ok) {
+    const probeAt = paintedHit.reason;
+    const started = Date.now();
+    let pose = { orbit: '', hypot: 0 };
+    do {
+      await sleep(60);
+      pose = await s.evalJson<{ orbit: string; hypot: number }>(
+        `const card=document.querySelector('[data-export-preview]');
+         return {orbit:card?.getAttribute('data-export-orbit')||'',hypot:Math.hypot(Number(card?.dataset.tiltX||0),Number(card?.dataset.tiltY||0))};`,
+      ).catch(() => ({ orbit: '', hypot: 0 }));
+    } while (!(pose.orbit === 'pointer' && pose.hypot > 1) && Date.now() - started < 800);
+    paintedHit.ok = pose.orbit === 'pointer' && pose.hypot > 1;
+    paintedHit.reason = `${pose.orbit} hypot=${pose.hypot.toFixed(1)} ${probeAt} after ${Date.now() - started}ms`;
+  }
   const restStatic = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
      if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
