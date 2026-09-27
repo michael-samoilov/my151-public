@@ -50,6 +50,7 @@ import {
 } from '../export/foilRecipe';
 import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
 import { FOIL_HOLO_BLEND } from '../export/foilBlend';
+import { exportCornerRadius } from '@/lib/exportPngShape';
 import './ExportPreview3D.css';
 
 const TAP_MS = 320;
@@ -218,13 +219,19 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-scale', liveScale.toFixed(3));
     const hit = hitRef.current;
     if (hit) {
+      // The card is laid out at its popped size, so tilt never enlarges a
+      // raster: the lift scales down to rest and up to 1 while active.
+      const pop = Math.max(1, tiltNow.scaleFactor);
       hit.style.setProperty('--rotation-x', `${rotateX}deg`);
       hit.style.setProperty('--rotation-y', `${rotateY}deg`);
       hit.style.setProperty('--hover-tilt-scale', liveScale.toFixed(3));
+      hit.style.setProperty('--export-lift-scale', (liveScale / pop).toFixed(4));
+      hit.style.setProperty('--export-lift-rest', (1 / pop).toFixed(4));
       hit.style.setProperty('--shadow-x', shadowX.toFixed(4));
       hit.style.setProperty('--shadow-y', shadowY.toFixed(4));
       hit.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
-      hit.style.setProperty('--hover-tilt-shadow-blur', String(Math.round(tiltNow.shadowBlur)));
+      // In layout px, which the lift's transform then scales back down.
+      hit.style.setProperty('--hover-tilt-shadow-blur', String(Math.round(tiltNow.shadowBlur * pop)));
       hit.dataset.hoverTiltShadow = shadowOn ? '1' : '0';
       hit.setAttribute('data-shadow-x', shadowX.toFixed(2));
       hit.setAttribute('data-shadow-y', shadowY.toFixed(2));
@@ -272,7 +279,7 @@ export function ExportPreview3D({
     const width = lift instanceof HTMLElement && lift.offsetWidth > 0 ? lift.offsetWidth : hit.clientWidth;
     const height = lift instanceof HTMLElement && lift.offsetHeight > 0 ? lift.offsetHeight : hit.clientHeight;
     const hitRect = hit.getBoundingClientRect();
-    const scale = Number(getComputedStyle(hit).getPropertyValue('--hover-tilt-scale')) || 1;
+    const scale = Number(getComputedStyle(hit).getPropertyValue('--export-lift-scale')) || 1;
     const visualW = width * scale;
     const visualH = height * scale;
     return new DOMRect(
@@ -394,6 +401,22 @@ export function ExportPreview3D({
   useEffect(() => {
     cardMaxRef.current = cardMax;
   }, [cardMax]);
+
+  // The PNG rounds its corners to 4% of its short edge. A percentage
+  // border-radius would be elliptical on a non-square card, so match in px.
+  useLayoutEffect(() => {
+    const img = imgRef.current;
+    const hit = hitRef.current;
+    if (!img || !hit) return;
+    const sync = () => {
+      if (img.offsetWidth <= 0 || img.offsetHeight <= 0) return;
+      hit.style.setProperty('--export-card-radius', `${exportCornerRadius(img.offsetWidth, img.offsetHeight).toFixed(2)}px`);
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(img);
+    return () => ro.disconnect();
+  }, [activeSrc]);
 
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -707,8 +730,9 @@ export function ExportPreview3D({
     if (orbitRef.current === 'pointer' && !pausedRef.current) beginRest(now);
   }, [beginRest, parkFlat]);
 
-  const maxW = cardMax.w > 0 ? `${Math.round(cardMax.w)}px` : '100%';
-  const maxH = cardMax.h > 0 ? `${Math.round(cardMax.h)}px` : '100%';
+  const pop = Math.max(1, tilt?.scaleFactor ?? 1);
+  const maxW = cardMax.w > 0 ? `${Math.round(cardMax.w * pop)}px` : '100%';
+  const maxH = cardMax.h > 0 ? `${Math.round(cardMax.h * pop)}px` : '100%';
 
   return (
     <div
@@ -726,7 +750,13 @@ export function ExportPreview3D({
         <div
           ref={hitRef}
           className="export-foil-hit pointer-events-auto cursor-pointer touch-none overflow-visible"
-          style={{ padding: PREVIEW_SHADOW_PAD_PX }}
+          style={
+            {
+              padding: PREVIEW_SHADOW_PAD_PX,
+              '--export-lift-scale': 1 / pop,
+              '--export-lift-rest': 1 / pop,
+            } as React.CSSProperties
+          }
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerCancel}
