@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from 'react-dom';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
-import { sectionName, t } from '@/i18n';
+import { pokemonLabel, sectionName, t, useNamesVersion } from '@/i18n';
 import { computeRemovalCascade, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { IntroCard } from '@/components/pokedex/IntroCard';
+import { UndoToast } from '@/components/pokedex/UndoToast';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
@@ -140,6 +141,9 @@ function DraggableTile({
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
   const spritePx = useTileSpritePx();
+  // The X's accessible name carries the Pokémon's name, which lands with the
+  // name catalog after first paint.
+  useNamesVersion();
 
   const {
     attributes,
@@ -188,9 +192,11 @@ function DraggableTile({
         <button type="button"
           onClick={() => removeBranch(sectionId, pokemonId)}
           onPointerDown={(e) => e.stopPropagation()}
+          aria-label={t('builder.remove', { name: pokemonLabel(pokemon.id, pokemon.name).full })}
           className={cn(
             TILE_ACTION_BUTTON_CLASS,
-            'cursor-pointer md:opacity-0 transition-opacity',
+            // The target is wider than the glyph; see index.css.
+            'tile-remove-target cursor-pointer md:opacity-0 md:focus-visible:opacity-100 transition-opacity',
             showX && 'md:!opacity-100',
           )}
           style={{ transform: 'translateZ(0)' }}
@@ -660,6 +666,7 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
     <div ref={menuRef} className="relative">
       <button type="button"
         onClick={() => { setOpen(!open); setConfirming(false); }}
+        data-testid="builder-settings"
         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
       >
         <Settings className="w-4 h-4" />
@@ -929,7 +936,7 @@ export function PokedexGrid() {
   const dragSet = useMemo(() => new Set(dragLineIds ?? []), [dragLineIds]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="relative flex flex-col h-full">
       {/* This page's controls live in the shared tool bar, not a row of its
           own — the count and nav are the header's job now. */}
       {toolbarSlot && createPortal(<SettingsMenu onClear={clearAll} />, toolbarSlot)}
@@ -995,6 +1002,7 @@ export function PokedexGrid() {
           </div>
           <PageFooter faq="dex" />
       </div>
+      <UndoToast />
     </div>
   );
 }

@@ -123,6 +123,19 @@ export const enUi = {
   'browser.tooMany.hint': 'Add another character, or search by Pokédex number.',
   'browser.tooMany.title': '{count} matches — too many to show.',
   'builder.addToSection': 'Add a Pokémon to {section}',
+  // The red X on a builder tile. One press can take a whole evolution line
+  // with it; the Undo toast then names what went.
+  'builder.remove': 'Remove {name}',
+  // The toast after a remove or Clear All. A line is named for its first
+  // removed stage.
+  'builder.undo.action': 'Undo',
+  'builder.undo.cleared_one': 'Cleared {count} Pokémon',
+  'builder.undo.cleared_other': 'Cleared all {count} Pokémon',
+  'builder.undo.removed': 'Removed {name}',
+  // Only while the name catalog is still loading, so a slug is never shown.
+  // English needs no `_one`: "Pokémon" is its own plural.
+  'builder.undo.removedCount_other': 'Removed {count} Pokémon',
+  'builder.undo.removedLine': 'Removed the {name} line',
   'chart.header.count': 'COUNT',
   'chart.header.gen': 'GEN',
   'chart.header.overIndexed1': 'OVER-',

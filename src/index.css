@@ -389,6 +389,36 @@ img {
   .milestone-nudge-in { animation: none; opacity: 1; transform: none; }
 }
 
+/* The builder's Undo toast rises a few pixels into place. It is short, since
+ * the toast itself only stays up for 6 seconds. */
+@keyframes undo-toast-in {
+  0%   { opacity: 0; transform: translateY(0.5rem); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.undo-toast-in { animation: undo-toast-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .undo-toast-in { animation: none; }
+}
+
+/* The press target of a builder tile's remove X. The glyph keeps its painted
+ * size; this ::before makes the target at least 1.5rem square, which is 24px at
+ * the smallest root font (the WCAG 2.2 target size), and grows with the glyph
+ * box (100%) on larger tiles. It is centred on the glyph, but stops 0.1875rem
+ * (three quarters of the grid's gap-1) past the tile's edge, so it never
+ * reaches a neighbouring tile. `--tile-sprite * 0.05` is the glyph's inset
+ * from the tile corner, from TILE_ACTION_BUTTON_CLASS in
+ * src/components/shared/PokemonTile.tsx. */
+.tile-remove-target::before {
+  --hit: max(1.5rem, calc(100% + 0.625rem));
+  --out: min(calc((var(--hit) - 100%) / 2), calc(var(--tile-sprite) * 0.05 + 0.1875rem));
+  content: '';
+  position: absolute;
+  top: calc(var(--out) * -1);
+  right: calc(var(--out) * -1);
+  width: var(--hit);
+  height: var(--hit);
+}
+
 /* Milestone bar width. The bar is a flex child that GROWS to fill the space
    between the counter (left) and the page controls (right): width:100% takes the
    whole flex cell, so it spans whatever space each page's header actually has.
