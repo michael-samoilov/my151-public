@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FilterChipList } from './FilterChipList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { Search, X, ChevronDown, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useSheetCloseGuard, type SheetCloseVia } from '@/components/ui/sheetCloseGuard';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'shape' | 'color' | 'eggGroup' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
@@ -173,6 +174,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   // Staged removals: assigned pokemon the user wants to remove (pending confirmation)
   const [removalStagedIds, setRemovalStagedIds] = useState<number[]>([]);
   const removalStagedSet = useMemo(() => new Set(removalStagedIds), [removalStagedIds]);
+  // Whether a phone sheet close is being asked about. See guardClose below.
+  const [closeAsk, setCloseAsk] = useState(false);
   const prevSectionRef = useRef(activeSection);
   const removeEvoLine = useBrowserStore((s) => s.removeEvoLine);
 
@@ -189,6 +192,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
     if (activeSection !== prevSectionRef.current) {
       setStagedIds([]);
       setRemovalStagedIds([]);
+      setCloseAsk(false);
       if (!activeSection) setOpenSheet(null);
       prevSectionRef.current = activeSection;
     }
@@ -206,6 +210,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       if (pickMode === 'instant' && !isDesktop) setMobileBrowserOpen(false);
       return;
     }
+    // Going on picking answers the close question: keep editing.
+    setCloseAsk(false);
     setStagedIds(prev => {
       const prevSet = new Set(prev);
       const allStaged = memberIds.every(id => prevSet.has(id));
@@ -252,6 +258,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       if (!isDesktop) setMobileBrowserOpen(false);
       return;
     }
+    setCloseAsk(false);
     setRemovalStagedIds(prev => {
       const prevSet = new Set(prev);
       const allStaged = memberIds.every(id => prevSet.has(id));
@@ -306,6 +313,47 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
     setMobileBrowserOpen(false);
     setActiveSection(null);
   }, [isDesktop, stagedIds, removalStagedIds, activeSection, assignedIds, sections, addToSection, removeEvoLine, setMobileBrowserOpen, setActiveSection]);
+
+  /**
+   * On a phone, taps only stage picks, and the floating button commits them.
+   * The staged picks live here, so a sheet close would drop them without a
+   * word. While anything is staged, a close from the handle, the scrim, a swipe
+   * or Escape asks instead: Add commits like the button, Discard closes.
+   * Escape on the question itself only dismisses it.
+   */
+  const pendingAdds = isDesktop ? 0 : stagedIds.filter(id => !assignedIds.has(id)).length;
+  const pendingRemovals = removalStagedIds.length;
+  const hasPending = !isDesktop && (pendingAdds > 0 || pendingRemovals > 0);
+  const closeAskReturnFocus = useRef<HTMLElement | null>(null);
+  const closeAskPrimary = useRef<HTMLButtonElement>(null);
+  const guardClose = useCallback((via: SheetCloseVia) => {
+    if (!hasPending) return false;
+    if (closeAsk) {
+      if (via === 'escape') {
+        setCloseAsk(false);
+        closeAskReturnFocus.current?.focus({ preventScroll: true });
+      }
+      return true;
+    }
+    closeAskReturnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setCloseAsk(true);
+    return true;
+  }, [hasPending, closeAsk]);
+  useSheetCloseGuard(guardClose);
+  const asking = closeAsk && hasPending;
+  useEffect(() => {
+    if (asking) closeAskPrimary.current?.focus({ preventScroll: true });
+  }, [asking]);
+  const closeAskTitleId = useId();
+  const closeAskDetailId = useId();
+
+  const handleDiscardStaged = useCallback(() => {
+    setStagedIds([]);
+    setRemovalStagedIds([]);
+    setCloseAsk(false);
+    setMobileBrowserOpen(false);
+    setActiveSection(null);
+  }, [setMobileBrowserOpen, setActiveSection]);
 
   const handleDesktopClose = useCallback(() => {
     setStagedIds([]);
@@ -1315,27 +1363,60 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
           <PageFooter />
       </div>
 
+      {/* The close question, in the floating button's place */}
+      {asking && (
+        <div
+          className="absolute inset-x-0 z-40 px-3"
+          style={{ bottom: openSheet && sheetH > 0 ? `calc(${sheetH}px + 0.75rem)` : '0.75rem' }}
+        >
+          <div
+            role="alertdialog"
+            aria-labelledby={closeAskTitleId}
+            aria-describedby={pendingAdds > 0 && pendingRemovals > 0 ? closeAskDetailId : undefined}
+            data-close-ask=""
+            className="sheet-ask-in mx-auto max-w-sm rounded-xl border bg-background p-3 shadow-lg"
+          >
+            <p id={closeAskTitleId} className="text-center text-sm font-semibold text-balance">
+              {pendingAdds > 0
+                ? tn('browser.closeAsk.add', pendingAdds, { section: sectionName ?? sectionLabel('other') })
+                : tn('browser.closeAsk.remove', pendingRemovals)}
+            </p>
+            {pendingAdds > 0 && pendingRemovals > 0 && (
+              <p id={closeAskDetailId} className="text-center text-xs text-muted-foreground">
+                {t('browser.fab.andRemove', { count: pendingRemovals })}
+              </p>
+            )}
+            <div className="mt-3 flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={handleDiscardStaged}>
+                {t('browser.closeAsk.discard')}
+              </Button>
+              <Button type="button" ref={closeAskPrimary} className="flex-1" onClick={handleSubmitStaged}>
+                {pendingAdds > 0 ? t('browser.closeAsk.addAction') : t('browser.closeAsk.removeAction')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating action button — add/remove staged pokemon */}
-      {(() => {
-        const newCount = isDesktop ? 0 : stagedIds.filter(id => !assignedIds.has(id)).length;
-        const removeCount = removalStagedIds.length;
-        if (newCount === 0 && removeCount === 0) return null;
+      {!asking && (() => {
+        if (pendingAdds === 0 && pendingRemovals === 0) return null;
         return (
           <div className="absolute left-1/2 -translate-x-1/2 z-40 transition-[bottom] duration-200" style={{ bottom: openSheet && !isDesktop && sheetH > 0 ? sheetH + 12 : 12 }}>
             <button type="button"
               onClick={handleSubmitStaged}
               className="bg-primary text-primary-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors leading-snug text-center"
             >
-              {newCount > 0 && removeCount > 0 ? (
+              {pendingAdds > 0 && pendingRemovals > 0 ? (
                 <>
-                  <span>{tn('browser.fab.add', newCount)}</span>
+                  <span>{tn('browser.fab.add', pendingAdds)}</span>
                   <br />
-                  <span className="text-xs font-normal opacity-90">{t('browser.fab.andRemove', { count: removeCount })}</span>
+                  <span className="text-xs font-normal opacity-90">{t('browser.fab.andRemove', { count: pendingRemovals })}</span>
                 </>
-              ) : newCount > 0 ? (
-                tn('browser.fab.add', newCount)
+              ) : pendingAdds > 0 ? (
+                tn('browser.fab.add', pendingAdds)
               ) : (
-                tn('browser.fab.remove', removeCount)
+                tn('browser.fab.remove', pendingRemovals)
               )}
             </button>
           </div>
