@@ -1595,7 +1595,7 @@ function AdminBar({ children }: { children: ReactNode }) {
     <div
       ref={barRef}
       data-admin-bar
-      className="fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 backdrop-blur md:sticky md:top-[var(--admin-header-h,0px)] md:mx-auto md:w-full md:max-w-5xl md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none"
+      className="fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 backdrop-blur md:sticky md:top-[var(--admin-header-h,0px)] md:mx-auto md:max-w-5xl md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none"
     >
       {children}
     </div>
