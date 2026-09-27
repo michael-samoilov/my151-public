@@ -1,3 +1,4 @@
+// keeps: glare-mask spots drifting from the PNG's sprite spots (one per evolution line, not per species); no E2E reads the mask geometry.
 import { describe, expect, it } from 'vitest';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { getPokemonByIds } from '@/hooks/usePokemonData';

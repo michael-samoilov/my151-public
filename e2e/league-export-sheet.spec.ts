@@ -258,6 +258,10 @@ test.describe('desktop export preview', () => {
     expect(box).toBeTruthy();
     await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    // The springs start from the auto-tilt pose, so wait for the hover pose.
+    await expect
+      .poll(async () => Math.hypot(Number(await foil.getAttribute('data-tilt-x')), Number(await foil.getAttribute('data-tilt-y'))))
+      .toBeGreaterThan(2);
     const holo = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
       const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
@@ -314,6 +318,10 @@ test.describe('gym trainer-card export', () => {
     expect(box).toBeTruthy();
     await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    // The springs start from the auto-tilt pose, so wait for the hover pose.
+    await expect
+      .poll(async () => Math.hypot(Number(await foil.getAttribute('data-tilt-x')), Number(await foil.getAttribute('data-tilt-y'))))
+      .toBeGreaterThan(2);
     const holo = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
       const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');

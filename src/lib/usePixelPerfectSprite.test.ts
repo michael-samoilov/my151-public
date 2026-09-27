@@ -1,3 +1,4 @@
+// keeps: a non-integer survey sprite on a DPR 2 desktop or below 320 px; the E2E projects run desktop at DPR 1 and stop at 320 px.
 import { describe, expect, it } from 'vitest';
 import {
   SPRITE_NATIVE,

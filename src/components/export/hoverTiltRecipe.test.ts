@@ -1,3 +1,4 @@
+// keeps: an old saved or linked workshop recipe (sparkleMask, blendMode, out-of-range factors) must parse to a safe recipe; no E2E seeds old saved recipes.
 import { describe, expect, it } from 'vitest';
 import { parseHoverTiltRecipe } from './hoverTiltRecipe';
 
