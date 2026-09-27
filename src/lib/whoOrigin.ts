@@ -419,21 +419,17 @@ export function countryRooms(
   return rooms;
 }
 
-/** Distinct countries on the country bar, and how many of them appear in the 7-day window. */
-export function countryHeaderCounts(
+/** Distinct countries on the country bar. */
+export function countryHeaderCount(
   buckets: readonly WhoBucket[],
   filter: WhoFilter | null,
   defaultRegion: Region | null,
-): { all: number; week: number } {
+): number {
   const all = new Set<string>();
-  const week = new Set<string>();
   for (const bucket of visibleBuckets(buckets, filter, defaultRegion)) {
-    if (!bucket.country || bucket.n <= 0) continue;
-    const code = bucket.country.toUpperCase();
-    all.add(code);
-    if (bucket.n7d > 0) week.add(code);
+    if (bucket.country && bucket.n > 0) all.add(bucket.country.toUpperCase());
   }
-  return { all: all.size, week: week.size };
+  return all.size;
 }
 
 /** Region with the most users of this language in the buckets already sliced. */
