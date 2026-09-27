@@ -130,6 +130,9 @@ export const enUi = {
   'browser.tooMany.hint': 'Add another character, or search by Pokédex number.',
   'browser.tooMany.title': '{count} matches — too many to show.',
   'builder.addToSection': 'Add a Pokémon to {section}',
+  // The red X on a builder tile. One press can remove the whole evolution
+  // line.
+  'builder.remove': 'Remove {name}',
   'chart.header.count': 'COUNT',
   'chart.header.gen': 'GEN',
   'chart.header.overIndexed1': 'OVER-',

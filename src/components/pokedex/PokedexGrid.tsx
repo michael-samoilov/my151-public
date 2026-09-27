@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from 'react-dom';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
-import { sectionName, t } from '@/i18n';
+import { pokemonLabel, sectionName, t, useNamesVersion } from '@/i18n';
 import { computeRemovalCascade, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
@@ -140,6 +140,9 @@ function DraggableTile({
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
   const spritePx = useTileSpritePx();
+  // The X's accessible name carries the Pokémon's name, which lands with the
+  // name catalog after first paint.
+  useNamesVersion();
 
   const {
     attributes,
@@ -188,9 +191,11 @@ function DraggableTile({
         <button type="button"
           onClick={() => removeBranch(sectionId, pokemonId)}
           onPointerDown={(e) => e.stopPropagation()}
+          aria-label={t('builder.remove', { name: pokemonLabel(pokemon.id, pokemon.name).full })}
           className={cn(
             TILE_ACTION_BUTTON_CLASS,
-            'cursor-pointer md:opacity-0 transition-opacity',
+            // For a finger, the target is wider than the glyph; see index.css.
+            'tile-remove-target cursor-pointer md:opacity-0 md:focus-visible:opacity-100 transition-opacity',
             showX && 'md:!opacity-100',
           )}
           style={{ transform: 'translateZ(0)' }}

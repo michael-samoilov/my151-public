@@ -389,6 +389,26 @@ img {
   .milestone-nudge-in { animation: none; opacity: 1; transform: none; }
 }
 
+/* The press target of a builder tile's remove X. With a mouse, the target is
+ * the glyph itself. For a finger (a coarse primary pointer, at any width), this
+ * ::before widens it to halfway between the glyph (100%) and
+ * max(1.5rem, 100% + 0.625rem). That second size is 24px at the smallest root
+ * font, the WCAG 2.2 target size, and grows with the glyph on larger tiles.
+ * The target is centred on the glyph. It reaches past the glyph by less than
+ * the glyph's inset from the tile edge plus the grid gap, so it never enters a
+ * neighbouring tile. */
+@media (pointer: coarse) {
+  .tile-remove-target::before {
+    --hit: calc((100% + max(1.5rem, 100% + 0.625rem)) / 2);
+    content: '';
+    position: absolute;
+    top: calc((100% - var(--hit)) / 2);
+    left: calc((100% - var(--hit)) / 2);
+    width: var(--hit);
+    height: var(--hit);
+  }
+}
+
 /* Milestone bar width. The bar is a flex child that GROWS to fill the space
    between the counter (left) and the page controls (right): width:100% takes the
    whole flex cell, so it spans whatever space each page's header actually has.
