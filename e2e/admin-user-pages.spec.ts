@@ -371,6 +371,7 @@ test.describe('admin user pages', () => {
 
   test('header chips open an unclipped tooltip on press', { tag: '@viewport' }, async ({ page }) => {
     await openDemo(page);
+    await page.getByRole('button', { name: 'Dex', exact: true }).click();
     await userCard(page, '74d5').click();
     await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
 
@@ -389,6 +390,7 @@ test.describe('admin user pages', () => {
 
   test('dex user-detail shows a red export+skip diamond and a playhead label', async ({ page }) => {
     await openDemo(page);
+    await page.getByRole('button', { name: 'Dex', exact: true }).click();
     await userCard(page, '14c0').click();
     const mark = page.locator('[data-testid="session-milestone"]');
     await expect(mark).toHaveCount(1);
@@ -440,6 +442,7 @@ test.describe('admin user pages', () => {
 
   test('header chips stay one row with one language and no focus ring', { tag: '@viewport' }, async ({ page }) => {
     await openDemo(page);
+    await page.getByRole('button', { name: 'Dex', exact: true }).click();
     await userCard(page, '4eab').click();
     await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
 

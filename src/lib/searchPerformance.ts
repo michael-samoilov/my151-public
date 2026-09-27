@@ -20,6 +20,11 @@ export interface SearchDimensionRow extends SearchMetric {
   key: string;
 }
 
+export interface SearchPageQueryRow extends SearchMetric {
+  page: string;
+  query: string;
+}
+
 export interface SearchProviderSnapshot {
   provider: SearchProviderKey;
   status: SearchProviderStatus;
@@ -28,7 +33,11 @@ export interface SearchProviderSnapshot {
   message?: string;
   daily: SearchDailyPoint[];
   pages: SearchDimensionRow[];
+  /** Same-length period immediately before `pages`, when the provider supports it. */
+  previousPages?: SearchDimensionRow[];
   queries: SearchDimensionRow[];
+  /** Page-query pairs for the current detail period, when the provider supports them. */
+  pageQueries?: SearchPageQueryRow[];
 }
 
 export interface SearchPerformanceSnapshot {
