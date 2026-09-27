@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildDashboard, type DashboardSource } from '../../api/_dashboard';
 import { DAY_MS, HOUR_MS } from '../../api/_aggregate';
-import type { DashboardRange } from '../../api/_range';
+import { DASHBOARD_RANGES, funnelDayKeys, type DashboardRange } from '../../api/_range';
 
 // How the date range can go wrong, and the test that catches each:
 // 1. Suite counts a browser the Active users label does not: an off-by-one
@@ -11,6 +11,9 @@ import type { DashboardRange } from '../../api/_range';
 //    with no session log dropped, or the archive applied twice.
 // 3. The range leaks into what must keep every browser: the user lists and
 //    their Load more totals, or the activity series behind the chart.
+// 4. A funnel opens on fewer browsers than it built, so bounced goes negative.
+// 5. A funnel reads the wrong counters: a day outside the window, or day
+//    counters past their 120-day lifetime instead of the all-time hash.
 
 const NOW = Date.UTC(2026, 8, 27, 17, 0, 0);
 const ago = (ms: number) => NOW - ms;
@@ -89,6 +92,7 @@ const source: DashboardSource = {
   ]),
   archived: ['archived1'],
   funnel: { 'intro-shown': '12', 'league-open': '5' },
+  funnelWindow: null,
   leagueClients: byCid([league('both-0001', [ago(2 * DAY_MS)]), league('lg-only01', [ago(8 * DAY_MS)])]),
   exportSurveySkips: null,
 };
@@ -122,5 +126,51 @@ describe('dashboard date range', () => {
       expect(day.byTool[tool].activity, tool).toEqual(all.byTool[tool].activity);
       expect(day.byTool[tool].hourly, tool).toEqual(all.byTool[tool].hourly);
     }
+  });
+});
+
+const dayKey = (daysAgo: number) => `funnel:${new Date(ago(daysAgo * DAY_MS)).toISOString().slice(0, 10)}`;
+const funnelDays: Record<string, Record<string, string>> = {
+  [dayKey(8)]: { 'intro-shown': '5' },
+  [dayKey(7)]: { 'intro-shown': '1' },
+  [dayKey(0)]: { 'intro-shown': '1', 'league-open': '1' },
+};
+
+/** The source as the handler builds it: its script sums every field over
+ *  the window's day keys. */
+function withWindow(range: DashboardRange): DashboardSource {
+  const keys = funnelDayKeys(range, NOW);
+  if (!keys) return { ...source, funnelWindow: null };
+  const sums: Record<string, number> = {};
+  for (const k of keys) {
+    for (const [field, n] of Object.entries(funnelDays[k] ?? {})) sums[field] = (sums[field] ?? 0) + Number(n);
+  }
+  return { ...source, funnelWindow: sums };
+}
+const funnels = (range: DashboardRange) => buildDashboard(withWindow(range), { ...page, range }, NOW);
+
+describe('dashboard funnels by date range', () => {
+  it('opens at least as many browsers as it built, at every range', () => {
+    for (const range of DASHBOARD_RANGES) {
+      const { dexFunnel, leagueFunnel } = funnels(range);
+      expect(dexFunnel.opened, range).toBeGreaterThanOrEqual(dexFunnel.built);
+      expect(leagueFunnel.opened, range).toBeGreaterThanOrEqual(leagueFunnel.placed);
+    }
+  });
+
+  it("opens on the window's day counters and builds from the browsers first seen in it", () => {
+    // 28 days: split-001, edge-0001, fresh-001, and both-0001 were first seen
+    // in the window; its counters hold 5 + 1 + 1 intro views.
+    expect(funnels('28d').dexFunnel).toMatchObject({ opened: 7, built: 4 });
+    // 7 days opens on the edge day: 1 + 1 views, fewer than the 3 builders.
+    expect(funnels('7d').dexFunnel).toMatchObject({ opened: 3, built: 3 });
+    expect(funnels('7d').leagueFunnel).toMatchObject({ opened: 1, placed: 1 });
+  });
+
+  it('reads the all-time counters for windows older than the day counters', () => {
+    expect(funnelDayKeys('90d', NOW)).toHaveLength(91);
+    expect(funnelDayKeys('180d', NOW)).toBeNull();
+    expect(funnels('180d').dexFunnel.opened).toBe(12);
+    expect(funnels('all').leagueFunnel.opened).toBe(5);
   });
 });
