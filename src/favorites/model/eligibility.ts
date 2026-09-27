@@ -21,6 +21,7 @@ import {
   isStarter,
   type PickerMon,
 } from './catalog';
+import { debutRank } from './debut';
 
 /** Native families precede arrivals from older generations within each section. */
 export function regionalPickerTier(mon: PickerMon): number {
@@ -74,11 +75,10 @@ export function eligibleFor(type: TypeAxisId, gen: GenAxisId): PickerMon[] {
       const unownOrder = Number(a.ownerId === 201) - Number(b.ownerId === 201);
       if (unownOrder !== 0) return unownOrder;
     }
-    if (type === 'starter' && gen === 8) {
-      const hisuiA = a.name.endsWith('-hisui') ? 1 : 0;
-      const hisuiB = b.name.endsWith('-hisui') ? 1 : 0;
-      if (hisuiA !== hisuiB) return hisuiA - hisuiB;
-    } else if (type !== 'starter') {
+    // Earlier debut games come first, so Sword/Shield entries precede Legends: Arceus ones.
+    const debutOrder = debutRank(a) - debutRank(b);
+    if (debutOrder !== 0) return debutOrder;
+    if (type !== 'starter') {
       const tierA = regionalPickerTier(a);
       const tierB = regionalPickerTier(b);
       if (tierA !== tierB) return tierA - tierB;
