@@ -1968,14 +1968,6 @@ export function AdminPage() {
           const leagueSankey = data.leagueFunnel ? leagueFunnelSankey(data.leagueFunnel) : null;
           const referrerSankey = data.referrerFlow?.length ? referrerFlowSankey(data.referrerFlow) : null;
 
-          const act = slice.activity;
-          const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          const fmtDateTime = (ms: number) =>
-            new Date(ms).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-          const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)} · as of ${fmtDateTime(loadedAt)}` : '';
-
-          const xt = data.tools;
-
           // The selected tool's whole population, not a built/incomplete/completed slice.
           const whoSrc = {
             devices: slice.devices,
@@ -2005,25 +1997,6 @@ export function AdminPage() {
 
           return (
           <>
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              {tool !== 'league' && (
-                <>
-                  <span className="text-sm">
-                    <b className="tabular-nums">{sawIntro}</b> <span className="text-muted-foreground">saw intro</span>
-                  </span>
-                  <span className="text-sm">
-                    <b className="tabular-nums">{built}</b> <span className="text-muted-foreground">built a dex</span>
-                  </span>
-                </>
-              )}
-              {tool !== 'dex' && xt && (
-                <span className="text-sm">
-                  <b className="tabular-nums">{xt.league}</b> <span className="text-muted-foreground">league browsers</span>
-                </span>
-              )}
-              {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
-            </div>
-
             {slice.activity.length > 0 && (
               <ActiveUsersPanel
                 key={tool}
