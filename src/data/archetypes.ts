@@ -24,6 +24,7 @@ export const ARCHETYPES: Archetype[] = [
       543,544,545,           // Venipede
       664,665,666,           // Scatterbug
       736,737,738,           // Grubbin
+      824,825,826,           // Blipbug
       917,918,               // Tarountula
       919,920,               // Nymble
       953,954,               // Rellor
@@ -47,6 +48,7 @@ export const ARCHETYPES: Archetype[] = [
       519,520,521,    // Pidove
       661,662,663,    // Fletchling
       731,732,733,    // Pikipek
+      821,822,823,    // Rookidee
       931,            // Squawkabilly
       940,941,        // Wattrel
     ],
