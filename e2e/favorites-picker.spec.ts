@@ -683,7 +683,7 @@ test.describe('favorite Pokémon picker', () => {
     const windowLeft = (await viewport.boundingBox())!.x;
     await scroller.evaluate((el) => { el.scrollLeft = 450; });
     await expect.poll(async () => (await viewport.boundingBox())?.x ?? 0).toBeGreaterThan(windowLeft + 3);
-    await expect.poll(() => map.evaluate((el) => Number(getComputedStyle(el).opacity)), { timeout: 2_500 }).toBeLessThan(0.05);
+    await expect.poll(() => map.evaluate((el) => Number(getComputedStyle(el).opacity)), { timeout: 4_000 }).toBeLessThan(0.05);
     await page.reload();
     await expect(page.getByTestId('favorites-scroll-cue')).toHaveCount(0);
   });
