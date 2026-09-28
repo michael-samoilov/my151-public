@@ -45,8 +45,8 @@ async function foilLabelsInPane(page: Page): Promise<{ ok: boolean; reason: stri
       return { ok: false, reason: 'missing pane' };
     }
     const pane = chrome.getBoundingClientRect();
-    const names = ['rainbow', 'glare', 'shadow'] as const;
-    const expectLabel = { rainbow: 'Rainbow', glare: 'Glare', shadow: 'Shadow' };
+    const names = ['shine', 'glare', 'shadow'] as const;
+    const expectLabel = { shine: 'Shine', glare: 'Glare', shadow: 'Shadow' };
     const rows: string[] = [];
     let lowest = pane.top;
     for (const name of names) {
@@ -574,7 +574,7 @@ test.describe('desktop dex export preview', () => {
     await expect.poll(() => cssVar('--hover-tilt-glare-intensity')).toBe('0.100');
     await page.locator('[data-export-shadow-toggle]').click();
     await expect.poll(() => foil.getAttribute('data-hover-tilt-shadow')).toBe('0');
-    await page.locator('[data-export-foil-rainbow] [data-foil-slider="holographic"]').fill('0');
+    await page.locator('[data-export-foil-shine] [data-foil-slider="holographic"]').fill('0');
     await expect.poll(() => cssVar('--foil-holographic')).toBe('0.000');
     await expect(page.locator('[data-export-preview-layer]')).toBeVisible();
   });

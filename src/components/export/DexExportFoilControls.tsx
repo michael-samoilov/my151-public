@@ -21,12 +21,12 @@ export function DexExportFoilControls({
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="grid grid-cols-[4.75rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
-        <RowLabel name="rainbow">Rainbow</RowLabel>
-        <div className="flex min-w-0 items-center gap-2" data-export-foil-rainbow>
+        <RowLabel name="shine">Shine</RowLabel>
+        <div className="flex min-w-0 items-center gap-2" data-export-foil-shine>
           <input
             type="checkbox"
             checked={holo.on}
-            aria-label="Rainbow on ink"
+            aria-label="Shine on ink"
             data-foil-on="holographic"
             onChange={(e) => onRecipe(withFoilLayer(recipe, 'holographic', { on: e.target.checked }))}
           />
