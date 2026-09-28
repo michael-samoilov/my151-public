@@ -1,0 +1,122 @@
+import { expect, test, type Page } from '@playwright/test';
+import { buildDashboard, type DashboardSource } from '../api/_dashboard';
+import { isDashboardRange } from '../api/_range';
+
+const DAY = 86_400_000;
+
+/** A small store: two browsers active this week, one last month. */
+function source(now: number): DashboardSource {
+  const dex = (cid: string, ts: number) => ({
+    cid,
+    firstTs: ts,
+    firstAt: new Date(ts).toISOString(),
+    lastTs: ts,
+    lastAt: new Date(ts).toISOString(),
+    submits: 1,
+    sessions: 1,
+    sessionMs: [60_000],
+    sessionLog: [{ ts, ids: [1, 4, 7] }],
+    maxDepth: 3,
+    localHour: 12,
+    tz: 'UTC',
+    country: 'US',
+    device: 'Mobile',
+    os: 'iOS',
+    browser: 'Safari',
+    everIds: [1, 4, 7],
+    latestIds: [1, 4, 7],
+    completed: false,
+    exported: false,
+  });
+  const rows = [dex('e2e-range-a', now - DAY), dex('e2e-range-b', now - 2 * DAY), dex('e2e-range-c', now - 30 * DAY)];
+  return {
+    clients: Object.fromEntries(rows.map((r) => [r.cid, JSON.stringify(r)])),
+    archived: [],
+    funnel: { 'intro-shown': '5' },
+    funnelWindow: null,
+    leagueClients: {},
+    exportSurveySkips: null,
+  };
+}
+
+/** Answers /api/submissions like the server does and lists the ranges asked. */
+async function stubDashboard(page: Page): Promise<string[]> {
+  const asked: string[] = [];
+  await page.route('**/api/submissions?**', (route) => {
+    const url = new URL(route.request().url());
+    const range = url.searchParams.get('range') ?? 'all';
+    asked.push(range);
+    const now = Date.now();
+    const body = buildDashboard(
+      source(now),
+      { offset: 0, limit: Number(url.searchParams.get('limit') ?? 50), range: isDashboardRange(range) ? range : 'all' },
+      now,
+    );
+    return route.fulfill({ json: body });
+  });
+  await page.route('**/api/search-performance**', (route) => route.fulfill({ status: 503, json: { error: 'off' } }));
+  await page.addInitScript(() => localStorage.setItem('p151-admin-token', 'e2e'));
+  return asked;
+}
+
+test.describe('admin date range', () => {
+  test('a press asks for its range once, and a return within a minute asks nothing', async ({ page }, testInfo) => {
+    const asked = await stubDashboard(page);
+    await page.goto('/?admin');
+    const ribbon = page.getByRole('group', { name: 'Date range' });
+    // The Who caption ends with the Suite's browser count.
+    const who = page.getByRole('heading', { name: /^Who/ });
+    await expect(ribbon.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(who).toHaveText(/· 3$/);
+    expect(asked).toEqual(['all']);
+
+    await ribbon.getByRole('button', { name: '7d' }).click();
+    await expect(ribbon.getByRole('button', { name: '7d' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(who).toHaveText(/· 2$/);
+    expect(asked).toEqual(['all', '7d']);
+
+    await ribbon.getByRole('button', { name: 'All' }).click();
+    await expect(who).toHaveText(/· 3$/);
+    await ribbon.getByRole('button', { name: '7d' }).click();
+    await expect(who).toHaveText(/· 2$/);
+    expect(asked).toEqual(['all', '7d']);
+
+    // The choice survives a reload, and the first request asks for it.
+    await page.reload();
+    await expect(ribbon.getByRole('button', { name: '7d' })).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => asked.length).toBe(3);
+    expect(asked).toEqual(['all', '7d', '7d']);
+    await testInfo.attach('ranges-asked.json', { body: JSON.stringify(asked), contentType: 'application/json' });
+  });
+
+  test('the ribbon sits on the nav in one bar', { tag: '@viewport' }, async ({ page }, testInfo) => {
+    await page.goto('/?admin&demo');
+    const ribbon = page.getByRole('group', { name: 'Date range' });
+    const nav = page.getByRole('navigation', { name: 'Admin section' });
+    await expect(ribbon).toBeVisible();
+    await expect(nav).toBeVisible();
+    await page.mouse.wheel(0, 1500);
+    const boxes = await page.evaluate(() => {
+      const box = (sel: string) => {
+        const r = document.querySelector(sel)!.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom };
+      };
+      const chips = [...document.querySelectorAll<HTMLElement>('[aria-label="Date range"] button')];
+      return {
+        ribbon: box('[aria-label="Date range"]'),
+        nav: box('nav[aria-label="Admin section"]'),
+        header: box('header'),
+        viewport: window.innerHeight,
+        clippedChips: chips.filter((b) => b.scrollWidth > b.clientWidth).length,
+        pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    await testInfo.attach('bar.json', { body: JSON.stringify(boxes), contentType: 'application/json' });
+    expect(Math.abs(boxes.ribbon.bottom - boxes.nav.top)).toBeLessThanOrEqual(1);
+    expect(boxes.clippedChips).toBe(0);
+    expect(boxes.pageOverflow).toBeLessThanOrEqual(0);
+    const width = page.viewportSize()!.width;
+    if (width < 1024) expect(Math.abs(boxes.nav.bottom - boxes.viewport)).toBeLessThanOrEqual(1);
+    else expect(Math.abs(boxes.ribbon.top - boxes.header.bottom)).toBeLessThanOrEqual(1);
+  });
+});

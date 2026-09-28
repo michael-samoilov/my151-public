@@ -345,12 +345,12 @@ export function SearchPerformancePanel({
   snapshot,
   loading,
   error,
-  range = '28d',
+  range,
 }: {
   snapshot: SearchPerformanceView | null;
   loading: boolean;
   error: string | null;
-  range?: SearchRangeKey;
+  range: SearchRangeKey;
 }) {
   const [provider, setProvider] = useState<SearchProviderKey>('google');
   const [picked, setPicked] = useState<SearchKpiKey[]>(DEFAULT_KPIS);
