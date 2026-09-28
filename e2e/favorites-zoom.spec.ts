@@ -44,7 +44,8 @@ async function scrollGrid(page: Page, testInfo: TestInfo, times: number) {
   const frame = (await page.getByTestId('favorites-grid-scroll').boundingBox())!;
   const viewport = page.viewportSize()!;
   const right = Math.min(frame.x + frame.width, viewport.width) - 20;
-  const bottom = Math.min(frame.y + frame.height, viewport.height) - 20;
+  // Start above the minimap. While it shows, a finger on it drives the minimap.
+  const bottom = Math.min(frame.y + frame.height, viewport.height) - 100;
   const cdp = await page.context().newCDPSession(page);
   for (let i = 0; i < times; i++) {
     if (testInfo.project.use.hasTouch) {
@@ -232,5 +233,83 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
     expect.soft(drift, 'on-screen movement of the minimap corner, px').toBeLessThan(1);
     expect.soft(scale, 'scale transform on the minimap').toBeLessThan(0.001);
     expect(Math.max(...samples.map((sample) => sample.opacity)), 'minimap opacity while zooming').toBeGreaterThan(0.5);
+  });
+
+  test('a finger on the minimap drives the zoomed grid, and a faded minimap lets taps through', async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.use.hasTouch, 'The phone minimap takes finger drags.');
+    await page.goto('/favorite-pokemon-by-type');
+    await pinchGrid(page, testInfo, 2);
+    const scroll = page.getByTestId('favorites-grid-scroll');
+    const map = page.getByTestId('favorites-minimap');
+    const view = page.getByTestId('favorites-minimap-viewport');
+    const state = () => scroll.evaluate((el) => {
+      const minimap = document.querySelector<HTMLElement>('[data-testid="favorites-minimap"]')!;
+      const inner = document.querySelector('[data-testid="favorites-minimap-viewport"]')!.parentElement!.getBoundingClientRect();
+      return {
+        left: el.scrollLeft,
+        top: el.scrollTop,
+        page: { x: window.scrollX, y: window.scrollY, scale: window.visualViewport?.scale ?? 1 },
+        cell: document.querySelector('[data-testid="favorites-cell-normal-1"]')!.getBoundingClientRect().width,
+        box: { width: inner.width, height: inner.height },
+        opacity: Number(getComputedStyle(minimap).opacity),
+        hit: getComputedStyle(minimap).pointerEvents,
+      };
+    });
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: 'touchStart' | 'touchMove', x: number, y: number) =>
+      cdp.send('Input.dispatchTouchEvent', { type, touchPoints: [{ x, y, id: 1 }] });
+    const lift = () => cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+    // Drag the window 20px right and 10px down from where the finger lands.
+    const start = (await view.boundingBox())!;
+    const x0 = start.x + start.width / 2;
+    const y0 = start.y + start.height / 2;
+    const before = await state();
+    await touch('touchStart', x0, y0);
+    for (let step = 1; step <= 10; step++) {
+      await touch('touchMove', x0 + 2 * step, y0 + step);
+      await nextFrame(page);
+    }
+    await page.waitForTimeout(250);
+    const held = await state();
+    await lift();
+    await nextFrame(page);
+    const dragged = await state();
+
+    // A press off the window centers the window under the finger.
+    const mapBox = (await map.boundingBox())!;
+    const press = { x: mapBox.x + mapBox.width * 0.25, y: mapBox.y + mapBox.height * 0.5 };
+    await touch('touchStart', press.x, press.y);
+    await lift();
+    await nextFrame(page);
+    const centered = (await view.boundingBox())!;
+    await page.waitForTimeout(1000);
+    const lingering = await state();
+    await page.screenshot({ path: testInfo.outputPath('minimap-touch-drag.png') });
+    await expect.poll(async () => (await state()).opacity, { timeout: 4_000 }).toBeLessThan(0.05);
+    const faded = await state();
+    const under = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('button')?.dataset.testid ?? '', press);
+    await cdp.detach();
+    const picker = await page.getByTestId('favorites-picker').count();
+
+    const expected = {
+      left: 20 * 22 * before.cell / before.box.width,
+      top: 10 * 12 * before.cell / before.box.height,
+    };
+    const result = { before, held, dragged, expected, press, centered, lingering, faded, under, picker };
+    await testInfo.attach('minimap-touch-drag.json', { body: JSON.stringify(result, null, 2), contentType: 'application/json' });
+
+    expect(Number(await scroll.getAttribute('data-zoom'))).toBeGreaterThan(1.5);
+    expect(held.opacity, 'minimap opacity under the finger').toBe(1);
+    expect(dragged.left - before.left, 'scrollLeft after the drag').toBeCloseTo(expected.left, -1);
+    expect(dragged.top - before.top, 'scrollTop after the drag').toBeCloseTo(expected.top, -1);
+    expect(dragged.page, 'page scroll and zoom').toEqual(before.page);
+    expect(Math.abs(centered.x + centered.width / 2 - press.x), 'window center x').toBeLessThan(1.5);
+    expect(Math.abs(centered.y + centered.height / 2 - press.y), 'window center y').toBeLessThan(1.5);
+    expect(picker, 'a finger on the minimap opens no cell').toBe(0);
+    expect(lingering.opacity, 'minimap 1 s after the last touch').toBeGreaterThan(0.9);
+    expect(lingering.hit).toBe('auto');
+    expect(faded.hit).toBe('none');
+    expect(under, 'cell under the faded minimap').toMatch(/^favorites-cell-/);
   });
 });

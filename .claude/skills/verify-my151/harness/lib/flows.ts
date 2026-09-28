@@ -1714,11 +1714,16 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     `cells=${mini.cells} gridCells=${mini.gridCells} filled=${mini.filled} empty=${mini.empty} stroke=${mini.stroke} offset=${mini.offset} tinted=${mini.tinted} primary=${mini.primary}`,
   ));
   if (mini.shown) await s.screenshot(ctx.shot('favorites-minimap-scrolling'));
-  await sleep(1200);
-  const miniIdle = await s.evalJson<number>(`
-    const map = document.querySelector('[data-testid="favorites-minimap"]');
-    return map ? Number(getComputedStyle(map).opacity) : 0;
-  `);
+  // The phone minimap stays 2 s after the last scroll so a finger can reach
+  // it, so allow up to 3.5 s for the fade.
+  let miniIdle = 1;
+  for (let waited = 0; waited < 3500 && miniIdle >= 0.05; waited += 250) {
+    await sleep(250);
+    miniIdle = await s.evalJson<number>(`
+      const map = document.querySelector('[data-testid="favorites-minimap"]');
+      return map ? Number(getComputedStyle(map).opacity) : 0;
+    `);
+  }
   checks.push(ok('favorites:minimap-fades-idle', miniIdle < 0.05, `opacity=${miniIdle}`));
 
   await clickCell(s, '[data-testid="favorites-cell-poison-1"]');

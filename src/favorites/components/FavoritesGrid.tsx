@@ -35,6 +35,9 @@ const MINIMAP_HOVER = '1';
 // The desktop minimap takes the pointer only after the pointer rests on it
 // this long, so a quick click on a cell under it still reaches the cell.
 const MINIMAP_HOVER_MS = 200;
+// How long the minimap stays after the last scroll, zoom, or drag. The phone
+// minimap stays long enough for a finger to reach it.
+const MINIMAP_LINGER_MS = { desktop: 350, mobile: 2000 };
 
 /** A length inside a 0.5px-bordered track of size `track`, as a fraction of
  *  it. A container unit would give the same size, but 300 size containers
@@ -149,7 +152,7 @@ function ZoomFrame({
           {pane}
         </div>
       </div>
-      <ChartMinimap fills={fills} mapRef={mapRef} windowRef={windowRef} box={minimapBox(desktop)} interactive={desktop} />
+      <ChartMinimap fills={fills} mapRef={mapRef} windowRef={windowRef} box={minimapBox(desktop)} />
       {showScrollCue ? (
         <div ref={cueRef} data-testid="favorites-scroll-cue" className="pointer-events-none absolute bottom-3 right-3 z-10 flex items-center gap-1 rounded-full bg-card/95 px-2 py-1 text-xs text-muted-foreground shadow-sm">
           <span>Scroll for more</span><span aria-hidden>→</span>
@@ -161,7 +164,7 @@ function ZoomFrame({
 
 /**
  * Sizes cells, applies pinch and ctrl+wheel zoom, and paints the minimap.
- * On desktop, the minimap window also drags to scroll the grid.
+ * A drag on the minimap scrolls the grid.
  *
  * Gestures write the track sizes and scroll offsets straight to the DOM once
  * per animation frame. React renders none of it, so a pinch never waits on a
@@ -200,8 +203,8 @@ function useZoomFrame(
     let frame = 0;
     let fadeTimer = 0;
     let scrolled = false;
-    // Desktop minimap pointer state: a pending hover, whether the minimap
-    // takes the pointer, and an active window drag.
+    // Minimap pointer state: a pending desktop hover, whether the desktop
+    // minimap takes the pointer, and an active drag.
     let hoverTimer = 0;
     let armed = false;
     let drag: { id: number; x: number; y: number; left: number; top: number } | null = null;
@@ -245,15 +248,22 @@ function useZoomFrame(
       if (!show) return;
       showMap();
     };
-    /** Shows the minimap, then fades it after idle unless the pointer is on it. */
+    /**
+     * Shows the minimap, then fades it after idle unless the pointer is on it.
+     * The phone minimap takes touches only while it shows, so a faded one
+     * never takes a tap meant for a cell.
+     */
     const showMap = () => {
       const map = mapRef.current;
       if (!map) return;
       map.style.opacity = armed || drag ? MINIMAP_HOVER : MINIMAP_SHOWN;
+      if (!desktop) map.style.pointerEvents = 'auto';
       window.clearTimeout(fadeTimer);
       fadeTimer = window.setTimeout(() => {
-        if (!armed && !drag) map.style.opacity = '0';
-      }, 350);
+        if (armed || drag) return;
+        map.style.opacity = '0';
+        if (!desktop) map.style.pointerEvents = '';
+      }, desktop ? MINIMAP_LINGER_MS.desktop : MINIMAP_LINGER_MS.mobile);
     };
     const draw = () => {
       frame = 0;
@@ -350,8 +360,7 @@ function useZoomFrame(
     };
 
     // Desktop minimap. It ignores the pointer until the pointer rests on it,
-    // then shows and takes the pointer until the pointer leaves it. Dragging
-    // its window scrolls the grid by the same share of the body.
+    // then shows and takes the pointer until the pointer leaves it.
     const overMap = (x: number, y: number) => {
       const map = mapRef.current;
       if (!map || map.style.display === 'none') return false;
@@ -374,23 +383,37 @@ function useZoomFrame(
     const onFrameLeave = () => {
       if (!drag) arm(false);
     };
-    const onDragStart = (event: PointerEvent) => {
-      if (!armed || event.button !== 0) return;
-      event.preventDefault();
-      windowRef.current?.setPointerCapture(event.pointerId);
-      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: el.scrollLeft, top: el.scrollTop };
-      showMap();
-    };
+    // A minimap drag moves the window with the pointer and scrolls the grid
+    // by the same share of the body. The desktop minimap drags only from its
+    // window. The phone minimap is small, so a press off the window first
+    // centers the window under the finger.
     const onDragMove = (event: PointerEvent) => {
       if (drag?.id !== event.pointerId) return;
       const { cell } = tracks();
       el.scrollLeft = drag.left + (event.clientX - drag.x) * TYPE_AXIS.length * cell / box.width;
       el.scrollTop = drag.top + (event.clientY - drag.y) * GEN_AXIS.length * cell / box.height;
     };
+    const onDragStart = (event: PointerEvent) => {
+      const view = windowRef.current;
+      if (!view || drag || event.button !== 0) return;
+      const rect = view.getBoundingClientRect();
+      const onWindow = event.clientX >= rect.left && event.clientX <= rect.right
+        && event.clientY >= rect.top && event.clientY <= rect.bottom;
+      if (desktop && (!armed || !onWindow)) return;
+      event.preventDefault();
+      view.setPointerCapture(event.pointerId);
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, left: el.scrollLeft, top: el.scrollTop };
+      if (!onWindow) {
+        drag.x = rect.left + rect.width / 2;
+        drag.y = rect.top + rect.height / 2;
+        onDragMove(event);
+      }
+      showMap();
+    };
     const onDragEnd = (event: PointerEvent) => {
       if (drag?.id !== event.pointerId) return;
       drag = null;
-      if (!overMap(event.clientX, event.clientY)) arm(false);
+      if (desktop && !overMap(event.clientX, event.clientY)) arm(false);
       else showMap();
     };
     // The minimap sits outside the scroller, so it passes wheel scrolling on.
@@ -434,28 +457,24 @@ function useZoomFrame(
     el.addEventListener('gesturechange', onGestureChange, active);
     el.addEventListener('gestureend', onGestureEnd, active);
     el.addEventListener('wheel', onWheel, active);
-    const frameEl = frameRef.current;
+    const frameEl = desktop ? frameRef.current : null;
+    frameEl?.addEventListener('pointermove', onFrameMove);
+    frameEl?.addEventListener('pointerleave', onFrameLeave);
     const map = mapRef.current;
-    const view = windowRef.current;
-    const minimapDrag = desktop && frameEl && map && view;
-    if (minimapDrag) {
-      frameEl.addEventListener('pointermove', onFrameMove);
-      frameEl.addEventListener('pointerleave', onFrameLeave);
-      map.addEventListener('wheel', onMapWheel, active);
-      view.addEventListener('pointerdown', onDragStart);
-      view.addEventListener('pointermove', onDragMove);
-      view.addEventListener('pointerup', onDragEnd);
-      view.addEventListener('pointercancel', onDragEnd);
-    }
+    map?.addEventListener('wheel', onMapWheel, active);
+    map?.addEventListener('pointerdown', onDragStart);
+    map?.addEventListener('pointermove', onDragMove);
+    map?.addEventListener('pointerup', onDragEnd);
+    map?.addEventListener('pointercancel', onDragEnd);
     return () => {
-      if (minimapDrag) {
-        frameEl.removeEventListener('pointermove', onFrameMove);
-        frameEl.removeEventListener('pointerleave', onFrameLeave);
+      frameEl?.removeEventListener('pointermove', onFrameMove);
+      frameEl?.removeEventListener('pointerleave', onFrameLeave);
+      if (map) {
         map.removeEventListener('wheel', onMapWheel);
-        view.removeEventListener('pointerdown', onDragStart);
-        view.removeEventListener('pointermove', onDragMove);
-        view.removeEventListener('pointerup', onDragEnd);
-        view.removeEventListener('pointercancel', onDragEnd);
+        map.removeEventListener('pointerdown', onDragStart);
+        map.removeEventListener('pointermove', onDragMove);
+        map.removeEventListener('pointerup', onDragEnd);
+        map.removeEventListener('pointercancel', onDragEnd);
         map.style.pointerEvents = '';
       }
       observer.disconnect();
@@ -623,13 +642,11 @@ function ChartMinimap({
   mapRef,
   windowRef,
   box,
-  interactive,
 }: {
   fills: Record<string, number>;
   mapRef: RefObject<HTMLDivElement | null>;
   windowRef: RefObject<HTMLDivElement | null>;
   box: { width: number; height: number };
-  interactive: boolean;
 }) {
   const cells: ReactNode[] = [];
   for (const gen of GEN_AXIS) {
@@ -651,16 +668,14 @@ function ChartMinimap({
     }
   }
   // useZoomFrame paints the position, viewport window, and opacity, and
-  // turns on pointer input for a desktop drag.
+  // turns on pointer input while the minimap can take a drag. A finger on it
+  // neither scrolls nor zooms the page.
   return (
     <div
       ref={mapRef}
       data-testid="favorites-minimap"
       aria-hidden
-      className={cn(
-        'pointer-events-none absolute bottom-2 right-2 z-10 rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200',
-        interactive && 'select-none',
-      )}
+      className="pointer-events-none absolute bottom-2 right-2 z-10 touch-none select-none rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200"
       style={{ opacity: 0 }}
     >
       <div className="relative" style={box}>
@@ -677,7 +692,7 @@ function ChartMinimap({
         <div
           ref={windowRef}
           data-testid="favorites-minimap-viewport"
-          className={cn('absolute bg-primary/10', interactive && 'cursor-grab active:cursor-grabbing')}
+          className="absolute cursor-grab bg-primary/10 active:cursor-grabbing"
           style={{ outline: '1px solid var(--color-primary)', outlineOffset: 1 }}
         />
       </div>

@@ -24,7 +24,11 @@ gimmick, legendary, and favorite picks.
   idle. Its window `[data-testid="favorites-minimap-viewport"]` uses the site
   red. It is hidden when the whole grid fits. On desktop, a pointer that rests
   on it for 200 ms shows it, and a drag of its window scrolls the grid. A quick
-  click there still reaches the cell under it.
+  click there still reaches the cell under it. Below 1024px, it stays 2 s after
+  the last scroll, zoom, or drag, and takes touches only while it shows. A
+  finger drag on it scrolls the grid on both axes. A press off the window
+  centers the window under the finger first. A faded minimap lets a tap reach
+  the cell under it.
 - Selector `[data-testid="favorites-picker"]`: a bottom sheet below 1024px, a
   pane inside the grid next to the tapped cell on desktop. The pane scrolls
   with the grid, and the sticky headers paint over it. It has no close button:
