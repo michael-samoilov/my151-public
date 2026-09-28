@@ -1,13 +1,22 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { Delta, Kpi, Panel, Seg } from '@/components/admin/ui';
-import { chartRangeWindowMs, type ChartRangeKey } from '@/components/admin/charts/trendSeries';
 import { cssVar, useECharts, type EChartsOption } from '@/components/admin/charts/useECharts';
 import type {
   SearchPageEngineView,
+  SearchPagePerformance,
   SearchPerformanceView,
-  SearchPeriodComparison,
+  SearchProviderRangeView,
+  SearchRangeComparison,
 } from '@/lib/searchPerformanceView';
-import type { SearchDailyPoint, SearchMetric, SearchProviderKey, SearchProviderStatus } from '@/lib/searchPerformance';
+import type {
+  SearchDateRange,
+  SearchGranularity,
+  SearchMetric,
+  SearchProviderKey,
+  SearchProviderStatus,
+  SearchRangeKey,
+  SearchSeriesPoint,
+} from '@/lib/searchPerformance';
 import { cn } from '@/lib/utils';
 
 const PROVIDERS: { key: SearchProviderKey; label: string }[] = [
@@ -38,20 +47,20 @@ function position(value: number | null): string {
   return value == null ? '—' : value.toFixed(1);
 }
 
+/** A day (`YYYY-MM-DD`, a UTC date) or an hour (an instant, shown in local time). */
 function shortDate(value: string | undefined): string {
   if (!value) return '—';
-  const parsed = Date.parse(value.length === 10 ? `${value}T00:00:00Z` : value);
+  const day = value.length === 10;
+  const parsed = Date.parse(day ? `${value}T00:00:00Z` : value);
   if (!Number.isFinite(parsed)) return value;
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  }).format(parsed);
+  return new Intl.DateTimeFormat(
+    undefined,
+    day ? { month: 'short', day: 'numeric', timeZone: 'UTC' } : { month: 'short', day: 'numeric', hour: 'numeric' },
+  ).format(parsed);
 }
 
-function rangeLabel(start: string, end: string): string {
-  if (!start || !end) return '—';
-  return `${shortDate(start)}–${shortDate(end)}`;
+function rangeLabel(window: SearchDateRange | undefined): string {
+  return window ? `${shortDate(window.start)}–${shortDate(window.end)}` : '—';
 }
 
 function statusLabel(status: SearchProviderStatus): string {
@@ -65,8 +74,8 @@ function statusDot(status: SearchProviderStatus): string {
   return 'bg-muted-foreground/50';
 }
 
-function countDelta(comparison: SearchPeriodComparison, metric: 'clicks' | 'impressions'): string {
-  if (!comparison.available) return '—';
+function countDelta(comparison: SearchRangeComparison | null, metric: 'clicks' | 'impressions'): string {
+  if (!comparison) return '—';
   const absolute = comparison.delta[metric];
   const relative = comparison.delta[`${metric}Pct`];
   return relative == null ? signed(absolute) : `${signed(absolute)} · ${signedPercent(relative)}`;
@@ -87,7 +96,8 @@ interface SearchKpi {
   inverse?: boolean;
   pick: (metric: SearchMetric) => number | null;
   format: (value: number) => string;
-  delta: (comparison: SearchPeriodComparison) => string;
+  /** The change from the previous period, or "—" when the range has none. */
+  delta: (comparison: SearchRangeComparison | null) => string;
 }
 
 const SEARCH_KPIS: SearchKpi[] = [
@@ -117,7 +127,7 @@ const SEARCH_KPIS: SearchKpi[] = [
     color: '#00897B',
     pick: (m) => m.ctr,
     format: percent,
-    delta: (c) => (c.available ? `${c.delta.ctrPoints > 0 ? '+' : ''}${(c.delta.ctrPoints * 100).toFixed(2)}pt` : '—'),
+    delta: (c) => (c ? `${c.delta.ctrPoints > 0 ? '+' : ''}${(c.delta.ctrPoints * 100).toFixed(2)}pt` : '—'),
   },
   {
     key: 'position',
@@ -128,7 +138,7 @@ const SEARCH_KPIS: SearchKpi[] = [
     pick: (m) => m.position,
     format: position,
     delta: (c) =>
-      c.available && c.delta.position != null ? `${c.delta.position > 0 ? '+' : ''}${c.delta.position.toFixed(1)}` : '—',
+      c?.delta.position != null ? `${c.delta.position > 0 ? '+' : ''}${c.delta.position.toFixed(1)}` : '—',
   },
 ];
 
@@ -139,23 +149,19 @@ function shown(kpi: SearchKpi, value: number | null): string {
   return value == null ? '—' : kpi.format(value);
 }
 
-const DAY_MS = 86_400_000;
-
-/** Rows inside `range`, counted back from the latest reported day. */
-function windowRows(daily: SearchDailyPoint[], range: ChartRangeKey): SearchDailyPoint[] {
-  const windowMs = chartRangeWindowMs(range);
-  const last = daily[daily.length - 1];
-  if (windowMs == null || !last) return daily;
-  const start = Date.parse(`${last.date}T00:00:00Z`) - windowMs + DAY_MS;
-  return daily.filter((row) => Date.parse(`${row.date}T00:00:00Z`) >= start);
-}
-
-function SearchTrend({ daily, range, kpis }: { daily: SearchDailyPoint[]; range: ChartRangeKey; kpis: SearchKpi[] }) {
-  const rows = windowRows(daily, range);
+function SearchTrend({
+  series: rows,
+  granularity,
+  kpis,
+}: {
+  series: SearchSeriesPoint[];
+  granularity: SearchGranularity;
+  kpis: SearchKpi[];
+}) {
   const lines = kpis.map((kpi) => ({ kpi, values: rows.map(kpi.pick) }));
   const drawn = lines.filter((line) => line.values.some((value) => value != null));
   const scrubLabel = (i: number) => [
-    shortDate(rows[i].date),
+    shortDate(rows[i].start),
     ...lines.map(({ kpi, values }) => `<b>${shown(kpi, values[i])}</b> ${kpi.unit}`),
   ];
   const ref = useECharts(
@@ -167,7 +173,7 @@ function SearchTrend({ daily, range, kpis }: { daily: SearchDailyPoint[]; range:
         grid: { left: 2, right: 2, top: 28, bottom: 1 },
         xAxis: {
           type: 'category',
-          data: rows.map((row) => row.date),
+          data: rows.map((row) => row.start),
           boundaryGap: false,
           axisLine: { lineStyle: { color: cssVar(el, '--color-border', '#e5e5e5') } },
           axisTick: { show: false },
@@ -192,7 +198,7 @@ function SearchTrend({ daily, range, kpis }: { daily: SearchDailyPoint[]; range:
         })),
       };
     },
-    [daily, range, kpis],
+    [rows, kpis],
     { scrub: { count: rows.length, label: scrubLabel } },
   );
 
@@ -203,11 +209,11 @@ function SearchTrend({ daily, range, kpis }: { daily: SearchDailyPoint[]; range:
         ref={ref}
         className="aspect-[3/1] max-h-[240px] min-h-[120px] w-full"
         role="img"
-        aria-label={`Daily ${lines.map(({ kpi }) => kpi.label).join(', ')} for the latest ${rows.length} reported days.`}
+        aria-label={`${granularity === 'hour' ? 'Hourly' : 'Daily'} ${lines.map(({ kpi }) => kpi.label).join(', ')} for the latest ${rows.length} reported ${granularity === 'hour' ? 'hours' : 'days'}.`}
       />
       <div className="mt-1 flex justify-between text-[0.65rem] font-semibold text-muted-foreground">
-        <span>{shortDate(rows[0]?.date)}</span>
-        <span>{shortDate(rows[rows.length - 1]?.date)}</span>
+        <span>{shortDate(rows[0]?.start)}</span>
+        <span>{shortDate(rows[rows.length - 1]?.start)}</span>
       </div>
     </div>
   );
@@ -216,12 +222,14 @@ function SearchTrend({ daily, range, kpis }: { daily: SearchDailyPoint[]; range:
 /** A KPI tile that toggles its line. Selected, it fills with the line color. */
 function KpiToggle({
   kpi,
+  metric,
   comparison,
   on,
   onToggle,
 }: {
   kpi: SearchKpi;
-  comparison: SearchPeriodComparison;
+  metric: SearchMetric | null;
+  comparison: SearchRangeComparison | null;
   on: boolean;
   onToggle: () => void;
 }) {
@@ -242,7 +250,7 @@ function KpiToggle({
     >
       <Kpi
         emphasis={kpi.emphasis}
-        value={shown(kpi, kpi.pick(comparison.current.metric))}
+        value={metric ? shown(kpi, kpi.pick(metric)) : '—'}
         label={kpi.label}
         delta={<Delta>{kpi.delta(comparison)}</Delta>}
       />
@@ -250,7 +258,7 @@ function KpiToggle({
   );
 }
 
-function QueryRows({ rows }: { rows: SearchPerformanceView['providers'][SearchProviderKey]['topQueries'] }) {
+function QueryRows({ rows }: { rows: SearchProviderRangeView['topQueries'] }) {
   if (rows.length === 0) return null;
   return (
     <div className="mt-4 border-t border-border pt-3">
@@ -301,7 +309,7 @@ function PageMetric({ label, value, delta }: { label: string; value: string; del
   );
 }
 
-function PageRow({ page }: { page: SearchPerformanceView['pages'][number] }) {
+function PageRow({ page }: { page: SearchPagePerformance }) {
   return (
     <article
       data-testid={`search-page-${page.path === '/' ? 'home' : page.path.slice(1).replace(/\//g, '-')}`}
@@ -337,10 +345,12 @@ export function SearchPerformancePanel({
   snapshot,
   loading,
   error,
+  range,
 }: {
   snapshot: SearchPerformanceView | null;
   loading: boolean;
   error: string | null;
+  range: SearchRangeKey;
 }) {
   const [provider, setProvider] = useState<SearchProviderKey>('google');
   const [picked, setPicked] = useState<SearchKpiKey[]>(DEFAULT_KPIS);
@@ -348,14 +358,14 @@ export function SearchPerformancePanel({
   // At least one metric stays on the chart.
   const toggleKpi = (key: SearchKpiKey) =>
     setPicked((cur) => (cur.includes(key) ? (cur.length > 1 ? cur.filter((k) => k !== key) : cur) : [...cur, key]));
-  const selected = snapshot?.providers[provider] ?? null;
-  const comparison = selected?.comparison ?? null;
-  const statusLegend = snapshot ? (
+  const view = snapshot?.byRange[range] ?? null;
+  const selected = view?.providers[provider] ?? null;
+  const statusLegend = view ? (
     <span className="flex items-center gap-2.5">
       {PROVIDERS.map(({ key, label }) => (
         <span key={key} className="inline-flex items-center gap-1">
-          <span className={cn('size-1.5 rounded-full', statusDot(snapshot.providers[key].status))} />
-          {label} {statusLabel(snapshot.providers[key].status)}
+          <span className={cn('size-1.5 rounded-full', statusDot(view.providers[key].status))} />
+          {label} {statusLabel(view.providers[key].status)}
         </span>
       ))}
     </span>
@@ -370,11 +380,11 @@ export function SearchPerformancePanel({
       >
         {!snapshot && loading && <p className="py-8 text-sm text-muted-foreground">Loading…</p>}
         {!snapshot && error && <p className="py-3 text-sm text-destructive">{error}</p>}
-        {selected && comparison && (
+        {view && selected && (
           <>
             <div className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-[0.68rem] font-semibold text-muted-foreground">
-              <span>Current {rangeLabel(comparison.current.range.start, comparison.current.range.end)}</span>
-              <span>Previous {rangeLabel(comparison.previous.range.start, comparison.previous.range.end)}</span>
+              <span>Current {rangeLabel(selected.current?.window)}</span>
+              <span>Previous {rangeLabel(selected.comparison?.previous.window)}</span>
               <span>Through {shortDate(selected.dataThrough)}</span>
             </div>
             <div className="-mx-2.5 grid grid-cols-2 gap-1 md:grid-cols-4">
@@ -382,21 +392,22 @@ export function SearchPerformancePanel({
                 <KpiToggle
                   key={kpi.key}
                   kpi={kpi}
-                  comparison={comparison}
+                  metric={selected.current?.metric ?? null}
+                  comparison={selected.comparison}
                   on={kpis.includes(kpi)}
                   onToggle={() => toggleKpi(kpi.key)}
                 />
               ))}
             </div>
-            <SearchTrend daily={selected.daily} range="28d" kpis={kpis} />
+            <SearchTrend series={selected.series} granularity={view.granularity} kpis={kpis} />
             <QueryRows rows={selected.topQueries} />
           </>
         )}
       </Panel>
 
-      <Panel title="Pages" sub={['28d']}>
-        {snapshot && snapshot.pages.length > 0
-          ? snapshot.pages.map((page) => <PageRow key={page.path} page={page} />)
+      <Panel title="Pages">
+        {view && view.pages.length > 0
+          ? view.pages.map((page) => <PageRow key={page.path} page={page} />)
           : <p className="py-4 text-sm text-muted-foreground">No page data.</p>}
       </Panel>
     </div>

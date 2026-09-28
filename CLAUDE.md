@@ -107,7 +107,7 @@ PLAYWRIGHT_BASE_URL=https://<preview>.vercel.app bash scripts/ci-local.sh
 
 That uses `e2e/preview.config.ts` (no vite preview/dev; drops the `dev` project, which needs `PREVIEW_FEATURES`).
 
-Speed changes: prove a change meant to make the app faster with `node scripts/performance/lab.mjs`. It builds production and your working tree, loads each page under the Lighthouse mobile and desktop lab profiles, and prints a base-against-candidate table of LCP, blocking time, and per-step INP. Paste that table into the pull request. Timing is noisy on a shared machine, so the script is evidence, not a ci-local gate.
+Speed changes: prove a change meant to make the app faster with `node scripts/performance/lab.mjs`. It builds production and your working tree, loads each page under the Lighthouse mobile and desktop lab profiles, and prints a base-against-candidate table of LCP, blocking time, and per-step INP. Paste that table into the pull request. Timing is noisy on a shared machine, so the script is evidence, not a ci-local gate. Michael's bar for merging a speed change: it must not hinder the user experience, and it must not overly complicate the code. Prefer the smallest diff that removes the measured cause. A speed change that users can see (content that appears later, a placeholder, a new animation) is a visual choice: show Michael before and after first. The speed targets, and the ideas already tried and left out, are in `docs/performance.md`. Read it before you start speed work.
 
 One browser run at a time on a machine: `lab.mjs` takes the lock itself. Wrap other browser commands in `flock "${TMPDIR:-/tmp}/my151-browser.lock" <command>`, so a Playwright run never overlaps a lab run.
 

@@ -209,6 +209,8 @@ describe('search performance by range', () => {
     expect(weekHome?.engines.bing.previous?.impressions).toBe(35);
     expect(view.byRange['7d'].providers.bing.topQueries[0]).toMatchObject({ key: 'make a pokedex', impressions: 21 });
     expect(view.byRange['7d'].pages.some((page) => page.path === '/old')).toBe(false);
+    // Bing starts inside the 90d previous window, so a page delta would compare with part of a period.
+    expect(view.byRange['90d'].pages.find((page) => page.path === '/')?.engines.bing.previous).toBeNull();
     expect(view.byRange.all.pages.find((page) => page.path === '/old')?.engines.bing.current?.impressions).toBe(9);
     expect(view.byRange.all.providers.bing.current?.window).toEqual({ start: BING_FIRST_DAY, end: '2026-09-24' });
   });

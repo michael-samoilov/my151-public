@@ -46,35 +46,9 @@ export function chartDailyValues(series: DailyPoint[]): number[] {
 
 export const INCOMPLETE_WEEKLY_DAYS = 6;
 
-export const CHART_RANGE_PRESETS = [
-  { key: '24h', label: '24h', windowMs: DAY_MS },
-  { key: '7d', label: '7d', windowMs: 7 * DAY_MS },
-  { key: '28d', label: '28d', windowMs: 28 * DAY_MS },
-  { key: '90d', label: '90d', windowMs: 90 * DAY_MS },
-  { key: '180d', label: '180d', windowMs: 180 * DAY_MS },
-  { key: '365d', label: '365d', windowMs: 365 * DAY_MS },
-  { key: 'all', label: 'All', windowMs: null },
-] as const;
-
-export type ChartRangeKey = (typeof CHART_RANGE_PRESETS)[number]['key'];
-
-export function isHourlyRange(key: ChartRangeKey): key is '24h' {
-  return key === '24h';
-}
-
-export function chartRangeWindowMs(key: ChartRangeKey): number | null {
-  const preset = CHART_RANGE_PRESETS.find((p) => p.key === key);
-  if (preset) return preset.windowMs;
-  throw new Error(`unknown chart range: ${key}`);
-}
-
-export function sliceActivityRange(
-  series: DailyPoint[],
-  nowMs: number,
-  windowMs: number | null,
-): DailyPoint[] {
-  if (windowMs == null || series.length === 0) return series;
-  const start = nowMs - windowMs;
+/** Days that overlap the window opening at `start`; every day for `null`. */
+export function sliceActivityRange(series: DailyPoint[], start: number | null): DailyPoint[] {
+  if (start == null || series.length === 0) return series;
   const sliced = series.filter((p) => p.day + DAY_MS > start);
   if (sliced.length >= 2 || sliced.length === series.length) return sliced;
   return series.slice(Math.max(0, series.length - 2));
