@@ -20,16 +20,26 @@ test.describe('admin search performance', () => {
     await expect(panel.getByText('Bing ready')).toBeVisible();
     await expect(panel.getByText(/^Current \w{3} \d+–\w{3} \d+$/)).toBeVisible();
     await expect(panel.getByText(/^Through /)).toBeVisible();
-    // The demo's 28 days have no full 28 days before them, so nothing compares.
+    // All has no period before it, so nothing compares.
     await expect(panel.getByText('Previous —', { exact: true })).toBeVisible();
     await expect(panel.locator('[data-kpi="clicks"]')).toContainText('—');
     await expect(panel.getByText('28d')).toHaveCount(0);
+
     await expect(panel.getByTestId('search-page-home')).toContainText('Homepage');
     await expect(panel.getByTestId('search-page-pokedex-builder')).toContainText('pokedex builder');
     await expect(panel.getByTestId('search-page-custom-gym-leader')).toContainText('gym leader maker');
 
     await panel.getByRole('group', { name: 'Search provider' }).getByRole('button', { name: 'Bing' }).click();
     await expect(panel.getByText('make a pokedex')).toBeVisible();
+
+    const ribbon = page.getByRole('group', { name: 'Date range' });
+    await ribbon.getByRole('button', { name: '24h' }).click();
+    // Bing reports no hours.
+    await expect(panel.getByText('Current —', { exact: true })).toBeVisible();
+    await panel.getByRole('group', { name: 'Search provider' }).getByRole('button', { name: 'Google' }).click();
+    await expect(panel.getByText(/^Current \w{3} \d+, \d+ [AP]M–/)).toBeVisible();
+    await ribbon.getByRole('button', { name: '7d' }).click();
+    await expect(panel.getByText(/^Previous \w{3} \d+–\w{3} \d+$/)).toBeVisible();
 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
