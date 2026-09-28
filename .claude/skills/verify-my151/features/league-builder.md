@@ -85,6 +85,12 @@ and `.powerups[row]`.
   holds its sprites at exactly 1x instead, and gives up its own spacing to
   keep all 14 rows on screen (`src/league/homeLayout.ts`). No harness surface
   runs there; `e2e/league-sprite-scale.spec.ts` covers it on Blink.
+- On a phone or a desktop under a device pixel ratio of 2, the summary zooms
+  as before down to the 0.55 floor. A shorter window then gives up the same
+  spacing, hint lines first, to keep all 14 rows on screen. The harness
+  surfaces (390x844, 412x915, 1280x800) never reach the floor, so they show
+  today's layout. `e2e/league-sprite-scale.spec.ts` sweeps a 320px phone and a
+  1280px window down to the floor and past it.
 - The league render audits wait for every visible image to load first. At
   hydration most sprites are still loading, and an early audit counted 6, 51
   or 37 warnings on the same build.
