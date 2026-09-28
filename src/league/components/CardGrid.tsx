@@ -45,6 +45,7 @@ import { LaurelIcon } from './LaurelIcon';
 import { BALL_OF_SPRITE, RING_OF_SPRITE, pairSpriteScale, seamEnds, SLOT_PAD_REM, SPRITE_REM } from '../slotLayout';
 import { tmBodyShiftRem, tmNameWraps } from '../export/layout';
 import { useSlotLab } from '../slotLab';
+import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
 
 /**
  * The 11-row gym leader card. Geometry mirrors the design canvas
@@ -61,6 +62,10 @@ const PAD_X = 0.5; // 8px
 const PAD_Y = 0.6875; // 11px
 const INSET_Y = 0.375; // 6px
 const INSET_X = 0.1875; // 3px
+
+/** The card labels' face. Their size is `text-[0.53125rem]` where they fit. */
+const LABEL_FACE = 'font-extrabold tracking-[0.08em] leading-[1.4]';
+const CARD_LABEL_CLASS = `text-[0.53125rem] ${LABEL_FACE}`;
 
 /**
  * How far a carried column lifts off the card.
@@ -121,7 +126,7 @@ function GlyphCell({ row, span, cell }: { row: number; span: number; cell: strin
   if (row === 1) {
     inner = (
       <span className="flex flex-col items-center gap-[3px]">
-        <span className="text-[0.59375rem] font-semibold text-white">No badges</span>
+        <span className={cn(CARD_LABEL_CLASS, 'text-white')}>No badges</span>
         <GymBadges n={1} size={8} />
       </span>
     );
@@ -236,6 +241,8 @@ function grabbedCellFace(activatorEvent: Event): {
   radius: number;
   /** One of the card's rem, in the portal's pixels. */
   rem: number;
+  /** How the card draws its sprites, which a portal does not inherit. */
+  rendering: React.CSSProperties['imageRendering'];
 } | null {
   const target = activatorEvent.target;
   const cell = target instanceof Element ? target.closest('[data-testid^="card-cell-"]') : null;
@@ -250,6 +257,7 @@ function grabbedCellFace(activatorEvent: Event): {
     height: box.height,
     radius: parseFloat(style.borderTopLeftRadius) * zoom,
     rem: box.height / (ROW_H - 2 * INSET_Y),
+    rendering: style.getPropertyValue(SPRITE_RENDERING_VAR).trim() as React.CSSProperties['imageRendering'] || undefined,
   };
 }
 
@@ -475,7 +483,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
             src={form ? formSprite(form) : pokemon.sprite}
             alt={form ? form.label : pokemon.name}
             className="pointer-events-none max-w-none"
-            style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: 'pixelated' }}
+            style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: SPRITE_RENDERING }}
           />
         ) : (
           <EmptySlotBall />
@@ -851,7 +859,7 @@ function SlotHalf({
             src={pokemon.sprite}
             alt={pokemon.name}
             className="relative z-[1] h-full w-full max-w-none"
-            style={{ imageRendering: 'pixelated' }}
+            style={{ imageRendering: SPRITE_RENDERING }}
           />
           <SlotRemove label={`Remove ${heading.label.toLowerCase()}`} onRemove={onRemove} />
         </>
@@ -976,7 +984,7 @@ function EmptyOutline() {
 
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
-const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
+const HEAD_CLASS = CARD_LABEL_CLASS;
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
 // words that a wide track sets off, while the name is one long word that the
@@ -1119,16 +1127,6 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
  */
 const MARK_ROWS = 1.5;
 /**
- * The glyph column, capped as a share of the box.
- *
- * A fixed rem width is wrong here: the box is two of the card's seven columns
- * and the card's width is not fixed, so at a 320px viewport a 2.75rem column
- * took most of the box and the badge name was down to two characters. The cap
- * keeps the glyph from eating the text it labels; both slots use the same
- * expression, so the disc and the hexagon stay on one axis whatever binds.
- */
-const MARK_COL = 'min(2.75rem, 26%)';
-/**
  * The box's left pad and the gap after the glyph column: equal, on purpose.
  *
  * The word under the glyph is centred in its column, so the room between
@@ -1164,7 +1162,55 @@ const MARK_TRAIL = '0.0625rem';
 // resolves against the column, so repeating the box fraction here multiplies
 // the two and collapses the glyph to a few pixels.
 const MARK_GLYPH = '72%';
-const MARK_LABEL_CLASS = 'shrink-0 whitespace-nowrap text-[0.4rem] font-extrabold tracking-normal';
+/**
+ * The glyph column, capped as a share of the box.
+ *
+ * A fixed rem width is wrong here: the box is two of the card's seven columns
+ * and the card's width is not fixed, so at a 320px viewport a 2.75rem column
+ * took most of the box and the badge name was down to two characters. The cap
+ * keeps the glyph from eating the text it labels; both slots use the same
+ * expression, so the disc and the hexagon stay on one axis whatever binds.
+ *
+ * The labels do not widen it. A column grown to fit BADGE took the room the
+ * move's type and category need, and cut the category chip at the slot edge.
+ *
+ * In `cqw` of the box, which is an inline-size container, rather than `%`, so
+ * the labels can be sized from the same expression. Both resolve against the
+ * box's content width.
+ */
+const MARK_COL = 'min(2.75rem, 26cqw)';
+/**
+ * The size of the four words in the pair: TM and BADGE under the glyphs, and
+ * the "Pick a move" and NAME placeholders beside them.
+ *
+ * As large as fits, from the 0.4rem production drew these at up to the ace
+ * heading's 0.53125rem. The word under the glyph is centred on the column and
+ * may reach into the pad and the gap, stopping 0.125rem short of the box's
+ * edge, where the empty box draws its dashed outline, and of the text. BADGE,
+ * the widest, is 3.92em at this face, so the size is that room over 3.92. The
+ * placeholders take the same size, so the pair keeps one size of label.
+ */
+const MARK_LABEL_ROOM = `(${MARK_COL} + ${MARK_PAD} + ${MARK_GAP} - 0.25rem)`;
+const MARK_LABEL_SIZE = `clamp(0.4rem, ${MARK_LABEL_ROOM} / 3.92, 0.53125rem)`;
+/**
+ * The labels' tracking: the face's 0.08em wherever the size above fits.
+ *
+ * On a 320px phone the room is under 3.92 × 0.4rem, and the floor would push
+ * BADGE onto the empty box's dashed outline. There the tracking gives way
+ * instead, down to production's none: BADGE is 3.52em untracked, and its five
+ * letters share what the room has left.
+ */
+const MARK_LABEL_TRACK = `clamp(0rem, (${MARK_LABEL_ROOM} - 3.52 * var(--mark-label)) / 5, 0.08em)`;
+const MARK_LABEL_TYPE = 'text-[length:var(--mark-label)] font-extrabold tracking-[var(--mark-track)] leading-[1.4]';
+const MARK_LABEL_CLASS = `shrink-0 whitespace-nowrap ${MARK_LABEL_TYPE}`;
+/** What the TM box and the badge box share. */
+const MARK_BOX_STYLE = {
+  paddingLeft: MARK_PAD,
+  gap: MARK_GAP,
+  containerType: 'inline-size',
+  '--mark-label': MARK_LABEL_SIZE,
+  '--mark-track': MARK_LABEL_TRACK,
+} as React.CSSProperties;
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
@@ -1183,8 +1229,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       className="absolute z-[5] flex cursor-pointer items-center rounded-lg"
       style={{
         ...pos,
-        paddingLeft: MARK_PAD,
-        gap: MARK_GAP,
+        ...MARK_BOX_STYLE,
         background: move ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
@@ -1256,11 +1301,15 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           </span>
         </span>
       ) : (
+        // Free to wrap, unlike the other labels: it is three words beside
+        // the disc, and at the full label size it is wider than the text
+        // column on a phone. The space before "move" does not break, so a
+        // wrap reads "Pick / a move" rather than stranding the noun.
         <span
-          className={cn('min-w-0 whitespace-nowrap text-left normal-case', MARK_LABEL_CLASS)}
+          className={cn('min-w-0 text-left normal-case', MARK_LABEL_TYPE)}
           style={{ color: 'var(--lg-hint)' }}
         >
-          Pick a move
+          Pick a{'\u00a0'}move
         </span>
       )}
       {move && <SlotRemove label="Remove TM" onRemove={() => setTm(cardIndex, null)} />}
@@ -1423,8 +1472,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       className="absolute z-[5] flex cursor-text items-center rounded-lg"
       style={{
         ...pos,
-        paddingLeft: MARK_PAD,
-        gap: MARK_GAP,
+        ...MARK_BOX_STYLE,
         background: name ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
@@ -1465,9 +1513,12 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         {/* The name ends in "Badge", so this word is redundant the moment a
             name is typed. It collapses away then — a grid row eased from 1fr
             to 0fr takes its height smoothly whatever it measures — and the
-            hexagon, centred in the column, eases into the space it leaves. */}
+            hexagon, centred in the column, eases into the space it leaves.
+            `grid-cols-1` holds the one track to the column's width: a BADGE
+            wider than the column then spills evenly on both sides and stays
+            on the hexagon's axis, where an auto track grew to the right. */}
         <span
-          className="grid w-full justify-items-center transition-[grid-template-rows] duration-300 ease-out"
+          className="grid w-full min-w-0 grid-cols-1 justify-items-center transition-[grid-template-rows] duration-300 ease-out"
           style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
           <span
@@ -1507,8 +1558,8 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           // sibling: an empty inline span is zero-wide, which leaves nothing
           // to tap and nowhere obvious for the caret to sit.
           data-badge-field
-          data-placeholder="Name"
-          className="outline-none"
+          data-placeholder="NAME"
+          className={cn('outline-none', !name && MARK_LABEL_CLASS)}
         />
       </div>
       {name && (
@@ -1590,7 +1641,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     ids: number[];
     sprite: number;
     /** The cell face the copy wears, in client pixels. */
-    face: { width: number; height: number; radius: number; shadow: string };
+    face: { width: number; height: number; radius: number; shadow: string; rendering?: React.CSSProperties['imageRendering'] };
   } | null>(null);
 
   const onDragStart = useCallback(
@@ -1609,6 +1660,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         height: cell?.height ?? sprite,
         radius: cell?.radius ?? 0,
         shadow: `0 ${0.5 * rem}px ${rem}px rgba(15,23,42,0.28)`,
+        rendering: cell?.rendering,
       };
       // Which of the card's two gestures this is. They begin identically —
       // a finger on a cell — and part company in what the finger does next.
@@ -2086,7 +2138,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                     src={p.sprite}
                     alt=""
                     className="max-w-none"
-                    style={{ width: held.sprite, height: held.sprite, imageRendering: 'pixelated' }}
+                    style={{ width: held.sprite, height: held.sprite, imageRendering: held.face.rendering ?? 'pixelated' }}
                   />
                 ))}
               </div>

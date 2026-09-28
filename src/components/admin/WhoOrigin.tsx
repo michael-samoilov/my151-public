@@ -14,7 +14,7 @@ import {
   balanceRailRows,
   captionKind,
   countryItems,
-  countryHeaderCounts,
+  countryHeaderCount,
   countryOtherLabeled,
   countryRooms,
   fitBar,
@@ -273,13 +273,11 @@ function markerRow(segments: FitSegment[], render: (seg: FitSegment) => ReactNod
 export function WhoOrigin({
   countries,
   buckets,
-  countries7d,
   filter,
   onFilter,
 }: {
   countries: Record<string, number>;
   buckets: readonly WhoBucket[];
-  countries7d: number;
   filter: WhoFilter | null;
   onFilter: (next: WhoFilter | null) => void;
 }) {
@@ -428,12 +426,9 @@ export function WhoOrigin({
   );
   const countryTotal = countryList.reduce((sum, it) => sum + it.n, 0);
   const tagTotal = tags.reduce((sum, it) => sum + it.n, 0);
-  const headerCounts = useMemo(
-    () =>
-      platformReady
-        ? countryHeaderCounts(buckets, filter, null)
-        : { all: countryList.length, week: countries7d },
-    [platformReady, buckets, filter, countryList.length, countries7d],
+  const countryCount = useMemo(
+    () => (platformReady ? countryHeaderCount(buckets, filter, null) : countryList.length),
+    [platformReady, buckets, filter, countryList.length],
   );
   const singleRegion: Region | null = filter?.dim === 'region' ? (filter.value as Region) : null;
   const countrySegsPainted = useMemo(() => {
@@ -501,11 +496,7 @@ export function WhoOrigin({
         <div className="min-w-0" data-who-countries>
           <div className="mb-1 flex items-baseline gap-1.5 text-xs font-bold" data-who-countries-header>
             <span className={TITLE}>{amongTitle('Countries', filter)}</span>
-            <span className="tabular-nums text-foreground">{headerCounts.all}</span>
-            <span className="tabular-nums text-foreground">
-              {headerCounts.week}
-              <sub className="ml-px text-[0.65em] font-semibold text-muted-foreground">7d</sub>
-            </span>
+            <span className="tabular-nums text-foreground">{countryCount}</span>
           </div>
           <ShareBar testId="countries" segments={countrySegsPainted} showShare />
           {markerRow(countrySegs, (seg) => {

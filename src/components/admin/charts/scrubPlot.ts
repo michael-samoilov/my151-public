@@ -21,23 +21,10 @@ export function lineLeftInPlot(x: number, rect: PlotRect, thickness = 1): number
   return Math.min(Math.max(x, rect.x), max);
 }
 
-/** Category index from an axis-tooltip payload, skipping silent custom series. */
-export function tipDataIndex(params: unknown): number {
-  const arr = Array.isArray(params) ? params : params == null ? [] : [params];
-  let fallback: number | undefined;
-  for (const p of arr) {
-    if (p == null || typeof p !== 'object' || !('dataIndex' in p)) continue;
-    const i = p.dataIndex;
-    if (typeof i !== 'number' || !Number.isFinite(i)) continue;
-    if ('seriesType' in p && p.seriesType === 'line') return i;
-    fallback ??= i;
-  }
-  return fallback ?? 0;
-}
-
 /**
- * Category index for a category axis with `boundaryGap: false`.
- * x = left edge is index 0; x = right edge is `lastIndex`.
+ * Index of the nearest of `lastIndex + 1` evenly spaced x positions, such as a
+ * category axis with `boundaryGap: false`. x = left edge is index 0; x = right
+ * edge is `lastIndex`.
  */
 export function categoryIndexAtX(x: number, rect: PlotRect, lastIndex: number): number {
   if (lastIndex <= 0) return 0;

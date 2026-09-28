@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SheetKeyboardContext } from './sheetKeyboard';
+import { SheetCloseGuardContext, type SheetCloseGuard, type SheetCloseVia } from './sheetCloseGuard';
 
 /** px drag distance past which the release dismisses the sheet. */
 const DISMISS_THRESHOLD = 120;
@@ -74,6 +75,21 @@ export function BottomSheet({
   const dragStartY = useRef<number | null>(null);
   const isDragging = useRef(false);
 
+  /**
+   * Every close path asks the content first. The picker uses this to ask about
+   * staged picks, which a close would otherwise drop without a word. Returns
+   * whether the sheet closed.
+   */
+  const closeGuard = useRef<SheetCloseGuard | null>(null);
+  const setCloseGuard = useCallback((guard: SheetCloseGuard | null) => {
+    closeGuard.current = guard;
+  }, []);
+  const requestClose = useCallback((via: SheetCloseVia) => {
+    if (closeGuard.current?.(via)) return false;
+    onClose();
+    return true;
+  }, [onClose]);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     dragStartY.current = e.touches[0].clientY;
     isDragging.current = false;
@@ -91,24 +107,27 @@ export function BottomSheet({
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    if (dragY > DISMISS_THRESHOLD) onClose();
-    else setDragY(0);
+    // A short drag, or a close the content held, springs back.
+    const closed = dragY > DISMISS_THRESHOLD && requestClose('swipe');
+    if (!closed) setDragY(0);
     dragStartY.current = null;
     isDragging.current = false;
-  }, [dragY, onClose]);
+  }, [dragY, requestClose]);
 
   // Tap-to-close, but not as the tail of a drag gesture.
   const handleTap = useCallback(() => {
-    if (!isDragging.current) (onHeaderClick ?? onClose)();
-  }, [onClose, onHeaderClick]);
+    if (isDragging.current) return;
+    if (onHeaderClick) onHeaderClick();
+    else requestClose('handle');
+  }, [onHeaderClick, requestClose]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') requestClose('escape');
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [requestClose]);
 
   /**
    * Stop the app behind the sheet from scrolling.
@@ -384,7 +403,7 @@ export function BottomSheet({
       {showScrim && (
         <div
           className="pointer-events-auto absolute inset-0 bg-black/50"
-          onClick={onClose}
+          onClick={() => requestClose('scrim')}
           style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
         />
       )}
@@ -439,7 +458,9 @@ export function BottomSheet({
             `overscroll-contain` stops that scroll continuing into the app once
             it reaches an end. */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-          <SheetKeyboardContext.Provider value={keyboardOpen}>{children}</SheetKeyboardContext.Provider>
+          <SheetCloseGuardContext.Provider value={setCloseGuard}>
+            <SheetKeyboardContext.Provider value={keyboardOpen}>{children}</SheetKeyboardContext.Provider>
+          </SheetCloseGuardContext.Provider>
         </div>
       </div>
     </div>,

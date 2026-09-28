@@ -28,6 +28,8 @@
  *   node docs/future-tools/home-page/capture-shots.mjs --list     # what exists
  *
  * It builds each app and serves it itself, so nothing needs to be running.
+ * Afterwards, run `bash scripts/resize-shots.sh` to rewrite the 400px copies
+ * that phones load in place of these.
  */
 import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';

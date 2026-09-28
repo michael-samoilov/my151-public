@@ -52,7 +52,15 @@ import { whenIdle } from '@/lib/whenIdle';
 declare const __BUILD_TIMESTAMP__: string;
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
 
-function MobileSheet({ sectionName, topGap, onClose }: { sectionName: string | null; topGap: number; onClose: () => void }) {
+function MobileSheet({ sectionName, topGap, onClose, isDesktop }: { sectionName: string | null; topGap: number; onClose: () => void; isDesktop: boolean }) {
+  // The sheet is `md:hidden`, so a browser mounted in it at desktop width is a
+  // second, invisible copy of the side pane's, built on the same tap and
+  // re-rendered with it. It mounts the first time the sheet is at phone width
+  // instead, and then stays, so a tablet turned across the breakpoint and back
+  // still has its staged picks. The sheet itself mounts at every width: its
+  // Escape handler is what closes the desktop pane.
+  const [browserMounted, setBrowserMounted] = useState(!isDesktop);
+  if (!isDesktop && !browserMounted) setBrowserMounted(true);
   return (
     <BottomSheet
       onClose={onClose}
@@ -70,7 +78,7 @@ function MobileSheet({ sectionName, topGap, onClose }: { sectionName: string | n
         )
       }
     >
-      <PokemonBrowser />
+      {browserMounted && <PokemonBrowser />}
     </BottomSheet>
   );
 }
@@ -267,7 +275,7 @@ function App() {
           )}>
             {isDesktop && browserPanelMounted && (
               <div className="flex-1 min-w-0">
-                <PokemonBrowser />
+                <PokemonBrowser deferRows />
               </div>
             )}
           </div>
@@ -306,7 +314,7 @@ function App() {
 
       {/* Mobile browser sheet */}
       {currentView === 'builder' && mobileBrowserOpen && (
-        <MobileSheet sectionName={sectionName} topGap={headerHeight} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
+        <MobileSheet sectionName={sectionName} topGap={headerHeight} isDesktop={isDesktop} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
       )}
 
       {/* Analytics drill-down sheet — only on analytics view, mobile only.

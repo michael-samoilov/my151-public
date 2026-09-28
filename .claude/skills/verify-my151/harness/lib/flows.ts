@@ -152,15 +152,16 @@ export async function seedDex(s: Session, base: string): Promise<void> {
   }
 }
 
-// Which view is active, read from the nav buttons' computed background. The active
-// tab uses the "default" Button variant with a non-transparent fill; ghosts
-// compute to transparent. The fill serializes as rgb(), rgba(), or oklab()
-// depending on the engine and state, so test for "not transparent" rather than
-// parse a color format. Engine-portable and free of localized text.
+// Which view is active. Prefer aria-selected (tab set). Fall back to a
+// non-transparent fill so a ghost-vs-default chrome still reads. The fill
+// serializes as rgb(), rgba(), or oklab() depending on the engine, so test
+// for "not transparent" rather than parse a color format.
 const ACTIVE_VIEW = `
 const TRANSPARENT = new Set(['rgba(0, 0, 0, 0)', 'transparent', '']);
 const btns = [...document.querySelectorAll('[data-nav]')];
-const active = btns.filter(b => !TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim())).map(b => b.getAttribute('data-nav'));
+const selected = btns.filter(b => b.getAttribute('aria-selected') === 'true').map(b => b.getAttribute('data-nav'));
+const filled = btns.filter(b => !TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim())).map(b => b.getAttribute('data-nav'));
+const active = selected.length ? selected : filled;
 return { active, navs: btns.map(b => b.getAttribute('data-nav')) };
 `;
 
@@ -276,10 +277,12 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
     const lanes = await s.evalJson<{ ok: boolean; found: boolean; detail: string }>(
       `const title=document.querySelector('[data-testid="tool-title"]');
        const actions=document.querySelector('[data-testid="tool-actions"]');
+       const list=document.querySelector('[role="tablist"]');
        const navs=[...document.querySelectorAll('[data-nav]')];
        if(!title||!actions||navs.length===0) return {ok:false,found:false,detail:'handles missing'};
-       const navLeft=Math.min(...navs.map(b=>b.getBoundingClientRect().left));
-       const navRight=Math.max(...navs.map(b=>b.getBoundingClientRect().right));
+       const navBox=list?list.getBoundingClientRect():null;
+       const navLeft=navBox?navBox.left:Math.min(...navs.map(b=>b.getBoundingClientRect().left));
+       const navRight=navBox?navBox.right:Math.max(...navs.map(b=>b.getBoundingClientRect().right));
        const inner=title.firstElementChild;
        const titleRight=inner?inner.getBoundingClientRect().right:title.getBoundingClientRect().left;
        const kids=[...actions.children].map(k=>k.getBoundingClientRect().left);
@@ -288,6 +291,48 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
        return {ok,found:true,detail:'title.r='+Math.round(titleRight)+' nav=['+Math.round(navLeft)+','+Math.round(navRight)+'] actions.l='+Math.round(actionsLeft)};`,
     );
     checks.push(ok(`header:${nav}-no-overlap`, lanes.found && lanes.ok, lanes.detail));
+    const tabset = await s.evalJson<{ ok: boolean; detail: string }>(
+      `const TRANSPARENT=new Set(['rgba(0, 0, 0, 0)','transparent','']);
+       const navs=[...document.querySelectorAll('[data-nav]')];
+       const list=document.querySelector('[role="tablist"]');
+       const primary=getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+       const parse=(css)=>{const rgb=css.match(/rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);if(rgb)return[Number(rgb[1]),Number(rgb[2]),Number(rgb[3])];return null;};
+       const hex=primary.startsWith('#')?(primary.length===4?primary.slice(1).split('').map(c=>c+c).join(''):primary.slice(1)):null;
+       const primaryRgb=hex?[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)]:parse(primary);
+       const selected=navs.filter(b=>b.getAttribute('aria-selected')==='true');
+       const active=selected[0]||navs[0];
+       const activeBg=active?getComputedStyle(active).backgroundColor.trim():'';
+       const activeRgb=parse(activeBg);
+       const othersGhost=navs.filter(b=>b!==active).every(b=>TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim()));
+       const lone=othersGhost&&activeRgb&&primaryRgb&&activeRgb.every((v,i)=>Math.abs(v-primaryRgb[i])<=2);
+       const inList=!!list&&navs.every(n=>list.contains(n));
+       const track=!!list&&!TRANSPARENT.has(getComputedStyle(list).backgroundColor.trim());
+       const roles=navs.every(b=>b.getAttribute('role')==='tab');
+       const ok=inList&&track&&roles&&selected.length===1&&!lone;
+       return {ok,detail:'inList='+inList+' track='+track+' roles='+roles+' selected='+selected.length+' lone='+lone};`,
+    );
+    checks.push(ok(`nav:${nav}-tabset`, tabset.ok, tabset.detail));
+    const fourDigit = await s.evalJson<{ ok: boolean; found: boolean; detail: string }>(
+      `const n=document.querySelector('[data-testid="tool-title"] .text-primary');
+       if(!n) return {ok:false,found:false,detail:'count missing'};
+       const prev=n.textContent;
+       n.textContent='1025';
+       const title=document.querySelector('[data-testid="tool-title"]');
+       const actions=document.querySelector('[data-testid="tool-actions"]');
+       const list=document.querySelector('[role="tablist"]');
+       const navs=[...document.querySelectorAll('[data-nav]')];
+       const navBox=list?list.getBoundingClientRect():null;
+       const navLeft=navBox?navBox.left:Math.min(...navs.map(b=>b.getBoundingClientRect().left));
+       const navRight=navBox?navBox.right:Math.max(...navs.map(b=>b.getBoundingClientRect().right));
+       const inner=title.firstElementChild;
+       const titleRight=inner?inner.getBoundingClientRect().right:title.getBoundingClientRect().left;
+       const kids=[...actions.children].map(k=>k.getBoundingClientRect().left);
+       const actionsLeft=kids.length?Math.min(...kids):actions.getBoundingClientRect().right;
+       const ok=titleRight<=navLeft+0.5&&navRight<=actionsLeft+0.5;
+       n.textContent=prev;
+       return {ok,found:true,detail:'4digit title.r='+Math.round(titleRight)+' nav=['+Math.round(navLeft)+','+Math.round(navRight)+'] actions.l='+Math.round(actionsLeft)};`,
+    );
+    checks.push(ok(`header:${nav}-4digit-no-overlap`, fourDigit.found && fourDigit.ok, fourDigit.detail));
     await settle(s);
     await s.screenshot(ctx.shot(`nav-${nav}`));
     checks.push(await auditRender(s, `render:${nav}-no-clipped-content`));
@@ -2166,7 +2211,15 @@ const FIVE_LINE_LEAGUE =
 const SEVEN_GYMS_LEAGUE =
   "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);for(let i=0;i<7;i++)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
 
-async function waitNudge(s: Session, kind: 'card' | 'league'): Promise<boolean> {
+/** Every card but Elite Four 1 filled, after the eight-gym popup was seen. */
+const LAST_CARD_EMPTY_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1],boundaryMode:'auto'});const cards=Array.from({length:14},empty);for(let i=0;i<14;i++)if(i!==8)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:['league']},version:3});})()";
+
+/** A full v3 league that saw the eight-gym popup, which said "League ready" before v4. */
+const FULL_SEEN_V3_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1],boundaryMode:'auto'});const cards=Array.from({length:14},(_,i)=>({...empty(),lines:[line(i+1)]}));return JSON.stringify({state:{name:'',cards,celebratedNudges:['league']},version:3});})()";
+
+async function waitNudge(s: Session, kind: 'card' | 'league' | 'complete'): Promise<boolean> {
   return waitFor(s, `[data-testid="league-nudge"][data-league-nudge="${kind}"]`, 25);
 }
 
@@ -2243,6 +2296,39 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   } else {
     checks.push(ok('league-funnel:roster-nudge-points-at-export', false, 'roster nudge never shown'));
   }
+
+  if (!(await seedLeagueHome(s, url, FULL_SEEN_V3_LEAGUE))) {
+    checks.push({ name: 'league-funnel:full-save-skips-seen-popup', status: 'skip', detail: 'league home never hydrated for the full save' });
+  } else {
+    await sleep(1500);
+    const saved = await s.evalJson<{ version: number | null; celebrated: string[]; nudges: number }>(
+      `const r=JSON.parse(localStorage.getItem(${JSON.stringify(LEAGUE_KEY)})||'{}');return {version:r.version??null,celebrated:r.state?.celebratedNudges??[],nudges:document.querySelectorAll('[data-testid="league-nudge"]').length};`,
+    ).catch(() => ({ version: null, celebrated: [] as string[], nudges: -1 }));
+    await s.screenshot(ctx.shot('league-funnel-full-save'));
+    checks.push(ok(
+      'league-funnel:full-save-skips-seen-popup',
+      saved.nudges === 0 && saved.version === 4 && saved.celebrated.includes('complete'),
+      `nudges=${saved.nudges} version=${saved.version} celebrated=${saved.celebrated.join(',')}`,
+    ));
+  }
+
+  if (!(await seedLeagueHome(s, url, LAST_CARD_EMPTY_LEAGUE))) {
+    checks.push({ name: 'league-funnel:complete-nudge-shown', status: 'skip', detail: 'league home never hydrated for the last card' });
+    return checks;
+  }
+  if (!(await openLeagueCard(s, 8))) {
+    checks.push(ok('league-funnel:complete-nudge-shown', false, 'Elite Four 1 never opened'));
+    return checks;
+  }
+  await s.click('[data-testid="card-cell-1-1"]');
+  await waitFor(s, '[data-filter-chip="my-dex"]');
+  await sleep(600);
+  await searchPicker(s, 'eevee');
+  await placePickerLine(s);
+  await closeLeagueCard(s);
+  const complete = await waitNudge(s, 'complete');
+  await s.screenshot(ctx.shot('league-funnel-complete-nudge'));
+  checks.push(ok('league-funnel:complete-nudge-shown', complete, complete ? 'full league export nudge' : 'no complete nudge after the last card'));
   return checks;
 }
 

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
-import { PicksDetailPage } from '@/components/admin/PicksDetailPage';
+import { LeaguePicksPage, PicksDetailPage } from '@/components/admin/PicksDetailPage';
 import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
@@ -29,6 +29,9 @@ import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { SearchPerformancePanel } from '@/components/admin/SearchPerformancePanel';
+import { RangeRibbon } from '@/components/admin/RangeRibbon';
+import { RangeSlotContext } from '@/components/admin/rangeSlot';
+import { isDashboardRange, type DashboardRange } from '../../../api/_range';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import type { SearchPerformanceView } from '@/lib/searchPerformanceView';
 import {
@@ -68,6 +71,7 @@ import { useHostZoom } from '@/components/admin/previewChipZoom';
 import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
 import type { ExportSurveySkip } from '../../../api/_events';
+import type { LeaguePicks } from '../../../api/_leaguePicks';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -80,15 +84,20 @@ import type { ExportSurveySkip } from '../../../api/_events';
 const TOKEN_KEY = 'p151-admin-token';
 // Beside the token, so the dashboard opens on the tool you were last reading.
 const TOOL_KEY = 'p151-admin-tool';
+const RANGE_KEY = 'p151-admin-range';
 const PAGE_SIZE = 50;
-// Returning to the tab refetches data older than this; while visible, the
-// dashboard also refetches on the interval.
+// Data younger than this is current: returning to the tab or to a date range
+// refetches only older data. While visible, the dashboard also refetches on
+// the interval.
 const STALE_ON_RETURN_MS = 60_000;
 const REFRESH_INTERVAL_MS = 5 * 60_000;
 // Each dashboard request takes a number, and only the newest one writes, so a
 // background refresh that answers late cannot undo a later Load more. The admin
 // page mounts once, so one counter serves it.
 let latestLoad = 0;
+// Each date range's last answer, so a return to it within
+// STALE_ON_RETURN_MS sends nothing. One page, so one cache.
+const rangeCache = new Map<DashboardRange, { data: ApiResponse; at: number }>();
 
 /** Which tool's records every shared card reads. */
 export type ToolSlice = 'all' | 'dex' | 'league';
@@ -126,7 +135,6 @@ function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
     browsers: {},
     joints: [],
     whoBuckets: [],
-    countries7d: 0,
     hourly: [],
   };
 }
@@ -135,6 +143,16 @@ function loadToolSlice(): ToolSlice {
   try {
     const v = localStorage.getItem(TOOL_KEY);
     if (v === 'all' || v === 'dex' || v === 'league') return v;
+  } catch {
+    // localStorage may be unavailable
+  }
+  return 'all';
+}
+
+function loadRange(): DashboardRange {
+  try {
+    const v = localStorage.getItem(RANGE_KEY);
+    if (v && isDashboardRange(v)) return v;
   } catch {
     // localStorage may be unavailable
   }
@@ -200,7 +218,6 @@ export interface Aggregates {
   browsers: Record<string, number>;
   joints?: PlatformJoint[];
   whoBuckets?: WhoBucket[];
-  countries7d?: number;
   /** Absent on a deploy that predates the clock toggle. */
   heatmaps?: Record<HeatmapClock, number[][]>;
   hourly?: { hour: number; unique: number }[];
@@ -276,6 +293,9 @@ export interface LeagueSummary {
 }
 
 export interface ApiResponse {
+  /** The date range the aggregates count, and where its window opens (null for all). */
+  range?: DashboardRange;
+  rangeStart?: number | null;
   totalUsers: number;
   /** Dex records in the store, including archived. Used for list pagination. */
   totalDexRecords?: number;
@@ -310,6 +330,8 @@ export interface ApiResponse {
     returning: number;
     activeLast7: number;
     activity: { day: number; dau: number }[];
+    /** Aces and seated Pokémon by card type, counted in leagues. Absent on an older deploy. */
+    picks?: LeaguePicks;
     recent: {
       cid: string;
       firstAt: string;
@@ -438,8 +460,8 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
 
 class UnauthorizedError extends Error {}
 
-async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
-  const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+async function fetchDashboard(token: string, limit: number, range: DashboardRange): Promise<ApiResponse> {
+  const qs = new URLSearchParams({ limit: String(limit), offset: '0', range });
   const res = await fetch(`/api/submissions?${qs.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -894,6 +916,25 @@ function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
   return (s.cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b));
 }
 
+/** Seated lines per evolution chain, across the whole league. A line is its
+ *  chain, so Ivysaur's branch and Venusaur's, or two Eevee branches, are one
+ *  line. One chain can fill several seats, so the value counts seats. */
+function leagueLinesByChain(cards: LeagueCard[]): Map<number, number> {
+  const seats = new Map<number, number>();
+  for (const { b } of cards.flatMap((c) => c.l)) {
+    const chain = getPokemonById(b[0])?.evolutionChainId ?? -b[0];
+    seats.set(chain, (seats.get(chain) ?? 0) + 1);
+  }
+  return seats;
+}
+
+/** Seats `a` fills beyond `b`, chain by chain. */
+function seatsBeyond(a: Map<number, number>, b: Map<number, number>): number {
+  let n = 0;
+  for (const [chain, seats] of a) n += Math.max(0, seats - (b.get(chain) ?? 0));
+  return n;
+}
+
 /** Dex user body: session timeline + the build at the scrubbed moment. */
 function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const { log, ms } = useMemo(
@@ -1027,24 +1068,19 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   );
   const [i, setI] = useState(Math.max(0, log.length - 1));
   const points: TimelinePoint[] = useMemo(() => {
-    const cardsOf = (k: number) => {
-      const c = log[k]?.cards;
-      return c && c.length ? c : null;
-    };
+    const lines = log.map((s) => (s.cards?.length ? leagueLinesByChain(s.cards) : null));
     const nets = log.map((s, k) => {
-      const c = cardsOf(k);
-      return c ? new Set(leagueSessionIds(s)).size : s.summary.seats;
+      const l = lines[k];
+      return l ? [...l.values()].reduce((a, b) => a + b, 0) : s.summary.seats;
     });
     return log.map((s, k) => {
-      const nowCards = cardsOf(k);
-      const prevCards = k > 0 ? cardsOf(k - 1) : null;
+      const now = lines[k];
+      const prev = k > 0 ? lines[k - 1] : null;
       let added = 0;
       let removed = 0;
-      if (nowCards && prevCards) {
-        const now = new Set(leagueSessionIds({ cards: nowCards }));
-        const prev = new Set(leagueSessionIds({ cards: prevCards }));
-        added = [...now].filter((x) => !prev.has(x)).length;
-        removed = [...prev].filter((x) => !now.has(x)).length;
+      if (now && prev) {
+        added = seatsBeyond(now, prev);
+        removed = seatsBeyond(prev, now);
       } else if (k === 0) {
         added = nets[0];
       } else {
@@ -1104,7 +1140,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
       index={idx}
       onIndex={setI}
       countUnit={`of ${CARD_COUNT}`}
-      peakLabel={`${peak} seated`}
+      peakLabel={`${peak} lines`}
       milestones={milestones}
       tz={league.tz}
       leftChip={<SessionsChip sessions={log.length} days={days} full={log.length <= 1} />}
@@ -1510,10 +1546,12 @@ function UserPreviewCard({
 function WhatPeoplePick({
   mostBySection,
   n,
+  unit,
   onOpen,
 }: {
   mostBySection: Record<string, [string, number][]>;
   n: number;
+  unit: string;
   onOpen: () => void;
 }) {
   const top = useMemo<[string, number][]>(() => {
@@ -1524,7 +1562,7 @@ function WhatPeoplePick({
   return (
     <Panel
       title="What people pick"
-      sub={[`of ${n} dexes`]}
+      sub={[`of ${n} ${unit}`]}
       actions={
         <Button variant="ghost" size="sm" onClick={onOpen}>
           Most picked ›
@@ -1538,13 +1576,43 @@ function WhatPeoplePick({
 
 export type AdminNavKey = ToolSlice | 'search' | 'feedback';
 
+/** The admin's one bar: fixed to the bottom on a phone, stuck under the
+ *  header on desktop. Its height is `--admin-bar-h`. `wide` spans the page,
+ *  so a full-width sticky block under it leaves no gap beside it. */
+function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
+  const barRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const apply = () => document.documentElement.style.setProperty('--admin-bar-h', `${el.getBoundingClientRect().height}px`);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty('--admin-bar-h');
+    };
+  }, []);
+  return (
+    <div
+      ref={barRef}
+      data-admin-bar
+      className={cn(
+        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 backdrop-blur md:sticky md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
+        wide ? 'md:w-full' : 'md:max-w-5xl',
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: AdminNavKey) => void }) {
   const navRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     const el = navRef.current;
     if (!el) return;
     const apply = () => {
-      document.documentElement.style.setProperty('--admin-nav-h', `${el.getBoundingClientRect().height}px`);
       const buttons = el.querySelectorAll('button');
       if (buttons.length > 0) {
         const a = buttons[0].getBoundingClientRect();
@@ -1557,7 +1625,6 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     ro.observe(el);
     return () => {
       ro.disconnect();
-      document.documentElement.style.removeProperty('--admin-nav-h');
       document.documentElement.style.removeProperty('--admin-nav-tabs-w');
     };
   }, []);
@@ -1572,7 +1639,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     <nav
       ref={navRef}
       aria-label="Admin section"
-      className="fixed inset-x-0 bottom-0 z-[90] flex justify-around gap-1 border-t border-border bg-card/95 px-2 py-2 backdrop-blur md:sticky md:top-0 md:mx-auto md:max-w-5xl md:justify-start md:border-t-0 md:border-b md:bg-card md:px-4 md:py-2 md:backdrop-blur-none"
+      className="flex justify-around gap-1 px-2 py-2 md:justify-center md:px-4"
     >
       {items.map((it) => {
         const on = it.key === value;
@@ -1598,7 +1665,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
 // ---------- main ----------
 
 /** What the detail pane shows: one browser's dex or league, or the picks page. */
-type Detail = { kind: 'dex' | 'league'; cid: string } | { kind: 'picks' };
+type Detail = { kind: 'dex' | 'league'; cid: string } | { kind: 'picks'; tool: 'dex' | 'league' };
 
 export function AdminPage() {
   const [token, setToken] = useState<string | null>(() => {
@@ -1615,6 +1682,10 @@ export function AdminPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
+  const [range, setRange] = useState<DashboardRange>(loadRange);
+  // Newest browsers rows the reader asked to see; null shows the browsers
+  // active in the range.
+  const [listShown, setListShown] = useState<number | null>(null);
   const [page, setPage] = useState<'analytics' | 'search' | 'feedback'>('analytics');
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
   const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
@@ -1632,6 +1703,7 @@ export function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const pageHeaderRef = useRef<HTMLElement>(null);
   const [pageHeaderH, setPageHeaderH] = useState(0);
+  const [rangeSlot, setRangeSlot] = useState<HTMLDivElement | null>(null);
   const [loadedAt, setLoadedAt] = useState(0);
 
   useLayoutEffect(() => {
@@ -1647,10 +1719,14 @@ export function AdminPage() {
     setDetail(d);
     window.scrollTo(0, 0);
   }, []);
+  // Cards that measure themselves (Who) re-render after this effect, still
+  // before paint. The microtask scrolls once they have, so the page is tall
+  // enough and the reader's row sits where it was.
   useLayoutEffect(() => {
-    if (!detail) window.scrollTo(0, dashScrollY);
+    if (!detail) queueMicrotask(() => window.scrollTo(0, dashScrollY));
   }, [detail, dashScrollY]);
-  const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
+  const openDexPicks = useCallback(() => openDetail({ kind: 'picks', tool: 'dex' }), [openDetail]);
+  const openLeaguePicks = useCallback(() => openDetail({ kind: 'picks', tool: 'league' }), [openDetail]);
 
   // A quiet load shows no progress and clears an error only on success, so a
   // background refresh leaves the page as it is until new data arrives.
@@ -1670,17 +1746,23 @@ export function AdminPage() {
   }, []);
 
   const load = useCallback(
-    async (tok: string, { limit = PAGE_SIZE, refreshSearch = false, quiet = false } = {}) => {
+    async (
+      tok: string,
+      asked: DashboardRange,
+      { limit = PAGE_SIZE, refreshSearch = false, quiet = false } = {},
+    ) => {
       const seq = ++latestLoad;
       if (!quiet) {
         setLoading(true);
         setError(null);
       }
       try {
-        const resp = await fetchDashboard(tok, limit, 0);
+        const resp = await fetchDashboard(tok, limit, asked);
+        const at = Date.now();
+        rangeCache.set(asked, { data: resp, at });
         if (seq !== latestLoad) return;
         setData(resp);
-        setLoadedAt(Date.now());
+        setLoadedAt(at);
         setAuthed(true);
         setToken(tok);
         setError(null);
@@ -1715,22 +1797,54 @@ export function AdminPage() {
       });
       return;
     }
-    if (initialToken) void load(initialToken);
+    if (initialToken) void load(initialToken, loadRange());
   }, [initialToken, load]);
 
-  const loadMore = useCallback(async () => {
-    if (!token || !data) return;
-    const seq = ++latestLoad;
-    setLoadingMore(true);
-    try {
-      const resp = await fetchDashboard(token, data.records.length + PAGE_SIZE, 0);
-      if (seq === latestLoad) setData(resp);
-    } catch (e) {
-      if (seq === latestLoad) setError(e instanceof Error ? e.message : 'Something went wrong.');
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [token, data]);
+  const loadMore = useCallback(
+    async (limit: number) => {
+      if (!token) return;
+      const seq = ++latestLoad;
+      setLoadingMore(true);
+      try {
+        const resp = await fetchDashboard(token, limit, range);
+        const at = Date.now();
+        rangeCache.set(range, { data: resp, at });
+        if (seq === latestLoad) {
+          setData(resp);
+          setLoadedAt(at);
+        }
+      } catch (e) {
+        if (seq === latestLoad) setError(e instanceof Error ? e.message : 'Something went wrong.');
+      } finally {
+        setLoadingMore(false);
+      }
+    },
+    [token, range],
+  );
+
+  const pickRange = useCallback(
+    (next: DashboardRange) => {
+      setRange(next);
+      setListShown(null);
+      // A request still out for the old range fills the cache, not the screen.
+      latestLoad += 1;
+      try {
+        localStorage.setItem(RANGE_KEY, next);
+      } catch {
+        // localStorage may be unavailable
+      }
+      if (!token) return;
+      const hit = rangeCache.get(next);
+      if (!hit) {
+        void load(token, next);
+        return;
+      }
+      setData(hit.data);
+      setLoadedAt(hit.at);
+      if (Date.now() - hit.at >= STALE_ON_RETURN_MS) void load(token, next, { limit: hit.data.limit, quiet: true });
+    },
+    [token, load],
+  );
 
   // Keep an open dashboard current: refetch on return to the tab (including an
   // iOS back-forward restore) and on an interval while visible. The refetch
@@ -1742,7 +1856,7 @@ export function AdminPage() {
     const refresh = (minAgeMs: number) => {
       if (running || Date.now() - loadedAt < minAgeMs) return;
       running = true;
-      void load(token, { limit: loadedLimit, quiet: true }).finally(() => {
+      void load(token, range, { limit: loadedLimit, quiet: true }).finally(() => {
         running = false;
       });
     };
@@ -1762,7 +1876,7 @@ export function AdminPage() {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('pageshow', onPageShow);
     };
-  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit]);
+  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit, range]);
 
   const setArchived = useCallback(
     async (cid: string, next: boolean) => {
@@ -1777,7 +1891,8 @@ export function AdminPage() {
           body: JSON.stringify({ cid, archived: next }),
         });
         if (!res.ok) throw new Error(`Archive failed (${res.status}).`);
-        await load(token, { limit: data?.records.length ?? PAGE_SIZE });
+        rangeCache.clear();
+        await load(token, range, { limit: data?.records.length ?? PAGE_SIZE });
         setArchiveOverride((prev) => {
           const copy = { ...prev };
           delete copy[key];
@@ -1792,11 +1907,12 @@ export function AdminPage() {
         setError(e instanceof Error ? e.message : 'Archive failed.');
       }
     },
-    [token, data, load],
+    [token, data, load, range],
   );
 
   const pickTool = useCallback((next: ToolSlice) => {
     setWhoFilter(null);
+    setListShown(null);
     setTool(next);
     try {
       localStorage.setItem(TOOL_KEY, next);
@@ -1814,6 +1930,7 @@ export function AdminPage() {
     setToken(null);
     setAuthed(false);
     setData(null);
+    rangeCache.clear();
     setSearchPerformance(null);
     setSearchError(null);
     setTokenInput('');
@@ -1826,7 +1943,7 @@ export function AdminPage() {
           onSubmit={(e) => {
             e.preventDefault();
             const t = tokenInput.trim();
-            if (t) void load(t);
+            if (t) void load(t, range);
           }}
           className="w-full max-w-sm flex flex-col gap-3"
         >
@@ -1852,6 +1969,11 @@ export function AdminPage() {
 
   const navKey: AdminNavKey = page === 'feedback' ? 'feedback' : page === 'search' ? 'search' : tool;
   const onNav = (k: AdminNavKey) => {
+    if (detail) {
+      // A nav press opens the tab at its top; Back is the way to the old place.
+      setDashScrollY(0);
+      setDetail(null);
+    }
     if (k === 'feedback') {
       setPage('feedback');
     } else if (k === 'search') {
@@ -1865,7 +1987,10 @@ export function AdminPage() {
   const lockUser = detail?.kind === 'dex' || detail?.kind === 'league';
 
   return (
-    <div className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
+    <div
+      className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}
+      style={{ '--admin-header-h': `${pageHeaderH}px` } as CSSProperties}
+    >
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
         <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockUser ? 'max-w-none' : 'max-w-5xl')}>
           <h1 className="whitespace-nowrap text-sm font-bold">
@@ -1873,7 +1998,7 @@ export function AdminPage() {
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, { refreshSearch: true })} disabled={loading || searchLoading}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, range, { refreshSearch: true })} disabled={loading || searchLoading}>
               {loading || searchLoading ? 'Refreshing…' : 'Refresh'}
             </Button>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
@@ -1883,15 +2008,21 @@ export function AdminPage() {
         </div>
       </header>
 
-      {detail?.kind !== 'picks' && <AdminNav value={navKey} onChange={onNav} />}
+      <AdminBar wide={detail?.kind === 'picks'}>
+        {/* A user page portals its session scrubber here instead. */}
+        <div ref={setRangeSlot} data-admin-range-slot className={cn(detail?.kind === 'picks' && 'pb-2')}>
+          {!lockUser && page !== 'feedback' && <RangeRibbon value={range} onChange={pickRange} />}
+        </div>
+        {detail?.kind !== 'picks' && <AdminNav value={navKey} onChange={onNav} />}
+      </AdminBar>
 
       <main
         className={cn(
           'mx-auto flex w-full min-w-0 flex-1 flex-col px-4',
           lockUser ? 'max-w-none' : 'max-w-5xl',
           lockUser
-            ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-nav-h,5rem)] md:pb-8'
-            : cn('gap-4 pt-4 md:pb-8', detail?.kind === 'picks' ? 'pb-8' : 'pb-24'),
+            ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-bar-h,8rem)] md:pb-8'
+            : 'gap-4 pb-[calc(var(--admin-bar-h,8rem)+1.5rem)] pt-4 md:pb-8',
         )}
       >
         {error && <p className="text-sm text-destructive">{error}</p>}
@@ -1901,14 +2032,14 @@ export function AdminPage() {
           <div className={cn((detail.kind === 'league' || detail.kind === 'dex') && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
           {(() => {
           if (detail.kind === 'picks') {
+            if (detail.tool === 'league') {
+              return data.league?.picks ? (
+                <LeaguePicksPage picks={data.league.picks} n={data.league.users} onBack={() => setDetail(null)} />
+              ) : null;
+            }
             const nDex = data.tools?.dex ?? data.funnel.users;
             return (
-              <PicksDetailPage
-                picksBySectionAll={data.picksBySectionAll}
-                n={nDex}
-                onBack={() => setDetail(null)}
-                stickyOffset={pageHeaderH}
-              />
+              <PicksDetailPage picksBySectionAll={data.picksBySectionAll} n={nDex} onBack={() => setDetail(null)} />
             );
           }
           const bare = detail.cid.split('::')[0];
@@ -1921,13 +2052,15 @@ export function AdminPage() {
             data.leagueByCid?.[bare] ??
             data.leagueUsers?.find((r) => r.cid === detail.cid || r.cid === bare);
           return (
-            <UserDetailPage
-              tool={detail.kind}
-              onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
-              dex={dex}
-              league={league}
-              onBack={() => setDetail(null)}
-            />
+            <RangeSlotContext.Provider value={rangeSlot}>
+              <UserDetailPage
+                tool={detail.kind}
+                onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
+                dex={dex}
+                league={league}
+                onBack={() => setDetail(null)}
+              />
+            </RangeSlotContext.Provider>
           );
           })()}
           </div>
@@ -1937,7 +2070,7 @@ export function AdminPage() {
           (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
 
         {!detail && page === 'search' && (
-          <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} />
+          <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} range={range} />
         )}
 
         {!detail && page === 'analytics' && data && (() => {
@@ -1968,14 +2101,6 @@ export function AdminPage() {
           const leagueSankey = data.leagueFunnel ? leagueFunnelSankey(data.leagueFunnel) : null;
           const referrerSankey = data.referrerFlow?.length ? referrerFlowSankey(data.referrerFlow) : null;
 
-          const act = slice.activity;
-          const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          const fmtDateTime = (ms: number) =>
-            new Date(ms).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-          const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)} · as of ${fmtDateTime(loadedAt)}` : '';
-
-          const xt = data.tools;
-
           // The selected tool's whole population, not a built/incomplete/completed slice.
           const whoSrc = {
             devices: slice.devices,
@@ -2005,25 +2130,6 @@ export function AdminPage() {
 
           return (
           <>
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              {tool !== 'league' && (
-                <>
-                  <span className="text-sm">
-                    <b className="tabular-nums">{sawIntro}</b> <span className="text-muted-foreground">saw intro</span>
-                  </span>
-                  <span className="text-sm">
-                    <b className="tabular-nums">{built}</b> <span className="text-muted-foreground">built a dex</span>
-                  </span>
-                </>
-              )}
-              {tool !== 'dex' && xt && (
-                <span className="text-sm">
-                  <b className="tabular-nums">{xt.league}</b> <span className="text-muted-foreground">league browsers</span>
-                </span>
-              )}
-              {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
-            </div>
-
             {slice.activity.length > 0 && (
               <ActiveUsersPanel
                 key={tool}
@@ -2034,6 +2140,7 @@ export function AdminPage() {
                 }
                 hourly={slice.hourly ?? []}
                 nowMs={loadedAt}
+                range={range}
               />
             )}
 
@@ -2045,7 +2152,6 @@ export function AdminPage() {
               <Panel title="League activity" sub={[`${slice.users} browsers`]}>
                 <div className="flex flex-wrap gap-x-6 gap-y-3">
                   <Kpi emphasis value={slice.users} label="Browsers" />
-                  <Kpi value={slice.retention.activeLast7} label="Active · 7d" />
                   <Kpi value={slice.retention.returning} label="Returning" />
                   {data.league && (
                     <Kpi value={data.league.exportedCard + data.league.exportedLeague} label="Exports" />
@@ -2161,7 +2267,6 @@ export function AdminPage() {
                 <WhoOrigin
                   countries={whoSrc.countries}
                   buckets={whoBuckets}
-                  countries7d={slice.countries7d ?? 0}
                   filter={whoFilter}
                   onFilter={setWhoFilter}
                 />
@@ -2169,7 +2274,15 @@ export function AdminPage() {
             </Panel>
 
             {tool === 'dex' && (
-              <WhatPeoplePick mostBySection={data.popularBySection} n={built} onOpen={openPicks} />
+              <WhatPeoplePick mostBySection={data.popularBySection} n={built} unit="dexes" onOpen={openDexPicks} />
+            )}
+            {tool === 'league' && data.league?.picks && (
+              <WhatPeoplePick
+                mostBySection={data.league.picks.byType}
+                n={data.league.users}
+                unit="leagues"
+                onOpen={openLeaguePicks}
+              />
             )}
 
             {tool !== 'all' && <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
@@ -2184,9 +2297,16 @@ export function AdminPage() {
                   archived: boolean;
                   open: Detail;
                 };
+                // Newest first, so the browsers active in the range lead the
+                // list. It opens on them; Load more continues past the range.
+                const loaded: { lastTs: number }[] = showDex ? data.records : (data.leagueUsers ?? []);
+                const total = showDex ? (data.totalDexRecords ?? data.totalUsers) : (data.totalLeagueUsers ?? loaded.length);
+                const since = data.rangeStart ?? null;
+                const inRange = since === null ? loaded.length : loaded.filter((r) => r.lastTs > since).length;
+                const shown = Math.min(loaded.length, listShown ?? inRange);
                 const listed: Row[] = [];
                 if (showDex) {
-                  for (const rec of data.records) {
+                  for (const rec of data.records.slice(0, shown)) {
                     const league =
                       data.leagueByCid?.[rec.cid] ?? data.leagueByCid?.[bareCid(rec.cid)];
                     const kind = toolKind(true, !!league);
@@ -2211,7 +2331,7 @@ export function AdminPage() {
                     });
                   }
                 } else {
-                  for (const rec of data.leagueUsers ?? []) {
+                  for (const rec of (data.leagueUsers ?? []).slice(0, shown)) {
                     const dex = data.records.find((r) => r.cid === rec.cid || r.cid.split('::')[0] === rec.cid);
                     const hasDex = !!dex || rec.hasDex;
                     const kind = toolKind(hasDex, true);
@@ -2240,8 +2360,7 @@ export function AdminPage() {
                   }
                 }
                 const rows = listed.filter((row) => matchesFacetFilters(row.rec, facetFilters));
-                const emptyList = showDex ? data.records.length === 0 : (data.leagueUsers?.length ?? 0) === 0;
-                const totalListed = data.totalDexRecords ?? data.totalUsers;
+                const emptyList = loaded.length === 0;
                 return (
                   <>
                     {emptyList && !loading && (
@@ -2249,7 +2368,7 @@ export function AdminPage() {
                         {showDex ? 'No users yet.' : 'No league users yet.'}
                       </p>
                     )}
-                    {!emptyList && rows.length === 0 && !loading && (
+                    {shown > 0 && rows.length === 0 && !loading && (
                       <p className="text-sm text-muted-foreground">No users match these filters.</p>
                     )}
                     <div className={PREVIEW_TABLE}>
@@ -2282,9 +2401,18 @@ export function AdminPage() {
                         ))}
                       </PreviewMetricScale>
                     </div>
-                    {showDex && data.records.length < totalListed && (
-                      <Button className="mt-3" variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
-                        {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${totalListed})`}
+                    {shown < total && (
+                      <Button
+                        className="mt-3"
+                        variant="outline"
+                        onClick={() => {
+                          const next = shown + PAGE_SIZE;
+                          setListShown(next);
+                          if (loaded.length < next) void loadMore(next);
+                        }}
+                        disabled={loadingMore}
+                      >
+                        {loadingMore ? 'Loading…' : `Load more (${shown} / ${total})`}
                       </Button>
                     )}
                   </>

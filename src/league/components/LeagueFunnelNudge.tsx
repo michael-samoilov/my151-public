@@ -31,6 +31,11 @@ const COPY: Record<LeagueNudgeId, NudgeCopy> = {
     bodyKey: 'nudge.gyms.body',
     ctaKey: 'nudge.gyms.cta',
   },
+  complete: {
+    titleKey: 'nudge.complete.title',
+    bodyKey: 'nudge.complete.body',
+    ctaKey: 'nudge.gyms.cta',
+  },
 };
 
 const AUTO_DISMISS_MS = 10000;
@@ -69,7 +74,7 @@ export function LeagueFunnelNudge() {
     let cancelled = false;
     let raf = 0;
     let frames = 0;
-    const selector = `[data-league-export="${id}"]`;
+    const selector = `[data-league-export="${id === 'card' ? 'card' : 'league'}"]`;
     const capture = () => {
       if (cancelled) return;
       const nodes = [...document.querySelectorAll(selector)];

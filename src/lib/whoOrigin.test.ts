@@ -5,7 +5,7 @@ import {
   OTHER_KEY,
   balanceRailRows,
   countryCounts,
-  countryHeaderCounts,
+  countryHeaderCount,
   countryItems,
   distinctCountries,
   fitBar,
@@ -124,15 +124,9 @@ describe('language modules', () => {
     expect(languageOverrides(buckets, 'North America')).toEqual([]);
   });
 
-  it('counts countries in the pressed slice, including the 7-day window', () => {
-    expect(countryHeaderCounts(buckets, { dim: 'device', value: 'Mobile' }, 'North America')).toEqual({
-      all: 2,
-      week: 2,
-    });
-    expect(countryHeaderCounts(buckets, { dim: 'region', value: 'Europe' }, 'North America')).toEqual({
-      all: 3,
-      week: 2,
-    });
+  it('counts countries in the pressed slice', () => {
+    expect(countryHeaderCount(buckets, { dim: 'device', value: 'Mobile' }, 'North America')).toBe(2);
+    expect(countryHeaderCount(buckets, { dim: 'region', value: 'Europe' }, 'North America')).toBe(3);
   });
 
   it('colors a language by the region with the most users', () => {
@@ -191,7 +185,7 @@ describe('language modules', () => {
     expect(europe.map((b) => b.country).sort()).toEqual(['DE', 'FR', 'GB']);
     const open = visibleBuckets(buckets, null, null);
     expect([...new Set(open.map((b) => b.country))].sort()).toEqual(['DE', 'FR', 'GB', 'US']);
-    expect(countryHeaderCounts(buckets, null, null)).toEqual({ all: 4, week: 3 });
+    expect(countryHeaderCount(buckets, null, null)).toBe(4);
     expect(regionBar(countryCounts(buckets, { dim: 'device', value: 'Mobile' }), 100).map((r) => r.key)).toEqual([
       'North America',
       'Europe',

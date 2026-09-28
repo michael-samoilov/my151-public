@@ -33,7 +33,9 @@ locked until 25 Pokémon are placed and stays unlocked after that.
 `p151-moved-notice-seen`, so no launch prompt covers the page. It seeds a
 37-Pokémon dex (real assignments from `src/data/demoDex.ts`) through
 localStorage. The seed pins `locale: 'en'`, so an engine's own
-`navigator.languages` cannot change a label. The real add clicks
+`navigator.languages` cannot change a label. It asserts tab activation
+(`aria-selected`, with a non-transparent background as fallback), a shared
+tablist track, and 4-digit count clearance. The real add clicks
 `[data-section-id="meadow"] [data-add-slot]`, then the first
 `[data-testid="verify-evo-card"]`, and reads the placed count. It runs on
 desktop Blink, where a card click adds immediately. Other surfaces skip it by
@@ -48,7 +50,8 @@ name. Personas assert their identity first.
 - `?tune` has no environment gate. It exposes `window.__pokedexStore`.
 - The Starters section has no `[data-add-slot]`, so a drive uses another
   section's add slot (see `build-and-place.md`).
-- The active-tab signal is the computed `background-color`, not a class name,
-  so it survives Tailwind class churn and reads the same on all three engines.
+- The active-tab signal is `aria-selected`, with the computed
+  `background-color` as a fallback, not a class name, so it survives Tailwind
+  class churn and reads the same on all three engines.
 - Analytics is a real nav only at 25 or more placed. The 37-Pokémon seed clears
   that bar.

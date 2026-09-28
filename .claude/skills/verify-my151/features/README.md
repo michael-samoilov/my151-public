@@ -31,7 +31,8 @@ every page. The admin dashboard is at `/?admin`. The favorite Pokémon picker is
 ## Stable handles
 
 - Nav tabs (dex page): `[data-nav="builder"]`, `[data-nav="analytics"]`,
-  `[data-nav="view"]`. Active tab = the one whose computed `background-color`
+  `[data-nav="view"]`, inside one `[role="tablist"]`. Active tab =
+  `aria-selected="true"`. Fallback: the one whose computed `background-color`
   is non-transparent. Header lanes: `[data-testid="tool-title"]` and
   `[data-testid="tool-actions"]`.
 - Builder: the scroll container `[data-build-scroll]`, sections

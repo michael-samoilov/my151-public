@@ -334,77 +334,101 @@ test.describe('gym card slots', () => {
     await expect(page.getByRole('button', { name: /Surf/ }).first()).toBeVisible();
   });
 
-  test('the badge name and the word Badge are one wrapping phrase', async ({ page }) => {
+  test('the badge name and the word Badge are one wrapping phrase', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
-    const field = page.locator('[aria-label="Badge name"]');
-    await field.click();
-    await page.keyboard.type('Thunder');
-    await page.waitForTimeout(200);
-
-    const short = await page.evaluate(() => {
-      const el = document.querySelector('[aria-label="Badge name"]')!;
-      const box = el.parentElement!;
-      return { field: el.textContent, phrase: box.textContent };
-    });
-    // The suffix lives inside the field now so wrap and caret stay one phrase.
-    expect(short.field).toBe('Thunder Badge');
-    expect(short.phrase).toBe('Thunder Badge');
+    await expectThunderBadge(page);
   });
 
   test('the badge refuses text that would spill out of its slot', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
-    const field = page.locator('[aria-label="Badge name"]');
-    await field.click();
-    await page.keyboard.type('Thunder Cascade Marsh Rainbow Soul Volcano Earth Boulder Zephyr Glacier');
-    await page.waitForTimeout(500);
-
-    const state = await page.evaluate(() => {
-      const el = document.querySelector('[aria-label="Badge name"]')!;
-      const box = el.parentElement!;
-      const slot = box.parentElement!;
-      return {
-        stored: (JSON.parse(localStorage.getItem('league-builder') ?? '{}').state?.cards?.[0]?.badgeName ?? '') as string,
-        rendered: el.textContent ?? '',
-        overflows: box.scrollHeight > box.clientHeight + 1,
-        insideSlot: box.getBoundingClientRect().bottom <= slot.getBoundingClientRect().bottom + 1,
-      };
-    });
-    // Typing kept going long past the limit; the slot stayed intact.
-    expect(state.overflows).toBe(false);
-    expect(state.insideSlot).toBe(true);
-    // What survived is what fits, and it is the head of what was typed —
-    // not a scrambled reorder, which is what a field that rewrites itself
-    // mid-keystroke produces.
-    // The box is a row and a half now, two lines beside the hexagon rather
-    // than three under it, so what fits is shorter than it was. The property
-    // is that what survived is the *head* of what was typed, whatever length
-    // the box allows — a field that rewrites itself mid-keystroke produces a
-    // scrambled reorder instead, which is what this catches.
-    expect(state.rendered.length).toBeGreaterThan(4);
-    expect(state.rendered.length).toBeLessThan(60);
-    // The head of what was typed, in order. Not every character of it, and
-    // not a fixed prefix: how much fits depends on the width the card is
-    // drawn at, and once the box is full a narrow letter can still slip in
-    // where a wide one was refused, so the last character may not be the one
-    // that came next. Both are the field's own behaviour. What this test is
-    // for is that everything before that point survives *in order*, which is
-    // what a field rewriting itself mid-keystroke destroys.
-    const typed = 'Thunder Cascade Marsh Rainbow Soul Volcano Earth Boulder Zephyr Glacier';
-    const kept = state.rendered.replace(/\u00a0/g, ' ').replace(/\s*Badge$/, '').trimEnd();
-    let common = 0;
-    while (common < kept.length && kept[common] === typed[common]) common++;
-    // Everything but the tail is the head of what was typed, in order. The
-    // tail can hold a character or two that never followed: once the box is
-    // full the field tests each keystroke on its own, so a narrow letter fits
-    // where a wide one was refused, and a trailing space arrives as a
-    // non-breaking one. Order is the property; the last couple of characters
-    // are the field's own arithmetic.
-    expect(common, `"${kept}" is the head of what was typed`)
-      .toBeGreaterThanOrEqual(kept.length - 2);
-    expect(common, 'and enough of it to show the order held').toBeGreaterThan(4);
-    expect(state.stored.replace(/\u00a0/g, ' ').trimEnd()).toBe(kept);
+    await expectBadgeKeepsTypedHead(page);
   });
 });
+
+/** Types "Thunder" into the badge and expects the phrase "Thunder Badge". */
+async function expectThunderBadge(page: Page) {
+  const field = page.locator('[aria-label="Badge name"]');
+  await field.click();
+  await page.keyboard.type('Thunder');
+  await page.waitForTimeout(200);
+
+  const short = await page.evaluate(() => {
+    const el = document.querySelector('[aria-label="Badge name"]')!;
+    const box = el.parentElement!;
+    // The lines the typed word is drawn on. The field breaks a word that is
+    // wider than its box rather than refusing it, so the text can be right
+    // while the reader sees "THUNDE" and "R".
+    const text = el.firstChild;
+    let lines = 0;
+    if (text?.nodeType === Node.TEXT_NODE && text.textContent?.startsWith('Thunder')) {
+      const word = document.createRange();
+      word.setStart(text, 0);
+      word.setEnd(text, 'Thunder'.length);
+      lines = new Set([...word.getClientRects()].map((r) => Math.round(r.top))).size;
+    }
+    return { field: el.textContent, phrase: box.textContent, lines };
+  });
+  await test.info().attach('badge-thunder.json', { body: JSON.stringify(short), contentType: 'application/json' });
+  // The suffix lives inside the field now so wrap and caret stay one phrase.
+  expect(short.field).toBe('Thunder Badge');
+  expect(short.phrase).toBe('Thunder Badge');
+  expect(short.lines, 'Thunder is drawn whole, on one line').toBe(1);
+}
+
+/** Types far past the badge's room and expects the head of it, in order. */
+async function expectBadgeKeepsTypedHead(page: Page) {
+  const field = page.locator('[aria-label="Badge name"]');
+  await field.click();
+  await page.keyboard.type('Thunder Cascade Marsh Rainbow Soul Volcano Earth Boulder Zephyr Glacier');
+  await page.waitForTimeout(500);
+
+  const state = await page.evaluate(() => {
+    const el = document.querySelector('[aria-label="Badge name"]')!;
+    const box = el.parentElement!;
+    const slot = box.parentElement!;
+    return {
+      stored: (JSON.parse(localStorage.getItem('league-builder') ?? '{}').state?.cards?.[0]?.badgeName ?? '') as string,
+      rendered: el.textContent ?? '',
+      overflows: box.scrollHeight > box.clientHeight + 1,
+      insideSlot: box.getBoundingClientRect().bottom <= slot.getBoundingClientRect().bottom + 1,
+    };
+  });
+  await test.info().attach('badge-long-name.json', { body: JSON.stringify(state), contentType: 'application/json' });
+  // Typing kept going long past the limit; the slot stayed intact.
+  expect(state.overflows).toBe(false);
+  expect(state.insideSlot).toBe(true);
+  // What survived is what fits, and it is the head of what was typed —
+  // not a scrambled reorder, which is what a field that rewrites itself
+  // mid-keystroke produces.
+  // The box is a row and a half now, two lines beside the hexagon rather
+  // than three under it, so what fits is shorter than it was. The property
+  // is that what survived is the *head* of what was typed, whatever length
+  // the box allows — a field that rewrites itself mid-keystroke produces a
+  // scrambled reorder instead, which is what this catches.
+  expect(state.rendered.length).toBeGreaterThan(4);
+  expect(state.rendered.length).toBeLessThan(60);
+  // The head of what was typed, in order. Not every character of it, and
+  // not a fixed prefix: how much fits depends on the width the card is
+  // drawn at, and once the box is full a narrow letter can still slip in
+  // where a wide one was refused, so the last character may not be the one
+  // that came next. Both are the field's own behaviour. What this test is
+  // for is that everything before that point survives *in order*, which is
+  // what a field rewriting itself mid-keystroke destroys.
+  const typed = 'Thunder Cascade Marsh Rainbow Soul Volcano Earth Boulder Zephyr Glacier';
+  const kept = state.rendered.replace(/\u00a0/g, ' ').replace(/\s*Badge$/, '').trimEnd();
+  let common = 0;
+  while (common < kept.length && kept[common] === typed[common]) common++;
+  // Everything but the tail is the head of what was typed, in order. The
+  // tail can hold a character or two that never followed: once the box is
+  // full the field tests each keystroke on its own, so a narrow letter fits
+  // where a wide one was refused, and a trailing space arrives as a
+  // non-breaking one. Order is the property; the last couple of characters
+  // are the field's own arithmetic.
+  expect(common, `"${kept}" is the head of what was typed`)
+    .toBeGreaterThanOrEqual(kept.length - 2);
+  expect(common, 'and enough of it to show the order held').toBeGreaterThan(4);
+  expect(state.stored.replace(/\u00a0/g, ' ').trimEnd()).toBe(kept);
+}
 
 /**
  * PARTNER / SHOULDERMON must sit inside the dashed rounded pane, as two
