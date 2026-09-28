@@ -1,6 +1,7 @@
 // keeps: a wrong candidate list in one of the 264 grid cells, which E2E cannot open one by one
 import { describe, expect, it } from 'vitest';
-import { eligibleFor, isEmptyTypePicker, kindFor, regionalPickerTier } from './eligibility';
+import { eligibleFor, isEmptyTypePicker, kindFor } from './eligibility';
+import { isBattleForm, regionalPickerTier } from './sortKeys';
 import { isLegendaryEligible, isPowerupForm } from './catalog';
 import { debutRank } from './debut';
 import { TYPE_NAMES } from '@/types/pokemon';
@@ -76,7 +77,7 @@ describe('eligibleFor', () => {
     expect(eligibleFor('legendary', 'gimmick').length).toBeGreaterThan(0);
   });
 
-  it('orders by debut game, then native, older-family, legendary, and older legendary families', () => {
+  it('orders by debut game, then regular before battle forms, then native, older-family, legendary, and older legendary families', () => {
     for (const gen of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
       for (const type of [...TYPE_NAMES, 'gimmick', 'legendary'] as const) {
         const mons = eligibleFor(type, gen);
@@ -87,11 +88,16 @@ describe('eligibleFor', () => {
         expect(ranks, `${type}|${gen} debut games`).toEqual(ranks.slice().sort((a, b) => a - b));
         for (const rank of new Set(ranks)) {
           const game = tieredMons.filter((mon) => debutRank(mon) === rank);
-          const tiers = game.map(regionalPickerTier);
-          expect(tiers, `${type}|${gen}`).toEqual(tiers.slice().sort((a, b) => a - b));
-          const firstLegendary = game.findIndex(isLegendaryEligible);
-          if (firstLegendary >= 0) {
-            expect(game.slice(firstLegendary).every(isLegendaryEligible), `${type}|${gen} legendary tail`).toBe(true);
+          const kinds = game.map((mon) => Number(isBattleForm(mon)));
+          expect(kinds, `${type}|${gen} battle forms`).toEqual(kinds.slice().sort((a, b) => a - b));
+          for (const kind of new Set(kinds)) {
+            const group = game.filter((mon) => Number(isBattleForm(mon)) === kind);
+            const tiers = group.map(regionalPickerTier);
+            expect(tiers, `${type}|${gen}`).toEqual(tiers.slice().sort((a, b) => a - b));
+            const firstLegendary = group.findIndex(isLegendaryEligible);
+            if (firstLegendary >= 0) {
+              expect(group.slice(firstLegendary).every(isLegendaryEligible), `${type}|${gen} legendary tail`).toBe(true);
+            }
           }
         }
       }
@@ -111,8 +117,10 @@ describe('eligibleFor', () => {
     contiguous(ids('legendary', 8), [898, 10193, 10194]);
     contiguous(ids('legendary', 8), [905, 10249]);
     contiguous(ids('legendary', 6), [716, 11001]);
-    // Necrozma's fusions and Ultra form debuted in Ultra Sun and Ultra Moon, after every Sun and Moon entry.
-    contiguous(ids('legendary', 7), [10155, 10156, 10157, 803]);
+    // Necrozma's fusions debuted in Ultra Sun and Ultra Moon, after every Sun and Moon entry.
+    contiguous(ids('legendary', 7), [10155, 10156, 803]);
+    // Ultra Necrozma is a battle form, so it closes the Ultra Sun and Ultra Moon entries.
+    expect(ids('legendary', 7).indexOf(10157)).toBe(ids('legendary', 7).indexOf(807) + 1);
     contiguous(ids('legendary', 7), [801, 10147]);
     expect(ids('legendary', 8).indexOf(10246)).toBeGreaterThan(ids('legendary', 8).indexOf(892));
     expect(ids('legendary', 7).indexOf(10181)).toBeGreaterThan(ids('legendary', 7).indexOf(785));

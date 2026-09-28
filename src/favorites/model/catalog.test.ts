@@ -6,6 +6,7 @@ import pokemonData from '@/data/pokemon.json';
 import { ALTERNATE_PICKER_FORMS } from './alternateForms';
 import { allPickerMons, getPickerMon } from './catalog';
 import { eligibleFor } from './eligibility';
+import { debutGame } from './debut';
 
 describe('alternate picker forms', () => {
   it('keeps the new form catalog inside the picker and resolves local sprites', () => {
@@ -128,7 +129,11 @@ describe('alternate picker forms', () => {
     expect(getPickerMon(1017)?.sprite).toBe('/sprites/pokemon/1017.png');
     for (const id of [11014, 11015, 11016, 11017]) expect(getPickerMon(id)).toBeUndefined();
     together(ids('fairy', 8), [888, 10188]);
-    together(ids('fighting', 8), [889, 10189]);
+    // Crowned Zamazenta is a battle form, so it closes the Sword and Shield entries.
+    const fighting = eligibleFor('fighting', 8);
+    const crowned = fighting.findIndex((mon) => mon.id === 10189);
+    expect(fighting.slice(0, crowned).every((mon) => debutGame(mon) === 'SwSh')).toBe(true);
+    expect(debutGame(fighting[crowned + 1])).toBe('PLA');
     expect(getPickerMon(888)?.types).toEqual(['fairy']);
     expect(getPickerMon(888)?.sprite).toBe('/sprites/pokemon/888.png');
     expect(getPickerMon(889)?.sprite).toBe('/sprites/pokemon/889.png');

@@ -10,6 +10,7 @@ import { ChevronLeft } from 'lucide-react';
 import { isGenNumber, isTypeName, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
+import type { SortOrder } from '../model/sortKeys';
 import {
   chainSlotKey,
   enumeratePaths,
@@ -40,6 +41,7 @@ export function PickerSheet({
   fills,
   currentId,
   showTypes,
+  sortOrder,
   onToggleTypes,
   onClose,
   onPlace,
@@ -51,6 +53,7 @@ export function PickerSheet({
   fills: Record<string, number>;
   currentId?: number;
   showTypes: boolean;
+  sortOrder: SortOrder;
   onToggleTypes: () => void;
   onClose: () => void;
   onPlace: (id: number) => void;
@@ -77,8 +80,8 @@ export function PickerSheet({
         .map(getPickerMon)
         .filter((m): m is PickerMon => Boolean(m));
     }
-    return eligibleFor(type, gen);
-  }, [kind, type, gen, fills]);
+    return eligibleFor(type, gen, sortOrder);
+  }, [kind, type, gen, fills, sortOrder]);
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
   const maxCols = 6;

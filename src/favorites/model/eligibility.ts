@@ -1,5 +1,4 @@
 import { TYPE_NAMES } from '@/types/pokemon';
-import { PARADOX_IDS } from '@/data/categories';
 import {
   GEN_NUMBERS,
   cellKind,
@@ -10,28 +9,15 @@ import {
 } from './cells';
 import {
   allPickerMons,
-  comparePickerOrder,
-  CONVERGENT_IDS,
   getPickerMon,
   isLegendaryEligible,
-  isRegionalFamily,
   isNewDexRiff,
   isPowerupForm,
   isGimmickForm,
   isStarter,
   type PickerMon,
 } from './catalog';
-import { debutRank } from './debut';
-
-/** Native families precede arrivals from older generations within each section. */
-export function regionalPickerTier(mon: PickerMon): number {
-  const legendary = isLegendaryEligible(mon);
-  const owner = getPickerMon(mon.ownerId);
-  const olderFamily = isRegionalFamily(mon) || (owner != null && owner.generation < mon.generation);
-  if (legendary) return 3 + Number(olderFamily);
-  if (PARADOX_IDS.has(mon.id) || CONVERGENT_IDS.has(mon.id)) return 2;
-  return Number(olderFamily);
-}
+import { DEFAULT_SORT_ORDER, sortComparator, type SortOrder } from './sortKeys';
 
 function isGimmickCandidate(mon: PickerMon): boolean {
   return isGimmickForm(mon) || isNewDexRiff(mon);
@@ -44,7 +30,8 @@ function isStarterSpeciesForm(mon: PickerMon): boolean {
   return isStarter(mon) || (owner != null && isStarter(owner));
 }
 
-export function eligibleFor(type: TypeAxisId, gen: GenAxisId): PickerMon[] {
+/** Candidates for a cell, sorted by `order` (see `sortKeys.ts`). */
+export function eligibleFor(type: TypeAxisId, gen: GenAxisId, order: SortOrder = DEFAULT_SORT_ORDER): PickerMon[] {
   const list = allPickerMons();
   let out: PickerMon[] = [];
 
@@ -70,21 +57,7 @@ export function eligibleFor(type: TypeAxisId, gen: GenAxisId): PickerMon[] {
     out = [];
   }
 
-  return out.slice().sort((a, b) => {
-    if (type === 'psychic' && (gen === 2 || gen === 3)) {
-      const unownOrder = Number(a.ownerId === 201) - Number(b.ownerId === 201);
-      if (unownOrder !== 0) return unownOrder;
-    }
-    // Earlier debut games come first, so Sword/Shield entries precede Legends: Arceus ones.
-    const debutOrder = debutRank(a) - debutRank(b);
-    if (debutOrder !== 0) return debutOrder;
-    if (type !== 'starter') {
-      const tierA = regionalPickerTier(a);
-      const tierB = regionalPickerTier(b);
-      if (tierA !== tierB) return tierA - tierB;
-    }
-    return comparePickerOrder(a, b);
-  });
+  return out.slice().sort(sortComparator(order, { type, gen }));
 }
 
 const EMPTY_TYPE_PICKERS = new Set<string>();

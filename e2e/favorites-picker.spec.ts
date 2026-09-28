@@ -941,8 +941,9 @@ test.describe('favorite Pokémon picker', () => {
     const order = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
       (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
     );
-    expect(order.indexOf(10188)).toBe(order.indexOf(888) + 1);
-    expect(order.indexOf(10189)).toBe(order.indexOf(889) + 1);
+    // Crowned forms are battle forms, so they close the Sword and Shield group,
+    // right after Galarian Moltres.
+    expect(order.slice(order.indexOf(10171) + 1, order.indexOf(10171) + 3)).toEqual([10188, 10189]);
     expect(order.indexOf(10246)).toBeGreaterThan(order.indexOf(892));
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('base-and-crowned-wolves.png') });
     await page.keyboard.press('Escape');
