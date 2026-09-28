@@ -1512,21 +1512,22 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   await s.screenshot(ctx.shot('league-funnel-roster-nudge'));
   checks.push(ok('league-funnel:roster-nudge-shown', roster, roster ? 'league export nudge' : 'no roster nudge after 8 gyms'));
   if (roster) {
-    const geo = await s.evalJson<{ exportX: number | null; nameX: number | null; arrowX: number | null }>(
-      `const mid=(el)=>{if(!el)return null;const r=el.getBoundingClientRect();return r.left+r.width/2};
-       return {exportX:mid(document.querySelector('[data-league-export="league"]')),nameX:mid(document.querySelector('[aria-label="League name"]')),arrowX:mid(document.querySelector('[data-nudge-arrow]'))};`,
-    ).catch(() => ({ exportX: null, nameX: null, arrowX: null }));
-    const toExport = geo.arrowX != null && geo.exportX != null ? Math.abs(geo.arrowX - geo.exportX) : Infinity;
-    const toName = geo.arrowX != null && geo.nameX != null ? Math.abs(geo.arrowX - geo.nameX) : Infinity;
-    const vw = await s.evalJson<number>('return window.innerWidth;').catch(() => 0);
-    const settled = geo.exportX != null && vw > 0 && geo.exportX > vw * 0.7;
+    // The popup sits under or beside the summary, never over a row, and the
+    // league Export button pulses while it shows.
+    const geo = await s.evalJson<{ covered: number[]; pulse: boolean; placement: string | null }>(
+      `const n=document.querySelector('[data-testid="league-nudge"]').getBoundingClientRect();
+       const covered=[];for(let i=0;i<14;i++){const r=document.querySelector('[data-testid="league-slot-'+i+'"]').getBoundingClientRect();
+       if(Math.min(r.right,n.right)-Math.max(r.left,n.left)>0.5&&Math.min(r.bottom,n.bottom)-Math.max(r.top,n.top)>0.5)covered.push(i+1);}
+       const b=document.querySelector('[data-league-export="league"]');
+       return {covered,pulse:!!b&&b.hasAttribute('data-nudge-pulse'),placement:document.querySelector('[data-testid="league-nudge"]').getAttribute('data-nudge-placement')};`,
+    ).catch(() => ({ covered: [-1], pulse: false, placement: null }));
     checks.push(ok(
-      'league-funnel:roster-nudge-points-at-export',
-      settled && toExport < 24 && toExport < toName,
-      `arrow=${geo.arrowX} export=${geo.exportX} name=${geo.nameX} vw=${vw}`,
+      'league-funnel:roster-nudge-clear-of-rows',
+      geo.covered.length === 0 && geo.pulse,
+      `covered rows=[${geo.covered.join(',')}] export pulse=${geo.pulse} placement=${geo.placement}`,
     ));
   } else {
-    checks.push(ok('league-funnel:roster-nudge-points-at-export', false, 'roster nudge never shown'));
+    checks.push(ok('league-funnel:roster-nudge-clear-of-rows', false, 'roster nudge never shown'));
   }
 
   if (!(await seedLeagueHome(s, url, FULL_SEEN_V3_LEAGUE))) {

@@ -82,6 +82,11 @@ export function nextLeagueNudge(ctx: LeagueNudgeContext): LeagueNudgeId | null {
   return null;
 }
 
+/** A popup about the whole league, which the league summary shows. */
+export function isRosterNudge(id: LeagueNudgeId | null): id is 'league' | 'complete' {
+  return id === 'league' || id === 'complete';
+}
+
 export function isLeagueNudgeId(v: unknown): v is LeagueNudgeId {
   return v === 'card' || v === 'league' || v === 'complete';
 }

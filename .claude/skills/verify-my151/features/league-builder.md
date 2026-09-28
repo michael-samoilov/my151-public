@@ -52,7 +52,11 @@ shows a `[data-filter-chip="my-dex"]` chip, and its tiles are
 - `league-funnel`: the export nudges (`[data-testid="league-nudge"]`). Its
   `data-league-nudge` is `card` for a full trainer card, `league` for eight
   gym leaders with a card still empty, and `complete` for every card filled.
-  It also loads a full v3 save that saw the eight-gym popup and checks the
+  The two roster popups never cover a summary row: `data-nudge-placement`
+  is `beside` where the pane has room right of the summary (a desktop) and
+  `below` elsewhere, where the popup joins the page flow and the fit shrinks
+  the summary to make room. The league Export button carries
+  `data-nudge-pulse` while one shows. It also loads a full v3 save that saw the eight-gym popup and checks the
   store: version 4, `complete` celebrated, and no popup.
 
 The oracle is the store: `state.cards[i].lines[j].branch` and `.boundaries`,

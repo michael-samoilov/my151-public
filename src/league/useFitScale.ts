@@ -129,6 +129,13 @@ export function useFitScale(
       } else {
         avail = window.innerHeight - rect.top - 8;
       }
+      // A note drawn under the block at its own size, not the block's zoom
+      // (the export popup, `LeagueRosterNudge`), takes its whole height off
+      // the budget.
+      const note = el.nextElementSibling;
+      if (note instanceof HTMLElement && note.hasAttribute('data-fit-reserve')) {
+        avail -= note.offsetHeight;
+      }
       // Hold ±a few px of pane flicker so zoom/width cannot chase it every frame.
       // A block that holds its sprites takes every shrink at once: its
       // spacing is sized to the last px, so a held measure spills rows.
