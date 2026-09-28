@@ -1,5 +1,6 @@
-import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { cn } from '@/lib/utils';
+import { startTransition, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { RangeSlotContext } from '@/components/admin/rangeSlot';
 import {
   fmtDay,
   formatSessionMeta,
@@ -53,11 +54,12 @@ export function SessionTimeline({
   rightChip?: ReactNode;
   milestones?: ChartMilestone[];
   tz?: string;
-  /** Snapshot under the chart. On a phone the scrubber docks flush with the
-   *  bottom nav. Desktop keeps the slider under the chart. */
+  /** Snapshot under the chart. The scrubber then moves into the admin bar's
+   *  ribbon row, on the nav. */
   children?: ReactNode;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
+  const slot = useContext(RangeSlotContext);
   const [W, setW] = useState(320);
   // Playhead follows the finger immediately. Snapshot `index` is a React
   // transition, so a heavy dex/league child cannot stall the thumb.
@@ -390,15 +392,13 @@ export function SessionTimeline({
       <div className="order-1 shrink-0">{chart}</div>
       <div className="order-2 shrink-0 md:order-3">{readout}</div>
       <div className="order-3 flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-auto md:order-4">{children}</div>
-      <div
-        data-testid="session-scrubber-dock"
-        className={cn(
-          'order-4 shrink-0 md:order-2',
-          'max-md:sticky max-md:bottom-0 max-md:z-20 max-md:-mx-4 max-md:border-t max-md:bg-card/95 max-md:px-4 max-md:py-1.5 max-md:backdrop-blur',
+      {slot &&
+        createPortal(
+          <div data-testid="session-scrubber-dock" className="px-4 pt-1.5 md:pt-2">
+            {scrub}
+          </div>,
+          slot,
         )}
-      >
-        {scrub}
-      </div>
     </div>
   );
 }
