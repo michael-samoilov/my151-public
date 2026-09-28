@@ -23,7 +23,7 @@ export function useLeagueFunnelNudges() {
       dismissNudge();
       return;
     }
-    if (activeNudge === 'league' && openCard !== null) {
+    if ((activeNudge === 'league' || activeNudge === 'complete') && openCard !== null) {
       dismissNudge();
       return;
     }
