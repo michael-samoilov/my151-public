@@ -25,13 +25,17 @@ export const DRAG_HOLD_MS = 250;
 const TOUCH_SLOP_PX = 5;
 const MOUSE_DISTANCE_PX = 8;
 
+// Module constants rather than literals in the hook. `useSensor` memoizes on
+// the options object, so a fresh literal gave every render of a drag surface a
+// new sensor list. DndContext passes that list to every draggable through its
+// context, so each parent render re-rendered every tile. A full build page has
+// 151 tiles and renders several times during startup.
+const MOUSE_OPTIONS = { activationConstraint: { distance: MOUSE_DISTANCE_PX } };
+const TOUCH_OPTIONS = { activationConstraint: { delay: DRAG_HOLD_MS, tolerance: TOUCH_SLOP_PX } };
+
 export function useDragSensors() {
-  const mouse = useSensor(MouseSensor, {
-    activationConstraint: { distance: MOUSE_DISTANCE_PX },
-  });
-  const touch = useSensor(TouchSensor, {
-    activationConstraint: { delay: DRAG_HOLD_MS, tolerance: TOUCH_SLOP_PX },
-  });
+  const mouse = useSensor(MouseSensor, MOUSE_OPTIONS);
+  const touch = useSensor(TouchSensor, TOUCH_OPTIONS);
   return useSensors(mouse, touch);
 }
 
