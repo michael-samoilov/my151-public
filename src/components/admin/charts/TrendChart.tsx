@@ -1,10 +1,9 @@
-import { useMemo, useState } from 'react';
-import { Panel, Seg } from '@/components/admin/ui';
+import { useMemo } from 'react';
+import { Panel } from '@/components/admin/ui';
 import { useECharts, cssVar, type EChartsOption } from './useECharts';
+import { rangeStart, type DashboardRange } from '../../../../api/_range';
 import {
-  CHART_RANGE_PRESETS,
   chartDailyValues,
-  chartRangeWindowMs,
   chartWeeklyValues,
   dailyWeekdayTicks,
   extendThroughToday,
@@ -17,7 +16,6 @@ import {
   sliceLastUtcDays,
   splitProvisional,
   windowCounts,
-  type ChartRangeKey,
   type DailyPoint,
   type HourlyPoint,
 } from './trendSeries';
@@ -477,17 +475,15 @@ export function ActiveUsersPanel({
   series,
   hourly,
   nowMs,
+  range,
 }: {
   series: DailyPoint[];
   hourly: HourlyPoint[];
   nowMs: number;
+  range: DashboardRange;
 }) {
-  const [range, setRange] = useState<ChartRangeKey>('all');
   const padded = useMemo(() => extendThroughToday(series, nowMs), [series, nowMs]);
-  const visible = useMemo(
-    () => sliceActivityRange(padded, nowMs, chartRangeWindowMs(range)),
-    [padded, nowMs, range],
-  );
+  const visible = useMemo(() => sliceActivityRange(padded, rangeStart(range, nowMs)), [padded, nowMs, range]);
   const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);
   const daily7 = useMemo(() => sliceLastUtcDays(padded, nowMs, 7), [padded, nowMs]);
   const counts = windowCounts(padded);
@@ -521,14 +517,6 @@ export function ActiveUsersPanel({
       title="Active users"
       legend={<span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">{legend}</span>}
     >
-      <div className="-mt-1 mb-1.5">
-        <Seg
-          ariaLabel="Chart range"
-          options={CHART_RANGE_PRESETS.map((p) => ({ key: p.key, label: p.label }))}
-          value={range}
-          onChange={setRange}
-        />
-      </div>
       {range === '24h' ? (
         <HourlyTrendChart series={hourly24} counts={counts} nowMs={nowMs} />
       ) : range === '7d' ? (
