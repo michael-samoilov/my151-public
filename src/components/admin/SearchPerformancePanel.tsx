@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { Delta, Kpi, Panel, Seg } from '@/components/admin/ui';
-import { chartRangeWindowMs, type ChartRangeKey } from '@/components/admin/charts/trendSeries';
+import { rangeStart, type DashboardRange } from '../../../api/_range';
 import { cssVar, useECharts, type EChartsOption } from '@/components/admin/charts/useECharts';
 import type {
   SearchPageEngineView,
@@ -142,15 +142,14 @@ function shown(kpi: SearchKpi, value: number | null): string {
 const DAY_MS = 86_400_000;
 
 /** Rows inside `range`, counted back from the latest reported day. */
-function windowRows(daily: SearchDailyPoint[], range: ChartRangeKey): SearchDailyPoint[] {
-  const windowMs = chartRangeWindowMs(range);
+function windowRows(daily: SearchDailyPoint[], range: DashboardRange): SearchDailyPoint[] {
   const last = daily[daily.length - 1];
-  if (windowMs == null || !last) return daily;
-  const start = Date.parse(`${last.date}T00:00:00Z`) - windowMs + DAY_MS;
+  const start = last ? rangeStart(range, Date.parse(`${last.date}T00:00:00Z`) + DAY_MS) : null;
+  if (start === null) return daily;
   return daily.filter((row) => Date.parse(`${row.date}T00:00:00Z`) >= start);
 }
 
-function SearchTrend({ daily, range, kpis }: { daily: SearchDailyPoint[]; range: ChartRangeKey; kpis: SearchKpi[] }) {
+function SearchTrend({ daily, range, kpis }: { daily: SearchDailyPoint[]; range: DashboardRange; kpis: SearchKpi[] }) {
   const rows = windowRows(daily, range);
   const lines = kpis.map((kpi) => ({ kpi, values: rows.map(kpi.pick) }));
   const drawn = lines.filter((line) => line.values.some((value) => value != null));
@@ -337,10 +336,12 @@ export function SearchPerformancePanel({
   snapshot,
   loading,
   error,
+  range,
 }: {
   snapshot: SearchPerformanceView | null;
   loading: boolean;
   error: string | null;
+  range: DashboardRange;
 }) {
   const [provider, setProvider] = useState<SearchProviderKey>('google');
   const [picked, setPicked] = useState<SearchKpiKey[]>(DEFAULT_KPIS);
@@ -388,7 +389,7 @@ export function SearchPerformancePanel({
                 />
               ))}
             </div>
-            <SearchTrend daily={selected.daily} range="28d" kpis={kpis} />
+            <SearchTrend daily={selected.daily} range={range} kpis={kpis} />
             <QueryRows rows={selected.topQueries} />
           </>
         )}

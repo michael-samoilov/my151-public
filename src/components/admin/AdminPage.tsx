@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { LeaguePicksPage, PicksDetailPage } from '@/components/admin/PicksDetailPage';
@@ -29,6 +29,8 @@ import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { SearchPerformancePanel } from '@/components/admin/SearchPerformancePanel';
+import { RangeRibbon } from '@/components/admin/RangeRibbon';
+import { isDashboardRange, type DashboardRange } from '../../../api/_range';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import type { SearchPerformanceView } from '@/lib/searchPerformanceView';
 import {
@@ -81,15 +83,20 @@ import type { LeaguePicks } from '../../../api/_leaguePicks';
 const TOKEN_KEY = 'p151-admin-token';
 // Beside the token, so the dashboard opens on the tool you were last reading.
 const TOOL_KEY = 'p151-admin-tool';
+const RANGE_KEY = 'p151-admin-range';
 const PAGE_SIZE = 50;
-// Returning to the tab refetches data older than this; while visible, the
-// dashboard also refetches on the interval.
+// Data younger than this is current: returning to the tab or to a date range
+// refetches only older data. While visible, the dashboard also refetches on
+// the interval.
 const STALE_ON_RETURN_MS = 60_000;
 const REFRESH_INTERVAL_MS = 5 * 60_000;
 // Each dashboard request takes a number, and only the newest one writes, so a
 // background refresh that answers late cannot undo a later Load more. The admin
 // page mounts once, so one counter serves it.
 let latestLoad = 0;
+// Each date range's last answer, so a return to it within
+// STALE_ON_RETURN_MS sends nothing. One page, so one cache.
+const rangeCache = new Map<DashboardRange, { data: ApiResponse; at: number }>();
 
 /** Which tool's records every shared card reads. */
 export type ToolSlice = 'all' | 'dex' | 'league';
@@ -127,7 +134,6 @@ function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
     browsers: {},
     joints: [],
     whoBuckets: [],
-    countries7d: 0,
     hourly: [],
   };
 }
@@ -136,6 +142,16 @@ function loadToolSlice(): ToolSlice {
   try {
     const v = localStorage.getItem(TOOL_KEY);
     if (v === 'all' || v === 'dex' || v === 'league') return v;
+  } catch {
+    // localStorage may be unavailable
+  }
+  return 'all';
+}
+
+function loadRange(): DashboardRange {
+  try {
+    const v = localStorage.getItem(RANGE_KEY);
+    if (v && isDashboardRange(v)) return v;
   } catch {
     // localStorage may be unavailable
   }
@@ -201,7 +217,6 @@ export interface Aggregates {
   browsers: Record<string, number>;
   joints?: PlatformJoint[];
   whoBuckets?: WhoBucket[];
-  countries7d?: number;
   /** Absent on a deploy that predates the clock toggle. */
   heatmaps?: Record<HeatmapClock, number[][]>;
   hourly?: { hour: number; unique: number }[];
@@ -277,6 +292,9 @@ export interface LeagueSummary {
 }
 
 export interface ApiResponse {
+  /** The date range the aggregates count, and where its window opens (null for all). */
+  range?: DashboardRange;
+  rangeStart?: number | null;
   totalUsers: number;
   /** Dex records in the store, including archived. Used for list pagination. */
   totalDexRecords?: number;
@@ -441,8 +459,8 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
 
 class UnauthorizedError extends Error {}
 
-async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
-  const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+async function fetchDashboard(token: string, limit: number, range: DashboardRange): Promise<ApiResponse> {
+  const qs = new URLSearchParams({ limit: String(limit), offset: '0', range });
   const res = await fetch(`/api/submissions?${qs.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -1557,13 +1575,39 @@ function WhatPeoplePick({
 
 export type AdminNavKey = ToolSlice | 'search' | 'feedback';
 
+/** The admin's one bar: fixed to the bottom on a phone, stuck under the
+ *  header on desktop. Its height is `--admin-bar-h`. */
+function AdminBar({ children }: { children: ReactNode }) {
+  const barRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const apply = () => document.documentElement.style.setProperty('--admin-bar-h', `${el.getBoundingClientRect().height}px`);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty('--admin-bar-h');
+    };
+  }, []);
+  return (
+    <div
+      ref={barRef}
+      data-admin-bar
+      className="fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 backdrop-blur md:sticky md:top-[var(--admin-header-h,0px)] md:mx-auto md:max-w-5xl md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none"
+    >
+      {children}
+    </div>
+  );
+}
+
 function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: AdminNavKey) => void }) {
   const navRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     const el = navRef.current;
     if (!el) return;
     const apply = () => {
-      document.documentElement.style.setProperty('--admin-nav-h', `${el.getBoundingClientRect().height}px`);
       const buttons = el.querySelectorAll('button');
       if (buttons.length > 0) {
         const a = buttons[0].getBoundingClientRect();
@@ -1576,7 +1620,6 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     ro.observe(el);
     return () => {
       ro.disconnect();
-      document.documentElement.style.removeProperty('--admin-nav-h');
       document.documentElement.style.removeProperty('--admin-nav-tabs-w');
     };
   }, []);
@@ -1591,7 +1634,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     <nav
       ref={navRef}
       aria-label="Admin section"
-      className="fixed inset-x-0 bottom-0 z-[90] flex justify-around gap-1 border-t border-border bg-card/95 px-2 py-2 backdrop-blur md:sticky md:top-0 md:mx-auto md:max-w-5xl md:justify-start md:border-t-0 md:border-b md:bg-card md:px-4 md:py-2 md:backdrop-blur-none"
+      className="flex justify-around gap-1 px-2 py-2 md:justify-start md:px-4"
     >
       {items.map((it) => {
         const on = it.key === value;
@@ -1634,6 +1677,10 @@ export function AdminPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
+  const [range, setRange] = useState<DashboardRange>(loadRange);
+  // Newest browsers rows the reader asked to see; null shows the browsers
+  // active in the range.
+  const [listShown, setListShown] = useState<number | null>(null);
   const [page, setPage] = useState<'analytics' | 'search' | 'feedback'>('analytics');
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
   const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
@@ -1693,17 +1740,23 @@ export function AdminPage() {
   }, []);
 
   const load = useCallback(
-    async (tok: string, { limit = PAGE_SIZE, refreshSearch = false, quiet = false } = {}) => {
+    async (
+      tok: string,
+      asked: DashboardRange,
+      { limit = PAGE_SIZE, refreshSearch = false, quiet = false } = {},
+    ) => {
       const seq = ++latestLoad;
       if (!quiet) {
         setLoading(true);
         setError(null);
       }
       try {
-        const resp = await fetchDashboard(tok, limit, 0);
+        const resp = await fetchDashboard(tok, limit, asked);
+        const at = Date.now();
+        rangeCache.set(asked, { data: resp, at });
         if (seq !== latestLoad) return;
         setData(resp);
-        setLoadedAt(Date.now());
+        setLoadedAt(at);
         setAuthed(true);
         setToken(tok);
         setError(null);
@@ -1738,22 +1791,54 @@ export function AdminPage() {
       });
       return;
     }
-    if (initialToken) void load(initialToken);
+    if (initialToken) void load(initialToken, loadRange());
   }, [initialToken, load]);
 
-  const loadMore = useCallback(async () => {
-    if (!token || !data) return;
-    const seq = ++latestLoad;
-    setLoadingMore(true);
-    try {
-      const resp = await fetchDashboard(token, data.records.length + PAGE_SIZE, 0);
-      if (seq === latestLoad) setData(resp);
-    } catch (e) {
-      if (seq === latestLoad) setError(e instanceof Error ? e.message : 'Something went wrong.');
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [token, data]);
+  const loadMore = useCallback(
+    async (limit: number) => {
+      if (!token) return;
+      const seq = ++latestLoad;
+      setLoadingMore(true);
+      try {
+        const resp = await fetchDashboard(token, limit, range);
+        const at = Date.now();
+        rangeCache.set(range, { data: resp, at });
+        if (seq === latestLoad) {
+          setData(resp);
+          setLoadedAt(at);
+        }
+      } catch (e) {
+        if (seq === latestLoad) setError(e instanceof Error ? e.message : 'Something went wrong.');
+      } finally {
+        setLoadingMore(false);
+      }
+    },
+    [token, range],
+  );
+
+  const pickRange = useCallback(
+    (next: DashboardRange) => {
+      setRange(next);
+      setListShown(null);
+      // A request still out for the old range fills the cache, not the screen.
+      latestLoad += 1;
+      try {
+        localStorage.setItem(RANGE_KEY, next);
+      } catch {
+        // localStorage may be unavailable
+      }
+      if (!token) return;
+      const hit = rangeCache.get(next);
+      if (!hit) {
+        void load(token, next);
+        return;
+      }
+      setData(hit.data);
+      setLoadedAt(hit.at);
+      if (Date.now() - hit.at >= STALE_ON_RETURN_MS) void load(token, next, { limit: hit.data.limit, quiet: true });
+    },
+    [token, load],
+  );
 
   // Keep an open dashboard current: refetch on return to the tab (including an
   // iOS back-forward restore) and on an interval while visible. The refetch
@@ -1765,7 +1850,7 @@ export function AdminPage() {
     const refresh = (minAgeMs: number) => {
       if (running || Date.now() - loadedAt < minAgeMs) return;
       running = true;
-      void load(token, { limit: loadedLimit, quiet: true }).finally(() => {
+      void load(token, range, { limit: loadedLimit, quiet: true }).finally(() => {
         running = false;
       });
     };
@@ -1785,7 +1870,7 @@ export function AdminPage() {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('pageshow', onPageShow);
     };
-  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit]);
+  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit, range]);
 
   const setArchived = useCallback(
     async (cid: string, next: boolean) => {
@@ -1800,7 +1885,8 @@ export function AdminPage() {
           body: JSON.stringify({ cid, archived: next }),
         });
         if (!res.ok) throw new Error(`Archive failed (${res.status}).`);
-        await load(token, { limit: data?.records.length ?? PAGE_SIZE });
+        rangeCache.clear();
+        await load(token, range, { limit: data?.records.length ?? PAGE_SIZE });
         setArchiveOverride((prev) => {
           const copy = { ...prev };
           delete copy[key];
@@ -1815,11 +1901,12 @@ export function AdminPage() {
         setError(e instanceof Error ? e.message : 'Archive failed.');
       }
     },
-    [token, data, load],
+    [token, data, load, range],
   );
 
   const pickTool = useCallback((next: ToolSlice) => {
     setWhoFilter(null);
+    setListShown(null);
     setTool(next);
     try {
       localStorage.setItem(TOOL_KEY, next);
@@ -1837,6 +1924,7 @@ export function AdminPage() {
     setToken(null);
     setAuthed(false);
     setData(null);
+    rangeCache.clear();
     setSearchPerformance(null);
     setSearchError(null);
     setTokenInput('');
@@ -1849,7 +1937,7 @@ export function AdminPage() {
           onSubmit={(e) => {
             e.preventDefault();
             const t = tokenInput.trim();
-            if (t) void load(t);
+            if (t) void load(t, range);
           }}
           className="w-full max-w-sm flex flex-col gap-3"
         >
@@ -1893,7 +1981,10 @@ export function AdminPage() {
   const lockUser = detail?.kind === 'dex' || detail?.kind === 'league';
 
   return (
-    <div className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
+    <div
+      className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}
+      style={{ '--admin-header-h': `${pageHeaderH}px` } as CSSProperties}
+    >
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
         <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockUser ? 'max-w-none' : 'max-w-5xl')}>
           <h1 className="whitespace-nowrap text-sm font-bold">
@@ -1901,7 +1992,7 @@ export function AdminPage() {
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, { refreshSearch: true })} disabled={loading || searchLoading}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, range, { refreshSearch: true })} disabled={loading || searchLoading}>
               {loading || searchLoading ? 'Refreshing…' : 'Refresh'}
             </Button>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
@@ -1911,15 +2002,20 @@ export function AdminPage() {
         </div>
       </header>
 
-      {detail?.kind !== 'picks' && <AdminNav value={navKey} onChange={onNav} />}
+      {detail?.kind !== 'picks' && (
+        <AdminBar>
+          {!lockUser && <RangeRibbon value={range} onChange={pickRange} />}
+          <AdminNav value={navKey} onChange={onNav} />
+        </AdminBar>
+      )}
 
       <main
         className={cn(
           'mx-auto flex w-full min-w-0 flex-1 flex-col px-4',
           lockUser ? 'max-w-none' : 'max-w-5xl',
           lockUser
-            ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-nav-h,5rem)] md:pb-8'
-            : cn('gap-4 pt-4 md:pb-8', detail?.kind === 'picks' ? 'pb-8' : 'pb-24'),
+            ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-bar-h,8rem)] md:pb-8'
+            : cn('gap-4 pt-4 md:pb-8', detail?.kind === 'picks' ? 'pb-8' : 'pb-[calc(var(--admin-bar-h,8rem)+1.5rem)]'),
         )}
       >
         {error && <p className="text-sm text-destructive">{error}</p>}
@@ -1975,7 +2071,7 @@ export function AdminPage() {
           (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
 
         {!detail && page === 'search' && (
-          <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} />
+          <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} range={range} />
         )}
 
         {!detail && page === 'analytics' && data && (() => {
@@ -2045,6 +2141,7 @@ export function AdminPage() {
                 }
                 hourly={slice.hourly ?? []}
                 nowMs={loadedAt}
+                range={range}
               />
             )}
 
@@ -2056,7 +2153,6 @@ export function AdminPage() {
               <Panel title="League activity" sub={[`${slice.users} browsers`]}>
                 <div className="flex flex-wrap gap-x-6 gap-y-3">
                   <Kpi emphasis value={slice.users} label="Browsers" />
-                  <Kpi value={slice.retention.activeLast7} label="Active · 7d" />
                   <Kpi value={slice.retention.returning} label="Returning" />
                   {data.league && (
                     <Kpi value={data.league.exportedCard + data.league.exportedLeague} label="Exports" />
@@ -2172,7 +2268,6 @@ export function AdminPage() {
                 <WhoOrigin
                   countries={whoSrc.countries}
                   buckets={whoBuckets}
-                  countries7d={slice.countries7d ?? 0}
                   filter={whoFilter}
                   onFilter={setWhoFilter}
                 />
@@ -2203,9 +2298,16 @@ export function AdminPage() {
                   archived: boolean;
                   open: Detail;
                 };
+                // Newest first, so the browsers active in the range lead the
+                // list. It opens on them; Load more continues past the range.
+                const loaded: { lastTs: number }[] = showDex ? data.records : (data.leagueUsers ?? []);
+                const total = showDex ? (data.totalDexRecords ?? data.totalUsers) : (data.totalLeagueUsers ?? loaded.length);
+                const since = data.rangeStart ?? null;
+                const inRange = since === null ? loaded.length : loaded.filter((r) => r.lastTs > since).length;
+                const shown = Math.min(loaded.length, listShown ?? inRange);
                 const listed: Row[] = [];
                 if (showDex) {
-                  for (const rec of data.records) {
+                  for (const rec of data.records.slice(0, shown)) {
                     const league =
                       data.leagueByCid?.[rec.cid] ?? data.leagueByCid?.[bareCid(rec.cid)];
                     const kind = toolKind(true, !!league);
@@ -2230,7 +2332,7 @@ export function AdminPage() {
                     });
                   }
                 } else {
-                  for (const rec of data.leagueUsers ?? []) {
+                  for (const rec of (data.leagueUsers ?? []).slice(0, shown)) {
                     const dex = data.records.find((r) => r.cid === rec.cid || r.cid.split('::')[0] === rec.cid);
                     const hasDex = !!dex || rec.hasDex;
                     const kind = toolKind(hasDex, true);
@@ -2259,8 +2361,7 @@ export function AdminPage() {
                   }
                 }
                 const rows = listed.filter((row) => matchesFacetFilters(row.rec, facetFilters));
-                const emptyList = showDex ? data.records.length === 0 : (data.leagueUsers?.length ?? 0) === 0;
-                const totalListed = data.totalDexRecords ?? data.totalUsers;
+                const emptyList = loaded.length === 0;
                 return (
                   <>
                     {emptyList && !loading && (
@@ -2268,7 +2369,7 @@ export function AdminPage() {
                         {showDex ? 'No users yet.' : 'No league users yet.'}
                       </p>
                     )}
-                    {!emptyList && rows.length === 0 && !loading && (
+                    {shown > 0 && rows.length === 0 && !loading && (
                       <p className="text-sm text-muted-foreground">No users match these filters.</p>
                     )}
                     <div className={PREVIEW_TABLE}>
@@ -2301,9 +2402,18 @@ export function AdminPage() {
                         ))}
                       </PreviewMetricScale>
                     </div>
-                    {showDex && data.records.length < totalListed && (
-                      <Button className="mt-3" variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
-                        {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${totalListed})`}
+                    {shown < total && (
+                      <Button
+                        className="mt-3"
+                        variant="outline"
+                        onClick={() => {
+                          const next = shown + PAGE_SIZE;
+                          setListShown(next);
+                          if (loaded.length < next) void loadMore(next);
+                        }}
+                        disabled={loadingMore}
+                      >
+                        {loadingMore ? 'Loading…' : `Load more (${shown} / ${total})`}
                       </Button>
                     )}
                   </>

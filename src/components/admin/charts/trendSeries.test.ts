@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_MS } from '../../../../api/_aggregate';
 import { dayStart } from '../../../../api/_aggregate';
+import { rangeStart } from '../../../../api/_range';
 import {
   chartDailyValues,
-  chartRangeWindowMs,
   chartWeeklyValues,
   countLabelLayout,
   applyActivityLabels,
@@ -143,7 +143,7 @@ describe('chartWeeklyValues', () => {
     full[39] = { ...full[39], label168h: 99 };
     const origin = full[0].day;
     const now = day(40) + 12 * 3600_000;
-    const visible = sliceActivityRange(full, now, chartRangeWindowMs('28d'));
+    const visible = sliceActivityRange(full, rangeStart('28d', now));
     expect(visible).toHaveLength(29);
     const weekly = chartWeeklyValues(visible, origin);
     expect(weekly.slice(0, 6).every((v) => v != null)).toBe(true);
