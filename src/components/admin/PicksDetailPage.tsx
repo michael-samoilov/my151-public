@@ -318,23 +318,19 @@ function PicksPage({
   n,
   unit,
   onBack,
-  stickyOffset,
   controls,
   children,
 }: {
   n: number;
   unit: string;
   onBack: () => void;
-  stickyOffset: number;
   controls?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-3">
-      <div
-        className="sticky z-[95] -mx-4 border-b border-border bg-background px-4 py-2"
-        style={{ top: stickyOffset }}
-      >
+      {/* Under the header; on desktop also under the admin bar. */}
+      <div className="sticky top-[var(--admin-header-h,0px)] z-[95] -mx-4 border-b border-border bg-background px-4 py-2 md:top-[calc(var(--admin-header-h,0px)+var(--admin-bar-h,0px))]">
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
@@ -357,12 +353,10 @@ export function PicksDetailPage({
   picksBySectionAll,
   n,
   onBack,
-  stickyOffset,
 }: {
   picksBySectionAll: Record<string, [string, number][]>;
   n: number;
   onBack: () => void;
-  stickyOffset: number;
 }) {
   const [view, setView] = useState<'most' | 'off'>('most');
   const [excludeOneOffs, setExcludeOneOffs] = useState(false);
@@ -379,7 +373,6 @@ export function PicksDetailPage({
       n={n}
       unit="dexes"
       onBack={onBack}
-      stickyOffset={stickyOffset}
       controls={
         <>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -452,16 +445,14 @@ export function LeaguePicksPage({
   picks,
   n,
   onBack,
-  stickyOffset,
 }: {
   picks: LeaguePicks;
   n: number;
   onBack: () => void;
-  stickyOffset: number;
 }) {
   const sections = useMemo(() => leaguePicksSections(picks), [picks]);
   return (
-    <PicksPage n={n} unit="leagues" onBack={onBack} stickyOffset={stickyOffset}>
+    <PicksPage n={n} unit="leagues" onBack={onBack}>
       {sections.length === 0 ? (
         <p className="text-xs text-muted-foreground">No picks yet.</p>
       ) : (

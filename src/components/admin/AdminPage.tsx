@@ -30,6 +30,7 @@ import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { SearchPerformancePanel } from '@/components/admin/SearchPerformancePanel';
 import { RangeRibbon } from '@/components/admin/RangeRibbon';
+import { RangeSlotContext } from '@/components/admin/rangeSlot';
 import { isDashboardRange, type DashboardRange } from '../../../api/_range';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import type { SearchPerformanceView } from '@/lib/searchPerformanceView';
@@ -1576,8 +1577,9 @@ function WhatPeoplePick({
 export type AdminNavKey = ToolSlice | 'search' | 'feedback';
 
 /** The admin's one bar: fixed to the bottom on a phone, stuck under the
- *  header on desktop. Its height is `--admin-bar-h`. */
-function AdminBar({ children }: { children: ReactNode }) {
+ *  header on desktop. Its height is `--admin-bar-h`. `wide` spans the page,
+ *  so a full-width sticky block under it leaves no gap beside it. */
+function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
   const barRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const el = barRef.current;
@@ -1595,7 +1597,10 @@ function AdminBar({ children }: { children: ReactNode }) {
     <div
       ref={barRef}
       data-admin-bar
-      className="fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 backdrop-blur md:sticky md:top-[var(--admin-header-h,0px)] md:mx-auto md:max-w-5xl md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none"
+      className={cn(
+        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 backdrop-blur md:sticky md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
+        wide ? 'md:w-full' : 'md:max-w-5xl',
+      )}
     >
       {children}
     </div>
@@ -1634,7 +1639,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     <nav
       ref={navRef}
       aria-label="Admin section"
-      className="flex justify-around gap-1 px-2 py-2 md:justify-start md:px-4"
+      className="flex justify-around gap-1 px-2 py-2 md:justify-center md:px-4"
     >
       {items.map((it) => {
         const on = it.key === value;
@@ -1698,6 +1703,7 @@ export function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const pageHeaderRef = useRef<HTMLElement>(null);
   const [pageHeaderH, setPageHeaderH] = useState(0);
+  const [rangeSlot, setRangeSlot] = useState<HTMLDivElement | null>(null);
   const [loadedAt, setLoadedAt] = useState(0);
 
   useLayoutEffect(() => {
@@ -2002,12 +2008,13 @@ export function AdminPage() {
         </div>
       </header>
 
-      {detail?.kind !== 'picks' && (
-        <AdminBar>
-          {!lockUser && <RangeRibbon value={range} onChange={pickRange} />}
-          <AdminNav value={navKey} onChange={onNav} />
-        </AdminBar>
-      )}
+      <AdminBar wide={detail?.kind === 'picks'}>
+        {/* A user page portals its session scrubber here instead. */}
+        <div ref={setRangeSlot} data-admin-range-slot className={cn(detail?.kind === 'picks' && 'pb-2')}>
+          {!lockUser && page !== 'feedback' && <RangeRibbon value={range} onChange={pickRange} />}
+        </div>
+        {detail?.kind !== 'picks' && <AdminNav value={navKey} onChange={onNav} />}
+      </AdminBar>
 
       <main
         className={cn(
@@ -2015,7 +2022,7 @@ export function AdminPage() {
           lockUser ? 'max-w-none' : 'max-w-5xl',
           lockUser
             ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-bar-h,8rem)] md:pb-8'
-            : cn('gap-4 pt-4 md:pb-8', detail?.kind === 'picks' ? 'pb-8' : 'pb-[calc(var(--admin-bar-h,8rem)+1.5rem)]'),
+            : 'gap-4 pb-[calc(var(--admin-bar-h,8rem)+1.5rem)] pt-4 md:pb-8',
         )}
       >
         {error && <p className="text-sm text-destructive">{error}</p>}
@@ -2027,22 +2034,12 @@ export function AdminPage() {
           if (detail.kind === 'picks') {
             if (detail.tool === 'league') {
               return data.league?.picks ? (
-                <LeaguePicksPage
-                  picks={data.league.picks}
-                  n={data.league.users}
-                  onBack={() => setDetail(null)}
-                  stickyOffset={pageHeaderH}
-                />
+                <LeaguePicksPage picks={data.league.picks} n={data.league.users} onBack={() => setDetail(null)} />
               ) : null;
             }
             const nDex = data.tools?.dex ?? data.funnel.users;
             return (
-              <PicksDetailPage
-                picksBySectionAll={data.picksBySectionAll}
-                n={nDex}
-                onBack={() => setDetail(null)}
-                stickyOffset={pageHeaderH}
-              />
+              <PicksDetailPage picksBySectionAll={data.picksBySectionAll} n={nDex} onBack={() => setDetail(null)} />
             );
           }
           const bare = detail.cid.split('::')[0];
@@ -2055,13 +2052,15 @@ export function AdminPage() {
             data.leagueByCid?.[bare] ??
             data.leagueUsers?.find((r) => r.cid === detail.cid || r.cid === bare);
           return (
-            <UserDetailPage
-              tool={detail.kind}
-              onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
-              dex={dex}
-              league={league}
-              onBack={() => setDetail(null)}
-            />
+            <RangeSlotContext.Provider value={rangeSlot}>
+              <UserDetailPage
+                tool={detail.kind}
+                onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
+                dex={dex}
+                league={league}
+                onBack={() => setDetail(null)}
+              />
+            </RangeSlotContext.Provider>
           );
           })()}
           </div>
