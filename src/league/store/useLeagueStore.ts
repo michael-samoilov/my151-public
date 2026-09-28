@@ -4,6 +4,7 @@ import { LEAGUE_PERSIST_VERSION, LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } fr
 import type { TypeName } from '@/types/pokemon';
 import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW } from '../model/constants';
 import {
+  allCardsFilled,
   parseCelebratedNudges,
   reachedNudges,
   type LeagueNudgeId,
@@ -291,9 +292,17 @@ export function migrateLeagueState(persisted: unknown, version: number): Persist
         }),
       }))
     : state.cards;
-  const celebratedNudges = version < 2 || state.celebratedNudges === undefined
+  const celebrated = version < 2 || state.celebratedNudges === undefined
     ? reachedNudges(cards ?? [])
     : parseCelebratedNudges(state.celebratedNudges);
+  // Before v4 the eight-gym popup said "League ready". A full league that saw
+  // it has seen the `complete` popup's copy, so that popup must not replay.
+  const celebratedNudges = version < 4
+    && celebrated.includes('league')
+    && !celebrated.includes('complete')
+    && allCardsFilled(cards ?? [])
+    ? [...celebrated, 'complete' as const]
+    : celebrated;
 
   return { ...state, cards, celebratedNudges };
 }
