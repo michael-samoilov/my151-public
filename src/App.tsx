@@ -275,7 +275,7 @@ function App() {
           )}>
             {isDesktop && browserPanelMounted && (
               <div className="flex-1 min-w-0">
-                <PokemonBrowser />
+                <PokemonBrowser deferRows />
               </div>
             )}
           </div>
