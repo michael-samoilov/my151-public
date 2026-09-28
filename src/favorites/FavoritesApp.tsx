@@ -18,6 +18,8 @@ import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
 import { PickerSheet } from './components/PickerSheet';
 import { SettingsPane } from './components/SettingsPane';
+import { SortDebugPanel } from './components/SortDebugPanel';
+import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 
 const TOOL_NAME = 'Favorite Pokémon Picker by Type and Generation';
@@ -64,6 +66,8 @@ export function FavoritesApp() {
   const [showTypes, setShowTypes] = useState(savedShowTypes);
   const [noRepeats, setNoRepeats] = useState(savedNoRepeats);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Always the default order for users. `?sortdebug=1` lets a preview change it.
+  const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
 
   useEffect(() => {
@@ -106,6 +110,7 @@ export function FavoritesApp() {
       fills={fills}
       currentId={fills[cellKey(sel.type, sel.gen)]}
       showTypes={showTypes}
+      sortOrder={sortOrder}
       onToggleTypes={() => setShowTypes((value) => !value)}
       onClose={() => setSel(null)}
       onPlace={(id) => place(sel.type, sel.gen, id, noRepeats)}
@@ -154,6 +159,7 @@ export function FavoritesApp() {
             />
           </main>
           {settingsOpen && desktop ? settingsPane : null}
+          {SORT_DEBUG_ENABLED ? <SortDebugPanel desktop={desktop} order={sortOrder} onChange={setSortOrder} /> : null}
         </div>
         {settingsOpen && !desktop ? settingsPane : null}
         {desktop ? null : picker}

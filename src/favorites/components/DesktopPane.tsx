@@ -217,7 +217,10 @@ function useDismiss(ref: RefObject<HTMLElement | null>, onClose: () => void) {
 
   useEffect(() => {
     let press: { x: number; y: number; inside: boolean; mouse: boolean } | null = null;
-    const inPane = (target: EventTarget | null) => target instanceof Node && Boolean(ref.current?.contains(target));
+    // A click in the sort debug panel (`?sortdebug=1`) reorders the open pane
+    // in place, so it does not close it.
+    const inPane = (target: EventTarget | null) => target instanceof Node
+      && (Boolean(ref.current?.contains(target)) || (target instanceof Element && target.closest('[data-picker-keep-open]') != null));
     const onPointerDown = (event: PointerEvent) => {
       press = { x: event.clientX, y: event.clientY, inside: inPane(event.target), mouse: event.pointerType === 'mouse' };
     };
