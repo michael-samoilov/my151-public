@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FilterChipList } from './FilterChipList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -95,12 +95,16 @@ interface SubgroupGridGroup {
   matchedIds: Set<number>;
 }
 
-export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
+export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows = false }: {
   /** 'stage' is the dex builder's flow (mobile taps stage, the FAB commits).
    *  'instant' is the league's: a tap places the line and closes the sheet. */
   pickMode?: 'stage' | 'instant';
   /** Section-title resolver for hosts whose ids are not build groups. */
   labelForSection?: (sectionId: string) => string;
+  /** Paint the header on the opening frame and the results after it. The
+   *  desktop pane sets it: the rows are most of the tap's work, and the pane
+   *  is still sliding in when they land. */
+  deferRows?: boolean;
 } = {}) {
   const searchQuery = useBrowserStore((s) => s.searchQuery);
   /**
@@ -163,6 +167,12 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   const t = useT();
   const tn = useTn();
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
+  // In a transition, so the rows render in a later task that yields to the
+  // opening frame's paint.
+  const [rowsReady, setRowsReady] = useState(!deferRows);
+  useEffect(() => {
+    if (!rowsReady) startTransition(() => setRowsReady(true));
+  }, [rowsReady]);
   const [sheetH, setSheetH] = useState(0);
   const isDesktop = useIsDesktop();
   const gridMaxW = useTileGridMaxWidth(6, 0, 0);
@@ -1267,7 +1277,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
         style={{ WebkitOverflowScrolling: 'touch', ...(!isDesktop && { overscrollBehavior: 'contain' }) } as React.CSSProperties}
       >
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
-          {!isSearching && gridCategoryDef?.dualColumns && (
+          {rowsReady && !isSearching && gridCategoryDef?.dualColumns && (
             <div className="sticky top-0 z-30 bg-background border-b">
               <div className="grid grid-cols-2 gap-x-1">
                 <div className="w-full text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW3, marginInline: gridMaxW3 ? 'auto' : undefined }}>
@@ -1279,7 +1289,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
               </div>
             </div>
           )}
-          {subgroupModels.map((model) => {
+          {rowsReady && subgroupModels.map((model) => {
             if (model.dualCols) {
               return (
                 <div key={model.label}>
@@ -1348,19 +1358,19 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
               </div>
             );
           })}
-          {tooManyResults && (
+          {rowsReady && tooManyResults && (
             <div className="py-12 text-center text-muted-foreground">
               <p>{t('browser.tooMany.title', { count: totalCount })}</p>
               <p className="text-sm mt-1">{t('browser.tooMany.hint')}</p>
             </div>
           )}
-          {groups.length === 0 && (
+          {rowsReady && groups.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
               <p>{t('browser.empty.title')}</p>
               <p className="text-sm mt-1">{t('browser.empty.hint')}</p>
             </div>
           )}
-          <PageFooter />
+          {rowsReady && <PageFooter />}
       </div>
 
       {/* The close question, in the floating button's place */}
