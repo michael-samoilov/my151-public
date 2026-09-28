@@ -65,7 +65,13 @@ export function useNamesVersion(): number {
 export function useDocumentLocale(): void {
   const locale = useLocale();
   useEffect(() => {
-    document.documentElement.lang = htmlLang(locale);
-    document.documentElement.dir = direction(locale);
+    // Chrome restyles the whole document on any write to `lang` or `dir`, even
+    // one that repeats the current value. On a full build page that is about
+    // 60 ms at mobile CPU speed, so a write that changes nothing is skipped.
+    const root = document.documentElement;
+    const lang = htmlLang(locale);
+    const dir = direction(locale);
+    if (root.lang !== lang) root.lang = lang;
+    if (root.dir !== dir) root.dir = dir;
   }, [locale]);
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
@@ -120,7 +120,10 @@ function PokemonTileStatic({ id }: { id: number }) {
 
 // ---------- draggable + droppable tile ----------
 
-function DraggableTile({
+// Memoized so a render of the page around it (the header, a tab's pre-mount,
+// the toolbar slot arriving) does not re-render all 151 tiles. Its props are
+// primitives, and it subscribes to the names and locale it reads itself.
+const DraggableTile = memo(function DraggableTile({
   id,
   pokemonId,
   sectionId,
@@ -206,7 +209,7 @@ function DraggableTile({
       </div>
     </div>
   );
-}
+});
 
 // ---------- end-of-section drop zone ----------
 
