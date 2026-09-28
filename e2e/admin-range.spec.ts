@@ -119,4 +119,47 @@ test.describe('admin date range', () => {
     if (width < 1024) expect(Math.abs(boxes.nav.bottom - boxes.viewport)).toBeLessThanOrEqual(1);
     else expect(Math.abs(boxes.ribbon.top - boxes.header.bottom)).toBeLessThanOrEqual(1);
   });
+
+  test('a user page holds its session scrubber in the ribbon row, with no chips', { tag: '@viewport' }, async ({ page }, testInfo) => {
+    await page.goto('/?admin&demo');
+    await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Dex', exact: true }).click();
+    await page.getByRole('link', { name: /Open user 74d5/ }).click();
+    const slot = page.locator('[data-admin-range-slot]');
+    await expect(slot.getByRole('slider', { name: 'Scrub sessions' })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Date range' })).toHaveCount(0);
+    const gap = await page.evaluate(() => {
+      const dock = document.querySelector('[data-testid="session-scrubber-dock"]')!.getBoundingClientRect();
+      const nav = document.querySelector('nav[aria-label="Admin section"]')!.getBoundingClientRect();
+      return nav.top - dock.bottom;
+    });
+    await testInfo.attach('scrubber-gap.json', { body: JSON.stringify({ gap }), contentType: 'application/json' });
+    expect(Math.abs(gap)).toBeLessThanOrEqual(1);
+  });
+
+  test('Feedback hides the ribbon, and a picks page keeps it under the header', { tag: '@viewport' }, async ({ page }, testInfo) => {
+    await page.goto('/?admin&demo');
+    const nav = page.getByRole('navigation', { name: 'Admin section' });
+    const ribbon = page.getByRole('group', { name: 'Date range' });
+    await nav.getByRole('button', { name: 'Feedback' }).click();
+    await expect(ribbon).toHaveCount(0);
+
+    await nav.getByRole('button', { name: 'Dex', exact: true }).click();
+    await page.getByRole('button', { name: /Most picked/ }).click();
+    await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
+    await expect(ribbon).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 1200));
+    await page.waitForFunction(() => window.scrollY > 0);
+    const boxes = await page.evaluate(() => {
+      const back = [...document.querySelectorAll('button')].find((b) => b.textContent?.includes('‹ Back'))!;
+      const sticky = back.closest('.sticky')!.getBoundingClientRect();
+      const bar = document.querySelector('[data-admin-bar]')!.getBoundingClientRect();
+      const header = document.querySelector('header')!.getBoundingClientRect();
+      return { stickyTop: sticky.top, barTop: bar.top, barBottom: bar.bottom, headerBottom: header.bottom, scrollY: window.scrollY };
+    });
+    await testInfo.attach('picks-sticky.json', { body: JSON.stringify(boxes), contentType: 'application/json' });
+    expect(boxes.scrollY).toBeGreaterThan(0);
+    const width = page.viewportSize()!.width;
+    const above = width < 1024 ? boxes.headerBottom : boxes.barBottom;
+    expect(Math.abs(boxes.stickyTop - above)).toBeLessThanOrEqual(1);
+  });
 });
