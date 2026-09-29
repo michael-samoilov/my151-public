@@ -129,6 +129,10 @@ describe('eligibleFor', () => {
     contiguous(ids('legendary', 5), [642, 10020]);
     contiguous(ids('legendary', 5), [645, 10021]);
     contiguous(ids('electric', 5), [642, 10020, 644]);
+    // Platinum shares Sinnoh with Diamond and Pearl.
+    contiguous(ids('legendary', 4), [487, 10007]);
+    contiguous(ids('legendary', 4), [492, 10006]);
+    contiguous(ids('electric', 4), [479, 10008, 10009, 10010, 10011, 10012]);
     contiguous(ids('legendary', 7), [801, 10147]);
     expect(ids('legendary', 8).indexOf(10246)).toBeGreaterThan(ids('legendary', 8).indexOf(892));
     expect(ids('legendary', 7).indexOf(10181)).toBeGreaterThan(ids('legendary', 7).indexOf(785));

@@ -3,7 +3,8 @@ import { isPowerupForm, type PickerMon } from './catalog';
 
 /**
  * Main-series games in release order, limited to games where a picker entry
- * debuted. Sword/Shield and Scarlet/Violet include their DLC.
+ * debuted. RB stands for Red, Green, Blue, and Yellow, and GS for Gold,
+ * Silver, and Crystal. Sword/Shield and Scarlet/Violet include their DLC.
  */
 export const DEBUT_GAMES = [
   'RB', 'GS', 'RS', 'FRLG', 'E', 'DP', 'Pt', 'HGSS', 'BW', 'B2W2', 'XY', 'ORAS',
