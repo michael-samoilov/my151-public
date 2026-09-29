@@ -45,7 +45,7 @@ const MUTATIONS: Mutation[] = [
     expectFail: 'render:no-clipped-content',
     expectPassStill: 'boot:react-mounted',
     // A bordered chip wider than its overflow-hidden column: the shape the render audit exists to catch.
-    apply: (dir) => append(dir, 'src/main.tsx', `queueMicrotask(() => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:60px;overflow:hidden;z-index:1'; d.innerHTML = '<span style="display:inline-block;width:120px;border:2px solid #333;box-sizing:border-box">verify-injected-clip</span>'; document.body.appendChild(d); });`),
+    apply: (dir) => append(dir, 'src/main.tsx', `queueMicrotask(() => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:8px;top:120px;width:60px;height:32px;overflow:hidden;z-index:2147483646;background:#fff'; d.innerHTML = '<span style="display:block;width:120px;height:24px;border:2px solid rgb(51,51,51);box-sizing:border-box">verify-injected-clip</span>'; document.body.appendChild(d); });`),
   },
   {
     name: 'break-persist',

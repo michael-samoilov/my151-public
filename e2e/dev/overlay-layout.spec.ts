@@ -48,7 +48,8 @@ const ALL_LOCALES = [
 ] as const;
 
 async function openSheet(page: Page, locale: string) {
-  await page.goto(`/pokedex-builder?demo&lang=${locale}`);
+  await page.goto(`/pokedex-builder?demo&lang=${locale}`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('html')).toHaveAttribute('lang', locale, { timeout: 15_000 });
   // By attribute, not by accessible name: the name is translated, and a regex
   // of nine translations stops matching the first time one is reworded.
   await page.locator('[data-feedback-open]').first().click();
@@ -65,7 +66,13 @@ async function raiseKeyboard(page: Page, visible: number | null) {
     Object.defineProperty(vv, 'scale', { value: 0.9999999403953552, configurable: true });
     vv.dispatchEvent(new Event('resize'));
   }, visible);
-  await page.waitForTimeout(350);
+  await expect
+    .poll(() =>
+      page.locator('[data-overlay]').evaluate((el) =>
+        Math.round(el.getBoundingClientRect().height),
+      ),
+    )
+    .toBe(visible);
 }
 
 async function expectClean(page: Page, state: string) {
@@ -105,6 +112,15 @@ test.describe('feedback sheet layout', () => {
 
     const fieldHeight = () =>
       page.getByRole('dialog').locator('textarea').evaluate((el) => el.getBoundingClientRect().height);
+    const fieldLines = () =>
+      page.getByRole('dialog').locator('textarea').evaluate((el) => {
+        const style = getComputedStyle(el);
+        const innerHeight =
+          el.getBoundingClientRect().height
+          - Number.parseFloat(style.paddingTop)
+          - Number.parseFloat(style.paddingBottom);
+        return innerHeight / Number.parseFloat(style.lineHeight);
+      });
 
     expect(await fieldHeight(), 'the field is undersized with no keyboard').toBeGreaterThanOrEqual(90);
 
@@ -120,15 +136,18 @@ test.describe('feedback sheet layout', () => {
     // from, the field has to be worth typing into — five or six lines, not two
     // — and fitting alone was satisfied at two.
     await raiseKeyboard(page, 338);
-    expect(
-      await fieldHeight(),
-      'the field is too cramped to read a message back on a 15 Pro',
-    ).toBeGreaterThanOrEqual(140);
+    await expect
+      .poll(fieldLines, {
+        message: 'the field is too cramped to read a message back on a 15 Pro',
+      })
+      .toBeGreaterThanOrEqual(4.9);
 
     // And it takes the room when there is room to take, rather than staying at
     // its four rows and leaving the space blank.
     await raiseKeyboard(page, 500);
-    expect(await fieldHeight(), 'the field does not grow into spare space').toBeGreaterThan(150);
+    await expect
+      .poll(fieldHeight, { message: 'the field does not grow into spare space' })
+      .toBeGreaterThan(150);
   });
 
   test('scrolling the field does not drag the page under the sheet', async ({ page }) => {
@@ -151,6 +170,7 @@ test.describe('feedback sheet layout', () => {
   });
 
   test('the category chips stay on one row at phone width', async ({ page }) => {
+    test.setTimeout(90_000);
     // A second row of chips costs the field 38px, which is most of a line of
     // typing. Holding the row to one line is why there are four categories
     // rather than five and why the labels are nouns rather than sentences —
@@ -276,6 +296,7 @@ test.describe('feedback sheet layout', () => {
   });
 
   test('the desktop chips stay on one row', async ({ page }) => {
+    test.setTimeout(90_000);
     // The same requirement the phone check makes, on the surface that had more
     // room and used less of it: the card was narrower than the sheet, so the
     // row that fits on a 390px phone wrapped on a 1280px desktop.

@@ -125,9 +125,8 @@ interface PokedexState {
    *  shown. Only relevant when auto-detection picked a non-English locale. */
   localeNoticeSeen: boolean;
   /** Transient (never persisted): armed when the 100-milestone celebration's
-   *  "Open View" CTA is clicked. "Show detailed stats" lives inside View
-   *  Settings rather than on the page itself, so a follow-up nudge points the
-   *  user at the settings gear once they land on View. */
+   *  "Open View" CTA is clicked. "Show detailed stats" lives in the export
+   *  overlay, so a follow-up nudge points at the download control. */
   statsHintArmed: boolean;
   /** Transient (never persisted): armed when the 151-milestone celebration's
    *  "Open View" CTA is clicked, pointing the user at the Export button. */
