@@ -49,7 +49,7 @@ test.describe('admin When heatmap', { tag: '@viewport' }, () => {
     const card = whenCard(page);
     const clocks = card.getByRole('group', { name: 'Clock' });
     await expect(clocks.getByRole('button', { name: 'Local time' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(card.getByRole('img', { name: /^Local time: \d+ browsers/ })).toBeVisible();
+    await expect(card.getByRole('img', { name: /^Local time: \d+ browser-hours by day and hour$/ })).toBeVisible();
 
     const cells = shownGrid(card).getByTestId('heatmap-cell');
     for (const [cell, slot] of [[cells.first(), 'Sun 12 AM'], [cells.last(), 'Sat 11 PM']] as const) {
@@ -67,7 +67,7 @@ test.describe('admin When heatmap', { tag: '@viewport' }, () => {
 
     await press(clocks.getByRole('button', { name: 'Eastern Time' }));
     await expect(clocks.getByRole('button', { name: 'Eastern Time' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(card.getByRole('img', { name: /^Eastern Time: \d+ browsers/ })).toBeVisible();
+    await expect(card.getByRole('img', { name: /^Eastern Time: \d+ browser-hours by day and hour$/ })).toBeVisible();
     // A mouse leaving the grid clears the hover readout; a tap keeps it.
     if (!touch) await cells.last().click();
     await expect(card.getByRole('tooltip')).toHaveText(/^Sat 11 PM · \d+$/);

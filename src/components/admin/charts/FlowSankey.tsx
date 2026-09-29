@@ -58,13 +58,46 @@ function compactLabel(side: ReturnType<typeof compactFunnelLabelSide>) {
   };
 }
 
+/** On a phone funnel, the last column's count sits in its label, right of
+ *  the bar. A chip on the bar would reach left over the previous column's
+ *  names, and the last column has no outgoing flow on its right. */
+function chipInLabel(
+  n: SankeyNode,
+  compact: boolean,
+  kind: 'funnel' | 'referrer',
+  nodes: SankeyNode[],
+  links: SankeyLink[],
+): boolean {
+  if (!compact || kind !== 'funnel') return false;
+  const last = Math.max(...nodes.map((m) => nodeDepth(m.name, links)));
+  return nodeDepth(n.name, links) === last && compactFunnelLabelSide(n, nodes, links) === 'right';
+}
+
 function nodeLabel(
   n: SankeyNode,
   compact: boolean,
   kind: 'funnel' | 'referrer',
   nodes: SankeyNode[],
   links: SankeyLink[],
+  roleColor: (role?: FunnelRole) => string,
+  fontSize: number,
 ) {
+  if (chipInLabel(n, compact, kind, nodes, links)) {
+    return {
+      ...compactLabel('right'),
+      distance: 3,
+      formatter: (p: { name: string; value?: number }) => `{chip|${Math.round(p.value ?? 0)}} ${p.name}`,
+      rich: {
+        chip: {
+          backgroundColor: roleColor(n.role),
+          color: n.role === 'sink' ? '#171717' : '#ffffff',
+          fontSize,
+          fontWeight: 600,
+          padding: [0, 2],
+        },
+      },
+    };
+  }
   if (kind === 'referrer' && compact && !links.some((l) => l.target === n.name)) {
     return {
       position: 'left' as const,
@@ -98,6 +131,7 @@ function paintCountChips(
   roleColor: (role?: FunnelRole) => string,
   fontSize: number,
   compact: boolean,
+  kind: 'funnel' | 'referrer',
 ) {
   if (paintingGraphic.has(chart)) return;
   const model = (chart as unknown as { getModel(): { getSeriesByIndex(i: number): unknown } }).getModel();
@@ -115,7 +149,7 @@ function paintCountChips(
     const node = byName.get(name);
     const value = nodeData.getItemLayout(idx)?.value;
     const el = nodeData.getItemGraphicEl(idx);
-    if (value == null || !el?.shape || !node) return;
+    if (value == null || !el?.shape || !node || chipInLabel(node, compact, kind, nodes, links)) return;
     const ox = el.parent?.x ?? originX;
     const oy = el.parent?.y ?? originY;
     const side = compact ? compactFunnelLabelSide(node, nodes, links) : node.label;
@@ -221,7 +255,7 @@ export function FlowSankey({
             data: nodes.map((n) => ({
               name: n.name,
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
-              label: nodeLabel(n, g.compact, kind, nodes, links),
+              label: nodeLabel(n, g.compact, kind, nodes, links, roleColor, g.fontSize),
             })),
             links: links.map((l) => ({
               source: l.source,
@@ -244,7 +278,7 @@ export function FlowSankey({
         const roleColor = (role?: FunnelRole) =>
           role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
         const g = sankeyGeometry(el.clientWidth || 360, kind);
-        paintCountChips(chart, nodes, links, roleColor, g.fontSize, g.compact);
+        paintCountChips(chart, nodes, links, roleColor, g.fontSize, g.compact, kind);
       },
     },
   );
