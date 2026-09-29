@@ -1,14 +1,91 @@
-/* Lighting layers for the export preview.
- *
- * Layers read a FoilRecipe through CSS variables (`--foil-pointLight`, …)
- * and clip to maps derived from the PNG (`--foil-sat-mask`, edge, gloss).
- * White paper has no chroma, so holographic / iridescence / sparkle stay on
- * type pills, sprites, and ink. Emboss and rim use the edge map.
- *
- * Mix modes stay off color-dodge as the master blend: that wash blew out
- * this white export. Multiply, overlay, soft-light, screen, and color
- * keep the print readable.
- */
+/* The lift carries its own perspective() (see below), so no element holds a
+   3D rendering context: iOS drew stray one-frame twists while the stage's
+   perspective and the lift's rotation composited as separate layers. */
+.export-foil-hit {
+  --shadow-x: 0;
+  --shadow-y: 0;
+  --hover-tilt-shadow-opacity: 0.14;
+  --hover-tilt-shadow-blur: 18;
+  --rotation-x: 0deg;
+  --rotation-y: 0deg;
+  --hover-tilt-scale: 1;
+  --export-lift-scale: 1;
+  --export-lift-rest: 1;
+  --export-perspective: 600px;
+  /* A perspective property on this card-sized box is the iOS clip rect
+     around the drop shadow. */
+  perspective: none;
+  -webkit-perspective: none;
+  transform-origin: center center;
+  -webkit-transform-origin: center center;
+  transform-style: flat;
+  -webkit-transform-style: flat;
+  overflow: visible;
+  background: none;
+  box-shadow: none;
+  border: 0;
+  contain: none;
+  isolation: auto;
+  clip-path: none;
+  -webkit-clip-path: none;
+}
+
+/* Rotates with the card. Overflow stays visible so the raised-edge
+   shadow paints past the paper. `.export-foil` still clips shine. */
+.export-foil-lift {
+  overflow: visible;
+  background: none;
+  border: 0;
+  contain: none;
+  isolation: auto;
+  border-radius: var(--export-card-radius, 4%);
+  transform-origin: center center;
+  -webkit-transform-origin: center center;
+  -webkit-transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
+    rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
+  transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
+    rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
+  box-shadow:
+    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 1px)
+      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.6px + 6px)
+      calc(var(--hover-tilt-shadow-blur) * 1px)
+      calc(var(--hover-tilt-shadow-blur) * -0.06px)
+      rgb(0 0 0 / calc(var(--hover-tilt-shadow-opacity) * 0.38)),
+    0 8px 18px rgb(0 0 0 / 0.10);
+}
+
+.export-foil-hit[data-hover-tilt='1'] .export-foil-lift {
+  --hover-tilt-default-shadow:
+    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 1px)
+      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.5px + var(--hover-tilt-shadow-blur) * 0.25px)
+      calc(var(--hover-tilt-shadow-blur) * 0.5px)
+      calc(var(--hover-tilt-shadow-blur) * -0.25px)
+      rgb(0 0 0 / var(--hover-tilt-shadow-opacity, 0)),
+    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 0.5px)
+      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.25px + var(--hover-tilt-shadow-blur) * 0.125px)
+      calc(var(--hover-tilt-shadow-blur) * 0.25px)
+      calc(var(--hover-tilt-shadow-blur) * -0.125px)
+      rgb(0 0 0 / var(--hover-tilt-shadow-opacity, 0));
+  transform-style: flat;
+  -webkit-transform-style: flat;
+  /* The lift sits centered in the stage, so its own perspective() about its
+     center draws the same picture a stage perspective did. */
+  -webkit-transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
+    rotateX(var(--rotation-x)) rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
+  transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
+    rotateX(var(--rotation-x)) rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
+  box-shadow: var(--hover-tilt-custom-shadow, var(--hover-tilt-default-shadow));
+}
+
+/* At rest the lift is flat and scaled down from its popped layout size. */
+.export-foil-hit[data-hover-tilt='1'][data-tilt-active='0'] .export-foil-lift {
+  -webkit-transform: scale(var(--export-lift-rest, 1));
+  transform: scale(var(--export-lift-rest, 1));
+}
+
+.export-foil-hit[data-hover-tilt='1'][data-hover-tilt-shadow='0'] .export-foil-lift {
+  box-shadow: none;
+}
 
 .export-foil {
   --pointer-x: 50%;
@@ -16,16 +93,28 @@
   --pointer-from-center: 0;
   --pointer-from-top: 0.5;
   --pointer-from-left: 0.5;
+  --rotate-x: 0deg;
+  --rotate-y: 0deg;
+  --rotation-x: 0deg;
+  --rotation-y: 0deg;
+  --hover-tilt-x: 0.5;
+  --hover-tilt-y: 0.5;
+  --hover-tilt-opacity: 0;
+  --hover-tilt-shadow-blur: 18;
+  --hover-tilt-scale: 1;
+  --shadow-x: 0;
+  --shadow-y: 0;
+  --hover-tilt-shadow-opacity: 0.14;
   --foil-opacity: 0;
   --foil-pointLight: 0;
   --foil-ambient: 0;
   --foil-specular: 0;
   --foil-rim: 0;
   --foil-holographic: 0;
+  --foil-holoRainbow: 0;
   --foil-iridescence: 0;
   --foil-emboss: 0;
   --foil-parallax: 0;
-  --foil-sparkle: 0;
   --foil-bloom: 0;
   --foil-parallax-px: 7px;
   --foil-bloom-blur: 14px;
@@ -33,29 +122,54 @@
   --foil-sat-mask: none;
   --foil-edge-mask: none;
   --foil-gloss-mask: none;
+  /* poke-holo's sunpillar colors, shared by the rainbow and the V shine. */
   --sunpillar-1: hsl(2, 100%, 73%);
   --sunpillar-2: hsl(53, 100%, 69%);
   --sunpillar-3: hsl(93, 100%, 69%);
   --sunpillar-4: hsl(176, 100%, 76%);
   --sunpillar-5: hsl(228, 100%, 74%);
   --sunpillar-6: hsl(283, 100%, 73%);
-  --space: 5%;
   --foil-shift-x: calc((var(--pointer-from-left) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
+  --background-x: 50%;
+  --background-y: 50%;
   position: relative;
-  overflow: visible;
-  transform-style: preserve-3d;
+  border-radius: var(--export-card-radius, 4%);
   isolation: isolate;
+  background-color: transparent;
+  overflow: hidden;
+  -webkit-mask-image: var(--export-shape-mask);
+  mask-image: var(--export-shape-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-mode: alpha;
+  mask-mode: alpha;
+  box-shadow: none;
+  /* Safari needs this element flattened so overflow clips the foil layers. */
+  transform-style: flat;
+  -webkit-transform-style: flat;
+  -webkit-transform: none;
+  transform: none;
+  transform-origin: center center;
+  -webkit-transform-origin: center center;
 }
 
 .export-foil-layer {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
+  transform: none;
+  -webkit-transform: none;
+  transform-style: flat;
+  -webkit-transform-style: flat;
 }
 
 .export-foil-mask-sat,
+.export-foil-holo-rainbow,
 .export-foil-holographic,
 .export-foil-iridescence,
 .export-foil-parallax {
@@ -65,6 +179,8 @@
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
+  -webkit-mask-source-type: alpha;
+  mask-mode: alpha;
 }
 
 .export-foil-emboss,
@@ -78,7 +194,6 @@
 }
 
 .export-foil-specular,
-.export-foil-sparkle,
 .export-foil-bloom {
   -webkit-mask-image: var(--foil-gloss-mask);
   mask-image: var(--foil-gloss-mask);
@@ -88,12 +203,12 @@
   mask-repeat: no-repeat;
 }
 
+.export-foil:not([data-foil-maps='1']) .export-foil-holo-rainbow,
 .export-foil:not([data-foil-maps='1']) .export-foil-holographic,
 .export-foil:not([data-foil-maps='1']) .export-foil-iridescence,
 .export-foil:not([data-foil-maps='1']) .export-foil-emboss,
 .export-foil:not([data-foil-maps='1']) .export-foil-rim,
 .export-foil:not([data-foil-maps='1']) .export-foil-specular,
-.export-foil:not([data-foil-maps='1']) .export-foil-sparkle,
 .export-foil:not([data-foil-maps='1']) .export-foil-bloom,
 .export-foil:not([data-foil-maps='1']) .export-foil-parallax {
   opacity: 0;
@@ -115,42 +230,141 @@
   z-index: 2;
   background-image: radial-gradient(
     circle at var(--pointer-x) var(--pointer-y),
-    hsla(40, 45%, 100%, 0.7) 0%,
-    hsla(40, 30%, 96%, 0.22) 22%,
+    hsla(40, 45%, 100%, 0.70) 0%,
+    hsla(40, 30%, 96%, 0.24) 22%,
     transparent 58%
   );
   mix-blend-mode: soft-light;
-  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.78 + 0.22 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.72 + 0.08 * var(--pointer-from-center)));
 }
 
+/* A rainbow holofoil: tight sunpillar bands recolor the ink as the card
+   tilts. hue keeps each ink's lightness, so paper stays white and nothing
+   washes out. Positions stay inside 0-100%, so the tile always covers the
+   card. */
+.export-foil-holo-rainbow {
+  z-index: 3;
+  background-image: repeating-linear-gradient(
+    110deg,
+    var(--sunpillar-1) 0%,
+    var(--sunpillar-2) 1.33%,
+    var(--sunpillar-3) 2.67%,
+    var(--sunpillar-4) 4%,
+    var(--sunpillar-5) 5.33%,
+    var(--sunpillar-6) 6.67%,
+    var(--sunpillar-1) 8%
+  );
+  background-size: 400% 400%;
+  background-position: var(--background-x) var(--background-y);
+  mix-blend-mode: hue;
+  opacity: calc(var(--foil-opacity) * var(--foil-holoRainbow));
+}
+
+/* The poke-holo "V" shine (https://poke-holo.simey.me/#-v): a sunpillar
+   rainbow, diagonal bands, and noise, dodged onto the card. The ::after copy
+   moves its bands the opposite way, so they cross as the card tilts. The ink
+   mask keeps it off paper and pastel fills, which color-dodge washes white. */
 .export-foil-holographic {
+  --holo-clr-1: var(--sunpillar-1);
+  --holo-clr-2: var(--sunpillar-2);
+  --holo-clr-3: var(--sunpillar-3);
+  --holo-clr-4: var(--sunpillar-4);
+  --holo-clr-5: var(--sunpillar-5);
+  --holo-clr-6: var(--sunpillar-6);
+  --holo-space: 5%;
+  --holo-angle: 133deg;
+  --holo-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
   z-index: 3;
   background-image:
+    var(--holo-grain),
     repeating-linear-gradient(
-      125deg,
-      var(--sunpillar-1) calc(var(--space) * 1),
-      var(--sunpillar-2) calc(var(--space) * 2),
-      var(--sunpillar-3) calc(var(--space) * 3),
-      var(--sunpillar-4) calc(var(--space) * 4),
-      var(--sunpillar-5) calc(var(--space) * 5),
-      var(--sunpillar-6) calc(var(--space) * 6),
-      var(--sunpillar-1) calc(var(--space) * 7)
+      0deg,
+      var(--holo-clr-1) calc(var(--holo-space) * 1),
+      var(--holo-clr-2) calc(var(--holo-space) * 2),
+      var(--holo-clr-3) calc(var(--holo-space) * 3),
+      var(--holo-clr-4) calc(var(--holo-space) * 4),
+      var(--holo-clr-5) calc(var(--holo-space) * 5),
+      var(--holo-clr-6) calc(var(--holo-space) * 6),
+      var(--holo-clr-1) calc(var(--holo-space) * 7)
     ),
     repeating-linear-gradient(
-      -55deg,
-      transparent 0%,
-      hsla(0, 0%, 100%, 0.32) 8%,
-      transparent 18%
+      var(--holo-angle),
+      #0e152e 0%,
+      hsl(180, 10%, 60%) 3.8%,
+      hsl(180, 29%, 66%) 4.5%,
+      hsl(180, 10%, 60%) 5.2%,
+      #0e152e 10%,
+      #0e152e 12%
+    ),
+    radial-gradient(
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsla(0, 0%, 0%, 0.1) 12%,
+      hsla(0, 0%, 0%, 0.15) 20%,
+      hsla(0, 0%, 0%, 0.25) 120%
     );
-  background-blend-mode: overlay, overlay;
-  background-size: 380% 820%, 210% 210%;
+  background-blend-mode: screen, hue, hard-light;
+  background-size: 500px 100%, 200% 700%, 300% 100%, 200% 100%;
   background-position:
-    calc(10% + var(--pointer-from-left) * 80%) calc(10% + var(--pointer-from-top) * 80%),
-    calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%);
-  mix-blend-mode: overlay;
-  filter: saturate(1.35);
-  transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 2px);
-  opacity: calc(var(--foil-opacity) * var(--foil-holographic) * (0.82 + 0.18 * var(--pointer-from-center)));
+    center,
+    0% var(--background-y),
+    var(--background-x) var(--background-y),
+    var(--background-x) var(--background-y);
+  filter: brightness(0.7) contrast(2) saturate(0.5);
+  mix-blend-mode: var(--foil-holo-blend, color-dodge);
+  opacity: calc(var(--foil-opacity) * var(--foil-holographic));
+}
+
+.export-foil-holographic::after {
+  --holo-clr-1: var(--sunpillar-6);
+  --holo-clr-2: var(--sunpillar-1);
+  --holo-clr-3: var(--sunpillar-2);
+  --holo-clr-4: var(--sunpillar-3);
+  --holo-clr-5: var(--sunpillar-4);
+  --holo-clr-6: var(--sunpillar-5);
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Its own gradients: inherit would carry the parent's resolved colors. */
+  background-image:
+    var(--holo-grain),
+    repeating-linear-gradient(
+      0deg,
+      var(--holo-clr-1) calc(var(--holo-space) * 1),
+      var(--holo-clr-2) calc(var(--holo-space) * 2),
+      var(--holo-clr-3) calc(var(--holo-space) * 3),
+      var(--holo-clr-4) calc(var(--holo-space) * 4),
+      var(--holo-clr-5) calc(var(--holo-space) * 5),
+      var(--holo-clr-6) calc(var(--holo-space) * 6),
+      var(--holo-clr-1) calc(var(--holo-space) * 7)
+    ),
+    repeating-linear-gradient(
+      var(--holo-angle),
+      #0e152e 0%,
+      hsl(180, 10%, 60%) 3.8%,
+      hsl(180, 29%, 66%) 4.5%,
+      hsl(180, 10%, 60%) 5.2%,
+      #0e152e 10%,
+      #0e152e 12%
+    ),
+    radial-gradient(
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsla(0, 0%, 0%, 0.1) 12%,
+      hsla(0, 0%, 0%, 0.15) 20%,
+      hsla(0, 0%, 0%, 0.25) 120%
+    );
+  background-blend-mode: screen, hue, hard-light;
+  background-size: 500px 100%, 200% 400%, 195% 100%, 200% 100%;
+  /* 100% - x moves the bands the opposite way and keeps the 195% tile over
+     the whole card. poke-holo's -x starts the tile inside the card, where the
+     band pattern restarts in a vertical seam. */
+  background-position:
+    center,
+    0% var(--background-y),
+    calc(100% - var(--background-x)) calc(var(--background-y) * -1),
+    var(--background-x) var(--background-y);
+  filter: brightness(1) contrast(2.5) saturate(1.75);
+  mix-blend-mode: soft-light;
 }
 
 .export-foil-iridescence {
@@ -161,8 +375,8 @@
     hsl(calc(120 + var(--pointer-from-left) * 360), 88%, 58%),
     hsl(calc(240 + var(--pointer-from-left) * 360), 88%, 58%)
   );
-  mix-blend-mode: color;
-  transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 3px);
+  mix-blend-mode: hue;
+  transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
 }
 
@@ -199,10 +413,9 @@
     hsla(0, 0%, 0%, 0.22)
   );
   mix-blend-mode: overlay;
-  transform: translate3d(
+  transform: translate(
     calc(var(--foil-shift-x) * 1.8),
-    calc(var(--foil-shift-y) * 1.8),
-    5px
+    calc(var(--foil-shift-y) * 1.8)
   );
   opacity: calc(var(--foil-opacity) * var(--foil-parallax));
 }
@@ -221,6 +434,7 @@
 
 .export-foil-bloom {
   z-index: 9;
+  inset: 0;
   background-image: radial-gradient(
     circle at var(--pointer-x) var(--pointer-y),
     hsla(0, 0%, 100%, 0.85) 0%,
@@ -232,55 +446,71 @@
   opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--pointer-from-center)));
 }
 
-.export-foil-sparkle {
-  z-index: 10;
-  background-image:
-    radial-gradient(1.1px 1.1px at 12% 18%, hsla(0, 0%, 100%, 0.95), transparent),
-    radial-gradient(1.4px 1.4px at 38% 8%, hsla(50, 100%, 92%, 0.9), transparent),
-    radial-gradient(1px 1px at 62% 22%, hsla(0, 0%, 100%, 0.85), transparent),
-    radial-gradient(1.6px 1.6px at 84% 14%, hsla(280, 100%, 95%, 0.8), transparent),
-    radial-gradient(1.2px 1.2px at 8% 48%, hsla(180, 100%, 94%, 0.85), transparent),
-    radial-gradient(1px 1px at 28% 62%, hsla(0, 0%, 100%, 0.8), transparent),
-    radial-gradient(1.5px 1.5px at 54% 44%, hsla(50, 100%, 90%, 0.9), transparent),
-    radial-gradient(1.1px 1.1px at 76% 58%, hsla(0, 0%, 100%, 0.88), transparent),
-    radial-gradient(1.3px 1.3px at 92% 72%, hsla(200, 100%, 94%, 0.8), transparent),
-    radial-gradient(1px 1px at 18% 82%, hsla(0, 0%, 100%, 0.75), transparent),
-    radial-gradient(1.4px 1.4px at 46% 88%, hsla(50, 100%, 92%, 0.85), transparent),
-    radial-gradient(1.2px 1.2px at 70% 86%, hsla(0, 0%, 100%, 0.8), transparent);
-  background-size:
-    180% 180%,
-    160% 160%,
-    200% 200%,
-    140% 140%,
-    170% 170%,
-    190% 190%,
-    150% 150%,
-    210% 210%,
-    165% 165%,
-    185% 185%,
-    155% 155%,
-    175% 175%;
-  background-position:
-    calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%),
-    calc(20% + var(--pointer-from-left) * 60%) calc(15% + var(--pointer-from-top) * 70%),
-    calc(var(--pointer-from-left) * 80%) calc(var(--pointer-from-top) * 90%),
-    calc(10% + var(--pointer-from-left) * 70%) calc(var(--pointer-from-top) * 80%),
-    calc(var(--pointer-from-left) * 90%) calc(20% + var(--pointer-from-top) * 60%),
-    calc(30% + var(--pointer-from-left) * 50%) calc(var(--pointer-from-top) * 100%),
-    calc(var(--pointer-from-left) * 70%) calc(10% + var(--pointer-from-top) * 80%),
-    calc(15% + var(--pointer-from-left) * 75%) calc(var(--pointer-from-top) * 85%),
-    calc(var(--pointer-from-left) * 95%) calc(25% + var(--pointer-from-top) * 55%),
-    calc(5% + var(--pointer-from-left) * 85%) calc(var(--pointer-from-top) * 75%),
-    calc(var(--pointer-from-left) * 60%) calc(5% + var(--pointer-from-top) * 90%),
-    calc(25% + var(--pointer-from-left) * 65%) calc(var(--pointer-from-top) * 70%);
-  mix-blend-mode: overlay;
-  transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 6px);
-  opacity: calc(var(--foil-opacity) * var(--foil-sparkle) * (0.65 + 0.35 * var(--pointer-from-center)));
-  filter: brightness(1.12) contrast(1.12);
+.export-foil[data-hover-tilt='1'] {
+  --hover-tilt-from-center: var(--pointer-from-center);
+  --hover-tilt-at-edge: var(--pointer-from-center);
+  --hover-tilt-glare-mask: none;
+  --hover-tilt-glare-mask-size: cover;
+  --hover-tilt-glare-mask-repeat: no-repeat;
+  --hover-tilt-glare-mask-position: center;
+  --hover-tilt-mask-mode: match-source;
+  --hover-tilt-blend-mode: overlay;
+  --hover-tilt-glare-intensity: 1;
+  --hover-tilt-glare-size: 0.5;
+  --hover-tilt-glare-hue: 40;
+  --gradient-x: var(--pointer-x);
+  --gradient-y: var(--pointer-y);
+  /* Size pulls the light stops in toward the pointer, then fades them to a
+     clear neutral stop before the dark far stop. At 1 this is close to
+     hover-tilt's glare, whose light already crossed mid-gray near 56%.
+     Smaller keeps the light in a hotspot, so its overlay washes a smaller
+     patch of the card. */
+  --hover-tilt-default-gradient: radial-gradient(
+    farthest-corner circle at var(--gradient-x) var(--gradient-y),
+    hsla(var(--hover-tilt-glare-hue), 40%, 95%, calc(var(--hover-tilt-glare-intensity) * 0.66))
+      calc(8% * var(--hover-tilt-glare-size)),
+    hsla(var(--hover-tilt-glare-hue), 30%, 88%, calc(var(--hover-tilt-glare-intensity) * 0.5))
+      calc(28% * var(--hover-tilt-glare-size)),
+    hsla(var(--hover-tilt-glare-hue), 10%, 50%, 0) calc(56% * var(--hover-tilt-glare-size)),
+    hsla(var(--hover-tilt-glare-hue), 10%, 5%, calc(var(--hover-tilt-glare-intensity) * 0.25)) 90%
+  );
+  isolation: auto;
+  transform-style: flat;
+  -webkit-transform-style: flat;
+  -webkit-transform: none;
+  transform: none;
+  will-change: auto;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .export-foil-layer {
-    opacity: 0;
-  }
+.export-foil[data-hover-tilt='1']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: var(--hover-tilt-custom-gradient, var(--hover-tilt-default-gradient));
+  mix-blend-mode: var(--hover-tilt-blend-mode, overlay);
+  opacity: var(--hover-tilt-opacity, 0);
+  will-change: background-image, opacity;
+  -webkit-mask-image: var(--hover-tilt-glare-mask, none);
+  mask-image: var(--hover-tilt-glare-mask, none);
+  -webkit-mask-size: var(--hover-tilt-glare-mask-size, cover);
+  mask-size: var(--hover-tilt-glare-mask-size, cover);
+  -webkit-mask-position: var(--hover-tilt-glare-mask-position, center);
+  mask-position: var(--hover-tilt-glare-mask-position, center);
+  -webkit-mask-repeat: var(--hover-tilt-glare-mask-repeat, no-repeat);
+  mask-repeat: var(--hover-tilt-glare-mask-repeat, no-repeat);
+  -webkit-mask-mode: var(--hover-tilt-mask-mode, match-source);
+  mask-mode: var(--hover-tilt-mask-mode, match-source);
+  -webkit-mask-composite: var(--hover-tilt-glare-mask-composite-webkit, source-in);
+  mask-composite: var(--hover-tilt-glare-mask-composite, intersect);
+}
+
+
+.export-foil[data-hover-tilt='1'] .export-foil-layer {
+  z-index: auto;
+}
+
+.export-foil[data-workshop-dark-card='1'] > img {
+  filter: invert(1) hue-rotate(180deg);
 }

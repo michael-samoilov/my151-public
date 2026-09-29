@@ -10,9 +10,18 @@ export const SPRITE_NATIVE = 96;
  * `image-rendering: pixelated` stays crisp when the CSS size is `n * 96 / dpr`
  * (integer device pixels). A pane fraction such as `min(42cqw, 32cqh)` is not
  * an integer scale and is the source of pair-sprite pixelation.
+ * `scale` is an integer ≥ 1 (1×, 2×, 3×…). Values below 1 snap up to 1.
  */
-export function pixelPerfectCssPx(scale: 1 | 2, dpr: number): number {
-  return Math.round((scale * SPRITE_NATIVE) / Math.max(dpr, 1));
+export function pixelPerfectCssPx(scale: number, dpr: number): number {
+  const n = Math.max(1, Math.round(scale));
+  return Math.round((n * SPRITE_NATIVE) / Math.max(dpr, 1));
+}
+
+/** True when device pixels are an integer multiple of the native sprite, ≥ 1×. */
+export function isIntegerSpriteScale(devicePx: number, nativePx = SPRITE_NATIVE): boolean {
+  if (!Number.isFinite(devicePx) || devicePx + 0.5 < nativePx) return false;
+  const multiple = devicePx / nativePx;
+  return Math.abs(multiple - Math.round(multiple)) < 0.06;
 }
 
 /**
@@ -181,6 +190,51 @@ export function useDevicePixelRatio(): number {
     () => {
       void vpVersion;
       return typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+    },
+    () => 1,
+  );
+}
+
+/**
+ * CSS px for an integer sprite scale on this device. Default 1× (almost always
+ * what a single portrait sprite wants). Never fractional, never below native.
+ */
+export function usePixelPerfectSprite(scale = 1): number {
+  return pixelPerfectCssPx(scale, useDevicePixelRatio());
+}
+
+/**
+ * Integer survey-sprite scale (1× / 2× / 3× only).
+ * Device pixels stay ≥ native and an integer multiple. Desktop uses 2×
+ * when 1× CSS would be a sub-native stub (dpr > 1).
+ */
+export function exportSurveySpriteScale(opts: {
+  viewportWidth: number;
+  dpr: number;
+}): number {
+  const dpr = Math.max(opts.dpr, 1);
+  const room = Math.max(SPRITE_NATIVE, opts.viewportWidth - 48);
+  const fits = (n: number) => pixelPerfectCssPx(n, dpr) <= room;
+  if (opts.viewportWidth >= 1024) {
+    if (pixelPerfectCssPx(1, dpr) >= SPRITE_NATIVE && fits(1)) return 1;
+    if (fits(2)) return 2;
+    return 1;
+  }
+  if (fits(2)) return 2;
+  return 1;
+}
+
+/** Integer scale for the export-survey highlight sprite. */
+export function useExportSurveySpriteScale(): number {
+  return useSyncExternalStore(
+    subscribeFn,
+    () => {
+      void vpVersion;
+      if (typeof window === 'undefined') return 1;
+      return exportSurveySpriteScale({
+        viewportWidth: getUnzoomedViewportWidth(),
+        dpr: window.devicePixelRatio || 1,
+      });
     },
     () => 1,
   );

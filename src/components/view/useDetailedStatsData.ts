@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { useAnalytics, fullBaseline } from '@/hooks/useAnalytics';
+import { useAnalytics, fullBaseline, type computeAnalytics } from '@/hooks/useAnalytics';
 import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { countTypes, buildTypeRows } from '@/components/analytics/typeDistribution';
 import { rowKey } from '@/components/analytics/butterflyRow';
@@ -69,45 +69,45 @@ function alignHistograms(
  * (DetailedStatsPanel) and by the PNG exporter (which redraws these natively on
  * the export canvas), so both read from a single source of truth.
  */
+export function detailedStatsData(
+  sections: Record<string, number[]>,
+  analytics: ReturnType<typeof computeAnalytics>,
+): DetailedStatsData {
+  const pokemon = getPokemonByIds(Object.values(sections).flat());
+  const total = pokemon.length;
+  const typeData: StatsTypeDatum[] =
+    total === 0
+      ? []
+      : buildTypeRows(countTypes(pokemon), total, fullBaseline.typeProp)
+          .sort((a, b) => b.deviation - a.deviation)
+          .map((r) => ({ type: rowKey(r) as TypeName, label: r.label, count: r.count, deviation: r.deviation, color: r.color }));
+
+  const genData: StatsGenDatum[] = analytics.generationDeviation
+    .map((d, i) => ({
+      gen: d.generation,
+      count: d.count,
+      deviation: d.deviation,
+      color: GEN_COLORS[i % GEN_COLORS.length],
+    }))
+    .sort((a, b) => a.gen - b.gen);
+
+  const h = alignHistograms(analytics.yourBstHistogram, analytics.nationalBstHistogram, 50, 100);
+  const bst: StatsBst = {
+    merged: h.merged,
+    binSize: h.binSize,
+    xDomain: h.xDomain,
+    xTicks: h.xTicks,
+    yDomain: h.yDomain,
+    yTicks: h.yTicks,
+    yoursAvg: analytics.bstStats.avg,
+    nationalAvg: analytics.nationalAvgBst,
+  };
+
+  return { typeData, genData, bst };
+}
+
 export function useDetailedStatsData(): DetailedStatsData {
   const sections = usePokedexStore((s) => s.sections);
   const analytics = useAnalytics(false);
-
-  const typeData = useMemo<StatsTypeDatum[]>(() => {
-    const pokemon = getPokemonByIds(Object.values(sections).flat());
-    const total = pokemon.length;
-    if (total === 0) return [];
-    return buildTypeRows(countTypes(pokemon), total, fullBaseline.typeProp)
-      .sort((a, b) => b.deviation - a.deviation)
-      .map((r) => ({ type: rowKey(r) as TypeName, label: r.label, count: r.count, deviation: r.deviation, color: r.color }));
-  }, [sections]);
-
-  const genData = useMemo<StatsGenDatum[]>(
-    () =>
-      analytics.generationDeviation
-        .map((d, i) => ({
-          gen: d.generation,
-          count: d.count,
-          deviation: d.deviation,
-          color: GEN_COLORS[i % GEN_COLORS.length],
-        }))
-        .sort((a, b) => a.gen - b.gen),
-    [analytics.generationDeviation],
-  );
-
-  const bst = useMemo<StatsBst>(() => {
-    const h = alignHistograms(analytics.yourBstHistogram, analytics.nationalBstHistogram, 50, 100);
-    return {
-      merged: h.merged,
-      binSize: h.binSize,
-      xDomain: h.xDomain,
-      xTicks: h.xTicks,
-      yDomain: h.yDomain,
-      yTicks: h.yTicks,
-      yoursAvg: analytics.bstStats.avg,
-      nationalAvg: analytics.nationalAvgBst,
-    };
-  }, [analytics.yourBstHistogram, analytics.nationalBstHistogram, analytics.bstStats.avg, analytics.nationalAvgBst]);
-
-  return { typeData, genData, bst };
+  return useMemo(() => detailedStatsData(sections, analytics), [sections, analytics]);
 }

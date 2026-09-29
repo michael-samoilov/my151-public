@@ -1,5 +1,6 @@
 import { Check, Download, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportSettingsScroll } from '@/components/export/ExportSettingsScroll';
 import type { LeagueHomeExportLayout, LeagueHomeTeamMode } from '../export/exportOptions';
 
 const TEAM_OPTIONS: { mode: LeagueHomeTeamMode; label: string; fill: 'left' | 'right' | 'both' }[] = [
@@ -53,7 +54,7 @@ export function LeagueExportSettingsPane({
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <ExportSettingsScroll>
         {isLeague ? (
           <div className={mobileSheet ? 'space-y-2 px-3 pb-2 pt-1' : 'space-y-4 px-3 pb-2 pt-3'}>
             <div>
@@ -94,7 +95,7 @@ export function LeagueExportSettingsPane({
             Trainer card exports match the card on screen.
           </p>
         )}
-      </div>
+      </ExportSettingsScroll>
 
       <div className={`flex shrink-0 flex-col gap-2 border-t pt-2 ${mobileSheet ? 'px-3 pb-3' : 'px-4 pb-4'}`}>
         <Button type="button" disabled={busy} onClick={onExport} data-league-export-confirm>
