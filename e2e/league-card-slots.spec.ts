@@ -483,9 +483,9 @@ test.describe('the partner heading', () => {
       const aceHead = document.querySelector('[data-slot-head="ace"]');
       const aceArt = document.querySelector('[data-testid="slot-ace"] [data-slot-art]');
       if (!head || !art || !aceHead || !aceArt) return { ok: false, detail: 'missing' };
-      // Each heading sits beside its own sprite: the partner's ends at the
-      // partner's left edge, a caption gap short of it, and the ace's
-      // starts at the ace's left edge, under it.
+      // Each heading sits by its own sprite: the partner's ends at the
+      // partner's left edge, a caption gap short of it, and the ace's is
+      // centred under the ace.
       const h = head.getBoundingClientRect();
       const a = art.getBoundingClientRect();
       const ah = aceHead.getBoundingClientRect();
@@ -494,7 +494,7 @@ test.describe('the partner heading', () => {
       const zoom = slot.getBoundingClientRect().width / slot.offsetWidth || 1;
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
       const partnerGap = (a.left - h.right) / zoom;
-      const aceDrift = Math.abs(ah.left - aa.left) / zoom;
+      const aceDrift = Math.abs((ah.left + ah.right) / 2 - (aa.left + aa.right) / 2) / zoom;
       return {
         ok: partnerGap >= 0 && partnerGap <= 0.25 * rem && aceDrift <= 1 && ah.top >= aa.bottom - 1,
         detail: `partner gap ${partnerGap.toFixed(2)}px ace drift ${aceDrift.toFixed(2)}px`,
