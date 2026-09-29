@@ -814,7 +814,7 @@ test.describe('favorite Pokémon picker', () => {
     const rowIds = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
       (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
     );
-    expect(rowIds).toEqual([701, 650, 10300, 716]);
+    expect(rowIds).toEqual([701, 650, 716, 10300]);
     await expect(page.getByTestId('favorites-pick-701').locator('[data-source="type"]')).toBeVisible();
     await expect(page.getByTestId('favorites-pick-10300').locator('[data-source="gimmick"]')).toBeVisible();
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);

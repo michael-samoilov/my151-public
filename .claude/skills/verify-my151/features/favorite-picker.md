@@ -6,7 +6,7 @@ gimmick, legendary, and favorite picks.
 
 ## Sub-features
 
-- Grid: 18 type columns plus starter, gimmick, legendary, and favorite; 9
+- Grid: 18 type columns plus starter, legendary, gimmick, and favorite; 9
   generation rows plus gimmick, legendary, and favorite. Each body cell is a
   `[data-testid="favorites-cell-<type>-<gen>"]` button whose `data-kind` is
   `pick`, `pointer`, `disabled`, or `null`. Empty cells show a faint Poké Ball.
