@@ -12,7 +12,7 @@
  */
 
 import { localeUppercase } from '@/i18n';
-import { EXPORT_FRAME_PX } from '@/lib/exportPngShape';
+import { EXPORT_CORNER_RATIO, EXPORT_FRAME_PX } from '@/lib/exportPngShape';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import { pairSprite, soloSprite } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
@@ -451,14 +451,29 @@ export const HOME_RAIL = 3 * K2;
 /**
  * What a band sits in from the picture's left and right edges.
  *
- * An unnamed league has no name line, so this is also the whitespace above
- * its first band: the band then has the same air on three sides.
+ * An unnamed league has no name line, so this is also the least whitespace
+ * above its first band; `homeTopPad` adds what the frame's round corner needs.
  */
 export const HOME_GUTTER = HPADX + HOME_RAIL - HOME_R;
 
-/** The whitespace above the first thing the picture draws. */
-export function homeTopPad(named: boolean): number {
-  return named ? HPADY : HOME_GUTTER;
+/** Fourteen rows, four bands with their gaps, and the credit. */
+export const HOME_BODY_H = 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT;
+
+/**
+ * The whitespace above the first thing the picture draws.
+ *
+ * An unnamed league opens on a band, and the frame's inner corner is round, so
+ * the band's corner must keep `HOME_GUTTER` from the curve as well as from the
+ * straight edges: its corner arc sits no higher than the frame's. The inner
+ * radius follows the picture's short edge; when that is the height, which
+ * grows with this pad, the pad is solved for directly.
+ */
+export function homeTopPad(named: boolean, homeW: number): number {
+  if (named) return HPADY;
+  const r = EXPORT_CORNER_RATIO;
+  const fromWidth = (homeW + 2 * FRAME) * r - FRAME - HOME_R;
+  const fromHeight = ((HOME_BODY_H + 2 * FRAME) * r - FRAME - HOME_R) / (1 - r);
+  return Math.max(HOME_GUTTER, Math.min(fromWidth, fromHeight));
 }
 
 export const HOME_W = BOX_W;
@@ -657,10 +672,8 @@ export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT + FRAME;
  * The league: its padding, the name line if there is one, four bands with
  * their gaps, fourteen rows, and the credit.
  */
-export function homeImgH(named: boolean): number {
-  return Math.ceil(
-    homeTopPad(named) + (named ? HOME_HDR_H : 0) + 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT,
-  );
+export function homeImgH(named: boolean, homeW: number): number {
+  return Math.ceil(homeTopPad(named, homeW) + (named ? HOME_HDR_H : 0) + HOME_BODY_H);
 }
 
 export { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT };

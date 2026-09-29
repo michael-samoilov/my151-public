@@ -1296,12 +1296,12 @@ function drawLeagueHome(
 ): void {
   // The picture is the league's content on white, edge to edge.
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, geom.homeW, L.homeImgH(!!name));
+  ctx.fillRect(0, 0, geom.homeW, L.homeImgH(!!name, geom.homeW));
 
   const ox = L.HPADX;
   // An unnamed league opens on its first band, so the band takes the gutter
   // above it as well as either side of it.
-  let y = L.homeTopPad(!!name);
+  let y = L.homeTopPad(!!name, geom.homeW);
 
   // --- the identity line: the league's name, and nothing else ---
   // The tool's own name stays off the picture, and so does the reading:
@@ -1415,7 +1415,7 @@ export async function exportLeagueHome(
     homeDetailsNeed(measure, cards, images, layout),
   );
   const named = Boolean(name) && layout.showLeagueName;
-  const innerH = L.homeImgH(named);
+  const innerH = L.homeImgH(named, geom.homeW);
   const w = geom.homeW + 2 * L.FRAME;
   const h = innerH + 2 * L.FRAME;
   return render(w, h, (ctx) => {
