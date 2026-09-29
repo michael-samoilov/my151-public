@@ -1,16 +1,5 @@
 import type { FoilMapNeed } from './foilRecipe';
 
-/**
- * Alpha maps derived from an export PNG so lighting can follow the print.
- *
- * sat  — chroma. Type pills, sprites, and ink. White paper stays 0.
- * edge — Sobel magnitude of luminance. Type, frames, sprite outlines.
- * gloss — chroma on mid-bright pixels. Specular and sparkle land here.
- *
- * Maps are RGBA with white RGB and the signal in alpha, so CSS
- * `mask-mode: alpha` can clip each lighting layer.
- */
-
 export type RgbaBitmap = {
   width: number;
   height: number;
@@ -29,7 +18,19 @@ export type FoilMaskUrls = {
   gloss: string;
 };
 
-const CHROMA_FLOOR = 12;
+/**
+ * Chroma ramp from paper to ink. At or below PASTEL_CHROMA a pixel is paper
+ * or a pastel fill; from INK_CHROMA up it counts in full. A ramp, not a
+ * floor: the league rows' tints sit at chroma 7-16, and a hard floor at 12
+ * lit the water, electric, fire, ice, and fighting rows but not the rest.
+ */
+const PASTEL_CHROMA = 18;
+const INK_CHROMA = 30;
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
 const ALL_MAPS: FoilMapNeed = { sat: true, edge: true, gloss: true };
 
 function luma(r: number, g: number, b: number): number {
@@ -76,7 +77,10 @@ export function deriveFoilMaps(src: RgbaBitmap, need: FoilMapNeed = ALL_MAPS): F
       const maxc = Math.max(r, g, b);
       const minc = Math.min(r, g, b);
       const chroma = maxc - minc;
-      const sat01 = a === 0 || chroma < CHROMA_FLOOR || maxc === 0 ? 0 : chroma / maxc;
+      const clear = a === 0;
+      const chroma01 = clear || maxc === 0 ? 0 : (chroma / maxc) * smoothstep(PASTEL_CHROMA, INK_CHROMA, chroma);
+      const dark01 = clear || y >= 230 ? 0 : Math.min(1, (230 - y) / 160);
+      const sat01 = clear ? 0 : Math.max(chroma01, dark01 * 0.65);
       const satA = Math.round(Math.min(255, Math.pow(sat01, 0.72) * 255));
       if (need.sat) writeMaskPixel(sat.data, i, satA);
       if (need.gloss) {

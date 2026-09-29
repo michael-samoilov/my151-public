@@ -294,7 +294,6 @@ function aceId(seed: SeedLine | undefined): number | null {
   return seed.pin ?? seed.branch[seed.branch.length - 1] ?? null;
 }
 
-/** The seeded cards, in slot order. */
 /**
  * Slots the seed deliberately leaves empty.
  *
@@ -309,10 +308,11 @@ function aceId(seed: SeedLine | undefined): number | null {
  */
 const BLANK_SLOTS = new Set([6, 9]);
 
-export function kantoCards(): GymCard[] {
+/** The seeded cards. `full` fills the two slots the template leaves blank. */
+export function kantoCards({ full = false }: { full?: boolean } = {}): GymCard[] {
   const cards = Array.from({ length: SLOT_COUNT }, emptyCard);
   for (const seed of SEED) {
-    if (BLANK_SLOTS.has(seed.slot)) continue;
+    if (!full && BLANK_SLOTS.has(seed.slot)) continue;
     cards[seed.slot] = {
       type: seed.type,
       theme: seed.theme,
