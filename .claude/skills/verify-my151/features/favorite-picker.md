@@ -13,6 +13,10 @@ gimmick, legendary, and favorite picks.
   `[data-testid="favorites-empty-ball"]` whose `data-ball` is `poke` in a pick
   cell, `ultra` in a pointer cell, and `master` in favorite × favorite. The
   Master Ball's domes rise past its outline but stay inside the cell.
+  The extra headers, selector titles, and source badges show white-tile icons
+  `[data-testid="favorites-axis-icon-<id>"]`: three Poké Balls (starter), the
+  Mega, Dynamax, Z-Move, and Terastal marks (gimmick), Arceus's ring
+  (legendary), and a laurel (favorite). The SVGs live in `src/favorites/icons/`.
   Filled sprites may extend past their cell borders.
 - Grid frame `[data-testid="favorites-grid-scroll"]`: fills the screen below the
   two page headers and scrolls on both axes. The header row and generation

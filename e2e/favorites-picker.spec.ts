@@ -212,6 +212,19 @@ test.describe('favorite Pokémon picker', () => {
     expect(spec.sample.bh).toBeLessThan(spec.sample.ch);
   });
 
+  test('the starter, gimmick, legendary, and favorite headers show their icons', async ({ page }, testInfo) => {
+    await page.goto('/favorite-pokemon-by-type');
+    const icons = page.locator('[data-testid^="favorites-axis-icon-"]');
+    // Four extra columns and three extra rows.
+    await expect(icons).toHaveCount(7);
+    await expect.poll(() => icons.evaluateAll((imgs) =>
+      (imgs as HTMLImageElement[]).filter((img) => img.complete && img.naturalWidth > 0).length,
+    )).toBe(7);
+    const ids = await icons.evaluateAll((imgs) => imgs.map((img) => img.getAttribute('data-testid')));
+    await testInfo.attach('axis-icons.json', { body: JSON.stringify(ids), contentType: 'application/json' });
+    expect(new Set(ids)).toEqual(new Set(['starter', 'gimmick', 'legendary', 'favorite'].map((id) => `favorites-axis-icon-${id}`)));
+  });
+
   test('pointer cells show an Ultra Ball, the last cell a Master Ball, and strokes stay in the cell', { tag: '@viewport' }, async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     const frame = page.getByTestId('favorites-grid-scroll');

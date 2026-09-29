@@ -2,7 +2,11 @@ import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
-import { EXTRA_COLOR, ROMAN, type ExtraGenAxis, type ExtraTypeAxis, type GenNumber } from '../model/cells';
+import favoriteIcon from '../icons/favorite.svg?url';
+import gimmickIcon from '../icons/gimmick.svg?url';
+import legendaryIcon from '../icons/legendary.svg?url';
+import starterIcon from '../icons/starter.svg?url';
+import { ROMAN, type ExtraGenAxis, type ExtraTypeAxis, type GenNumber } from '../model/cells';
 
 const ROMAN_DISC_FS = 15;
 const ROMAN_DISC_STROKE = 1.25;
@@ -41,6 +45,14 @@ export function RomanDisc({ gen, size = 27 }: { gen: GenNumber; size?: number })
   );
 }
 
+// White tiles with a colored edge. Each SVG notes where its symbols come from.
+const EXTRA_ICON: Record<ExtraTypeAxis | ExtraGenAxis, string> = {
+  starter: starterIcon,
+  gimmick: gimmickIcon,
+  legendary: legendaryIcon,
+  favorite: favoriteIcon,
+};
+
 export function ExtraMark({
   id,
   size = 24,
@@ -48,16 +60,16 @@ export function ExtraMark({
   id: ExtraTypeAxis | ExtraGenAxis;
   size?: number;
 }) {
-  const color = EXTRA_COLOR[id];
-  const ch = id === 'starter' ? 'S' : id === 'gimmick' ? 'G' : id === 'favorite' ? '★' : 'L';
   return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-[4px] font-extrabold text-white"
-      style={{ width: size, height: size, background: color, fontSize: size * 0.55 }}
-      aria-hidden
-    >
-      {ch}
-    </span>
+    <img
+      src={EXTRA_ICON[id]}
+      alt=""
+      width={size}
+      height={size}
+      draggable={false}
+      data-testid={`favorites-axis-icon-${id}`}
+      className="block shrink-0"
+    />
   );
 }
 
