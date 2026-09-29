@@ -156,12 +156,6 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
  */
 export const FRAME = EXPORT_FRAME_PX;
 
-/**
- * Native 2× source pixels. Export paint size is `pairExportSprite`: 96, 192,
- * or 288. Never a fraction of 96.
- */
-export const SIG_SPRITE = 192;
-
 /** Showcase headings. Same two-line caps the live card paints. */
 export const ACE_HEAD = ['ACE', 'POKÉMON'];
 export const PARTNER_HEAD = ['PARTNER /', 'SHOULDERMON'];
