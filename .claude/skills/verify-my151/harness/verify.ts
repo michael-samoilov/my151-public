@@ -8,7 +8,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, type EngineName } from './lib/engines.ts';
 import type { PersonaName } from './lib/personas.ts';
-import { runGymCardExportParitySuite, runLeagueChangeSuite, runLeagueExportTeamSuite, runLeagueColumnHoverSuite, runLeagueFunnelNudgeSuite, runLeagueHomeSlotMoveProof, runLeagueSuite, runStandardSuite } from './lib/flows.ts';
+import {
+  runDexExportSuite,
+  runFoilWorkshopSuite,
+  runGymCardExportParitySuite,
+  runLeagueChangeSuite,
+  runLeagueColumnHoverSuite,
+  runLeagueExportTeamSuite,
+  runLeagueFunnelNudgeSuite,
+  runLeagueGymExportFoilSuite,
+  runLeagueHomeSlotMoveProof,
+  runLeagueSuite,
+  runStandardSuite,
+} from './lib/flows.ts';
 import { probeEngines } from './doctor.ts';
 import { buildIn, startPreview, addWorktree, REPO_ROOT, type Preview, type Worktree } from './lib/servers.ts';
 import { Evidence, rollup, type SurfaceResult, type RunReport, type Check } from './lib/evidence.ts';
@@ -50,7 +62,10 @@ async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: st
     const checks: Check[] = [];
     const suites: Array<[string, () => Promise<Check[]>]> = [
       ['standard', () => runStandardSuite(s, def.persona, ctx)],
+      ['dex-export', () => runDexExportSuite(s, def.persona, ctx)],
+      ['foil-workshop', () => runFoilWorkshopSuite(s, def.persona, ctx)],
       ['league', () => runLeagueSuite(s, def.persona, ctx)],
+      ['league-export-foil', () => runLeagueGymExportFoilSuite(s, def.persona, ctx)],
       ['league-change', () => runLeagueChangeSuite(s, def.persona, ctx)],
       ['league-hover', () => runLeagueColumnHoverSuite(s, def.persona, ctx)],
       ['league-home', () => runLeagueHomeSlotMoveProof(s, def.persona, ctx)],

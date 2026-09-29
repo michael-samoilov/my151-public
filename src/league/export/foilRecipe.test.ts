@@ -8,12 +8,14 @@ describe('foil recipe', () => {
       extra: true,
       layers: {
         holographic: { on: false, amount: 4 },
+        sparkle: { on: true, amount: 1 },
         rainbow: { on: true, amount: 1 },
       },
     });
-    expect(parsed.idleTilt).toBe(20);
+    expect(parsed.idleTilt).toBe(30);
     expect(parsed.layers.holographic).toEqual({ on: false, amount: 1 });
     expect(parsed.layers.pointLight).toEqual(DEFAULT_FOIL_RECIPE.layers.pointLight);
+    expect('sparkle' in parsed.layers).toBe(false);
     expect('rainbow' in parsed.layers).toBe(false);
   });
 });
