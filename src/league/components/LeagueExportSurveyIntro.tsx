@@ -2,6 +2,10 @@ import { Button } from '@/components/ui/button';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type { ExportSurveyTool } from '@/lib/exportSurvey';
 import {
+  useExportSurveySpriteScale,
+  usePixelPerfectSprite,
+} from '@/lib/usePixelPerfectSprite';
+import {
   EXPORT_TOOL_LABEL,
   earlyExportLine,
   pokemonDisplayName,
@@ -30,6 +34,8 @@ export function LeagueExportSurveyIntro({
   onContinue: () => void;
   onSkip: () => void;
 }) {
+  const spriteScale = useExportSurveySpriteScale();
+  const spriteCssPx = usePixelPerfectSprite(spriteScale);
   const early = highlight ? earlyExportLine(highlight.ordinal, highlight.tool) : null;
   const pokemon =
     highlight?.firstPokemonId != null ? getPokemonById(highlight.firstPokemonId) : undefined;
@@ -64,10 +70,20 @@ export function LeagueExportSurveyIntro({
           <img
             src={sprite}
             alt=""
-            width={96}
-            height={96}
-            className="h-24 w-24"
-            style={{ aspectRatio: '1 / 1', imageRendering: 'pixelated' }}
+            width={spriteCssPx}
+            height={spriteCssPx}
+            data-export-survey-sprite
+            data-sprite-scale={spriteScale}
+            data-sprite-css-px={spriteCssPx}
+            style={{
+              width: spriteCssPx,
+              height: spriteCssPx,
+              minWidth: spriteCssPx,
+              minHeight: spriteCssPx,
+              flexShrink: 0,
+              aspectRatio: '1 / 1',
+              imageRendering: 'pixelated',
+            }}
             draggable={false}
           />
           <p className="text-sm leading-relaxed text-foreground">Hi {pokeName}!</p>
