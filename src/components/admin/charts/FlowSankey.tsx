@@ -2,6 +2,7 @@ import { useECharts, cssVar, tooltipStyle, type EChartsOption, echarts } from '.
 import { nodeDepth, type FunnelLink, type FunnelNode, type FunnelRole } from '@/lib/usageFunnels';
 import { sankeyGeometry, sankeyHeightCss } from '@/lib/sankeyGeometry';
 import { compactFunnelLabelSide } from '@/lib/sankeyLabels';
+import { columnLefts, gapNeeds, type LabelBox } from '@/lib/sankeyColumns';
 
 export type SankeyNode = FunnelNode;
 export type SankeyLink = FunnelLink;
@@ -15,13 +16,26 @@ function fattestColumn(nodes: SankeyNode[], links: SankeyLink[]): number {
   return Math.max(2, ...counts.values());
 }
 
+/** echarts' own gap between a node and its label. */
+const LABEL_DISTANCE = 5;
+/** The last column's gap, which holds its count chip in the label instead. */
+const CHIP_LABEL_DISTANCE = 3;
+
+/** Width each compact label wraps at, by side. */
+const COMPACT_WRAP: Record<ReturnType<typeof compactFunnelLabelSide>, number> = {
+  top: 48,
+  bottom: 72,
+  left: 56,
+  right: 80,
+};
+
 function compactTopLabel() {
   return {
     position: 'top' as const,
     align: 'left' as const,
     verticalAlign: 'bottom' as const,
     distance: 4,
-    width: 48,
+    width: COMPACT_WRAP.top,
     overflow: 'break' as const,
     lineHeight: 12,
     formatter: '{b}',
@@ -33,7 +47,7 @@ function compactLabel(side: ReturnType<typeof compactFunnelLabelSide>) {
   if (side === 'bottom') {
     return {
       position: 'bottom' as const,
-      width: 72,
+      width: COMPACT_WRAP.bottom,
       overflow: 'break' as const,
       lineHeight: 12,
       formatter: '{b}',
@@ -42,7 +56,7 @@ function compactLabel(side: ReturnType<typeof compactFunnelLabelSide>) {
   if (side === 'left') {
     return {
       position: 'left' as const,
-      width: 56,
+      width: COMPACT_WRAP.left,
       overflow: 'break' as const,
       lineHeight: 12,
       formatter: '{b}',
@@ -51,11 +65,26 @@ function compactLabel(side: ReturnType<typeof compactFunnelLabelSide>) {
   return {
     position: 'right' as const,
     align: 'left' as const,
-    width: 80,
+    width: COMPACT_WRAP.right,
     overflow: 'break' as const,
     lineHeight: 12,
     formatter: '{b}',
   };
+}
+
+/** On a phone funnel, the last column's count sits in its label, right of
+ *  the bar. A chip on the bar would reach left over the previous column's
+ *  names, and the last column has no outgoing flow on its right. */
+function chipInLabel(
+  n: SankeyNode,
+  compact: boolean,
+  kind: 'funnel' | 'referrer',
+  nodes: SankeyNode[],
+  links: SankeyLink[],
+): boolean {
+  if (!compact || kind !== 'funnel') return false;
+  const last = Math.max(...nodes.map((m) => nodeDepth(m.name, links)));
+  return nodeDepth(n.name, links) === last && compactFunnelLabelSide(n, nodes, links) === 'right';
 }
 
 function nodeLabel(
@@ -64,7 +93,25 @@ function nodeLabel(
   kind: 'funnel' | 'referrer',
   nodes: SankeyNode[],
   links: SankeyLink[],
+  roleColor: (role?: FunnelRole) => string,
+  fontSize: number,
 ) {
+  if (chipInLabel(n, compact, kind, nodes, links)) {
+    return {
+      ...compactLabel('right'),
+      distance: CHIP_LABEL_DISTANCE,
+      formatter: (p: { name: string; value?: number }) => `{chip|${Math.round(p.value ?? 0)}} ${p.name}`,
+      rich: {
+        chip: {
+          backgroundColor: roleColor(n.role),
+          color: n.role === 'sink' ? '#171717' : '#ffffff',
+          fontSize,
+          fontWeight: 600,
+          padding: [0, 2],
+        },
+      },
+    };
+  }
   if (kind === 'referrer' && compact && !links.some((l) => l.target === n.name)) {
     return {
       position: 'left' as const,
@@ -98,6 +145,7 @@ function paintCountChips(
   roleColor: (role?: FunnelRole) => string,
   fontSize: number,
   compact: boolean,
+  kind: 'funnel' | 'referrer',
 ) {
   if (paintingGraphic.has(chart)) return;
   const model = (chart as unknown as { getModel(): { getSeriesByIndex(i: number): unknown } }).getModel();
@@ -115,7 +163,7 @@ function paintCountChips(
     const node = byName.get(name);
     const value = nodeData.getItemLayout(idx)?.value;
     const el = nodeData.getItemGraphicEl(idx);
-    if (value == null || !el?.shape || !node) return;
+    if (value == null || !el?.shape || !node || chipInLabel(node, compact, kind, nodes, links)) return;
     const ox = el.parent?.x ?? originX;
     const oy = el.parent?.y ?? originY;
     const side = compact ? compactFunnelLabelSide(node, nodes, links) : node.label;
@@ -157,6 +205,50 @@ function paintCountChips(
   chipTimers.set(chart, id);
 }
 
+let measureCtx: CanvasRenderingContext2D | null = null;
+
+/** Label text width in px, measured the way echarts draws it. */
+function labelMeasure(fontSize: number): (text: string) => number {
+  measureCtx ??= document.createElement('canvas').getContext('2d');
+  const ctx = measureCtx;
+  const font = `600 ${fontSize}px sans-serif`;
+  return (text) => {
+    if (!ctx) return text.length * fontSize * 0.6;
+    ctx.font = font;
+    return ctx.measureText(text).width;
+  };
+}
+
+/** Each node's `localX`: its column's left edge as a share of the plot
+ *  width, spaced so no column's labels run into the next column. Null when
+ *  the plot is too narrow for that, and echarts spaces the columns evenly. */
+function columnShares(
+  nodes: SankeyNode[],
+  links: SankeyLink[],
+  width: number,
+  g: ReturnType<typeof sankeyGeometry>,
+): Map<string, number> | null {
+  const measure = labelMeasure(g.fontSize);
+  const chip = (n: SankeyNode) => {
+    const inflow = links.filter((l) => l.target === n.name).reduce((s, l) => s + l.value, 0);
+    const outflow = links.filter((l) => l.source === n.name).reduce((s, l) => s + l.value, 0);
+    // paintCountChips pads the count by 2px on each side.
+    return measure(String(Math.round(Math.max(inflow, outflow)))) + 4;
+  };
+  const box = (n: SankeyNode): LabelBox => {
+    if (!g.compact) return { side: n.label, wrap: Number.POSITIVE_INFINITY, distance: LABEL_DISTANCE, chip: chip(n) };
+    if (chipInLabel(n, true, 'funnel', nodes, links)) {
+      return { side: 'right', wrap: COMPACT_WRAP.right, distance: CHIP_LABEL_DISTANCE, chip: 0 };
+    }
+    const side = compactFunnelLabelSide(n, nodes, links);
+    return { side, wrap: COMPACT_WRAP[side], distance: LABEL_DISTANCE, chip: chip(n) };
+  };
+  const plot = width - g.left - g.right;
+  const lefts = columnLefts(gapNeeds(nodes, links, box, measure, g.nodeWidth), plot, g.nodeWidth);
+  if (!lefts) return null;
+  return new Map(nodes.map((n) => [n.name, lefts[nodeDepth(n.name, links)] / plot]));
+}
+
 /**
  * MECE usage funnel as a Sankey at every width. On a phone the plot is
  * wider than it is tall, first-stage names sit on the bar, column titles
@@ -185,6 +277,7 @@ export function FlowSankey({
       const roleColor = (role?: string) =>
         role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
       const g = sankeyGeometry(el.clientWidth || 360, kind);
+      const shares = kind === 'funnel' ? columnShares(nodes, links, el.clientWidth || 360, g) : null;
 
       return {
         animation: false,
@@ -220,8 +313,9 @@ export function FlowSankey({
             labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
             data: nodes.map((n) => ({
               name: n.name,
+              localX: shares?.get(n.name),
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
-              label: nodeLabel(n, g.compact, kind, nodes, links),
+              label: nodeLabel(n, g.compact, kind, nodes, links, roleColor, g.fontSize),
             })),
             links: links.map((l) => ({
               source: l.source,
@@ -244,7 +338,7 @@ export function FlowSankey({
         const roleColor = (role?: FunnelRole) =>
           role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
         const g = sankeyGeometry(el.clientWidth || 360, kind);
-        paintCountChips(chart, nodes, links, roleColor, g.fontSize, g.compact);
+        paintCountChips(chart, nodes, links, roleColor, g.fontSize, g.compact, kind);
       },
     },
   );

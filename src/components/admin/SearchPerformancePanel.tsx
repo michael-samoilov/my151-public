@@ -261,19 +261,21 @@ function KpiToggle({
 function QueryRows({ rows }: { rows: SearchProviderRangeView['topQueries'] }) {
   if (rows.length === 0) return null;
   return (
-    <div className="mt-4 border-t border-border pt-3">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-3 border-b border-border pb-1.5 text-[0.62rem] font-bold uppercase tracking-wide text-muted-foreground">
+    <div className="mt-4 grid grid-cols-[minmax(0,1fr)_repeat(4,auto)] gap-x-2 border-t border-border pt-3">
+      <div className="col-span-full grid grid-cols-subgrid border-b border-border pb-1.5 text-[0.62rem] font-bold uppercase tracking-wide text-muted-foreground">
         <span>Query</span>
         <span className="text-right">Clicks</span>
         <span className="text-right">Impr.</span>
+        <span className="text-right">CTR</span>
         <span className="text-right">Pos.</span>
       </div>
       {rows.slice(0, 8).map((row) => (
-        <div key={row.key} className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-baseline gap-3 border-b border-border/60 py-1.5 text-xs last:border-b-0">
-          <span className="truncate" title={row.key}>{row.key}</span>
-          <span className="min-w-8 text-right font-bold tabular-nums">{compact(row.clicks)}</span>
-          <span className="min-w-8 text-right tabular-nums text-muted-foreground">{compact(row.impressions)}</span>
-          <span className="min-w-8 text-right tabular-nums text-muted-foreground">{position(row.position)}</span>
+        <div key={row.key} className="col-span-full grid grid-cols-subgrid items-baseline border-b border-border/60 py-1.5 text-xs last:border-b-0">
+          <span className="min-w-0 break-words">{row.key}</span>
+          <span className="text-right font-bold tabular-nums">{compact(row.clicks)}</span>
+          <span className="text-right tabular-nums text-muted-foreground">{compact(row.impressions)}</span>
+          <span className="text-right tabular-nums text-muted-foreground">{percent(row.ctr)}</span>
+          <span className="text-right tabular-nums text-muted-foreground">{position(row.position)}</span>
         </div>
       ))}
     </div>

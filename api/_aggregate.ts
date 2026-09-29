@@ -317,7 +317,7 @@ export function tallies(records: SessionRecord[], field: TallyField): Record<str
   return out;
 }
 
-/** The clocks the admin heatmap can read last activity on. */
+/** The clocks the admin heatmap reads activity on. */
 const HEATMAP_CLOCKS = ['local', 'eastern'] as const;
 export type HeatmapClock = (typeof HEATMAP_CLOCKS)[number];
 
@@ -344,28 +344,36 @@ function weekdayHourFormat(timeZone: string): Intl.DateTimeFormat | null {
   return fmt;
 }
 
-/** Day of week (0=Sun) and hour (0-23) of `ts` on the zone's wall clock. */
-function weekSlot(ts: number, timeZone: string): { dow: number; hour: number } | null {
+/** Hour of the week of `ts` on the zone's wall clock: day of week (0=Sun)
+ *  times 24, plus the hour (0-23). */
+function hourOfWeek(ts: number, timeZone: string): number | null {
   const parts = weekdayHourFormat(timeZone)?.formatToParts(ts);
   if (!parts) return null;
   const dow = DOW_NAMES.indexOf(parts.find((p) => p.type === 'weekday')?.value ?? '');
   const hour = Number(parts.find((p) => p.type === 'hour')?.value);
-  return dow >= 0 && Number.isInteger(hour) ? { dow, hour } : null;
+  return dow >= 0 && Number.isInteger(hour) ? dow * 24 + hour : null;
 }
 
 /**
- * 7 x 24 day-by-hour counts of browsers, one matrix per clock. Each browser
- * counts once, in the cell of its last activity. A browser with no zone for a
- * clock is left out of that clock's matrix.
+ * 7 x 24 day-by-hour counts of browsers, one matrix per clock. A browser
+ * counts once in each weekday hour it was active in after `start`, however
+ * often it came back to that hour. A browser with no zone for a clock is left
+ * out of that clock's matrix.
  */
-export function heatmaps(records: SessionRecord[]): Record<HeatmapClock, number[][]> {
+export function heatmaps(records: SessionRecord[], start: number | null = null): Record<HeatmapClock, number[][]> {
   const week = () => Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
   const out: Record<HeatmapClock, number[][]> = { local: week(), eastern: week() };
   for (const r of records) {
+    const times = activeTimestamps(r).filter((ts) => start === null || ts > start);
     for (const clock of HEATMAP_CLOCKS) {
       const zone = CLOCK_ZONE[clock](r);
-      const slot = zone ? weekSlot(r.lastTs, zone) : null;
-      if (slot) out[clock][slot.dow][slot.hour] += 1;
+      if (!zone) continue;
+      const hours = new Set<number>();
+      for (const ts of times) {
+        const h = hourOfWeek(ts, zone);
+        if (h !== null) hours.add(h);
+      }
+      for (const h of hours) out[clock][Math.floor(h / 24)][h % 24] += 1;
     }
   }
   return out;
@@ -408,8 +416,13 @@ export interface Aggregates {
 
 /** Every aggregation above. The activity series read every record, so the
  *  chart keeps its history; the rest read only `inRange`, the records active
- *  in the dashboard's date range. */
-export function aggregate(records: SessionRecord[], now: number, inRange = records): Aggregates {
+ *  in the dashboard's date range, which opens after `start`. */
+export function aggregate(
+  records: SessionRecord[],
+  now: number,
+  inRange = records,
+  start: number | null = null,
+): Aggregates {
   return {
     users: inRange.length,
     activity: dailyActive(records, now),
@@ -425,7 +438,7 @@ export function aggregate(records: SessionRecord[], now: number, inRange = recor
     joints: tallyJoints(inRange),
     whoBuckets: tallyWhoBuckets(inRange),
     countries7d: distinctCountries7d(inRange),
-    heatmaps: heatmaps(inRange),
+    heatmaps: heatmaps(inRange, start),
   };
 }
 
@@ -607,14 +620,27 @@ export interface DexSizeBucket {
   exported: number;
 }
 
-/** League gym-completion bucket. Export counts are of people in this bucket
- *  who exported a league (or both) vs a card only. Incomplete buckets keep
- *  non-exporters in the bucket. Full league peels them to Kept private. */
-export interface LeagueGymBucket {
-  label: string;
-  count: number;
+/** What a browser exported from the gym leader maker, as one outcome: a
+ *  browser that exported a league and a gym card counts as `both` only. */
+export const LEAGUE_EXPORT_ENDS = ['league', 'both', 'card'] as const;
+export type LeagueExportEnd = (typeof LEAGUE_EXPORT_ENDS)[number];
+export type LeagueExportCounts = Record<LeagueExportEnd, number>;
+
+/** Export counts in the shape the production frontend read before
+ *  `exports`: `exportedLeague` includes `both`. Delete once no open admin
+ *  tab predates `exports`. */
+interface LegacyLeagueExportSplit {
   exportedLeague: number;
   exportedCard: number;
+}
+
+/** League gym-completion bucket. `exports` counts the people in this bucket
+ *  under one export end each. Incomplete buckets keep non-exporters in the
+ *  bucket. Full league peels them to Kept private. */
+export interface LeagueGymBucket extends LegacyLeagueExportSplit {
+  label: string;
+  count: number;
+  exports: LeagueExportCounts;
 }
 
 /** Dex builder usage funnel: intro → built → in-line size buckets + completed. */
@@ -631,7 +657,7 @@ export interface DexUsageFunnel {
 /** Gym leader maker usage funnel: open → placed a Pokémon → one gym full →
  *  in-line gym-completion buckets → export. Full league also peels
  *  non-exporters to Kept private. */
-export interface LeagueUsageFunnel {
+export interface LeagueUsageFunnel extends LegacyLeagueExportSplit {
   opened: number;
   placed: number;
   bounced: number;
@@ -639,8 +665,7 @@ export interface LeagueUsageFunnel {
   cardNotFinished: number;
   gymBuckets: LeagueGymBucket[];
   fullLeague: number;
-  exportedLeague: number;
-  exportedCard: number;
+  exports: LeagueExportCounts;
   keptPrivate: number;
 }
 
@@ -709,11 +734,18 @@ function placedAPokemon(r: LeagueFunnelRow): boolean {
   return r.maxSeats > 0 || r.maxCards > 0 || r.fullGyms > 0;
 }
 
-function leagueExportSplit(rows: LeagueFunnelRow[]): { exportedLeague: number; exportedCard: number } {
-  return {
-    exportedLeague: rows.filter((r) => r.exportsLeague > 0).length,
-    exportedCard: rows.filter((r) => r.exportsLeague === 0 && r.exportsCard > 0).length,
-  };
+function leagueExportEnd(r: LeagueFunnelRow): LeagueExportEnd | null {
+  if (r.exportsLeague > 0) return r.exportsCard > 0 ? 'both' : 'league';
+  return r.exportsCard > 0 ? 'card' : null;
+}
+
+function leagueExports(rows: LeagueFunnelRow[]): { exports: LeagueExportCounts } & LegacyLeagueExportSplit {
+  const exports: LeagueExportCounts = { league: 0, both: 0, card: 0 };
+  for (const r of rows) {
+    const end = leagueExportEnd(r);
+    if (end) exports[end] += 1;
+  }
+  return { exports, exportedLeague: exports.league + exports.both, exportedCard: exports.card };
 }
 
 /**
@@ -758,10 +790,10 @@ export function dexUsageFunnel(rows: DexFunnelRow[], openedHint: number): DexUsa
  *
  * Stages: opened (league-open event, floored at people who placed a
  * Pokémon), placed a Pokémon vs bounced, one gym full vs card not finished,
- * then in-line gym-count buckets. Exports (league, card-only, or both)
- * leave each gym bucket toward the export nodes. Both-export counts as a
- * league export, same as before. Full-league people who exported neither
- * peel to Kept private. Incomplete gym buckets do not.
+ * then in-line gym-count buckets. Each exporter leaves their gym bucket
+ * toward one export end: league only, both, or gym card only. Full-league
+ * people who exported neither peel to Kept private. Incomplete gym buckets
+ * do not.
  */
 export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): LeagueUsageFunnel {
   const placedRows = rows.filter(placedAPokemon);
@@ -773,12 +805,11 @@ export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): 
   const cardNotFinished = Math.max(0, placed - oneGymFull);
   const gymBuckets = LEAGUE_GYM_BUCKETS.map((t) => {
     const inBucket = gymRows.filter((r) => inTier(r.fullGyms, t));
-    return { label: t.label, count: inBucket.length, ...leagueExportSplit(inBucket) };
+    return { label: t.label, count: inBucket.length, ...leagueExports(inBucket) };
   }).filter((b) => b.count > 0);
   const fullLeagueRows = gymRows.filter((r) => r.fullGyms >= CARD_COUNT);
   const fullLeague = fullLeagueRows.length;
-  const keptPrivate = fullLeagueRows.filter((r) => r.exportsLeague === 0 && r.exportsCard === 0).length;
-  const { exportedLeague, exportedCard } = leagueExportSplit(gymRows);
+  const keptPrivate = fullLeagueRows.filter((r) => leagueExportEnd(r) === null).length;
   return {
     opened,
     placed,
@@ -787,8 +818,7 @@ export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): 
     cardNotFinished,
     gymBuckets,
     fullLeague,
-    exportedLeague,
-    exportedCard,
+    ...leagueExports(gymRows),
     keptPrivate,
   };
 }
