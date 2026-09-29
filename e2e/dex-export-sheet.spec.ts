@@ -37,49 +37,19 @@ async function waitPreviewReady(page: Page) {
   });
 }
 
-async function foilLabelsInPane(page: Page): Promise<{ ok: boolean; reason: string }> {
+/** The export pane has no foil tuning controls: the foil is fixed at its defaults. */
+async function noFoilControlsInPane(page: Page): Promise<{ ok: boolean; reason: string }> {
   return page.evaluate(() => {
     const chrome = document.querySelector('[data-export-chrome]');
     const sort = document.querySelector('[data-export-sort="build-order"]');
     if (!(chrome instanceof HTMLElement) || !(sort instanceof HTMLElement)) {
       return { ok: false, reason: 'missing pane' };
     }
-    const pane = chrome.getBoundingClientRect();
-    const names = ['shine', 'glare', 'shadow'] as const;
-    const expectLabel = { shine: 'Shine', glare: 'Glare', shadow: 'Shadow' };
-    const rows: string[] = [];
-    let lowest = pane.top;
-    for (const name of names) {
-      const label = document.querySelector(`[data-export-foil-label="${name}"]`);
-      const control = document.querySelector(`[data-export-foil-${name}]`);
-      if (!(label instanceof HTMLElement) || !(control instanceof HTMLElement)) {
-        return { ok: false, reason: `missing ${name}` };
-      }
-      if (label.textContent?.trim() !== expectLabel[name]) {
-        return { ok: false, reason: `label ${name} ${label.textContent}` };
-      }
-      const box = label.getBoundingClientRect();
-      const ctrl = control.getBoundingClientRect();
-      const top = Math.min(box.top, ctrl.top);
-      const bottom = Math.max(box.bottom, ctrl.bottom);
-      if (box.height < 8 || top < pane.top - 1 || bottom > pane.bottom + 1) {
-        return {
-          ok: false,
-          reason: `${name} outside pane top=${top.toFixed(0)} bottom=${bottom.toFixed(0)} pane=${pane.top.toFixed(0)}-${pane.bottom.toFixed(0)}`,
-        };
-      }
-      lowest = Math.max(lowest, bottom);
-      rows.push(name);
-    }
-    const sortTop = sort.getBoundingClientRect().top;
-    if (document.querySelector('[data-export-foil-blend], [data-export-foil-select]')) {
-      return { ok: false, reason: 'blend controls remain' };
-    }
-    const scroll = document.querySelector('[data-export-settings-scroll]');
-    const scrollTop = scroll instanceof HTMLElement ? scroll.scrollTop : 0;
-    if (scrollTop > 1) return { ok: false, reason: `scrolled ${scrollTop}` };
-    if (sortTop < lowest - 1) return { ok: false, reason: `sort above foil ${sortTop.toFixed(0)}<${lowest.toFixed(0)}` };
-    return { ok: true, reason: rows.join(',') };
+    const controls = chrome.querySelectorAll(
+      '[data-foil-slider], [data-foil-on], [data-export-foil-label], [data-export-shadow-toggle], [data-export-foil-blend], [data-export-foil-select]',
+    );
+    if (controls.length > 0) return { ok: false, reason: `${controls.length} foil controls` };
+    return { ok: true, reason: 'no foil controls' };
   });
 }
 
@@ -245,40 +215,6 @@ test.describe('dex export overlay', () => {
 test.describe('mobile dex export sheet', () => {
   test.use({ viewport: MOBILE });
 
-  test('a finger drag on glare changes the value and leaves tilt alone', async ({ page, browserName }) => {
-    test.skip(browserName !== 'chromium', 'CDP touch injection');
-    await openDexExport(page);
-    await waitPreviewReady(page);
-    const slider = page.locator('[data-foil-slider="glareIntensity"]');
-    await expect(slider).toBeVisible();
-    const before = Number(await slider.inputValue());
-    const box = await slider.boundingBox();
-    expect(box).toBeTruthy();
-    const y = box!.y + box!.height / 2;
-    const x0 = box!.x + box!.width * 0.8;
-    const x1 = box!.x + box!.width * 0.15;
-    const top = await page.evaluate(({ x, y: py }) => {
-      const el = document.elementFromPoint(x, py);
-      if (!(el instanceof Element)) return 'none';
-      return el.getAttribute('data-foil-slider') || el.tagName;
-    }, { x: x0, y });
-    expect(top, 'glare slider receives the hit').toBe('glareIntensity');
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: x0, y }] });
-    for (let i = 1; i <= 8; i += 1) {
-      const x = x0 + ((x1 - x0) * i) / 8;
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y }] });
-    }
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await expect.poll(async () => Number(await slider.inputValue())).toBeLessThan(before - 0.05);
-    const after = Number(await slider.inputValue());
-    const painted = await page.locator('[data-export-preview]').evaluate((el) =>
-      Number(getComputedStyle(el).getPropertyValue('--hover-tilt-glare-intensity')),
-    );
-    expect(painted).toBeCloseTo(after, 2);
-    expect(await page.locator('[data-export-preview]').getAttribute('data-export-orbit')).not.toBe('pointer');
-  });
-
   test('a tap toggles auto-tilt, a long press does not, and drag release stays flat', async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', 'CDP touch injection');
     await openDexExport(page);
@@ -345,7 +281,7 @@ test.describe('mobile dex export sheet', () => {
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.2);
     const rainbow = await paintedInkRainbow(page);
     expect(rainbow.ok, rainbow.reason).toBe(true);
-    const placed = await foilLabelsInPane(page);
+    const placed = await noFoilControlsInPane(page);
     expect(placed.ok, placed.reason).toBe(true);
   });
 
@@ -560,7 +496,7 @@ test.describe('desktop dex export preview', () => {
     const rainbow = await paintedInkRainbow(page);
     expect(rainbow.ok, rainbow.reason).toBe(true);
 
-    const placed = await foilLabelsInPane(page);
+    const placed = await noFoilControlsInPane(page);
     expect(placed.ok, placed.reason).toBe(true);
 
     const cssVar = (name: string) =>
@@ -572,12 +508,8 @@ test.describe('desktop dex export preview', () => {
         page.locator('[data-foil-layer="holographic"]').evaluate((el) => getComputedStyle(el).mixBlendMode),
       )
       .toBe('color-dodge');
-    await page.locator('[data-export-foil-glare] [data-foil-slider="glareIntensity"]').fill('0.1');
-    await expect.poll(() => cssVar('--hover-tilt-glare-intensity')).toBe('0.100');
-    await page.locator('[data-export-shadow-toggle]').click();
-    await expect.poll(() => foil.getAttribute('data-hover-tilt-shadow')).toBe('0');
-    await page.locator('[data-export-foil-shine] [data-foil-slider="holographic"]').fill('0');
-    await expect.poll(() => cssVar('--foil-holographic')).toBe('0.000');
+    await expect.poll(() => cssVar('--hover-tilt-glare-intensity')).toBe('1.000');
+    await expect.poll(() => cssVar('--foil-holographic')).toBe('0.700');
     await expect(page.locator('[data-export-preview-layer]')).toBeVisible();
   });
 

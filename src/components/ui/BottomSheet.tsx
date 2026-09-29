@@ -297,7 +297,7 @@ export function BottomSheet({
       if (!overlay) return;
       const target = e.target;
       if (target instanceof Element) {
-        const owner = target.closest('input, select, textarea, [data-export-foil-pinned]');
+        const owner = target.closest('input, select, textarea');
         if (owner instanceof HTMLElement && overlay.contains(owner)) return;
       }
 
