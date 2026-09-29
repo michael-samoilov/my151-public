@@ -55,6 +55,10 @@ import { exportCornerRadius } from '@/lib/exportPngShape';
 import './ExportPreview3D.css';
 
 const TAP_MS = 320;
+/** Opening the export eases auto-tilt, glare, pop, and foil in from flat. */
+const PREVIEW_OPEN_MS = 1500;
+/** The most one frame advances the opening, so a stalled frame cannot skip it. */
+const PREVIEW_OPEN_STEP_MS = 34;
 const TAP_PX = 10;
 
 type Orbit = 'idle' | 'pointer' | 'rest' | 'paused' | 'static';
@@ -116,6 +120,7 @@ export function ExportPreview3D({
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const originRef = useRef<number | null>(null);
+  const openMsRef = useRef<number | null>(null);
   const orbitRef = useRef<Orbit>('idle');
   const pausedRef = useRef(false);
   const modeRef = useRef<TiltMode>('auto');
@@ -261,21 +266,31 @@ export function ExportPreview3D({
     el.setAttribute('data-shadow-y', shadowY.toFixed(2));
   }, []);
 
+  // The opening ramp, 0 to 1. The loop advances it (see `tick`).
+  const openLevel = useCallback(() => {
+    const ms = openMsRef.current;
+    if (ms === null) return 0;
+    const u = Math.min(1, ms / PREVIEW_OPEN_MS);
+    return u * u * (3 - 2 * u);
+  }, []);
+
   const idleAt = useCallback((now: number) => {
+    const open = openLevel();
+    const origin = originRef.current;
     // Reduced motion holds the card still. Activation still rises in idle, so
     // the foil stays on. Hover, drag, and tap are the user's own motion.
-    if (reducedMotionRef.current) return REST_POSE;
-    if (originRef.current === null) originRef.current = now;
+    if (reducedMotionRef.current || origin === null) return REST_POSE;
     const recipeNow = recipeRef.current;
+    // The orbit radius grows with `open`, so auto-tilt starts flat and spirals out.
     return pokeHoloIdle({
       now,
-      origin: originRef.current,
+      origin,
       idleMsX: recipeNow.idleMsX,
       idleMsY: recipeNow.idleMsY,
-      idleTilt: recipeNow.idleTilt,
+      idleTilt: recipeNow.idleTilt * open,
       axes: tiltAxes(tiltRef.current, recipeNow.maxTilt),
     });
-  }, []);
+  }, [openLevel]);
 
   /** Unrotated box. The lift's transformed rect inverts left and right. */
   const restPointerBox = useCallback((): DOMRect | null => {
@@ -452,6 +467,19 @@ export function ExportPreview3D({
       const lastTick = lastTickRef.current ?? now;
       const dt = now - lastTick;
       lastTickRef.current = now;
+      // The opening starts once the card shows with its foil maps: the loop
+      // runs while the preview renders, and building the maps stalls the main
+      // thread right after the image loads. A card that first showed mid-orbit
+      // would jump in at full tilt.
+      if (openMsRef.current === null) {
+        const maps = cardRef.current?.dataset.foilMaps;
+        if (imgRef.current?.complete && (maps === '1' || maps === 'failed')) {
+          openMsRef.current = 0;
+          originRef.current ??= now;
+        }
+      } else if (openMsRef.current < PREVIEW_OPEN_MS) {
+        openMsRef.current += Math.min(dt, PREVIEW_OPEN_STEP_MS);
+      }
       if (orbitRef.current === 'pointer') {
         tickSpring(springXRef.current, dt);
         tickSpring(springYRef.current, dt);
@@ -502,7 +530,8 @@ export function ExportPreview3D({
       } else {
         orbitRef.current = 'idle';
         applySpringOpts(springARef.current, HOVER_TILT_SPRING);
-        springARef.current.target = 1;
+        // Glare, pop, and foil rise with the opening orbit.
+        springARef.current.target = openLevel();
         tickSpring(springARef.current, dt);
         const idle = idleAt(now);
         const release = releaseRef.current;
@@ -520,7 +549,7 @@ export function ExportPreview3D({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [idleAt, paint]);
+  }, [idleAt, openLevel, paint]);
 
   useLayoutEffect(() => {
     recipeRef.current = recipe;
@@ -600,7 +629,12 @@ export function ExportPreview3D({
           card.dataset.foilMapSource = activeSrc;
         })
         .catch(() => {
-          if (cancelled || tries >= 6) return;
+          if (cancelled) return;
+          if (tries >= 6) {
+            const card = cardRef.current;
+            if (card) card.dataset.foilMaps = 'failed';
+            return;
+          }
           tries += 1;
           window.setTimeout(apply, 50);
         });
