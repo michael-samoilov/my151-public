@@ -2181,7 +2181,15 @@ const FIVE_LINE_LEAGUE =
 const SEVEN_GYMS_LEAGUE =
   "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);for(let i=0;i<7;i++)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
 
-async function waitNudge(s: Session, kind: 'card' | 'league'): Promise<boolean> {
+/** Every card but Elite Four 1 filled, after the eight-gym popup was seen. */
+const LAST_CARD_EMPTY_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1],boundaryMode:'auto'});const cards=Array.from({length:14},empty);for(let i=0;i<14;i++)if(i!==8)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:['league']},version:3});})()";
+
+/** A full v3 league that saw the eight-gym popup, which said "League ready" before v4. */
+const FULL_SEEN_V3_LEAGUE =
+  "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1],boundaryMode:'auto'});const cards=Array.from({length:14},(_,i)=>({...empty(),lines:[line(i+1)]}));return JSON.stringify({state:{name:'',cards,celebratedNudges:['league']},version:3});})()";
+
+async function waitNudge(s: Session, kind: 'card' | 'league' | 'complete'): Promise<boolean> {
   return waitFor(s, `[data-testid="league-nudge"][data-league-nudge="${kind}"]`, 25);
 }
 
@@ -2258,5 +2266,38 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   } else {
     checks.push(ok('league-funnel:roster-nudge-points-at-export', false, 'roster nudge never shown'));
   }
+
+  if (!(await seedLeagueHome(s, url, FULL_SEEN_V3_LEAGUE))) {
+    checks.push({ name: 'league-funnel:full-save-skips-seen-popup', status: 'skip', detail: 'league home never hydrated for the full save' });
+  } else {
+    await sleep(1500);
+    const saved = await s.evalJson<{ version: number | null; celebrated: string[]; nudges: number }>(
+      `const r=JSON.parse(localStorage.getItem(${JSON.stringify(LEAGUE_KEY)})||'{}');return {version:r.version??null,celebrated:r.state?.celebratedNudges??[],nudges:document.querySelectorAll('[data-testid="league-nudge"]').length};`,
+    ).catch(() => ({ version: null, celebrated: [] as string[], nudges: -1 }));
+    await s.screenshot(ctx.shot('league-funnel-full-save'));
+    checks.push(ok(
+      'league-funnel:full-save-skips-seen-popup',
+      saved.nudges === 0 && saved.version === 4 && saved.celebrated.includes('complete'),
+      `nudges=${saved.nudges} version=${saved.version} celebrated=${saved.celebrated.join(',')}`,
+    ));
+  }
+
+  if (!(await seedLeagueHome(s, url, LAST_CARD_EMPTY_LEAGUE))) {
+    checks.push({ name: 'league-funnel:complete-nudge-shown', status: 'skip', detail: 'league home never hydrated for the last card' });
+    return checks;
+  }
+  if (!(await openLeagueCard(s, 8))) {
+    checks.push(ok('league-funnel:complete-nudge-shown', false, 'Elite Four 1 never opened'));
+    return checks;
+  }
+  await s.click('[data-testid="card-cell-1-1"]');
+  await waitFor(s, '[data-filter-chip="my-dex"]');
+  await sleep(600);
+  await searchPicker(s, 'eevee');
+  await placePickerLine(s);
+  await closeLeagueCard(s);
+  const complete = await waitNudge(s, 'complete');
+  await s.screenshot(ctx.shot('league-funnel-complete-nudge'));
+  checks.push(ok('league-funnel:complete-nudge-shown', complete, complete ? 'full league export nudge' : 'no complete nudge after the last card'));
   return checks;
 }

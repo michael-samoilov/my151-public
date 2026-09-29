@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { defaultBoundaries, levelBoundaries, makePlacedLine } from '../model/engine';
-import { BOSS_ROW, CHAMPION_ROW } from '../model/constants';
+import { BOSS_ROW, CHAMPION_ROW, SLOT_COUNT } from '../model/constants';
 import { emptyCard, legendAt, legendsOf, migrateLeagueState, powerupAt, useLeagueStore } from './useLeagueStore';
 
 /**
@@ -175,6 +175,46 @@ describe('evolution boundary intent', () => {
       ...manual,
       boundaryMode: 'manual',
     });
+  });
+});
+
+/**
+ * The v4 step. Before v4 the eight-gym popup said "League ready", the copy
+ * the new all-cards popup uses. The ways it can fail a saved league:
+ * 1. A full league that saw that popup is shown "League ready" again.
+ * 2. A league with only its gyms filled loses the popup it has not yet seen.
+ * 3. An older save skips the v3 boundary upgrade on its way to v4.
+ * 4. The step drops or rewrites a card.
+ */
+describe('the v4 roster popup migration', () => {
+  const fullLeague = (line: () => object) =>
+    Array.from({ length: SLOT_COUNT }, () => ({ ...emptyCard(), lines: [line()] }));
+
+  it('marks a full v3 league that saw the eight-gym popup as having seen League ready', () => {
+    const cards = fullLeague(() => makePlacedLine(RHYHORN));
+    const migrated = migrateLeagueState({ cards, celebratedNudges: ['league'] }, 3);
+    expect(migrated.celebratedNudges).toEqual(['league', 'complete']);
+    expect(migrated.cards).toEqual(cards);
+  });
+
+  it('leaves a v3 league with only its gyms filled free to see League ready later', () => {
+    const cards = Array.from({ length: SLOT_COUNT }, (_, i) =>
+      i < 8 ? cardWith([RHYHORN]) : emptyCard());
+    const migrated = migrateLeagueState({ cards, celebratedNudges: ['league'] }, 3);
+    expect(migrated.celebratedNudges).toEqual(['league']);
+    expect(migrated.cards).toEqual(cards);
+  });
+
+  it('still upgrades a v2 save to automatic boundaries before the v4 step', () => {
+    const cards = fullLeague(() => ({ branch: RHYHORN, boundaries: levelBoundaries(RHYHORN) }));
+    const migrated = migrateLeagueState({ cards, celebratedNudges: ['league'] }, 2);
+    expect(migrated.cards).toHaveLength(SLOT_COUNT);
+    for (const saved of migrated.cards ?? []) {
+      expect(saved.lines).toEqual([
+        { branch: RHYHORN, boundaries: defaultBoundaries(RHYHORN), boundaryMode: 'auto' },
+      ]);
+    }
+    expect(migrated.celebratedNudges).toEqual(['league', 'complete']);
   });
 });
 

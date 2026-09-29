@@ -639,14 +639,17 @@ function drawTmSlot(
   }
 
   ctx.fillStyle = moveShades.band;
-  const emAscent = ctx.measureText('H').emHeightAscent || capHeight(ctx);
+  // The cap height on every engine. WebKit's `emHeightAscent` is the font
+  // ascent (15px here, against a 12px cap), so it dropped the name 3px in the
+  // iPhone PNG. Blink has no `emHeightAscent` and always took the cap height.
+  const ascent = capHeight(ctx);
   ctx.textBaseline = 'alphabetic';
   lines.forEach((line, i) => {
     fillTracked(
       ctx,
       line,
       bodyX,
-      L.cssLineAlphabetic(body.nameTop + i * L.NAME_LINE, L.NAME_LINE, L.NAME_PX, emAscent),
+      L.cssLineAlphabetic(body.nameTop + i * L.NAME_LINE, L.NAME_LINE, L.NAME_PX, ascent),
       L.NAME_TRACK,
     );
   });
