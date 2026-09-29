@@ -6,7 +6,7 @@ gimmick, legendary, and favorite picks.
 
 ## Sub-features
 
-- Grid: 18 type columns plus starter, gimmick, legendary, and favorite; 9
+- Grid: 18 type columns plus starter, legendary, gimmick, and favorite; 9
   generation rows plus gimmick, legendary, and favorite. Each body cell is a
   `[data-testid="favorites-cell-<type>-<gen>"]` button whose `data-kind` is
   `pick`, `pointer`, `disabled`, or `null`. An empty cell shows a faint ball
@@ -41,6 +41,11 @@ gimmick, legendary, and favorite picks.
 - Clear: the current pick is translucent, with a red x
   `[data-testid="favorites-clear"]` centered over it. Tapping it clears the
   cell.
+- Name tip `[data-testid="favorites-name-tooltip"]`: a dark tip with the
+  Pokémon's name over a filled grid cell or a selector sprite. A mouse hover
+  opens it after 200 ms. A finger held still for 450 ms opens it until the
+  finger lifts. That release does not pick, open, or clear. A move of more
+  than 10 px, a scroll, or a second finger before 450 ms opens no tip.
 - Pointer cells (favorite row and column, legendary × legendary, gimmick ×
   gimmick): list picks
   from other cells, with source badges `[data-testid="favorites-pointer-mark"]`.
