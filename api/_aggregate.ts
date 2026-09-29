@@ -317,7 +317,7 @@ export function tallies(records: SessionRecord[], field: TallyField): Record<str
   return out;
 }
 
-/** The clocks the admin heatmap can read last activity on. */
+/** The clocks the admin heatmap reads activity on. */
 const HEATMAP_CLOCKS = ['local', 'eastern'] as const;
 export type HeatmapClock = (typeof HEATMAP_CLOCKS)[number];
 
@@ -344,28 +344,36 @@ function weekdayHourFormat(timeZone: string): Intl.DateTimeFormat | null {
   return fmt;
 }
 
-/** Day of week (0=Sun) and hour (0-23) of `ts` on the zone's wall clock. */
-function weekSlot(ts: number, timeZone: string): { dow: number; hour: number } | null {
+/** Hour of the week of `ts` on the zone's wall clock: day of week (0=Sun)
+ *  times 24, plus the hour (0-23). */
+function hourOfWeek(ts: number, timeZone: string): number | null {
   const parts = weekdayHourFormat(timeZone)?.formatToParts(ts);
   if (!parts) return null;
   const dow = DOW_NAMES.indexOf(parts.find((p) => p.type === 'weekday')?.value ?? '');
   const hour = Number(parts.find((p) => p.type === 'hour')?.value);
-  return dow >= 0 && Number.isInteger(hour) ? { dow, hour } : null;
+  return dow >= 0 && Number.isInteger(hour) ? dow * 24 + hour : null;
 }
 
 /**
- * 7 x 24 day-by-hour counts of browsers, one matrix per clock. Each browser
- * counts once, in the cell of its last activity. A browser with no zone for a
- * clock is left out of that clock's matrix.
+ * 7 x 24 day-by-hour counts of browsers, one matrix per clock. A browser
+ * counts once in each weekday hour it was active in after `start`, however
+ * often it came back to that hour. A browser with no zone for a clock is left
+ * out of that clock's matrix.
  */
-export function heatmaps(records: SessionRecord[]): Record<HeatmapClock, number[][]> {
+export function heatmaps(records: SessionRecord[], start: number | null = null): Record<HeatmapClock, number[][]> {
   const week = () => Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
   const out: Record<HeatmapClock, number[][]> = { local: week(), eastern: week() };
   for (const r of records) {
+    const times = activeTimestamps(r).filter((ts) => start === null || ts > start);
     for (const clock of HEATMAP_CLOCKS) {
       const zone = CLOCK_ZONE[clock](r);
-      const slot = zone ? weekSlot(r.lastTs, zone) : null;
-      if (slot) out[clock][slot.dow][slot.hour] += 1;
+      if (!zone) continue;
+      const hours = new Set<number>();
+      for (const ts of times) {
+        const h = hourOfWeek(ts, zone);
+        if (h !== null) hours.add(h);
+      }
+      for (const h of hours) out[clock][Math.floor(h / 24)][h % 24] += 1;
     }
   }
   return out;
@@ -408,8 +416,13 @@ export interface Aggregates {
 
 /** Every aggregation above. The activity series read every record, so the
  *  chart keeps its history; the rest read only `inRange`, the records active
- *  in the dashboard's date range. */
-export function aggregate(records: SessionRecord[], now: number, inRange = records): Aggregates {
+ *  in the dashboard's date range, which opens after `start`. */
+export function aggregate(
+  records: SessionRecord[],
+  now: number,
+  inRange = records,
+  start: number | null = null,
+): Aggregates {
   return {
     users: inRange.length,
     activity: dailyActive(records, now),
@@ -425,7 +438,7 @@ export function aggregate(records: SessionRecord[], now: number, inRange = recor
     joints: tallyJoints(inRange),
     whoBuckets: tallyWhoBuckets(inRange),
     countries7d: distinctCountries7d(inRange),
-    heatmaps: heatmaps(inRange),
+    heatmaps: heatmaps(inRange, start),
   };
 }
 
