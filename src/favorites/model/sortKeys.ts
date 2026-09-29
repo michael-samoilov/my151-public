@@ -63,7 +63,7 @@ export const SORT_KEYS = [
   {
     id: 'debut',
     label: 'Debut game',
-    description: 'Earlier games first: Sword and Shield before Legends: Arceus.',
+    description: 'Earlier games first. Games of one generation and region count as one: Black 2 and White 2 sort with Black and White, but Legends: Arceus sorts after Sword and Shield.',
     compare: (a, b) => debutRank(a) - debutRank(b),
   },
   {

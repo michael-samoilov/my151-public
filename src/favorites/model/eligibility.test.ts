@@ -104,7 +104,7 @@ describe('eligibleFor', () => {
     }
   });
 
-  it('keeps same-game legendary forms together before older legendary families', () => {
+  it('keeps same-region legendary forms together before older legendary families', () => {
     const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
       eligibleFor(type, gen).map((mon) => mon.id);
     const contiguous = (list: number[], family: number[]) => {
@@ -117,10 +117,18 @@ describe('eligibleFor', () => {
     contiguous(ids('legendary', 8), [898, 10193, 10194]);
     contiguous(ids('legendary', 8), [905, 10249]);
     contiguous(ids('legendary', 6), [716, 11001]);
-    // Necrozma's fusions debuted in Ultra Sun and Ultra Moon, after every Sun and Moon entry.
-    contiguous(ids('legendary', 7), [10155, 10156, 803]);
-    // Ultra Necrozma is a battle form, so it closes the Ultra Sun and Ultra Moon entries.
-    expect(ids('legendary', 7).indexOf(10157)).toBe(ids('legendary', 7).indexOf(807) + 1);
+    // Ultra Sun and Ultra Moon share Alola with Sun and Moon, so Necrozma's
+    // fusions follow Necrozma.
+    contiguous(ids('legendary', 7), [800, 10155, 10156]);
+    // Ultra Necrozma is a battle form, so it closes the Alola entries, before
+    // Meltan from Let's Go in Kanto.
+    expect(ids('legendary', 7).indexOf(10157)).toBe(ids('legendary', 7).indexOf(808) - 1);
+    // Black 2 and White 2 share Unova with Black and White, so each Therian
+    // Forme follows its Incarnate Forme, before Zekrom.
+    contiguous(ids('legendary', 5), [641, 10019]);
+    contiguous(ids('legendary', 5), [642, 10020]);
+    contiguous(ids('legendary', 5), [645, 10021]);
+    contiguous(ids('electric', 5), [642, 10020, 644]);
     contiguous(ids('legendary', 7), [801, 10147]);
     expect(ids('legendary', 8).indexOf(10246)).toBeGreaterThan(ids('legendary', 8).indexOf(892));
     expect(ids('legendary', 7).indexOf(10181)).toBeGreaterThan(ids('legendary', 7).indexOf(785));

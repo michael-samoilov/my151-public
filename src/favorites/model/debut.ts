@@ -51,7 +51,21 @@ export function debutGame(mon: PickerMon): DebutGame {
   return GENERATION_GAME[mon.generation];
 }
 
-/** Release position of the entry's debut game. Earlier games sort first. */
+/**
+ * Each game's generation and primary region. Games that share both are one
+ * debut: B2W2 sorts with BW, USUM with SM, and Emerald with Ruby and
+ * Sapphire. A game in the same generation but another region stays apart:
+ * FRLG, HGSS, ORAS, LGPE, PLA, and PLZA.
+ */
+const GAME_REGION: Record<DebutGame, `${GenNumber} ${string}`> = {
+  RB: '1 kanto', GS: '2 johto', RS: '3 hoenn', FRLG: '3 kanto', E: '3 hoenn',
+  DP: '4 sinnoh', Pt: '4 sinnoh', HGSS: '4 johto', BW: '5 unova', B2W2: '5 unova',
+  XY: '6 kalos', ORAS: '6 hoenn', SM: '7 alola', USUM: '7 alola', LGPE: '7 kanto',
+  SwSh: '8 galar', PLA: '8 hisui', SV: '9 paldea', PLZA: '9 kalos',
+};
+
+/** Release position of the entry's debut region. Earlier regions sort first. */
 export function debutRank(mon: PickerMon): number {
-  return DEBUT_GAMES.indexOf(debutGame(mon));
+  const region = GAME_REGION[debutGame(mon)];
+  return DEBUT_GAMES.findIndex((game) => GAME_REGION[game] === region);
 }
