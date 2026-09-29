@@ -17,6 +17,9 @@ import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
  *   at exactly 1x, and gives up its own spacing to keep every row on screen
  *   (`homeLayout.ts`). Only when even that cannot fit does it zoom, and then
  *   it stays pixelated down to 0.75x.
+ *
+ * The phone and standard summaries give up the same spacing, but only once
+ * their zoom reaches the fit's floor.
  */
 export type SpriteScreen = 'phone' | 'standard' | 'retina';
 
@@ -27,18 +30,19 @@ interface ScreenRule {
    */
   homeCeilingPx: ((dpr: number) => number) | null;
   /**
-   * True where the summary keeps its sprites at the ceiling and gives up its
-   * own spacing first.
+   * The zoom the summary holds while it gives up its own spacing
+   * (`Compact.holds`): the ceiling, so the sprites stay at it, or the fit's
+   * floor, so the zoom follows the window until it has nowhere left to go.
    */
-  holdsCeiling: boolean;
+  holds: 'ceiling' | 'floor';
   /** Below this many device px per source px, a sprite is smoothed. */
   smoothBelow: number;
 }
 
 const RULES: Record<SpriteScreen, ScreenRule> = {
-  phone: { homeCeilingPx: null, holdsCeiling: false, smoothBelow: 0 },
-  standard: { homeCeilingPx: () => SPRITE_NATIVE, holdsCeiling: false, smoothBelow: 1 },
-  retina: { homeCeilingPx: (dpr) => SPRITE_NATIVE / dpr, holdsCeiling: true, smoothBelow: 0.75 },
+  phone: { homeCeilingPx: null, holds: 'floor', smoothBelow: 0 },
+  standard: { homeCeilingPx: () => SPRITE_NATIVE, holds: 'floor', smoothBelow: 1 },
+  retina: { homeCeilingPx: (dpr) => SPRITE_NATIVE / dpr, holds: 'ceiling', smoothBelow: 0.75 },
 };
 
 export function spriteScreen(desktop: boolean, dpr: number): SpriteScreen {
