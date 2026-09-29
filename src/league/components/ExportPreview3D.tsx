@@ -59,6 +59,13 @@ const TAP_MS = 320;
 const PREVIEW_OPEN_MS = 1500;
 /** The most one frame advances the opening, so a stalled frame cannot skip it. */
 const PREVIEW_OPEN_STEP_MS = 34;
+
+/** The opening ramp, 0 to 1, from the ms the loop counted since the card showed. */
+function openEase(ms: number | null): number {
+  if (ms === null) return 0;
+  const u = Math.min(1, ms / PREVIEW_OPEN_MS);
+  return u * u * (3 - 2 * u);
+}
 const TAP_PX = 10;
 
 type Orbit = 'idle' | 'pointer' | 'rest' | 'paused' | 'static';
@@ -162,7 +169,10 @@ export function ExportPreview3D({
     const cardH = cardMaxRef.current.h;
     const tiltNowEarly = tiltRef.current ?? DEFAULT_HOVER_TILT_RECIPE;
     const activation = Math.min(1, Math.max(0, springARef.current.value));
-    const liveScale = 1 + (tiltNowEarly.scaleFactor - 1) * activation;
+    // The glare and the pop ease in with the opening. The foil does not: a
+    // flat card already shows it at its floor.
+    const open = openEase(openMsRef.current);
+    const liveScale = 1 + (tiltNowEarly.scaleFactor - 1) * activation * open;
     const tiltPad = tiltPadForScaledCard({
       stageWidth: stageSize.w,
       stageHeight: stageSize.h,
@@ -214,7 +224,7 @@ export function ExportPreview3D({
       foilMag <= recipeNow.deadDeg ? 0 : Math.min(1, (foilMag - recipeNow.deadDeg) / span);
     const foil = activation * (0.45 + 0.55 * tiltStrength);
     el.style.setProperty('--foil-opacity', foil.toFixed(3));
-    el.style.setProperty('--hover-tilt-opacity', activation.toFixed(3));
+    el.style.setProperty('--hover-tilt-opacity', (activation * open).toFixed(3));
     const angle = (Math.atan2(ny - 0.5, nx - 0.5) * 180) / Math.PI;
     el.style.setProperty('--hover-tilt-angle', `${angle.toFixed(1)}deg`);
     el.style.setProperty('--hover-tilt-from-center', Math.min(1, Math.hypot(nx - 0.5, ny - 0.5) / 0.5).toFixed(3));
@@ -266,16 +276,7 @@ export function ExportPreview3D({
     el.setAttribute('data-shadow-y', shadowY.toFixed(2));
   }, []);
 
-  // The opening ramp, 0 to 1. The loop advances it (see `tick`).
-  const openLevel = useCallback(() => {
-    const ms = openMsRef.current;
-    if (ms === null) return 0;
-    const u = Math.min(1, ms / PREVIEW_OPEN_MS);
-    return u * u * (3 - 2 * u);
-  }, []);
-
   const idleAt = useCallback((now: number) => {
-    const open = openLevel();
     const origin = originRef.current;
     // Reduced motion holds the card still. Activation still rises in idle, so
     // the foil stays on. Hover, drag, and tap are the user's own motion.
@@ -287,10 +288,10 @@ export function ExportPreview3D({
       origin,
       idleMsX: recipeNow.idleMsX,
       idleMsY: recipeNow.idleMsY,
-      idleTilt: recipeNow.idleTilt * open,
+      idleTilt: recipeNow.idleTilt * openEase(openMsRef.current),
       axes: tiltAxes(tiltRef.current, recipeNow.maxTilt),
     });
-  }, [openLevel]);
+  }, []);
 
   /** Unrotated box. The lift's transformed rect inverts left and right. */
   const restPointerBox = useCallback((): DOMRect | null => {
@@ -530,8 +531,7 @@ export function ExportPreview3D({
       } else {
         orbitRef.current = 'idle';
         applySpringOpts(springARef.current, HOVER_TILT_SPRING);
-        // Glare, pop, and foil rise with the opening orbit.
-        springARef.current.target = openLevel();
+        springARef.current.target = 1;
         tickSpring(springARef.current, dt);
         const idle = idleAt(now);
         const release = releaseRef.current;
@@ -549,7 +549,7 @@ export function ExportPreview3D({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [idleAt, openLevel, paint]);
+  }, [idleAt, paint]);
 
   useLayoutEffect(() => {
     recipeRef.current = recipe;

@@ -426,6 +426,8 @@ test.describe('mobile dex export sheet', () => {
     await expect.poll(async () => page.locator('[data-export-preview]').getAttribute('data-foil-maps'), { timeout: 15_000 }).toBe('1');
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.1);
+    // The pop eases in over the opening, so wait for the full auto-tilt card.
+    await expect.poll(async () => Number(await foil.getAttribute('data-tilt-scale')), { timeout: 10_000 }).toBeGreaterThan(1.14);
     const measure = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
       const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
@@ -929,15 +931,21 @@ test.describe('desktop dex export preview', () => {
     const hit = page.locator('[data-export-tilt-hit]');
     const box = await hit.boundingBox();
     expect(box).toBeTruthy();
-    const restCover = await page.evaluate(() => {
-      const card = document.querySelector<HTMLElement>('[data-export-preview]');
-      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
-      if (!card || !layer) return 0;
-      const c = card.getBoundingClientRect();
-      const l = layer.getBoundingClientRect();
-      return Math.max(c.width / l.width, c.height / l.height);
-    });
-    expect(restCover).toBeGreaterThan(0.78);
+    // The pop eases in over the opening, so wait for the full auto-tilt card.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const card = document.querySelector<HTMLElement>('[data-export-preview]');
+            const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+            if (!card || !layer) return 0;
+            const c = card.getBoundingClientRect();
+            const l = layer.getBoundingClientRect();
+            return Math.max(c.width / l.width, c.height / l.height);
+          }),
+        { timeout: 10_000 },
+      )
+      .toBeGreaterThan(0.78);
     await page.mouse.move(box!.x + box!.width * 0.08, box!.y + box!.height * 0.92, { steps: 10 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
     await page.waitForTimeout(400);
@@ -963,15 +971,21 @@ test.describe('desktop dex export preview', () => {
     const hit = page.locator('[data-export-tilt-hit]');
     const box = await hit.boundingBox();
     expect(box).toBeTruthy();
-    const restCover = await page.evaluate(() => {
-      const card = document.querySelector<HTMLElement>('[data-export-preview]');
-      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
-      if (!card || !layer) return 0;
-      const c = card.getBoundingClientRect();
-      const l = layer.getBoundingClientRect();
-      return Math.max(c.width / l.width, c.height / l.height);
-    });
-    expect(restCover).toBeGreaterThan(0.78);
+    // The pop eases in over the opening, so wait for the full auto-tilt card.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const card = document.querySelector<HTMLElement>('[data-export-preview]');
+            const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+            if (!card || !layer) return 0;
+            const c = card.getBoundingClientRect();
+            const l = layer.getBoundingClientRect();
+            return Math.max(c.width / l.width, c.height / l.height);
+          }),
+        { timeout: 10_000 },
+      )
+      .toBeGreaterThan(0.78);
     await page.mouse.move(box!.x + box!.width * 0.08, box!.y + box!.height * 0.92, { steps: 10 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
     await page.waitForTimeout(400);
