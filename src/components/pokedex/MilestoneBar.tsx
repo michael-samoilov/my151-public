@@ -7,6 +7,7 @@ import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 import { BarChart3, Camera, Sparkles, Trophy, ChevronDown, type LucideIcon } from 'lucide-react';
 import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
+import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
 
 /**
  * The milestone progress spine — a slim runway with a bead at each milestone
@@ -158,9 +159,11 @@ const GATED: Record<MilestoneFeature, boolean> = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dev tuning store (?tune). A tiny shared external store so both header bars
-// read the same live overrides. Inert in production (no overrides, no preview).
+// read the same live overrides. The production deploy ignores ?tune, so the
+// panel and the store handle below exist only on local builds and previews.
 // ─────────────────────────────────────────────────────────────────────────────
 const TUNE = (() => {
+  if (PRODUCTION_DEPLOY) return false;
   try {
     return new URLSearchParams(window.location.search).has('tune');
   } catch {
@@ -169,7 +172,7 @@ const TUNE = (() => {
 })();
 
 // Dev convenience: expose the store for console tinkering / test harnesses when
-// tuning. Never present in production (TUNE is false without ?tune).
+// tuning. Never present in production (TUNE is always false there).
 if (TUNE && typeof window !== 'undefined') {
   (window as unknown as Record<string, unknown>).__pokedexStore = usePokedexStore;
 }
