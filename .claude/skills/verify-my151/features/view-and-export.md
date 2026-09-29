@@ -10,9 +10,10 @@ display options, exportable as a PNG.
 - View settings: sort (build order, regional, national, type, custom), section
   outlines, and group-special-at-end. Detailed stats are export-only.
 - A detailed-stats column in the export, available from 100 placed.
-- Export opens a preview overlay first: a live settings pane (Shine, Glare,
-  Shadow, sort, outlines, stats) beside a 3D preview card, then save. Export
-  settings do not write the View store.
+- Export opens a preview overlay first: a live settings pane (sort, outlines,
+  stats) beside a 3D preview card, then save. The foil has no controls in the
+  pane; it always uses the defaults below. Export settings do not write the
+  View store.
 - Save produces `my151.png` through the share sheet or a download. The PNG has
   rounded transparent corners (radius 4% of the short edge), and the red frame
   follows the curve. The sprites paint at 1× (96 px) and the frame is 12 px,
