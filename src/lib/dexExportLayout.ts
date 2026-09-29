@@ -1,4 +1,5 @@
 import type { Pokemon, TypeName } from '@/types/pokemon';
+import { EXPORT_FRAME_PX, EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import {
   computeOutlineLayout,
   buildOutlines,
@@ -14,6 +15,10 @@ import {
 
 export const DEX_EXPORT_COLS = 10;
 export const DEX_EXPORT_TILE = 48;
+/** PNG px per layout px: a tile's sprite paints at 1× (`EXPORT_SPRITE_PX`). */
+export const DEX_EXPORT_SCALE = EXPORT_SPRITE_PX / DEX_EXPORT_TILE;
+/** The red frame in layout px, so it paints `EXPORT_FRAME_PX` wide. */
+export const DEX_EXPORT_FRAME = EXPORT_FRAME_PX / DEX_EXPORT_SCALE;
 export const DEX_EXPORT_PAD_X = 12;
 export const DEX_EXPORT_PAD_TOP = 8;
 export const DEX_EXPORT_PAD_BOTTOM = 28;

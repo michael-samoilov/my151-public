@@ -15,7 +15,8 @@ display options, exportable as a PNG.
   settings do not write the View store.
 - Save produces `my151.png` through the share sheet or a download. The PNG has
   rounded transparent corners (radius 4% of the short edge), and the red frame
-  follows the curve.
+  follows the curve. The sprites paint at 1× (96 px) and the frame is 12 px,
+  the same as on both league exports (`EXPORT_SPRITE_PX`, `EXPORT_FRAME_PX`).
 - The preview card auto-tilts on open (not with reduced motion). On desktop,
   the first hover takes manual control and ends auto-tilt: leaving rests the
   card flat, and each later hover tilts it again. A click locks it flat and

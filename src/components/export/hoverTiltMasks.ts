@@ -1,5 +1,5 @@
 import { typeGlyphPath } from '@/data/type-ids';
-import { layoutDexExportGrid } from '@/lib/dexExportLayout';
+import { DEX_EXPORT_FRAME, layoutDexExportGrid } from '@/lib/dexExportLayout';
 import { CARD_IMG_H, CARD_IMG_W, FRAME } from '@/league/export/layout';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import type { HoverTiltMaskId } from './hoverTiltRecipe';
@@ -84,11 +84,11 @@ export function hoverTiltMaskContextFromDex(
 ): HoverTiltMaskContext {
   const grid = layoutDexExportGrid(pokemon, sections);
   return {
-    width: grid.width + 2 * FRAME,
-    height: grid.height + 2 * FRAME,
+    width: grid.width + 2 * DEX_EXPORT_FRAME,
+    height: grid.height + 2 * DEX_EXPORT_FRAME,
     sprites: grid.sprites.map((s) => ({
-      cx: s.cx + FRAME,
-      cy: s.cy + FRAME,
+      cx: s.cx + DEX_EXPORT_FRAME,
+      cy: s.cy + DEX_EXPORT_FRAME,
       r: s.r,
       type: s.pokemon.types[0] ?? 'normal',
       dexNumber: s.pokemon.id,
@@ -96,13 +96,15 @@ export function hoverTiltMaskContextFromDex(
   };
 }
 
-/** FRAME / card size. Empty workshop contexts fall back to the trainer card. */
+/** Frame / card size. Empty workshop contexts fall back to the trainer card. */
 export function dexBorderInsets(ctx: HoverTiltMaskContext): { x: number; y: number } {
-  const width = ctx.width > 8 ? ctx.width : CARD_IMG_W;
-  const height = ctx.height > 8 ? ctx.height : CARD_IMG_H;
+  const dex = ctx.width > 8;
+  const frame = dex ? DEX_EXPORT_FRAME : FRAME;
+  const width = dex ? ctx.width : CARD_IMG_W;
+  const height = dex ? ctx.height : CARD_IMG_H;
   return {
-    x: FRAME / width,
-    y: FRAME / height,
+    x: frame / width,
+    y: frame / height,
   };
 }
 

@@ -27,17 +27,15 @@ import {
   DEX_EXPORT_PAD_X as PAD_X,
   DEX_EXPORT_POKEBALL_R_FRAC,
   DEX_EXPORT_TILE as TILE,
+  DEX_EXPORT_FRAME,
+  DEX_EXPORT_SCALE,
   layoutDexExportGrid,
 } from '@/lib/dexExportLayout';
-import { FRAME } from '@/league/export/layout';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
 
-/** Same stroke as the trainer-card export (`layout.FRAME`). */
-export const DEX_EXPORT_FRAME = FRAME;
 export const DEX_EXPORT_FRAME_RED = '#DC2626';
 
-const SPRITE_SRC = 96; // native sprite resolution
-const SPRITE = SPRITE_SRC / 2; // logical draw size = 48px (1:1 with tile)
+const SPRITE = TILE; // logical draw size = 48px (1:1 with tile)
 const BG = '#ffffff';
 // When the stats panel is composited, the grid is wrapped in a white card (like
 // the website). The card's inner padding is computed to match the stat cards'
@@ -50,12 +48,12 @@ const PAGE_BG = '#f7f7f8';
 // isn't clipped at the canvas edge.
 const CARD_SHADOW_ROOM = 20;
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
-const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
+const SCALE = DEX_EXPORT_SCALE; // SPRITE * SCALE = 96 = native sprites at 1×
 // iOS/Safari (and therefore every iOS browser, incl. Chrome) caps a canvas's
 // backing store at ~16.7M px (4096²). Past it, canvas ops silently no-op and
 // toBlob never fires its callback — the export spinner hangs forever. The
-// with-stats export at SCALE=4 (~4400×4900 ≈ 21.6M px) exceeds this, so we cap
-// the area and derive the effective scale from it. Margin under the hard limit.
+// with-stats export at SCALE=2 (~2000×2000 ≈ 4M px) is well under it, but the
+// area stays capped as a guard. Margin under the hard limit.
 const MAX_CANVAS_AREA = 16_000_000;
 
 // ---------- Footer insight computation ----------
@@ -380,8 +378,8 @@ export async function generateExportImage(
   const framedW = canvasW + 2 * DEX_EXPORT_FRAME;
   const framedH = h + 2 * DEX_EXPORT_FRAME;
 
-  // Cap the backing store to the iOS canvas-area limit. At 151 + stats this pulls
-  // SCALE 4 down to ~3.4; grid-only stays at 4 (it's well under the cap).
+  // Cap the backing store to the iOS canvas-area limit. Every export today stays
+  // under it at SCALE, so the sprites keep their whole 1× scale.
   const expScale = Math.min(SCALE, Math.sqrt(MAX_CANVAS_AREA / (framedW * framedH)));
 
   const canvas = document.createElement('canvas');
@@ -791,7 +789,7 @@ function drawTile(
     ctx.setTransform(1, 0, 0, 1, 0, 0); // reset to identity (canvas pixels)
     // Size the sprite from the *live* scale (m.a), not the SCALE constant, so it
     // tracks the effective scale when the canvas area is capped (iOS).
-    const drawSize = SPRITE * m.a; // = 2× native 96px at full SCALE
+    const drawSize = SPRITE * m.a; // = native 96px (1×) at full SCALE
     const sx = m.a * cx + m.c * cy + m.e - drawSize / 2;
     const sy = m.b * cx + m.d * cy + m.f - drawSize / 2;
     ctx.imageSmoothingEnabled = false;

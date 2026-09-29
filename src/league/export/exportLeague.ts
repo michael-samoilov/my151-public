@@ -66,6 +66,8 @@ export const HOME_FILENAME = 'my151-league.png';
 
 const FG = '#0a0a0a';
 const RED = '#DC2626';
+/** The league summary's frame: the Dex export's red. */
+const HOME_FRAME = RED;
 const MUTED = '#737373';
 const GREY = '#a3a3a3';
 const ZINC = '#a1a1aa';
@@ -1300,7 +1302,9 @@ async function render(
     }
   }
 
-  const scale = Math.min(2, Math.sqrt(MAX_CANVAS_AREA / (w * h)));
+  // One PNG px per layout px, so the team sprites paint at their native 96px
+  // (1×). Only the iOS area cap could lower it.
+  const scale = Math.min(1, Math.sqrt(MAX_CANVAS_AREA / (w * h)));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(w * scale);
   canvas.height = Math.round(h * scale);
@@ -1341,7 +1345,18 @@ export async function exportLeagueHome(
   const geom = L.homeExportGeometry(layoutShowsGymDetails(layout), both);
   const images = await loadAll(homeImageUrls(cards, view, layout));
   const named = Boolean(name) && layout.showLeagueName;
-  return render(geom.homeW, L.homeImgH(named), (ctx) =>
-    drawLeagueHome(ctx, named ? name : '', cards, view, layout, geom, images),
-  );
+  const innerH = L.homeImgH(named);
+  const w = geom.homeW + 2 * L.FRAME;
+  const h = innerH + 2 * L.FRAME;
+  return render(w, h, (ctx) => {
+    ctx.fillStyle = HOME_FRAME;
+    ctx.fillRect(0, 0, w, h);
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(L.FRAME, L.FRAME, geom.homeW, innerH, exportInnerCornerRadius(w, h, L.FRAME));
+    ctx.clip();
+    ctx.translate(L.FRAME, L.FRAME);
+    drawLeagueHome(ctx, named ? name : '', cards, view, layout, geom, images);
+    ctx.restore();
+  });
 }
