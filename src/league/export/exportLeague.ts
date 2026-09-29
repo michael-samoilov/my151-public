@@ -958,6 +958,181 @@ function drawHomeTeamSprites(
   });
 }
 
+/** Inset of the details lines from either side of their column. */
+const DETAIL_PAD = 2 * L.K2;
+/** Between THEME and the theme's own words. */
+const THEME_VALUE_GAP = 5 * L.K2;
+
+/** One line of a row's details column: theme, TM, or badge. */
+interface DetailLine {
+  /** The column width the line needs to draw uncut, padding included. */
+  need: number;
+  /** Paint the line on `midY`, between the column's padded edges. */
+  paint: (bodyX: number, right: number, midY: number) => void;
+}
+
+/**
+ * A row's details lines, each with the width it takes at full size.
+ *
+ * The export sizes the details column from these widths before it draws, and
+ * then paints the same lines in it, so the column and the text agree on
+ * every engine.
+ */
+function homeDetailLines(
+  ctx: CanvasRenderingContext2D,
+  card: GymCard,
+  shades: CardShades,
+  images: Images,
+  layout: LeagueHomeExportLayout,
+): DetailLine[] {
+  if (vacantRow(card)) return [];
+
+  const themeText = layout.showTheme ? (card.theme?.trim() ?? '') : '';
+  const move =
+    layout.showTmReward && card.tmMoveId !== null ? getMoveById(card.tmMoveId) : undefined;
+  const badgeName = layout.showBadgeName ? (card.badgeName?.trim() ?? '') : '';
+  const lines: DetailLine[] = [];
+  const typeR = L.homeTypeMarkRadius(L.HOME_DETAIL_TYPE);
+  const markInset = L.HOME_DETAIL_ICON + L.HOME_DETAIL_GAP;
+
+  const markWidth = (text: string): number => {
+    ctx.save();
+    ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
+    const w = trackedWidth(ctx, text, L.HOME_MARK_TRACK);
+    ctx.restore();
+    return w;
+  };
+
+  if (themeText) {
+    const labelW = markWidth('THEME');
+    ctx.save();
+    ctx.font = font(L.HOME_THEME_TEXT_PX, 700);
+    const textW = ctx.measureText(themeText).width;
+    ctx.restore();
+    lines.push({
+      need: 2 * DETAIL_PAD + labelW + THEME_VALUE_GAP + textW,
+      paint: (bodyX, right, midY) => {
+        ctx.save();
+        ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
+        ctx.fillStyle = shades.band;
+        ctx.textBaseline = 'middle';
+        fillTracked(ctx, 'THEME', bodyX, midY, L.HOME_MARK_TRACK);
+        const valueX = bodyX + labelW + THEME_VALUE_GAP;
+        const valueW = Math.max(8, right - valueX);
+        const themePx = fitFontSize(
+          ctx,
+          themeText,
+          valueW,
+          L.HOME_THEME_TEXT_PX,
+          L.HOME_MARK_LABEL_PX * 0.85,
+          700,
+        );
+        ctx.font = font(themePx, 700);
+        ctx.fillStyle = FG;
+        ctx.fillText(ellipsize(ctx, themeText, valueW), valueX, midY);
+        ctx.restore();
+      },
+    });
+  }
+
+  if (move) {
+    const moveShades = cardShades(move.type as TypeName);
+    const moveUpper = move.name.toUpperCase();
+    const trailing = L.HOME_DETAIL_GAP + L.HOME_DETAIL_TYPE + L.HOME_DETAIL_GAP + L.HOME_DETAIL_CHIP_W;
+    lines.push({
+      need: 2 * DETAIL_PAD + markInset + markWidth(moveUpper) + trailing,
+      paint: (bodyX, right, midY) => {
+        const markX = bodyX + markInset;
+        const iconY = midY - L.HOME_DETAIL_ICON / 2;
+        drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], L.HOME_DETAIL_ICON, bodyX, iconY);
+        const nameW = Math.max(8, right - trailing - markX);
+        ctx.save();
+        ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
+        ctx.fillStyle = moveShades.band;
+        ctx.textBaseline = 'middle';
+        const name = ellipsizeTracked(ctx, moveUpper, nameW, L.HOME_MARK_TRACK);
+        fillTracked(ctx, name, markX, midY, L.HOME_MARK_TRACK);
+        const typeX = markX + trackedWidth(ctx, name, L.HOME_MARK_TRACK) + L.HOME_DETAIL_GAP;
+        ctx.restore();
+        drawTypeMark(
+          ctx,
+          move.type as TypeName,
+          images,
+          typeX,
+          midY - L.HOME_DETAIL_TYPE / 2,
+          L.HOME_DETAIL_TYPE,
+          typeR,
+        );
+        const chipX = typeX + L.HOME_DETAIL_TYPE + L.HOME_DETAIL_GAP;
+        const chipY = midY - L.HOME_DETAIL_CHIP_H / 2;
+        ctx.save();
+        ctx.fillStyle = CATEGORY_COLORS[move.category];
+        roundRect(ctx, chipX, chipY, L.HOME_DETAIL_CHIP_W, L.HOME_DETAIL_CHIP_H, 2 * L.K2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.2 * L.K2;
+        ctx.stroke();
+        const catIcon = images.get(`/sprites/moves/${move.category}.png`);
+        if (catIcon) {
+          const iw = L.HOME_DETAIL_CHIP_W * 0.62;
+          const ih = (catIcon.naturalHeight / (catIcon.naturalWidth || 1)) * iw;
+          ctx.imageSmoothingEnabled = true;
+          ctx.drawImage(
+            catIcon,
+            chipX + (L.HOME_DETAIL_CHIP_W - iw) / 2,
+            chipY + (L.HOME_DETAIL_CHIP_H - ih) / 2,
+            iw,
+            ih,
+          );
+        }
+        ctx.restore();
+      },
+    });
+  }
+
+  if (badgeName) {
+    const badgeText = `${badgeName} Badge`.toUpperCase();
+    lines.push({
+      need: 2 * DETAIL_PAD + markInset + markWidth(badgeText),
+      paint: (bodyX, right, midY) => {
+        drawHexagon(ctx, shades.type, true, L.HOME_DETAIL_ICON, bodyX, midY - L.HOME_DETAIL_ICON / 2);
+        const textX = bodyX + markInset;
+        const textW = Math.max(8, right - textX);
+        ctx.save();
+        ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
+        ctx.fillStyle = shades.band;
+        ctx.textBaseline = 'middle';
+        fillTracked(
+          ctx,
+          ellipsizeTracked(ctx, badgeText, textW, L.HOME_MARK_TRACK),
+          textX,
+          midY,
+          L.HOME_MARK_TRACK,
+        );
+        ctx.restore();
+      },
+    });
+  }
+
+  return lines;
+}
+
+/** The widest details line in the league, which the details column fits. */
+function homeDetailsNeed(
+  ctx: CanvasRenderingContext2D,
+  cards: GymCard[],
+  images: Images,
+  layout: LeagueHomeExportLayout,
+): number {
+  let need = 0;
+  for (const card of cards) {
+    for (const line of homeDetailLines(ctx, card, cardShades(card.type), images, layout)) {
+      need = Math.max(need, line.need);
+    }
+  }
+  return need;
+}
+
 function drawHomeGymDetails(
   ctx: CanvasRenderingContext2D,
   card: GymCard,
@@ -968,129 +1143,20 @@ function drawHomeGymDetails(
   w: number,
   layout: LeagueHomeExportLayout,
 ): void {
-  if (vacantRow(card)) return;
-
-  const themeText = layout.showTheme ? (card.theme?.trim() ?? '') : '';
-  const move =
-    layout.showTmReward && card.tmMoveId !== null ? getMoveById(card.tmMoveId) : undefined;
-  const badgeName = layout.showBadgeName ? (card.badgeName?.trim() ?? '') : '';
-  const rows: Array<(midY: number) => void> = [];
-  const bodyX = x + 2 * L.K2;
-  const right = x + w - 2 * L.K2;
-  const typeR = L.homeTypeMarkRadius(L.HOME_DETAIL_TYPE);
-  const markX = bodyX + L.HOME_DETAIL_ICON + L.HOME_DETAIL_GAP;
-
-  if (themeText) {
-    rows.push((midY) => {
-      ctx.save();
-      ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
-      ctx.fillStyle = shades.band;
-      ctx.textBaseline = 'middle';
-      fillTracked(ctx, 'THEME', bodyX, midY, L.HOME_MARK_TRACK);
-      const labelW = trackedWidth(ctx, 'THEME', L.HOME_MARK_TRACK);
-      const valueX = bodyX + labelW + 5 * L.K2;
-      const valueW = Math.max(8, right - valueX);
-      const themePx = fitFontSize(
-        ctx,
-        themeText,
-        valueW,
-        L.HOME_THEME_TEXT_PX,
-        L.HOME_MARK_LABEL_PX * 0.85,
-        700,
-      );
-      ctx.font = font(themePx, 700);
-      ctx.fillStyle = FG;
-      ctx.fillText(ellipsize(ctx, themeText, valueW), valueX, midY);
-      ctx.restore();
-    });
-  }
-
-  if (move) {
-    const moveShades = cardShades(move.type as TypeName);
-    rows.push((midY) => {
-      const iconY = midY - L.HOME_DETAIL_ICON / 2;
-      drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], L.HOME_DETAIL_ICON, bodyX, iconY);
-      const trailing =
-        L.HOME_DETAIL_TYPE + L.HOME_DETAIL_GAP + L.HOME_DETAIL_CHIP_W;
-      const nameW = Math.max(8, right - trailing - L.HOME_DETAIL_GAP - markX);
-      const moveUpper = move.name.toUpperCase();
-      ctx.save();
-      ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
-      ctx.fillStyle = moveShades.band;
-      ctx.textBaseline = 'middle';
-      const name = ellipsizeTracked(ctx, moveUpper, nameW, L.HOME_MARK_TRACK);
-      fillTracked(ctx, name, markX, midY, L.HOME_MARK_TRACK);
-      const typeX = markX + trackedWidth(ctx, name, L.HOME_MARK_TRACK) + L.HOME_DETAIL_GAP;
-      ctx.restore();
-      drawTypeMark(
-        ctx,
-        move.type as TypeName,
-        images,
-        typeX,
-        midY - L.HOME_DETAIL_TYPE / 2,
-        L.HOME_DETAIL_TYPE,
-        typeR,
-      );
-      const chipX = typeX + L.HOME_DETAIL_TYPE + L.HOME_DETAIL_GAP;
-      const chipY = midY - L.HOME_DETAIL_CHIP_H / 2;
-      ctx.save();
-      ctx.fillStyle = CATEGORY_COLORS[move.category];
-      roundRect(ctx, chipX, chipY, L.HOME_DETAIL_CHIP_W, L.HOME_DETAIL_CHIP_H, 2 * L.K2);
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.2 * L.K2;
-      ctx.stroke();
-      const catIcon = images.get(`/sprites/moves/${move.category}.png`);
-      if (catIcon) {
-        const iw = L.HOME_DETAIL_CHIP_W * 0.62;
-        const ih = (catIcon.naturalHeight / (catIcon.naturalWidth || 1)) * iw;
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(
-          catIcon,
-          chipX + (L.HOME_DETAIL_CHIP_W - iw) / 2,
-          chipY + (L.HOME_DETAIL_CHIP_H - ih) / 2,
-          iw,
-          ih,
-        );
-      }
-      ctx.restore();
-    });
-  }
-
-  if (badgeName) {
-    rows.push((midY) => {
-      drawHexagon(ctx, shades.type, true, L.HOME_DETAIL_ICON, bodyX, midY - L.HOME_DETAIL_ICON / 2);
-      const textX = markX;
-      const textW = Math.max(8, right - textX);
-      const badgeText = `${badgeName} Badge`.toUpperCase();
-      ctx.save();
-      ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
-      ctx.fillStyle = shades.band;
-      ctx.textBaseline = 'middle';
-      fillTracked(
-        ctx,
-        ellipsizeTracked(ctx, badgeText, textW, L.HOME_MARK_TRACK),
-        textX,
-        midY,
-        L.HOME_MARK_TRACK,
-      );
-      ctx.restore();
-    });
-  }
-
-  if (rows.length === 0) return;
+  const lines = homeDetailLines(ctx, card, shades, images, layout);
+  if (lines.length === 0) return;
 
   const innerH = L.ROW2 - 2 * L.HOME_DETAIL_PAD_Y;
   const bandH = innerH / 3;
-  const usedH = rows.length * bandH;
+  const usedH = lines.length * bandH;
   const startY = y + L.HOME_DETAIL_PAD_Y + (innerH - usedH) / 2;
 
   ctx.save();
   ctx.beginPath();
   ctx.rect(x, y, w, L.ROW2);
   ctx.clip();
-  rows.forEach((draw, i) => {
-    draw(startY + i * bandH + bandH / 2);
+  lines.forEach((line, i) => {
+    line.paint(x + DETAIL_PAD, x + w - DETAIL_PAD, startY + i * bandH + bandH / 2);
   });
   ctx.restore();
 }
@@ -1119,19 +1185,6 @@ function paintSectionPill(
     fillTracked(ctx, label, tx, y + L.BAND2 / 2, track);
   }
   ctx.restore();
-}
-
-function drawSectionRow(
-  ctx: CanvasRenderingContext2D,
-  ox: number,
-  y: number,
-  geom: L.HomeExportGeometry,
-  title: string,
-  splitTeams: boolean,
-): void {
-  for (const pill of L.homeSectionPills(ox, geom, title, splitTeams)) {
-    paintSectionPill(ctx, pill.x, y, pill.w, pill.label, pill.align);
-  }
 }
 
 function drawHomeRow(
@@ -1243,12 +1296,12 @@ function drawLeagueHome(
 ): void {
   // The picture is the league's content on white, edge to edge.
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, geom.homeW, L.homeImgH(!!name));
+  ctx.fillRect(0, 0, geom.homeW, L.homeImgH(!!name, geom.homeW));
 
   const ox = L.HPADX;
   // An unnamed league opens on its first band, so the band takes the gutter
   // above it as well as either side of it.
-  let y = L.homeTopPad(!!name);
+  let y = L.homeTopPad(!!name, geom.homeW);
 
   // --- the identity line: the league's name, and nothing else ---
   // The tool's own name stays off the picture, and so does the reading:
@@ -1274,7 +1327,10 @@ function drawLeagueHome(
     const section = L.SECTION_BEFORE[index];
     if (section) {
       if (index !== 0) y += 2;
-      drawSectionRow(ctx, ox, y, geom, section, bothTeamColumns && index === 0);
+      // Every band splits over the two team blocks; only the first names them.
+      for (const pill of L.homeSectionPills(ox, geom, section, bothTeamColumns, index === 0)) {
+        paintSectionPill(ctx, pill.x, y, pill.w, pill.label, pill.align);
+      }
       y += L.BAND2;
     }
     drawHomeRow(ctx, cards[index], index, view, layout, geom, images, ox, y);
@@ -1286,22 +1342,28 @@ function drawLeagueHome(
 
 // ---------- assembling a PNG ----------
 
+/**
+ * Wait for the export's face.
+ *
+ * Text metrics decide every fit, so the real face has to be resident before
+ * anything is measured. Without this the first export of a session measures a
+ * fallback and lays the picture out to the wrong widths.
+ */
+async function fontsReady(): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts?.ready) return;
+  try {
+    await document.fonts.ready;
+  } catch {
+    /* fall back to metrics as they are */
+  }
+}
+
 async function render(
   w: number,
   h: number,
   paint: (ctx: CanvasRenderingContext2D) => void,
 ): Promise<Blob> {
-  // Text metrics decide every fit below, so the real face has to be resident
-  // before anything is measured. Without this the first export of a session
-  // measures a fallback and lays the card out to the wrong widths.
-  if (typeof document !== 'undefined' && document.fonts?.ready) {
-    try {
-      await document.fonts.ready;
-    } catch {
-      /* fall back to metrics as they are */
-    }
-  }
-
+  await fontsReady();
   // One PNG px per layout px, so the team sprites paint at their native 96px
   // (1×). Only the iOS area cap could lower it.
   const scale = Math.min(1, Math.sqrt(MAX_CANVAS_AREA / (w * h)));
@@ -1341,11 +1403,19 @@ export async function exportLeagueHome(
   view: LeagueView,
   layout: LeagueHomeExportLayout = DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
 ): Promise<Blob> {
-  const both = layoutShowsBothTeams(layout);
-  const geom = L.homeExportGeometry(layoutShowsGymDetails(layout), both);
   const images = await loadAll(homeImageUrls(cards, view, layout));
+  // The details column fits its widest line, so measure before the canvas
+  // takes its size.
+  await fontsReady();
+  const measure = document.createElement('canvas').getContext('2d');
+  if (!measure) throw new Error('Canvas 2D context unavailable');
+  const geom = L.homeExportGeometry(
+    layoutShowsGymDetails(layout),
+    layoutShowsBothTeams(layout),
+    homeDetailsNeed(measure, cards, images, layout),
+  );
   const named = Boolean(name) && layout.showLeagueName;
-  const innerH = L.homeImgH(named);
+  const innerH = L.homeImgH(named, geom.homeW);
   const w = geom.homeW + 2 * L.FRAME;
   const h = innerH + 2 * L.FRAME;
   return render(w, h, (ctx) => {
