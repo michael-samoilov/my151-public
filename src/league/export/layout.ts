@@ -14,7 +14,7 @@
 import { localeUppercase } from '@/i18n';
 import { EXPORT_FRAME_PX } from '@/lib/exportPngShape';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
-import { pairSprite, soloSprite } from '../slotLayout';
+import { soloSprite } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
 /** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
@@ -159,6 +159,8 @@ export const FRAME = EXPORT_FRAME_PX;
 /** Showcase headings. Same two-line caps the live card paints. */
 export const ACE_HEAD = ['ACE', 'POKÉMON'];
 export const PARTNER_HEAD = ['PARTNER /', 'SHOULDERMON'];
+/** One Pokémon chosen as both the ace and the partner. */
+export const SIGNATURE_HEAD = ['SIGNATURE', 'POKÉMON'];
 
 /** Badge phrase in the same caps as ACE POKÉMON. */
 export function badgeExportPhrase(name: string): string {
@@ -170,15 +172,10 @@ export function moveExportName(name: string): string {
   return localeUppercase(name);
 }
 
-/**
- * Ace/partner edge in export pixels: 1×, 2×, or 3× of the team cell (96).
- * The live card sizes these as n×SPRITE_REM rem so the fit zoom paints n×96.
- * Export rem is 16×K, so the same n lands on n×96 canvas px. css×K (~118)
- * is not an integer scale of the 96px asset and aliases it.
- */
-export function pairExportSprite(w: number, h: number): number {
-  return pairSprite(w, h, 16 * K);
-}
+/** The partner: one team sprite, at the team's own 1×. */
+export const PARTNER_SPRITE = 96;
+/** The ace: exactly twice the partner. */
+export const ACE_SPRITE = 2 * PARTNER_SPRITE;
 
 /**
  * One ace or one partner, centered. Largest of 1×, 2×, 3× of 96 that still
@@ -402,6 +399,118 @@ export function slotX(from: number, to: number): { left: number; width: number }
 export function showcaseBox(): { left: number; top: number; width: number; height: number } {
   const { left, width } = slotX(1, 3);
   return { left, top: rowTop(1) + INY, width, height: 4 * ROW - 2 * INY };
+}
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * The ace's and the partner's squares, in picture pixels, for a grid whose
+ * top-left corner is at (`ox`, `oy`).
+ *
+ * The partner sits in the panel's bottom-right cell, centred on column 3, so
+ * it stands over the team sprite below it. That centring leaves a gap to the
+ * panel's right edge, and the partner keeps the same gap to the bottom edge.
+ *
+ * The ace is centred on the panel's top-left 2×2 cells. Inside the cell
+ * insets those cells are 178px tall. A centred 192px square would start 7px
+ * above the panel, and the panel would clip a sprite drawn up to the top of
+ * its frame, such as Celesteela or Raging Bolt. So the ace moves down until
+ * it keeps the partner's gap to the top edge. Its left edge is rounded to a
+ * whole pixel, which keeps its 2× pixels square.
+ */
+export function showcaseSquares(ox: number, oy: number): { ace: Box; partner: Box } {
+  const box = showcaseBox();
+  const partnerCx = 2.5 * COL;
+  const gap = box.left + box.width - (partnerCx + PARTNER_SPRITE / 2);
+  const partner = {
+    x: ox + partnerCx - PARTNER_SPRITE / 2,
+    y: oy + box.top + box.height - gap - PARTNER_SPRITE,
+    w: PARTNER_SPRITE,
+    h: PARTNER_SPRITE,
+  };
+  const zoneCy = (rowTop(1) + rowTop(2) + ROW) / 2;
+  const aceCy = Math.max(zoneCy, box.top + gap + ACE_SPRITE / 2);
+  const ace = {
+    x: Math.round(ox + COL - ACE_SPRITE / 2),
+    y: Math.round(oy + aceCy - ACE_SPRITE / 2),
+    w: ACE_SPRITE,
+    h: ACE_SPRITE,
+  };
+  return { ace, partner };
+}
+
+/** Between the ace and its caption under it: the in-app design's 0.0625rem. */
+export const CAPTION_GAP_Y = 0.0625 * 16 * K;
+/** Between the partner and its caption to its left: the in-app design's 0.1875rem. */
+export const CAPTION_GAP_X = 0.1875 * 16 * K;
+/**
+ * The smallest a caption name shrinks to before it takes an ellipsis: the
+ * TM and BADGE labels' size, the smallest type the card paints. The in-app
+ * design floors its captions at those labels' size too.
+ */
+export const CAPTION_NAME_MIN_PX = MARK_LABEL_PX;
+/** How far past a caption line's ink the seam fades: the in-app design's 0.125rem. */
+export const CAPTION_HALO = 0.125 * 16 * K;
+
+const TAN_30 = Math.tan(Math.PI / 6);
+const COS_30 = Math.cos(Math.PI / 6);
+
+/** How near the seam may come to a sprite's square: the in-app design's 0.25rem. */
+export const SEAM_SQUARE_CLEAR = 0.25 * 16 * K;
+
+/**
+ * The seam's strength where it runs through a caption line's halo. The seam
+ * is already the type's cell colour at 28% over white, so half of that is
+ * still a visible, unbroken line, and the letters read over it.
+ */
+export const SEAM_FADE = 0.5;
+
+/** How far across the 30° seam a point sits. Every point of one seam has one depth. */
+function depthOf(x: number, y: number): number {
+  return y + TAN_30 * x;
+}
+
+/** One side of the seam: its sprite square and its caption lines' halos. */
+export interface SeamSide {
+  square: Box;
+  lines: readonly Box[];
+}
+
+/**
+ * The seam's depth: midway between the ace's side and the partner's side.
+ *
+ * The seam rises to the right at 30°, so the ace side reaches furthest across
+ * it at each box's bottom-right corner, and the partner side at each box's
+ * top-left corner. Where no 30° line separates the two sides' captions, the
+ * seam takes the middle anyway and fades where it runs through a caption
+ * line. Either way it keeps `SEAM_SQUARE_CLEAR` off both squares.
+ */
+export function seamDepth(ace: SeamSide, partner: SeamSide): number {
+  const lo = Math.max(...[ace.square, ...ace.lines].map((b) => depthOf(b.x + b.w, b.y + b.h)));
+  const hi = Math.min(...[partner.square, ...partner.lines].map((b) => depthOf(b.x, b.y)));
+  const clear = SEAM_SQUARE_CLEAR / COS_30;
+  const min = depthOf(ace.square.x + ace.square.w, ace.square.y + ace.square.h) + clear;
+  const max = depthOf(partner.square.x, partner.square.y) - clear;
+  return Math.min(max, Math.max(min, (lo + hi) / 2));
+}
+
+/** The seam of `depth`, cut to `box`: its lower-left end first. */
+export function seamSegment(
+  box: Box,
+  depth: number,
+): { x1: number; y1: number; x2: number; y2: number } {
+  const right = box.x + box.w;
+  const bottom = box.y + box.h;
+  const yAt = (x: number) => depth - TAN_30 * x;
+  const xAt = (y: number) => (depth - y) / TAN_30;
+  const [x1, y1] = yAt(box.x) > bottom ? [xAt(bottom), bottom] : [box.x, yAt(box.x)];
+  const [x2, y2] = yAt(right) < box.y ? [xAt(box.y), box.y] : [right, yAt(right)];
+  return { x1, y1, x2, y2 };
 }
 
 export function gridHeight(): number {

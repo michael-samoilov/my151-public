@@ -30,7 +30,7 @@ import { formAt, type PowerupForm } from '../model/powerups';
 import { SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { cardShades, type CardShades } from '../theme';
 import { getMoveById, CATEGORY_COLORS, type Move } from '../moves';
-import { RING_OF_SPRITE, seamEnds, SLOT_PAD_REM } from '../slotLayout';
+import { RING_OF_SPRITE } from '../slotLayout';
 import * as L from './layout';
 import {
   DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
@@ -306,12 +306,6 @@ function capHeight(ctx: CanvasRenderingContext2D): number {
 const ACE_HEAD = L.ACE_HEAD;
 const PARTNER_HEAD = L.PARTNER_HEAD;
 
-/** The width of a two-line heading run, at the heading's own size. */
-function headWidth(ctx: CanvasRenderingContext2D, lines: string[]): number {
-  ctx.font = font(L.HEAD_PX, 800);
-  return Math.max(...lines.map((line) => trackedWidth(ctx, line, L.HEAD_TRACK)));
-}
-
 /** A two-line heading, centred on `cx`, its first line's top at `top`. */
 function drawHeading(
   ctx: CanvasRenderingContext2D,
@@ -363,43 +357,120 @@ function speciesCaps(pokemonId: number): string {
   return localeUppercase(label.pending ? pokemon.name : label.name);
 }
 
-function halfSpriteCy(mirrored: boolean, outer: number, sprite: number): number {
-  const headH = 2 * L.HEAD_LINE;
-  return mirrored ? outer - headH - sprite / 2 : outer + headH + sprite / 2;
+/** One run of a signature caption: its text and its face. */
+interface CaptionRun {
+  text: string;
+  px: number;
+  track: number;
+  colour: string;
+}
+
+/** A caption run laid out on its line. */
+interface CaptionLine extends CaptionRun {
+  /** Where the run starts. */
+  x: number;
+  /** The line box's vertical centre. */
+  cy: number;
+  /** The line box, as wide as the ink plus `CAPTION_HALO` each side. The seam fades inside it. */
+  halo: L.Box;
+}
+
+function headRun(text: string, colour: string): CaptionRun {
+  return { text, px: L.HEAD_PX, track: L.HEAD_TRACK, colour };
 }
 
 /**
- * One ace or partner cluster. Partner is the 180° CSS mirror: heading on the
- * outer corner, name toward the seam, same pad.
+ * A species name in black at the name size. A name wider than `room` shrinks
+ * to `CAPTION_NAME_MIN_PX`, and past that it takes an ellipsis.
  */
-function drawSlotHalfChrome(
-  ctx: CanvasRenderingContext2D,
-  pokemonId: number | null,
-  lines: string[],
-  mirrored: boolean,
-  shades: CardShades,
-  cx: number,
-  outer: number,
-  sprite: number,
-): void {
-  const headH = 2 * L.HEAD_LINE;
-  const colour = pokemonId !== null ? shades.band : shades.hint;
-  const headTop = mirrored ? outer - headH : outer;
-  const spriteCy = halfSpriteCy(mirrored, outer, sprite);
-  drawHeading(ctx, lines, cx, headTop, colour);
-  if (pokemonId !== null) {
-    const nameCy = mirrored
-      ? spriteCy - sprite / 2 - L.NAME_LINE / 2
-      : spriteCy + sprite / 2 + L.NAME_LINE / 2;
-    ctx.save();
-    ctx.font = font(L.NAME_PX, 800);
-    ctx.fillStyle = colour;
-    ctx.textBaseline = 'middle';
-    fillTrackedCentered(ctx, speciesCaps(pokemonId), cx, nameCy, L.NAME_TRACK);
-    ctx.restore();
-  } else {
-    drawEmptyBall(ctx, RING_OF_SPRITE * sprite, cx, spriteCy);
+function nameRun(ctx: CanvasRenderingContext2D, pokemonId: number | null, room: number): CaptionRun {
+  const text = pokemonId === null ? '' : speciesCaps(pokemonId);
+  const trackAt = (px: number) => (L.NAME_TRACK / L.NAME_PX) * px;
+  let px = L.NAME_PX;
+  ctx.font = font(px, 800);
+  while (px > L.CAPTION_NAME_MIN_PX && trackedWidth(ctx, text, trackAt(px)) > room) {
+    px = Math.max(L.CAPTION_NAME_MIN_PX, px - 0.5);
+    ctx.font = font(px, 800);
   }
+  return { text: ellipsizeTracked(ctx, text, room, trackAt(px)), px, track: trackAt(px), colour: FG };
+}
+
+/**
+ * Caption runs one heading line apart from `top`, each centred on `anchor`
+ * or ending at it. A shrunk name keeps the full line height, so the lines
+ * around it stay where they are.
+ */
+function layoutCaption(
+  ctx: CanvasRenderingContext2D,
+  runs: CaptionRun[],
+  align: 'center' | 'right',
+  anchor: number,
+  top: number,
+): CaptionLine[] {
+  return runs.map((run, i) => {
+    ctx.font = font(run.px, 800);
+    const w = trackedWidth(ctx, run.text, run.track);
+    const x = align === 'center' ? anchor - w / 2 : anchor - w;
+    // Tracking follows the last letter too, as in CSS, but it is not ink.
+    const ink = Math.max(0, w - run.track);
+    const lineTop = top + i * L.HEAD_LINE;
+    return {
+      ...run,
+      x,
+      cy: lineTop + L.HEAD_LINE / 2,
+      halo: { x: x - L.CAPTION_HALO, y: lineTop, w: ink + 2 * L.CAPTION_HALO, h: L.HEAD_LINE },
+    };
+  });
+}
+
+/** Each run's capitals centred on its line box. The cap height is the same on every engine. */
+function fillCaption(ctx: CanvasRenderingContext2D, lines: CaptionLine[]): void {
+  ctx.save();
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  for (const line of lines) {
+    ctx.font = font(line.px, 800);
+    ctx.fillStyle = line.colour;
+    fillTracked(ctx, line.text, line.x, line.cy + capHeight(ctx) / 2, line.track);
+  }
+  ctx.restore();
+}
+
+/**
+ * The seam, at full strength outside the caption halos and at `SEAM_FADE`
+ * inside them. Each part is stroked once, so the line's antialiased edges
+ * are no heavier than a single stroke's. The halos are line boxes, which
+ * never overlap, so the even-odd clip holds every point outside them.
+ */
+function strokeSeam(
+  ctx: CanvasRenderingContext2D,
+  seam: { x1: number; y1: number; x2: number; y2: number },
+  halos: L.Box[],
+  panel: L.Box,
+  colour: string,
+): void {
+  const stroke = (clip: () => void, rule: CanvasFillRule, alpha: number) => {
+    ctx.save();
+    ctx.beginPath();
+    clip();
+    ctx.clip(rule);
+    ctx.strokeStyle = colour;
+    ctx.lineWidth = L.K;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.moveTo(seam.x1, seam.y1);
+    ctx.lineTo(seam.x2, seam.y2);
+    ctx.stroke();
+    ctx.restore();
+  };
+  const halosPath = () => {
+    for (const h of halos) ctx.rect(h.x, h.y, h.w, h.h);
+  };
+  stroke(() => {
+    ctx.rect(panel.x, panel.y, panel.w, panel.h);
+    halosPath();
+  }, 'evenodd', 1);
+  if (halos.length) stroke(halosPath, 'nonzero', L.SEAM_FADE);
 }
 
 function drawShowcase(
@@ -415,8 +486,9 @@ function drawShowcase(
   const y = oy + box.top;
   const { ace, partner } = showcasePair(card);
   const filled = ace !== null || partner !== null;
-  const pad = SLOT_PAD_REM * 16 * L.K;
-  const solo = (ace === null) !== (partner === null);
+  // One Pokémon to show is a single showcase: a lone ace, a lone partner, or
+  // the same Pokémon in both slots, which is headed as the signature Pokémon.
+  const solo = (ace === null) !== (partner === null) || (ace !== null && ace === partner);
 
   ctx.save();
   ctx.fillStyle = filled ? '#ffffff' : 'rgba(255,255,255,0.65)';
@@ -446,10 +518,11 @@ function drawShowcase(
       const cx = x + box.width / 2;
       const spriteCy = top + headH + sprite / 2;
       drawShowcaseArt(ctx, id, images, cx, spriteCy, sprite, 'both');
-      drawHeading(ctx, ace !== null ? ACE_HEAD : PARTNER_HEAD, cx, top, shades.band);
+      const heading = ace === partner ? L.SIGNATURE_HEAD : ace !== null ? ACE_HEAD : PARTNER_HEAD;
+      drawHeading(ctx, heading, cx, top, shades.band);
       ctx.save();
       ctx.font = font(L.NAME_PX, 800);
-      ctx.fillStyle = shades.band;
+      ctx.fillStyle = FG;
       ctx.textBaseline = 'middle';
       fillTrackedCentered(ctx, speciesCaps(id), cx, spriteCy + sprite / 2 + L.NAME_LINE / 2, L.NAME_TRACK);
       ctx.restore();
@@ -458,63 +531,61 @@ function drawShowcase(
     return;
   }
 
-  const sprite = L.pairExportSprite(box.width, box.height);
-  const aceW = Math.max(headWidth(ctx, ACE_HEAD), sprite);
-  const partnerW = Math.max(headWidth(ctx, PARTNER_HEAD), sprite);
-  const seam = seamEnds(box.width, box.height);
-  const halves = [
-    {
-      id: ace,
-      lines: ACE_HEAD,
-      cx: x + pad + aceW / 2,
-      outer: y + pad,
-      mirrored: false,
-    },
-    {
-      id: partner,
-      lines: PARTNER_HEAD,
-      cx: x + box.width - pad - partnerW / 2,
-      outer: y + box.height - pad,
-      mirrored: true,
-    },
+  // The ace at 2× over the partner at 1×, each captioned, and the 30° seam
+  // between the two sides. The captions are laid out first, because the
+  // seam runs between them.
+  const panel = { x, y, w: box.width, h: box.height };
+  const squares = L.showcaseSquares(ox, oy);
+  const headColour = (id: number | null) => (id !== null ? shades.band : shades.hint);
+  const aceSq = squares.ace;
+  const aceLines = layoutCaption(
+    ctx,
+    [headRun(ACE_HEAD.join(' '), headColour(ace)), nameRun(ctx, ace, aceSq.w)],
+    'center',
+    aceSq.x + aceSq.w / 2,
+    aceSq.y + aceSq.h + L.CAPTION_GAP_Y,
+  );
+  const partnerSq = squares.partner;
+  const partnerRight = partnerSq.x - L.CAPTION_GAP_X;
+  const partnerRuns = [
+    ...PARTNER_HEAD.map((line) => headRun(line, headColour(partner))),
+    nameRun(ctx, partner, partnerRight - x - L.CAPTION_GAP_X),
   ];
+  const partnerLines = layoutCaption(
+    ctx,
+    partnerRuns,
+    'right',
+    partnerRight,
+    partnerSq.y + (partnerSq.h - partnerRuns.length * L.HEAD_LINE) / 2,
+  );
+  const halos = (lines: CaptionLine[]) => lines.filter((line) => line.text).map((line) => line.halo);
+  const depth = L.seamDepth(
+    { square: aceSq, lines: halos(aceLines) },
+    { square: partnerSq, lines: halos(partnerLines) },
+  );
 
-  for (const half of halves) {
-    if (half.id === null) continue;
-    drawShowcaseArt(
-      ctx,
-      half.id,
-      images,
-      half.cx,
-      halfSpriteCy(half.mirrored, half.outer, sprite),
-      sprite,
-      'ball',
-    );
+  const halves = [
+    { id: ace, square: aceSq },
+    { id: partner, square: partnerSq },
+  ];
+  for (const { id, square } of halves) {
+    if (id === null) continue;
+    drawShowcaseArt(ctx, id, images, square.x + square.w / 2, square.y + square.h / 2, square.w, 'ball');
   }
-
-  ctx.save();
-  ctx.strokeStyle = shades.dash;
-  ctx.lineWidth = L.K;
-  ctx.beginPath();
-  ctx.moveTo(x + seam.x1 * box.width, y + seam.y1 * box.height);
-  ctx.lineTo(x + seam.x2 * box.width, y + seam.y2 * box.height);
-  ctx.stroke();
-  ctx.restore();
-
-  for (const half of halves) {
-    if (half.id !== null) {
-      drawShowcaseArt(
-        ctx,
-        half.id,
-        images,
-        half.cx,
-        halfSpriteCy(half.mirrored, half.outer, sprite),
-        sprite,
-        'sprite',
-      );
-    }
-    drawSlotHalfChrome(ctx, half.id, half.lines, half.mirrored, shades, half.cx, half.outer, sprite);
+  strokeSeam(
+    ctx,
+    L.seamSegment(panel, depth),
+    [...halos(aceLines), ...halos(partnerLines)],
+    panel,
+    shades.dash,
+  );
+  for (const { id, square } of halves) {
+    const cx = square.x + square.w / 2;
+    const cy = square.y + square.h / 2;
+    if (id !== null) drawShowcaseArt(ctx, id, images, cx, cy, square.w, 'sprite');
+    else drawEmptyBall(ctx, RING_OF_SPRITE * square.w, cx, cy);
   }
+  fillCaption(ctx, [...aceLines, ...partnerLines]);
   ctx.restore();
 }
 

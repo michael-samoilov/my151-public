@@ -26,29 +26,74 @@ describe('export layout', () => {
     }
   });
 
-  it('keeps both showcase blocks inside the slot', () => {
+  it('puts the ace and the partner on whole pixels, inside the panel', () => {
+    // Same hatching as a team sprite on a half pixel, at twice the size.
+    const ox = L.FRAME + L.PADX;
+    const oy = L.gridTop();
     const box = L.showcaseBox();
-    const head = 2 * L.HEAD_LINE;
-    const pad = 0.5 * 16 * L.K;
-    const sprite = L.pairExportSprite(box.width, box.height);
-    const aceTop = pad;
-    const aceBottom = pad + head + sprite;
-    const partnerTop = box.height - pad - head - sprite;
-    const partnerBottom = box.height - pad;
-    expect(aceTop).toBeGreaterThanOrEqual(0);
-    expect(partnerBottom).toBeLessThanOrEqual(box.height);
-    expect(partnerTop - aceBottom).toBeGreaterThan(0);
-    expect(sprite % 96).toBe(0);
-    expect(sprite).toBeLessThan(box.width);
-    expect(sprite).toBeLessThan(box.height);
+    const { ace, partner } = L.showcaseSquares(ox, oy);
+    expect(ace.w).toBe(2 * partner.w);
+    for (const sq of [ace, partner]) {
+      expect(Number.isInteger(sq.x)).toBe(true);
+      expect(Number.isInteger(sq.y)).toBe(true);
+      expect(sq.x).toBeGreaterThanOrEqual(ox + box.left);
+      expect(sq.y).toBeGreaterThanOrEqual(oy + box.top);
+      expect(sq.x + sq.w).toBeLessThanOrEqual(ox + box.left + box.width);
+      expect(sq.y + sq.h).toBeLessThanOrEqual(oy + box.top + box.height);
+    }
   });
 
-  it('draws the solo showcase sprite at a whole multiple of the source, larger than the pair', () => {
+  it('runs the seam clear of both sprites and inside the panel, for any caption width', () => {
+    // The captions change with every name and locale, so sweep their widths:
+    // the ace's two lines centred under it, the partner's three ending at its
+    // left. Where a 30° line fits between the captions, the seam crosses none.
+    const box = L.showcaseBox();
+    const panel = { x: box.left, y: box.top, w: box.width, h: box.height };
+    const { ace, partner } = L.showcaseSquares(0, 0);
+    const lineBox = (x: number, y: number, w: number) => ({ x, y, w, h: L.HEAD_LINE });
+    const depth = (x: number, y: number) => y + Math.tan(Math.PI / 6) * x;
+    const clear = L.SEAM_SQUARE_CLEAR / Math.cos(Math.PI / 6);
+    for (let aceW = 0; aceW <= ace.w; aceW += 8) {
+      for (let partnerW = 0; partnerW <= partner.x - panel.x; partnerW += 8) {
+        const aceCx = ace.x + ace.w / 2;
+        const aceLines = [0, 1].map((i) => lineBox(aceCx - aceW / 2, ace.y + ace.h + i * L.HEAD_LINE, aceW));
+        const top = partner.y + partner.h / 2 - 1.5 * L.HEAD_LINE;
+        const partnerLines = [0, 1, 2].map((i) => lineBox(partner.x - partnerW, top + i * L.HEAD_LINE, partnerW));
+        const d = L.seamDepth({ square: ace, lines: aceLines }, { square: partner, lines: partnerLines });
+        expect(d - depth(ace.x + ace.w, ace.y + ace.h)).toBeGreaterThanOrEqual(clear - 1e-9);
+        expect(depth(partner.x, partner.y) - d).toBeGreaterThanOrEqual(clear - 1e-9);
+        const seg = L.seamSegment(panel, d);
+        for (const [sx, sy] of [[seg.x1, seg.y1], [seg.x2, seg.y2]]) {
+          expect(sx).toBeGreaterThanOrEqual(panel.x - 1e-9);
+          expect(sx).toBeLessThanOrEqual(panel.x + panel.w + 1e-9);
+          expect(sy).toBeGreaterThanOrEqual(panel.y - 1e-9);
+          expect(sy).toBeLessThanOrEqual(panel.y + panel.h + 1e-9);
+          expect(depth(sx, sy)).toBeCloseTo(d, 9);
+        }
+        // The squares come first: a seam that clears both captions only
+        // has to exist where it also clears both squares.
+        const aceReach = Math.max(
+          depth(ace.x + ace.w, ace.y + ace.h) + clear,
+          ...aceLines.map((b) => depth(b.x + b.w, b.y + b.h)),
+        );
+        const partnerReach = Math.min(
+          depth(partner.x, partner.y) - clear,
+          ...partnerLines.map((b) => depth(b.x, b.y)),
+        );
+        if (aceReach <= partnerReach) {
+          expect(d).toBeGreaterThanOrEqual(aceReach);
+          expect(d).toBeLessThanOrEqual(partnerReach);
+        }
+      }
+    }
+  });
+
+  it('draws the solo showcase sprite at a whole multiple of the source, larger than the partner', () => {
     const box = L.showcaseBox();
     const sprite = L.soloExportSprite(box.width, box.height);
     expect(sprite % 96).toBe(0);
     expect(sprite).toBeGreaterThanOrEqual(96);
-    expect(sprite).toBeGreaterThan(L.pairExportSprite(box.width, box.height));
+    expect(sprite).toBeGreaterThan(L.PARTNER_SPRITE);
     const pad = 0.5 * 16 * L.K;
     expect(sprite).toBeLessThanOrEqual(box.width - 2 * pad);
     expect(2 * L.HEAD_LINE + L.NAME_LINE + sprite + 2 * pad).toBeLessThanOrEqual(box.height);
