@@ -563,10 +563,10 @@ export function buildDashboard(
   // Every record-agnostic aggregate, once per tool. `all` is one record per
   // browser with both tools' sessions merged, so a person who used both is
   // one user with one set of days — not two.
-  const dexAgg = aggregate(records, now, dexIn);
-  const leagueAgg = aggregate(leagueRecords, now, leagueIn);
+  const dexAgg = aggregate(records, now, dexIn, start);
+  const leagueAgg = aggregate(leagueRecords, now, leagueIn, start);
   const merged = mergeByCid([records, leagueRecords]);
-  const allAgg = aggregate(merged, now, within(merged, active));
+  const allAgg = aggregate(merged, now, within(merged, active), start);
   const byTool: Record<'dex' | 'league' | 'all', Aggregates> = {
     dex: dexAgg,
     league: leagueAgg,

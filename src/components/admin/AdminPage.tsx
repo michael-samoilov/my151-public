@@ -1668,7 +1668,11 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
 type Detail = { kind: 'dex' | 'league'; cid: string } | { kind: 'picks'; tool: 'dex' | 'league' };
 
 export function AdminPage() {
+  // `demo` shows the bundled fixtures even on a browser with a saved token,
+  // and leaves that token in storage for the next plain `?admin`.
+  const [demo] = useState(() => new URLSearchParams(window.location.search).has('demo'));
   const [token, setToken] = useState<string | null>(() => {
+    if (demo) return null;
     try {
       return localStorage.getItem(TOKEN_KEY);
     } catch {
@@ -1785,7 +1789,7 @@ export function AdminPage() {
   );
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).has('demo') && !initialToken) {
+    if (demo) {
       void Promise.all([
         import('./__fixtures__/sampleResponse'),
         import('./__fixtures__/sampleSearchPerformance'),
@@ -1798,7 +1802,7 @@ export function AdminPage() {
       return;
     }
     if (initialToken) void load(initialToken, loadRange());
-  }, [initialToken, load]);
+  }, [demo, initialToken, load]);
 
   const loadMore = useCallback(
     async (limit: number) => {
@@ -1923,7 +1927,7 @@ export function AdminPage() {
 
   const signOut = useCallback(() => {
     try {
-      localStorage.removeItem(TOKEN_KEY);
+      if (!demo) localStorage.removeItem(TOKEN_KEY);
     } catch {
       // localStorage may be unavailable
     }
@@ -1934,7 +1938,7 @@ export function AdminPage() {
     setSearchPerformance(null);
     setSearchError(null);
     setTokenInput('');
-  }, []);
+  }, [demo]);
 
   if (!authed) {
     return (
@@ -2153,9 +2157,7 @@ export function AdminPage() {
                 <div className="flex flex-wrap gap-x-6 gap-y-3">
                   <Kpi emphasis value={slice.users} label="Browsers" />
                   <Kpi value={slice.retention.returning} label="Returning" />
-                  {data.league && (
-                    <Kpi value={data.league.exportedCard + data.league.exportedLeague} label="Exports" />
-                  )}
+                  {data.tools && <Kpi value={data.tools.leagueExporters} label="Exports" />}
                 </div>
               </Panel>
             )}
