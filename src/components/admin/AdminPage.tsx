@@ -2153,9 +2153,7 @@ export function AdminPage() {
                 <div className="flex flex-wrap gap-x-6 gap-y-3">
                   <Kpi emphasis value={slice.users} label="Browsers" />
                   <Kpi value={slice.retention.returning} label="Returning" />
-                  {data.league && (
-                    <Kpi value={data.league.exportedCard + data.league.exportedLeague} label="Exports" />
-                  )}
+                  {data.tools && <Kpi value={data.tools.leagueExporters} label="Exports" />}
                 </div>
               </Panel>
             )}

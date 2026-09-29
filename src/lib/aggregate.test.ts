@@ -493,8 +493,7 @@ describe('leagueUsageFunnel', () => {
       { label: 'Full league', count: 2 },
     ]);
     expect(f.fullLeague).toBe(2);
-    expect(f.exportedLeague).toBe(1);
-    expect(f.exportedCard).toBe(2);
+    expect(f.exports).toEqual({ league: 0, both: 1, card: 2 });
     expect(f.keptPrivate).toBe(0);
     expect(f.gymBuckets.reduce((s, p) => s + p.count, 0)).toBe(f.oneGymFull);
   });
@@ -506,21 +505,31 @@ describe('leagueUsageFunnel', () => {
     );
     expect(f.fullLeague).toBe(2);
     expect(f.keptPrivate).toBe(1);
-    expect(f.gymBuckets.find((b) => b.label === 'Full league')).toEqual({
-      label: 'Full league',
-      count: 2,
-      exportedLeague: 1,
-      exportedCard: 0,
-    });
+    expect(f.gymBuckets.find((b) => b.label === 'Full league')?.exports).toEqual({ league: 1, both: 0, card: 0 });
+  });
+
+  it('puts each full-league browser in one export end or Kept private', () => {
+    const f = leagueUsageFunnel(
+      [
+        row(14, { exportsLeague: 1 }),
+        row(14, { exportsLeague: 2, exportsCard: 1 }),
+        row(14, { exportsLeague: 1, exportsCard: 3 }),
+        row(14, { exportsCard: 1 }),
+        row(14),
+      ],
+      5,
+    );
+    const full = f.gymBuckets.find((b) => b.label === 'Full league');
+    expect(full?.exports).toEqual({ league: 1, both: 2, card: 1 });
+    expect(full!.exports.league + full!.exports.both + full!.exports.card + f.keptPrivate).toBe(f.fullLeague);
   });
 
   it('counts exports from an unfinished gym bucket', () => {
     const f = leagueUsageFunnel([row(3, { exportsCard: 1 }), row(3, { exportsLeague: 1 })], 2);
-    expect(f.gymBuckets).toEqual([
-      { label: '1–4 gyms', count: 2, exportedLeague: 1, exportedCard: 1 },
+    expect(f.gymBuckets.map((b) => ({ label: b.label, count: b.count, exports: b.exports }))).toEqual([
+      { label: '1–4 gyms', count: 2, exports: { league: 1, both: 0, card: 1 } },
     ]);
-    expect(f.exportedLeague).toBe(1);
-    expect(f.exportedCard).toBe(1);
+    expect(f.exports).toEqual({ league: 1, both: 0, card: 1 });
   });
 
   it('does not count a zero-seat record as placed', () => {
