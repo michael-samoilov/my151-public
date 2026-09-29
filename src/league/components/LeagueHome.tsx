@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   useDraggable,
@@ -24,6 +24,16 @@ import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { deriveRow, leagueSlotIsEmpty, moveLeagueSlots } from '../model/engine';
 import { cardShades } from '../theme';
 import { fitStyle, useFitScale } from '../useFitScale';
+import {
+  fitHomeLayout,
+  HOME_SPRITE_REM,
+  homeHeightRem,
+  homeMetrics,
+  HomeMetricsContext,
+} from '../homeLayout';
+import { screenRule, spriteRendering, spriteScreen, SPRITE_RENDERING } from '../spriteScale';
+import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
+import { useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import {
   emptyCard,
@@ -34,6 +44,7 @@ import {
 } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
+import { LeagueRosterNudge } from './LeagueFunnelNudge';
 
 /**
  * The league home: the card, zoomed out. One row per slot, led by the glyph
@@ -46,16 +57,9 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
  * sits on the right and carries the row's own affordance.
  */
 
-const ROW_H = 2.75; // 44px
-const BAND_H = 1.25;
+// Row, band, and sprite sizes live in `../homeLayout`, which spends a short
+// window's height on them.
 const GREY = '#a3a3a3';
-/**
- * Sprite size, as a share of the row. The gym card draws its sprites at 96%
- * of its row height and lets them overhang the cell — that overhang is what
- * makes a sprite read as a creature rather than an icon — so the summary
- * takes the same proportion instead of the timid 77% it had.
- */
-const SPRITE_REM = 2.625;
 const BAND_RED = '#dc2626';
 /** The widest team any row holds — the team block's column count. */
 const TEAM_COLS = 6;
@@ -127,29 +131,30 @@ function SlotGlyph({ index, cell }: { index: number; cell: string }) {
  * and so does the copy held under the pointer during a drag — one component
  * so the held copy cannot drift from the thing it is a copy of.
  */
-function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
+function SlotRowFace({ position, card, active }: { position: number; card: GymCard; active: boolean }) {
   const view = useLeagueStore((s) => s.view);
-  const shades = card.type ? cardShades(card.type) : null;
+  const shades = card.type || active ? cardShades(card.type) : null;
   const cellColour = shades ? shades.cell : GREY;
   // The gym challenge reads each trainer at the row you meet them; the
   // rematch view reads every trainer at their last row instead.
   const row = view === 'rematch' ? BOSS_ROW : slotRow(position);
   const cells = deriveRow(card.lines, row, row === BOSS_ROW ? legendsOf(card) : []);
   const filled = card.lines.length > 0;
+  const m = useContext(HomeMetricsContext);
 
   return (
     <div
       className="grid w-full items-center rounded-[0.3125rem] text-left"
       style={{
         gridTemplateColumns: `2.75rem 2rem repeat(${TEAM_COLS + 1}, minmax(0, 1fr))`,
-        height: `${ROW_H}rem`,
+        height: `${m.rowRem}rem`,
         background: shades ? shades.base : '#ffffff',
         boxShadow: 'inset 0 1px 0 #f0f0f1',
       }}
     >
         <span
           className="mx-[0.1875rem] flex items-center justify-center self-center rounded-[0.3125rem]"
-          style={{ height: `${ROW_H - 0.625}rem`, background: cellColour }}
+          style={{ height: `${m.rowRem - 0.625}rem`, background: cellColour }}
         >
           <SlotGlyph index={position} cell={cellColour} />
         </span>
@@ -179,7 +184,16 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
                   src={form ? `/sprites/pokemon/${form.id}.png` : p.sprite}
                   alt={form ? form.label : p.name}
                   className="max-w-none"
-                  style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: 'pixelated' }}
+                  style={{
+                    width: `${HOME_SPRITE_REM}rem`,
+                    height: `${HOME_SPRITE_REM}rem`,
+                    imageRendering: SPRITE_RENDERING,
+                    // A trimmed row reserves less than the sprite, and the
+                    // image hangs over its edges. A grid item paints after
+                    // every row's background, so it lands above the rows and
+                    // bands beside it with no z-index.
+                    ...(m.trimRem > 0 ? { margin: `-${m.trimRem}rem` } : null),
+                  }}
                 />
               ) : filled ? (
                 <EmptySlotBall size={18} />
@@ -213,6 +227,7 @@ function SlotRow({ position, card, held, canDrag }: {
   canDrag: boolean;
 }) {
   const openCardPage = useLeagueUi((s) => s.openCardPage);
+  const active = useLeagueUi((s) => s.openCard === position);
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id: `slot-${position}`,
     data: { index: position },
@@ -239,10 +254,10 @@ function SlotRow({ position, card, held, canDrag }: {
             className="origin-center overflow-hidden rounded-[0.3125rem] shadow-lg ring-1 ring-black/10"
             style={{ transform: `scale(${HELD_ROW_SCALE})` }}
           >
-            <SlotRowFace position={position} card={card} />
+            <SlotRowFace position={position} card={card} active={active} />
           </div>
         ) : (
-          <SlotRowFace position={position} card={card} />
+          <SlotRowFace position={position} card={card} active={active} />
         )}
       </button>
     </div>
@@ -257,11 +272,23 @@ export function LeagueHome() {
   const sensors = useDragSensors();
   const fitRef = useRef<HTMLDivElement>(null);
   const isDesktop = useIsDesktop();
+  const dpr = useDevicePixelRatio();
+  const screen = spriteScreen(isDesktop, dpr);
+  const rule = screenRule(screen);
+  const rootPx = getAppliedRootFontSizePx();
   const fit = useFitScale(
     fitRef,
     0.55,
-    isDesktop ? { baseWidthRem: 26, spriteRem: 2.625, targetSpritePx: 96 } : undefined,
+    rule.homeCeilingPx
+      ? { baseWidthRem: 26, spriteRem: HOME_SPRITE_REM, targetSpritePx: rule.homeCeilingPx(dpr) }
+      : undefined,
+    {
+      heightRem: (budgetRem) => homeHeightRem(fitHomeLayout(budgetRem, rootPx), rootPx),
+      holds: rule.holds,
+    },
   );
+  const metrics = homeMetrics(fitHomeLayout(fit.budgetRem, rootPx));
+  const rendering = spriteRendering(screen, HOME_SPRITE_REM * rootPx * fit.scale, dpr);
   const [preview, setPreview] = useState<{ from: number; to: number } | null>(null);
   const cards = useLeagueStore((s) => s.cards);
   const blank = cards.every((c) => leagueSlotIsEmpty(c));
@@ -319,14 +346,23 @@ export function LeagueHome() {
         setPreview(null);
       }}
     >
-      <div ref={fitRef} style={fitStyle(fit)}>
-        <div data-lg-league-root className="rounded-2xl bg-card p-[0.6875rem] shadow-elevated">
+      <HomeMetricsContext.Provider value={metrics}>
+      <div ref={fitRef} style={fitStyle(fit, rendering)}>
+        <div
+          data-lg-league-root
+          className="rounded-2xl bg-card shadow-elevated"
+          style={{ padding: `${metrics.padRem}rem` }}
+        >
           {displayCards.map((card, position) => (
             <div key={position}>
               {SECTION_BEFORE[position] && (
                 <div
-                  className={cn('flex items-center rounded-[0.3125rem] px-2 text-white', position > 0 && 'mt-px')}
-                  style={{ height: `${BAND_H}rem`, background: BAND_RED }}
+                  className="flex items-center rounded-[0.3125rem] px-2 text-white"
+                  style={{
+                    height: `${metrics.bandRem}rem`,
+                    marginTop: position > 0 ? metrics.gapPx : 0,
+                    background: BAND_RED,
+                  }}
                 >
                   <b className="text-[0.5625rem] font-extrabold tracking-[0.07em]">{SECTION_BEFORE[position]}</b>
                 </div>
@@ -342,24 +378,40 @@ export function LeagueHome() {
         </div>
         <div
           data-fit-tail
-          className="px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground"
+          className="px-[0.375rem] text-[0.625rem] leading-[1.35] text-muted-foreground"
+          style={{ paddingTop: `${metrics.hintPadRem}rem` }}
         >
-          <div className="flex items-start gap-[0.3125rem]">
-            <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
-            <span className="min-w-0 truncate">Drag a row to reorder the league</span>
-          </div>
-          <div className="mt-[0.125rem] flex items-start gap-[0.3125rem]">
-            {blank ? (
-              <Plus className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
-            ) : (
-              <ChevronRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
-            )}
-            <span className="min-w-0 truncate">
-              {blank ? 'Tap a row to add a trainer' : 'Tap a row to open its trainer card'}
-            </span>
-          </div>
+          {metrics.hints === 1 ? (
+            <div className="flex items-start gap-[0.3125rem]">
+              <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
+              <span className="min-w-0 truncate">
+                {blank ? 'Drag a row to reorder · tap a row to add a trainer' : 'Drag a row to reorder · tap a row to open its card'}
+              </span>
+            </div>
+          ) : metrics.hints === 2 ? (
+            <>
+              <div className="flex items-start gap-[0.3125rem]">
+                <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
+                <span className="min-w-0 truncate">Drag a row to reorder the league</span>
+              </div>
+              <div className="mt-[0.125rem] flex items-start gap-[0.3125rem]">
+                {blank ? (
+                  <Plus className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
+                ) : (
+                  <ChevronRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
+                )}
+                <span className="min-w-0 truncate">
+                  {blank ? 'Tap a row to add a trainer' : 'Tap a row to open its trainer card'}
+                </span>
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
+      {/* After the fitted block, not in its tail: the popup keeps its own
+          size, and the fit reserves its height. */}
+      <LeagueRosterNudge fit={fit} />
+      </HomeMetricsContext.Provider>
     </DndContext>
   );
 }

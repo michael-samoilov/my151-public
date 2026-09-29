@@ -1,11 +1,9 @@
-import { useMemo, useState } from 'react';
-import { Panel, Seg } from '@/components/admin/ui';
-import { useECharts, cssVar, topTooltip, type EChartsOption } from './useECharts';
-import { tipDataIndex } from './scrubPlot';
+import { useMemo } from 'react';
+import { Panel } from '@/components/admin/ui';
+import { useECharts, cssVar, type EChartsOption } from './useECharts';
+import { rangeStart, type DashboardRange } from '../../../../api/_range';
 import {
-  CHART_RANGE_PRESETS,
   chartDailyValues,
-  chartRangeWindowMs,
   chartWeeklyValues,
   dailyWeekdayTicks,
   extendThroughToday,
@@ -18,7 +16,6 @@ import {
   sliceLastUtcDays,
   splitProvisional,
   windowCounts,
-  type ChartRangeKey,
   type DailyPoint,
   type HourlyPoint,
 } from './trendSeries';
@@ -124,7 +121,7 @@ function TrendChart({
   const counts = windowCounts(series);
   const scrubLabel = (i: number) => {
     const w = weekly[i];
-    return `${labels[i]} · <b>${daily[i]}</b> daily${w != null ? ` · <b>${w}</b> weekly` : ''}`;
+    return [labels[i], `<b>${daily[i]}</b> daily`, ...(w != null ? [`<b>${w}</b> weekly`] : [])];
   };
 
   const ref = useECharts(
@@ -140,17 +137,10 @@ function TrendChart({
       return {
         animation: false,
         grid: { left: GRID_LEFT, right, top: GRID_TOP, bottom: GRID_BOTTOM },
-        tooltip: {
-          ...topTooltip(el),
-          trigger: 'axis',
-          axisPointer: { type: 'none' },
-          formatter: (params: unknown) => scrubLabel(tipDataIndex(params)),
-        },
         xAxis: {
           type: 'category',
           data: labels,
           boundaryGap: false,
-          axisPointer: { show: false },
           z: 0,
           axisLine: { lineStyle: { color: grid } },
           axisTick: { show: false },
@@ -292,7 +282,7 @@ function TrendChart({
       };
     },
     [series, nowMs, historyOriginDay],
-    { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
+    { scrub: { count: labels.length, label: scrubLabel } },
   );
 
   if (series.length < 2) {
@@ -304,7 +294,7 @@ function TrendChart({
   return (
     <div
       ref={ref}
-      className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
+      className="h-[180px] w-full overflow-visible md:h-[220px]"
       role="img"
       aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with trailing 7-day unique active users. Last 24 hours ${counts.hours24}${counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}.`}
     />
@@ -325,7 +315,7 @@ function UniqueUsersLineChart({
   values: number[];
   axisLabels: string[];
   showTick: (i: number, last: number) => boolean;
-  scrubLabel: (i: number) => string;
+  scrubLabel: (i: number) => string[];
   ariaLabel: string;
   seriesName: 'hourly' | 'daily';
   provisional: boolean;
@@ -344,17 +334,10 @@ function UniqueUsersLineChart({
       return {
         animation: false,
         grid: { left: GRID_LEFT, right, top: GRID_TOP, bottom: GRID_BOTTOM },
-        tooltip: {
-          ...topTooltip(el),
-          trigger: 'axis',
-          axisPointer: { type: 'none' },
-          formatter: (params: unknown) => scrubLabel(tipDataIndex(params)),
-        },
         xAxis: {
           type: 'category',
           data: axisLabels,
           boundaryGap: false,
-          axisPointer: { show: false },
           axisLine: { lineStyle: { color: grid } },
           axisTick: { show: false },
           axisLabel: {
@@ -412,7 +395,7 @@ function UniqueUsersLineChart({
       };
     },
     [source, seriesName, provisional, counts.hours24],
-    { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
+    { scrub: { count: axisLabels.length, label: scrubLabel } },
   );
 
   if (values.length < 2) {
@@ -421,7 +404,7 @@ function UniqueUsersLineChart({
   return (
     <div
       ref={ref}
-      className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
+      className="h-[180px] w-full overflow-visible md:h-[220px]"
       role="img"
       aria-label={ariaLabel}
     />
@@ -447,7 +430,7 @@ function HourlyTrendChart({
       values={values}
       axisLabels={hourLabels}
       showTick={(i) => i === 0 || i === last || i % 6 === 0}
-      scrubLabel={(i) => `${hourLabels[i]} · <b>${values[i]}</b> hourly`}
+      scrubLabel={(i) => [hourLabels[i], `<b>${values[i]}</b> hourly`]}
       ariaLabel={`Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}.`}
       seriesName="hourly"
       provisional={lastPointIsCurrentHour(series, nowMs)}
@@ -478,7 +461,7 @@ function DailyWeekdayChart({
       values={values}
       axisLabels={axisLabels}
       showTick={(i) => tickAt.has(i)}
-      scrubLabel={(i) => `${fmtWeekday(series[i].day)} · <b>${values[i]}</b> daily`}
+      scrubLabel={(i) => [fmtWeekday(series[i].day), `<b>${values[i]}</b> daily`]}
       ariaLabel={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}. ${weekdayList}.`}
       seriesName="daily"
       provisional={lastPointIsToday(series, nowMs)}
@@ -492,17 +475,15 @@ export function ActiveUsersPanel({
   series,
   hourly,
   nowMs,
+  range,
 }: {
   series: DailyPoint[];
   hourly: HourlyPoint[];
   nowMs: number;
+  range: DashboardRange;
 }) {
-  const [range, setRange] = useState<ChartRangeKey>('all');
   const padded = useMemo(() => extendThroughToday(series, nowMs), [series, nowMs]);
-  const visible = useMemo(
-    () => sliceActivityRange(padded, nowMs, chartRangeWindowMs(range)),
-    [padded, nowMs, range],
-  );
+  const visible = useMemo(() => sliceActivityRange(padded, rangeStart(range, nowMs)), [padded, nowMs, range]);
   const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);
   const daily7 = useMemo(() => sliceLastUtcDays(padded, nowMs, 7), [padded, nowMs]);
   const counts = windowCounts(padded);
@@ -536,14 +517,6 @@ export function ActiveUsersPanel({
       title="Active users"
       legend={<span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">{legend}</span>}
     >
-      <div className="-mt-1 mb-1.5">
-        <Seg
-          ariaLabel="Chart range"
-          options={CHART_RANGE_PRESETS.map((p) => ({ key: p.key, label: p.label }))}
-          value={range}
-          onChange={setRange}
-        />
-      </div>
       {range === '24h' ? (
         <HourlyTrendChart series={hourly24} counts={counts} nowMs={nowMs} />
       ) : range === '7d' ? (

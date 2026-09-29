@@ -49,7 +49,15 @@ shows a `[data-filter-chip="my-dex"]` chip, and its tiles are
 - `league-hover`: a column wash on desktop hover, and none left behind on touch.
 - `league-home`: slot moves on the home (fill, displace, playlist order).
 - `gym-card-export`: the card export preview, and ace, TM, and badge fit.
-- `league-funnel`: the card and roster nudges (`[data-testid="league-nudge"]`).
+- `league-funnel`: the export nudges (`[data-testid="league-nudge"]`). Its
+  `data-league-nudge` is `card` for a full trainer card, `league` for eight
+  gym leaders with a card still empty, and `complete` for every card filled.
+  The two roster popups never cover a summary row: `data-nudge-placement`
+  is `beside` where the pane has room right of the summary (a desktop) and
+  `below` elsewhere, where the popup joins the page flow and the fit shrinks
+  the summary to make room. The league Export button carries
+  `data-nudge-pulse` while one shows. It also loads a full v3 save that saw the eight-gym popup and checks the
+  store: version 4, `complete` celebrated, and no popup.
 
 The oracle is the store: `state.cards[i].lines[j].branch` and `.boundaries`,
 and `.powerups[row]`.
@@ -76,10 +84,21 @@ and `.powerups[row]`.
 - Headless Firefox reports no hover-capable pointer, so
   `league-hover:desktop-column-wash` skips on Gecko by name. A desktop
   browser with a mouse is the proof.
-- At desktop width every league sprite draws at a non-integer scale on all
-  engines, because the fit zoom scales the pixel art (at 1280px a 96px sprite
-  draws 36.48px on Blink and 37.27px on Gecko). Do not report it as an engine
-  difference.
+- The harness's desktop surfaces run at a device pixel ratio of 1. There
+  every league sprite draws at a non-integer scale on all engines, because the
+  fit zoom scales the pixel art (at 1280px a 96px sprite draws 36.48px on
+  Blink and 37.27px on Gecko), and below 1x it is smoothed
+  (`image-rendering: auto`). Do not report either as an engine difference.
+- At a device pixel ratio of 2 or more (a Retina desktop), the league summary
+  holds its sprites at exactly 1x instead, and gives up its own spacing to
+  keep all 14 rows on screen (`src/league/homeLayout.ts`). No harness surface
+  runs there; `e2e/league-sprite-scale.spec.ts` covers it on Blink.
+- On a phone or a desktop under a device pixel ratio of 2, the summary zooms
+  as before down to the 0.55 floor. A shorter window then gives up the same
+  spacing, hint lines first, to keep all 14 rows on screen. The harness
+  surfaces (390x844, 412x915, 1280x800) never reach the floor, so they show
+  today's layout. `e2e/league-sprite-scale.spec.ts` sweeps a 320px phone and a
+  1280px window down to the floor and past it.
 - The league render audits wait for every visible image to load first. At
   hydration most sprites are still loading, and an early audit counted 6, 51
   or 37 warnings on the same build.

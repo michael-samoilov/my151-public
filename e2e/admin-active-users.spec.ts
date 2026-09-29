@@ -22,9 +22,9 @@ test.describe('admin active users range', () => {
     await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
   });
 
-  test('range chips default to All and keep last-point gutter counts', async ({ page }) => {
+  test('the date range defaults to All and keeps last-point gutter counts', async ({ page }) => {
     const panel = activeUsers(page);
-    const range = panel.getByRole('group', { name: 'Chart range' });
+    const range = page.getByRole('group', { name: 'Date range' });
     await expect(range.getByRole('button', { name: '24h' })).toBeVisible();
     await expect(range.getByRole('button', { name: '7d' })).toBeVisible();
     await expect(range.getByRole('button', { name: '28d' })).toBeVisible();
@@ -51,7 +51,7 @@ test.describe('admin active users range', () => {
 
   test('24h plots hourly unique users and hides the weekly series', async ({ page }) => {
     const panel = activeUsers(page);
-    await panel.getByRole('group', { name: 'Chart range' }).getByRole('button', { name: '24h' }).click();
+    await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '24h' }).click();
     const chart = panel.getByRole('img', { name: /Hourly active users/ });
     await expect(chart).toBeVisible();
     const label = await chart.getAttribute('aria-label');
@@ -65,7 +65,7 @@ test.describe('admin active users range', () => {
 
   test('7d plots one daily series with weekday axis labels and hides the weekly series', async ({ page }) => {
     const panel = activeUsers(page);
-    await panel.getByRole('group', { name: 'Chart range' }).getByRole('button', { name: '7d' }).click();
+    await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '7d' }).click();
     const chart = panel.getByRole('img', { name: /Daily active users/ });
     await expect(chart).toBeVisible();
     const label = await chart.getAttribute('aria-label');

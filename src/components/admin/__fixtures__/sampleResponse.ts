@@ -22,6 +22,7 @@ import type {
   ToolSlice,
 } from '../AdminPage';
 import { lineKey, poolIdsForSection } from '../picksStats';
+import { leaguePicks } from '../../../../api/_leaguePicks';
 import { PREVIEW_FIT } from '../userPreview';
 const DAY = 86_400_000;
 // Anchor "now" to the data window's end so relative times read sensibly.
@@ -391,6 +392,7 @@ function mkCards(n: number): import('../AdminPage').LeagueCard[] {
     };
     if (i % 3 !== 2) {
       const line = l[i % 3].b;
+      card.ace = (i % 3) + 1;
       card.aceId = line[line.length - 1];
     }
     return card;
@@ -474,6 +476,12 @@ const leagueUsers: LeagueUser[] = [
   const prev = u.sessionLog[u.sessionLog.length - 2];
   prev.summary = { ...last.summary };
   prev.events = ['league-nudge-card-shown', 'league-nudge-card-cta'];
+  // Changes that keep every line: gym 1 swaps one Eevee branch for another,
+  // and gyms 1 and 2 trade a line. The diff is the 30 lines of the new gyms.
+  if (!prev.cards || !last.cards) throw new Error('70cd fixture missing card structure');
+  prev.cards[0].l[3] = { b: [133, 134] };
+  last.cards[0].l[3] = { b: [133, 136] };
+  [last.cards[0].l[4], last.cards[1].l[4]] = [last.cards[1].l[4], last.cards[0].l[4]];
   u.sessionLog.splice(u.sessionLog.length - 1, 0, {
     ts: Math.round((prev.ts + last.ts) / 2),
     summary: { cards: 1, seats: 1, typed: 0, named: 0, aces: 0, leagueNamed: false },
@@ -635,7 +643,7 @@ export const sampleResponse: ApiResponse = {
     leagueExportersWithDex: 2,
   },
   league: {
-    users: 5,
+    users: leagueUsers.length,
     named: 4,
     typed: 5,
     fullLeague: 1,
@@ -644,6 +652,7 @@ export const sampleResponse: ApiResponse = {
     returning: 3,
     activeLast7: 3,
     activity: ACTIVITY.slice(-30).map((a) => ({ day: a.day, dau: Math.max(0, Math.round(a.dau / 12)) })),
+    picks: leaguePicks(leagueUsers),
     recent: leagueUsers.map((u) => ({
       cid: u.cid,
       firstAt: u.firstAt,

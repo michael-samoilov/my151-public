@@ -11,30 +11,31 @@ import { formatListToParts, raw, t, typeLabel } from '@/i18n';
 import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, STATS_NAT_W, CARD_PADX as STATS_CARD_PADX, CARD_GAP as STATS_CARD_GAP, type StatsHeights } from './exportStats';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import {
-  computeOutlineLayout,
-  buildOutlines,
   fitLabel,
   starPath,
   outlineStrokeW,
   type OutlineShape,
   type Spandrel,
-  OUTLINE_GAP,
-  OUTLINE_PAD,
-  OUTLINE_HEAD,
   OUTLINE_STROKE_FRAC,
-  OUTLINE_TITLE_VBIAS,
   OUTLINE_TITLE_OPACITY,
   OUTLINE_REPEAT_TITLES,
   OUTLINE_SHORTEN_TITLES,
 } from '@/lib/sectionOutlines';
+import {
+  DEX_EXPORT_PAD_BOTTOM as PAD_BOTTOM,
+  DEX_EXPORT_PAD_TOP as PAD_TOP,
+  DEX_EXPORT_PAD_X as PAD_X,
+  DEX_EXPORT_POKEBALL_R_FRAC,
+  DEX_EXPORT_TILE as TILE,
+  DEX_EXPORT_FRAME,
+  DEX_EXPORT_SCALE,
+  layoutDexExportGrid,
+} from '@/lib/dexExportLayout';
+import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
 
-const COLS = 10;
-const TILE = 48;
-const SPRITE_SRC = 96; // native sprite resolution
-const SPRITE = SPRITE_SRC / 2; // logical draw size = 48px (1:1 with tile)
-const PAD_X = 12;
-const PAD_TOP = 8;
-const PAD_BOTTOM = 28;
+export const DEX_EXPORT_FRAME_RED = '#DC2626';
+
+const SPRITE = TILE; // logical draw size = 48px (1:1 with tile)
 const BG = '#ffffff';
 // When the stats panel is composited, the grid is wrapped in a white card (like
 // the website). The card's inner padding is computed to match the stat cards'
@@ -47,12 +48,12 @@ const PAGE_BG = '#f7f7f8';
 // isn't clipped at the canvas edge.
 const CARD_SHADOW_ROOM = 20;
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
-const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
+const SCALE = DEX_EXPORT_SCALE; // SPRITE * SCALE = 96 = native sprites at 1×
 // iOS/Safari (and therefore every iOS browser, incl. Chrome) caps a canvas's
 // backing store at ~16.7M px (4096²). Past it, canvas ops silently no-op and
 // toBlob never fires its callback — the export spinner hangs forever. The
-// with-stats export at SCALE=4 (~4400×4900 ≈ 21.6M px) exceeds this, so we cap
-// the area and derive the effective scale from it. Margin under the hard limit.
+// with-stats export at SCALE=2 (~2000×2000 ≈ 4M px) is well under it, but the
+// area stays capped as a guard. Margin under the hard limit.
 const MAX_CANVAS_AREA = 16_000_000;
 
 // ---------- Footer insight computation ----------
@@ -292,73 +293,16 @@ export async function generateExportImage(
   const statsData = options.stats?.data ?? null;
   const statsHeights = options.stats?.heights ?? null;
 
-  // --- Outline geometry (only when section outlines are enabled) -----------
-  let outline: {
-    gridSlots: number;
-    lastRowGeom: { index: number; count: number; offsetCols: number } | null;
-    lastRowIndex: number;
-    pitch: number;
-    ox: number;
-    oy: number;
-    shapes: OutlineShape[];
-    spandrels: Spandrel[];
-    tileTop: (r: number) => number;
-    spandrelTypes: TypeName[];
-  } | null = null;
-
-  // Canvas dimensions + where the footer begins.
-  let w: number;
-  let h: number;
-  let footerTop: number;
-
   // Canvas text metrics for title fitting / stats wrapping need the real font.
   if ((sections || statsData) && typeof document !== 'undefined' && document.fonts?.ready) {
     try { await document.fonts.ready; } catch { /* fall back to metrics-as-is */ }
   }
 
-  if (sections) {
-    const oLayout = computeOutlineLayout(pokemon, sections, count, COLS);
-    const gap = TILE * OUTLINE_GAP;
-    const pad = TILE * OUTLINE_PAD;
-    const headroom = TILE * OUTLINE_HEAD;
-    const pitch = TILE + gap;
-    const startRows = oLayout.bandRows;
-    const { shapes, spandrels } = buildOutlines(
-      oLayout.allRuns, COLS, TILE, startRows, headroom, gap, pad,
-      OUTLINE_TITLE_VBIAS, oLayout.lastRowGeom, OUTLINE_STROKE_FRAC,
-    );
-    // Row tops mirror buildOutlines' blockTop/tileTop (bands push start rows down).
-    const blockTop: number[] = new Array(oLayout.totalRows + 1).fill(0);
-    for (let r = 1; r <= oLayout.totalRows; r++) {
-      blockTop[r] = blockTop[r - 1] + (startRows.has(r - 1) ? headroom : 0) + TILE + gap;
-    }
-    const tileTop = (r: number) => blockTop[r] + (startRows.has(r) ? headroom : 0);
-
-    const contentH = oLayout.rowFactor * TILE;
-    w = oLayout.colFactor * TILE + PAD_X * 2;
-    h = PAD_TOP + contentH + PAD_BOTTOM;
-    footerTop = PAD_TOP + contentH;
-
-    outline = {
-      gridSlots: oLayout.gridSlots,
-      lastRowGeom: oLayout.lastRowGeom,
-      lastRowIndex: oLayout.lastRowIndex,
-      pitch,
-      ox: PAD_X + pad,
-      oy: PAD_TOP + pad,
-      shapes,
-      spandrels,
-      tileTop,
-      spandrelTypes: [...new Set(spandrels.map((s) => s.type).filter((t): t is TypeName => t !== null))],
-    };
-  } else {
-    const fullRows = Math.floor(count / COLS);
-    const lastRowCount = count % COLS;
-    const totalRows = fullRows + (lastRowCount > 0 ? 1 : 0);
-    w = COLS * TILE + PAD_X * 2;
-    h = PAD_TOP + totalRows * TILE + PAD_BOTTOM;
-    footerTop = PAD_TOP + totalRows * TILE;
-  }
+  const grid = layoutDexExportGrid(pokemon, sections);
+  const outline = grid.outline;
+  const w = grid.width;
+  let h = grid.height;
+  let footerTop = grid.footerTop;
 
   // Compute footer insights before loading images so we know which icons to fetch
   const insights = computeFooterInsights(pokemon);
@@ -431,24 +375,36 @@ export async function generateExportImage(
   footerTop = my + dexCardH;
   h = footerTop + (stats ? my : PAD_BOTTOM);
 
-  // Cap the backing store to the iOS canvas-area limit. At 151 + stats this pulls
-  // SCALE 4 down to ~3.4; grid-only stays at 4 (it's well under the cap).
-  const expScale = Math.min(SCALE, Math.sqrt(MAX_CANVAS_AREA / (canvasW * h)));
+  const framedW = canvasW + 2 * DEX_EXPORT_FRAME;
+  const framedH = h + 2 * DEX_EXPORT_FRAME;
+
+  // Cap the backing store to the iOS canvas-area limit. Every export today stays
+  // under it at SCALE, so the sprites keep their whole 1× scale.
+  const expScale = Math.min(SCALE, Math.sqrt(MAX_CANVAS_AREA / (framedW * framedH)));
 
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(canvasW * expScale);
-  canvas.height = Math.round(h * expScale);
+  canvas.width = Math.round(framedW * expScale);
+  canvas.height = Math.round(framedH * expScale);
   const ctx = canvas.getContext('2d')!;
 
   // Scale everything for sharp rendering (≤ SCALE, lowered when capped above).
   ctx.scale(expScale, expScale);
   ctx.imageSmoothingEnabled = false;
+  clipExportCanvas(ctx, framedW, framedH);
 
-  // Background. With the stats panel present, use the app's muted page background
-  // (not pure white) so the white cards read as cards — matching the website. A
-  // grid-only export stays white.
+  ctx.fillStyle = DEX_EXPORT_FRAME_RED;
+  ctx.fillRect(0, 0, framedW, framedH);
   ctx.fillStyle = stats ? PAGE_BG : BG;
-  ctx.fillRect(0, 0, canvasW, h);
+  ctx.beginPath();
+  ctx.roundRect(
+    DEX_EXPORT_FRAME,
+    DEX_EXPORT_FRAME,
+    canvasW,
+    h,
+    exportInnerCornerRadius(framedW, framedH, DEX_EXPORT_FRAME),
+  );
+  ctx.fill();
+  ctx.translate(DEX_EXPORT_FRAME, DEX_EXPORT_FRAME);
 
   // Dex card behind the grid (white rounded rect + soft shadow), matching the
   // stat cards. Drawn before the grid; the grid is then shifted in by cardPad.
@@ -472,50 +428,11 @@ export async function generateExportImage(
 
   // No top header — content starts immediately after PAD_TOP breathing room.
 
+  for (const placed of grid.sprites) {
+    drawTile(ctx, placed.x, placed.y, placed.pokemon, sprites[placed.index], placed.index + 1);
+  }
   if (outline) {
-    // Outlined grid: tiles sit on the gapped/banded layout, then the section
-    // outlines are drawn on top (matching the View page's overlay).
-    const { ox, oy, pitch, gridSlots, lastRowGeom, lastRowIndex, tileTop } = outline;
-    for (let i = 0; i < count; i++) {
-      let x: number, y: number;
-      if (i < gridSlots) {
-        const col = i % COLS;
-        const row = Math.floor(i / COLS);
-        x = ox + col * pitch;
-        y = oy + tileTop(row);
-      } else {
-        const c = i - gridSlots;
-        const off = lastRowGeom ? lastRowGeom.offsetCols * pitch : 0;
-        x = ox + off + c * pitch;
-        y = oy + tileTop(lastRowIndex);
-      }
-      drawTile(ctx, x, y, pokemon[i], sprites[i], i + 1);
-    }
-    drawOutlines(ctx, outline.shapes, outline.spandrels, ox, oy, maskImgs);
-  } else {
-    const fullRows = Math.floor(count / COLS);
-    const lastRowCount = count % COLS;
-
-    // Draw full rows (left-aligned in grid)
-    for (let i = 0; i < fullRows * COLS; i++) {
-      const col = i % COLS;
-      const row = Math.floor(i / COLS);
-      const x = PAD_X + col * TILE;
-      const y = PAD_TOP + row * TILE;
-      drawTile(ctx, x, y, pokemon[i], sprites[i], i + 1);
-    }
-
-    // Draw last partial row (centered)
-    if (lastRowCount > 0) {
-      const lastRowW = lastRowCount * TILE;
-      const lastRowX = (w - lastRowW) / 2;
-      for (let i = 0; i < lastRowCount; i++) {
-        const idx = fullRows * COLS + i;
-        const x = lastRowX + i * TILE;
-        const y = PAD_TOP + fullRows * TILE;
-        drawTile(ctx, x, y, pokemon[idx], sprites[idx], idx + 1);
-      }
-    }
+    drawOutlines(ctx, outline.shapes, outline.spandrels, outline.ox, outline.oy, maskImgs);
   }
 
   ctx.restore(); // end grid translate
@@ -855,7 +772,7 @@ function drawTile(
 ) {
   const cx = x + TILE / 2;
   const cy = y + TILE / 2;
-  const r = TILE * 0.42;
+  const r = TILE * DEX_EXPORT_POKEBALL_R_FRAC;
   const primary = TYPE_COLORS[pokemon.types[0] as TypeName];
   const secondary = TYPE_COLORS[(pokemon.types[1] ?? pokemon.types[0]) as TypeName];
 
@@ -872,7 +789,7 @@ function drawTile(
     ctx.setTransform(1, 0, 0, 1, 0, 0); // reset to identity (canvas pixels)
     // Size the sprite from the *live* scale (m.a), not the SCALE constant, so it
     // tracks the effective scale when the canvas area is capped (iOS).
-    const drawSize = SPRITE * m.a; // = 2× native 96px at full SCALE
+    const drawSize = SPRITE * m.a; // = native 96px (1×) at full SCALE
     const sx = m.a * cx + m.c * cy + m.e - drawSize / 2;
     const sy = m.b * cx + m.d * cy + m.f - drawSize / 2;
     ctx.imageSmoothingEnabled = false;

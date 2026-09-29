@@ -1,5 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-import { fiveLineCardLeague, sevenGymsLeague } from './support/leagueSeed';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { filledSlotsLeague, fiveLineCardLeague, sevenGymsLeague } from './support/leagueSeed';
 
 type EventBody = { event?: string; cid?: string; tool?: string; page?: string };
 
@@ -35,8 +35,45 @@ async function seatSixthLine(page: Page) {
   await page.waitForTimeout(400);
 }
 
+/** Open a league slot, seat one line on its first cell, and return home. */
+async function seatLine(page: Page, slot: number, query: string) {
+  await page.click(`[data-testid="league-slot-${slot}"]`);
+  await page.waitForSelector('[data-testid="card-cell-1-1"]');
+  await page.waitForTimeout(400);
+  await page.click('[data-testid="card-cell-1-1"]');
+  await page.waitForTimeout(600);
+  await page.evaluate((name) => {
+    const inputs = [...document.querySelectorAll('input')];
+    const el = inputs[inputs.length - 1];
+    const setValue = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+    setValue.call(el, name);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }, query);
+  await page.waitForTimeout(700);
+  await page.click('[data-testid="verify-evo-card"]');
+  await page.waitForTimeout(400);
+  await page.getByRole('button', { name: /Back to the league/ }).click();
+  await page.waitForSelector('[data-testid="league-slot-0"]');
+}
+
 function nudgeEvents(events: EventBody[]) {
   return events.filter((e) => typeof e.event === 'string' && e.event.startsWith('league-nudge-'));
+}
+
+/** Wait out the reveal delay, then prove no popup took the dismissed one's place. */
+async function expectNoFollowUpNudge(page: Page) {
+  await page.waitForTimeout(1500);
+  await expect(page.getByTestId('league-nudge')).toHaveCount(0);
+}
+
+async function attachRosterState(page: Page, testInfo: TestInfo, events: EventBody[]) {
+  const celebrated = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('league-builder') ?? '{}')?.state?.celebratedNudges,
+  );
+  await testInfo.attach('roster-nudges.json', {
+    body: JSON.stringify({ events: nudgeEvents(events).map((e) => e.event), celebrated }, null, 2),
+    contentType: 'application/json',
+  });
 }
 
 test.describe('league funnel export nudges', () => {
@@ -69,51 +106,40 @@ test.describe('league funnel export nudges', () => {
     await expect(page.getByTestId('league-nudge')).toHaveCount(0);
   });
 
-  test('eight filled gym-leader slots suggest exporting the league', async ({ page }) => {
+  test('eight gym leaders with a card still empty suggest exporting now or later', async ({ page }, testInfo) => {
     const events = await collectEvents(page);
     await sevenGymsLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
-    await page.click('[data-testid="league-slot-7"]');
-    await page.waitForSelector('[data-testid="card-cell-1-1"]');
-    await page.waitForTimeout(400);
-    await page.click('[data-testid="card-cell-1-1"]');
-    await page.waitForTimeout(600);
-    await page.evaluate(() => {
-      const inputs = [...document.querySelectorAll('input')];
-      const el = inputs[inputs.length - 1];
-      const setValue = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
-      setValue.call(el, 'pikachu');
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await page.waitForTimeout(700);
-    await page.click('[data-testid="verify-evo-card"]');
-    await page.waitForTimeout(400);
-    await page.getByRole('button', { name: /Back to the league/ }).click();
-    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await seatLine(page, 7, 'pikachu');
     const nudge = page.getByTestId('league-nudge');
     await expect(nudge).toBeVisible({ timeout: 5000 });
     await expect(nudge).toHaveAttribute('data-league-nudge', 'league');
+    // A phone has no room beside the summary, so the popup joins the page
+    // under it, clear of every row, and the league Export button pulses.
+    const exportButton = page.locator('[data-league-export="league"]');
+    await expect(nudge).toHaveAttribute('data-nudge-placement', 'below');
+    await expect(exportButton).toHaveAttribute('data-nudge-pulse', 'true');
     const geo = await page.evaluate(() => {
-      const mid = (el: Element | null) => {
-        if (!el) return null;
-        const r = el.getBoundingClientRect();
-        return r.left + r.width / 2;
-      };
+      const n = document.querySelector('[data-testid="league-nudge"]')!.getBoundingClientRect();
+      const summary = document.querySelector('[data-lg-league-root]')!.getBoundingClientRect();
+      const rows = [...Array(14)].map((_, i) =>
+        document.querySelector(`[data-testid="league-slot-${i}"]`)!.getBoundingClientRect());
       return {
-        exportX: mid(document.querySelector('[data-league-export="league"]')),
-        nameX: mid(document.querySelector('[aria-label="League name"]')),
-        arrowX: mid(document.querySelector('[data-nudge-arrow]')),
+        gapBelowSummary: n.top - summary.bottom,
+        rowsUnderPopup: rows.filter((r) => r.bottom > n.top && r.top < n.bottom).length,
+        rowsOnScreen: rows.filter((r) => r.top >= 0 && r.bottom <= innerHeight).length,
+        popupBottom: n.bottom,
+        viewportHeight: innerHeight,
       };
     });
-    expect(geo.exportX).toBeGreaterThan(0);
-    expect(geo.nameX).toBeGreaterThan(0);
-    expect(geo.arrowX).toBeGreaterThan(0);
-    expect(geo.exportX!).toBeGreaterThan(page.viewportSize()!.width * 0.7);
-    expect(Math.abs(geo.arrowX! - geo.exportX!)).toBeLessThan(Math.abs(geo.arrowX! - geo.nameX!));
-    expect(Math.abs(geo.arrowX! - geo.exportX!)).toBeLessThan(24);
-    await expect(nudge).toContainText('League ready');
-    await expect(nudge).not.toContainText(/gym leaders?/i);
+    await testInfo.attach('roster-popup-below.json', { body: JSON.stringify(geo, null, 2), contentType: 'application/json' });
+    expect(geo.gapBelowSummary).toBeGreaterThanOrEqual(0);
+    expect(geo.rowsUnderPopup).toBe(0);
+    expect(geo.rowsOnScreen).toBe(14);
+    expect(geo.popupBottom).toBeLessThanOrEqual(geo.viewportHeight);
+    await expect(nudge).toContainText('Gym leaders complete');
+    await expect(nudge).toContainText('Export now, or keep building and export when it is complete.');
     await expect(nudge).not.toContainText(/toolbar/i);
     await expect(nudge.getByRole('button', { name: 'Export league' })).toBeVisible();
     await expect.poll(() => nudgeEvents(events).map((e) => e.event)).toEqual([
@@ -121,10 +147,59 @@ test.describe('league funnel export nudges', () => {
     ]);
     await nudge.getByRole('button', { name: 'Dismiss' }).click();
     await expect(page.getByTestId('league-nudge')).toHaveCount(0);
+    await expect(exportButton).not.toHaveAttribute('data-nudge-pulse');
     await expect.poll(() => nudgeEvents(events).map((e) => e.event)).toEqual([
       'league-nudge-league-shown',
       'league-nudge-league-dismiss',
     ]);
+    await attachRosterState(page, testInfo, events);
+  });
+
+  test('the last empty card suggests exporting the full league, once', async ({ page }, testInfo) => {
+    const events = await collectEvents(page);
+    await filledSlotsLeague(page, [0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13]);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await seatLine(page, 7, 'pikachu');
+    const gyms = page.getByTestId('league-nudge');
+    await expect(gyms).toHaveAttribute('data-league-nudge', 'league', { timeout: 5000 });
+    await gyms.getByRole('button', { name: 'Dismiss' }).click();
+    await seatLine(page, 8, 'eevee');
+    const full = page.getByTestId('league-nudge');
+    await expect(full).toBeVisible({ timeout: 5000 });
+    await expect(full).toHaveAttribute('data-league-nudge', 'complete');
+    await expect(full).toContainText('League ready');
+    await expect(full).toContainText('Export the league as an image and share it.');
+    await expect(full.getByRole('button', { name: 'Export league' })).toBeVisible();
+    await full.getByRole('button', { name: 'Dismiss' }).click();
+    await expectNoFollowUpNudge(page);
+    // /api/event accepts no name of its own for this popup, and `shown`
+    // posts once per browser, so the second popup adds only its dismiss.
+    await expect.poll(() => nudgeEvents(events).map((e) => e.event)).toEqual([
+      'league-nudge-league-shown',
+      'league-nudge-league-dismiss',
+      'league-nudge-league-dismiss',
+    ]);
+    await attachRosterState(page, testInfo, events);
+  });
+
+  test('when the eighth gym is the last empty card, only League ready shows', async ({ page }, testInfo) => {
+    const events = await collectEvents(page);
+    await filledSlotsLeague(page, [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13]);
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await seatLine(page, 7, 'pikachu');
+    const full = page.getByTestId('league-nudge');
+    await expect(full).toBeVisible({ timeout: 5000 });
+    await expect(full).toHaveAttribute('data-league-nudge', 'complete');
+    await expect(full).toContainText('League ready');
+    await full.getByRole('button', { name: 'Dismiss' }).click();
+    await expectNoFollowUpNudge(page);
+    await expect.poll(() => nudgeEvents(events).map((e) => e.event)).toEqual([
+      'league-nudge-league-shown',
+      'league-nudge-league-dismiss',
+    ]);
+    await attachRosterState(page, testInfo, events);
   });
 
   test('does not post nudge beacons under ?notme', async ({ page }) => {
@@ -135,5 +210,55 @@ test.describe('league funnel export nudges', () => {
     await seatSixthLine(page);
     await expect(page.getByTestId('league-nudge')).toBeVisible({ timeout: 5000 });
     expect(nudgeEvents(events)).toEqual([]);
+  });
+});
+
+/** Eight gym leaders filled in a save that has not seen their popup yet. */
+async function unseenEightGymsLeague(page: Page) {
+  await page.addInitScript(() => {
+    const empty = () => ({ type: null, theme: '', lines: [] as unknown[], signatureSeat: null, tmMoveId: null, badgeName: '', legend: null, powerup: null });
+    const cards = Array.from({ length: 14 }, (_, i) =>
+      i < 8 ? { ...empty(), lines: [{ branch: [i + 1], boundaries: [1], boundaryMode: 'auto' }] } : empty());
+    window.localStorage.setItem('league-builder', JSON.stringify({ state: { name: '', cards, celebratedNudges: [] }, version: 3 }));
+  });
+}
+
+test.describe('league funnel export nudges on a Retina desktop', () => {
+  test.use({ viewport: { width: 1440, height: 790 }, deviceScaleFactor: 2 });
+
+  test('the gym-leaders popup sits beside the summary and leaves its zoom alone', async ({ page }, testInfo) => {
+    await collectEvents(page);
+    await unseenEightGymsLeague(page);
+    await page.goto('/custom-gym-leader');
+    const nudge = page.getByTestId('league-nudge');
+    await expect(nudge).toHaveAttribute('data-league-nudge', 'league', { timeout: 5000 });
+    await expect(nudge).toHaveAttribute('data-nudge-placement', 'beside');
+    await expect(page.locator('[data-league-export="league"]')).toHaveAttribute('data-nudge-pulse', 'true');
+    await page.waitForTimeout(500);
+    const read = () => page.evaluate(() => {
+      const root = document.querySelector('[data-lg-league-root]')!;
+      const s = root.getBoundingClientRect();
+      const n = document.querySelector('[data-testid="league-nudge"]')?.getBoundingClientRect();
+      const exportBox = document.querySelector('[data-league-export="league"]')!.getBoundingClientRect();
+      const arrow = document.querySelector('[data-nudge-arrow]')?.getBoundingClientRect();
+      return {
+        zoom: Number(getComputedStyle(root.parentElement!).zoom),
+        summary: { left: s.left, right: s.right, top: s.top },
+        popup: n ? { left: n.left, right: n.right, top: n.top } : null,
+        arrowToExport: arrow ? Math.abs(arrow.left + arrow.width / 2 - (exportBox.left + exportBox.width / 2)) : null,
+        viewportWidth: innerWidth,
+      };
+    });
+    const open = await read();
+    await nudge.getByRole('button', { name: 'Dismiss' }).click();
+    await expect(nudge).toHaveCount(0);
+    await page.waitForTimeout(500);
+    const closed = await read();
+    await testInfo.attach('roster-popup-beside.json', { body: JSON.stringify({ open, closed }, null, 2), contentType: 'application/json' });
+    expect(open.popup!.left).toBeGreaterThan(open.summary.right);
+    expect(open.popup!.right).toBeLessThanOrEqual(open.viewportWidth);
+    expect(open.popup!.top).toBeCloseTo(open.summary.top, 0);
+    expect(open.arrowToExport).toBeLessThan(24);
+    expect(open.zoom, 'the summary keeps its zoom while the popup shows').toBe(closed.zoom);
   });
 });

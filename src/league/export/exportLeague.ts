@@ -21,6 +21,7 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { expandTemplate } from '@/lib/richTemplate';
+import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
 import { localeUppercase, pokemonLabel, raw } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
@@ -65,6 +66,8 @@ export const HOME_FILENAME = 'my151-league.png';
 
 const FG = '#0a0a0a';
 const RED = '#DC2626';
+/** The league summary's frame: the Dex export's red. */
+const HOME_FRAME = RED;
 const MUTED = '#737373';
 const GREY = '#a3a3a3';
 const ZINC = '#a1a1aa';
@@ -638,14 +641,17 @@ function drawTmSlot(
   }
 
   ctx.fillStyle = moveShades.band;
-  const emAscent = ctx.measureText('H').emHeightAscent || capHeight(ctx);
+  // The cap height on every engine. WebKit's `emHeightAscent` is the font
+  // ascent (15px here, against a 12px cap), so it dropped the name 3px in the
+  // iPhone PNG. Blink has no `emHeightAscent` and always took the cap height.
+  const ascent = capHeight(ctx);
   ctx.textBaseline = 'alphabetic';
   lines.forEach((line, i) => {
     fillTracked(
       ctx,
       line,
       bodyX,
-      L.cssLineAlphabetic(body.nameTop + i * L.NAME_LINE, L.NAME_LINE, L.NAME_PX, emAscent),
+      L.cssLineAlphabetic(body.nameTop + i * L.NAME_LINE, L.NAME_LINE, L.NAME_PX, ascent),
       L.NAME_TRACK,
     );
   });
@@ -792,7 +798,16 @@ function drawGymCard(
   ctx.fillStyle = type ? shades.band : RED;
   ctx.fillRect(0, 0, L.CARD_IMG_W, L.CARD_IMG_H);
   ctx.fillStyle = shades.base;
-  ctx.fillRect(L.FRAME, L.BAR_H, L.CARD_W, L.CARD_IMG_H - L.BAR_H - L.FRAME);
+  ctx.beginPath();
+  const innerRadius = exportInnerCornerRadius(L.CARD_IMG_W, L.CARD_IMG_H, L.FRAME);
+  ctx.roundRect(
+    L.FRAME,
+    L.BAR_H,
+    L.CARD_W,
+    L.CARD_IMG_H - L.BAR_H - L.FRAME,
+    [0, 0, innerRadius, innerRadius],
+  );
+  ctx.fill();
 
   const fx = L.FRAME;
   const ox = fx + L.PADX;
@@ -1349,13 +1364,16 @@ async function render(
   paint: (ctx: CanvasRenderingContext2D) => void,
 ): Promise<Blob> {
   await fontsReady();
-  const scale = Math.min(2, Math.sqrt(MAX_CANVAS_AREA / (w * h)));
+  // One PNG px per layout px, so the team sprites paint at their native 96px
+  // (1×). Only the iOS area cap could lower it.
+  const scale = Math.min(1, Math.sqrt(MAX_CANVAS_AREA / (w * h)));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(w * scale);
   canvas.height = Math.round(h * scale);
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D context unavailable');
   ctx.scale(scale, scale);
+  clipExportCanvas(ctx, w, h);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   paint(ctx);
@@ -1397,7 +1415,18 @@ export async function exportLeagueHome(
     homeDetailsNeed(measure, cards, images, layout),
   );
   const named = Boolean(name) && layout.showLeagueName;
-  return render(geom.homeW, L.homeImgH(named), (ctx) =>
-    drawLeagueHome(ctx, named ? name : '', cards, view, layout, geom, images),
-  );
+  const innerH = L.homeImgH(named);
+  const w = geom.homeW + 2 * L.FRAME;
+  const h = innerH + 2 * L.FRAME;
+  return render(w, h, (ctx) => {
+    ctx.fillStyle = HOME_FRAME;
+    ctx.fillRect(0, 0, w, h);
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(L.FRAME, L.FRAME, geom.homeW, innerH, exportInnerCornerRadius(w, h, L.FRAME));
+    ctx.clip();
+    ctx.translate(L.FRAME, L.FRAME);
+    drawLeagueHome(ctx, named ? name : '', cards, view, layout, geom, images);
+    ctx.restore();
+  });
 }

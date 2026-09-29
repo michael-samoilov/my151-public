@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 /**
  * The report-a-problem chips, in every language.
@@ -31,13 +31,22 @@ const CHIPS: Record<string, { bug: string; translation: string; idea: string; ot
   it: { bug: 'Errore', translation: 'Traduzione', idea: 'Idea', other: 'Altro' },
 };
 
+async function gotoLocale(page: Page, locale: string) {
+  await page.goto(`/pokedex-builder?lang=${locale}`, { waitUntil: 'domcontentloaded' });
+  // Locale loading is intentionally allowed to outlive the 1.2s boot budget.
+  // Under a busy dev server, wait for that background catalog commit before
+  // inspecting translated copy instead of mistaking the English fallback for
+  // the final state.
+  await expect(page.locator('html')).toHaveAttribute('lang', locale, { timeout: 15_000 });
+}
+
 // 320px: the narrowest width the app supports, and where a long chip shows.
 test.use({ viewport: { width: 320, height: 800 } });
 
 test.describe('feedback chips', () => {
   for (const [locale, expected] of Object.entries(CHIPS)) {
     test(`${locale}: the chips are translated, and they fit`, async ({ page }) => {
-      await page.goto(`/pokedex-builder?lang=${locale}`);
+      await gotoLocale(page, locale);
       await page.locator('[data-feedback-open]').first().click();
 
       const dialog = page.getByRole('dialog');
@@ -81,10 +90,10 @@ test.describe('feedback chips', () => {
     // The layering promise: a locale with no entry for a key falls back to
     // English. Worth pinning, because the failure mode of a partial catalog
     // should be "in the wrong language" and never "missing".
-    await page.goto('/pokedex-builder?lang=ja');
+    await gotoLocale(page, 'ja');
     const openers = page.getByRole('button', { name: /.+/ });
     await expect(openers.first()).toBeVisible();
-    await page.goto('/pokedex-builder?lang=ja');
+    await gotoLocale(page, 'ja');
     await page.locator('[data-feedback-open]').first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();

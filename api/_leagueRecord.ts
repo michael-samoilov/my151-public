@@ -53,6 +53,11 @@ const MAX_STAGES = 5;
 const MAX_POKEMON_ID = 99_999;
 /** Rows a card can have. Bounds `boundaries`, which name a row. */
 const MAX_ROW = 20;
+/**
+ * The endgame boss's card row, the last one. Must equal `BOSS_ROW` in
+ * src/league/model/constants.ts; src/lib/leaguePicks.test.ts pins the two.
+ */
+export const LEAGUE_BOSS_ROW = 11;
 
 /**
  * One seated evolution line.
