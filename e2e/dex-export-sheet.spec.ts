@@ -534,7 +534,9 @@ test.describe('desktop dex export preview', () => {
       })
       .toBeGreaterThan(0.4);
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
-    await expect.poll(async () => foil.getAttribute('data-tilt-scale')).toBe('1.150');
+    // The pop eases in over the opening, which counts painted frames: a loaded
+    // runner paints slowly, so give it longer than the default 5 s.
+    await expect.poll(async () => foil.getAttribute('data-tilt-scale'), { timeout: 15_000 }).toBe('1.150');
 
     const fit = await page.evaluate(() => {
       const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
@@ -714,7 +716,7 @@ test.describe('desktop dex export preview', () => {
       );
     }
     expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
-    expect(await foil.getAttribute('data-tilt-scale')).toBe('1.150');
+    await expect.poll(async () => foil.getAttribute('data-tilt-scale'), { timeout: 15_000 }).toBe('1.150');
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
 
     const park = await hit.boundingBox();
