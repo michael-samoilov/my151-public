@@ -653,7 +653,7 @@ export function ExportPreview3D({
       const target = e.target;
       if (
         target instanceof Element &&
-        target.closest('[data-export-foil-pinned], [data-export-chrome] input, [data-export-chrome] select, [data-export-chrome] textarea')
+        target.closest('[data-export-chrome] input, [data-export-chrome] select, [data-export-chrome] textarea')
       ) {
         return;
       }
