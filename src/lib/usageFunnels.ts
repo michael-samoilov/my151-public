@@ -8,12 +8,15 @@
  * exported" peel. Full league peels non-exporters to Kept private,
  * same as Completed on the dex funnel.
  */
-import type {
-  DexSizeBucket,
-  DexUsageFunnel,
-  LeagueGymBucket,
-  LeagueUsageFunnel,
-  ReferrerFlowEntry,
+import {
+  LEAGUE_EXPORT_ENDS,
+  type DexSizeBucket,
+  type DexUsageFunnel,
+  type LeagueExportCounts,
+  type LeagueExportEnd,
+  type LeagueGymBucket,
+  type LeagueUsageFunnel,
+  type ReferrerFlowEntry,
 } from '../../api/_aggregate';
 
 export type FunnelRole = 'success' | 'sink' | 'priv' | 'neutral';
@@ -62,9 +65,14 @@ interface FanItem {
   exportName?: string;
   leftoverName?: string;
   leftoverRole?: FunnelRole;
-  exportedLeague?: number;
-  exportedCard?: number;
+  exports?: LeagueExportCounts;
 }
+
+const LEAGUE_EXPORT_NODE: Record<LeagueExportEnd, { name: string; label: FunnelLabelSide }> = {
+  league: { name: 'League export', label: 'top' },
+  both: { name: 'Both exported', label: 'right' },
+  card: { name: 'Gym export', label: 'right' },
+};
 
 function addFan(
   nodes: FunnelNode[],
@@ -94,8 +102,8 @@ function addFan(
       });
     }
     if (item.leftoverName) {
-      const left =
-        item.value - (item.exported ?? 0) - (item.exportedLeague ?? 0) - (item.exportedCard ?? 0);
+      const leagueExports = LEAGUE_EXPORT_ENDS.reduce((sum, end) => sum + (item.exports?.[end] ?? 0), 0);
+      const left = item.value - (item.exported ?? 0) - leagueExports;
       if (left > 0) {
         addNode(nodes, seen, {
           name: item.leftoverName,
@@ -110,29 +118,14 @@ function addFan(
         });
       }
     }
-    if ((item.exportedLeague ?? 0) > 0) {
-      addNode(nodes, seen, { name: 'Exported league', role: 'success', label: 'top' });
-      addLink(links, {
-        source: item.name,
-        target: 'Exported league',
-        value: item.exportedLeague ?? 0,
-        role: 'success',
-      });
-    }
   }
-  for (const item of present) {
-    if ((item.exportedCard ?? 0) > 0) {
-      addNode(nodes, seen, {
-        name: 'Exported card',
-        role: 'success',
-        label: 'right',
-      });
-      addLink(links, {
-        source: item.name,
-        target: 'Exported card',
-        value: item.exportedCard ?? 0,
-        role: 'success',
-      });
+  for (const end of LEAGUE_EXPORT_ENDS) {
+    const { name, label } = LEAGUE_EXPORT_NODE[end];
+    for (const item of present) {
+      const value = item.exports?.[end] ?? 0;
+      if (value <= 0) continue;
+      addNode(nodes, seen, { name, role: 'success', label });
+      addLink(links, { source: item.name, target: name, value, role: 'success' });
     }
   }
 }
@@ -169,8 +162,7 @@ function gymFan(buckets: LeagueGymBucket[]): FanItem[] {
     name: b.label,
     value: b.count,
     role: b.label === 'Full league' ? 'success' : 'sink',
-    exportedLeague: b.exportedLeague,
-    exportedCard: b.exportedCard,
+    exports: b.exports,
     leftoverName: b.label === 'Full league' ? 'Kept private' : undefined,
     leftoverRole: 'priv',
   }));
@@ -241,7 +233,7 @@ export function leagueFunnelSankey(f: LeagueUsageFunnel): FunnelSankey {
   return orderSankeyForLayout(
     nodes,
     links,
-    `League usage funnel: ${f.opened} opened, ${f.placed} placed a Pokémon, ${f.bounced} bounced; of ${f.placed} placed, ${f.oneGymFull} filled a gym and ${f.cardNotFinished} did not finish a card; gyms: ${gymBits}; ${f.exportedLeague} exported a league, ${f.exportedCard} exported a card only; of ${f.fullLeague} full league, ${f.keptPrivate} kept private.`,
+    `League usage funnel: ${f.opened} opened, ${f.placed} placed a Pokémon, ${f.bounced} bounced; of ${f.placed} placed, ${f.oneGymFull} filled a gym and ${f.cardNotFinished} did not finish a card; gyms: ${gymBits}; ${f.exports.league} league export, ${f.exports.card} gym export, ${f.exports.both} both exported; of ${f.fullLeague} full league, ${f.keptPrivate} kept private.`,
   );
 }
 

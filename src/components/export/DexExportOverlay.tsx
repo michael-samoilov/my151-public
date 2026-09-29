@@ -38,8 +38,8 @@ function seedDraft(): DexExportDraft {
 export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   const sections = usePokedexStore((s) => s.sections);
   const [draft, setDraft] = useState<DexExportDraft>(seedDraft);
-  const [recipe, setRecipe] = useState<FoilRecipe>(() => cloneFoilRecipe(DEFAULT_FOIL_RECIPE));
-  const [tilt, setTilt] = useState<HoverTiltRecipe>(() => cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE));
+  const [recipe] = useState<FoilRecipe>(() => cloneFoilRecipe(DEFAULT_FOIL_RECIPE));
+  const [tilt] = useState<HoverTiltRecipe>(() => cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE));
   const [phase, setPhase] = useState<ExportPreviewPhase>('settings');
   const [exportBusy, setExportBusy] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
@@ -167,10 +167,6 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
           onDraft={setDraft}
           placedCount={placedCount}
           seedCustomIds={seedCustomIds}
-          recipe={recipe}
-          onRecipe={setRecipe}
-          tilt={tilt}
-          onTilt={setTilt}
           busy={exportBusy || busy}
           onExport={() => void runExport()}
           onClose={onClose}

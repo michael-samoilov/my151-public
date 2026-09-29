@@ -159,24 +159,59 @@ describe('tallies', () => {
 
 describe('heatmaps', () => {
   const total = (m: number[][]) => m.flat().reduce((a, b) => a + b, 0);
+  /** A browser with one session ending at each timestamp. */
+  const seen = (cid: string, tz: string | undefined, ...ts: number[]): SessionRecord =>
+    dex({ cid, tz, firstTs: ts[0], lastTs: ts[ts.length - 1], sessionLog: ts.map((t) => ({ ts: t })), sessionMs: ts.map(() => 60_000) });
+  // September is EDT, UTC-4.
+  const MON_9PM = [Date.UTC(2026, 8, 8, 1, 5), Date.UTC(2026, 8, 8, 1, 50), Date.UTC(2026, 8, 15, 1, 30)];
+  const FRI_2PM = Date.UTC(2026, 8, 11, 18, 20);
 
   it('reads Eastern Time with daylight saving: the same UTC hour is noon in July and 11 AM in January', () => {
-    const july = dex({ cid: 'jul', tz: 'Asia/Tokyo', lastTs: Date.UTC(2026, 6, 15, 16) }); // Wed
-    const january = dex({ cid: 'jan', tz: 'Asia/Tokyo', lastTs: Date.UTC(2026, 0, 14, 16) }); // Wed
+    const july = seen('jul', 'Asia/Tokyo', Date.UTC(2026, 6, 15, 16)); // Wed
+    const january = seen('jan', 'Asia/Tokyo', Date.UTC(2026, 0, 14, 16)); // Wed
     const { eastern } = heatmaps([july, january]);
     expect(eastern[3][12]).toBe(1);
     expect(eastern[3][11]).toBe(1);
   });
 
+  it('counts a browser once in an hour it visited three times', () => {
+    const { eastern } = heatmaps([seen('rep', 'America/Chicago', ...MON_9PM)]);
+    expect(eastern[1][21]).toBe(1);
+    expect(total(eastern)).toBe(1);
+  });
+
+  it('counts a browser once in each hour it was active', () => {
+    const { local, eastern } = heatmaps([seen('two', 'America/Los_Angeles', MON_9PM[0], FRI_2PM)]);
+    expect(eastern[1][21]).toBe(1);
+    expect(eastern[5][14]).toBe(1);
+    expect(total(eastern)).toBe(2);
+    expect(local[1][18]).toBe(1);
+    expect(local[5][11]).toBe(1);
+  });
+
+  it('counts only activity after the range start', () => {
+    const start = Date.UTC(2026, 8, 10); // Wed 8 PM EDT
+    const before = Date.UTC(2026, 8, 6, 14); // Sun 10 AM EDT
+    const r = seen('rng', 'America/New_York', before, start, FRI_2PM, MON_9PM[2]);
+    const { eastern } = heatmaps([r], start);
+    expect(eastern[0][10]).toBe(0);
+    expect(eastern[3][20]).toBe(0);
+    expect(eastern[5][14]).toBe(1);
+    expect(eastern[1][21]).toBe(1);
+    expect(total(eastern)).toBe(2);
+    expect(total(heatmaps([r]).eastern)).toBe(4);
+  });
+
   it('leaves a browser without a timezone out of local time and keeps it in Eastern Time', () => {
-    const london = dex({ cid: 'ldn', tz: 'Europe/London', lastTs: Date.UTC(2026, 8, 3, 12) }); // Thu 13:00 BST
+    const london = seen('ldn', 'Europe/London', Date.UTC(2026, 8, 3, 12)); // Thu 13:00 BST
     // What submit stores for a browser with no timezone: UTC wall-clock fields.
-    const noTz = { ...dex({ cid: 'none', tz: undefined, lastTs: Date.UTC(2026, 8, 3, 12) }), localDow: 4, localHour: 12 };
+    const noTz = { ...seen('none', undefined, Date.UTC(2026, 8, 3, 12), FRI_2PM), localDow: 5, localHour: 18 };
     const { local, eastern } = heatmaps([london, noTz]);
     expect(total(local)).toBe(1);
     expect(local[4][13]).toBe(1);
-    expect(total(eastern)).toBe(2);
     expect(eastern[4][8]).toBe(2);
+    expect(eastern[5][14]).toBe(1);
+    expect(total(eastern)).toBe(3);
   });
 });
 
@@ -458,8 +493,7 @@ describe('leagueUsageFunnel', () => {
       { label: 'Full league', count: 2 },
     ]);
     expect(f.fullLeague).toBe(2);
-    expect(f.exportedLeague).toBe(1);
-    expect(f.exportedCard).toBe(2);
+    expect(f.exports).toEqual({ league: 0, both: 1, card: 2 });
     expect(f.keptPrivate).toBe(0);
     expect(f.gymBuckets.reduce((s, p) => s + p.count, 0)).toBe(f.oneGymFull);
   });
@@ -471,21 +505,31 @@ describe('leagueUsageFunnel', () => {
     );
     expect(f.fullLeague).toBe(2);
     expect(f.keptPrivate).toBe(1);
-    expect(f.gymBuckets.find((b) => b.label === 'Full league')).toEqual({
-      label: 'Full league',
-      count: 2,
-      exportedLeague: 1,
-      exportedCard: 0,
-    });
+    expect(f.gymBuckets.find((b) => b.label === 'Full league')?.exports).toEqual({ league: 1, both: 0, card: 0 });
+  });
+
+  it('puts each full-league browser in one export end or Kept private', () => {
+    const f = leagueUsageFunnel(
+      [
+        row(14, { exportsLeague: 1 }),
+        row(14, { exportsLeague: 2, exportsCard: 1 }),
+        row(14, { exportsLeague: 1, exportsCard: 3 }),
+        row(14, { exportsCard: 1 }),
+        row(14),
+      ],
+      5,
+    );
+    const full = f.gymBuckets.find((b) => b.label === 'Full league');
+    expect(full?.exports).toEqual({ league: 1, both: 2, card: 1 });
+    expect(full!.exports.league + full!.exports.both + full!.exports.card + f.keptPrivate).toBe(f.fullLeague);
   });
 
   it('counts exports from an unfinished gym bucket', () => {
     const f = leagueUsageFunnel([row(3, { exportsCard: 1 }), row(3, { exportsLeague: 1 })], 2);
-    expect(f.gymBuckets).toEqual([
-      { label: '1–4 gyms', count: 2, exportedLeague: 1, exportedCard: 1 },
+    expect(f.gymBuckets.map((b) => ({ label: b.label, count: b.count, exports: b.exports }))).toEqual([
+      { label: '1–4 gyms', count: 2, exports: { league: 1, both: 0, card: 1 } },
     ]);
-    expect(f.exportedLeague).toBe(1);
-    expect(f.exportedCard).toBe(1);
+    expect(f.exports).toEqual({ league: 1, both: 0, card: 1 });
   });
 
   it('does not count a zero-seat record as placed', () => {
