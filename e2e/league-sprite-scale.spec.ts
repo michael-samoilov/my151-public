@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * How the league summary draws its sprites on a desktop screen.
+ * How the league summary fits its sprites and its 14 rows on screen.
  *
  * On a Retina screen (2 device px per CSS px) the summary holds every sprite
  * at exactly 1x and keeps all 14 rows on screen. A short window takes the
@@ -10,7 +10,11 @@ import { expect, test, type Page } from '@playwright/test';
  * hint lines (`src/league/homeLayout.ts`). On a 1080p screen the summary
  * keeps today's layout and zoom, and smooths a sprite drawn below 1x.
  *
- * Both tests pin their own viewport and device pixel ratio, so they run once,
+ * A phone and a 1080p desktop zoom as before until the zoom reaches its
+ * floor. A shorter window then takes the same spacing, in the same order,
+ * instead of pushing rows off the screen.
+ *
+ * Every test pins its own viewport and device pixel ratio, so each runs once,
  * in the desktop project.
  */
 
@@ -27,12 +31,16 @@ function summary(page: Page) {
       document.querySelector(`[data-testid="league-slot-${i}"]`)!.getBoundingClientRect());
     const sprite = sprites[0].getBoundingClientRect();
     const spriteBox = sprites[0].parentElement!.getBoundingClientRect();
+    const visibleBottom = Math.min(paneBox.bottom, innerHeight) + 0.5;
     return {
       height: innerHeight,
+      zoom: Number(getComputedStyle(fit).zoom),
       scaleMin: Math.min(...scales),
       scaleMax: Math.max(...scales),
       rendering: getComputedStyle(sprites[0]).imageRendering,
-      rowsOnScreen: rows.filter((r) => r.top >= paneBox.top - 0.5 && r.bottom <= Math.min(paneBox.bottom, innerHeight) + 0.5).length,
+      rowsOnScreen: rows.filter((r) => r.top >= paneBox.top - 0.5 && r.bottom <= visibleBottom).length,
+      spritesOnScreen: sprites.every((i) => i.getBoundingClientRect().bottom <= visibleBottom),
+      cardOnScreen: root.getBoundingClientRect().bottom <= visibleBottom,
       paneScrolls: pane.scrollHeight > pane.clientHeight + 1,
       trimSourcePx: (Math.max(0, (sprite.height - spriteBox.height) / 2) * sprites[0].naturalWidth) / sprite.width,
       bandRem: (root.children[0].firstElementChild as HTMLElement).getBoundingClientRect().height / remPx,
@@ -53,18 +61,71 @@ async function openLeague(page: Page) {
 const settle = (page: Page) => page.waitForTimeout(500);
 const TIGHT_BAND_REM = 0.875;
 const ROOMY_BAND_REM = 1.25;
+const FLOOR = 0.55;
+
+type Step = Awaited<ReturnType<typeof summary>>;
+
+/** The summary at each window height, in the order given. */
+async function sweep(page: Page, width: number, heights: number[]) {
+  const steps: Step[] = [];
+  for (const height of heights) {
+    await page.setViewportSize({ width, height });
+    await settle(page);
+    steps.push(await summary(page));
+  }
+  return steps;
+}
+
+const heights = (from: number, to: number, step: number) =>
+  Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
+
+/** Spare height goes back in order: the sprite box, the spacing, the hints. */
+function expectStagesInOrder(s: Step) {
+  const at = `at ${s.height}px`;
+  if (s.bandRem > TIGHT_BAND_REM + 0.01) {
+    expect(s.trimSourcePx, `the sprite box is whole before the spacing returns ${at}`).toBeLessThan(0.01);
+  }
+  if (s.hintLines > 0) {
+    expect(s.bandRem, `the spacing is whole before a hint line returns ${at}`).toBeCloseTo(ROOMY_BAND_REM, 2);
+  }
+}
+
+/**
+ * A window that zooms to its floor before it gives up spacing: every row on
+ * screen at every height, today's layout wherever the zoom is above the floor,
+ * and the same fit on the way back up as on the way down.
+ */
+function expectHeldAtTheFloor(down: Step[], up: Step[]) {
+  for (const [i, s] of [...down, ...up].entries()) {
+    const at = `at ${s.height}px`;
+    expect(s.rowsOnScreen, `every row on screen ${at}`).toBe(14);
+    expect(s.spritesOnScreen, `every sprite on screen ${at}`).toBe(true);
+    expect(s.cardOnScreen, `the card's bottom edge on screen ${at}`).toBe(true);
+    expect(s.zoom, `the zoom never goes below its floor ${at}`).toBeGreaterThanOrEqual(FLOOR - 1e-6);
+    if (s.zoom > FLOOR + 1e-3) {
+      expect(s.hintLines, `a zoom above the floor keeps both hint lines ${at}`).toBe(2);
+      expect(s.bandRem, `and today's spacing ${at}`).toBeCloseTo(ROOMY_BAND_REM, 2);
+    }
+    expectStagesInOrder(s);
+    if (i > 0 && i < down.length) {
+      expect(s.trimSourcePx, `a shorter window never trims less ${at}`).toBeGreaterThanOrEqual(down[i - 1].trimSourcePx - 1e-6);
+    }
+  }
+  const top = down[0];
+  const back = up.at(-1)!;
+  expect(top.zoom, 'the tallest window zooms above the floor').toBeGreaterThan(FLOOR + 0.02);
+  expect(down.at(-1)!.trimSourcePx, 'the shortest window trims the sprite box').toBeGreaterThan(1);
+  expect(back.height).toBe(top.height);
+  expect(back.hintLines, 'back at the top, both hint lines return').toBe(2);
+  expect(back.zoom, 'and the zoom returns').toBeCloseTo(top.zoom, 1);
+}
 
 test.describe('a Retina desktop', () => {
   test.use({ viewport: { width: 1470, height: 760 }, deviceScaleFactor: 2 });
 
   test('holds the sprites at 1x and spends each window height in order', async ({ page }, info) => {
     await openLeague(page);
-    const steps: Awaited<ReturnType<typeof summary>>[] = [];
-    for (let height = 760; height <= 1060; height += 20) {
-      await page.setViewportSize({ width: 1470, height });
-      await settle(page);
-      steps.push(await summary(page));
-    }
+    const steps = await sweep(page, 1470, heights(760, 1060, 20));
     await info.attach('sweep.json', { body: JSON.stringify(steps, null, 2), contentType: 'application/json' });
 
     // 760px is too short for even the tightest layout at 1x; the zoom takes
@@ -77,12 +138,7 @@ test.describe('a Retina desktop', () => {
         expect(s.scaleMin, `1x ${at}`).toBeCloseTo(1, 3);
         expect(s.scaleMax, `1x ${at}`).toBeCloseTo(1, 3);
       }
-      if (s.bandRem > TIGHT_BAND_REM + 0.01) {
-        expect(s.trimSourcePx, `the sprite box is whole before the spacing returns ${at}`).toBeLessThan(0.01);
-      }
-      if (s.hintLines > 0) {
-        expect(s.bandRem, `the spacing is whole before a hint line returns ${at}`).toBeCloseTo(ROOMY_BAND_REM, 2);
-      }
+      expectStagesInOrder(s);
       if (i > 0) {
         expect(s.trimSourcePx, `a taller window never trims more ${at}`).toBeLessThanOrEqual(steps[i - 1].trimSourcePx + 1e-6);
       }
@@ -118,5 +174,36 @@ test.describe('a Retina desktop', () => {
     expect(standard.hintLines).toBe(2);
     expect(back.scaleMin, 'back on Retina, 1x again').toBeCloseTo(1, 3);
     expect(back.rowsOnScreen).toBe(14);
+  });
+});
+
+test.describe('a short phone', () => {
+  test.use({ viewport: { width: 320, height: 568 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+
+  test('gives up its spacing at the zoom floor and keeps every row on screen', async ({ page }, info) => {
+    await openLeague(page);
+    // 568px is an iPhone SE with no toolbars; 418px is the same phone with
+    // both toolbars showing and 50px more taken.
+    const down = await sweep(page, 320, heights(568, 418, -10));
+    const up = await sweep(page, 320, heights(438, 568, 26));
+    await info.attach('sweep.json', { body: JSON.stringify({ down, up }, null, 2), contentType: 'application/json' });
+    expectHeldAtTheFloor(down, up);
+  });
+});
+
+test.describe('a short 1080p window', () => {
+  test.use({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+
+  test('gives up its spacing at the zoom floor and keeps every row on screen', async ({ page }, info) => {
+    await openLeague(page);
+    const down = await sweep(page, 1280, heights(720, 540, -20));
+    const up = await sweep(page, 1280, heights(570, 720, 30));
+    await info.attach('sweep.json', { body: JSON.stringify({ down, up }, null, 2), contentType: 'application/json' });
+    expectHeldAtTheFloor(down, up);
+    // Above the floor the zoom keeps its 0.015 deadband, which can leave the
+    // pane's bottom padding a few px past the fold. A held zoom spends it.
+    for (const s of [...down, ...up].filter((s) => s.zoom <= FLOOR + 1e-3)) {
+      expect(s.paneScrolls, `no scroll at ${s.height}px`).toBe(false);
+    }
   });
 });

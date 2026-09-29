@@ -30,7 +30,6 @@ import {
   homeHeightRem,
   homeMetrics,
   HomeMetricsContext,
-  TIGHTEST,
 } from '../homeLayout';
 import { screenRule, spriteRendering, spriteScreen, SPRITE_RENDERING } from '../spriteScale';
 import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
@@ -45,6 +44,7 @@ import {
 } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
+import { LeagueRosterNudge } from './LeagueFunnelNudge';
 
 /**
  * The league home: the card, zoomed out. One row per slot, led by the glyph
@@ -280,13 +280,12 @@ export function LeagueHome() {
     fitRef,
     0.55,
     rule.homeCeilingPx
-      ? {
-          baseWidthRem: 26,
-          spriteRem: HOME_SPRITE_REM,
-          targetSpritePx: rule.homeCeilingPx(dpr),
-          shortestRem: rule.holdsCeiling ? homeHeightRem(TIGHTEST, rootPx) : undefined,
-        }
+      ? { baseWidthRem: 26, spriteRem: HOME_SPRITE_REM, targetSpritePx: rule.homeCeilingPx(dpr) }
       : undefined,
+    {
+      heightRem: (budgetRem) => homeHeightRem(fitHomeLayout(budgetRem, rootPx), rootPx),
+      holds: rule.holds,
+    },
   );
   const metrics = homeMetrics(fitHomeLayout(fit.budgetRem, rootPx));
   const rendering = spriteRendering(screen, HOME_SPRITE_REM * rootPx * fit.scale, dpr);
@@ -409,6 +408,9 @@ export function LeagueHome() {
           ) : null}
         </div>
       </div>
+      {/* After the fitted block, not in its tail: the popup keeps its own
+          size, and the fit reserves its height. */}
+      <LeagueRosterNudge fit={fit} />
       </HomeMetricsContext.Provider>
     </DndContext>
   );

@@ -5,10 +5,11 @@ import { SLOT_COUNT } from './model/constants';
 /**
  * The league summary's vertical layout, and the order it spends height in.
  *
- * On a Retina desktop the summary holds its sprites at exactly 1x
- * (`spriteScale.ts`), so the zoom cannot shrink to fit a short window. The
- * summary's own spacing gives way instead. It starts from its tightest
- * layout and spends the window's spare height on these stages, in order:
+ * The summary's zoom stops shrinking at the zoom it holds (`spriteScale.ts`):
+ * on a Retina desktop the one that draws its sprites at exactly 1x, on every
+ * other screen the fit's floor. Past that point the summary's own spacing
+ * gives way instead. It starts from its tightest layout and spends the
+ * window's spare height on these stages, in order:
  *
  * 1. The sprite box. At its tightest a row reserves the sprite minus
  *    `MAX_TRIM_PX` source px on each side, and the image hangs over the row's
@@ -22,8 +23,8 @@ import { SLOT_COUNT } from './model/constants';
  * Before any of these, the summary spends the empty gutter under it in its
  * pane (`useFitScale`), and it gets that gutter back last.
  *
- * Every other screen uses `ROOMY`, today's layout, and every screen gets
- * `ROOMY` once its window has the room for it.
+ * A window with the room for it gets `ROOMY`, today's layout. On a phone or
+ * a 1080p desktop that is any window where the zoom stays above its floor.
  *
  * All sizes are rem at zoom 1. The markup reads them from `homeMetrics`, and
  * `homeHeightRem` adds up the same numbers, so the fit and the paint cannot

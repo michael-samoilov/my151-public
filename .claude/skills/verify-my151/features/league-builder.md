@@ -52,7 +52,11 @@ shows a `[data-filter-chip="my-dex"]` chip, and its tiles are
 - `league-funnel`: the export nudges (`[data-testid="league-nudge"]`). Its
   `data-league-nudge` is `card` for a full trainer card, `league` for eight
   gym leaders with a card still empty, and `complete` for every card filled.
-  It also loads a full v3 save that saw the eight-gym popup and checks the
+  The two roster popups never cover a summary row: `data-nudge-placement`
+  is `beside` where the pane has room right of the summary (a desktop) and
+  `below` elsewhere, where the popup joins the page flow and the fit shrinks
+  the summary to make room. The league Export button carries
+  `data-nudge-pulse` while one shows. It also loads a full v3 save that saw the eight-gym popup and checks the
   store: version 4, `complete` celebrated, and no popup.
 
 The oracle is the store: `state.cards[i].lines[j].branch` and `.boundaries`,
@@ -89,6 +93,12 @@ and `.powerups[row]`.
   holds its sprites at exactly 1x instead, and gives up its own spacing to
   keep all 14 rows on screen (`src/league/homeLayout.ts`). No harness surface
   runs there; `e2e/league-sprite-scale.spec.ts` covers it on Blink.
+- On a phone or a desktop under a device pixel ratio of 2, the summary zooms
+  as before down to the 0.55 floor. A shorter window then gives up the same
+  spacing, hint lines first, to keep all 14 rows on screen. The harness
+  surfaces (390x844, 412x915, 1280x800) never reach the floor, so they show
+  today's layout. `e2e/league-sprite-scale.spec.ts` sweeps a 320px phone and a
+  1280px window down to the floor and past it.
 - The league render audits wait for every visible image to load first. At
   hydration most sprites are still loading, and an early audit counted 6, 51
   or 37 warnings on the same build.
