@@ -44,6 +44,7 @@ import {
 } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
+import { LeagueRosterNudge } from './LeagueFunnelNudge';
 
 /**
  * The league home: the card, zoomed out. One row per slot, led by the glyph
@@ -407,6 +408,9 @@ export function LeagueHome() {
           ) : null}
         </div>
       </div>
+      {/* After the fitted block, not in its tail: the popup keeps its own
+          size, and the fit reserves its height. */}
+      <LeagueRosterNudge fit={fit} />
       </HomeMetricsContext.Provider>
     </DndContext>
   );

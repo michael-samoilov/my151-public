@@ -165,6 +165,13 @@ export function useFitScale(
       } else {
         avail = window.innerHeight - rect.top - 8;
       }
+      // A note drawn under the block at its own size, not the block's zoom
+      // (the export popup, `LeagueRosterNudge`), takes its whole height off
+      // the budget.
+      const note = el.nextElementSibling;
+      if (note instanceof HTMLElement && note.hasAttribute('data-fit-reserve')) {
+        avail -= note.offsetHeight;
+      }
       // The room the block is drawn in, measured on the parent because the
       // parent is not scaled.
       const host = el.parentElement;
