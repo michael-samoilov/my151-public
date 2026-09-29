@@ -4,9 +4,10 @@ import { blankLeague, pairLeague } from './support/leagueSeed';
 /**
  * The ace and the partner share the card's top-left slot, split by a diagonal.
  *
- * CSS pins ace top-left and partner bottom-right, same padding, partner
- * column reversed. Sprite size is 1× or 2× of the 96px source, never a
- * pane fraction. This spec checks that layout, not a solver reading.
+ * CSS pins ace top-left at 2× the team sprite and partner bottom-right at
+ * 1×, each with its caption beside it. Sizes are whole multiples of the
+ * team sprite, never a pane fraction. This spec checks that layout, not a
+ * solver reading.
  */
 
 const openCard = async (page: Page) => {
@@ -274,16 +275,15 @@ test.describe('the ace and partner slot', () => {
     expect(state.lines, 'the partner seats itself when there is room').toBeGreaterThan(0);
   });
 
-  test('both halves get the same sprite', { tag: '@viewport' }, async ({ page }) => {
+  test('the ace is twice the partner', { tag: '@viewport' }, async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
     const { halves } = await slotGeometry(page);
     const ace = halves.find((h) => h.id === 'slot-ace')!;
     const partner = halves.find((h) => h.id === 'slot-partner')!;
-    // Equal is the invariant. The partner's wedge is the smaller partition,
-    // so sizing each half to its own room made the partner read as the lesser
-    // one; the pair is one size and the slot's width sets it.
-    expect(Math.abs(ace.sprite - partner.sprite), 'the two match').toBeLessThanOrEqual(1);
+    // Michael's rule: the ace draws at twice the partner's scale, and the
+    // partner stays one team sprite.
+    expect(Math.abs(ace.sprite - 2 * partner.sprite), 'the ace is 2x').toBeLessThanOrEqual(1);
   });
 
   test('a lone ace keeps the empty partner half and the diagonal', { tag: '@viewport' }, async ({ page }) => {

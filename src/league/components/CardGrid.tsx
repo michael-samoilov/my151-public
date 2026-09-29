@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DndContext,
@@ -42,7 +42,11 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyp
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
-import { BALL_OF_SPRITE, RING_OF_SPRITE, pairSpriteScale, seamEnds, SLOT_PAD_REM, SPRITE_REM } from '../slotLayout';
+import { BALL_OF_SPRITE, RING_OF_SPRITE, SPRITE_REM } from '../slotLayout';
+import {
+  ACE_SCALE, CAPTION_GAP_X_REM, CAPTION_GAP_Y_REM, CAPTION_SIZE, CAPTION_TRACK, SHOWCASE_PAD_REM,
+  showcase, showcaseUnit, type SeamRule,
+} from '../showcaseLayout';
 import { tmBodyShiftRem, tmNameWraps } from '../export/layout';
 import { useSlotLab } from '../slotLab';
 import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
@@ -775,11 +779,14 @@ function PowerupButton({ kind, active, onPress, side }: {
 }
 
 /**
- * Ace/partner cluster: heading, sprite, name.
+ * Ace/partner cluster: a sprite and its caption, the heading over the name.
  *
- * Ace pins top-left. Partner pins bottom-right and reverses the column so
- * the heading stays in the outer corner. Same padding. Empty keeps the
- * sprite square and draws the ring inside it.
+ * The ace pins top left at twice the partner's size, with its caption under
+ * it on one line, left-aligned from the pane's edge. The partner pins bottom
+ * right with its caption to its left, right-aligned against it and sitting
+ * on the pane's bottom pad. Both captions share the corner under the ace;
+ * the seam runs between them (`showcaseLayout.ts`). Empty keeps the sprite
+ * square and draws the ring inside it.
  */
 function SlotHalf({
   testId, half, heading, mirrored, pokemon, onPick, onRemove,
@@ -795,7 +802,8 @@ function SlotHalf({
   const label = (
     <HeadRuns
       lines={heading.lines}
-      className={HEAD_CLASS}
+      inline={!mirrored}
+      className={cn(HEAD_CLASS, mirrored ? 'text-right' : 'text-left')}
       data-slot-head={half}
       style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)' }}
     />
@@ -836,17 +844,24 @@ function SlotHalf({
     el.addEventListener('pointercancel', up);
   };
 
+  const edge = mirrored ? 'var(--slot-unit)' : `calc(var(--slot-unit) * ${ACE_SCALE})`;
   const art = (
     <span
       data-slot-art
       className="relative flex shrink-0 items-center justify-center"
-      style={{ width: 'var(--slot-sprite)', height: 'var(--slot-sprite)' }}
+      style={{ width: edge, height: edge, ['--slot-sprite' as string]: edge }}
     >
       {pokemon ? (
         <>
+          {/* The ball's two layers are squares turned 30 degrees, so their
+              boxes reach past the ball on every side. The ball is a circle
+              inside its own square, so cropping to that square paints the
+              same and keeps the turned corners off the pane's edge, which a
+              2x ace at the pane's pad would otherwise reach. */}
           <span
             aria-hidden="true"
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            data-audit-clip="intended"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden"
             style={{
               width: `calc(var(--slot-sprite) * ${BALL_OF_SPRITE})`,
               height: `calc(var(--slot-sprite) * ${BALL_OF_SPRITE})`,
@@ -880,10 +895,20 @@ function SlotHalf({
   const name = (
     <span
       data-slot-name={half}
-      className={cn('relative block w-max shrink-0 whitespace-nowrap', NAME_CLASS)}
+      className={cn('relative block w-max shrink-0 whitespace-nowrap', CAPTION_NAME_CLASS)}
       style={{ color: pokemon ? 'var(--lg-band)' : undefined }}
     >
       {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0'}
+    </span>
+  );
+  // The name keeps its line while empty, so filling a slot moves nothing.
+  const caption = (
+    <span
+      data-slot-caption={half}
+      className={cn('flex shrink-0 flex-col', mirrored ? 'items-end' : 'items-start')}
+    >
+      {label}
+      {name}
     </span>
   );
   return (
@@ -904,19 +929,19 @@ function SlotHalf({
         pokemon ? `${heading.label}: ${pokemon.name}` : `Choose a ${heading.label.toLowerCase()}`
       }
       className={cn(
-        'absolute z-[6] flex items-center text-center',
-        mirrored ? 'bottom-0 right-0 flex-col-reverse' : 'left-0 top-0 flex-col',
+        'absolute z-[6] flex',
+        mirrored ? 'bottom-0 right-0 flex-row items-end' : 'left-0 top-0 flex-col items-start',
         lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer',
       )}
       style={{
-        padding: `${SLOT_PAD_REM}rem`,
+        padding: `${SHOWCASE_PAD_REM}rem`,
+        gap: mirrored ? `${CAPTION_GAP_X_REM}rem` : `${CAPTION_GAP_Y_REM}rem`,
         transform: offset.x || offset.y ? `translate(${offset.x}px, ${offset.y}px)` : undefined,
         outlineColor: lab ? 'rgba(37,99,235,0.5)' : undefined,
       }}
     >
-      {label}
-      {art}
-      {name}
+      {mirrored ? caption : art}
+      {mirrored ? art : caption}
     </button>
   );
 }
@@ -982,22 +1007,41 @@ function EmptyOutline() {
   );
 }
 
+/**
+ * Mockup switch: where the seam sits. `between` (the default) splits the
+ * room the two captions share; `hug` sits as high as it can while it clears
+ * the ace. Set `localStorage['ace-mock'] = 'hug'` and reload to compare.
+ */
+const SEAM_RULE: SeamRule = (() => {
+  try {
+    return window.localStorage.getItem('ace-mock') === 'hug' ? 'hug' : 'between';
+  } catch {
+    return 'between';
+  }
+})();
+
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
-const HEAD_CLASS = CARD_LABEL_CLASS;
+// The card's label face, at the caption size the pane sets (`CAPTION_SIZE`).
+const HEAD_CLASS = 'text-[length:var(--cap-size)] font-extrabold tracking-[var(--cap-track)] leading-[1.4]';
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
 // words that a wide track sets off, while the name is one long word that the
 // same track would push past the seam — a ten-letter starter like Charmander
 // clears the box at this spacing and clips at the heading's.
 const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[1.4] uppercase';
+/** The ace's and partner's names: `NAME_CLASS` at the pane's caption size. */
+const CAPTION_NAME_CLASS = 'text-[length:var(--cap-size)] font-extrabold tracking-[0.02em] leading-[1.4] uppercase';
 
 /**
  * A heading, one line per run. Each line is nowrap so PARTNER / and
- * SHOULDERMON stay two words.
+ * SHOULDERMON stay two words. `inline` sets the runs on one line instead,
+ * which is how the ace's caption reads under the ace: ACE POKÉMON is one
+ * phrase, and one line leaves the seam the room a second would take.
  */
-function HeadRuns({ lines, className, style, ...rest }: {
+function HeadRuns({ lines, inline = false, className, style, ...rest }: {
   lines: readonly string[];
+  inline?: boolean;
   className?: string;
   style?: React.CSSProperties;
   'data-slot-head'?: string;
@@ -1005,12 +1049,17 @@ function HeadRuns({ lines, className, style, ...rest }: {
   return (
     <span
       {...rest}
-      className={cn('inline-block w-max shrink-0 text-center', className)}
+      className={cn('inline-block w-max shrink-0 text-center', inline && 'whitespace-nowrap', className)}
       style={style}
     >
-      {lines.map((line) => (
+      {lines.map((line, i) => (inline ? (
+        <Fragment key={line}>
+          {i > 0 && ' '}
+          <span className="inline shrink-0 whitespace-nowrap">{line}</span>
+        </Fragment>
+      ) : (
         <span key={line} className="block shrink-0 whitespace-nowrap">{line}</span>
-      ))}
+      )))}
     </span>
   );
 }
@@ -1052,9 +1101,12 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const box = useSlotBox(slotRef);
   const labSprite = useSlotLab((st) => (st.enabled ? st.sprite : 0));
   const remPx = getAppliedRootFontSizePx();
-  const scale = pairSpriteScale(box[0], box[1], remPx);
-  const spritePx = labSprite > 0 ? labSprite : scale * SPRITE_REM * remPx;
-  const seam = seamEnds(box[0], box[1]);
+  // The partner is one team sprite, 1x of the 3.25rem cell, and the ace two.
+  // Both stay whole multiples of the cell, so the card's fit zoom paints them
+  // at the same scale steps as the team rows.
+  const unitPx = labSprite > 0 ? labSprite : showcaseUnit(box[0], remPx, SPRITE_REM);
+  const whole = labSprite === 0 && unitPx === SPRITE_REM * remPx;
+  const { seam } = showcase(box[0], box[1], remPx, unitPx, SEAM_RULE);
   const pos = {
     ...slotX(1, 3),
     top: `${rowTop(1) + INSET_Y}rem`,
@@ -1065,13 +1117,15 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       ref={slotRef}
       data-ace-partner-slot
       data-showcase={ace && partner ? 'pair' : ace || partner ? 'split' : 'empty'}
-      data-slot-sprite={spritePx}
+      data-slot-sprite={ACE_SCALE * unitPx}
+      data-seam-rule={SEAM_RULE}
       className="absolute z-[5] overflow-hidden rounded-lg"
       style={{
         ...pos,
-        ['--slot-sprite' as string]: labSprite > 0
-          ? `${labSprite}px`
-          : `${scale * SPRITE_REM}rem`,
+        ['--slot-unit' as string]: whole ? `${SPRITE_REM}rem` : `${unitPx}px`,
+        containerType: 'inline-size',
+        ['--cap-size' as string]: CAPTION_SIZE,
+        ['--cap-track' as string]: CAPTION_TRACK,
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
