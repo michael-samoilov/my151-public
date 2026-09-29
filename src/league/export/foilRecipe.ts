@@ -1,3 +1,5 @@
+import { FOIL_HOLO_AMOUNT } from './foilBlend';
+
 /**
  * Lighting recipe for the export preview foil.
  *
@@ -12,11 +14,11 @@ export const FOIL_LAYER_IDS = [
   'ambient',
   'specular',
   'rim',
+  'holoRainbow',
   'holographic',
   'iridescence',
   'emboss',
   'parallax',
-  'sparkle',
   'bloom',
 ] as const;
 
@@ -28,10 +30,12 @@ export type FoilLayer = {
 };
 
 export type FoilRecipe = {
+  /** Auto-tilt amplitude in degrees. The card fit reserves room for it. */
   idleTilt: number;
   idleMsX: number;
   idleMsY: number;
   deadDeg: number;
+  /** Hover tilt at the card edge, and the cap on every tilt, in degrees. */
   maxTilt: number;
   parallaxPx: number;
   bloomBlurPx: number;
@@ -56,9 +60,13 @@ export const FOIL_LAYER_META = {
     title: 'Rim lighting',
     blurb: 'Edge glow opposite the light, masked to ridges.',
   },
+  holoRainbow: {
+    title: 'Rainbow holofoil',
+    blurb: 'Rainbow bands sweep across colored ink as the card tilts.',
+  },
   holographic: {
-    title: 'Foil / holographic sheen',
-    blurb: 'Rainbow sheen on saturated ink, not on the white paper.',
+    title: 'V shine',
+    blurb: 'Diagonal bands cross on colored ink. White paper stays paper.',
   },
   iridescence: {
     title: 'Iridescence / color shift',
@@ -72,10 +80,6 @@ export const FOIL_LAYER_META = {
     title: 'Parallax',
     blurb: 'Colored ink slides a few pixels above the paper.',
   },
-  sparkle: {
-    title: 'Specular glints / sparkles',
-    blurb: 'Tiny glints on glossy and ridged pixels.',
-  },
   bloom: {
     title: 'Bloom / glow',
     blurb: 'Blurred copy of the hotspot.',
@@ -84,35 +88,35 @@ export const FOIL_LAYER_META = {
 
 export const FOIL_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-recipe';
 
+/** Michael's workshop pick, September 27. */
 const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   pointLight: { on: true, amount: 1 },
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
-  holographic: { on: true, amount: 0.75 },
-  iridescence: { on: true, amount: 0.15 },
+  holoRainbow: { on: true, amount: 0.2 },
+  holographic: { on: true, amount: FOIL_HOLO_AMOUNT },
+  iridescence: { on: true, amount: 0.1 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
-  sparkle: { on: true, amount: 0.52 },
-  bloom: { on: true, amount: 0.36 },
+  bloom: { on: false, amount: 0.36 },
 };
 
-/** Live overlay default. Off layers stay off so they never paint. */
 export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
   idleTilt: 10,
   idleMsX: 14000,
   idleMsY: 14000,
   deadDeg: 3,
-  maxTilt: 20,
+  maxTilt: 10,
   parallaxPx: 0,
   bloomBlurPx: 34,
   specSize: 0.5,
   layers: DEFAULT_LAYERS,
 };
 
-const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holographic', 'iridescence', 'parallax'];
+const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holoRainbow', 'holographic', 'iridescence', 'parallax'];
 const EDGE_MASK_LAYERS: readonly FoilLayerId[] = ['emboss', 'rim'];
-const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'sparkle', 'bloom'];
+const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'bloom'];
 
 export type FoilMapNeed = {
   sat: boolean;
@@ -162,11 +166,11 @@ export function parseFoilRecipe(input: unknown): FoilRecipe {
     }
   }
   return {
-    idleTilt: readNumber(rec.idleTilt, base.idleTilt, 0, 20),
+    idleTilt: readNumber(rec.idleTilt, base.idleTilt, 0, 30),
     idleMsX: readNumber(rec.idleMsX, base.idleMsX, 2000, 40000),
     idleMsY: readNumber(rec.idleMsY, base.idleMsY, 2000, 40000),
     deadDeg: readNumber(rec.deadDeg, base.deadDeg, 0, 15),
-    maxTilt: readNumber(rec.maxTilt, base.maxTilt, 8, 35),
+    maxTilt: readNumber(rec.maxTilt, base.maxTilt, 1, 20),
     parallaxPx: readNumber(rec.parallaxPx, base.parallaxPx, 0, 24),
     bloomBlurPx: readNumber(rec.bloomBlurPx, base.bloomBlurPx, 0, 40),
     specSize: readNumber(rec.specSize, base.specSize, 0.08, 0.8),

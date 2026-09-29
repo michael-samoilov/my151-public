@@ -13,7 +13,8 @@ preview and layout options.
   name, theme, TM reward, badge name) and a team mode
   (`[data-export-team="story"|"rematch"|"both"]`). A card export has neither.
 - Save (`[data-league-export-confirm]`) shares or downloads `my151-league.png`
-  or `my151-trainer-card.png`.
+  or `my151-trainer-card.png`. Both paint the team sprites at 1× (96 px) and
+  wear a 12 px frame: red around the league, the bar's colour around the card.
 - A survey can follow: `[data-export-survey-intro]`, then
   `[data-export-survey]` with an "other" option (`[data-export-other]`).
 

@@ -12,6 +12,7 @@
  */
 
 import { localeUppercase } from '@/i18n';
+import { EXPORT_FRAME_PX } from '@/lib/exportPngShape';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import { pairSprite, soloSprite } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
@@ -25,9 +26,9 @@ export const K = 96 / 52;
  * One box for both pictures.
  *
  * Each picture is its content, edge to edge: no page around it and no card
- * chrome, so nothing reads as a card floating on a blank ground. The league is
- * the box wide; the trainer card wears a frame either side of it, so it runs
- * 24px wider. Each picture is as tall as its own content.
+ * chrome, so nothing reads as a card floating on a blank ground. The trainer
+ * card is the box wide plus a frame either side of it; the league adds the same
+ * frame around its own width. Each picture is as tall as its own content.
  *
  * The box is the league's natural width at 1× sprites. The trainer card's
  * columns are derived from it below.
@@ -147,18 +148,13 @@ export const BAR_RING = 2;
 export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
 
 /**
- * The frame: the bar's own colour down both sides and along the bottom, with
- * the bar as the top edge, so the picture reads as one bordered card. The
- * content keeps its size and the picture grows by the frame. The league stays
- * bare: a frame in its spacer red was tried and turned down.
+ * The frame, as wide as on every export (`EXPORT_FRAME_PX` beside 1× sprites).
+ * The trainer card wears its bar's own colour down both sides and along the
+ * bottom, with the bar as the top edge, so the picture reads as one bordered
+ * card. The league wears it on all four sides. The content keeps its size and
+ * the picture grows by the frame.
  */
-export const FRAME = 12;
-
-/**
- * Native 2× source pixels. Export paint size is `pairExportSprite`: 96, 192,
- * or 288. Never a fraction of 96.
- */
-export const SIG_SPRITE = 192;
+export const FRAME = EXPORT_FRAME_PX;
 
 /** Showcase headings. Same two-line caps the live card paints. */
 export const ACE_HEAD = ['ACE', 'POKÉMON'];
