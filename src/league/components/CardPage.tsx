@@ -361,7 +361,7 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
       )}
       <div className="px-3 pt-2.5">
         <div ref={fitRef} style={fitStyle(fit, rendering)}>
-          <CardGrid cardIndex={cardIndex} view={view} zoom={fit.scale} />
+          <CardGrid cardIndex={cardIndex} view={view} />
         </div>
       </div>
       {/* Both pickers are `position: fixed`, and a transformed ancestor

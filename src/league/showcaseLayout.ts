@@ -1,28 +1,21 @@
 /**
  * The live card's signature pane: the ace at twice the partner's size.
  *
- * Michael's rules for the pane:
+ * The pane's rules:
  *
- * - The ace sits top left and the partner bottom right, the ace exactly
- *   twice the partner.
- * - Every sprite draws at a whole number of device px per source px, so no
- *   source pixel draws as a wider block than its neighbour. The card's fit
- *   zoom and the screen's dpr both set that, so the pane snaps its sprites
- *   from both, live. The exceptions are the screens `isScaleException`
- *   names.
+ * - The partner is the size of the card's other sprites, as the card draws
+ *   them, and centres on the column of sprites below it (the pane's right
+ *   column) in the pane's bottom row, the card's 4th.
+ * - The ace is exactly twice the partner and centres on the pane's top-left
+ *   2x2-cell zone.
  * - The ace's caption, ACE POKÉMON over the name, is centred under the ace.
  *   The partner's, PARTNER / SHOULDERMON over the name, sits to its left,
  *   right-aligned and centred on it. Names are in the page's text colour.
  * - The 30 degree seam runs between the two sprites. Text may cross it; the
- *   seam then shows faintly behind the text instead of breaking.
+ *   seam then fades right next to the letters instead of breaking.
  *
- * Where the ace's caption goes is a mockup choice, `CaptionPlan`, picked
- * with `localStorage['ace-mock']`.
- *
- * The export draws its own pane from `slotLayout.ts` and is unchanged.
+ * The export draws its own pane from `slotLayout.ts`.
  */
-import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
-
 /** The ace is this many partner sprites wide. */
 export const ACE_SCALE = 2;
 
@@ -54,7 +47,7 @@ export const CAPTION_LEADING = 1.4;
 const CAPTION_WIDEST_EM = 8.9;
 const SHOULDERMON_EM = 7.96;
 const SHOULDERMON_LETTERS = 11;
-export const CAPTION_MAX_REM = 0.53125;
+const CAPTION_MAX_REM = 0.53125;
 export const CAPTION_MIN_REM = 0.4;
 
 const GAPS_REM = 2 * SHOWCASE_PAD_REM + CAPTION_GAP_X_REM;
@@ -68,106 +61,73 @@ export const PANE_FACE = {
 };
 
 /**
- * How much of its strength the seam keeps where it passes behind a
- * caption's text box. Each text box wears the pane's colour at the rest.
+ * The captions' halo: the pane's colour in a thin ring round each glyph, so
+ * the seam fades where it runs right next to a letter and nowhere else.
+ * Eight copies of the text, each 0.15em off in one of eight directions at a
+ * quarter of the pane's colour, stack strongest against the letters.
  */
-export const SEAM_BEHIND_TEXT = 0.35;
+export const CAPTION_HALO = Array.from({ length: 8 }, (_, i) => {
+  const turn = (i * Math.PI) / 4;
+  const [x, y] = [Math.cos(turn), Math.sin(turn)].map((v) => (0.15 * v).toFixed(3));
+  return `${x}em ${y}em 0.05em color-mix(in srgb, var(--lg-slot) 25%, transparent)`;
+}).join(', ');
 
 const TAN_30 = Math.tan(Math.PI / 6);
 const COS_30 = Math.cos(Math.PI / 6);
 
 /** How far the seam stays off each sprite's square, measured square to it. */
-export const SQUARE_CLEAR_REM = 0.25;
+const SQUARE_CLEAR_REM = 0.25;
 
-/** Where the ace's caption goes. The partner's is the same in every plan. */
-export interface CaptionPlan {
-  /**
-   * `under` the ace and centred on it, ACE POKÉMON over the name; or
-   * `around` it, ACE POKÉMON over the ace and the name under it.
-   */
-  ace: 'under' | 'around';
+/** The card's grid, in rem, as the card lays it out. */
+export interface CardGridRem {
+  /** A row's height. */
+  row: number;
+  /** How far the pane sits inside its columns, and inside its rows. */
+  insetX: number;
+  insetY: number;
+  /** The card's own pad outside the first column, which the card clips at. */
+  padX: number;
+  /** A cell sprite's edge. */
+  sprite: number;
 }
 
-export const PLANS = {
-  center: { ace: 'under' },
-  centersplit: { ace: 'around' },
-} as const satisfies Record<string, CaptionPlan>;
-
-export type PlanName = keyof typeof PLANS;
-export const DEFAULT_PLAN: PlanName = 'center';
-
-export function isPlanName(value: unknown): value is PlanName {
-  return typeof value === 'string' && Object.hasOwn(PLANS, value);
-}
-
-/**
- * The largest partner edge, in pane px, that keeps the layout: the ace,
- * twice it, sits between the pads; the ace, its caption lines and the
- * partner stack down the pane without meeting; and a 30 degree seam passes
- * between the two squares, clear of each.
- */
-function largestUnit(w: number, h: number, remPx: number, plan: CaptionPlan): number {
-  const pad = SHOWCASE_PAD_REM * remPx;
-  const line = CAPTION_LEADING * CAPTION_MAX_REM * remPx;
-  const gap = CAPTION_GAP_Y_REM * remPx;
-  // The ace's caption takes two lines under it, or one over and one under.
-  const captions = 2 * line + (plan.ace === 'around' ? 2 * gap : gap);
-  const aceTop = pad + (plan.ace === 'around' ? line + gap : 0);
-  // The ace's lower right corner and the partner's upper left one, a seam's
-  // clearance on each side of the line: linear in the edge, so solved here.
-  const clear = (2 * SQUARE_CLEAR_REM * remPx) / COS_30;
-  const seam = (h - pad - aceTop + TAN_30 * (w - 2 * pad) - clear) / ((ACE_SCALE + 1) * (1 + TAN_30));
-  return Math.min((w - 2 * pad) / ACE_SCALE, (h - 2 * pad - captions) / (ACE_SCALE + 1), seam);
+/** Where a sprite's square goes, in pane px. */
+export interface Square {
+  cx: number;
+  cy: number;
+  size: number;
 }
 
 /**
- * The screens that break the whole-scale rule: those where even a partner
- * at 1 device px per source px does not fit the layout.
+ * The two squares, from the pane's width. The pane spans three of the card's
+ * seven columns and four of its rows, inset by `insetX` and `insetY`, so a
+ * column is a third of the pane's width plus both insets.
  *
- * Michael's rule is a whole number of device px per source px wherever
- * possible, with exceptions only for pathological displays. Measured on
- * the card, those are a 1x desktop (1280x800 at dpr 1: a 1x partner is 96
- * screen px and its ace 192, in a pane 148 screen px wide) and a phone
- * whose card zooms out or lays out narrow (320x568 at dpr 2, and 320x844
- * at dpr 1). Every other size tested fits k = 1 or more.
+ * The partner is one cell sprite, centred on the pane's right column and
+ * bottom row, where the column of sprites below it and the card's 4th row
+ * put their own centres. The ace is two, centred on the top-left 2x2 cells.
+ * Both may reach a little past the pane's inset box, as the cell sprites
+ * reach past their cells, but the ace never past the card's edge, which
+ * clips it: on a pane too narrow for it (320px at dpr 1) it moves right just
+ * far enough to stay whole.
  */
-export function isScaleException(w: number, h: number, remPx: number, devicePerPx: number, plan: CaptionPlan): boolean {
-  return (largestUnit(w, h, remPx, plan) * devicePerPx) / SPRITE_NATIVE < 1;
+export function showcaseSquares(w: number, remPx: number, grid: CardGridRem): { ace: Square; partner: Square } {
+  const insetX = grid.insetX * remPx;
+  const insetY = grid.insetY * remPx;
+  const col = (w + 2 * insetX) / 3;
+  const row = grid.row * remPx;
+  const unit = grid.sprite * remPx;
+  const size = ACE_SCALE * unit;
+  const cardEdge = -(grid.insetX + grid.padX) * remPx;
+  return {
+    // The 2x2 cells' centre is one column and one row in from the pane's
+    // outer corner, which sits the insets outside the pane.
+    ace: { cx: Math.max(col - insetX, cardEdge + size / 2), cy: row - insetY, size },
+    partner: { cx: 2.5 * col - insetX, cy: 3.5 * row - insetY, size: unit },
+  };
 }
 
-/** How the pane draws its pair on one screen. */
-export interface PairScale {
-  /** The partner's edge, in pane px. The ace's is `ACE_SCALE` times it. */
-  unit: number;
-  /** Device px per source px, for the partner. The ace's is twice it. */
-  k: number;
-  /**
-   * `whole`: both sprites at whole scales. `exception`: the pair at the
-   * largest size that fits, drawn by production's rule for the screen.
-   */
-  mode: 'whole' | 'exception';
-}
-
-/**
- * The pair's size, from the pane's size and how many device px one pane px
- * paints (`dpr` times the card's zoom): the largest whole scale that fits,
- * or, on an exception screen, the largest size that fits.
- */
-export function pairScale(
-  w: number, h: number, remPx: number, devicePerPx: number, plan: CaptionPlan, cellRem: number,
-): PairScale {
-  // Before the pane is measured, the team cell stands in.
-  if (w < 8 || h < 8 || devicePerPx <= 0) return { unit: cellRem * remPx, k: 1, mode: 'exception' };
-  const room = largestUnit(w, h, remPx, plan);
-  if (isScaleException(w, h, remPx, devicePerPx, plan)) {
-    return { unit: room, k: (room * devicePerPx) / SPRITE_NATIVE, mode: 'exception' };
-  }
-  const k = Math.floor((room * devicePerPx) / SPRITE_NATIVE);
-  return { unit: (k * SPRITE_NATIVE) / devicePerPx, k, mode: 'whole' };
-}
-
-
-export interface Point {
+interface Point {
   x: number;
   y: number;
 }

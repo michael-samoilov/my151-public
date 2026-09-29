@@ -44,15 +44,12 @@ import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } fr
 import { LaurelIcon } from './LaurelIcon';
 import { BALL_OF_SPRITE, RING_OF_SPRITE, SPRITE_REM } from '../slotLayout';
 import {
-  ACE_SCALE, CAPTION_GAP_X_REM, CAPTION_GAP_Y_REM, CAPTION_LEADING, CAPTION_MIN_REM, DEFAULT_PLAN, isPlanName,
-  pairScale, PANE_FACE, PLANS, SEAM_BEHIND_TEXT, seamBetween, SHOWCASE_PAD_REM,
-  type Box, type CaptionPlan, type PlanName, type SeamEnds,
+  ACE_SCALE, CAPTION_GAP_X_REM, CAPTION_GAP_Y_REM, CAPTION_HALO, CAPTION_LEADING, CAPTION_MIN_REM, PANE_FACE,
+  seamBetween, showcaseSquares, SHOWCASE_PAD_REM, type Box, type CardGridRem, type SeamEnds,
 } from '../showcaseLayout';
-import { useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { tmBodyShiftRem, tmNameWraps } from '../export/layout';
 import { useSlotLab } from '../slotLab';
-import { SPRITE_RENDERING, SPRITE_RENDERING_VAR, spriteRendering, spriteScreen } from '../spriteScale';
+import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
 
 /**
  * The 11-row gym leader card. Geometry mirrors the design canvas
@@ -790,28 +787,29 @@ function PowerupButton({ kind, active, onPress, side }: {
  * sprite square and draws the ring inside it.
  */
 function SlotHalf({
-  testId, half, heading, plan, fit, rendering, pokemon, onPick, onRemove,
+  testId, half, heading, fit, place, pokemon, onPick, onRemove,
 }: {
   testId: string;
   half: 'ace' | 'partner';
   heading: Heading;
-  plan: CaptionPlan;
   fit: HalfFit;
-  /** How the sprite's pixels draw: sharp at a whole scale, smoothed below 1x. */
-  rendering: 'pixelated' | 'auto';
+  /**
+   * Where the half sits in the pane: the ace's centre line and top, or the
+   * partner's right edge and top, in pane px.
+   */
+  place: { left: number; top: number } | { right: number; top: number };
   pokemon: ReturnType<typeof getPokemonById>;
   onPick: () => void;
   onRemove: () => void;
 }) {
   const mirrored = half === 'partner';
-  const align = mirrored ? 'right' : 'center';
   const label = (
     <HeadRuns
       lines={heading.lines}
       inline={!mirrored}
-      className={cn(HEAD_CLASS, TEXT_ALIGN[align])}
+      className={cn(HEAD_CLASS, mirrored && 'text-right')}
       data-slot-head={half}
-      style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)', background: TEXT_VEIL }}
+      style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)' }}
     />
   );
   const halfRef = useRef<HTMLButtonElement>(null);
@@ -862,8 +860,8 @@ function SlotHalf({
           {/* The ball's two layers are squares turned 30 degrees, so their
               boxes reach past the ball on every side. The ball is a circle
               inside its own square, so cropping to that square paints the
-              same and keeps the turned corners off the pane's edge, which a
-              2x ace at the pane's pad would otherwise reach. */}
+              same and keeps the turned corners off the card's edge, which a
+              2x ace near it would otherwise reach. */}
           <span
             aria-hidden="true"
             data-audit-clip="intended"
@@ -880,7 +878,7 @@ function SlotHalf({
             src={pokemon.sprite}
             alt={pokemon.name}
             className="relative z-[1] h-full w-full max-w-none"
-            style={{ imageRendering: rendering }}
+            style={{ imageRendering: SPRITE_RENDERING }}
           />
           <SlotRemove label={`Remove ${heading.label.toLowerCase()}`} onRemove={onRemove} />
         </>
@@ -898,18 +896,18 @@ function SlotHalf({
       )}
     </span>
   );
-  // The name keeps its line while empty, so filling a slot moves nothing.
-  const text = pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0';
+  // An empty half has no name line, so the partner's heading alone centres
+  // on its ball.
+  const text = pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : null;
   const clipped = fit.max > 0;
-  const name = (
+  const name = text !== null && (
     <span
       data-slot-name={half}
-      className={cn('relative block w-max shrink-0 whitespace-nowrap', CAPTION_NAME_CLASS, TEXT_ALIGN[align])}
+      className={cn('relative block w-max shrink-0 whitespace-nowrap', CAPTION_NAME_CLASS)}
       style={{
         // The names are in the page's text colour, the darkest the card page
         // draws (`text-foreground`); the labels keep the card's band colour.
-        color: pokemon ? 'var(--color-foreground, #0a0a0a)' : undefined,
-        background: TEXT_VEIL,
+        color: 'var(--color-foreground, #0a0a0a)',
         // A shrunk name keeps its line's height, so the lines around it
         // stay put.
         fontSize: fit.scale < 1 ? `max(${CAPTION_MIN_REM}rem, var(--cap-size) * ${fit.scale})` : undefined,
@@ -925,7 +923,7 @@ function SlotHalf({
   );
   // The name at the caption size, unshrunk and unclipped, for the fit to
   // measure against its room.
-  const probe = (
+  const probe = text !== null && (
     <span
       data-name-probe={half}
       aria-hidden="true"
@@ -935,14 +933,15 @@ function SlotHalf({
     </span>
   );
   const caption = (
-    <span data-slot-caption={half} className={cn('relative flex shrink-0 flex-col', ITEMS[align])}>
+    <span
+      data-slot-caption={half}
+      className={cn('relative flex shrink-0 flex-col', mirrored ? 'items-end' : 'items-center')}
+      style={{ textShadow: CAPTION_HALO }}
+    >
       {label}
       {name}
     </span>
   );
-  const children = mirrored
-    ? <>{caption}{art}</>
-    : plan.ace === 'around' ? <>{label}{art}{name}</> : <>{art}{caption}</>;
   return (
     <button
       ref={halfRef}
@@ -962,30 +961,24 @@ function SlotHalf({
       }
       className={cn(
         'absolute z-[6] flex items-center',
-        mirrored ? 'bottom-0 right-0 flex-row' : 'left-0 top-0 flex-col',
+        mirrored ? 'flex-row' : 'flex-col',
         lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer',
       )}
       style={{
-        padding: `${SHOWCASE_PAD_REM}rem`,
+        ...('left' in place ? { left: `${place.left}px` } : { right: `${place.right}px` }),
+        top: `${place.top}px`,
         gap: mirrored ? `${CAPTION_GAP_X_REM}rem` : `${CAPTION_GAP_Y_REM}rem`,
-        transform: offset.x || offset.y ? `translate(${offset.x}px, ${offset.y}px)` : undefined,
+        // The ace's block centres on its left edge; the lab's nudge rides
+        // on top.
+        transform: `translate(${'left' in place ? '-50%' : '0px'}, 0px) translate(${offset.x}px, ${offset.y}px)`,
         outlineColor: lab ? 'rgba(37,99,235,0.5)' : undefined,
       }}
     >
-      {children}
+      {mirrored ? <>{caption}{art}</> : <>{art}{caption}</>}
       {probe}
     </button>
   );
 }
-
-/**
- * What each caption's text box wears: the pane's colour, so the seam shows
- * through at `SEAM_BEHIND_TEXT` of its strength where it passes behind text.
- */
-const TEXT_VEIL = `color-mix(in srgb, var(--lg-slot) ${Math.round((1 - SEAM_BEHIND_TEXT) * 100)}%, transparent)`;
-
-const TEXT_ALIGN = { left: 'text-left', center: 'text-center', right: 'text-right' } as const;
-const ITEMS = { left: 'items-start', center: 'items-center', right: 'items-end' } as const;
 
 /**
  * The card's remove control, in the corner of whatever it is given.
@@ -1048,19 +1041,8 @@ function EmptyOutline() {
   );
 }
 
-/**
- * Mockup switch: where the captions sit. Set `localStorage['ace-mock']` to
- * a key of `PLANS` and reload to compare; anything else is `DEFAULT_PLAN`.
- */
-const PLAN_NAME: PlanName = (() => {
-  try {
-    const value = window.localStorage.getItem('ace-mock');
-    return isPlanName(value) ? value : DEFAULT_PLAN;
-  } catch {
-    return DEFAULT_PLAN;
-  }
-})();
-const PLAN: CaptionPlan = PLANS[PLAN_NAME];
+/** The card's grid as the signature pane reads it: the same rem the rows and cells use. */
+const PANE_GRID: CardGridRem = { row: ROW_H, insetX: INSET_X, insetY: INSET_Y, padX: PAD_X, sprite: SPRITE_REM };
 
 /** How one caption's name fits: its scale, its tracking, and its clip width. */
 interface HalfFit {
@@ -1132,10 +1114,9 @@ function fitName(natural: number, track: number, room: number, cap: number, floo
 
 /**
  * The next fit, from the pane as drawn. Each name has the room across the
- * pane that its caption can take: the ace's between the pads, since its
- * caption centres on the ace and the ace gives way to it, and the partner's
- * from the pad to the partner. The seam does not limit either; text may
- * cross it.
+ * pane that its caption can take: the ace's centred on the ace, and the
+ * partner's from the pad to the partner. The seam does not limit either;
+ * text may cross it.
  */
 function solveFit(pane: HTMLElement, remPx: number): CaptionFit {
   const m = readPane(pane);
@@ -1143,8 +1124,11 @@ function solveFit(pane: HTMLElement, remPx: number): CaptionFit {
   const floor = CAPTION_MIN_REM * remPx;
   const a = m.ace;
   const p = m.partner;
+  // The ace's caption centres on the ace, so its room is twice the way to
+  // the nearer side of the pane, less the pad.
+  const aceCentre = a.art.x + a.art.w / 2;
   return {
-    ace: fitName(a.natural, a.track, m.w - 2 * pad, a.cap, floor),
+    ace: fitName(a.natural, a.track, 2 * (Math.min(aceCentre, m.w - aceCentre) - pad), a.cap, floor),
     partner: p.name ? fitName(p.natural, p.track, p.name.x + p.name.w - pad, p.cap, floor) : WHOLE,
     seam: seamBetween(m.w, m.h, a.art, p.art, remPx),
   };
@@ -1250,11 +1234,7 @@ function useSlotBox(ref: React.RefObject<HTMLDivElement | null>) {
   return box;
 }
 
-/**
- * `zoom` is the card's fit zoom, screen px per pane px, which the card page
- * sets from the window.
- */
-function AcePartnerSlot({ cardIndex, view, zoom }: { cardIndex: number; view: CardView; zoom: number }) {
+function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
   const setPartner = useLeagueStore((s) => s.setPartner);
   useNamesVersion();
@@ -1267,18 +1247,14 @@ function AcePartnerSlot({ cardIndex, view, zoom }: { cardIndex: number; view: Ca
   const box = useSlotBox(slotRef);
   const labSprite = useSlotLab((st) => (st.enabled ? st.sprite : 0));
   const remPx = getAppliedRootFontSizePx();
-  const dpr = useDevicePixelRatio();
-  const isDesktop = useIsDesktop();
-  // Each pane px paints dpr times the card's zoom in device px, so the pair
-  // snaps to the largest whole scale that fits on this screen, live. An
-  // exception screen draws the largest pair that fits, by production's rule
-  // for that screen: pixelated on a phone, smoothed below 1x on a 1x
-  // desktop.
-  const pair = pairScale(box[0], box[1], remPx, dpr * zoom, PLAN, SPRITE_REM);
-  const unitPx = labSprite > 0 ? labSprite : pair.unit;
-  const screen = spriteScreen(isDesktop, dpr);
-  const rendering = (scale: number) =>
-    pair.mode === 'whole' ? 'pixelated' : spriteRendering(screen, scale * unitPx * zoom, dpr);
+  // The partner is one cell sprite on the pane's right column and bottom
+  // row, and the ace two on its top-left 2x2 cells (`showcaseLayout.ts`).
+  const squares = showcaseSquares(box[0], remPx, PANE_GRID);
+  const unitPx = labSprite > 0 ? labSprite : squares.partner.size;
+  const partnerPlace = {
+    right: box[0] - (squares.partner.cx + squares.partner.size / 2),
+    top: squares.partner.cy - squares.partner.size / 2,
+  };
   const fit = useCaptionFit(slotRef);
   const seam = fit.seam ?? { x1: 0, y1: 1, x2: 1, y2: 0 };
   const pos = {
@@ -1292,16 +1268,12 @@ function AcePartnerSlot({ cardIndex, view, zoom }: { cardIndex: number; view: Ca
       data-ace-partner-slot
       data-showcase={ace && partner ? 'pair' : ace || partner ? 'split' : 'empty'}
       data-slot-sprite={ACE_SCALE * unitPx}
-      data-ace-mock={PLAN_NAME}
-      data-sprite-k={pair.k}
-      data-sprite-mode={pair.mode}
-      className="absolute z-[5] overflow-hidden rounded-lg"
+      className="absolute z-[5] rounded-lg"
       style={{
         ...pos,
         ['--slot-unit' as string]: `${unitPx}px`,
         containerType: 'inline-size',
-        ['--pane-cap' as string]: PANE_FACE.size,
-        ['--cap-size' as string]: 'var(--pane-cap)',
+        ['--cap-size' as string]: PANE_FACE.size,
         ['--cap-track' as string]: PANE_FACE.track,
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
@@ -1327,9 +1299,8 @@ function AcePartnerSlot({ cardIndex, view, zoom }: { cardIndex: number; view: Ca
         testId="slot-ace"
         half="ace"
         heading={ACE_HEAD}
-        plan={PLAN}
         fit={fit.ace}
-        rendering={rendering(ACE_SCALE)}
+        place={{ left: squares.ace.cx, top: squares.ace.cy - squares.ace.size / 2 }}
         pokemon={ace}
         onPick={() => openLeagueBrowser(cardIndex, 'signature')}
         onRemove={() => setSignatureSeat(cardIndex, null, null)}
@@ -1338,9 +1309,8 @@ function AcePartnerSlot({ cardIndex, view, zoom }: { cardIndex: number; view: Ca
         testId="slot-partner"
         half="partner"
         heading={PARTNER_HEAD}
-        plan={PLAN}
         fit={fit.partner}
-        rendering={rendering(1)}
+        place={partnerPlace}
         pokemon={partner}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
         onRemove={() => setPartner(cardIndex, null)}
@@ -1811,8 +1781,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   );
 }
 
-/** `zoom` is the card's fit zoom, which the signature pane snaps its sprites from. */
-export function CardGrid({ cardIndex, view, zoom = 1 }: { cardIndex: number; view: CardView; zoom?: number }) {
+export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const moveSeat = useLeagueStore((s) => s.moveSeat);
   const setStageBoundary = useLeagueStore((s) => s.setStageBoundary);
   const setLineBoundaries = useLeagueStore((s) => s.setLineBoundaries);
@@ -2203,7 +2172,7 @@ export function CardGrid({ cardIndex, view, zoom = 1 }: { cardIndex: number; vie
         onPointerMove={onGridPointerMove}
         onPointerLeave={() => setHoverSeat(null)}
       >
-        <AcePartnerSlot cardIndex={cardIndex} view={view} zoom={zoom} />
+        <AcePartnerSlot cardIndex={cardIndex} view={view} />
         <TmSlot cardIndex={cardIndex} view={view} />
         <BadgeSlot cardIndex={cardIndex} view={view} />
         <Band label="GYM LEADER TEAM" />
