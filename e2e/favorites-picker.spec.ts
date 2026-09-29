@@ -225,6 +225,45 @@ test.describe('favorite Pokémon picker', () => {
     expect(new Set(ids)).toEqual(new Set(['starter', 'gimmick', 'legendary', 'favorite'].map((id) => `favorites-axis-icon-${id}`)));
   });
 
+  test('column headers and the extra row headers show a badge under the icon, inside the header', { tag: '@viewport' }, async ({ page }, testInfo) => {
+    await page.goto('/favorite-pokemon-by-type');
+    const frame = page.getByTestId('favorites-grid-scroll');
+    await expect(page.getByTestId('favorites-header-badge-normal')).toBeVisible();
+    // Off-screen cells skip layout, so measure each end of the grid in view.
+    const measure = () => page.evaluate(() => [...document.querySelectorAll('[data-testid^="favorites-header-badge-"]')].map((badge) => {
+      const b = badge.getBoundingClientRect();
+      const h = badge.closest('.overflow-hidden')!.getBoundingClientRect();
+      const icon = badge.previousElementSibling!.getBoundingClientRect();
+      // The gimmick, legendary, and favorite rows share ids with their columns.
+      const row = badge.closest('[data-row-banded]') ? ':row' : '';
+      return {
+        id: (badge as HTMLElement).dataset.testid!.replace('favorites-header-badge-', '') + row,
+        label: badge.querySelector('[role="img"]')?.getAttribute('aria-label'),
+        inside: b.left >= h.left - 0.5 && b.right <= h.right + 0.5 && b.top >= h.top - 0.5 && b.bottom <= h.bottom + 0.5,
+        belowIcon: b.top >= icon.bottom - 0.5,
+        width: b.width / h.width,
+      };
+    }));
+    const seen = new Map<string, Awaited<ReturnType<typeof measure>>[number]>();
+    for (const end of ['start', 'end'] as const) {
+      await frame.evaluate((el, e) => { el.scrollLeft = e === 'start' ? 0 : el.scrollWidth; el.scrollTop = e === 'start' ? 0 : el.scrollHeight; }, end);
+      await page.waitForTimeout(300);
+      for (const row of await measure()) seen.set(row.id, row);
+    }
+    // 22 columns, plus the gimmick, legendary, and favorite rows. The generation rows keep only their discs.
+    expect([...seen.keys()]).toEqual(expect.arrayContaining(['normal', 'fairy', 'starter', 'legendary', 'gimmick', 'favorite', 'gimmick:row', 'legendary:row', 'favorite:row']));
+    expect(seen.size).toBe(25);
+    expect(seen.get('fire')!.label).toBe('Fire');
+    expect(seen.get('starter')!.label).toBe('Starter');
+    for (const row of seen.values()) {
+      expect(row.inside, row.id).toBe(true);
+      expect(row.belowIcon, row.id).toBe(true);
+      expect(row.width, row.id).toBeGreaterThan(0.85);
+    }
+    await page.screenshot({ path: testInfo.outputPath('header-badges.png') });
+    await testInfo.attach('header-badges', { path: testInfo.outputPath('header-badges.png'), contentType: 'image/png' });
+  });
+
   test('pointer cells show an Ultra Ball, the last cell a Master Ball, and strokes stay in the cell', { tag: '@viewport' }, async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     const frame = page.getByTestId('favorites-grid-scroll');
@@ -809,15 +848,17 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
   });
 
-  test('mobile selector header uses a back indicator and two icons', async ({ page }) => {
+  test('mobile selector header uses a back indicator and two badges', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fire-1').click();
     const header = page.getByTestId('bottom-sheet-header');
     await expect(header.locator('svg.lucide-chevron-left')).toBeVisible();
     await expect(header.locator('[class*="border-primary"]')).toHaveCount(0);
-    await expect(header.getByTestId('favorites-picker-title').locator('img')).toHaveCount(2);
-    expect(await header.getByTestId('favorites-picker-title').textContent()).toBe('');
+    const badges = header.getByTestId('favorites-picker-title').getByRole('img');
+    await expect(badges).toHaveCount(2);
+    await expect(badges.nth(0)).toHaveAttribute('aria-label', 'Fire');
+    await expect(badges.nth(1)).toHaveAttribute('aria-label', 'Generation I');
     await header.click();
     await expect(page.getByTestId('favorites-picker')).toBeHidden();
   });
@@ -947,7 +988,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(opacity).toBe(1);
   });
 
-  test('overall legendary pointer badges show all origins on one aligned top edge', { tag: '@viewport' }, async ({ page }, testInfo) => {
+  test('overall legendary pointer badges stack all origins on one aligned right edge', { tag: '@viewport' }, async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.evaluate(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({
@@ -961,19 +1002,23 @@ test.describe('favorite Pokémon picker', () => {
     });
     await page.reload();
     await page.getByTestId('favorites-cell-legendary-legendary').click();
-    const marks = page.getByTestId('favorites-pick-643').getByTestId('favorites-pointer-mark');
+    const tile = page.getByTestId('favorites-pick-643');
+    const marks = tile.getByTestId('favorites-pointer-mark');
     await expect(marks).toHaveCount(3);
     await expect(marks.nth(0)).toHaveAttribute('data-source', 'gen');
     await expect(marks.nth(1)).toHaveAttribute('data-source', 'type');
     await expect(marks.nth(2)).toHaveAttribute('data-source', 'type');
     const boxes = await marks.evaluateAll((items) => items.map((item) => {
-      const { top, height } = item.getBoundingClientRect();
-      return { top, height };
+      const { top, bottom, right, height } = item.getBoundingClientRect();
+      return { top, bottom, right, height };
     }));
-    expect(Math.max(...boxes.map((box) => box.top)) - Math.min(...boxes.map((box) => box.top))).toBeLessThan(1);
+    const tileBox = (await tile.boundingBox())!;
+    expect(Math.max(...boxes.map((box) => box.right)) - Math.min(...boxes.map((box) => box.right))).toBeLessThan(1);
     expect(Math.max(...boxes.map((box) => box.height)) - Math.min(...boxes.map((box) => box.height))).toBeLessThan(1);
+    for (let i = 1; i < boxes.length; i++) expect(boxes[i].top).toBeGreaterThanOrEqual(boxes[i - 1].bottom - 0.5);
+    for (const box of boxes) expect(box.right).toBeLessThanOrEqual(tileBox.x + tileBox.width + 0.5);
     expect(await marks.first().evaluate((el) => getComputedStyle(el.parentElement!).opacity)).toBe('0.85');
-    expect(await marks.first().locator('img').evaluate((img) => decodeURIComponent((img as HTMLImageElement).src))).toContain('stroke="#d4d4d8" stroke-width="0.5"');
+    await expect(marks.first().locator('rect')).toHaveAttribute('stroke', '#d4d4d8');
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('legendary-origins.png') });
   });
 

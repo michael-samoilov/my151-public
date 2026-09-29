@@ -311,6 +311,19 @@ export function typeBadgeFit(
 }
 
 /**
+ * A word's natural width in badge units: set at its language's band size with
+ * the base condense, before any fitting. A badge whose pill may grow sizes the
+ * pill from it. Null where nothing can measure.
+ */
+export function typeBadgeNaturalWidth(label: string, cohort: readonly string[] = [label]): number | null {
+  const c = measureContext();
+  if (!c) return null;
+  const { fontSize } = scriptBand(c, cohort);
+  c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
+  return c.measureText(label).width * TYPE_BADGE.textScaleX;
+}
+
+/**
  * The stack the badge's word is set in, for a caller that has to build its own
  * `font` string — the canvas exporter. Read from the document rather than
  * repeated, for the same reason the measurement is.

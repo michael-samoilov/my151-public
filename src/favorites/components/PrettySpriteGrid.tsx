@@ -1,17 +1,37 @@
 import { tileImageCssPx } from '@/lib/tileImage';
 import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
-import { typeIconPath } from '@/data/type-ids';
+import { TypeBadge } from '@/components/shared/TypeBadge';
+import { TYPE_BADGE_ASPECT, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { useNamesVersion } from '@/i18n';
 import { useLayoutEffect, useRef, useState } from 'react';
-import { ExtraMark, RomanDisc, TypeIcon } from './marks';
+import { AxisBadge, GenerationBadge } from './WordBadge';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
 import type { PointerMark } from '../model/pointers';
+import type { TypeName } from '@/types/pokemon';
 
 const ROW_GAP_PX = 4;
+// A sprite's badges are this fraction of the tile tall, about the height of
+// the grid's header badges on a phone.
+const MARK_BADGE = 0.165;
+
+function TypeMarkBadge({ type, height }: { type: TypeName; height: number }) {
+  return (
+    <span className="block" style={{ width: height * TYPE_BADGE_ASPECT }}>
+      <TypeBadge type={type} className="block w-full overflow-visible" />
+    </span>
+  );
+}
+
+/** A mark's badge. A generation badge longer than `maxWidth` condenses its word. */
+function MarkBadge({ mark, height, maxWidth }: { mark: PointerMark; height: number; maxWidth: number }) {
+  if (mark.source === 'gen') return <GenerationBadge gen={mark.value} height={height} maxUnits={maxWidth / height * TYPE_BADGE_H} className="block" />;
+  if (mark.source === 'type') return <TypeMarkBadge type={mark.value} height={height} />;
+  return <AxisBadge id={mark.source} height={height} className="block" />;
+}
 
 export function PrettySpriteGrid({
   mons,
@@ -140,7 +160,7 @@ function PickCell({
   const clearing = selected && Boolean(onClear);
   // Pointer selectors list only picks from other cells, so they never show taken.
   const takenHere = pointer ? [] : taken;
-  const mark = Math.round(spritePx * 0.28);
+  const badge = spritePx * MARK_BADGE;
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   const tile = (
     <button
@@ -164,25 +184,18 @@ function PickCell({
       />
       {selected ? <span className="pointer-events-none absolute inset-[2px] z-[1] rounded-md border-2 border-primary" data-testid="favorites-selection-ring" /> : null}
       {showTypes ? <span
-        className="pointer-events-none absolute inset-x-0 z-[12] flex items-end justify-center"
-        style={{ gap: 1, bottom: inset, height: Math.round(spritePx * 0.22) }}
+        className="pointer-events-none absolute inset-x-0 z-[12] flex flex-col items-center justify-end"
+        style={{ gap: 1, bottom: inset }}
       >
         {mon.types.slice(0, 2).map((type) => (
-          <img
-            key={type}
-            src={typeIconPath(type)}
-            alt=""
-            data-testid="favorites-type-icon"
-            data-type={type}
-            draggable={false}
-            className="rounded-[2px]"
-            style={{ width: Math.round(spritePx * 0.22), height: Math.round(spritePx * 0.22) }}
-          />
+          <span key={type} data-testid="favorites-type-icon" data-type={type}>
+            <TypeMarkBadge type={type} height={badge} />
+          </span>
         ))}
       </span> : null}
       {sourceMarks.length > 0 ? (
         <span
-          className="pointer-events-none absolute z-[16] flex items-start leading-none opacity-[0.85]"
+          className="pointer-events-none absolute z-[16] flex flex-col items-end leading-none opacity-[0.85]"
           style={{ gap: 1, right: inset, top: inset }}
         >
           {sourceMarks.map((source) => (
@@ -190,19 +203,16 @@ function PickCell({
               key={`${source.source}:${'value' in source ? source.value : ''}`}
               data-testid="favorites-pointer-mark"
               data-source={source.source}
-              className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: mark, height: mark }}
+              className="block shrink-0 leading-none"
             >
-              {source.source === 'gen' ? <RomanDisc gen={source.value} size={mark} />
-                : source.source === 'type' ? <TypeIcon type={source.value} size={mark} />
-                : <ExtraMark id={source.source} size={mark} />}
+              <MarkBadge mark={source} height={badge} maxWidth={spritePx - inset} />
             </span>
           ))}
         </span>
       ) : null}
       {takenHere.length > 0 ? (
         <span
-          className="pointer-events-none absolute z-[15] flex items-start leading-none"
+          className="pointer-events-none absolute z-[15] flex flex-col items-end leading-none"
           style={{ gap: 1, right: inset, top: inset }}
         >
           {takenHere.map((where) => (
@@ -211,12 +221,9 @@ function PickCell({
               data-testid="favorites-used-mark"
               data-source={where.source}
               data-value={'value' in where ? where.value : undefined}
-              className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: mark, height: mark }}
+              className="block shrink-0 leading-none"
             >
-              {where.source === 'gen' ? <RomanDisc gen={where.value} size={mark} />
-                : where.source === 'type' ? <TypeIcon type={where.value} size={mark} />
-                : <ExtraMark id={where.source} size={mark} />}
+              <MarkBadge mark={where} height={badge} maxWidth={spritePx - inset} />
             </span>
           ))}
         </span>

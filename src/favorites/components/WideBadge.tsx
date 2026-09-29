@@ -5,7 +5,7 @@ import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W, typeBadgeGlyphBox } from '@/lib
 import { typeBadgeFit } from '@/lib/typeBadgeFit';
 import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
 import { isTypeName, type ExtraTypeAxis, type TypeAxisId } from '../model/cells';
-import { AXIS_FILL, AXIS_TEXT_CENTER_X, AXIS_TEXT_WIDTH } from './axisFill';
+import { AXIS_FILL, WORD_BADGE_MARGIN } from './badgeStyle';
 
 /**
  * A type badge that stretches to its box's width. The pill, symbol, and word
@@ -26,8 +26,8 @@ export function WideBadge({ id }: { id: TypeAxisId }) {
   const label = localeUppercase(spoken);
   const fit = type
     ? typeBadgeFit(label, localeTypeLabels())
-    : typeBadgeFit(label, localeTypeLabels(), AXIS_TEXT_WIDTH);
-  const centerX = type ? TYPE_BADGE.textCenterX : AXIS_TEXT_CENTER_X;
+    : typeBadgeFit(label, localeTypeLabels(), TYPE_BADGE_W - 2 * WORD_BADGE_MARGIN);
+  const centerX = type ? TYPE_BADGE.textCenterX : TYPE_BADGE_W / 2;
   const fill = type ? TYPE_COLORS[type] : AXIS_FILL[id as ExtraTypeAxis];
   const background = typeof fill === 'string'
     ? fill
