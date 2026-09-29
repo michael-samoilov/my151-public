@@ -122,7 +122,7 @@ export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, numbe
   return (
     <Panel
       title="When"
-      sub={['active each hour']}
+      sub={['active hours']}
       actions={<Seg ariaLabel="Clock" options={CLOCK_OPTIONS} value={clock} onChange={setClock} />}
     >
       <div className="@container">
