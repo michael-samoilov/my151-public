@@ -26,7 +26,7 @@ import { typeBadgeFit } from '@/lib/typeBadgeFit';
  */
 let labelCache: { version: number; labels: string[] } | null = null;
 
-function localeTypeLabels(): string[] {
+export function localeTypeLabels(): string[] {
   // Cached per catalog version. A full browser grid draws ~2,250 badges, and
   // each one used to translate and uppercase all eighteen names again. The
   // version key invalidates the cache on a locale change.

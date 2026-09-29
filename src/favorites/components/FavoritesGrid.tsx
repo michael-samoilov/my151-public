@@ -10,6 +10,7 @@ import {
   cellKey,
   isGenNumber,
   isTypeName,
+  type ExtraTypeAxis,
   type GenAxisId,
   type TypeAxisId,
 } from '../model/cells';
@@ -18,7 +19,20 @@ import type { PickerMon } from '../model/catalog';
 import { gridSpriteSizePercent } from '../model/gridSpriteSize';
 import { minimapViewportX } from '../model/minimap';
 import { ExtraMark, EmptyBall, RomanDisc, TypeIcon } from './marks';
+import { AxisBadge } from './AxisBadge';
+import { WideBadge } from './WideBadge';
+import { TypeBadge } from '@/components/shared/TypeBadge';
 import { NameTooltip } from './NameTooltip';
+
+// Preview only: `?badges=wide` stretches the header badges to the column.
+const PREVIEW = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
+const WIDE_BADGES = PREVIEW.get('badges') === 'wide';
+// Preview only: `?icon=72` keeps today's icon size, so the badge may take
+// only the room under it: 18% of the header's height.
+const BIG_ICON = PREVIEW.get('icon') === '72';
+const HEAD_ICON = BIG_ICON ? 0.72 : 0.58;
+const HEAD_GAP = BIG_ICON ? 0.03 : 0.04;
+const BADGE_MAX_H = BIG_ICON ? 0.18 : 0.29;
 
 const ROWS = GEN_AXIS.length + 1;
 const COLS = TYPE_AXIS.length + 1;
@@ -535,7 +549,10 @@ function Corner() {
 }
 
 function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenAxisId; pin?: boolean; banded?: boolean }) {
-  const iconSize = isGenNumber(id) ? 87 : 72;
+  // Every header mark keeps one area: a disc of 87% has the area of a 72%
+  // square. The column icons make room for their badges, and the row marks
+  // shrink with them.
+  const iconSize = (isGenNumber(id) ? 87 : 72) * HEAD_ICON / 0.72;
   return (
     <div
       data-row-banded={pin ? banded : undefined}
@@ -547,18 +564,44 @@ function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenA
       )}
     >
       {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
-      <div
-        className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain [&_span]:!h-full [&_span]:!w-full [&_span]:!text-[0.62em]"
-        style={{ width: trackPart('--head', iconSize / 100), height: trackPart('--head', iconSize / 100), fontSize: trackPart('--head', iconSize / 100) }}
-      >
-        {isTypeName(id) ? (
-          <TypeIcon type={id} size={32} />
-        ) : isGenNumber(id) ? (
-          <RomanDisc gen={id} size={32} />
-        ) : (
-          <ExtraMark id={id} size={32} />
-        )}
-      </div>
+      {pin || isGenNumber(id) ? (
+        <div
+          className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain [&_span]:!h-full [&_span]:!w-full [&_span]:!text-[0.62em]"
+          style={{ width: trackPart('--head', iconSize / 100), height: trackPart('--head', iconSize / 100), fontSize: trackPart('--head', iconSize / 100) }}
+        >
+          {isTypeName(id) ? (
+            <TypeIcon type={id} size={32} />
+          ) : isGenNumber(id) ? (
+            <RomanDisc gen={id} size={32} />
+          ) : (
+            <ExtraMark id={id} size={32} />
+          )}
+        </div>
+      ) : (
+        // Column headers stack the icon over its badge. The badge spans the
+        // column; once a zoom widens the column past the capped header
+        // height, the badge stops growing so it still fits under the icon.
+        <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ gap: trackPart('--head', HEAD_GAP) }}>
+          <div
+            className="flex items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain"
+            style={{ width: trackPart('--head', HEAD_ICON), height: trackPart('--head', HEAD_ICON) }}
+          >
+            {isTypeName(id) ? <TypeIcon type={id} size={32} /> : <ExtraMark id={id as ExtraTypeAxis} size={32} />}
+          </div>
+          {WIDE_BADGES ? (
+            <div
+              data-testid={`favorites-header-badge-${String(id)}`}
+              style={{ width: 'calc(var(--cell) * 0.9)', height: `min(calc(var(--cell) * 0.18), calc(var(--head) * ${BADGE_MAX_H}))` }}
+            >
+              <WideBadge id={id} />
+            </div>
+          ) : (
+            <div data-testid={`favorites-header-badge-${String(id)}`} style={{ width: `min(calc(var(--cell) * 0.9), calc(var(--head) * ${BADGE_MAX_H * 5}))` }}>
+              {isTypeName(id) ? <TypeBadge type={id} className="block w-full overflow-visible" /> : <AxisBadge id={id as ExtraTypeAxis} className="block w-full" />}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
