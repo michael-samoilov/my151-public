@@ -5,12 +5,9 @@
  * 1x, and the seam keeps its 30 degrees but moves down so it clears the ace.
  *
  * The pane is three cells wide. On a tall phone that is 9rem, and a 2x and a
- * 1x sprite need 9.75rem, so the two cannot also carry a caption across
- * their width the way the equal pair did. Each caption sits beside its own
- * sprite instead: the ace's under the ace, reading left to right from the
- * pane's edge, and the partner's to the partner's left, right-aligned
- * against it. Both captions share the corner under the ace, and the seam
- * runs between them.
+ * 1x sprite need 9.75rem, so the captions cannot run across the pair's width
+ * the way the equal pair's did. Where each caption goes instead is a mockup
+ * choice, `CaptionPlan`, picked with `localStorage['ace-mock']`.
  *
  * The export draws its own pane from `slotLayout.ts` and is unchanged.
  */
@@ -26,77 +23,152 @@ export const ACE_SCALE = 2;
  */
 export const SHOWCASE_PAD_REM = 0.25;
 
-/**
- * The room between the partner's caption and the partner. The ball already
- * sits a twelfth of the square inside it, so the words stand clear of the
- * ball by more than this.
- */
+/** The room between a sprite and a caption beside it. */
 export const CAPTION_GAP_X_REM = 0.1875;
 
 /**
- * The room between the ace and the caption under it: a single pixel, for
- * the same reason. The ball's own inset is the gap, and every pixel the
- * caption rises is one more between it and the seam. The pixel keeps the
- * caption's box off the sprite's square rather than touching it.
+ * The room between a sprite and a caption under or over it: a single pixel.
+ * The ball's own inset is the visible gap.
  */
 export const CAPTION_GAP_Y_REM = 0.0625;
 
 /**
  * The caption type, which gives way on a narrow pane.
  *
- * The partner's caption shares the pane's width with the partner, so its
- * widest line has `100cqw` less the pads, the gap and one sprite. The widest
- * lines are SHOULDERMON at full tracking, 8.84em, and Brambleghast, the
- * widest English name, 8.71em; 8.9em covers both. Where that room is short
- * the size comes down from the card's 0.53125rem to the 0.4rem floor the TM
- * and badge labels already use, and below the floor the heading's tracking
- * gives way too, as theirs does: SHOULDERMON is 7.96em untracked, over
- * eleven letters. A 390px phone keeps the full size; a 320px one does not.
- *
- * Both captions take the same size and tracking, so the pair keeps one
- * label face.
+ * Measured in the caption face (Inter 800): SHOULDERMON is 8.83em at full
+ * tracking and 7.95em untracked; ACE POKÉMON is 8.43em and 7.55em. The widest
+ * name in any shipped locale is MANGUSPEKTOR (German Gumshoos), 8.94em, and
+ * the widest English one is BRAMBLEGHAST, 8.70em. Where the room is short the
+ * size comes down from the card's 0.53125rem to the 0.4rem floor the TM and
+ * badge labels already use, and below the floor the heading's tracking gives
+ * way too, as theirs does.
  */
 const CAPTION_WIDEST_EM = 8.9;
 const SHOULDERMON_EM = 7.96;
 const SHOULDERMON_LETTERS = 11;
+const ACE_HEAD_EM = 8.44;
+const ACE_HEAD_PLAIN_EM = 7.56;
+const ACE_HEAD_LETTERS = 10;
+/** The widest name in any shipped locale, MANGUSPEKTOR, rounded up. */
+const WIDEST_NAME_EM = 8.94;
 export const CAPTION_MAX_REM = 0.53125;
 export const CAPTION_MIN_REM = 0.4;
-const CAPTION_ROOM = `(100cqw - ${2 * SHOWCASE_PAD_REM + CAPTION_GAP_X_REM}rem - var(--slot-unit))`;
-export const CAPTION_SIZE = `clamp(${CAPTION_MIN_REM}rem, ${CAPTION_ROOM} / ${CAPTION_WIDEST_EM}, ${CAPTION_MAX_REM}rem)`;
-export const CAPTION_TRACK =
-  `clamp(0rem, (${CAPTION_ROOM} - ${SHOULDERMON_EM} * var(--cap-size)) / ${SHOULDERMON_LETTERS}, 0.08em)`;
+
+const GAPS_REM = 2 * SHOWCASE_PAD_REM + CAPTION_GAP_X_REM;
+/** The partner's room beside its sprite. */
+const PARTNER_ROOM = `(100cqw - ${GAPS_REM}rem - var(--slot-unit))`;
+/** The ace's room beside its sprite. */
+const ACE_ROOM = `(100cqw - ${GAPS_REM}rem - ${ACE_SCALE} * var(--slot-unit))`;
+export const PARTNER_ROOM_CSS = `calc${PARTNER_ROOM}`;
+export const ACE_ROOM_CSS = `calc${ACE_ROOM}`;
+
+/**
+ * A caption's size and tracking when its widest fixed line has `room`: the
+ * size first, down to the floor, then the tracking.
+ */
+function captionFace(room: string, widestEm: number, plainEm: number, letters: number, max: string) {
+  return {
+    size: `clamp(${CAPTION_MIN_REM}rem, ${room} / ${widestEm}, ${max})`,
+    track: `clamp(0rem, (${room} - ${plainEm} * var(--cap-size)) / ${letters}, 0.08em)`,
+  };
+}
+
+/** The pane's caption face, set by the partner's room beside its sprite. */
+export const PANE_FACE = captionFace(
+  PARTNER_ROOM, CAPTION_WIDEST_EM, SHOULDERMON_EM, SHOULDERMON_LETTERS, `${CAPTION_MAX_REM}rem`,
+);
+/** The ace caption's face when it sits beside the ace and must fit there. */
+export const ACE_BESIDE_FACE = captionFace(
+  ACE_ROOM, ACE_HEAD_EM, ACE_HEAD_PLAIN_EM, ACE_HEAD_LETTERS, 'var(--pane-cap)',
+);
+
+/**
+ * Where the two captions go. Each field is one decision, so the options
+ * Michael compares differ only where they say they do.
+ */
+export interface CaptionPlan {
+  /**
+   * The ace's caption: `under-left` under the ace from the pane's edge (the
+   * first mock), `beside` to its right and centred on it, `under` under it
+   * and centred on it, `around` with the heading over the ace and the name
+   * under it.
+   */
+  ace: 'under-left' | 'beside' | 'under' | 'around';
+  /**
+   * The partner's caption: `foot` to its left on the bottom pad, heading
+   * first (the first mock); `beside` to its left and centred on it, name
+   * first; `around` with the name over the partner and the heading under it.
+   */
+  partner: 'foot' | 'beside' | 'around';
+  /** A name too wide for its room runs on, wraps at a space or hyphen, or shrinks. */
+  names: 'overflow' | 'wrap' | 'fit';
+  /** The partner's caption may slide down from centred, as far as the partner's foot, to clear the seam. */
+  slide: boolean;
+  /** The pair steps down on a pane too narrow for a caption beside the ace. */
+  step: boolean;
+  /** The seam comes from the caption anchors or from the drawn text. */
+  seam: 'anchor' | 'measured';
+}
+
+export const PLANS = {
+  mock: { ace: 'under-left', partner: 'foot', names: 'overflow', slide: false, step: false, seam: 'anchor' },
+  side: { ace: 'beside', partner: 'beside', names: 'overflow', slide: false, step: false, seam: 'measured' },
+  stack: { ace: 'around', partner: 'around', names: 'overflow', slide: false, step: false, seam: 'measured' },
+  wrap: { ace: 'beside', partner: 'beside', names: 'wrap', slide: false, step: false, seam: 'measured' },
+  fit: { ace: 'beside', partner: 'beside', names: 'fit', slide: false, step: false, seam: 'measured' },
+  under: { ace: 'under', partner: 'beside', names: 'overflow', slide: false, step: false, seam: 'measured' },
+  step: { ace: 'beside', partner: 'beside', names: 'fit', slide: false, step: true, seam: 'measured' },
+  underfit: { ace: 'under', partner: 'beside', names: 'fit', slide: false, step: false, seam: 'measured' },
+  slide: { ace: 'under', partner: 'beside', names: 'fit', slide: true, step: false, seam: 'measured' },
+  slideleft: { ace: 'under-left', partner: 'beside', names: 'fit', slide: true, step: false, seam: 'measured' },
+} as const satisfies Record<string, CaptionPlan>;
+
+export type PlanName = keyof typeof PLANS;
+export const DEFAULT_PLAN: PlanName = 'slideleft';
+
+export function isPlanName(value: unknown): value is PlanName {
+  return typeof value === 'string' && Object.hasOwn(PLANS, value);
+}
+
+/** The steps a stepped pair takes, as shares of the team cell. */
+const STEPS = [1, 7 / 8, 3 / 4, 5 / 8, 1 / 2];
 
 /**
  * The partner's edge in pane px: one team sprite, the 3.25rem cell.
  *
  * Only a pane too narrow to hold a 2x ace between its pads, which no phone
  * from 320px up reaches, takes less, and then the pair keeps its 2:1 at
- * whatever the width allows.
+ * whatever the width allows. A stepped plan also steps down, an eighth of a
+ * cell at a time, until the widest name fits beside the ace at the floor.
  */
-export function showcaseUnit(w: number, remPx: number, cellRem: number): number {
+export function showcaseUnit(w: number, remPx: number, cellRem: number, step = false): number {
   const cell = cellRem * remPx;
   if (w < 8) return cell;
-  return Math.min(cell, (w - 2 * SHOWCASE_PAD_REM * remPx) / ACE_SCALE);
+  const fit = (w - 2 * SHOWCASE_PAD_REM * remPx) / ACE_SCALE;
+  if (!step) return Math.min(cell, fit);
+  const room = (w - GAPS_REM * remPx - WIDEST_NAME_EM * CAPTION_MIN_REM * remPx) / ACE_SCALE;
+  const share = STEPS.find((s) => s * cell <= room) ?? STEPS[STEPS.length - 1];
+  return Math.min(share * cell, fit);
 }
 
-/**
- * Where the seam passes.
- *
- * - `between`: through the midpoint of the two captions' outer corners, so
- *   the seam splits the room the captions share. The default.
- * - `hug`: as high as it can sit while it clears the ace's square by
- *   `HUG_CLEAR_REM`. The least move from where the seam was.
- */
-export type SeamRule = 'between' | 'hug';
-
-/** How far the `hug` seam stays off the ace's square, measured square to it. */
-export const HUG_CLEAR_REM = 0.25;
-
 const TAN_30 = Math.tan(Math.PI / 6);
+const COS_30 = Math.cos(Math.PI / 6);
+
+/** How far the seam stays off the ace's square, measured square to it. */
+export const SQUARE_CLEAR_REM = 0.25;
+/** How far the seam stays off a line of text, measured square to it. */
+export const TEXT_CLEAR_REM = 0.125;
 
 export interface Point {
   x: number;
   y: number;
+}
+
+export interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 /** The seam's two ends, as fractions of the pane: left or bottom end first. */
@@ -107,22 +179,6 @@ export interface SeamEnds {
   y2: number;
 }
 
-export interface Showcase {
-  /** The partner's sprite edge, in pane px. The ace's is `ACE_SCALE` times it. */
-  unit: number;
-  /** The ace's square, top left. */
-  ace: { left: number; top: number; size: number };
-  /** The partner's square, bottom right. */
-  partner: { left: number; top: number; size: number };
-  /** The ace caption's top-left corner. */
-  aceCaption: Point;
-  /** The partner caption's bottom-right corner. */
-  partnerCaption: Point;
-  /** A point the seam passes through. */
-  through: Point;
-  seam: SeamEnds;
-}
-
 /**
  * The 30 degree line through `p`, cut to the pane.
  *
@@ -130,7 +186,7 @@ export interface Showcase {
  * whichever edge it meets first, so a seam low in the pane leaves through
  * the bottom edge rather than the left one.
  */
-export function seamThrough(w: number, h: number, p: Point): SeamEnds {
+function seamThrough(w: number, h: number, p: Point): SeamEnds {
   const yAt = (x: number) => p.y + TAN_30 * (p.x - x);
   const xAt = (y: number) => p.x - (y - p.y) / TAN_30;
   const left = yAt(0) > h ? { x: xAt(h), y: h } : { x: 0, y: yAt(0) };
@@ -138,42 +194,81 @@ export function seamThrough(w: number, h: number, p: Point): SeamEnds {
   return { x1: left.x / w, y1: left.y / h, x2: right.x / w, y2: right.y / h };
 }
 
-/** The line's height at `x`, for a seam in pane fractions. */
-export function seamYAt(seam: SeamEnds, w: number, h: number, x: number): number {
-  const x1 = seam.x1 * w;
-  const y1 = seam.y1 * h;
-  const x2 = seam.x2 * w;
-  const y2 = seam.y2 * h;
-  return y1 + ((y2 - y1) * (x - x1)) / (x2 - x1);
+/**
+ * How far along the seam's normal a point sits. The seam is the set of
+ * points of one depth, so a point above it has less depth and one below more.
+ */
+function depthOf(p: Point): number {
+  return p.y + TAN_30 * p.x;
 }
 
 /**
- * Every position in the pane, from its size alone.
- *
- * Nothing here reads text. The captions are anchored by CSS at the corners
- * returned, and the seam is placed from those anchors, so a name that
- * changes, or a webfont that lands late, moves no part of the layout.
+ * The first mock's seam, from the caption anchors alone: through the
+ * midpoint of the ace caption's top-left corner and the partner caption's
+ * bottom-right one, and never nearer the ace than `SQUARE_CLEAR_REM`.
  */
-export function showcase(
-  w: number,
-  h: number,
-  remPx: number,
-  unit: number,
-  rule: SeamRule = 'between',
-): Showcase {
+export function anchorSeam(w: number, h: number, remPx: number, unit: number): SeamEnds {
   const pad = SHOWCASE_PAD_REM * remPx;
   const aceSize = ACE_SCALE * unit;
-  const ace = { left: pad, top: pad, size: aceSize };
-  const partner = { left: w - pad - unit, top: h - pad - unit, size: unit };
   const aceCaption = { x: pad, y: pad + aceSize + CAPTION_GAP_Y_REM * remPx };
-  const partnerCaption = { x: partner.left - CAPTION_GAP_X_REM * remPx, y: h - pad };
-  // Both candidate lines are parallel, so the lower of the two is the one
-  // whose point sits further along the seam's normal. `between` never rises
-  // past `hug`: on a narrow pane the captions' midpoint climbs toward the
-  // ace, and the seam stops where it would touch it.
-  const hug = { x: ace.left + aceSize, y: ace.top + aceSize + (HUG_CLEAR_REM * remPx) / Math.cos(Math.PI / 6) };
+  const partnerCaption = { x: w - pad - unit - CAPTION_GAP_X_REM * remPx, y: h - pad };
+  const hug = { x: pad + aceSize, y: pad + aceSize + (SQUARE_CLEAR_REM * remPx) / COS_30 };
   const mid = { x: (aceCaption.x + partnerCaption.x) / 2, y: (aceCaption.y + partnerCaption.y) / 2 };
-  const depth = (q: Point) => q.y + TAN_30 * q.x;
-  const through = rule === 'hug' || depth(hug) > depth(mid) ? hug : mid;
-  return { unit, ace, partner, aceCaption, partnerCaption, through, seam: seamThrough(w, h, through) };
+  return seamThrough(w, h, depthOf(hug) > depthOf(mid) ? hug : mid);
+}
+
+/** A box beside the seam, and how far off the seam it keeps. */
+export interface Keep {
+  box: Box;
+  clear: number;
+}
+
+/**
+ * The band the seam may run in: below every ace-side box by its clearance
+ * and above every partner-side box by its. `lo > hi` means no 30 degree line
+ * separates the two sides.
+ */
+export function seamBand(ace: readonly Keep[], partner: readonly Keep[]): { lo: number; hi: number } {
+  let lo = -Infinity;
+  for (const { box, clear } of ace) {
+    lo = Math.max(lo, depthOf({ x: box.x + box.w, y: box.y + box.h }) + clear / COS_30);
+  }
+  let hi = Infinity;
+  for (const { box, clear } of partner) {
+    hi = Math.min(hi, depthOf({ x: box.x, y: box.y }) - clear / COS_30);
+  }
+  return { lo, hi };
+}
+
+/**
+ * The seam through the middle of the band. Where no line separates the two
+ * sides it still keeps off the ace's square (`square`, a depth), and the
+ * text it crosses is the collision a reviewer sees.
+ */
+export function measuredSeam(w: number, h: number, band: { lo: number; hi: number }, square: number): SeamEnds {
+  const mid = Number.isFinite(band.hi) ? (band.lo + band.hi) / 2 : band.lo;
+  return seamThrough(w, h, { x: 0, y: Math.max(square, mid) });
+}
+
+/** The depth the seam may not rise above: the ace's square and its clearance. */
+export function squareDepth(ace: Box, remPx: number): number {
+  return depthOf({ x: ace.x + ace.w, y: ace.y + ace.h }) + (SQUARE_CLEAR_REM * remPx) / COS_30;
+}
+
+/**
+ * The widest a partner name may run, right-aligned at `right` with its top
+ * at `top`, and still sit below every seam the ace side allows (`lo`).
+ */
+export function partnerNameRoom(right: number, top: number, lo: number, remPx: number): number {
+  const clear = (TEXT_CLEAR_REM * remPx) / COS_30;
+  return Math.min(right - SHOWCASE_PAD_REM * remPx, right - (lo + clear - top) / TAN_30);
+}
+
+/**
+ * How far a partner caption must slide down so a name of `natural` width
+ * clears the seam: zero when it already does.
+ */
+export function partnerSlide(right: number, top: number, natural: number, lo: number, remPx: number): number {
+  const clear = (TEXT_CLEAR_REM * remPx) / COS_30;
+  return Math.max(0, lo + clear - TAN_30 * (right - natural) - top);
 }
