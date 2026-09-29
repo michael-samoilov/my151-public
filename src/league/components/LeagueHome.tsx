@@ -30,7 +30,6 @@ import {
   homeHeightRem,
   homeMetrics,
   HomeMetricsContext,
-  TIGHTEST,
 } from '../homeLayout';
 import { screenRule, spriteRendering, spriteScreen, SPRITE_RENDERING } from '../spriteScale';
 import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
@@ -280,13 +279,12 @@ export function LeagueHome() {
     fitRef,
     0.55,
     rule.homeCeilingPx
-      ? {
-          baseWidthRem: 26,
-          spriteRem: HOME_SPRITE_REM,
-          targetSpritePx: rule.homeCeilingPx(dpr),
-          shortestRem: rule.holdsCeiling ? homeHeightRem(TIGHTEST, rootPx) : undefined,
-        }
+      ? { baseWidthRem: 26, spriteRem: HOME_SPRITE_REM, targetSpritePx: rule.homeCeilingPx(dpr) }
       : undefined,
+    {
+      heightRem: (budgetRem) => homeHeightRem(fitHomeLayout(budgetRem, rootPx), rootPx),
+      holds: rule.holds,
+    },
   );
   const metrics = homeMetrics(fitHomeLayout(fit.budgetRem, rootPx));
   const rendering = spriteRendering(screen, HOME_SPRITE_REM * rootPx * fit.scale, dpr);
