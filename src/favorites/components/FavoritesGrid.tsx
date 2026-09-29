@@ -588,6 +588,8 @@ function BodyCell({
   const isSel = selected?.type === type && selected?.gen === gen;
   const tint = isTypeName(type) ? TYPE_COLORS[type] : undefined;
   const locked = kind === 'disabled' || kind === 'null';
+  // Pointer cells show an Ultra Ball, and the last pointer cell a Master Ball.
+  const ball = kind !== 'pointer' ? 'poke' : type === 'favorite' && gen === 'favorite' ? 'master' : 'ultra';
 
   const cell = (
     <button
@@ -617,9 +619,10 @@ function BodyCell({
       ) : locked ? null : (
         <span
           data-testid="favorites-empty-ball"
+          data-ball={ball}
           className="pointer-events-none absolute left-[5%] top-[5%] h-[90%] w-[90%]"
         >
-          <EmptyBall className="block h-full w-full overflow-visible text-muted-foreground/20" />
+          <EmptyBall kind={ball} className="block h-full w-full overflow-visible text-muted-foreground/20" />
         </span>
       )}
       {tint && !mon && !locked ? (

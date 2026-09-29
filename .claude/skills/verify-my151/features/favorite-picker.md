@@ -9,7 +9,10 @@ gimmick, legendary, and favorite picks.
 - Grid: 18 type columns plus starter, gimmick, legendary, and favorite; 9
   generation rows plus gimmick, legendary, and favorite. Each body cell is a
   `[data-testid="favorites-cell-<type>-<gen>"]` button whose `data-kind` is
-  `pick`, `pointer`, `disabled`, or `null`. Empty cells show a faint Poké Ball.
+  `pick`, `pointer`, `disabled`, or `null`. An empty cell shows a faint ball
+  `[data-testid="favorites-empty-ball"]` whose `data-ball` is `poke` in a pick
+  cell, `ultra` in a pointer cell, and `master` in favorite × favorite. The
+  Master Ball's domes rise past its outline but stay inside the cell.
   Filled sprites may extend past their cell borders.
 - Grid frame `[data-testid="favorites-grid-scroll"]`: fills the screen below the
   two page headers and scrolls on both axes. The header row and generation

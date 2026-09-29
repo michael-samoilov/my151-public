@@ -212,6 +212,40 @@ test.describe('favorite Pokémon picker', () => {
     expect(spec.sample.bh).toBeLessThan(spec.sample.ch);
   });
 
+  test('pointer cells show an Ultra Ball, the last cell a Master Ball, and strokes stay in the cell', { tag: '@viewport' }, async ({ page }, testInfo) => {
+    await page.goto('/favorite-pokemon-by-type');
+    const frame = page.getByTestId('favorites-grid-scroll');
+    await expect(page.getByTestId('favorites-empty-ball').first()).toBeVisible();
+    // The Master Ball cell is the far corner, and off-screen empty cells skip layout.
+    await frame.evaluate((el) => {
+      el.scrollLeft = el.scrollWidth;
+      el.scrollTop = el.scrollHeight;
+    });
+    const cells = ['fire-1', 'favorite-1', 'legendary-legendary', 'gimmick-gimmick', 'favorite-favorite'];
+    await expect(page.getByTestId('favorites-cell-favorite-favorite')).toBeInViewport();
+    const balls = await page.evaluate((ids) => ids.map((id) => {
+      const cell = document.querySelector(`[data-testid="favorites-cell-${id}"]`)!;
+      const ball = cell.querySelector<HTMLElement>('[data-testid="favorites-empty-ball"]');
+      if (!ball) return { id, ball: null, margin: null };
+      // Sample every stroke in screen space, so the tilt and the domes count.
+      const cb = cell.getBoundingClientRect();
+      let margin = Infinity;
+      for (const shape of ball.querySelectorAll<SVGGeometryElement>('path, circle, line')) {
+        const m = shape.getScreenCTM()!;
+        const half = shape.getAttribute('stroke') === 'none' ? 0 : 0.75 * Math.hypot(m.a, m.b);
+        const len = shape.getTotalLength();
+        for (let i = 0; i <= 96; i++) {
+          const p = shape.getPointAtLength((len * i) / 96).matrixTransform(m);
+          margin = Math.min(margin, p.x - cb.left - half, cb.right - p.x - half, p.y - cb.top - half, cb.bottom - p.y - half);
+        }
+      }
+      return { id, ball: ball.dataset.ball ?? null, margin: Math.round(margin * 10) / 10 };
+    }), cells);
+    await testInfo.attach('empty-balls.json', { body: JSON.stringify(balls, null, 1), contentType: 'application/json' });
+    expect(balls.map((b) => b.ball)).toEqual(['poke', 'ultra', 'ultra', 'ultra', 'master']);
+    for (const b of balls) expect(b.margin, b.id).toBeGreaterThanOrEqual(0);
+  });
+
   test('a short selector stays compact and a tall selector fits without scrolling', { tag: '@viewport' }, async ({ page }) => {
     const viewport = page.viewportSize();
     expect(viewport).toBeTruthy();

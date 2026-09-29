@@ -74,15 +74,42 @@ export function TypeIcon({ type, size = 24 }: { type: TypeName; size?: number })
   );
 }
 
-export function EmptyBall({ className }: { className?: string }) {
+export type BallKind = 'poke' | 'ultra' | 'master';
+
+// The balls are drawn head-on: centre (20, 20), outline r 18, seam at y 20.
+// Ultra Ball: the yellow band is an H seen from above. Its legs are the ball
+// cut by the planes x = ±8.5 and ±13, which show as vertical lines. Its
+// crossbar runs over the top, half a leg wide, so its front edge is the
+// circle r 15.75.
+const ULTRA_BAND = 'M11.5 20V6.74A15.75 15.75 0 0 1 28.5 6.74V20M7 20V7.55M33 20V7.55';
+// Master Ball: each dome is the circle r 8 at 13.5 from the centre, 48° off
+// vertical, where it rises past the outline. A half ellipse on the chord
+// closes it. The outline skips the two chords.
+const MASTER_OUTLINE = 'M12.82 3.49A18 18 0 0 1 27.18 3.49M37.17 14.59A18 18 0 1 1 2.83 14.59';
+const MASTER_MARKS =
+  'M2.83 14.59A8 8 0 0 1 12.82 3.49A2.99 7.46 -138 0 1 2.83 14.59Z' +
+  'M27.18 3.49A8 8 0 0 1 37.17 14.59A2.99 7.46 -42 0 1 27.18 3.49Z' +
+  'M16.5 11.25V6.25L20 9.35L23.5 6.25V11.25';
+
+export function EmptyBall({ kind = 'poke', className }: { kind?: BallKind; className?: string }) {
   return (
-    <svg viewBox="0 0 40 40" className={className} aria-hidden overflow="visible">
+    <svg
+      viewBox="0 0 40 40"
+      className={className}
+      aria-hidden
+      overflow="visible"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <g transform="rotate(-30 20 20)">
-        <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="2" y1="20" x2="14" y2="20" stroke="currentColor" strokeWidth="1.5" />
-        <line x1="26" y1="20" x2="38" y2="20" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="20" cy="20" r="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="20" cy="20" r="2.5" fill="currentColor" />
+        {kind === 'master' ? <path d={MASTER_OUTLINE} /> : <circle cx="20" cy="20" r="18" />}
+        <line x1="2" y1="20" x2="14" y2="20" />
+        <line x1="26" y1="20" x2="38" y2="20" />
+        <circle cx="20" cy="20" r="6" />
+        <circle cx="20" cy="20" r="2.5" fill="currentColor" stroke="none" />
+        {kind === 'ultra' ? <path d={ULTRA_BAND} /> : null}
+        {kind === 'master' ? <path d={MASTER_MARKS} strokeLinejoin="round" /> : null}
       </g>
     </svg>
   );
