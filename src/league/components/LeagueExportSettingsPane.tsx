@@ -1,5 +1,6 @@
 import { Check, Download, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportNoSettings } from '@/components/export/ExportNoSettings';
 import { ExportSettingsScroll } from '@/components/export/ExportSettingsScroll';
 import type { LeagueHomeExportLayout, LeagueHomeTeamMode } from '../export/exportOptions';
 
@@ -54,8 +55,8 @@ export function LeagueExportSettingsPane({
         </div>
       )}
 
-      <ExportSettingsScroll>
-        {isLeague ? (
+      {isLeague ? (
+        <ExportSettingsScroll>
           <div className={mobileSheet ? 'space-y-2 px-3 pb-2 pt-1' : 'space-y-4 px-3 pb-2 pt-3'}>
             <div>
               <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -90,12 +91,14 @@ export function LeagueExportSettingsPane({
               </div>
             </div>
           </div>
-        ) : (
-          <p className="px-3 py-3 text-sm text-muted-foreground">
-            Trainer card exports match the card on screen.
-          </p>
-        )}
-      </ExportSettingsScroll>
+        </ExportSettingsScroll>
+      ) : (
+        // Nothing to set. On a phone the sheet fits this; the desktop pane keeps
+        // its actions at the bottom like the other exports.
+        <div className={mobileSheet ? undefined : 'min-h-0 flex-1'}>
+          <ExportNoSettings note="Trainer card exports match the card on screen." />
+        </div>
+      )}
 
       <div className={`flex shrink-0 flex-col gap-2 border-t pt-2 ${mobileSheet ? 'px-3 pb-3' : 'px-4 pb-4'}`}>
         <Button type="button" disabled={busy} onClick={onExport} data-league-export-confirm>

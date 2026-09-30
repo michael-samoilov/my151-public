@@ -295,6 +295,40 @@ test.describe('desktop export preview', () => {
   });
 });
 
+test.describe('settings-free export on a phone', () => {
+  test.use({ viewport: MOBILE });
+
+  async function sheetHeight(page: Page): Promise<number> {
+    const box = await page.locator('[data-export-chrome]').boundingBox();
+    expect(box).toBeTruthy();
+    return box!.height;
+  }
+
+  test('the trainer card sheet fits its content; the league sheet keeps its band', async ({ page }) => {
+    await seededLeague(page);
+    await page.goto('/custom-gym-leader');
+    await page.locator('[data-testid="league-slot-0"]').waitFor();
+    await page.locator('[data-testid="league-slot-0"]').click();
+    await page.locator('[aria-label="Export trainer card"]').click();
+    await waitPreviewReady(page);
+    await expect(page.locator('[data-export-no-settings]')).toBeVisible();
+    await expect(page.locator('[data-league-export-confirm]')).toBeInViewport();
+    const card = await sheetHeight(page);
+    expect(card, 'trainer card sheet height').toBeLessThan(MOBILE.height * 0.3);
+    const layer = await page.locator('[data-export-preview-layer]').boundingBox();
+    expect(layer, 'preview layer').toBeTruthy();
+    expect(layer!.height, 'preview gets the space the sheet gave up').toBeGreaterThan(MOBILE.height - card - 2);
+
+    await page.keyboard.press('Escape');
+    await page.goto('/custom-gym-leader');
+    await page.locator('[data-testid="league-slot-0"]').waitFor();
+    await page.locator('[data-league-export]').first().click();
+    await waitPreviewReady(page);
+    await expect(page.locator('[data-export-no-settings]')).toHaveCount(0);
+    expect(await sheetHeight(page), 'league sheet height').toBeGreaterThan(MOBILE.height * 0.4);
+  });
+});
+
 test.describe('gym trainer-card export', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 

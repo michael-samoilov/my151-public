@@ -138,6 +138,7 @@ export function LeagueExportOverlay() {
       surveyTool={exportKind}
       previewAlt={isLeague ? 'League export preview' : 'Trainer card export preview'}
       frames={{ activeKey, urls, busy: busy || exportBusy }}
+      bare={!isLeague}
       settings={
         <LeagueExportSettingsPane
           isLeague={isLeague}

@@ -116,6 +116,7 @@ export function ExportPreviewShell({
   maskContext = DEFAULT_MASK_CONTEXT,
   recipe = DEFAULT_FOIL_RECIPE,
   tilt = DEFAULT_HOVER_TILT_RECIPE,
+  bare = false,
 }: {
   phase: ExportPreviewPhase;
   onClose: () => void;
@@ -129,6 +130,11 @@ export function ExportPreviewShell({
   maskContext?: HoverTiltMaskContext;
   recipe?: FoilRecipe;
   tilt?: HoverTiltRecipe;
+  /**
+   * The export has no settings: its pane holds only `ExportNoSettings` and the
+   * actions, so the phone sheet sizes to them and the preview gets the rest.
+   */
+  bare?: boolean;
 }) {
   const isDesktop = useViewportAtLeast(1024);
   const sheetCap = useSettingsSheetCap(!isDesktop && phase === 'settings');
@@ -195,6 +201,7 @@ export function ExportPreviewShell({
       showScrim={false}
       exportChrome
       capHeightPx={sheetCap}
+      fitContent={bare && phase === 'settings'}
     >
       {paneBody}
     </BottomSheet>

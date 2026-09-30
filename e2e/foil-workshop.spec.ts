@@ -205,7 +205,8 @@ test.describe('export foil workshop', () => {
     await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 }).toBe('1');
     await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('1');
     const lift = page.locator('[data-export-foil-lift]');
-    await expect.poll(async () => foil.getAttribute('data-tilt-scale')).toBe('1.150');
+    // The pop eases in over the opening, which counts painted frames.
+    await expect.poll(async () => foil.getAttribute('data-tilt-scale'), { timeout: 15_000 }).toBe('1.150');
     await expect.poll(async () => lift.evaluate((el) => getComputedStyle(el).transform)).not.toBe('none');
     const popped = await lift.boundingBox();
     if ((await foil.getAttribute('data-paused')) !== '1') {
