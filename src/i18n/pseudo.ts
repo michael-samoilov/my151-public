@@ -1,4 +1,3 @@
-import { en } from './catalogs/en';
 import type { Messages } from './types';
 
 /**
@@ -24,12 +23,9 @@ import type { Messages } from './types';
  * under PREVIEW_FEATURES, and are never offered in the picker.
  */
 
-export const PSEUDO_LOCALES = ['en-XA', 'en-XC'] as const;
-export type PseudoLocale = (typeof PSEUDO_LOCALES)[number];
-
-export function isPseudoLocale(value: unknown): value is PseudoLocale {
-  return typeof value === 'string' && (PSEUDO_LOCALES as readonly string[]).includes(value);
-}
+export { PSEUDO_LOCALES, isPseudoLocale } from './pseudoLocale';
+export type { PseudoLocale } from './pseudoLocale';
+import type { PseudoLocale } from './pseudoLocale';
 
 const ACCENTS: Record<string, string> = {
   a: 'á', b: 'ƀ', c: 'ç', d: 'đ', e: 'é', f: 'ƒ', g: 'ġ', h: 'ĥ', i: 'í',
@@ -94,9 +90,9 @@ export function widen(template: string): string {
     .join('');
 }
 
-export function buildPseudoCatalog(which: PseudoLocale): Messages {
+export function buildPseudoCatalog(which: PseudoLocale, source: Messages): Messages {
   const transform = which === 'en-XA' ? accentuate : widen;
   const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(en)) out[key] = transform(value);
+  for (const [key, value] of Object.entries(source)) out[key] = transform(value);
   return out as Messages;
 }

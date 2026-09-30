@@ -4,7 +4,7 @@ import { DEFAULT_LOCALE, isLocale, type Locale } from './config';
 import { setCatalog } from './core';
 import { negotiateLocale } from './detect';
 import { loadNames, hasNameExtension } from './names';
-import { buildPseudoCatalog, isPseudoLocale, type PseudoLocale } from './pseudo';
+import { isPseudoLocale, type PseudoLocale } from './pseudoLocale';
 import type { Messages } from './types';
 
 /**
@@ -78,7 +78,10 @@ const UI_SOURCES = import.meta.glob<Record<string, string>>('./catalogs/ui/*.jso
  * is a coherent intermediate state rather than a half-broken one.
  */
 export async function loadCatalog(locale: ActiveLocale): Promise<Messages> {
-  if (isPseudoLocale(locale)) return buildPseudoCatalog(locale);
+  if (isPseudoLocale(locale)) {
+    const { buildPseudoCatalog } = await import('./pseudo');
+    return buildPseudoCatalog(locale, en);
+  }
   const loadTerms = TERM_SOURCES[`./catalogs/terms/${locale}.json`];
   if (!loadTerms) return en;
   const loadUi = UI_SOURCES[`./catalogs/ui/${locale}.json`];
