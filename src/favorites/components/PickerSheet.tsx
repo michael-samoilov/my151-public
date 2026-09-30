@@ -173,7 +173,9 @@ export function PickerSheet({
   ) : null;
   const mobileTitle = (
     <span className="flex w-full items-center gap-1.5 px-2 py-0.5 text-left">
-      <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+      {/* The sheet closes by a drag, a tap on the header, or a tap outside,
+          so only packing, where the header steps back, shows a back mark. */}
+      {packing ? <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /> : null}
       {title}
     </span>
   );

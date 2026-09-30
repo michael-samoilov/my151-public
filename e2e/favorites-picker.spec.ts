@@ -848,12 +848,12 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
   });
 
-  test('mobile selector header uses a back indicator and two badges', async ({ page }) => {
+  test('mobile selector header shows two badges and no back indicator', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fire-1').click();
     const header = page.getByTestId('bottom-sheet-header');
-    await expect(header.locator('svg.lucide-chevron-left')).toBeVisible();
+    await expect(header.locator('svg.lucide-chevron-left')).toHaveCount(0);
     await expect(header.locator('[class*="border-primary"]')).toHaveCount(0);
     const badges = header.getByTestId('favorites-picker-title').getByRole('img');
     await expect(badges).toHaveCount(2);
