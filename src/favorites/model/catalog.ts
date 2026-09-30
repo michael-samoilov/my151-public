@@ -54,6 +54,7 @@ function asGen(n: number): GenNumber {
 
 const ALL: PickerMon[] = [];
 const BY_ID = new Map<number, PickerMon>();
+const DEX_ID_BY_PICKER_ID = new Map<number, number>();
 const LINE_BY_ID = new Map<number, number>();
 const STAGE_BY_ID = new Map<number, number>();
 const FIRST_BY_LINE = new Map<number, number>();
@@ -74,6 +75,7 @@ function pushMon(mon: PickerMon): void {
 
 for (const p of SPECIES) {
   const pickerId = p.id === 10178 ? 10179 : p.id === 10179 ? 10180 : p.id === 10227 ? 10191 : p.id;
+  DEX_ID_BY_PICKER_ID.set(pickerId, p.id);
   LINE_BY_ID.set(pickerId, p.evolutionChainId);
   STAGE_BY_ID.set(pickerId, p.evolutionStage);
   pushMon({
@@ -138,6 +140,14 @@ export function allPickerMons(): readonly PickerMon[] {
 
 export function getPickerMon(id: number): PickerMon | undefined {
   return BY_ID.get(id);
+}
+
+export function pickerDexId(mon: PickerMon): number {
+  return DEX_ID_BY_PICKER_ID.get(mon.id) ?? DEX_ID_BY_PICKER_ID.get(mon.ownerId) ?? mon.ownerId;
+}
+
+export function pickerNameId(mon: PickerMon): number {
+  return DEX_ID_BY_PICKER_ID.get(mon.id) ?? mon.id;
 }
 
 export function isRegional(mon: PickerMon): boolean {
