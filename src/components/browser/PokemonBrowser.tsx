@@ -6,7 +6,7 @@ import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup } from '@/hooks/usePokemonData';
 import { mergeBranchesByChain } from './chainMerge';
-import { useBrowserStore } from './browserStore';
+import { useBrowserStore, useFavoriteBrowserStore } from './browserStore';
 import { ARCHETYPES } from '@/data/archetypes';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { DEX_TOTAL } from '@/lib/milestones';
@@ -151,6 +151,11 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const sections = useBrowserStore((s) => s.sections);
   const activeSection = useBrowserStore((s) => s.activeSection);
   const addToSection = useBrowserStore((s) => s.addToSection);
+  const favoritesFilter = useFavoriteBrowserStore((s) => s.favoritesFilter);
+  const favoriteIds = useFavoriteBrowserStore((s) => s.favoriteIds);
+  const setFavoritesFilter = useFavoriteBrowserStore((s) => s.setFavoritesFilter);
+  const refreshFavorites = useFavoriteBrowserStore((s) => s.refreshFavorites);
+  useLayoutEffect(() => { refreshFavorites(); }, [activeSection, refreshFavorites]);
   const myDexFilter = useBrowserStore((s) => s.myDexFilter);
   const myDexIds = useBrowserStore((s) => s.myDexIds);
   const myDexSections = useBrowserStore((s) => s.myDexSections);
@@ -390,11 +395,12 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const restrictToIds = useMemo(() => {
     const active: Set<number>[] = [];
     if (restrictIds) active.push(restrictIds);
+    if (favoritesFilter) active.push(favoriteIds);
     if (myDexFilter && myDexIds) active.push(myDexIds);
     if (scopeFilter && scopeFilterIds) active.push(scopeFilterIds);
     if (active.length === 0) return undefined;
     return active.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))));
-  }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds]);
+  }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds, favoritesFilter, favoriteIds]);
 
   const filterOptions = useMemo(() => ({
     search: searchInput,
@@ -542,11 +548,12 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   // Deferred like the grid: the search view and its subgroups must switch
   // together with the `groups` they render.
   const isSearching = deferredOptions.search.trim().length > 0;
-  const hasActivePropertyFilters = !!(myDexFilter || scopeFilter || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || (colorFilter && colorFilter.length > 0) || (eggGroupFilter && eggGroupFilter.length > 0) || evoLineSizeFilter);
+  const hasActivePropertyFilters = !!(favoritesFilter || myDexFilter || scopeFilter || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || (colorFilter && colorFilter.length > 0) || (eggGroupFilter && eggGroupFilter.length > 0) || evoLineSizeFilter);
   const hasActiveBrowseFilters = !!(activeCategory || activeArchetype);
   const hasActiveFilters = hasActivePropertyFilters || hasActiveBrowseFilters;
 
   const clearPropertyFilters = () => {
+    setFavoritesFilter(false);
     setMyDexFilter?.(false);
     setScopeFilter?.(false);
     setTypeFilter(null);
@@ -1010,6 +1017,22 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         {/* Row 1: Property filters (Type, Gen, Stages) */}
         <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 px-2 py-1">
+          {favoritesFilter ? (
+            <FilterChip
+              label={<FavoriteLabel count={favoriteIds.size} />}
+              onDismiss={() => setFavoritesFilter(false)}
+              onClick={() => setFavoritesFilter(false)}
+              className="bg-foreground text-background"
+            />
+          ) : (
+            <button type="button"
+              onClick={() => setFavoritesFilter(true)}
+              data-filter-chip="my-favorites"
+              className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+            >
+              <FavoriteLabel count={favoriteIds.size} />
+            </button>
+          )}
           {setMyDexFilter && (
             myDexFilter ? (
               <FilterChip
@@ -1518,6 +1541,16 @@ function EntryChip({ label, onClick, active, sheet }: { label: string; onClick: 
       {label}
       <ChevronDown size={12} className={cn('transition-transform', active && 'rotate-180')} />
     </button>
+  );
+}
+
+function FavoriteLabel({ count }: { count: number }) {
+  const t = useT();
+  return (
+    <span className="whitespace-nowrap">
+      {t('browser.myFavorites')}{' '}
+      <span className="font-bold tabular-nums text-primary">{count}</span>
+    </span>
   );
 }
 
