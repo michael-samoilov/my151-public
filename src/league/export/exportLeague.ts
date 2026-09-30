@@ -63,9 +63,7 @@ import {
   wrapTracked,
 } from './paint';
 
-/** One name each, whatever the league is called and whoever is on the card. */
-export const CARD_FILENAME = 'my151-trainer-card.png';
-export const HOME_FILENAME = 'my151-league.png';
+export { CARD_FILENAME, HOME_FILENAME } from './exportOptions';
 
 const FG = '#0a0a0a';
 const RED = '#DC2626';
