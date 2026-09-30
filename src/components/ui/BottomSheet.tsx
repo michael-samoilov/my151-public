@@ -32,6 +32,12 @@ interface BottomSheetProps {
    * screen instead of the sheet growing to its content.
    */
   capHeightPx?: number;
+  /**
+   * An export sheet normally holds the cap's full height so the preview above
+   * it does not jump as settings change. One with nothing to set sizes to its
+   * content, under the same cap, and leaves the rest to the preview.
+   */
+  fitContent?: boolean;
   children: React.ReactNode;
 }
 
@@ -60,6 +66,7 @@ export function BottomSheet({
   showScrim = true,
   exportChrome = false,
   capHeightPx,
+  fitContent = false,
   children,
 }: BottomSheetProps) {
   const [dragY, setDragY] = useState(0);
@@ -417,7 +424,7 @@ export function BottomSheet({
           // with `maxHeight` alone the chain stays `auto` and the form can only
           // overflow and scroll, which is the fold the tail was hiding behind.
           height:
-            exportChrome && maxHeightPx != null
+            exportChrome && !fitContent && maxHeightPx != null
               ? `${maxHeightPx}px`
               : size === 'full' || keyboardOpen
                 ? `calc(100% - ${gap}px)`
