@@ -9,7 +9,7 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { useT } from '@/i18n';
+import { useDocumentLocale, useT } from '@/i18n';
 import { cellKey, type GenAxisId, type TypeAxisId } from './model/cells';
 import { getPickerMon } from './model/catalog';
 import { prewarmPickerSprites } from './model/spritePreload';
@@ -22,7 +22,6 @@ import { SortDebugPanel } from './components/SortDebugPanel';
 import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 
-const TOOL_NAME = 'Favorite Pokémon Picker by Type and Generation';
 const TYPES_STORAGE_KEY = 'personal-151-favorites-show-types-v1';
 const NO_REPEATS_STORAGE_KEY = 'personal-151-favorites-no-repeats-v1';
 
@@ -57,6 +56,7 @@ function GlobalHeader() {
 
 export function FavoritesApp() {
   useJsErrorCounter();
+  useDocumentLocale();
   const desktop = useIsDesktop();
   const fills = useFavoritesStore((s) => s.fills);
   const place = useFavoritesStore((s) => s.place);
@@ -69,6 +69,10 @@ export function FavoritesApp() {
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
+
+  useEffect(() => {
+    document.title = `${t('favorites.title')} | my151`;
+  }, [t]);
 
   useEffect(() => {
     try { window.localStorage.setItem(TYPES_STORAGE_KEY, showTypes ? '1' : '0'); }
@@ -126,8 +130,8 @@ export function FavoritesApp() {
       <div className="flex min-h-dvh flex-col bg-background text-foreground">
         <GlobalHeader />
         <div className="flex h-11 items-center gap-1 border-b bg-card px-3">
-          <h1 className="min-w-0 overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground" title={TOOL_NAME}>
-            {TOOL_NAME}
+          <h1 className="min-w-0 text-[0.6875rem] font-semibold leading-tight text-muted-foreground" title={t('favorites.title')}>
+            {t('favorites.title')}
           </h1>
           <button
             type="button"

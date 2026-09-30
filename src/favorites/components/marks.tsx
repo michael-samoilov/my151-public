@@ -1,3 +1,4 @@
+import { useT } from '@/i18n';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
@@ -35,10 +36,11 @@ for (const gen of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
 }
 
 export function RomanDisc({ gen, size = 27 }: { gen: GenNumber; size?: number }) {
+  const t = useT();
   return (
     <img
       src={ROMAN_URIS[gen]}
-      alt={`Generation ${ROMAN[gen]}`}
+      alt={t('favorites.generation', { gen: ROMAN[gen] })}
       width={size}
       height={size}
       draggable={false}

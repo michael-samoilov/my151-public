@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import { tileImageCssPx } from '@/lib/tileImage';
 import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { typeIconPath } from '@/data/type-ids';
@@ -148,7 +149,7 @@ function PickCell({
       onClick={() => selected && onClear ? onClear() : onPick(mon)}
       data-testid={`favorites-pick-${mon.id}`}
       aria-pressed={selected}
-      aria-label={clearing ? `${clearLabel ?? 'Clear'} ${labelOf(mon)}` : labelOf(mon)}
+      aria-label={clearing ? `${clearLabel ?? t('favorites.clear')} ${labelOf(mon)}` : labelOf(mon)}
       className="group/pick relative flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent p-0 hover:bg-foreground/5"
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >

@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { TYPE_COLORS } from '@/data/type-colors';
+import { useNamesVersion, useT } from '@/i18n';
+import { labelOf } from './spriteLabel';
 import { cn } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import {
@@ -104,6 +106,7 @@ export function FavoritesGrid({
   /** The desktop selector pane. It scrolls with the grid, under the headers. */
   pane?: ReactNode;
 }) {
+  useNamesVersion();
   return (
     <ZoomFrame desktop={desktop} fills={fills} pane={pane}>
       <Corner />
@@ -141,6 +144,7 @@ function ZoomFrame({
   fills: Record<string, number>;
   pane?: ReactNode;
 }) {
+  const t = useT();
   const frameRef = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -183,7 +187,7 @@ function ZoomFrame({
       <ChartMinimap fills={fills} mapRef={mapRef} windowRef={windowRef} box={minimapBox(desktop)} />
       {showScrollCue ? (
         <div ref={cueRef} data-testid="favorites-scroll-cue" className="pointer-events-none absolute bottom-3 right-3 z-10 flex items-center gap-1 rounded-full bg-card/95 px-2 py-1 text-xs text-muted-foreground shadow-sm">
-          <span>Scroll for more</span><span aria-hidden>→</span>
+          <span>{t('favorites.scrollMore')}</span><span aria-hidden>→</span>
         </div>
       ) : null}
     </div>
@@ -789,7 +793,7 @@ function Filled({ mon, desktop }: { mon: PickerMon; desktop: boolean }) {
       </span>
       <img
         src={mon.sprite}
-        alt={mon.name}
+        alt={labelOf(mon)}
         className="absolute left-1/2 top-1/2 z-10 h-auto max-w-none -translate-x-1/2 -translate-y-1/2"
         style={{ imageRendering: 'pixelated', width: desktop ? 'var(--cell)' : trackPart('--cell', size / 100) }}
         data-grid-sprite-size={desktop ? DESKTOP_CELL_PX : size}

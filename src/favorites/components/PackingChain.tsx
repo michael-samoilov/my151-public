@@ -1,3 +1,5 @@
+import { useNamesVersion } from '@/i18n';
+import { labelOf } from './spriteLabel';
 import { typeIconPath } from '@/data/type-ids';
 import { cn } from '@/lib/utils';
 import { ArrowRight, Trash2 } from 'lucide-react';
@@ -12,6 +14,7 @@ export function PackingChain({
   selected?: boolean;
   onSelect?: () => void;
 }) {
+  useNamesVersion();
   const inner = (
     <div className="flex flex-nowrap items-center gap-1.5" data-testid="favorites-pack-chain">
       {slots.map((slot) => <PackSlot key={chainSlotKey(slot)} slot={slot} />)}
@@ -77,7 +80,7 @@ function PackSlot({ slot }: { slot: ChainSlot }) {
       ) : null}
       <img
         src={slot.mon.sprite}
-        alt={slot.mon.name}
+        alt={labelOf(slot.mon)}
         data-testid="favorites-pack-sprite"
         className={cn('relative z-0 h-11 w-11', trash && 'opacity-35')}
         style={{ imageRendering: 'pixelated' }}
