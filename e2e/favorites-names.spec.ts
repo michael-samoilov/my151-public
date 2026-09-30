@@ -42,3 +42,42 @@ test('picker identity shifts retain the correct localized species', async ({ pag
     contentType: 'application/json',
   });
 });
+
+test('picker awaits form overlays before switching language and reuses loaded locales', async ({ page }, testInfo) => {
+  await page.goto('/favorite-pokemon-by-type?lang=en');
+  await page.getByTestId('favorites-cell-legendary-6').click();
+  const neutral = page.getByTestId('favorites-pick-11001');
+  const english = (await neutral.getAttribute('aria-label'))!;
+  await neutral.click();
+  const image = page.getByTestId('favorites-cell-legendary-6').locator('img');
+  let release!: () => void;
+  let intercepted!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const arrived = new Promise<void>(resolve => { intercepted = resolve; });
+  await page.route(/\/assets\/ja-[^/]+\.js$/, async route => {
+    const response = await route.fetch();
+    if ((await response.text()).includes('11001')) {
+      intercepted();
+      await gate;
+    }
+    await route.fulfill({ response });
+  });
+  await page.getByRole('button', { name: /language/i }).click();
+  await page.getByRole('menuitemradio', { name: '日本語' }).click();
+  await arrived;
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(image).toHaveAttribute('alt', english);
+  release();
+  const japanese = table['sv.zkn_form.ZKN_FORM_716_000'].names.ja;
+  await expect(image).toHaveAttribute('alt', new RegExp(japanese));
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+  for (const endonym of ['English', '日本語']) {
+    await page.locator('button[aria-haspopup="menu"]').filter({ has: page.locator('svg.lucide-globe') }).click();
+    await page.getByRole('menuitemradio', { name: endonym, exact: true }).click();
+    await expect(image).toHaveAttribute('alt', endonym === 'English' ? english : new RegExp(japanese));
+  }
+  await testInfo.attach('awaited-overlay-switch.json', {
+    body: JSON.stringify({ whileOverlayPending: english, final: await image.getAttribute('alt'), cachedLocaleRoundTrip: true }),
+    contentType: 'application/json',
+  });
+});

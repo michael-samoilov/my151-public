@@ -53,7 +53,20 @@ const inFlight = new Map<Locale, Promise<void>>();
 /** Vite turns each of these into its own hashed chunk, fetched on demand. */
 const SOURCES = import.meta.glob<NameCatalog>('./names/*.json', { import: 'default' });
 
-export function loadNames(locale: Locale): Promise<void> {
+let extensionLoader: ((locale: Locale, catalog: NameCatalog, species: Record<string, number>) => Promise<void>) | undefined;
+/** Picker installs its optional names before boot; other pages never import them. */
+export function registerNameExtension(loader: typeof extensionLoader): void {
+  extensionLoader = loader;
+}
+export function hasNameExtension(): boolean { return !!extensionLoader; }
+
+export async function loadNames(locale: Locale): Promise<void> {
+  await loadSharedNames(locale);
+  const catalog = loaded.get(locale);
+  if (extensionLoader && catalog) await extensionLoader(locale, catalog, ALT_FORM_SPECIES);
+}
+
+function loadSharedNames(locale: Locale): Promise<void> {
   if (loaded.has(locale)) return Promise.resolve();
   let pending = inFlight.get(locale);
   if (!pending) {

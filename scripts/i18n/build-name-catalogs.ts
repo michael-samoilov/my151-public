@@ -15,6 +15,7 @@ import { searchAffix } from './searchAffixes';
 import { ALTERNATE_PICKER_FORMS } from '../../src/favorites/model/alternateForms';
 
 const OUT_DIR = 'src/i18n/names';
+const PICKER_OUT_DIR = 'src/i18n/picker-names';
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
 /** How a name was arrived at. Anything but `official` is flagged in the UI. */
@@ -322,6 +323,16 @@ async function main(): Promise<void> {
     // would be '', which is 1,025 commas of nothing in the payload.
     if (affix.some(Boolean)) catalog.affix = affix;
 
+    const overlay = { species: Object.fromEntries(entries.filter(e => !originalIds.has(e.appId) && e.appId !== e.speciesId).map(e => [e.appId, e.speciesId])), forms: {} as Record<string, string>, formSource: {} as Record<string, NameProvenance> };
+    for (const key of Object.keys(catalog.forms)) {
+      if (originalIds.has(Number(key))) continue;
+      overlay.forms[key] = catalog.forms[key];
+      overlay.formSource[key] = catalog.formSource[key];
+      delete catalog.forms[key];
+      delete catalog.formSource[key];
+    }
+    mkdirSync(PICKER_OUT_DIR, { recursive: true });
+    writeFileSync(`${PICKER_OUT_DIR}/${locale}.json`, `${JSON.stringify(overlay)}\n`);
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(catalog)}\n`);
     const named = catalog.species.filter(Boolean).length;
     summary.push(
@@ -336,7 +347,7 @@ async function main(): Promise<void> {
    * ~95 kB before this was split out. Only alt forms need stating.
    */
   const altForms = Object.fromEntries(
-    entries.filter((e) => e.appId !== e.speciesId).map((e) => [e.appId, e.speciesId]),
+    entries.filter((e) => originalIds.has(e.appId) && e.appId !== e.speciesId).map((e) => [e.appId, e.speciesId]),
   );
   // Outside OUT_DIR: names.ts glob-imports `names/*.json` as lazy per-locale
   // chunks, and a file that is both statically imported and matched by that

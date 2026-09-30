@@ -6,6 +6,7 @@ import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
 import { installOptOut, isOptedOut } from '../lib/clientId'
 import { whenIdle } from '../lib/whenIdle'
+import './pickerNames'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
 import { FavoritesApp } from './FavoritesApp'
@@ -42,7 +43,7 @@ void initLocale({
   search: window.location.search,
   stored: usePokedexStore.getState().locale,
   navigatorLanguages: navigator.languages,
-}).finally(() => {
+}).then(() => {
   createRoot(rootEl).render(
     <StrictMode>
       {SPRITE_CHECK_ENABLED ? <SpriteChecklist /> : <FavoritesApp />}

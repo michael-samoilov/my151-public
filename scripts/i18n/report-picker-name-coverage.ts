@@ -7,6 +7,9 @@ const report = LOCALES.map(locale => {
   const catalog = JSON.parse(readFileSync(`src/i18n/names/${locale}.json`, 'utf8')) as {
     species: string[]; forms: Record<string, string>;
   };
+  const overlay = JSON.parse(readFileSync(`src/i18n/picker-names/${locale}.json`, 'utf8'));
+  Object.assign(catalog.forms, overlay.forms);
+  Object.assign(species, overlay.species);
   const missingSpecies = allPickerMons().filter(mon => !catalog.species[(species[pickerNameId(mon)] ?? pickerNameId(mon)) - 1]);
   const missingDescriptors = allPickerMons().filter(mon => mon.id > 10_000
     && !catalog.forms[mon.id === 10227 ? 'picker:10227' : pickerNameId(mon)]
