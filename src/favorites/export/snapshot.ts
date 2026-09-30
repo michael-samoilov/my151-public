@@ -1,7 +1,7 @@
 import pokemonData from '@/data/pokemon.json';
 import type { Pokemon } from '@/types/pokemon';
 import { GEN_AXIS, GEN_NUMBERS, TYPE_AXIS, TYPES18, cellKey, type GenAxisId, type TypeAxisId } from '../model/cells';
-import { getPickerMon, type PickerMon } from '../model/catalog';
+import { getPickerMon, pickerDexId, type PickerMon } from '../model/catalog';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { pointerPool } from '../model/pointers';
 
@@ -62,9 +62,7 @@ export function buildFavoritesSnapshot(fills: Readonly<Record<string, number>>):
   const uniquePicks = [...new Map(cells.filter(cell => cell.kind === 'pick' && cell.mon)
     .map(cell => [cell.mon!.id, cell.mon!])).values()];
   const species = [...new Map(uniquePicks.flatMap(mon => {
-    const owner = getPickerMon(mon.ownerId);
-    const id = owner?.ownerId ?? mon.ownerId;
-    const metadata = speciesById.get(id);
+    const metadata = speciesById.get(pickerDexId(mon));
     return metadata ? [[metadata.id, metadata] as const] : [];
   })).values()];
   const picks = cells.filter(cell => cell.kind === 'pick');
