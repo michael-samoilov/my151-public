@@ -1,12 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import { blankLeague, pairLeague } from './support/leagueSeed';
+import { blankLeague, fiveLineCardLeague, pairLeague } from './support/leagueSeed';
 
 /**
  * The ace and the partner share the card's top-left slot, split by a diagonal.
  *
- * CSS pins ace top-left and partner bottom-right, same padding, partner
- * column reversed. Sprite size is 1× or 2× of the 96px source, never a
- * pane fraction. This spec checks that layout, not a solver reading.
+ * The partner is a team sprite on the column of cells below it, and the ace
+ * is twice it on the pane's top-left cells. The captions' fit and the seam
+ * are read from the drawn text (`showcaseLayout.ts`), so this spec measures
+ * the drawn text too.
  */
 
 const openCard = async (page: Page) => {
@@ -36,8 +37,10 @@ async function slotGeometry(page: Page) {
         left: r.left + r.width / 2 - sprite / 2,
         top: r.top + r.height / 2 - sprite / 2,
       };
-      // Every run the half paints, so nothing can leave the slot unnoticed.
-      const runs = [...half.querySelectorAll<HTMLElement>('span, img')]
+      // Every line of caption text the half paints, so no word can leave
+      // the slot unnoticed. The sprites may reach past it, as the cell
+      // sprites reach past their cells.
+      const runs = [...half.querySelectorAll<HTMLElement>('[data-slot-head], [data-slot-name]')]
         .map((el) => el.getBoundingClientRect())
         .filter((v) => v.width > 1);
       // The empty state's placeholder ball, and how far past the seam it
@@ -133,42 +136,34 @@ test.describe('the ace and partner slot', () => {
     }
   });
 
-  test('the sprite is an integer device-pixel scale', { tag: '@viewport' }, async ({ page }) => {
-    await blankLeague(page);
+  test('the partner is a cell sprite on the column below it, and the ace twice it', { tag: '@viewport' }, async ({ page }, testInfo) => {
+    // Five lines fill the Gym 8, Elite Four, Champion and Endgame cells
+    // under the pane's right column.
+    await fiveLineCardLeague(page);
     await openCard(page);
-    const { halves, slot } = await slotGeometry(page);
-    const measured = await page.evaluate(() => {
+    const got = await page.evaluate(() => {
       const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
-      const art = pane.querySelector<HTMLElement>('[data-slot-art]')!;
-      const team = document.querySelector<HTMLElement>('[data-testid="card-cell-1-1"] img');
-      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-      const css = art.offsetWidth;
-      const n = css / (3.25 * rem);
-      const teamW = team?.offsetWidth ?? 0;
-      return {
-        layout: css,
-        attr: Number(pane.dataset.slotSprite),
-        rem,
-        n,
-        teamW,
-        vsTeam: teamW > 0 ? css / teamW : 0,
-        integer: [1, 2, 3].some((s) => Math.abs(n - s) < 0.02),
-        style: getComputedStyle(art).width,
-      };
+      const p = pane.getBoundingClientRect();
+      const mid = (r: DOMRect) => ({ x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2, w: r.width });
+      const partner = mid(pane.querySelector('[data-slot-half="partner"] [data-slot-art]')!.getBoundingClientRect());
+      const ace = mid(pane.querySelector('[data-slot-half="ace"] [data-slot-art]')!.getBoundingClientRect());
+      const cells = [...document.querySelectorAll<HTMLElement>('[data-testid^="card-cell-"] img')]
+        .map((img) => mid(img.getBoundingClientRect()));
+      // The column under the pane's right cell, and the pane's bottom row.
+      const below = cells.filter((c) => c.y > p.bottom && c.x > p.left + (2 * p.width) / 3 && c.x < p.right + 8);
+      const row4 = [...document.querySelectorAll<HTMLElement>('[data-testid^="card-cell-4-"] img')]
+        .map((img) => mid(img.getBoundingClientRect()));
+      return { partner, ace, below, row4 };
     });
-    expect(measured.integer, `n=${measured.n} css=${measured.layout} rem=${measured.rem}`).toBe(true);
-    expect(measured.attr).toBeCloseTo(measured.layout, 0);
-    expect(measured.style).not.toContain('cqw');
-    if (measured.teamW > 0) {
-      expect(
-        [1, 2, 3].some((s) => Math.abs(measured.vsTeam - s) < 0.05),
-        `ace ${measured.layout} vs team ${measured.teamW}`,
-      ).toBe(true);
+    await testInfo.attach('alignment.json', { body: JSON.stringify(got, null, 2), contentType: 'application/json' });
+    expect(got.below.length, 'sprites in the column below the pane').toBeGreaterThanOrEqual(3);
+    for (const cell of got.below) {
+      expect(Math.abs(got.partner.x - cell.x), 'the partner centres on the column below').toBeLessThanOrEqual(1);
+      expect(Math.abs(got.partner.w - cell.w), 'the partner is a cell sprite').toBeLessThanOrEqual(0.5);
     }
-    for (const half of halves) {
-      expect(half.sprite, `${half.id} painted`).toBeGreaterThan(8);
-    }
-    expect(slot.width).toBeGreaterThan(8);
+    expect(got.row4.length, 'sprites in the card\'s 4th row').toBeGreaterThan(0);
+    expect(Math.abs(got.partner.y - got.row4[0].y), 'the partner lines up with the 4th row').toBeLessThanOrEqual(1);
+    expect(Math.abs(got.ace.w - 2 * got.partner.w), 'the ace is twice the partner').toBeLessThanOrEqual(0.5);
   });
 
   test('Hisuian Braviary and Celesteela do not overlap', { tag: '@viewport' }, async ({ page }, testInfo) => {
@@ -184,7 +179,7 @@ test.describe('the ace and partner slot', () => {
     expect(overlap / area, 'large sprites overlap').toBeLessThanOrEqual(0.02);
   });
 
-  test('the empty state puts its heading where the filled one does', { tag: '@viewport' }, async ({ page }) => {
+  test('the empty state centres the partner heading as the filled one does', { tag: '@viewport' }, async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
 
@@ -228,20 +223,46 @@ test.describe('the ace and partner slot', () => {
       await page.waitForTimeout(700);
     };
 
+    /**
+     * The partner caption's drawn lines, and how far their centre sits from
+     * the partner square's, in the slot's own pixels.
+     */
+    const partnerCaption = () =>
+      page.evaluate(() => {
+        const half = document.querySelector<HTMLElement>('[data-testid="slot-partner"]')!;
+        const zoom = half.getBoundingClientRect().width / half.offsetWidth;
+        const art = half.querySelector('[data-slot-art]')!.getBoundingClientRect();
+        const lines = [...half.querySelectorAll('[data-slot-head] > span, [data-slot-name]')]
+          .filter((el) => (el.textContent ?? '').trim() !== '')
+          .map((el) => el.getBoundingClientRect());
+        const top = Math.min(...lines.map((r) => r.top));
+        const bottom = Math.max(...lines.map((r) => r.bottom));
+        return { lines: lines.length, off: ((top + bottom) / 2 - (art.top + art.bottom) / 2) / zoom };
+      });
+
     const empty = await runs();
-    // One Pokémon centres itself. Fill both so this check stays on the
-    // corner pair, which is the layout empty and filled must share.
+    const emptyPartner = await partnerCaption();
     await pick('slot-partner', 'pikachu');
     await pick('slot-ace', 'bulbasaur', true);
     const filled = await runs();
+    const filledPartner = await partnerCaption();
 
-    // The partner half is the one that changed state; its runs must not move.
-    // A twentieth of a pixel, not a whole one: the runs are measured against
-    // the half's own box, and nothing inside it should move at all. This does
-    // not see the pane's own outline -- the half moves with it -- so a border
-    // that shifts the whole pane is the card-slots spec's job, not this one's.
-    filled[1].forEach((top, i) => {
-      expect(Math.abs(top - empty[1][i]), `partner text run ${i} moved`).toBeLessThanOrEqual(0.1);
+    // The partner's caption centres on its square either way: PARTNER /
+    // SHOULDERMON alone while it is empty, and those two lines with the name
+    // once it is filled. No line is kept for a name that is not there.
+    expect(emptyPartner.lines, 'an empty partner draws its heading only').toBe(2);
+    expect(Math.abs(emptyPartner.off), `the empty caption is ${emptyPartner.off.toFixed(2)}px off centre`).toBeLessThanOrEqual(0.5);
+    expect(filledPartner.lines, 'a filled partner adds its name').toBe(3);
+    expect(Math.abs(filledPartner.off), `the filled caption is ${filledPartner.off.toFixed(2)}px off centre`).toBeLessThanOrEqual(0.5);
+
+    // The ace's heading sits under its square, so a name arriving below it
+    // moves none of the runs the empty half had. A tenth of a pixel, not a
+    // whole one: the runs are measured against the half's own box, and
+    // nothing inside it should move at all. This does not see the pane's own
+    // outline -- the half moves with it -- so a border that shifts the whole
+    // pane is the card-slots spec's job, not this one's.
+    empty[0].forEach((top, i) => {
+      expect(Math.abs(filled[0][i] - top), `ace text run ${i} moved`).toBeLessThanOrEqual(0.1);
     });
   });
 
@@ -274,16 +295,146 @@ test.describe('the ace and partner slot', () => {
     expect(state.lines, 'the partner seats itself when there is room').toBeGreaterThan(0);
   });
 
-  test('both halves get the same sprite', { tag: '@viewport' }, async ({ page }) => {
+  test('the ace is twice the partner', { tag: '@viewport' }, async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
     const { halves } = await slotGeometry(page);
     const ace = halves.find((h) => h.id === 'slot-ace')!;
     const partner = halves.find((h) => h.id === 'slot-partner')!;
-    // Equal is the invariant. The partner's wedge is the smaller partition,
-    // so sizing each half to its own room made the partner read as the lesser
-    // one; the pair is one size and the slot's width sets it.
-    expect(Math.abs(ace.sprite - partner.sprite), 'the two match').toBeLessThanOrEqual(1);
+    expect(Math.abs(ace.sprite - 2 * partner.sprite), 'the ace is 2x').toBeLessThanOrEqual(1);
+  });
+
+  for (const [state, aceId, partnerId] of [
+    ['empty', null, null],
+    ['ace only', 95, null],
+    ['partner only', null, 25],
+    ['both', 95, 25],
+  ] as const) {
+    test(`the partner caption centres on the partner square: ${state}`, { tag: '@viewport' }, async ({ page }) => {
+      await pairLeague(page, aceId, partnerId);
+      await page.goto('/custom-gym-leader');
+      await page.waitForSelector('[data-testid="league-slot-0"]');
+      await page.click('[data-testid="league-slot-0"]');
+      await page.waitForSelector('[data-testid="slot-tm"]');
+      await page.evaluate(() => document.fonts.ready);
+      await page.waitForTimeout(600);
+      const got = await page.evaluate(() => {
+        const half = document.querySelector('[data-slot-half="partner"]')!;
+        const art = half.querySelector('[data-slot-art]')!.getBoundingClientRect();
+        // The caption's drawn lines: the heading's two, and the name's when
+        // there is one.
+        const lines = [...half.querySelectorAll('[data-slot-head] > span, [data-slot-name]')]
+          .filter((el) => (el.textContent ?? '').trim() !== '')
+          .map((el) => el.getBoundingClientRect());
+        const top = Math.min(...lines.map((r) => r.top));
+        const bottom = Math.max(...lines.map((r) => r.bottom));
+        return { lines: lines.length, off: (top + bottom) / 2 - (art.top + art.bottom) / 2 };
+      });
+      expect(got.lines, 'the heading, and the name only when there is one').toBe(partnerId === null ? 2 : 3);
+      expect(Math.abs(got.off), `the caption's centre is ${got.off.toFixed(2)}px off the partner's`).toBeLessThanOrEqual(0.5);
+    });
+  }
+
+  test('the widest names keep off the seam, the sprites and each other', { tag: '@viewport' }, async ({ page }, testInfo) => {
+    // German Gumshoos and Oranguru, MANGUSPEKTOR and KOMMANDUTAN, are the
+    // widest ace and partner names the app ships in any locale, measured in
+    // the caption face.
+    await pairLeague(page, 735, 765);
+    await page.goto('/custom-gym-leader?lang=de');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await expect(page.locator('[data-slot-name="partner"]')).toHaveText('Kommandutan');
+    await page.evaluate(() => document.fonts.ready);
+    // The fit settles over a few frames once the names land.
+    await page.waitForTimeout(800);
+
+    const got = await page.evaluate(() => {
+      const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
+      const p = pane.getBoundingClientRect();
+      const zoom = p.width / pane.offsetWidth;
+      const W = pane.offsetWidth;
+      const H = pane.offsetHeight;
+      type Box = { x: number; y: number; w: number; h: number };
+      const rel = (r: DOMRect): Box => ({
+        x: (r.left - p.left) / zoom, y: (r.top - p.top) / zoom, w: r.width / zoom, h: r.height / zoom,
+      });
+      const line = pane.querySelector('svg line')!;
+      const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2']
+        .map((k, i) => (Number(line.getAttribute(k)) / 100) * (i % 2 ? H : W));
+      const seamY = (x: number) => y1 + ((y2 - y1) * (x - x1)) / (x2 - x1);
+      // Each line of text as drawn, clipped where its element clips it.
+      const lines = (el: Element): Box[] => {
+        const cs = getComputedStyle(el);
+        const clip = cs.overflowX === 'hidden' ? el.getBoundingClientRect() : null;
+        const out: Box[] = [];
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        const range = document.createRange();
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          if (!(n.textContent ?? '').trim()) continue;
+          range.selectNodeContents(n);
+          for (const r of range.getClientRects()) {
+            const left = clip ? Math.max(r.left, clip.left) : r.left;
+            const right = clip ? Math.min(r.right, clip.right) : r.right;
+            if (right - left > 0.5) out.push(rel(new DOMRect(left, r.top, right - left, r.height)));
+          }
+        }
+        return out;
+      };
+      const half = (h: string) => {
+        const root = pane.querySelector(`[data-slot-half="${h}"]`)!;
+        const name = root.querySelector<HTMLElement>('[data-slot-name]')!;
+        return {
+          art: rel(root.querySelector('[data-slot-art]')!.getBoundingClientRect()),
+          runs: [...lines(root.querySelector('[data-slot-head]')!), ...lines(name)],
+          namePx: parseFloat(getComputedStyle(name).fontSize),
+          // The text's drawn width against its box: an ellipsis can cut two
+          // letters for an overflow under the pixel that scrollWidth rounds.
+          clipped: (() => {
+            const range = document.createRange();
+            range.selectNodeContents(name);
+            return range.getBoundingClientRect().width > name.getBoundingClientRect().width + 0.25;
+          })(),
+        };
+      };
+      const ace = half('ace');
+      const partner = half('partner');
+      const hit = (a: Box, b: Box) =>
+        a.x < b.x + b.w - 0.25 && a.x + a.w > b.x + 0.25 && a.y < b.y + b.h - 0.25 && a.y + a.h > b.y + 0.25;
+      const faults: string[] = [];
+      let crossings = 0;
+      for (const [side, mine, other] of [['ace', ace, partner], ['partner', partner, ace]] as const) {
+        for (const r of mine.runs) {
+          const at = `${side} line at ${r.x.toFixed(1)},${r.y.toFixed(1)}`;
+          if (r.x < -0.5 || r.y < -0.5 || r.x + r.w > W + 0.5 || r.y + r.h > H + 0.5) faults.push(`${at} leaves the pane`);
+          if (hit(r, ace.art) || hit(r, partner.art)) faults.push(`${at} is on a sprite`);
+          if (other.runs.some((o) => hit(r, o))) faults.push(`${at} is on the other caption`);
+          // Text may cross the seam, which fades next to the letters; only
+          // count how often it does.
+          const gap = Math.min(...[r.x, r.x + r.w].flatMap((x) => [r.y, r.y + r.h].map((y) => (
+            side === 'ace' ? seamY(x) - y : y - seamY(x)))));
+          if (gap < 0) crossings += 1;
+        }
+      }
+      return {
+        pane: { W, H, zoom }, seam: [x1, y1, x2, y2], faults, crossings,
+        rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+        ace: { namePx: ace.namePx, clipped: ace.clipped },
+        partner: { namePx: partner.namePx, clipped: partner.clipped },
+      };
+    });
+    await testInfo.attach('widest-names.json', { body: JSON.stringify(got, null, 2), contentType: 'application/json' });
+    expect(got.faults, 'every caption line clears the pane edge, the sprites and the other caption').toEqual([]);
+    // A long name shrinks, but never under the 0.4rem floor the TM and badge
+    // labels hold.
+    expect(got.ace.namePx).toBeGreaterThanOrEqual(0.4 * got.rem - 0.01);
+    expect(got.partner.namePx).toBeGreaterThanOrEqual(0.4 * got.rem - 0.01);
+    expect(got.ace.clipped, 'the ace name is whole').toBe(false);
+    // The last resort is an ellipsis, and only the narrowest pane, a 320px
+    // phone that lays the card out at full height, needs it: there the
+    // partner has 3.2rem beside it and KOMMANDUTAN is 3.5rem at the floor.
+    if (testInfo.project.name !== 'narrow') {
+      expect(got.partner.clipped, 'the partner name is whole').toBe(false);
+    }
   });
 
   test('a lone ace keeps the empty partner half and the diagonal', { tag: '@viewport' }, async ({ page }) => {
@@ -296,23 +447,24 @@ test.describe('the ace and partner slot', () => {
 
     const got = await page.evaluate(() => {
       const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
-      const cluster = pane.querySelector<HTMLElement>('[data-testid="slot-ace"]')!;
       const art = pane.querySelector<HTMLElement>('[data-slot-art]')!;
       const slot = pane.getBoundingClientRect();
-      const box = cluster.getBoundingClientRect();
+      const box = art.getBoundingClientRect();
+      const zoom = slot.width / pane.offsetWidth;
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
       const css = art.offsetWidth;
-      const n = css / (3.25 * rem);
       return {
         mode: pane.dataset.showcase,
         seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
         arts: pane.querySelectorAll('[data-slot-art] img').length,
         heads: [...pane.querySelectorAll('[data-slot-head]')].map((el) => el.getAttribute('data-slot-head')),
-        cx: (box.left + box.width / 2 - slot.left) / slot.width,
-        cy: (box.top + box.height / 2 - slot.top) / slot.height,
+        // The ace square's centre, in shares of the pane.
+        cx: ((box.left + box.right) / 2 - slot.left) / slot.width,
+        cy: ((box.top + box.bottom) / 2 - slot.top) / slot.height,
+        rem,
         css,
         attr: Number(pane.dataset.slotSprite),
-        integer: [1, 2, 3].some((s) => Math.abs(n - s) < 0.02),
+        twice: Math.abs(box.width / zoom - 2 * 3.25 * rem) < 0.5,
         partner: !!pane.querySelector('[data-testid="slot-partner"]'),
       };
     });
@@ -321,9 +473,12 @@ test.describe('the ace and partner slot', () => {
     expect(got.arts, 'one sprite').toBe(1);
     expect(got.heads, 'both headings').toEqual(['ace', 'partner']);
     expect(got.partner, 'empty partner half stays').toBe(true);
+    // A lone ace does not centre itself: it stays on the pane's top-left
+    // cells.
     expect(got.cx, 'ace stays in its corner').toBeLessThan(0.42);
+    expect(got.cy, 'ace stays in its corner').toBeLessThan(0.42);
     expect(got.css).toBeCloseTo(got.attr, 0);
-    expect(got.integer, `css ${got.css} is n×3.25rem`).toBe(true);
+    expect(got.twice, `the ace at ${got.css} pane px is two cell sprites`).toBe(true);
 
     await page.locator('[data-testid="slot-partner"]').click({ position: { x: 8, y: 8 }, force: true });
     await expect(page.locator('[data-filter-chip="my-dex"]')).toBeVisible();
@@ -401,16 +556,17 @@ test.describe('the ace and partner slot', () => {
 
     const got = await page.evaluate(() => {
       const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
-      const cluster = pane.querySelector<HTMLElement>('[data-testid="slot-partner"]')!;
-      const box = cluster.getBoundingClientRect();
+      const art = pane.querySelector<HTMLElement>('[data-testid="slot-partner"] [data-slot-art]')!;
+      const box = art.getBoundingClientRect();
       const slot = pane.getBoundingClientRect();
       return {
         mode: pane.dataset.showcase,
         seam: !!pane.querySelector('svg line[vector-effect="non-scaling-stroke"]'),
         arts: pane.querySelectorAll('[data-slot-art] img').length,
         heads: [...pane.querySelectorAll('[data-slot-head]')].map((el) => el.getAttribute('data-slot-head')),
-        cx: (box.left + box.width / 2 - slot.left) / slot.width,
-        cy: (box.top + box.height / 2 - slot.top) / slot.height,
+        // The partner square's centre, in shares of the pane.
+        cx: ((box.left + box.right) / 2 - slot.left) / slot.width,
+        cy: ((box.top + box.bottom) / 2 - slot.top) / slot.height,
         ace: !!pane.querySelector('[data-testid="slot-ace"]'),
       };
     });
@@ -420,5 +576,6 @@ test.describe('the ace and partner slot', () => {
     expect(got.heads).toEqual(['ace', 'partner']);
     expect(got.ace).toBe(true);
     expect(got.cx, 'partner stays in its corner').toBeGreaterThan(0.58);
+    expect(got.cy, 'partner stays in its corner').toBeGreaterThan(0.58);
   });
 });
