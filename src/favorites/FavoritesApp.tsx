@@ -16,6 +16,7 @@ import { prewarmPickerSprites } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
+import { FavoritesCompletionCounter } from './components/FavoritesCompletionCounter';
 import { PickerSheet } from './components/PickerSheet';
 import { SettingsPane } from './components/SettingsPane';
 import { SortDebugPanel } from './components/SortDebugPanel';
@@ -133,6 +134,10 @@ export function FavoritesApp() {
           <h1 className="min-w-0 text-[0.6875rem] font-semibold leading-tight text-muted-foreground" title={t('favorites.title')}>
             {t('favorites.title')}
           </h1>
+          <FavoritesCompletionCounter
+            fills={fills}
+            label={(filled, total) => t('favorites.completion.label', { filled, total })}
+          />
           <button
             type="button"
             data-testid="favorites-settings-open"
