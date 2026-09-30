@@ -5,5 +5,11 @@
   "feedback.category.translation": "Traduction",
   "league.head.ace": "Pokémon\nphare",
   "league.head.partner": "Partenaire /\nSur l’épaule",
-  "league.head.signature": "Pokémon\nfétiche"
+  "league.head.signature": "Pokémon\nfétiche",
+  "league.slot.ace.choose": "Choisir un Pokémon phare",
+  "league.slot.ace.filled": "Pokémon phare : {name}",
+  "league.slot.ace.remove": "Retirer le Pokémon phare",
+  "league.slot.partner.choose": "Choisir un partenaire",
+  "league.slot.partner.filled": "Partenaire : {name}",
+  "league.slot.partner.remove": "Retirer le partenaire"
 }

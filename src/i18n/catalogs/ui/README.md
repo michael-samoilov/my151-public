@@ -12,7 +12,8 @@ falls back to English, which is the intended intermediate state rather than a
 gap — `loadCatalog` layers English, then the sourced terms, then these.
 
 Currently: the five report-a-problem category chips, and the trainer card's
-signature-pane headings (`league.head.*`).
+signature-pane headings (`league.head.*`) and what a screen reader says for
+those two slots (`league.slot.*`).
 
 ## Provenance
 

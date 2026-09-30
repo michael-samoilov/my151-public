@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { ArrowLeftRight, ArrowUpDown, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { pokemonLabel, useLocale, useNamesVersion } from '@/i18n';
+import { pokemonLabel, useNamesVersion, useT } from '@/i18n';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -881,7 +881,7 @@ function SlotHalf({
             className="relative z-[1] h-full w-full max-w-none"
             style={{ imageRendering: SPRITE_RENDERING }}
           />
-          <SlotRemove label={`Remove ${heading.label.toLowerCase()}`} onRemove={onRemove} />
+          <SlotRemove label={heading.remove} onRemove={onRemove} />
         </>
       ) : (
         <span
@@ -957,9 +957,7 @@ function SlotHalf({
       onPointerDown={lab ? onLabPointerDown : undefined}
       data-testid={testId}
       data-slot-half={half}
-      aria-label={
-        pokemon ? `${heading.label}: ${pokemon.name}` : `Choose a ${heading.label.toLowerCase()}`
-      }
+      aria-label={text !== null ? heading.filled(text) : heading.choose}
       className={cn(
         'absolute z-[6] flex items-center',
         mirrored ? 'flex-row' : 'flex-col',
@@ -1011,15 +1009,18 @@ function SlotRemove({ label, onRemove }: { label: string; onRemove: () => void }
 /**
  * A slot heading: what it shows, and what it is called.
  *
- * `lines` is the drawn form and `label` the spoken one. The partner's two
- * lines are two names for one role, with the slash drawn so they read as
- * alternatives rather than a phrase; reading both out adds nothing, so its
- * label is the first. The ace's heading is one phrase on one line, which
- * leaves the seam the room a second line would take.
+ * `lines` is the drawn form, and the rest what a screen reader says for the
+ * slot empty, filled, and for its remove button. The partner's two lines
+ * are two names for one role, with the slash drawn so they read as
+ * alternatives rather than a phrase; reading both out adds nothing, so it
+ * is spoken as the partner. The ace's heading is one phrase on one line,
+ * which leaves the seam the room a second line would take.
  */
 interface Heading {
   readonly lines: readonly string[];
-  readonly label: string;
+  readonly choose: string;
+  readonly filled: (name: string) => string;
+  readonly remove: string;
 }
 
 /**
@@ -1253,9 +1254,19 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
   const setPartner = useLeagueStore((s) => s.setPartner);
   useNamesVersion();
-  useLocale();
-  const aceHead: Heading = { lines: [headingInline('ace')], label: 'ACE POKÉMON' };
-  const partnerHead: Heading = { lines: headingLines('partner'), label: 'PARTNER' };
+  const t = useT();
+  const aceHead: Heading = {
+    lines: [headingInline('ace')],
+    choose: t('league.slot.ace.choose'),
+    filled: (name) => t('league.slot.ace.filled', { name }),
+    remove: t('league.slot.ace.remove'),
+  };
+  const partnerHead: Heading = {
+    lines: headingLines('partner'),
+    choose: t('league.slot.partner.choose'),
+    filled: (name) => t('league.slot.partner.filled', { name }),
+    remove: t('league.slot.partner.remove'),
+  };
   const { card } = view;
   const line = card.signatureSeat !== null ? card.lines[card.signatureSeat - 1] : undefined;
   const shown = signatureMember(line, card.signatureId ?? null);
