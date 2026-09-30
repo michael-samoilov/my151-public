@@ -5,6 +5,7 @@
 - Treat the repository root that contains this file as the main my151 repository.
 - Keep all code, documentation, tests, screenshots, and Git work inside this repository or its Git worktrees.
 - For cloud work, use the checked-out GitHub repository `michael-samoilov/my151` and start from `claude/pokedex-region-builder-AviYF` unless the user names another base.
+- Favorite Pokémon Picker (`/favorite-pokemon-by-type`): the code and its to-do list live on branch `claude/jolly-meitner-opefey` (PR 111), not on production. Before picker work, check out that branch and read `docs/favorite-picker-handoff.md` there.
 - Read `CLAUDE.md` before work. It is authoritative for build, deployment, response style, and repository conventions.
 - The user-facing task is the coordinator. It is the user's single entry point: accept new work there, delegate bounded implementation or research to workers, monitor them, resolve conflicts, and return one consolidated outcome. Do not make the user chase worker tasks for status or results.
 - Apply every instruction in this file to the root agent and every delegated worker. Include the relevant requirements in each worker assignment.
