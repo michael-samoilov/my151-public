@@ -767,7 +767,7 @@ function measureTm(source: string) {
   const needle = new RegExp(source, 'i');
   const slot = document.querySelector('[data-testid="slot-tm"]');
   if (!slot) {
-    return { found: false, text: '', ellipsis: true, lines: 0, topGap: 0, bottomGap: 0, lastVisible: false };
+    return { found: false, text: '', ellipsis: true, lines: 0, fits: false, topGap: 0, bottomGap: 0, lastVisible: false };
   }
   const named = slot.querySelector<HTMLElement>('[data-tm-name]');
   const name = named ?? [...slot.querySelectorAll('span')].find(
@@ -777,11 +777,17 @@ function measureTm(source: string) {
   const badge = slot.querySelector('svg[viewBox="0 0 200 40"]');
   const tm = slot.querySelector<HTMLElement>('[data-mark-label="tm"]');
   if (!name || !disc || !badge || !tm) {
-    return { found: false, text: name?.textContent ?? '', ellipsis: true, lines: 0, topGap: 0, bottomGap: 0, lastVisible: false };
+    return { found: false, text: name?.textContent ?? '', ellipsis: true, lines: 0, fits: false, topGap: 0, bottomGap: 0, lastVisible: false };
   }
   const cs = getComputedStyle(name);
   const lineH = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4;
   const lines = lineH > 0 ? Math.round(name.offsetHeight / lineH) : 0;
+  // Whether the name fits its column on one line: set it unwrapped for one
+  // synchronous read, then put it back.
+  const wrap = name.style.whiteSpace;
+  name.style.whiteSpace = 'nowrap';
+  const fits = name.scrollWidth <= name.clientWidth + 1;
+  name.style.whiteSpace = wrap;
   const zoom = name.offsetHeight > 0 ? name.getBoundingClientRect().height / name.offsetHeight : 1;
   const node = [...name.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
   const tmNode = [...tm.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
@@ -810,40 +816,45 @@ function measureTm(source: string) {
   return {
     found: true,
     text: raw,
-    ellipsis: cs.textOverflow === 'ellipsis' || name.scrollWidth > name.clientWidth + 1,
+    // A cut, not the style: a one-word name always carries `truncate`.
+    ellipsis: name.scrollWidth > name.clientWidth + 1,
     lines,
+    fits,
     topGap: (badgeTop - discTop) / zoom,
     bottomGap: (tmBottom - nameBottom) / zoom,
     lastVisible,
   };
 }
 
-test.describe('two-word TM names wrap', () => {
+/**
+ * A TM name takes one line when it fits its column and wraps at its spaces
+ * when it does not, as the export draws it. Rock Slide fits at both widths
+ * and Stomping Tantrum fits at neither, so each case is driven at each.
+ */
+test.describe('TM names wrap only when they do not fit', () => {
   for (const vp of [
     { width: 390, height: 667, label: 'squat 390×667' },
     { width: 1280, height: 800, label: '~1280' },
   ]) {
-    test(`Stomping Tantrum wraps with no ellipsis and equal gaps at ${vp.label}`, async ({ page }) => {
-      await openTmCard(page, { tmMoveId: 707, width: vp.width, height: vp.height });
-      const got = await page.evaluate(measureTm, 'stomping');
-      expect(got.found, 'the move is on the card').toBe(true);
-      expect(got.text).toMatch(/Stomping Tantrum/i);
-      expect(got.ellipsis, 'a two-word name must not ellipsize').toBe(false);
-      expect(got.lines, 'the two words wrap onto two lines').toBe(2);
-      expect(got.lastVisible, 'the last letter stays inside the slot').toBe(true);
-      expect(Math.abs(got.topGap - got.bottomGap), `top=${got.topGap.toFixed(1)} bottom=${got.bottomGap.toFixed(1)}`)
-        .toBeLessThanOrEqual(1.25);
-    });
-
-    test(`Psychic stays one line with equal gaps at ${vp.label}`, async ({ page }) => {
-      await openTmCard(page, { tmMoveId: 94, width: vp.width, height: vp.height });
-      const got = await page.evaluate(measureTm, 'psychic');
-      expect(got.found, 'the move is on the card').toBe(true);
-      expect(got.text).toMatch(/^Psychic$/i);
-      expect(got.lines, 'a one-word name stays one line').toBe(1);
-      expect(Math.abs(got.topGap - got.bottomGap), `top=${got.topGap.toFixed(1)} bottom=${got.bottomGap.toFixed(1)}`)
-        .toBeLessThanOrEqual(1.25);
-    });
+    for (const move of [
+      { id: 707, name: 'Stomping Tantrum', fits: false },
+      { id: 157, name: 'Rock Slide', fits: true },
+      { id: 94, name: 'Psychic', fits: true },
+    ]) {
+      test(`${move.name} takes ${move.fits ? 'one line' : 'two lines'} with equal gaps at ${vp.label}`, async ({ page }, testInfo) => {
+        await openTmCard(page, { tmMoveId: move.id, width: vp.width, height: vp.height });
+        const got = await page.evaluate(measureTm, move.name.split(' ')[0]);
+        await testInfo.attach('tm-name.json', { body: JSON.stringify(got, null, 2), contentType: 'application/json' });
+        expect(got.found, 'the move is on the card').toBe(true);
+        expect(got.text).toBe(move.name);
+        expect(got.fits, 'whether one line holds the name').toBe(move.fits);
+        expect(got.lines, 'one line when it fits, two when it wraps').toBe(move.fits ? 1 : 2);
+        expect(got.ellipsis, 'the name is whole').toBe(false);
+        expect(got.lastVisible, 'the last letter stays inside the slot').toBe(true);
+        expect(Math.abs(got.topGap - got.bottomGap), `top=${got.topGap.toFixed(1)} bottom=${got.bottomGap.toFixed(1)}`)
+          .toBeLessThanOrEqual(1.25);
+      });
+    }
   }
 });
 

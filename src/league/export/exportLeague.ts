@@ -672,8 +672,8 @@ function drawTmSlot(
   const name = L.moveExportName(move.name);
   ctx.save();
   ctx.font = font(L.NAME_PX, 800);
-  // As few lines as fit the body: one line whenever the whole name fits. The
-  // live card's `tmNameWraps` breaks at every space; the export does not.
+  // As few lines as fit the body: one line whenever the whole name fits,
+  // as the live card wraps it.
   const lines = wrapTracked(ctx, name, bodyW, L.NAME_TRACK);
   const body = L.tmMoveBody(cy, lines.length);
 

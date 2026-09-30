@@ -47,7 +47,7 @@ import {
   ACE_SCALE, CAPTION_GAP_X_REM, CAPTION_GAP_Y_REM, CAPTION_HALO, CAPTION_LEADING, CAPTION_MIN_REM, PANE_FACE,
   seamBetween, showcaseSquares, SHOWCASE_PAD_REM, type Box, type CardGridRem, type SeamEnds,
 } from '../showcaseLayout';
-import { tmBodyShiftRem, tmNameWraps } from '../export/layout';
+import { tmBodyShiftRem } from '../export/layout';
 import { useSlotLab } from '../slotLab';
 import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
 
@@ -1490,19 +1490,19 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink overflow-visible" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
-          {/* A one-word move stays on one line. A two-word move always
-              wraps at the space so both words stay visible. The one-word
-              case can still ellipsize when the box cannot hold it. */}
+          {/* A name that fits the column stays on one line, and a longer
+              one wraps at its spaces, as the export draws it. A single
+              word cannot wrap, so one too wide for the box ellipsizes. */}
           <span
             data-tm-name=""
             className={cn(
               'min-w-0 w-full max-w-full text-left',
               NAME_CLASS,
-              tmNameWraps(move.name) ? 'whitespace-pre-line break-normal' : 'truncate',
+              /\s/.test(move.name.trim()) ? 'whitespace-normal break-normal' : 'truncate',
             )}
             style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band }}
           >
-            {tmNameWraps(move.name) ? move.name.trim().split(/\s+/).join('\n') : move.name}
+            {move.name}
           </span>
         </span>
       ) : (

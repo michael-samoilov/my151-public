@@ -236,11 +236,6 @@ export const TM_DISC_PAD = 2 / 24;
  */
 export const LATIN_EM_ASCENT = 0.73;
 
-/** Two or more whitespace-separated tokens wrap. A single token stays one line. */
-export function tmNameWraps(name: string): boolean {
-  return name.trim().split(/\s+/).filter(Boolean).length >= 2;
-}
-
 export function tmBadgeH(): number {
   return TM_BADGE_W / TYPE_BADGE_ASPECT;
 }
@@ -294,7 +289,7 @@ function tmInkGapsFrom(
  * out: a column beside the disc. Badge top and disc-icon top leave the same
  * gap as name bottom and the “TM” label bottom.
  *
- * `nameLines` is 2 when a two-word name wraps, 1 otherwise.
+ * `nameLines` is how many lines the move name wraps to.
  */
 export function tmMoveBody(cy: number, nameLines = 1): {
   top: number;
