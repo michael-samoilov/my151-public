@@ -4,6 +4,7 @@
   "faq.favorites.a2": "暂时不行。首个版本提供表格、选择器和重新排列功能。之后会加入图片导出和将选择发送到宝可梦图鉴的功能。",
   "faq.favorites.q1": "如何选择宝可梦？",
   "faq.favorites.q2": "可以导出表格图片吗？",
+  "faq.summary": "关于此工具",
   "favorites.axis.favorite": "最爱",
   "favorites.axis.generation": "第{gen}世代",
   "favorites.axis.gimmick": "特殊形态",
@@ -37,8 +38,12 @@
   "feedback.category.idea": "建议",
   "feedback.category.other": "其他",
   "feedback.category.translation": "翻译",
+  "feedback.title": "报告问题",
+  "footer.report": "报告问题",
   "home.favorites.blurb": "每种属性、每个世代，各选一只最爱",
   "home.favorites.title": "按属性和世代挑选最爱的宝可梦",
+  "lang.change": "更改语言",
+  "lang.title": "语言",
   "league.head.ace": "王牌\n宝可梦",
   "league.head.partner": "搭档／\n肩上宝可梦",
   "league.head.signature": "招牌\n宝可梦",
@@ -47,5 +52,9 @@
   "league.slot.ace.remove": "移除王牌宝可梦",
   "league.slot.partner.choose": "选择搭档",
   "league.slot.partner.filled": "搭档：{name}",
-  "league.slot.partner.remove": "移除搭档"
+  "league.slot.partner.remove": "移除搭档",
+  "tools.dex": "宝可梦图鉴制作器",
+  "tools.favorites": "最爱的宝可梦选择器",
+  "tools.league": "道馆馆主制作器",
+  "tools.title": "工具"
 }

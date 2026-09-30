@@ -4,6 +4,7 @@
   "faq.favorites.a2": "まだできません。最初の版には表・ポケモン選択・詰め直しがあります。画像の保存とポケモン図鑑への追加は今後対応します。",
   "faq.favorites.q1": "どうやって選びますか？",
   "faq.favorites.q2": "表を画像で保存できますか？",
+  "faq.summary": "このツールについて",
   "favorites.axis.favorite": "お気に入り",
   "favorites.axis.generation": "第{gen}世代",
   "favorites.axis.gimmick": "特別な姿",
@@ -37,8 +38,12 @@
   "feedback.category.idea": "提案",
   "feedback.category.other": "その他",
   "feedback.category.translation": "誤訳",
+  "feedback.title": "問題を報告",
+  "footer.report": "問題を報告",
   "home.favorites.blurb": "タイプ・世代ごとにお気に入りを1匹",
   "home.favorites.title": "タイプ・世代別のお気に入りポケモン",
+  "lang.change": "言語を変更",
+  "lang.title": "言語",
   "league.head.ace": "エース\nポケモン",
   "league.head.partner": "相棒／\n肩乗りポケモン",
   "league.head.signature": "看板\nポケモン",
@@ -47,5 +52,9 @@
   "league.slot.ace.remove": "エースポケモンを外す",
   "league.slot.partner.choose": "相棒を選ぶ",
   "league.slot.partner.filled": "相棒：{name}",
-  "league.slot.partner.remove": "相棒を外す"
+  "league.slot.partner.remove": "相棒を外す",
+  "tools.dex": "ポケモン図鑑づくり",
+  "tools.favorites": "お気に入りポケモン選び",
+  "tools.league": "ジムリーダーづくり",
+  "tools.title": "ツール"
 }

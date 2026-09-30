@@ -4,6 +4,7 @@
   "faq.favorites.a2": "Noch nicht. Die erste Version enthält die Tabelle, die Auswahl und die Neuordnung. Export und Übertragung in den Pokédex-Builder folgen später.",
   "faq.favorites.q1": "Wie wähle ich Pokémon aus?",
   "faq.favorites.q2": "Kann ich die Tabelle exportieren?",
+  "faq.summary": "Über dieses Tool",
   "favorites.axis.favorite": "Liebling",
   "favorites.axis.generation": "Gen. {gen}",
   "favorites.axis.gimmick": "Sonderform",
@@ -37,8 +38,12 @@
   "feedback.category.idea": "Idee",
   "feedback.category.other": "Anderes",
   "feedback.category.translation": "Übersetzung",
+  "feedback.title": "Problem melden",
+  "footer.report": "Problem melden",
   "home.favorites.blurb": "Ein Liebling pro Typ und Generation",
   "home.favorites.title": "Lieblings-Pokémon nach Typ und Generation wählen",
+  "lang.change": "Sprache ändern",
+  "lang.title": "Sprache",
   "league.head.ace": "Ass-\nPokémon",
   "league.head.partner": "Partner /\nSchultermon",
   "league.head.signature": "Signatur-\nPokémon",
@@ -47,5 +52,9 @@
   "league.slot.ace.remove": "Ass-Pokémon entfernen",
   "league.slot.partner.choose": "Partner wählen",
   "league.slot.partner.filled": "Partner-Pokémon: {name}",
-  "league.slot.partner.remove": "Partner entfernen"
+  "league.slot.partner.remove": "Partner entfernen",
+  "tools.dex": "Pokédex-Builder",
+  "tools.favorites": "Lieblings-Pokémon wählen",
+  "tools.league": "Arenaleiter erstellen",
+  "tools.title": "Werkzeuge"
 }

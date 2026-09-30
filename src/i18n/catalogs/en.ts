@@ -260,6 +260,10 @@ export const enUi = {
   'intro.body': 'Hand-pick your favorites from all {total} Pokémon into a Pokédex that’s entirely yours.',
   'intro.cta': 'Choose your starters',
   'intro.headline': 'Build your own {count}',
+  'tools.title': 'Tools',
+  'tools.dex': 'Pokédex Builder',
+  'tools.league': 'Gym Leader Maker',
+  'tools.favorites': 'Favorite Pokémon Picker',
   'lang.change': 'Change language',
   'lang.title': 'Language',
   // The trainer card's signature-pane headings, drawn in capitals. A newline

@@ -4,6 +4,7 @@
   "faq.favorites.a2": "Non ancora. La prima versione include la tabella, il selettore e la riorganizzazione. L’esportazione e l’invio delle scelte al creatore di Pokédex arriveranno in seguito.",
   "faq.favorites.q1": "Come si scelgono i Pokémon?",
   "faq.favorites.q2": "Posso esportare la tabella?",
+  "faq.summary": "Informazioni sullo strumento",
   "favorites.axis.favorite": "Preferito",
   "favorites.axis.generation": "Gen. {gen}",
   "favorites.axis.gimmick": "Forma speciale",
@@ -37,8 +38,12 @@
   "feedback.category.idea": "Idea",
   "feedback.category.other": "Altro",
   "feedback.category.translation": "Traduzione",
+  "feedback.title": "Segnala un problema",
+  "footer.report": "Segnala un problema",
   "home.favorites.blurb": "Un preferito per tipo e generazione",
   "home.favorites.title": "Scegli i tuoi Pokémon preferiti per tipo e generazione",
+  "lang.change": "Cambia lingua",
+  "lang.title": "Lingua",
   "league.head.ace": "Pokémon\nasso",
   "league.head.partner": "Compagno /\nSulla spalla",
   "league.head.signature": "Pokémon\nsimbolo",
@@ -47,5 +52,9 @@
   "league.slot.ace.remove": "Rimuovi il Pokémon asso",
   "league.slot.partner.choose": "Scegli un compagno",
   "league.slot.partner.filled": "Compagno: {name}",
-  "league.slot.partner.remove": "Rimuovi il compagno"
+  "league.slot.partner.remove": "Rimuovi il compagno",
+  "tools.dex": "Creatore di Pokédex",
+  "tools.favorites": "Selettore di Pokémon preferiti",
+  "tools.league": "Creatore di Capipalestra",
+  "tools.title": "Strumenti"
 }

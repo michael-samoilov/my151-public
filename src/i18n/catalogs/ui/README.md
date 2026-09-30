@@ -11,9 +11,10 @@ is ~460 strings; this is a handful of them. A locale that has no entry for a key
 falls back to English, which is the intended intermediate state rather than a
 gap — `loadCatalog` layers English, then the sourced terms, then these.
 
-Currently: the five report-a-problem category chips, and the trainer card's
-signature-pane headings (`league.head.*`) and what a screen reader says for
-those two slots (`league.slot.*`).
+The translated keys cover the report categories, trainer-card headings and
+slot labels, picker interface, favorite home card and FAQ, favorites filter,
+and the shared controls visible on the picker. Other app copy still falls
+back to English.
 
 ## Provenance
 
@@ -87,3 +88,19 @@ Sword/Shield text from `abcboy101/poke-corpus`.
   肩乗りポケモン (肩乗り is the Japanese for a pet that rides the shoulder),
   어깨 위 포켓몬, 肩上宝可梦, "on the shoulder" in French, Spanish and Italian,
   and the German coinage Schultermon, which mirrors the English one.
+
+### The favorite picker
+
+`favorites.*`, `home.favorites.*`, and `faq.favorites.*` have translations in
+all eight overlays. `favorites.completion` stays in the English base because
+its value contains only numbers and a slash. Its accessible label is translated.
+
+The picker also uses translated language controls, report buttons, FAQ summary,
+and tool-menu labels. These controls share their translations with the other tools.
+
+The copy is authored. Gym Leader and Legendary terminology follows the pinned
+game text in `docs/i18n/sources/picker-interface-terms.json`. That fixture also
+records German `Starter-Pokémon`, shortened to `Starter` on the badge.
+
+`docs/favorite-picker-localization/verification.md` records the temporary proof
+and the nine-locale render measurements at 320, 390, and 1280 pixels.

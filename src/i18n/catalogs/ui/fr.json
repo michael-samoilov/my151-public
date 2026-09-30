@@ -4,6 +4,7 @@
   "faq.favorites.a2": "Pas encore. La première version comprend le tableau, le sélecteur et le réagencement. L’export et l’envoi des choix vers le créateur de Pokédex suivront.",
   "faq.favorites.q1": "Comment choisir un Pokémon ?",
   "faq.favorites.q2": "Puis-je exporter le tableau ?",
+  "faq.summary": "À propos de cet outil",
   "favorites.axis.favorite": "Favori",
   "favorites.axis.generation": "Gén. {gen}",
   "favorites.axis.gimmick": "Forme spéciale",
@@ -37,8 +38,12 @@
   "feedback.category.idea": "Idée",
   "feedback.category.other": "Autre",
   "feedback.category.translation": "Traduction",
+  "feedback.title": "Signaler un problème",
+  "footer.report": "Signaler un problème",
   "home.favorites.blurb": "Un favori par type et par génération",
   "home.favorites.title": "Choisissez vos Pokémon préférés par type et génération",
+  "lang.change": "Changer de langue",
+  "lang.title": "Langue",
   "league.head.ace": "Pokémon\nphare",
   "league.head.partner": "Partenaire /\nSur l’épaule",
   "league.head.signature": "Pokémon\nfétiche",
@@ -47,5 +52,9 @@
   "league.slot.ace.remove": "Retirer le Pokémon phare",
   "league.slot.partner.choose": "Choisir un partenaire",
   "league.slot.partner.filled": "Partenaire : {name}",
-  "league.slot.partner.remove": "Retirer le partenaire"
+  "league.slot.partner.remove": "Retirer le partenaire",
+  "tools.dex": "Créateur de Pokédex",
+  "tools.favorites": "Sélecteur de Pokémon préférés",
+  "tools.league": "Créateur de Champions d’Arène",
+  "tools.title": "Outils"
 }

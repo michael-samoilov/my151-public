@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 
@@ -10,9 +11,9 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } 
  */
 
 const TOOLS = [
-  { id: 'dex', href: '/pokedex-builder', label: 'Pokédex Builder' },
-  { id: 'league', href: '/custom-gym-leader', label: 'Gym Leader Maker' },
-  { id: 'favorites', href: '/favorite-pokemon-by-type', label: 'Favorite Pokémon Picker' },
+  { id: 'dex', href: '/pokedex-builder', label: 'tools.dex' },
+  { id: 'league', href: '/custom-gym-leader', label: 'tools.league' },
+  { id: 'favorites', href: '/favorite-pokemon-by-type', label: 'tools.favorites' },
 ] as const;
 
 export type ToolId = (typeof TOOLS)[number]['id'];
@@ -32,6 +33,7 @@ export interface ToolsCallout {
 }
 
 export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: ToolsCallout | null }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -71,7 +73,7 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
       data-testid="tools-menu"
       className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
-      Tools
+      {t('tools.title')}
       <ChevronDown size={14} className={cn('transition-transform', open && 'rotate-180')} />
     </button>
   );
@@ -127,16 +129,16 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
       )}
       {open && (
         <div className="absolute right-0 top-full z-30 mt-1 min-w-[170px] rounded-lg border bg-popover py-1 shadow-lg">
-          {TOOLS.map((t) => (
+          {TOOLS.map((tool) => (
             <a
-              key={t.id}
-              href={t.href}
+              key={tool.id}
+              href={tool.href}
               className={cn(
                 'flex w-full items-center whitespace-nowrap px-3 py-2 text-sm transition-colors hover:bg-muted',
-                t.id === current ? 'font-semibold text-foreground' : 'text-muted-foreground',
+                tool.id === current ? 'font-semibold text-foreground' : 'text-muted-foreground',
               )}
             >
-              {t.label}
+              {t(tool.label)}
             </a>
           ))}
         </div>

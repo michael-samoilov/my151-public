@@ -4,6 +4,7 @@
   "faq.favorites.a2": "暫時不行。首個版本提供表格、選擇器和重新排列功能。之後會加入圖片匯出和將選擇傳送到寶可夢圖鑑的功能。",
   "faq.favorites.q1": "如何選擇寶可夢？",
   "faq.favorites.q2": "可以匯出表格圖片嗎？",
+  "faq.summary": "關於此工具",
   "favorites.axis.favorite": "最愛",
   "favorites.axis.generation": "第{gen}世代",
   "favorites.axis.gimmick": "特殊形態",
@@ -37,8 +38,12 @@
   "feedback.category.idea": "建議",
   "feedback.category.other": "其他",
   "feedback.category.translation": "翻譯",
+  "feedback.title": "回報問題",
+  "footer.report": "回報問題",
   "home.favorites.blurb": "每種屬性、每個世代，各選一隻最愛",
   "home.favorites.title": "依屬性和世代挑選最愛的寶可夢",
+  "lang.change": "變更語言",
+  "lang.title": "語言",
   "league.head.ace": "王牌\n寶可夢",
   "league.head.partner": "搭檔／\n肩上寶可夢",
   "league.head.signature": "招牌\n寶可夢",
@@ -47,5 +52,9 @@
   "league.slot.ace.remove": "移除王牌寶可夢",
   "league.slot.partner.choose": "選擇搭檔",
   "league.slot.partner.filled": "搭檔：{name}",
-  "league.slot.partner.remove": "移除搭檔"
+  "league.slot.partner.remove": "移除搭檔",
+  "tools.dex": "寶可夢圖鑑製作器",
+  "tools.favorites": "最愛的寶可夢選擇器",
+  "tools.league": "道館館主製作器",
+  "tools.title": "工具"
 }

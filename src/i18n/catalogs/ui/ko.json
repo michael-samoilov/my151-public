@@ -4,6 +4,7 @@
   "faq.favorites.a2": "아직 지원하지 않습니다. 첫 버전은 표, 선택창, 재배치를 제공합니다. 이미지 저장과 포켓몬 도감으로 선택 전송은 추후 지원합니다.",
   "faq.favorites.q1": "어떻게 고르나요?",
   "faq.favorites.q2": "표를 이미지로 저장할 수 있나요?",
+  "faq.summary": "이 도구 소개",
   "favorites.axis.favorite": "좋아하는 포켓몬",
   "favorites.axis.generation": "{gen}세대",
   "favorites.axis.gimmick": "특수한 모습",
@@ -37,8 +38,12 @@
   "feedback.category.idea": "제안",
   "feedback.category.other": "기타",
   "feedback.category.translation": "번역",
+  "feedback.title": "문제 신고",
+  "footer.report": "문제 신고",
   "home.favorites.blurb": "타입별·세대별로 좋아하는 포켓몬 한 마리씩",
   "home.favorites.title": "타입·세대별 좋아하는 포켓몬 고르기",
+  "lang.change": "언어 변경",
+  "lang.title": "언어",
   "league.head.ace": "에이스\n포켓몬",
   "league.head.partner": "파트너 /\n어깨 위 포켓몬",
   "league.head.signature": "간판\n포켓몬",
@@ -47,5 +52,9 @@
   "league.slot.ace.remove": "에이스 포켓몬 제거",
   "league.slot.partner.choose": "파트너 선택",
   "league.slot.partner.filled": "파트너: {name}",
-  "league.slot.partner.remove": "파트너 제거"
+  "league.slot.partner.remove": "파트너 제거",
+  "tools.dex": "포켓몬 도감 만들기",
+  "tools.favorites": "좋아하는 포켓몬 고르기",
+  "tools.league": "체육관 관장 만들기",
+  "tools.title": "도구"
 }

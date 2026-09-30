@@ -33,6 +33,27 @@ The after screens pass the render audit with no app hard findings. Existing smal
 - `flock /tmp/my151-browser.lock npx playwright test e2e/favorites-*.spec.ts --project=desktop --project=mobile --project=narrow --workers=2` passes 94 cases; 4 cases skip.
 - Test rules and viewport tags pass.
 
+## Shared controls
+
+The shared controls use `lang.change`, `lang.title`, `feedback.title`,
+`footer.report`, `faq.summary`, and `tools.title`, `tools.dex`, `tools.league`,
+`tools.favorites`. The feedback form itself is outside this change.
+
+The shared-control proof fails before the change because French shows `Tools`
+instead of `Outils`. After the change, all 12 proof cases pass. The last run
+also measures the translated document title and HTML language for all nine locales.
+The temporary proof is removed before commit.
+
+| Screen | Before shared-control translations | After shared-control translations |
+| --- | --- | --- |
+| Phone | ![English tool-menu label before translation](evidence/after-390.png) | ![French tool-menu label after translation](evidence/chrome-after-390.png) |
+| Desktop | ![English tool-menu label before translation](evidence/after-1280.png) | ![French tool-menu label after translation](evidence/chrome-after-1280.png) |
+
+`evidence/locale-fit.json` records 27 render-audit rounds across all nine
+locales at 320, 390, and 1280 pixels. Each round has zero app hard findings.
+Each heading takes at most two lines and has no horizontal text overflow.
+The shared-header specs pass all 3 cases. Lint, 486 unit tests, and build pass.
+
 ## Verification boundary
 
 The coordinator runs verify-my151 on the integrated picker work. This worker does not claim all-engine verification. The stock doctor probes a `data:` URL, which the managed Chromium policy blocks; HTTP localhost works. WebKit and Firefox setup belongs to the coordinator.

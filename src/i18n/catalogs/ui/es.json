@@ -4,6 +4,7 @@
   "faq.favorites.a2": "Todavía no. La primera versión incluye la tabla, el selector y la reorganización. La exportación y el envío de elecciones al creador de Pokédex llegarán después.",
   "faq.favorites.q1": "¿Cómo elijo los Pokémon?",
   "faq.favorites.q2": "¿Puedo exportar la tabla?",
+  "faq.summary": "Acerca de esta herramienta",
   "favorites.axis.favorite": "Favorito",
   "favorites.axis.generation": "Gen. {gen}",
   "favorites.axis.gimmick": "Forma especial",
@@ -37,8 +38,12 @@
   "feedback.category.idea": "Idea",
   "feedback.category.other": "Otro",
   "feedback.category.translation": "Traducción",
+  "feedback.title": "Informar de un problema",
+  "footer.report": "Informar de un problema",
   "home.favorites.blurb": "Un favorito por tipo y generación",
   "home.favorites.title": "Elige tus Pokémon favoritos por tipo y generación",
+  "lang.change": "Cambiar idioma",
+  "lang.title": "Idioma",
   "league.head.ace": "Pokémon\nestrella",
   "league.head.partner": "Compañero /\nEn el hombro",
   "league.head.signature": "Pokémon\ninsignia",
@@ -47,5 +52,9 @@
   "league.slot.ace.remove": "Quitar al Pokémon estrella",
   "league.slot.partner.choose": "Elegir un compañero",
   "league.slot.partner.filled": "Compañero: {name}",
-  "league.slot.partner.remove": "Quitar al compañero"
+  "league.slot.partner.remove": "Quitar al compañero",
+  "tools.dex": "Creador de Pokédex",
+  "tools.favorites": "Selector de Pokémon favoritos",
+  "tools.league": "Creador de Líderes de Gimnasio",
+  "tools.title": "Herramientas"
 }
