@@ -156,12 +156,6 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
  */
 export const FRAME = EXPORT_FRAME_PX;
 
-/** Showcase headings. Same two-line caps the live card paints. */
-export const ACE_HEAD = ['ACE', 'POKÉMON'];
-export const PARTNER_HEAD = ['PARTNER /', 'SHOULDERMON'];
-/** One Pokémon chosen as both the ace and the partner. */
-export const SIGNATURE_HEAD = ['SIGNATURE', 'POKÉMON'];
-
 /** Badge phrase in the same caps as ACE POKÉMON. */
 export function badgeExportPhrase(name: string): string {
   return localeUppercase(`${name} Badge`);
@@ -236,11 +230,6 @@ export const TM_DISC_PAD = 2 / 24;
  */
 export const LATIN_EM_ASCENT = 0.73;
 
-/** Two or more whitespace-separated tokens wrap. A single token stays one line. */
-export function tmNameWraps(name: string): boolean {
-  return name.trim().split(/\s+/).filter(Boolean).length >= 2;
-}
-
 export function tmBadgeH(): number {
   return TM_BADGE_W / TYPE_BADGE_ASPECT;
 }
@@ -294,7 +283,7 @@ function tmInkGapsFrom(
  * out: a column beside the disc. Badge top and disc-icon top leave the same
  * gap as name bottom and the “TM” label bottom.
  *
- * `nameLines` is 2 when a two-word name wraps, 1 otherwise.
+ * `nameLines` is how many lines the move name wraps to.
  */
 export function tmMoveBody(cy: number, nameLines = 1): {
   top: number;
@@ -448,6 +437,8 @@ export function showcaseSquares(ox: number, oy: number): { ace: Box; partner: Bo
 export const CAPTION_GAP_Y = 0.0625 * 16 * K;
 /** Between the partner and its caption to its left: the in-app design's 0.1875rem. */
 export const CAPTION_GAP_X = 0.1875 * 16 * K;
+/** Between a caption and the pane's edge: the in-app design's 0.25rem. */
+export const SHOWCASE_PAD = 0.25 * 16 * K;
 /**
  * The smallest a caption name shrinks to before it takes an ellipsis: the
  * TM and BADGE labels' size, the smallest type the card paints. The in-app

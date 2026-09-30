@@ -284,4 +284,44 @@ test.describe('powerups', () => {
     expect(await drawn(page, 10, 1)).toBe('Gigantamax Charizard');
     expect(await drawn(page, 10, 2)).toBe('Gigantamax Lapras');
   });
+
+  test('Kyogre and Groudon wear their orbs on the Mega button', async ({ page }, testInfo) => {
+    // A Primal Reversion rides the Mega button, but the games mark it with
+    // the orb that triggers it: the Blue Orb for Kyogre, the Red Orb for
+    // Groudon. Every other Mega keeps the Mega symbol. The orbs are pixel
+    // art, so they draw as the team sprites beside them do.
+    await page.addInitScript(() => {
+      const empty = {
+        type: null, theme: '', lines: [], signatureSeat: null, signatureId: null,
+        partnerId: null, tmMoveId: null, badgeName: '', legend: null, powerup: null,
+      };
+      const cards: Record<string, unknown>[] = Array.from({ length: 14 }, () => ({ ...empty }));
+      cards[0] = { ...empty, type: 'water', lines: [382, 383, 6].map((id) => ({ branch: [id], boundaries: [1] })) };
+      window.localStorage.setItem('league-builder', JSON.stringify({ state: { name: '', cards }, version: 1 }));
+    });
+    await page.goto('/custom-gym-leader');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-10-1"]');
+    await press(page, 10, 1, 'mega');
+    await page.evaluate(() => Promise.all([...document.images].map((img) => img.decode().catch(() => null))));
+    const got = await page.evaluate(() => [1, 2, 3].map((seat) => {
+      const cell = document.querySelector(`[data-testid="card-cell-10-${seat}"]`)!;
+      const button = cell.parentElement!.querySelector('[data-powerup="mega"]')!;
+      const img = button.querySelector('img')!;
+      return {
+        form: cell.querySelector('img')!.getAttribute('alt'),
+        symbol: new URL(img.src).pathname,
+        label: button.getAttribute('aria-label'),
+        loaded: img.complete && img.naturalWidth > 0,
+        rendering: getComputedStyle(img).imageRendering,
+        sprite: getComputedStyle(cell.querySelector('img')!).imageRendering,
+      };
+    }));
+    await testInfo.attach('primal-orbs.json', { body: JSON.stringify(got, null, 2), contentType: 'application/json' });
+    expect(got.map((d) => d.symbol)).toEqual(['/powerups/primal-kyogre.png', '/powerups/primal-groudon.png', '/powerups/mega.png']);
+    expect(got.map((d) => d.label)).toEqual(['Primal Reversion', 'Primal Reversion', 'Mega Evolution']);
+    expect(got[0].form, 'the pressed orb draws Primal Kyogre').toBe('Primal Kyogre');
+    expect(got.every((d) => d.loaded), 'every symbol loads').toBe(true);
+    expect(got.slice(0, 2).map((d) => d.rendering), 'the orbs follow the sprites').toEqual(got.slice(0, 2).map((d) => d.sprite));
+  });
 });

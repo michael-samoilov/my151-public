@@ -19,7 +19,9 @@ and a legendary on the boss row.
 - A cell dragged up or down moves an evolution boundary. A press and hold lifts
   the column to reorder it. The moving stage wears a wash of its primary type.
 - Mega and Gigantamax buttons on rows 9-11, the bottom three. A press sets its
-  row and every row below it that shows the same form on that seat.
+  row and every row below it that shows the same form on that seat. Kyogre's
+  and Groudon's Mega button shows their orb (`/powerups/primal-kyogre.png`,
+  `primal-groudon.png`) and is labelled "Primal Reversion".
 - Desktop (1024px and wider) opens on the league pane alone. Opening a gym
   splits the width in halves with the card, and the picker makes thirds.
   Content widths follow the pane. One compact page footer sits below the fold.

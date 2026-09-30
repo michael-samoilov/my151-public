@@ -256,6 +256,21 @@ export const enUi = {
   'intro.headline': 'Build your own {count}',
   'lang.change': 'Change language',
   'lang.title': 'Language',
+  // The trainer card's signature-pane headings, drawn in capitals. A newline
+  // is where the heading breaks when it stands in two lines. On one line, a
+  // line that ends in a hyphen runs on into the next, and elsewhere a space
+  // joins them, except in Japanese and Chinese, which join with none.
+  'league.head.ace': 'Ace\nPokémon',
+  'league.head.partner': 'Partner /\nShouldermon',
+  'league.head.signature': 'Signature\nPokémon',
+  // What a screen reader says for the ace and partner slots: empty, filled,
+  // and the remove button a filled one carries.
+  'league.slot.ace.choose': 'Choose an ace Pokémon',
+  'league.slot.ace.filled': 'Ace Pokémon: {name}',
+  'league.slot.ace.remove': 'Remove the ace Pokémon',
+  'league.slot.partner.choose': 'Choose a partner',
+  'league.slot.partner.filled': 'Partner: {name}',
+  'league.slot.partner.remove': 'Remove the partner',
   'milestone.100.detail': 'Type, generation, and base-stat charts are now available in View.',
   'milestone.100.title': 'Detailed stats in View page',
   'milestone.151.detail': 'Save as an image, or keep refining your picks.',

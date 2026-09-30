@@ -2,5 +2,14 @@
   "feedback.category.bug": "버그",
   "feedback.category.idea": "제안",
   "feedback.category.other": "기타",
-  "feedback.category.translation": "번역"
+  "feedback.category.translation": "번역",
+  "league.head.ace": "에이스\n포켓몬",
+  "league.head.partner": "파트너 /\n어깨 위 포켓몬",
+  "league.head.signature": "간판\n포켓몬",
+  "league.slot.ace.choose": "에이스 포켓몬 선택",
+  "league.slot.ace.filled": "에이스 포켓몬: {name}",
+  "league.slot.ace.remove": "에이스 포켓몬 제거",
+  "league.slot.partner.choose": "파트너 선택",
+  "league.slot.partner.filled": "파트너: {name}",
+  "league.slot.partner.remove": "파트너 제거"
 }

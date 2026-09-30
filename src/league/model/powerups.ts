@@ -1,5 +1,6 @@
 /**
- * Mega Evolution and Gigantamax, as the card models them.
+ * Mega Evolution and Gigantamax, as the card models them. Primal Reversion
+ * rides the Mega button, with its own symbol (`powerupSymbol`).
  *
  * A powerup is a *form change* of the Pokémon in a seat, never a swap
  * (DECISIONS.md item 8): the line keeps its place and its evolution rows,
@@ -62,6 +63,30 @@ export type CardPowerups = Partial<Record<number, Powerup[]>>;
 /** The forms a species can take under one powerup; empty when it has none. */
 export function formsFor(pokemonId: number, kind: PowerupKind): PowerupForm[] {
   return FORMS[pokemonId]?.[kind] ?? [];
+}
+
+/**
+ * What a powerup button shows: the Mega or Dynamax symbol, or the orb of a
+ * Primal Reversion. Kyogre's and Groudon's forms sit under the Mega button
+ * (`powerupForms.json` files them there), but the games mark a Primal with
+ * the orb that triggers it, not the Mega symbol: the Blue Orb for Kyogre,
+ * the Red Orb for Groudon. Each is `public/powerups/<symbol>.png`.
+ */
+export type PowerupSymbol = PowerupKind | 'primal-kyogre' | 'primal-groudon';
+
+/** The Primal forms, by the label `powerupForms.json` gives them, and their orbs. */
+const PRIMAL_ORBS: Readonly<Record<string, PowerupSymbol>> = {
+  'Primal Kyogre': 'primal-kyogre',
+  'Primal Groudon': 'primal-groudon',
+};
+
+/** The symbol a species' button for `kind` wears. */
+export function powerupSymbol(pokemonId: number, kind: PowerupKind): PowerupSymbol {
+  for (const form of formsFor(pokemonId, kind)) {
+    const orb = PRIMAL_ORBS[form.label];
+    if (orb) return orb;
+  }
+  return kind;
 }
 
 /** True when a species has any form under either powerup. */
