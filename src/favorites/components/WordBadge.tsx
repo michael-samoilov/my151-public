@@ -12,6 +12,12 @@ import { AXIS_FILL, GEN_FILL, WORD_BADGE_MARGIN, generationBadgeUnits, generatio
 // much outline showing past the letter, in CSS px.
 const OUTLINE_PER_FONT = 1.25 / 15;
 const OUTLINE_MIN_PX = 0.6;
+// The word is condensed sideways, and a stroke on it is condensed with it:
+// about 0.7 as thick at the sides as at the top. So the outline repeats the
+// stroked word at small steps left and right, until the sides match the top.
+// Only horizontal steps: browsers snap text to whole pixels vertically, and
+// vertical steps would round unevenly.
+const OUTLINE_SPREAD = [-1, -0.5, 0, 0.5, 1];
 // The disc's grey hairline edge, which keeps a pale half visible on a pale
 // background. In badge units.
 const EDGE = 1;
@@ -52,8 +58,28 @@ function WordBadge({
   // top-left corner to the point level with the far end along that diagonal.
   const reach = (units + TYPE_BADGE_H) / 2;
   const style: CSSProperties | undefined = height == null ? undefined : { height, width: height * units / TYPE_BADGE_H };
-  // Paint order puts the stroke under the fill, so half of it shows.
-  const outline = Math.max(fit.fontSize * OUTLINE_PER_FONT, height == null ? 0 : 2 * OUTLINE_MIN_PX * TYPE_BADGE_H / height);
+  // How far the outline shows past the letter, in badge units: half the
+  // disc's stroke, and never under OUTLINE_MIN_PX on screen.
+  const outline = Math.max(fit.fontSize * OUTLINE_PER_FONT / 2, height == null ? 0 : OUTLINE_MIN_PX * TYPE_BADGE_H / height);
+  // The condensed stroke reaches scaleX * outline to each side; the spread
+  // adds the rest.
+  const spread = outline * (1 - fit.scaleX);
+  const condense = `translate(${centerX} 0) scale(${fit.scaleX} 1) translate(${-centerX} 0)`;
+  const word = (color: string, stroke?: number) => (
+    <text
+      x={centerX}
+      y={fit.baseline}
+      textAnchor="middle"
+      fontSize={fit.fontSize}
+      fontWeight={TYPE_BADGE.fontWeight}
+      fill={color}
+      stroke={stroke == null ? undefined : color}
+      strokeWidth={stroke}
+      strokeLinejoin={stroke == null ? undefined : 'round'}
+    >
+      {label}
+    </text>
+  );
   return (
     <svg
       viewBox={`0 0 ${units} ${TYPE_BADGE_H}`}
@@ -90,21 +116,17 @@ function WordBadge({
         stroke={split ? '#d4d4d8' : undefined}
         strokeWidth={split ? EDGE : undefined}
       />
-      <g transform={`translate(${centerX} 0) scale(${fit.scaleX} 1) translate(${-centerX} 0)`}>
-        <text
-          x={centerX}
-          y={fit.baseline}
-          textAnchor="middle"
-          fontSize={fit.fontSize}
-          fontWeight={TYPE_BADGE.fontWeight}
-          fill="#ffffff"
-          stroke={split ? 'rgba(0,0,0,0.85)' : undefined}
-          strokeWidth={split ? outline : undefined}
-          paintOrder={split ? 'stroke' : undefined}
-        >
-          {label}
-        </text>
-      </g>
+      {split ? (
+        // One opacity for the whole group, so overlapping copies stay one shade.
+        <g opacity={0.85} aria-hidden>
+          {OUTLINE_SPREAD.map((step) => (
+            <g key={step} transform={`translate(${step * spread} 0)`}>
+              <g transform={condense}>{word('#000000', 2 * outline)}</g>
+            </g>
+          ))}
+        </g>
+      ) : null}
+      <g transform={condense}>{word('#ffffff')}</g>
     </svg>
   );
 }
