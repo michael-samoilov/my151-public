@@ -174,7 +174,7 @@ export function isTerastalForm(mon: PickerMon): boolean {
 
 export function isGimmickForm(mon: PickerMon): boolean {
   // Ultra Necrozma is reached with Ultranecrozium Z, not Mega Evolution.
-  return isPowerupForm(mon) || isTerastalForm(mon) || mon.id === 10157 || mon.id === 10190;
+  return isPowerupForm(mon) || isTerastalForm(mon) || mon.id === 10157;
 }
 
 export function isStarter(mon: PickerMon): boolean {

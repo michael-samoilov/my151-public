@@ -31,14 +31,12 @@ export function regionalPickerTier(mon: PickerMon): number {
  * battle through a held item or Dynamax.
  */
 const OTHER_BATTLE_FORM_IDS = new Set([
-  10188, // Zacian Crowned Sword
-  10189, // Zamazenta Crowned Shield
   10190, // Eternamax Eternatus
 ]);
 
 /**
  * Mega Evolution, Primal Reversion, Gigantamax, Terastal and Stellar
- * Terapagos, Ultra Necrozma, the Crowned forms, and Eternamax. Forms that an
+ * Terapagos, Ultra Necrozma, and Eternamax. Forms that an
  * ability changes during battle, such as Aegislash Blade, are not included.
  */
 export function isBattleForm(mon: PickerMon): boolean {
