@@ -1,9 +1,8 @@
 // keeps: a wrong candidate list in one of the 264 grid cells, which E2E cannot open one by one
 import { describe, expect, it } from 'vitest';
 import { eligibleFor, isEmptyTypePicker, kindFor } from './eligibility';
-import { isBattleForm, regionalPickerTier } from './sortKeys';
+import { debutSortRank, isBattleForm, regionalPickerTier } from './sortKeys';
 import { isLegendaryEligible, isPowerupForm } from './catalog';
-import { debutRank } from './debut';
 import { TYPE_NAMES } from '@/types/pokemon';
 
 describe('eligibleFor', () => {
@@ -84,10 +83,10 @@ describe('eligibleFor', () => {
         const tieredMons = type === 'psychic' && (gen === 2 || gen === 3)
           ? mons.filter((mon) => mon.ownerId !== 201)
           : mons;
-        const ranks = tieredMons.map(debutRank);
+        const ranks = tieredMons.map(debutSortRank);
         expect(ranks, `${type}|${gen} debut games`).toEqual(ranks.slice().sort((a, b) => a - b));
         for (const rank of new Set(ranks)) {
-          const game = tieredMons.filter((mon) => debutRank(mon) === rank);
+          const game = tieredMons.filter((mon) => debutSortRank(mon) === rank);
           const kinds = game.map((mon) => Number(isBattleForm(mon)));
           expect(kinds, `${type}|${gen} battle forms`).toEqual(kinds.slice().sort((a, b) => a - b));
           for (const kind of new Set(kinds)) {
@@ -117,6 +116,8 @@ describe('eligibleFor', () => {
     contiguous(ids('legendary', 8), [898, 10193, 10194]);
     contiguous(ids('legendary', 8), [905, 10249]);
     contiguous(ids('legendary', 6), [716, 11001]);
+    // Hoopa Unbound came in Omega Ruby and Alpha Sapphire, Hoopa and Volcanion in X and Y.
+    contiguous(ids('legendary', 6), [720, 10086]);
     // Ultra Sun and Ultra Moon share Alola with Sun and Moon, so Necrozma's
     // fusions follow Necrozma.
     contiguous(ids('legendary', 7), [800, 10155, 10156]);

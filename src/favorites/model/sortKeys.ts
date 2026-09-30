@@ -45,6 +45,24 @@ export function isBattleForm(mon: PickerMon): boolean {
   return isGimmickForm(mon) || OTHER_BATTLE_FORM_IDS.has(mon.id);
 }
 
+/**
+ * The entry whose debut game a form sorts by. A form in its species'
+ * generation row sits with the species, even when the form came in a later
+ * game of another region: Hoopa Unbound (Omega Ruby and Alpha Sapphire)
+ * sorts with Hoopa (X and Y), not after Volcanion. Regional forms and battle
+ * forms keep their own debut, which their own sort layers expect.
+ */
+function debutAnchor(mon: PickerMon): PickerMon {
+  if (mon.ownerId === mon.id || isBattleForm(mon) || isRegionalFamily(mon)) return mon;
+  const owner = getPickerMon(mon.ownerId);
+  return owner != null && owner.generation === mon.generation ? owner : mon;
+}
+
+/** The debut rank a selector sorts by, from `debutAnchor`. */
+export function debutSortRank(mon: PickerMon): number {
+  return debutRank(debutAnchor(mon));
+}
+
 /** Entries that fail `test` first. */
 function lastIf(test: (mon: PickerMon) => boolean) {
   return (a: PickerMon, b: PickerMon) => Number(test(a)) - Number(test(b));
@@ -63,8 +81,10 @@ export const SORT_KEYS = [
   {
     id: 'debut',
     label: 'Debut game',
-    description: 'Earlier games first. Games of one generation and region count as one: Black 2 and White 2 sort with Black and White, but Legends: Arceus sorts after Sword and Shield.',
-    compare: (a, b) => debutRank(a) - debutRank(b),
+    description: 'Earlier games first. Games of one generation and region count as one: Black 2 and White 2 sort with Black and White, but Legends: Arceus sorts after Sword and Shield. A form sorts with its species in the same generation, except regional and battle forms.',
+    compare: (a, b) => debutSortRank(a) - debutSortRank(b)
+      // Within one species, forms still follow their own debut.
+      || (a.ownerId === b.ownerId ? debutRank(a) - debutRank(b) : 0),
   },
   {
     id: 'formKind',
