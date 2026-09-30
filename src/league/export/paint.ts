@@ -138,6 +138,26 @@ export function ellipsizeTracked(
 }
 
 /**
+ * Break a tracked run at spaces, filling each line as far as it fits `maxW`.
+ * A run that fits stays on one line. A word wider than `maxW` still gets a
+ * line of its own, for the caller to clip.
+ */
+export function wrapTracked(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxW: number,
+  track: number,
+): string[] {
+  const lines: string[] = [];
+  for (const word of text.trim().split(/\s+/).filter(Boolean)) {
+    const joined = lines.length ? `${lines[lines.length - 1]} ${word}` : '';
+    if (joined && trackedWidth(ctx, joined, track) <= maxW) lines[lines.length - 1] = joined;
+    else lines.push(word);
+  }
+  return lines;
+}
+
+/**
  * Break a run into at most `maxLines` lines that fit `maxW`.
  *
  * The last line is ellipsized rather than dropped, so a long badge name says
