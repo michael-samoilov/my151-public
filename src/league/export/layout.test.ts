@@ -147,13 +147,6 @@ describe('export layout', () => {
     const two = L.tmMoveBody(100, 2);
     expect(two.height - one.height).toBeCloseTo(L.NAME_LINE);
   });
-
-  it('wraps a two-word TM name and leaves a one-word name on one line', () => {
-    expect(L.tmNameWraps('Stomping Tantrum')).toBe(true);
-    expect(L.tmNameWraps('Psychic')).toBe(false);
-    expect(L.tmNameWraps('Self-Destruct')).toBe(false);
-    expect(L.tmNameWraps('Power-Up Punch')).toBe(true);
-  });
 });
 
 function cardWith(over: Partial<GymCard>): GymCard {

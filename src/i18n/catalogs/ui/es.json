@@ -2,5 +2,14 @@
   "feedback.category.bug": "Error",
   "feedback.category.idea": "Idea",
   "feedback.category.other": "Otro",
-  "feedback.category.translation": "Traducción"
+  "feedback.category.translation": "Traducción",
+  "league.head.ace": "Pokémon\nestrella",
+  "league.head.partner": "Compañero /\nEn el hombro",
+  "league.head.signature": "Pokémon\ninsignia",
+  "league.slot.ace.choose": "Elegir un Pokémon estrella",
+  "league.slot.ace.filled": "Pokémon estrella: {name}",
+  "league.slot.ace.remove": "Quitar al Pokémon estrella",
+  "league.slot.partner.choose": "Elegir un compañero",
+  "league.slot.partner.filled": "Compañero: {name}",
+  "league.slot.partner.remove": "Quitar al compañero"
 }

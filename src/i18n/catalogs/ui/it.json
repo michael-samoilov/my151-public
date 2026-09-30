@@ -2,5 +2,14 @@
   "feedback.category.bug": "Errore",
   "feedback.category.idea": "Idea",
   "feedback.category.other": "Altro",
-  "feedback.category.translation": "Traduzione"
+  "feedback.category.translation": "Traduzione",
+  "league.head.ace": "Pokémon\nasso",
+  "league.head.partner": "Compagno /\nSulla spalla",
+  "league.head.signature": "Pokémon\nsimbolo",
+  "league.slot.ace.choose": "Scegli un Pokémon asso",
+  "league.slot.ace.filled": "Pokémon asso: {name}",
+  "league.slot.ace.remove": "Rimuovi il Pokémon asso",
+  "league.slot.partner.choose": "Scegli un compagno",
+  "league.slot.partner.filled": "Compagno: {name}",
+  "league.slot.partner.remove": "Rimuovi il compagno"
 }

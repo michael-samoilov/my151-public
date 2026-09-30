@@ -2,5 +2,14 @@
   "feedback.category.bug": "程序错误",
   "feedback.category.idea": "建议",
   "feedback.category.other": "其他",
-  "feedback.category.translation": "翻译"
+  "feedback.category.translation": "翻译",
+  "league.head.ace": "王牌\n宝可梦",
+  "league.head.partner": "搭档／\n肩上宝可梦",
+  "league.head.signature": "招牌\n宝可梦",
+  "league.slot.ace.choose": "选择王牌宝可梦",
+  "league.slot.ace.filled": "王牌宝可梦：{name}",
+  "league.slot.ace.remove": "移除王牌宝可梦",
+  "league.slot.partner.choose": "选择搭档",
+  "league.slot.partner.filled": "搭档：{name}",
+  "league.slot.partner.remove": "移除搭档"
 }

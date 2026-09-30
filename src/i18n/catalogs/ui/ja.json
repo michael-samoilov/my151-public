@@ -2,5 +2,14 @@
   "feedback.category.bug": "不具合",
   "feedback.category.idea": "提案",
   "feedback.category.other": "その他",
-  "feedback.category.translation": "誤訳"
+  "feedback.category.translation": "誤訳",
+  "league.head.ace": "エース\nポケモン",
+  "league.head.partner": "相棒／\n肩乗りポケモン",
+  "league.head.signature": "看板\nポケモン",
+  "league.slot.ace.choose": "エースポケモンを選ぶ",
+  "league.slot.ace.filled": "エースポケモン：{name}",
+  "league.slot.ace.remove": "エースポケモンを外す",
+  "league.slot.partner.choose": "相棒を選ぶ",
+  "league.slot.partner.filled": "相棒：{name}",
+  "league.slot.partner.remove": "相棒を外す"
 }

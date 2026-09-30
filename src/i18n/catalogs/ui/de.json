@@ -2,5 +2,14 @@
   "feedback.category.bug": "Fehler",
   "feedback.category.idea": "Idee",
   "feedback.category.other": "Anderes",
-  "feedback.category.translation": "Übersetzung"
+  "feedback.category.translation": "Übersetzung",
+  "league.head.ace": "Ass-\nPokémon",
+  "league.head.partner": "Partner /\nSchultermon",
+  "league.head.signature": "Signatur-\nPokémon",
+  "league.slot.ace.choose": "Ass-Pokémon wählen",
+  "league.slot.ace.filled": "Ass-Pokémon: {name}",
+  "league.slot.ace.remove": "Ass-Pokémon entfernen",
+  "league.slot.partner.choose": "Partner wählen",
+  "league.slot.partner.filled": "Partner-Pokémon: {name}",
+  "league.slot.partner.remove": "Partner entfernen"
 }

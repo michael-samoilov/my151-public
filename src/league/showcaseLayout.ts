@@ -11,6 +11,7 @@
  * - The ace's caption, ACE POKÉMON over the name, is centred under the ace.
  *   The partner's, PARTNER / SHOULDERMON over the name, sits to its left,
  *   right-aligned and centred on it. Names are in the page's text colour.
+ *   Every locale words the headings its own way (`slotHeadings.ts`).
  * - The 30 degree seam runs between the two sprites. Text may cross it; the
  *   seam then fades right next to the letters instead of breaking.
  *
@@ -37,28 +38,73 @@ export const CAPTION_LEADING = 1.4;
 /**
  * The caption type, which gives way on a narrow pane.
  *
- * Measured in the caption face (Inter 800): SHOULDERMON is 8.83em at full
- * tracking and 7.95em untracked. The widest name in any shipped locale is
- * MANGUSPEKTOR (German Gumshoos), 8.94em. Where the room is short the size
- * comes down from the card's 0.53125rem to the 0.4rem floor the TM and
- * badge labels already use, and below the floor the heading's tracking
- * gives way too, as theirs does.
+ * Measured in the caption face (Inter 800): the widest name in any shipped
+ * locale is MANGUSPEKTOR (German Gumshoos), 8.94em. Where the room is short
+ * the size comes down from the card's 0.53125rem to the 0.4rem floor the TM
+ * and badge labels already use.
+ *
+ * The headings differ by locale, so they are measured as drawn rather than
+ * named here (`fitHeadings`). Their tracking gives way first, as the TM and
+ * badge labels' does, and a heading still too wide untracked brings the
+ * size down with it.
  */
 const CAPTION_WIDEST_EM = 8.9;
-const SHOULDERMON_EM = 7.96;
-const SHOULDERMON_LETTERS = 11;
 const CAPTION_MAX_REM = 0.53125;
 export const CAPTION_MIN_REM = 0.4;
+/** The headings' tracking where they have the room. */
+const CAPTION_TRACK_EM = 0.08;
 
 const GAPS_REM = 2 * SHOWCASE_PAD_REM + CAPTION_GAP_X_REM;
 /** The partner's room beside its sprite. */
 const PARTNER_ROOM = `(100cqw - ${GAPS_REM}rem - var(--slot-unit))`;
 
-/** The pane's caption face, set by the partner's room beside its sprite. */
-export const PANE_FACE = {
-  size: `clamp(${CAPTION_MIN_REM}rem, ${PARTNER_ROOM} / ${CAPTION_WIDEST_EM}, ${CAPTION_MAX_REM}rem)`,
-  track: `clamp(0rem, (${PARTNER_ROOM} - ${SHOULDERMON_EM} * var(--cap-size)) / ${SHOULDERMON_LETTERS}, 0.08em)`,
-};
+/** One heading line as drawn, in pane px. */
+export interface HeadLine {
+  /** The line's width untracked. */
+  width: number;
+  /** The characters the tracking follows, one each. */
+  letters: number;
+  /** The room the line may take. */
+  room: number;
+}
+
+/** What the headings allow the pane's face, in px. */
+export interface HeadFace {
+  /** The largest caption size at which every heading line fits untracked. */
+  size: number;
+  /** The tracking every line fits at, at the size the lines were read at. */
+  track: number;
+}
+
+/**
+ * The headings' limits on the caption face, from their lines read at the
+ * caption size `cap`. A line's width scales with the size, so `size` does
+ * not depend on the size it was read at, and a heading that brought the
+ * size down keeps it down.
+ */
+export function fitHeadings(lines: readonly HeadLine[], cap: number): HeadFace {
+  let size = Infinity;
+  let track = CAPTION_TRACK_EM * cap;
+  for (const line of lines) {
+    if (line.width > 0) size = Math.min(size, (cap * line.room) / line.width);
+    if (line.letters > 0) track = Math.min(track, (line.room - line.width) / line.letters);
+  }
+  return { size, track: Math.max(0, track) };
+}
+
+/**
+ * The pane's caption face. The partner's room beside its sprite sets the
+ * size, and the headings, once read, can only bring it down and take the
+ * tracking in.
+ */
+export function paneFace(head: HeadFace | null): { size: string; track: string } {
+  const room = `${PARTNER_ROOM} / ${CAPTION_WIDEST_EM}`;
+  const size = head && Number.isFinite(head.size) ? `min(${room}, ${head.size}px)` : room;
+  return {
+    size: `clamp(${CAPTION_MIN_REM}rem, ${size}, ${CAPTION_MAX_REM}rem)`,
+    track: head ? `clamp(0px, ${head.track}px, ${CAPTION_TRACK_EM}em)` : `${CAPTION_TRACK_EM}em`,
+  };
+}
 
 /**
  * The captions' halo: the pane's colour in a thin ring round each glyph, so

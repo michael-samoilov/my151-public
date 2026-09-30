@@ -11,7 +11,9 @@ is ~460 strings; this is a handful of them. A locale that has no entry for a key
 falls back to English, which is the intended intermediate state rather than a
 gap — `loadCatalog` layers English, then the sourced terms, then these.
 
-Currently: the five report-a-problem category chips.
+Currently: the five report-a-problem category chips, and the trainer card's
+signature-pane headings (`league.head.*`) and what a screen reader says for
+those two slots (`league.slot.*`).
 
 ## Provenance
 
@@ -58,3 +60,30 @@ the screen — not a clumsy phrase. That needs a speaker, which is what the
 - **French** keeps `Bug`, which is what French tech writing uses.
 - **German** uses `Fehler` rather than `Bug`, and `Sonstiges` for Other, which
   is the conventional German list terminator.
+
+### The trainer card's headings
+
+The pane draws ACE POKÉMON, PARTNER / SHOULDERMON and SIGNATURE POKÉMON in
+capitals. A newline in the value is where the heading breaks when it stands
+in two lines; `src/league/slotHeadings.ts` joins the lines when it draws one.
+The pane fits each heading to its room, tracking first and then size
+(`fitHeadings`), so a long wording costs a smaller face, not a cut. Where
+the games have a word, it is theirs; the corpus is Scarlet/Violet and
+Sword/Shield text from `abcboy101/poke-corpus`.
+
+- **Pokémon** is each locale's own word: ポケモン, 포켓몬, 宝可梦, 寶可夢, and
+  Pokémon in the Latin locales.
+- **Partner** follows the games' "partner Pokémon": 相棒, 파트너, 搭档 and 搭檔,
+  Partenaire, Partner(-Pokémon), Compañero and Compagno.
+- **Signature** follows the games' "signature dish": 看板, 간판 and 招牌. French
+  says fétiche, the usual word for a trainer's own Pokémon; Spanish insignia,
+  Italian simbolo and German Signatur- are the nearest plain words.
+- **Ace** is the gym leader's strongest Pokémon. エース and 에이스 as fans
+  say it, 王牌 as the games translate Trump Card, Ass as in the German
+  games' Turnier-Ass, estrella as Piers's star in Spanish, and asso as the
+  Italian games say it. French takes phare: the games' vedette is wider than
+  the ace's room on a phone.
+- **Shouldermon** is a fan word, so it is described rather than sourced:
+  肩乗りポケモン (肩乗り is the Japanese for a pet that rides the shoulder),
+  어깨 위 포켓몬, 肩上宝可梦, "on the shoulder" in French, Spanish and Italian,
+  and the German coinage Schultermon, which mirrors the English one.
