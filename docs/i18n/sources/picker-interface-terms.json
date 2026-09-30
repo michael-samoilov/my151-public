@@ -1,5 +1,5 @@
 {
-  "source": "Pokémon Scarlet/Violet game text",
+  "source": "Pokémon Scarlet/Violet and X/Y game text",
   "mirror": "https://github.com/abcboy101/poke-corpus",
   "commit": "d74a89ba69cbabc491b65c3e88af8722bb34a927",
   "table": "ScarletViolet/*_common.txt.gz",

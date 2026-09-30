@@ -178,7 +178,7 @@ export const enUi = {
   'faq.dex.q3': 'Is it free? Do I need an app or an account?',
   'faq.dex.q4': 'Can I add fakemon?',
   'faq.favorites.a1': 'Choose a cell to pick a Pokémon for that type and generation. Then choose your favorites from each row and column, and an overall favorite.',
-  'faq.favorites.a2': 'Not yet. Ship 1 is the grid, the picker, and packing. Export and sending picks into the Pokédex builder come next.',
+  'faq.favorites.a2': 'Not yet. Image export is planned. You can filter Pokémon by your favorites in the Pokédex and gym leader builders.',
   'faq.favorites.q1': 'How does picking work?',
   'faq.favorites.q2': 'Can I export the chart?',
   'faq.hub.a1': 'Yes. No account, no download. Everything saves in your browser (the webapp supports mobile, tablet, and desktop!) and exports as a PNG you can save or share anywhere.',
