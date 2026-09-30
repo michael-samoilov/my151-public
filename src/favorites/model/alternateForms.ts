@@ -169,6 +169,11 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11069, ownerId: 592, name: 'frillish-female', types: ['water', 'ghost'], spriteSlug: 'frillish-f' },
   { id: 11070, ownerId: 593, name: 'jellicent-female', types: ['water', 'ghost'], spriteSlug: 'jellicent-f' },
   { id: 11071, ownerId: 668, name: 'pyroar-female', types: ['fire', 'normal'], spriteSlug: 'pyroar-f' },
+  // Sprites from PokeAPI's Black/White female folder: Showdown is unreachable
+  // from the build machines, and that folder matches Showdown's Gen 5 art
+  // pixel for pixel (checked on hippopotas-f).
+  { id: 11094, ownerId: 415, name: 'combee-female', types: ['bug', 'flying'], spriteSlug: 'combee-f' },
+  { id: 11095, ownerId: 521, name: 'unfezant-female', types: ['normal', 'flying'], spriteSlug: 'unfezant-f' },
   { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spriteSlug: 'darmanitan-galarzen' },
   ...flowerColors,
 ];
