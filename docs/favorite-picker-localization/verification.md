@@ -2,7 +2,7 @@
 
 The interface uses the existing English catalog and eight translated UI overlays. All nine locales now have picker badges, empty states, settings, buttons, scroll hints, headings, and accessible generation labels.
 
-Pokémon names and power-up terminology remain the name worker's scope. Type names still use the checked-in official game terms. Picker wording is authored UI copy. German `Starter` and `Generation` match English spelling, so the translation gate has two explicit exceptions.
+Pokémon names and power-up terminology remain the name worker's scope. Type names still use the checked-in official game terms. Picker wording is authored UI copy. Shared Gym Leader and Legendary terminology follows the pinned game text in `docs/i18n/sources/picker-interface-terms.json`. The same fixture records German `Starter-Pokémon` from X/Y. German `Starter` and `Generation` match English spelling, so the translation gate has two explicit exceptions.
 
 ## Proof
 
