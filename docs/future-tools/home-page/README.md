@@ -55,9 +55,12 @@ flag is set. Two of the three tool links point at slugs that do not exist yet:
 | Trainer Card & Gym Leader Maker | `/custom-gym-leader` | shipped with the hub |
 | What should we build next? | opens the feedback sheet | yes |
 
-The favorite Pokémon picker is off the page until it is built. Adding it back is
-one entry in `useTools()`: the grid's column count, the overhang reserve, and
-whether the call to action spans a row all follow from the count.
+On the Favorite Picker work branch, `useTools()` includes the picker at
+`/favorite-pokemon-by-type`. The desktop grid follows the tool count.
+The card has no artwork yet. Capture its art from the finished Picker export,
+then add the images and descriptive alt text to the tool entry.
+The launch remains pending while the Picker carries `noindex` and stays out of
+the sitemap. Production keeps the two-tool layout until the approved launch.
 
 ### Getting there
 

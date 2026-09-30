@@ -77,6 +77,13 @@ const PAGES = {
       149, 248, 461, 260, 887, 1000,
     ],
   },
+  favorites: {
+    file: 'og-favorite-picker.png',
+    heading: 'Favorite <span class="accent">Pokémon Picker</span>',
+    subtitle: 'Choose your favorites by type and generation. Build a chart that is yours.',
+    sprites: [6, 9, 3, 257, 260, 254, 911, 914, 908],
+    chart: { types: ['Fire', 'Water', 'Grass'], generations: ['Gen I', 'Gen III', 'Gen IX'] },
+  },
 };
 
 function dataUri(relPath, mime) {
@@ -88,13 +95,20 @@ const interUri = dataUri(
   'font/woff2',
 );
 
-function pageHtml({ heading, subtitle, sprites }) {
-  const spriteTags = sprites
+function pageHtml({ heading, subtitle, sprites, chart }) {
+  let spriteTags = sprites
     .map((id) => {
       const uri = dataUri(`public/sprites/pokemon/${id}.png`, 'image/png');
       return `<div class="cell"><img src="${uri}" alt="" /></div>`;
     })
     .join('\n        ');
+  if (chart) {
+    const cells = sprites.map((id) => `<div class="cell"><img src="${dataUri(`public/sprites/pokemon/${id}.png`, 'image/png')}" alt="" /></div>`);
+    spriteTags = `<span></span>${chart.types.map((type) => `<span class="chart-label">${type}</span>`).join('')}`;
+    chart.generations.forEach((generation, row) => {
+      spriteTags += `<span class="chart-label">${generation}</span>${cells.slice(row * chart.types.length, (row + 1) * chart.types.length).join('')}`;
+    });
+  }
 
   return `<!doctype html>
 <html>
@@ -160,9 +174,13 @@ function pageHtml({ heading, subtitle, sprites }) {
         /* Sprites are 96px pixel art; nearest-neighbor keeps them crisp when scaled. */
         image-rendering: pixelated;
       }
+      .chart { grid-template-columns: 54px repeat(3, 1fr); gap: 8px; }
+      .chart-label { align-self: center; text-align: center; font-size: 16px; font-weight: 600; color: #d4d4d4; }
+      .chart .cell img { width: 96px; height: 96px; }
+      body.favorites h1 { font-size: 56px; }
     </style>
   </head>
-  <body>
+  <body${chart ? ' class="favorites"' : ''}>
     <div class="left">
       <div class="brand">
         <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
@@ -178,7 +196,7 @@ function pageHtml({ heading, subtitle, sprites }) {
       <p>${subtitle}</p>
       <div class="domain">my151.app</div>
     </div>
-    <div class="grid">
+    <div class="grid${chart ? ' chart' : ''}">
         ${spriteTags}
     </div>
   </body>
@@ -255,7 +273,12 @@ try {
   });
   for (const name of names) {
     const spec = PAGES[name];
-    await page.setContent(pageHtml(spec), { waitUntil: 'load' });
+    const html = pageHtml(spec);
+    if (process.env.OG_HTML_OUT_DIR) {
+      mkdirSync(process.env.OG_HTML_OUT_DIR, { recursive: true });
+      writeFileSync(join(process.env.OG_HTML_OUT_DIR, `${name}.html`), html);
+    }
+    await page.setContent(html, { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
     const png = await page.screenshot({ type: 'png' });
     const out = join(outDir, spec.file);
