@@ -2276,9 +2276,10 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
       `const r=JSON.parse(localStorage.getItem(${JSON.stringify(LEAGUE_KEY)})||'{}');return {version:r.version??null,celebrated:r.state?.celebratedNudges??[],nudges:document.querySelectorAll('[data-testid="league-nudge"]').length};`,
     ).catch(() => ({ version: null, celebrated: [] as string[], nudges: -1 }));
     await s.screenshot(ctx.shot('league-funnel-full-save'));
+    // v4 records the seen popup; later save versions must keep it suppressed.
     checks.push(ok(
       'league-funnel:full-save-skips-seen-popup',
-      saved.nudges === 0 && saved.version === 4 && saved.celebrated.includes('complete'),
+      saved.nudges === 0 && saved.version !== null && saved.version >= 4 && saved.celebrated.includes('complete'),
       `nudges=${saved.nudges} version=${saved.version} celebrated=${saved.celebrated.join(',')}`,
     ));
   }

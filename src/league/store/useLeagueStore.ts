@@ -277,7 +277,7 @@ type PersistedLeagueState = {
 
 export function migrateLeagueState(persisted: unknown, version: number): PersistedLeagueState {
   const state = (persisted ?? {}) as PersistedLeagueState;
-  const cards = version < 3 && state.cards
+  const legacyCards = version < 3 && state.cards
     ? state.cards.map((card) => ({
         ...card,
         lines: card.lines.map((line) => {
@@ -292,6 +292,16 @@ export function migrateLeagueState(persisted: unknown, version: number): Persist
         }),
       }))
     : state.cards;
+  // Corrected level data also changes the fitted arrivals. Refresh automatic
+  // saves, but keep deliberate or unclassified evolution rows intact.
+  const cards = version < 5 && legacyCards
+    ? legacyCards.map((card) => ({
+        ...card,
+        lines: card.lines.map((line) => line.boundaryMode === 'auto'
+          ? { ...line, boundaries: defaultBoundaries(line.branch) }
+          : line),
+      }))
+    : legacyCards;
   const celebrated = version < 2 || state.celebratedNudges === undefined
     ? reachedNudges(cards ?? [])
     : parseCelebratedNudges(state.celebratedNudges);
