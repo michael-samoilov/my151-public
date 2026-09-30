@@ -1,5 +1,7 @@
-import { getPickerMon, pickerDexId } from '@/favorites/model/catalog';
+import browserIds from './favoriteBrowserIds.json';
 import { getPokemonById } from '@/hooks/usePokemonData';
+
+const PICKER_BROWSER_IDS: Readonly<Record<string, number>> = browserIds;
 
 export function favoritePickerIds(raw: string | null): Set<number> {
   const ids = new Set<number>();
@@ -13,8 +15,7 @@ export function favoritePickerIds(raw: string | null): Set<number> {
     if (!fills || typeof fills !== 'object' || Array.isArray(fills)) return ids;
     for (const value of Object.values(fills)) {
       if (typeof value !== 'number' || !Number.isSafeInteger(value)) continue;
-      const mon = getPickerMon(value);
-      const id = mon ? pickerDexId(mon) : value;
+      const id = PICKER_BROWSER_IDS[value] ?? value;
       if (getPokemonById(id)) ids.add(id);
     }
   } catch {
