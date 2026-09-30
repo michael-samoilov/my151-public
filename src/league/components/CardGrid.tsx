@@ -40,7 +40,9 @@ import { openLeagueBrowser } from '../store/browserBridge';
 import type { CardView } from '../useCardView';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyphs';
 import { PokeballBg } from '@/components/shared/PokeballBg';
-import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
+import {
+  formAt, formsFor, isPowerupRow, powerupSymbol, type PowerupForm, type PowerupKind, type PowerupSymbol,
+} from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
 import { BALL_OF_SPRITE, RING_OF_SPRITE, SPRITE_REM } from '../slotLayout';
 import {
@@ -505,6 +507,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           {formsFor(pokemon.id, 'mega').length > 0 && (
             <PowerupButton
               kind="mega"
+              symbol={powerupSymbol(pokemon.id, 'mega')}
               active={powerupKind === 'mega'}
               onPress={() => onPowerup('mega')}
               side="left"
@@ -513,6 +516,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           {formsFor(pokemon.id, 'dynamax').length > 0 && (
             <PowerupButton
               kind="dynamax"
+              symbol={powerupSymbol(pokemon.id, 'dynamax')}
               active={powerupKind === 'dynamax'}
               onPress={() => onPowerup('dynamax')}
               side="right"
@@ -604,16 +608,25 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
  * left and right rims with clear space above and below, which reads as a
  * circle squashed sideways. Sizing each symbol so its *widest* side takes
  * the same share of the disc gives both the same margin all round.
+ *
+ * The Primal orbs are round pixel art whose ink fills their 15px box, so
+ * they take the same share and keep the same margin.
  */
 
 /** The widest side of a symbol's ink, as a share of its own image box. */
-const SYMBOL_INK: Record<PowerupKind, number> = { mega: 1, dynamax: 0.961 };
+const SYMBOL_INK: Record<PowerupSymbol, number> = { mega: 1, dynamax: 0.961, 'primal-kyogre': 1, 'primal-groudon': 1 };
+
+/**
+ * The orbs are pixel art, so they draw as the team sprites beside them do
+ * (`SPRITE_RENDERING`); the Mega and Dynamax symbols are smooth art.
+ */
+const PIXEL_ART: ReadonlySet<PowerupSymbol> = new Set(['primal-kyogre', 'primal-groudon']);
 
 /** How much of the disc that widest side may take. */
 const SYMBOL_EXTENT = 0.8;
 
-function symbolScale(kind: PowerupKind): string {
-  return `${((SYMBOL_EXTENT / SYMBOL_INK[kind]) * 100).toFixed(1)}%`;
+function symbolScale(symbol: PowerupSymbol): string {
+  return `${((SYMBOL_EXTENT / SYMBOL_INK[symbol]) * 100).toFixed(1)}%`;
 }
 
 /** The disc's diameter. Every other powerup measure derives from it. */
@@ -709,8 +722,10 @@ const HIT_WIDTH = `calc(${DISC_REM}rem + ${SLACK} / 4)`;
 const HIT_HEIGHT = `${DISC_REM + HIT_UP_REM + HIT_DOWN_REM}rem`;
 
 /** One corner button: a press box, with the disc drawn at the bottom of it. */
-function PowerupButton({ kind, active, onPress, side }: {
+function PowerupButton({ kind, symbol, active, onPress, side }: {
   kind: PowerupKind;
+  /** What the disc shows: the kind's own symbol, or a Primal's orb. */
+  symbol: PowerupSymbol;
   active: boolean;
   onPress: () => void;
   /** Mega takes the cell's left corner, Dynamax its right. */
@@ -719,7 +734,7 @@ function PowerupButton({ kind, active, onPress, side }: {
   return (
     <button
       type="button"
-      aria-label={kind === 'mega' ? 'Mega Evolution' : 'Dynamax'}
+      aria-label={kind === 'dynamax' ? 'Dynamax' : symbol === 'mega' ? 'Mega Evolution' : 'Primal Reversion'}
       aria-pressed={active}
       data-powerup={kind}
       data-active={active ? 'true' : 'false'}
@@ -770,10 +785,14 @@ function PowerupButton({ kind, active, onPress, side }: {
         {/* The disc stays opaque so the symbol always has a ground; the
             symbol itself dims when the powerup is merely available. */}
         <img
-          src={`/powerups/${kind}.png`}
+          src={`/powerups/${symbol}.png`}
           alt=""
           className={cn('object-contain', !active && 'opacity-55')}
-          style={{ width: symbolScale(kind), height: symbolScale(kind) }}
+          style={{
+            width: symbolScale(symbol),
+            height: symbolScale(symbol),
+            imageRendering: PIXEL_ART.has(symbol) ? SPRITE_RENDERING : undefined,
+          }}
         />
       </span>
     </button>

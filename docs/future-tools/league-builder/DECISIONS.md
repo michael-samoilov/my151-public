@@ -1356,9 +1356,16 @@ bar height.
 
 - **Powerup symbols:** done. Bulbapedia's Mega Evolution and Dynamax symbols
   drive the corner buttons, checked in as `public/powerups/mega.png` and
-  `dynamax.png`. The two Primal Reversion icons (Kyogre, Groudon) stay beside
-  the canvas, unused: a Primal is a Mega-slot form here, under the Mega
-  button.
+  `dynamax.png`. A Primal is a Mega-slot form here, under the Mega button,
+  and that button shows the Primal Reversion icon instead of the Mega
+  symbol: the Blue Orb for Kyogre, the Red Orb for Groudon
+  (`public/powerups/primal-kyogre.png`, `primal-groudon.png`, the 15px ORAS
+  icons beside the canvas). The 15px icon was chosen over the 12px SM/USUM
+  one by measurement: at 390x844@3 and 1440x790@2 its pixel draws 1.57x the
+  neighbouring team sprite's pixel, against 1.97x for the 12px. Neither
+  lands on whole device pixels at every width, because the card's fit zoom
+  is continuous. The orbs are pixel art and follow the team sprites'
+  `image-rendering`.
 - **Sprite harvest:** the Mega and Gigantamax half is done — 123 form sprites
   and a species→forms map, from `npm run league:powerups`. Gender, alt-form
   and shiny sprites are still open, as are data entries for the form Pokémon
