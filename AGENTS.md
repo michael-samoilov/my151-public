@@ -7,6 +7,7 @@
 - For cloud work, use the checked-out GitHub repository `michael-samoilov/my151` and start from `claude/pokedex-region-builder-AviYF` unless the user names another base.
 - Favorite Pokémon Picker (`/favorite-pokemon-by-type`): the code and its to-do list live on branch `claude/jolly-meitner-opefey` (PR 111), not on production. Before picker work, check out that branch and read `docs/favorite-picker-handoff.md` there.
 - League Builder (`/custom-gym-leader`, `/league-card`): the state, rules, and to-do list are in `docs/handoff/league-builder-2026-09-30.md` on production. Read it before league work.
+- Pokédex builder (`/pokedex-builder`, the Dex Builder surface): the state, Michael's decisions, and open ideas are in `docs/handoff/dex-builder-2026-09-30.md` on production. Read it before Dex work.
 - Admin Dashboard (`/?admin`): the state, open decisions, rules, and to-do list are in `docs/handoff/admin-dashboard-2026-09-30.md` on production, and its verification tools are in `docs/handoff/admin-dashboard-tools/`. Read it before admin work.
 - Read `CLAUDE.md` before work. It is authoritative for build, deployment, response style, and repository conventions.
 - The user-facing task is the coordinator. It is the user's single entry point: accept new work there, delegate bounded implementation or research to workers, monitor them, resolve conflicts, and return one consolidated outcome. Do not make the user chase worker tasks for status or results.
