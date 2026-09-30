@@ -12,7 +12,7 @@
  */
 
 import { localeUppercase } from '@/i18n';
-import { EXPORT_FRAME_PX } from '@/lib/exportPngShape';
+import { EXPORT_CORNER_RATIO, EXPORT_FRAME_PX } from '@/lib/exportPngShape';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import { soloSprite } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
@@ -560,14 +560,29 @@ export const HOME_RAIL = 3 * K2;
 /**
  * What a band sits in from the picture's left and right edges.
  *
- * An unnamed league has no name line, so this is also the whitespace above
- * its first band: the band then has the same air on three sides.
+ * An unnamed league has no name line, so this is also the least whitespace
+ * above its first band; `homeTopPad` adds what the frame's round corner needs.
  */
 export const HOME_GUTTER = HPADX + HOME_RAIL - HOME_R;
 
-/** The whitespace above the first thing the picture draws. */
-export function homeTopPad(named: boolean): number {
-  return named ? HPADY : HOME_GUTTER;
+/** Fourteen rows, four bands with their gaps, and the credit. */
+export const HOME_BODY_H = 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT;
+
+/**
+ * The whitespace above the first thing the picture draws.
+ *
+ * An unnamed league opens on a band, and the frame's inner corner is round, so
+ * the band's corner must keep `HOME_GUTTER` from the curve as well as from the
+ * straight edges: its corner arc sits no higher than the frame's. The inner
+ * radius follows the picture's short edge; when that is the height, which
+ * grows with this pad, the pad is solved for directly.
+ */
+export function homeTopPad(named: boolean, homeW: number): number {
+  if (named) return HPADY;
+  const r = EXPORT_CORNER_RATIO;
+  const fromWidth = (homeW + 2 * FRAME) * r - FRAME - HOME_R;
+  const fromHeight = ((HOME_BODY_H + 2 * FRAME) * r - FRAME - HOME_R) / (1 - r);
+  return Math.max(HOME_GUTTER, Math.min(fromWidth, fromHeight));
 }
 
 export const HOME_W = BOX_W;
@@ -582,16 +597,26 @@ export const SEAT_COUNT = 6;
 export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
 
 /**
- * Gym-detail column: theme, TM, and badge on three lines. Sized for a
- * THEME label plus ~28 characters of theme, and for a TM row (disc, 12-letter
- * move at the smallcaps mark size, 1×1 type square, category chip)
- * without clipping.
+ * Gym-detail column bounds. The column holds theme, TM, and badge on three
+ * lines, and it is as wide as its widest line, so short themes leave no empty
+ * space before the teams.
+ *
+ * `HOME_DETAILS_MIN` makes the first part of a split band (glyph, type, and
+ * details columns) as wide as one team block, so the three parts of a
+ * story-and-rematch band match. A picture with one team block keeps the same
+ * floor.
+ *
+ * A line wider than `HOME_DETAILS_MAX` ends in an ellipsis. The cap gives a
+ * theme 1.5 times the room that a fixed 220 * K2 column gave it: about 58
+ * characters of mixed-case text instead of about 38.
  */
-export const HOME_DETAILS_COL = 220 * K2;
+export const HOME_DETAILS_MIN =
+  SEAT_COUNT * SEAT_COL - (GLYPH_COL + TYPE_COL + HOME_R - HOME_RAIL);
+export const HOME_DETAILS_MAX = 310 * K2;
 /**
  * Air between the details column, story teams, and rematch teams — and
  * between the spacers that sit on those blocks. One number, so the gaps
- * stay uniform when the gym-leader spacer splits.
+ * stay uniform when a spacer splits.
  */
 export const HOME_SIDE_GAP = 20 * K2;
 
@@ -641,10 +666,18 @@ export interface HomeExportGeometry {
 
 /**
  * Picture width for export permutations. Team seats keep the default
- * `SEAT_COL`; optional columns, lead gaps, and side-by-side blocks add width only.
+ * `SEAT_COL`; the details column, lead gaps, and side-by-side blocks add width
+ * only. `detailsNeed` is the widest details line in export px, which the
+ * column clamps between `HOME_DETAILS_MIN` and `HOME_DETAILS_MAX`.
  */
-export function homeExportGeometry(gymDetails: boolean, sideBySide: boolean): HomeExportGeometry {
-  const detailsCol = gymDetails ? HOME_DETAILS_COL : 0;
+export function homeExportGeometry(
+  gymDetails: boolean,
+  sideBySide: boolean,
+  detailsNeed: number,
+): HomeExportGeometry {
+  const detailsCol = gymDetails
+    ? Math.min(HOME_DETAILS_MAX, Math.max(HOME_DETAILS_MIN, Math.ceil(detailsNeed)))
+    : 0;
   const seatCol = SEAT_COL;
   const blockWidth = SEAT_COUNT * seatCol;
   const leadGap = gymDetails || sideBySide ? HOME_SIDE_GAP : 0;
@@ -688,15 +721,17 @@ export interface HomeSectionPill {
 }
 
 /**
- * Section-band pills. Gym leaders in both-teams mode split into three
- * equal-gapped pills (title, story, rematch). Every later band stays one
- * full-width pill.
+ * Section-band pills. In both-teams mode every band splits into three
+ * equal-gapped pills at the same x: the title, then one over each team block.
+ * Only the first band names the blocks (`nameTeams`); the bands under it keep
+ * the split without the words. Other modes draw one full-width pill.
  */
 export function homeSectionPills(
   ox: number,
   geom: HomeExportGeometry,
   title: string,
   splitTeams: boolean,
+  nameTeams: boolean,
 ): HomeSectionPill[] {
   const bandX = ox + HOME_RAIL - HOME_R;
   const bandRight = ox + geom.homeInner - HOME_RAIL + HOME_R;
@@ -712,8 +747,8 @@ export function homeSectionPills(
       label: title,
       align: 'left',
     },
-    { x: teamBaseX, w: geom.blockWidth, label: 'STORY TEAMS', align: 'right' },
-    { x: rematchX, w: geom.blockWidth, label: 'REMATCH TEAMS', align: 'right' },
+    { x: teamBaseX, w: geom.blockWidth, label: nameTeams ? 'STORY TEAMS' : null, align: 'right' },
+    { x: rematchX, w: geom.blockWidth, label: nameTeams ? 'REMATCH TEAMS' : null, align: 'right' },
   ];
 }
 
@@ -746,10 +781,8 @@ export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT + FRAME;
  * The league: its padding, the name line if there is one, four bands with
  * their gaps, fourteen rows, and the credit.
  */
-export function homeImgH(named: boolean): number {
-  return Math.ceil(
-    homeTopPad(named) + (named ? HOME_HDR_H : 0) + 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT,
-  );
+export function homeImgH(named: boolean, homeW: number): number {
+  return Math.ceil(homeTopPad(named, homeW) + (named ? HOME_HDR_H : 0) + HOME_BODY_H);
 }
 
 export { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT };
