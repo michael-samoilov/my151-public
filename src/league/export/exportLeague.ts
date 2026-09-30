@@ -58,6 +58,7 @@ import {
   roundRect,
   trackedWidth,
   wrapLines,
+  wrapTracked,
 } from './paint';
 
 /** One name each, whatever the league is called and whoever is on the card. */
@@ -671,10 +672,9 @@ function drawTmSlot(
   const name = L.moveExportName(move.name);
   ctx.save();
   ctx.font = font(L.NAME_PX, 800);
-  const wrapName = L.tmNameWraps(move.name);
-  const lines = wrapName
-    ? name.trim().split(/\s+/).filter(Boolean)
-    : [name];
+  // As few lines as fit the body: one line whenever the whole name fits. The
+  // live card's `tmNameWraps` breaks at every space; the export does not.
+  const lines = wrapTracked(ctx, name, bodyW, L.NAME_TRACK);
   const body = L.tmMoveBody(cy, lines.length);
 
   ctx.beginPath();
