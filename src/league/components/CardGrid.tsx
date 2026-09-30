@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DndContext,
@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { ArrowLeftRight, ArrowUpDown, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { pokemonLabel, useNamesVersion } from '@/i18n';
+import { pokemonLabel, useLocale, useNamesVersion } from '@/i18n';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -44,9 +44,11 @@ import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } fr
 import { LaurelIcon } from './LaurelIcon';
 import { BALL_OF_SPRITE, RING_OF_SPRITE, SPRITE_REM } from '../slotLayout';
 import {
-  ACE_SCALE, CAPTION_GAP_X_REM, CAPTION_GAP_Y_REM, CAPTION_HALO, CAPTION_LEADING, CAPTION_MIN_REM, PANE_FACE,
-  seamBetween, showcaseSquares, SHOWCASE_PAD_REM, type Box, type CardGridRem, type SeamEnds,
+  ACE_SCALE, CAPTION_GAP_X_REM, CAPTION_GAP_Y_REM, CAPTION_HALO, CAPTION_LEADING, CAPTION_MIN_REM, fitHeadings,
+  paneFace, seamBetween, showcaseSquares, SHOWCASE_PAD_REM, type Box, type CardGridRem, type HeadFace,
+  type HeadLine, type SeamEnds,
 } from '../showcaseLayout';
+import { headingInline, headingLines } from '../slotHeadings';
 import { tmBodyShiftRem } from '../export/layout';
 import { useSlotLab } from '../slotLab';
 import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
@@ -806,7 +808,6 @@ function SlotHalf({
   const label = (
     <HeadRuns
       lines={heading.lines}
-      inline={!mirrored}
       className={cn(HEAD_CLASS, mirrored && 'text-right')}
       data-slot-head={half}
       style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)' }}
@@ -1013,8 +1014,8 @@ function SlotRemove({ label, onRemove }: { label: string; onRemove: () => void }
  * `lines` is the drawn form and `label` the spoken one. The partner's two
  * lines are two names for one role, with the slash drawn so they read as
  * alternatives rather than a phrase; reading both out adds nothing, so its
- * label is the first. The ace's lines are one phrase broken in two, so the
- * label keeps it whole.
+ * label is the first. The ace's heading is one phrase on one line, which
+ * leaves the seam the room a second line would take.
  */
 interface Heading {
   readonly lines: readonly string[];
@@ -1057,9 +1058,11 @@ interface CaptionFit {
   partner: HalfFit;
   /** The seam between the two sprites as drawn, or null before the first read. */
   seam: SeamEnds | null;
+  /** What the headings allow the pane's face, or null before the first read. */
+  head: HeadFace | null;
 }
 const WHOLE: HalfFit = { scale: 1, tight: false, max: 0 };
-const UNFITTED: CaptionFit = { ace: WHOLE, partner: WHOLE, seam: null };
+const UNFITTED: CaptionFit = { ace: WHOLE, partner: WHOLE, seam: null, head: null };
 
 /** One half as drawn, in pane px. */
 interface HalfRead {
@@ -1071,6 +1074,8 @@ interface HalfRead {
   track: number;
   /** The caption size in px. */
   cap: number;
+  /** The heading's box, and each of its lines untracked. */
+  head: { box: Box; lines: Omit<HeadLine, 'room'>[]; cap: number };
 }
 
 function readPane(pane: HTMLElement): { w: number; h: number; ace: HalfRead; partner: HalfRead } {
@@ -1086,12 +1091,23 @@ function readPane(pane: HTMLElement): { w: number; h: number; ace: HalfRead; par
     const root = pane.querySelector<HTMLElement>(`[data-slot-half="${half}"]`)!;
     const nameEl = root.querySelector<HTMLElement>('[data-slot-name]');
     const probe = root.querySelector<HTMLElement>('[data-name-probe]');
+    const headEl = root.querySelector<HTMLElement>('[data-slot-head]')!;
+    const headStyle = getComputedStyle(headEl);
+    // `normal`, as the CJK locales set it, reads as no tracking.
+    const headTrack = parseFloat(headStyle.letterSpacing) || 0;
+    const range = document.createRange();
+    const headLines = [...headEl.children].map((line) => {
+      range.selectNodeContents(line);
+      const letters = [...(line.textContent ?? '')].length;
+      return { width: range.getBoundingClientRect().width / zoom - letters * headTrack, letters };
+    });
     return {
       art: rel(root.querySelector('[data-slot-art]')!.getBoundingClientRect()),
       name: nameEl ? rel(nameEl.getBoundingClientRect()) : null,
       natural: probe ? probe.getBoundingClientRect().width / zoom : 0,
       track: probe ? [...(probe.textContent ?? '')].length * (parseFloat(getComputedStyle(probe).letterSpacing) || 0) : 0,
       cap: probe ? parseFloat(getComputedStyle(probe).fontSize) : 0,
+      head: { box: rel(headEl.getBoundingClientRect()), lines: headLines, cap: parseFloat(headStyle.fontSize) },
     };
   };
   return { w: pane.offsetWidth, h: pane.offsetHeight, ace: read('ace'), partner: read('partner') };
@@ -1113,10 +1129,10 @@ function fitName(natural: number, track: number, room: number, cap: number, floo
 }
 
 /**
- * The next fit, from the pane as drawn. Each name has the room across the
- * pane that its caption can take: the ace's centred on the ace, and the
- * partner's from the pad to the partner. The seam does not limit either;
- * text may cross it.
+ * The next fit, from the pane as drawn. Each name and each heading has the
+ * room across the pane that its caption can take: the ace's centred on the
+ * ace, and the partner's from the pad to the partner. The seam does not
+ * limit either; text may cross it.
  */
 function solveFit(pane: HTMLElement, remPx: number): CaptionFit {
   const m = readPane(pane);
@@ -1127,10 +1143,16 @@ function solveFit(pane: HTMLElement, remPx: number): CaptionFit {
   // The ace's caption centres on the ace, so its room is twice the way to
   // the nearer side of the pane, less the pad.
   const aceCentre = a.art.x + a.art.w / 2;
+  const aceRoom = 2 * (Math.min(aceCentre, m.w - aceCentre) - pad);
+  const partnerRoom = p.head.box.x + p.head.box.w - pad;
   return {
-    ace: fitName(a.natural, a.track, 2 * (Math.min(aceCentre, m.w - aceCentre) - pad), a.cap, floor),
+    ace: fitName(a.natural, a.track, aceRoom, a.cap, floor),
     partner: p.name ? fitName(p.natural, p.track, p.name.x + p.name.w - pad, p.cap, floor) : WHOLE,
     seam: seamBetween(m.w, m.h, a.art, p.art, remPx),
+    head: fitHeadings([
+      ...a.head.lines.map((line) => ({ ...line, room: aceRoom })),
+      ...p.head.lines.map((line) => ({ ...line, room: partnerRoom })),
+    ], a.head.cap),
   };
 }
 
@@ -1138,6 +1160,8 @@ const sameHalf = (a: HalfFit, b: HalfFit) =>
   a.tight === b.tight && Math.abs(a.scale - b.scale) < 0.004 && Math.abs(a.max - b.max) < 1;
 const sameSeam = (a: SeamEnds | null, b: SeamEnds | null) =>
   a === b || (!!a && !!b && (['x1', 'y1', 'x2', 'y2'] as const).every((k) => Math.abs(a[k] - b[k]) < 1e-3));
+const sameHead = (a: HeadFace | null, b: HeadFace | null) =>
+  a === b || (!!a && !!b && (a.size === b.size || Math.abs(a.size - b.size) < 0.01) && Math.abs(a.track - b.track) < 0.01);
 
 /** The captions' fit and the seam, read from the pane as drawn. */
 function useCaptionFit(ref: React.RefObject<HTMLDivElement | null>): CaptionFit {
@@ -1160,15 +1184,14 @@ function useCaptionFit(ref: React.RefObject<HTMLDivElement | null>): CaptionFit 
     const el = ref.current;
     if (!el) return;
     const next = solveFit(el, getAppliedRootFontSizePx());
-    const same = sameHalf(next.ace, fit.ace) && sameHalf(next.partner, fit.partner) && sameSeam(next.seam, fit.seam);
+    const same = sameHalf(next.ace, fit.ace) && sameHalf(next.partner, fit.partner) && sameSeam(next.seam, fit.seam)
+      && sameHead(next.head, fit.head);
     if (!same) setFit(next);
   }, [ref, fit, tick]);
   return fit;
 }
 
-const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
-const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
-// The card's label face, at the caption size the pane sets (`PANE_FACE`).
+// The card's label face, at the caption size the pane sets (`paneFace`).
 const HEAD_CLASS = 'text-[length:var(--cap-size)] font-extrabold tracking-[var(--cap-track)] leading-[1.4]';
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
@@ -1180,14 +1203,11 @@ const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[
 const CAPTION_NAME_CLASS = 'text-[length:var(--cap-size)] font-extrabold tracking-[0.02em] leading-[1.4] uppercase';
 
 /**
- * A heading, one line per run. Each line is nowrap so PARTNER / and
- * SHOULDERMON stay two words. `inline` sets the runs on one line instead,
- * which is how the ace's caption reads under the ace: ACE POKÉMON is one
- * phrase, and one line leaves the seam the room a second would take.
+ * A heading, one line per run. Each line is nowrap, so PARTNER / and
+ * SHOULDERMON stay two lines of whole words.
  */
-function HeadRuns({ lines, inline = false, className, style, ...rest }: {
+function HeadRuns({ lines, className, style, ...rest }: {
   lines: readonly string[];
-  inline?: boolean;
   className?: string;
   style?: React.CSSProperties;
   'data-slot-head'?: string;
@@ -1195,17 +1215,12 @@ function HeadRuns({ lines, inline = false, className, style, ...rest }: {
   return (
     <span
       {...rest}
-      className={cn('inline-block w-max shrink-0 text-center', inline && 'whitespace-nowrap', className)}
+      className={cn('inline-block w-max shrink-0 text-center', className)}
       style={style}
     >
-      {lines.map((line, i) => (inline ? (
-        <Fragment key={line}>
-          {i > 0 && ' '}
-          <span className="inline shrink-0 whitespace-nowrap">{line}</span>
-        </Fragment>
-      ) : (
-        <span key={line} className="block shrink-0 whitespace-nowrap">{line}</span>
-      )))}
+      {lines.map((line, i) => (
+        <span key={i} className="block shrink-0 whitespace-nowrap">{line}</span>
+      ))}
     </span>
   );
 }
@@ -1238,6 +1253,9 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
   const setPartner = useLeagueStore((s) => s.setPartner);
   useNamesVersion();
+  useLocale();
+  const aceHead: Heading = { lines: [headingInline('ace')], label: 'ACE POKÉMON' };
+  const partnerHead: Heading = { lines: headingLines('partner'), label: 'PARTNER' };
   const { card } = view;
   const line = card.signatureSeat !== null ? card.lines[card.signatureSeat - 1] : undefined;
   const shown = signatureMember(line, card.signatureId ?? null);
@@ -1256,6 +1274,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
     top: squares.partner.cy - squares.partner.size / 2,
   };
   const fit = useCaptionFit(slotRef);
+  const face = paneFace(fit.head);
   const seam = fit.seam ?? { x1: 0, y1: 1, x2: 1, y2: 0 };
   const pos = {
     ...slotX(1, 3),
@@ -1273,8 +1292,8 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         ...pos,
         ['--slot-unit' as string]: `${unitPx}px`,
         containerType: 'inline-size',
-        ['--cap-size' as string]: PANE_FACE.size,
-        ['--cap-track' as string]: PANE_FACE.track,
+        ['--cap-size' as string]: face.size,
+        ['--cap-track' as string]: face.track,
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
@@ -1298,7 +1317,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       <SlotHalf
         testId="slot-ace"
         half="ace"
-        heading={ACE_HEAD}
+        heading={aceHead}
         fit={fit.ace}
         place={{ left: squares.ace.cx, top: squares.ace.cy - squares.ace.size / 2 }}
         pokemon={ace}
@@ -1308,7 +1327,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       <SlotHalf
         testId="slot-partner"
         half="partner"
-        heading={PARTNER_HEAD}
+        heading={partnerHead}
         fit={fit.partner}
         place={partnerPlace}
         pokemon={partner}

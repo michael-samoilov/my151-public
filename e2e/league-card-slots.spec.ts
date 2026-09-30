@@ -563,8 +563,8 @@ test.describe('an empty slot and a filled one', () => {
         ace: rel(pane, ace.querySelector('[data-slot-art]')!),
         partner: rel(pane, partner.querySelector('[data-slot-art]')!),
         colours: {
-          aceHead: hex(getComputedStyle(word(ace, 'ACE')).color),
-          partnerHead: hex(getComputedStyle(word(partner, 'PARTNER /')).color),
+          aceHead: hex(getComputedStyle(ace.querySelector('[data-slot-head] > span')!).color),
+          partnerHead: hex(getComputedStyle(partner.querySelector('[data-slot-head] > span')!).color),
           tmWord: hex(getComputedStyle(word(tm, 'TM')).color),
           badgeWord: hex(getComputedStyle(word(badge, 'BADGE')).color),
         },
@@ -619,14 +619,12 @@ test.describe('an empty slot and a filled one', () => {
       };
       const pane = document.querySelector('[data-ace-partner-slot]')!;
       const ace = document.querySelector('[data-testid="slot-ace"]')!;
-      const word = (root: Element, text: string) =>
-        [...root.querySelectorAll('span')].find((el) => el.childElementCount === 0 && el.textContent === text)!;
       return {
         mode: pane.getAttribute('data-showcase'),
         seam: !!pane.querySelector(':scope > svg line'),
         partnerHead: !!document.querySelector('[data-slot-head="partner"]'),
         arts: pane.querySelectorAll('[data-slot-art] img').length,
-        aceHead: hex(getComputedStyle(word(ace, 'ACE')).color),
+        aceHead: hex(getComputedStyle(ace.querySelector('[data-slot-head] > span')!).color),
       };
     });
     expect(seeded.mode, 'seeded Brock keeps a split pane').toBe('split');

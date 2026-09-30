@@ -2,5 +2,8 @@
   "feedback.category.bug": "不具合",
   "feedback.category.idea": "提案",
   "feedback.category.other": "その他",
-  "feedback.category.translation": "誤訳"
+  "feedback.category.translation": "誤訳",
+  "league.head.ace": "エース\nポケモン",
+  "league.head.partner": "相棒／\n肩乗りポケモン",
+  "league.head.signature": "看板\nポケモン"
 }

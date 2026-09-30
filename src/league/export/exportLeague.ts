@@ -31,6 +31,8 @@ import { SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { cardShades, type CardShades } from '../theme';
 import { getMoveById, CATEGORY_COLORS, type Move } from '../moves';
 import { RING_OF_SPRITE } from '../slotLayout';
+import { fitHeadings } from '../showcaseLayout';
+import { headingInline, headingLines, headingTracks, type SlotHeading } from '../slotHeadings';
 import * as L from './layout';
 import {
   DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
@@ -304,24 +306,45 @@ function capHeight(ctx: CanvasRenderingContext2D): number {
 
 // ---------- the gym card ----------
 
-const ACE_HEAD = L.ACE_HEAD;
-const PARTNER_HEAD = L.PARTNER_HEAD;
+/** The headings' size and tracking, in export px. */
+interface HeadFace {
+  px: number;
+  track: number;
+}
 
-/** A two-line heading, centred on `cx`, its first line's top at `top`. */
+/**
+ * The face every heading line fits its room at, as the live pane fits it
+ * (`fitHeadings`): the card's size and tracking where there is room, the
+ * tracking taken in where a line runs close, and a smaller size where a
+ * line is too wide even untracked. Japanese, Korean and Chinese stay
+ * untracked, as the app sets them.
+ */
+function headFace(ctx: CanvasRenderingContext2D, lines: { text: string; room: number }[]): HeadFace {
+  ctx.font = font(L.HEAD_PX, 800);
+  const fit = fitHeadings(
+    lines.map(({ text, room }) => ({ width: ctx.measureText(text).width, letters: [...text].length, room })),
+    L.HEAD_PX,
+  );
+  const px = Math.max(L.CAPTION_NAME_MIN_PX, Math.min(L.HEAD_PX, fit.size));
+  return { px, track: headingTracks() && px === L.HEAD_PX ? fit.track : 0 };
+}
+
+/** A heading's lines, centred on `cx`, the first line's top at `top`. */
 function drawHeading(
   ctx: CanvasRenderingContext2D,
   lines: string[],
   cx: number,
   top: number,
   colour: string,
+  face: HeadFace,
 ): void {
   ctx.save();
-  ctx.font = font(L.HEAD_PX, 800);
+  ctx.font = font(face.px, 800);
   ctx.fillStyle = colour;
   ctx.textBaseline = 'middle';
   ctx.translate(cx, top);
   lines.forEach((line, i) => {
-    fillTrackedCentered(ctx, line, 0, (i + 0.5) * L.HEAD_LINE, L.HEAD_TRACK);
+    fillTrackedCentered(ctx, line, 0, (i + 0.5) * L.HEAD_LINE, face.track);
   });
   ctx.restore();
 }
@@ -376,8 +399,8 @@ interface CaptionLine extends CaptionRun {
   halo: L.Box;
 }
 
-function headRun(text: string, colour: string): CaptionRun {
-  return { text, px: L.HEAD_PX, track: L.HEAD_TRACK, colour };
+function headRun(text: string, colour: string, face: HeadFace): CaptionRun {
+  return { text, px: face.px, track: face.track, colour };
 }
 
 /**
@@ -513,14 +536,16 @@ function drawShowcase(
     const id = ace ?? partner;
     if (id !== null) {
       const sprite = L.soloExportSprite(box.width, box.height);
-      const headH = 2 * L.HEAD_LINE;
+      const heading: SlotHeading = ace === partner ? 'signature' : ace !== null ? 'ace' : 'partner';
+      const lines = headingLines(heading);
+      const headH = lines.length * L.HEAD_LINE;
       const clusterH = headH + sprite + L.NAME_LINE;
       const top = y + (box.height - clusterH) / 2;
       const cx = x + box.width / 2;
       const spriteCy = top + headH + sprite / 2;
       drawShowcaseArt(ctx, id, images, cx, spriteCy, sprite, 'both');
-      const heading = ace === partner ? L.SIGNATURE_HEAD : ace !== null ? ACE_HEAD : PARTNER_HEAD;
-      drawHeading(ctx, heading, cx, top, shades.band);
+      const face = headFace(ctx, lines.map((text) => ({ text, room: box.width - 2 * L.SHOWCASE_PAD })));
+      drawHeading(ctx, lines, cx, top, shades.band, face);
       ctx.save();
       ctx.font = font(L.NAME_PX, 800);
       ctx.fillStyle = FG;
@@ -539,18 +564,27 @@ function drawShowcase(
   const squares = L.showcaseSquares(ox, oy);
   const headColour = (id: number | null) => (id !== null ? shades.band : shades.hint);
   const aceSq = squares.ace;
+  const partnerSq = squares.partner;
+  const partnerRight = partnerSq.x - L.CAPTION_GAP_X;
+  const partnerRoom = partnerRight - x - L.CAPTION_GAP_X;
+  // Each heading has the room its name has: the ace's square under it, and
+  // the pane beside the partner.
+  const aceHead = headingInline('ace');
+  const partnerHead = headingLines('partner');
+  const face = headFace(ctx, [
+    { text: aceHead, room: aceSq.w },
+    ...partnerHead.map((text) => ({ text, room: partnerRoom })),
+  ]);
   const aceLines = layoutCaption(
     ctx,
-    [headRun(ACE_HEAD.join(' '), headColour(ace)), nameRun(ctx, ace, aceSq.w)],
+    [headRun(aceHead, headColour(ace), face), nameRun(ctx, ace, aceSq.w)],
     'center',
     aceSq.x + aceSq.w / 2,
     aceSq.y + aceSq.h + L.CAPTION_GAP_Y,
   );
-  const partnerSq = squares.partner;
-  const partnerRight = partnerSq.x - L.CAPTION_GAP_X;
   const partnerRuns = [
-    ...PARTNER_HEAD.map((line) => headRun(line, headColour(partner))),
-    nameRun(ctx, partner, partnerRight - x - L.CAPTION_GAP_X),
+    ...partnerHead.map((line) => headRun(line, headColour(partner), face)),
+    nameRun(ctx, partner, partnerRoom),
   ];
   const partnerLines = layoutCaption(
     ctx,

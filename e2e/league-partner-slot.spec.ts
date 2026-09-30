@@ -1,5 +1,32 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
+import { en } from '../src/i18n/catalogs/en';
 import { blankLeague, fiveLineCardLeague, pairLeague } from './support/leagueSeed';
+
+/**
+ * Each shipped locale with its two widest species names in the caption face,
+ * as the ace and the partner. German Gumshoos and Oranguru, MANGUSPEKTOR and
+ * KOMMANDUTAN, are the widest in any locale.
+ */
+const WIDEST = [
+  { lang: 'en', ace: 947, partner: 908 },
+  { lang: 'de', ace: 735, partner: 765 },
+  { lang: 'fr', ace: 819, partner: 740 },
+  { lang: 'es', ace: 947, partner: 908 },
+  { lang: 'it', ace: 947, partner: 1005 },
+  { lang: 'ja', ace: 678, partner: 721 },
+  { lang: 'ko', ace: 695, partner: 937 },
+  { lang: 'zh-Hans', ace: 82, partner: 139 },
+  { lang: 'zh-Hant', ace: 82, partner: 139 },
+] as const;
+
+const readJson = (path: string) => JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+
+/** A heading as its locale's catalog words it, for comparing with what is drawn. */
+function catalogHeading(lang: string, key: 'league.head.ace' | 'league.head.partner'): string {
+  const text = lang === 'en' ? en[key] : readJson(`src/i18n/catalogs/ui/${lang}.json`)[key] as string;
+  return text.replace(/\s+/g, '').toLocaleUpperCase(lang);
+}
 
 /**
  * The ace and the partner share the card's top-left slot, split by a diagonal.
@@ -335,107 +362,116 @@ test.describe('the ace and partner slot', () => {
     });
   }
 
-  test('the widest names keep off the seam, the sprites and each other', { tag: '@viewport' }, async ({ page }, testInfo) => {
-    // German Gumshoos and Oranguru, MANGUSPEKTOR and KOMMANDUTAN, are the
-    // widest ace and partner names the app ships in any locale, measured in
-    // the caption face.
-    await pairLeague(page, 735, 765);
-    await page.goto('/custom-gym-leader?lang=de');
-    await page.waitForSelector('[data-testid="league-slot-0"]');
-    await page.click('[data-testid="league-slot-0"]');
-    await expect(page.locator('[data-slot-name="partner"]')).toHaveText('Kommandutan');
-    await page.evaluate(() => document.fonts.ready);
-    // The fit settles over a few frames once the names land.
-    await page.waitForTimeout(800);
+  for (const { lang, ace: aceId, partner: partnerId } of WIDEST) {
+    test(`the widest names and the headings keep off the seam, the sprites and each other: ${lang}`, { tag: '@viewport' }, async ({ page }, testInfo) => {
+      const species = readJson(`src/i18n/names/${lang}.json`).species as string[];
+      await pairLeague(page, aceId, partnerId);
+      await page.goto(`/custom-gym-leader?lang=${lang}`);
+      await page.waitForSelector('[data-testid="league-slot-0"]');
+      await page.click('[data-testid="league-slot-0"]');
+      await expect(page.locator('[data-slot-name="partner"]')).toHaveText(species[partnerId - 1]);
+      await page.evaluate(() => document.fonts.ready);
+      // The fit settles over a few frames once the names land.
+      await page.waitForTimeout(800);
 
-    const got = await page.evaluate(() => {
-      const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
-      const p = pane.getBoundingClientRect();
-      const zoom = p.width / pane.offsetWidth;
-      const W = pane.offsetWidth;
-      const H = pane.offsetHeight;
-      type Box = { x: number; y: number; w: number; h: number };
-      const rel = (r: DOMRect): Box => ({
-        x: (r.left - p.left) / zoom, y: (r.top - p.top) / zoom, w: r.width / zoom, h: r.height / zoom,
-      });
-      const line = pane.querySelector('svg line')!;
-      const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2']
-        .map((k, i) => (Number(line.getAttribute(k)) / 100) * (i % 2 ? H : W));
-      const seamY = (x: number) => y1 + ((y2 - y1) * (x - x1)) / (x2 - x1);
-      // Each line of text as drawn, clipped where its element clips it.
-      const lines = (el: Element): Box[] => {
-        const cs = getComputedStyle(el);
-        const clip = cs.overflowX === 'hidden' ? el.getBoundingClientRect() : null;
-        const out: Box[] = [];
-        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-        const range = document.createRange();
-        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-          if (!(n.textContent ?? '').trim()) continue;
-          range.selectNodeContents(n);
-          for (const r of range.getClientRects()) {
-            const left = clip ? Math.max(r.left, clip.left) : r.left;
-            const right = clip ? Math.min(r.right, clip.right) : r.right;
-            if (right - left > 0.5) out.push(rel(new DOMRect(left, r.top, right - left, r.height)));
+      const got = await page.evaluate(() => {
+        const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
+        const p = pane.getBoundingClientRect();
+        const zoom = p.width / pane.offsetWidth;
+        const W = pane.offsetWidth;
+        const H = pane.offsetHeight;
+        type Box = { x: number; y: number; w: number; h: number };
+        const rel = (r: DOMRect): Box => ({
+          x: (r.left - p.left) / zoom, y: (r.top - p.top) / zoom, w: r.width / zoom, h: r.height / zoom,
+        });
+        const line = pane.querySelector('svg line')!;
+        const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2']
+          .map((k, i) => (Number(line.getAttribute(k)) / 100) * (i % 2 ? H : W));
+        const seamY = (x: number) => y1 + ((y2 - y1) * (x - x1)) / (x2 - x1);
+        // Each line of text as drawn, clipped where its element clips it.
+        const lines = (el: Element): Box[] => {
+          const cs = getComputedStyle(el);
+          const clip = cs.overflowX === 'hidden' ? el.getBoundingClientRect() : null;
+          const out: Box[] = [];
+          const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+          const range = document.createRange();
+          for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+            if (!(n.textContent ?? '').trim()) continue;
+            range.selectNodeContents(n);
+            for (const r of range.getClientRects()) {
+              const left = clip ? Math.max(r.left, clip.left) : r.left;
+              const right = clip ? Math.min(r.right, clip.right) : r.right;
+              if (right - left > 0.5) out.push(rel(new DOMRect(left, r.top, right - left, r.height)));
+            }
+          }
+          return out;
+        };
+        const half = (h: string) => {
+          const root = pane.querySelector(`[data-slot-half="${h}"]`)!;
+          const name = root.querySelector<HTMLElement>('[data-slot-name]')!;
+          return {
+            art: rel(root.querySelector('[data-slot-art]')!.getBoundingClientRect()),
+            runs: [...lines(root.querySelector('[data-slot-head]')!), ...lines(name)],
+            namePx: parseFloat(getComputedStyle(name).fontSize),
+            // The text's drawn width against its box: an ellipsis can cut two
+            // letters for an overflow under the pixel that scrollWidth rounds.
+            clipped: (() => {
+              const range = document.createRange();
+              range.selectNodeContents(name);
+              return range.getBoundingClientRect().width > name.getBoundingClientRect().width + 0.25;
+            })(),
+          };
+        };
+        const ace = half('ace');
+        const partner = half('partner');
+        const hit = (a: Box, b: Box) =>
+          a.x < b.x + b.w - 0.25 && a.x + a.w > b.x + 0.25 && a.y < b.y + b.h - 0.25 && a.y + a.h > b.y + 0.25;
+        const faults: string[] = [];
+        let crossings = 0;
+        for (const [side, mine, other] of [['ace', ace, partner], ['partner', partner, ace]] as const) {
+          for (const r of mine.runs) {
+            const at = `${side} line at ${r.x.toFixed(1)},${r.y.toFixed(1)}`;
+            if (r.x < -0.5 || r.y < -0.5 || r.x + r.w > W + 0.5 || r.y + r.h > H + 0.5) faults.push(`${at} leaves the pane`);
+            if (hit(r, ace.art) || hit(r, partner.art)) faults.push(`${at} is on a sprite`);
+            if (other.runs.some((o) => hit(r, o))) faults.push(`${at} is on the other caption`);
+            // Text may cross the seam, which fades next to the letters; only
+            // count how often it does.
+            const gap = Math.min(...[r.x, r.x + r.w].flatMap((x) => [r.y, r.y + r.h].map((y) => (
+              side === 'ace' ? seamY(x) - y : y - seamY(x)))));
+            if (gap < 0) crossings += 1;
           }
         }
-        return out;
-      };
-      const half = (h: string) => {
-        const root = pane.querySelector(`[data-slot-half="${h}"]`)!;
-        const name = root.querySelector<HTMLElement>('[data-slot-name]')!;
+        const drawn = (h: string) => [...pane.querySelectorAll(`[data-slot-half="${h}"] [data-slot-head] > span`)]
+          .map((el) => el.textContent ?? '');
         return {
-          art: rel(root.querySelector('[data-slot-art]')!.getBoundingClientRect()),
-          runs: [...lines(root.querySelector('[data-slot-head]')!), ...lines(name)],
-          namePx: parseFloat(getComputedStyle(name).fontSize),
-          // The text's drawn width against its box: an ellipsis can cut two
-          // letters for an overflow under the pixel that scrollWidth rounds.
-          clipped: (() => {
-            const range = document.createRange();
-            range.selectNodeContents(name);
-            return range.getBoundingClientRect().width > name.getBoundingClientRect().width + 0.25;
-          })(),
+          heads: { ace: drawn('ace'), partner: drawn('partner') },
+          pane: { W, H, zoom }, seam: [x1, y1, x2, y2], faults, crossings,
+          rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+          ace: { namePx: ace.namePx, clipped: ace.clipped },
+          partner: { namePx: partner.namePx, clipped: partner.clipped },
         };
-      };
-      const ace = half('ace');
-      const partner = half('partner');
-      const hit = (a: Box, b: Box) =>
-        a.x < b.x + b.w - 0.25 && a.x + a.w > b.x + 0.25 && a.y < b.y + b.h - 0.25 && a.y + a.h > b.y + 0.25;
-      const faults: string[] = [];
-      let crossings = 0;
-      for (const [side, mine, other] of [['ace', ace, partner], ['partner', partner, ace]] as const) {
-        for (const r of mine.runs) {
-          const at = `${side} line at ${r.x.toFixed(1)},${r.y.toFixed(1)}`;
-          if (r.x < -0.5 || r.y < -0.5 || r.x + r.w > W + 0.5 || r.y + r.h > H + 0.5) faults.push(`${at} leaves the pane`);
-          if (hit(r, ace.art) || hit(r, partner.art)) faults.push(`${at} is on a sprite`);
-          if (other.runs.some((o) => hit(r, o))) faults.push(`${at} is on the other caption`);
-          // Text may cross the seam, which fades next to the letters; only
-          // count how often it does.
-          const gap = Math.min(...[r.x, r.x + r.w].flatMap((x) => [r.y, r.y + r.h].map((y) => (
-            side === 'ace' ? seamY(x) - y : y - seamY(x)))));
-          if (gap < 0) crossings += 1;
-        }
+      });
+      await testInfo.attach('widest-names.json', { body: JSON.stringify(got, null, 2), contentType: 'application/json' });
+      // The ace's heading is one line and the partner's two, each worded as
+      // the locale's catalog words it.
+      expect(got.heads.ace).toHaveLength(1);
+      expect(got.heads.partner).toHaveLength(2);
+      expect(got.heads.ace.join('').replace(/\s+/g, '')).toBe(catalogHeading(lang, 'league.head.ace'));
+      expect(got.heads.partner.join('').replace(/\s+/g, '')).toBe(catalogHeading(lang, 'league.head.partner'));
+      expect(got.faults, 'every caption line clears the pane edge, the sprites and the other caption').toEqual([]);
+      // A long name shrinks, but never under the 0.4rem floor the TM and badge
+      // labels hold.
+      expect(got.ace.namePx).toBeGreaterThanOrEqual(0.4 * got.rem - 0.01);
+      expect(got.partner.namePx).toBeGreaterThanOrEqual(0.4 * got.rem - 0.01);
+      expect(got.ace.clipped, 'the ace name is whole').toBe(false);
+      // The last resort is an ellipsis, and only the narrowest pane, a 320px
+      // phone that lays the card out at full height, needs it: there the
+      // partner has 3.2rem beside it and KOMMANDUTAN is 3.5rem at the floor.
+      if (testInfo.project.name !== 'narrow') {
+        expect(got.partner.clipped, 'the partner name is whole').toBe(false);
       }
-      return {
-        pane: { W, H, zoom }, seam: [x1, y1, x2, y2], faults, crossings,
-        rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
-        ace: { namePx: ace.namePx, clipped: ace.clipped },
-        partner: { namePx: partner.namePx, clipped: partner.clipped },
-      };
     });
-    await testInfo.attach('widest-names.json', { body: JSON.stringify(got, null, 2), contentType: 'application/json' });
-    expect(got.faults, 'every caption line clears the pane edge, the sprites and the other caption').toEqual([]);
-    // A long name shrinks, but never under the 0.4rem floor the TM and badge
-    // labels hold.
-    expect(got.ace.namePx).toBeGreaterThanOrEqual(0.4 * got.rem - 0.01);
-    expect(got.partner.namePx).toBeGreaterThanOrEqual(0.4 * got.rem - 0.01);
-    expect(got.ace.clipped, 'the ace name is whole').toBe(false);
-    // The last resort is an ellipsis, and only the narrowest pane, a 320px
-    // phone that lays the card out at full height, needs it: there the
-    // partner has 3.2rem beside it and KOMMANDUTAN is 3.5rem at the floor.
-    if (testInfo.project.name !== 'narrow') {
-      expect(got.partner.clipped, 'the partner name is whole').toBe(false);
-    }
-  });
+  }
 
   test('a lone ace keeps the empty partner half and the diagonal', { tag: '@viewport' }, async ({ page }) => {
     await pairLeague(page, 334, null);

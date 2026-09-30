@@ -156,12 +156,6 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
  */
 export const FRAME = EXPORT_FRAME_PX;
 
-/** Showcase headings. Same two-line caps the live card paints. */
-export const ACE_HEAD = ['ACE', 'POKÉMON'];
-export const PARTNER_HEAD = ['PARTNER /', 'SHOULDERMON'];
-/** One Pokémon chosen as both the ace and the partner. */
-export const SIGNATURE_HEAD = ['SIGNATURE', 'POKÉMON'];
-
 /** Badge phrase in the same caps as ACE POKÉMON. */
 export function badgeExportPhrase(name: string): string {
   return localeUppercase(`${name} Badge`);
@@ -443,6 +437,8 @@ export function showcaseSquares(ox: number, oy: number): { ace: Box; partner: Bo
 export const CAPTION_GAP_Y = 0.0625 * 16 * K;
 /** Between the partner and its caption to its left: the in-app design's 0.1875rem. */
 export const CAPTION_GAP_X = 0.1875 * 16 * K;
+/** Between a caption and the pane's edge: the in-app design's 0.25rem. */
+export const SHOWCASE_PAD = 0.25 * 16 * K;
 /**
  * The smallest a caption name shrinks to before it takes an ellipsis: the
  * TM and BADGE labels' size, the smallest type the card paints. The in-app

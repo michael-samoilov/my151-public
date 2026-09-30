@@ -2,5 +2,8 @@
   "feedback.category.bug": "Error",
   "feedback.category.idea": "Idea",
   "feedback.category.other": "Otro",
-  "feedback.category.translation": "Traducción"
+  "feedback.category.translation": "Traducción",
+  "league.head.ace": "Pokémon\nestrella",
+  "league.head.partner": "Compañero /\nEn el hombro",
+  "league.head.signature": "Pokémon\ninsignia"
 }

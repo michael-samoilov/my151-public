@@ -2,5 +2,8 @@
   "feedback.category.bug": "버그",
   "feedback.category.idea": "제안",
   "feedback.category.other": "기타",
-  "feedback.category.translation": "번역"
+  "feedback.category.translation": "번역",
+  "league.head.ace": "에이스\n포켓몬",
+  "league.head.partner": "파트너 /\n어깨 위 포켓몬",
+  "league.head.signature": "간판\n포켓몬"
 }

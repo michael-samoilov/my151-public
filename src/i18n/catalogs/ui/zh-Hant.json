@@ -2,5 +2,8 @@
   "feedback.category.bug": "程式錯誤",
   "feedback.category.idea": "建議",
   "feedback.category.other": "其他",
-  "feedback.category.translation": "翻譯"
+  "feedback.category.translation": "翻譯",
+  "league.head.ace": "王牌\n寶可夢",
+  "league.head.partner": "搭檔／\n肩上寶可夢",
+  "league.head.signature": "招牌\n寶可夢"
 }
