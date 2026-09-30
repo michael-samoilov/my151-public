@@ -54,21 +54,23 @@ describe('export layout', () => {
     expect(2 * L.HEAD_LINE + L.NAME_LINE + sprite + 2 * pad).toBeLessThanOrEqual(box.height);
   });
 
-  it('splits only the gym-leader band, with equal gaps and equal team pills', () => {
-    const geom = L.homeExportGeometry(true, true);
-    const gym = L.homeSectionPills(0, geom, 'GYM LEADERS', true);
+  it('splits every band at the same x in both-teams mode, with equal gaps and pills', () => {
+    // At the narrowest details column, the title pill is as wide as a team pill.
+    const geom = L.homeExportGeometry(true, true, 0);
+    const gym = L.homeSectionPills(0, geom, 'GYM LEADERS', true, true);
     expect(gym).toHaveLength(3);
     const gap12 = gym[1].x - (gym[0].x + gym[0].w);
     const gap23 = gym[2].x - (gym[1].x + gym[1].w);
     expect(gap12).toBeCloseTo(L.HOME_SIDE_GAP, 6);
     expect(gap23).toBeCloseTo(L.HOME_SIDE_GAP, 6);
-    expect(gym[1].w).toBeCloseTo(gym[2].w, 6);
+    expect(gym[0].w).toBeCloseTo(geom.blockWidth, 6);
     expect(gym[1].w).toBeCloseTo(geom.blockWidth, 6);
+    expect(gym[2].w).toBeCloseTo(geom.blockWidth, 6);
 
     for (const title of ['ELITE FOUR', 'CHAMPION', 'ENDGAME BOSS']) {
-      const pills = L.homeSectionPills(0, geom, title, false);
-      expect(pills).toHaveLength(1);
-      expect(pills[0].w).toBeGreaterThan(geom.blockWidth * 2);
+      const pills = L.homeSectionPills(0, geom, title, true, false);
+      expect(pills.map((p) => [p.x, p.w])).toEqual(gym.map((p) => [p.x, p.w]));
+      expect(pills.map((p) => p.label)).toEqual([title, null, null]);
     }
   });
 
