@@ -37,7 +37,7 @@ function samePlacement(a: Placement | null, b: Placement): boolean {
 /**
  * The desktop selector pane. FavoritesGrid renders it inside the grid, so it
  * scrolls with the grid and the sticky headers paint over it. Its position is
- * CSS in `--cell` and `--head`, so a zoom moves it with its cell in the same
+ * CSS in `--cell`, `--head`, and `--head-row`, so a zoom moves it with its cell in the same
  * frame. Only the first placement, a pane resize, and a frame resize measure.
  *
  * The pane is as wide as its content, and at least `minWidth`, so a narrow
@@ -96,10 +96,13 @@ export function DesktopPane({
 }
 
 /** Track sizes in CSS px, read from the grid scroller's custom properties. */
-function tracks(scroller: HTMLElement): { cell: number; head: number } {
+function tracks(scroller: HTMLElement): { cell: number; head: number; headRow: number } {
+  const head = parseFloat(scroller.style.getPropertyValue('--head'));
   return {
     cell: parseFloat(scroller.style.getPropertyValue('--cell')),
-    head: parseFloat(scroller.style.getPropertyValue('--head')),
+    head,
+    // The header row can be taller than the generation column is wide.
+    headRow: parseFloat(scroller.style.getPropertyValue('--head-row')) || head,
   };
 }
 
@@ -108,7 +111,7 @@ function tracks(scroller: HTMLElement): { cell: number; head: number } {
  * past the sticky headers, and inside the visual viewport.
  */
 function visibleBody(grid: HTMLElement, scroller: HTMLElement): Box | null {
-  const { cell, head } = tracks(scroller);
+  const { cell, head, headRow } = tracks(scroller);
   if (!(cell > 0) || !(head > 0)) return null;
   const origin = grid.getBoundingClientRect();
   const frame = scroller.getBoundingClientRect();
@@ -119,9 +122,9 @@ function visibleBody(grid: HTMLElement, scroller: HTMLElement): Box | null {
   const screenTop = (visual?.offsetTop ?? 0) - origin.top;
   const box = {
     left: Math.max(head, portLeft + head, screenLeft),
-    top: Math.max(head, portTop + head, screenTop),
+    top: Math.max(headRow, portTop + headRow, screenTop),
     right: Math.min(head + cell * BODY_COLS, portLeft + scroller.clientWidth, screenLeft + (visual?.width ?? window.innerWidth)),
-    bottom: Math.min(head + cell * BODY_ROWS, portTop + scroller.clientHeight, screenTop + (visual?.height ?? window.innerHeight)),
+    bottom: Math.min(headRow + cell * BODY_ROWS, portTop + scroller.clientHeight, screenTop + (visual?.height ?? window.innerHeight)),
   };
   return box.right > box.left && box.bottom > box.top ? box : null;
 }
@@ -142,14 +145,14 @@ function placePane(
 ): Placement | null {
   let view = visibleBody(grid, scroller);
   if (!view) return null;
-  const { cell, head } = tracks(scroller);
+  const { cell, head, headRow } = tracks(scroller);
   const maxWidth = view.right - view.left;
   const width = Math.min(pane.offsetWidth, maxWidth);
   // scrollHeight excludes the outer border and rounds to an integer, so
   // reserve a few pixels before clamping against the visible body.
   const maxHeight = Math.max(0, view.bottom - view.top - 4);
   const height = Math.min(pane.scrollHeight + 4, maxHeight);
-  const box = { left: head + cell * col, top: head + cell * row, right: head + cell * (col + 1), bottom: head + cell * (row + 1) };
+  const box = { left: head + cell * col, top: headRow + cell * row, right: head + cell * (col + 1), bottom: headRow + cell * (row + 1) };
   const fitsBeside = (room: Box) => box.bottom + GAP + height <= room.bottom
     || box.top - height - GAP >= room.top
     || box.right + GAP + width <= room.right
@@ -186,6 +189,7 @@ function placePane(
  */
 function paneStyle(col: number, row: number, p: Placement, minWidth: number): CSSProperties {
   const line = (n: number) => `var(--head) + var(--cell) * ${n}`;
+  const lineY = (n: number) => `var(--head-row, var(--head)) + var(--cell) * ${n}`;
   const px = (n: number) => (n < 0 ? `- ${-n}px` : `+ ${n}px`);
   const x = p.side === 'right' ? `${line(col + 1)} ${px(GAP + p.dx)}`
     : p.side === 'left' ? `${line(col)} ${px(p.dx - GAP - p.width)}`
@@ -200,8 +204,8 @@ function paneStyle(col: number, row: number, p: Placement, minWidth: number): CS
     // Anchor the bottom edge, so the pane grows upward from its cell.
     style.bottom = `clamp(0px, var(--cell) * ${BODY_ROWS - row} ${px(GAP - p.dy)}, var(--cell) * ${BODY_ROWS} - ${p.height}px)`;
   } else {
-    const y = p.side === 'below' ? `${line(row + 1)} ${px(GAP + p.dy)}` : `${line(row)} ${px(p.dy)}`;
-    style.top = `clamp(var(--head), ${y}, ${line(BODY_ROWS)} - ${p.height}px)`;
+    const y = p.side === 'below' ? `${lineY(row + 1)} ${px(GAP + p.dy)}` : `${lineY(row)} ${px(p.dy)}`;
+    style.top = `clamp(var(--head-row, var(--head)), ${y}, ${lineY(BODY_ROWS)} - ${p.height}px)`;
   }
   return style;
 }

@@ -166,7 +166,7 @@ export function PickerSheet({
       data-testid="favorites-type-toggle"
       aria-pressed={showTypes}
       onClick={onToggleTypes}
-      className={`inline-flex min-h-8 shrink-0 cursor-pointer items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showTypes ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
+      className={`inline-flex h-7 shrink-0 cursor-pointer items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showTypes ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
     >
       {showTypes ? t('favorites.types.hide') : t('favorites.types.show')}
     </button>

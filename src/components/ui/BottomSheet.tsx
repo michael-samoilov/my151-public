@@ -443,26 +443,37 @@ export function BottomSheet({
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
       >
-        {/* Grab handle — drag down or tap to close. Min 44px touch target per
-            Apple HIG, which is why the padding tightens rather than collapses
-            when a keyboard is open: the header is still something to aim at,
-            just not something to spend 24px of a third of a screen on. */}
-        <button
-          type="button"
-          data-testid="bottom-sheet-header"
-          aria-label={headerLabel ?? closeLabel}
-          className={`w-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none ${
-            keyboardOpen ? 'py-1.5' : 'py-3'
-          }`}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onClick={handleTap}
-        >
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
-          <span className="w-full text-sm font-semibold">{title}</span>
-        </button>
-        {headerAccessory ? <div className="absolute right-2 top-6 z-10">{headerAccessory}</div> : null}
+        {/* The header and its accessory share a box, so the accessory can
+            be placed against the header alone. */}
+        <div className="relative shrink-0">
+          {/* Grab handle — drag down or tap to close. Min 44px touch target per
+              Apple HIG, which is why the padding tightens rather than collapses
+              when a keyboard is open: the header is still something to aim at,
+              just not something to spend 24px of a third of a screen on. */}
+          <button
+            type="button"
+            data-testid="bottom-sheet-header"
+            aria-label={headerLabel ?? closeLabel}
+            className={`w-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none ${
+              keyboardOpen ? 'py-1.5' : 'py-3'
+            }`}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onClick={handleTap}
+          >
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
+            <span className="w-full text-sm font-semibold">{title}</span>
+          </button>
+          {/* The accessory spans the title's line: below the padding and the
+              grab handle (h-1 plus mb-1), above the bottom padding. Centred in
+              that box, it lines up with the title whatever its height. */}
+          {headerAccessory ? (
+            <div className={`absolute right-2 z-10 flex items-center ${keyboardOpen ? 'top-3.5 bottom-1.5' : 'top-5 bottom-3'}`}>
+              {headerAccessory}
+            </div>
+          ) : null}
+        </div>
         <div className="border-b" />
         {/* Its own scroll container: a long form scrolls here, and
             `overscroll-contain` stops that scroll continuing into the app once

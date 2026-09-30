@@ -195,7 +195,7 @@ export const enUi = {
   'faq.summary': 'About this tool',
   'favorites.axis.favorite': 'Favorite',
   'favorites.axis.gimmick': 'Gimmick',
-  'favorites.axis.generation': 'Generation {gen}',
+  'favorites.axis.generation': 'Gen {gen}',
   'favorites.axis.legendary': 'Legendary',
   'favorites.axis.starter': 'Starter',
   'favorites.clear': 'Clear this cell',

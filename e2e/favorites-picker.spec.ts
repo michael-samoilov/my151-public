@@ -858,7 +858,7 @@ test.describe('favorite Pokémon picker', () => {
     const badges = header.getByTestId('favorites-picker-title').getByRole('img');
     await expect(badges).toHaveCount(2);
     await expect(badges.nth(0)).toHaveAttribute('aria-label', 'Fire');
-    await expect(badges.nth(1)).toHaveAttribute('aria-label', 'Generation I');
+    await expect(badges.nth(1)).toHaveAttribute('aria-label', 'Gen I');
     await header.click();
     await expect(page.getByTestId('favorites-picker')).toBeHidden();
   });
@@ -988,7 +988,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(opacity).toBe(1);
   });
 
-  test('overall legendary pointer badges stack all origins on one aligned right edge', { tag: '@viewport' }, async ({ page }, testInfo) => {
+  test('overall legendary pointer badges show all origins on one aligned top edge', { tag: '@viewport' }, async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.evaluate(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({
@@ -1002,23 +1002,19 @@ test.describe('favorite Pokémon picker', () => {
     });
     await page.reload();
     await page.getByTestId('favorites-cell-legendary-legendary').click();
-    const tile = page.getByTestId('favorites-pick-643');
-    const marks = tile.getByTestId('favorites-pointer-mark');
+    const marks = page.getByTestId('favorites-pick-643').getByTestId('favorites-pointer-mark');
     await expect(marks).toHaveCount(3);
     await expect(marks.nth(0)).toHaveAttribute('data-source', 'gen');
     await expect(marks.nth(1)).toHaveAttribute('data-source', 'type');
     await expect(marks.nth(2)).toHaveAttribute('data-source', 'type');
     const boxes = await marks.evaluateAll((items) => items.map((item) => {
-      const { top, bottom, right, height } = item.getBoundingClientRect();
-      return { top, bottom, right, height };
+      const { top, height } = item.getBoundingClientRect();
+      return { top, height };
     }));
-    const tileBox = (await tile.boundingBox())!;
-    expect(Math.max(...boxes.map((box) => box.right)) - Math.min(...boxes.map((box) => box.right))).toBeLessThan(1);
+    expect(Math.max(...boxes.map((box) => box.top)) - Math.min(...boxes.map((box) => box.top))).toBeLessThan(1);
     expect(Math.max(...boxes.map((box) => box.height)) - Math.min(...boxes.map((box) => box.height))).toBeLessThan(1);
-    for (let i = 1; i < boxes.length; i++) expect(boxes[i].top).toBeGreaterThanOrEqual(boxes[i - 1].bottom - 0.5);
-    for (const box of boxes) expect(box.right).toBeLessThanOrEqual(tileBox.x + tileBox.width + 0.5);
     expect(await marks.first().evaluate((el) => getComputedStyle(el.parentElement!).opacity)).toBe('0.85');
-    await expect(marks.first().locator('rect')).toHaveAttribute('stroke', '#d4d4d8');
+    expect(await marks.first().locator('img').evaluate((img) => decodeURIComponent((img as HTMLImageElement).src))).toContain('stroke="#d4d4d8" stroke-width="0.5"');
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('legendary-origins.png') });
   });
 

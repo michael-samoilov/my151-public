@@ -186,8 +186,22 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
     await testInfo.attach('max-zoom.json', { body: JSON.stringify({ point, before, after }), contentType: 'application/json' });
 
     expect(after.cellWidth).toBeGreaterThan(before.cellWidth * 2.4);
-    expect.soft(after.rowHeight, 'header row height').toBeLessThanOrEqual(before.rowHeight * 1.25 + 1);
+    // The header row stops at 1.25x, plus what its column badges grow past
+    // that: they keep their 5:1 shape at 90% of the column.
+    const cappedHead = before.rowHeight * 1.25;
+    expect.soft(after.rowHeight, 'header row height').toBeLessThanOrEqual(cappedHead + 0.18 * (after.cellWidth - cappedHead) + 1);
     expect.soft(after.columnWidth, 'generation column width').toBeLessThanOrEqual(before.columnWidth * 1.25 + 1);
+    // A column badge keeps its 5:1 shape and spans 90% of its column.
+    const badge = await page.evaluate(() => {
+      const scroller = document.querySelector('[data-testid="favorites-grid-scroll"]')!.getBoundingClientRect();
+      const shown = [...document.querySelectorAll('[data-testid^="favorites-header-badge-"]')]
+        .filter((el) => !el.closest('[data-row-banded]'))
+        .map((el) => el.getBoundingClientRect())
+        .find((r) => r.left >= scroller.left && r.right <= scroller.right)!;
+      return { width: shown.width, height: shown.height };
+    });
+    expect(badge.width / after.cellWidth, 'badge share of the column').toBeCloseTo(0.9, 2);
+    expect(badge.width / badge.height, 'badge aspect').toBeCloseTo(5, 1);
     // The same spot of the same body cell is still under the pinch point.
     expect(Math.abs(after.box.left + before.fx * after.box.width - point.x), 'pinch point x').toBeLessThan(3);
     expect(Math.abs(after.box.top + before.fy * after.box.height - point.y), 'pinch point y').toBeLessThan(3);

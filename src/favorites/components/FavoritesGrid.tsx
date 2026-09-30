@@ -25,16 +25,28 @@ import { WideBadge } from './WideBadge';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { NameTooltip } from './NameTooltip';
 
-// Preview only: `?badges=wide` stretches the column badges to the column at
-// any zoom, and `?genbadges=1` puts a badge under each generation disc.
+// Preview only: `?badges=wide` stretches each column badge's pill to the
+// column past the capped header, `?badges=capped` stops the badge at the
+// capped header's size, and `?genbadges=1` puts a badge under each
+// generation disc. The default keeps the badge's 5:1 shape at 90% of the
+// column, and the header row grows to hold it.
 const PREVIEW = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
-const WIDE_BADGES = PREVIEW.get('badges') === 'wide';
+const BADGE_ZOOM = PREVIEW.get('badges') === 'wide' ? 'wide' : PREVIEW.get('badges') === 'capped' ? 'capped' : 'scale';
 const GEN_ROW_BADGES = PREVIEW.get('genbadges') === '1';
 // A header mark over its badge: the mark keeps its size, and the badge takes
 // the room under it.
 const HEAD_ICON = 0.72;
 const HEAD_GAP = 0.03;
 const HEAD_BADGE = 0.18;
+
+/**
+ * Height of the header row. Past the header cap, a column badge that keeps
+ * its shape grows with the column, so the row grows by the badge's growth.
+ * The generation column keeps the capped width.
+ */
+function headRowPx(cell: number, head: number): number {
+  return BADGE_ZOOM === 'scale' ? head + HEAD_BADGE * (cell - head) : head;
+}
 
 const ROWS = GEN_AXIS.length + 1;
 const COLS = TYPE_AXIS.length + 1;
@@ -149,7 +161,7 @@ function ZoomFrame({
       <div
         ref={ref}
         className="isolate h-full w-full overflow-auto overscroll-contain bg-background"
-        style={{ touchAction: 'pan-x pan-y', scrollPaddingTop: 'var(--head)', scrollPaddingLeft: 'var(--head)' }}
+        style={{ touchAction: 'pan-x pan-y', scrollPaddingTop: 'var(--head-row, var(--head))', scrollPaddingLeft: 'var(--head)' }}
         data-testid="favorites-grid-scroll"
         data-zoom="1"
       >
@@ -157,8 +169,8 @@ function ZoomFrame({
           className="relative grid"
           style={{
             width: `calc(var(--head) + var(--cell) * ${COLS - 1})`,
-            height: `calc(var(--head) + var(--cell) * ${ROWS - 1})`,
-            gridTemplateRows: `var(--head) repeat(${ROWS - 1}, var(--cell))`,
+            height: `calc(var(--head-row, var(--head)) + var(--cell) * ${ROWS - 1})`,
+            gridTemplateRows: `var(--head-row, var(--head)) repeat(${ROWS - 1}, var(--cell))`,
             gridTemplateColumns: `var(--head) repeat(${COLS - 1}, var(--cell))`,
           }}
           data-testid="favorites-grid"
@@ -225,19 +237,25 @@ function useZoomFrame(
     let armed = false;
     let drag: { id: number; x: number; y: number; left: number; top: number } | null = null;
 
-    // Body cells scale with the zoom. Headers scale up to HEAD_MAX_ZOOM.
-    const tracks = () => ({ cell: base * zoom, head: base * Math.min(zoom, HEAD_MAX_ZOOM) });
+    // Body cells scale with the zoom. Headers scale up to HEAD_MAX_ZOOM, and
+    // the header row also holds the column badges' growth past it.
+    const tracks = () => {
+      const cell = base * zoom;
+      const head = base * Math.min(zoom, HEAD_MAX_ZOOM);
+      return { cell, head, headRow: headRowPx(cell, head) };
+    };
     const writeTracks = () => {
       zoomRef.current = zoom;
-      const { cell, head } = tracks();
+      const { cell, head, headRow } = tracks();
       el.style.setProperty('--cell', `${cell}px`);
       el.style.setProperty('--head', `${head}px`);
+      el.style.setProperty('--head-row', `${headRow}px`);
       el.dataset.zoom = String(Math.round(zoom * 1000) / 1000);
     };
     /** The body point under a frame-local point. */
     const bodyAt = (x: number, y: number): BodyPoint => {
-      const { cell, head } = tracks();
-      return { u: (el.scrollLeft + x - head) / cell, v: (el.scrollTop + y - head) / cell };
+      const { cell, head, headRow } = tracks();
+      return { u: (el.scrollLeft + x - head) / cell, v: (el.scrollTop + y - headRow) / cell };
     };
     const paint = (show: boolean) => {
       const map = mapRef.current;
@@ -252,11 +270,11 @@ function useZoomFrame(
       map.style.bottom = `${el.offsetHeight - el.clientHeight - el.clientTop + 8}px`;
       // The sticky headers cover the first track on each axis, so the
       // visible body starts at the scroll offset and is one header short.
-      const { cell, head } = tracks();
+      const { cell, head, headRow } = tracks();
       const sx = box.width / (TYPE_AXIS.length * cell);
       const sy = box.height / (GEN_AXIS.length * cell);
       const width = Math.min(box.width, Math.max(2, (el.clientWidth - head) * sx));
-      const height = Math.min(box.height, Math.max(2, (el.clientHeight - head) * sy));
+      const height = Math.min(box.height, Math.max(2, (el.clientHeight - headRow) * sy));
       view.style.left = `${minimapViewportX(el.scrollLeft, sx, box.width, width)}px`;
       view.style.top = `${Math.max(0, Math.min(box.height - height, el.scrollTop * sy))}px`;
       view.style.width = `${width}px`;
@@ -287,9 +305,9 @@ function useZoomFrame(
       const { u, v } = target.body ?? bodyAt(target.x, target.y);
       zoom = target.zoom;
       writeTracks();
-      const { cell, head } = tracks();
+      const { cell, head, headRow } = tracks();
       el.scrollLeft = u * cell + head - target.x;
-      el.scrollTop = v * cell + head - target.y;
+      el.scrollTop = v * cell + headRow - target.y;
       target = null;
       paint(true);
     };
@@ -598,7 +616,7 @@ function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenA
           </div>
           {pin ? (
             <div data-testid={badgeTestId} style={{ width: trackPart('--head', HEAD_BADGE * 5) }}>{badge}</div>
-          ) : WIDE_BADGES ? (
+          ) : BADGE_ZOOM === 'wide' ? (
             <div
               data-testid={badgeTestId}
               style={{ width: 'calc(var(--cell) * 0.9)', height: `min(calc(var(--cell) * ${HEAD_BADGE}), calc(var(--head) * ${HEAD_BADGE}))` }}
@@ -606,7 +624,12 @@ function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenA
               <WideBadge id={id as TypeAxisId} />
             </div>
           ) : (
-            <div data-testid={badgeTestId} style={{ width: `min(calc(var(--cell) * 0.9), calc(var(--head) * ${HEAD_BADGE * 5}))` }}>{badge}</div>
+            <div
+              data-testid={badgeTestId}
+              style={{ width: BADGE_ZOOM === 'scale' ? 'calc(var(--cell) * 0.9)' : `min(calc(var(--cell) * 0.9), calc(var(--head) * ${HEAD_BADGE * 5}))` }}
+            >
+              {badge}
+            </div>
           )}
         </div>
       )}
