@@ -2,16 +2,9 @@
  * Generates `src/i18n/names/<locale>.json` — species names, form descriptors
  * and search affixes for the nine shipped locales.
  *
- * Everything here is *sourced*, never translated. Where PokeAPI has no official
- * form descriptor for a regional form — it is missing for 26 of our 64 in
- * Korean, Chinese, Spanish and Italian, and for all 16 Hisuian forms — the
- * descriptor is composed from two official pieces: the region's published name
- * in that language, and a pattern learned from a form the language *does*
- * document. Japanese documents アローラのすがた, so the pattern is
- * "{region}のすがた", and Hisuian becomes ヒスイのすがた.
- *
- * That is a reconstruction, not an official string, and it is recorded as such:
- * every entry carries a provenance so the UI can flag anything unofficial.
+ * Missing PokeAPI descriptors come from pinned game text. Combinations of
+ * published strings, such as Alcremie's cream and sweet, retain composed
+ * provenance. An absent official descriptor never becomes a translated slug.
  *
  * Run: npm run i18n:names
  */
@@ -19,6 +12,7 @@ import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { LANGUAGE_IDS, ROMAJI_LANGUAGE_ID, ensureCsvs, readCsv } from './pokeapi';
 import type { IdMapEntry } from './propose-id-map';
 import { searchAffix } from './searchAffixes';
+import { ALTERNATE_PICKER_FORMS } from '../../src/favorites/model/alternateForms';
 
 const OUT_DIR = 'src/i18n/names';
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
@@ -85,6 +79,7 @@ interface NameCatalog {
 }
 
 function regionOf(appName: string): string | null {
+  if (appName.endsWith('-cap')) return null;
   for (const region of Object.keys(REGIONS)) if (appName.includes(`-${region}`)) return region;
   return null;
 }
@@ -96,6 +91,43 @@ async function main(): Promise<void> {
   const { entries } = JSON.parse(readFileSync('scripts/i18n/pokemon-id-map.json', 'utf8')) as {
     entries: IdMapEntry[];
   };
+  const formsBySlug = new Map(readCsv('pokemon_forms').map((row) => [row.identifier, row]));
+  const pokemonById = new Map(readCsv('pokemon').map((row) => [row.id, row]));
+  const originalIds = new Set(entries.map((entry) => entry.appId));
+  const addForm = (appId: number, appName: string, slug: string, speciesId: number) => {
+    const form = formsBySlug.get(slug);
+    if (form && Number(pokemonById.get(form.pokemon_id)?.species_id) !== speciesId) {
+      throw new Error(`${appName}: ${slug} belongs to a different species`);
+    }
+    entries.push({ appId, appName, speciesId, formId: Number(form?.id ?? 0), formIdentifier: slug });
+  };
+  for (const form of ALTERNATE_PICKER_FORMS) {
+    if (originalIds.has(form.id)) continue;
+    const speciesId = entries.find((entry) => entry.appId === form.ownerId)?.speciesId ?? form.ownerId;
+    addForm(form.id, form.name, form.name === 'vivillon-pokeball' ? 'vivillon-poke-ball' : form.name, speciesId);
+  }
+  const powerups = JSON.parse(readFileSync('src/league/data/powerupForms.json', 'utf8')) as
+    Record<string, Record<string, { id: number; label: string }[]>>;
+  for (const [species, kinds] of Object.entries(powerups)) {
+    for (const [kind, forms] of Object.entries(kinds)) {
+      for (const form of forms) {
+        if (originalIds.has(form.id)) continue;
+        const owner = entries.find((entry) => entry.appId === Number(species));
+        if (!owner) throw new Error(`Power-up owner ${species} is missing`);
+        const suffix = form.label.match(/ (X|Y|Z)$/)?.[1].toLowerCase();
+        const stem = Number(species) === 892 ? 'urshifu-single-strike' : owner.appName;
+        const mode = form.label.startsWith('Primal ') ? 'primal' : kind === 'dynamax' ? 'gmax' : 'mega';
+        const powerupAliases: Record<number, string> = {
+          10219: 'toxtricity-amped-gmax', 10314: 'meowstic-male-mega', 10322: 'tatsugiri-curly-mega',
+        };
+        const slug = powerupAliases[form.id] ?? `${stem}-${mode}${suffix ? `-${suffix}` : ''}`;
+        addForm(form.id, form.label, slug, owner.speciesId);
+      }
+    }
+  }
+  const xerneas = entries.find((entry) => entry.appId === 716)!;
+  xerneas.formId = Number(formsBySlug.get('xerneas-active')!.id);
+  xerneas.formIdentifier = 'xerneas-active';
 
   const speciesNames = new Map<string, string>();
   const romaji = new Map<number, string>();
@@ -110,6 +142,22 @@ async function main(): Promise<void> {
   for (const r of readCsv('pokemon_form_names')) {
     if (r.form_name) formNames.set(`${r.pokemon_form_id}:${r.local_language_id}`, r.form_name);
   }
+  const gameText = JSON.parse(readFileSync('docs/i18n/sources/pokemon-formnames.json', 'utf8')) as {
+    forms: Record<string, { species: string; names: Record<string, string> }>;
+  };
+  const gameDescriptor = (entry: IdMapEntry, locale: string): string | undefined => {
+    const species = speciesNames.get(`${entry.speciesId}:${LANGUAGE_IDS.en}`);
+    const english = formNames.get(`${entry.formId}:${LANGUAGE_IDS.en}`);
+    if (!english) return;
+    const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const target = entry.formIdentifier.endsWith('-gmax') ? 'Gigantamax'
+      : entry.appName.startsWith('tauros-paldea-') ? 'Paldean Form'
+      : entry.formIdentifier === 'tatsugiri-curly-mega' ? 'Mega Tatsugiri'
+      : english;
+    const match = Object.values(gameText.forms).find((row) =>
+      row.species === species && normalize(row.names.en) === normalize(target));
+    return match?.names[locale] || undefined;
+  };
 
   const itemIdBySlug = new Map<string, number>();
   for (const r of readCsv('items')) itemIdBySlug.set(r.identifier, Number(r.id));
@@ -145,6 +193,7 @@ async function main(): Promise<void> {
       regionNames.get(`${REGIONS[region]}:${langId}`) ?? regionNames.get(`${REGIONS[region]}:${LANGUAGE_IDS.en}`);
 
     const documented = entries
+      .filter((entry) => originalIds.has(entry.appId))
       .map((e) => ({ region: regionOf(e.appName), descriptor: formNames.get(`${e.formId}:${langId}`) }))
       .filter((d): d is { region: string; descriptor: string } => Boolean(d.region && d.descriptor));
 
@@ -203,7 +252,7 @@ async function main(): Promise<void> {
     let composed = 0;
     let marked = 0;
     for (const entry of entries) {
-      const markRegion = regionOf(entry.appName);
+      const markRegion = originalIds.has(entry.appId) ? regionOf(entry.appName) : null;
       const sweet = sweetMarks.get(entry.appName);
       if (markRegion) {
         const noun = regionName(markRegion);
@@ -216,12 +265,33 @@ async function main(): Promise<void> {
         marked += 1;
       }
 
-      const descriptor = formNames.get(`${entry.formId}:${langId}`);
+      const descriptor = formNames.get(`${entry.formId}:${langId}`) ?? gameDescriptor(entry, locale);
       if (descriptor) {
         catalog.forms[entry.appId] = descriptor;
         catalog.formSource[entry.appId] = 'official';
         official += 1;
         continue;
+      }
+      const sweetItem = SWEET_ITEMS[entry.appName];
+      if (sweetItem) {
+        const vanilla = Object.values(gameText.forms).find((row) => row.species === 'Alcremie' && row.names.en === 'Vanilla Cream');
+        const itemId = itemIdBySlug.get(sweetItem);
+        const item = itemId === undefined ? undefined : itemNames.get(`${itemId}:${langId}`);
+        if (vanilla?.names[locale] && item) {
+          catalog.forms[entry.appId] = `${vanilla.names[locale]} — ${item}`;
+          catalog.formSource[entry.appId] = 'official-composed';
+          composed += 1;
+          continue;
+        }
+      }
+      if (entry.speciesId === 201) {
+        const glyph = formNames.get(`${entry.formId}:${LANGUAGE_IDS.en}`);
+        if (glyph) {
+          catalog.forms[entry.appId] = glyph;
+          catalog.formSource[entry.appId] = 'official-composed';
+          composed += 1;
+          continue;
+        }
       }
       const region = regionOf(entry.appName);
       if (!region || !pattern) continue;
@@ -230,6 +300,19 @@ async function main(): Promise<void> {
       catalog.forms[entry.appId] = pattern.replace('{region}', name);
       catalog.formSource[entry.appId] = 'official-composed';
       composed += 1;
+    }
+    const rapidGmax = formsBySlug.get('urshifu-rapid-strike-gmax');
+    if (!rapidGmax) throw new Error('Gigantamax Rapid Strike Urshifu is missing');
+    const rapidEntry: IdMapEntry = {
+      appId: 10227, appName: 'urshifu-rapid-strike-gmax', speciesId: 892,
+      formId: Number(rapidGmax.id), formIdentifier: rapidGmax.identifier,
+    };
+    const rapidDescriptor = formNames.get(`${rapidEntry.formId}:${langId}`) ?? gameDescriptor(rapidEntry, locale);
+    const styleDescriptor = catalog.forms[10227];
+    if (rapidDescriptor && styleDescriptor) {
+      const complete = rapidDescriptor.includes(styleDescriptor);
+      catalog.forms['picker:10227'] = complete ? rapidDescriptor : `${rapidDescriptor} — ${styleDescriptor}`;
+      catalog.formSource['picker:10227'] = complete ? 'official' : 'official-composed';
     }
 
     const affix = catalog.species.map((name, i) =>
@@ -250,7 +333,7 @@ async function main(): Promise<void> {
    * appId -> speciesId, but only where they differ. For all 1,025 base species
    * they are equal, so shipping the full map would put ~1,000 redundant pairs
    * (and every entry's slug, form id and note) into the main bundle — it added
-   * ~95 kB before this was split out. Only the 64 alt forms need stating.
+   * ~95 kB before this was split out. Only alt forms need stating.
    */
   const altForms = Object.fromEntries(
     entries.filter((e) => e.appId !== e.speciesId).map((e) => [e.appId, e.speciesId]),

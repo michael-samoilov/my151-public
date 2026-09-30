@@ -82,10 +82,7 @@ describe('name catalogs', () => {
     }
   });
 
-  it('composes the descriptors PokeAPI is missing, from official pieces', () => {
-    // Hisuian forms are undocumented in ko/zh/es/it. Each composed value uses
-    // that language's own published region name and its own documented pattern,
-    // so it matches the shape of the Alolan entry above.
+  it('uses published game text when PokeAPI omits a descriptor', () => {
     const expected: Record<string, string> = {
       ko: '히스이의 모습',
       'zh-Hant': '洗翠的樣子',
@@ -95,7 +92,7 @@ describe('name catalogs', () => {
     for (const [locale, label] of Object.entries(expected)) {
       use(locale as Locale);
       expect(formLabel(10229), locale).toBe(label); // Hisuian Growlithe
-      expect(formProvenance(10229), locale).toBe('official-composed');
+      expect(formProvenance(10229), locale).toBe('official');
     }
   });
 

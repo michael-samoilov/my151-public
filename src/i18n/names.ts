@@ -37,7 +37,7 @@ interface NameCatalog {
 }
 
 /**
- * Only the 64 alt forms need an appId -> speciesId entry; for the 1,025 base
+ * Only alt forms need an appId -> speciesId entry; for the 1,025 base
  * species the two are equal. Importing the full id map instead put ~95 kB of
  * slugs, form ids and notes into the main bundle for nothing.
  *
@@ -167,12 +167,12 @@ export interface PokemonLabel {
   pending: boolean;
 }
 
-export function pokemonLabel(appId: number, slug: string): PokemonLabel {
+export function pokemonLabel(appId: number, slug: string, formKey: number | `picker:${number}` = appId): PokemonLabel {
   const catalog = loaded.get(getLocale());
   const species = speciesName(appId);
   if (!catalog || !species) return { name: slug, mark: null, full: slug, pending: true };
   const mark = catalog.formMark[appId] ?? null;
-  const descriptor = catalog.forms[appId];
+  const descriptor = catalog.forms[formKey];
   return {
     name: species,
     mark,
