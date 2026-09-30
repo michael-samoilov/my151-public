@@ -9,6 +9,8 @@ import { whenIdle } from '../lib/whenIdle'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
 import { FavoritesApp } from './FavoritesApp'
+import { SpriteChecklist } from './components/SpriteChecklist'
+import { SPRITE_CHECK_ENABLED } from './model/spriteChecklist'
 
 const preload = document.createElement('link');
 preload.rel = 'preload';
@@ -43,7 +45,7 @@ void initLocale({
 }).finally(() => {
   createRoot(rootEl).render(
     <StrictMode>
-      <FavoritesApp />
+      {SPRITE_CHECK_ENABLED ? <SpriteChecklist /> : <FavoritesApp />}
     </StrictMode>,
   )
 })
