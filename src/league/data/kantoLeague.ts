@@ -285,7 +285,7 @@ function seededLine(seed: SeedLine) {
   if (seed.pin === undefined) return line;
   const stage = seed.branch.indexOf(seed.pin);
   if (stage < 0 || stage === seed.branch.length - 1) return line;
-  return { ...line, boundaries: setBoundary(line, stage + 1, ROW_COUNT + 1) };
+  return { ...line, boundaries: setBoundary(line, stage + 1, ROW_COUNT + 1), boundaryMode: 'manual' as const };
 }
 
 /** The member of a seeded line the leader fields: the pin, or the leaf. */
