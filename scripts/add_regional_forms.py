@@ -896,7 +896,7 @@ REGIONAL_FORMS = [
         "evolutionChainId": 44,
         "evolvesFrom": 10231,
         "evolutionStage": 2,
-        "evolutionLevel": 30,
+        "evolutionLevel": None,  # Leaf Stone; no level threshold.
         "isLegendary": False,
         "isMythical": False,
         "captureRate": 60,
@@ -1148,7 +1148,7 @@ REGIONAL_FORMS = [
         "evolutionChainId": 400,
         "evolvesFrom": 723,
         "evolutionStage": 3,
-        "evolutionLevel": 34,
+        "evolutionLevel": 36,
         "isLegendary": False,
         "isMythical": False,
         "captureRate": 45,
