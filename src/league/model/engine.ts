@@ -78,11 +78,17 @@ export function makePlacedLine(branch: number[]): PlacedLine {
   return { branch, boundaries: defaultBoundaries(branch), boundaryMode: 'auto' };
 }
 
+/** Explicit auto intent follows today's defaults; manual and legacy rows stay put. */
+export function effectiveBoundaries(line: PlacedLine): number[] {
+  return line.boundaryMode === 'auto' ? defaultBoundaries(line.branch) : line.boundaries;
+}
+
 /** The stage index a line shows at a row, respecting manual boundaries. */
 export function stageAt(line: PlacedLine, row: number): number {
+  const boundaries = effectiveBoundaries(line);
   let stage = 0;
   for (let i = 1; i < line.branch.length; i++) {
-    if (line.boundaries[i] <= row) stage = i;
+    if (boundaries[i] <= row) stage = i;
   }
   return stage;
 }
@@ -116,7 +122,7 @@ export function signatureMember(
  * made a squeezed-out middle stage unrecoverable. Stage 0 is pinned to row 1.
  */
 export function setBoundary(line: PlacedLine, stage: number, row: number): number[] {
-  const next = [...line.boundaries];
+  const next = [...effectiveBoundaries(line)];
   if (stage <= 0 || stage >= next.length) return next;
   const r = Math.max(1, Math.min(ROW_COUNT + 1, row));
   next[stage] = r;

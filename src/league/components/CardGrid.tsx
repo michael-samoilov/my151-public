@@ -26,6 +26,7 @@ import { warmImages } from '@/lib/warmImages';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
 import {
   defaultBoundaries,
+  effectiveBoundaries,
   deriveRows,
   moveSeat as reorderLines,
   signatureMember,
@@ -1470,6 +1471,32 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
   const setTm = useLeagueStore((s) => s.setTm);
   const move = view.card.tmMoveId !== null ? getMoveById(view.card.tmMoveId) : undefined;
+  const nameRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = nameRef.current;
+    if (!el) return;
+    el.style.fontSize = '';
+    if (!move || /\s/.test(move.name.trim())) return;
+    const fit = () => {
+      el.style.fontSize = '';
+      const style = getComputedStyle(el);
+      const box = el.getBoundingClientRect();
+      const zoom = box.width / parseFloat(style.width);
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const cap = parseFloat(style.fontSize);
+      const room = box.width - parseFloat(style.paddingRight) * zoom;
+      el.style.fontSize = `${cap * fitName(range.getBoundingClientRect().width, 0, room, cap, 0).scale}px`;
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(el.parentElement!);
+    document.fonts.addEventListener('loadingdone', fit);
+    fit();
+    return () => {
+      observer.disconnect();
+      document.fonts.removeEventListener('loadingdone', fit);
+    };
+  }, [move]);
   const pos = {
     ...slotX(1, 2),
     top: `${rowTop(5) + INSET_Y}rem`,
@@ -1539,17 +1566,17 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink overflow-visible" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
-          {/* A name that fits the column stays on one line, and a longer
-              one wraps at its spaces, as the export draws it. A single
-              word cannot wrap, so one too wide for the box ellipsizes. */}
+          {/* Long names wrap at spaces; a single word shrinks to fit.
+              Keep the nominal line box (0.53125rem × 1.4) while its glyphs shrink. */}
           <span
+            ref={nameRef}
             data-tm-name=""
             className={cn(
               'min-w-0 w-full max-w-full text-left',
               NAME_CLASS,
-              /\s/.test(move.name.trim()) ? 'whitespace-normal break-normal' : 'truncate',
+              /\s/.test(move.name.trim()) ? 'whitespace-normal break-normal' : 'whitespace-nowrap',
             )}
-            style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band }}
+            style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band, lineHeight: '0.74375rem' }}
           >
             {move.name}
           </span>
@@ -1979,7 +2006,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       paintRef.current = {
         legend: false, seat: d.seat, stage, startRow: d.row, role,
         runTop, runBottom, canTop, canBottom, reordered: false, pickedUp,
-        initial: [...line.boundaries], painted: false,
+        initial: [...effectiveBoundaries(line)], painted: false,
       };
       if (!pickedUp) setStageDrag({ seat: d.seat, stage });
     },
@@ -2267,7 +2294,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                   const topId = topRowBySeat.get(cell.seat) === row ? cell.pokemonId : null;
                   const custom =
                     topId !== null && line !== undefined
-                    && line.boundaries.join() !== defaultBoundaries(line.branch).join();
+                    && effectiveBoundaries(line).join() !== defaultBoundaries(line.branch).join();
                   // Read off the live line, so the wash follows the run as
                   // the drag grows or shrinks it.
                   const tinted =
