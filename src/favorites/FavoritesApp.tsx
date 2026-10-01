@@ -131,13 +131,15 @@ export function FavoritesApp() {
       <div className="flex min-h-dvh flex-col bg-background text-foreground">
         <GlobalHeader />
         <div className="flex h-11 items-center gap-1 border-b bg-card px-3">
-          <h1 className="min-w-0 text-[0.6875rem] font-semibold leading-tight text-muted-foreground" title={t('favorites.title')}>
-            {t('favorites.title')}
-          </h1>
-          <FavoritesCompletionCounter
-            fills={fills}
-            label={(filled, total) => t('favorites.completion.label', { filled, total })}
-          />
+          <div className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
+            <h1 className="min-w-0 text-[0.6875rem] font-semibold leading-none text-muted-foreground" title={t('favorites.title')}>
+              {t('favorites.title')}
+            </h1>
+            <FavoritesCompletionCounter
+              fills={fills}
+              label={(filled, total) => t('favorites.completion.label', { filled, total })}
+            />
+          </div>
           <button
             type="button"
             data-testid="favorites-settings-open"
