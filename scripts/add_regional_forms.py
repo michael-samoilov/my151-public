@@ -403,7 +403,7 @@ REGIONAL_FORMS = [
         "evolutionChainId": 46,
         "evolvesFrom": 104,
         "evolutionStage": 2,
-        "evolutionLevel": None,
+        "evolutionLevel": 28,
         "isLegendary": False,
         "isMythical": False,
         "captureRate": 75,
