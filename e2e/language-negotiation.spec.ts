@@ -59,7 +59,7 @@ test.describe('language negotiation', () => {
     await expect(page.getByRole('button', { name: /language/i })).toBeVisible();
   });
 
-  test('a visitor moved out of English can get back, and it sticks', async ({ browser }) => {
+  test('a visitor moved out of English can get back, and it sticks', async ({ browser }, testInfo) => {
     // The whole point. Someone with a Japanese browser who wants English must be
     // able to say so and have it survive a reload — otherwise every visit undoes
     // the choice and the app argues with them forever.
@@ -67,7 +67,7 @@ test.describe('language negotiation', () => {
     const page = await ctx.newPage();
     await page.goto('/pokedex-builder');
 
-    await page.getByRole('button', { name: /language/i }).click();
+    await page.getByRole('button', { name: '言語を変更', exact: true }).click();
     await page.getByRole('menuitemradio', { name: /English/ }).click();
 
     await expect
@@ -78,6 +78,14 @@ test.describe('language negotiation', () => {
     // detection, or the visitor is switched back on their next visit.
     await page.goto('/pokedex-builder');
     expect(await typeNames(await openTypeFilter(page))).toContain(BUG_EN);
+    await testInfo.attach('language-roundtrip', {
+      body: Buffer.from(JSON.stringify({
+        browserLanguage: await page.evaluate(() => navigator.language),
+        documentLanguage: await page.locator('html').getAttribute('lang'),
+        typesAfterReload: await typeNames(page.locator('[data-testid="type-filter"]')),
+      })),
+      contentType: 'application/json',
+    });
     await ctx.close();
   });
 
