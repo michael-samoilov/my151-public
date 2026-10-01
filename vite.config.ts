@@ -14,6 +14,16 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      output: {
+        codeSplitting: {
+          // These shared startup modules keep their common dependencies in one
+          // chunk when a new lazy export entry changes automatic partitioning.
+          groups: [{
+            name: 'shared-chrome',
+            test: /\/src\/(?:components\/shared\/PageFooter\.tsx|lib\/(?:feedbackContext|usePixelPerfectSprite)\.ts)$/,
+          }],
+        },
+      },
       input: {
         // One served HTML file per page, each with its own head and crawlable
         // copy — see docs/seo/PAGE-SEO-CONTRACT.md. `cleanUrls` in vercel.json
