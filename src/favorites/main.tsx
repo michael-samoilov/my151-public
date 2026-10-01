@@ -43,7 +43,7 @@ void initLocale({
   search: window.location.search,
   stored: usePokedexStore.getState().locale,
   navigatorLanguages: navigator.languages,
-}).then(() => {
+}).finally(() => {
   createRoot(rootEl).render(
     <StrictMode>
       {SPRITE_CHECK_ENABLED ? <SpriteChecklist /> : <FavoritesApp />}

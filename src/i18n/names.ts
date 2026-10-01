@@ -63,7 +63,10 @@ export function hasNameExtension(): boolean { return !!extensionLoader; }
 export async function loadNames(locale: Locale): Promise<void> {
   await loadSharedNames(locale);
   const catalog = loaded.get(locale);
-  if (extensionLoader && catalog) await extensionLoader(locale, catalog, ALT_FORM_SPECIES);
+  if (extensionLoader && catalog) {
+    await extensionLoader(locale, catalog, ALT_FORM_SPECIES);
+    notify();
+  }
 }
 
 function loadSharedNames(locale: Locale): Promise<void> {
