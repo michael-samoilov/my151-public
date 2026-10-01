@@ -1565,7 +1565,8 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink overflow-visible" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
-          {/* Long names wrap at spaces; a single word shrinks to fit. */}
+          {/* Long names wrap at spaces; a single word shrinks to fit.
+              Keep the nominal line box (0.53125rem × 1.4) while its glyphs shrink. */}
           <span
             ref={nameRef}
             data-tm-name=""
@@ -1574,7 +1575,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
               NAME_CLASS,
               /\s/.test(move.name.trim()) ? 'whitespace-normal break-normal' : 'whitespace-nowrap',
             )}
-            style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band }}
+            style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band, lineHeight: '0.74375rem' }}
           >
             {move.name}
           </span>
