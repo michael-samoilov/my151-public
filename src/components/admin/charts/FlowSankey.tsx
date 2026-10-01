@@ -148,6 +148,9 @@ function paintCountChips(
   kind: 'funnel' | 'referrer',
 ) {
   if (paintingGraphic.has(chart)) return;
+  const prev = chipTimers.get(chart);
+  if (prev) window.clearTimeout(prev);
+  chipTimers.delete(chart);
   const model = (chart as unknown as { getModel(): { getSeriesByIndex(i: number): unknown } }).getModel();
   const series = model.getSeriesByIndex(0) as
     | { getData(): SankeyNodeData; layoutInfo?: { x: number; y: number } }
@@ -194,13 +197,15 @@ function paintCountChips(
     });
   });
   if (elements.length === 0) return;
-  const prev = chipTimers.get(chart);
-  if (prev) window.clearTimeout(prev);
   const id = window.setTimeout(() => {
     chipTimers.delete(chart);
+    if (chart.isDisposed()) return;
     paintingGraphic.add(chart);
-    chart.setOption({ graphic: elements });
-    window.setTimeout(() => paintingGraphic.delete(chart), 0);
+    try {
+      chart.setOption({ graphic: elements });
+    } finally {
+      paintingGraphic.delete(chart);
+    }
   }, 50);
   chipTimers.set(chart, id);
 }
