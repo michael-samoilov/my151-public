@@ -43,7 +43,9 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
    from a linear regression of evolution level on BST, fitted over all
    level-evolvers. Dev-only module, rerun when new Pokémon release.
    Edge cases (split evos, Shedinja-style double evolutions, and the rest)
-   get solved case by case during the build.
+   get solved case by case during the build. Picking an ace or partner keeps
+   that Pokémon's portrait identity while its team line evolves automatically.
+   The selected branch stays unchanged; explicit manual rows stay manual.
 7. **Manual override.** Dragging a sprite up or down its column shifts the
    evolution boundary (cover or reveal line members). Mid-column line swaps
    are parked — UX to be figured out later.

@@ -292,9 +292,9 @@ export function migrateLeagueState(persisted: unknown, version: number): Persist
         }),
       }))
     : state.cards;
-  // Corrected level data also changes the fitted arrivals. Refresh automatic
-  // saves, but keep deliberate or unclassified evolution rows intact.
-  const cards = version < 5 && legacyCards
+  // Refresh automatic saves and normalize v5 preview pins before automatic
+  // derivation; deliberate or unclassified evolution rows stay intact.
+  const cards = version < 6 && legacyCards
     ? legacyCards.map((card) => ({
         ...card,
         lines: card.lines.map((line) => {
