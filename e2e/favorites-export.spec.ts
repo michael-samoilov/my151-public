@@ -101,4 +101,27 @@ test.describe('full favorite chart export', () => {
     await testInfo.attach('cancelled-share-preview', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
+
+  test('export dialog fits the viewport and contains keyboard focus @viewport', async ({ page }, testInfo) => {
+    await page.goto('/favorite-pokemon-by-type?lang=de');
+    await page.getByTestId('favorites-export-open').click();
+    await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
+    const dialog = page.locator('[role="dialog"][data-export-chrome]');
+    await expect(dialog).toHaveAttribute('aria-modal', 'true');
+    const bounds = await dialog.boundingBox();
+    const viewport = page.viewportSize()!;
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.y).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + 1);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
+    for (let index = 0; index < 6; index++) {
+      await page.keyboard.press(index % 2 ? 'Shift+Tab' : 'Tab');
+      expect(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))).toBe(true);
+    }
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('favorites-export-open')).toBeFocused();
+    await testInfo.attach('dialog-fit', { body: JSON.stringify({ bounds, viewport }, null, 2), contentType: 'application/json' });
+  });
+
 });
