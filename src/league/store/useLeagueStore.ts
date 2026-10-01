@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { LEAGUE_PERSIST_VERSION, LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } from './seedLeague';
 import type { TypeName } from '@/types/pokemon';
-import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW } from '../model/constants';
+import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW, ROW_COUNT } from '../model/constants';
 import {
   allCardsFilled,
   parseCelebratedNudges,
@@ -297,9 +297,16 @@ export function migrateLeagueState(persisted: unknown, version: number): Persist
   const cards = version < 5 && legacyCards
     ? legacyCards.map((card) => ({
         ...card,
-        lines: card.lines.map((line) => line.boundaryMode === 'auto'
-          ? { ...line, boundaries: defaultBoundaries(line.branch) }
-          : line),
+        lines: card.lines.map((line) => {
+          if (line.boundaryMode !== 'auto') return line;
+          // Since v3, automatic stages arrive by Champion. Off-card rows
+          // therefore preserve an authored suppression mislabeled as auto
+          // (older preview seeds), including copies of those lines.
+          if (version >= 3 && line.boundaries.some((row) => row > ROW_COUNT)) {
+            return { ...line, boundaryMode: 'manual' as const };
+          }
+          return { ...line, boundaries: defaultBoundaries(line.branch) };
+        }),
       }))
     : legacyCards;
   const celebrated = version < 2 || state.celebratedNudges === undefined
