@@ -125,12 +125,12 @@ test.describe('one-Pokémon pickers', () => {
       '1× at dpr 1 is 96 CSS px; two squares overlap a 320 pane',
     );
     await openCard(page, 0);
-    await seatOne(page, 'geodude'); // Geodude into Graveler into Golem
-
     // The slot used to re-derive its member from the boss row, which fields
     // the line's leaf: a tap on Geodude answered with Golem.
     await pickSignature(page, 'geodude', 'geodude');
     expect(await signatureAlt(page)).toBe('geodude');
+    // A fresh identity pick seats its whole line with automatic progression.
+    await expect(page.getByTestId('card-cell-11-1').locator('img')).toHaveAttribute('alt', 'golem');
 
     await pickSignature(page, 'geodude', 'graveler');
     expect(await signatureAlt(page)).toBe('graveler');
@@ -138,6 +138,10 @@ test.describe('one-Pokémon pickers', () => {
     // The leaf is a pick like any other, not a fallback.
     await pickSignature(page, 'geodude', 'golem');
     expect(await signatureAlt(page)).toBe('golem');
+    await testInfo.attach('signature-and-team', {
+      body: JSON.stringify(await page.evaluate(() => JSON.parse(localStorage.getItem('league-builder')!).state.cards[0])),
+      contentType: 'application/json',
+    });
   });
 
   test('the line picker keeps its chevrons and its branches', async ({ page }) => {

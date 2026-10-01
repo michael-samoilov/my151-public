@@ -22,7 +22,7 @@ import { reachedNudges } from '../model/funnelNudges';
 export const LEAGUE_STORAGE_KEY = 'league-builder';
 
 /** The store's persisted version. `useLeagueStore` reads this same constant. */
-export const LEAGUE_PERSIST_VERSION = 5;
+export const LEAGUE_PERSIST_VERSION = 6;
 
 /**
  * The record `seedLeagueOnFirstVisit` writes. Kanto already has full trainer

@@ -1,6 +1,6 @@
 import type { LeagueCardShape, LeagueLineShape, LeagueSummary } from '../../../api/_leagueRecord';
 import type { GymCard } from '../store/useLeagueStore';
-import { defaultBoundaries } from './engine';
+import { defaultBoundaries, effectiveBoundaries } from './engine';
 import { legendsOf, powerupAt } from '../store/useLeagueStore';
 import { POWERUP_ROWS } from './powerups';
 
@@ -46,8 +46,9 @@ export function describeLeague(cards: GymCard[]): LeagueCardShape[] {
       // line evolves where the level curve puts it, and the default is
       // computed here — the server cannot tell adjusted from default alone.
       const fallback = defaultBoundaries(line.branch);
-      if (line.boundaries.some((row, stage) => row !== fallback[stage])) {
-        shape.bd = [...line.boundaries];
+      const boundaries = effectiveBoundaries(line);
+      if (boundaries.some((row, stage) => row !== fallback[stage])) {
+        shape.bd = [...boundaries];
       }
       return shape;
     });

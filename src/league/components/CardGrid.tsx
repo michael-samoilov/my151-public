@@ -26,6 +26,7 @@ import { warmImages } from '@/lib/warmImages';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
 import {
   defaultBoundaries,
+  effectiveBoundaries,
   deriveRows,
   moveSeat as reorderLines,
   signatureMember,
@@ -2005,7 +2006,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       paintRef.current = {
         legend: false, seat: d.seat, stage, startRow: d.row, role,
         runTop, runBottom, canTop, canBottom, reordered: false, pickedUp,
-        initial: [...line.boundaries], painted: false,
+        initial: [...effectiveBoundaries(line)], painted: false,
       };
       if (!pickedUp) setStageDrag({ seat: d.seat, stage });
     },
@@ -2293,7 +2294,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                   const topId = topRowBySeat.get(cell.seat) === row ? cell.pokemonId : null;
                   const custom =
                     topId !== null && line !== undefined
-                    && line.boundaries.join() !== defaultBoundaries(line.branch).join();
+                    && effectiveBoundaries(line).join() !== defaultBoundaries(line.branch).join();
                   // Read off the live line, so the wash follows the run as
                   // the drag grows or shrinks it.
                   const tinted =
