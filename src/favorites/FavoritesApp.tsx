@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Settings } from 'lucide-react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { Download, Settings } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -25,6 +25,7 @@ import type { PackMove } from './model/packing';
 
 const TYPES_STORAGE_KEY = 'personal-151-favorites-show-types-v1';
 const NO_REPEATS_STORAGE_KEY = 'personal-151-favorites-no-repeats-v1';
+const FavoritesExportOverlay = lazy(() => import('./components/FavoritesExportOverlay'));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId };
 
@@ -67,6 +68,7 @@ export function FavoritesApp() {
   const [showTypes, setShowTypes] = useState(savedShowTypes);
   const [noRepeats, setNoRepeats] = useState(savedNoRepeats);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
@@ -128,7 +130,7 @@ export function FavoritesApp() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
         <GlobalHeader />
         <div className="flex h-11 items-center gap-1 border-b bg-card px-3">
           <div className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
@@ -142,6 +144,17 @@ export function FavoritesApp() {
           </div>
           <button
             type="button"
+            data-testid="favorites-export-open"
+            aria-label={t('favorites.export.title')}
+            aria-expanded={exportOpen}
+            onClick={() => { setSel(null); setSettingsOpen(false); setExportOpen(true); }}
+            className="ml-auto flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('favorites.export.title')}</span>
+          </button>
+          <button
+            type="button"
             data-testid="favorites-settings-open"
             aria-label={t('favorites.settings.open')}
             aria-expanded={settingsOpen}
@@ -149,7 +162,7 @@ export function FavoritesApp() {
               setSel(null);
               setSettingsOpen((open) => !open);
             }}
-            className="ml-auto shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <Settings className="h-4 w-4" />
           </button>
@@ -177,6 +190,9 @@ export function FavoritesApp() {
         <PageFooter faq="favorites" compact />
       </div>
       <FeedbackHost route="/favorite-pokemon-by-type" />
+      {exportOpen && <Suspense fallback={null}>
+        <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)} />
+      </Suspense>}
     </TooltipProvider>
   );
 }

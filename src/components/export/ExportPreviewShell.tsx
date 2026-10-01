@@ -51,7 +51,7 @@ function useSettingsSheetCap(active: boolean): number | undefined {
   return active ? cap : undefined;
 }
 
-function ExportScrim({ onClose }: { onClose: () => void }) {
+function ExportScrim({ onClose, closeLabel }: { onClose: () => void; closeLabel: string }) {
   return createPortal(
     <div className="fixed inset-0" style={{ zIndex: SCRIM_Z }} data-export-scrim data-overlay>
       <div
@@ -62,7 +62,7 @@ function ExportScrim({ onClose }: { onClose: () => void }) {
       <button
         type="button"
         className="absolute inset-0 cursor-default bg-transparent"
-        aria-label="Close export"
+        aria-label={closeLabel}
         onClick={onClose}
       />
     </div>,
@@ -117,10 +117,12 @@ export function ExportPreviewShell({
   recipe = DEFAULT_FOIL_RECIPE,
   tilt = DEFAULT_HOVER_TILT_RECIPE,
   bare = false,
+  settingsTitle = 'Export',
+  closeLabel = 'Close export',
 }: {
   phase: ExportPreviewPhase;
   onClose: () => void;
-  surveyTool: ExportSurveyTool;
+  surveyTool?: ExportSurveyTool;
   settings: ReactNode;
   surveyIntro: (actions: ExportSurveyActions) => ReactNode;
   survey: (actions: ExportSurveyActions) => ReactNode;
@@ -135,37 +137,39 @@ export function ExportPreviewShell({
    * actions, so the phone sheet sizes to them and the preview gets the rest.
    */
   bare?: boolean;
+  settingsTitle?: string;
+  closeLabel?: string;
 }) {
   const isDesktop = useViewportAtLeast(1024);
   const sheetCap = useSettingsSheetCap(!isDesktop && phase === 'settings');
   const chrome = useExportChrome(isDesktop);
   const [skipReporter] = useState(() =>
-    createExportSurveySkipReporter({
+    surveyTool ? createExportSurveySkipReporter({
       exportTool: surveyTool,
       send: (event, payload) => sendEventBeacon(event, payload),
-    }),
+    }) : null,
   );
   const surveyPhase = phase === 'survey' ? 'form' : 'intro';
 
   useEffect(() => {
     if (phase === 'settings') return;
-    const onHide = () => skipReporter.onPageHide(surveyPhase);
+    const onHide = () => skipReporter?.onPageHide(surveyPhase);
     window.addEventListener('pagehide', onHide);
     return () => window.removeEventListener('pagehide', onHide);
   }, [phase, skipReporter, surveyPhase]);
 
   const dismissSurvey = (action: ExportSurveySkipAction) => {
-    skipReporter.skip(exportSurveySkipReason({ phase: surveyPhase, action }));
+    skipReporter?.skip(exportSurveySkipReason({ phase: surveyPhase, action }));
     onClose();
   };
   const finishSurvey = () => {
-    skipReporter.markSent();
+    skipReporter?.markSent();
     onClose();
   };
   const surveyActions = { dismiss: dismissSurvey, finish: finishSurvey };
   const closeOverlay = phase === 'settings' ? onClose : () => dismissSurvey('dismiss');
   const paneTitle =
-    phase === 'settings' ? 'Export' : phase === 'surveyIntro' ? 'Your export' : 'Quick question';
+    phase === 'settings' ? settingsTitle : phase === 'surveyIntro' ? 'Your export' : 'Quick question';
   const paneBody =
     phase === 'settings'
       ? settings
@@ -194,7 +198,7 @@ export function ExportPreviewShell({
     <BottomSheet
       onClose={closeOverlay}
       title={paneTitle}
-      closeLabel={paneTitle}
+      closeLabel={phase === 'settings' ? closeLabel : paneTitle}
       size="content"
       topGap={56}
       layerZIndex={PANE_Z}
@@ -209,7 +213,7 @@ export function ExportPreviewShell({
 
   return (
     <>
-      <ExportScrim onClose={closeOverlay} />
+      <ExportScrim onClose={closeOverlay} closeLabel={closeLabel} />
       {phase === 'settings' &&
         createPortal(
           <div

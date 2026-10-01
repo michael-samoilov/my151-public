@@ -1,3 +1,4 @@
+import { ULTRA_BAND, MASTER_OUTLINE, MASTER_MARKS, type BallKind } from '../components/ballShape';
 import { ROMAN_URIS } from '../components/romanDiscAssets';
 import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
 import { typeGlyphPath, typeIconPath } from '@/data/type-ids';
@@ -7,7 +8,7 @@ import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { clipExportCanvas, exportInnerCornerRadius, EXPORT_FRAME_PX, EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import { TYPE_BADGE } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
-import { drawEmptyBall, drawPokeballBg, drawSprite, font, roundRect } from '@/league/export/paint';
+import { drawPokeballBg, drawSprite, font, roundRect } from '@/league/export/paint';
 import { AXIS_FILL, type BadgeStops } from '../components/badgeStyle';
 import favoriteIcon from '../icons/favorite.svg?url';
 import gimmickIcon from '../icons/gimmick.svg?url';
@@ -61,6 +62,27 @@ function axisBadge(ctx: CanvasRenderingContext2D, axis: ExtraTypeAxis, x: number
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillText(label, 0, fit.baseline);
+  ctx.restore();
+}
+
+function drawBall(ctx: CanvasRenderingContext2D, kind: BallKind, cx: number, cy: number) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(-Math.PI / 6);
+  ctx.scale(48 / 40, 48 / 40);
+  ctx.translate(-20, -20);
+  ctx.strokeStyle = 'rgba(10,10,10,0.14)';
+  ctx.fillStyle = ctx.strokeStyle;
+  ctx.lineWidth = 1.5;
+  if (kind === 'master') ctx.stroke(new Path2D(MASTER_OUTLINE));
+  else { ctx.beginPath(); ctx.arc(20, 20, 18, 0, Math.PI * 2); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(2, 20); ctx.lineTo(14, 20); ctx.moveTo(26, 20); ctx.lineTo(38, 20); ctx.stroke();
+  ctx.beginPath(); ctx.arc(20, 20, 6, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(20, 20, 2.5, 0, Math.PI * 2); ctx.fill();
+  if (kind === 'ultra') ctx.stroke(new Path2D(ULTRA_BAND));
+  if (kind === 'master') {
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke(new Path2D(MASTER_MARKS));
+  }
   ctx.restore();
 }
 
@@ -124,7 +146,10 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
       drawPokeballBg(ctx, TYPE_COLORS[entry.mon.types[0]], entry.mon.types[1] ? TYPE_COLORS[entry.mon.types[1]] : '#ffffff',
         EXPORT_SPRITE_PX * 0.84, x + cell / 2, y + cell / 2);
       drawSprite(ctx, images.get(entry.mon.sprite)!, x + cell / 2, y + cell / 2, EXPORT_SPRITE_PX);
-    } else if (entry.kind === 'pick' || entry.kind === 'pointer') drawEmptyBall(ctx, 48, x + cell / 2, y + cell / 2);
+    } else if (entry.kind === 'pick' || entry.kind === 'pointer') {
+      const kind = entry.kind === 'pick' ? 'poke' : entry.type === 'favorite' && entry.generation === 'favorite' ? 'master' : 'ultra';
+      drawBall(ctx, kind, x + cell / 2, y + cell / 2);
+    }
     else {
       ctx.font = font(24, 500);
       ctx.fillStyle = '#a1a1aa';
