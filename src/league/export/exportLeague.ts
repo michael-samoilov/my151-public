@@ -20,9 +20,9 @@ import { typeIconPath, typeGlyphPath } from '@/data/type-ids';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
-import { expandTemplate } from '@/lib/richTemplate';
+import { drawExportCredit as drawCredit } from '@/lib/exportCredit';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
-import { localeUppercase, pokemonLabel, raw } from '@/i18n';
+import { localeUppercase, pokemonLabel } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
 import { deriveRow, signatureMember } from '../model/engine';
@@ -69,9 +69,7 @@ const FG = '#0a0a0a';
 const RED = '#DC2626';
 /** The league summary's frame: the Dex export's red. */
 const HOME_FRAME = RED;
-const MUTED = '#737373';
 const GREY = '#a3a3a3';
-const ZINC = '#a1a1aa';
 const NO_TYPE = '#9CA3AF';
 const HOME_LINE = '#f0f0f1';
 
@@ -215,49 +213,6 @@ function homeImageUrls(cards: GymCard[], view: LeagueView, layout: LeagueHomeExp
 }
 
 // ---------- shared chrome ----------
-
-/**
- * "<what this is> · made with my151.app", centred in the footer strip.
- *
- * The credit is the dex poster's translated template, so the two tools carry
- * one credit. The wordmark is a brand asset rather than copy: it stays
- * my151.app in every locale and only its place in the sentence is translated.
- * The prefix names the picture — the trainer card template is /vp/'s, and
- * the league is this tool's — in the muted grey the app's own labels use.
- */
-function drawCredit(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  size: number,
-  prefix: string,
-): void {
-  const segs = [
-    { text: `${prefix} · `, color: MUTED },
-    ...expandTemplate<{ text: string; color: string }>(
-      raw('poster.credit'),
-      (text) => ({ text, color: ZINC }),
-      {
-        app: () => [
-          { text: 'my151', color: RED },
-          { text: '.app', color: FG },
-        ],
-      },
-    ),
-  ];
-  ctx.save();
-  ctx.font = font(size, 600);
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  const total = segs.reduce((sum, s) => sum + ctx.measureText(s.text).width, 0);
-  let x = cx - total / 2;
-  for (const seg of segs) {
-    ctx.fillStyle = seg.color;
-    ctx.fillText(seg.text, x, cy);
-    x += ctx.measureText(seg.text).width;
-  }
-  ctx.restore();
-}
 
 /**
  * The type square on a league row: the chosen type's icon, or the no-type

@@ -1,6 +1,8 @@
 import { ULTRA_BAND, MASTER_OUTLINE, MASTER_MARKS, type BallKind } from '../components/ballShape';
 import { clipExportCanvas, exportInnerCornerRadius, EXPORT_FRAME_PX } from '@/lib/exportPngShape';
-import { font } from '@/league/export/paint';
+import { fillTracked, font } from '@/league/export/paint';
+import { BAR_H, BAR_TEXT_X, CREDIT_PX, FOOT, FRAME, TITLE_PX, TITLE_TRACK } from '@/league/export/layout';
+import { drawExportCredit } from '@/lib/exportCredit';
 import { t } from '@/i18n';
 
 export function image(url: string): Promise<HTMLImageElement> {
@@ -34,7 +36,7 @@ export function drawBall(ctx: CanvasRenderingContext2D, kind: BallKind, cx: numb
 }
 
 /** The frame and title bar use the trainer card's continuous red field. */
-export function createFavoritesCanvas(width: number, height: number, headerHeight: number, titleX: number) {
+export function createFavoritesCanvas(width: number, height: number) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -46,17 +48,21 @@ export function createFavoritesCanvas(width: number, height: number, headerHeigh
   ctx.fillStyle = '#ffffff';
   const radius = exportInnerCornerRadius(width, height, EXPORT_FRAME_PX);
   ctx.beginPath();
-  ctx.roundRect(EXPORT_FRAME_PX, headerHeight, width - 2 * EXPORT_FRAME_PX,
-    height - headerHeight - EXPORT_FRAME_PX, [0, 0, radius, radius]);
+  ctx.roundRect(EXPORT_FRAME_PX, BAR_H, width - 2 * EXPORT_FRAME_PX,
+    height - BAR_H - EXPORT_FRAME_PX, [0, 0, radius, radius]);
   ctx.fill();
-  ctx.font = font(40, 700);
+  ctx.font = font(TITLE_PX, 800);
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  const title = t('favorites.export.chartTitle');
-  const room = width - titleX * 2;
-  if (ctx.measureText(title).width > room) ctx.font = font(40 * room / ctx.measureText(title).width, 700);
-  ctx.fillText(title, titleX, headerHeight / 2);
+  ctx.textBaseline = 'alphabetic';
+  const metrics = ctx.measureText('H');
+  const cap = metrics.actualBoundingBoxAscent || TITLE_PX * 0.72;
+  fillTracked(ctx, t('favorites.export.chartTitle'), FRAME + BAR_TEXT_X, BAR_H / 2 + cap / 2, TITLE_TRACK);
   return { canvas, ctx };
+}
+
+/** The trainer credit's 14px face, centered in the same 36px footer strip. */
+export function drawFavoritesCredit(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+  drawExportCredit(ctx, width / 2, height - EXPORT_FRAME_PX - FOOT / 2, CREDIT_PX);
 }
 
 export function encodeFavoritesCanvas(canvas: HTMLCanvasElement): Promise<Blob> {

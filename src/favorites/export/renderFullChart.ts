@@ -15,7 +15,7 @@ import legendaryIcon from '../icons/legendary.svg?url';
 import starterIcon from '../icons/starter.svg?url';
 import { GEN_AXIS, TYPE_AXIS, isGenNumber, isTypeName, type ExtraTypeAxis } from '../model/cells';
 import type { FavoritesSnapshot } from './snapshot';
-import { createFavoritesCanvas, drawBall, encodeFavoritesCanvas, image } from './canvas';
+import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCanvas, image } from './canvas';
 
 // Native 96px sprites, with 12px breathing room on each side. The shared
 // frame and corner geometry are the same as Dex and League PNGs.
@@ -66,7 +66,7 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
   ]);
   const images = new Map(await Promise.all([...urls].map(async url => [url, await image(url)] as const)));
   const { width, height, gridX, gridY } = FULL_CHART_LAYOUT;
-  const { canvas, ctx } = createFavoritesCanvas(width, height, gridY - 12, gridX);
+  const { canvas, ctx } = createFavoritesCanvas(width, height);
   ctx.textAlign = 'center';
 
   const cell = FULL_CHART_CELL;
@@ -111,9 +111,6 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
       ctx.fillText('—', x + cell / 2, y + cell / 2);
     }
   });
-  ctx.font = font(20, 500);
-  ctx.fillStyle = '#71717a';
-  const footer = gridY + (GEN_AXIS.length + 1) * cell + 32;
-  ctx.fillText(`${t('favorites.completion.label', snapshot.completion)} · my151.app`, width / 2, footer);
+  drawFavoritesCredit(ctx, width, height);
   return encodeFavoritesCanvas(canvas);
 }
