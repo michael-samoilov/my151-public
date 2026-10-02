@@ -67,6 +67,7 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
   const images = new Map(await Promise.all([...urls].map(async url => [url, await image(url)] as const)));
   const { width, height, gridX, gridY } = FULL_CHART_LAYOUT;
   const { canvas, ctx } = createFavoritesCanvas(width, height);
+  ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
 
   const cell = FULL_CHART_CELL;
