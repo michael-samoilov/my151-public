@@ -1,11 +1,10 @@
-import { ULTRA_BAND, MASTER_OUTLINE, MASTER_MARKS, type BallKind } from '../components/ballShape';
 import { ROMAN_URIS } from '../components/romanDiscAssets';
 import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
 import { typeGlyphPath, typeIconPath } from '@/data/type-ids';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { localeUppercase, t } from '@/i18n';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
-import { clipExportCanvas, exportInnerCornerRadius, EXPORT_FRAME_PX, EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
+import { EXPORT_FRAME_PX, EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import { TYPE_BADGE } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
 import { drawPokeballBg, drawSprite, font, roundRect } from '@/league/export/paint';
@@ -16,6 +15,7 @@ import legendaryIcon from '../icons/legendary.svg?url';
 import starterIcon from '../icons/starter.svg?url';
 import { GEN_AXIS, TYPE_AXIS, isGenNumber, isTypeName, type ExtraTypeAxis } from '../model/cells';
 import type { FavoritesSnapshot } from './snapshot';
+import { createFavoritesCanvas, drawBall, encodeFavoritesCanvas, image } from './canvas';
 
 // Native 96px sprites, with 12px breathing room on each side. The shared
 // frame and corner geometry are the same as Dex and League PNGs.
@@ -29,15 +29,6 @@ export const FULL_CHART_LAYOUT = {
 const EXTRA_ICONS: Record<ExtraTypeAxis, string> = {
   favorite: favoriteIcon, gimmick: gimmickIcon, legendary: legendaryIcon, starter: starterIcon,
 };
-
-function image(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Could not load export image: ${url}`));
-    img.src = url;
-  });
-}
 
 /** No-symbol axis pills use the app's colors, font fitter and 200×40 units. */
 function axisBadge(ctx: CanvasRenderingContext2D, axis: ExtraTypeAxis, x: number, y: number, width: number) {
@@ -65,27 +56,6 @@ function axisBadge(ctx: CanvasRenderingContext2D, axis: ExtraTypeAxis, x: number
   ctx.restore();
 }
 
-function drawBall(ctx: CanvasRenderingContext2D, kind: BallKind, cx: number, cy: number) {
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(-Math.PI / 6);
-  ctx.scale(48 / 40, 48 / 40);
-  ctx.translate(-20, -20);
-  ctx.strokeStyle = 'rgba(10,10,10,0.14)';
-  ctx.fillStyle = ctx.strokeStyle;
-  ctx.lineWidth = 1.5;
-  if (kind === 'master') ctx.stroke(new Path2D(MASTER_OUTLINE));
-  else { ctx.beginPath(); ctx.arc(20, 20, 18, 0, Math.PI * 2); ctx.stroke(); }
-  ctx.beginPath(); ctx.moveTo(2, 20); ctx.lineTo(14, 20); ctx.moveTo(26, 20); ctx.lineTo(38, 20); ctx.stroke();
-  ctx.beginPath(); ctx.arc(20, 20, 6, 0, Math.PI * 2); ctx.stroke();
-  ctx.beginPath(); ctx.arc(20, 20, 2.5, 0, Math.PI * 2); ctx.fill();
-  if (kind === 'ultra') ctx.stroke(new Path2D(ULTRA_BAND));
-  if (kind === 'master') {
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke(new Path2D(MASTER_MARKS));
-  }
-  ctx.restore();
-}
-
 /** Paint a validated snapshot; empty and incomplete charts are valid exports. */
 export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob> {
   await document.fonts.ready;
@@ -96,23 +66,8 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
   ]);
   const images = new Map(await Promise.all([...urls].map(async url => [url, await image(url)] as const)));
   const { width, height, gridX, gridY } = FULL_CHART_LAYOUT;
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas unavailable');
-  clipExportCanvas(ctx, width, height);
-  ctx.fillStyle = '#DC2626';
-  ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = '#ffffff';
-  roundRect(ctx, EXPORT_FRAME_PX, EXPORT_FRAME_PX, width - 2 * EXPORT_FRAME_PX,
-    height - 2 * EXPORT_FRAME_PX, exportInnerCornerRadius(width, height, EXPORT_FRAME_PX));
-  ctx.fill();
-  ctx.font = font(40, 700);
-  ctx.fillStyle = '#18181b';
+  const { canvas, ctx } = createFavoritesCanvas(width, height, gridY - 12, gridX);
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(t('favorites.title'), width / 2, EXPORT_FRAME_PX + 58);
 
   const cell = FULL_CHART_CELL;
   const badgeW = cell * 0.9;
@@ -160,5 +115,5 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
   ctx.fillStyle = '#71717a';
   const footer = gridY + (GEN_AXIS.length + 1) * cell + 32;
   ctx.fillText(`${t('favorites.completion.label', snapshot.completion)} · my151.app`, width / 2, footer);
-  return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG encoding failed')), 'image/png'));
+  return encodeFavoritesCanvas(canvas);
 }

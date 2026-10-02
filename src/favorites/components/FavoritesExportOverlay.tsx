@@ -1,13 +1,17 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, X } from 'lucide-react';
+import { Download, Grid3x3, LayoutGrid, Loader2, X } from 'lucide-react';
 import { ExportPreviewShell } from '@/components/export/ExportPreviewShell';
 import { useExportPreviewCache } from '@/components/export/useExportPreviewCache';
 import { shareOrDownload, isShareAbort } from '@/lib/shareOrDownload';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useLocale, useT } from '@/i18n';
 import { renderFullChart } from '../export/renderFullChart';
+import { renderSimplifiedChart } from '../export/renderSimplifiedChart';
 import { buildFavoritesSnapshot } from '../export/snapshot';
+
+type ExportMode = 'full' | 'simplified';
+const MODES: ExportMode[] = ['full', 'simplified'];
 
 export default function FavoritesExportOverlay({ fills, onClose }: {
   fills: Readonly<Record<string, number>>;
@@ -18,18 +22,24 @@ export default function FavoritesExportOverlay({ fills, onClose }: {
   const desktop = useIsDesktop();
   const snapshot = useMemo(() => buildFavoritesSnapshot(fills), [fills]);
   const [attempt, setAttempt] = useState(0);
-  const [error, setError] = useState(false);
+  const [mode, setMode] = useState<ExportMode>('full');
+  const [errorKey, setErrorKey] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const key = `${locale}-${attempt}-${snapshot.cells.map(cell => cell.mon?.id ?? '').join(',')}`;
+  const contentKey = `${locale}-${attempt}-${snapshot.cells.map(cell => `${cell.key}:${cell.mon?.id ?? ''}`).join(',')}`;
+  const key = `${mode}-${contentKey}`;
+  const error = errorKey === key;
   const settingsRef = useRef<HTMLDivElement>(null);
-  const jobs = useMemo(() => [{ key, render: async () => {
-    try {
-      return await renderFullChart(snapshot);
-    } catch (err) {
-      setError(true);
-      throw err;
-    }
-  } }], [key, snapshot]);
+  const jobs = useMemo(() => MODES.map(exportMode => {
+    const jobKey = `${exportMode}-${contentKey}`;
+    return { key: jobKey, render: async () => {
+      try {
+        return await (exportMode === 'full' ? renderFullChart(snapshot) : renderSimplifiedChart(snapshot));
+      } catch (err) {
+        setErrorKey(jobKey);
+        throw err;
+      }
+    } };
+  }), [contentKey, snapshot]);
   const frames = useExportPreviewCache({ enabled: true, activeKey: key, jobs });
 
   useLayoutEffect(() => {
@@ -72,7 +82,7 @@ export default function FavoritesExportOverlay({ fills, onClose }: {
       try { await shareOrDownload(blob, 'my151-favorites.png'); }
       catch (err) { if (isShareAbort(err)) return; throw err; }
       onClose();
-    } catch { setError(true); }
+    } catch { setErrorKey(key); }
     finally { setSaving(false); }
   }
 
@@ -86,12 +96,23 @@ export default function FavoritesExportOverlay({ fills, onClose }: {
         </button>
       </div>}
       <div className="space-y-2 px-3 py-3">
-        <h2 className="text-sm font-semibold">{t('favorites.export.fullChart')}</h2>
-        <p className="text-sm text-muted-foreground">{t('favorites.export.description')}</p>
+        <div className="grid grid-cols-2 gap-1" aria-label={t('favorites.export.title')}>
+          {MODES.map(option => {
+            const Icon = option === 'full' ? Grid3x3 : LayoutGrid;
+            return <button key={option} type="button" data-favorites-export-mode={option}
+              aria-pressed={mode === option} disabled={saving} onClick={() => setMode(option)}
+              className={`flex cursor-pointer flex-col items-center gap-1 rounded-md px-1 py-2 text-center text-[0.6875rem] leading-tight transition-colors ${
+                mode === option ? 'bg-primary/10 font-medium text-primary' : 'text-foreground hover:bg-muted'
+              }`}>
+              <Icon className="h-5 w-5" aria-hidden="true" />
+              {t(option === 'full' ? 'favorites.export.fullGrid' : 'favorites.export.simplified')}
+            </button>;
+          })}
+        </div>
         <p className="text-xs text-muted-foreground">{t('favorites.completion.label', snapshot.completion)}</p>
         {error && <div role="alert" className="space-y-2">
           <p className="text-sm text-destructive">{t('favorites.export.error')}</p>
-          <Button variant="outline" onClick={() => { setError(false); setAttempt(value => value + 1); }}>{t('favorites.export.retry')}</Button>
+          <Button variant="outline" onClick={() => { setErrorKey(null); setAttempt(value => value + 1); }}>{t('favorites.export.retry')}</Button>
         </div>}
       </div>
       <div className="mt-auto shrink-0 border-t px-3 py-3">
