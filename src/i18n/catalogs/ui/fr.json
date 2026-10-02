@@ -1,7 +1,7 @@
 {
   "browser.myFavorites": "Mes favoris",
   "faq.favorites.a1": "Choisissez une case pour sélectionner un Pokémon de ce type et de cette génération. Choisissez ensuite vos favoris dans chaque ligne et colonne, puis votre favori parmi tous.",
-  "faq.favorites.a2": "Pas encore. L’export d’images est prévu. Vous pouvez filtrer les Pokémon selon vos favoris dans les créateurs de Pokédex et de Champions d’Arène.",
+  "faq.favorites.a2": "Oui. Enregistrez une image PNG de la grille complète ou de la vue simplifiée. Vous pouvez filtrer les Pokémon selon vos favoris dans les créateurs de Pokédex et de Champions d’Arène.",
   "faq.favorites.q1": "Comment choisir un Pokémon ?",
   "faq.favorites.q2": "Puis-je exporter le tableau ?",
   "faq.summary": "À propos de cet outil",

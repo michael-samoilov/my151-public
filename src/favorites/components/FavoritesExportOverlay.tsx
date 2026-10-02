@@ -23,11 +23,11 @@ export default function FavoritesExportOverlay({ fills, onClose }: {
   const snapshot = useMemo(() => buildFavoritesSnapshot(fills), [fills]);
   const [attempt, setAttempt] = useState(0);
   const [mode, setMode] = useState<ExportMode>('full');
-  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [errorKeys, setErrorKeys] = useState<Record<string, true>>({});
   const [saving, setSaving] = useState(false);
   const contentKey = `${locale}-${attempt}-${snapshot.cells.map(cell => `${cell.key}:${cell.mon?.id ?? ''}`).join(',')}`;
   const key = `${mode}-${contentKey}`;
-  const error = errorKey === key;
+  const error = !!errorKeys[key];
   const settingsRef = useRef<HTMLDivElement>(null);
   const jobs = useMemo(() => MODES.map(exportMode => {
     const jobKey = `${exportMode}-${contentKey}`;
@@ -35,7 +35,7 @@ export default function FavoritesExportOverlay({ fills, onClose }: {
       try {
         return await (exportMode === 'full' ? renderFullChart(snapshot) : renderSimplifiedChart(snapshot));
       } catch (err) {
-        setErrorKey(jobKey);
+        setErrorKeys(previous => ({ ...previous, [jobKey]: true }));
         throw err;
       }
     } };
@@ -82,7 +82,7 @@ export default function FavoritesExportOverlay({ fills, onClose }: {
       try { await shareOrDownload(blob, 'my151-favorites.png'); }
       catch (err) { if (isShareAbort(err)) return; throw err; }
       onClose();
-    } catch { setErrorKey(key); }
+    } catch { setErrorKeys(previous => ({ ...previous, [key]: true })); }
     finally { setSaving(false); }
   }
 
@@ -112,7 +112,7 @@ export default function FavoritesExportOverlay({ fills, onClose }: {
         <p className="text-xs text-muted-foreground">{t('favorites.completion.label', snapshot.completion)}</p>
         {error && <div role="alert" className="space-y-2">
           <p className="text-sm text-destructive">{t('favorites.export.error')}</p>
-          <Button variant="outline" onClick={() => { setErrorKey(null); setAttempt(value => value + 1); }}>{t('favorites.export.retry')}</Button>
+          <Button variant="outline" onClick={() => { setErrorKeys({}); setAttempt(value => value + 1); }}>{t('favorites.export.retry')}</Button>
         </div>}
       </div>
       <div className="mt-auto shrink-0 border-t px-3 py-3">
