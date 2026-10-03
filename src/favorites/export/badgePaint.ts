@@ -1,10 +1,9 @@
 import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
-import { localeUppercase, t } from '@/i18n';
+import { localeUppercase } from '@/i18n';
 import { TYPE_BADGE } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
 import { roundRect } from '@/league/export/paint';
-import { AXIS_FILL, type BadgeStops } from '../components/badgeStyle';
-import type { ExtraTypeAxis } from '../model/cells';
+import type { BadgeStops } from '../components/badgeStyle';
 
 /** Preserve hard generation stops and the WordBadge diagonal on its frame. */
 export function badgePaint(ctx: CanvasRenderingContext2D, fill: string | BadgeStops,
@@ -16,23 +15,52 @@ export function badgePaint(ctx: CanvasRenderingContext2D, fill: string | BadgeSt
   return gradient;
 }
 
-/** The canvas twin of AxisBadge, centered on the sprite frame's bottom edge. */
-export function drawAxisBadge(ctx: CanvasRenderingContext2D, axis: ExtraTypeAxis,
-  cx: number, edgeY: number, height: number): void {
-  const width = height * 5;
-  const fit = typeBadgeFit(localeUppercase(t(`favorites.axis.${axis}`)), localeTypeLabels(), 156);
+/** WordBadge's measured fit and split outline, using the frame's shared paint. */
+export function drawWordBadge(ctx: CanvasRenderingContext2D, label: string,
+  paint: string | CanvasGradient, cx: number, edgeY: number, width: number, height: number, split = false): void {
+  const scale = height / 40;
+  const units = width / scale;
+  const spoken = localeUppercase(label);
+  const fit = typeBadgeFit(spoken, localeTypeLabels(), units - 44);
+  const left = cx - width / 2;
+  const top = edgeY - height / 2;
+  const inset = split ? scale / 2 : 0;
   ctx.save();
-  ctx.translate(cx - width / 2, edgeY - height / 2);
-  ctx.scale(height / 40, height / 40);
-  ctx.fillStyle = badgePaint(ctx, AXIS_FILL[axis], 0, 0, 200, 40);
-  roundRect(ctx, 0, 0, 200, 40, TYPE_BADGE.radius);
+  ctx.fillStyle = paint;
+  roundRect(ctx, left + inset, top + inset, width - 2 * inset, height - 2 * inset, TYPE_BADGE.radius * scale - inset);
   ctx.fill();
-  ctx.translate(100, 0);
-  ctx.scale(fit.scaleX, 1);
+  if (split) {
+    ctx.strokeStyle = '#d4d4d8';
+    ctx.lineWidth = scale;
+    ctx.stroke();
+    // Paint the repeated black outline once at group opacity, as WordBadge does.
+    const outline = Math.max(fit.fontSize * (1.25 / 15) / 2, 0.6 / scale);
+    const spread = outline * (1 - fit.scaleX);
+    const x = Math.floor(left), y = Math.floor(top);
+    const mask = document.createElement('canvas');
+    mask.width = Math.ceil(left + width) - x;
+    mask.height = Math.ceil(top + height) - y;
+    const ink = mask.getContext('2d')!;
+    ink.translate(left - x + width / 2, top - y);
+    ink.scale(scale * fit.scaleX, scale);
+    ink.font = `${TYPE_BADGE.fontWeight} ${fit.fontSize}px ${typeBadgeFontStack()}`;
+    ink.textAlign = 'center';
+    ink.textBaseline = 'alphabetic';
+    ink.strokeStyle = '#000000';
+    ink.lineWidth = 2 * outline;
+    ink.lineJoin = 'round';
+    for (const step of [-1, -0.5, 0, 0.5, 1]) ink.strokeText(spoken, step * spread / fit.scaleX, fit.baseline);
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.drawImage(mask, x, y);
+    ctx.restore();
+  }
+  ctx.translate(cx, top);
+  ctx.scale(scale * fit.scaleX, scale);
   ctx.font = `${TYPE_BADGE.fontWeight} ${fit.fontSize}px ${typeBadgeFontStack()}`;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText(localeUppercase(t(`favorites.axis.${axis}`)), 0, fit.baseline);
+  ctx.fillText(spoken, 0, fit.baseline);
   ctx.restore();
 }
