@@ -5,10 +5,11 @@ import {
   cellKind,
   isGenNumber,
   isTypeName,
+  parseCellKey,
   type GenAxisId,
   type TypeAxisId,
 } from './cells';
-import type { PointerMark } from './pointers';
+import type { PointerMark, SourceCoordinate } from './pointers';
 
 type Coordinate = TypeAxisId | GenAxisId;
 type Cell = readonly [TypeAxisId, GenAxisId];
@@ -100,4 +101,18 @@ export function withoutRepeats(
     if (next[key] === id) delete next[key];
   }
   return next;
+}
+
+/** Direct peer cells; unlike axis marks, distinct coordinate pairs stay distinct. */
+export function takenCoordinatesIn(fills: Record<string, number>, type: TypeAxisId, gen: GenAxisId) {
+  const result = new Map<number, SourceCoordinate[]>();
+  for (const { key, mark } of peersOf(type, gen)) {
+    const id = fills[key];
+    const cell = parseCellKey(key);
+    if (id == null || !cell) continue;
+    const origins = result.get(id) ?? [];
+    if (!origins.some((origin) => cellKey(origin.type, origin.gen) === key)) origins.push({ ...cell, mark });
+    result.set(id, origins);
+  }
+  return result;
 }

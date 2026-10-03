@@ -7,7 +7,7 @@ import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import { ChevronLeft } from 'lucide-react';
-import { isGenNumber, isTypeName, type GenAxisId, type TypeAxisId } from '../model/cells';
+import { isGenNumber, isTypeName, isTypeCell, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
 import type { SortOrder } from '../model/sortKeys';
@@ -22,8 +22,8 @@ import {
   type ChainSlot,
   type PackMove,
 } from '../model/packing';
-import { pointerMarks, pointerPool } from '../model/pointers';
-import { takenIn } from '../model/taken';
+import { pointerMarks, pointerPool, pointerCoordinates } from '../model/pointers';
+import { takenIn, takenCoordinatesIn } from '../model/taken';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
@@ -82,6 +82,7 @@ export function PickerSheet({
     }
     return eligibleFor(type, gen, sortOrder);
   }, [kind, type, gen, fills, sortOrder]);
+  const takenCoordinates = useMemo(() => takenCoordinatesIn(fills, type, gen), [fills, type, gen]);
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
   const maxCols = 6;
@@ -144,6 +145,8 @@ export function PickerSheet({
           takenMarks={kind === 'pick' ? (id) => taken.get(id) ?? [] : undefined}
           showTypes={showTypes && kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
           pointer={kind === 'pointer'}
+          coordinates={kind === 'pointer' ? (id) => pointerCoordinates(type, gen, fills, id)
+            : !isTypeCell(type, gen) ? (id) => takenCoordinates.get(id) ?? [] : undefined}
           sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}
           onClear={
             currentId != null

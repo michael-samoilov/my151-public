@@ -988,7 +988,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(opacity).toBe(1);
   });
 
-  test('overall legendary pointer badges show all origins on one aligned top edge', { tag: '@viewport' }, async ({ page }, testInfo) => {
+  test('overall legendary pointer badges keep each coordinate pair within its tile', { tag: '@viewport' }, async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.evaluate(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({
@@ -1011,10 +1011,21 @@ test.describe('favorite Pokémon picker', () => {
       const { top, height } = item.getBoundingClientRect();
       return { top, height };
     }));
-    expect(Math.max(...boxes.map((box) => box.top)) - Math.min(...boxes.map((box) => box.top))).toBeLessThan(1);
+    expect(boxes[1].top).toBeGreaterThan(boxes[0].top);
+    expect(boxes[2].top).toBeGreaterThan(boxes[1].top);
+    await expect(marks.nth(0)).toHaveAttribute('data-coordinate-cell', 'legendary|5');
+    await expect(marks.nth(1)).toHaveAttribute('data-coordinate-cell', 'fire|legendary');
+    await expect(marks.nth(2)).toHaveAttribute('data-coordinate-cell', 'dragon|legendary');
+    for (const mark of await marks.all()) await expect(mark.locator('img')).toHaveCount(2);
+    const contained = await marks.evaluateAll((items) => items.every((item) => {
+      const tile = item.closest('button')!.getBoundingClientRect();
+      const box = item.getBoundingClientRect();
+      return box.left >= tile.left && box.right <= tile.right && box.top >= tile.top && box.bottom <= tile.bottom;
+    }));
+    expect(contained).toBe(true);
     expect(Math.max(...boxes.map((box) => box.height)) - Math.min(...boxes.map((box) => box.height))).toBeLessThan(1);
     expect(await marks.first().evaluate((el) => getComputedStyle(el.parentElement!).opacity)).toBe('0.85');
-    expect(await marks.first().locator('img').evaluate((img) => decodeURIComponent((img as HTMLImageElement).src))).toContain('stroke="#d4d4d8" stroke-width="0.5"');
+    expect(await marks.first().locator('img').first().evaluate((img) => decodeURIComponent((img as HTMLImageElement).src))).toContain('stroke="#d4d4d8" stroke-width="0.5"');
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('legendary-origins.png') });
   });
 

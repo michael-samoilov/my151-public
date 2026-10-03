@@ -10,6 +10,8 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { ExtraMark, RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
+import { CoordinatePills } from './CoordinatePills';
+import type { SourceCoordinate } from '../model/pointers';
 import type { PointerMark } from '../model/pointers';
 
 const ROW_GAP_PX = 4;
@@ -26,6 +28,7 @@ export function PrettySpriteGrid({
   showTypes = true,
   pointer = false,
   sourceMarks,
+  coordinates,
   onClear,
   clearLabel,
 }: {
@@ -41,6 +44,7 @@ export function PrettySpriteGrid({
   showTypes?: boolean;
   pointer?: boolean;
   sourceMarks?: (id: number) => PointerMark[];
+  coordinates?: (id: number) => SourceCoordinate[];
   onClear?: () => void;
   clearLabel?: string;
 }) {
@@ -104,6 +108,7 @@ export function PrettySpriteGrid({
                 showTypes={showTypes}
                 pointer={pointer}
                 sourceMarks={sourceMarks?.(mon.id) ?? []}
+                coordinates={coordinates?.(mon.id)}
                 onPick={onPick}
                 onClear={onClear}
                 clearLabel={clearLabel}
@@ -123,6 +128,7 @@ function PickCell({
   showTypes,
   pointer,
   sourceMarks,
+  coordinates,
   onPick,
   onClear,
   clearLabel,
@@ -134,6 +140,7 @@ function PickCell({
   showTypes: boolean;
   pointer: boolean;
   sourceMarks: PointerMark[];
+  coordinates?: SourceCoordinate[];
   onPick: (mon: PickerMon) => void;
   onClear?: () => void;
   clearLabel?: string;
@@ -181,7 +188,8 @@ function PickCell({
           />
         ))}
       </span> : null}
-      {sourceMarks.length > 0 ? (
+      {coordinates && coordinates.length > 0 ? <CoordinatePills origins={coordinates} spritePx={spritePx} inset={inset} markPx={mark} pointer={pointer} /> : null}
+      {!coordinates && sourceMarks.length > 0 ? (
         <span
           className="pointer-events-none absolute z-[16] flex items-start leading-none opacity-[0.85]"
           style={{ gap: 1, right: inset, top: inset }}
@@ -201,7 +209,7 @@ function PickCell({
           ))}
         </span>
       ) : null}
-      {takenHere.length > 0 ? (
+      {!coordinates && takenHere.length > 0 ? (
         <span
           className="pointer-events-none absolute z-[15] flex items-start leading-none"
           style={{ gap: 1, right: inset, top: inset }}

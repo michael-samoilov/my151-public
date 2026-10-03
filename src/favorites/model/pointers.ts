@@ -133,3 +133,16 @@ export function prunePointers(fills: Record<string, number>): Record<string, num
   }
   return next;
 }
+
+export type SourceCoordinate = { type: TypeAxisId; gen: GenAxisId; mark: PointerMark };
+
+/** The pool's immediate source cells, without expanding summary pointers. */
+export function pointerCoordinates(type: TypeAxisId, gen: GenAxisId, fills: Record<string, number>, id: number): SourceCoordinate[] {
+  return pointerSourceKeys(type, gen).flatMap((key) => {
+    if (fills[key] !== id) return [];
+    const cell = parseCellKey(key);
+    const mark = pointerMarks(type, gen, { [key]: id }, id)[0]
+      ?? (cell?.gen === 'gimmick' ? { source: 'gimmick' as const } : undefined);
+    return cell && mark ? [{ ...cell, mark }] : [];
+  });
+}
