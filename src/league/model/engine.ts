@@ -214,8 +214,15 @@ export function leagueSlotIsEmpty(card: {
   type: unknown;
   theme: string;
   badgeName: string;
+  partnerId?: number | null;
+  tmMoveId?: number | null;
 }): boolean {
-  return card.lines.length === 0 && !card.type && !card.theme && !card.badgeName;
+  return card.lines.length === 0
+    && (!card.type || card.type === 'none')
+    && !card.theme
+    && !card.badgeName
+    && card.partnerId == null
+    && card.tmMoveId == null;
 }
 
 /**
