@@ -529,7 +529,7 @@ export function HomePage() {
         <div className="flex min-h-dvh flex-col">
           <header className="border-b bg-card">
             <div className="flex items-center justify-between px-3 sm:px-6 py-2">
-              <span className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
+              <span lang="en" className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
                 <span className="text-primary">my151</span>
                 <span className="text-foreground">.app</span>
               </span>

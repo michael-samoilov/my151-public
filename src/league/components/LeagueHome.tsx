@@ -364,7 +364,7 @@ export function LeagueHome() {
                     background: BAND_RED,
                   }}
                 >
-                  <b className="text-[0.5625rem] font-extrabold tracking-[0.07em]">{SECTION_BEFORE[position]}</b>
+                  <b lang="en" className="text-[0.5625rem] font-extrabold tracking-[0.07em]">{SECTION_BEFORE[position]}</b>
                 </div>
               )}
               <SlotRow
