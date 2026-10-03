@@ -120,7 +120,7 @@ function UnsetTypeMark() {
       style={{ width: TYPE_MARK, height: TYPE_MARK, borderRadius: TYPE_MARK_RADIUS }}
     >
       <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
-      <span className="text-[0.40625rem] font-extrabold leading-[1.1] tracking-[0.06em]">TYPE</span>
+      <span lang="en" className="text-[0.40625rem] font-extrabold leading-[1.1] tracking-[0.06em]">TYPE</span>
     </span>
   );
 }
