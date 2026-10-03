@@ -3,8 +3,9 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import { t } from '@/i18n';
-import { drawSprite } from '@/league/export/paint';
-import { AXIS_FILL, GEN_FILL, generationLabel, type BadgeStops } from '../components/badgeStyle';
+import { drawSprite, roundRect } from '@/league/export/paint';
+import { AXIS_FILL, GEN_FILL, type BadgeStops } from '../components/badgeStyle';
+import { ROMAN_URIS } from '../components/romanDiscAssets';
 import { GEN_NUMBERS, TYPES18, cellKey } from '../model/cells';
 import { badgePaint, drawWordBadge } from './badgePaint';
 import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCanvas, image } from './canvas';
@@ -15,7 +16,7 @@ export const SIMPLIFIED_CHART_LAYOUT = {
   width: 1356, height: 1040, left: 48, column: 140,
   tileWidth: 128, tileHeight: 140, radius: 12, stroke: 3,
   typeTop: 104, typeColumns: 9, rowHeight: 176,
-  generationTop: 480, specialTop: 688,
+  generationTop: 480, generationCircle: 40, specialTop: 688,
   specialWidth: 296, specialHeight: 248, specialBadgeHeight: 32,
 };
 
@@ -25,6 +26,7 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
   const urls = new Set([
     ...snapshot.summary.flatMap(cell => cell.mon ? [cell.mon.sprite] : []),
     ...TYPES18.map(typeGlyphPath),
+    ...GEN_NUMBERS.map(gen => ROMAN_URIS[gen]),
   ]);
   const images = new Map(await Promise.all([...urls].map(async url => [url, await image(url)] as const)));
   const L = SIMPLIFIED_CHART_LAYOUT;
@@ -35,20 +37,24 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     const left = cx - width / 2;
     const badgeHeight = size === EXPORT_SPRITE_PX ? width / 5 : L.specialBadgeHeight;
     const edge = top + height;
-    const paint = badgePaint(ctx, fill, left, edge - badgeHeight / 2, width, badgeHeight);
+    const paint = split ? badgePaint(ctx, fill, left, top, width, height)
+      : badgePaint(ctx, fill, left, edge - badgeHeight / 2, width, badgeHeight);
     // Bounds describe the outside ink, including the generation's gray guard.
-    // Inset the open-U centerline so its sides meet the badge's outer tips.
+    // Inset the path so its painted outside stays within the frame bounds.
     const inset = (L.stroke + (split ? 1 : 0)) / 2;
     const radius = L.radius - inset;
     const x = left + inset, y = top + inset, right = left + width - inset;
     ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(x, edge);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.lineTo(right - radius, y);
-    ctx.quadraticCurveTo(right, y, right, y + radius);
-    ctx.lineTo(right, edge);
+    if (split) roundRect(ctx, x, y, width - 2 * inset, height - 2 * inset, radius);
+    else {
+      ctx.beginPath();
+      ctx.moveTo(x, edge);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.lineTo(right - radius, y);
+      ctx.quadraticCurveTo(right, y, right, y + radius);
+      ctx.lineTo(right, edge);
+    }
     ctx.lineCap = 'butt';
     if (split) {
       ctx.strokeStyle = '#d4d4d8';
@@ -75,7 +81,8 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
   GEN_NUMBERS.forEach((gen, index) => {
     const cx = L.left + (index + 0.5) * L.column;
     const box = tile(byKey.get(cellKey('favorite', gen))!, cx, L.generationTop, GEN_FILL[gen], L.tileWidth, L.tileHeight, EXPORT_SPRITE_PX, true);
-    drawWordBadge(ctx, generationLabel(gen), box.paint, cx, box.edge, L.tileWidth, box.badgeHeight, true);
+    ctx.drawImage(images.get(ROMAN_URIS[gen])!, cx - L.generationCircle / 2,
+      box.edge - L.generationCircle / 2, L.generationCircle, L.generationCircle);
   });
   const special = [
     { key: cellKey('starter', 'favorite'), axis: 'starter' },
