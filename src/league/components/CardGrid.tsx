@@ -119,6 +119,7 @@ function slotX(colFrom: number, colTo: number) {
 function Band({ label, note }: { label: string; note?: string }) {
   return (
     <div
+      lang="en"
       className="mx-[0.1875rem] flex items-center gap-[0.3125rem] rounded-[0.3125rem] px-2 text-white"
       style={{ height: `${BAND_H}rem`, background: 'var(--lg-band)' }}
     >
@@ -135,7 +136,7 @@ function GlyphCell({ row, span, cell }: { row: number; span: number; cell: strin
   if (row === 1) {
     inner = (
       <span className="flex flex-col items-center gap-[3px]">
-        <span className={cn(CARD_LABEL_CLASS, 'text-white')}>No badges</span>
+        <span lang="en" className={cn(CARD_LABEL_CLASS, 'text-white')}>No badges</span>
         <GymBadges n={1} size={8} />
       </span>
     );
@@ -1533,6 +1534,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             move; the hexagon and BADGE answer to the gym. So the word here
             reads the move's own band rather than the card's `--lg-band`. */}
         <span
+          lang="en"
           className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
           data-mark-label="tm"
           style={{ color: move ? cardShades(move.type).band : 'var(--lg-hint)', whiteSpace: 'nowrap' }}
@@ -1570,6 +1572,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
               Keep the nominal line box (0.53125rem × 1.4) while its glyphs shrink. */}
           <span
             ref={nameRef}
+            lang="en"
             data-tm-name=""
             className={cn(
               'min-w-0 w-full max-w-full text-left',
@@ -1587,6 +1590,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         // column on a phone. The space before "move" does not break, so a
         // wrap reads "Pick / a move" rather than stranding the noun.
         <span
+          lang="en"
           className={cn('min-w-0 text-left normal-case', MARK_LABEL_TYPE)}
           style={{ color: 'var(--lg-hint)' }}
         >
@@ -1803,6 +1807,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
           <span
+            lang="en"
             className={cn('-mt-[0.0625rem] transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
             data-mark-label="badge"
             style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0, whiteSpace: 'nowrap' }}
@@ -1828,6 +1833,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       >
         <span
           ref={fieldRef}
+          lang={name ? undefined : 'en'}
           contentEditable
           suppressContentEditableWarning
           role="textbox"
