@@ -5,7 +5,7 @@ import { getAllPokemon, getEvolutionLine, getPokemonById } from '@/hooks/usePoke
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { CATEGORIES } from '@/data/categories';
 import { placedIds } from '../model/engine';
-import { BOSS_ROW, TEAM_SIZES } from '../model/constants';
+import { BOSS_ROW, ROW_COUNT, TEAM_SIZES } from '../model/constants';
 import { useLeagueStore } from './useLeagueStore';
 import { useLeagueUi, type BrowserPurpose } from './useLeagueUi';
 
@@ -51,6 +51,20 @@ function branchEndingAt(finalId: number): number[] {
 function lineThrough(pokemonId: number): number[] {
   const line = getEvolutionLine(pokemonId).map((p) => p.id);
   return line.includes(pokemonId) ? line : branchEndingAt(pokemonId);
+}
+
+/**
+ * Field one stage of a seated line: push every later stage off the card.
+ *
+ * The same operation a downward drag performs, so the line then reads as
+ * edited, blue reset and all, and a drag back up reveals what was pushed.
+ * The seed does the same for Brock's Onix. A leaf has nothing after it and
+ * is left alone.
+ */
+function fieldStage(card: number, seat: number, branch: number[], pokemonId: number): void {
+  const stage = branch.indexOf(pokemonId);
+  if (stage < 0 || stage >= branch.length - 1) return;
+  useLeagueStore.getState().setStageBoundary(card, seat, stage + 1, ROW_COUNT + 1);
 }
 
 function sectionKey(card: number): string {
@@ -220,11 +234,14 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       } else if (purpose === 'signature') {
         // Under six lines the signature line seats itself rightmost,
         // shifting the rest left (DECISIONS.md item 12). The whole line is
-        // seated with automatic evolution. The tapped Pokemon is the
-        // signature identity; choosing it does not edit the team's rows.
+        // seated and the tapped Pokemon is the stage fielded, so it is what
+        // the slot and the boss row show, and what sits below it on the
+        // line is still there for a drag to reveal.
         const picked = ids[ids.length - 1];
         const line = lineThrough(picked);
+        const before = league().cards[card]?.lines.length ?? 0;
         league().placeBranch(card, line, 'front');
+        if ((league().cards[card]?.lines.length ?? 0) > before) fieldStage(card, 1, line, picked);
         league().setSignatureSeat(card, 1, picked);
         ui().closeBrowser();
       } else if (purpose === 'partner') {
@@ -233,11 +250,14 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // is. `placeBranch` already no-ops on a full card, which is exactly
         // the rule: on a five-line card the partner becomes the sixth line
         // *and* the partner; on a full one it lives in the slot alone. When
-        // it does seat, the whole line evolves automatically while the
-        // partner slot keeps the tapped Pokemon's identity.
+        // it does seat, it seats the whole line and fields the tapped stage,
+        // as the ace does.
         const picked = ids[ids.length - 1];
         const line = lineThrough(picked);
+        const before = league().cards[card]?.lines.length ?? 0;
         league().placeBranch(card, line);
+        const after = league().cards[card]?.lines.length ?? 0;
+        if (after > before) fieldStage(card, after, line, picked);
         league().setPartner(card, picked);
         ui().closeBrowser();
       } else {
