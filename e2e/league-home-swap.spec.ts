@@ -57,6 +57,8 @@ function leagueSeed() {
       lines: [{ branch: [mon], boundaries: [1] }],
     };
   }
+  // The UI's No Type sentinel and an unset type are both empty holes.
+  cards[6].type = 'none';
   return JSON.stringify({ state: { name: 'SwapProof', cards }, version: 1 });
 }
 
