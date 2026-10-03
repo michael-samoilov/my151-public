@@ -734,7 +734,9 @@ function ChartMinimap({
     for (const type of TYPE_AXIS) {
       const kind = kindFor(type, gen);
       const filled = fills[cellKey(type, gen)] != null;
-      const tint = isTypeName(type) ? TYPE_COLORS[type] : EXTRA_COLOR[type];
+      const tint = type === 'favorite' || gen === 'favorite' ? EXTRA_COLOR.favorite
+        : !isTypeName(type) || !isGenNumber(gen) ? TYPE_COLORS.normal
+          : TYPE_COLORS[type];
       let background = `color-mix(in srgb, ${tint} ${filled ? 45 : 18}%, white)`;
       if (kind === 'disabled' || kind === 'null') background = 'transparent';
       cells.push(
