@@ -126,6 +126,11 @@ function visibleBody(grid: HTMLElement, scroller: HTMLElement): Box | null {
     right: Math.min(head + cell * BODY_COLS, portLeft + scroller.clientWidth, screenLeft + (visual?.width ?? window.innerWidth)),
     bottom: Math.min(headRow + cell * BODY_ROWS, portTop + scroller.clientHeight, screenTop + (visual?.height ?? window.innerHeight)),
   };
+  // The first-scroll cue lives above the grid's stacking context. Keep a
+  // short selector clear of its visible bottom band rather than hiding rows.
+  const cue = scroller.parentElement?.querySelector('[data-testid="favorites-scroll-cue"]');
+  const cueTop = cue ? cue.getBoundingClientRect().top - origin.top : box.bottom;
+  if (cueTop > box.top && cueTop < box.bottom) box.bottom = cueTop - GAP;
   return box.right > box.left && box.bottom > box.top ? box : null;
 }
 
@@ -151,7 +156,11 @@ function placePane(
   // scrollHeight excludes the outer border and rounds to an integer, so
   // reserve a few pixels before clamping against the visible body.
   const maxHeight = Math.max(0, view.bottom - view.top - 4);
-  const height = Math.min(pane.scrollHeight + 4, maxHeight);
+  // A capped flex body hides its overflow from pane.scrollHeight. Measure
+  // its full content so a short selector can grow instead of retaining a cap.
+  const contentHeight = [...pane.children].reduce((height, child) =>
+    height + Math.max(child.scrollHeight, child.getBoundingClientRect().height), 0);
+  const height = Math.min(contentHeight + 4, maxHeight);
   const box = { left: head + cell * col, top: headRow + cell * row, right: head + cell * (col + 1), bottom: headRow + cell * (row + 1) };
   const fitsBeside = (room: Box) => box.bottom + GAP + height <= room.bottom
     || box.top - height - GAP >= room.top

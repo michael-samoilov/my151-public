@@ -1011,7 +1011,7 @@ test.describe('favorite Pokémon picker', () => {
       const { top, height } = item.getBoundingClientRect();
       return { top, height };
     }));
-    expect(boxes[1].top).toBeGreaterThan(boxes[0].top);
+    expect(boxes[1].top).toBe(boxes[0].top);
     expect(boxes[2].top).toBeGreaterThan(boxes[1].top);
     await expect(marks.nth(0)).toHaveAttribute('data-coordinate-cell', 'legendary|5');
     await expect(marks.nth(1)).toHaveAttribute('data-coordinate-cell', 'fire|legendary');
@@ -1025,7 +1025,9 @@ test.describe('favorite Pokémon picker', () => {
     expect(contained).toBe(true);
     expect(Math.max(...boxes.map((box) => box.height)) - Math.min(...boxes.map((box) => box.height))).toBeLessThan(1);
     expect(await marks.first().evaluate((el) => getComputedStyle(el.parentElement!).opacity)).toBe('0.85');
-    expect(await marks.first().locator('img').first().evaluate((img) => decodeURIComponent((img as HTMLImageElement).src))).toContain('stroke="#d4d4d8" stroke-width="0.5"');
+    const numeral = await marks.first().locator('img').first().evaluate((img) => decodeURIComponent((img as HTMLImageElement).src));
+    expect(numeral).not.toContain('<circle');
+    expect(numeral).toContain('stroke-linejoin="round"');
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('legendary-origins.png') });
   });
 

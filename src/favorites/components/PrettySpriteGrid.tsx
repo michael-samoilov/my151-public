@@ -11,6 +11,7 @@ import { ExtraMark, RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
 import { CoordinatePills } from './CoordinatePills';
+import { coordinatePillLayout } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
 import type { PointerMark } from '../model/pointers';
 
@@ -54,11 +55,16 @@ export function PrettySpriteGrid({
   const dexPx = tileImageCssPx(viewportPx);
   const rows = prettyRows(mons, maxCols, lineKey, formKey);
   const fitRows = rows.length;
+  const metadataColumns = coordinatePillLayout(baseSpritePx, Math.max(5, Math.round(baseSpritePx * 0.05)), Math.round(baseSpritePx * 0.28)).columns;
+  const metadataRows = rows.map(row => Math.max(0, ...row.map(mon => Math.ceil((coordinates?.(mon.id)?.length ?? 0) / metadataColumns))));
+  const hasMetadata = metadataRows.some(count => count > 0);
   const gridRef = useRef<HTMLDivElement>(null);
   const [fitPx, setFitPx] = useState(baseSpritePx);
-  const spritePx = Math.min(baseSpritePx, fitPx);
+  const spritePx = hasMetadata ? baseSpritePx : Math.min(baseSpritePx, fitPx);
 
   useLayoutEffect(() => {
+    // Source rows use the scroller rather than compressing the Pokémon image.
+    if (hasMetadata) return;
     const grid = gridRef.current;
     if (!grid) return;
     let scroller = grid.parentElement;
@@ -79,7 +85,7 @@ export function PrettySpriteGrid({
       observer.disconnect();
       window.visualViewport?.removeEventListener('resize', resize);
     };
-  }, [baseSpritePx, fitRows]);
+  }, [baseSpritePx, fitRows, hasMetadata]);
   return (
     <div
       ref={gridRef}
@@ -103,6 +109,7 @@ export function PrettySpriteGrid({
                 key={mon.id}
                 mon={mon}
                 spritePx={spritePx}
+                metadataRows={metadataRows[r]}
                 selected={selectedId === mon.id}
                 taken={takenMarks?.(mon.id) ?? []}
                 showTypes={showTypes}
@@ -123,6 +130,7 @@ export function PrettySpriteGrid({
 function PickCell({
   mon,
   spritePx,
+  metadataRows,
   selected,
   taken,
   showTypes,
@@ -135,6 +143,7 @@ function PickCell({
 }: {
   mon: PickerMon;
   spritePx: number;
+  metadataRows: number;
   selected: boolean;
   taken: PointerMark[];
   showTypes: boolean;
@@ -150,6 +159,8 @@ function PickCell({
   const takenHere = pointer ? [] : taken;
   const mark = Math.round(spritePx * 0.28);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
+  const pills = coordinatePillLayout(spritePx, inset, mark);
+  const metadataHeight = metadataRows > 0 ? inset * 2 + metadataRows * pills.size + (metadataRows - 1) * pills.gap : 0;
   const tile = (
     <button
       type="button"
@@ -157,8 +168,8 @@ function PickCell({
       data-testid={`favorites-pick-${mon.id}`}
       aria-pressed={selected}
       aria-label={clearing ? `${clearLabel ?? t('favorites.clear')} ${labelOf(mon)}` : labelOf(mon)}
-      className="group/pick relative flex shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent p-0 hover:bg-foreground/5"
-      style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
+      className="group/pick relative flex shrink-0 flex-col cursor-pointer items-center justify-start rounded-md bg-transparent p-0 hover:bg-foreground/5"
+      style={{ width: spritePx, height: spritePx + metadataHeight, scrollMargin: 4 }}
     >
       <img
         src={mon.sprite}
@@ -238,7 +249,7 @@ function PickCell({
           viewBox="0 0 24 24"
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 text-red-500 opacity-50 group-hover/pick:opacity-100"
-          style={{ width: Math.round(spritePx * 0.62), height: Math.round(spritePx * 0.62), filter: 'drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)' }}
+          style={{ top: spritePx / 2, width: Math.round(spritePx * 0.62), height: Math.round(spritePx * 0.62), filter: 'drop-shadow(0 0 1px white) drop-shadow(0 0 1px white)' }}
           fill="none"
           stroke="currentColor"
           strokeWidth={3}
