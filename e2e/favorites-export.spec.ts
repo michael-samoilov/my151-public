@@ -33,7 +33,7 @@ test.describe('full favorite chart export', () => {
       }
       return { width: img.naturalWidth, height: img.naturalHeight, corner: pixel(0, 0), frame: pixel(1400, 4), white: pixel(1400, 104), header: pixel(1400, 20), opaque, matching };
     });
-    expect(geometry).toMatchObject({ width: 2832, height: 1776, corner: [0, 0, 0, 0], frame: [220, 38, 38, 255], white: [255, 255, 255, 255], header: [220, 38, 38, 255] });
+    expect(geometry).toMatchObject({ width: 2832, height: 1724, corner: [0, 0, 0, 0], frame: [220, 38, 38, 255], white: [255, 255, 255, 255], header: [220, 38, 38, 255] });
     expect(geometry.opaque).toBeGreaterThan(100);
     expect(geometry.matching).toBe(geometry.opaque);
     await testInfo.attach('png-geometry', { body: JSON.stringify(geometry, null, 2), contentType: 'application/json' });

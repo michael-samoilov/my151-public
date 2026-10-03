@@ -7,6 +7,7 @@ import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { EXPORT_FRAME_PX, EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import { TYPE_BADGE } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
+import { FOOT } from '@/league/export/layout';
 import { drawPokeballBg, drawSprite, font, roundRect } from '@/league/export/paint';
 import { AXIS_FILL, type BadgeStops } from '../components/badgeStyle';
 import favoriteIcon from '../icons/favorite.svg?url';
@@ -20,11 +21,12 @@ import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCa
 // Native 96px sprites, with 12px breathing room on each side. The shared
 // frame and corner geometry are the same as Dex and League PNGs.
 export const FULL_CHART_CELL = EXPORT_SPRITE_PX + 24;
+const FULL_CHART_GRID_Y = EXPORT_FRAME_PX + 32 + 72;
 export const FULL_CHART_LAYOUT = {
   width: 2 * EXPORT_FRAME_PX + 48 + (TYPE_AXIS.length + 1) * FULL_CHART_CELL,
-  height: 2 * EXPORT_FRAME_PX + 64 + 72 + (GEN_AXIS.length + 1) * FULL_CHART_CELL + 56,
+  height: FULL_CHART_GRID_Y + (GEN_AXIS.length + 1) * FULL_CHART_CELL + FOOT + EXPORT_FRAME_PX,
   gridX: EXPORT_FRAME_PX + 24,
-  gridY: EXPORT_FRAME_PX + 32 + 72,
+  gridY: FULL_CHART_GRID_Y,
 };
 const EXTRA_ICONS: Record<ExtraTypeAxis, string> = {
   favorite: favoriteIcon, gimmick: gimmickIcon, legendary: legendaryIcon, starter: starterIcon,
@@ -99,7 +101,7 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
     if (entry.mon) {
-      drawPokeballBg(ctx, TYPE_COLORS[entry.mon.types[0]], entry.mon.types[1] ? TYPE_COLORS[entry.mon.types[1]] : '#ffffff',
+      drawPokeballBg(ctx, TYPE_COLORS[entry.mon.types[0]], TYPE_COLORS[entry.mon.types[1] ?? entry.mon.types[0]],
         EXPORT_SPRITE_PX * 0.84, x + cell / 2, y + cell / 2);
       drawSprite(ctx, images.get(entry.mon.sprite)!, x + cell / 2, y + cell / 2, EXPORT_SPRITE_PX);
     } else if (entry.kind === 'pick' || entry.kind === 'pointer') {
