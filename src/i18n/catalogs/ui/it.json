@@ -22,7 +22,7 @@
   "favorites.empty.row": "Scegli un Pokémon in un’altra casella di questa generazione. Le tue scelte appariranno qui.",
   "favorites.empty.title": "Non c’è ancora nulla da scegliere",
   "favorites.empty.unavailable": "Non ci sono Pokémon disponibili per questa casella.",
-  "favorites.export.chartTitle": "I miei Pokémon preferiti",
+  "favorites.export.chartTitle": "Pokémon preferiti per tipo e generazione",
   "favorites.export.close": "Chiudi esportazione",
   "favorites.export.description": "Tutte le generazioni e tutti i tipi, incluse le caselle vuote.",
   "favorites.export.error": "Impossibile creare l’immagine. Riprova.",

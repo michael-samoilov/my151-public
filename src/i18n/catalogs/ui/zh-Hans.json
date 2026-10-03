@@ -22,7 +22,7 @@
   "favorites.empty.row": "先在这个世代的其他格子中选择宝可梦，选好的宝可梦就会显示在这里。",
   "favorites.empty.title": "还没有可选的宝可梦",
   "favorites.empty.unavailable": "没有可用于此格的宝可梦。",
-  "favorites.export.chartTitle": "我最喜欢的宝可梦",
+  "favorites.export.chartTitle": "按属性和世代分类的最爱宝可梦",
   "favorites.export.close": "关闭导出",
   "favorites.export.description": "包括所有世代和属性，以及空白格。",
   "favorites.export.error": "无法生成图片。请重试。",

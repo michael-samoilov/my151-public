@@ -22,7 +22,7 @@
   "favorites.empty.row": "Choisissez un Pokémon dans une autre case de cette génération. Vos choix apparaîtront ici.",
   "favorites.empty.title": "Rien à choisir pour le moment",
   "favorites.empty.unavailable": "Aucun Pokémon n’est disponible pour cette case.",
-  "favorites.export.chartTitle": "Mes Pokémon préférés",
+  "favorites.export.chartTitle": "Pokémon préférés par type et génération",
   "favorites.export.close": "Fermer l’exportation",
   "favorites.export.description": "Toutes les générations et tous les types, y compris les cases vides.",
   "favorites.export.error": "Impossible de créer l’image. Veuillez réessayer.",

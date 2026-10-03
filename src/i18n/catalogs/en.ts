@@ -200,7 +200,7 @@ export const enUi = {
   'favorites.axis.legendary': 'Legendary',
   'favorites.axis.starter': 'Starter',
   'favorites.title': 'Favorite Pokémon Picker by Type and Generation',
-  'favorites.export.chartTitle': 'My favorite Pokémon',
+  'favorites.export.chartTitle': 'Favorite Pokémon by Type by Generation',
   'favorites.export.fullGrid': 'Full grid',
   'favorites.export.simplified': 'Simplified',
   'favorites.export.close': "Close export",

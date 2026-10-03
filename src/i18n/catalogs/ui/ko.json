@@ -22,7 +22,7 @@
   "favorites.empty.row": "이 세대의 다른 칸에서 포켓몬을 고르면 여기에 나타납니다.",
   "favorites.empty.title": "아직 고를 포켓몬이 없습니다",
   "favorites.empty.unavailable": "이 칸에서 고를 수 있는 포켓몬이 없습니다.",
-  "favorites.export.chartTitle": "내가 좋아하는 포켓몬",
+  "favorites.export.chartTitle": "타입·세대별 좋아하는 포켓몬",
   "favorites.export.close": "내보내기 닫기",
   "favorites.export.description": "빈 칸을 포함한 모든 세대와 타입을 표시합니다.",
   "favorites.export.error": "이미지를 만들 수 없습니다. 다시 시도해 주세요.",

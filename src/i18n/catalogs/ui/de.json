@@ -22,7 +22,7 @@
   "favorites.empty.row": "Wähle ein Pokémon in einer anderen Zelle dieser Generation. Deine Auswahl erscheint hier.",
   "favorites.empty.title": "Noch keine Auswahl möglich",
   "favorites.empty.unavailable": "Für diese Zelle sind keine Pokémon verfügbar.",
-  "favorites.export.chartTitle": "Meine Lieblings-Pokémon",
+  "favorites.export.chartTitle": "Lieblings-Pokémon nach Typ und Generation",
   "favorites.export.close": "Export schließen",
   "favorites.export.description": "Alle Generationen und Typen, einschließlich leerer Felder.",
   "favorites.export.error": "Das Bild konnte nicht erstellt werden. Bitte versuche es erneut.",

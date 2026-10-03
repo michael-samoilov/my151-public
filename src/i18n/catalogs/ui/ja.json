@@ -22,7 +22,7 @@
   "favorites.empty.row": "この世代のほかのマスでポケモンを選ぶと、ここに表示されます。",
   "favorites.empty.title": "まだ選べるポケモンがいません",
   "favorites.empty.unavailable": "このマスで選べるポケモンはいません。",
-  "favorites.export.chartTitle": "お気に入りのポケモン",
+  "favorites.export.chartTitle": "タイプ・世代別のお気に入りポケモン",
   "favorites.export.close": "書き出しを閉じる",
   "favorites.export.description": "空のマスも含め、すべての世代とタイプを表示します。",
   "favorites.export.error": "画像を作成できませんでした。もう一度お試しください。",
