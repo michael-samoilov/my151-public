@@ -28,6 +28,7 @@
   "favorites.export.error": "이미지를 만들 수 없습니다. 다시 시도해 주세요.",
   "favorites.export.fullChart": "전체 표",
   "favorites.export.fullGrid": "전체 표",
+  "favorites.export.noPick": "선택 없음",
   "favorites.export.preview": "좋아하는 포켓몬 표 미리보기",
   "favorites.export.retry": "다시 시도",
   "favorites.export.save": "이미지 저장",

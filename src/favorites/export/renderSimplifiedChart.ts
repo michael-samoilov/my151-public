@@ -3,21 +3,24 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import { t } from '@/i18n';
-import { drawSprite, roundRect } from '@/league/export/paint';
+import { drawSprite, roundRect, font } from '@/league/export/paint';
 import { AXIS_FILL, GEN_FILL, type BadgeStops } from '../components/badgeStyle';
 import { ROMAN_URIS } from '../components/romanDiscAssets';
 import { GEN_NUMBERS, TYPES18, cellKey } from '../model/cells';
 import { badgePaint, drawWordBadge } from './badgePaint';
 import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCanvas, image } from './canvas';
+import { drawFavoriteLaurels, drawFavoriteCrown, FAVORITE_ORNAMENTS } from './laurelPaint';
 import type { FavoritesExportCell, FavoritesSnapshot } from './snapshot';
 
-// Nine types per row, one generation row, then four larger special favorites.
+// Nine types per row, one generation row, then diagonal support cards and Overall.
 export const SIMPLIFIED_CHART_LAYOUT = {
   width: 1356, height: 1040, left: 48, column: 140,
   tileWidth: 128, tileHeight: 140, radius: 12, stroke: 3,
   typeTop: 104, typeColumns: 9, rowHeight: 176,
-  generationTop: 480, generationCircle: 40, specialTop: 688,
-  specialWidth: 296, specialHeight: 248, specialBadgeHeight: 32,
+  generationTop: 480, generationCircle: 40,
+  supportWidth: 224, supportHeight: 164, supportBadgeHeight: 25.6,
+  favoriteWidth: 360, favoriteHeight: 264, favoriteBadgeHeight: 32,
+  supportTops: [708, 759.6, 811.2], favoriteTop: 708,
 };
 
 /** Only the validated generation, type, special and overall pointer cells. */
@@ -27,15 +30,16 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     ...snapshot.summary.flatMap(cell => cell.mon ? [cell.mon.sprite] : []),
     ...TYPES18.map(typeGlyphPath),
     ...GEN_NUMBERS.map(gen => ROMAN_URIS[gen]),
+    FAVORITE_ORNAMENTS.leaf, FAVORITE_ORNAMENTS.crown,
   ]);
   const images = new Map(await Promise.all([...urls].map(async url => [url, await image(url)] as const)));
   const L = SIMPLIFIED_CHART_LAYOUT;
   const { canvas, ctx } = createFavoritesCanvas(L.width, L.height);
   const byKey = new Map(snapshot.summary.map(cell => [cell.key, cell]));
   function tile(entry: FavoritesExportCell, cx: number, top: number, fill: string | BadgeStops,
-    width = L.tileWidth, height = L.tileHeight, size = EXPORT_SPRITE_PX, split = false) {
+    width = L.tileWidth, height = L.tileHeight, size = EXPORT_SPRITE_PX, split = false, special = false, fixedBadgeHeight?: number) {
     const left = cx - width / 2;
-    const badgeHeight = size === EXPORT_SPRITE_PX ? width / 5 : L.specialBadgeHeight;
+    const badgeHeight = fixedBadgeHeight ?? width / 5;
     const edge = top + height;
     const paint = split ? badgePaint(ctx, fill, left, top, width, height)
       : badgePaint(ctx, fill, left, edge - badgeHeight / 2, width, badgeHeight);
@@ -65,10 +69,18 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     ctx.lineWidth = L.stroke;
     ctx.stroke();
     ctx.restore();
-    const spriteTop = top + (size === EXPORT_SPRITE_PX ? 16 : 20);
+    const spriteTop = special ? Math.round(top + (height - badgeHeight / 2 - size) / 2) : top + 16;
     const cy = spriteTop + size / 2;
     if (entry.mon) drawSprite(ctx, images.get(entry.mon.sprite)!, cx, cy, size);
-    else drawBall(ctx, entry.type === 'favorite' && entry.generation === 'favorite' ? 'master' : 'ultra', cx, cy);
+    else {
+      drawBall(ctx, entry.type === 'favorite' && entry.generation === 'favorite' ? 'master' : 'ultra', cx, cy);
+      if (special) {
+        ctx.save();
+        ctx.font = font(16, 500); ctx.textAlign = 'center'; ctx.fillStyle = '#737373';
+        ctx.fillText(t('favorites.export.noPick'), cx, spriteTop + size - 12);
+        ctx.restore();
+      }
+    }
     return { edge, badgeHeight, paint };
   }
   TYPES18.forEach((type, index) => {
@@ -91,10 +103,18 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     { key: cellKey('favorite', 'favorite'), axis: 'favorite' },
   ] as const;
   special.forEach(({ key, axis }, index) => {
-    const cx = [206, 521, 836, 1151][index];
-    const box = tile(byKey.get(key)!, cx, L.specialTop, AXIS_FILL[axis], L.specialWidth, L.specialHeight, EXPORT_SPRITE_PX * 2);
-    drawWordBadge(ctx, t(`favorites.axis.${axis}`), box.paint, cx, box.edge, L.specialWidth, box.badgeHeight);
+    const favorite = axis === 'favorite';
+    const cx = [166, 402, 638, 1053][index];
+    const width = favorite ? L.favoriteWidth : L.supportWidth;
+    const height = favorite ? L.favoriteHeight : L.supportHeight;
+    const badgeHeight = favorite ? L.favoriteBadgeHeight : L.supportBadgeHeight;
+    const top = favorite ? L.favoriteTop : L.supportTops[index];
+    const box = tile(byKey.get(key)!, cx, top, AXIS_FILL[axis], width, height,
+      EXPORT_SPRITE_PX * (favorite ? 2 : 1), false, true, badgeHeight);
+    if (favorite) drawFavoriteLaurels(ctx, images.get(FAVORITE_ORNAMENTS.leaf)!);
+    drawWordBadge(ctx, t(`favorites.axis.${axis}`), box.paint, cx, box.edge, width, badgeHeight);
   });
+  drawFavoriteCrown(ctx, images.get(FAVORITE_ORNAMENTS.crown)!);
   drawFavoritesCredit(ctx, L.width, L.height);
   return encodeFavoritesCanvas(canvas);
 }

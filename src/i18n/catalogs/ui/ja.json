@@ -28,6 +28,7 @@
   "favorites.export.error": "画像を作成できませんでした。もう一度お試しください。",
   "favorites.export.fullChart": "表全体",
   "favorites.export.fullGrid": "全体の表",
+  "favorites.export.noPick": "未選択",
   "favorites.export.preview": "お気に入りポケモンの表のプレビュー",
   "favorites.export.retry": "もう一度試す",
   "favorites.export.save": "画像を保存",

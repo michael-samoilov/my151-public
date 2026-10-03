@@ -28,6 +28,7 @@
   "favorites.export.error": "無法產生圖片。請重試。",
   "favorites.export.fullChart": "完整圖表",
   "favorites.export.fullGrid": "完整表格",
+  "favorites.export.noPick": "未選擇",
   "favorites.export.preview": "最喜歡的寶可夢圖表預覽",
   "favorites.export.retry": "重試",
   "favorites.export.save": "儲存圖片",

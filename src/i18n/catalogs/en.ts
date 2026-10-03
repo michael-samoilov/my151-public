@@ -207,6 +207,7 @@ export const enUi = {
   'favorites.export.description': "All generations and types, including empty cells.",
   'favorites.export.error': "Could not create the image. Please try again.",
   'favorites.export.fullChart': "Full chart",
+  'favorites.export.noPick': 'No pick',
   'favorites.export.preview': "Favorite Pokémon chart preview",
   'favorites.export.retry': "Try again",
   'favorites.export.save': "Save image",

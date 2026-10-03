@@ -28,6 +28,7 @@
   "favorites.export.error": "无法生成图片。请重试。",
   "favorites.export.fullChart": "完整图表",
   "favorites.export.fullGrid": "完整表格",
+  "favorites.export.noPick": "未选择",
   "favorites.export.preview": "最喜欢的宝可梦图表预览",
   "favorites.export.retry": "重试",
   "favorites.export.save": "保存图片",

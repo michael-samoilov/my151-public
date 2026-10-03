@@ -28,6 +28,7 @@
   "favorites.export.error": "Impossible de créer l’image. Veuillez réessayer.",
   "favorites.export.fullChart": "Tableau complet",
   "favorites.export.fullGrid": "Grille complète",
+  "favorites.export.noPick": "Aucun choix",
   "favorites.export.preview": "Aperçu du tableau de vos Pokémon préférés",
   "favorites.export.retry": "Réessayer",
   "favorites.export.save": "Enregistrer l’image",
