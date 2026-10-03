@@ -103,7 +103,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
          * eyebrow below, so the heading Google reads names the tool. The sr-only
          * tagline stays for screen readers, which otherwise hear only
          * "my151.app". */}
-        <p className="m-0 text-2xl font-extrabold tracking-tight whitespace-nowrap">
+        <p className="m-0 text-2xl font-extrabold whitespace-nowrap">
           {/* The wordmark is the way back to the router page, the way a logo is
               on any other site. It is a plain link, not a view switch: the
               router is a separate entry point, and the Pokédex lives in
@@ -116,7 +116,11 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
             data-testid="wordmark"
             className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <span className="text-primary">my151</span><span className="text-foreground">.app</span>
+            {/* The brand keeps Latin tracking. The translated tagline below
+                still inherits the page's language. */}
+            <span lang="en" className="tracking-tight">
+              <span className="text-primary">my151</span><span className="text-foreground">.app</span>
+            </span>
             {/* Through the catalog like every other visible string. It is
                 screen-reader-only, but "invisible" is not "untranslated": a
                 Japanese visitor's screen reader should not read them an English

@@ -41,7 +41,7 @@ import { confirmOnEnter } from './components/confirmOnEnter';
 function GlobalHeader() {
   return (
     <header className="flex h-11 items-center justify-between border-b bg-card px-3 sm:px-6">
-      <a href="/" data-testid="wordmark" className="text-2xl font-extrabold tracking-tight">
+      <a href="/" lang="en" data-testid="wordmark" className="text-2xl font-extrabold tracking-tight">
         <span className="text-primary">my151</span>
         <span className="text-foreground">.app</span>
       </a>
