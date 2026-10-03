@@ -6,12 +6,12 @@ import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { useNamesVersion } from '@/i18n';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import { ExtraMark, RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
 import { CoordinatePills } from './CoordinatePills';
-import { coordinatePillLayout } from './coordinatePillLayout';
+import { coordinatePillLayout, originRows, type OriginContext } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
 import type { PointerMark } from '../model/pointers';
 
@@ -30,6 +30,7 @@ export function PrettySpriteGrid({
   pointer = false,
   sourceMarks,
   coordinates,
+  originContext,
   onClear,
   clearLabel,
 }: {
@@ -46,6 +47,7 @@ export function PrettySpriteGrid({
   pointer?: boolean;
   sourceMarks?: (id: number) => PointerMark[];
   coordinates?: (id: number) => SourceCoordinate[];
+  originContext?: OriginContext;
   onClear?: () => void;
   clearLabel?: string;
 }) {
@@ -55,8 +57,8 @@ export function PrettySpriteGrid({
   const dexPx = tileImageCssPx(viewportPx);
   const rows = prettyRows(mons, maxCols, lineKey, formKey);
   const fitRows = rows.length;
-  const metadataColumns = coordinatePillLayout(baseSpritePx, Math.max(5, Math.round(baseSpritePx * 0.05)), Math.round(baseSpritePx * 0.28)).columns;
-  const metadataRows = rows.map(row => Math.max(0, ...row.map(mon => Math.ceil((coordinates?.(mon.id)?.length ?? 0) / metadataColumns))));
+  const metadataLayout = coordinatePillLayout(baseSpritePx, Math.max(5, Math.round(baseSpritePx * 0.05)), Math.round(baseSpritePx * 0.28));
+  const metadataRows = rows.map(row => Math.max(0, ...row.map(mon => originRows(coordinates?.(mon.id) ?? [], pointer, originContext, metadataLayout))));
   const hasMetadata = metadataRows.some(count => count > 0);
   const gridRef = useRef<HTMLDivElement>(null);
   const [fitPx, setFitPx] = useState(baseSpritePx);
@@ -116,6 +118,7 @@ export function PrettySpriteGrid({
                 pointer={pointer}
                 sourceMarks={sourceMarks?.(mon.id) ?? []}
                 coordinates={coordinates?.(mon.id)}
+                originContext={originContext}
                 onPick={onPick}
                 onClear={onClear}
                 clearLabel={clearLabel}
@@ -137,6 +140,7 @@ function PickCell({
   pointer,
   sourceMarks,
   coordinates,
+  originContext,
   onPick,
   onClear,
   clearLabel,
@@ -150,10 +154,12 @@ function PickCell({
   pointer: boolean;
   sourceMarks: PointerMark[];
   coordinates?: SourceCoordinate[];
+  originContext?: OriginContext;
   onPick: (mon: PickerMon) => void;
   onClear?: () => void;
   clearLabel?: string;
 }) {
+  const originsId = useId();
   const clearing = selected && Boolean(onClear);
   // Pointer selectors list only picks from other cells, so they never show taken.
   const takenHere = pointer ? [] : taken;
@@ -167,6 +173,7 @@ function PickCell({
       onClick={() => selected && onClear ? onClear() : onPick(mon)}
       data-testid={`favorites-pick-${mon.id}`}
       aria-pressed={selected}
+      aria-describedby={coordinates?.length ? originsId : undefined}
       aria-label={clearing ? `${clearLabel ?? t('favorites.clear')} ${labelOf(mon)}` : labelOf(mon)}
       className="group/pick relative flex shrink-0 flex-col cursor-pointer items-center justify-start rounded-md bg-transparent p-0 hover:bg-foreground/5"
       style={{ width: spritePx, height: spritePx + metadataHeight, scrollMargin: 4 }}
@@ -199,7 +206,7 @@ function PickCell({
           />
         ))}
       </span> : null}
-      {coordinates && coordinates.length > 0 ? <CoordinatePills origins={coordinates} spritePx={spritePx} inset={inset} markPx={mark} pointer={pointer} /> : null}
+      {coordinates && coordinates.length > 0 ? <CoordinatePills origins={coordinates} spritePx={spritePx} inset={inset} markPx={mark} pointer={pointer} current={originContext} id={originsId} /> : null}
       {!coordinates && sourceMarks.length > 0 ? (
         <span
           className="pointer-events-none absolute z-[16] flex items-start leading-none opacity-[0.85]"

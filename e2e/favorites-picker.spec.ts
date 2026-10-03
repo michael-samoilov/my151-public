@@ -988,7 +988,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(opacity).toBe(1);
   });
 
-  test('overall legendary pointer badges keep each coordinate pair within its tile', { tag: '@viewport' }, async ({ page }, testInfo) => {
+  test('overall legendary pointer badges omit the implied category and stay within their tile', { tag: '@viewport' }, async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.evaluate(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({
@@ -1012,11 +1012,14 @@ test.describe('favorite Pokémon picker', () => {
       return { top, height };
     }));
     expect(boxes[1].top).toBe(boxes[0].top);
-    expect(boxes[2].top).toBeGreaterThan(boxes[1].top);
+    expect(boxes[2].top).toBe(boxes[1].top);
     await expect(marks.nth(0)).toHaveAttribute('data-coordinate-cell', 'legendary|5');
     await expect(marks.nth(1)).toHaveAttribute('data-coordinate-cell', 'fire|legendary');
     await expect(marks.nth(2)).toHaveAttribute('data-coordinate-cell', 'dragon|legendary');
-    for (const mark of await marks.all()) await expect(mark.locator('img')).toHaveCount(2);
+    for (const mark of await marks.all()) {
+      await expect(mark).toHaveAttribute('data-origin-mode', 'single');
+      await expect(mark.locator('img')).toHaveCount(1);
+    }
     const contained = await marks.evaluateAll((items) => items.every((item) => {
       const tile = item.closest('button')!.getBoundingClientRect();
       const box = item.getBoundingClientRect();

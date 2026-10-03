@@ -145,6 +145,7 @@ export function PickerSheet({
           takenMarks={kind === 'pick' ? (id) => taken.get(id) ?? [] : undefined}
           showTypes={showTypes && kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
           pointer={kind === 'pointer'}
+          originContext={{ type, gen }}
           coordinates={kind === 'pointer' ? (id) => pointerCoordinates(type, gen, fills, id)
             : !isTypeCell(type, gen) ? (id) => pickedCoordinates.get(id) ?? [] : undefined}
           sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}
