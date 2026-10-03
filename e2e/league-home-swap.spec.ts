@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * League home: empty drop fills only that hole. Occupied drop is playlist
- * arrayMove. Empties are not boxes.
+ * League home: an empty drop fills only that hole. An occupied drop shifts
+ * the nearest occupied segment into a passed hole. Empties are not boxes.
  */
 
 const TYPES = [
@@ -127,11 +127,13 @@ test.describe('league home slot move', () => {
     ]);
   });
 
-  test('playlist-displaces onto the last occupied row', async ({ page }) => {
+  test('displaces only the occupied segment before the last row', async ({ page }, testInfo) => {
     await openSeeded(page);
     await dragSlot(page, 0, 13);
-    expect(await badges(page)).toEqual([
-      'B', 'C', 'D', 'E', 'F', '', 'G', 'H', '', 'I', 'J', 'K', 'L', 'A',
+    const result = await badges(page);
+    await testInfo.attach('last-row-order', { body: JSON.stringify(result), contentType: 'application/json' });
+    expect(result).toEqual([
+      '', 'B', 'C', 'D', 'E', 'F', '', 'G', 'H', 'I', 'J', 'K', 'L', 'A',
     ]);
   });
 
