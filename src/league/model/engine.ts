@@ -222,8 +222,8 @@ export function leagueSlotIsEmpty(card: {
  * Move a league slot on the home summary.
  *
  * Empty drop: only the dragged trainer moves into that hole. Empties are not
- * boxes, so neighbours do not shift. Occupied drop: playlist `arrayMove` —
- * passed trainers keep order and close the hole.
+ * boxes, so neighbours do not shift. Occupied drop: shift the occupied
+ * segment into the nearest passed hole. Earlier holes stop displacement.
  */
 export function moveLeagueSlots<T>(
   slots: readonly T[],
@@ -232,7 +232,8 @@ export function moveLeagueSlots<T>(
   isEmpty: (slot: T) => boolean,
   blank: () => T,
 ): T[] {
-  if (from === to || from < 0 || to < 0 || from >= slots.length || to >= slots.length) {
+  if (!Number.isInteger(from) || !Number.isInteger(to)
+      || from === to || from < 0 || to < 0 || from >= slots.length || to >= slots.length) {
     return [...slots];
   }
   const next = slots.slice();
@@ -243,7 +244,16 @@ export function moveLeagueSlots<T>(
     next[to] = moved;
     return next;
   }
-  const [moved] = next.splice(from, 1);
-  next.splice(to, 0, moved);
+  const moved = slots[from];
+  const step = from < to ? 1 : -1;
+  let hole = from;
+  for (let i = from + step; i !== to; i += step) {
+    if (isEmpty(slots[i])) hole = i;
+  }
+  next[from] = blank();
+  for (let i = hole; i !== to; i += step) {
+    next[i] = slots[i + step];
+  }
+  next[to] = moved;
   return next;
 }

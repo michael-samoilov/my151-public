@@ -3,6 +3,8 @@ import {
   DndContext,
   useDraggable,
   useDroppable,
+  closestCenter,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -13,7 +15,6 @@ import { formAt } from '../model/powerups';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
 import {
-  createEffectiveCursorCollision,
   dragInputIsTouch,
   dragPointerRef,
   isTouchDrag,
@@ -64,34 +65,22 @@ const BAND_RED = '#dc2626';
 /** The widest team any row holds — the team block's column count. */
 const TEAM_COLS = 6;
 
-/**
- * How far above the thumb the drop is read, on touch.
- *
- * A finger covers about a row and a half of this list, so the row it picks
- * has to sit clear of it. The dex pages do the same thing with 180px over
- * their much taller tiles (`src/lib/dragCollision.ts`).
- */
-const HIT_LIFT_PX = 64;
+/** Read stable drop wrappers, not the scaled face held inside a row. */
+function rowRects(): DOMRect[] {
+  return Array.from({ length: SLOT_COUNT }, (_, i) =>
+    document.querySelector(`[data-testid="league-slot-${i}"]`)?.parentElement?.getBoundingClientRect(),
+  ).filter((r): r is DOMRect => r !== undefined);
+}
 
-const rowCollision = createEffectiveCursorCollision(HIT_LIFT_PX);
-
-/**
- * Reorder index from the thumb on touch (lift is hit-test only).
- *
- * Collision reads a point above the finger so the target stays visible, but
- * preview uses `moveLeagueSlots` and must follow the thumb — not the lifted
- * hit point — or labels jump before the finger crosses a row.
- */
-function insertIndexFromThumb(): number | undefined {
+/** The held copy sits on its target, so both inputs use the raw pointer. */
+function insertIndexFromPointer(): number | undefined {
   const y = dragPointerRef.current?.y;
   if (y === undefined) return undefined;
-
+  const rects = rowRects();
+  if (rects.length !== SLOT_COUNT) return undefined;
   let best: number | undefined;
   let bestD2 = Infinity;
-  for (let i = 0; i < SLOT_COUNT; i++) {
-    const el = document.querySelector(`[data-testid="league-slot-${i}"]`);
-    if (!el) continue;
-    const r = el.getBoundingClientRect();
+  for (const [i, r] of rects.entries()) {
     const cy = r.top + r.height / 2;
     const d2 = (cy - y) ** 2;
     if (d2 < bestD2) {
@@ -100,6 +89,36 @@ function insertIndexFromThumb(): number | undefined {
     }
   }
   return best;
+}
+
+const rowCollision: CollisionDetection = (args) => {
+  dragPointerRef.current = args.pointerCoordinates;
+  const index = insertIndexFromPointer();
+  return index === undefined ? closestCenter(args) : [{ id: `slotdrop-${index}`, data: { value: 0 } }];
+};
+
+/** Keep edge scrolling only when the summary still has unreachable rows. */
+function canScrollRows(): boolean {
+  const rects = rowRects();
+  if (rects.length !== SLOT_COUNT) return true;
+  const viewport = window.visualViewport;
+  let top = viewport?.offsetTop ?? 0;
+  let bottom = top + (viewport?.height ?? window.innerHeight);
+  for (let el = document.querySelector('[data-lg-league-root]')?.parentElement; el; el = el.parentElement) {
+    if (!/(auto|scroll|hidden|clip)/.test(getComputedStyle(el).overflowY)) continue;
+    const r = el.getBoundingClientRect();
+    const scale = el.offsetHeight > 0 ? r.height / el.offsetHeight : 1;
+    const clientTop = r.top + el.clientTop * scale;
+    top = Math.max(top, clientTop);
+    bottom = Math.min(bottom, clientTop + el.clientHeight * scale);
+  }
+  const allVisible = rects.every(r => r.top >= top && r.bottom <= bottom);
+  const centers = rects.map(r => r.top + r.height / 2);
+  // Nearest-row targeting reaches an end row at the midpoint to its neighbour.
+  // There is no pointer-to-hit offset: the held copy is rendered on that row.
+  const firstDropEnd = (centers[0] + centers[1]) / 2;
+  const lastDropStart = (centers[SLOT_COUNT - 2] + centers[SLOT_COUNT - 1]) / 2;
+  return !(allVisible && firstDropEnd > top && lastDropStart < bottom);
 }
 
 const SECTION_BEFORE: Record<number, string> = {
@@ -289,14 +308,14 @@ export function LeagueHome() {
   );
   const metrics = homeMetrics(fitHomeLayout(fit.budgetRem, rootPx));
   const rendering = spriteRendering(screen, HOME_SPRITE_REM * rootPx * fit.scale, dpr);
-  const [preview, setPreview] = useState<{ from: number; to: number } | null>(null);
+  const [preview, setPreview] = useState<{ from: number; to: number; cards: readonly GymCard[] } | null>(null);
   const cards = useLeagueStore((s) => s.cards);
   const blank = cards.every((c) => leagueSlotIsEmpty(c));
 
   const displayCards = useMemo(() => {
     if (!preview) return cards;
     return moveLeagueSlots(
-      cards,
+      preview.cards,
       preview.from,
       preview.to,
       leagueSlotIsEmpty,
@@ -308,25 +327,26 @@ export function LeagueHome() {
     dragInputIsTouch.current = isTouchDrag(e.activatorEvent);
     const position = (e.active.data.current as { index: number } | undefined)?.index;
     if (position === undefined) return;
-    setPreview({ from: position, to: position });
+    setPreview({ from: position, to: position, cards: useLeagueStore.getState().cards });
   }, []);
 
   const onDragOver = useCallback((e: DragOverEvent) => {
     const from = (e.active.data.current as { index: number } | undefined)?.index;
     const to =
-      insertIndexFromThumb()
+      insertIndexFromPointer()
       ?? (e.over?.data.current as { index: number } | undefined)?.index;
     if (from === undefined || to === undefined) return;
-    setPreview((cur) => (cur && cur.to === to && cur.from === from ? cur : { from, to }));
+    setPreview((cur) => (cur && cur.from === from && cur.to !== to ? { ...cur, to } : cur));
   }, []);
 
   const onDragEnd = useCallback(
     (e: DragEndEvent) => {
       const from = (e.active.data.current as { index: number } | undefined)?.index;
       const to =
-        insertIndexFromThumb()
+        insertIndexFromPointer()
         ?? (e.over?.data.current as { index: number } | undefined)?.index;
       dragInputIsTouch.current = false;
+      dragPointerRef.current = null;
       setPreview(null);
       if (from === undefined || to === undefined || from === to) return;
       moveSlot(from, to);
@@ -338,11 +358,14 @@ export function LeagueHome() {
     <DndContext
       sensors={sensors}
       collisionDetection={rowCollision}
+      autoScroll={{ canScroll: canScrollRows }}
+      onDragMove={onDragOver}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
       onDragStart={onDragStart}
       onDragCancel={() => {
         dragInputIsTouch.current = false;
+        dragPointerRef.current = null;
         setPreview(null);
       }}
     >
@@ -371,7 +394,7 @@ export function LeagueHome() {
                 position={position}
                 card={card}
                 held={preview !== null && position === preview.to}
-                canDrag={!leagueSlotIsEmpty(cards[position])}
+                canDrag={!leagueSlotIsEmpty((preview?.cards ?? cards)[position])}
               />
             </div>
           ))}
