@@ -1075,14 +1075,14 @@ test.describe('favorite Pokémon picker', () => {
     await testInfo.attach('legendary-line-taken.json', { body: JSON.stringify({ fromRow, fromColumn }, null, 2), contentType: 'application/json' });
   });
 
-  test('the normal gimmick selector marks gimmick column picks and leaves picks from other columns free', async ({ page }, testInfo) => {
+  test('the normal gimmick selector marks picks across the grid without changing their sources', async ({ page }, testInfo) => {
     await seedFills(page, { 'dark|8': 10174, 'dark|7': 10092, 'ghost|8': 10239, 'gimmick|1': 10039, 'gimmick|4': 10308 });
     await page.getByTestId('favorites-cell-normal-gimmick').click();
     const taken = await takenState(page, [10174, 10092, 10239, 10039, 10308]);
     expect(taken).toEqual({
-      10174: { faded: false, marks: [] },
-      10092: { faded: false, marks: [] },
-      10239: { faded: false, marks: [] },
+      10174: { faded: true, marks: ['gen:8'] },
+      10092: { faded: true, marks: ['gen:7'] },
+      10239: { faded: true, marks: ['gen:8'] },
       10039: { faded: true, marks: ['gen:1'] },
       10308: { faded: true, marks: ['gen:4'] },
     });

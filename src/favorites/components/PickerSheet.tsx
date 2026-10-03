@@ -23,7 +23,7 @@ import {
   type PackMove,
 } from '../model/packing';
 import { pointerMarks, pointerPool, pointerCoordinates } from '../model/pointers';
-import { takenIn, takenCoordinatesIn } from '../model/taken';
+import { takenIn, pickedCoordinatesElsewhere } from '../model/taken';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
@@ -82,7 +82,7 @@ export function PickerSheet({
     }
     return eligibleFor(type, gen, sortOrder);
   }, [kind, type, gen, fills, sortOrder]);
-  const takenCoordinates = useMemo(() => takenCoordinatesIn(fills, type, gen), [fills, type, gen]);
+  const pickedCoordinates = useMemo(() => pickedCoordinatesElsewhere(fills, type, gen), [fills, type, gen]);
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
   const maxCols = 6;
@@ -146,7 +146,7 @@ export function PickerSheet({
           showTypes={showTypes && kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
           pointer={kind === 'pointer'}
           coordinates={kind === 'pointer' ? (id) => pointerCoordinates(type, gen, fills, id)
-            : !isTypeCell(type, gen) ? (id) => takenCoordinates.get(id) ?? [] : undefined}
+            : !isTypeCell(type, gen) ? (id) => pickedCoordinates.get(id) ?? [] : undefined}
           sourceMarks={kind === 'pointer' ? (id) => pointerMarks(type, gen, fills, id) : undefined}
           onClear={
             currentId != null

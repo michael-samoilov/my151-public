@@ -165,7 +165,7 @@ function PickCell({
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}
-        className={clearing || takenHere.length > 0 ? 'relative z-10 opacity-35' : 'relative z-10'}
+        className={clearing || takenHere.length > 0 || (!pointer && Boolean(coordinates?.length)) ? 'relative z-10 opacity-35' : 'relative z-10'}
         style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx }}
         decoding="sync"
         draggable={false}

@@ -116,3 +116,23 @@ export function takenCoordinatesIn(fills: Record<string, number>, type: TypeAxis
   }
   return result;
 }
+
+/** Display-only origins from other pick cells; summary pointers add no new pick. */
+export function pickedCoordinatesElsewhere(fills: Record<string, number>, type: TypeAxisId, gen: GenAxisId) {
+  const result = new Map<number, SourceCoordinate[]>();
+  const here = cellKey(type, gen);
+  const peerMarks = new Map(peersOf(type, gen).map(({ key, mark }) => [key, mark]));
+  for (const g of GEN_AXIS) {
+    for (const t of TYPE_AXIS) {
+      const key = cellKey(t, g);
+      if (key === here || cellKind(t, g, false) !== 'pick') continue;
+      const id = fills[key];
+      const mark = peerMarks.get(key) ?? axisMark(g) ?? axisMark(t);
+      if (id == null || !mark) continue;
+      const origins = result.get(id) ?? [];
+      origins.push({ type: t, gen: g, mark });
+      result.set(id, origins);
+    }
+  }
+  return result;
+}
