@@ -6,7 +6,7 @@ import { prettyRows } from '../model/prettyWrap';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import { isGenNumber, isTypeName, isTypeCell, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
@@ -169,10 +169,13 @@ export function PickerSheet({
       type="button"
       data-testid="favorites-type-toggle"
       aria-pressed={showIcons}
+      aria-label={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
+      title={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
       onClick={onToggleIcons}
       className={`inline-flex h-7 shrink-0 cursor-pointer items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
     >
-      {showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
+      {desktop ? (showIcons ? t('favorites.icons.hide') : t('favorites.icons.show'))
+        : showIcons ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
     </button>
   );
   const mobileTitle = (
