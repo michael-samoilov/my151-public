@@ -64,13 +64,38 @@ const brotli = (file) =>
     params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
   }).length;
 
+/** Rolldown may merge a dynamic catalog into a shared chunk with no source key.
+ * Resolve its emitted glob loader instead of dropping that startup download.
+ * Require one destination, since guessing by chunk name could select UI copy.
+ */
+function manifestChunk(key) {
+  if (manifest[key]) return manifest[key];
+  if (!key.startsWith('src/i18n/names/')) return undefined;
+  const loaderKey = JSON.stringify(`./names/${key.slice('src/i18n/names/'.length)}`);
+  const destinations = new Set();
+  for (const chunk of Object.values(manifest)) {
+    if (extname(chunk.file) !== '.js') continue;
+    const code = readFileSync(join(dist, chunk.file), 'utf8');
+    let at = code.indexOf(loaderKey);
+    while (at !== -1) {
+      const loader = code.slice(at + loaderKey.length, at + loaderKey.length + 200);
+      const match = loader.match(/^:\s*\(\)\s*=>[^;]{0,160}?import\((['"`])(\.\/[^'"`]+)\1\)/);
+      if (match) destinations.add(join(dirname(chunk.file), match[2]));
+      at = code.indexOf(loaderKey, at + loaderKey.length);
+    }
+  }
+  if (destinations.size !== 1) return undefined;
+  const file = [...destinations][0];
+  return Object.values(manifest).find((chunk) => chunk.file === file);
+}
+
 /** Every emitted file reachable through static imports from the given keys. */
 function files(keys) {
   const seen = new Set();
   const out = { text: new Set(), images: new Set() };
   const visit = (key) => {
     if (seen.has(key)) return;
-    const chunk = manifest[key];
+    const chunk = manifestChunk(key);
     if (!chunk) throw new Error(`${key} is not in the Vite manifest. Update scripts/performance/budgets.json.`);
     seen.add(key);
     out.text.add(chunk.file);
