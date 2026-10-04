@@ -55,17 +55,19 @@ gimmick, legendary, and favorite picks.
   from other cells, with source badges `[data-testid="favorites-pointer-mark"]`.
   With nothing to point at, the selector shows a "?" Unown empty state
   `[data-testid="favorites-empty-unown"]`.
-- Taken: a pick selector fades each Pokémon that another pick cell in its row
-  or column holds, with one `[data-testid="favorites-used-mark"]` per holder.
-  `data-source` and `data-value` name the holder's other coordinate. The
-  legendary row and column are one line, and so are the gimmick row and
-  column. Pointer selectors show no taken marks.
-- Settings: the gear `[data-testid="favorites-settings-open"]` opens a pane
-  (desktop) or sheet (mobile) with
-  `[data-testid="favorites-setting-no-repeats"]` (`aria-pressed`, on by
-  default, saved as `personal-151-favorites-no-repeats-v1`). On, a pick leaves
-  every other pick cell in its row and column. Off, nothing moves. The packing
-  sheet `[data-testid="favorites-packing"]` is off for users.
+- Already selected: origin indicators identify other cells that hold a Pokémon.
+  Shared coordinates are omitted in the current selector context. These
+  indicators are informational; repeated picks stay bright and preserve every
+  independent source. Selecting the current cell's Pokémon still clears it.
+- Repeat picks are always allowed. There is no No Repeats setting or settings
+  gear. The old persisted setting is ignored without deleting saved picks.
+  Pointer pools and unsupported-pointer pruning retain their rules.
+- The eye and localized Hide Icons / Show Icons action share one row with the
+  selector badges. It hides both type chips and origin indicators in all cells.
+  Mobile spacing tightens before title badges scale proportionally to fit.
+- Special word badges contain centered text without white symbols. Standalone
+  special origin icons retain their symbols. The packing sheet
+  `[data-testid="favorites-packing"]` stays off for users.
 
 ## How to get to it (user POV)
 
