@@ -1,4 +1,5 @@
 import { Check, Download, Loader2, X } from 'lucide-react';
+import { useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { ExportSettingsScroll } from '@/components/export/ExportSettingsScroll';
 import type { CardTeamOrder, LeagueHomeExportLayout, LeagueHomeTeamMode } from '../export/exportOptions';
@@ -242,17 +243,27 @@ function TeamModeOption({
 
 /** Four line identities, with the same rounded diagonal joins as Dex outlines. */
 function CardOrderGlyph({ order }: { order: CardTeamOrder }) {
+  const clipId = useId();
   // Three equal-height rows of capacities 2, 3, 4. Each array follows one line identity.
   const columns = order === 'fixed'
     ? [[null,null,0], [null,1,1], [2,2,2], [3,3,3]]
     : [[null,null,2], [null,2,1], [2,1,0], [3,3,3]];
   const shapes = columns.map(orderLineContour);
+  // Double the 1.2px stroke at 28px (109 / 28), then clip inward to keep gaps clear.
   return (
-    <svg viewBox="0 0 109 109" className="h-7 w-7" fill="none" strokeWidth="2" aria-hidden data-card-order-glyph={order}>
+    <svg viewBox="0 0 109 109" className="h-7 w-7" fill="none" strokeWidth={327 / 35} aria-hidden data-card-order-glyph={order}>
+      <defs>
+        {shapes.map((points, line) => (
+          <clipPath key={line} id={`${clipId}-${line}`}>
+            <path d={roundedOrderPath(points)} fill="black" stroke="none" />
+          </clipPath>
+        ))}
+      </defs>
       {shapes.map((points, line) => (
         <path
           key={line}
           d={roundedOrderPath(points)}
+          clipPath={`url(#${clipId}-${line})`}
           stroke="currentColor"
           strokeOpacity={[0.45, 0.63, 0.81, 1][line]}
         />
