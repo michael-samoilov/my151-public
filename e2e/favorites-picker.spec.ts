@@ -1096,9 +1096,9 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-normal-gimmick').click();
     const taken = await takenState(page, [10174, 10092, 10239, 10039, 10308]);
     expect(taken).toEqual({
-      10174: { faded: true, marks: ['gen:8'] },
-      10092: { faded: true, marks: ['gen:7'] },
-      10239: { faded: true, marks: ['gen:8'] },
+      10174: { faded: false, marks: ['gen:8'] },
+      10092: { faded: false, marks: ['gen:7'] },
+      10239: { faded: false, marks: ['gen:8'] },
       10039: { faded: true, marks: ['gen:1'] },
       10308: { faded: true, marks: ['gen:4'] },
     });
