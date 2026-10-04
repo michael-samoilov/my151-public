@@ -1031,8 +1031,11 @@ test.describe('favorite Pokémon picker', () => {
       const svg = new DOMParser().parseFromString(decodeURIComponent(el.querySelector('img')!.src.split(',')[1]), 'image/svg+xml');
       const radius = Number(svg.querySelector('circle')!.getAttribute('r'));
       const viewBoxWidth = Number(svg.documentElement.getAttribute('viewBox')!.split(' ')[2]);
-      const squareSide = el.nextElementSibling!.getBoundingClientRect().height;
-      return Math.PI * (radius * box.width / viewBoxWidth) ** 2 / squareSide ** 2;
+      const square = el.nextElementSibling!;
+      const squareSide = square.getBoundingClientRect().height;
+      const cornerRadius = parseFloat(getComputedStyle(square).borderRadius);
+      const squareArea = squareSide ** 2 - (4 - Math.PI) * cornerRadius ** 2;
+      return Math.PI * (radius * box.width / viewBoxWidth) ** 2 / squareArea;
     });
     expect(circleAreaRatio).toBeCloseTo(1, 2);
     expect(await marks.first().evaluate((el) => getComputedStyle(el.parentElement!).opacity)).toBe('0.85');

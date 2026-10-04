@@ -13,7 +13,7 @@ import { labelOf } from './spriteLabel';
 import { ExtraSymbol } from './ExtraSymbol';
 import { axisBackground } from './coordinatePresentation';
 import { CoordinatePills } from './CoordinatePills';
-import { equalAreaDiscSize, type OriginContext } from './coordinatePillLayout';
+import { equalAreaDiscSize, originShapeGeometry, type OriginContext } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
 import type { PointerMark } from '../model/pointers';
 
@@ -162,6 +162,7 @@ function PickCell({
   const takenHere = pointer ? [] : taken;
   const mark = Math.round(spritePx * 0.28);
   const discSize = equalAreaDiscSize(mark);
+  const { roundedSide, roundedRadius } = originShapeGeometry(mark);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   const hasOrigins = coordinates !== undefined;
   const tile = (
@@ -213,8 +214,8 @@ function PickCell({
               key={`${source.source}:${'value' in source ? source.value : ''}`}
               data-testid="favorites-pointer-mark"
               data-source={source.source}
-              className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: source.source === 'gen' ? discSize : mark, height: source.source === 'gen' ? discSize : mark, background: source.source === 'gen' ? undefined : axisBackground(source.source === 'type' ? source.value : source.source) }}
+              className="flex shrink-0 items-center justify-center overflow-hidden leading-none"
+              style={{ width: source.source === 'gen' ? discSize : source.source === 'type' ? roundedSide : mark, height: source.source === 'gen' ? discSize : source.source === 'type' ? roundedSide : mark, borderRadius: source.source === 'type' ? roundedRadius : undefined, background: source.source === 'gen' ? undefined : axisBackground(source.source === 'type' ? source.value : source.source) }}
             >
               {source.source === 'gen' ? <RomanDisc gen={source.value} size={discSize} />
                 : source.source === 'type' ? <TypeIcon type={source.value} size={mark} />
@@ -234,8 +235,8 @@ function PickCell({
               data-testid="favorites-used-mark"
               data-source={where.source}
               data-value={'value' in where ? where.value : undefined}
-              className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: where.source === 'gen' ? discSize : mark, height: where.source === 'gen' ? discSize : mark, background: where.source === 'gen' ? undefined : axisBackground(where.source === 'type' ? where.value : where.source) }}
+              className="flex shrink-0 items-center justify-center overflow-hidden leading-none"
+              style={{ width: where.source === 'gen' ? discSize : where.source === 'type' ? roundedSide : mark, height: where.source === 'gen' ? discSize : where.source === 'type' ? roundedSide : mark, borderRadius: where.source === 'type' ? roundedRadius : undefined, background: where.source === 'gen' ? undefined : axisBackground(where.source === 'type' ? where.value : where.source) }}
             >
               {where.source === 'gen' ? <RomanDisc gen={where.value} size={discSize} />
                 : where.source === 'type' ? <TypeIcon type={where.value} size={mark} />

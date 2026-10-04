@@ -19,7 +19,7 @@ export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, cur
   origins: SourceCoordinate[]; spritePx: number; inset: number; markPx: number; pointer: boolean; current?: OriginContext; id?: string;
 }) {
   const layout = coordinateOverlayLayout(spritePx, inset, markPx);
-  const { size, circleSize, radius, circleDiameter, outlineOutset, gap, width, height } = layout;
+  const { size, circleSize, radius, roundedRadius, circleDiameter, outlineOutset, gap, width, height } = layout;
   const visible = visibleOriginCount(origins, pointer, current, layout);
   const hidden = origins.length - visible;
   const label = coordinateLabel;
@@ -36,9 +36,9 @@ export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, cur
         data-origin-mode={single ? 'single' : 'pair'}
         data-testid={pointer ? 'favorites-pointer-mark' : 'favorites-used-mark'}
         data-coordinate-cell={cellKey(type, gen)} data-source={mark.source} data-value={'value' in mark ? mark.value : undefined}
-        className={single && single.source !== 'gen' ? 'pointer-events-auto flex shrink-0 bg-white' : 'pointer-events-auto flex shrink-0'}
-        style={{ width: box.width, height: box.height, marginLeft: index ? gap - previous - box.padding : 0, borderRadius: single ? 0 : radius, boxShadow: single && single.source !== 'gen' ? `0 0 0 ${outlineOutset}px #d4d4d8` : undefined }}>
-        {single?.source === 'gen' ? <RomanDisc gen={single.value} size={circleSize} /> : single ? <CoordinateIcon axis={single.source === 'type' ? single.value : single.source} size={size} /> : <CoordinatePair type={type} gen={gen} size={size} />}
+        className={single?.source === 'type' ? 'pointer-events-auto flex shrink-0 overflow-hidden bg-white' : single && single.source !== 'gen' ? 'pointer-events-auto flex shrink-0 bg-white' : 'pointer-events-auto flex shrink-0'}
+        style={{ width: box.width, height: box.height, marginLeft: index ? gap - previous - box.padding : 0, borderRadius: single?.source === 'type' ? roundedRadius : single ? 0 : radius, boxShadow: single && single.source !== 'gen' ? `0 0 0 ${outlineOutset}px #d4d4d8` : undefined }}>
+        {single?.source === 'gen' ? <RomanDisc gen={single.value} size={circleSize} /> : single ? <CoordinateIcon axis={single.source === 'type' ? single.value : single.source} size={single.source === 'type' ? box.width : size} /> : <CoordinatePair type={type} gen={gen} size={size} />}
       </span>;
     })}
     {hidden > 0 ? <span data-testid="favorites-origin-overflow-badge" role="img"

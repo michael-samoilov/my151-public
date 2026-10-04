@@ -34,8 +34,9 @@ export function equalAreaDiscSize(squareSide: number) {
 /** Filled backgrounds share squareSide²; outline strokes and glyphs are excluded. */
 export function originShapeGeometry(squareSide: number) {
   const radius = squareSide * 0.2;
+  const roundedSide = squareSide / Math.sqrt(1 - (4 - Math.PI) * 0.04);
   const halfWidth = squareSide + (2 - Math.PI / 2) * radius ** 2 / squareSide;
-  return { radius, halfWidth, circleDiameter: 2 * squareSide / Math.sqrt(Math.PI), outlineOutset: equalAreaDiscSize(squareSide) / 128 };
+  return { radius, halfWidth, roundedSide, roundedRadius: roundedSide * 0.2, circleDiameter: 2 * squareSide / Math.sqrt(Math.PI), outlineOutset: equalAreaDiscSize(squareSide) / 128 };
 }
 
 /** One contained overlay row inside the sprite tile. */
@@ -56,7 +57,9 @@ export function coordinateOverlayLayout(spritePx: number, inset: number, markPx:
 export function originMarkBox(single: PointerMark | undefined, layout: ReturnType<typeof coordinateOverlayLayout>) {
   return single?.source === 'gen'
     ? { width: layout.circleSize, height: layout.circleSize, padding: (layout.circleSize - layout.circleDiameter) / 2 - layout.outlineOutset, units: 1 }
-    : { width: single ? layout.size : layout.halfWidth * 2, height: layout.size, padding: -layout.outlineOutset, units: single ? 1 : 2 };
+    : single?.source === 'type'
+      ? { width: layout.roundedSide, height: layout.roundedSide, padding: -layout.outlineOutset, units: 1 }
+      : { width: single ? layout.size : layout.halfWidth * 2, height: layout.size, padding: -layout.outlineOutset, units: single ? 1 : 2 };
 }
 
 export function visibleOriginCount(origins: SourceCoordinate[], pointer: boolean, current: OriginContext | undefined,
