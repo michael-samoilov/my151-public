@@ -709,7 +709,7 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-cell-poison-1').locator('img[alt]')).toHaveAttribute('alt', /nidoking/i);
   });
 
-  test('a direct relocation replaces the opened cell without showing packing', async ({ page }) => {
+  test('a repeated pick replaces the opened cell and preserves its other source without showing packing', async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-fairy-2').click();
     await page.getByTestId('favorites-pick-176').click();
@@ -725,8 +725,11 @@ test.describe('favorite Pokémon picker', () => {
       return state as Record<string, number>;
     });
     expect(fills['fairy|2']).toBe(184);
-    expect(fills['water|2']).toBeUndefined();
+    expect(fills['water|2']).toBe(184);
     expect(Object.values(fills)).not.toContain(176);
+    await testInfo.attach('repeated-pick-sources.json', {
+      body: JSON.stringify(fills), contentType: 'application/json',
+    });
   });
 
   test('a direct trash swap replaces the old pick without a packing sheet', async ({ page }) => {
