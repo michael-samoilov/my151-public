@@ -97,6 +97,8 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
     const row = Math.floor(index / TYPE_AXIS.length);
     const x = gridX + (col + 1) * cell;
     const y = gridY + (row + 1) * cell;
+    // Reserve space under the doubled crown without scaling the Favorite sprite.
+    const contentY = y + cell / 2 + (entry.type === 'favorite' && entry.generation === 'favorite' ? 8 : 0);
     ctx.fillStyle = entry.kind === 'disabled' || entry.kind === 'null' ? '#fafafa' : '#ffffff';
     ctx.fillRect(x, y, cell, cell);
     ctx.strokeStyle = '#e4e4e7';
@@ -104,11 +106,11 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
     ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
     if (entry.mon) {
       drawPokeballBg(ctx, TYPE_COLORS[entry.mon.types[0]], TYPE_COLORS[entry.mon.types[1] ?? entry.mon.types[0]],
-        EXPORT_SPRITE_PX * 0.84, x + cell / 2, y + cell / 2);
-      drawSprite(ctx, images.get(entry.mon.sprite)!, x + cell / 2, y + cell / 2, EXPORT_SPRITE_PX);
+        EXPORT_SPRITE_PX * 0.84, x + cell / 2, contentY);
+      drawSprite(ctx, images.get(entry.mon.sprite)!, x + cell / 2, contentY, EXPORT_SPRITE_PX);
     } else if (entry.kind === 'pick' || entry.kind === 'pointer') {
       const kind = entry.kind === 'pick' ? 'poke' : entry.type === 'favorite' && entry.generation === 'favorite' ? 'master' : 'ultra';
-      drawBall(ctx, kind, x + cell / 2, y + cell / 2);
+      drawBall(ctx, kind, x + cell / 2, contentY);
     }
     else {
       ctx.font = font(24, 500);
@@ -116,12 +118,12 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
       ctx.fillText('—', x + cell / 2, y + cell / 2);
     }
   });
-  // One native crown unit retains Simplified's crown-to-cell proportion.
-  // Its 9px overhang clears both neighboring 96px sprite bounds by 3px.
+  // A crisp 2× crown straddles the border above the Ultimate Favorite.
+  // The structurally disabled cell above has no Pokémon artwork to obscure.
   const favoriteX = gridX + (TYPE_AXIS.indexOf('favorite') + 1.5) * cell;
   const favoriteY = gridY + (GEN_AXIS.indexOf('favorite') + 1) * cell;
   drawFavoriteCrown(ctx, images.get(FAVORITE_ORNAMENTS.crown)!, {
-    x: Math.round(favoriteX - 31 / 2), y: favoriteY - 9, width: 31, height: 18,
+    x: favoriteX - 31, y: favoriteY - 18, width: 62, height: 36,
   });
   drawFavoritesCredit(ctx, width, height);
   return encodeFavoritesCanvas(canvas);
