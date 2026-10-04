@@ -295,7 +295,7 @@ test.describe('desktop export preview', () => {
   });
 });
 
-test.describe('settings-free export on a phone', () => {
+test.describe('compact trainer export on a phone', () => {
   test.use({ viewport: MOBILE });
 
   async function sheetHeight(page: Page): Promise<number> {
@@ -311,7 +311,8 @@ test.describe('settings-free export on a phone', () => {
     await page.locator('[data-testid="league-slot-0"]').click();
     await page.locator('[aria-label="Export trainer card"]').click();
     await waitPreviewReady(page);
-    await expect(page.locator('[data-export-no-settings]')).toBeVisible();
+    await expect(page.locator('[data-export-card-order]')).toHaveCount(2);
+    await expect(page.locator('[data-export-card-order="fixed"]')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('[data-league-export-confirm]')).toBeInViewport();
     const card = await sheetHeight(page);
     expect(card, 'trainer card sheet height').toBeLessThan(MOBILE.height * 0.3);

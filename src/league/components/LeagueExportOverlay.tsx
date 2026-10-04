@@ -19,6 +19,7 @@ import {
   leagueLayoutPermutations,
   parseLeagueHomeExportLayout,
   type LeagueHomeExportLayout,
+  type CardTeamOrder,
 } from '../export/exportOptions';
 import {
   exportPokemonIds,
@@ -48,22 +49,21 @@ export function LeagueExportOverlay() {
       useLeagueStore.getState().view === 'rematch' ? 'rematch' : 'story',
     ),
   );
+  const [cardTeamOrder, setCardTeamOrder] = useState<CardTeamOrder>('fixed');
   const [exportBusy, setExportBusy] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
   const [surveyOpenedAt, setSurveyOpenedAt] = useState(0);
 
-  const activeKey = isLeague ? leagueLayoutFrameKey(layout) : `card:${exportCardIndex ?? 0}`;
+  const activeKey = isLeague ? leagueLayoutFrameKey(layout) : `card:${exportCardIndex ?? 0}:${cardTeamOrder}`;
   const jobs = useMemo(() => {
     if (!isLeague) {
-      return [
-        {
-          key: activeKey,
-          render: async () => {
-            const { cards } = useLeagueStore.getState();
-            return exportGymCard(cards[exportCardIndex!]);
-          },
+      return (['fixed', 'first-last'] as const).map((order) => ({
+        key: `card:${exportCardIndex ?? 0}:${order}`,
+        render: async () => {
+          const { cards } = useLeagueStore.getState();
+          return exportGymCard(cards[exportCardIndex!], order);
         },
-      ];
+      }));
     }
     return leagueLayoutPermutations(layout).map((item) => ({
       key: leagueLayoutFrameKey(item),
@@ -72,7 +72,7 @@ export function LeagueExportOverlay() {
         return exportLeagueHome(name, cards, view, item);
       },
     }));
-  }, [activeKey, exportCardIndex, isLeague, layout]);
+  }, [exportCardIndex, isLeague, layout]);
 
   const { urls, busy } = useExportPreviewCache({
     enabled: exportPhase === 'settings',
@@ -91,7 +91,7 @@ export function LeagueExportOverlay() {
         ? await fetch(cached).then((r) => r.blob())
         : isLeague
           ? await exportLeagueHome(name, cards, view, layout)
-          : await exportGymCard(cards[exportCardIndex!]);
+          : await exportGymCard(cards[exportCardIndex!], cardTeamOrder);
       await shareOrDownload(blob, isLeague ? HOME_FILENAME : CARD_FILENAME);
       incrementLeagueExportCount();
       const { event, exportTool } = leagueExportEventBody(exportKind);
@@ -124,6 +124,7 @@ export function LeagueExportOverlay() {
     closeLeagueExport,
     exportBusy,
     exportCardIndex,
+    cardTeamOrder,
     exportKind,
     isLeague,
     layout,
@@ -144,6 +145,8 @@ export function LeagueExportOverlay() {
           isLeague={isLeague}
           layout={layout}
           onLayout={setLayout}
+          cardTeamOrder={cardTeamOrder}
+          onCardTeamOrder={setCardTeamOrder}
           busy={exportBusy || busy}
           onExport={() => void runExport()}
           onClose={closeLeagueExport}
