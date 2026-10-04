@@ -68,5 +68,7 @@
   "tools.dex": "ポケモン図鑑づくり",
   "tools.favorites": "お気に入りポケモン選び",
   "tools.league": "ジムリーダーづくり",
-  "tools.title": "ツール"
+  "tools.title": "ツール",
+  "favorites.origins.more": "{pokemon}のすべての選択元を表示",
+  "favorites.origins.close": "選択元を閉じる"
 }

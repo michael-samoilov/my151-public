@@ -68,5 +68,7 @@
   "tools.dex": "宝可梦图鉴制作器",
   "tools.favorites": "最爱的宝可梦选择器",
   "tools.league": "道馆馆主制作器",
-  "tools.title": "工具"
+  "tools.title": "工具",
+  "favorites.origins.more": "显示{pokemon}的所有选择位置",
+  "favorites.origins.close": "关闭选择位置"
 }

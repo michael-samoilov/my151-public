@@ -11,7 +11,7 @@ import { ExtraMark, RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
 import { CoordinatePills } from './CoordinatePills';
-import { coordinatePillLayout, originRows, type OriginContext } from './coordinatePillLayout';
+import { coordinateBandLayout, type OriginContext } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
 import type { PointerMark } from '../model/pointers';
 
@@ -57,9 +57,7 @@ export function PrettySpriteGrid({
   const dexPx = tileImageCssPx(viewportPx);
   const rows = prettyRows(mons, maxCols, lineKey, formKey);
   const fitRows = rows.length;
-  const metadataLayout = coordinatePillLayout(baseSpritePx, Math.max(5, Math.round(baseSpritePx * 0.05)), Math.round(baseSpritePx * 0.28));
-  const metadataRows = rows.map(row => Math.max(0, ...row.map(mon => originRows(coordinates?.(mon.id) ?? [], pointer, originContext, metadataLayout))));
-  const hasMetadata = metadataRows.some(count => count > 0);
+  const hasMetadata = coordinates !== undefined;
   const gridRef = useRef<HTMLDivElement>(null);
   const [fitPx, setFitPx] = useState(baseSpritePx);
   const spritePx = hasMetadata ? baseSpritePx : Math.min(baseSpritePx, fitPx);
@@ -111,7 +109,6 @@ export function PrettySpriteGrid({
                 key={mon.id}
                 mon={mon}
                 spritePx={spritePx}
-                metadataRows={metadataRows[r]}
                 selected={selectedId === mon.id}
                 taken={takenMarks?.(mon.id) ?? []}
                 showTypes={showTypes}
@@ -133,7 +130,6 @@ export function PrettySpriteGrid({
 function PickCell({
   mon,
   spritePx,
-  metadataRows,
   selected,
   taken,
   showTypes,
@@ -147,7 +143,6 @@ function PickCell({
 }: {
   mon: PickerMon;
   spritePx: number;
-  metadataRows: number;
   selected: boolean;
   taken: PointerMark[];
   showTypes: boolean;
@@ -165,8 +160,7 @@ function PickCell({
   const takenHere = pointer ? [] : taken;
   const mark = Math.round(spritePx * 0.28);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
-  const pills = coordinatePillLayout(spritePx, inset, mark);
-  const metadataHeight = metadataRows > 0 ? inset * 2 + metadataRows * pills.size + (metadataRows - 1) * pills.gap : 0;
+  const band = coordinates !== undefined ? coordinateBandLayout(spritePx, inset, mark) : undefined;
   const tile = (
     <button
       type="button"
@@ -176,7 +170,7 @@ function PickCell({
       aria-describedby={coordinates?.length ? originsId : undefined}
       aria-label={clearing ? `${clearLabel ?? t('favorites.clear')} ${labelOf(mon)}` : labelOf(mon)}
       className="group/pick relative flex shrink-0 flex-col cursor-pointer items-center justify-start rounded-md bg-transparent p-0 hover:bg-foreground/5"
-      style={{ width: spritePx, height: spritePx + metadataHeight, scrollMargin: 4 }}
+      style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
       <img
         src={mon.sprite}
@@ -206,7 +200,6 @@ function PickCell({
           />
         ))}
       </span> : null}
-      {coordinates && coordinates.length > 0 ? <CoordinatePills origins={coordinates} spritePx={spritePx} inset={inset} markPx={mark} pointer={pointer} current={originContext} id={originsId} /> : null}
       {!coordinates && sourceMarks.length > 0 ? (
         <span
           className="pointer-events-none absolute z-[16] flex items-start leading-none opacity-[0.85]"
@@ -267,5 +260,10 @@ function PickCell({
       ) : null}
     </button>
   );
-  return <NameTooltip mon={mon}>{tile}</NameTooltip>;
+  return <div data-selector-tile data-testid={`favorites-origin-tile-${mon.id}`} className="relative flex shrink-0 flex-col items-center"
+    style={{ width: spritePx, height: spritePx + (band?.height ?? 0) }}>
+    {band ? <CoordinatePills origins={coordinates ?? []} spritePx={spritePx} inset={inset} markPx={mark}
+      pointer={pointer} current={originContext} id={originsId} name={labelOf(mon)} /> : null}
+    <NameTooltip mon={mon}>{tile}</NameTooltip>
+  </div>;
 }

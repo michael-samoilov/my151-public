@@ -26,17 +26,23 @@ export function coordinatePillLayout(spritePx: number, inset: number, markPx: nu
   return { size, gap, columns, width: available };
 }
 
-/** Use the same widths as the flex layout to reserve complete metadata rows. */
-export function originRows(origins: SourceCoordinate[], pointer: boolean, current: OriginContext | undefined,
-  layout: ReturnType<typeof coordinatePillLayout>): number {
-  let rows = 0;
+/** One fixed band, including a touch target, above every coordinate selector tile. */
+export function coordinateBandLayout(spritePx: number, inset: number, markPx: number) {
+  const layout = coordinatePillLayout(spritePx, inset, markPx);
+  const height = spritePx >= 96 ? 26 : 24;
+  return { ...layout, width: spritePx - inset, height, overflowWidth: height };
+}
+
+export function visibleOriginCount(origins: SourceCoordinate[], pointer: boolean, current: OriginContext | undefined,
+  layout: ReturnType<typeof coordinateBandLayout>): number {
+  const widths = origins.map(origin => layout.size * (singleOriginMark(origin, pointer, current) ? 1 : 2));
+  if (widths.reduce((sum, width) => sum + width, 0) + Math.max(0, widths.length - 1) * layout.gap <= layout.width) return origins.length;
   let used = 0;
-  for (const origin of origins) {
-    const width = layout.size * (singleOriginMark(origin, pointer, current) ? 1 : 2);
-    if (!rows || used + layout.gap + width > layout.width + 0.01) {
-      rows++;
-      used = width;
-    } else used += layout.gap + width;
+  let count = 0;
+  for (const width of widths.slice(0, 2)) {
+    if (used + width + (count + 1) * layout.gap + layout.overflowWidth > layout.width) break;
+    used += width;
+    count++;
   }
-  return rows;
+  return count;
 }

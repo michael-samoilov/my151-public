@@ -68,5 +68,7 @@
   "tools.dex": "Creatore di Pokédex",
   "tools.favorites": "Selettore di Pokémon preferiti",
   "tools.league": "Creatore di Capipalestra",
-  "tools.title": "Strumenti"
+  "tools.title": "Strumenti",
+  "favorites.origins.more": "Mostra tutte le origini di {pokemon}",
+  "favorites.origins.close": "Chiudi origini"
 }

@@ -68,5 +68,7 @@
   "tools.dex": "Créateur de Pokédex",
   "tools.favorites": "Sélecteur de Pokémon préférés",
   "tools.league": "Créateur de Champions d’Arène",
-  "tools.title": "Outils"
+  "tools.title": "Outils",
+  "favorites.origins.more": "Afficher toutes les origines de {pokemon}",
+  "favorites.origins.close": "Fermer les origines"
 }

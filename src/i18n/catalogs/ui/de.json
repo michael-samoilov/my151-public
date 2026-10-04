@@ -68,5 +68,7 @@
   "tools.dex": "Pokédex-Builder",
   "tools.favorites": "Lieblings-Pokémon wählen",
   "tools.league": "Arenaleiter erstellen",
-  "tools.title": "Werkzeuge"
+  "tools.title": "Werkzeuge",
+  "favorites.origins.more": "Alle Ursprünge für {pokemon} anzeigen",
+  "favorites.origins.close": "Ursprünge schließen"
 }

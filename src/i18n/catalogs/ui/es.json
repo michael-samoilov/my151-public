@@ -68,5 +68,7 @@
   "tools.dex": "Creador de Pokédex",
   "tools.favorites": "Selector de Pokémon favoritos",
   "tools.league": "Creador de Líderes de Gimnasio",
-  "tools.title": "Herramientas"
+  "tools.title": "Herramientas",
+  "favorites.origins.more": "Mostrar todos los orígenes de {pokemon}",
+  "favorites.origins.close": "Cerrar orígenes"
 }

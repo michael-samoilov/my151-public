@@ -218,6 +218,8 @@ export const enUi = {
   'favorites.completion.label': '{filled} of {total} favorites selected',
   'favorites.clear': 'Clear this cell',
   'favorites.close': 'Close picker',
+  'favorites.origins.more': 'Show all origins for {pokemon}',
+  'favorites.origins.close': 'Close origins',
   'favorites.empty.back': 'Back to grid',
   'favorites.empty.column': 'Choose a Pokémon elsewhere in this column. Your picks will appear here.',
   'favorites.empty.legendary': 'Choose a legendary Pokémon elsewhere on the grid first.',

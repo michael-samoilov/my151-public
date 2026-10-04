@@ -35,7 +35,7 @@ async function takenState(page: Page, ids: number[]) {
     await expect(pick).toBeVisible();
     out[id] = await pick.evaluate((el) => ({
       faded: Number(getComputedStyle(el.querySelector('img[alt]:not([alt=""])')!).opacity) < 0.5,
-      marks: [...el.querySelectorAll('[data-testid="favorites-used-mark"]')].map(
+      marks: [...(el.closest('[data-selector-tile]') ?? el).querySelectorAll('[data-testid="favorites-used-mark"]')].map(
         (mark) => `${mark.getAttribute('data-source')}:${mark.getAttribute('data-value') ?? ''}`,
       ),
     }));
@@ -604,10 +604,10 @@ test.describe('favorite Pokémon picker', () => {
     })));
     await page.reload();
     await page.getByTestId('favorites-cell-gimmick-gimmick').click();
-    await expect(page.getByTestId('favorites-pick-10034').locator('[data-source="gen"]')).toBeVisible();
-    await expect(page.getByTestId('favorites-pick-10034').locator('[data-source="type"]')).toBeVisible();
-    await expect(page.getByTestId('favorites-pick-10199').locator('[data-source="starter"]')).toBeVisible();
-    await expect(page.getByTestId('favorites-pick-10157').locator('[data-source="legendary"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-origin-tile-10034').locator('[data-source="gen"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-origin-tile-10034').locator('[data-source="type"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-origin-tile-10199').locator('[data-source="starter"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-origin-tile-10157').locator('[data-source="legendary"]')).toBeVisible();
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('gimmick-origins.png') });
   });
 
@@ -876,9 +876,9 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-favorite-1').click();
     for (const [id, source] of [[4, 'starter'], [6, 'gimmick'], [144, 'legendary']] as const) {
       const pick = page.getByTestId(`favorites-pick-${id}`);
-      await expect(pick.locator(`[data-testid="favorites-pointer-mark"][data-source="${source}"]`)).toBeVisible();
+      await expect(pick.locator('..').locator(`[data-testid="favorites-pointer-mark"][data-source="${source}"]`)).toBeVisible();
       await expect(pick.getByTestId('favorites-type-icon')).toHaveCount(0);
-      await expect(pick.getByTestId('favorites-used-mark')).toHaveCount(0);
+      await expect(pick.locator('..').getByTestId('favorites-used-mark')).toHaveCount(0);
       const opacity = await pick.locator('img[alt]').first().evaluate((el) => Number(getComputedStyle(el).opacity));
       expect(opacity).toBe(1);
     }
@@ -903,8 +903,8 @@ test.describe('favorite Pokémon picker', () => {
       (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
     );
     expect(rowIds).toEqual([701, 650, 716, 10300]);
-    await expect(page.getByTestId('favorites-pick-701').locator('[data-source="type"]')).toBeVisible();
-    await expect(page.getByTestId('favorites-pick-10300').locator('[data-source="gimmick"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-origin-tile-701').locator('[data-source="type"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-origin-tile-10300').locator('[data-source="gimmick"]')).toBeVisible();
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await page.getByTestId('favorites-cell-fire-favorite').click();
@@ -912,7 +912,7 @@ test.describe('favorite Pokémon picker', () => {
       (els) => els.map((el) => Number(el.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
     );
     expect(colIds).toEqual([4, 155]);
-    await expect(page.getByTestId('favorites-pick-4').locator('[data-source="gen"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-origin-tile-4').locator('[data-source="gen"]')).toBeVisible();
     await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
   });
 
@@ -930,7 +930,7 @@ test.describe('favorite Pokémon picker', () => {
     const selected = page.getByTestId('favorites-pick-6');
     const ring = selected.getByTestId('favorites-selection-ring');
     const clear = page.getByTestId('favorites-clear');
-    const boxes = await Promise.all([selected.boundingBox(), ring.boundingBox(), clear.boundingBox(), page.getByTestId('favorites-pick-4').boundingBox(), selected.getByTestId('favorites-pointer-mark').boundingBox()]);
+    const boxes = await Promise.all([selected.boundingBox(), ring.boundingBox(), clear.boundingBox(), page.getByTestId('favorites-pick-4').boundingBox(), selected.locator('..').getByTestId('favorites-pointer-mark').boundingBox()]);
     expect(boxes.every(Boolean)).toBe(true);
     expect(boxes[1]!.x).toBeGreaterThan(boxes[0]!.x);
     expect(boxes[1]!.x + boxes[1]!.width).toBeLessThan(boxes[0]!.x + boxes[0]!.width);
@@ -938,9 +938,9 @@ test.describe('favorite Pokémon picker', () => {
     expect(boxes[2]!.x + boxes[2]!.width).toBeLessThanOrEqual(boxes[0]!.x + boxes[0]!.width);
     expect(boxes[3]!.x + boxes[3]!.width).toBeLessThanOrEqual(boxes[1]!.x);
     expect(boxes[4]!.x + boxes[4]!.width).toBeLessThanOrEqual(boxes[0]!.x + boxes[0]!.width);
-    await expect(selected.getByTestId('favorites-pointer-mark')).toHaveAttribute('data-source', 'gimmick');
+    await expect(selected.locator('..').getByTestId('favorites-pointer-mark')).toHaveAttribute('data-source', 'gimmick');
     const layers = await selected.evaluate((el) => ({
-      badge: Number(getComputedStyle(el.querySelector('[data-testid="favorites-pointer-mark"]')!.parentElement!).zIndex),
+      badge: Number(getComputedStyle(el.parentElement!.querySelector('[data-testid="favorites-pointer-mark"]')!.parentElement!).zIndex),
       ring: Number(getComputedStyle(el.querySelector('[data-testid="favorites-selection-ring"]')!).zIndex),
       clear: Number(getComputedStyle(el.querySelector('[data-testid="favorites-clear"]')!).zIndex),
       sprite: Number(getComputedStyle(el.querySelector('img[alt]:not([alt=""])')!).zIndex),
@@ -973,13 +973,13 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-favorite-favorite').click();
     const both = page.getByTestId('favorites-pick-4');
     await expect(both).toBeVisible();
-    await expect(both.locator('[data-testid="favorites-pointer-mark"][data-source="gen"]')).toBeVisible();
-    await expect(both.locator('[data-testid="favorites-pointer-mark"][data-source="type"]')).toBeVisible();
+    await expect(both.locator('..').locator('[data-testid="favorites-pointer-mark"][data-source="gen"]')).toBeVisible();
+    await expect(both.locator('..').locator('[data-testid="favorites-pointer-mark"][data-source="type"]')).toBeVisible();
     const legendary = page.getByTestId('favorites-pick-144');
     await expect(legendary).toBeVisible();
-    await expect(legendary.locator('[data-testid="favorites-pointer-mark"][data-source="legendary"]')).toBeVisible();
-    await expect(page.getByTestId('favorites-pick-1').locator('[data-source="starter"]')).toBeVisible();
-    await expect(page.getByTestId('favorites-pick-6').locator('[data-source="gimmick"]')).toBeVisible();
+    await expect(legendary.locator('..').locator('[data-testid="favorites-pointer-mark"][data-source="legendary"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-origin-tile-1').locator('[data-source="starter"]')).toBeVisible();
+    await expect(page.getByTestId('favorites-origin-tile-6').locator('[data-source="gimmick"]')).toBeVisible();
     const order = await page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').evaluateAll(
       (items) => items.map((item) => Number(item.getAttribute('data-testid')!.replace('favorites-pick-', ''))),
     );
@@ -1002,7 +1002,7 @@ test.describe('favorite Pokémon picker', () => {
     });
     await page.reload();
     await page.getByTestId('favorites-cell-legendary-legendary').click();
-    const marks = page.getByTestId('favorites-pick-643').getByTestId('favorites-pointer-mark');
+    const marks = page.getByTestId('favorites-origin-tile-643').getByTestId('favorites-pointer-mark');
     await expect(marks).toHaveCount(3);
     await expect(marks.nth(0)).toHaveAttribute('data-source', 'gen');
     await expect(marks.nth(1)).toHaveAttribute('data-source', 'type');
@@ -1021,7 +1021,7 @@ test.describe('favorite Pokémon picker', () => {
       await expect(mark.locator('img')).toHaveCount(1);
     }
     const contained = await marks.evaluateAll((items) => items.every((item) => {
-      const tile = item.closest('button')!.getBoundingClientRect();
+      const tile = item.closest('[data-selector-tile]')!.getBoundingClientRect();
       const box = item.getBoundingClientRect();
       return box.left >= tile.left && box.right <= tile.right && box.top >= tile.top && box.bottom <= tile.bottom;
     }));
@@ -1029,7 +1029,7 @@ test.describe('favorite Pokémon picker', () => {
     expect(Math.max(...boxes.map((box) => box.height)) - Math.min(...boxes.map((box) => box.height))).toBeLessThan(1);
     expect(await marks.first().evaluate((el) => getComputedStyle(el.parentElement!).opacity)).toBe('0.85');
     const numeral = await marks.first().locator('img').first().evaluate((img) => decodeURIComponent((img as HTMLImageElement).src));
-    expect(numeral).not.toContain('<circle');
+    expect(numeral).toContain('<circle');
     expect(numeral).toContain('stroke-linejoin="round"');
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('legendary-origins.png') });
   });
