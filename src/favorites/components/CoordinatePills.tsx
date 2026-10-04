@@ -1,9 +1,8 @@
-import { useT, typeLabel } from '@/i18n';
-import { cellKey, isGenNumber, isTypeName, ROMAN, GEN_NUMBERS, type GenNumber } from '../model/cells';
+import { cellKey, isGenNumber, isTypeName, GEN_NUMBERS, type GenNumber } from '../model/cells';
 import type { SourceCoordinate } from '../model/pointers';
-import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { TYPE_COLORS } from '@/data/type-colors';
-import { ExtraMark, RomanDisc, TypeIcon } from './marks';
+import { RomanDisc, TypeIcon } from './marks';
+import { ExtraSymbol } from './ExtraSymbol';
+import { axisBackground, coordinateLabel, displayCoordinate } from './coordinatePresentation';
 import { ROMAN_URIS } from './romanDiscAssets';
 import { coordinateOverlayLayout, originShapeGeometry, originMarkBox, visibleOriginCount, singleOriginMark, type OriginContext } from './coordinatePillLayout';
 
@@ -19,14 +18,11 @@ const ROMAN_GLYPHS = Object.fromEntries(GEN_NUMBERS.map(gen => [gen,
 export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, current, id }: {
   origins: SourceCoordinate[]; spritePx: number; inset: number; markPx: number; pointer: boolean; current?: OriginContext; id?: string;
 }) {
-  const t = useT();
   const layout = coordinateOverlayLayout(spritePx, inset, markPx);
   const { size, circleSize, radius, circleDiameter, outlineOutset, gap, width, height } = layout;
   const visible = visibleOriginCount(origins, pointer, current, layout);
   const hidden = origins.length - visible;
-  const label = (type: SourceCoordinate['type'], gen: SourceCoordinate['gen']) => `${isGenNumber(gen)
-    ? t('favorites.generation', { gen: ROMAN[gen] }) : t(`favorites.axis.${gen}`)} · ${isTypeName(type)
-    ? typeLabel(type) : t(`favorites.axis.${type}`)}`;
+  const label = coordinateLabel;
   return <span data-testid="favorites-origin-overlay" className="pointer-events-none absolute z-[16] flex items-center justify-end leading-none"
     style={{ top: inset, right: inset, width, height, opacity: pointer ? 0.85 : 1 }}>
     <span id={id} className="sr-only">{origins.map(origin => label(origin.type, origin.gen)).join('; ')}</span>
@@ -57,10 +53,12 @@ export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, cur
 
 function CoordinatePair({ type, gen, size }: { type: SourceCoordinate['type']; gen: SourceCoordinate['gen']; size: number }) {
   const { radius, halfWidth, outlineOutset } = originShapeGeometry(size);
+  const display = displayCoordinate(type, gen);
+  if (display.gen == null) return <CoordinateIcon axis={display.type} size={size} />;
   return <span aria-hidden className="flex shrink-0 overflow-hidden bg-white"
     style={{ width: halfWidth * 2, height: size, borderRadius: radius, boxShadow: `0 0 0 ${outlineOutset}px #d4d4d8` }}>
-    <CoordinateIcon axis={gen} size={size} width={halfWidth} />
-    <CoordinateIcon axis={type} size={size} width={halfWidth} divider />
+    <CoordinateIcon axis={display.gen} size={size} width={halfWidth} />
+    <CoordinateIcon axis={display.type} size={size} width={halfWidth} divider />
   </span>;
 }
 
@@ -68,10 +66,8 @@ function CoordinateIcon({ axis, size, width = size, divider = false }: {
   axis: SourceCoordinate['type'] | SourceCoordinate['gen']; size: number; width?: number; divider?: boolean;
 }) {
   return <span aria-hidden data-origin-half className="flex shrink-0 items-center justify-center"
-    style={{ width, height: size, boxShadow: divider ? 'inset 1px 0 #d4d4d8' : undefined, background: isGenNumber(axis)
-      ? `linear-gradient(135deg, ${GEN_STOPS[axis].map(stop => `${stop.color} ${stop.offset}`).join(', ')})`
-      : isTypeName(axis) ? TYPE_COLORS[axis] : undefined }}>
+    style={{ width, height: size, boxShadow: divider ? 'inset 1px 0 #d4d4d8' : undefined, background: axisBackground(axis) }}>
     {isGenNumber(axis) ? <img src={ROMAN_GLYPHS[axis]} alt="" width={size} height={size} draggable={false} className="block shrink-0" />
-      : isTypeName(axis) ? <TypeIcon type={axis} size={size - 2} /> : <ExtraMark id={axis} size={size - 2} />}
+      : isTypeName(axis) ? <TypeIcon type={axis} size={size - 2} /> : <ExtraSymbol id={axis} size={size - 2} />}
   </span>;
 }

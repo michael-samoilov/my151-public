@@ -17,7 +17,7 @@ export function singleOriginMark(origin: SourceCoordinate, pointer: boolean, cur
   return undefined;
 }
 
-/** Fixed proportional sizing; origin count changes rows, never glyph size. */
+/** Fixed proportional bounds; origin count never changes glyph size. */
 export function coordinatePillLayout(spritePx: number, inset: number, markPx: number) {
   const gap = Math.max(1, Math.round(spritePx * 0.02));
   const available = Math.max(1, spritePx - inset * 2);

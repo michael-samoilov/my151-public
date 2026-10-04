@@ -1,16 +1,17 @@
 import { t } from '@/i18n';
 import { tileImageCssPx } from '@/lib/tileImage';
 import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
-import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { useNamesVersion } from '@/i18n';
 import { useId, useLayoutEffect, useRef, useState } from 'react';
-import { ExtraMark, RomanDisc, TypeIcon } from './marks';
+import { RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
+import { ExtraSymbol } from './ExtraSymbol';
+import { axisBackground } from './coordinatePresentation';
 import { CoordinatePills } from './CoordinatePills';
 import { equalAreaDiscSize, type OriginContext } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
@@ -213,11 +214,11 @@ function PickCell({
               data-testid="favorites-pointer-mark"
               data-source={source.source}
               className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: source.source === 'gen' ? discSize : mark, height: source.source === 'gen' ? discSize : mark, background: source.source === 'gen' ? undefined : source.source === 'type' ? TYPE_COLORS[source.value] : 'white' }}
+              style={{ width: source.source === 'gen' ? discSize : mark, height: source.source === 'gen' ? discSize : mark, background: source.source === 'gen' ? undefined : axisBackground(source.source === 'type' ? source.value : source.source) }}
             >
               {source.source === 'gen' ? <RomanDisc gen={source.value} size={discSize} />
                 : source.source === 'type' ? <TypeIcon type={source.value} size={mark} />
-                : <ExtraMark id={source.source} size={mark} />}
+                : <ExtraSymbol id={source.source} size={mark - 2} />}
             </span>
           ))}
         </span>
@@ -234,11 +235,11 @@ function PickCell({
               data-source={where.source}
               data-value={'value' in where ? where.value : undefined}
               className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: where.source === 'gen' ? discSize : mark, height: where.source === 'gen' ? discSize : mark, background: where.source === 'gen' ? undefined : where.source === 'type' ? TYPE_COLORS[where.value] : 'white' }}
+              style={{ width: where.source === 'gen' ? discSize : mark, height: where.source === 'gen' ? discSize : mark, background: where.source === 'gen' ? undefined : axisBackground(where.source === 'type' ? where.value : where.source) }}
             >
               {where.source === 'gen' ? <RomanDisc gen={where.value} size={discSize} />
                 : where.source === 'type' ? <TypeIcon type={where.value} size={mark} />
-                : <ExtraMark id={where.source} size={mark} />}
+                : <ExtraSymbol id={where.source} size={mark - 2} />}
             </span>
           ))}
         </span>
