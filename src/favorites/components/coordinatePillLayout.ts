@@ -31,22 +31,28 @@ export function equalAreaDiscSize(squareSide: number) {
   return 2 * squareSide / Math.sqrt(Math.PI) * 32 / 30;
 }
 
+/** Filled backgrounds share squareSide²; outline strokes and glyphs are excluded. */
+export function originShapeGeometry(squareSide: number) {
+  const radius = squareSide * 0.2;
+  const halfWidth = squareSide + (2 - Math.PI / 2) * radius ** 2 / squareSide;
+  return { radius, halfWidth, circleDiameter: 2 * squareSide / Math.sqrt(Math.PI) };
+}
+
 /** One contained overlay row, including a touch target, inside the sprite tile. */
 export function coordinateOverlayLayout(spritePx: number, inset: number, markPx: number) {
   const layout = coordinatePillLayout(spritePx, inset, markPx);
   // Shared disc has radius 15 in a 32px viewBox; compensate its transparent rim.
   const circleSize = equalAreaDiscSize(layout.size);
-  const pairSize = layout.size * 0.95;
-  const badgeWidth = layout.size * 1.15;
+  const shape = originShapeGeometry(layout.size);
   const height = Math.max(circleSize, 24 - inset * 2);
-  return { ...layout, circleSize, pairSize, width: spritePx - inset, height, badgeWidth, badgeHeight: layout.size, overflowWidth: 24 };
+  return { ...layout, ...shape, circleSize, width: spritePx - inset, height, overflowWidth: 24 };
 }
 
 export function visibleOriginCount(origins: SourceCoordinate[], pointer: boolean, current: OriginContext | undefined,
   layout: ReturnType<typeof coordinateOverlayLayout>): number {
   const widths = origins.map(origin => {
     const single = singleOriginMark(origin, pointer, current);
-    return single?.source === 'gen' ? layout.circleSize : single ? layout.size : layout.pairSize * 2;
+    return single?.source === 'gen' ? layout.circleSize : single ? layout.size : layout.halfWidth * 2;
   });
   if (widths.reduce((sum, width) => sum + width, 0) + Math.max(0, widths.length - 1) * layout.gap <= layout.width) return origins.length;
   let used = 0;

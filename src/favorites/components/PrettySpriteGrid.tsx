@@ -1,6 +1,7 @@
 import { t } from '@/i18n';
 import { tileImageCssPx } from '@/lib/tileImage';
 import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
+import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
@@ -212,7 +213,7 @@ function PickCell({
               data-testid="favorites-pointer-mark"
               data-source={source.source}
               className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: source.source === 'gen' ? discSize : mark, height: source.source === 'gen' ? discSize : mark }}
+              style={{ width: source.source === 'gen' ? discSize : mark, height: source.source === 'gen' ? discSize : mark, background: source.source === 'gen' ? undefined : source.source === 'type' ? TYPE_COLORS[source.value] : 'white' }}
             >
               {source.source === 'gen' ? <RomanDisc gen={source.value} size={discSize} />
                 : source.source === 'type' ? <TypeIcon type={source.value} size={mark} />
@@ -233,7 +234,7 @@ function PickCell({
               data-source={where.source}
               data-value={'value' in where ? where.value : undefined}
               className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: where.source === 'gen' ? discSize : mark, height: where.source === 'gen' ? discSize : mark }}
+              style={{ width: where.source === 'gen' ? discSize : mark, height: where.source === 'gen' ? discSize : mark, background: where.source === 'gen' ? undefined : where.source === 'type' ? TYPE_COLORS[where.value] : 'white' }}
             >
               {where.source === 'gen' ? <RomanDisc gen={where.value} size={discSize} />
                 : where.source === 'type' ? <TypeIcon type={where.value} size={mark} />
