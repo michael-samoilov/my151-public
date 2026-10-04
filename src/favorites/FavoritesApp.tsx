@@ -117,6 +117,7 @@ export function FavoritesApp() {
       fills={fills}
       currentId={fills[cellKey(sel.type, sel.gen)]}
       showIcons={showIcons}
+      noRepeats={noRepeats}
       sortOrder={sortOrder}
       onToggleIcons={() => setShowIcons((value) => !value)}
       onClose={() => setSel(null)}

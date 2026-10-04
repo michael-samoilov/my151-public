@@ -25,6 +25,15 @@ function isLinked(id: Coordinate): id is 'legendary' | 'gimmick' {
   return id === 'legendary' || id === 'gimmick';
 }
 
+/** The source coordinate left after the selector supplies a shared pick line. */
+export function sharedPickOtherCoordinate(source: { type: TypeAxisId; gen: GenAxisId }, current: { type: TypeAxisId; gen: GenAxisId }): Coordinate | undefined {
+  if (source.type === current.type) return source.gen;
+  if (source.gen === current.gen) return source.type;
+  if (isLinked(source.type) && source.type === current.gen) return source.gen;
+  if (isLinked(source.gen) && source.gen === current.type) return source.type;
+  return undefined;
+}
+
 function columnCells(type: TypeAxisId): Cell[] {
   return GEN_AXIS.map((gen) => [type, gen] as const);
 }
@@ -61,7 +70,8 @@ function peersOf(type: TypeAxisId, gen: GenAxisId): Peer[] {
     for (const [t, g] of line.cells) {
       const key = cellKey(t, g);
       if (key === here || cellKind(t, g, false) !== 'pick') continue;
-      const mark = axisMark(g === line.shared ? t : g);
+      const other = sharedPickOtherCoordinate({ type: t, gen: g }, { type, gen });
+      const mark = other == null ? null : axisMark(other);
       if (mark) peers.push({ key, mark });
     }
   }

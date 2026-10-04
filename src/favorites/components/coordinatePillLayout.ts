@@ -1,20 +1,16 @@
 import { isGenNumber, isTypeName, type GenAxisId, type TypeAxisId } from '../model/cells';
 import type { PointerMark, SourceCoordinate } from '../model/pointers';
+import { sharedPickOtherCoordinate } from '../model/taken';
 
 export type OriginContext = { type: TypeAxisId; gen: GenAxisId };
 
 /** The selector supplies the shared coordinate; summaries supply their category. */
 export function singleOriginMark(origin: SourceCoordinate, pointer: boolean, current?: OriginContext): PointerMark | undefined {
   if (pointer) return origin.mark;
-  if (origin.type === current?.type) {
-    return isGenNumber(origin.gen) ? { source: 'gen', value: origin.gen }
-      : origin.gen !== 'favorite' ? { source: origin.gen } : undefined;
-  }
-  if (origin.gen === current?.gen) {
-    return isTypeName(origin.type) ? { source: 'type', value: origin.type }
-      : origin.type !== 'favorite' ? { source: origin.type } : undefined;
-  }
-  return undefined;
+  const other = current && sharedPickOtherCoordinate(origin, current);
+  return other == null || other === 'favorite' ? undefined
+    : isGenNumber(other) ? { source: 'gen', value: other }
+      : isTypeName(other) ? { source: 'type', value: other } : { source: other };
 }
 
 /** Fixed proportional bounds; origin count never changes glyph size. */
