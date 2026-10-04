@@ -35,31 +35,39 @@ export function equalAreaDiscSize(squareSide: number) {
 export function originShapeGeometry(squareSide: number) {
   const radius = squareSide * 0.2;
   const halfWidth = squareSide + (2 - Math.PI / 2) * radius ** 2 / squareSide;
-  return { radius, halfWidth, circleDiameter: 2 * squareSide / Math.sqrt(Math.PI) };
+  return { radius, halfWidth, circleDiameter: 2 * squareSide / Math.sqrt(Math.PI), outlineOutset: equalAreaDiscSize(squareSide) / 128 };
 }
 
-/** One contained overlay row, including a touch target, inside the sprite tile. */
+/** One contained overlay row inside the sprite tile. */
 export function coordinateOverlayLayout(spritePx: number, inset: number, markPx: number) {
-  const layout = coordinatePillLayout(spritePx, inset, markPx);
-  // Shared disc has radius 15 in a 32px viewBox; compensate its transparent rim.
-  const circleSize = equalAreaDiscSize(layout.size);
-  const shape = originShapeGeometry(layout.size);
-  const height = Math.max(circleSize, 24 - inset * 2);
-  return { ...layout, ...shape, circleSize, width: spritePx - inset, height, overflowWidth: 24 };
+  const initial = coordinatePillLayout(spritePx, inset, markPx);
+  const width = spritePx - inset;
+  const unit = originShapeGeometry(1);
+  const paintedCircle = unit.circleDiameter + unit.outlineOutset * 2;
+  // Four painted circles, three gaps, and transparent SVG rims at both ends.
+  const size = Math.min(initial.size, (width - initial.gap * 3) / (equalAreaDiscSize(1) + paintedCircle * 3));
+  const shape = originShapeGeometry(size);
+  const circleSize = equalAreaDiscSize(size);
+  const height = circleSize;
+  return { ...initial, ...shape, size, circleSize, width, height };
+}
+
+/** Padding measures the space between a CSS box and its painted outline edge. */
+export function originMarkBox(single: PointerMark | undefined, layout: ReturnType<typeof coordinateOverlayLayout>) {
+  return single?.source === 'gen'
+    ? { width: layout.circleSize, height: layout.circleSize, padding: (layout.circleSize - layout.circleDiameter) / 2 - layout.outlineOutset, units: 1 }
+    : { width: single ? layout.size : layout.halfWidth * 2, height: layout.size, padding: -layout.outlineOutset, units: single ? 1 : 2 };
 }
 
 export function visibleOriginCount(origins: SourceCoordinate[], pointer: boolean, current: OriginContext | undefined,
   layout: ReturnType<typeof coordinateOverlayLayout>): number {
-  const widths = origins.map(origin => {
-    const single = singleOriginMark(origin, pointer, current);
-    return single?.source === 'gen' ? layout.circleSize : single ? layout.size : layout.halfWidth * 2;
-  });
-  if (widths.reduce((sum, width) => sum + width, 0) + Math.max(0, widths.length - 1) * layout.gap <= layout.width) return origins.length;
+  const units = origins.map(origin => originMarkBox(singleOriginMark(origin, pointer, current), layout).units);
+  if (units.reduce((sum, count) => sum + count, 0) <= 4) return origins.length;
   let used = 0;
   let count = 0;
-  for (const width of widths.slice(0, 2)) {
-    if (used + width + (count + 1) * layout.gap + layout.overflowWidth > layout.width) break;
-    used += width;
+  for (const next of units) {
+    if (used + next + 1 > 4) break;
+    used += next;
     count++;
   }
   return count;

@@ -265,7 +265,7 @@ function PickCell({
   return <div data-selector-tile data-testid={`favorites-origin-tile-${mon.id}`} className="relative flex shrink-0 flex-col items-center"
     style={{ width: spritePx, height: spritePx }}>
     {hasOrigins ? <CoordinatePills origins={coordinates ?? []} spritePx={spritePx} inset={inset} markPx={mark}
-      pointer={pointer} current={originContext} id={originsId} name={labelOf(mon)} /> : null}
+      pointer={pointer} current={originContext} id={originsId} /> : null}
     <NameTooltip mon={mon}>{tile}</NameTooltip>
   </div>;
 }

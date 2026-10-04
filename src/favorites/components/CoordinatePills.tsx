@@ -1,4 +1,3 @@
-import { useCallback, useRef, useState } from 'react';
 import { useT, typeLabel } from '@/i18n';
 import { cellKey, isGenNumber, isTypeName, ROMAN, GEN_NUMBERS, type GenNumber } from '../model/cells';
 import type { SourceCoordinate } from '../model/pointers';
@@ -6,8 +5,7 @@ import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { ExtraMark, RomanDisc, TypeIcon } from './marks';
 import { ROMAN_URIS } from './romanDiscAssets';
-import { OriginDetails } from './OriginDetails';
-import { coordinateOverlayLayout, originShapeGeometry, visibleOriginCount, singleOriginMark, type OriginContext } from './coordinatePillLayout';
+import { coordinateOverlayLayout, originShapeGeometry, originMarkBox, visibleOriginCount, singleOriginMark, type OriginContext } from './coordinatePillLayout';
 
 // Keep the shared numeral, outline and font; only remove its disc. A tighter
 // viewBox gives the glyph room inside the generation-colored half.
@@ -18,59 +16,49 @@ const ROMAN_GLYPHS = Object.fromEntries(GEN_NUMBERS.map(gen => [gen,
 ])) as Record<GenNumber, string>;
 
 /** Show each immediate origin, omitting coordinates supplied by the selector. */
-export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, current, id, name }: {
-  origins: SourceCoordinate[]; spritePx: number; inset: number; markPx: number; pointer: boolean; current?: OriginContext; id?: string; name: string;
+export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, current, id }: {
+  origins: SourceCoordinate[]; spritePx: number; inset: number; markPx: number; pointer: boolean; current?: OriginContext; id?: string;
 }) {
   const t = useT();
   const layout = coordinateOverlayLayout(spritePx, inset, markPx);
-  const { size, circleSize, halfWidth, radius, circleDiameter, gap, width, height, overflowWidth } = layout;
+  const { size, circleSize, radius, circleDiameter, outlineOutset, gap, width, height } = layout;
   const visible = visibleOriginCount(origins, pointer, current, layout);
   const hidden = origins.length - visible;
-  const trigger = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), [setOpen]);
   const label = (type: SourceCoordinate['type'], gen: SourceCoordinate['gen']) => `${isGenNumber(gen)
     ? t('favorites.generation', { gen: ROMAN[gen] }) : t(`favorites.axis.${gen}`)} · ${isTypeName(type)
     ? typeLabel(type) : t(`favorites.axis.${type}`)}`;
   return <span data-testid="favorites-origin-overlay" className="pointer-events-none absolute z-[16] flex items-center justify-end leading-none"
-    style={{ top: inset, right: inset, width, height, gap, opacity: pointer ? 0.85 : 1 }}>
+    style={{ top: inset, right: inset, width, height, opacity: pointer ? 0.85 : 1 }}>
     <span id={id} className="sr-only">{origins.map(origin => label(origin.type, origin.gen)).join('; ')}</span>
-    {origins.slice(0, visible).map(origin => {
+    {origins.slice(0, visible).map((origin, index) => {
       const { type, gen, mark } = origin;
       const single = singleOriginMark(origin, pointer, current);
       const fullLabel = label(type, gen);
-      const iconSize = single?.source === 'gen' ? circleSize : size;
+      const box = originMarkBox(single, layout);
+      const previous = index > 0 ? originMarkBox(singleOriginMark(origins[index - 1], pointer, current), layout).padding : 0;
       return <span key={cellKey(type, gen)} role="img" aria-label={fullLabel} title={fullLabel}
         data-origin-mode={single ? 'single' : 'pair'}
         data-testid={pointer ? 'favorites-pointer-mark' : 'favorites-used-mark'}
         data-coordinate-cell={cellKey(type, gen)} data-source={mark.source} data-value={'value' in mark ? mark.value : undefined}
-        className={single && single.source !== 'gen' ? 'pointer-events-auto flex shrink-0 bg-white ring-1 ring-zinc-300' : 'pointer-events-auto flex shrink-0'}
-        style={{ width: single ? iconSize : halfWidth * 2, height: iconSize, borderRadius: single ? 0 : radius }}>
+        className={single && single.source !== 'gen' ? 'pointer-events-auto flex shrink-0 bg-white' : 'pointer-events-auto flex shrink-0'}
+        style={{ width: box.width, height: box.height, marginLeft: index ? gap - previous - box.padding : 0, borderRadius: single ? 0 : radius, boxShadow: single && single.source !== 'gen' ? `0 0 0 ${outlineOutset}px #d4d4d8` : undefined }}>
         {single?.source === 'gen' ? <RomanDisc gen={single.value} size={circleSize} /> : single ? <CoordinateIcon axis={single.source === 'type' ? single.value : single.source} size={size} /> : <CoordinatePair type={type} gen={gen} size={size} />}
       </span>;
     })}
-    {hidden > 0 ? <button ref={trigger} type="button" data-testid="favorites-origin-overflow"
-      aria-label={t('favorites.origins.more', { pokemon: name })} aria-describedby={id} aria-haspopup="dialog" aria-expanded={open}
-      onClick={() => setOpen(true)}
-      className="pointer-events-auto group flex shrink-0 cursor-pointer items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-primary"
-      style={{ width: overflowWidth, height: overflowWidth }}>
-      <span data-testid="favorites-origin-overflow-badge" className="flex items-center justify-center rounded-full bg-muted ring-1 ring-border font-semibold text-foreground group-hover:bg-foreground/10"
-        style={{ width: circleDiameter, height: circleDiameter, fontSize: size * 0.55 }}>+{hidden}</span>
-    </button> : null}
-    {open ? <OriginDetails name={name} trigger={trigger} onClose={close}>
-      {origins.map(origin => <li key={cellKey(origin.type, origin.gen)} data-origin-detail
-        className="flex items-center gap-2 leading-normal">
-        <CoordinatePair type={origin.type} gen={origin.gen} size={20} />
-        <span>{label(origin.type, origin.gen)}</span>
-      </li>)}
-    </OriginDetails> : null}
+    {hidden > 0 ? <span data-testid="favorites-origin-overflow-badge" role="img"
+      aria-label={origins.map(origin => label(origin.type, origin.gen)).join('; ')}
+      title={origins.map(origin => label(origin.type, origin.gen)).join('; ')}
+      className="pointer-events-auto flex shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-foreground"
+      style={{ width: circleDiameter, height: circleDiameter, fontSize: size * 0.55,
+        marginLeft: visible ? gap - originMarkBox(singleOriginMark(origins[visible - 1], pointer, current), layout).padding + outlineOutset : 0,
+        boxShadow: `0 0 0 ${outlineOutset}px #d4d4d8` }}>+{hidden}</span> : null}
   </span>;
 }
 
 function CoordinatePair({ type, gen, size }: { type: SourceCoordinate['type']; gen: SourceCoordinate['gen']; size: number }) {
-  const { radius, halfWidth } = originShapeGeometry(size);
-  return <span aria-hidden className="flex shrink-0 overflow-hidden bg-white ring-1 ring-zinc-300"
-    style={{ width: halfWidth * 2, height: size, borderRadius: radius }}>
+  const { radius, halfWidth, outlineOutset } = originShapeGeometry(size);
+  return <span aria-hidden className="flex shrink-0 overflow-hidden bg-white"
+    style={{ width: halfWidth * 2, height: size, borderRadius: radius, boxShadow: `0 0 0 ${outlineOutset}px #d4d4d8` }}>
     <CoordinateIcon axis={gen} size={size} width={halfWidth} />
     <CoordinateIcon axis={type} size={size} width={halfWidth} divider />
   </span>;
