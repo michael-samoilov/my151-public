@@ -1,8 +1,9 @@
 import { useId, type CSSProperties } from 'react';
 import { localeUppercase, useLocale, useT } from '@/i18n';
-import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W } from '@/lib/typeBadgeGeometry';
+import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W, typeBadgeGlyphBox } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit } from '@/lib/typeBadgeFit';
 import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
+import { EXTRA_SYMBOL } from './extraSymbolAssets';
 import type { ExtraTypeAxis, GenNumber } from '../model/cells';
 import { AXIS_FILL, GEN_FILL, WORD_BADGE_MARGIN, generationBadgeUnits, generationLabel, type BadgeStops } from './badgeStyle';
 
@@ -42,8 +43,10 @@ function WordBadge({
   className,
   height,
   data,
+  symbol,
 }: Sizing & {
   spoken: string;
+  symbol?: ExtraTypeAxis;
   fill: string | BadgeStops;
   units?: number;
   /** Hard-edged bands at 45°, as on the generation discs, with an outlined word. */
@@ -52,8 +55,9 @@ function WordBadge({
 }) {
   const gradientId = `word-badge-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const label = localeUppercase(spoken);
-  const fit = typeBadgeFit(label, localeTypeLabels(), units - 2 * WORD_BADGE_MARGIN);
-  const centerX = units / 2;
+  const fit = typeBadgeFit(label, localeTypeLabels(), symbol ? undefined : units - 2 * WORD_BADGE_MARGIN);
+  const centerX = symbol ? TYPE_BADGE.textCenterX : units / 2;
+  const glyph = typeBadgeGlyphBox();
   // A 45° band edge crosses the pill's middle when the gradient runs from the
   // top-left corner to the point level with the far end along that diagonal.
   const reach = (units + TYPE_BADGE_H) / 2;
@@ -116,6 +120,8 @@ function WordBadge({
         stroke={split ? '#d4d4d8' : undefined}
         strokeWidth={split ? EDGE : undefined}
       />
+      {symbol ? <image href={EXTRA_SYMBOL[symbol]} x={glyph.x} y={glyph.y}
+        width={glyph.size} height={glyph.size} preserveAspectRatio="xMidYMid meet" data-special-symbol={symbol} /> : null}
       {split ? (
         // One opacity for the whole group, so overlapping copies stay one shade.
         <g opacity={0.85} aria-hidden>
@@ -135,7 +141,7 @@ function WordBadge({
 export function AxisBadge({ id, ...sizing }: Sizing & { id: ExtraTypeAxis }) {
   useLocale();
   const t = useT();
-  return <WordBadge spoken={t(`favorites.axis.${id}`)} fill={AXIS_FILL[id]} data={{ 'data-axis': id }} {...sizing} />;
+  return <WordBadge spoken={t(`favorites.axis.${id}`)} fill={AXIS_FILL[id]} symbol={id} data={{ 'data-axis': id }} {...sizing} />;
 }
 
 /**
