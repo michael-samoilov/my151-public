@@ -1987,8 +1987,8 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
         used.opacity < 0.5 && used.mark === 'water' && used.freeOpacity > 0.9 && !used.freeMark,
         `opacity=${used.opacity} mark=${used.mark} freeOpacity=${used.freeOpacity} freeMark=${used.freeMark}`,
       ));
-      const typeToggle = await s.evalJson<boolean>(`return !!document.querySelector('[data-testid="favorites-type-toggle"]');`);
-      if (typeToggle) await s.click('[data-testid="favorites-type-toggle"]');
+      const iconsHidden = await s.evalJson<boolean>(`return document.querySelector('[data-testid="favorites-type-toggle"]')?.getAttribute('aria-pressed') === 'false';`);
+      if (iconsHidden) await s.click('[data-testid="favorites-type-toggle"]');
       const types = await s.evalJson<{ icons: string[]; same: boolean }>(`
         const btn = document.querySelector('[data-testid="favorites-pick-184"]');
         if (!btn) return { icons: [], same: false };

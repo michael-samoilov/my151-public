@@ -874,10 +874,15 @@ test.describe('favorite Pokémon picker', () => {
     });
     await page.reload();
     await page.getByTestId('favorites-cell-favorite-1').click();
-    for (const [id, source] of [[4, 'starter'], [6, 'gimmick'], [144, 'legendary']] as const) {
+    for (const [id, source, types] of [[4, 'starter', ['fire']], [6, 'gimmick', ['fire', 'flying']], [144, 'legendary', ['ice', 'flying']]] as const) {
       const pick = page.getByTestId(`favorites-pick-${id}`);
       await expect(pick.locator('..').locator(`[data-testid="favorites-pointer-mark"][data-source="${source}"]`)).toBeVisible();
-      await expect(pick.getByTestId('favorites-type-icon')).toHaveCount(0);
+      const typeIcons = pick.getByTestId('favorites-type-icon');
+      await expect(typeIcons).toHaveCount(types.length);
+      for (const [index, type] of types.entries()) {
+        await expect(typeIcons.nth(index)).toHaveAttribute('data-type', type);
+        await expect(typeIcons.nth(index)).toBeVisible();
+      }
       await expect(pick.locator('..').getByTestId('favorites-used-mark')).toHaveCount(0);
       const opacity = await pick.locator('img[alt]').first().evaluate((el) => Number(getComputedStyle(el).opacity));
       expect(opacity).toBe(1);
