@@ -21,6 +21,10 @@ import leagueBack from '@/assets/home/tool-league-b.webp';
 import leagueBack400 from '@/assets/home/tool-league-b-400.webp';
 import leagueFront from '@/assets/home/tool-league.webp';
 import leagueFront400 from '@/assets/home/tool-league-400.webp';
+import favoritesBack from '@/assets/home/tool-favorites-b.webp';
+import favoritesBack400 from '@/assets/home/tool-favorites-b-400.webp';
+import favoritesFront from '@/assets/home/tool-favorites.webp';
+import favoritesFront400 from '@/assets/home/tool-favorites-400.webp';
 
 /**
  * The router page: one card per tool, plus a call to action.
@@ -146,6 +150,8 @@ function useTools(placed: number): Tool[] {
       href: '/favorite-pokemon-by-type',
       title: t('home.favorites.title'),
       blurb: t('home.favorites.blurb'),
+      shots: [shot(favoritesBack400, favoritesBack), shot(favoritesFront400, favoritesFront)],
+      alts: [t('home.favorites.fullGridAlt'), t('home.favorites.simplifiedAlt')],
     },
     { key: HAMMER_TITLE, title: t('home.next.title'), blurb: t('home.next.blurb') },
   ];

@@ -113,16 +113,24 @@ test.describe('home page responsive sweep', () => {
           const h2 = cell.querySelector('[data-card-title]');
           const p = cell.querySelector('[data-card-title] + p');
 
-          // 6. Copy fits. A caption's title stays on one line and its blurb is
-          // never clipped; the wide bar's copy stays inside the panel it sits
+          // 6. Copy fits. Caption titles may wrap, with every line visible;
+          // the blurb is never clipped. The wide bar's copy stays in its panel
           // in. A block reports one client rect whatever it does, so the line
           // count comes from the text range.
           if (h2 && p) {
             const range = document.createRange();
             range.selectNodeContents(h2);
-            const lines = range.getClientRects().length;
             const text = range.getBoundingClientRect().width;
-            if (lines > 1) fail.push(`card ${i} title wrapped to ${lines} lines`);
+            if (h2.scrollHeight - h2.clientHeight > 0.5) {
+              fail.push(`card ${i} title clipped by ${h2.scrollHeight - h2.clientHeight}`);
+            }
+            for (const line of range.getClientRects()) {
+              const title = R(h2);
+              if (line.left < title.left - 0.5 || line.right > title.right + 0.5
+                || line.top < title.top - 0.5 || line.bottom > title.bottom + 0.5) {
+                fail.push(`card ${i} title text escapes its caption`);
+              }
+            }
             if (text - R(h2).width > 0.5) fail.push(`card ${i} title overruns by ${(text - R(h2).width).toFixed(1)}`);
             if (p.scrollHeight - p.clientHeight > 0.5) {
               fail.push(`card ${i} blurb clipped by ${p.scrollHeight - p.clientHeight}`);
