@@ -1011,8 +1011,8 @@ test.describe('favorite Pokémon picker', () => {
       const { top, height } = item.getBoundingClientRect();
       return { top, height };
     }));
-    expect(boxes[1].top).toBe(boxes[0].top);
-    expect(boxes[2].top).toBe(boxes[1].top);
+    expect(boxes[1].top + boxes[1].height / 2).toBeCloseTo(boxes[0].top + boxes[0].height / 2, 1);
+    expect(boxes[2].top + boxes[2].height / 2).toBeCloseTo(boxes[1].top + boxes[1].height / 2, 1);
     await expect(marks.nth(0)).toHaveAttribute('data-coordinate-cell', 'legendary|5');
     await expect(marks.nth(1)).toHaveAttribute('data-coordinate-cell', 'fire|legendary');
     await expect(marks.nth(2)).toHaveAttribute('data-coordinate-cell', 'dragon|legendary');
@@ -1026,7 +1026,15 @@ test.describe('favorite Pokémon picker', () => {
       return box.left >= tile.left && box.right <= tile.right && box.top >= tile.top && box.bottom <= tile.bottom;
     }));
     expect(contained).toBe(true);
-    expect(Math.max(...boxes.map((box) => box.height)) - Math.min(...boxes.map((box) => box.height))).toBeLessThan(1);
+    const circleAreaRatio = await marks.first().evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const svg = new DOMParser().parseFromString(decodeURIComponent(el.querySelector('img')!.src.split(',')[1]), 'image/svg+xml');
+      const radius = Number(svg.querySelector('circle')!.getAttribute('r'));
+      const viewBoxWidth = Number(svg.documentElement.getAttribute('viewBox')!.split(' ')[2]);
+      const squareSide = el.nextElementSibling!.getBoundingClientRect().height;
+      return Math.PI * (radius * box.width / viewBoxWidth) ** 2 / squareSide ** 2;
+    });
+    expect(circleAreaRatio).toBeCloseTo(1, 2);
     expect(await marks.first().evaluate((el) => getComputedStyle(el.parentElement!).opacity)).toBe('0.85');
     const numeral = await marks.first().locator('img').first().evaluate((img) => decodeURIComponent((img as HTMLImageElement).src));
     expect(numeral).toContain('<circle');

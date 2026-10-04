@@ -26,11 +26,16 @@ export function coordinatePillLayout(spritePx: number, inset: number, markPx: nu
   return { size, gap, columns, width: available };
 }
 
+/** Equal filled circle area despite the shared disc asset's transparent rim. */
+export function equalAreaDiscSize(squareSide: number) {
+  return 2 * squareSide / Math.sqrt(Math.PI) * 32 / 30;
+}
+
 /** One contained overlay row, including a touch target, inside the sprite tile. */
 export function coordinateOverlayLayout(spritePx: number, inset: number, markPx: number) {
   const layout = coordinatePillLayout(spritePx, inset, markPx);
   // Shared disc has radius 15 in a 32px viewBox; compensate its transparent rim.
-  const circleSize = 2 * layout.size / Math.sqrt(Math.PI) * 32 / 30;
+  const circleSize = equalAreaDiscSize(layout.size);
   const pairSize = layout.size * 0.95;
   const badgeWidth = layout.size * 1.15;
   const height = Math.max(circleSize, 24 - inset * 2);

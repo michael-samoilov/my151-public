@@ -11,7 +11,7 @@ import { ExtraMark, RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
 import { CoordinatePills } from './CoordinatePills';
-import { type OriginContext } from './coordinatePillLayout';
+import { equalAreaDiscSize, type OriginContext } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
 import type { PointerMark } from '../model/pointers';
 
@@ -159,6 +159,7 @@ function PickCell({
   // Pointer selectors list only picks from other cells, so they never show taken.
   const takenHere = pointer ? [] : taken;
   const mark = Math.round(spritePx * 0.28);
+  const discSize = equalAreaDiscSize(mark);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   const hasOrigins = coordinates !== undefined;
   const tile = (
@@ -202,7 +203,7 @@ function PickCell({
       </span> : null}
       {!coordinates && sourceMarks.length > 0 ? (
         <span
-          className="pointer-events-none absolute z-[16] flex items-start leading-none opacity-[0.85]"
+          className="pointer-events-none absolute z-[16] flex items-center leading-none opacity-[0.85]"
           style={{ gap: 1, right: inset, top: inset }}
         >
           {sourceMarks.map((source) => (
@@ -211,9 +212,9 @@ function PickCell({
               data-testid="favorites-pointer-mark"
               data-source={source.source}
               className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: mark, height: mark }}
+              style={{ width: source.source === 'gen' ? discSize : mark, height: source.source === 'gen' ? discSize : mark }}
             >
-              {source.source === 'gen' ? <RomanDisc gen={source.value} size={mark} />
+              {source.source === 'gen' ? <RomanDisc gen={source.value} size={discSize} />
                 : source.source === 'type' ? <TypeIcon type={source.value} size={mark} />
                 : <ExtraMark id={source.source} size={mark} />}
             </span>
@@ -222,7 +223,7 @@ function PickCell({
       ) : null}
       {!coordinates && takenHere.length > 0 ? (
         <span
-          className="pointer-events-none absolute z-[15] flex items-start leading-none"
+          className="pointer-events-none absolute z-[15] flex items-center leading-none"
           style={{ gap: 1, right: inset, top: inset }}
         >
           {takenHere.map((where) => (
@@ -232,9 +233,9 @@ function PickCell({
               data-source={where.source}
               data-value={'value' in where ? where.value : undefined}
               className="flex shrink-0 items-center justify-center leading-none"
-              style={{ width: mark, height: mark }}
+              style={{ width: where.source === 'gen' ? discSize : mark, height: where.source === 'gen' ? discSize : mark }}
             >
-              {where.source === 'gen' ? <RomanDisc gen={where.value} size={mark} />
+              {where.source === 'gen' ? <RomanDisc gen={where.value} size={discSize} />
                 : where.source === 'type' ? <TypeIcon type={where.value} size={mark} />
                 : <ExtraMark id={where.source} size={mark} />}
             </span>
