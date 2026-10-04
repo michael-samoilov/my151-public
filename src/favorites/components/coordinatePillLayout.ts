@@ -29,15 +29,20 @@ export function coordinatePillLayout(spritePx: number, inset: number, markPx: nu
 /** One contained overlay row, including a touch target, inside the sprite tile. */
 export function coordinateOverlayLayout(spritePx: number, inset: number, markPx: number) {
   const layout = coordinatePillLayout(spritePx, inset, markPx);
-  const badgeWidth = spritePx >= 96 ? 24 : 20;
-  const badgeHeight = spritePx >= 96 ? 20 : 16;
-  const height = Math.max(layout.size, badgeHeight);
-  return { ...layout, width: spritePx - inset, height, badgeWidth, badgeHeight, overflowWidth: 24 };
+  // Shared disc has radius 15 in a 32px viewBox; compensate its transparent rim.
+  const circleSize = 2 * layout.size / Math.sqrt(Math.PI) * 32 / 30;
+  const pairSize = layout.size * 0.95;
+  const badgeWidth = layout.size * 1.15;
+  const height = Math.max(circleSize, 24 - inset * 2);
+  return { ...layout, circleSize, pairSize, width: spritePx - inset, height, badgeWidth, badgeHeight: layout.size, overflowWidth: 24 };
 }
 
 export function visibleOriginCount(origins: SourceCoordinate[], pointer: boolean, current: OriginContext | undefined,
   layout: ReturnType<typeof coordinateOverlayLayout>): number {
-  const widths = origins.map(origin => layout.size * (singleOriginMark(origin, pointer, current) ? 1 : 2));
+  const widths = origins.map(origin => {
+    const single = singleOriginMark(origin, pointer, current);
+    return single?.source === 'gen' ? layout.circleSize : single ? layout.size : layout.pairSize * 2;
+  });
   if (widths.reduce((sum, width) => sum + width, 0) + Math.max(0, widths.length - 1) * layout.gap <= layout.width) return origins.length;
   let used = 0;
   let count = 0;

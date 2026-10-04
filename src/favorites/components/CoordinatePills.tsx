@@ -23,7 +23,7 @@ export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, cur
 }) {
   const t = useT();
   const layout = coordinateOverlayLayout(spritePx, inset, markPx);
-  const { size, gap, width, height, badgeWidth, badgeHeight, overflowWidth } = layout;
+  const { size, circleSize, pairSize, gap, width, height, badgeWidth, badgeHeight, overflowWidth } = layout;
   const visible = visibleOriginCount(origins, pointer, current, layout);
   const hidden = origins.length - visible;
   const trigger = useRef<HTMLButtonElement>(null);
@@ -39,15 +39,16 @@ export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, cur
       const { type, gen, mark } = origin;
       const single = singleOriginMark(origin, pointer, current);
       const fullLabel = label(type, gen);
+      const iconSize = single?.source === 'gen' ? circleSize : single ? size : pairSize;
       return <span key={cellKey(type, gen)} role="img" aria-label={fullLabel} title={fullLabel}
         data-origin-mode={single ? 'single' : 'pair'}
         data-testid={pointer ? 'favorites-pointer-mark' : 'favorites-used-mark'}
         data-coordinate-cell={cellKey(type, gen)} data-source={mark.source} data-value={'value' in mark ? mark.value : undefined}
         className={single?.source === 'gen' ? 'pointer-events-auto flex shrink-0' : 'pointer-events-auto flex shrink-0 overflow-hidden bg-white ring-1 ring-zinc-300'}
-        style={{ width: size * (single ? 1 : 2), height: size, borderRadius: size * 0.2 }}>
-        {single?.source === 'gen' ? <RomanDisc gen={single.value} size={size} /> : single ? <CoordinateIcon axis={single.source === 'type' ? single.value : single.source} size={size} /> : <>
-          <CoordinateIcon axis={gen} size={size} />
-          <CoordinateIcon axis={type} size={size} divider />
+        style={{ width: iconSize * (single ? 1 : 2), height: iconSize, borderRadius: iconSize * 0.2 }}>
+        {single?.source === 'gen' ? <RomanDisc gen={single.value} size={circleSize} /> : single ? <CoordinateIcon axis={single.source === 'type' ? single.value : single.source} size={size} /> : <>
+          <CoordinateIcon axis={gen} size={pairSize} />
+          <CoordinateIcon axis={type} size={pairSize} divider />
         </>}
       </span>;
     })}
@@ -56,8 +57,8 @@ export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, cur
       onClick={() => setOpen(true)}
       className="pointer-events-auto group flex shrink-0 cursor-pointer items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-primary"
       style={{ width: overflowWidth, height: overflowWidth }}>
-      <span data-testid="favorites-origin-overflow-badge" className="flex items-center justify-center rounded-full border border-border bg-muted text-[11px] font-semibold text-foreground group-hover:bg-foreground/10"
-        style={{ width: badgeWidth, height: badgeHeight }}>+{hidden}</span>
+      <span data-testid="favorites-origin-overflow-badge" className="flex items-center justify-center rounded-full border border-border bg-muted font-semibold text-foreground group-hover:bg-foreground/10"
+        style={{ width: badgeWidth, height: badgeHeight, fontSize: size * 0.55 }}>+{hidden}</span>
     </button> : null}
     {open ? <OriginDetails name={name} trigger={trigger} onClose={close}>
       {origins.map(origin => <li key={cellKey(origin.type, origin.gen)} data-origin-detail
