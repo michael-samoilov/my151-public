@@ -224,7 +224,7 @@ function PickCell({
             >
               {source.source === 'gen' ? <RomanDisc gen={source.value} size={discSize} />
                 : source.source === 'type' ? <TypeIcon type={source.value} size={mark} />
-                : <ExtraSymbol id={source.source} size={mark - 2} />}
+                : <ExtraSymbol origin id={source.source} size={mark - 2} />}
             </span>
           ))}
         </span>
@@ -245,7 +245,7 @@ function PickCell({
             >
               {where.source === 'gen' ? <RomanDisc gen={where.value} size={discSize} />
                 : where.source === 'type' ? <TypeIcon type={where.value} size={mark} />
-                : <ExtraSymbol id={where.source} size={mark - 2} />}
+                : <ExtraSymbol origin id={where.source} size={mark - 2} />}
             </span>
           ))}
         </span>

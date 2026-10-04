@@ -68,6 +68,6 @@ function CoordinateIcon({ axis, size, width = size, divider = false }: {
   return <span aria-hidden data-origin-half className="flex shrink-0 items-center justify-center"
     style={{ width, height: size, boxShadow: divider ? 'inset 1px 0 #d4d4d8' : undefined, background: axisBackground(axis) }}>
     {isGenNumber(axis) ? <img src={ROMAN_GLYPHS[axis]} alt="" width={size} height={size} draggable={false} className="block shrink-0" />
-      : isTypeName(axis) ? <TypeIcon type={axis} size={size - 2} /> : <ExtraSymbol id={axis} size={size - 2} />}
+      : isTypeName(axis) ? <TypeIcon type={axis} size={size - 2} /> : <ExtraSymbol origin id={axis} size={size - 2} />}
   </span>;
 }
