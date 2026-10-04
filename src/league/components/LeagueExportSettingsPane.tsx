@@ -253,8 +253,8 @@ function CardOrderGlyph({ order }: { order: CardTeamOrder }) {
         <path
           key={line}
           d={roundedOrderPath(points)}
-          stroke={`hsl(0 72% ${70 - line * 8}%)`}
-          style={{ stroke: `oklch(from var(--color-primary) ${0.7 - line * 0.08} c h)` }}
+          stroke="currentColor"
+          strokeOpacity={[0.45, 0.63, 0.81, 1][line]}
         />
       ))}
     </svg>
