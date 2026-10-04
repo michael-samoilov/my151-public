@@ -16,6 +16,8 @@ interface BottomSheetProps {
   title: React.ReactNode;
   /** Optional independent action opposite the title, outside the drag button. */
   headerAccessory?: React.ReactNode;
+  /** Use a separate row when the title and action need their full widths. */
+  headerAccessoryPlacement?: 'inline' | 'below';
   /** Accessible name for the grab-handle button, which also closes on tap. */
   closeLabel: string;
   /**
@@ -68,6 +70,7 @@ export function BottomSheet({
   headerLabel,
   title,
   headerAccessory,
+  headerAccessoryPlacement = 'inline',
   closeLabel,
   size = 'content',
   topGap = 56,
@@ -452,7 +455,7 @@ export function BottomSheet({
       >
         {/* The header and its accessory share a box, so the accessory can
             be placed against the header alone. */}
-        <div className="relative shrink-0">
+        <div className="relative shrink-0" data-testid="bottom-sheet-header-frame">
           {/* Grab handle — drag down or tap to close. Min 44px touch target per
               Apple HIG, which is why the padding tightens rather than collapses
               when a keyboard is open: the header is still something to aim at,
@@ -472,11 +475,12 @@ export function BottomSheet({
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
             <span className="w-full text-sm font-semibold">{title}</span>
           </button>
-          {/* The accessory spans the title's line: below the padding and the
-              grab handle (h-1 plus mb-1), above the bottom padding. Centred in
-              that box, it lines up with the title whatever its height. */}
+          {/* Inline accessories align with the title below the grab handle.
+              The separate row preserves full-width labels when space is tight. */}
           {headerAccessory ? (
-            <div className={`absolute right-2 z-10 flex items-center ${keyboardOpen ? 'top-3.5 bottom-1.5' : 'top-5 bottom-3'}`}>
+            <div className={headerAccessoryPlacement === 'below'
+              ? 'flex justify-end px-2 pb-3'
+              : `absolute right-2 z-10 flex items-center ${keyboardOpen ? 'top-3.5 bottom-1.5' : 'top-5 bottom-3'}`}>
               {headerAccessory}
             </div>
           ) : null}
