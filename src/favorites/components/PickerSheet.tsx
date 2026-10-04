@@ -177,7 +177,7 @@ export function PickerSheet({
       onClick={onToggleIcons}
       className={`inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
     >
-      {!desktop ? (showIcons ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />) : null}
+      {showIcons ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
       {showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
     </button>
   );
