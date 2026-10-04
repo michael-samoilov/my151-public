@@ -242,10 +242,10 @@ function TeamModeOption({
 
 /** Four line identities, with the same rounded diagonal joins as Dex outlines. */
 function CardOrderGlyph({ order }: { order: CardTeamOrder }) {
-  // Four rows of capacities 2, 2, 3, 4. Each array follows one line identity.
+  // Three equal-height rows of capacities 2, 3, 4. Each array follows one line identity.
   const columns = order === 'fixed'
-    ? [[null,null,null,0], [null,null,1,1], [2,2,2,2], [3,3,3,3]]
-    : [[null,null,null,2], [null,null,2,1], [2,2,1,0], [3,3,3,3]];
+    ? [[null,null,0], [null,1,1], [2,2,2], [3,3,3]]
+    : [[null,null,2], [null,2,1], [2,1,0], [3,3,3]];
   const shapes = columns.map(orderLineContour);
   return (
     <svg viewBox="0 0 109 109" className="h-7 w-7" fill="none" strokeWidth="2" aria-hidden data-card-order-glyph={order}>
@@ -268,8 +268,8 @@ function orderLineContour(columns: (number | null)[]): number[][] {
     if (column === null) return;
     const left = 2 + column * 27;
     const previous = spans[spans.length - 1];
-    if (previous?.left === left) previous.bottom = row * 27 + 26;
-    else spans.push({ left, right: left + 24, top: 2 + row * 27, bottom: row * 27 + 26 });
+    if (previous?.left === left) previous.bottom = row * 36 + 35;
+    else spans.push({ left, right: left + 24, top: 2 + row * 36, bottom: row * 36 + 35 });
   });
   const points = [[spans[0].left, spans[0].top], [spans[0].right, spans[0].top]];
   spans.forEach((span, i) => {
