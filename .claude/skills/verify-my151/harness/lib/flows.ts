@@ -1984,7 +1984,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       `);
       checks.push(ok(
         'favorites:used-elsewhere-mark',
-        used.opacity < 0.5 && used.mark === 'water' && used.freeOpacity > 0.9 && !used.freeMark,
+        used.opacity > 0.9 && used.mark === 'water' && used.freeOpacity > 0.9 && !used.freeMark,
         `opacity=${used.opacity} mark=${used.mark} freeOpacity=${used.freeOpacity} freeMark=${used.freeMark}`,
       ));
       const iconsHidden = await s.evalJson<boolean>(`return document.querySelector('[data-testid="favorites-type-toggle"]')?.getAttribute('aria-pressed') === 'false';`);
@@ -2107,7 +2107,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   `);
   checks.push(ok(
     'favorites:store-has-placements',
-    Boolean(oracle.has && oracle.fairy === 184 && oracle.water == null),
+    Boolean(oracle.has && oracle.fairy === 184 && oracle.water === 184),
     `fairy=${oracle.fairy} water=${oracle.water}`,
   ));
 
@@ -2133,7 +2133,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       `applied=${applied} fairy=${landed.fairy} water=${landed.water} togetic=${landed.togetic}`,
     ));
   } else {
-    checks.push(ok('favorites:direct-replacement', oracle.fairy === 184 && oracle.water == null, `fairy=${oracle.fairy} water=${oracle.water}`));
+    checks.push(ok('favorites:direct-replacement', oracle.fairy === 184 && oracle.water === 184, `fairy=${oracle.fairy} water=${oracle.water}`));
   }
 
   const dismiss = async () => {

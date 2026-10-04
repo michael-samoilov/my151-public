@@ -693,7 +693,7 @@ test.describe('favorite Pokémon picker', () => {
     await expect(pane.getByTestId('favorites-type-icon')).toHaveCount(0);
   });
 
-  test('an empty cell takes a move without a packing sheet', async ({ page }) => {
+  test('an empty cell accepts a repeated pick without a packing sheet', async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-poison-1').click();
     await page.getByTestId('favorites-pick-34').click();
@@ -705,8 +705,13 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-packing')).toHaveCount(0);
     await expect(page.getByTestId('favorites-picker')).toBeHidden();
     await expect(page.getByTestId('favorites-cell-rock-1').locator('img[alt]')).toHaveAttribute('alt', /golem/i);
-    await expect(page.getByTestId('favorites-cell-ground-1').locator('img[alt]')).toHaveCount(0);
+    await expect(page.getByTestId('favorites-cell-ground-1').locator('img[alt]')).toHaveAttribute('alt', /golem/i);
     await expect(page.getByTestId('favorites-cell-poison-1').locator('img[alt]')).toHaveAttribute('alt', /nidoking/i);
+    const fills = await savedFills(page);
+    expect(fills).toEqual({ 'poison|1': 34, 'ground|1': 76, 'rock|1': 76 });
+    await testInfo.attach('empty-cell-repeat-sources.json', {
+      body: JSON.stringify(fills), contentType: 'application/json',
+    });
   });
 
   test('a repeated pick replaces the opened cell and preserves its other source without showing packing', async ({ page }, testInfo) => {
