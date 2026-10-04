@@ -12,12 +12,12 @@ import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCa
 import { drawFavoriteLaurels, drawFavoriteCrown, FAVORITE_ORNAMENTS } from './laurelPaint';
 import type { FavoritesExportCell, FavoritesSnapshot } from './snapshot';
 
-// Nine types per row, one generation row, then diagonal support cards and Overall.
+// One generation row, nine types per row, then diagonal support cards and Overall.
 export const SIMPLIFIED_CHART_LAYOUT = {
   width: 1356, height: 1040, left: 48, column: 140,
   tileWidth: 128, tileHeight: 140, radius: 12, stroke: 3,
-  typeTop: 104, typeColumns: 9, rowHeight: 176,
-  generationTop: 480, generationCircle: 40,
+  typeTop: 280, typeColumns: 9, rowHeight: 176,
+  generationTop: 104, generationCircle: 40,
   supportWidth: 224, supportHeight: 164, supportBadgeHeight: 25.6,
   favoriteWidth: 360, favoriteHeight: 264, favoriteBadgeHeight: 32,
   supportTops: [708, 759.6, 811.2], favoriteTop: 708,
@@ -83,18 +83,18 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     }
     return { edge, badgeHeight, paint };
   }
+  GEN_NUMBERS.forEach((gen, index) => {
+    const cx = L.left + (index + 0.5) * L.column;
+    const box = tile(byKey.get(cellKey('favorite', gen))!, cx, L.generationTop, GEN_FILL[gen], L.tileWidth, L.tileHeight, EXPORT_SPRITE_PX, true);
+    ctx.drawImage(images.get(ROMAN_URIS[gen])!, cx - L.generationCircle / 2,
+      box.edge - L.generationCircle / 2, L.generationCircle, L.generationCircle);
+  });
   TYPES18.forEach((type, index) => {
     const cx = L.left + (index % L.typeColumns + 0.5) * L.column;
     const top = L.typeTop + Math.floor(index / L.typeColumns) * L.rowHeight;
     const box = tile(byKey.get(cellKey(type, 'favorite'))!, cx, top, TYPE_COLORS[type]);
     drawTypeBadge(ctx, type, images.get(typeGlyphPath(type))!, cx - L.tileWidth / 2,
       box.edge - box.badgeHeight / 2, box.badgeHeight);
-  });
-  GEN_NUMBERS.forEach((gen, index) => {
-    const cx = L.left + (index + 0.5) * L.column;
-    const box = tile(byKey.get(cellKey('favorite', gen))!, cx, L.generationTop, GEN_FILL[gen], L.tileWidth, L.tileHeight, EXPORT_SPRITE_PX, true);
-    ctx.drawImage(images.get(ROMAN_URIS[gen])!, cx - L.generationCircle / 2,
-      box.edge - L.generationCircle / 2, L.generationCircle, L.generationCircle);
   });
   const special = [
     { key: cellKey('starter', 'favorite'), axis: 'starter' },
