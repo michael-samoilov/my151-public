@@ -114,9 +114,8 @@ test.describe('home page responsive sweep', () => {
           const p = cell.querySelector('[data-card-title] + p');
 
           // 6. Copy fits. Caption titles may wrap, with every line visible;
-          // the blurb is never clipped. The wide bar's copy stays in its panel
-          // in. A block reports one client rect whatever it does, so the line
-          // count comes from the text range.
+          // the blurb is never clipped. The wide bar's copy stays in its panel.
+          // A text range measures each rendered line inside the title's box.
           if (h2 && p) {
             const range = document.createRange();
             range.selectNodeContents(h2);
