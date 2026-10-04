@@ -16,7 +16,8 @@ import type { FavoritesExportCell, FavoritesSnapshot } from './snapshot';
 export const SIMPLIFIED_CHART_LAYOUT = {
   width: 1356, height: 1040, left: 48, column: 140,
   tileWidth: 128, tileHeight: 140, radius: 12, stroke: 3,
-  typeTop: 280, typeColumns: 9, rowHeight: 176,
+  // Painted gaps are 44px: after the generation discs and before the crown.
+  typeTop: 308, typeColumns: 9, rowHeight: 176,
   generationTop: 104, generationCircle: 40,
   supportWidth: 224, supportHeight: 164, supportBadgeHeight: 25.6,
   favoriteWidth: 360, favoriteHeight: 264, favoriteBadgeHeight: 32,
