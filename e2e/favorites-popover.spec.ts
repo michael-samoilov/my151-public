@@ -273,28 +273,29 @@ test('desktop minimap shows on hover, and dragging its window scrolls the grid',
   expect(Math.abs(moved.y - view.y - 20)).toBeLessThan(3);
 });
 
-test('type toggle persists across pickers and reloads', async ({ page }) => {
+test('icon toggle persists across pickers and reloads', async ({ page }, testInfo) => {
   await page.goto('/favorite-pokemon-by-type.html');
   await page.getByTestId('favorites-cell-fire-1').click();
   let toggle = page.getByTestId('favorites-type-toggle');
-  await expect(toggle).toHaveText('Show Types');
+  await expect(toggle).toHaveText('Hide Icons');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.getByTestId('favorites-type-icon').count()).toBeGreaterThan(0);
+  await toggle.click();
+  await expect(toggle).toHaveText('Show Icons');
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-  await toggle.click();
-  await expect(toggle).toHaveText('Hide Types');
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  expect(await page.getByTestId('favorites-type-icon').count()).toBeGreaterThan(0);
-  expect(await page.evaluate(() => localStorage.getItem('personal-151-favorites-show-types-v1'))).toBe('1');
-
+  expect(await page.evaluate(() => localStorage.getItem('personal-151-favorites-show-icons-v1'))).toBe('0');
   await page.keyboard.press('Escape');
-  await page.getByTestId('favorites-cell-bug-6').click();
+  await page.getByTestId('favorites-cell-legendary-1').click();
   toggle = page.getByTestId('favorites-type-toggle');
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  expect(await page.getByTestId('favorites-type-icon').count()).toBeGreaterThan(0);
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByTestId('favorites-type-icon')).toHaveCount(0);
   await page.reload();
-  await page.getByTestId('favorites-cell-bug-6').click();
+  await page.getByTestId('favorites-cell-legendary-1').click();
   toggle = page.getByTestId('favorites-type-toggle');
-  await expect(toggle).toHaveText('Hide Types');
+  await expect(toggle).toHaveText('Show Icons');
   await toggle.click();
-  await expect(toggle).toHaveText('Show Types');
-  expect(await page.evaluate(() => localStorage.getItem('personal-151-favorites-show-types-v1'))).toBe('0');
+  await expect(toggle).toHaveText('Hide Icons');
+  expect(await page.getByTestId('favorites-type-icon').count()).toBeGreaterThan(0);
+  expect(await page.evaluate(() => localStorage.getItem('personal-151-favorites-show-icons-v1'))).toBe('1');
+  await testInfo.attach('icon-toggle.json', { body: JSON.stringify({ persisted: true, specialPicker: true }), contentType: 'application/json' });
 });

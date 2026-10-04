@@ -40,9 +40,9 @@ export function PickerSheet({
   gen,
   fills,
   currentId,
-  showTypes,
+  showIcons,
   sortOrder,
-  onToggleTypes,
+  onToggleIcons,
   onClose,
   onPlace,
   onApplyPack,
@@ -52,9 +52,9 @@ export function PickerSheet({
   gen: GenAxisId;
   fills: Record<string, number>;
   currentId?: number;
-  showTypes: boolean;
+  showIcons: boolean;
   sortOrder: SortOrder;
-  onToggleTypes: () => void;
+  onToggleIcons: () => void;
   onClose: () => void;
   onPlace: (id: number) => void;
   onApplyPack: (path: PackMove[]) => void;
@@ -143,7 +143,7 @@ export function PickerSheet({
           selectedId={currentId}
           onPick={pick}
           takenMarks={kind === 'pick' ? (id) => taken.get(id) ?? [] : undefined}
-          showTypes={showTypes && kind === 'pick' && isTypeName(type) && isGenNumber(gen)}
+          showIcons={showIcons}
           pointer={kind === 'pointer'}
           originContext={{ type, gen }}
           coordinates={kind === 'pointer' ? (id) => pointerCoordinates(type, gen, fills, id)
@@ -164,17 +164,17 @@ export function PickerSheet({
   );
 
   const title = <PickerTitle type={type} gen={gen} />;
-  const typeToggle = kind === 'pick' && isTypeName(type) && isGenNumber(gen) ? (
+  const iconToggle = (
     <button
       type="button"
       data-testid="favorites-type-toggle"
-      aria-pressed={showTypes}
-      onClick={onToggleTypes}
-      className={`inline-flex h-7 shrink-0 cursor-pointer items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showTypes ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
+      aria-pressed={showIcons}
+      onClick={onToggleIcons}
+      className={`inline-flex h-7 shrink-0 cursor-pointer items-center rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
     >
-      {showTypes ? t('favorites.types.hide') : t('favorites.types.show')}
+      {showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
     </button>
-  ) : null;
+  );
   const mobileTitle = (
     <span className="flex w-full items-center gap-1.5 px-2 py-0.5 text-left">
       {/* The sheet closes by a drag, a tap on the header, or a tap outside,
@@ -196,7 +196,7 @@ export function PickerSheet({
             ) : null}
             {title}
           </div>
-          {typeToggle}
+          {iconToggle}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">{body}</div>
       </DesktopPane>
@@ -209,7 +209,7 @@ export function PickerSheet({
       onHeaderClick={packing ? backFromPack : undefined}
       headerLabel={packing ? t('favorites.packing.back') : undefined}
       title={mobileTitle}
-      headerAccessory={typeToggle}
+      headerAccessory={iconToggle}
       closeLabel={t('favorites.close')}
       size="content"
     >

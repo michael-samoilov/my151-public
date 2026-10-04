@@ -23,15 +23,15 @@ import { SortDebugPanel } from './components/SortDebugPanel';
 import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 
-const TYPES_STORAGE_KEY = 'personal-151-favorites-show-types-v1';
+const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
 const NO_REPEATS_STORAGE_KEY = 'personal-151-favorites-no-repeats-v1';
 const FavoritesExportOverlay = lazy(() => import('./components/FavoritesExportOverlay'));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId };
 
-function savedShowTypes(): boolean {
-  try { return window.localStorage.getItem(TYPES_STORAGE_KEY) === '1'; }
-  catch { return false; }
+function savedShowIcons(): boolean {
+  try { return window.localStorage.getItem(ICONS_STORAGE_KEY) !== '0'; }
+  catch { return true; }
 }
 
 /** On unless the viewer turned it off. */
@@ -65,7 +65,7 @@ export function FavoritesApp() {
   const applyPack = useFavoritesStore((s) => s.applyPack);
   const clear = useFavoritesStore((s) => s.clear);
   const [sel, setSel] = useState<Selection | null>(null);
-  const [showTypes, setShowTypes] = useState(savedShowTypes);
+  const [showIcons, setShowIcons] = useState(savedShowIcons);
   const [noRepeats, setNoRepeats] = useState(savedNoRepeats);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -78,9 +78,9 @@ export function FavoritesApp() {
   }, [t]);
 
   useEffect(() => {
-    try { window.localStorage.setItem(TYPES_STORAGE_KEY, showTypes ? '1' : '0'); }
+    try { window.localStorage.setItem(ICONS_STORAGE_KEY, showIcons ? '1' : '0'); }
     catch { /* Storage can be unavailable in private browsing. */ }
-  }, [showTypes]);
+  }, [showIcons]);
 
   useEffect(() => {
     try { window.localStorage.setItem(NO_REPEATS_STORAGE_KEY, noRepeats ? '1' : '0'); }
@@ -116,9 +116,9 @@ export function FavoritesApp() {
       gen={sel.gen}
       fills={fills}
       currentId={fills[cellKey(sel.type, sel.gen)]}
-      showTypes={showTypes}
+      showIcons={showIcons}
       sortOrder={sortOrder}
-      onToggleTypes={() => setShowTypes((value) => !value)}
+      onToggleIcons={() => setShowIcons((value) => !value)}
       onClose={() => setSel(null)}
       onPlace={(id) => place(sel.type, sel.gen, id, noRepeats)}
       onApplyPack={(path: PackMove[]) => {

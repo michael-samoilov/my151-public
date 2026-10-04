@@ -11,7 +11,7 @@ import { RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
 import { ExtraSymbol } from './ExtraSymbol';
-import { axisBackground } from './coordinatePresentation';
+import { axisBackground, coordinateLabel } from './coordinatePresentation';
 import { CoordinatePills } from './CoordinatePills';
 import { equalAreaDiscSize, originShapeGeometry, type OriginContext } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
@@ -28,7 +28,7 @@ export function PrettySpriteGrid({
   selectedId,
   onPick,
   takenMarks,
-  showTypes = true,
+  showIcons = true,
   pointer = false,
   sourceMarks,
   coordinates,
@@ -45,7 +45,7 @@ export function PrettySpriteGrid({
   onPick: (mon: PickerMon) => void;
   /** Where each Pokémon is already picked in this cell's row or column. */
   takenMarks?: (id: number) => PointerMark[];
-  showTypes?: boolean;
+  showIcons?: boolean;
   pointer?: boolean;
   sourceMarks?: (id: number) => PointerMark[];
   coordinates?: (id: number) => SourceCoordinate[];
@@ -113,7 +113,7 @@ export function PrettySpriteGrid({
                 spritePx={spritePx}
                 selected={selectedId === mon.id}
                 taken={takenMarks?.(mon.id) ?? []}
-                showTypes={showTypes}
+                showIcons={showIcons}
                 pointer={pointer}
                 sourceMarks={sourceMarks?.(mon.id) ?? []}
                 coordinates={coordinates?.(mon.id)}
@@ -134,7 +134,7 @@ function PickCell({
   spritePx,
   selected,
   taken,
-  showTypes,
+  showIcons,
   pointer,
   sourceMarks,
   coordinates,
@@ -147,7 +147,7 @@ function PickCell({
   spritePx: number;
   selected: boolean;
   taken: PointerMark[];
-  showTypes: boolean;
+  showIcons: boolean;
   pointer: boolean;
   sourceMarks: PointerMark[];
   coordinates?: SourceCoordinate[];
@@ -187,7 +187,7 @@ function PickCell({
         draggable={false}
       />
       {selected ? <span className="pointer-events-none absolute inset-[2px] z-[1] rounded-md border-2 border-primary" data-testid="favorites-selection-ring" /> : null}
-      {showTypes ? <span
+      {showIcons ? <span
         className="pointer-events-none absolute inset-x-0 z-[12] flex items-end justify-center"
         style={{ gap: 1, bottom: inset, height: Math.round(spritePx * 0.22) }}
       >
@@ -204,7 +204,7 @@ function PickCell({
           />
         ))}
       </span> : null}
-      {!coordinates && sourceMarks.length > 0 ? (
+      {showIcons && !coordinates && sourceMarks.length > 0 ? (
         <span
           className="pointer-events-none absolute z-[16] flex items-center leading-none opacity-[0.85]"
           style={{ gap: 1, right: inset, top: inset }}
@@ -224,7 +224,7 @@ function PickCell({
           ))}
         </span>
       ) : null}
-      {!coordinates && takenHere.length > 0 ? (
+      {showIcons && !coordinates && takenHere.length > 0 ? (
         <span
           className="pointer-events-none absolute z-[15] flex items-center leading-none"
           style={{ gap: 1, right: inset, top: inset }}
@@ -266,8 +266,8 @@ function PickCell({
   );
   return <div data-selector-tile data-testid={`favorites-origin-tile-${mon.id}`} className="relative flex shrink-0 flex-col items-center"
     style={{ width: spritePx, height: spritePx }}>
-    {hasOrigins ? <CoordinatePills origins={coordinates ?? []} spritePx={spritePx} inset={inset} markPx={mark}
-      pointer={pointer} current={originContext} id={originsId} /> : null}
+    {hasOrigins && showIcons ? <CoordinatePills origins={coordinates ?? []} spritePx={spritePx} inset={inset} markPx={mark}
+      pointer={pointer} current={originContext} id={originsId} /> : hasOrigins ? <span id={originsId} className="sr-only">{coordinates?.map(origin => coordinateLabel(origin.type, origin.gen)).join('; ')}</span> : null}
     <NameTooltip mon={mon}>{tile}</NameTooltip>
   </div>;
 }
