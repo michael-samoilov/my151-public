@@ -675,9 +675,10 @@ test.describe('favorite Pokémon picker', () => {
     expect(toggleBox).toBeTruthy();
     expect(toggleBox!.y).toBeGreaterThanOrEqual(headerBox!.y);
     expect(toggleBox!.y + toggleBox!.height).toBeLessThanOrEqual(headerBox!.y + headerBox!.height);
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
     await expect(pane.getByTestId('favorites-type-icon').first()).toBeVisible();
+    await toggle.click();
+    await expect(pane.getByTestId('favorites-type-icon')).toHaveCount(0);
   });
 
   test('an empty cell takes a move without a packing sheet', async ({ page }) => {
