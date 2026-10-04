@@ -11,7 +11,7 @@ import { ExtraMark, RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
 import { CoordinatePills } from './CoordinatePills';
-import { coordinateBandLayout, type OriginContext } from './coordinatePillLayout';
+import { type OriginContext } from './coordinatePillLayout';
 import type { SourceCoordinate } from '../model/pointers';
 import type { PointerMark } from '../model/pointers';
 
@@ -160,7 +160,7 @@ function PickCell({
   const takenHere = pointer ? [] : taken;
   const mark = Math.round(spritePx * 0.28);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
-  const band = coordinates !== undefined ? coordinateBandLayout(spritePx, inset, mark) : undefined;
+  const hasOrigins = coordinates !== undefined;
   const tile = (
     <button
       type="button"
@@ -261,8 +261,8 @@ function PickCell({
     </button>
   );
   return <div data-selector-tile data-testid={`favorites-origin-tile-${mon.id}`} className="relative flex shrink-0 flex-col items-center"
-    style={{ width: spritePx, height: spritePx + (band?.height ?? 0) }}>
-    {band ? <CoordinatePills origins={coordinates ?? []} spritePx={spritePx} inset={inset} markPx={mark}
+    style={{ width: spritePx, height: spritePx }}>
+    {hasOrigins ? <CoordinatePills origins={coordinates ?? []} spritePx={spritePx} inset={inset} markPx={mark}
       pointer={pointer} current={originContext} id={originsId} name={labelOf(mon)} /> : null}
     <NameTooltip mon={mon}>{tile}</NameTooltip>
   </div>;

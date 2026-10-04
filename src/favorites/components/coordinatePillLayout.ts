@@ -26,15 +26,17 @@ export function coordinatePillLayout(spritePx: number, inset: number, markPx: nu
   return { size, gap, columns, width: available };
 }
 
-/** One fixed band, including a touch target, above every coordinate selector tile. */
-export function coordinateBandLayout(spritePx: number, inset: number, markPx: number) {
+/** One contained overlay row, including a touch target, inside the sprite tile. */
+export function coordinateOverlayLayout(spritePx: number, inset: number, markPx: number) {
   const layout = coordinatePillLayout(spritePx, inset, markPx);
-  const height = spritePx >= 96 ? 26 : 24;
-  return { ...layout, width: spritePx - inset, height, overflowWidth: height };
+  const badgeWidth = spritePx >= 96 ? 24 : 20;
+  const badgeHeight = spritePx >= 96 ? 20 : 16;
+  const height = Math.max(layout.size, badgeHeight);
+  return { ...layout, width: spritePx - inset, height, badgeWidth, badgeHeight, overflowWidth: 24 };
 }
 
 export function visibleOriginCount(origins: SourceCoordinate[], pointer: boolean, current: OriginContext | undefined,
-  layout: ReturnType<typeof coordinateBandLayout>): number {
+  layout: ReturnType<typeof coordinateOverlayLayout>): number {
   const widths = origins.map(origin => layout.size * (singleOriginMark(origin, pointer, current) ? 1 : 2));
   if (widths.reduce((sum, width) => sum + width, 0) + Math.max(0, widths.length - 1) * layout.gap <= layout.width) return origins.length;
   let used = 0;
