@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
@@ -70,6 +70,18 @@ export function PickerSheet({
   const kind = kindFor(type, gen);
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);
   const [packStack, setPackStack] = useState<string[]>(['']);
+  const iconToggleRef = useRef<HTMLButtonElement>(null);
+  const [iconToggleWidth, setIconToggleWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    const button = iconToggleRef.current;
+    if (!button) return;
+    const measure = () => setIconToggleWidth(button.getBoundingClientRect().width);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(button);
+    return () => observer.disconnect();
+  }, [desktop, showIcons, t]);
 
   function backFromPack() {
     if (packStack.length > 1) setPackStack(packStack.slice(0, -1));
@@ -166,23 +178,27 @@ export function PickerSheet({
     </div>
   );
 
-  const title = <PickerTitle type={type} gen={gen} />;
+  // Mobile reserves the measured action width and a 4px gap before fitting badges.
+  const title = <PickerTitle type={type} gen={gen}
+    maxWidth={desktop ? undefined : Math.max(1, viewportPx - iconToggleWidth - 16 - (packing ? 20 : 0))}
+    gapPx={desktop ? 6 : 2} />;
   const iconToggle = (
     <button
       type="button"
+      ref={iconToggleRef}
       data-testid="favorites-type-toggle"
       aria-pressed={showIcons}
       aria-label={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
       title={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
       onClick={onToggleIcons}
-      className={`inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${showIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
+      className={`inline-flex h-7 shrink-0 cursor-pointer items-center rounded-md border text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${desktop ? 'gap-1.5 px-2.5' : 'gap-1 px-1'} ${showIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
     >
       {showIcons ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
       {showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
     </button>
   );
   const mobileTitle = (
-    <span className="flex w-full items-center gap-1.5 px-2 py-0.5 text-left">
+    <span className="flex w-full items-center gap-1 px-1 py-0.5 text-left">
       {/* The sheet closes by a drag, a tap on the header, or a tap outside,
           so only packing, where the header steps back, shows a back mark. */}
       {packing ? <ChevronLeft className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden /> : null}
@@ -216,7 +232,6 @@ export function PickerSheet({
       headerLabel={packing ? t('favorites.packing.back') : undefined}
       title={mobileTitle}
       headerAccessory={iconToggle}
-      headerAccessoryPlacement="below"
       closeLabel={t('favorites.close')}
       size="content"
     >

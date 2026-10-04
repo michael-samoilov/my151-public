@@ -16,8 +16,6 @@ interface BottomSheetProps {
   title: React.ReactNode;
   /** Optional independent action opposite the title, outside the drag button. */
   headerAccessory?: React.ReactNode;
-  /** Use a separate row when the title and action need their full widths. */
-  headerAccessoryPlacement?: 'inline' | 'below';
   /** Accessible name for the grab-handle button, which also closes on tap. */
   closeLabel: string;
   /**
@@ -70,7 +68,6 @@ export function BottomSheet({
   headerLabel,
   title,
   headerAccessory,
-  headerAccessoryPlacement = 'inline',
   closeLabel,
   size = 'content',
   topGap = 56,
@@ -475,12 +472,9 @@ export function BottomSheet({
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
             <span className="w-full text-sm font-semibold">{title}</span>
           </button>
-          {/* Inline accessories align with the title below the grab handle.
-              The separate row preserves full-width labels when space is tight. */}
+          {/* Inline accessories align with the title below the grab handle. */}
           {headerAccessory ? (
-            <div className={headerAccessoryPlacement === 'below'
-              ? 'flex justify-end px-2 pb-3'
-              : `absolute right-2 z-10 flex items-center ${keyboardOpen ? 'top-3.5 bottom-1.5' : 'top-5 bottom-3'}`}>
+            <div className={`absolute right-2 z-10 flex items-center ${keyboardOpen ? 'top-3.5 bottom-1.5' : 'top-5 bottom-3'}`}>
               {headerAccessory}
             </div>
           ) : null}
