@@ -183,6 +183,25 @@ export interface PokemonLabel {
   pending: boolean;
 }
 
+/** Complete form names already include their species; descriptors do not. */
+export function fullPokemonName(species: string, descriptor?: string): string {
+  if (!descriptor) return species;
+  const name = species.normalize('NFKC').toLocaleLowerCase();
+  const form = descriptor.normalize('NFKC').toLocaleLowerCase();
+  let index = form.indexOf(name);
+  while (index !== -1) {
+    // Latin names need word boundaries: Mew is not the species in Mewtwo.
+    // Japanese, Korean and Chinese complete names join the prefix directly.
+    const latin = /\p{Script=Latin}/u.test(name);
+    const before = form[index - 1] ?? '';
+    const after = form[index + name.length] ?? '';
+    const joinedPrefix = /^(mega|ultra)$/.test(form.slice(0, index));
+    if (!latin || ((!/[\p{L}\p{N}]/u.test(before) || joinedPrefix) && !/[\p{L}\p{N}]/u.test(after))) return descriptor;
+    index = form.indexOf(name, index + name.length);
+  }
+  return `${species} — ${descriptor}`;
+}
+
 export function pokemonLabel(appId: number, slug: string, formKey: number | `picker:${number}` = appId): PokemonLabel {
   const catalog = loaded.get(getLocale());
   const species = speciesName(appId);
@@ -192,9 +211,7 @@ export function pokemonLabel(appId: number, slug: string, formKey: number | `pic
   return {
     name: species,
     mark,
-    // "Raichu — Alolan Form". An em dash rather than a bracket because this is
-    // read aloud as often as it is seen.
-    full: descriptor ? `${species} — ${descriptor}` : species,
+    full: fullPokemonName(species, descriptor),
     pending: false,
   };
 }
