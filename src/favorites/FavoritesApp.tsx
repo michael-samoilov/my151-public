@@ -145,17 +145,6 @@ export function FavoritesApp() {
           </div>
           <button
             type="button"
-            data-testid="favorites-export-open"
-            aria-label={t('favorites.export.title')}
-            aria-expanded={exportOpen}
-            onClick={() => { setSel(null); setSettingsOpen(false); setExportOpen(true); }}
-            className="ml-auto flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('favorites.export.title')}</span>
-          </button>
-          <button
-            type="button"
             data-testid="favorites-settings-open"
             aria-label={t('favorites.settings.open')}
             aria-expanded={settingsOpen}
@@ -163,9 +152,19 @@ export function FavoritesApp() {
               setSel(null);
               setSettingsOpen((open) => !open);
             }}
-            className="shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="ml-auto shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="h-4 w-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            data-testid="favorites-export-open"
+            aria-label={t('favorites.export.title')}
+            aria-expanded={exportOpen}
+            onClick={() => { setSel(null); setSettingsOpen(false); setExportOpen(true); }}
+            className="shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          >
+            <Download className="h-4 w-4" aria-hidden />
           </button>
         </div>
         {/* The grid frame fills the screen below both headers. The grid
