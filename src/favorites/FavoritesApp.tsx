@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Download, Settings } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -18,25 +18,17 @@ import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
 import { FavoritesCompletionCounter } from './components/FavoritesCompletionCounter';
 import { PickerSheet } from './components/PickerSheet';
-import { SettingsPane } from './components/SettingsPane';
 import { SortDebugPanel } from './components/SortDebugPanel';
 import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
-const NO_REPEATS_STORAGE_KEY = 'personal-151-favorites-no-repeats-v1';
 const FavoritesExportOverlay = lazy(() => import('./components/FavoritesExportOverlay'));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId };
 
 function savedShowIcons(): boolean {
   try { return window.localStorage.getItem(ICONS_STORAGE_KEY) !== '0'; }
-  catch { return true; }
-}
-
-/** On unless the viewer turned it off. */
-function savedNoRepeats(): boolean {
-  try { return window.localStorage.getItem(NO_REPEATS_STORAGE_KEY) !== '0'; }
   catch { return true; }
 }
 
@@ -66,8 +58,6 @@ export function FavoritesApp() {
   const clear = useFavoritesStore((s) => s.clear);
   const [sel, setSel] = useState<Selection | null>(null);
   const [showIcons, setShowIcons] = useState(savedShowIcons);
-  const [noRepeats, setNoRepeats] = useState(savedNoRepeats);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
@@ -83,11 +73,6 @@ export function FavoritesApp() {
   }, [showIcons]);
 
   useEffect(() => {
-    try { window.localStorage.setItem(NO_REPEATS_STORAGE_KEY, noRepeats ? '1' : '0'); }
-    catch { /* Storage can be unavailable in private browsing. */ }
-  }, [noRepeats]);
-
-  useEffect(() => {
     sendEventBeacon('favorites-open', { once: true });
     const timer = window.setTimeout(prewarmPickerSprites, 350);
     return () => window.clearTimeout(timer);
@@ -99,15 +84,6 @@ export function FavoritesApp() {
     setSel({ type, gen });
   }
 
-  const settingsPane = (
-    <SettingsPane
-      desktop={desktop}
-      noRepeats={noRepeats}
-      onToggleNoRepeats={() => setNoRepeats((value) => !value)}
-      onClose={() => setSettingsOpen(false)}
-    />
-  );
-
   // Desktop shows the picker inside the grid, next to its cell. Mobile shows
   // it as a bottom sheet.
   const picker = sel ? (
@@ -117,11 +93,10 @@ export function FavoritesApp() {
       fills={fills}
       currentId={fills[cellKey(sel.type, sel.gen)]}
       showIcons={showIcons}
-      noRepeats={noRepeats}
       sortOrder={sortOrder}
       onToggleIcons={() => setShowIcons((value) => !value)}
       onClose={() => setSel(null)}
-      onPlace={(id) => place(sel.type, sel.gen, id, noRepeats)}
+      onPlace={(id) => place(sel.type, sel.gen, id)}
       onApplyPack={(path: PackMove[]) => {
         if (typeof sel.gen === 'number') applyPack(sel.gen, path);
       }}
@@ -145,24 +120,11 @@ export function FavoritesApp() {
           </div>
           <button
             type="button"
-            data-testid="favorites-settings-open"
-            aria-label={t('favorites.settings.open')}
-            aria-expanded={settingsOpen}
-            onClick={() => {
-              setSel(null);
-              setSettingsOpen((open) => !open);
-            }}
-            className="ml-auto shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Settings className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
             data-testid="favorites-export-open"
             aria-label={t('favorites.export.title')}
             aria-expanded={exportOpen}
-            onClick={() => { setSel(null); setSettingsOpen(false); setExportOpen(true); }}
-            className="shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+            onClick={() => { setSel(null); setExportOpen(true); }}
+            className="ml-auto shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
           >
             <Download className="h-4 w-4" aria-hidden />
           </button>
@@ -182,10 +144,8 @@ export function FavoritesApp() {
               pane={desktop ? picker : null}
             />
           </main>
-          {settingsOpen && desktop ? settingsPane : null}
           {SORT_DEBUG_ENABLED ? <SortDebugPanel desktop={desktop} order={sortOrder} onChange={setSortOrder} /> : null}
         </div>
-        {settingsOpen && !desktop ? settingsPane : null}
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>

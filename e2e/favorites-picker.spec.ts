@@ -1093,7 +1093,7 @@ test.describe('favorite Pokémon picker', () => {
     await seedFills(page, { 'steel|8': 10242 });
     await page.getByTestId('favorites-cell-gimmick-8').click();
     const taken = await takenState(page, [10242]);
-    expect(taken).toEqual({ 10242: { faded: true, marks: ['type:steel'] } });
+    expect(taken).toEqual({ 10242: { faded: false, marks: ['type:steel'] } });
     await testInfo.attach('gen8-gimmick-taken.json', { body: JSON.stringify(taken, null, 2), contentType: 'application/json' });
   });
 
@@ -1101,11 +1101,11 @@ test.describe('favorite Pokémon picker', () => {
     await seedFills(page, { 'legendary|2': 249 });
     await page.getByTestId('favorites-cell-psychic-legendary').click();
     const fromRow = await takenState(page, [249]);
-    expect(fromRow).toEqual({ 249: { faded: true, marks: ['gen:2'] } });
+    expect(fromRow).toEqual({ 249: { faded: false, marks: ['gen:2'] } });
     await seedFills(page, { 'psychic|legendary': 249 });
     await page.getByTestId('favorites-cell-legendary-2').click();
     const fromColumn = await takenState(page, [249]);
-    expect(fromColumn).toEqual({ 249: { faded: true, marks: ['type:psychic'] } });
+    expect(fromColumn).toEqual({ 249: { faded: false, marks: ['type:psychic'] } });
     await testInfo.attach('legendary-line-taken.json', { body: JSON.stringify({ fromRow, fromColumn }, null, 2), contentType: 'application/json' });
   });
 
@@ -1117,44 +1117,32 @@ test.describe('favorite Pokémon picker', () => {
       10174: { faded: false, marks: ['gen:8'] },
       10092: { faded: false, marks: ['gen:7'] },
       10239: { faded: false, marks: ['gen:8'] },
-      10039: { faded: true, marks: ['gen:1'] },
-      10308: { faded: true, marks: ['gen:4'] },
+      10039: { faded: false, marks: ['gen:1'] },
+      10308: { faded: false, marks: ['gen:4'] },
     });
     await testInfo.attach('normal-gimmick-taken.json', { body: JSON.stringify(taken, null, 2), contentType: 'application/json' });
   });
 
-  test('the no-repeat setting moves a pick out of its row and column, and off allows doubles', async ({ page }, testInfo) => {
-    await seedFills(page, { 'legendary|2': 249 });
-    await page.getByTestId('favorites-cell-psychic-legendary').click();
-    await page.getByTestId('favorites-pick-249').click();
-    const on = await savedFills(page);
-    expect(on).toEqual({ 'psychic|legendary': 249 });
-
-    await page.getByTestId('favorites-settings-open').click();
-    const toggle = page.getByTestId('favorites-setting-no-repeats');
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
-    await page.getByRole('button', { name: 'Close settings' }).click();
-    await page.getByTestId('favorites-cell-legendary-2').click();
-    await page.getByTestId('favorites-pick-249').click();
+  test('repeat picks preserve independent sources and pointers despite an old saved setting @viewport', async ({ page }, testInfo) => {
+    await page.addInitScript(() => localStorage.setItem('personal-151-favorites-no-repeats-v1', '1'));
+    await seedFills(page, { 'grass|1': 1, 'favorite|1': 1 });
+    await expect(page.getByTestId('favorites-settings-open')).toHaveCount(0);
+    await page.getByTestId('favorites-cell-poison-1').click();
+    const repeated = page.getByTestId('favorites-pick-1');
+    await expect(repeated.locator('img[alt="Bulbasaur"]')).toHaveCSS('opacity', '1');
+    await repeated.click();
+    const repeatedFills = await savedFills(page);
+    expect(repeatedFills).toEqual({ 'grass|1': 1, 'poison|1': 1, 'favorite|1': 1 });
+    await page.reload();
+    expect(await savedFills(page)).toEqual(repeatedFills);
+    // Remove one source: the pointer remains valid through the other source.
     await page.getByTestId('favorites-cell-grass-1').click();
     await page.getByTestId('favorites-pick-1').click();
+    expect(await savedFills(page)).toEqual({ 'poison|1': 1, 'favorite|1': 1 });
+    // Remove the final source: ordinary pointer pruning still applies.
     await page.getByTestId('favorites-cell-poison-1').click();
     await page.getByTestId('favorites-pick-1').click();
-    const off = await savedFills(page);
-    expect(off).toEqual({ 'psychic|legendary': 249, 'legendary|2': 249, 'grass|1': 1, 'poison|1': 1 });
-
-    // Turning the setting back on keeps doubles that already exist.
-    await page.getByTestId('favorites-settings-open').click();
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await page.reload();
-    await expect(page.getByTestId('favorites-grid')).toBeVisible();
-    const reopened = await savedFills(page);
-    expect(reopened).toEqual(off);
-    const setting = await page.evaluate(() => localStorage.getItem('personal-151-favorites-no-repeats-v1'));
-    expect(setting).toBe('1');
-    await testInfo.attach('no-repeat-setting.json', { body: JSON.stringify({ on, off, reopened, setting }, null, 2), contentType: 'application/json' });
+    expect(await savedFills(page)).toEqual({});
+    await testInfo.attach('repeat-picks.json', { body: JSON.stringify({ repeatedFills, afterClearingSources: await savedFills(page) }, null, 2), contentType: 'application/json' });
   });
 });

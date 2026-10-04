@@ -9,7 +9,6 @@ import {
   type PackMove,
 } from '../model/packing';
 import { pointerPool, prunePointers } from '../model/pointers';
-import { withoutRepeats } from '../model/taken';
 
 export const FAVORITES_STORAGE_KEY = 'favorite-picker';
 
@@ -40,8 +39,7 @@ export function migrateFavoriteFills(saved: Record<string, number>): Record<stri
 
 export interface FavoritesState {
   fills: Record<string, number>;
-  /** With `noRepeats`, the pick also leaves every other cell in this cell's row and column. */
-  place: (type: TypeAxisId, gen: GenAxisId, id: number, noRepeats: boolean) => void;
+  place: (type: TypeAxisId, gen: GenAxisId, id: number) => void;
   applyPack: (gen: number, path: PackMove[]) => void;
   clear: (type: TypeAxisId, gen: GenAxisId) => void;
 }
@@ -59,10 +57,10 @@ export const useFavoritesStore = create<FavoritesState>()(
   persist(
     (set) => ({
       fills: {},
-      place: (type, gen, id, noRepeats) =>
+      place: (type, gen, id) =>
         set((s) => {
           const placed = { ...s.fills, [cellKey(type, gen)]: id };
-          return { fills: prunePointers(noRepeats ? withoutRepeats(placed, type, gen, id) : placed) };
+          return { fills: prunePointers(placed) };
         }),
       applyPack: (gen, path) =>
         set((s) => {

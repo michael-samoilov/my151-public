@@ -28,7 +28,6 @@ export function PrettySpriteGrid({
   selectedId,
   onPick,
   takenMarks,
-  noRepeats = true,
   showIcons = true,
   pointer = false,
   sourceMarks,
@@ -46,7 +45,6 @@ export function PrettySpriteGrid({
   onPick: (mon: PickerMon) => void;
   /** Where each Pokémon is already picked in this cell's row or column. */
   takenMarks?: (id: number) => PointerMark[];
-  noRepeats?: boolean;
   showIcons?: boolean;
   pointer?: boolean;
   sourceMarks?: (id: number) => PointerMark[];
@@ -115,7 +113,6 @@ export function PrettySpriteGrid({
                 spritePx={spritePx}
                 selected={selectedId === mon.id}
                 taken={takenMarks?.(mon.id) ?? []}
-                noRepeats={noRepeats}
                 showIcons={showIcons}
                 pointer={pointer}
                 sourceMarks={sourceMarks?.(mon.id) ?? []}
@@ -137,7 +134,6 @@ function PickCell({
   spritePx,
   selected,
   taken,
-  noRepeats,
   showIcons,
   pointer,
   sourceMarks,
@@ -151,7 +147,6 @@ function PickCell({
   spritePx: number;
   selected: boolean;
   taken: PointerMark[];
-  noRepeats: boolean;
   showIcons: boolean;
   pointer: boolean;
   sourceMarks: PointerMark[];
@@ -186,7 +181,7 @@ function PickCell({
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}
-        className={clearing || (noRepeats && takenHere.length > 0) ? 'relative z-10 opacity-35' : 'relative z-10'}
+        className={clearing ? 'relative z-10 opacity-35' : 'relative z-10'}
         style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx }}
         decoding="sync"
         draggable={false}

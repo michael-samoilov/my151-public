@@ -4,10 +4,10 @@ test.describe('full favorite chart export', () => {
   test('partial chart uses shared PNG geometry and preserves saved settings', async ({ page }, testInfo) => {
     await page.addInitScript(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: { 'fire|1': 4, 'grass|1': 1 } }, version: 3 }));
-      localStorage.setItem('personal-151-favorites-no-repeats-v1', '0');
+      localStorage.setItem('personal-151-favorites-show-icons-v1', '0');
     });
     await page.goto('/favorite-pokemon-by-type?lang=en');
-    const before = await page.evaluate(() => [localStorage.getItem('favorite-picker'), localStorage.getItem('personal-151-favorites-no-repeats-v1')]);
+    const before = await page.evaluate(() => [localStorage.getItem('favorite-picker'), localStorage.getItem('personal-151-favorites-show-icons-v1')]);
     await page.getByTestId('favorites-export-open').click();
     const save = page.getByTestId('favorites-export-save');
     await expect(save).toBeEnabled({ timeout: 30000 });
@@ -44,7 +44,7 @@ test.describe('full favorite chart export', () => {
     expect(download.suggestedFilename()).toBe('my151-favorites.png');
     expect(await download.failure()).toBeNull();
     await expect(page.locator('[data-export-preview-layer]')).toHaveCount(0);
-    expect(await page.evaluate(() => [localStorage.getItem('favorite-picker'), localStorage.getItem('personal-151-favorites-no-repeats-v1')])).toEqual(before);
+    expect(await page.evaluate(() => [localStorage.getItem('favorite-picker'), localStorage.getItem('personal-151-favorites-show-icons-v1')])).toEqual(before);
   });
 
   test('empty and stale charts export, and Escape returns to the unchanged grid', async ({ page }, testInfo) => {

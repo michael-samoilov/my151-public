@@ -41,7 +41,6 @@ export function PickerSheet({
   fills,
   currentId,
   showIcons,
-  noRepeats,
   sortOrder,
   onToggleIcons,
   onClose,
@@ -54,7 +53,6 @@ export function PickerSheet({
   fills: Record<string, number>;
   currentId?: number;
   showIcons: boolean;
-  noRepeats: boolean;
   sortOrder: SortOrder;
   onToggleIcons: () => void;
   onClose: () => void;
@@ -158,7 +156,6 @@ export function PickerSheet({
           onPick={pick}
           takenMarks={kind === 'pick' ? (id) => taken.get(id) ?? [] : undefined}
           showIcons={showIcons}
-          noRepeats={noRepeats}
           pointer={kind === 'pointer'}
           originContext={{ type, gen }}
           coordinates={kind === 'pointer' ? (id) => pointerCoordinates(type, gen, fills, id)

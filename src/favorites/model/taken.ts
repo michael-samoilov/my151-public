@@ -99,20 +99,6 @@ export function takenIn(
   return taken;
 }
 
-/** `fills` without `id` in any peer of this cell. */
-export function withoutRepeats(
-  fills: Record<string, number>,
-  type: TypeAxisId,
-  gen: GenAxisId,
-  id: number,
-): Record<string, number> {
-  const next = { ...fills };
-  for (const { key } of peersOf(type, gen)) {
-    if (next[key] === id) delete next[key];
-  }
-  return next;
-}
-
 /** Direct peer cells; unlike axis marks, distinct coordinate pairs stay distinct. */
 export function takenCoordinatesIn(fills: Record<string, number>, type: TypeAxisId, gen: GenAxisId) {
   const result = new Map<number, SourceCoordinate[]>();
