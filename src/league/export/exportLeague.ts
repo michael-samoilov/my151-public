@@ -39,6 +39,7 @@ import {
   layoutShowsBothTeams,
   layoutShowsGymDetails,
   type LeagueHomeExportLayout,
+  type CardTeamOrder,
 } from './exportOptions';
 import {
   drawBossBall,
@@ -893,6 +894,7 @@ function drawGymCard(
   ctx: CanvasRenderingContext2D,
   card: GymCard,
   images: Images,
+  teamOrder: CardTeamOrder,
 ): void {
   const shades = cardShades(card.type);
   const type = card.type !== 'none' ? card.type : null;
@@ -994,7 +996,12 @@ function drawGymCard(
       ctx.fillRect(ox, y, innerW, L.K);
       ctx.restore();
     }
-    const cells = exportRow(card, row);
+    const resolved = exportRow(card, row);
+    // Keep the original rightmost seat last. The other active seats follow
+    // their introduction order. Resolve legendary and form identity first.
+    const cells = teamOrder === 'first-last'
+      ? [...resolved.slice(0, -1).reverse(), ...resolved.slice(-1)]
+      : resolved;
     const span = L.GLYPH_SPAN[row] ?? 1;
     const lead = 7 - cells.length - span;
     drawGlyphCell(ctx, row, span, shades, ox + lead * L.COL, y);
@@ -1496,9 +1503,9 @@ async function render(
 }
 
 /** One trainer's card as a PNG. */
-export async function exportGymCard(card: GymCard): Promise<Blob> {
+export async function exportGymCard(card: GymCard, teamOrder: CardTeamOrder = 'fixed'): Promise<Blob> {
   const images = await loadAll(cardImageUrls(card));
-  return render(L.CARD_IMG_W, L.CARD_IMG_H, (ctx) => drawGymCard(ctx, card, images));
+  return render(L.CARD_IMG_W, L.CARD_IMG_H, (ctx) => drawGymCard(ctx, card, images, teamOrder));
 }
 
 /** The league summary as a PNG, at the layout's team mode. `view` fills in for "both". */

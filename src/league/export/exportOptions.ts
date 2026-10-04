@@ -119,3 +119,6 @@ export function parseLeagueHomeExportLayout(
     teamMode,
   };
 }
+
+/** Trainer-card PNG order. Persistent team seats stay unchanged. */
+export type CardTeamOrder = 'fixed' | 'first-last';
