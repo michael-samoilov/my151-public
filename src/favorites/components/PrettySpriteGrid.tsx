@@ -220,7 +220,7 @@ function PickCell({
               data-testid="favorites-pointer-mark"
               data-source={source.source}
               className="flex shrink-0 items-center justify-center overflow-hidden leading-none"
-              style={{ width: source.source === 'gen' ? discSize : source.source === 'type' ? roundedSide : mark, height: source.source === 'gen' ? discSize : source.source === 'type' ? roundedSide : mark, borderRadius: source.source === 'type' ? roundedRadius : undefined, background: source.source === 'gen' ? undefined : axisBackground(source.source === 'type' ? source.value : source.source) }}
+              style={{ width: source.source === 'gen' ? discSize : roundedSide, height: source.source === 'gen' ? discSize : roundedSide, borderRadius: source.source === 'gen' ? undefined : roundedRadius, background: source.source === 'gen' ? undefined : axisBackground(source.source === 'type' ? source.value : source.source) }}
             >
               {source.source === 'gen' ? <RomanDisc gen={source.value} size={discSize} />
                 : source.source === 'type' ? <TypeIcon type={source.value} size={mark} />
@@ -241,7 +241,7 @@ function PickCell({
               data-source={where.source}
               data-value={'value' in where ? where.value : undefined}
               className="flex shrink-0 items-center justify-center overflow-hidden leading-none"
-              style={{ width: where.source === 'gen' ? discSize : where.source === 'type' ? roundedSide : mark, height: where.source === 'gen' ? discSize : where.source === 'type' ? roundedSide : mark, borderRadius: where.source === 'type' ? roundedRadius : undefined, background: where.source === 'gen' ? undefined : axisBackground(where.source === 'type' ? where.value : where.source) }}
+              style={{ width: where.source === 'gen' ? discSize : roundedSide, height: where.source === 'gen' ? discSize : roundedSide, borderRadius: where.source === 'gen' ? undefined : roundedRadius, background: where.source === 'gen' ? undefined : axisBackground(where.source === 'type' ? where.value : where.source) }}
             >
               {where.source === 'gen' ? <RomanDisc gen={where.value} size={discSize} />
                 : where.source === 'type' ? <TypeIcon type={where.value} size={mark} />

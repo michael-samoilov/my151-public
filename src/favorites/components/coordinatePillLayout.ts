@@ -53,9 +53,9 @@ export function coordinateOverlayLayout(spritePx: number, inset: number, markPx:
 export function originMarkBox(single: PointerMark | undefined, layout: ReturnType<typeof coordinateOverlayLayout>) {
   return single?.source === 'gen'
     ? { width: layout.circleSize, height: layout.circleSize, padding: (layout.circleSize - layout.circleDiameter) / 2 - layout.outlineOutset, units: 1 }
-    : single?.source === 'type'
+    : single
       ? { width: layout.roundedSide, height: layout.roundedSide, padding: -layout.outlineOutset, units: 1 }
-      : { width: single ? layout.size : layout.halfWidth * 2, height: layout.size, padding: -layout.outlineOutset, units: single ? 1 : 2 };
+      : { width: layout.halfWidth * 2, height: layout.size, padding: -layout.outlineOutset, units: 2 };
 }
 
 export function visibleOriginCount(origins: SourceCoordinate[], pointer: boolean, current: OriginContext | undefined,
