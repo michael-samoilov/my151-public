@@ -2317,8 +2317,8 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     };
   `);
   checks.push(ok(
-    'favorites:empty-dest-moves',
-    Boolean(poisonOpen && groundOpen && rockOpen && !moved.packing && moved.rock === 76 && moved.ground == null && moved.poison === 34),
+    'favorites:empty-dest-preserves-source',
+    Boolean(poisonOpen && groundOpen && rockOpen && !moved.packing && moved.rock === 76 && moved.ground === 76 && moved.poison === 34),
     `packing=${moved.packing} rock=${moved.rock} ground=${moved.ground} poison=${moved.poison}`,
   ));
   await dismiss();
