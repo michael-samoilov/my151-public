@@ -17,6 +17,7 @@ import starterIcon from '../icons/starter.svg?url';
 import { GEN_AXIS, TYPE_AXIS, isGenNumber, isTypeName, type ExtraTypeAxis } from '../model/cells';
 import type { FavoritesSnapshot } from './snapshot';
 import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCanvas, image } from './canvas';
+import { drawFavoriteCrown, FAVORITE_ORNAMENTS } from './laurelPaint';
 
 // Native 96px sprites, with 12px breathing room on each side. The shared
 // frame and corner geometry are the same as Dex and League PNGs.
@@ -65,6 +66,7 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
     ...snapshot.cells.flatMap(cell => cell.mon ? [cell.mon.sprite] : []),
     ...TYPE_AXIS.flatMap(axis => isTypeName(axis) ? [typeIconPath(axis), typeGlyphPath(axis)] : [EXTRA_ICONS[axis]]),
     ...GEN_AXIS.filter(isGenNumber).map(gen => ROMAN_URIS[gen]),
+    FAVORITE_ORNAMENTS.crown,
   ]);
   const images = new Map(await Promise.all([...urls].map(async url => [url, await image(url)] as const)));
   const { width, height, gridX, gridY } = FULL_CHART_LAYOUT;
@@ -113,6 +115,13 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
       ctx.fillStyle = '#a1a1aa';
       ctx.fillText('—', x + cell / 2, y + cell / 2);
     }
+  });
+  // One native crown unit retains Simplified's crown-to-cell proportion.
+  // Its 9px overhang clears both neighboring 96px sprite bounds by 3px.
+  const favoriteX = gridX + (TYPE_AXIS.indexOf('favorite') + 1.5) * cell;
+  const favoriteY = gridY + (GEN_AXIS.indexOf('favorite') + 1) * cell;
+  drawFavoriteCrown(ctx, images.get(FAVORITE_ORNAMENTS.crown)!, {
+    x: Math.round(favoriteX - 31 / 2), y: favoriteY - 9, width: 31, height: 18,
   });
   drawFavoritesCredit(ctx, width, height);
   return encodeFavoritesCanvas(canvas);

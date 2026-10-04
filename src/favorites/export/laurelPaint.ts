@@ -71,10 +71,13 @@ export function drawFavoriteLaurels(ctx: CanvasRenderingContext2D, leaf: HTMLIma
   ctx.restore();
 }
 
-export function drawFavoriteCrown(ctx: CanvasRenderingContext2D, crown: HTMLImageElement): void {
-  const L = FAVORITE_ORNAMENTS;
+export function drawFavoriteCrown(ctx: CanvasRenderingContext2D, crown: HTMLImageElement,
+  placement: { x: number; y: number; width: number; height: number } = {
+    x: FAVORITE_ORNAMENTS.crownX, y: FAVORITE_ORNAMENTS.crownY,
+    width: FAVORITE_ORNAMENTS.crownWidth, height: FAVORITE_ORNAMENTS.crownHeight,
+  }): void {
   ctx.save();
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(crown, L.crownX, L.crownY, L.crownWidth, L.crownHeight);
+  ctx.drawImage(crown, placement.x, placement.y, placement.width, placement.height);
   ctx.restore();
 }
