@@ -53,7 +53,7 @@ const PAGES = {
     // (docs/seo/HANDOFF.md, section 10).
     heading: 'Free <span class="accent">Pokémon fan tools</span>',
     subtitle:
-      'A custom regional Pokédex builder, and a gym leader &amp; trainer card maker with an Elite Four and Champion. Free, in the browser.',
+      'Build a custom Pokédex, create gym leader cards, and pick your favorite Pokémon by type and generation. Free, in the browser.',
     // A cross-generation spread: one recognizable face per generation and type
     // family, so the image reads as "all of Pokémon", not "Gen 1".
     sprites: [
@@ -79,10 +79,9 @@ const PAGES = {
   },
   favorites: {
     file: 'og-favorite-picker.png',
-    heading: 'Favorite <span class="accent">Pokémon Picker</span>',
-    subtitle: 'Choose your favorites by type and generation. Build a chart that is yours.',
-    sprites: [6, 9, 3, 257, 260, 254, 911, 914, 908],
-    chart: { types: ['Fire', 'Water', 'Grass'], generations: ['Gen I', 'Gen III', 'Gen IX'] },
+    heading: 'Favorite <span class="accent">Pokémon</span><br>Picker',
+    subtitle: 'Pick your favorites. Export your chart.',
+    artwork: 'src/assets/home/tool-favorites.webp',
   },
 };
 
@@ -95,7 +94,35 @@ const interUri = dataUri(
   'font/woff2',
 );
 
-function pageHtml({ heading, subtitle, sprites, chart }) {
+function favoritePageHtml({ heading, subtitle, artwork }) {
+  const image = dataUri(artwork, 'image/webp');
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
+    @font-face { font-family: InterOG; src: url('${interUri}') format('woff2'); font-weight: 100 900; font-display: block; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: ${WIDTH}px; height: ${HEIGHT}px; padding: 52px 64px; display: flex; align-items: center; gap: 40px;
+      background: #0a0a0a; background-image: radial-gradient(circle at 86% 24%, rgba(220,38,38,.2), transparent 58%);
+      font-family: InterOG, sans-serif; color: #fafafa; }
+    .copy { width: 616px; flex: none; }
+    .brand { font-size: 34px; font-weight: 800; letter-spacing: -.025em; margin-bottom: 34px; }
+    .brand b { color: #f87171; }
+    h1 { font-size: 58px; line-height: 1.08; letter-spacing: -.035em; font-weight: 750; }
+    .accent { color: #f87171; }
+    .axes { font-size: 30px; line-height: 1.3; font-weight: 600; margin-top: 20px; }
+    .rule { width: 76px; height: 5px; border-radius: 999px; background: #dc2626; margin: 26px 0; }
+    .subtitle { font-size: 24px; line-height: 1.4; color: #d4d4d4; }
+    .domain { font-size: 21px; font-weight: 600; margin-top: 32px; color: #a3a3a3; }
+    .artwork { width: 416px; height: 526px; flex: none; display: flex; align-items: center; justify-content: center; }
+    .artwork img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 16px 24px rgba(0,0,0,.35)); }
+  </style></head><body>
+    <div class="copy"><div class="brand"><b>my151</b>.app</div><h1>${heading}</h1>
+      <p class="axes">by Type &amp; Generation</p><div class="rule"></div>
+      <p class="subtitle">${subtitle}</p><p class="domain">my151.app</p></div>
+    <div class="artwork" data-audit-scale="intended"><img src="${image}" alt="Simplified favorite Pokémon chart with generations, types and a crowned overall favorite"></div>
+  </body></html>`;
+}
+
+function pageHtml({ heading, subtitle, sprites, chart, artwork }) {
+  if (artwork) return favoritePageHtml({ heading, subtitle, artwork });
   let spriteTags = sprites
     .map((id) => {
       const uri = dataUri(`public/sprites/pokemon/${id}.png`, 'image/png');
@@ -196,7 +223,8 @@ function pageHtml({ heading, subtitle, sprites, chart }) {
       <p>${subtitle}</p>
       <div class="domain">my151.app</div>
     </div>
-    <div class="grid${chart ? ' chart' : ''}">
+    <!-- The existing six-column OG montage intentionally fits sprites to thumbnail cells. -->
+    <div class="grid${chart ? ' chart' : ''}" data-audit-scale="intended">
         ${spriteTags}
     </div>
   </body>
