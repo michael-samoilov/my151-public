@@ -108,15 +108,13 @@ function favoritePageHtml({ heading, subtitle, artwork }) {
     h1 { font-size: 58px; line-height: 1.08; letter-spacing: -.035em; font-weight: 750; }
     .accent { color: #f87171; }
     .axes { font-size: 30px; line-height: 1.3; font-weight: 600; margin-top: 20px; }
-    .rule { width: 76px; height: 5px; border-radius: 999px; background: #dc2626; margin: 26px 0; }
-    .subtitle { font-size: 24px; line-height: 1.4; color: #d4d4d4; }
-    .domain { font-size: 21px; font-weight: 600; margin-top: 32px; color: #a3a3a3; }
+    .subtitle { font-size: 24px; line-height: 1.4; color: #d4d4d4; margin-top: 26px; }
     .artwork { width: 416px; height: 526px; flex: none; display: flex; align-items: center; justify-content: center; }
     .artwork img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 16px 24px rgba(0,0,0,.35)); }
   </style></head><body>
     <div class="copy"><div class="brand"><b>my151</b>.app</div><h1>${heading}</h1>
-      <p class="axes">by Type &amp; Generation</p><div class="rule"></div>
-      <p class="subtitle">${subtitle}</p><p class="domain">my151.app</p></div>
+      <p class="axes">by Type &amp; Generation</p>
+      <p class="subtitle">${subtitle}</p></div>
     <div class="artwork" data-audit-scale="intended"><img src="${image}" alt="Simplified favorite Pokémon chart with generations, types and a crowned overall favorite"></div>
   </body></html>`;
 }
