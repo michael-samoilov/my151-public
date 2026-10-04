@@ -59,14 +59,11 @@ export function PrettySpriteGrid({
   const dexPx = tileImageCssPx(viewportPx);
   const rows = prettyRows(mons, maxCols, lineKey, formKey);
   const fitRows = rows.length;
-  const hasMetadata = coordinates !== undefined;
   const gridRef = useRef<HTMLDivElement>(null);
   const [fitPx, setFitPx] = useState(baseSpritePx);
-  const spritePx = hasMetadata ? baseSpritePx : Math.min(baseSpritePx, fitPx);
+  const spritePx = Math.min(baseSpritePx, fitPx);
 
   useLayoutEffect(() => {
-    // Source rows use the scroller rather than compressing the Pokémon image.
-    if (hasMetadata) return;
     const grid = gridRef.current;
     if (!grid) return;
     let scroller = grid.parentElement;
@@ -76,7 +73,20 @@ export function PrettySpriteGrid({
     const available = scroller ?? grid.parentElement;
     if (!available) return;
     const resize = () => {
-      const room = available.getBoundingClientRect().bottom - grid.getBoundingClientRect().top - 16;
+      // A content-sized sheet can shrink with this grid. Measure its capacity,
+      // rather than feeding the smaller content height back into sprite sizing.
+      let container: HTMLElement | null = available;
+      let bottom = available.getBoundingClientRect().bottom;
+      while (container) {
+        const maxHeight = getComputedStyle(container).maxHeight;
+        const cap = maxHeight.endsWith('px') ? parseFloat(maxHeight) : NaN;
+        if (Number.isFinite(cap)) {
+          bottom = container.getBoundingClientRect().top + cap;
+          break;
+        }
+        container = container.parentElement;
+      }
+      const room = bottom - grid.getBoundingClientRect().top - 20;
       setFitPx(fitPickerSpriteCssPx(baseSpritePx, fitRows, room, ROW_GAP_PX));
     };
     resize();
@@ -87,7 +97,7 @@ export function PrettySpriteGrid({
       observer.disconnect();
       window.visualViewport?.removeEventListener('resize', resize);
     };
-  }, [baseSpritePx, fitRows, hasMetadata]);
+  }, [baseSpritePx, fitRows]);
   return (
     <div
       ref={gridRef}

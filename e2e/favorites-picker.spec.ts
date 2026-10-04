@@ -298,7 +298,7 @@ test.describe('favorite Pokémon picker', () => {
     for (const b of balls) expect(b.margin, b.id).toBeGreaterThanOrEqual(0);
   });
 
-  test('a short selector stays compact and a tall origin selector scrolls without shrinking sprites', { tag: '@viewport' }, async ({ page }, testInfo) => {
+  test('a short selector stays compact and a tall origin selector fits every choice', { tag: '@viewport' }, async ({ page }, testInfo) => {
     const viewport = page.viewportSize();
     expect(viewport).toBeTruthy();
     test.skip(viewport!.width >= 1024, 'desktop uses a side pane');
@@ -323,7 +323,7 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-gimmick-8').click();
     const gimmick = await sheetBox(page);
     expect(gimmick.sheetH).toBeLessThanOrEqual(gimmick.max + 2);
-    expect(gimmick.scrollH).toBeGreaterThan(gimmick.clientH + 2);
+    expect(gimmick.scrollH).toBeLessThanOrEqual(gimmick.clientH + 1);
     const fit = await page.getByTestId('favorites-pretty-grid').evaluate((el) => {
       const grid = el.getBoundingClientRect();
       const body = el.closest('.overflow-y-auto')?.getBoundingClientRect();
@@ -345,12 +345,11 @@ test.describe('favorite Pokémon picker', () => {
     });
     expect(fit.rowCount).toBeGreaterThanOrEqual(9);
     expect(fit.top).toBeGreaterThanOrEqual(fit.bodyTop - 1);
-    expect(fit.bottom).toBeGreaterThan(fit.bodyBottom + 1);
+    expect(fit.bottom).toBeLessThanOrEqual(fit.bodyBottom + 1);
     expect(Math.abs((fit.left + fit.right) / 2 - fit.bodyCenter)).toBeLessThan(3);
     expect(fit.maxWidth - fit.minWidth).toBeLessThan(0.6);
-    expect(fit.minWidth).toBeCloseTo(fit.nativeWidth, 0);
+    expect(fit.minWidth).toBeLessThan(fit.nativeWidth);
     const lastPick = page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').last();
-    await lastPick.scrollIntoViewIfNeeded();
     await expect(lastPick).toBeInViewport();
     const lastId = Number((await lastPick.getAttribute('data-testid'))!.replace('favorites-pick-', ''));
     await lastPick.click();
