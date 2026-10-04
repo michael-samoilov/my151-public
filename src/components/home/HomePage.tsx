@@ -540,7 +540,7 @@ export function HomePage() {
                 <span className="text-foreground">.app</span>
               </span>
               {/* The same site bar as every tool page: language, report, tools. */}
-              <div className="flex flex-shrink-0 items-center gap-1">
+              <div className="flex flex-shrink-0 items-center gap-0 min-[360px]:gap-1">
                 <LanguagePicker />
                 <FeedbackButton />
                 <ToolsMenu callout={movedCallout} />
