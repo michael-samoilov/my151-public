@@ -20,7 +20,7 @@ export default defineConfig({
           // chunk when a new lazy export entry changes automatic partitioning.
           groups: [{
             name: 'shared-chrome',
-            test: /\/src\/(?:components\/shared\/PageFooter\.tsx|lib\/(?:feedbackContext|usePixelPerfectSprite)\.ts)$/,
+            test: /\/src\/(?:components\/shared\/PageFooter\.tsx|lib\/(?:feedbackContext|usePixelPerfectSprite)\.ts|hooks\/useJsErrorCounter\.ts)$/,
           }],
         },
       },
