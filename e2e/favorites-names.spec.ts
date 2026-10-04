@@ -20,7 +20,7 @@ for (const locale of locales) {
     await expect(neutral).toHaveAttribute('aria-label', new RegExp(neutralMode));
     await expect(hoopa).toHaveAttribute('aria-label', new RegExp(hoopaForm));
     const label = (await hoopa.getAttribute('aria-label'))!;
-    await expect(hoopa.locator('img')).toHaveAttribute('alt', label);
+    await expect(hoopa.getByRole('img', { name: label, exact: true })).toHaveAttribute('alt', label);
     await hoopa.hover();
     await expect(page.getByRole('tooltip')).toHaveText(label);
     await testInfo.attach('official-form-labels.json', {
