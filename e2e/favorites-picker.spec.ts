@@ -120,10 +120,10 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('selector sprites stay one size', { tag: '@viewport' }, async ({ page }) => {
-    // The desktop pane fits below the sticky header row. A 900px-tall window
+    // The desktop pane fits below the sticky header row. A 1200px-tall window
     // leaves room for the tallest of these selectors at the dex sprite size.
     const width = page.viewportSize()!.width;
-    if (width >= 1024) await page.setViewportSize({ width, height: 900 });
+    if (width >= 1024) await page.setViewportSize({ width, height: 1200 });
     await page.goto('/favorite-pokemon-by-type');
     const cells = [
       { id: 'favorites-cell-normal-1' },
@@ -298,7 +298,7 @@ test.describe('favorite Pokémon picker', () => {
     for (const b of balls) expect(b.margin, b.id).toBeGreaterThanOrEqual(0);
   });
 
-  test('a short selector stays compact and a tall selector fits without scrolling', { tag: '@viewport' }, async ({ page }) => {
+  test('a short selector stays compact and a tall origin selector scrolls without shrinking sprites', { tag: '@viewport' }, async ({ page }, testInfo) => {
     const viewport = page.viewportSize();
     expect(viewport).toBeTruthy();
     test.skip(viewport!.width >= 1024, 'desktop uses a side pane');
@@ -323,7 +323,7 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-gimmick-8').click();
     const gimmick = await sheetBox(page);
     expect(gimmick.sheetH).toBeLessThanOrEqual(gimmick.max + 2);
-    expect(gimmick.scrollH).toBeLessThanOrEqual(gimmick.clientH + 2);
+    expect(gimmick.scrollH).toBeGreaterThan(gimmick.clientH + 2);
     const fit = await page.getByTestId('favorites-pretty-grid').evaluate((el) => {
       const grid = el.getBoundingClientRect();
       const body = el.closest('.overflow-y-auto')?.getBoundingClientRect();
@@ -340,13 +340,25 @@ test.describe('favorite Pokémon picker', () => {
         bodyCenter: body ? (body.left + body.right) / 2 : 0,
         minWidth: Math.min(...widths),
         maxWidth: Math.max(...widths),
+        nativeWidth: Number(el.getAttribute('data-sprite-dex')),
       };
     });
     expect(fit.rowCount).toBeGreaterThanOrEqual(9);
     expect(fit.top).toBeGreaterThanOrEqual(fit.bodyTop - 1);
-    expect(fit.bottom).toBeLessThanOrEqual(fit.bodyBottom + 1);
+    expect(fit.bottom).toBeGreaterThan(fit.bodyBottom + 1);
     expect(Math.abs((fit.left + fit.right) / 2 - fit.bodyCenter)).toBeLessThan(3);
     expect(fit.maxWidth - fit.minWidth).toBeLessThan(0.6);
+    expect(fit.minWidth).toBeCloseTo(fit.nativeWidth, 0);
+    const lastPick = page.getByTestId('favorites-pretty-grid').locator('[data-testid^="favorites-pick-"]').last();
+    await lastPick.scrollIntoViewIfNeeded();
+    await expect(lastPick).toBeInViewport();
+    const lastId = Number((await lastPick.getAttribute('data-testid'))!.replace('favorites-pick-', ''));
+    await lastPick.click();
+    await expect(page.getByTestId('favorites-picker')).toBeHidden();
+    expect((await savedFills(page))['gimmick|8']).toBe(lastId);
+    await testInfo.attach('tall-selector-reachability.json', {
+      body: JSON.stringify({ gimmick, fit, lastId }), contentType: 'application/json',
+    });
   });
 
   test('generation discs match type badge area and alternating rows are subtly banded', { tag: '@viewport' }, async ({ page }) => {
