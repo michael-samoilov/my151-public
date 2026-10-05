@@ -8,7 +8,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
-import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useDocumentLocale, useT } from '@/i18n';
 import { cellKey, type GenAxisId, type TypeAxisId } from './model/cells';
@@ -17,6 +16,7 @@ import { prewarmPickerSprites } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
+import { useFavoriteBeacon } from './hooks/useFavoriteBeacon';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
 import { FavoritesCompletionCounter } from './components/FavoritesCompletionCounter';
@@ -73,6 +73,7 @@ function FavoritesContent({ sel, setSel }: {
   sel: Selection | null;
   setSel: (next: Selection | null) => void;
 }) {
+  useFavoriteBeacon();
   useJsErrorCounter();
   useDocumentLocale();
   const desktop = useIsDesktop();
@@ -96,7 +97,6 @@ function FavoritesContent({ sel, setSel }: {
   }, [showIcons]);
 
   useEffect(() => {
-    sendEventBeacon('favorites-open', { once: true });
     const timer = window.setTimeout(prewarmPickerSprites, 350);
     return () => window.clearTimeout(timer);
   }, []);
