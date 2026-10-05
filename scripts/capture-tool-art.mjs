@@ -50,14 +50,14 @@ async function phonePage(tab,name){
  await p.screenshot({path:resolve(out,`${name}.png`),clip:{x:0,y:chrome,width:390,height:844}});source(name);await p.close();
 }
 try{
- if(has('league')){
+ if(has('league')||has('league-summary')){
  const ctx=await browser.newContext({viewport:{width:1280,height:900}});
  const seed=readFileSync('docs/future-tools/home-page/league-fixture.json','utf8');
  await ctx.addInitScript(seed=>{localStorage.setItem('league-builder',seed);localStorage.setItem('my151-opt-out','1')},seed);
  const p=await ctx.newPage();await p.goto(`${base}/custom-gym-leader?notme`);
  await p.locator('[data-testid="league-slot-0"]').waitFor();await p.locator('[data-league-export="league"]').first().click();
  await p.locator('[data-league-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'league-story');
- await p.goto(`${base}/custom-gym-leader?notme`);await p.locator('[data-testid="league-slot-0"]').click();await p.locator('[data-league-export="card"]').first().click();await p.locator('[data-league-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'trainer-brock');await ctx.close();
+ if(has('league')){await p.goto(`${base}/custom-gym-leader?notme`);await p.locator('[data-testid="league-slot-0"]').click();await p.locator('[data-league-export="card"]').first().click();await p.locator('[data-league-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'trainer-brock');}await ctx.close();
  }
  if(has('favorites')){
  const p=await browser.newPage({viewport:{width:1280,height:900}});
