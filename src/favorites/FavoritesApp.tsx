@@ -85,6 +85,7 @@ function FavoritesContent({ sel, setSel }: {
   const [showIcons, setShowIcons] = useState(savedShowIcons);
   const [exportOpen, setExportOpen] = useState(false);
   const [currentView, setCurrentView] = useState<FavoritesView>('picker');
+  const [analyticsMounted, setAnalyticsMounted] = useState(false);
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
@@ -141,7 +142,11 @@ function FavoritesContent({ sel, setSel }: {
       <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
         <GlobalHeader />
         <FavoritesHeader fills={fills} currentView={currentView} exportOpen={exportOpen}
-          onViewChange={(view) => { setSel(null); setCurrentView(view); }}
+          onViewChange={(view) => {
+            setSel(null);
+            if (view === 'analytics') setAnalyticsMounted(true);
+            setCurrentView(view);
+          }}
           onExport={() => { setSel(null); setExportOpen(true); }} />
         {/* The grid frame fills the screen below both headers. The grid
             scrolls inside it, and the footer stays below the fold. On
@@ -165,8 +170,8 @@ function FavoritesContent({ sel, setSel }: {
           </div>
         </div>
         <main id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"
-          hidden={currentView !== 'analytics'} className={currentView === 'analytics' ? 'min-h-[calc(100dvh-2*2.75rem)]' : 'hidden'}>
-          {currentView === 'analytics' && <Suspense fallback={<div role="status" aria-label={t('nav.analytics')} className="m-4 h-32 animate-pulse rounded-lg bg-muted" />}>
+          hidden={currentView !== 'analytics'} className={currentView === 'analytics' ? 'h-[calc(100dvh-2*2.75rem)] shrink-0 min-h-0' : 'hidden'}>
+          {analyticsMounted && <Suspense fallback={<div role="status" aria-label={t('nav.analytics')} className="m-4 h-32 animate-pulse rounded-lg bg-muted" />}>
             <FavoritesAnalyticsDashboard fills={fills} />
           </Suspense>}
         </main>
