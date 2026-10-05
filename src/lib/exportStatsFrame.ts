@@ -4,10 +4,9 @@ import { exportCornerRadius } from './exportPngShape';
 import { drawExportCredit } from './exportCredit';
 
 const PAD = 24;
-const GUTTER = 24;
 const MAX_CANVAS_AREA = 16_000_000;
 
-/** Append one independently framed stats sheet; pixels outside either sheet stay transparent. */
+/** Join framed sheets on one shared border; pixels outside their rounded outlines stay transparent. */
 export async function composeStatsExport(
   main: Blob,
   naturalSize: { w: number; h: number },
@@ -27,7 +26,8 @@ export async function composeStatsExport(
     const scale = (height - BAR_H - FRAME - FOOT - PAD * 2) / naturalSize.h;
     if (!(scale > 0)) throw new Error('Export is too short for detailed stats');
     const panelWidth = Math.ceil(naturalSize.w * scale + 2 * (FRAME + PAD));
-    const width = image.width + GUTTER + panelWidth;
+    const panelX = image.width - FRAME;
+    const width = panelX + panelWidth;
     const outputScale = Math.min(1, Math.sqrt(MAX_CANVAS_AREA / (width * height)));
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(width * outputScale);
@@ -38,7 +38,7 @@ export async function composeStatsExport(
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(image, 0, 0);
     ctx.save();
-    ctx.translate(image.width + GUTTER, 0);
+    ctx.translate(panelX, 0);
     const radius = exportCornerRadius(image.width, height);
     ctx.beginPath();
     ctx.roundRect(0, 0, panelWidth, height, radius);
