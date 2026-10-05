@@ -1,3 +1,4 @@
+import { BAR_H } from '@/league/export/layout';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { EXPORT_FRAME_PX, EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import {
@@ -19,6 +20,8 @@ export const DEX_EXPORT_TILE = 48;
 export const DEX_EXPORT_SCALE = EXPORT_SPRITE_PX / DEX_EXPORT_TILE;
 /** The red frame in layout px, so it paints `EXPORT_FRAME_PX` wide. */
 export const DEX_EXPORT_FRAME = EXPORT_FRAME_PX / DEX_EXPORT_SCALE;
+/** Added space below the existing top frame, matching the trainer title band. */
+export const DEX_EXPORT_HEADER = BAR_H / DEX_EXPORT_SCALE - DEX_EXPORT_FRAME;
 export const DEX_EXPORT_PAD_X = 12;
 export const DEX_EXPORT_PAD_TOP = 8;
 export const DEX_EXPORT_PAD_BOTTOM = 28;

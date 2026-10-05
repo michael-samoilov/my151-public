@@ -28,9 +28,12 @@ import {
   DEX_EXPORT_POKEBALL_R_FRAC,
   DEX_EXPORT_TILE as TILE,
   DEX_EXPORT_FRAME,
+  DEX_EXPORT_HEADER,
   DEX_EXPORT_SCALE,
   layoutDexExportGrid,
 } from '@/lib/dexExportLayout';
+import { BAR_H, BAR_TEXT_X, FRAME, TITLE_PX, TITLE_TRACK } from '@/league/export/layout';
+import { fillTracked, font } from '@/league/export/paint';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
 
 export const DEX_EXPORT_FRAME_RED = '#DC2626';
@@ -294,7 +297,7 @@ export async function generateExportImage(
   const statsHeights = options.stats?.heights ?? null;
 
   // Canvas text metrics for title fitting / stats wrapping need the real font.
-  if ((sections || statsData) && typeof document !== 'undefined' && document.fonts?.ready) {
+  if (typeof document !== 'undefined' && document.fonts?.ready) {
     try { await document.fonts.ready; } catch { /* fall back to metrics-as-is */ }
   }
 
@@ -376,7 +379,7 @@ export async function generateExportImage(
   h = footerTop + (stats ? my : PAD_BOTTOM);
 
   const framedW = canvasW + 2 * DEX_EXPORT_FRAME;
-  const framedH = h + 2 * DEX_EXPORT_FRAME;
+  const framedH = h + 2 * DEX_EXPORT_FRAME + DEX_EXPORT_HEADER;
 
   // Cap the backing store to the iOS canvas-area limit. Every export today stays
   // under it at SCALE, so the sprites keep their whole 1× scale.
@@ -398,13 +401,24 @@ export async function generateExportImage(
   ctx.beginPath();
   ctx.roundRect(
     DEX_EXPORT_FRAME,
-    DEX_EXPORT_FRAME,
+    DEX_EXPORT_FRAME + DEX_EXPORT_HEADER,
     canvasW,
     h,
-    exportInnerCornerRadius(framedW, framedH, DEX_EXPORT_FRAME),
+    [0, 0, exportInnerCornerRadius(framedW, framedH, DEX_EXPORT_FRAME), exportInnerCornerRadius(framedW, framedH, DEX_EXPORT_FRAME)],
   );
   ctx.fill();
-  ctx.translate(DEX_EXPORT_FRAME, DEX_EXPORT_FRAME);
+  // Match the trainer/favorites title font, rail and cap-height centering.
+  // The title describes the user's Dex; no editable Dex name is stored.
+  ctx.save();
+  ctx.font = font(TITLE_PX / SCALE, 800);
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  const cap = ctx.measureText('H').actualBoundingBoxAscent || TITLE_PX / SCALE * 0.72;
+  fillTracked(ctx, t('export.dexTitle'), (FRAME + BAR_TEXT_X) / SCALE,
+    BAR_H / SCALE / 2 + cap / 2, TITLE_TRACK / SCALE);
+  ctx.restore();
+  ctx.translate(DEX_EXPORT_FRAME, DEX_EXPORT_FRAME + DEX_EXPORT_HEADER);
 
   // Dex card behind the grid (white rounded rect + soft shadow), matching the
   // stat cards. Drawn before the grid; the grid is then shifted in by cardPad.
@@ -425,8 +439,6 @@ export async function generateExportImage(
   // follow this translate too.
   ctx.save();
   ctx.translate(mx + cardPad - PAD_X, my + cardPad - PAD_TOP);
-
-  // No top header — content starts immediately after PAD_TOP breathing room.
 
   for (const placed of grid.sprites) {
     drawTile(ctx, placed.x, placed.y, placed.pokemon, sprites[placed.index], placed.index + 1);
