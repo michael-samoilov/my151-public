@@ -24,3 +24,9 @@ it('folds babies into Basic without dropping choices and retains candidate extre
  expect(stats.bst.xDomain[1]).toBeGreaterThanOrEqual(1150);
  const empty=pickerConditionalStats(buildFavoritesSnapshot({}));expect(empty.bst.xDomain).toEqual([0,100]);expect(empty.bst.merged).toEqual([]);
 });
+it('keeps invalid externally supplied selections out of histogram means too',()=>{
+ const valid=buildFavoritesSnapshot({'water|1':7});
+ const charizard=buildFavoritesSnapshot({'fire|1':6}).cells.find(cell=>cell.key==='fire|1')!.mon;
+ const invalid={...valid,cells:valid.cells.map(cell=>cell.key==='water|1'?{...cell,mon:charizard}:cell)};
+ const stats=pickerConditionalStats(invalid);expect(stats.populationSize).toBe(0);expect(stats.bst.yoursAvg).toBe(0);expect(stats.bst.nationalAvg).toBe(0);
+});

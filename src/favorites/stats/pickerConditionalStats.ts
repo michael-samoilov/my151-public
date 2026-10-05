@@ -24,7 +24,7 @@ export function pickerConditionalStats(snapshot:FavoritesSnapshot){
  const low=Math.floor((merged[0]?.x??0)/100)*100,high=merged.length?(merged.at(-1)!.x+25):100;
  const yDomain=Math.max(10,Math.ceil(Math.max(0,...merged.flatMap(row=>[row.nationalPct,row.yoursPct]))/10)*10);
  // nationalPct is only the shared Dex painter's structural field name; the displayed legend says Selector options.
- const covered=picks.map(pick=>({...pick,pool:[...new Set(pick.pool)]})).filter(pick=>pick.pool.length>1&&pick.pool.every(id=>Number.isFinite(sourcedBst[id])));
+ const covered=picks.map(pick=>({...pick,pool:[...new Set(pick.pool)]})).filter(pick=>pick.pool.length>1&&pick.pool.includes(pick.id)&&pick.pool.every(id=>Number.isFinite(sourcedBst[id])));
  const yoursAvg=covered.length?covered.reduce((sum,pick)=>sum+sourcedBst[pick.id],0)/covered.length:0;
  const nationalAvg=covered.length?covered.reduce((sum,pick)=>sum+pick.pool.reduce((n,id)=>n+sourcedBst[id],0)/pick.pool.length,0)/covered.length:0;
  const bst:StatsBst={merged,binSize:50,xDomain:[low,high],xTicks:Array.from({length:Math.floor((high-low)/100)+1},(_,i)=>low+i*100),yDomain,yTicks:Array.from({length:yDomain/10+1},(_,i)=>i*10),yoursAvg,nationalAvg};
