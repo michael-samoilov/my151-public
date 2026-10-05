@@ -133,7 +133,7 @@ const SHOT_SRCSETS = [
 const SHOT_DIMS = [
   { width: 390, height: 620 },
   { width: 348, height: 620 },
-  { width: 555, height: 640 },
+  { width: 555, height: 653 },
 ] as const;
 
 /** Parallel to SHOT_SRCS. These three screenshots show the product's progression
