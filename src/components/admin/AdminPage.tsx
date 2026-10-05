@@ -2006,7 +2006,7 @@ export function AdminPage() {
       pickTool(k);
     }
   };
-  const lockUser = detail?.kind === 'dex' || detail?.kind === 'league';
+  const lockUser = detail?.kind === 'dex' || detail?.kind === 'league' || detail?.kind === 'favorites';
 
   return (
     <div
@@ -2244,7 +2244,7 @@ export function AdminPage() {
                     )}
                     {showFavoriteFunnel && favoriteSankey && <div>
                       {tool === 'all' && <div className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Favorite Pokémon Picker</div>}
-                      <FlowSankey nodes={favoriteSankey.nodes} links={favoriteSankey.links} ariaLabel={favoriteSankey.ariaLabel}/>
+                      <FlowSankey labelHalo nodes={favoriteSankey.nodes} links={favoriteSankey.links} ariaLabel={favoriteSankey.ariaLabel}/>
                     </div>}
                   </div>
                 )}
