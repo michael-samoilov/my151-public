@@ -7,22 +7,17 @@ import { currentPage } from '@/lib/tool';
 import { externalReferrerHost } from '@/lib/referrer';
 import { createBeaconDebouncer, PROGRESS_DEBOUNCE_MS, PROGRESS_MAX_WAIT_MS } from '@/lib/beaconScheduler';
 import type { FavoriteExportKind } from '../../../api/_favoriteRecord';
+import { createFavoriteBeaconDelivery } from './favoriteBeaconDelivery';
 import { useFavoritesStore } from '../store/useFavoritesStore';
 import { buildFavoritesSnapshot, type FavoritesSnapshot } from '../export/snapshot';
-let lastContent = '';
-let lastSentAt = 0;
+const delivery = createFavoriteBeaconDelivery(() => !DEMO_MODE && !PREVIEW_DEPLOY && !isOptedOut());
 function post(snapshot: FavoritesSnapshot, exportKind?: FavoriteExportKind, capturedAt = Date.now()) {
   if (DEMO_MODE || PREVIEW_DEPLOY || isOptedOut()) return;
-  const now = Date.now();
   const fills = Object.fromEntries(snapshot.cells.filter(cell => cell.mon).map(cell => [cell.key,cell.mon!.id]));
   const content = JSON.stringify(fills);
-  // React StrictMode/remount does not manufacture duplicate visits. A later sitting still reports unchanged picks.
-  if (!exportKind && content === lastContent && now-lastSentAt < 30*60_000) return;
-  lastContent=content;lastSentAt=now;
-  const payload = JSON.stringify({cid:getClientId(),id:crypto.randomUUID(),tool:'favorites',page:currentPage(),
+  delivery.send({cid:getClientId(),tool:'favorites',page:currentPage(),
     kind:exportKind?'export':snapshot.completion.filled===snapshot.completion.total?'completion':'progress',exportKind,
-    snapshot:{v:1,fills},ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined});
-  void fetch('/api/favorites',{method:'POST',headers:{'Content-Type':'application/json'},body:payload,keepalive:true}).catch(()=>{});
+    snapshot:{v:1,fills},ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined},content,!!exportKind);
 }
 /** Report one validated board after a pause, with a bounded wait during continuous edits. */
 export function useFavoriteBeacon() {
@@ -34,8 +29,8 @@ export function useFavoriteBeacon() {
     debouncer.schedule(()=>post(snapshot,undefined,capturedAt));
   },[fills,debouncer]);
   useEffect(()=>{
-    const hidden=()=>{if(document.visibilityState==='hidden')debouncer.flush();};
-    const flush=()=>debouncer.flush();
+    const hidden=()=>{if(document.visibilityState==='hidden'){debouncer.flush();delivery.flush();}};
+    const flush=()=>{debouncer.flush();delivery.flush();};
     document.addEventListener('visibilitychange',hidden);window.addEventListener('pagehide',flush);
     return()=>{document.removeEventListener('visibilitychange',hidden);window.removeEventListener('pagehide',flush);debouncer.flush();};
   },[debouncer]);
