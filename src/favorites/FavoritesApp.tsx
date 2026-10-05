@@ -15,6 +15,8 @@ import { cellKey, type GenAxisId, type TypeAxisId } from './model/cells';
 import { getPickerMon } from './model/catalog';
 import { prewarmPickerSprites } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
+import { buildFavoritesSnapshot } from './export/snapshot';
+import type { FeedbackToolContext } from '@/lib/feedbackContext';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
 import { FavoritesCompletionCounter } from './components/FavoritesCompletionCounter';
@@ -55,7 +57,15 @@ export function FavoritesApp() {
     <ErrorBoundary where="favorite-picker">
       <FavoritesContent sel={sel} setSel={setSel} />
     </ErrorBoundary>
-    <FeedbackHost route="/favorite-pokemon-by-type" />
+    <FeedbackHost route="/favorite-pokemon-by-type" getToolContext={() => {
+      const completion = buildFavoritesSnapshot(useFavoritesStore.getState().fills ?? {}).completion;
+      return {
+        placed: completion.filled, search: false, filters: [],
+        favorites: { filled: completion.filled, total: completion.total,
+          picksFilled: completion.picksFilled, pointersFilled: completion.pointersFilled,
+          selection: sel ? { type: sel.type, gen: sel.gen } : null },
+      } satisfies FeedbackToolContext;
+    }} />
   </TooltipProvider>;
 }
 

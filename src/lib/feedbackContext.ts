@@ -37,6 +37,11 @@ export interface FeedbackContext {
   dpr: number;
   ua: string;
   placed: number;
+  /** Valid Picker progress and active coordinates, never Pokémon IDs. */
+  favorites?: {
+    filled: number; total: number; picksFilled: number; pointersFilled: number;
+    selection: { type: string; gen: number | string } | null;
+  };
   /** Whether a text search was active, never what it said. */
   search: boolean;
   filters: string[];
@@ -50,6 +55,8 @@ export interface FeedbackContext {
   /** For a crash report. */
   error?: { name: string; message: string; stack?: string; componentStack?: string };
 }
+
+export type FeedbackToolContext = Pick<FeedbackContext, 'placed' | 'search' | 'filters' | 'favorites'>;
 
 /** Which filter dimensions are engaged — the names only, never the values. */
 function activeFilters(): string[] {
@@ -69,7 +76,7 @@ function activeFilters(): string[] {
     .map(([name]) => name);
 }
 
-export function collectFeedbackContext(route: string): FeedbackContext {
+export function collectFeedbackContext(route: string, toolContext?: FeedbackToolContext): FeedbackContext {
   const store = usePokedexStore.getState();
   const placed = Object.values(store.sections).reduce((n, ids) => n + ids.length, 0);
   return {
@@ -87,6 +94,7 @@ export function collectFeedbackContext(route: string): FeedbackContext {
     search: Boolean(store.searchQuery),
     filters: activeFilters(),
     demo: DEMO_MODE,
+    ...toolContext,
   };
 }
 
