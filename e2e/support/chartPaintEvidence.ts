@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 export async function observeChartPaint(page: Page) {
   await page.addInitScript(`(() => {
     if (window.chartPaintObserved) return; window.chartPaintObserved = true;
-    window.chartLines = []; window.chartCircles = []; window.chartBadges = []; window.chartBadgeTexts = []; window.chartShapeGlyphs = [];
+    window.chartBars = []; window.chartLines = []; window.chartCircles = []; window.chartBadges = []; window.chartBadgeTexts = []; window.chartShapeGlyphs = [];
     const paths = new WeakMap();
     const proto = CanvasRenderingContext2D.prototype;
     const drawImage=proto.drawImage;
@@ -22,6 +22,10 @@ export async function observeChartPaint(page: Page) {
     };
     const round = proto.roundRect, text = proto.fillText;
     proto.roundRect = function(x,y,w,h,radii) {
+      if(this.globalAlpha === .85 || this.globalAlpha === 1) {
+        const matrix=this.getTransform(),a=new DOMPoint(x,y).matrixTransform(matrix),b=new DOMPoint(x+w,y+h).matrixTransform(matrix);
+        window.chartBars.push({fill:String(this.fillStyle),width:this.canvas.width,left:a.x,top:a.y,right:b.x,bottom:b.y});
+      }
       if (this.globalAlpha === 1 && w / h > 4.8 && w / h < 5.3) {
         const matrix=this.getTransform(), a=new DOMPoint(x,y).matrixTransform(matrix), b=new DOMPoint(x+w,y+h).matrixTransform(matrix);
         window.chartBadges.push({fill:String(this.fillStyle),width:this.canvas.width,left:a.x,top:a.y,right:b.x,bottom:b.y});

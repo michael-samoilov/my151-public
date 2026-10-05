@@ -125,11 +125,11 @@ test('native localized badge ink stays within its painted pill @viewport', async
     const detailed = await nativeImage(page, 'picker');
     const paint = await page.evaluate(({ mainWidth, outputWidth }) => {
       type Bounds = { width:number; left:number;right:number;top:number;bottom:number; text?:string; fill?:string; color?:string };
-      const target = window as unknown as { chartBadges:Bounds[]; chartBadgeTexts:Bounds[]; chartShapeGlyphs:Bounds[] };
+      const target = window as unknown as { chartBadges:Bounds[]; chartBadgeTexts:Bounds[]; chartShapeGlyphs:Bounds[]; chartBars:Bounds[] };
       const badges = target.chartBadges.filter(item => item.width === outputWidth && item.left > mainWidth);
       const texts = target.chartBadgeTexts.filter(item => item.width === outputWidth && item.left > mainWidth);
       const glyphs = target.chartShapeGlyphs.filter(item => item.width === outputWidth && item.left > mainWidth);
-      return { badges, texts, glyphs };
+      return { badges, texts, glyphs, bars:target.chartBars.filter(item => item.width === outputWidth && item.left > mainWidth) };
     }, { mainWidth: plain.width, outputWidth: detailed.width });
     expect(paint.badges.length).toBeGreaterThan(30);
     expect(paint.texts.length).toBeGreaterThan(30);
@@ -137,9 +137,31 @@ test('native localized badge ink stays within its painted pill @viewport', async
       const badge = paint.badges.find(b => text.top >= b.top - .5 && text.bottom <= b.bottom + .5 && text.left >= b.left - .5 && text.right <= b.right + .5);
       expect(badge, `${locale}: ${text.text} painted outside pill`).toBeDefined();
       expect(text.right - text.left).toBeGreaterThan(2);
-      if (badge!.fill !== '#ffffff') expect(text.color, `${locale}: ${text.text} colored pill ink`).toBe('#ffffff');
+      expect(text.color, `${locale}: ${text.text} pill ink`).toBe(badge!.fill === '#ffffff' ? '#000000' : '#ffffff');
+      const rowBar=paint.bars.find(bar=>bar.left>=badge!.right && Math.abs((bar.top+bar.bottom)-(badge!.top+badge!.bottom))<.5);
+      if(rowBar && badge!.fill!=='#ffffff') expect(rowBar.fill?.toLowerCase(),`${locale}: ${text.text} native badge/bar`).toBe(badge!.fill?.toLowerCase());
       const glyph = paint.glyphs.find(g => g.left >= badge!.left && g.right <= badge!.right && g.top >= badge!.top && g.bottom <= badge!.bottom);
-      if (glyph) expect(text.left - glyph.right, `${locale}: ${text.text} painted glyph gap`).toBeGreaterThanOrEqual(glyph.left - badge!.left - .5);
+      if (glyph) {
+        expect(text.left - glyph.right, `${locale}: ${text.text} painted glyph gap`).toBeGreaterThanOrEqual(glyph.left - badge!.left - .5);
+        const badgeWidth=badge!.right-badge!.left;
+        expect((text.left-badge!.left)/badgeWidth*199+.5,`${locale}: ${text.text} slot left`).toBeGreaterThanOrEqual(63.5);
+        expect((text.right-badge!.left)/badgeWidth*199+.5,`${locale}: ${text.text} slot right`).toBeLessThanOrEqual(185.5);
+      }
+    }
+    if(locale === 'en') {
+      const pixels=await page.evaluate(async({png,paint})=>{
+        const image=new Image();image.src=`data:image/png;base64,${png}`;await image.decode();
+        const cv=document.createElement('canvas');cv.width=image.width;cv.height=image.height;const ctx=cv.getContext('2d')!;ctx.drawImage(image,0,0);
+        const rgba=(x:number,y:number)=>[...ctx.getImageData(Math.round(x),Math.round(y),1,1).data];
+        return paint.badges.filter(badge=>badge.fill!=='#ffffff').flatMap(badge=>{
+          const bar=paint.bars.filter(bar=>bar.left>=badge.right && bar.right-bar.left>3 && Math.abs((bar.top+bar.bottom)-(badge.top+badge.bottom))<.5).sort((a,b)=>a.left-b.left)[0];
+          if(!bar)return [];
+          return [{badge:rgba(badge.right-(badge.bottom-badge.top)*.2,(badge.top+badge.bottom)/2),bar:rgba((bar.left+bar.right)/2,(bar.top+bar.bottom)/2)}];
+        });
+      },{png:detailed.png,paint});
+      expect(pixels.length,'native type/color row pixels').toBeGreaterThan(20);
+      for(const pixel of pixels) expect(pixel.bar,'native actual palette').toEqual(pixel.badge);
+      await testInfo.attach('native-actual-palette-RGBA',{body:JSON.stringify(pixels,null,2),contentType:'application/json'});
     }
     evidence.push({ locale, ...paint });
     await page.goto('/');
@@ -184,23 +206,102 @@ test('count labels stay numeric and badge whitespace keeps colored text and shap
   const evidence = await page.locator('[data-favorite-chart]').evaluateAll(cards => cards.filter(card => card.getAttribute('data-favorite-chart') !== 'bst').map(card => {
     const svg = card.querySelector('svg')!;
     const countLabels = [...svg.querySelectorAll(':scope > g > text')].map(text => text.textContent ?? '').filter(text => !text.endsWith('x'));
-    const badgeTexts = [...svg.querySelectorAll('text[font-weight="700"]')].map(text => ({ text:text.textContent,fill:text.getAttribute('fill') }));
+    const badgeTexts = [...svg.querySelectorAll('text[font-weight="700"]')].map(text => ({ text:text.textContent,fill:text.getAttribute('fill'),badgeFill:text.closest('g')?.parentElement?.querySelector('rect[rx]')?.getAttribute('fill') }));
     const shapeGaps = card.getAttribute('data-favorite-chart') === 'shape' ? [...svg.querySelectorAll(':scope > g')].flatMap(row => {
       const image=row.querySelector('image'),text=row.querySelector('text[font-weight="700"]'),rect=row.querySelector('rect[rx]');
       if(!image||!text||!rect)return [];
       const glyph=image.getBoundingClientRect(),ink=text.getBoundingClientRect(),badge=rect.getBoundingClientRect();
       return [{label:text.textContent,leftInset:glyph.left-badge.left,textGap:ink.left-glyph.right}];
     }) : [];
-    const countBars=[...svg.querySelectorAll(':scope > g > rect[opacity="0.85"]')].filter(rect=>Number(rect.getAttribute('x'))===Number(svg.querySelector(':scope > line')!.getAttribute('x1'))).map(rect=>Number(rect.getAttribute('width')));
+    const countBars=[...svg.querySelectorAll(':scope > g > rect[rx="1"]')].filter(rect=>Number(rect.getAttribute('x'))===Number(svg.querySelector(':scope > line')!.getAttribute('x1'))).map(rect=>Number(rect.getAttribute('width')));
     return { dimension:card.getAttribute('data-favorite-chart'),countLabels,badgeTexts,shapeGaps,maxCountBar:Math.max(...countBars) };
   }));
   for(const card of evidence) {
     expect.soft(card.countLabels.length).toBeGreaterThan(0);
     expect.soft(card.countLabels.filter(label => !/^\d+$/.test(label)), `${card.dimension} counts`).toEqual([]);
-    if(card.dimension==='color')expect.soft(card.badgeTexts.filter(label => label.fill !== '#ffffff'), 'white color ink').toEqual([]);
+    if(card.dimension==='color') for (const label of card.badgeTexts) expect.soft(label.fill, `${label.text} color ink`).toBe(label.badgeFill?.toLowerCase() === '#ffffff' ? '#000000' : '#ffffff');
     expect.soft(card.shapeGaps.filter(shape => shape.textGap < shape.leftInset-.5), 'shape glyph gap').toEqual([]);
   }
   expect(await page.locator('[data-favorite-chart=bst] svg text').allTextContents()).toEqual(expect.arrayContaining([expect.stringMatching(/%$/)]));
   await testInfo.attach('count-and-badge-spacing', {body:JSON.stringify(evidence,null,2),contentType:'application/json'});
   await testInfo.attach('count-and-badge-screen', {body:await page.screenshot(),contentType:'image/png'});
+});
+
+test('color identifiers match row bars and retain categorical headers @viewport', async ({ page }, testInfo) => {
+  await openPickerAnalytics(page);
+  await expect(page.locator('[data-favorite-chart=color]')).toHaveAttribute('aria-label','Pokémon Color');
+  const evidence = await page.locator('[data-favorite-chart]').evaluateAll(cards => cards.filter(card => ['type','color','shape'].includes(card.getAttribute('data-favorite-chart') ?? '')).map(card => {
+    const svg=card.querySelector('svg')!;
+    return {dimension:card.getAttribute('data-favorite-chart'),headers:[...svg.querySelectorAll(':scope > text')].map(text=>text.textContent),rows:[...svg.querySelectorAll(':scope > g')].flatMap(row=>{
+      const badge=row.querySelector('rect[rx]'),bar=row.querySelector(':scope > rect[rx="1"]'),text=row.querySelector('text[font-weight="700"]');
+      if(!badge||!bar||!text)return [];
+      return [{label:text.textContent,badge:badge.getAttribute('fill')?.toLowerCase(),bar:bar.getAttribute('fill')?.toLowerCase(),ink:text.getAttribute('fill')?.toLowerCase(),stroke:bar.getAttribute('stroke'),strokeWidth:Number(bar.getAttribute('stroke-width')),opacity:Number(bar.getAttribute('opacity'))}];
+    })};
+  }));
+  expect(evidence).toHaveLength(3);
+  for(const chart of evidence){
+    expect(chart.headers).toContain(chart.dimension!.toUpperCase());
+    expect(chart.rows.length).toBeGreaterThan(5);
+    if(chart.dimension==='shape')continue;
+    for(const row of chart.rows){expect(row.bar,`${chart.dimension}/${row.label} palette`).toBe(row.badge);expect(row.ink).toBe(row.badge==='#ffffff'?'#000000':'#ffffff');}
+  }
+  const colors=evidence.find(chart=>chart.dimension==='color')!.rows;
+  expect(colors.find(row=>row.label==='WHITE')).toMatchObject({badge:'#ffffff',ink:'#000000',stroke:'#a3a3a3',strokeWidth:.75,opacity:1});
+  const types=evidence.find(chart=>chart.dimension==='type')!.rows;
+  for(const [color,type] of Object.entries({YELLOW:'ELECTRIC',PINK:'FAIRY',PURPLE:'POISON',GRAY:'NORMAL',BLUE:'WATER',BROWN:'GROUND',BLACK:'DARK',RED:'FIRE',GREEN:'GRASS'}))
+    expect(colors.find(row=>row.label===color)?.badge,`${color} follows ${type}`).toBe(types.find(row=>row.label===type)?.badge);
+  await testInfo.attach('painted-row-palette-and-headers',{body:JSON.stringify(evidence,null,2),contentType:'application/json'});
+  await page.locator('[data-favorite-chart=color]').scrollIntoViewIfNeeded();
+  await testInfo.attach('color-chart-palette',{body:await page.screenshot(),contentType:'image/png'});
+});
+
+test('long shape names share one bounded painted text slot @viewport', async ({ page }, testInfo) => {
+  await openPickerAnalytics(page);
+  await page.evaluate(()=>document.fonts.ready);
+  const evidence=await page.locator('[data-favorite-chart=shape] svg').evaluate(svg=>[...svg.querySelectorAll(':scope > g')].flatMap(row=>{
+    const text=row.querySelector('text[font-weight="700"]') as SVGTextElement|null,rect=row.querySelector('rect[rx]');
+    if(!text||!rect)return [];
+    const ctx=document.createElement('canvas').getContext('2d')!,style=getComputedStyle(text);
+    ctx.font=`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;ctx.textAlign='center';
+    const metrics=ctx.measureText(text.textContent??''),matrix=text.getScreenCTM()!,x=Number(text.getAttribute('x'));
+    const left=new DOMPoint(x-metrics.actualBoundingBoxLeft,0).matrixTransform(matrix).x,right=new DOMPoint(x+metrics.actualBoundingBoxRight,0).matrixTransform(matrix).x,badge=rect.getBoundingClientRect();
+    return [{label:text.textContent,left:(left-badge.left)/badge.width*199+.5,right:(right-badge.left)/badge.width*199+.5}];
+  }));
+  expect(evidence).toHaveLength(14);
+  for(const row of evidence){expect(row.left,`${row.label} painted left`).toBeGreaterThanOrEqual(63.8);expect(row.right,`${row.label} painted right`).toBeLessThanOrEqual(185.2);}
+  const capped=evidence.filter(row=>row.right>184.8);
+  expect(capped.length,'multiple long labels reach the common cap').toBeGreaterThanOrEqual(3);
+  for(const row of capped){expect(row.left).toBeCloseTo(64,0);expect(row.right).toBeCloseTo(185,0);}
+  await testInfo.attach('actual-shape-ink-edges',{body:JSON.stringify(evidence,null,2),contentType:'application/json'});
+  await page.locator('[data-favorite-chart=shape]').scrollIntoViewIfNeeded();
+  await testInfo.attach('shape-bounded-text-screen',{body:await page.screenshot(),contentType:'image/png'});
+});
+
+test('visible type and color badge interiors match actual bar pixels @viewport', async ({ page }, testInfo) => {
+  await openPickerAnalytics(page);
+  const evidence=[];
+  for(const dimension of ['type','color']){
+    const chart=page.locator(`[data-favorite-chart=${dimension}]`);
+    await chart.scrollIntoViewIfNeeded();
+    const samples=await chart.locator('svg').evaluate(svg=>[...svg.querySelectorAll(':scope > g')].flatMap(row=>{
+      const badge=row.querySelector('rect[rx]'),bar=row.querySelector(':scope > rect[rx="1"]'),text=row.querySelector('text[font-weight="700"]');
+      if(!badge||!bar||!text)return [];
+      const b=badge.getBoundingClientRect(),r=bar.getBoundingClientRect();
+      if(b.top<0||b.bottom>innerHeight||r.width<3)return [];
+      return [{label:text.textContent,badge:[b.right-b.height*.2,(b.top+b.bottom)/2],bar:[(r.left+r.right)/2,(r.top+r.bottom)/2]}];
+    }));
+    const png=await page.screenshot();
+    const pixels=await page.evaluate(async({data,samples})=>{
+      const image=new Image();image.src=`data:image/png;base64,${data}`;await image.decode();
+      const cv=document.createElement('canvas');cv.width=image.width;cv.height=image.height;const ctx=cv.getContext('2d')!;ctx.drawImage(image,0,0);
+      const ratio=image.width/innerWidth;
+      const rgb=(point:number[])=>[...ctx.getImageData(Math.round(point[0]*ratio),Math.round(point[1]*ratio),1,1).data];
+      return samples.map(sample=>({label:sample.label,badge:rgb(sample.badge),bar:rgb(sample.bar)}));
+    },{data:png.toString('base64'),samples});
+    expect(pixels.length).toBeGreaterThan(4);
+    for(const pixel of pixels)expect(pixel.bar,`${dimension}/${pixel.label} actual paint`).toEqual(pixel.badge);
+    evidence.push({dimension,pixels});
+    await testInfo.attach(`${dimension}-actual-paint`,{body:png,contentType:'image/png'});
+  }
+  await testInfo.attach('actual-categorical-RGBA',{body:JSON.stringify(evidence,null,2),contentType:'application/json'});
 });
