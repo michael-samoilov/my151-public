@@ -1,3 +1,7 @@
+import {aggregate as aggregateRecords} from '../../../../api/_aggregate';
+import {favoriteSummary,favoriteUsageFunnel,favoriteUser} from '../../../../api/_favoriteAggregate';
+import {mergeFavoriteRecord,parseFavoriteSnapshot,type FavoriteRecord} from '../../../../api/_favoriteRecord';
+import favoriteCells from '../../../../api/_favoriteCells.json';
 // Demo fixture for the admin dashboard, reached at `/?admin&demo`.
 //
 // It renders the redesign without a live token, so a preview deploy shows the
@@ -203,6 +207,7 @@ const byTool: Record<ToolSlice, Aggregates> = {
   all: aggregate('all'),
   dex: aggregate('dex'),
   league: aggregate('league'),
+  favorites:aggregateRecords([],Date.UTC(2026,9,4)),
 };
 
 // Fixed country distribution reused across cohorts (region rollup maps codes).
@@ -800,4 +805,38 @@ export const sampleResponse: ApiResponse = {
   records,
 };
 
+// Picker demo records are fabricated from valid coordinate eligibility, not production data.
+const fullFills:Record<string,number> = {};
+for(const [key,cell] of Object.entries(favoriteCells)) {
+  const c = cell as {kind:string;ids?:number[];sources?:string[]};
+  if(c.kind==='pick' && c.ids?.length)fullFills[key]=c.ids[0];
+}
+for(const [key,cell] of Object.entries(favoriteCells)) {
+  const c = cell as {kind:string;sources?:string[]};
+  if(c.kind==='pointer')for(const source of c.sources ?? [])if(fullFills[source]){fullFills[key]=fullFills[source];break;}
+}
+const pickerNow=Date.UTC(2026,9,4,18);
+const pickerRecords:FavoriteRecord[] = [0,24,80,150,220,257].map((depth,i)=>{
+  const fills=Object.fromEntries(Object.entries(fullFills).slice(0,depth));
+  const initial=parseFavoriteSnapshot({v:1,fills:{}})!;
+  const selected=parseFavoriteSnapshot({v:1,fills})!;
+  const cid=`demo-picker-${i+1}`;
+  let r=mergeFavoriteRecord(null,{cid,id:`open-${i}`,now:pickerNow-86400000,kind:'progress',snapshot:initial,events:['favorites-open'],country:i%2?'GB':'US',device:i%2?'desktop':'mobile',os:i%2?'Windows':'iOS',browser:i%2?'Chrome':'Safari',tz:'America/New_York',locale:'en',lang:'en-US'});
+  r=mergeFavoriteRecord(r,{cid,id:`pick-${i}`,now:pickerNow,kind:'progress',snapshot:selected,events:[]});
+  if(i>1)r=mergeFavoriteRecord(r,{cid,id:`full-${i}`,now:pickerNow+60000,kind:'export',exportKind:i===3?'simplified':'full',snapshot:selected,events:[i===3?'favorites-export-simplified':'favorites-export-full']});
+  if(i===5)r=mergeFavoriteRecord(r,{cid,id:`simple-${i}`,now:pickerNow+120000,kind:'export',exportKind:'simplified',snapshot:selected,events:['favorites-export-simplified']});
+  return r;
+});
+sampleResponse.favoriteUsers=pickerRecords.map(r=>favoriteUser(r,false));
+sampleResponse.favoriteByCid=Object.fromEntries(sampleResponse.favoriteUsers.map(r=>[r.cid,r]));
+sampleResponse.totalFavoriteUsers=pickerRecords.length;
+sampleResponse.favorite=favoriteSummary(pickerRecords);
+sampleResponse.favoriteFunnel=favoriteUsageFunnel(pickerRecords);
+sampleResponse.byTool!.favorites=aggregateRecords(pickerRecords,pickerNow+120000);
+sampleResponse.byTool!.all!.users+=pickerRecords.length;
+if(sampleResponse.crossTool){
+  sampleResponse.crossTool.catalog.push({id:'favorites',label:'Favorite Pokémon Picker',short:'Picker',launchedAt:null});
+  const era=sampleResponse.crossTool.eras.at(-1)!;
+  era.regions.favorites=pickerRecords.length;era.browsers+=pickerRecords.length;
+}
 export default sampleResponse;

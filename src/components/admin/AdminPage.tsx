@@ -1,3 +1,5 @@
+import {FavoriteDetailBody} from './FavoriteDetailBody';
+import type {FavoriteUser,FavoriteUsageFunnel} from '../../../api/_favoriteAggregate';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
@@ -100,7 +102,7 @@ let latestLoad = 0;
 const rangeCache = new Map<DashboardRange, { data: ApiResponse; at: number }>();
 
 /** Which tool's records every shared card reads. */
-export type ToolSlice = 'all' | 'dex' | 'league';
+export type ToolSlice = 'all' | 'dex' | 'league' | 'favorites';
 
 export type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
 
@@ -108,6 +110,7 @@ const TOOL_TABS: { key: ToolSlice; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'dex', label: 'Dex builder' },
   { key: 'league', label: 'Gym leader maker' },
+  { key: 'favorites', label: 'Favorite Pokémon Picker' },
 ];
 
 /**
@@ -118,6 +121,7 @@ const TOOL_TABS: { key: ToolSlice; label: string }[] = [
 function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
   const slice = data.byTool?.[tool];
   if (slice) return slice;
+  if(tool === 'favorites') return {users:0,activity:[],retention:{returning:0,activeLast7:0,newUsers:0},timeCurves:{longest:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},first:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},all:{survival:[],stats:{p50:0,p75:0,p90:0},n:0}},countries:{},languages:{},locales:{},devices:{},os:{},browsers:{}};
   return {
     users: data.totalUsers,
     activity: data.activity ?? [],
@@ -142,7 +146,7 @@ function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
 function loadToolSlice(): ToolSlice {
   try {
     const v = localStorage.getItem(TOOL_KEY);
-    if (v === 'all' || v === 'dex' || v === 'league') return v;
+    if (v === 'all' || v === 'dex' || v === 'league' || v === 'favorites') return v;
   } catch {
     // localStorage may be unavailable
   }
@@ -397,7 +401,12 @@ export interface ApiResponse {
   droppedBySection: Record<string, [string, number][]>;
   picksBySectionAll: Record<string, [string, number][]>;
   /** Every shared aggregate, per tool. Absent on an older deploy. */
-  byTool?: Record<ToolSlice, Aggregates>;
+  byTool?: Partial<Record<ToolSlice, Aggregates>>;
+  favoriteFunnel?:FavoriteUsageFunnel;
+  favorite?: {users:number;started:number;completed:number;exporters:number;exportsFull:number;exportsSimplified:number;depth:SurvivalCurve;unique:SurvivalCurve};
+  favoriteUsers?:FavoriteUser[];
+  favoriteByCid?:Record<string,FavoriteUser>;
+  totalFavoriteUsers?:number;
   /** Dex cohort breakdowns (built / incomplete / completed). No "bounced" —
    *  a browser that never built has no record, so its device is unknowable. */
   cohorts?: Record<
@@ -415,7 +424,7 @@ export interface ApiResponse {
   depthByDevice?: Record<'all' | 'mobile' | 'desktop', SurvivalCurve>;
   /** Acquisition: referring host → dex / league landings. Forward-only, so
    *  empty until referrers accumulate. */
-  referrerFlow?: { host: string; total: number; dex: number; league: number }[];
+  referrerFlow?: { host: string; total: number; dex: number; league: number; favorites?:number }[];
   /** Opportunity conversion, companion share, league⊂dex, and arrival-era overlap. */
   crossTool?: CrossToolSnapshot;
   /** Cross-tool order and weekly crossover, for browsers in both stores. */
@@ -728,15 +737,18 @@ function UserToolSeg({
   onChange,
   hasDex,
   hasLeague,
+  hasFavorites=false,
 }: {
-  value: 'dex' | 'league';
-  onChange: (k: 'dex' | 'league') => void;
+  value: 'dex' | 'league' | 'favorites';
+  onChange: (k: 'dex' | 'league' | 'favorites') => void;
   hasDex: boolean;
   hasLeague: boolean;
+  hasFavorites?:boolean;
 }) {
   const opts = [
     { key: 'dex' as const, label: 'Dex', on: hasDex },
     { key: 'league' as const, label: 'League', on: hasLeague },
+    { key: 'favorites' as const, label: 'Picker', on:hasFavorites },
   ];
   return (
     <div role="group" aria-label="This browser's tools" className="flex shrink-0 items-center gap-0.5">
@@ -808,13 +820,15 @@ function DetailHeader({
   onTool,
   hasDex,
   hasLeague,
+  hasFavorites=false,
 }: {
   rec: HeaderRec;
   onBack: () => void;
-  tool: 'dex' | 'league';
-  onTool: (k: 'dex' | 'league') => void;
+  tool: 'dex' | 'league' | 'favorites';
+  onTool: (k: 'dex' | 'league' | 'favorites') => void;
   hasDex: boolean;
   hasLeague: boolean;
+  hasFavorites?:boolean;
 }) {
   return (
     <div className="flex flex-col gap-1">
@@ -826,7 +840,7 @@ function DetailHeader({
         {middleId(rec.cid)}
       </span>
       <span className="hidden md:inline-flex">
-        <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} />
+        <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} hasFavorites={hasFavorites} />
       </span>
       <TooltipScope>
         <div className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-x-auto">
@@ -855,7 +869,7 @@ function DetailHeader({
       </TooltipScope>
     </div>
     <div className="md:hidden">
-      <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} />
+      <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} hasFavorites={hasFavorites} />
     </div>
     </div>
   );
@@ -1151,8 +1165,8 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   );
 }
 
-function headerFrom(dex?: ClientRecord, league?: LeagueUser): HeaderRec | null {
-  const src = dex ?? league;
+function headerFrom(dex?: ClientRecord, league?: LeagueUser, favorite?:FavoriteUser): HeaderRec | null {
+  const src = dex ?? league ?? favorite;
   if (!src) return null;
   return {
     cid: src.cid,
@@ -1173,23 +1187,26 @@ function UserDetailPage({
   onTool,
   dex,
   league,
+  favorite,
   onBack,
 }: {
-  tool: 'dex' | 'league';
-  onTool: (k: 'dex' | 'league') => void;
+  tool: 'dex' | 'league' | 'favorites';
+  onTool: (k: 'dex' | 'league' | 'favorites') => void;
   dex?: ClientRecord;
   league?: LeagueUser;
+  favorite?:FavoriteUser;
   onBack: () => void;
 }) {
-  const rec = headerFrom(dex, league);
+  const rec = headerFrom(dex, league, favorite);
   if (!rec) return null;
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
       <div className="shrink-0">
-        <DetailHeader rec={rec} onBack={onBack} tool={tool} onTool={onTool} hasDex={!!dex} hasLeague={!!league} />
+        <DetailHeader rec={rec} onBack={onBack} tool={tool} onTool={onTool} hasDex={!!dex} hasLeague={!!league} hasFavorites={!!favorite} />
       </div>
       {tool === 'dex' && dex && <DexDetailBody rec={dex} />}
       {tool === 'league' && league && <LeagueDetailBody league={league} />}
+      {tool === 'favorites' && favorite && <FavoriteDetailBody user={favorite} />}
     </div>
   );
 }
@@ -1632,6 +1649,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     { key: 'all', label: 'Suite' },
     { key: 'dex', label: 'Dex' },
     { key: 'league', label: 'League' },
+    { key: 'favorites', label: 'Picker' },
     { key: 'search', label: 'Search' },
     { key: 'feedback', label: 'Feedback' },
   ];
@@ -1665,7 +1683,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
 // ---------- main ----------
 
 /** What the detail pane shows: one browser's dex or league, or the picks page. */
-type Detail = { kind: 'dex' | 'league'; cid: string } | { kind: 'picks'; tool: 'dex' | 'league' };
+type Detail = { kind: 'dex' | 'league' | 'favorites'; cid: string } | { kind: 'picks'; tool: 'dex' | 'league' };
 
 export function AdminPage() {
   // `demo` shows the bundled fixtures even on a browser with a saved token,
@@ -2033,7 +2051,7 @@ export function AdminPage() {
 
         {/* A clicked preview opens a full detail page; Back returns here. */}
         {detail && data && (
-          <div className={cn((detail.kind === 'league' || detail.kind === 'dex') && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
+          <div className={cn((detail.kind === 'league' || detail.kind === 'dex' || detail.kind === 'favorites') && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
           {(() => {
           if (detail.kind === 'picks') {
             if (detail.tool === 'league') {
@@ -2062,6 +2080,7 @@ export function AdminPage() {
                 onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
                 dex={dex}
                 league={league}
+                favorite={data.favoriteByCid?.[bare] ?? data.favoriteUsers?.find(r=>r.cid===bare)}
                 onBack={() => setDetail(null)}
               />
             </RangeSlotContext.Provider>
@@ -2079,7 +2098,7 @@ export function AdminPage() {
 
         {!detail && page === 'analytics' && data && (() => {
           const slice = sliceOf(data, tool);
-          const showDex = tool !== 'league';
+          const showDex = tool === 'all' || tool === 'dex';
 
           const f = data.funnel;
           const built = data.tools?.dex ?? f.users;
@@ -2087,8 +2106,8 @@ export function AdminPage() {
           const bounced = Math.max(0, sawIntro - built);
           const incomplete = Math.max(0, built - f.completed);
           const keptPrivate = Math.max(0, f.completed - f.exported);
-          const showDexFunnel = tool !== 'league' && (data.dexFunnel ? data.dexFunnel.built > 0 : built > 0);
-          const showLeagueFunnel = tool !== 'dex' && (data.leagueFunnel?.placed ?? 0) > 0;
+          const showDexFunnel = (tool === 'all' || tool === 'dex') && (data.dexFunnel ? data.dexFunnel.built > 0 : built > 0);
+          const showLeagueFunnel = (tool === 'all' || tool === 'league') && (data.leagueFunnel?.placed ?? 0) > 0;
           const showReferrer = (data.referrerFlow?.length ?? 0) > 0;
           const showFlows = flowView === 'referrer' ? showReferrer : showDexFunnel || showLeagueFunnel;
           const dexSankey = data.dexFunnel
@@ -2130,7 +2149,7 @@ export function AdminPage() {
           // total. League uses its own card curve, never the dex curves.
           const depthCurve = showDex
             ? data.depthByDevice?.[depthDevice] ?? data.monCurves?.total ?? data.depthCurves?.total
-            : data.leagueCurves?.cards;
+            : tool === 'favorites' ? data.favorite?.depth : data.leagueCurves?.cards;
 
           return (
           <>
@@ -2152,7 +2171,7 @@ export function AdminPage() {
 
             {showDex && <BeaconDropNotice events={data.funnelEvents} />}
 
-            {!showDex && (
+            {tool === 'league' && (
               <Panel title="League activity" sub={[`${slice.users} browsers`]}>
                 <div className="flex flex-wrap gap-x-6 gap-y-3">
                   <Kpi emphasis value={slice.users} label="Browsers" />
@@ -2161,6 +2180,17 @@ export function AdminPage() {
                 </div>
               </Panel>
             )}
+
+            {tool === 'favorites' && <Panel title="Picker activity" sub={[`${slice.users} browsers`]}>
+              <div className="flex flex-wrap gap-x-6 gap-y-3">
+                <Kpi emphasis value={slice.users} label="Browsers"/>
+                <Kpi value={slice.retention.returning} label="Returning"/>
+                <Kpi value={data.favorite?.completed ?? 0} label="Completed"/>
+                <Kpi value={data.favorite?.exporters ?? 0} label="Exporters"/>
+                <Kpi value={data.favorite?.exportsFull ?? 0} label="Full grid exports"/>
+                <Kpi value={data.favorite?.exportsSimplified ?? 0} label="Simplified exports"/>
+              </div>
+            </Panel>}
 
             {tool === 'all' && data.crossTool && <CrossToolCard data={data.crossTool} />}
 
@@ -2236,7 +2266,7 @@ export function AdminPage() {
               >
                 <BuildDepthChart
                   curve={depthCurve}
-                  xLabel={tool === 'league' ? 'cards' : 'Pokémon'}
+                  xLabel={tool === 'league' ? 'cards' : tool === 'favorites' ? 'cells' : 'Pokémon'}
                   ariaLabel="Build depth: browsers still building by size"
                 />
               </Panel>
@@ -2287,7 +2317,21 @@ export function AdminPage() {
               />
             )}
 
-            {tool !== 'all' && <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
+            {tool === 'favorites' && <Panel title="Newest browsers" sub={['picker','newest first']}>
+              <div className="flex flex-col gap-2">
+                <Seg ariaLabel="Archive status" options={ARCHIVE_FILTER_OPTIONS} value={archiveFilter} onChange={setArchiveFilter}/>
+                {(data.favoriteUsers ?? []).filter(rec=>matchesArchiveFilter(archiveOverride[bareCid(rec.cid)] ?? rec.archived ?? false,archiveFilter) && ((data.rangeStart ?? null)===null || rec.lastTs > data.rangeStart!)).map(rec=><button key={rec.cid} type="button" data-favorite-user={rec.cid} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2 text-left text-xs" onClick={()=>openDetail({kind:'favorites',cid:rec.cid})}>
+                  <span className="font-semibold">{middleId(rec.cid)}</span>
+                  <span>{rec.latest.filled} / 257 cells · {rec.latest.uniqueIds.length} Pokémon</span>
+                  <span>{rec.sessions} sessions · {rec.exportsFull+rec.exportsSimplified} exports</span>
+                  <span className="text-muted-foreground">{relativeTime(rec.lastTs)}</span>
+                </button>)}
+                {!data.favoriteUsers?.length && <p className="text-sm text-muted-foreground">No picker users yet.</p>}
+                {(data.totalFavoriteUsers ?? 0) > (data.favoriteUsers?.length ?? 0) && <Button variant="ghost" size="sm" disabled={loading} onClick={()=>void loadMore((data.favoriteUsers?.length ?? 0)+PAGE_SIZE)}>Load more</Button>}
+              </div>
+            </Panel>}
+
+            {(tool === 'dex' || tool === 'league') && <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
               {(() => {
                 const archivedOf = (cid: string, flag?: boolean) =>
                   archiveOverride[bareCid(cid)] ?? flag ?? false;
