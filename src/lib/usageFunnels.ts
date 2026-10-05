@@ -19,6 +19,8 @@ import {
   type ReferrerFlowEntry,
 } from '../../api/_aggregate';
 
+import type { FavoriteUsageFunnel } from '../../api/_favoriteAggregate';
+
 export type FunnelRole = 'success' | 'sink' | 'priv' | 'neutral';
 export type FunnelLabelSide = 'left' | 'right' | 'top' | 'bottom';
 
@@ -237,6 +239,36 @@ export function leagueFunnelSankey(f: LeagueUsageFunnel): FunnelSankey {
   );
 }
 
+/** One browser follows one maximum-progress bucket and one export outcome.
+ *  Export outcomes describe the record lifetime, not events in the range. */
+export function favoriteFunnelSankey(f: FavoriteUsageFunnel): FunnelSankey {
+  const nodes: FunnelNode[] = [{ name: 'Opened', role: 'neutral', label: 'left' }];
+  const links: FunnelLink[] = [];
+  const seen = new Set(['Opened']);
+  const outcomes = [
+    { key: 'full', name: 'Full grid', role: 'success' },
+    { key: 'both', name: 'Both views', role: 'success' },
+    { key: 'simplified', name: 'Simplified', role: 'success' },
+    { key: 'notExported', name: 'Not exported', role: 'priv' },
+  ] as const;
+  for (const bucket of [...f.buckets].reverse()) {
+    if (bucket.count <= 0) continue;
+    const role = bucket.label === 'Completed' ? 'success' : 'neutral';
+    addNode(nodes, seen, { name: bucket.label, role, label: 'right' });
+    addLink(links, { source: 'Opened', target: bucket.label, value: bucket.count, role });
+    for (const outcome of outcomes) {
+      const value = outcome.key === 'notExported' ? bucket.notExported : bucket.exports[outcome.key];
+      if (value <= 0) continue;
+      addNode(nodes, seen, { name: outcome.name, role: outcome.role, label: 'right' });
+      addLink(links, { source: bucket.label, target: outcome.name, value, role: outcome.role });
+    }
+  }
+  const progress = f.buckets.filter(b => b.count > 0).map(b => `${b.count} at ${b.label}`).join(', ');
+  const count = (key: 'full' | 'simplified' | 'both' | 'notExported') => f.buckets.reduce((sum, b) => sum + (key === 'notExported' ? b.notExported : b.exports[key]), 0);
+  return orderSankeyForLayout(nodes, links,
+    `Favorite Pokémon usage funnel: ${f.opened} opened; maximum filled cells (picks and pointers, 257 total): ${progress || 'none'}; lifetime exports: ${count('full')} full grid only, ${count('simplified')} simplified only, ${count('both')} both views, ${count('notExported')} not exported.`);
+}
+
 /** Distance along the trunk from the start node. Used to assert buckets
  *  that share a parent sit in the same column. */
 export function nodeDepth(name: string, links: FunnelLink[]): number {
@@ -291,14 +323,16 @@ export function referrerFlowSankey(rows: ReferrerFlowEntry[]): FunnelSankey {
     ...rows.map((r) => ({ name: r.host, role: 'neutral' as const, label: 'left' as const })),
     { name: 'Dex', role: 'success', label: 'top' },
     { name: 'League', role: 'priv', label: 'bottom' },
+    ...(rows.some(r => r.favorites !== undefined) ? [{ name: 'Favorites', role: 'neutral' as const, label: 'right' as const }] : []),
   ];
   const links: FunnelLink[] = rows.flatMap((r) => [
     ...(r.dex > 0 ? [{ source: r.host, target: 'Dex', value: r.dex, role: 'success' as const }] : []),
     ...(r.league > 0 ? [{ source: r.host, target: 'League', value: r.league, role: 'priv' as const }] : []),
+    ...((r.favorites ?? 0) > 0 ? [{ source: r.host, target: 'Favorites', value: r.favorites ?? 0, role: 'neutral' as const }] : []),
   ]);
   return orderSankeyForLayout(
     nodes,
     links,
-    `Referrer to landing: ${rows.map((r) => r.host).join(', ')} split into dex and league landings.`,
+    `Referrer to landing: ${rows.map((r) => r.host).join(', ')} split into dex and league${rows.some(r => r.favorites !== undefined) ? ' and favorites' : ''} landings.`,
   );
 }
