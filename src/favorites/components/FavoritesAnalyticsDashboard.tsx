@@ -90,7 +90,10 @@ export default function FavoritesAnalyticsDashboard({ fills }: { fills: Readonly
   const stats = useMemo(() => pickerConditionalStats(buildFavoritesSnapshot(fills)), [fills]);
   const coverage = stats.dimensions.bst.coveredChoices;
   return <div data-favorites-analytics data-testid="favorites-analytics" data-favorite-population={stats.populationSize} className="h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
-    <div className="max-w-5xl mx-auto p-4 sm:p-6 grid md:grid-cols-2 gap-4 sm:gap-6 items-start">
+    <div className="max-w-5xl mx-auto p-4 sm:p-6">
+      <p className="text-sm text-muted-foreground mb-5">{t('favorites.analytics.description')}</p>
+      {!stats.populationSize && <p className="text-sm text-muted-foreground mb-5">{t('favorites.analytics.empty')}</p>}
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-6 items-start">
       <div className="space-y-4 sm:space-y-6 min-w-0">
         <Distribution dimension="type" stats={stats} />
         <Distribution dimension="color" stats={stats} />
@@ -108,6 +111,7 @@ export default function FavoritesAnalyticsDashboard({ fills }: { fills: Readonly
             <SuperimposedHistogram data={stats.bst.merged} binSize={stats.bst.binSize} xDomain={stats.bst.xDomain} xTicks={stats.bst.xTicks} yDomain={stats.bst.yDomain} yTicks={stats.bst.yTicks} textClass={TEXT} />
           </> : <p className="text-sm text-muted-foreground py-4">{t('favorites.stats.empty')}</p>}
         </Card>
+      </div>
       </div>
     </div>
   </div>;
