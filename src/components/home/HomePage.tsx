@@ -130,7 +130,7 @@ function useTools(placed: number): Tool[] {
       blurb: placed > 0 ? t('home.dex.continue', { count: placed }) : t('home.dex.blurb'),
       shots: [shot(dexBack400, dexBack), shot(dexFront400, dexFront)],
       alts: [
-        'The Pokédex builder’s analytics page: type distribution charts for a custom region against the National Dex',
+        'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
         'A custom regional Pokédex of 151 Pokémon, exported as an image from the Pokédex builder',
       ],
     },
@@ -141,7 +141,7 @@ function useTools(placed: number): Tool[] {
       blurb: t('home.league.blurb'),
       shots: [shot(leagueBack400, leagueBack), shot(leagueFront400, leagueFront)],
       alts: [
-        'A whole league exported from the gym leader maker: eight gym leaders, the Elite Four and the Champion with their teams',
+        'A whole league exported from the gym leader maker: eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
         'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
       ],
     },
