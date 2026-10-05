@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { Download } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -19,7 +18,7 @@ import type { FeedbackToolContext } from '@/lib/feedbackContext';
 import { useFavoriteBeacon } from './hooks/useFavoriteBeacon';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
-import { FavoritesCompletionCounter } from './components/FavoritesCompletionCounter';
+import { FavoritesHeader, type FavoritesView } from './components/FavoritesHeader';
 import { FavoritesTypeRepairNotice } from './components/FavoritesTypeRepairNotice';
 import { PickerSheet } from './components/PickerSheet';
 import { SortDebugPanel } from './components/SortDebugPanel';
@@ -27,6 +26,7 @@ import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
+const FavoritesAnalyticsDashboard = lazy(() => import('./components/FavoritesAnalyticsDashboard'));
 const FavoritesExportOverlay = lazy(() => import('./components/FavoritesExportOverlay'));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId; keyboard?: boolean };
@@ -84,6 +84,7 @@ function FavoritesContent({ sel, setSel }: {
   const clear = useFavoritesStore((s) => s.clear);
   const [showIcons, setShowIcons] = useState(savedShowIcons);
   const [exportOpen, setExportOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<FavoritesView>('picker');
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
@@ -105,6 +106,7 @@ function FavoritesContent({ sel, setSel }: {
   function open(type: TypeAxisId, gen: GenAxisId, keyboard = false) {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
+    setCurrentView('picker');
     setSel({ type, gen, keyboard });
   }
 
@@ -138,32 +140,15 @@ function FavoritesContent({ sel, setSel }: {
     <>
       <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
         <GlobalHeader />
-        <div className="flex h-11 items-center gap-1 border-b bg-card px-3">
-          <div className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
-            <h1 className="min-w-0 text-[0.6875rem] font-semibold leading-none text-muted-foreground" title={t('favorites.title')}>
-              {t('favorites.title')}
-            </h1>
-            <FavoritesCompletionCounter
-              fills={fills}
-              label={(filled, total) => t('favorites.completion.label', { filled, total })}
-            />
-          </div>
-          <button
-            type="button"
-            data-testid="favorites-export-open"
-            aria-label={t('favorites.export.title')}
-            aria-expanded={exportOpen}
-            onClick={() => { setSel(null); setExportOpen(true); }}
-            className="ml-auto shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-          >
-            <Download className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
+        <FavoritesHeader fills={fills} currentView={currentView} exportOpen={exportOpen}
+          onViewChange={(view) => { setSel(null); setCurrentView(view); }}
+          onExport={() => { setSel(null); setExportOpen(true); }} />
         {/* The grid frame fills the screen below both headers. The grid
             scrolls inside it, and the footer stays below the fold. On
             desktop the frame runs to the screen edge, as the grid did when
             the page scrolled. */}
-        <div className="flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col">
+        <div id="favorites-panel-picker" role="tabpanel" aria-labelledby="favorites-tab-picker"
+          hidden={currentView !== 'picker'} className={currentView === 'picker' ? 'flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col' : 'hidden'}>
           <FavoritesTypeRepairNotice fills={fills} onReview={open} />
           <div className="flex min-h-0 flex-1">
             <main className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
@@ -179,6 +164,12 @@ function FavoritesContent({ sel, setSel }: {
             {SORT_DEBUG_ENABLED ? <SortDebugPanel desktop={desktop} order={sortOrder} onChange={setSortOrder} /> : null}
           </div>
         </div>
+        <main id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"
+          hidden={currentView !== 'analytics'} className={currentView === 'analytics' ? 'min-h-[calc(100dvh-2*2.75rem)]' : 'hidden'}>
+          {currentView === 'analytics' && <Suspense fallback={<div role="status" aria-label={t('nav.analytics')} className="m-4 h-32 animate-pulse rounded-lg bg-muted" />}>
+            <FavoritesAnalyticsDashboard fills={fills} />
+          </Suspense>}
+        </main>
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>

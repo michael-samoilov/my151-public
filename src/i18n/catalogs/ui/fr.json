@@ -87,5 +87,8 @@
   "favorites.stats.middle": "Intermédiaire",
   "favorites.stats.final": "Final",
   "favorites.stats.noEvo": "Sans évolution",
-  "favorites.stats.means": "Votre moyenne : {yours} · Options : {expected}"
+  "favorites.stats.means": "Votre moyenne : {yours} · Options : {expected}",
+  "favorites.nav.picker": "Sélection",
+  "favorites.analytics.description": "Explore tes Pokémon préférés par type et génération. Les graphiques comparent tes choix aux options disponibles dans chaque case.",
+  "favorites.analytics.empty": "Choisis des Pokémon dans des cases avec plusieurs options pour voir tes préférences."
 }

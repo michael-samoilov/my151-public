@@ -22,7 +22,9 @@ whether that copy reaches a crawler at all.
    Bing indexes. Keep it visible for a slow connection, hidden for the first
    second so it does not flash, the way `index.html` does it today.
 4. **After React mounts, the page's `<h1>` says the same thing** as the served
-   h1 and the title's first clause. The second header ribbon is the right
+   h1. The search title can add a descriptive qualifier. The Picker uses
+   “Favorite Pokémon Picker” at every width, while its search title retains
+   “by Type and Generation”. The second header ribbon is the right
    element for it. The wordmark is not an h1; it is a `<p>` or a plain link
    with the same styling. Google renders JavaScript, so the post-mount DOM is
    what Google reads, and the h1 is its first fallback when it rewrites a

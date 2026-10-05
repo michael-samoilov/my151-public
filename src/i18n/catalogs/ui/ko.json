@@ -87,5 +87,8 @@
   "favorites.stats.middle": "중간",
   "favorites.stats.final": "최종",
   "favorites.stats.noEvo": "진화 없음",
-  "favorites.stats.means": "내 평균: {yours} · 후보 평균: {expected}"
+  "favorites.stats.means": "내 평균: {yours} · 후보 평균: {expected}",
+  "favorites.nav.picker": "선택",
+  "favorites.analytics.description": "타입과 세대별로 좋아하는 포켓몬을 살펴보세요. 차트는 각 칸에서 선택할 수 있는 후보와 실제 선택을 비교합니다.",
+  "favorites.analytics.empty": "후보가 여러 개인 칸에서 포켓몬을 고르면 선호 경향을 볼 수 있습니다."
 }
