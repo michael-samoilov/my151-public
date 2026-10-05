@@ -99,7 +99,7 @@ export function parseFavoriteRecord(raw: unknown): FavoriteRecord | null {
   const r = value as FavoriteRecord;
   if (r.v !== 1 || typeof r.cid !== 'string' || !Number.isFinite(r.firstTs) || !Number.isFinite(r.lastTs)
     || !parseFavoriteSnapshot(r.latest) || !Array.isArray(r.sessionLog) || !Array.isArray(r.seenIds)) return null;
-  const nonnegative = (n: unknown) => typeof n === 'number' && Number.isFinite(n) && n >= 0;
+  const nonnegative = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
   if (!['submits','sessions','maxFilled','exportsFull','exportsSimplified'].every(key => nonnegative((r as unknown as Record<string,unknown>)[key]))) return null;
   if (r.maxFilled > FAVORITE_TOTAL_CELLS || r.firstTs > r.lastTs) return null;
   const sessionLog = r.sessionLog.flatMap(session => {
@@ -109,8 +109,8 @@ export function parseFavoriteRecord(raw: unknown): FavoriteRecord | null {
       events:Array.isArray(session.events)?session.events.filter((event):event is string=>typeof event==='string'&&event.startsWith('favorites-')).slice(0,20):[]}];
   }).sort((a,b)=>a.ts-b.ts).slice(-50);
   const sessionMs = sessionLog.map(session=>session.endTs-session.ts);
-  return {...r,latest:parseFavoriteSnapshot(r.latest)!,sessionLog,sessionMs,
-    maxSessionMs:Math.max(0,...sessionMs),curSessionStart:sessionLog.at(-1)?.ts??r.lastTs,
+  return {...r,firstAt:new Date(r.firstTs).toISOString(),lastAt:new Date(r.lastTs).toISOString(),latest:parseFavoriteSnapshot(r.latest)!,sessionLog,sessionMs,
+    maxSessionMs:Math.max(nonnegative(r.maxSessionMs)?r.maxSessionMs:0,...sessionMs),curSessionStart:sessionLog.at(-1)?.ts??r.lastTs,
     seenIds:r.seenIds.filter((id):id is string=>typeof id==='string'&&/^[\w-]{8,80}$/.test(id)).slice(-256)};
 }
 export function mergeFavoriteRecord(existing: FavoriteRecord | null, input: FavoriteBeaconInput): FavoriteRecord {
@@ -124,11 +124,12 @@ export function mergeFavoriteRecord(existing: FavoriteRecord | null, input: Favo
   rec.seenIds = [...rec.seenIds,input.id].slice(-256);
   rec.submits++;
   const log = rec.sessionLog;
-  let session = [...log].reverse().find(s => now >= s.ts && now <= s.endTs + FAVORITE_SESSION_GAP_MS);
+  let session = [...log].reverse().find(s => now >= s.ts - FAVORITE_SESSION_GAP_MS && now <= s.endTs + FAVORITE_SESSION_GAP_MS);
   if (!session) {
     session = {id:input.id,ts:now,endTs:now,snapshot,events:[]};
     log.push(session);log.sort((a,b)=>a.ts-b.ts);rec.sessions++;
   }
+  session.ts = Math.min(session.ts, now);
   if (now >= session.endTs) {session.endTs=now;session.snapshot=snapshot;}
   session.events = [...new Set([...session.events,...input.events])];
   rec.sessionLog = log.slice(-50);

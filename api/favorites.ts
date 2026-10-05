@@ -5,7 +5,7 @@ import { JOURNAL_MAX_PER_DAY, JOURNAL_TTL_S, parsePage } from './_events.js';
 import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
 import { parseCapturedAt } from './_sessionize.js';
 import { parseNotmeFlag } from './_exportStats.js';
-import { FAVORITE_CLIENTS_KEY, FAVORITE_VERSION_KEY, parseFavoriteSnapshot, parseFavoriteRecord, mergeFavoriteRecord, type FavoriteBeaconKind, type FavoriteExportKind } from './_favoriteRecord.js';
+import { FAVORITE_CLIENTS_KEY, FAVORITE_VERSION_KEY, FAVORITE_SESSION_GAP_MS, parseFavoriteSnapshot, parseFavoriteRecord, mergeFavoriteRecord, type FavoriteBeaconKind, type FavoriteExportKind } from './_favoriteRecord.js';
 const burstLimiter = new Ratelimit({redis,limiter:Ratelimit.slidingWindow(500,'10 m'),analytics:false,prefix:'rl:burst'});
 const clientLimiter = new Ratelimit({redis,limiter:Ratelimit.slidingWindow(SUBMIT_CLIENT_DAILY_CAP,'1 d'),analytics:false,prefix:'rl:client'});
 /** Commit record, dedupe, milestone counters, and journal atomically. One billed command. */
@@ -43,16 +43,19 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     const exportKind=b.kind==='export'&&(b.exportKind==='full'||b.exportKind==='simplified')?b.exportKind:undefined;
     if(b.kind==='export'&&!exportKind)return res.status(400).json({error:'invalid export kind'});
     if(parseNotmeFlag(b.notme)||isReadOnlyDeployment(req))return res.status(200).json({ok:true});
+    const received=Date.now();const now=parseCapturedAt(b.ts,received);
+    if(now===null)return res.status(400).json({error:'invalid captured time'});
     const drop=async(reason:string)=>{await redis.hincrby('funnel',`favorites-drop:${reason}`,1);};
     for(const [limiter,key,reason] of [[burstLimiter,getClientIp(req),'rate-limit-ip'],[clientLimiter,`favorites:${b.cid}`,'rate-limit-client']] as const){
       const limit=await limiter.limit(key);
       if(!limit.success){await drop(reason);res.setHeader('Retry-After',Math.max(1,Math.ceil((limit.reset-Date.now())/1000)));return res.status(429).json({error:'Too many requests'});}
     }
-    const received=Date.now();const now=parseCapturedAt(b.ts,received)??received;
     const geo=getGeo(req);const ua=getClient(req);const day=new Date(now).toISOString().slice(0,10);
     for(let attempt=0;attempt<6;attempt++){
       const [raw,version]=await Promise.all([redis.hget(FAVORITE_CLIENTS_KEY,b.cid),redis.hget(FAVORITE_VERSION_KEY,b.cid)]);
-      const existing=parseFavoriteRecord(raw);const events:string[]=existing?[]:['favorites-open'];
+      const existing=parseFavoriteRecord(raw);
+      const sessionKnown=existing?.sessionLog.some(session=>now>=session.ts-FAVORITE_SESSION_GAP_MS&&now<=session.endTs+FAVORITE_SESSION_GAP_MS);
+      const events:string[]=sessionKnown?[]:['favorites-open'];
       for(const [threshold,event] of [[1,'favorites-first-pick'],[65,'favorites-quarter'],[129,'favorites-half'],[257,'favorites-complete']] as const){
         if(snapshot.filled>=threshold&&(existing?.maxFilled??0)<threshold)events.push(event);
       }

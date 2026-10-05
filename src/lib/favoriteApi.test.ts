@@ -13,6 +13,11 @@ beforeEach(()=>{vi.clearAllMocks();mocks.hget.mockResolvedValue(null);mocks.eval
 describe('favorites endpoint failure guards',()=>{
  it('does not write excluded preview or opted-out traffic',async()=>{mocks.readOnly.mockReturnValue(true);await invoke(body());expect(mocks.limit).not.toHaveBeenCalled();expect(mocks.eval).not.toHaveBeenCalled();mocks.readOnly.mockReturnValue(false);await invoke({...body(),notme:true});expect(mocks.eval).not.toHaveBeenCalled();});
  it('rejects forged completion and unsupported export modes before Redis',async()=>{expect((await invoke({...body(),kind:'completion'})).status).toHaveBeenCalledWith(400);expect((await invoke({...body(),kind:'export',exportKind:'portrait'})).status).toHaveBeenCalledWith(400);expect(mocks.eval).not.toHaveBeenCalled();});
+ it('rejects absent or future capture timestamps instead of overwriting the current board at arrival time',async()=>{
+  expect((await invoke({...body(),ts:undefined})).status).toHaveBeenCalledWith(400);
+  expect((await invoke({...body(),ts:Date.now()+86_400_000})).status).toHaveBeenCalledWith(400);
+  expect(mocks.eval).not.toHaveBeenCalled();
+ });
  it('stores valid board and derived milestones together, and passes retry dedupe to the atomic write',async()=>{await invoke(body());const call=mocks.eval.mock.calls[0];expect(call[1]).toContain('favorites:request:browser-0001:request-00001');const record=JSON.parse(call[2][2]);expect(record.latest.filled).toBe(2);expect(record.latest.uniqueIds).toEqual([7]);expect(record.country).toBe('US');const events=JSON.parse(call[2][4]);expect(events.map((e:{ev:string})=>e.ev)).toEqual(['favorites-open','favorites-first-pick']);});
  it('records a successful simplified export without a separate non-atomic event write',async()=>{await invoke({...body(),kind:'export',exportKind:'simplified'});const record=JSON.parse(mocks.eval.mock.calls[0][2][2]);expect(record.exportsSimplified).toBe(1);expect(record.exportsFull).toBe(0);expect(mocks.hincrby).not.toHaveBeenCalled();});
  it('retries contention and acknowledges duplicate requests without repeated writes',async()=>{mocks.eval.mockResolvedValueOnce(0).mockResolvedValueOnce(2);await invoke(body());expect(mocks.eval).toHaveBeenCalledTimes(2);expect(mocks.hincrby).not.toHaveBeenCalled();});
