@@ -88,7 +88,7 @@ function Distribution({ dimension, stats }: { dimension: Dimension; stats: Picke
   const labelHeader = dimension === 'type' ? t('chart.header.type') : dimension === 'shape' ? t('chart.header.shape') : undefined;
   return <Card dimension={dimension} covered={data.coveredChoices} excluded={data.excludedChoices} title={titles[dimension]}>
     {!data.coveredChoices ? <p className="text-sm text-muted-foreground py-4">{t('favorites.stats.empty')}</p> : <>
-      <ButterflyChart data={rows} rowHeight={22} hideLabelText alignBaselines iconFillsRow countDenominator={data.coveredChoices} sortBy={sort} onSortChange={setSort} labelHeader={labelHeader} textClass={TEXT} />
+      <ButterflyChart data={rows} rowHeight={22} hideLabelText alignBaselines iconFillsRow sortBy={sort} onSortChange={setSort} labelHeader={labelHeader} textClass={TEXT} />
       <div className="sr-only" data-audit-clip="intended"><table><caption>{titles[dimension]}</caption><thead><tr><th>{titles[dimension]}</th><th>{t('chart.header.count')}</th><th>{t('favorites.stats.options')}</th><th>{t('chart.header.overIndexed2')}</th></tr></thead><tbody>{rows.map(row => <tr key={row.key} data-favorite-chart-row={row.key}><th>{row.label}</th><td>{formatNumber(row.count)}</td><td>{formatNumber(row.expected, { maximumFractionDigits: 4 })}</td><td>{formatNumber(1 + row.deviation / 100, { maximumFractionDigits: 2 })}×</td></tr>)}</tbody></table></div>
     </>}
   </Card>;

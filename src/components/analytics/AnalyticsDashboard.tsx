@@ -107,10 +107,7 @@ export function AnalyticsDashboard() {
     }
   }, [drillDownDexId, drillDownSegment, closeDrillDown, openDrillDown]);
 
-  // "Yours" type chart — computed locally so excludeSpecial only affects this chart.
-  // Returns the row data plus the pokemon count, which the chart needs as the
-  // percentage-label denominator — a dual-type pokemon contributes to two bars,
-  // so summing the bar counts would overcount the "dex size" the label refers to.
+  // The Yours type chart keeps its existing independent exclusion filter.
   const typeChart = useMemo<{ rows: ButterflyRow[]; total: number }>(() => {
     const base = excludeSpecial ? filteredBaseline : fullBaseline;
     const allIds = Object.values(sections).flat();
@@ -182,8 +179,7 @@ export function AnalyticsDashboard() {
     shapeChartData.filter(d => d.count > 0).map(d => ({ kind: 'shape' as const, shape: rowKey(d) })),
     [shapeChartData]);
 
-  // Compute type chart data for a regional/national dex (also returns the
-  // pokemon count for the chart's percentage-label denominator).
+  // Compute type chart data for a regional or National Dex.
   const regionalTypeChart = useMemo<{ rows: ButterflyRow[]; total: number }>(() => {
     if (selectedTypeChart === 'yours') return { rows: [], total: 0 };
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
@@ -216,7 +212,6 @@ export function AnalyticsDashboard() {
     [regionalTypeChartData]);
 
   const activeTypeChartData = selectedTypeChart === 'yours' ? typeChartData : regionalTypeChartData;
-  const activeTypeChartTotal = selectedTypeChart === 'yours' ? typeChart.total : regionalTypeChart.total;
   const isNationalSelected = selectedTypeChart === 'national';
   const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
 
@@ -614,11 +609,6 @@ export function AnalyticsDashboard() {
                 onSortChange={setTypeSortBy}
                 labelHeader={t('chart.header.type')}
                 disableEmptyRows
-                // Types overlap (dual-types contribute to two bars), so the
-                // default "share of type mentions" denominator would dilute
-                // every percentage. Pass the pokemon count so each bar reads
-                // as "share of the dex".
-                countDenominator={isNationalSelected ? activeTypeChartTotal : undefined}
                 onBarClick={handleTypeBarClick}
                 activeKey={
                   (selectedTypeChart === 'yours' && drillDownIsYours) ||

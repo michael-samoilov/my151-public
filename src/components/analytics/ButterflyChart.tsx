@@ -66,8 +66,6 @@ interface ButterflyChartProps {
   iconScale?: number;
   /** When true, rows with count === 0 are not clickable */
   disableEmptyRows?: boolean;
-  /** Accepted for existing callers; count annotations no longer include percentages. */
-  countDenominator?: number;
   /** When set, overrides the font-size class on every text element (headers,
    *  count numbers, value labels) so they render at a single uniform size.
    *  Defaults to the per-element sizes (used by the analytics dashboard). */
@@ -75,14 +73,15 @@ interface ButterflyChartProps {
 }
 
 let countMeasureCanvas: HTMLCanvasElement | undefined;
-function countLabelPadding(data: ButterflyRow[], textClass: string | undefined, scale: number): number {
+function countLabelPadding(data: ButterflyRow[], textClass: string | undefined): number {
   countMeasureCanvas ??= document.createElement('canvas');
   const ctx = countMeasureCanvas.getContext('2d');
   const size = textClass?.match(/text-\[([\d.]+)(rem|px)\]/);
-  const fontSize = size ? Number(size[1]) * (size[2] === 'rem' ? 16 : 1) : textClass === 'text-xs' ? 12 : 11;
-  if (!ctx) return (Math.max(1, ...data.map(row => String(row.count).length)) * fontSize * .65 + 6) * scale;
+  const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const fontSize = size ? Number(size[1]) * (size[2] === 'rem' ? rootPx : 1) : textClass === 'text-xs' ? rootPx * .75 : rootPx * .6875;
+  if (!ctx) return (Math.max(1, ...data.map(row => String(row.count).length)) * fontSize * .65 + 6);
   ctx.font = `400 ${fontSize}px 'Inter Variable', system-ui, sans-serif`;
-  return (Math.max(0, ...data.map(row => ctx.measureText(String(row.count)).width)) + 6) * scale;
+  return (Math.max(0, ...data.map(row => ctx.measureText(String(row.count)).width)) + 6);
 }
 
 function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
@@ -180,7 +179,7 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
 
   // Count labels reserve their measured width, leaving the rest for bars.
   // Signed scores retain their existing allowance and formatting.
-  const countLabelPad = scoreMode ? 32 * chartScale : countLabelPadding(data, textClass, chartScale);
+  const countLabelPad = scoreMode ? 32 * chartScale : countLabelPadding(data, textClass);
   const countLeftPad = countHasNeg ? countLabelPad : 0;
   const countRightPad = countHasPos ? countLabelPad : 0;
   const countBarArea = Math.max(0, chart1Width - countLeftPad - countRightPad);
