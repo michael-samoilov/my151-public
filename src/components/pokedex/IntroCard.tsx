@@ -133,7 +133,7 @@ const SHOT_SRCSETS = [
 const SHOT_DIMS = [
   { width: 390, height: 620 },
   { width: 348, height: 620 },
-  { width: 555, height: 620 },
+  { width: 555, height: 640 },
 ] as const;
 
 /** Parallel to SHOT_SRCS. These three screenshots show the product's progression
@@ -346,7 +346,9 @@ function ShowcaseStaircase() {
             style={{ height: s.height, marginLeft: i === 0 ? 0 : s.overlap, transform: `translateY(-${s.lift})` }}
           >
             <div
-              className="h-full rounded-md border border-border/70 bg-white shadow-lg overflow-hidden"
+              className={FACE === 'shots' && i === 2
+                ? 'h-full rounded-md border border-transparent shadow-lg'
+                : 'h-full rounded-md border border-border/70 bg-white shadow-lg overflow-hidden'}
               style={{ transform: `rotate(${s.rotate})` }}
             >
               {FACE === 'shots' ? (

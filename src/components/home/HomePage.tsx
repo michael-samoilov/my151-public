@@ -400,7 +400,9 @@ function Artwork({ tool }: { tool: Tool }) {
           <span
             key={f.tilt}
             data-shot={i}
-            className="hub-float-shot block overflow-hidden border border-neutral-300 bg-background"
+            className={`hub-float-shot block ${tool.key === 'dex' && i === 0
+              ? 'border border-transparent'
+              : 'overflow-hidden border border-neutral-300 bg-background'}`}
             style={{ ...geom(i), transform: floatTransform(i) }}
           >
             {/* Not lazy: every card sits in the first viewport at every
