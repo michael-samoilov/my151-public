@@ -14,13 +14,13 @@ const evidence=process.env.OG_HTML_OUT_DIR||resolve(root,'docs/evidence/tool-art
 const data=(path,mime)=>`data:${mime};base64,${readFileSync(resolve(root,path)).toString('base64')}`;
 const font=data('node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2','font/woff2');
 const tools={
- pokedex:{file:'og-image.png',title:'Custom Region &<br>Pokédex Builder',images:[['build','public/og-sources/dex-build.webp','In-progress Pokédex Build page'],['back','src/assets/home/tool-dex-b.webp','Pokédex export with detailed statistics'],['front','src/assets/home/tool-dex.webp','Custom regional Pokédex export']]},
+ pokedex:{file:'og-image.png',title:'Custom Region &<br>Pokédex Builder',images:[['build','public/og-sources/dex-build.webp','In-progress Pokédex Build page'],['front','public/og-sources/dex-stats.webp','Custom regional Pokédex export with detailed statistics and no section outlines']]},
  league:{file:'og-gym-leader.png',title:'Trainer Card &<br>Gym Leader Maker',images:[['back','src/assets/home/tool-league-b.webp','Kanto league story-team export'],['front','src/assets/home/tool-league.webp','Brock trainer-card export']]},
- favorites:{file:'og-favorite-picker.png',title:'Favorite Pokémon<br>Picker by Type<br>and Generation',images:[['back','src/assets/home/tool-favorites.webp','Simplified portrait favorite Pokémon chart'],['front','src/assets/home/tool-favorites-b.webp','Full grid portrait favorite Pokémon chart']]},
+ favorites:{file:'og-favorite-picker.png',title:'Favorite Pokémon<br> Picker by Type &amp; Gen',images:[['back','src/assets/home/tool-favorites.webp','Simplified portrait favorite Pokémon chart'],['front','src/assets/home/tool-favorites-b.webp','Full grid portrait favorite Pokémon chart']]},
 };
-const FAN_WIDTH = 400;
+const FAN_WIDTH = 480;
 const FAN_STEP = 7;
-const FAN_TOP = 180;
+const FAN_TOP = 140;
 const FAN_CENTER = 300;
 const FAN_SPREAD = 100;
 const styles=`@font-face{font-family:Inter;src:url('${font}');font-weight:100 900}*{box-sizing:border-box;margin:0}html,body{width:1200px;height:630px;background:#171719;font-family:Inter,sans-serif;color:#fafafa}.frame{width:1200px;height:630px;position:relative}.brand{position:absolute;top:54px;left:56px;font-size:42px;line-height:1.1;font-weight:800;letter-spacing:-1.8px}.brand b{color:#ef3438}.title{position:absolute;left:56px;bottom:58px;width:540px;font-size:54px;line-height:1.09;font-weight:750;letter-spacing:-1.8px}.fan{position:absolute;left:600px;top:0;width:600px;height:630px;overflow:hidden}.shot{position:absolute;left:${FAN_CENTER - FAN_WIDTH / 2}px;top:${FAN_TOP}px;width:${FAN_WIDTH}px;height:auto;transform-origin:50% 0;object-fit:contain;filter:drop-shadow(0 14px 16px rgba(0,0,0,.4));border-radius:8px}.favorites .title{font-size:52px}`;
@@ -46,7 +46,9 @@ try{
   if(geometry.slice(1).some((g,index)=>Math.abs(g.angle-geometry[index].angle-FAN_STEP)>0.05))throw Error(`${name}: unequal fan angle increment`);
   if(geometry.some(g=>g.left<600||g.right>1200||g.top<0))throw Error(`${name}: only bottom-edge cropping is intentional`);
   if(geometry.some(g=>g.bottom<=630))throw Error(`${name}: sheet does not extend below canvas`);
-  reports.push({name,...audit,hardCount:hard.length,geometry});if(hard.length)throw Error(JSON.stringify(hard));
+  const title=await page.locator('.title').evaluate(el=>({text:el.textContent,lines:Math.round(el.getBoundingClientRect().height/parseFloat(getComputedStyle(el).lineHeight)),...Object.fromEntries(['top','bottom','left','right'].map(k=>[k,el.getBoundingClientRect()[k]]))}));
+  if(name==='favorites' && (title.lines!==2 || title.text!=='Favorite Pokémon Picker by Type & Gen'))throw Error(`${name}: title must fit the requested two lines`);
+  reports.push({name,...audit,hardCount:hard.length,geometry:geometry.map(g=>({...g,hiddenBottom:g.bottom-630})),title});if(hard.length)throw Error(JSON.stringify(hard));
   const path=resolve(out,tools[name].file);await page.screenshot({path});console.log(`Wrote ${path} (1200x630)`);
  }
  writeFileSync(resolve(evidence,'audit.json'),JSON.stringify(reports,null,2));
