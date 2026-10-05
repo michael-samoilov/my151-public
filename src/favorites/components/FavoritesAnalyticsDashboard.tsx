@@ -37,7 +37,7 @@ function ChartTitle({ text }: { text: string }) {
 }
 
 function Card({ dimension, title, subtitle, covered, excluded, children }: { dimension: string; title: string; subtitle: string; covered: number; excluded: number; children: ReactNode }) {
-  return <section data-favorite-chart={dimension} data-favorite-covered={covered} data-favorite-excluded={excluded} aria-label={title} className="bg-card rounded-lg shadow-elevated py-3 px-4 sm:px-5 min-w-0">
+  return <section data-favorite-chart={dimension} data-favorite-covered={covered} data-favorite-excluded={excluded} aria-label={title} className="relative bg-card rounded-lg shadow-elevated py-3 px-4 sm:px-5 min-w-0">
     <ChartTitle text={title} />
     <p className={`${TEXT} text-muted-foreground mb-3 leading-snug`}>{subtitle}</p>
     {children}
@@ -78,9 +78,14 @@ function Distribution({ dimension, stats }: { dimension: Dimension; stats: Picke
   const titles = { type: t('stats.type.title'), shape: t('favorites.stats.shape'), color: t('favorites.stats.color'), evolution: t('favorites.stats.evolution') };
   const textIcons = dimension === 'color' || dimension === 'evolution';
   const labelWidth = textIcons ? Math.max(0, ...rows.map(row => measureLabelWidth(row.label, 12))) : 0;
+  const labelHeader = dimension === 'type' ? t('chart.header.type') : dimension === 'shape' ? t('chart.header.shape') : undefined;
+  const iconScale = dimension === 'shape' ? 1.4 : 1;
+  // The identifier column also contains its centered header; reserve space for both.
+  const iconColAspect = textIcons ? 1 + (labelWidth + 5) / 14
+    : Math.max(dimension === 'shape' ? 1.65 : 1, (measureLabelWidth(labelHeader ?? '', 12) + 12) / (14 * iconScale));
   return <Card dimension={dimension} covered={data.coveredChoices} excluded={data.excludedChoices} title={titles[dimension]} subtitle={t('favorites.stats.choices', { count: data.coveredChoices })}>
     {!data.coveredChoices ? <p className="text-sm text-muted-foreground py-4">{t('favorites.stats.empty')}</p> : <>
-      <ButterflyChart data={rows} rowHeight={22} hideLabelText iconColAspect={textIcons ? 1 + (labelWidth + 5) / 14 : dimension === 'shape' ? 1.65 : 1} iconScale={dimension === 'shape' ? 1.4 : 1} countDenominator={data.coveredChoices} sortBy={sort} onSortChange={setSort} labelHeader={dimension === 'type' ? t('chart.header.type') : dimension === 'shape' ? t('chart.header.shape') : undefined} textClass={TEXT} />
+      <ButterflyChart data={rows} rowHeight={22} hideLabelText iconColAspect={iconColAspect} iconScale={iconScale} countDenominator={data.coveredChoices} sortBy={sort} onSortChange={setSort} labelHeader={labelHeader} textClass={TEXT} />
       <div className="sr-only" data-audit-clip="intended"><table><caption>{titles[dimension]}</caption><thead><tr><th>{titles[dimension]}</th><th>{t('chart.header.count')}</th><th>{t('favorites.stats.options')}</th><th>{t('chart.header.overIndexed2')}</th></tr></thead><tbody>{rows.map(row => <tr key={row.key} data-favorite-chart-row={row.key}><th>{row.label}</th><td>{formatNumber(row.count)}</td><td>{formatNumber(row.expected, { maximumFractionDigits: 4 })}</td><td>{formatNumber(1 + row.deviation / 100, { maximumFractionDigits: 2 })}×</td></tr>)}</tbody></table></div>
     </>}
   </Card>;
