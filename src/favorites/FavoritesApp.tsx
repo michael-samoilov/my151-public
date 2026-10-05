@@ -43,7 +43,7 @@ function GlobalHeader() {
         <span className="text-primary">my151</span>
         <span className="text-foreground">.app</span>
       </a>
-      <div className="flex flex-shrink-0 items-center gap-1">
+      <div className="flex flex-shrink-0 items-center gap-0 min-[360px]:gap-1">
         <LanguagePicker />
         <FeedbackButton />
         <ToolsMenu current="favorites" />
