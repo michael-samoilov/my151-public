@@ -36,10 +36,9 @@ function ChartTitle({ text }: { text: string }) {
   return <h2 ref={ref} className="text-sm mb-1 overflow-hidden"><span className="inline-block font-black uppercase leading-none whitespace-nowrap origin-left" style={{ transform: `scaleX(${stretch})` }}>{text}</span></h2>;
 }
 
-function Card({ dimension, title, subtitle, covered, excluded, children }: { dimension: string; title: string; subtitle: string; covered: number; excluded: number; children: ReactNode }) {
+function Card({ dimension, title, covered, excluded, children }: { dimension: string; title: string; covered: number; excluded: number; children: ReactNode }) {
   return <section data-favorite-chart={dimension} data-favorite-covered={covered} data-favorite-excluded={excluded} aria-label={title} className="relative bg-card rounded-lg shadow-elevated py-3 px-4 sm:px-5 min-w-0">
     <ChartTitle text={title} />
-    <p className={`${TEXT} text-muted-foreground mb-3 leading-snug`}>{subtitle}</p>
     {children}
   </section>;
 }
@@ -83,7 +82,7 @@ function Distribution({ dimension, stats }: { dimension: Dimension; stats: Picke
   // The identifier column also contains its centered header; reserve space for both.
   const iconColAspect = textIcons ? 1 + (labelWidth + 5) / 14
     : Math.max(dimension === 'shape' ? 1.65 : 1, (measureLabelWidth(labelHeader ?? '', 12) + 12) / (14 * iconScale));
-  return <Card dimension={dimension} covered={data.coveredChoices} excluded={data.excludedChoices} title={titles[dimension]} subtitle={t('favorites.stats.choices', { count: data.coveredChoices })}>
+  return <Card dimension={dimension} covered={data.coveredChoices} excluded={data.excludedChoices} title={titles[dimension]}>
     {!data.coveredChoices ? <p className="text-sm text-muted-foreground py-4">{t('favorites.stats.empty')}</p> : <>
       <ButterflyChart data={rows} rowHeight={22} hideLabelText iconColAspect={iconColAspect} iconScale={iconScale} countDenominator={data.coveredChoices} sortBy={sort} onSortChange={setSort} labelHeader={labelHeader} textClass={TEXT} />
       <div className="sr-only" data-audit-clip="intended"><table><caption>{titles[dimension]}</caption><thead><tr><th>{titles[dimension]}</th><th>{t('chart.header.count')}</th><th>{t('favorites.stats.options')}</th><th>{t('chart.header.overIndexed2')}</th></tr></thead><tbody>{rows.map(row => <tr key={row.key} data-favorite-chart-row={row.key}><th>{row.label}</th><td>{formatNumber(row.count)}</td><td>{formatNumber(row.expected, { maximumFractionDigits: 4 })}</td><td>{formatNumber(1 + row.deviation / 100, { maximumFractionDigits: 2 })}×</td></tr>)}</tbody></table></div>
@@ -122,14 +121,13 @@ export default function FavoritesAnalyticsDashboard({ fills }: { fills: Readonly
   const coverage = stats.dimensions.bst.coveredChoices;
   return <div data-favorites-analytics data-testid="favorites-analytics" data-favorite-population={stats.populationSize} className="h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
     <div className="max-w-6xl md:max-w-2xl mx-auto p-4 sm:p-6">
-      <p className="text-sm text-muted-foreground mb-5">{t('favorites.analytics.description')}</p>
       {!stats.populationSize && <p className="text-sm text-muted-foreground mb-5">{t('favorites.analytics.empty')}</p>}
       <div className="space-y-4 sm:space-y-6 md:space-y-8 min-w-0">
         <Distribution dimension="type" stats={stats} />
         <Distribution dimension="color" stats={stats} />
         <Distribution dimension="shape" stats={stats} />
         <Distribution dimension="evolution" stats={stats} />
-        <Card dimension="bst" covered={coverage} excluded={stats.dimensions.bst.excludedChoices} title={t('stats.bst.title')} subtitle={t('favorites.stats.coverage', { count: coverage, total: stats.populationSize })}>
+        <Card dimension="bst" covered={coverage} excluded={stats.dimensions.bst.excludedChoices} title={t('stats.bst.title')}>
           {coverage ? <>
             <p className={`${TEXT} text-muted-foreground mb-3`}>{t('favorites.stats.means', { yours: formatNumber(stats.bst.yoursAvg, { maximumFractionDigits: 1 }), expected: formatNumber(stats.bst.nationalAvg, { maximumFractionDigits: 1 }) })}</p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 mb-2">

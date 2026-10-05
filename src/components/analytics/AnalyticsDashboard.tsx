@@ -621,11 +621,9 @@ export function AnalyticsDashboard() {
             </div>
             <div className="h-[3px] bg-primary" />
             <div className="py-2 md:py-4">
-            <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3 min-h-[4.125rem] md:min-h-[2.75rem]">
-              {typeView === 'distribution'
-                ? t('analytics.type.descDistribution')
-                : t('analytics.type.descMatchup')}
-            </p>
+            {typeView === 'matchup' && <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3">
+              {t('analytics.type.descMatchup')}
+            </p>}
             <div className="px-6">
             {typeView === 'distribution' ? (
               <ButterflyChart
@@ -674,9 +672,6 @@ export function AnalyticsDashboard() {
         {/* Generation Origin */}
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.gen.heading')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('analytics.gen.desc')}
-          </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
               data={sortedGenChartData}
@@ -695,9 +690,6 @@ export function AnalyticsDashboard() {
         {/* Body Shape Distribution */}
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.shape.heading')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('analytics.shape.desc')}
-          </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
               data={sortedShapeChartData}

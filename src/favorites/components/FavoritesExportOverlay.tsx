@@ -139,7 +139,6 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
             {t('viewSettings.showStats')}
           </span>
         </label>}
-        <p className="text-xs text-muted-foreground">{t('favorites.completion.label', snapshot.completion)}</p>
         {error && <div role="alert" className="space-y-2">
           <p className="text-sm text-destructive">{t('favorites.export.error')}</p>
           <Button variant="outline" onClick={() => { setErrorKeys({}); setAttempt(value => value + 1); }}>{t('favorites.export.retry')}</Button>
