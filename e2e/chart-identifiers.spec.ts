@@ -124,11 +124,12 @@ test('native localized badge ink stays within its painted pill @viewport', async
     await toggleStats(page, 'picker');
     const detailed = await nativeImage(page, 'picker');
     const paint = await page.evaluate(({ mainWidth, outputWidth }) => {
-      type Bounds = { width:number; left:number;right:number;top:number;bottom:number; text?:string };
-      const target = window as unknown as { chartBadges:Bounds[]; chartBadgeTexts:Bounds[] };
+      type Bounds = { width:number; left:number;right:number;top:number;bottom:number; text?:string; fill?:string; color?:string };
+      const target = window as unknown as { chartBadges:Bounds[]; chartBadgeTexts:Bounds[]; chartShapeGlyphs:Bounds[] };
       const badges = target.chartBadges.filter(item => item.width === outputWidth && item.left > mainWidth);
       const texts = target.chartBadgeTexts.filter(item => item.width === outputWidth && item.left > mainWidth);
-      return { badges, texts };
+      const glyphs = target.chartShapeGlyphs.filter(item => item.width === outputWidth && item.left > mainWidth);
+      return { badges, texts, glyphs };
     }, { mainWidth: plain.width, outputWidth: detailed.width });
     expect(paint.badges.length).toBeGreaterThan(30);
     expect(paint.texts.length).toBeGreaterThan(30);
@@ -136,6 +137,9 @@ test('native localized badge ink stays within its painted pill @viewport', async
       const badge = paint.badges.find(b => text.top >= b.top - .5 && text.bottom <= b.bottom + .5 && text.left >= b.left - .5 && text.right <= b.right + .5);
       expect(badge, `${locale}: ${text.text} painted outside pill`).toBeDefined();
       expect(text.right - text.left).toBeGreaterThan(2);
+      if (badge!.fill !== '#ffffff') expect(text.color, `${locale}: ${text.text} colored pill ink`).toBe('#ffffff');
+      const glyph = paint.glyphs.find(g => g.left >= badge!.left && g.right <= badge!.right && g.top >= badge!.top && g.bottom <= badge!.bottom);
+      if (glyph) expect(text.left - glyph.right, `${locale}: ${text.text} painted glyph gap`).toBeGreaterThanOrEqual(glyph.left - badge!.left - .5);
     }
     evidence.push({ locale, ...paint });
     await page.goto('/');
@@ -154,14 +158,49 @@ test('Dex type generation and shape charts share axes and pill identifiers @view
     const lines = [...svg.querySelectorAll(':scope > line')];
     if (!header || lines.length !== 2) return [];
     const badges = [...svg.querySelectorAll('rect')].filter(rect => Number(rect.getAttribute('width')) / Number(rect.getAttribute('height')) > 4.8);
-    return [{ header:header.textContent, width:svg.getBoundingClientRect().width, axes:lines.map(line => Number(line.getAttribute('x1'))), badges:badges.length, genPills:svg.querySelectorAll('svg[data-gen]').length }];
+    const parentRect=svg.getBoundingClientRect();
+    const generationBounds=[...svg.querySelectorAll('svg[data-gen]')].map(pill=>{const rect=pill.getBoundingClientRect();return {left:rect.left-parentRect.left,right:rect.right-parentRect.left,top:rect.top-parentRect.top,bottom:rect.bottom-parentRect.top};});
+    return [{ header:header.textContent, width:parentRect.width, axes:lines.map(line => Number(line.getAttribute('x1'))), badges:badges.length, genPills:generationBounds.length, generationBounds }];
   }));
   expect(evidence.map(card => card.header).sort()).toEqual(['GEN','SHAPE','TYPE']);
   for (const card of evidence) {
     expect(card.width).toBeCloseTo(evidence[0].width, 1);
     card.axes.forEach((axis,index) => expect(axis).toBeCloseTo(evidence[0].axes[index], 1));
-    if (card.header === 'GEN') expect(card.genPills).toBe(9);
+    if (card.header === 'GEN') {
+      expect(card.genPills).toBe(9);
+      for(const [index,pill] of card.generationBounds.entries()) {
+        expect(pill.right).toBeLessThan(card.axes[0]);
+        if(index) expect(pill.top).toBeGreaterThan(card.generationBounds[index-1].bottom);
+      }
+    }
     else expect(card.badges).toBeGreaterThanOrEqual(card.header === 'TYPE' ? 18 : 14);
   }
   await testInfo.attach('dex-actual-axes-and-pill-shapes', { body:JSON.stringify(evidence,null,2), contentType:'application/json' });
+});
+
+
+test('count labels stay numeric and badge whitespace keeps colored text and shapes readable @viewport', async ({ page }, testInfo) => {
+  await openPickerAnalytics(page);
+  const evidence = await page.locator('[data-favorite-chart]').evaluateAll(cards => cards.filter(card => card.getAttribute('data-favorite-chart') !== 'bst').map(card => {
+    const svg = card.querySelector('svg')!;
+    const countLabels = [...svg.querySelectorAll(':scope > g > text')].map(text => text.textContent ?? '').filter(text => !text.endsWith('x'));
+    const badgeTexts = [...svg.querySelectorAll('text[font-weight="700"]')].map(text => ({ text:text.textContent,fill:text.getAttribute('fill') }));
+    const shapeGaps = card.getAttribute('data-favorite-chart') === 'shape' ? [...svg.querySelectorAll(':scope > g')].flatMap(row => {
+      const image=row.querySelector('image'),text=row.querySelector('text[font-weight="700"]'),rect=row.querySelector('rect[rx]');
+      if(!image||!text||!rect)return [];
+      const glyph=image.getBoundingClientRect(),ink=text.getBoundingClientRect(),badge=rect.getBoundingClientRect();
+      return [{label:text.textContent,leftInset:glyph.left-badge.left,textGap:ink.left-glyph.right}];
+    }) : [];
+    const countBars=[...svg.querySelectorAll(':scope > g > rect[opacity="0.85"]')].filter(rect=>Number(rect.getAttribute('x'))===Number(svg.querySelector(':scope > line')!.getAttribute('x1'))).map(rect=>Number(rect.getAttribute('width')));
+    return { dimension:card.getAttribute('data-favorite-chart'),countLabels,badgeTexts,shapeGaps,maxCountBar:Math.max(...countBars) };
+  }));
+  for(const card of evidence) {
+    expect.soft(card.countLabels.length).toBeGreaterThan(0);
+    expect.soft(card.countLabels.filter(label => !/^\d+$/.test(label)), `${card.dimension} counts`).toEqual([]);
+    if(card.dimension==='color')expect.soft(card.badgeTexts.filter(label => label.fill !== '#ffffff'), 'white color ink').toEqual([]);
+    expect.soft(card.shapeGaps.filter(shape => shape.textGap < shape.leftInset-.5), 'shape glyph gap').toEqual([]);
+  }
+  expect(await page.locator('[data-favorite-chart=bst] svg text').allTextContents()).toEqual(expect.arrayContaining([expect.stringMatching(/%$/)]));
+  await testInfo.attach('count-and-badge-spacing', {body:JSON.stringify(evidence,null,2),contentType:'application/json'});
+  await testInfo.attach('count-and-badge-screen', {body:await page.screenshot(),contentType:'image/png'});
 });

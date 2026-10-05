@@ -4,14 +4,27 @@ import type { Page } from '@playwright/test';
 export async function observeChartPaint(page: Page) {
   await page.addInitScript(`(() => {
     if (window.chartPaintObserved) return; window.chartPaintObserved = true;
-    window.chartLines = []; window.chartCircles = []; window.chartBadges = []; window.chartBadgeTexts = [];
+    window.chartLines = []; window.chartCircles = []; window.chartBadges = []; window.chartBadgeTexts = []; window.chartShapeGlyphs = [];
     const paths = new WeakMap();
     const proto = CanvasRenderingContext2D.prototype;
+    const drawImage=proto.drawImage;
+    proto.drawImage=function(image,...args) {
+      if(image instanceof HTMLImageElement && image.src.includes('/shapes/') && args.length===4) {
+        const cv=document.createElement('canvas');cv.width=image.naturalWidth;cv.height=image.naturalHeight;
+        const c=cv.getContext('2d');c.drawImage(image,0,0);const px=c.getImageData(0,0,cv.width,cv.height).data;
+        let left=cv.width,right=0,top=cv.height,bottom=0;
+        for(let y=0;y<cv.height;y++)for(let x=0;x<cv.width;x++)if(px[(y*cv.width+x)*4+3]>0){left=Math.min(left,x);right=Math.max(right,x+1);top=Math.min(top,y);bottom=Math.max(bottom,y+1);}
+        const [x,y,w,h]=args,matrix=this.getTransform();
+        const a=new DOMPoint(x+w*left/cv.width,y+h*top/cv.height).matrixTransform(matrix),b=new DOMPoint(x+w*right/cv.width,y+h*bottom/cv.height).matrixTransform(matrix);
+        window.chartShapeGlyphs.push({width:this.canvas.width,left:a.x,right:b.x,top:a.y,bottom:b.y});
+      }
+      return drawImage.call(this,image,...args);
+    };
     const round = proto.roundRect, text = proto.fillText;
     proto.roundRect = function(x,y,w,h,radii) {
-      if (w / h > 4.8 && w / h < 5.3) {
+      if (this.globalAlpha === 1 && w / h > 4.8 && w / h < 5.3) {
         const matrix=this.getTransform(), a=new DOMPoint(x,y).matrixTransform(matrix), b=new DOMPoint(x+w,y+h).matrixTransform(matrix);
-        window.chartBadges.push({width:this.canvas.width,left:a.x,top:a.y,right:b.x,bottom:b.y});
+        window.chartBadges.push({fill:String(this.fillStyle),width:this.canvas.width,left:a.x,top:a.y,right:b.x,bottom:b.y});
       }
       return round.call(this,x,y,w,h,radii);
     };
@@ -20,7 +33,7 @@ export async function observeChartPaint(page: Page) {
         const m=this.measureText(value), matrix=this.getTransform();
         const a=new DOMPoint(x-m.actualBoundingBoxLeft,y-m.actualBoundingBoxAscent).matrixTransform(matrix);
         const b=new DOMPoint(x+m.actualBoundingBoxRight,y+m.actualBoundingBoxDescent).matrixTransform(matrix);
-        window.chartBadgeTexts.push({text:value,width:this.canvas.width,left:a.x,top:a.y,right:b.x,bottom:b.y});
+        window.chartBadgeTexts.push({text:value,color:String(this.fillStyle),width:this.canvas.width,left:a.x,top:a.y,right:b.x,bottom:b.y});
       }
       return maxWidth===undefined?text.call(this,value,x,y):text.call(this,value,x,y,maxWidth);
     };
