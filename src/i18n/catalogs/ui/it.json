@@ -71,5 +71,6 @@
   "favorites.origins.close": "Chiudi origini",
   "home.intro": "Crea un Pokédex regionale personalizzato, squadre di Capipalestra e schede Allenatore, oppure scegli i tuoi Pokémon preferiti per tipo e generazione. Salva e condividi le tue creazioni in PNG.",
   "favorites.typeRepair.message": "I tipi corretti delle forme riguardano {count} scelte salvate. Restano nella griglia ma sono escluse dalle esportazioni. Controlla le celle per sostituirle.",
-  "favorites.typeRepair.review": "Controlla"
+  "favorites.typeRepair.review": "Controlla",
+  "viewSettings.showStats": "Mostra statistiche dettagliate"
 }

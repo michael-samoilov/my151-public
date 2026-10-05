@@ -71,5 +71,6 @@
   "favorites.origins.close": "Ursprünge schließen",
   "home.intro": "Erstelle einen eigenen regionalen Pokédex, gestalte Arenaleiter-Teams und Trainerkarten oder wähle deine Lieblings-Pokémon nach Typ und Generation. Speichere und teile deine Kreationen als PNGs.",
   "favorites.typeRepair.message": "Korrigierte Formen-Typen betreffen {count} gespeicherte Auswahlen. Sie bleiben im Raster, fehlen aber im Export. Prüfe die Felder und wähle Ersatz.",
-  "favorites.typeRepair.review": "Prüfen"
+  "favorites.typeRepair.review": "Prüfen",
+  "viewSettings.showStats": "Detaillierte Statistiken anzeigen"
 }

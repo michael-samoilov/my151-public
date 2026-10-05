@@ -71,5 +71,6 @@
   "favorites.origins.close": "Cerrar orígenes",
   "home.intro": "Crea una Pokédex regional personalizada, equipos de líderes de gimnasio y tarjetas de entrenador, o elige tus Pokémon favoritos por tipo y generación. Guarda y comparte tus creaciones como PNG.",
   "favorites.typeRepair.message": "Los tipos corregidos afectan a {count} elecciones guardadas. Se conservan en la cuadrícula, pero no se exportan. Revisa sus casillas para sustituirlas.",
-  "favorites.typeRepair.review": "Revisar"
+  "favorites.typeRepair.review": "Revisar",
+  "viewSettings.showStats": "Mostrar estadísticas detalladas"
 }

@@ -71,5 +71,6 @@
   "favorites.origins.close": "Fermer les origines",
   "home.intro": "Créez un Pokédex régional personnalisé, des équipes de Champions et des cartes de Dresseur, ou choisissez vos Pokémon préférés par type et génération. Enregistrez et partagez vos créations en PNG.",
   "favorites.typeRepair.message": "Les types corrigés des formes affectent {count} choix enregistrés. Ils restent dans la grille, mais sont exclus des exports. Vérifiez leurs cases pour les remplacer.",
-  "favorites.typeRepair.review": "Vérifier"
+  "favorites.typeRepair.review": "Vérifier",
+  "viewSettings.showStats": "Afficher les statistiques détaillées"
 }
