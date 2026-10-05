@@ -4,6 +4,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { useNamesVersion, useT } from '@/i18n';
 import { labelOf } from './spriteLabel';
 import { cn } from '@/lib/utils';
+import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import { coordinateLabel } from './coordinatePresentation';
 import type { Pokemon } from '@/types/pokemon';
 import {
@@ -33,7 +34,7 @@ import { NameTooltip } from './NameTooltip';
 // capped header's size, and `?genbadges=1` puts a badge under each
 // generation disc. The default keeps the badge's 5:1 shape at 90% of the
 // column, and the header row grows to hold it.
-const PREVIEW = new URLSearchParams(typeof location !== 'undefined' ? location.search : '');
+const PREVIEW = new URLSearchParams(!PRODUCTION_DEPLOY && typeof location !== 'undefined' ? location.search : '');
 const BADGE_ZOOM = PREVIEW.get('badges') === 'wide' ? 'wide' : PREVIEW.get('badges') === 'capped' ? 'capped' : 'scale';
 const GEN_ROW_BADGES = PREVIEW.get('genbadges') === '1';
 // A header mark over its badge: the mark keeps its size, and the badge takes
