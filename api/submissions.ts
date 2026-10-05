@@ -1,3 +1,4 @@
+import {FAVORITE_CLIENTS_KEY} from './_favoriteRecord.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { redis, requireAdmin, firstQueryValue, CLIENTS_KEY } from './_shared.js';
 import { EXPORT_SURVEY_SKIPS_KEY } from './_events.js';
@@ -49,13 +50,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const now = Date.now();
     const dayKeys = funnelDayKeys(range, now);
-    const [clients, archived, funnel, funnelDays, leagueClients, exportSurveySkips] = await Promise.all([
+    const [clients, archived, funnel, funnelDays, leagueClients, exportSurveySkips, favoriteClients] = await Promise.all([
       redis.hgetall(CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
       redis.smembers(ARCHIVED_KEY),
       redis.hgetall('funnel') as Promise<Record<string, unknown> | null>,
       dayKeys ? redis.eval(SUM_HASHES, dayKeys, []) : null,
       redis.hgetall(LEAGUE_CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
       redis.hgetall(EXPORT_SURVEY_SKIPS_KEY) as Promise<Record<string, unknown> | null>,
+      redis.hgetall(FAVORITE_CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
     ]);
     const body = buildDashboard(
       {
@@ -64,6 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         funnel,
         funnelWindow: dayKeys ? pairsToHash(funnelDays) : null,
         leagueClients,
+        favoriteClients,
         exportSurveySkips,
       },
       { offset, limit, range },

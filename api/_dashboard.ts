@@ -1,3 +1,5 @@
+import {parseFavoriteRecord, type FavoriteRecord} from './_favoriteRecord.js';
+import {favoriteSummary, favoriteUsageFunnel, favoriteUser, type FavoriteUser} from './_favoriteAggregate.js';
 // The admin dashboard payload, computed from the raw Redis reads in
 // api/submissions.ts. It reads no Redis and no request, and it takes the
 // clock as an argument.
@@ -317,6 +319,7 @@ export interface DashboardSource {
    *  when the funnels read the all-time `funnel` hash (see funnelDayKeys). */
   funnelWindow: Record<string, unknown> | null;
   leagueClients: Record<string, unknown> | null;
+  favoriteClients?: Record<string, unknown> | null;
   exportSurveySkips: Record<string, unknown> | null;
 }
 
@@ -366,15 +369,21 @@ export function buildDashboard(
     .filter((r): r is LeagueRecord => r !== null);
   const leagueRecords = withoutArchived(allLeagueRecords, archivedSet);
 
+  const allFavoriteRecords = Object.values(source.favoriteClients ?? {}).map(parseFavoriteRecord).filter((r): r is FavoriteRecord => r !== null);
+  const favoriteRecords = withoutArchived(allFavoriteRecords, archivedSet);
+
   // For `all`, every card reads the same arrays it read before ranges existed.
   const start = rangeStart(range, now);
   const within = <T>(list: T[], keep: (r: T) => boolean): T[] => (start === null ? list : list.filter(keep));
   const active = (r: SessionRecord) => activeSince(r, start);
   const dexIn = within(records, active);
   const leagueIn = within(leagueRecords, active);
-  const crossCids = new Set([...dexIn, ...leagueIn].map((r) => bareCid(r.cid)));
+  const favoriteIn = within(favoriteRecords, active);
+  const favoriteNew = within(favoriteRecords, (r) => firstSeenSince(r, start));
+  const crossCids = new Set([...dexIn, ...leagueIn, ...favoriteIn].map((r) => bareCid(r.cid)));
   const crossDex = within(records, (r) => crossCids.has(bareCid(r.cid)));
   const crossLeague = within(leagueRecords, (r) => crossCids.has(r.cid));
+  const crossFavorite = within(favoriteRecords, (r) => crossCids.has(bareCid(r.cid)));
   const dexNew = within(records, (r) => firstSeenSince(r, start));
   const leagueNew = within(leagueRecords, (r) => firstSeenSince(r, start));
 
@@ -396,7 +405,7 @@ export function buildDashboard(
   };
   const dexFirstTs = firstTsByCid(records);
   const journeys = crossToolJourneys(firstTsByCid(crossDex), firstTsByCid(crossLeague));
-  const crossTool = buildCrossTool(crossDex, crossLeague);
+  const crossTool = buildCrossTool(crossDex, crossLeague, undefined, crossFavorite);
 
   // The league funnel, from the records: opened is a record at all (the
   // first beacon needs a seated line), then named, then exported.
@@ -565,11 +574,13 @@ export function buildDashboard(
   // one user with one set of days — not two.
   const dexAgg = aggregate(records, now, dexIn, start);
   const leagueAgg = aggregate(leagueRecords, now, leagueIn, start);
-  const merged = mergeByCid([records, leagueRecords]);
+  const favoriteAgg = aggregate(favoriteRecords, now, favoriteIn, start);
+  const merged = mergeByCid([records, leagueRecords, favoriteRecords]);
   const allAgg = aggregate(merged, now, within(merged, active), start);
-  const byTool: Record<'dex' | 'league' | 'all', Aggregates> = {
+  const byTool: Record<'dex' | 'league' | 'favorites' | 'all', Aggregates> = {
     dex: dexAgg,
     league: leagueAgg,
+    favorites: favoriteAgg,
     all: allAgg,
   };
 
@@ -682,6 +693,17 @@ export function buildDashboard(
     if (dr) dexByCid[u.cid] = stampExportSurveySkips(dr, skipMap);
   }
 
+  const favoriteUsers = [...allFavoriteRecords].sort((a,b)=>b.lastTs-a.lastTs).slice(offset,offset+limit).map(r=>favoriteUser(r,isArchived(r.cid,archivedSet)));
+  const favoriteByCid: Record<string,FavoriteUser> = {};
+  const loadedCids = new Set([...page,...leagueUsers,...favoriteUsers].map(r=>bareCid(r.cid)));
+  for (const r of allFavoriteRecords) if (loadedCids.has(bareCid(r.cid))) favoriteByCid[bareCid(r.cid)] = favoriteUser(r,isArchived(r.cid,archivedSet));
+  for (const r of favoriteUsers) {
+    const dr = dexByCidAll.get(bareCid(r.cid));
+    if (dr) dexByCid[r.cid] = stampExportSurveySkips(dr,skipMap);
+    const lr = leagueByCidAll.get(bareCid(r.cid));
+    if (lr) leagueByCid[r.cid] = {...stampExportSurveySkips(leagueUser(lr,dr?.firstTs),skipMap),archived:isArchived(lr.cid,archivedSet)};
+  }
+
   // Self-scaling qualification thresholds: median per-Pokemon count per list.
   const popularMin = tailThreshold(picksFinal);
   const droppedMin = tailThreshold(droppedCounts);
@@ -702,6 +724,11 @@ export function buildDashboard(
     funnelEvents,
     dexFunnel,
     leagueFunnel,
+    favoriteFunnel:favoriteUsageFunnel(favoriteNew),
+    favorite:favoriteSummary(favoriteIn),
+    favoriteUsers,
+    favoriteByCid,
+    totalFavoriteUsers:allFavoriteRecords.length,
     tools,
     crossTool,
     league,
