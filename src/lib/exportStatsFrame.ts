@@ -1,5 +1,5 @@
 import { BAR_H, BAR_TEXT_X, CREDIT_PX, FOOT, FRAME, TITLE_PX, TITLE_TRACK } from '@/league/export/layout';
-import { fillTracked, font } from '@/league/export/paint';
+import { fillTracked, font, trackedWidth } from '@/league/export/paint';
 import { exportCornerRadius } from './exportPngShape';
 import { drawExportCredit } from './exportCredit';
 
@@ -50,11 +50,15 @@ export async function composeStatsExport(
       [0, 0, Math.max(0, radius - FRAME), Math.max(0, radius - FRAME)]);
     ctx.fill();
     ctx.font = font(TITLE_PX, 800);
+    const rail = FRAME + BAR_TEXT_X;
+    const titleWidth = trackedWidth(ctx, title, TITLE_TRACK);
+    const titleScale = titleWidth > 0 ? Math.min(1, (panelWidth - rail * 2) / titleWidth) : 1;
+    ctx.font = font(TITLE_PX * titleScale, 800);
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    const cap = ctx.measureText('H').actualBoundingBoxAscent || TITLE_PX * .72;
-    fillTracked(ctx, title, FRAME + BAR_TEXT_X, BAR_H / 2 + cap / 2, TITLE_TRACK);
+    const cap = ctx.measureText('H').actualBoundingBoxAscent || TITLE_PX * titleScale * .72;
+    fillTracked(ctx, title, rail, BAR_H / 2 + cap / 2, TITLE_TRACK * titleScale);
     ctx.save();
     ctx.translate(FRAME + PAD, BAR_H + PAD);
     ctx.scale(scale, scale);
