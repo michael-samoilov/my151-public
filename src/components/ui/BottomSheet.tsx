@@ -393,7 +393,8 @@ export function BottomSheet({
       className="pointer-events-none fixed inset-x-0 z-[110] flex flex-col justify-end md:hidden"
       onFocusCapture={(e) => {
         const t = e.target;
-        if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+        if (t instanceof HTMLTextAreaElement
+          || (t instanceof HTMLInputElement && t.type !== 'checkbox' && t.type !== 'radio')) {
           collapsePending.current = false;
           setTextFocus(true);
         }
