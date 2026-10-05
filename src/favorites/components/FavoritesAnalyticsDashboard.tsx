@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ButterflyChart, type ButterflyRow } from '@/components/analytics/ButterflyChart';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
-import { shapeChartIcon } from '@/components/shared/ShapeIcon';
+import { colorChartIcon, shapeBadgeChartIcon } from '@/components/shared/attributeBadgeSvg';
+import { typeChartIcon } from '@/components/shared/typeBadgeSvg';
 import { COLOR_SWATCHES } from '@/data/classifications';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeIconPath } from '@/data/type-ids';
 import { colorLabel, formatNumber, localeUppercase, shapeLabel, typeLabel, useT } from '@/i18n';
 import { MAX_LABEL_STRETCH, measureLabelWidth } from '@/lib/sectionOutlines';
 import type { ColorName, ShapeName, TypeName } from '@/types/pokemon';
@@ -14,6 +14,14 @@ import { pickerConditionalStats, type PickerConditionalStats } from '../stats/pi
 type Dimension = 'type' | 'color' | 'shape' | 'evolution';
 type Sort = 'count' | 'deviation' | 'label';
 const TEXT = 'text-xs';
+let roleMeasureCanvas: HTMLCanvasElement | undefined;
+function roleLabelWidth(label: string): number {
+  roleMeasureCanvas ??= document.createElement('canvas');
+  const ctx = roleMeasureCanvas.getContext('2d');
+  if (!ctx) return label.length * 7;
+  ctx.font = '400 12px "Inter Variable", system-ui, sans-serif';
+  return ctx.measureText(label).width;
+}
 
 /** Match the Dex detailed-stats title without changing the shared Dex panel. */
 function ChartTitle({ text }: { text: string }) {
@@ -45,7 +53,7 @@ function Card({ dimension, title, covered, excluded, children }: { dimension: st
 
 function RoleGlyph({ role, x, y, size }: { role: string; x: number; y: number; size: number }) {
   const cy = y + size / 2;
-  if (role === 'standalone') return <circle cx={x + size / 2} cy={cy} r={size * .32} fill="var(--color-primary)" stroke="var(--color-muted-foreground)" strokeWidth={1} />;
+  if (role === 'standalone') return <circle cx={x + size / 2} cy={cy} r={size * .12} fill="var(--color-primary)" stroke="var(--color-muted-foreground)" strokeWidth={.7} />;
   const filled = role === 'basic' ? 1 : role === 'intermediate' ? 2 : 3;
   return <g>{[0, 1, 2].map(index => <circle key={index} cx={x + size * (.15 + index * .35)} cy={cy} r={size * .12} fill={index < filled ? 'var(--color-primary)' : 'none'} stroke="var(--color-muted-foreground)" strokeWidth={.7} />)}</g>;
 }
@@ -62,29 +70,25 @@ function Distribution({ dimension, stats }: { dimension: Dimension; stats: Picke
     const name = label(row.key);
     let icon: ButterflyRow['icon'];
     if (dimension === 'shape') {
-      const render = shapeChartIcon(row.key as ShapeName);
+      const render = shapeBadgeChartIcon(row.key as ShapeName);
       icon = (x, y, size, width) => <g><title>{name}</title>{render(x, y, size, width)}</g>;
     } else if (dimension === 'type') {
-      icon = (x, y, size, width) => <g><title>{name}</title><image href={typeIconPath(row.key as TypeName)} x={x + (width - size) / 2} y={y} width={size} height={size} /></g>;
+      icon = typeChartIcon(row.key as TypeName);
+    } else if (dimension === 'color') {
+      icon = colorChartIcon(row.key as ColorName);
     } else {
-      icon = (x, y, size) => <g><title>{name}</title>
-        {dimension === 'color' ? <circle cx={x + size / 2} cy={y + size / 2} r={size / 2 - .5} fill={COLOR_SWATCHES[row.key as ColorName]} stroke="var(--color-muted-foreground)" strokeWidth={.7} /> : <RoleGlyph role={row.key} x={x} y={y} size={size} />}
-        <text x={x + size + 5} y={y + size / 2} dominantBaseline="middle" className={TEXT} fill="currentColor">{name}</text>
+      icon = (x, y, size, width) => <g><title>{name}</title>
+        <RoleGlyph role={row.key} x={x} y={y} size={size} />
+        <text x={x + size + 5} y={y + size / 2} dominantBaseline="middle" className={TEXT} fill="currentColor" textLength={roleLabelWidth(name) > width - size - 8 ? width - size - 8 : undefined} lengthAdjust="spacingAndGlyphs">{name}</text>
       </g>;
     }
     return [{ key: row.key, label: name, count: row.count, expected: row.expected, deviation: row.deviation, color: dimension === 'type' ? TYPE_COLORS[row.key as TypeName] : dimension === 'color' ? COLOR_SWATCHES[row.key as ColorName] : '#dc2626', icon }];
   }).sort((a, b) => sort === 'label' ? a.label.localeCompare(b.label) : (sort === 'count' ? b.count - a.count : b.deviation - a.deviation) || a.label.localeCompare(b.label));
   const titles = { type: t('stats.type.title'), shape: t('favorites.stats.shape'), color: t('favorites.stats.color'), evolution: t('favorites.stats.evolution') };
-  const textIcons = dimension === 'color' || dimension === 'evolution';
-  const labelWidth = textIcons ? Math.max(0, ...rows.map(row => measureLabelWidth(row.label, 12))) : 0;
   const labelHeader = dimension === 'type' ? t('chart.header.type') : dimension === 'shape' ? t('chart.header.shape') : undefined;
-  const iconScale = dimension === 'shape' ? 1.4 : 1;
-  // The identifier column also contains its centered header; reserve space for both.
-  const iconColAspect = textIcons ? 1 + (labelWidth + 5) / 14
-    : Math.max(dimension === 'shape' ? 1.65 : 1, (measureLabelWidth(labelHeader ?? '', 12) + 12) / (14 * iconScale));
   return <Card dimension={dimension} covered={data.coveredChoices} excluded={data.excludedChoices} title={titles[dimension]}>
     {!data.coveredChoices ? <p className="text-sm text-muted-foreground py-4">{t('favorites.stats.empty')}</p> : <>
-      <ButterflyChart data={rows} rowHeight={22} hideLabelText iconColAspect={iconColAspect} iconScale={iconScale} countDenominator={data.coveredChoices} sortBy={sort} onSortChange={setSort} labelHeader={labelHeader} textClass={TEXT} />
+      <ButterflyChart data={rows} rowHeight={22} hideLabelText alignBaselines iconFillsRow countDenominator={data.coveredChoices} sortBy={sort} onSortChange={setSort} labelHeader={labelHeader} textClass={TEXT} />
       <div className="sr-only" data-audit-clip="intended"><table><caption>{titles[dimension]}</caption><thead><tr><th>{titles[dimension]}</th><th>{t('chart.header.count')}</th><th>{t('favorites.stats.options')}</th><th>{t('chart.header.overIndexed2')}</th></tr></thead><tbody>{rows.map(row => <tr key={row.key} data-favorite-chart-row={row.key}><th>{row.label}</th><td>{formatNumber(row.count)}</td><td>{formatNumber(row.expected, { maximumFractionDigits: 4 })}</td><td>{formatNumber(1 + row.deviation / 100, { maximumFractionDigits: 2 })}×</td></tr>)}</tbody></table></div>
     </>}
   </Card>;

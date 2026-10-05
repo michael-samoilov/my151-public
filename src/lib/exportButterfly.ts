@@ -1,5 +1,6 @@
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { MAX_LABEL_STRETCH } from '@/lib/sectionOutlines';
+import { butterflyColumns } from './butterflyLayout';
 const MUTED = '#737373';
 const CHART_TEXT = 10;
 function font(weight: number, size: number) { return `${weight} ${size}px 'Inter Variable', system-ui, sans-serif`; }
@@ -49,20 +50,21 @@ export function drawExportButterfly(
   heightScale: number,
   labelHeader: string,
   draw: boolean,
-  options: { contentWidth?: number; iconColAspect?: number } = {},
+  options: { contentWidth?: number; iconColAspect?: number; alignBaselines?: boolean } = {},
 ): number {
   const n = rows.length;
   const iconSize = 14;
-  const rowHeight = Math.max(rowHeightBase * heightScale, iconSize + 4);
+  const columns = butterflyColumns(options.contentWidth ?? 280);
+  const rowHeight = Math.max(rowHeightBase * heightScale, options.alignBaselines ? columns.identifierWidth / 5 + 4 : iconSize + 4);
   const gap = 6;
   const gutter = 8;
   const topOffset = 28;
   const headerBaseline = topOffset - 8;
-  const iconBoxH = rowHeight;
+  const iconBoxH = options.alignBaselines ? columns.identifierWidth / 5 : rowHeight;
   const iconColAspect = options.iconColAspect ?? 128 / 40;
-  const iconColW = iconBoxH * iconColAspect;
+  const iconColW = options.alignBaselines ? columns.identifierWidth : iconBoxH * iconColAspect;
   const iconStart = 0;
-  const labelColEnd = iconStart + iconColW + gap;
+  const labelColEnd = options.alignBaselines ? columns.countStart : iconStart + iconColW + gap;
   const countLabelPad = 28;
   const countLeftPad = 0;
   const countRightPad = countLabelPad;
@@ -105,6 +107,7 @@ export function drawExportButterfly(
     if (dl / dTotal < minSideFrac) dl = dr * minSideFrac / (1 - minSideFrac);
     if (dr / dTotal < minSideFrac) dr = dl * minSideFrac / (1 - minSideFrac);
   }
+  if (options.alignBaselines) dl = dr = Math.max(dl, dr);
   const devLeft = -dl;
   const devRight = dr;
   const devScale = scaleLinear().domain([devLeft, devRight]).range([barPad, chart2Width - barPad]);

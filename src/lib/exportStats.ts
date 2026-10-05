@@ -1,5 +1,6 @@
 import { scaleLinear } from 'd3-scale';
-import { GEN_STOPS } from '@/components/shared/GenBadge';
+import { drawGenerationBadge } from './drawAttributeBadge';
+import type { GenNumber } from '@/favorites/model/cells';
 import { drawExportButterfly as butterfly, drawExportStatsTitle, type ButterflyRowInput, type IconDrawer } from './exportButterfly';
 import { typeGlyphPath } from '@/data/type-ids';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
@@ -146,29 +147,11 @@ export function drawExportHistogram(
   return height;
 }
 
-/** Build the per-row icon drawer for a generation badge (gradient disc + number). */
+/** A generation uses the same pill geometry as its neighboring type identifiers. */
 function genIcon(gen: number): IconDrawer {
-  const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
   return (ctx, x, y, w, h) => {
-    // Function icons render square (size = row height), centred in the column.
-    const size = h;
-    const cx = x + (w - size) / 2;
-    const r = size / 2;
-    const grad = ctx.createLinearGradient(cx, y, cx + size, y + size);
-    for (const s of stops) grad.addColorStop(Math.min(1, Math.max(0, parseFloat(s.offset) / 100)), s.color);
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(cx + r, y + r, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.font = font(800, size * 0.55);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-    ctx.strokeText(`${gen}`, cx + r, y + r + size * 0.02);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`${gen}`, cx + r, y + r + size * 0.02);
-    ctx.textAlign = 'left';
+    const height = Math.min(h, w / TYPE_BADGE_ASPECT);
+    drawGenerationBadge(ctx, gen as GenNumber, x + (w - height * TYPE_BADGE_ASPECT) / 2, y + (h - height) / 2, height);
   };
 }
 
@@ -223,14 +206,14 @@ function renderPanel(
     {
       title: t('stats.type.title'),
       subtitle: '',
-      chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, 'TYPE', dr),
-      drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, 'TYPE', true),
+      chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, 'TYPE', dr, { alignBaselines: true }),
+      drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, 'TYPE', true, { alignBaselines: true }),
     },
     {
       title: t('stats.gen.title'),
       subtitle: '',
-      chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, 'GEN', dr),
-      drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, 'GEN', true),
+      chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, 'GEN', dr, { alignBaselines: true }),
+      drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, 'GEN', true, { alignBaselines: true }),
     },
     {
       title: t('stats.bst.title'),

@@ -9,7 +9,8 @@ import { ButterflyChart } from '@/components/analytics/ButterflyChart';
 import { rowKey, type ButterflyRow } from '@/components/analytics/butterflyRow';
 import { t } from '@/i18n';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
-import { GEN_STOPS } from '@/components/shared/GenBadge';
+import { generationChartIcon } from '@/components/shared/attributeBadgeSvg';
+import type { GenNumber } from '@/favorites/model/cells';
 import { typeChartIcon } from '@/components/shared/typeBadgeSvg';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import type { TypeName } from '@/types/pokemon';
@@ -173,37 +174,13 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
     () =>
       analytics.generationDeviation.map((d, i) => {
         const gen = d.generation;
-        const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
         return {
           key: String(gen),
           label: `Gen ${gen}`,
           count: d.count,
           deviation: d.deviation,
           color: GEN_COLORS[i % GEN_COLORS.length],
-          icon: (x: number, y: number, size: number) => {
-            const gradId = `stats-gen-grad-${gen}`;
-            const r = size / 2;
-            return (
-              <React.Fragment key={`stats-gen-${gen}`}>
-                <defs>
-                  <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-                    {stops.map((s, si) => (
-                      <stop key={si} offset={s.offset} stopColor={s.color} />
-                    ))}
-                  </linearGradient>
-                </defs>
-                <circle cx={x + r} cy={y + r} r={r} fill={`url(#${gradId})`} />
-                <text
-                  x={x + r} y={y + r} textAnchor="middle" dominantBaseline="central"
-                  fill="white" fontSize={size * 0.55} fontWeight="800"
-                  fontFamily="system-ui, sans-serif"
-                  paintOrder="stroke" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5"
-                >
-                  {gen}
-                </text>
-              </React.Fragment>
-            );
-          },
+          icon: generationChartIcon(gen as GenNumber),
         };
       }),
     [analytics.generationDeviation],
@@ -217,11 +194,12 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       <Card variant={variant} title={t('stats.type.title')}>
-        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader={t('chart.header.type')} iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows textClass={STATS_TEXT} />
+        <ButterflyChart alignBaselines data={typeRows} rowHeight={16} hideLabelText labelHeader={t('chart.header.type')} iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows textClass={STATS_TEXT} />
       </Card>
 
       <Card variant={variant} title={t('stats.gen.title')}>
         <ButterflyChart
+          alignBaselines
           data={[...genRows].sort((a, b) => Number(rowKey(a)) - Number(rowKey(b)))}
           rowHeight={24}
           hideLabelText

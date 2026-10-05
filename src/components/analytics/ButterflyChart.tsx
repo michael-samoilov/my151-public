@@ -3,10 +3,13 @@ import { scaleBand, scaleLinear } from 'd3-scale';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 import { rowKey, type ButterflyRow } from './butterflyRow';
+import { butterflyColumns } from '@/lib/butterflyLayout';
 
 export type { ButterflyRow };
 
 interface ButterflyChartProps {
+  /** Use a fixed identifier rail and centered index reference across sibling charts. */
+  alignBaselines?: boolean;
   data: ButterflyRow[];
   /** Row height in px. Default 22 */
   rowHeight?: number;
@@ -77,7 +80,7 @@ interface ButterflyChartProps {
   textClass?: string;
 }
 
-function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
+function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -130,19 +133,20 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
   const titleHeight = 28;
   const topOffset = titleHeight;
   const headerBaseline = topOffset - 8;
-  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale * heightScale, iconSize + 4);
+  const columns = butterflyColumns(width, chartScale, hideDeviation, !!scoreMode);
+  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale * heightScale, alignBaselines ? columns.identifierWidth / 5 + 4 : iconSize + 4);
   const chartHeight = topOffset + data.length * rowHeight;
 
   // Icon box height: a fixed ~14px square by default, or the full row height for
   // tall identifiers (type-name badges) so the name reads at roughly bar height.
-  const iconBoxH = hasIcons ? (iconFillsRow ? rowHeight : iconSize) : 0;
+  const iconBoxH = hasIcons ? (alignBaselines ? columns.identifierWidth / 5 : iconFillsRow ? rowHeight : iconSize) : 0;
   // Reserved icon-column width. Square by default; wider for type-name badges etc.
-  const iconColW = iconBoxH * iconColAspect;
+  const iconColW = alignBaselines ? columns.identifierWidth : iconBoxH * iconColAspect;
 
   const iconStart = hideLabelText ? 0 : labelWidth + iconGap;
 
   // Column A: labels + icons (fixed width)
-  const labelColEnd = iconStart + iconColW + gap;
+  const labelColEnd = alignBaselines ? columns.countStart : iconStart + iconColW + gap;
 
   // Determine directionality BEFORE width distribution
   const countHasNeg = scoreMode ? data.some(d => d.count < 0) : false;
@@ -165,8 +169,9 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
     chart2Width = available - chart1Width;
   }
 
+  if (alignBaselines) { chart1Width = columns.countWidth; chart2Width = columns.indexWidth; }
   const countSectionStart = labelColEnd;
-  const devSectionStart = labelColEnd + chart1Width + gutter;
+  const devSectionStart = alignBaselines ? columns.indexStart : labelColEnd + chart1Width + gutter;
 
   // Chart 1 (count/score): directionality-aware margins. Reserves room for
   // value labels at bar ends — "-0.54" (~28px) in score mode, "25 (16%)"
@@ -201,6 +206,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
   const maxPosDev = scoreMode ? Math.max(...data.map(d => d.deviation > 0 ? d.deviation : 0), 0) : 0;
 
   const countZeroX = (() => {
+    if (alignBaselines && scoreMode && countIsBidirectional) return countLeftPad + countBarArea / 2;
     if (!scoreMode) return countLeftPad;
     if (countIsBidirectional) {
       // Zero's proportional position follows this chart's own asymmetry
@@ -212,7 +218,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
   })();
   // For bidirectional: uniform scale across the full bar area
   const countTotalExtent = countIsBidirectional
-    ? (rawMaxNeg + rawMaxPos) || 0.01
+    ? (alignBaselines ? Math.max(rawMaxNeg, rawMaxPos) * 2 : rawMaxNeg + rawMaxPos) || 0.01
     : maxCount;
   const countScale = scaleLinear().domain([0, countTotalExtent]).range([0, countBarArea]);
 
@@ -268,6 +274,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
     if (dl / dTotal < minSideFrac) dl = dr * minSideFrac / (1 - minSideFrac);
     if (dr / dTotal < minSideFrac) dr = dl * minSideFrac / (1 - minSideFrac);
   }
+  if (alignBaselines) dl = dr = Math.max(dl, dr);
   const devLeft = -dl;
   const devRight_ = dr;
 
@@ -283,7 +290,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
   return (
     <div ref={containerRef} className="w-full">
       {width > 0 && (
-        <svg width={width} height={chartHeight} className="overflow-visible">
+        <svg width={width} height={chartHeight} className="overflow-visible" data-count-baseline={countSectionStart + countZeroX} data-index-baseline={hideDeviation ? undefined : devSectionStart + zeroX}>
           {/* Label column header (e.g. "TYPE", "GEN"). Sortable only when
               `labelSortable` is true — e.g. the gen chart uses natural-order
               sort; the type chart does not. With the label text hidden the header
