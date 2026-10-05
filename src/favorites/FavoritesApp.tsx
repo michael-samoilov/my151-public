@@ -25,7 +25,7 @@ import type { PackMove } from './model/packing';
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
 const FavoritesExportOverlay = lazy(() => import('./components/FavoritesExportOverlay'));
 
-type Selection = { type: TypeAxisId; gen: GenAxisId };
+type Selection = { type: TypeAxisId; gen: GenAxisId; keyboard?: boolean };
 
 function savedShowIcons(): boolean {
   try { return window.localStorage.getItem(ICONS_STORAGE_KEY) !== '0'; }
@@ -78,16 +78,17 @@ export function FavoritesApp() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  function open(type: TypeAxisId, gen: GenAxisId) {
+  function open(type: TypeAxisId, gen: GenAxisId, keyboard = false) {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
-    setSel({ type, gen });
+    setSel({ type, gen, keyboard });
   }
 
   // Desktop shows the picker inside the grid, next to its cell. Mobile shows
   // it as a bottom sheet.
   const picker = sel ? (
     <PickerSheet
+      autoFocus={sel.keyboard}
       type={sel.type}
       gen={sel.gen}
       fills={fills}
@@ -95,7 +96,12 @@ export function FavoritesApp() {
       showIcons={showIcons}
       sortOrder={sortOrder}
       onToggleIcons={() => setShowIcons((value) => !value)}
-      onClose={() => setSel(null)}
+      onClose={() => {
+        if (sel.keyboard) requestAnimationFrame(() => {
+          document.querySelector<HTMLButtonElement>(`[data-testid="favorites-cell-${sel.type}-${sel.gen}"]`)?.focus({ preventScroll: true });
+        });
+        setSel(null);
+      }}
       onPlace={(id) => place(sel.type, sel.gen, id)}
       onApplyPack={(path: PackMove[]) => {
         if (typeof sel.gen === 'number') applyPack(sel.gen, path);

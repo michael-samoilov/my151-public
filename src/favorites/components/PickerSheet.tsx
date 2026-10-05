@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
@@ -38,6 +38,7 @@ const PACKING_UI_ENABLED = !PRODUCTION_DEPLOY && typeof window !== 'undefined'
 export function PickerSheet({
   type,
   gen,
+  autoFocus = false,
   fills,
   currentId,
   showIcons,
@@ -50,6 +51,7 @@ export function PickerSheet({
 }: {
   type: TypeAxisId;
   gen: GenAxisId;
+  autoFocus?: boolean;
   fills: Record<string, number>;
   currentId?: number;
   showIcons: boolean;
@@ -60,6 +62,16 @@ export function PickerSheet({
   onApplyPack: (path: PackMove[]) => void;
   onClear: () => void;
 }) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!autoFocus) return;
+    const frame = requestAnimationFrame(() => {
+      const first = bodyRef.current?.querySelector<HTMLButtonElement>('button[data-testid^="favorites-pick-"]')
+        ?? bodyRef.current?.querySelector<HTMLButtonElement>('button');
+      first?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [autoFocus, type, gen]);
   const t = useT();
   const desktop = useIsDesktop();
   const viewportPx = useLayoutViewportCssPx();
@@ -144,7 +156,7 @@ export function PickerSheet({
       heading={t('favorites.packing.heading')}
     />
   ) : (
-    <div className={mons.length === 0 && currentId == null ? 'pb-4 pt-3' : 'pb-4'} style={{ paddingTop: mons.length > 0 && currentId != null ? 4 : undefined, paddingLeft: inset, paddingRight: inset }}>
+    <div ref={bodyRef} id="favorites-selector" className={mons.length === 0 && currentId == null ? 'pb-4 pt-3' : 'pb-4'} style={{ paddingTop: mons.length > 0 && currentId != null ? 4 : undefined, paddingLeft: inset, paddingRight: inset }}>
       {mons.length === 0 && currentId == null ? (
         <PickerEmptyState title={t('favorites.empty.title')} hint={emptyHint} backLabel={t('favorites.empty.back')} onBack={onClose} />
       ) : (

@@ -4,6 +4,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { useNamesVersion, useT } from '@/i18n';
 import { labelOf } from './spriteLabel';
 import { cn } from '@/lib/utils';
+import { coordinateLabel } from './coordinatePresentation';
 import type { Pokemon } from '@/types/pokemon';
 import {
   GEN_AXIS,
@@ -101,7 +102,7 @@ export function FavoritesGrid({
   fills: Record<string, number>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
-  onSelect: (type: TypeAxisId, gen: GenAxisId) => void;
+  onSelect: (type: TypeAxisId, gen: GenAxisId, keyboard?: boolean) => void;
   desktop: boolean;
   /** The desktop selector pane. It scrolls with the grid, under the headers. */
   pane?: ReactNode;
@@ -544,7 +545,7 @@ function GenRow({
   fills: Record<string, number>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
-  onSelect: (type: TypeAxisId, gen: GenAxisId) => void;
+  onSelect: (type: TypeAxisId, gen: GenAxisId, keyboard?: boolean) => void;
   desktop: boolean;
 }) {
   const banded = gen !== 'favorite' && GEN_AXIS.indexOf(gen) % 2 === 1;
@@ -657,7 +658,7 @@ function BodyCell({
   fills: Record<string, number>;
   resolve: (id: number) => PickerMon | undefined;
   selected: { type: TypeAxisId; gen: GenAxisId } | null;
-  onSelect: (type: TypeAxisId, gen: GenAxisId) => void;
+  onSelect: (type: TypeAxisId, gen: GenAxisId, keyboard?: boolean) => void;
   desktop: boolean;
 }) {
   const kind = kindFor(type, gen);
@@ -673,7 +674,11 @@ function BodyCell({
     <button
       type="button"
       disabled={locked}
-      onClick={() => onSelect(type, gen)}
+      onClick={(event) => onSelect(type, gen, event.detail === 0)}
+      aria-label={`${coordinateLabel(type, gen)}${mon ? ` · ${labelOf(mon)}` : ''}`}
+      aria-expanded={locked ? undefined : isSel}
+      aria-controls={isSel ? 'favorites-selector' : undefined}
+      aria-haspopup={locked ? undefined : 'dialog'}
       data-testid={`favorites-cell-${type}-${gen}`}
       data-kind={kind}
       data-row-banded={banded}

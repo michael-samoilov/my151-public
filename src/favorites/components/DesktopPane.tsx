@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { coordinateLabel } from './coordinatePresentation';
 import { GEN_AXIS, TYPE_AXIS, type GenAxisId, type TypeAxisId } from '../model/cells';
 
 /** Space between the pane and its cell, in CSS px. */
@@ -83,6 +84,8 @@ export function DesktopPane({
   return (
     <aside
       ref={ref}
+      role="dialog"
+      aria-label={coordinateLabel(type, gen)}
       className="absolute z-[15] flex flex-col overflow-hidden rounded-xl border bg-card shadow-xl"
       style={{
         width: 'max-content',
