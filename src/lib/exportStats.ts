@@ -193,6 +193,7 @@ function renderPanel(
     count: d.count,
     deviation: d.deviation,
     color: d.color,
+    barOpacity: 1,
     icon: typeBadgeIcon(d.type as TypeName, badges.get(d.type) ?? null),
   }));
   const genRows: ButterflyRowInput[] = data.genData.map((d) => ({

@@ -34,6 +34,8 @@ export interface ButterflyRowInput {
   deviation: number | null;
   color: string;
   barStroke?: string;
+  /** Override the standard translucent bar paint for badge-matched colors. */
+  barOpacity?: number;
   icon: IconDrawer;
 }
 
@@ -144,7 +146,7 @@ export function drawExportButterfly(
     // Count bar + number
     const countBarW = countScale(d.count);
     ctx.fillStyle = d.color;
-    ctx.globalAlpha = 0.85;
+    ctx.globalAlpha = d.barOpacity ?? 0.85;
     roundRect(ctx, countSectionStart, y, countBarW, barHeight, 1);
     ctx.fill();
     if (d.barStroke && countBarW > 0) { ctx.strokeStyle = d.barStroke; ctx.lineWidth = .75; ctx.stroke(); }
@@ -161,7 +163,7 @@ export function drawExportButterfly(
     const barW = Math.abs(devScale(clampedDev) - zeroX);
     if (barW > 0 && d.deviation !== null) {
       ctx.fillStyle = d.color;
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = d.barOpacity ?? 0.85;
       roundRect(ctx, devSectionStart + barX, y, barW, barHeight, 1);
       ctx.fill();
       if (d.barStroke) { ctx.strokeStyle = d.barStroke; ctx.lineWidth = .75; ctx.stroke(); }

@@ -261,6 +261,7 @@ export function AnalyticsDashboard() {
       count: r.score,
       deviation: r.score - (baseline.get(r.type) ?? 0),
       color: TYPE_COLORS[r.type as keyof typeof TYPE_COLORS],
+      barOpacity: 1,
       icon: typeChartIcon(r.type as TypeName),
     })).sort((a, b) => isNationalSelected ? b.count - a.count : b.deviation - a.deviation);
   }, [matchupVisible, sections, selectedTypeChart, excludeSpecial, newPokemonOnly, isNationalSelected]);

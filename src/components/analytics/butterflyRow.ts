@@ -17,6 +17,8 @@ export interface ButterflyRow {
   color: string;
   /** Optional outline for a bar fill that matches the chart background. */
   barStroke?: string;
+  /** Override the standard translucent bar paint for badge-matched colors. */
+  barOpacity?: number;
   /** Optional icon path (e.g. "/types/fire.svg") or an inline SVG render
    *  function. The function is handed the icon column's left edge, the row's
    *  vertical position, the square icon size and the column's full width — wide
