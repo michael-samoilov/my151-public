@@ -37,7 +37,7 @@ test.describe('full favorite chart export', () => {
     expect(geometry.opaque).toBeGreaterThan(100);
     expect(geometry.matching).toBe(geometry.opaque);
     await testInfo.attach('png-geometry', { body: JSON.stringify(geometry, null, 2), contentType: 'application/json' });
-    await expect(page.getByTestId('favorites-export-settings')).toContainText('2 of 257');
+    await expect(page.locator('[data-favorites-export-mode=full]')).toHaveAttribute('aria-pressed', 'true');
     const downloadPromise = page.waitForEvent('download');
     await save.click();
     const download = await downloadPromise;
@@ -52,7 +52,7 @@ test.describe('full favorite chart export', () => {
     await page.goto('/favorite-pokemon-by-type?lang=en');
     await page.getByTestId('favorites-export-open').click();
     await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
-    await expect(page.getByTestId('favorites-export-settings')).toContainText('0 of 257');
+    await expect(page.locator('[data-export-preview-layer] img[src^="blob:"]')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-export-preview-layer]')).toHaveCount(0);
     await expect(page.getByTestId('favorites-grid')).toBeVisible();
