@@ -1,5 +1,6 @@
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import { seedDex, TUNE_URL } from './support/dexSeed';
 
 test.setTimeout(60_000);
 const fullSeed = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
@@ -233,4 +234,41 @@ test('chart identifiers stay distinct from counts and hidden chart data does not
   expect(metrics.typeGap).toBeGreaterThanOrEqual(3);
   expect(metrics.shapeGap).toBeGreaterThanOrEqual(3);
   await artifact(page, testInfo, 'chart-header-space', metrics);
+});
+
+
+test('five Analytics charts form one ordered column with the Dex desktop reading width @viewport', async ({ page }, testInfo) => {
+  if (testInfo.project.name === 'mobile') await page.setViewportSize({ width: 390, height: 844 });
+  await seed(page, fullSeed);
+  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await openAnalytics(page);
+  const measured = await dashboard(page).evaluate(el => {
+    const container = el.firstElementChild!.getBoundingClientRect();
+    const cards = [...el.querySelectorAll('[data-favorite-chart]')].map(card => {
+      const box = card.getBoundingClientRect();
+      return { name: card.getAttribute('data-favorite-chart'), left: box.left, top: box.top, bottom: box.bottom, width: box.width };
+    });
+    return { containerWidth: container.width, cards };
+  });
+  expect(measured.cards.map(card => card.name)).toEqual(['type', 'color', 'shape', 'evolution', 'bst']);
+  for (const [index, card] of measured.cards.entries()) {
+    expect(card.left).toBeCloseTo(measured.cards[0].left, 1);
+    expect(card.width).toBeCloseTo(measured.cards[0].width, 1);
+    if (index) expect(card.top).toBeGreaterThanOrEqual(measured.cards[index - 1].bottom + 1);
+  }
+  let dex: { containerWidth: number; cardWidth: number } | null = null;
+  if (page.viewportSize()!.width >= 1024) {
+    await page.goto(TUNE_URL);
+    await seedDex(page);
+    await page.locator('[data-nav="analytics"]').click();
+    const heading = page.getByRole('heading', { name: 'Generation Origin' });
+    await expect(heading).toBeVisible();
+    dex = await page.locator('.max-w-6xl').filter({ has: heading }).evaluate(el => {
+      const box = el.getBoundingClientRect(), css = getComputedStyle(el);
+      return { containerWidth: box.width, cardWidth: box.width - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight) };
+    });
+    expect(measured.containerWidth).toBeCloseTo(dex.containerWidth, 1);
+    expect(measured.cards[0].width).toBeCloseTo(dex.cardWidth, 1);
+  }
+  await artifact(page, testInfo, 'single-chart-column', { measured, dex });
 });
