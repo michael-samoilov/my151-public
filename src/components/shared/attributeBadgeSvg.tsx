@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { COLOR_SWATCHES } from '@/data/classifications';
 import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W, typeBadgeGlyphBox } from '@/lib/typeBadgeGeometry';
-import { attributeBadgeLayout, colorBadgeText } from '@/lib/attributeBadgeStyle';
+import { attributeBadgeLayout, COLOR_BADGE_FILLS } from '@/lib/attributeBadgeStyle';
 import type { ColorName, ShapeName } from '@/types/pokemon';
 import { GenerationBadge } from '@/favorites/components/WordBadge';
 import type { GenNumber } from '@/favorites/model/cells';
@@ -9,11 +8,11 @@ import { shapeIconPath } from './ShapeIcon';
 
 function attributeBadgeSvg(kind: 'color' | 'shape', value: ColorName | ShapeName): ReactNode {
   const { label, centerX, fit } = attributeBadgeLayout(kind, value);
-  const color = kind === 'color' ? colorBadgeText(value as ColorName) : '#000000';
+  const color = kind === 'color' ? '#ffffff' : '#000000';
   const box = typeBadgeGlyphBox();
   return <>
     <rect x={.5} y={.5} width={TYPE_BADGE_W - 1} height={TYPE_BADGE_H - 1} rx={TYPE_BADGE.radius - .5}
-      fill={kind === 'color' ? COLOR_SWATCHES[value as ColorName] : '#ffffff'} stroke="#a3a3a3" strokeWidth={1} />
+      fill={kind === 'color' ? COLOR_BADGE_FILLS[value as ColorName] : '#ffffff'} stroke="#a3a3a3" strokeWidth={1} />
     {kind === 'shape' && <image href={shapeIconPath(value)} x={box.x} y={box.y} width={box.size} height={box.size} preserveAspectRatio="xMidYMid meet" />}
     <g transform={`translate(${centerX} 0) scale(${fit.scaleX} 1) translate(${-centerX} 0)`}>
       <text x={centerX} y={fit.baseline} textAnchor="middle" fontSize={fit.fontSize} fontWeight={TYPE_BADGE.fontWeight} fill={color}>{label}</text>

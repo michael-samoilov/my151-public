@@ -1,11 +1,10 @@
-import { COLOR_SWATCHES } from '@/data/classifications';
 import type { ColorName, ShapeName } from '@/types/pokemon';
 import { GEN_FILL, generationLabel } from '@/favorites/components/badgeStyle';
 import type { GenNumber } from '@/favorites/model/cells';
 import { badgePaint, drawWordBadge } from '@/favorites/export/badgePaint';
 import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W, typeBadgeGlyphBox } from './typeBadgeGeometry';
 import { typeBadgeFontStack } from './typeBadgeFit';
-import { attributeBadgeLayout, colorBadgeText } from './attributeBadgeStyle';
+import { attributeBadgeLayout, COLOR_BADGE_FILLS } from './attributeBadgeStyle';
 
 function drawAttributeBadge(ctx: CanvasRenderingContext2D, kind: 'color' | 'shape', value: ColorName | ShapeName,
   glyph: HTMLImageElement | null, x: number, y: number, height: number): void {
@@ -14,7 +13,7 @@ function drawAttributeBadge(ctx: CanvasRenderingContext2D, kind: 'color' | 'shap
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
-  ctx.fillStyle = kind === 'color' ? COLOR_SWATCHES[value as ColorName] : '#ffffff';
+  ctx.fillStyle = kind === 'color' ? COLOR_BADGE_FILLS[value as ColorName] : '#ffffff';
   ctx.strokeStyle = '#a3a3a3';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -28,7 +27,7 @@ function drawAttributeBadge(ctx: CanvasRenderingContext2D, kind: 'color' | 'shap
     ctx.drawImage(glyph, box.x + (box.size - width) / 2, box.y + (box.size - glyphHeight) / 2, width, glyphHeight);
   }
   ctx.font = `${TYPE_BADGE.fontWeight} ${fit.fontSize}px ${typeBadgeFontStack()}`;
-  ctx.fillStyle = kind === 'color' ? colorBadgeText(value as ColorName) : '#000000';
+  ctx.fillStyle = kind === 'color' ? '#ffffff' : '#000000';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.translate(centerX, 0);
