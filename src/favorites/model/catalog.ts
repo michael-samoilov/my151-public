@@ -6,6 +6,7 @@ import {
   ULTRA_BEAST_IDS,
 } from '@/data/categories';
 import powerupForms from '@/league/data/powerupForms.json';
+import powerupTypes from '../data/powerupTypes.json';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import type { PowerupForms } from '@/league/model/powerups';
 import { GEN_NUMBERS, type GenNumber } from './cells';
@@ -27,6 +28,7 @@ export interface PickerMon {
 
 const SPECIES = pokemonData as Pokemon[];
 const FORMS = powerupForms as PowerupForms;
+const POWERUP_TYPES = powerupTypes as Record<number, TypeName[]>;
 
 // A cap Pikachu names a region but is not a regional form.
 const REGIONAL_RE = /-(alola|galar|hisui|paldea)(?!-cap)(?:-|$)/;
@@ -110,10 +112,12 @@ for (const [ownerRaw, kinds] of Object.entries(FORMS)) {
   if (!owner) continue;
   for (const kind of ['mega', 'dynamax'] as const) {
     for (const form of kinds[kind] ?? []) {
+      const types = POWERUP_TYPES[form.id];
+      if (!types) throw new Error(`Missing sourced types for battle form ${form.id}. Run scripts/build-favorite-powerup-types.mjs.`);
       pushMon({
         id: form.id,
         name: form.label,
-        types: owner.types,
+        types,
         generation: owner.generation,
         sprite: `/sprites/pokemon/${form.id}.png`,
         source: 'powerup',
