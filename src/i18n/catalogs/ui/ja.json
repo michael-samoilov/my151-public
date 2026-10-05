@@ -90,5 +90,6 @@
   "favorites.stats.means": "選択の平均：{yours} · 候補の平均：{expected}",
   "favorites.nav.picker": "選択",
   "favorites.analytics.description": "タイプと世代ごとにお気に入りのポケモンを分析できます。各マスで選べる候補と、実際に選んだポケモンをグラフで比較します。",
-  "favorites.analytics.empty": "候補が複数あるマスでポケモンを選ぶと、好みの傾向を確認できます。"
+  "favorites.analytics.empty": "候補が複数あるマスでポケモンを選ぶと、好みの傾向を確認できます。",
+  "export.detailedStatsTitle": "詳しい統計"
 }

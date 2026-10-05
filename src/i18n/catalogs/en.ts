@@ -455,6 +455,7 @@ export const enUi = {
   "favorites.stats.final": "Final",
   "favorites.stats.noEvo": "No evo",
   "favorites.stats.means": "Your avg: {yours} · Selector avg: {expected}",
+  'export.detailedStatsTitle': 'Detailed Stats',
   'viewSettings.showStats': 'Show detailed stats',
   'viewSettings.sortHeading': 'Sort Order',
   'viewSettings.statsHeading': 'Stats',

@@ -90,5 +90,6 @@
   "favorites.stats.means": "所選平均：{yours} · 候選平均：{expected}",
   "favorites.nav.picker": "挑選",
   "favorites.analytics.description": "按屬性和世代分析你最愛的寶可夢。圖表將你的選擇與每個格子中可選的寶可夢進行比較。",
-  "favorites.analytics.empty": "在有多個候選的格子中選擇寶可夢，即可查看你的偏好。"
+  "favorites.analytics.empty": "在有多個候選的格子中選擇寶可夢，即可查看你的偏好。",
+  "export.detailedStatsTitle": "詳細統計"
 }
