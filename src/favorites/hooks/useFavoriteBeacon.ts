@@ -32,7 +32,7 @@ export function useFavoriteBeacon() {
     const hidden=()=>{if(document.visibilityState==='hidden'){debouncer.flush();delivery.flush();}};
     const flush=()=>{debouncer.flush();delivery.flush();};
     document.addEventListener('visibilitychange',hidden);window.addEventListener('pagehide',flush);
-    return()=>{document.removeEventListener('visibilitychange',hidden);window.removeEventListener('pagehide',flush);debouncer.flush();};
+    return()=>{document.removeEventListener('visibilitychange',hidden);window.removeEventListener('pagehide',flush);flush();};
   },[debouncer]);
 }
 /** Called only after share/download succeeds, using the board displayed in that export. */
