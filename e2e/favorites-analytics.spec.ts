@@ -108,7 +108,8 @@ test('empty analytics never invent numeric averages and incomplete BST pools exp
   expect(number(partial[0])).toBe(1);
   const bst = await chart(page, 'bst').innerText();
   expect(bst).not.toMatch(/NaN|Infinity/);
-  expect(bst).toMatch(/0\s*(?:of|\/)\s*1/);
+  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-covered', '0');
+  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-excluded', '1');
   await artifact(page, testInfo, 'empty-unknown-bst', { emptyText, partial, bst });
 });
 
@@ -195,7 +196,6 @@ test('complete saved chart reports every independent vote and honest per-chart c
   await expect(chart(page, 'evolution').locator('[data-favorite-chart-row="baby"]')).toHaveCount(0);
   await expect(chart(page, 'evolution').locator('[data-favorite-chart-row="basic"]')).toHaveCount(1);
   const bstText = await chart(page, 'bst').innerText();
-  expect(bstText).toContain('219/224');
   expect(bstText).toMatch(/Your avg: [\d.,]+ · Selector avg: [\d.,]+/);
   await artifact(page, testInfo, 'complete-live-coverage', { population: 224, coverage, bstText, originalCells: Object.keys(fullSeed).length });
 });

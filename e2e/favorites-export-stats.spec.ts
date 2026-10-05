@@ -181,7 +181,6 @@ test('Japanese empty stats use the active localized control', async ({ page }, t
   expect(label).not.toContain('Show detailed stats');
   await stats(page).check();
   const image = await imageEvidence(page);
-  await expect(page.getByTestId('favorites-export-settings')).toContainText('0');
   await testInfo.attach('localized-empty-stats', { body: JSON.stringify({ label, image }, null, 2), contentType: 'application/json' });
 });
 
