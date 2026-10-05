@@ -97,14 +97,15 @@ export function parseFavoriteRecord(raw: unknown): FavoriteRecord | null {
   if (typeof value === 'string') { try { value = JSON.parse(value); } catch { return null; } }
   if (!value || typeof value !== 'object') return null;
   const r = value as FavoriteRecord;
-  if (r.v !== 1 || typeof r.cid !== 'string' || !Number.isFinite(r.firstTs) || !Number.isFinite(r.lastTs)
+  const validTime = (n: unknown) => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 8_640_000_000_000_000;
+  if (r.v !== 1 || typeof r.cid !== 'string' || !validTime(r.firstTs) || !validTime(r.lastTs)
     || !parseFavoriteSnapshot(r.latest) || !Array.isArray(r.sessionLog) || !Array.isArray(r.seenIds)) return null;
   const nonnegative = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
   if (!['submits','sessions','maxFilled','exportsFull','exportsSimplified'].every(key => nonnegative((r as unknown as Record<string,unknown>)[key]))) return null;
   if (r.maxFilled > FAVORITE_TOTAL_CELLS || r.firstTs > r.lastTs) return null;
   const sessionLog = r.sessionLog.flatMap(session => {
     const snapshot = parseFavoriteSnapshot(session?.snapshot);
-    if (!snapshot || !Number.isFinite(session.ts) || !Number.isFinite(session.endTs) || session.endTs < session.ts || typeof session.id !== 'string') return [];
+    if (!snapshot || !validTime(session.ts) || !validTime(session.endTs) || session.endTs < session.ts || typeof session.id !== 'string') return [];
     return [{id:session.id,ts:session.ts,endTs:session.endTs,snapshot,
       events:Array.isArray(session.events)?session.events.filter((event):event is string=>typeof event==='string'&&event.startsWith('favorites-')).slice(0,20):[]}];
   }).sort((a,b)=>a.ts-b.ts).slice(-50);

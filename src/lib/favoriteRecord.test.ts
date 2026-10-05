@@ -8,6 +8,7 @@ describe('favorite record failure guards',()=>{
  it('normalizes stored snapshots and rejects nonfinite or negative counters',()=>{
   const r=mergeFavoriteRecord(null,input('first-000001'));
   expect(parseFavoriteRecord({...r,exportsFull:NaN})).toBeNull();
+  expect(parseFavoriteRecord({...r,firstTs:1e20,lastTs:1e20})).toBeNull();
   expect(parseFavoriteRecord({...r,maxFilled:-1})).toBeNull();
   expect(parseFavoriteRecord({...r,latest:{...r.latest,filled:257}})!.latest.filled).toBe(2);
   expect(parseFavoriteRecord({...r,sessionLog:[{...r.sessionLog[0],endTs:NaN}]} )!.sessionLog).toEqual([]);
