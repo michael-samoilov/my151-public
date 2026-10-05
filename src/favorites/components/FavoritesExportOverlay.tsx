@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Grid3x3, LayoutGrid, Loader2, X } from 'lucide-react';
+import { Check, Download, Grid3x3, LayoutGrid, Loader2, X } from 'lucide-react';
 import { ExportPreviewShell } from '@/components/export/ExportPreviewShell';
 import { useExportPreviewCache } from '@/components/export/useExportPreviewCache';
 import { shareOrDownload, isShareAbort } from '@/lib/shareOrDownload';
@@ -15,6 +15,7 @@ import type { GenAxisId, TypeAxisId } from '../model/cells';
 
 type ExportMode = 'full' | 'simplified';
 const MODES: ExportMode[] = ['full', 'simplified'];
+const VARIANTS = ['full', 'full-stats', 'simplified'] as const;
 
 export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
   fills: Readonly<Record<string, number>>;
@@ -27,17 +28,23 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
   const snapshot = useMemo(() => buildFavoritesSnapshot(fills), [fills]);
   const [attempt, setAttempt] = useState(0);
   const [mode, setMode] = useState<ExportMode>('full');
+  const [showDetailedStats, setShowDetailedStats] = useState(false);
   const [errorKeys, setErrorKeys] = useState<Record<string, true>>({});
   const [saving, setSaving] = useState(false);
   const contentKey = `${locale}-${attempt}-${snapshot.cells.map(cell => `${cell.key}:${cell.mon?.id ?? ''}`).join(',')}`;
-  const key = `${mode}-${contentKey}`;
+  const variant = mode === 'full' && showDetailedStats ? 'full-stats' : mode;
+  const key = `${variant}-${contentKey}`;
   const error = !!errorKeys[key];
   const settingsRef = useRef<HTMLDivElement>(null);
-  const jobs = useMemo(() => MODES.map(exportMode => {
-    const jobKey = `${exportMode}-${contentKey}`;
+  const jobs = useMemo(() => VARIANTS.map(exportVariant => {
+    const jobKey = `${exportVariant}-${contentKey}`;
     return { key: jobKey, render: async () => {
       try {
-        return await (exportMode === 'full' ? renderFullChart(snapshot) : renderSimplifiedChart(snapshot));
+        if (exportVariant === 'full-stats') {
+          const { renderFullChartWithStats } = await import('../export/renderFullChartWithStats');
+          return await renderFullChartWithStats(snapshot);
+        }
+        return await (exportVariant === 'full' ? renderFullChart(snapshot) : renderSimplifiedChart(snapshot));
       } catch (err) {
         setErrorKeys(previous => ({ ...previous, [jobKey]: true }));
         throw err;
@@ -115,6 +122,23 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
             </button>;
           })}
         </div>
+        {mode === 'full' && <label
+          className={`relative flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 ${
+            showDetailedStats ? 'bg-primary/10' : 'hover:bg-muted'
+          } ${saving ? 'cursor-default opacity-50' : ''}`}>
+          <input type="checkbox" data-testid="favorites-export-stats" checked={showDetailedStats}
+            disabled={saving} onChange={event => setShowDetailedStats(event.target.checked)}
+            className="peer absolute z-10 h-4 w-4 cursor-pointer opacity-0" />
+          <span aria-hidden="true"
+            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 ${
+              showDetailedStats ? 'border-primary bg-primary' : 'border-muted-foreground/40'
+            }`}>
+            {showDetailedStats && <Check className="h-3 w-3 text-primary-foreground" />}
+          </span>
+          <span className={`text-sm leading-tight ${showDetailedStats ? 'font-medium text-primary' : 'text-foreground'}`}>
+            {t('viewSettings.showStats')}
+          </span>
+        </label>}
         <p className="text-xs text-muted-foreground">{t('favorites.completion.label', snapshot.completion)}</p>
         {error && <div role="alert" className="space-y-2">
           <p className="text-sm text-destructive">{t('favorites.export.error')}</p>
