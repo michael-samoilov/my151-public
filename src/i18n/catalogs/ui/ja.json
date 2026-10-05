@@ -1,4 +1,5 @@
 {
+  "chart.header.color": "色",
   "browser.myFavorites": "お気に入り",
   "faq.favorites.a1": "マスを選び、そのタイプ・世代のポケモンを選びます。各行・列のお気に入りを選び、最後に全体のお気に入りを選びます。",
   "faq.favorites.a2": "はい。「全体の表」または「シンプル」の画像をPNG形式で保存できます。ポケモン図鑑づくりとジムリーダーづくりでは、お気に入りのポケモンで絞り込めます。",
@@ -76,7 +77,7 @@
   "stats.type.title": "タイプ分布",
   "stats.bst.title": "種族値合計",
   "favorites.stats.shape": "ポケモンの体形",
-  "favorites.stats.color": "図鑑の色",
+  "favorites.stats.color": "ポケモンの色",
   "favorites.stats.evolution": "進化段階",
   "favorites.stats.empty": "比較できる選択はまだありません",
   "favorites.stats.options": "選択候補",

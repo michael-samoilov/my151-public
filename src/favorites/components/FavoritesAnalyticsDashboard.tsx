@@ -3,7 +3,7 @@ import { ButterflyChart, type ButterflyRow } from '@/components/analytics/Butter
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { colorChartIcon, shapeBadgeChartIcon } from '@/components/shared/attributeBadgeSvg';
 import { typeChartIcon } from '@/components/shared/typeBadgeSvg';
-import { COLOR_SWATCHES } from '@/data/classifications';
+import { COLOR_BADGE_FILLS } from '@/lib/attributeBadgeStyle';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { colorLabel, formatNumber, localeUppercase, shapeLabel, typeLabel, useT } from '@/i18n';
 import { MAX_LABEL_STRETCH, measureLabelWidth } from '@/lib/sectionOutlines';
@@ -82,10 +82,10 @@ function Distribution({ dimension, stats }: { dimension: Dimension; stats: Picke
         <text x={x + size + 5} y={y + size / 2} dominantBaseline="middle" className={TEXT} fill="currentColor" textLength={roleLabelWidth(name) > width - size - 8 ? width - size - 8 : undefined} lengthAdjust="spacingAndGlyphs">{name}</text>
       </g>;
     }
-    return [{ key: row.key, label: name, count: row.count, expected: row.expected, deviation: row.deviation, color: dimension === 'type' ? TYPE_COLORS[row.key as TypeName] : dimension === 'color' ? COLOR_SWATCHES[row.key as ColorName] : '#dc2626', icon }];
+    return [{ key: row.key, label: name, count: row.count, expected: row.expected, deviation: row.deviation, color: dimension === 'type' ? TYPE_COLORS[row.key as TypeName] : dimension === 'color' ? COLOR_BADGE_FILLS[row.key as ColorName] : '#dc2626', icon }];
   }).sort((a, b) => sort === 'label' ? a.label.localeCompare(b.label) : (sort === 'count' ? b.count - a.count : b.deviation - a.deviation) || a.label.localeCompare(b.label));
   const titles = { type: t('stats.type.title'), shape: t('favorites.stats.shape'), color: t('favorites.stats.color'), evolution: t('favorites.stats.evolution') };
-  const labelHeader = dimension === 'type' ? t('chart.header.type') : dimension === 'shape' ? t('chart.header.shape') : undefined;
+  const labelHeader = dimension === 'type' ? t('chart.header.type') : dimension === 'shape' ? t('chart.header.shape') : dimension === 'color' ? t('chart.header.color') : undefined;
   return <Card dimension={dimension} covered={data.coveredChoices} excluded={data.excludedChoices} title={titles[dimension]}>
     {!data.coveredChoices ? <p className="text-sm text-muted-foreground py-4">{t('favorites.stats.empty')}</p> : <>
       <ButterflyChart data={rows} rowHeight={22} hideLabelText alignBaselines iconFillsRow sortBy={sort} onSortChange={setSort} labelHeader={labelHeader} textClass={TEXT} />

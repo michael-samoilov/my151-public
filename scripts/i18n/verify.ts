@@ -317,6 +317,7 @@ function cjkSafety(): void {
  * makes the check meaningful for every other key.
  */
 const SAME_AS_ENGLISH_OK = new Set([
+  'es:chart.header.color', // "Color" is also the Spanish color header.
   'es:feedback.category.idea', // "Idea" is the Spanish word too.
   'it:feedback.category.idea', // And the Italian one.
   'de:favorites.axis.starter',

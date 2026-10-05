@@ -9,12 +9,12 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { typeGlyphPath } from '@/data/type-ids';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { drawColorBadge, drawShapeBadge } from '@/lib/drawAttributeBadge';
-import { COLOR_SWATCHES } from '@/data/classifications';
+import { COLOR_BADGE_FILLS } from '@/lib/attributeBadgeStyle';
 import { t, formatNumber } from '@/i18n';
 import type { ColorName, ShapeName, TypeName } from '@/types/pokemon';
 type Dimension='type'|'color'|'shape'|'evolution';
 function titles():Record<Dimension,string>{return {type:t('stats.type.title'),color:t('favorites.stats.color'),shape:t('favorites.stats.shape'),evolution:t('favorites.stats.evolution')};}
-const headers:Record<Dimension,string>={type:'TYPE',color:'COLOR',shape:'SHAPE',evolution:'STAGE'};
+function headers():Record<Dimension,string>{return {type:t('chart.header.type'),color:t('chart.header.color'),shape:t('chart.header.shape'),evolution:'STAGE'};}
 function stages():Record<string,string>{return {basic:t('favorites.stats.basic'),intermediate:t('favorites.stats.middle'),final:t('favorites.stats.final'),standalone:t('favorites.stats.noEvo')};}
 const W=320,GAP=16,PANEL_H=864,PANEL_W=W*2+GAP;
 function label(ctx:CanvasRenderingContext2D,text:string,x:number,y:number,maxWidth?:number){ctx.font='400 10px "Inter Variable", system-ui, sans-serif';ctx.fillStyle='#737373';ctx.textAlign='left';ctx.textBaseline='alphabetic';if(maxWidth===undefined)ctx.fillText(text,x,y);else ctx.fillText(text,x,y,maxWidth);}
@@ -39,10 +39,10 @@ export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerCo
   ctx.save();ctx.translate(x,y);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,h,8);ctx.fill();drawExportStatsTitle(ctx,titles()[d],20,12);
   const data=stats.dimensions[d];
   if(!data.coveredChoices){label(ctx,t('favorites.stats.empty'),20,56);ctx.restore();return;}
-  const rows=[...data.rows].sort((a,b)=>(b.deviation??-Infinity)-(a.deviation??-Infinity)).map(row=>({...row,color:d==='type'?TYPE_COLORS[row.key as TypeName]:d==='color'?COLOR_SWATCHES[row.key as ColorName]:'#dc2626',icon:rowIcon(d,row.key,images)}));
+  const rows=[...data.rows].sort((a,b)=>(b.deviation??-Infinity)-(a.deviation??-Infinity)).map(row=>({...row,color:d==='type'?TYPE_COLORS[row.key as TypeName]:d==='color'?COLOR_BADGE_FILLS[row.key as ColorName]:'#dc2626',icon:rowIcon(d,row.key,images)}));
   const rowHeight=Math.min(28,(h-80)/rows.length);
   ctx.font='400 10px "Inter Variable", system-ui, sans-serif';
-  drawExportButterfly(ctx,20,44,rows,rowHeight,1,headers[d],true,{alignBaselines:true});ctx.restore();
+  drawExportButterfly(ctx,20,44,rows,rowHeight,1,headers()[d],true,{alignBaselines:true});ctx.restore();
  }
  card('type',0,0,488);card('color',0,504,360);card('shape',336,0,408);card('evolution',336,424,168);
  ctx.save();ctx.translate(336,608);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,256,8);ctx.fill();drawExportStatsTitle(ctx,t('stats.bst.title'),20,12);

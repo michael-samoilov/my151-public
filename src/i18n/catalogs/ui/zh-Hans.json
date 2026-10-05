@@ -1,4 +1,5 @@
 {
+  "chart.header.color": "颜色",
   "browser.myFavorites": "我的最爱",
   "faq.favorites.a1": "选择一个格子，挑选该属性和世代的宝可梦。然后从每一行和列中选出最爱，最后选出总体最爱。",
   "faq.favorites.a2": "可以。你可以将完整表格或简洁版保存为PNG图片。在宝可梦图鉴制作器和道馆馆主制作器中，你可以按最爱的宝可梦筛选。",
@@ -76,7 +77,7 @@
   "stats.type.title": "属性分布",
   "stats.bst.title": "种族值总和",
   "favorites.stats.shape": "宝可梦体形",
-  "favorites.stats.color": "图鉴颜色",
+  "favorites.stats.color": "宝可梦颜色",
   "favorites.stats.evolution": "进化阶段",
   "favorites.stats.empty": "暂无可比较的选择",
   "favorites.stats.options": "可选宝可梦",

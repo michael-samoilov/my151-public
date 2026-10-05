@@ -131,6 +131,7 @@ export const enUi = {
   // The red X on a builder tile. One press can remove the whole evolution
   // line.
   'builder.remove': 'Remove {name}',
+  'chart.header.color': 'COLOR',
   'chart.header.count': 'COUNT',
   'chart.header.gen': 'GEN',
   'chart.header.overIndexed1': 'OVER-',
@@ -437,7 +438,7 @@ export const enUi = {
   'viewSettings.resetCustom': 'Reset custom order',
   'viewSettings.showOutlines': 'Show section outlines',
   "favorites.stats.shape": "Pokémon Shape",
-  "favorites.stats.color": "Pokédex Color",
+  "favorites.stats.color": "Pokémon Color",
   "favorites.stats.evolution": "Evolution Stage",
   "favorites.stats.empty": "No comparable choices yet",
   "favorites.stats.options": "Selector options",

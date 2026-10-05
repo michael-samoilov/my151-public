@@ -1,4 +1,5 @@
 {
+  "chart.header.color": "COLOR",
   "browser.myFavorites": "Mis favoritos",
   "faq.favorites.a1": "Elige una casilla para escoger un Pokémon de ese tipo y generación. Después elige tus favoritos de cada fila y columna, y tu favorito de todos.",
   "faq.favorites.a2": "Sí. Guarda la cuadrícula completa o la vista simplificada como imagen PNG. Puedes filtrar Pokémon según tus favoritos en los creadores de Pokédex y de Líderes de Gimnasio.",
@@ -76,7 +77,7 @@
   "stats.type.title": "Distribución de tipos",
   "stats.bst.title": "Total de estadísticas",
   "favorites.stats.shape": "Forma del Pokémon",
-  "favorites.stats.color": "Color de la Pokédex",
+  "favorites.stats.color": "Color de Pokémon",
   "favorites.stats.evolution": "Fase evolutiva",
   "favorites.stats.empty": "Aún no hay elecciones comparables",
   "favorites.stats.options": "Opciones disponibles",
