@@ -82,7 +82,7 @@ function Distribution({ dimension, stats }: { dimension: Dimension; stats: Picke
         <text x={x + size + 5} y={y + size / 2} dominantBaseline="middle" className={TEXT} fill="currentColor" textLength={roleLabelWidth(name) > width - size - 8 ? width - size - 8 : undefined} lengthAdjust="spacingAndGlyphs">{name}</text>
       </g>;
     }
-    return [{ key: row.key, label: name, count: row.count, expected: row.expected, deviation: row.deviation, color: dimension === 'type' ? TYPE_COLORS[row.key as TypeName] : dimension === 'color' ? COLOR_BADGE_FILLS[row.key as ColorName] : '#dc2626', icon }];
+    return [{ key: row.key, label: name, count: row.count, expected: row.expected, deviation: row.deviation, color: dimension === 'type' ? TYPE_COLORS[row.key as TypeName] : dimension === 'color' ? COLOR_BADGE_FILLS[row.key as ColorName] : '#dc2626', barStroke: dimension === 'color' && row.key === 'white' ? '#a3a3a3' : undefined, icon }];
   }).sort((a, b) => sort === 'label' ? a.label.localeCompare(b.label) : (sort === 'count' ? b.count - a.count : b.deviation - a.deviation) || a.label.localeCompare(b.label));
   const titles = { type: t('stats.type.title'), shape: t('favorites.stats.shape'), color: t('favorites.stats.color'), evolution: t('favorites.stats.evolution') };
   const labelHeader = dimension === 'type' ? t('chart.header.type') : dimension === 'shape' ? t('chart.header.shape') : dimension === 'color' ? t('chart.header.color') : undefined;

@@ -15,6 +15,8 @@ export interface ButterflyRow {
   count: number;
   deviation: number; // percentage, e.g. +100 = double, -50 = half (or raw diff in scoreMode)
   color: string;
+  /** Optional outline for a bar fill that matches the chart background. */
+  barStroke?: string;
   /** Optional icon path (e.g. "/types/fire.svg") or an inline SVG render
    *  function. The function is handed the icon column's left edge, the row's
    *  vertical position, the square icon size and the column's full width — wide

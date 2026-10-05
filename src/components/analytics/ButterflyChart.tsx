@@ -445,6 +445,8 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
                   width={countBarW}
                   height={barHeight}
                   fill={d.color}
+                  stroke={countBarW > 0 ? d.barStroke : undefined}
+                  strokeWidth={d.barStroke ? .75 : undefined}
                   opacity={0.85}
                   rx={1}
                 />
@@ -493,7 +495,7 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
                   if (!isClipped) {
                     return (
                       <rect x={bx} y={y} width={bw} height={barHeight}
-                        fill={d.color} opacity={0.85} rx={1} />
+                        fill={d.color} stroke={d.barStroke} strokeWidth={d.barStroke ? .75 : undefined} opacity={0.85} rx={1} />
                     );
                   }
                   // Build path with jagged torn edge on the clipped side
@@ -520,7 +522,7 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
                     }
                     p += ` L${bx + bw},${bot} Z`;
                   }
-                  return <path d={p} fill={d.color} opacity={0.85} />;
+                  return <path d={p} fill={d.color} stroke={d.barStroke} strokeWidth={d.barStroke ? .75 : undefined} opacity={0.85} />;
                 })()}
 
                 {/* Value label at bar end */}

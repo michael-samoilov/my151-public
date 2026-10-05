@@ -39,7 +39,7 @@ export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerCo
   ctx.save();ctx.translate(x,y);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,h,8);ctx.fill();drawExportStatsTitle(ctx,titles()[d],20,12);
   const data=stats.dimensions[d];
   if(!data.coveredChoices){label(ctx,t('favorites.stats.empty'),20,56);ctx.restore();return;}
-  const rows=[...data.rows].sort((a,b)=>(b.deviation??-Infinity)-(a.deviation??-Infinity)).map(row=>({...row,color:d==='type'?TYPE_COLORS[row.key as TypeName]:d==='color'?COLOR_BADGE_FILLS[row.key as ColorName]:'#dc2626',icon:rowIcon(d,row.key,images)}));
+  const rows=[...data.rows].sort((a,b)=>(b.deviation??-Infinity)-(a.deviation??-Infinity)).map(row=>({...row,color:d==='type'?TYPE_COLORS[row.key as TypeName]:d==='color'?COLOR_BADGE_FILLS[row.key as ColorName]:'#dc2626',barStroke:d==='color'&&row.key==='white'?'#a3a3a3':undefined,icon:rowIcon(d,row.key,images)}));
   const rowHeight=Math.min(28,(h-80)/rows.length);
   ctx.font='400 10px "Inter Variable", system-ui, sans-serif';
   drawExportButterfly(ctx,20,44,rows,rowHeight,1,headers()[d],true,{alignBaselines:true});ctx.restore();

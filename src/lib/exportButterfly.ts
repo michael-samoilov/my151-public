@@ -33,6 +33,7 @@ export interface ButterflyRowInput {
   count: number;
   deviation: number | null;
   color: string;
+  barStroke?: string;
   icon: IconDrawer;
 }
 
@@ -146,6 +147,7 @@ export function drawExportButterfly(
     ctx.globalAlpha = 0.85;
     roundRect(ctx, countSectionStart, y, countBarW, barHeight, 1);
     ctx.fill();
+    if (d.barStroke && countBarW > 0) { ctx.strokeStyle = d.barStroke; ctx.lineWidth = .75; ctx.stroke(); }
     ctx.globalAlpha = 1;
     ctx.fillStyle = MUTED;
     ctx.font = font(400, CHART_TEXT);
@@ -162,6 +164,7 @@ export function drawExportButterfly(
       ctx.globalAlpha = 0.85;
       roundRect(ctx, devSectionStart + barX, y, barW, barHeight, 1);
       ctx.fill();
+      if (d.barStroke) { ctx.strokeStyle = d.barStroke; ctx.lineWidth = .75; ctx.stroke(); }
       ctx.globalAlpha = 1;
     }
     // Value label
