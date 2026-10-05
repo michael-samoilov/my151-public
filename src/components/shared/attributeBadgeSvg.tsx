@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W, typeBadgeGlyphBox } from '@/lib/typeBadgeGeometry';
-import { attributeBadgeLayout, COLOR_BADGE_FILLS } from '@/lib/attributeBadgeStyle';
+import { attributeBadgeLayout, COLOR_BADGE_FILLS, colorBadgeTextFill } from '@/lib/attributeBadgeStyle';
 import type { ColorName, ShapeName } from '@/types/pokemon';
 import { GenerationBadge } from '@/favorites/components/WordBadge';
 import type { GenNumber } from '@/favorites/model/cells';
@@ -8,7 +8,7 @@ import { shapeIconPath } from './ShapeIcon';
 
 function attributeBadgeSvg(kind: 'color' | 'shape', value: ColorName | ShapeName): ReactNode {
   const { label, centerX, fit } = attributeBadgeLayout(kind, value);
-  const color = kind === 'color' ? '#ffffff' : '#000000';
+  const color = kind === 'color' ? colorBadgeTextFill(value as ColorName) : '#000000';
   const box = typeBadgeGlyphBox();
   return <>
     <rect x={.5} y={.5} width={TYPE_BADGE_W - 1} height={TYPE_BADGE_H - 1} rx={TYPE_BADGE.radius - .5}
