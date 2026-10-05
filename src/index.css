@@ -526,7 +526,8 @@ img {
  * phone proportion so the screenshots render at their current size. */
 .hub-grid {
   --panel-ar: 166 / 100;
-  --shot-nudge: 0px;
+  /* Radius, front-sheet lean, and clearance for its 12px hover lift. */
+  --shot-nudge: calc(min(8.434cqw, 14px) + 1.05cqw + 2px);
 }
 .hub-stage {
   position: absolute;

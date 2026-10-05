@@ -347,9 +347,8 @@ function Artwork({ tool }: { tool: Tool }) {
     const f = FAN[i];
     return {
       position: 'absolute' as const,
-      // `--shot-nudge` (0 by default, a desktop value in `.hub-grid`) shifts the
-      // fan right so its bottom-left clears the card's rounded corner. Without it
-      // the shots break past that corner on the wide desktop band.
+      // A shared mobile/desktop `--shot-nudge` keeps both sheets clear of
+      // the bottom rounded corners, including their raised hover state.
       left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px))`,
       // A common top anchor keeps native screenshot height out of the fan geometry.
       top: `calc(${BLEED} + ${U(SHOT_TOP)})`,
