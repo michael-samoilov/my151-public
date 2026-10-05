@@ -4,6 +4,7 @@ import type { ToolDef } from '../../../../api/_crossTool';
 const TOOL_COLOR: Record<string, string> = {
   dex: 'rgb(37, 99, 235)',
   league: 'rgb(217, 119, 6)',
+  favorites: 'rgb(14, 116, 94)',
 };
 const FALLBACK = ['rgb(14, 116, 94)', 'rgb(109, 40, 217)', 'rgb(190, 18, 60)'] as const;
 

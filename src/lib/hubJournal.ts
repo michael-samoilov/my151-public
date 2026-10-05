@@ -1,4 +1,4 @@
-import { HAS_DEX, HAS_LEAGUE, type JournalEntry } from '../../api/_events';
+import { HAS_DEX, HAS_LEAGUE, HAS_FAVORITES, type JournalEntry } from '../../api/_events';
 
 /**
  * The hub views, folded out of the raw funnel journal that `/api/journal`
@@ -26,6 +26,7 @@ export interface HubCounts {
   shown: number;
   dexClicks: number;
   leagueClicks: number;
+  favoriteClicks: number;
   /** The callout in the dex builder that points at the gym leader maker. */
   promoShown: number;
   promoCta: number;
@@ -35,6 +36,9 @@ export interface HubCounts {
   becameDex: number;
   becameLeague: number;
   becameBoth: number;
+  becameFavorites: number;
+  /** Exclusive three-tool membership regions, keyed by sorted tool ids. */
+  outcomes: Record<string, number>;
   becameNeither: number;
 }
 
@@ -55,6 +59,7 @@ const EVENT_OF = {
   shown: 'hub-shown',
   dexClicks: 'hub-cta-dex',
   leagueClicks: 'hub-cta-league',
+  favoriteClicks: 'hub-cta-favorites',
   promoShown: 'league-promo-shown',
   promoCta: 'league-promo-cta',
   promoDismiss: 'league-promo-dismiss',
@@ -72,19 +77,27 @@ function counts(b: Buckets, membership: Record<string, number>): HubCounts {
   let becameLeague = 0;
   let becameBoth = 0;
   let becameNeither = 0;
+  let becameFavorites = 0;
+  const outcomes: Record<string, number> = {};
   for (const cid of b.shown) {
     const m = membership[cid] ?? 0;
     const dex = (m & HAS_DEX) !== 0;
     const league = (m & HAS_LEAGUE) !== 0;
+    const favorite = (m & HAS_FAVORITES) !== 0;
+    if (favorite) becameFavorites += 1;
+    const tools = [dex ? 'dex' : '', favorite ? 'favorites' : '', league ? 'league' : ''].filter(Boolean);
+    const key = tools.join('+') || 'neither';
+    outcomes[key] = (outcomes[key] ?? 0) + 1;
     if (dex && league) becameBoth += 1;
     else if (dex) becameDex += 1;
     else if (league) becameLeague += 1;
-    else becameNeither += 1;
+    else if (!favorite) becameNeither += 1;
   }
   return {
     shown: b.shown.size,
     dexClicks: b.dexClicks.size,
     leagueClicks: b.leagueClicks.size,
+    favoriteClicks: b.favoriteClicks.size,
     promoShown: b.promoShown.size,
     promoCta: b.promoCta.size,
     promoDismiss: b.promoDismiss.size,
@@ -92,6 +105,8 @@ function counts(b: Buckets, membership: Record<string, number>): HubCounts {
     becameLeague,
     becameBoth,
     becameNeither,
+    becameFavorites,
+    outcomes,
   };
 }
 
