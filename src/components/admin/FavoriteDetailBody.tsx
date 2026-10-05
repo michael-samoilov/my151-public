@@ -1,4 +1,4 @@
-import {Fragment,useLayoutEffect,useMemo,useRef,useState} from 'react';
+import {useLayoutEffect,useMemo,useRef,useState} from 'react';
 import type {FavoriteUser} from '../../../api/_favoriteAggregate';
 import {FAVORITE_TOTAL_CELLS,type FavoriteSnapshot} from '../../../api/_favoriteRecord';
 import {PokeballBg} from '@/components/shared/PokeballBg';
@@ -51,9 +51,11 @@ function FavoriteSnapshotGrid({snapshot}:{snapshot:FavoriteSnapshot}) {
   },[columns,rows]);
   return <div ref={frame} className="flex min-h-0 flex-1 items-start justify-center" data-testid="admin-favorite-detail">
     <div className="grid shrink-0 rounded-sm border border-neutral-200 bg-card" style={{...size,gridTemplateColumns:`repeat(${columns},minmax(0,1fr))`,gridTemplateRows:`repeat(${rows},minmax(0,1fr))`}} role="table" aria-label="Favorite Pokémon portrait full grid" data-testid="admin-favorite-snapshot">
-      <div role="columnheader"/>
-      {GEN_AXIS.map(gen=><AxisHeader key={gen} id={gen} top/>)}
-      {TYPE_AXIS.map(type=><Fragment key={type}>
+      <div role="row" className="contents">
+        <div role="columnheader"/>
+        {GEN_AXIS.map(gen=><AxisHeader key={gen} id={gen} top/>)}
+      </div>
+      {TYPE_AXIS.map(type=><div key={type} role="row" className="contents">
         <AxisHeader id={type}/>
         {GEN_AXIS.map(gen=>{
           const key=cellKey(type,gen);
@@ -64,12 +66,12 @@ function FavoriteSnapshotGrid({snapshot}:{snapshot:FavoriteSnapshot}) {
           return <div key={key} role="cell" title={title} aria-label={title} data-favorite-coordinate={key} className="relative flex min-h-0 min-w-0 items-center justify-center border-[0.5px] border-neutral-200" style={{background:kind==='disabled'||kind==='null'?'#fafafa':undefined}}>
             {mon?<div className="relative h-4/5 w-4/5" style={{transform:favorite?'translateY(6%)':undefined}}>
               <PokeballBg pokemon={mon}/>
-              <img src={mon.sprite} alt={labelOf(mon)} className="relative h-full w-full object-contain"/>
+              <img src={mon.sprite} alt="" aria-hidden data-favorite-sprite className="relative h-full w-full object-contain"/>
             </div>:kind==='pick'||kind==='pointer'?<EmptyBall kind={kind==='pick'?'poke':favorite?'master':'ultra'} className="h-3/5 w-3/5 text-neutral-400"/>:<svg viewBox="0 0 40 40" className="h-3/5 w-3/5 text-neutral-400" aria-hidden><path d="M15 20h10" stroke="currentColor" strokeWidth="1.5"/></svg>}
             {favorite&&<img src={FAVORITE_ORNAMENTS.crown} alt="" aria-hidden className="pointer-events-none absolute left-1/2 top-0 w-3/5 -translate-x-1/2 -translate-y-1/2"/>}
           </div>;
         })}
-      </Fragment>)}
+      </div>)}
     </div>
   </div>;
 }
@@ -78,9 +80,9 @@ function AxisHeader({id,top=false}:{id:TypeAxisId|GenAxisId;top?:boolean}) {
   const gen=isGenNumber(id);
   const badge=isTypeName(id)?<TypeBadge type={id}/>:gen?null:<AxisBadge id={id}/>;
   return <div role={top?'columnheader':'rowheader'} aria-label={gen?`Generation ${id}`:id} className="relative flex min-h-0 min-w-0 flex-col items-center justify-center border-[0.5px] border-neutral-200" style={{gap:'1%'}}>
-    <div className="flex items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain" style={{width:gen?'74%':'65%',height:gen?'74%':'65%'}}>
+    <div aria-hidden className="flex items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain" style={{width:gen?'74%':'65%',height:gen?'74%':'65%'}}>
       {isTypeName(id)?<TypeIcon type={id}/>:gen?<RomanDisc gen={id}/>:<ExtraMark id={id}/>}
     </div>
-    {badge&&<div className="w-[90%] [&_svg]:block [&_svg]:h-auto [&_svg]:w-full">{badge}</div>}
+    {badge&&<div aria-hidden className="w-[90%] [&_svg]:block [&_svg]:h-auto [&_svg]:w-full">{badge}</div>}
   </div>;
 }
