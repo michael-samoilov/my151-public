@@ -24,6 +24,7 @@ import {
 } from '../model/packing';
 import { pointerMarks, pointerPool, pointerCoordinates } from '../model/pointers';
 import { takenIn, pickedCoordinatesElsewhere } from '../model/taken';
+import { coordinateLabel } from './coordinatePresentation';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
@@ -242,6 +243,7 @@ export function PickerSheet({
       title={mobileTitle}
       headerAccessory={iconToggle}
       closeLabel={t('favorites.close')}
+      dialogLabel={coordinateLabel(type, gen)}
       size="content"
     >
       <div data-testid="favorites-picker">{body}</div>

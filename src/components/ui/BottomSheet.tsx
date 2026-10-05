@@ -18,6 +18,8 @@ interface BottomSheetProps {
   headerAccessory?: React.ReactNode;
   /** Accessible name for the grab-handle button, which also closes on tap. */
   closeLabel: string;
+  /** Optional dialog name distinct from the dismissal control. */
+  dialogLabel?: string;
   /**
    * 'full' fills the viewport below `topGap`; 'content' sizes to its content
    * and only caps at that height. Either way the header stays on-screen — a
@@ -69,6 +71,7 @@ export function BottomSheet({
   title,
   headerAccessory,
   closeLabel,
+  dialogLabel,
   size = 'content',
   topGap = 56,
   layerZIndex = 110,
@@ -421,7 +424,7 @@ export function BottomSheet({
       )}
       <div
         role="dialog"
-        aria-label={closeLabel}
+        aria-label={dialogLabel ?? closeLabel}
         data-export-chrome={exportChrome ? '' : undefined}
         className="relative flex max-h-full min-h-0 flex-col rounded-t-2xl bg-background shadow-2xl pointer-events-auto"
         data-sheet-keyboard={keyboardOpen ? '' : undefined}
