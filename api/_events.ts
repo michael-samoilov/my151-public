@@ -87,6 +87,12 @@ export const FUNNEL_EVENTS = [
   'hub-cta-league',
   'hub-cta-favorites',
   'favorites-open',
+  'favorites-first-pick',
+  'favorites-quarter',
+  'favorites-half',
+  'favorites-complete',
+  'favorites-export-full',
+  'favorites-export-simplified',
   // The gym leader maker.
   'league-open',
   'league-first-seat',
@@ -292,3 +298,5 @@ export interface JournalEntry {
  */
 export const HAS_DEX = 1;
 export const HAS_LEAGUE = 2;
+
+export const HAS_FAVORITES = 4;

@@ -1,9 +1,16 @@
 // keeps: API validation and out-of-order retry behavior cannot run through stubbed browser routes.
 import { describe, expect, it } from 'vitest';
-import { parseFavoriteSnapshot, mergeFavoriteRecord } from '../../api/_favoriteRecord';
+import { parseFavoriteSnapshot, mergeFavoriteRecord, parseFavoriteRecord } from '../../api/_favoriteRecord';
 const snapshot = () => parseFavoriteSnapshot({v:1,fills:{'water|1':7,'favorite|1':7}})!;
 const input = (id:string,now=1_000_000) => ({cid:'browser-0001',id,kind:'progress' as const,now,snapshot:snapshot(),events:[]});
 describe('favorite record failure guards',()=>{
+ it('normalizes stored snapshots and rejects nonfinite or negative counters',()=>{
+  const r=mergeFavoriteRecord(null,input('first-000001'));
+  expect(parseFavoriteRecord({...r,exportsFull:NaN})).toBeNull();
+  expect(parseFavoriteRecord({...r,maxFilled:-1})).toBeNull();
+  expect(parseFavoriteRecord({...r,latest:{...r.latest,filled:257}})!.latest.filled).toBe(2);
+  expect(parseFavoriteRecord({...r,sessionLog:[{...r.sessionLog[0],endTs:NaN}]} )!.sessionLog).toEqual([]);
+ });
  it('rejects unknown snapshot versions and discards forged totals, invalid picks, and orphaned pointers',()=>{
   expect(parseFavoriteSnapshot({v:2,fills:{}})).toBeNull();
   const s=parseFavoriteSnapshot({v:1,filled:257,fills:{'water|1':7,'fire|1':7,'favorite|1':4,'Bad|1':25}})!;

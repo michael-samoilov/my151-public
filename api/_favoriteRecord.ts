@@ -99,7 +99,19 @@ export function parseFavoriteRecord(raw: unknown): FavoriteRecord | null {
   const r = value as FavoriteRecord;
   if (r.v !== 1 || typeof r.cid !== 'string' || !Number.isFinite(r.firstTs) || !Number.isFinite(r.lastTs)
     || !parseFavoriteSnapshot(r.latest) || !Array.isArray(r.sessionLog) || !Array.isArray(r.seenIds)) return null;
-  return r;
+  const nonnegative = (n: unknown) => typeof n === 'number' && Number.isFinite(n) && n >= 0;
+  if (!['submits','sessions','maxFilled','exportsFull','exportsSimplified'].every(key => nonnegative((r as unknown as Record<string,unknown>)[key]))) return null;
+  if (r.maxFilled > FAVORITE_TOTAL_CELLS || r.firstTs > r.lastTs) return null;
+  const sessionLog = r.sessionLog.flatMap(session => {
+    const snapshot = parseFavoriteSnapshot(session?.snapshot);
+    if (!snapshot || !Number.isFinite(session.ts) || !Number.isFinite(session.endTs) || session.endTs < session.ts || typeof session.id !== 'string') return [];
+    return [{id:session.id,ts:session.ts,endTs:session.endTs,snapshot,
+      events:Array.isArray(session.events)?session.events.filter((event):event is string=>typeof event==='string'&&event.startsWith('favorites-')).slice(0,20):[]}];
+  }).sort((a,b)=>a.ts-b.ts).slice(-50);
+  const sessionMs = sessionLog.map(session=>session.endTs-session.ts);
+  return {...r,latest:parseFavoriteSnapshot(r.latest)!,sessionLog,sessionMs,
+    maxSessionMs:Math.max(0,...sessionMs),curSessionStart:sessionLog.at(-1)?.ts??r.lastTs,
+    seenIds:r.seenIds.filter((id):id is string=>typeof id==='string'&&/^[\w-]{8,80}$/.test(id)).slice(-256)};
 }
 export function mergeFavoriteRecord(existing: FavoriteRecord | null, input: FavoriteBeaconInput): FavoriteRecord {
   if (existing?.seenIds.includes(input.id)) return existing;
