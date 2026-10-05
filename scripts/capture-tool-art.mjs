@@ -9,13 +9,14 @@ const out=resolve(process.env.ART_CAPTURE_DIR || 'docs/evidence/tool-art-rebake/
 mkdirSync(out,{recursive:true});
 const wanted=process.argv.slice(2); const has=name=>!wanted.length||wanted.includes(name);
 const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
-const reports=[];
+const reports=(()=>{try{return JSON.parse(readFileSync(resolve(out,'capture-audit.json'),'utf8'))}catch{return []}})();
 const sourceRef=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
 const sourceRefs=(()=>{try{return JSON.parse(readFileSync(resolve(out,'source-refs.json'),'utf8'))}catch{return {}}})();
 function source(name){sourceRefs[name]=sourceRef;writeFileSync(resolve(out,'source-refs.json'),JSON.stringify(sourceRefs,null,2))}
-async function audit(page,name){
- const result=await page.evaluate(`(()=>{${auditBody({minFont:12,annotate:false,checkFrame:false})}})()`);
+async function audit(page,name,checkFrame=false){
+ const result=await page.evaluate(`(()=>{${auditBody({minFont:12,annotate:false,checkFrame})}})()`);
  const hard=result.findings.filter(f=>APP_HARD_KINDS.includes(f.kind)||f.kind==='stretched-box');
+ const previous=reports.findIndex(report=>report.name===name);if(previous>=0)reports.splice(previous,1);
  reports.push({name,...result,hardCount:hard.length});
  if(hard.length)throw Error(JSON.stringify({name,hard}));
 }
@@ -64,6 +65,11 @@ try{
  if(has('dex')){
  await phonePage('build','dex-build');
  const p=await browser.newPage({viewport:{width:1280,height:900}});await p.goto(`${base}/pokedex-builder?demo=151&notme`);await p.locator('[data-nav="view"]').first().click();await p.locator('[data-dex-export]').click();await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'dex-grid');await p.locator('[data-export-stats]').click();await p.waitForTimeout(1000);await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'dex-stats');await p.close();
+ }
+ if(has('audit-native'))for(const name of ['league-story','trainer-brock','picker-full-portrait','picker-simplified-portrait','picker-full-horizontal','picker-simplified-horizontal','dex-grid','dex-stats']){
+  const bytes=readFileSync(resolve(out,`${name}.png`));const p=await browser.newPage();
+  await p.setContent(`<style>*{margin:0}img{display:block}</style><img data-audit-scale="intended" src="data:image/png;base64,${bytes.toString('base64')}">`);
+  await p.locator('img').evaluate(el=>el.decode());const dimensions=await p.locator('img').evaluate(el=>({width:el.naturalWidth,height:el.naturalHeight}));await p.setViewportSize(dimensions);await audit(p,`${name}-whole-artboard`,true);await p.close();
  }
  writeFileSync(resolve(out,'capture-audit.json'),JSON.stringify(reports,null,2));
 }finally{await browser.close()}
