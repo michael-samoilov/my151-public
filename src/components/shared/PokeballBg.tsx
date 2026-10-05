@@ -9,7 +9,7 @@ import type { Pokemon, TypeName } from '@/types/pokemon';
  * ace and partner slots now draw theirs the same. A single type fills both
  * halves, so a mono-type Pokemon reads as one colour rather than a mistake.
  */
-export function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
+export function PokeballBg({ pokemon }: { pokemon: Pick<Pokemon, 'types'> }) {
   const primary = TYPE_COLORS[pokemon.types[0] as TypeName];
   const secondary = TYPE_COLORS[(pokemon.types[1] ?? pokemon.types[0]) as TypeName];
 

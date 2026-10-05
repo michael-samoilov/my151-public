@@ -41,6 +41,7 @@ export function SessionTimeline({
   rightChip,
   milestones = [],
   tz,
+  showReadout = true,
   children,
 }: {
   points: TimelinePoint[];
@@ -54,6 +55,8 @@ export function SessionTimeline({
   rightChip?: ReactNode;
   milestones?: ChartMilestone[];
   tz?: string;
+  /** Hide the duplicate session summary when the snapshot needs the space. */
+  showReadout?: boolean;
   /** Snapshot under the chart. The scrubber then moves into the admin bar's
    *  ribbon row, on the nav. */
   children?: ReactNode;
@@ -382,7 +385,7 @@ export function SessionTimeline({
       <div className="flex flex-col gap-1.5">
         {chart}
         {scrub}
-        {readout}
+        {showReadout && readout}
       </div>
     );
   }
@@ -390,7 +393,7 @@ export function SessionTimeline({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1.5">
       <div className="order-1 shrink-0">{chart}</div>
-      <div className="order-2 shrink-0 md:order-3">{readout}</div>
+      {showReadout && <div className="order-2 shrink-0 md:order-3">{readout}</div>}
       <div className="order-3 flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-auto md:order-4">{children}</div>
       {slot &&
         createPortal(
