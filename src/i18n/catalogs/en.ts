@@ -217,6 +217,8 @@ export const enUi = {
   'favorites.scrollMore': 'Scroll for more',
   'favorites.completion': '{filled}/{total}',
   'favorites.completion.label': '{filled} of {total} favorites selected',
+  'favorites.typeRepair.message': 'Saved picks affected by corrected form types: {count}. They stay in your grid but are omitted from exports. Review their cells to choose replacements.',
+  'favorites.typeRepair.review': 'Review',
   'favorites.clear': 'Clear this cell',
   'favorites.close': 'Close picker',
   'favorites.origins.more': 'Show all origins for {pokemon}',

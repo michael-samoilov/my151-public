@@ -69,5 +69,7 @@
   "tools.title": "工具",
   "favorites.origins.more": "顯示{pokemon}的所有選擇位置",
   "favorites.origins.close": "關閉選擇位置",
-  "home.intro": "建立自訂地區寶可夢圖鑑、道館館主隊伍和訓練家卡片，或依屬性和世代挑選你最愛的寶可夢。將作品儲存為PNG圖片並分享。"
+  "home.intro": "建立自訂地區寶可夢圖鑑、道館館主隊伍和訓練家卡片，或依屬性和世代挑選你最愛的寶可夢。將作品儲存為PNG圖片並分享。",
+  "favorites.typeRepair.message": "形態屬性修正影響了{count}個已儲存的選擇。它們仍保留在表格中，但不會包含在匯出圖片中。請檢查對應儲存格並重新選擇。",
+  "favorites.typeRepair.review": "檢查"
 }

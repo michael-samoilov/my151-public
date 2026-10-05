@@ -69,5 +69,7 @@
   "tools.title": "工具",
   "favorites.origins.more": "显示{pokemon}的所有选择位置",
   "favorites.origins.close": "关闭选择位置",
-  "home.intro": "创建自定义地区宝可梦图鉴、道馆馆主队伍和训练家卡片，或按属性和世代挑选你最爱的宝可梦。将作品保存为PNG图片并分享。"
+  "home.intro": "创建自定义地区宝可梦图鉴、道馆馆主队伍和训练家卡片，或按属性和世代挑选你最爱的宝可梦。将作品保存为PNG图片并分享。",
+  "favorites.typeRepair.message": "形态属性修正影响了{count}个已保存的选择。它们仍保留在表格中，但不会包含在导出图片中。请检查对应单元格并重新选择。",
+  "favorites.typeRepair.review": "检查"
 }

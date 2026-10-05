@@ -10,13 +10,16 @@ import { renderFullChart } from '../export/renderFullChart';
 import { renderSimplifiedChart } from '../export/renderSimplifiedChart';
 import { sendFavoriteExportBeacon } from '../hooks/useFavoriteBeacon';
 import { buildFavoritesSnapshot } from '../export/snapshot';
+import { FavoritesTypeRepairNotice } from './FavoritesTypeRepairNotice';
+import type { GenAxisId, TypeAxisId } from '../model/cells';
 
 type ExportMode = 'full' | 'simplified';
 const MODES: ExportMode[] = ['full', 'simplified'];
 
-export default function FavoritesExportOverlay({ fills, onClose }: {
+export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
   fills: Readonly<Record<string, number>>;
   onClose: () => void;
+  onReview: (type: TypeAxisId, gen: GenAxisId) => void;
 }) {
   const t = useT();
   const locale = useLocale();
@@ -97,6 +100,7 @@ export default function FavoritesExportOverlay({ fills, onClose }: {
           <X className="h-4 w-4" />
         </button>
       </div>}
+      <FavoritesTypeRepairNotice fills={fills} onReview={onReview} />
       <div className="space-y-2 px-3 py-3">
         <div className="grid grid-cols-2 gap-1" aria-label={t('favorites.export.title')}>
           {MODES.map(option => {

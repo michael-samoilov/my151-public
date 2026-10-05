@@ -20,6 +20,7 @@ import { useFavoriteBeacon } from './hooks/useFavoriteBeacon';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
 import { FavoritesCompletionCounter } from './components/FavoritesCompletionCounter';
+import { FavoritesTypeRepairNotice } from './components/FavoritesTypeRepairNotice';
 import { PickerSheet } from './components/PickerSheet';
 import { SortDebugPanel } from './components/SortDebugPanel';
 import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
@@ -162,24 +163,28 @@ function FavoritesContent({ sel, setSel }: {
             scrolls inside it, and the footer stays below the fold. On
             desktop the frame runs to the screen edge, as the grid did when
             the page scrolled. */}
-        <div className="flex h-[calc(100dvh-2*2.75rem)] shrink-0">
-          <main className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
-            <FavoritesGrid
-              fills={fills}
-              resolve={getPickerMon}
-              selected={sel}
-              onSelect={open}
-              desktop={desktop}
-              pane={desktop ? picker : null}
-            />
-          </main>
-          {SORT_DEBUG_ENABLED ? <SortDebugPanel desktop={desktop} order={sortOrder} onChange={setSortOrder} /> : null}
+        <div className="flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col">
+          <FavoritesTypeRepairNotice fills={fills} onReview={open} />
+          <div className="flex min-h-0 flex-1">
+            <main className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
+              <FavoritesGrid
+                fills={fills}
+                resolve={getPickerMon}
+                selected={sel}
+                onSelect={open}
+                desktop={desktop}
+                pane={desktop ? picker : null}
+              />
+            </main>
+            {SORT_DEBUG_ENABLED ? <SortDebugPanel desktop={desktop} order={sortOrder} onChange={setSortOrder} /> : null}
+          </div>
         </div>
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
       {exportOpen && <Suspense fallback={null}>
-        <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)} />
+        <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)}
+          onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />
       </Suspense>}
     </>
   );

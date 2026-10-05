@@ -69,5 +69,7 @@
   "tools.title": "도구",
   "favorites.origins.more": "{pokemon}의 모든 선택 위치 보기",
   "favorites.origins.close": "선택 위치 닫기",
-  "home.intro": "나만의 지방 포켓몬 도감, 체육관 관장 팀과 트레이너 카드를 만들거나 타입·세대별로 좋아하는 포켓몬을 골라 보세요. 완성한 작품을 PNG 이미지로 저장하고 공유하세요."
+  "home.intro": "나만의 지방 포켓몬 도감, 체육관 관장 팀과 트레이너 카드를 만들거나 타입·세대별로 좋아하는 포켓몬을 골라 보세요. 완성한 작품을 PNG 이미지로 저장하고 공유하세요.",
+  "favorites.typeRepair.message": "폼의 타입 수정으로 저장된 선택 {count}개가 영향을 받았습니다. 표에는 남지만 내보내기에서는 제외됩니다. 해당 칸을 확인하고 다시 선택하세요.",
+  "favorites.typeRepair.review": "확인"
 }
