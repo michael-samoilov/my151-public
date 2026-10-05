@@ -28,7 +28,9 @@ async function blob(page,name){
  // Audit the entire native artboard, rather than the scaled overlay.
  const native=await browser.newPage();
  await native.setContent(`<style>*{margin:0}img{display:block}</style><img data-audit-scale="intended" src="data:image/png;base64,${Buffer.from(raw).toString('base64')}">`);
- await native.locator('img').evaluate(el=>el.decode());await audit(native,name);await native.close();
+ await native.locator('img').evaluate(el=>el.decode());
+ const dimensions=await native.locator('img').evaluate(el=>({width:el.naturalWidth,height:el.naturalHeight}));
+ await native.setViewportSize(dimensions);await audit(native,name,true);await native.close();
  console.log(name,'native PNG captured and audited');
 }
 async function phonePage(tab,name){
@@ -61,6 +63,17 @@ try{
  const p=await browser.newPage({viewport:{width:1280,height:900}});
  await p.goto(`${base}/docs/favorite-picker-work/export/portrait/index.html`);await p.waitForFunction(()=>window.ready,{timeout:90000});await audit(p,'picker-portrait-comparison');
  const data=await p.evaluate(()=>window.portrait.data);for(const [i,name]of ['picker-full-portrait','picker-simplified-portrait','picker-full-horizontal','picker-simplified-horizontal'].entries()){writeFileSync(resolve(out,`${name}.png`),Buffer.from(data[i].split(',')[1],'base64'));source(name)}await p.close();
+ }
+ if(has('dex-share')){
+ const p=await browser.newPage({viewport:{width:1280,height:900}});
+ await p.goto(`${base}/pokedex-builder?demo=151&notme`);await p.locator('[data-nav="view"]').first().click();await p.locator('[data-dex-export]').click();
+ await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});
+ const outlines=p.locator('[data-export-outlines]');
+ if((await outlines.getAttribute('class')).includes('bg-primary/10'))await outlines.click();
+ const stats=p.locator('[data-export-stats]');
+ if(!(await stats.getAttribute('class')).includes('bg-primary/10'))await stats.click();
+ await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});
+ await blob(p,'dex-share-stats');await p.close();
  }
  if(has('dex')){
  await phonePage('build','dex-build');

@@ -62,17 +62,8 @@ const BLURB = `min(${U(7.6)}, 15.6px)`;
 // lands where it would have anyway.
 const BLEED = U(34);
 
-/**
- * Corner radius as a share of the screenshot's width.
- *
- * A phone's own proportion, not this app's card radius: the shot is a picture
- * of a phone screen, so its corners should read as that phone's. An iPhone 14
- * rounds 47.3pt on a 390pt screen. The radius is applied here rather than baked
- * into the asset, so one flat rectangle serves the 110px phone card and the
- * 263px desktop card alike. `capture-shots.mjs` keeps the same number and
- * refuses to write an asset with ink inside this curve.
- */
-const PHONE_RADIUS = 0.121;
+/** Export-paper corners are gentle and leave each native title band intact. */
+const EXPORT_RADIUS = 0.02;
 
 /** Equal-width sheets share their top anchor and rotate in 7° steps. */
 const FAN = [
@@ -151,8 +142,8 @@ function useTools(placed: number): Tool[] {
       href: '/favorite-pokemon-by-type',
       title: t('home.favorites.title'),
       blurb: t('home.favorites.blurb'),
-      shots: [shot(favoritesBack400, favoritesBack), shot(favoritesFront400, favoritesFront)],
-      alts: [t('home.favorites.fullGridAlt'), t('home.favorites.simplifiedAlt')],
+      shots: [shot(favoritesFront400, favoritesFront), shot(favoritesBack400, favoritesBack)],
+      alts: [t('home.favorites.simplifiedAlt'), t('home.favorites.fullGridAlt')],
     },
     { key: HAMMER_TITLE, title: t('home.next.title'), blurb: t('home.next.blurb') },
   ];
@@ -354,7 +345,7 @@ function Artwork({ tool }: { tool: Tool }) {
       top: `calc(${BLEED} + ${U(SHOT_TOP)})`,
       width: `calc(${U(SHOT_W)} * var(--art))`,
       transformOrigin: '50% 0' as const,
-      borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${PHONE_RADIUS})`,
+      borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${EXPORT_RADIUS})`,
     };
   };
   // The floating shots carry `--hf`, the per-shot hover float that `index.css`
@@ -562,21 +553,20 @@ export function HomePage() {
               than the viewport. */}
           <main className="flex flex-1 flex-col px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
             <div className="min-h-6 flex-1" />
-            <section className="md:flex md:items-start md:justify-between">
+            <section className="md:grid md:grid-cols-4 md:items-start md:gap-x-6">
               <h1
                 // Every step here was measured, not guessed — see the README.
                 // 1.3125rem is 21px at the mobile root size, the largest whole
                 // pixel that keeps this heading to two lines at 320px, the
                 // narrowest width the e2e projects cover; 22px spills to three.
-                // The split hero gives the h1 a 375px column at 1024, where
-                // anything over 1.75rem runs to four lines, so the big size waits
-                // for xl.
-                className="m-0 font-extrabold tracking-tight text-pretty text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:w-[41%] md:shrink-0"
+                // Desktop copy spans the same two-card halves as the grid.
+                // Keep the larger heading size at xl to preserve its line fit.
+                className="m-0 font-extrabold tracking-tight text-pretty text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:col-span-2"
                 style={{ lineHeight: 1.08 }}
               >
                 {t('home.h1')}
               </h1>
-              <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:w-[55%] md:shrink-0">
+              <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2">
                 <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
                   {t('home.intro')}
                 </p>
