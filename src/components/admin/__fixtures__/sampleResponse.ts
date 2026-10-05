@@ -583,12 +583,12 @@ const depthByDevice = {
   desktop: curveRec(desktopPts, 244),
 };
 const referrerFlow = [
-  { host: 'google.com', total: 182, dex: 171, league: 13 },
-  { host: 'reddit.com', total: 96, dex: 88, league: 9 },
+  { host: 'google.com', total: 184, dex: 171, league: 13, favorites:2 },
+  { host: 'reddit.com', total: 97, dex: 88, league: 9, favorites:1 },
   { host: 'youtube.com', total: 41, dex: 39, league: 2 },
   { host: 't.co', total: 24, dex: 21, league: 4 },
   { host: 'bing.com', total: 15, dex: 14, league: 1 },
-  { host: 'referrer not known', total: 90, dex: 85, league: 6 },
+  { host: 'referrer not known', total: 93, dex: 85, league: 6, favorites:3 },
 ];
 
 export const sampleResponse: ApiResponse = {
