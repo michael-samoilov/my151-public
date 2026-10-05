@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ButterflyChart, type ButterflyRow } from '@/components/analytics/ButterflyChart';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { shapeChartIcon } from '@/components/shared/ShapeIcon';
@@ -13,7 +13,7 @@ import { pickerConditionalStats, type PickerConditionalStats } from '../stats/pi
 
 type Dimension = 'type' | 'color' | 'shape' | 'evolution';
 type Sort = 'count' | 'deviation' | 'label';
-const TEXT = 'text-[0.625rem]';
+const TEXT = 'text-xs';
 
 /** Match the Dex detailed-stats title without changing the shared Dex panel. */
 function ChartTitle({ text }: { text: string }) {
@@ -77,13 +77,37 @@ function Distribution({ dimension, stats }: { dimension: Dimension; stats: Picke
   }).sort((a, b) => sort === 'label' ? a.label.localeCompare(b.label) : (sort === 'count' ? b.count - a.count : b.deviation - a.deviation) || a.label.localeCompare(b.label));
   const titles = { type: t('stats.type.title'), shape: t('favorites.stats.shape'), color: t('favorites.stats.color'), evolution: t('favorites.stats.evolution') };
   const textIcons = dimension === 'color' || dimension === 'evolution';
-  const labelWidth = textIcons ? Math.max(0, ...rows.map(row => measureLabelWidth(row.label, 10))) : 0;
+  const labelWidth = textIcons ? Math.max(0, ...rows.map(row => measureLabelWidth(row.label, 12))) : 0;
   return <Card dimension={dimension} covered={data.coveredChoices} excluded={data.excludedChoices} title={titles[dimension]} subtitle={t('favorites.stats.choices', { count: data.coveredChoices })}>
     {!data.coveredChoices ? <p className="text-sm text-muted-foreground py-4">{t('favorites.stats.empty')}</p> : <>
       <ButterflyChart data={rows} rowHeight={22} hideLabelText iconColAspect={textIcons ? 1 + (labelWidth + 5) / 14 : dimension === 'shape' ? 1.65 : 1} iconScale={dimension === 'shape' ? 1.4 : 1} countDenominator={data.coveredChoices} sortBy={sort} onSortChange={setSort} labelHeader={dimension === 'type' ? t('chart.header.type') : dimension === 'shape' ? t('chart.header.shape') : undefined} textClass={TEXT} />
-      <div className="sr-only"><table><caption>{titles[dimension]}</caption><thead><tr><th>{titles[dimension]}</th><th>{t('chart.header.count')}</th><th>{t('favorites.stats.options')}</th><th>{t('chart.header.overIndexed2')}</th></tr></thead><tbody>{rows.map(row => <tr key={row.key} data-favorite-chart-row={row.key}><th>{row.label}</th><td>{formatNumber(row.count)}</td><td>{formatNumber(row.expected, { maximumFractionDigits: 4 })}</td><td>{formatNumber(1 + row.deviation / 100, { maximumFractionDigits: 2 })}×</td></tr>)}</tbody></table></div>
+      <div className="sr-only" data-audit-clip="intended"><table><caption>{titles[dimension]}</caption><thead><tr><th>{titles[dimension]}</th><th>{t('chart.header.count')}</th><th>{t('favorites.stats.options')}</th><th>{t('chart.header.overIndexed2')}</th></tr></thead><tbody>{rows.map(row => <tr key={row.key} data-favorite-chart-row={row.key}><th>{row.label}</th><td>{formatNumber(row.count)}</td><td>{formatNumber(row.expected, { maximumFractionDigits: 4 })}</td><td>{formatNumber(1 + row.deviation / 100, { maximumFractionDigits: 2 })}×</td></tr>)}</tbody></table></div>
     </>}
   </Card>;
+}
+
+/** Keep BST tick labels readable without changing the shared histogram or its bins. */
+function BstHistogram({ bst }: { bst: PickerConditionalStats['bst'] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const observer = new ResizeObserver(entries => {
+      const next = entries[0]?.contentRect.width ?? 0;
+      if (next > 0) setWidth(previous => Math.abs(previous - next) < .5 ? previous : next);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  const scale = Math.max(1, Math.min(width / 360, 2));
+  const plotWidth = Math.max(1, width - 40 * scale - 12);
+  const span = bst.xDomain[1] - bst.xDomain[0];
+  const minimumTickGap = 32 * scale;
+  const tickStep = bst.xTicks.length > 1 ? bst.xTicks[1] - bst.xTicks[0] : span;
+  const stride = Math.max(1, Math.ceil(minimumTickGap * span / (plotWidth * tickStep)));
+  const xTicks = bst.xTicks.filter((_, index) => index % stride === 0);
+  return <div ref={ref}><SuperimposedHistogram data={bst.merged} binSize={bst.binSize} xDomain={bst.xDomain} xTicks={xTicks} yDomain={bst.yDomain} yTicks={bst.yTicks} textClass={TEXT} /></div>;
 }
 
 /** Live choices use the same validated selector-option baseline as the Full export. */
@@ -110,7 +134,7 @@ export default function FavoritesAnalyticsDashboard({ fills }: { fills: Readonly
               <span className={`${TEXT} text-muted-foreground inline-flex items-center gap-1.5`}><span aria-hidden className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />{t('favorites.stats.options')}</span>
               <span className={`${TEXT} text-muted-foreground inline-flex items-center gap-1.5`}><span aria-hidden className="w-3 h-3 rounded-sm bg-red-500 opacity-85" />{t('favorites.stats.yours')}</span>
             </div>
-            <SuperimposedHistogram data={stats.bst.merged} binSize={stats.bst.binSize} xDomain={stats.bst.xDomain} xTicks={stats.bst.xTicks} yDomain={stats.bst.yDomain} yTicks={stats.bst.yTicks} textClass={TEXT} />
+            <BstHistogram bst={stats.bst} />
           </> : <p className="text-sm text-muted-foreground py-4">{t('favorites.stats.empty')}</p>}
         </Card>
       </div>
