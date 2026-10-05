@@ -21,8 +21,8 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { drawExportCredit as drawCredit } from '@/lib/exportCredit';
-import { clipExportCanvas, exportInnerCornerRadius, exportCornerRadius } from '@/lib/exportPngShape';
-import { localeUppercase, pokemonLabel, t } from '@/i18n';
+import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
+import { localeUppercase, pokemonLabel } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
 import { deriveRow, signatureMember } from '../model/engine';
@@ -1352,16 +1352,39 @@ function drawHomeRow(
 
 function drawLeagueHome(
   ctx: CanvasRenderingContext2D,
+  name: string,
   cards: GymCard[],
   view: LeagueView,
   layout: LeagueHomeExportLayout,
   geom: L.HomeExportGeometry,
   images: Images,
 ): void {
+  // The picture is the league's content on white, edge to edge.
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, geom.homeW, L.homeImgH(!!name, geom.homeW));
+
   const ox = L.HPADX;
-  // The band replaces the former name line. Round the small body gutter so
-  // the named export's existing row content moves by an integer pixel count.
-  let y = Math.ceil(L.HPADY);
+  // An unnamed league opens on its first band, so the band takes the gutter
+  // above it as well as either side of it.
+  let y = L.homeTopPad(!!name, geom.homeW);
+
+  // --- the identity line: the league's name, and nothing else ---
+  // The tool's own name stays off the picture, and so does the reading:
+  // someone handed it wants to know whose league it is, and the rows say
+  // themselves which teams they are. An unnamed league gets no line, so the
+  // picture starts at its first band and is that much shorter.
+  if (name) {
+    const big = 14 * L.K2;
+    ctx.save();
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = font(big, 700);
+    ctx.fillStyle = FG;
+    const base = y + L.HOME_HDR_H / 2 + capHeight(ctx) / 2;
+    const room = geom.homeInner - 2 * L.HOME_RAIL;
+    ctx.fillText(ellipsize(ctx, name, room), ox + L.HOME_RAIL, base);
+    ctx.restore();
+    y += L.HOME_HDR_H;
+  }
 
   const bothTeamColumns = layoutShowsBothTeams(layout);
 
@@ -1380,28 +1403,6 @@ function drawLeagueHome(
   }
 
   drawCredit(ctx, geom.homeW / 2, y + L.FOOT / 2, L.CREDIT_PX, L.HOME_CREDIT_PREFIX);
-}
-
-/** Full user title, fitted inside the red band and clear of its outer curve. */
-function drawLeagueTitle(ctx: CanvasRenderingContext2D, title: string, w: number, h: number): void {
-  ctx.save();
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = font(L.TITLE_PX, 800);
-  const baseline = L.BAR_H / 2 + capHeight(ctx) / 2;
-  const metrics = ctx.measureText(title);
-  const inkTop = Math.max(0, baseline - metrics.actualBoundingBoxAscent);
-  const radius = exportCornerRadius(w, h);
-  const curveInset = inkTop < radius
-    ? radius - Math.sqrt(radius * radius - (radius - inkTop) ** 2)
-    : 0;
-  const x = Math.max(L.FRAME + L.BAR_TEXT_X, Math.ceil(curveInset + L.FRAME));
-  const room = w - 2 * x;
-  const fit = Math.min(1, room / Math.max(1, trackedWidth(ctx, title, L.TITLE_TRACK)));
-  ctx.font = font(L.TITLE_PX * fit, 800);
-  fillTracked(ctx, title, x, L.BAR_H / 2 + capHeight(ctx) / 2, L.TITLE_TRACK * fit);
-  ctx.restore();
 }
 
 // ---------- assembling a PNG ----------
@@ -1478,24 +1479,19 @@ export async function exportLeagueHome(
     layoutShowsBothTeams(layout),
     homeDetailsNeed(measure, cards, images, layout),
   );
-  const title = layout.showLeagueName && name.trim() ? name : t('export.leagueTitle');
-  const innerH = Math.ceil(Math.ceil(L.HPADY) + L.HOME_BODY_H);
-  // Match the clip and frame to the integer PNG backing-store bounds.
-  const w = Math.round(geom.homeW + 2 * L.FRAME);
-  const h = L.BAR_H + innerH + L.FRAME;
+  const named = Boolean(name) && layout.showLeagueName;
+  const innerH = L.homeImgH(named, geom.homeW);
+  const w = geom.homeW + 2 * L.FRAME;
+  const h = innerH + 2 * L.FRAME;
   return render(w, h, (ctx) => {
     ctx.fillStyle = HOME_FRAME;
     ctx.fillRect(0, 0, w, h);
-    drawLeagueTitle(ctx, title, w, h);
     ctx.save();
     ctx.beginPath();
-    const radius = exportInnerCornerRadius(w, h, L.FRAME);
-    ctx.roundRect(L.FRAME, L.BAR_H, w - 2 * L.FRAME, innerH, [0, 0, radius, radius]);
+    ctx.roundRect(L.FRAME, L.FRAME, geom.homeW, innerH, exportInnerCornerRadius(w, h, L.FRAME));
     ctx.clip();
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(L.FRAME, L.BAR_H, w - 2 * L.FRAME, innerH);
-    ctx.translate(L.FRAME, L.BAR_H);
-    drawLeagueHome(ctx, cards, view, layout, geom, images);
+    ctx.translate(L.FRAME, L.FRAME);
+    drawLeagueHome(ctx, named ? name : '', cards, view, layout, geom, images);
     ctx.restore();
   });
 }

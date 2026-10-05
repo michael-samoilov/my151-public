@@ -11,7 +11,7 @@ export const HOME_FILENAME = 'my151-league.png';
 export type LeagueHomeTeamMode = 'story' | 'rematch' | 'both';
 
 export interface LeagueHomeExportLayout {
-  /** Use the saved league name in the title band instead of the generic title. */
+  /** League name line at the top of the picture. */
   showLeagueName: boolean;
   /** Theme row in the gym-details column. */
   showTheme: boolean;

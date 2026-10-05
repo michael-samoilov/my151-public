@@ -149,7 +149,6 @@ export const enUi = {
   'chart.header.weakerHere2': '← HERE',
   'common.dismiss': 'Dismiss',
   'export.dexTitle': 'Custom Pokédex',
-  'export.leagueTitle': 'Pokémon League',
   'dex.national': 'National Dex',
   'drilldown.bstTitle': 'BST {from}–{to}',
   'drilldown.evoLevelTitle': 'Evolves at Lv {from}–{to}',
