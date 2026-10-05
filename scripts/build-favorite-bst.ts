@@ -8,6 +8,7 @@ const revision='bc92d3b6029ef1abe9e7ad424c400b338f3c11fe';
 const directory=process.argv[2];if(!directory)throw Error('Provide a directory of pokemon.csv, pokemon_forms.csv and pokemon_stats.csv from the pinned revision.');
 function table(name:string){const raw=readFileSync(`${directory}/${name}.csv`,'utf8'),[head,...lines]=raw.trim().split('\n');const fields=head.split(',');return {name,sha256:createHash('sha256').update(raw).digest('hex'),rows:lines.map(line=>Object.fromEntries(line.split(',').map((v,i)=>[fields[i],v])))};}
 const pokemon=table('pokemon'),forms=table('pokemon_forms'),stats=table('pokemon_stats');
+if(forms.sha256!=='99bf8f7ad4dc1f2e291357a090cef6a575623ec3cbf9030d0e33656e6e608ae2'||stats.sha256!=='fa2c44263a3706468682fefc3e0b3c4f5487fe9febed7d4ebcd6939c34b16aa8')throw Error('Form/stats CSV differs from pinned source.');
 if(pokemon.sha256!=='16c81c33188b0eac403aa2f759fcbe9e42c611f722d263f5b5a6a5bff9f8ce6b')throw Error('pokemon.csv does not match reviewed immutable source.');
 const byId=new Map(pokemon.rows.map(row=>[Number(row.id),row]));const byName=new Map(pokemon.rows.map(row=>[row.identifier,row]));
 const formByName=new Map(forms.rows.map(row=>[row.identifier,row]));const map=new Map(reviewed.entries.map(row=>[row.appId,row]));

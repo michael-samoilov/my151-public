@@ -35,7 +35,7 @@ function rowIcon(dimension:Dimension,key:string,images:Map<string,HTMLImageEleme
 export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerConditionalStats,images:Map<string,HTMLImageElement>){
  function card(d:Dimension,x:number,y:number,h:number){
   ctx.save();ctx.translate(x,y);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,h,8);ctx.fill();drawExportStatsTitle(ctx,titles[d],20,12);
-  const data=stats.dimensions[d];label(ctx,`${data.coveredChoices} choices · selector-option reference`,20,46);
+  const data=stats.dimensions[d];label(ctx,`Choices: ${data.coveredChoices} · selector-option reference`,20,46);
   if(!data.coveredChoices){label(ctx,'No comparable choices yet',20,76);ctx.restore();return;}
   const rows=[...data.rows].sort((a,b)=>(b.deviation??-Infinity)-(a.deviation??-Infinity)).map(row=>({...row,color:d==='type'?TYPE_COLORS[row.key as TypeName]:d==='color'?COLOR_SWATCHES[row.key as ColorName]:'#dc2626',icon:rowIcon(d,row.key,images)}));
   const rowHeight=Math.min(28,(h-92)/rows.length);
@@ -43,7 +43,7 @@ export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerCo
  }
  card('type',0,0,488);card('color',0,504,360);card('shape',336,0,408);card('evolution',336,424,168);
  ctx.save();ctx.translate(336,608);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,256,8);ctx.fill();drawExportStatsTitle(ctx,'Base Stat Total',20,12);
- label(ctx,`${stats.dimensions.bst.coveredChoices} choices · ${stats.dimensions.bst.excludedChoices} without full BST coverage`,20,46);
+ label(ctx,`Choices: ${stats.dimensions.bst.coveredChoices} · ${stats.dimensions.bst.excludedChoices} without full BST coverage`,20,46);
  if(stats.dimensions.bst.coveredChoices){drawExportHistogram(ctx,20,54,stats.bst,.85,true);ctx.fillStyle='#94a3b8';ctx.fillRect(20,236,8,8);label(ctx,'Selector options',32,243);ctx.fillStyle='#ef4444';ctx.fillRect(162,236,8,8);label(ctx,'Your picks',174,243);}
  else label(ctx,'No comparable choices yet',20,76);
  ctx.restore();
