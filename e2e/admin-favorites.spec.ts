@@ -9,23 +9,59 @@ test.describe('Picker admin @viewport',()=>{
     await expect(funnel).toHaveAttribute('aria-label',/Completed/);
     await page.locator('[data-favorite-user="demo-picker-6"]').click();
     const detail=page.getByTestId('admin-favorite-detail');
-    await expect(detail.getByText('257 / 257 cells')).toBeVisible();
+    await expect(page.getByRole('table',{name:'Favorite Pokémon portrait full grid'})).toBeVisible();
+    await expect(detail.getByRole('heading')).toHaveCount(0);
+    await expect(page.getByTestId('session-playhead-count')).toHaveCount(0);
     const grid=page.getByTestId('admin-favorite-snapshot');
-    const images=grid.locator('img');
+    const images=grid.locator('[data-favorite-sprite]');
     await expect(images).toHaveCount(257);
     const slider=page.getByRole('slider',{name:'Scrub sessions'});
     await slider.focus();await slider.press('Home');
-    await expect(detail.getByText('0 / 257 cells')).toBeVisible();
+    await expect(slider).toHaveAttribute('aria-valuetext',/0 of 257 cells/);
     await expect(images).toHaveCount(0);
     await slider.press('End');
     await expect(images).toHaveCount(257);
     await expect(page.getByRole('group',{name:"This browser's tools"}).getByRole('button',{name:'Picker',exact:true}).last()).toBeEnabled();
-    const measurement=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,height:document.documentElement.scrollHeight,viewport:innerHeight,coordinates:document.querySelectorAll('[data-favorite-coordinate]').length,filled:document.querySelectorAll('[data-favorite-coordinate] img').length}));
+    await expect(slider).toHaveAttribute('aria-valuetext',/257 of 257 cells/);
+    await expect(grid.getByRole('columnheader')).toHaveCount(13);
+    await expect(grid.getByRole('rowheader')).toHaveCount(22);
+    await expect(grid.getByRole('row')).toHaveCount(23);
+    const measurement=await portraitMeasurement(page);
     expect(measurement.overflow).toBe(0);
     expect(measurement.height).toBeLessThanOrEqual(measurement.viewport);
+    expect(measurement.coordinates).toBe(264);
+    expect(measurement.filled).toBe(257);
+    expect(measurement.outside).toBe(0);
+    expect(measurement.internalScrolling).toBe(0);
     await testInfo.attach('picker-admin-session.json',{body:JSON.stringify(measurement),contentType:'application/json'});
+    await testInfo.attach('picker-admin-portrait.png',{body:await page.screenshot(),contentType:'image/png'});
+  });
+  test('the full portrait board refits when the available viewport height shrinks',async({page},testInfo)=>{
+    await page.goto('/?admin&demo');
+    await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
+    await page.locator('[data-favorite-user="demo-picker-6"]').click();
+    await expect(page.getByTestId('admin-favorite-snapshot').locator('[data-favorite-sprite]')).toHaveCount(257);
+    await page.setViewportSize({width:page.viewportSize()!.width,height:568});
+    await expect.poll(async()=>{const m=await portraitMeasurement(page);return m.outside+m.internalScrolling+Math.max(0,m.bottom-m.viewport);}).toBe(0);
+    const measurement=await portraitMeasurement(page);
+    expect(measurement.coordinates).toBe(264);
+    expect(measurement.overflow).toBe(0);
+    expect(measurement.height).toBeLessThanOrEqual(568);
+    await testInfo.attach('picker-admin-short-portrait.json',{body:JSON.stringify(measurement),contentType:'application/json'});
+    await testInfo.attach('picker-admin-short-portrait.png',{body:await page.screenshot(),contentType:'image/png'});
   });
 });
+
+async function portraitMeasurement(page:import('@playwright/test').Page){
+  return page.evaluate(()=>{
+    const grid=document.querySelector('[data-testid="admin-favorite-snapshot"]')!;
+    const box=grid.getBoundingClientRect();
+    const cells=[...grid.querySelectorAll('[data-favorite-coordinate]')];
+    const outside=cells.filter(cell=>{const rect=cell.getBoundingClientRect();return rect.left<box.left-1||rect.right>box.right+1||rect.top<box.top-1||rect.bottom>box.bottom+1;}).length;
+    const internalScrolling=[grid,...grid.querySelectorAll('*')].filter(el=>{const style=getComputedStyle(el);return /(auto|scroll)/.test(style.overflowX+style.overflowY)&&(el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+1);}).length;
+    return {overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,height:document.documentElement.scrollHeight,viewport:innerHeight,coordinates:cells.length,filled:grid.querySelectorAll('[data-favorite-sprite]').length,outside,internalScrolling,bottom:box.bottom};
+  });
+}
 
 test.describe('Three-tool overlap @viewport',()=>{
 test('a three-tool overlap keeps all seven exclusive region counts visible',async({page},testInfo)=>{
