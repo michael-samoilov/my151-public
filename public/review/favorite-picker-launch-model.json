@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "abbb316b",
+  "sourceRevision": "ad2e11a2",
   "groups": [
     {
       "id": "picker",
       "title": "1. Picker copy",
-      "note": "The title already matches the research proposal. The description and five-question FAQ remain proposals. Search results can rewrite titles and descriptions.",
+      "note": "The page heading is shortened to keep Picker and Analytics navigation clear. The descriptive search title remains. The description and five-question FAQ remain proposals. Search results can rewrite titles and descriptions.",
       "fields": [
         {
           "id": "picker_heading",
           "label": "Page heading",
-          "current": "Favorite Pokémon Picker by Type and Generation",
-          "proposed": "Favorite Pokémon Picker by Type and Generation"
+          "current": "Favorite Pokémon Picker",
+          "proposed": "Favorite Pokémon Picker"
         },
         {
           "id": "picker_title",
