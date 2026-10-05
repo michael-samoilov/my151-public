@@ -9,7 +9,8 @@ test.describe('Picker admin @viewport',()=>{
     await expect(funnel).toHaveAttribute('aria-label',/Completed/);
     await page.locator('[data-favorite-user="demo-picker-6"]').click();
     const detail=page.getByTestId('admin-favorite-detail');
-    await expect(page.getByRole('table',{name:'Favorite Pokémon portrait full grid'})).toBeVisible();
+    const desktop=page.viewportSize()!.width>=1024;
+    await expect(page.getByRole('table',{name:`Favorite Pokémon ${desktop?'landscape':'portrait'} full grid`})).toBeVisible();
     await expect(detail.getByRole('heading')).toHaveCount(0);
     await expect(page.getByTestId('session-playhead-count')).toHaveCount(0);
     const grid=page.getByTestId('admin-favorite-snapshot');
@@ -23,10 +24,10 @@ test.describe('Picker admin @viewport',()=>{
     await expect(images).toHaveCount(257);
     await expect(page.getByRole('group',{name:"This browser's tools"}).getByRole('button',{name:'Picker',exact:true}).last()).toBeEnabled();
     await expect(slider).toHaveAttribute('aria-valuetext',/257 of 257 cells/);
-    await expect(grid.getByRole('columnheader')).toHaveCount(13);
-    await expect(grid.getByRole('rowheader')).toHaveCount(22);
-    await expect(grid.getByRole('row')).toHaveCount(23);
-    const measurement=await portraitMeasurement(page);
+    await expect(grid.getByRole('columnheader')).toHaveCount(desktop?23:13);
+    await expect(grid.getByRole('rowheader')).toHaveCount(desktop?12:22);
+    await expect(grid.getByRole('row')).toHaveCount(desktop?13:23);
+    const measurement=await gridMeasurement(page);
     expect(measurement.overflow).toBe(0);
     expect(measurement.height).toBeLessThanOrEqual(measurement.viewport);
     expect(measurement.coordinates).toBe(264);
@@ -34,25 +35,47 @@ test.describe('Picker admin @viewport',()=>{
     expect(measurement.outside).toBe(0);
     expect(measurement.internalScrolling).toBe(0);
     await testInfo.attach('picker-admin-session.json',{body:JSON.stringify(measurement),contentType:'application/json'});
-    await testInfo.attach('picker-admin-portrait.png',{body:await page.screenshot(),contentType:'image/png'});
+    await testInfo.attach('picker-admin-responsive-grid.png',{body:await page.screenshot(),contentType:'image/png'});
   });
-  test('the full portrait board refits when the available viewport height shrinks',async({page},testInfo)=>{
+  test('the full board refits when the available viewport height shrinks',async({page},testInfo)=>{
     await page.goto('/?admin&demo');
     await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
     await page.locator('[data-favorite-user="demo-picker-6"]').click();
     await expect(page.getByTestId('admin-favorite-snapshot').locator('[data-favorite-sprite]')).toHaveCount(257);
     await page.setViewportSize({width:page.viewportSize()!.width,height:568});
-    await expect.poll(async()=>{const m=await portraitMeasurement(page);return m.outside+m.internalScrolling+Math.max(0,m.bottom-m.viewport);}).toBe(0);
-    const measurement=await portraitMeasurement(page);
+    await expect.poll(async()=>{const m=await gridMeasurement(page);return m.outside+m.internalScrolling+Math.max(0,m.bottom-m.viewport);}).toBe(0);
+    const measurement=await gridMeasurement(page);
     expect(measurement.coordinates).toBe(264);
     expect(measurement.overflow).toBe(0);
     expect(measurement.height).toBeLessThanOrEqual(568);
-    await testInfo.attach('picker-admin-short-portrait.json',{body:JSON.stringify(measurement),contentType:'application/json'});
-    await testInfo.attach('picker-admin-short-portrait.png',{body:await page.screenshot(),contentType:'image/png'});
+    await testInfo.attach('picker-admin-short-grid.json',{body:JSON.stringify(measurement),contentType:'application/json'});
+    await testInfo.attach('picker-admin-short-grid.png',{body:await page.screenshot(),contentType:'image/png'});
   });
 });
 
-async function portraitMeasurement(page:import('@playwright/test').Page){
+test('resizing across the desktop breakpoint preserves every selected coordinate',async({page},testInfo)=>{
+  await page.setViewportSize({width:1280,height:844});
+  await page.goto('/?admin&demo');
+  await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
+  await page.locator('[data-favorite-user="demo-picker-6"]').click();
+  const grid=page.getByTestId('admin-favorite-snapshot');
+  await expect(grid.locator('[data-favorite-sprite]')).toHaveCount(257);
+  const coordinates=()=>grid.locator('[data-favorite-coordinate]').evaluateAll(cells=>cells.map(cell=>[cell.getAttribute('data-favorite-coordinate'),cell.getAttribute('aria-label')]).sort(([a],[b])=>a!.localeCompare(b!)));
+  const original=await coordinates();
+  const measurements=[];
+  for(const width of [1280,1023,1024,390,1280]){
+    await page.setViewportSize({width,height:844});
+    await expect(grid.getByRole('columnheader')).toHaveCount(width>=1024?23:13);
+    await expect(grid.getByRole('rowheader')).toHaveCount(width>=1024?12:22);
+    await expect.poll(async()=>{const m=await gridMeasurement(page);return m.outside+m.internalScrolling+m.overflow+Math.max(0,m.bottom-m.viewport);}).toBe(0);
+    expect(await coordinates()).toEqual(original);
+    measurements.push({width,...await gridMeasurement(page)});
+  }
+  await testInfo.attach('picker-admin-breakpoint.json',{body:JSON.stringify(measurements),contentType:'application/json'});
+  await testInfo.attach('picker-admin-breakpoint.png',{body:await page.screenshot(),contentType:'image/png'});
+});
+
+async function gridMeasurement(page:import('@playwright/test').Page){
   return page.evaluate(()=>{
     const grid=document.querySelector('[data-testid="admin-favorite-snapshot"]')!;
     const box=grid.getBoundingClientRect();
