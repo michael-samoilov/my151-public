@@ -23,7 +23,15 @@ export function clipExportCanvas(
   width: number,
   height: number,
 ): void {
+  // Match the clip to the integer backing store. Layout widths can be
+  // fractional, and clipping that fraction gives opposite PNG corners
+  // different extents even though the canvas dimensions were rounded.
+  const transform = ctx.getTransform();
+  const scaleX = Math.abs(transform.a) || 1;
+  const scaleY = Math.abs(transform.d) || 1;
+  const pixelWidth = Math.round(width * scaleX) / scaleX;
+  const pixelHeight = Math.round(height * scaleY) / scaleY;
   ctx.beginPath();
-  ctx.roundRect(0, 0, width, height, exportCornerRadius(width, height));
+  ctx.roundRect(0, 0, pixelWidth, pixelHeight, exportCornerRadius(pixelWidth, pixelHeight));
   ctx.clip();
 }
