@@ -4,7 +4,7 @@ import { drawExportButterfly as butterfly, drawExportStatsTitle, type ButterflyR
 import { typeGlyphPath } from '@/data/type-ids';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
-import { t } from '@/i18n';
+import { t, formatNumber } from '@/i18n';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import type { TypeName } from '@/types/pokemon';
 
@@ -222,19 +222,19 @@ function renderPanel(
   const cards: CardSpec[] = [
     {
       title: t('stats.type.title'),
-      subtitle: t('stats.type.subtitle'),
+      subtitle: '',
       chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, 'TYPE', dr),
       drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, 'TYPE', true),
     },
     {
       title: t('stats.gen.title'),
-      subtitle: t('stats.gen.subtitle'),
+      subtitle: '',
       chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, 'GEN', dr),
       drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, 'GEN', true),
     },
     {
       title: t('stats.bst.title'),
-      subtitle: `Yours avg: ${data.bst.yoursAvg}, National avg: ${data.bst.nationalAvg}.`,
+      subtitle: t('analytics.avgCompare', { yours: formatNumber(data.bst.yoursAvg, { maximumFractionDigits: 1 }), national: formatNumber(data.bst.nationalAvg, { maximumFractionDigits: 1 }) }),
       legend: true,
       chartH: (dr) => drawExportHistogram(ctx, 0, 0, data.bst, heights.bst, dr),
       drawChart: (c, x, y) => drawExportHistogram(c, x, y, data.bst, heights.bst, true),

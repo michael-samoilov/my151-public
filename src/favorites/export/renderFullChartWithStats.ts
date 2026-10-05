@@ -1,5 +1,6 @@
 import { renderFullChart } from './renderFullChart';
-import { encodeFavoritesCanvas, image } from './canvas';
+import { image } from './canvas';
+import { composeStatsExport } from '@/lib/exportStatsFrame';
 import { pickerConditionalStats, type PickerConditionalStats } from '../stats/pickerConditionalStats';
 import type { FavoritesSnapshot } from './snapshot';
 import { drawExportButterfly, drawExportStatsTitle, type IconDrawer } from '@/lib/exportButterfly';
@@ -36,18 +37,17 @@ function rowIcon(dimension:Dimension,key:string,images:Map<string,HTMLImageEleme
 export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerConditionalStats,images:Map<string,HTMLImageElement>){
  function card(d:Dimension,x:number,y:number,h:number){
   ctx.save();ctx.translate(x,y);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,h,8);ctx.fill();drawExportStatsTitle(ctx,titles()[d],20,12);
-  const data=stats.dimensions[d];label(ctx,t('favorites.stats.choices',{count:data.coveredChoices}),20,46);
-  if(!data.coveredChoices){label(ctx,t('favorites.stats.empty'),20,76);ctx.restore();return;}
+  const data=stats.dimensions[d];
+  if(!data.coveredChoices){label(ctx,t('favorites.stats.empty'),20,56);ctx.restore();return;}
   const rows=[...data.rows].sort((a,b)=>(b.deviation??-Infinity)-(a.deviation??-Infinity)).map(row=>({...row,color:d==='type'?TYPE_COLORS[row.key as TypeName]:d==='color'?COLOR_SWATCHES[row.key as ColorName]:'#dc2626',icon:rowIcon(d,row.key,images)}));
-  const rowHeight=Math.min(28,(h-92)/rows.length);
+  const rowHeight=Math.min(28,(h-80)/rows.length);
   ctx.font='400 10px "Inter Variable", system-ui, sans-serif';
   const roleWidth=d==='evolution'?Math.max(...Object.values(stages()).map(text=>ctx.measureText(text).width))+29:0;
-  drawExportButterfly(ctx,20,64,rows,rowHeight,1,headers[d],true,{iconColAspect:d==='type'||d==='shape'?2:Math.max(3.2,roleWidth/rowHeight)});ctx.restore();
+  drawExportButterfly(ctx,20,44,rows,rowHeight,1,headers[d],true,{iconColAspect:d==='type'||d==='shape'?2:Math.max(3.2,roleWidth/rowHeight)});ctx.restore();
  }
  card('type',0,0,488);card('color',0,504,360);card('shape',336,0,408);card('evolution',336,424,168);
  ctx.save();ctx.translate(336,608);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,256,8);ctx.fill();drawExportStatsTitle(ctx,t('stats.bst.title'),20,12);
- label(ctx,t('favorites.stats.coverage',{count:stats.dimensions.bst.coveredChoices,total:stats.populationSize}),20,46);
- if(stats.dimensions.bst.coveredChoices){label(ctx,t('favorites.stats.means',{yours:formatNumber(stats.bst.yoursAvg,{maximumFractionDigits:1}),expected:formatNumber(stats.bst.nationalAvg,{maximumFractionDigits:1})}),20,60);drawExportHistogram(ctx,20,66,stats.bst,.80,true);ctx.fillStyle='#94a3b8';ctx.fillRect(20,236,8,8);label(ctx,t('favorites.stats.options'),32,243);ctx.fillStyle='#ef4444';ctx.fillRect(162,236,8,8);label(ctx,t('favorites.stats.yours'),174,243);}
+ if(stats.dimensions.bst.coveredChoices){label(ctx,t('favorites.stats.means',{yours:formatNumber(stats.bst.yoursAvg,{maximumFractionDigits:1}),expected:formatNumber(stats.bst.nationalAvg,{maximumFractionDigits:1})}),20,46);drawExportHistogram(ctx,20,52,stats.bst,.87,true);ctx.fillStyle='#94a3b8';ctx.fillRect(20,236,8,8);label(ctx,t('favorites.stats.options'),32,243);ctx.fillStyle='#ef4444';ctx.fillRect(162,236,8,8);label(ctx,t('favorites.stats.yours'),174,243);}
  else label(ctx,t('favorites.stats.empty'),20,76);
  ctx.restore();
 }
@@ -56,11 +56,6 @@ export async function renderFullChartWithStats(snapshot:FavoritesSnapshot):Promi
  const stats=pickerConditionalStats(snapshot);
  const urls=[...stats.dimensions.type.rows.map(row=>typeIconPath(row.key as TypeName)),...stats.dimensions.shape.rows.map(row=>`/shapes/${row.key}.png`)];
  const images=new Map(await Promise.all(urls.map(async url=>[url,await image(url)] as const)));
- const base=await renderFullChart(snapshot),url=URL.createObjectURL(base);
- try{
-  const native=await image(url),pad=24,scale=(native.height-pad*2)/PANEL_H;
-  const canvas=document.createElement('canvas');canvas.width=Math.ceil(native.width+PANEL_W*scale+pad*2);canvas.height=native.height;
-  const ctx=canvas.getContext('2d');if(!ctx)throw Error('Canvas unavailable');ctx.fillStyle='#f4f4f5';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(native,0,0);
-  ctx.save();ctx.translate(native.width+pad,pad);ctx.scale(scale,scale);drawPickerStatsPanel(ctx,stats,images);ctx.restore();return await encodeFavoritesCanvas(canvas);
- }finally{URL.revokeObjectURL(url);}
+ const base=await renderFullChart(snapshot);
+ return composeStatsExport(base,{w:PANEL_W,h:PANEL_H},t('export.detailedStatsTitle'),ctx=>drawPickerStatsPanel(ctx,stats,images));
 }

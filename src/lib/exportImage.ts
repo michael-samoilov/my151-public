@@ -8,7 +8,7 @@ import { STARTER_IDS } from '@/data/categories';
 import { ensureTypeMask } from '@/lib/typeSymbol';
 import { expandTemplate } from '@/lib/richTemplate';
 import { formatListToParts, raw, t, typeLabel } from '@/i18n';
-import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, STATS_NAT_W, CARD_PADX as STATS_CARD_PADX, CARD_GAP as STATS_CARD_GAP, type StatsHeights } from './exportStats';
+import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, type StatsHeights } from './exportStats';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import {
   fitLabel,
@@ -35,21 +35,12 @@ import {
 import { BAR_H, BAR_TEXT_X, FRAME, TITLE_PX, TITLE_TRACK } from '@/league/export/layout';
 import { fillTracked, font } from '@/league/export/paint';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
+import { composeStatsExport } from './exportStatsFrame';
 
 export const DEX_EXPORT_FRAME_RED = '#DC2626';
 
 const SPRITE = TILE; // logical draw size = 48px (1:1 with tile)
 const BG = '#ffffff';
-// When the stats panel is composited, the grid is wrapped in a white card (like
-// the website). The card's inner padding is computed to match the stat cards'
-// padding (see generateExportImage); corner radius + the muted page background
-// the cards sit on are below.
-const CARD_RADIUS = 12;
-const CARD_BG = '#ffffff';
-const PAGE_BG = '#f7f7f8';
-// Outer margin around the carded content so the cards' soft shadow has room and
-// isn't clipped at the canvas edge.
-const CARD_SHADOW_ROOM = 20;
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
 const SCALE = DEX_EXPORT_SCALE; // SPRITE * SCALE = 96 = native sprites at 1×
 // iOS/Safari (and therefore every iOS browser, incl. Chrome) caps a canvas's
@@ -293,12 +284,25 @@ export async function generateExportImage(
   if (count === 0) throw new Error('No Pokemon to export');
 
   const sections = options.sections ?? null;
-  const statsData = options.stats?.data ?? null;
-  const statsHeights = options.stats?.heights ?? null;
 
   // Canvas text metrics for title fitting / stats wrapping need the real font.
   if (typeof document !== 'undefined' && document.fonts?.ready) {
     try { await document.fonts.ready; } catch { /* fall back to metrics-as-is */ }
+  }
+
+  if (options.stats) {
+    const { data, heights } = options.stats;
+    const base = await generateExportImage(pokemon, { sections });
+    const measure = document.createElement('canvas').getContext('2d');
+    if (!measure) throw new Error('Canvas unavailable');
+    const layout = measureStatsPanel(measure, data, heights);
+    const badges = new Map<string, HTMLImageElement>();
+    await Promise.all(statsBadgeUrls(data).map(async ({ type, url }) => {
+      const image = await maybeLoadImage(url);
+      if (image) badges.set(type, image);
+    }));
+    return composeStatsExport(base, layout, t('export.detailedStatsTitle'),
+      ctx => drawStatsPanel(ctx, data, badges, heights));
   }
 
   const grid = layoutDexExportGrid(pokemon, sections);
@@ -321,62 +325,14 @@ export async function generateExportImage(
     loadSpandrelMasks(outline?.spandrelTypes ?? []),
   ]);
 
-  // Type-name badge sprites for the stats Type-Distribution chart.
-  const statsBadges = new Map<string, HTMLImageElement>();
-  if (statsData) {
-    await Promise.all(
-      statsBadgeUrls(statsData).map(async ({ type, url }) => {
-        const img = await maybeLoadImage(url);
-        if (img) statsBadges.set(type, img);
-      }),
-    );
-  }
-
-  // Detailed-stats panel (if requested): the grid is wrapped in a white card (like
-  // the website) and the stats are drawn natively to its right, height-matched to
-  // the dex card. The grid is shifted in by the card padding; the canvas grows for
-  // the card + stats. Grid-only exports skip the card entirely (unchanged white).
-  const statsLayout = (() => {
-    if (!statsData || !statsHeights) return null;
-    const mc = document.createElement('canvas').getContext('2d');
-    return mc ? measureStatsPanel(mc, statsData, statsHeights) : null;
-  })();
-  const statsNatH = statsLayout?.h ?? 0;
-  const willCard = !!(statsData && statsNatH > 0);
-  // Outer margins: roomy when carded (so card shadows aren't clipped at the canvas
-  // edge), tight otherwise (unchanged grid-only export).
-  const mx = willCard ? CARD_SHADOW_ROOM : PAD_X;
-  const my = willCard ? CARD_SHADOW_ROOM : PAD_TOP;
-  const dexContentW = w - PAD_X * 2;
+  const mx = PAD_X;
+  const my = PAD_TOP;
   const dexContentH = footerTop - PAD_TOP;
-  // Dex-card inner padding. When stats are present, match it to the stat cards'
-  // padding in final-image units (= STATS_CARD_PADX × statsScale) so all cards
-  // share the same content-to-edge spacing. statsScale depends on dexCardH which
-  // depends on the pad, so solve the resulting equation in closed form:
-  //   pad = P·dexContentH / (statsNatH − 2P),  where P = STATS_CARD_PADX.
-  const cardPad = willCard
-    ? Math.max(4, (STATS_CARD_PADX * dexContentH) / (statsNatH - 2 * STATS_CARD_PADX))
-    : 0;
-  const dexCardW = dexContentW + cardPad * 2;
-  const dexCardH = dexContentH + cardPad * 2;
-
-  // Scale the natural-width panel so its height matches the dex card.
-  const statsScale = willCard ? dexCardH / statsNatH : 0;
-  // Horizontal gutter between the dex card and the stats column == the vertical
-  // gutter between the stat cards (CARD_GAP, scaled), so all gutters are uniform.
-  const STATS_GAP = STATS_CARD_GAP * statsScale;
-  const stats = willCard
-    ? { x: mx + dexCardW + STATS_GAP, y: my, w: STATS_NAT_W * statsScale, h: dexCardH, scale: statsScale }
-    : null;
-  const canvasW = stats ? stats.x + stats.w + mx : w;
-
-  // Footer centered under the whole image. For the stats export the bottom margin
-  // mirrors the top margin (my), and the single "made with my151.app" credit sits
-  // inside that bottom margin (the charts already convey the type/gen lean).
-  // Grid-only exports keep their original footer band (PAD_BOTTOM, two lines).
+  const dexCardH = dexContentH;
+  const canvasW = w;
   const footerCenterX = canvasW / 2;
   footerTop = my + dexCardH;
-  h = footerTop + (stats ? my : PAD_BOTTOM);
+  h = footerTop + PAD_BOTTOM;
 
   const framedW = canvasW + 2 * DEX_EXPORT_FRAME;
   const framedH = h + 2 * DEX_EXPORT_FRAME + DEX_EXPORT_HEADER;
@@ -397,7 +353,7 @@ export async function generateExportImage(
 
   ctx.fillStyle = DEX_EXPORT_FRAME_RED;
   ctx.fillRect(0, 0, framedW, framedH);
-  ctx.fillStyle = stats ? PAGE_BG : BG;
+  ctx.fillStyle = BG;
   ctx.beginPath();
   ctx.roundRect(
     DEX_EXPORT_FRAME,
@@ -420,25 +376,8 @@ export async function generateExportImage(
   ctx.restore();
   ctx.translate(DEX_EXPORT_FRAME, DEX_EXPORT_FRAME + DEX_EXPORT_HEADER);
 
-  // Dex card behind the grid (white rounded rect + soft shadow), matching the
-  // stat cards. Drawn before the grid; the grid is then shifted in by cardPad.
-  if (cardPad > 0) {
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.06)';
-    ctx.shadowBlur = 16;
-    ctx.shadowOffsetY = 4;
-    ctx.fillStyle = CARD_BG;
-    ctx.beginPath();
-    ctx.roundRect(mx, my, dexCardW, dexCardH, CARD_RADIUS);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // Shift the grid to sit inside the card (no-op when not carded: mx=PAD_X,
-  // my=PAD_TOP, cardPad=0). drawTile maps through the live transform, so sprites
-  // follow this translate too.
   ctx.save();
-  ctx.translate(mx + cardPad - PAD_X, my + cardPad - PAD_TOP);
+  ctx.translate(mx - PAD_X, my - PAD_TOP);
 
   for (const placed of grid.sprites) {
     drawTile(ctx, placed.x, placed.y, placed.pokemon, sprites[placed.index], placed.index + 1);
@@ -448,34 +387,6 @@ export async function generateExportImage(
   }
 
   ctx.restore(); // end grid translate
-
-  // Detailed-stats panel to the right of the grid — drawn natively (NOT via
-  // html-to-image, which hangs/fails on iOS).
-  if (stats && statsData && statsHeights && statsLayout) {
-    // Card backgrounds drawn in the export's logical space so their corner radius
-    // and soft shadow match the dex card exactly (same CARD_RADIUS + shadow).
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.06)';
-    ctx.shadowBlur = 16;
-    ctx.shadowOffsetY = 4;
-    ctx.fillStyle = CARD_BG;
-    for (const c of statsLayout.cards) {
-      ctx.beginPath();
-      ctx.roundRect(stats.x, stats.y + c.y * stats.scale, STATS_NAT_W * stats.scale, c.h * stats.scale, CARD_RADIUS);
-      ctx.fill();
-    }
-    ctx.restore();
-
-    // Chart/text content scaled on top (smoothing on for anti-aliased charts +
-    // badge images, then back off for the pixel sprites/footer icons).
-    ctx.save();
-    ctx.imageSmoothingEnabled = true;
-    ctx.translate(stats.x, stats.y);
-    ctx.scale(stats.scale, stats.scale);
-    drawStatsPanel(ctx, statsData, statsBadges, statsHeights);
-    ctx.restore();
-    ctx.imageSmoothingEnabled = false;
-  }
 
   // Grid-only footer: two lines — insights (top) + "made with my151.app" (bottom).
   const line1Y = footerTop + 10;
@@ -608,16 +519,8 @@ export async function generateExportImage(
     }
   };
 
-  if (stats) {
-    // Stats export: the charts already convey the type/gen lean, so drop the
-    // insights line and show just a larger, legible "made with my151.app" credit,
-    // centred inside the bottom margin (which mirrors the top margin).
-    const STATS_CREDIT_FONT = '600 13px "Inter Variable", system-ui, -apple-system, sans-serif';
-    drawLine(creditSegs, footerTop + my / 2, STATS_CREDIT_FONT);
-  } else {
-    drawLine(insightSegs, line1Y, INSIGHTS_FONT);
-    drawLine(creditSegs, line2Y, CREDIT_FONT);
-  }
+  drawLine(insightSegs, line1Y, INSIGHTS_FONT);
+  drawLine(creditSegs, line2Y, CREDIT_FONT);
 
   return new Promise<Blob>((resolve, reject) => {
     // Guard against iOS occasionally never invoking the toBlob callback (which
