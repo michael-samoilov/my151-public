@@ -1117,15 +1117,15 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('the normal gimmick selector marks picks across the grid without changing their sources', async ({ page }, testInfo) => {
-    await seedFills(page, { 'dark|8': 10174, 'dark|7': 10092, 'ghost|8': 10239, 'gimmick|1': 10039, 'gimmick|4': 10308 });
+    await seedFills(page, { 'dark|8': 10174, 'dark|7': 10092, 'ghost|8': 10239, 'gimmick|1': 10039, 'gimmick|4': 10088 });
     await page.getByTestId('favorites-cell-normal-gimmick').click();
-    const taken = await takenState(page, [10174, 10092, 10239, 10039, 10308]);
+    const taken = await takenState(page, [10174, 10092, 10239, 10039, 10088]);
     expect(taken).toEqual({
       10174: { faded: false, marks: ['gen:8'] },
       10092: { faded: false, marks: ['gen:7'] },
       10239: { faded: false, marks: ['gen:8'] },
       10039: { faded: false, marks: ['gen:1'] },
-      10308: { faded: false, marks: ['gen:4'] },
+      10088: { faded: false, marks: ['gen:4'] },
     });
     await testInfo.attach('normal-gimmick-taken.json', { body: JSON.stringify(taken, null, 2), contentType: 'application/json' });
   });
