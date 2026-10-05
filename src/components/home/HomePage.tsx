@@ -326,6 +326,12 @@ function Artwork({ tool }: { tool: Tool }) {
   // guard is unchanged — the handlers sit on the twins, which never move, so a
   // floating shot can never move out from under the pointer and toggle itself.
   const [floated, setFloated] = useState<number | null>(null);
+  const [ratios, setRatios] = useState([2, 2]);
+  const readRatio = (index: number, image: HTMLImageElement) => {
+    const ratio = image.naturalHeight / image.naturalWidth;
+    if (!Number.isFinite(ratio) || ratio <= 0) return;
+    setRatios((current) => current[index] === ratio ? current : current.map((value, i) => i === index ? ratio : value));
+  };
   // Both clip boxes reach far past the panel's top-left edge, mostly over empty
   // space. That whole rectangle used to be part of the link, so a click well
   // above or beside the artwork still navigated. `pointerEvents: 'none'` here
@@ -350,7 +356,9 @@ function Artwork({ tool }: { tool: Tool }) {
       // fan right so its bottom-left clears the card's rounded corner. Without it
       // the shots break past that corner on the wide desktop band.
       left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px))`,
-      top: `calc(${BLEED} + ${U(SHOT_TOP)} + ${U(f.drop)})`,
+      // Shorter native exports still bleed below the panel. The second bound
+      // uses their intrinsic ratio and rotated height; CSS tracks every width.
+      top: `max(calc(${BLEED} + ${U(SHOT_TOP)} + ${U(f.drop)}), calc(100% - ${U(SHOT_W * ratios[i] * Math.cos(f.tilt * Math.PI / 180))} * var(--art) + 2px))`,
       width: `calc(${U(SHOT_W)} * var(--art))`,
       transformOrigin: '0 0' as const,
       borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${PHONE_RADIUS})`,
@@ -397,7 +405,7 @@ function Artwork({ tool }: { tool: Tool }) {
             className="hub-float-shot block"
             style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
           >
-            <img {...tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
+            <img {...tool.shots![i]} onLoad={(event) => readRatio(i, event.currentTarget)} alt="" draggable={false} className="block w-full invisible" />
           </span>
         ))}
       </span>
@@ -415,6 +423,7 @@ function Artwork({ tool }: { tool: Tool }) {
                 width, and these are the page's largest paint. */}
             <img
               {...tool.shots![i]}
+              onLoad={(event) => readRatio(i, event.currentTarget)}
               alt={tool.alts?.[i] ?? ''}
               draggable={false}
               decoding="async"
@@ -448,7 +457,7 @@ function Artwork({ tool }: { tool: Tool }) {
             {/* An invisible copy of the shot gives the twin the shot's exact
                 height, so the hit area matches the screenshot's footprint. The
                 browser has already decoded this image, so it costs no fetch. */}
-            <img {...tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
+            <img {...tool.shots![i]} onLoad={(event) => readRatio(i, event.currentTarget)} alt="" draggable={false} className="block w-full invisible" />
           </span>
         ))}
       </span>

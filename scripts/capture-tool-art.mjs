@@ -28,7 +28,7 @@ async function blob(page,name){
  const native=await browser.newPage();
  await native.setContent(`<style>*{margin:0}img{display:block}</style><img data-audit-scale="intended" src="data:image/png;base64,${Buffer.from(raw).toString('base64')}">`);
  await native.locator('img').evaluate(el=>el.decode());await audit(native,name);await native.close();
- console.log(name,await image.evaluate(el=>[el.naturalWidth,el.naturalHeight]));
+ console.log(name,'native PNG captured and audited');
 }
 async function phonePage(tab,name){
  const p=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:3});
@@ -37,7 +37,7 @@ async function phonePage(tab,name){
   localStorage.setItem('personal-151-pokedex-v3',JSON.stringify({state:{sections,milestoneMax:37,milestoneCelebrated:[25],localeNoticeSeen:true,locale:'en'},version:10}));
   localStorage.setItem('p151-league-promo-seen','1');localStorage.setItem('p151-moved-notice-seen','1');
  });
- await p.goto(`${base}/pokedex-builder?${tab==='build'?'':'demo=151&'}notme`);await p.locator(`[data-nav="${tab}"]`).first().click();
+ await p.goto(`${base}/pokedex-builder?${tab==='build'?'':'demo=151&'}notme`);await p.locator(`[data-nav="${tab==='build'?'builder':tab}"]`).first().click();
  await p.waitForTimeout(1000);
  const chrome=await p.evaluate(()=>Math.ceil(Math.max(document.querySelector('header')?.getBoundingClientRect().bottom||0,...[...document.querySelectorAll('.milestone-bar')].map(b=>b.getBoundingClientRect().width?b.closest('.border-b')?.getBoundingClientRect().bottom||0:0))));
  await p.setViewportSize({width:390,height:844+chrome});
