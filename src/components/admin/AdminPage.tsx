@@ -7,7 +7,7 @@ import { LeaguePicksPage, PicksDetailPage } from '@/components/admin/PicksDetail
 import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
-import { dexFunnelSankey, leagueFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
+import { dexFunnelSankey, leagueFunnelSankey, favoriteFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
 import type { DexUsageFunnel, HeatmapClock, LeagueUsageFunnel, WhoBucket } from '../../../api/_aggregate';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
 import { Panel, Seg, Kpi } from '@/components/admin/ui';
@@ -2109,7 +2109,9 @@ export function AdminPage() {
           const showDexFunnel = (tool === 'all' || tool === 'dex') && (data.dexFunnel ? data.dexFunnel.built > 0 : built > 0);
           const showLeagueFunnel = (tool === 'all' || tool === 'league') && (data.leagueFunnel?.placed ?? 0) > 0;
           const showReferrer = (data.referrerFlow?.length ?? 0) > 0;
-          const showFlows = flowView === 'referrer' ? showReferrer : showDexFunnel || showLeagueFunnel;
+          const showFavoriteFunnel = (tool === 'all' || tool === 'favorites') && (data.favoriteFunnel?.opened ?? 0) > 0;
+          const favoriteSankey = data.favoriteFunnel ? favoriteFunnelSankey(data.favoriteFunnel) : null;
+          const showFlows = flowView === 'referrer' ? showReferrer : showDexFunnel || showLeagueFunnel || showFavoriteFunnel;
           const dexSankey = data.dexFunnel
             ? dexFunnelSankey(data.dexFunnel)
             : dexFunnelSankey({
@@ -2200,7 +2202,7 @@ export function AdminPage() {
                 title="Flows"
                 sub={[
                   flowView === 'referrer' ? 'referrer → landing' : 'usage funnel',
-                  tool === 'all' ? 'all tools' : tool === 'league' ? 'league' : 'dex',
+                  tool === 'all' ? 'all tools' : tool === 'league' ? 'league' : tool === 'favorites' ? 'picker' : 'dex',
                 ]}
                 actions={
                   showReferrer ? (
@@ -2240,6 +2242,10 @@ export function AdminPage() {
                         <FlowSankey nodes={leagueSankey.nodes} links={leagueSankey.links} ariaLabel={leagueSankey.ariaLabel} />
                       </div>
                     )}
+                    {showFavoriteFunnel && favoriteSankey && <div>
+                      {tool === 'all' && <div className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Favorite Pokémon Picker</div>}
+                      <FlowSankey nodes={favoriteSankey.nodes} links={favoriteSankey.links} ariaLabel={favoriteSankey.ariaLabel}/>
+                    </div>}
                   </div>
                 )}
               </Panel>
