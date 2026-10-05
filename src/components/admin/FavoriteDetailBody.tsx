@@ -3,6 +3,7 @@ import type {FavoriteUser} from '../../../api/_favoriteAggregate';
 import {FAVORITE_TOTAL_CELLS,type FavoriteSnapshot} from '../../../api/_favoriteRecord';
 import {PokeballBg} from '@/components/shared/PokeballBg';
 import {TypeBadge} from '@/components/shared/TypeBadge';
+import {useIsDesktop} from '@/hooks/useIsDesktop';
 import {GEN_AXIS,TYPE_AXIS,cellKey,isGenNumber,isTypeName,type GenAxisId,type TypeAxisId} from '@/favorites/model/cells';
 import {getPickerMon} from '@/favorites/model/catalog';
 import {kindFor} from '@/favorites/model/eligibility';
@@ -31,12 +32,17 @@ export function FavoriteDetailBody({user}:{user:FavoriteUser}) {
   return <SessionTimeline points={points} index={current} onIndex={setIndex} countUnit={`of ${FAVORITE_TOTAL_CELLS} cells`} peakLabel={`${user.maxFilled} peak cells`} tz={user.tz} showReadout={false}>{board}</SessionTimeline>;
 }
 
-/** All portrait tracks share one size, fitted to the measured remaining space. */
+/** All tracks share one size, fitted to the measured remaining space. */
 function FavoriteSnapshotGrid({snapshot}:{snapshot:FavoriteSnapshot}) {
   const frame=useRef<HTMLDivElement>(null);
   const [size,setSize]=useState({width:0,height:0});
-  const columns=GEN_AXIS.length+1;
-  const rows=TYPE_AXIS.length+1;
+  const desktop=useIsDesktop();
+  const columnAxes=desktop?TYPE_AXIS:GEN_AXIS;
+  const tracks=desktop
+    ?GEN_AXIS.map(gen=>({axis:gen,cells:TYPE_AXIS.map(type=>({type,gen}))}))
+    :TYPE_AXIS.map(type=>({axis:type,cells:GEN_AXIS.map(gen=>({type,gen}))}));
+  const columns=columnAxes.length+1;
+  const rows=tracks.length+1;
   useLayoutEffect(()=>{
     const el=frame.current;
     if(!el)return;
@@ -50,14 +56,14 @@ function FavoriteSnapshotGrid({snapshot}:{snapshot:FavoriteSnapshot}) {
     return ()=>observer.disconnect();
   },[columns,rows]);
   return <div ref={frame} className="flex min-h-0 flex-1 items-start justify-center" data-testid="admin-favorite-detail">
-    <div className="grid shrink-0 rounded-sm border border-neutral-200 bg-card" style={{...size,gridTemplateColumns:`repeat(${columns},minmax(0,1fr))`,gridTemplateRows:`repeat(${rows},minmax(0,1fr))`}} role="table" aria-label="Favorite Pokémon portrait full grid" data-testid="admin-favorite-snapshot">
+    <div className="grid shrink-0 rounded-sm border border-neutral-200 bg-card" style={{...size,gridTemplateColumns:`repeat(${columns},minmax(0,1fr))`,gridTemplateRows:`repeat(${rows},minmax(0,1fr))`}} role="table" aria-label={`Favorite Pokémon ${desktop?'landscape':'portrait'} full grid`} data-testid="admin-favorite-snapshot">
       <div role="row" className="contents">
         <div role="columnheader"/>
-        {GEN_AXIS.map(gen=><AxisHeader key={gen} id={gen} top/>)}
+        {columnAxes.map(axis=><AxisHeader key={axis} id={axis} top/>)}
       </div>
-      {TYPE_AXIS.map(type=><div key={type} role="row" className="contents">
-        <AxisHeader id={type}/>
-        {GEN_AXIS.map(gen=>{
+      {tracks.map(track=><div key={track.axis} role="row" className="contents">
+        <AxisHeader id={track.axis}/>
+        {track.cells.map(({type,gen})=>{
           const key=cellKey(type,gen);
           const mon=getPickerMon(snapshot.fills[key]);
           const kind=kindFor(type,gen);
