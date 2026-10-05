@@ -37,8 +37,12 @@ export const shapeBadgeChartIcon = (shape: ShapeName) => badgeChartIcon(() => sh
 export function generationChartIcon(gen: GenNumber) {
   return (x: number, y: number, size: number, colWidth = size): ReactNode => {
     const height = Math.min(size, colWidth * TYPE_BADGE_H / TYPE_BADGE_W);
-    return <g transform={`translate(${x + (colWidth - height * 5) / 2} ${y + (size - height) / 2})`}>
+    const width = height * TYPE_BADGE_W / TYPE_BADGE_H;
+    // A nested SVG needs an explicit coordinate viewport; CSS sizing alone
+    // leaves its hit box relative to the complete chart instead of its row.
+    return <svg x={x + (colWidth - width) / 2} y={y + (size - height) / 2}
+      width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
       <GenerationBadge gen={gen} maxUnits={TYPE_BADGE_W} height={height} />
-    </g>;
+    </svg>;
   };
 }
