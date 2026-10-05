@@ -302,7 +302,9 @@ export async function generateExportImage(
       if (image) badges.set(type, image);
     }));
     return composeStatsExport(base, layout, t('export.detailedStatsTitle'),
-      ctx => drawStatsPanel(ctx, data, badges, heights));
+      ctx => drawStatsPanel(ctx, data, badges, heights),
+      // Match the ordinary Dex credit's 6px logical face and footer baseline.
+      { size: 6 * SCALE, bottomOffset: (DEX_EXPORT_FRAME + PAD_BOTTOM - 21) * SCALE });
   }
 
   const grid = layoutDexExportGrid(pokemon, sections);
