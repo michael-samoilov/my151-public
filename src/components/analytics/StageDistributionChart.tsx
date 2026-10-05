@@ -154,7 +154,6 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
             }
           }
           const names = stageNames();
-          const totalPokemon = mekkoData.columns.reduce((sum, col) => sum + col.segments.reduce((s, seg) => s + seg.count, 0), 0);
           // Always render 3 columns for stable layout
           const allColumns = [1, 2, 3].map(len => {
             const existing = mekkoData.columns.find(c => c.lineLength === len);
@@ -236,7 +235,6 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                 <div className="flex items-end" style={{ height: containerH, gap }}>
                   {allColumns.map((col, colIdx) => {
                     const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
-                    const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
                     const segHeights = columnSegHeights[colIdx];
 
                     // Think-cell style 2D label placement
@@ -306,7 +304,7 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                         {colTotal > 0 && (
                           <>
                             <div className="text-center text-xs text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center tabular-nums" style={{ height: 26 * mekkoScale }}>
-                              <span>{colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span></span>
+                              <span>{colTotal} {colIdx === 0 && 'Pokémon '}</span>
                             </div>
                             <div className="relative" style={{
                               borderRadius: 3,
@@ -424,7 +422,7 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                       >
                         <span className="whitespace-nowrap" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{names[col.lineLength - 1]}</span>
                         <br />
-                        {col.chainCount}{idx === 0 && ' lines'} <span className="font-normal">({col.widthPct.toFixed(0)}%)</span>
+                        {col.chainCount}{idx === 0 && ' lines'}
                       </div>
                     );
                   })}
@@ -472,7 +470,7 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                         <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>{t('stage.label', { stage: seg.stage })}</span>
                         {isFirstLegend(seg.stage) && <><br />Pokémon</>}
                         <br />
-                        {stageTotals[seg.stage]} <span className="font-normal">({totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%)</span>
+                        {stageTotals[seg.stage]}
                       </span>
                     </div>
                   );

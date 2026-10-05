@@ -66,13 +66,7 @@ interface ButterflyChartProps {
   iconScale?: number;
   /** When true, rows with count === 0 are not clickable */
   disableEmptyRows?: boolean;
-  /** Override the denominator used for the per-bar percentage label. Defaults
-   *  to the sum of all counts in `data`. That default is correct for
-   *  disjoint categories (e.g. generations), but for overlapping categories
-   *  like types — where a dual-type pokemon contributes to two bars — the
-   *  correct denominator is the number of pokemon, not the sum of type-slot
-   *  mentions. Pass `pokemon.length` in that case so each bar reads as
-   *  "share of the dex" rather than "share of type mentions". */
+  /** Accepted for existing callers; count annotations no longer include percentages. */
   countDenominator?: number;
   /** When set, overrides the font-size class on every text element (headers,
    *  count numbers, value labels) so they render at a single uniform size.
@@ -80,7 +74,18 @@ interface ButterflyChartProps {
   textClass?: string;
 }
 
-function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
+let countMeasureCanvas: HTMLCanvasElement | undefined;
+function countLabelPadding(data: ButterflyRow[], textClass: string | undefined, scale: number): number {
+  countMeasureCanvas ??= document.createElement('canvas');
+  const ctx = countMeasureCanvas.getContext('2d');
+  const size = textClass?.match(/text-\[([\d.]+)(rem|px)\]/);
+  const fontSize = size ? Number(size[1]) * (size[2] === 'rem' ? 16 : 1) : textClass === 'text-xs' ? 12 : 11;
+  if (!ctx) return (Math.max(1, ...data.map(row => String(row.count).length)) * fontSize * .65 + 6) * scale;
+  ctx.font = `400 ${fontSize}px 'Inter Variable', system-ui, sans-serif`;
+  return (Math.max(0, ...data.map(row => ctx.measureText(String(row.count)).width)) + 6) * scale;
+}
+
+function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -173,11 +178,9 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
   const countSectionStart = labelColEnd;
   const devSectionStart = alignBaselines ? columns.indexStart : labelColEnd + chart1Width + gutter;
 
-  // Chart 1 (count/score): directionality-aware margins. Reserves room for
-  // value labels at bar ends — "-0.54" (~28px) in score mode, "25 (16%)"
-  // (~48px) with percentages, "25" (~20px) without. Scales with chartScale
-  // so labels don't clip on desktop where the root font grows.
-  const countLabelPad = (scoreMode ? 32 : countDenominator ? 52 : 28) * chartScale;
+  // Count labels reserve their measured width, leaving the rest for bars.
+  // Signed scores retain their existing allowance and formatting.
+  const countLabelPad = scoreMode ? 32 * chartScale : countLabelPadding(data, textClass, chartScale);
   const countLeftPad = countHasNeg ? countLabelPad : 0;
   const countRightPad = countHasPos ? countLabelPad : 0;
   const countBarArea = Math.max(0, chart1Width - countLeftPad - countRightPad);
@@ -460,9 +463,7 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
                 >
                   {scoreMode
                     ? (d.count >= 0 ? '+' : '') + d.count.toFixed(2)
-                    : countDenominator
-                      ? `${d.count} (${countDenominator > 0 ? ((d.count / countDenominator) * 100).toFixed(0) : 0}%)`
-                      : `${d.count}`
+                    : `${d.count}`
                   }
                 </text>
 

@@ -65,7 +65,10 @@ export function drawExportButterfly(
   const iconColW = options.alignBaselines ? columns.identifierWidth : iconBoxH * iconColAspect;
   const iconStart = 0;
   const labelColEnd = options.alignBaselines ? columns.countStart : iconStart + iconColW + gap;
-  const countLabelPad = 28;
+  ctx.save();
+  ctx.font = font(400, CHART_TEXT);
+  const countLabelPad = Math.max(0, ...rows.map(row => ctx.measureText(String(row.count)).width)) + 6;
+  ctx.restore();
   const countLeftPad = 0;
   const countRightPad = countLabelPad;
   const chartsWidth = (options.contentWidth ?? 280) - labelColEnd;
