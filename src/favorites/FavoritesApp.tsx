@@ -4,6 +4,7 @@ import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
@@ -49,6 +50,19 @@ function GlobalHeader() {
 }
 
 export function FavoritesApp() {
+  const [sel, setSel] = useState<Selection | null>(null);
+  return <TooltipProvider delayDuration={200}>
+    <ErrorBoundary where="favorite-picker">
+      <FavoritesContent sel={sel} setSel={setSel} />
+    </ErrorBoundary>
+    <FeedbackHost route="/favorite-pokemon-by-type" />
+  </TooltipProvider>;
+}
+
+function FavoritesContent({ sel, setSel }: {
+  sel: Selection | null;
+  setSel: (next: Selection | null) => void;
+}) {
   useJsErrorCounter();
   useDocumentLocale();
   const desktop = useIsDesktop();
@@ -56,7 +70,6 @@ export function FavoritesApp() {
   const place = useFavoritesStore((s) => s.place);
   const applyPack = useFavoritesStore((s) => s.applyPack);
   const clear = useFavoritesStore((s) => s.clear);
-  const [sel, setSel] = useState<Selection | null>(null);
   const [showIcons, setShowIcons] = useState(savedShowIcons);
   const [exportOpen, setExportOpen] = useState(false);
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
@@ -111,7 +124,7 @@ export function FavoritesApp() {
   ) : null;
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <>
       <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
         <GlobalHeader />
         <div className="flex h-11 items-center gap-1 border-b bg-card px-3">
@@ -155,10 +168,9 @@ export function FavoritesApp() {
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
-      <FeedbackHost route="/favorite-pokemon-by-type" />
       {exportOpen && <Suspense fallback={null}>
         <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)} />
       </Suspense>}
-    </TooltipProvider>
+    </>
   );
 }
