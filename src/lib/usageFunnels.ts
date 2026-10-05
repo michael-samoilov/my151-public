@@ -323,7 +323,7 @@ export function referrerFlowSankey(rows: ReferrerFlowEntry[]): FunnelSankey {
     ...rows.map((r) => ({ name: r.host, role: 'neutral' as const, label: 'left' as const })),
     { name: 'Dex', role: 'success', label: 'top' },
     { name: 'League', role: 'priv', label: 'bottom' },
-    ...(rows.some(r => r.favorites !== undefined) ? [{ name: 'Favorites', role: 'neutral' as const, label: 'right' as const }] : []),
+    ...(rows.some(r => (r.favorites ?? 0) > 0) ? [{ name: 'Favorites', role: 'neutral' as const, label: 'right' as const }] : []),
   ];
   const links: FunnelLink[] = rows.flatMap((r) => [
     ...(r.dex > 0 ? [{ source: r.host, target: 'Dex', value: r.dex, role: 'success' as const }] : []),
@@ -333,6 +333,6 @@ export function referrerFlowSankey(rows: ReferrerFlowEntry[]): FunnelSankey {
   return orderSankeyForLayout(
     nodes,
     links,
-    `Referrer to landing: ${rows.map((r) => r.host).join(', ')} split into dex and league${rows.some(r => r.favorites !== undefined) ? ' and favorites' : ''} landings.`,
+    `Referrer to landing: ${rows.map((r) => r.host).join(', ')} ${rows.some(r => r.favorites !== undefined) ? 'reached dex, league and favorites; browser reach can overlap across tools' : 'split into dex and league landings'}.`,
   );
 }

@@ -110,7 +110,12 @@ describe('favoriteFunnelSankey', () => {
 });
 
 describe('Picker acquisition', () => {
-  it('counts Picker landings without duplicating a browser total or changing legacy destinations', () => {
+  it('omits an isolated Picker destination when the API records no Picker reach', () => {
+    const s = referrerFlowSankey([{ host: 'example.com', total: 1, dex: 1, league: 0, favorites: 0 }]);
+    expect(namesOf(s)).not.toContain('Favorites');
+    expect(s.links).toHaveLength(1);
+  });
+  it('adds Picker reach while preserving the existing destinations', () => {
     const legacy = referrerFlowSankey([{ host: 'example.com', total: 2, dex: 1, league: 1 }]);
     expect(namesOf(legacy)).toEqual(['example.com', 'Dex', 'League']);
     const expanded = referrerFlowSankey([{ host: 'example.com', total: 3, dex: 1, league: 1, favorites: 2 }]);
