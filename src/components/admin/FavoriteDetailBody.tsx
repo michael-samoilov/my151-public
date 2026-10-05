@@ -33,7 +33,7 @@ export function FavoriteDetailBody({user}:{user:FavoriteUser}) {
     <FavoriteSnapshotGrid snapshot={snapshot}/>
   </div>;
   if(!points.length)return board;
-  return <SessionTimeline points={points} index={current} onIndex={setIndex} countUnit={`of ${FAVORITE_TOTAL_CELLS} cells`} deltaUnit="cells" peakLabel={`${user.maxFilled} peak cells`} tz={user.tz}>{board}</SessionTimeline>;
+  return <SessionTimeline points={points} index={current} onIndex={setIndex} countUnit={`of ${FAVORITE_TOTAL_CELLS} cells`} peakLabel={`${user.maxFilled} peak cells`} tz={user.tz}>{board}</SessionTimeline>;
 }
 function FavoriteSnapshotGrid({snapshot}:{snapshot:FavoriteSnapshot}) {
   return <div className="min-h-0 flex-1 overflow-auto rounded-lg border bg-card" data-testid="admin-favorite-snapshot">
