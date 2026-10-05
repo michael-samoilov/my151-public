@@ -72,5 +72,20 @@
   "home.intro": "Créez un Pokédex régional personnalisé, des équipes de Champions et des cartes de Dresseur, ou choisissez vos Pokémon préférés par type et génération. Enregistrez et partagez vos créations en PNG.",
   "favorites.typeRepair.message": "Les types corrigés des formes affectent {count} choix enregistrés. Ils restent dans la grille, mais sont exclus des exports. Vérifiez leurs cases pour les remplacer.",
   "favorites.typeRepair.review": "Vérifier",
-  "viewSettings.showStats": "Afficher les statistiques détaillées"
+  "viewSettings.showStats": "Afficher les statistiques détaillées",
+  "stats.type.title": "Répartition des types",
+  "stats.bst.title": "Total des statistiques",
+  "favorites.stats.shape": "Forme du Pokémon",
+  "favorites.stats.color": "Couleur du Pokédex",
+  "favorites.stats.evolution": "Stade d’évolution",
+  "favorites.stats.choices": "Choix : {count} · options disponibles",
+  "favorites.stats.coverage": "Couverture BST : {count}/{total} choix",
+  "favorites.stats.empty": "Aucun choix comparable pour le moment",
+  "favorites.stats.options": "Options disponibles",
+  "favorites.stats.yours": "Vos choix",
+  "favorites.stats.basic": "Base",
+  "favorites.stats.middle": "Intermédiaire",
+  "favorites.stats.final": "Final",
+  "favorites.stats.noEvo": "Sans évolution",
+  "favorites.stats.means": "Votre moyenne : {yours} · Options : {expected}"
 }

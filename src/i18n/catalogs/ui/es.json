@@ -72,5 +72,20 @@
   "home.intro": "Crea una Pokédex regional personalizada, equipos de líderes de gimnasio y tarjetas de entrenador, o elige tus Pokémon favoritos por tipo y generación. Guarda y comparte tus creaciones como PNG.",
   "favorites.typeRepair.message": "Los tipos corregidos afectan a {count} elecciones guardadas. Se conservan en la cuadrícula, pero no se exportan. Revisa sus casillas para sustituirlas.",
   "favorites.typeRepair.review": "Revisar",
-  "viewSettings.showStats": "Mostrar estadísticas detalladas"
+  "viewSettings.showStats": "Mostrar estadísticas detalladas",
+  "stats.type.title": "Distribución de tipos",
+  "stats.bst.title": "Total de estadísticas",
+  "favorites.stats.shape": "Forma del Pokémon",
+  "favorites.stats.color": "Color de la Pokédex",
+  "favorites.stats.evolution": "Fase evolutiva",
+  "favorites.stats.choices": "Elecciones: {count} · opciones disponibles",
+  "favorites.stats.coverage": "Cobertura BST: {count}/{total} elecciones",
+  "favorites.stats.empty": "Aún no hay elecciones comparables",
+  "favorites.stats.options": "Opciones disponibles",
+  "favorites.stats.yours": "Tus elecciones",
+  "favorites.stats.basic": "Básica",
+  "favorites.stats.middle": "Intermedia",
+  "favorites.stats.final": "Final",
+  "favorites.stats.noEvo": "Sin evolución",
+  "favorites.stats.means": "Tu media: {yours} · Opciones: {expected}"
 }

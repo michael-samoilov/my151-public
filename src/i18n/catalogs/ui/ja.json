@@ -72,5 +72,20 @@
   "home.intro": "自分だけの地方のポケモン図鑑、ジムリーダーのチームやトレーナーカードを作ったり、タイプ・世代別にお気に入りのポケモンを選んだりできます。作品をPNG画像に保存して共有しましょう。",
   "favorites.typeRepair.message": "フォルムのタイプ修正により、保存済みの{count}件が対象外になりました。グリッドには残りますが、画像には含まれません。セルを確認して選び直してください。",
   "favorites.typeRepair.review": "確認",
-  "viewSettings.showStats": "詳しい統計を表示"
+  "viewSettings.showStats": "詳しい統計を表示",
+  "stats.type.title": "タイプ分布",
+  "stats.bst.title": "種族値合計",
+  "favorites.stats.shape": "ポケモンの体形",
+  "favorites.stats.color": "図鑑の色",
+  "favorites.stats.evolution": "進化段階",
+  "favorites.stats.choices": "選択数：{count} · 候補との比較",
+  "favorites.stats.coverage": "種族値の集計対象：{count}/{total}",
+  "favorites.stats.empty": "比較できる選択はまだありません",
+  "favorites.stats.options": "選択候補",
+  "favorites.stats.yours": "選んだポケモン",
+  "favorites.stats.basic": "基本",
+  "favorites.stats.middle": "中間",
+  "favorites.stats.final": "最終",
+  "favorites.stats.noEvo": "進化なし",
+  "favorites.stats.means": "選択の平均：{yours} · 候補の平均：{expected}"
 }

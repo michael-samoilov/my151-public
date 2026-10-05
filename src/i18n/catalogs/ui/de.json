@@ -72,5 +72,20 @@
   "home.intro": "Erstelle einen eigenen regionalen Pokédex, gestalte Arenaleiter-Teams und Trainerkarten oder wähle deine Lieblings-Pokémon nach Typ und Generation. Speichere und teile deine Kreationen als PNGs.",
   "favorites.typeRepair.message": "Korrigierte Formen-Typen betreffen {count} gespeicherte Auswahlen. Sie bleiben im Raster, fehlen aber im Export. Prüfe die Felder und wähle Ersatz.",
   "favorites.typeRepair.review": "Prüfen",
-  "viewSettings.showStats": "Detaillierte Statistiken anzeigen"
+  "viewSettings.showStats": "Detaillierte Statistiken anzeigen",
+  "stats.type.title": "Typenverteilung",
+  "stats.bst.title": "Statuswertsumme",
+  "favorites.stats.shape": "Pokémon-Form",
+  "favorites.stats.color": "Pokédex-Farbe",
+  "favorites.stats.evolution": "Entwicklungsstufe",
+  "favorites.stats.choices": "Auswahl: {count} · verfügbare Optionen",
+  "favorites.stats.coverage": "BST-Abdeckung: {count}/{total} Auswahlen",
+  "favorites.stats.empty": "Noch keine vergleichbare Auswahl",
+  "favorites.stats.options": "Verfügbare Optionen",
+  "favorites.stats.yours": "Deine Auswahl",
+  "favorites.stats.basic": "Basis",
+  "favorites.stats.middle": "Zwischenstufe",
+  "favorites.stats.final": "Endstufe",
+  "favorites.stats.noEvo": "Keine Entw.",
+  "favorites.stats.means": "Dein Mittel: {yours} · Optionen: {expected}"
 }

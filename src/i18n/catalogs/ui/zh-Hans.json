@@ -72,5 +72,20 @@
   "home.intro": "创建自定义地区宝可梦图鉴、道馆馆主队伍和训练家卡片，或按属性和世代挑选你最爱的宝可梦。将作品保存为PNG图片并分享。",
   "favorites.typeRepair.message": "形态属性修正影响了{count}个已保存的选择。它们仍保留在表格中，但不会包含在导出图片中。请检查对应单元格并重新选择。",
   "favorites.typeRepair.review": "检查",
-  "viewSettings.showStats": "显示详细统计"
+  "viewSettings.showStats": "显示详细统计",
+  "stats.type.title": "属性分布",
+  "stats.bst.title": "种族值总和",
+  "favorites.stats.shape": "宝可梦体形",
+  "favorites.stats.color": "图鉴颜色",
+  "favorites.stats.evolution": "进化阶段",
+  "favorites.stats.choices": "选择数：{count} · 候选基准",
+  "favorites.stats.coverage": "种族值覆盖：{count}/{total}",
+  "favorites.stats.empty": "暂无可比较的选择",
+  "favorites.stats.options": "可选宝可梦",
+  "favorites.stats.yours": "你的选择",
+  "favorites.stats.basic": "基础",
+  "favorites.stats.middle": "中间",
+  "favorites.stats.final": "最终",
+  "favorites.stats.noEvo": "不进化",
+  "favorites.stats.means": "所选平均：{yours} · 候选平均：{expected}"
 }

@@ -72,5 +72,20 @@
   "home.intro": "Crea un Pokédex regionale personalizzato, squadre di Capipalestra e schede Allenatore, oppure scegli i tuoi Pokémon preferiti per tipo e generazione. Salva e condividi le tue creazioni in PNG.",
   "favorites.typeRepair.message": "I tipi corretti delle forme riguardano {count} scelte salvate. Restano nella griglia ma sono escluse dalle esportazioni. Controlla le celle per sostituirle.",
   "favorites.typeRepair.review": "Controlla",
-  "viewSettings.showStats": "Mostra statistiche dettagliate"
+  "viewSettings.showStats": "Mostra statistiche dettagliate",
+  "stats.type.title": "Distribuzione dei tipi",
+  "stats.bst.title": "Totale statistiche",
+  "favorites.stats.shape": "Forma del Pokémon",
+  "favorites.stats.color": "Colore del Pokédex",
+  "favorites.stats.evolution": "Stadio evolutivo",
+  "favorites.stats.choices": "Scelte: {count} · opzioni disponibili",
+  "favorites.stats.coverage": "Copertura BST: {count}/{total} scelte",
+  "favorites.stats.empty": "Nessuna scelta confrontabile",
+  "favorites.stats.options": "Opzioni disponibili",
+  "favorites.stats.yours": "Le tue scelte",
+  "favorites.stats.basic": "Base",
+  "favorites.stats.middle": "Intermedio",
+  "favorites.stats.final": "Finale",
+  "favorites.stats.noEvo": "Non evolve",
+  "favorites.stats.means": "La tua media: {yours} · Opzioni: {expected}"
 }
