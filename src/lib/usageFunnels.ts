@@ -251,6 +251,10 @@ export function favoriteFunnelSankey(f: FavoriteUsageFunnel): FunnelSankey {
     { key: 'simplified', name: 'Simplified', role: 'success' },
     { key: 'notExported', name: 'Not exported', role: 'priv' },
   ] as const;
+  for (const outcome of outcomes) {
+    const present = f.buckets.some(bucket => (outcome.key === 'notExported' ? bucket.notExported : bucket.exports[outcome.key]) > 0);
+    if (present) addNode(nodes, seen, { name: outcome.name, role: outcome.role, label: 'right' });
+  }
   for (const bucket of [...f.buckets].reverse()) {
     if (bucket.count <= 0) continue;
     const role = bucket.label === 'Completed' ? 'success' : 'neutral';

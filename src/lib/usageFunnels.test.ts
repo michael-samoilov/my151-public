@@ -104,7 +104,7 @@ describe('favoriteFunnelSankey', () => {
     ] });
     expect(targetsFrom(s, 'Opened')).toEqual(['Completed', '193–256 cells', '1–64 cells', 'Not started']);
     expect(flowOut(s, 'Opened')).toBe(4);
-    expect(s.nodes.filter(n => ['Full grid', 'Both views', 'Simplified', 'Not exported'].includes(n.name))).toHaveLength(4);
+    expect(s.nodes.filter(n => ['Full grid', 'Both views', 'Simplified', 'Not exported'].includes(n.name)).map(n => n.name)).toEqual(['Full grid', 'Both views', 'Simplified', 'Not exported']);
     expect(s.ariaLabel).toContain('maximum filled cells');
   });
 });
