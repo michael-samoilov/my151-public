@@ -23,8 +23,10 @@ const FAN_STEP = 7;
 const FAN_TOP = 140;
 const FAN_CENTER = 300;
 const FAN_SPREAD = 100;
-const styles=`@font-face{font-family:Inter;src:url('${font}');font-weight:100 900}*{box-sizing:border-box;margin:0}html,body{width:1200px;height:630px;background:#171719;font-family:Inter,sans-serif;color:#fafafa}.frame{width:1200px;height:630px;position:relative}.brand{position:absolute;top:54px;left:56px;font-size:42px;line-height:1.1;font-weight:800;letter-spacing:-1.8px}.brand b{color:#ef3438}.title{position:absolute;left:56px;bottom:58px;width:540px;font-size:54px;line-height:1.09;font-weight:750;letter-spacing:-1.8px}.fan{position:absolute;left:600px;top:0;width:600px;height:630px;overflow:hidden}.shot{position:absolute;left:${FAN_CENTER - FAN_WIDTH / 2}px;top:${FAN_TOP}px;width:${FAN_WIDTH}px;height:auto;transform-origin:50% 0;object-fit:contain;filter:drop-shadow(0 14px 16px rgba(0,0,0,.4));border-radius:8px}.favorites .title{font-size:52px}`;
-const html=(id,tool)=>`<!doctype html><html><head><meta charset="utf-8"><style>${styles}</style></head><body><main class="frame ${id}"><div class="brand"><b>my151</b>.app</div><h1 class="title">${tool.title}</h1><!-- Only the artwork fan intentionally continues below the canvas. Copy remains wholly inside. --><div class="fan" data-audit-clip="intended" data-audit-scale="intended">${tool.images.map(([cls,path,alt],index)=>`<img class="shot ${cls}" style="left:${FAN_CENTER - FAN_WIDTH / 2 + (index - (tool.images.length - 1) / 2) * FAN_SPREAD}px;transform:rotate(${(index - (tool.images.length - 1) / 2) * FAN_STEP}deg)" src="${data(path,'image/webp')}" alt="${alt}">`).join('')}</div></main></body></html>`;
+const FAN_REAR_SHIFT = 24;
+const FAN_LEFT = 600 - FAN_REAR_SHIFT;
+const styles=`@font-face{font-family:Inter;src:url('${font}');font-weight:100 900}*{box-sizing:border-box;margin:0}html,body{width:1200px;height:630px;background:#171719;font-family:Inter,sans-serif;color:#fafafa}.frame{width:1200px;height:630px;position:relative}.brand{position:absolute;top:54px;left:56px;font-size:42px;line-height:1.1;font-weight:800;letter-spacing:-1.8px}.brand b{color:#ef3438}.title{position:absolute;left:56px;bottom:58px;width:540px;font-size:54px;line-height:1.09;font-weight:750;letter-spacing:-1.8px}.fan{position:absolute;left:${FAN_LEFT}px;top:0;width:${1200 - FAN_LEFT}px;height:630px;overflow:hidden}.shot{position:absolute;left:${FAN_CENTER - FAN_WIDTH / 2}px;top:${FAN_TOP}px;width:${FAN_WIDTH}px;height:auto;transform-origin:50% 0;object-fit:contain;filter:drop-shadow(0 14px 16px rgba(0,0,0,.4));border-radius:8px}.favorites .title{font-size:52px}`;
+const html=(id,tool)=>`<!doctype html><html><head><meta charset="utf-8"><style>${styles}</style></head><body><main class="frame ${id}"><div class="brand"><b>my151</b>.app</div><h1 class="title">${tool.title}</h1><!-- Only the artwork fan intentionally continues below the canvas. Copy remains wholly inside. --><div class="fan" data-audit-clip="intended" data-audit-scale="intended">${tool.images.map(([cls,path,alt],index)=>`<img class="shot ${cls}" style="left:${FAN_CENTER - FAN_WIDTH / 2 + (index - (tool.images.length - 1) / 2) * FAN_SPREAD + (index === 0 ? 0 : FAN_REAR_SHIFT)}px;transform:rotate(${(index - (tool.images.length - 1) / 2) * FAN_STEP}deg)" src="${data(path,'image/webp')}" alt="${alt}">`).join('')}</div></main></body></html>`;
 const names=process.argv.slice(2);
 if(names.includes('hub'))execFileSync(process.execPath,[resolve(root,'scripts/generate-og-hub-image.mjs'),'hub'],{env:process.env,stdio:'inherit'});
 const wanted=names.length?names.filter(name=>name!=='hub'):Object.keys(tools);
@@ -44,11 +46,21 @@ try{
   const geometry=await page.locator('.shot').evaluateAll(images=>images.map(i=>({class:i.className,width:parseFloat(getComputedStyle(i).width),anchorY:parseFloat(getComputedStyle(i).top),angle:Math.atan2(new DOMMatrixReadOnly(getComputedStyle(i).transform).b,new DOMMatrixReadOnly(getComputedStyle(i).transform).a)*180/Math.PI,...Object.fromEntries(['top','bottom','left','right'].map(k=>[k,i.getBoundingClientRect()[k]]))})));
   if(geometry.some(g=>Math.abs(g.width-FAN_WIDTH)>0.05||Math.abs(g.anchorY-FAN_TOP)>0.05))throw Error(`${name}: unequal top-edge width or top anchor`);
   if(geometry.slice(1).some((g,index)=>Math.abs(g.angle-geometry[index].angle-FAN_STEP)>0.05))throw Error(`${name}: unequal fan angle increment`);
-  if(geometry.some(g=>g.left<600||g.right>1200||g.top<0))throw Error(`${name}: only bottom-edge cropping is intentional`);
+  if(geometry.some(g=>g.left<FAN_LEFT||g.right>1200||g.top<0))throw Error(`${name}: only bottom-edge cropping is intentional`);
   if(geometry.some(g=>g.bottom<=630))throw Error(`${name}: sheet does not extend below canvas`);
   const title=await page.locator('.title').evaluate(el=>({text:el.textContent,lines:Math.round(el.getBoundingClientRect().height/parseFloat(getComputedStyle(el).lineHeight)),...Object.fromEntries(['top','bottom','left','right'].map(k=>[k,el.getBoundingClientRect()[k]]))}));
   if(name==='favorites' && (title.lines!==2 || title.text!=='Favorite Pokémon Picker by Type & Gen'))throw Error(`${name}: title must fit the requested two lines`);
-  reports.push({name,...audit,hardCount:hard.length,geometry:geometry.map(g=>({...g,hiddenBottom:g.bottom-630})),title});if(hard.length)throw Error(JSON.stringify(hard));
+  // Use the rotated left edge at title height, not its top-corner bounding box.
+  const titleGap=await page.locator('.shot').evaluateAll((images,title)=>Math.min(...images.map(image=>{
+    const style=getComputedStyle(image);const m=new DOMMatrixReadOnly(style.transform);
+    const origin=parseFloat(style.transformOrigin.split(' ')[0]);const parent=image.parentElement.getBoundingClientRect();
+    const topLeftX=parent.left+parseFloat(style.left)+origin-m.a*origin;
+    const topLeftY=parent.top+parseFloat(style.top)-m.b*origin;
+    const edgeX=y=>topLeftX+(y-topLeftY)*m.c/m.d;
+    return Math.min(edgeX(title.top),edgeX(title.bottom))-title.right;
+  })),title);
+  if(titleGap<6)throw Error(`${name}: artwork approaches title by less than 6px`);
+  reports.push({name,...audit,hardCount:hard.length,titleGap,geometry:geometry.map(g=>({...g,hiddenBottom:g.bottom-630})),title});if(hard.length)throw Error(JSON.stringify(hard));
   const path=resolve(out,tools[name].file);await page.screenshot({path});console.log(`Wrote ${path} (1200x630)`);
  }
  writeFileSync(resolve(evidence,'audit.json'),JSON.stringify(reports,null,2));
