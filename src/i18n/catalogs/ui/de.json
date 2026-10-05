@@ -47,10 +47,10 @@
   "feedback.category.translation": "Übersetzung",
   "feedback.title": "Problem melden",
   "footer.report": "Problem melden",
-  "home.favorites.blurb": "Wähle deine Lieblinge nach Typ und Generation und exportiere sie",
+  "home.favorites.blurb": "Wähle deine Favoriten nach Typ und Generation. Exportiere deine Übersicht.",
   "home.favorites.fullGridAlt": "Ein vollständiges Raster der Lieblings-Pokémon nach Typ und Generation, aus dem Lieblings-Pokémon-Wähler exportiert",
   "home.favorites.simplifiedAlt": "Eine vereinfachte Übersicht der Lieblings-Pokémon nach Typ und Generation mit einem Gesamtfavoriten, aus dem Lieblings-Pokémon-Wähler exportiert",
-  "home.favorites.title": "Lieblings-Pokémon nach Typ und Generation wählen",
+  "home.favorites.title": "Lieblings-Pokémon wählen",
   "lang.change": "Sprache ändern",
   "lang.title": "Sprache",
   "league.head.ace": "Ass-\nPokémon",
@@ -67,5 +67,6 @@
   "tools.league": "Arenaleiter erstellen",
   "tools.title": "Werkzeuge",
   "favorites.origins.more": "Alle Ursprünge für {pokemon} anzeigen",
-  "favorites.origins.close": "Ursprünge schließen"
+  "favorites.origins.close": "Ursprünge schließen",
+  "home.intro": "Erstelle einen eigenen regionalen Pokédex, gestalte Arenaleiter-Teams und Trainerkarten oder wähle deine Lieblings-Pokémon nach Typ und Generation. Speichere und teile deine Kreationen als PNGs."
 }

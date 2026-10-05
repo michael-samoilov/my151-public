@@ -578,9 +578,6 @@ export function HomePage() {
                 <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
                   {t('home.intro')}
                 </p>
-                <p className="m-0 text-[0.72rem] leading-relaxed text-muted-foreground/70 text-pretty">
-                  {t('home.note')}
-                </p>
               </div>
             </section>
 

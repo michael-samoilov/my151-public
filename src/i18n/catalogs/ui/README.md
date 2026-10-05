@@ -12,7 +12,7 @@ falls back to English, which is the intended intermediate state rather than a
 gap — `loadCatalog` layers English, then the sourced terms, then these.
 
 The translated keys cover the report categories, trainer-card headings and
-slot labels, picker interface, favorite home card and FAQ, favorites filter,
+slot labels, picker interface, favorite home card and FAQ, the compact homepage intro, favorites filter,
 and the shared controls visible on the picker. Other app copy still falls
 back to English.
 

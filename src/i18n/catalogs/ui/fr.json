@@ -47,10 +47,10 @@
   "feedback.category.translation": "Traduction",
   "feedback.title": "Signaler un problème",
   "footer.report": "Signaler un problème",
-  "home.favorites.blurb": "Choisissez vos favoris par type et génération, puis exportez-les",
+  "home.favorites.blurb": "Choisissez vos favoris par type et génération. Exportez votre tableau.",
   "home.favorites.fullGridAlt": "Une grille complète de Pokémon préférés par type et génération, exportée du sélecteur de Pokémon préférés",
   "home.favorites.simplifiedAlt": "Un tableau simplifié de Pokémon préférés par type et génération avec un favori parmi tous, exporté du sélecteur de Pokémon préférés",
-  "home.favorites.title": "Choisissez vos Pokémon préférés par type et génération",
+  "home.favorites.title": "Sélecteur de Pokémon préférés",
   "lang.change": "Changer de langue",
   "lang.title": "Langue",
   "league.head.ace": "Pokémon\nphare",
@@ -67,5 +67,6 @@
   "tools.league": "Créateur de Champions d’Arène",
   "tools.title": "Outils",
   "favorites.origins.more": "Afficher toutes les origines de {pokemon}",
-  "favorites.origins.close": "Fermer les origines"
+  "favorites.origins.close": "Fermer les origines",
+  "home.intro": "Créez un Pokédex régional personnalisé, des équipes de Champions et des cartes de Dresseur, ou choisissez vos Pokémon préférés par type et génération. Enregistrez et partagez vos créations en PNG."
 }

@@ -47,10 +47,10 @@
   "feedback.category.translation": "Traducción",
   "feedback.title": "Informar de un problema",
   "footer.report": "Informar de un problema",
-  "home.favorites.blurb": "Elige tus favoritos por tipo y generación y expórtalos",
+  "home.favorites.blurb": "Elige tus favoritos por tipo y generación. Exporta tu tabla.",
   "home.favorites.fullGridAlt": "Una cuadrícula completa de Pokémon favoritos por tipo y generación, exportada del selector de Pokémon favoritos",
   "home.favorites.simplifiedAlt": "Una tabla simplificada de Pokémon favoritos por tipo y generación con un favorito de todos, exportada del selector de Pokémon favoritos",
-  "home.favorites.title": "Elige tus Pokémon favoritos por tipo y generación",
+  "home.favorites.title": "Selector de Pokémon favoritos",
   "lang.change": "Cambiar idioma",
   "lang.title": "Idioma",
   "league.head.ace": "Pokémon\nestrella",
@@ -67,5 +67,6 @@
   "tools.league": "Creador de Líderes de Gimnasio",
   "tools.title": "Herramientas",
   "favorites.origins.more": "Mostrar todos los orígenes de {pokemon}",
-  "favorites.origins.close": "Cerrar orígenes"
+  "favorites.origins.close": "Cerrar orígenes",
+  "home.intro": "Crea una Pokédex regional personalizada, equipos de líderes de gimnasio y tarjetas de entrenador, o elige tus Pokémon favoritos por tipo y generación. Guarda y comparte tus creaciones como PNG."
 }

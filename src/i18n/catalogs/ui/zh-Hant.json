@@ -47,10 +47,10 @@
   "feedback.category.translation": "翻譯",
   "feedback.title": "回報問題",
   "footer.report": "回報問題",
-  "home.favorites.blurb": "依屬性和世代挑選最愛，再匯出圖片",
+  "home.favorites.blurb": "依屬性和世代挑選最愛，匯出你的圖表。",
   "home.favorites.fullGridAlt": "從最愛寶可夢挑選工具匯出的屬性和世代完整網格",
   "home.favorites.simplifiedAlt": "從最愛寶可夢挑選工具匯出的屬性和世代簡化圖表，包含最愛的寶可夢",
-  "home.favorites.title": "依屬性和世代挑選最愛的寶可夢",
+  "home.favorites.title": "最愛寶可夢挑選工具",
   "lang.change": "變更語言",
   "lang.title": "語言",
   "league.head.ace": "王牌\n寶可夢",
@@ -67,5 +67,6 @@
   "tools.league": "道館館主製作器",
   "tools.title": "工具",
   "favorites.origins.more": "顯示{pokemon}的所有選擇位置",
-  "favorites.origins.close": "關閉選擇位置"
+  "favorites.origins.close": "關閉選擇位置",
+  "home.intro": "建立自訂地區寶可夢圖鑑、道館館主隊伍和訓練家卡片，或依屬性和世代挑選你最愛的寶可夢。將作品儲存為PNG圖片並分享。"
 }
