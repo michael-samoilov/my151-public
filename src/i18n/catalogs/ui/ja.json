@@ -78,8 +78,6 @@
   "favorites.stats.shape": "ポケモンの体形",
   "favorites.stats.color": "図鑑の色",
   "favorites.stats.evolution": "進化段階",
-  "favorites.stats.choices": "選択数：{count} · 候補との比較",
-  "favorites.stats.coverage": "種族値の集計対象：{count}/{total}",
   "favorites.stats.empty": "比較できる選択はまだありません",
   "favorites.stats.options": "選択候補",
   "favorites.stats.yours": "選んだポケモン",
@@ -89,7 +87,6 @@
   "favorites.stats.noEvo": "進化なし",
   "favorites.stats.means": "選択の平均：{yours} · 候補の平均：{expected}",
   "favorites.nav.picker": "選択",
-  "favorites.analytics.description": "タイプと世代ごとにお気に入りのポケモンを分析できます。各マスで選べる候補と、実際に選んだポケモンをグラフで比較します。",
   "favorites.analytics.empty": "候補が複数あるマスでポケモンを選ぶと、好みの傾向を確認できます。",
   "export.detailedStatsTitle": "詳しい統計"
 }

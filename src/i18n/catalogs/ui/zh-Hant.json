@@ -78,8 +78,6 @@
   "favorites.stats.shape": "寶可夢體形",
   "favorites.stats.color": "圖鑑顏色",
   "favorites.stats.evolution": "進化階段",
-  "favorites.stats.choices": "選擇數：{count} · 候選基準",
-  "favorites.stats.coverage": "種族值涵蓋：{count}/{total}",
   "favorites.stats.empty": "暫無可比較的選擇",
   "favorites.stats.options": "可選寶可夢",
   "favorites.stats.yours": "你的選擇",
@@ -89,7 +87,6 @@
   "favorites.stats.noEvo": "不進化",
   "favorites.stats.means": "所選平均：{yours} · 候選平均：{expected}",
   "favorites.nav.picker": "挑選",
-  "favorites.analytics.description": "按屬性和世代分析你最愛的寶可夢。圖表將你的選擇與每個格子中可選的寶可夢進行比較。",
   "favorites.analytics.empty": "在有多個候選的格子中選擇寶可夢，即可查看你的偏好。",
   "export.detailedStatsTitle": "詳細統計"
 }

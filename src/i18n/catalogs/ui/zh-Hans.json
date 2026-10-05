@@ -78,8 +78,6 @@
   "favorites.stats.shape": "宝可梦体形",
   "favorites.stats.color": "图鉴颜色",
   "favorites.stats.evolution": "进化阶段",
-  "favorites.stats.choices": "选择数：{count} · 候选基准",
-  "favorites.stats.coverage": "种族值覆盖：{count}/{total}",
   "favorites.stats.empty": "暂无可比较的选择",
   "favorites.stats.options": "可选宝可梦",
   "favorites.stats.yours": "你的选择",
@@ -89,7 +87,6 @@
   "favorites.stats.noEvo": "不进化",
   "favorites.stats.means": "所选平均：{yours} · 候选平均：{expected}",
   "favorites.nav.picker": "挑选",
-  "favorites.analytics.description": "按属性和世代分析你最爱的宝可梦。图表将你的选择与每个格子中可选的宝可梦进行比较。",
   "favorites.analytics.empty": "在有多个候选的格子中选择宝可梦，即可查看你的偏好。",
   "export.detailedStatsTitle": "详细统计"
 }

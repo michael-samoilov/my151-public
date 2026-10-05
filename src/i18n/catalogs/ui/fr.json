@@ -78,8 +78,6 @@
   "favorites.stats.shape": "Forme du Pokémon",
   "favorites.stats.color": "Couleur du Pokédex",
   "favorites.stats.evolution": "Stade d’évolution",
-  "favorites.stats.choices": "Choix : {count} · options disponibles",
-  "favorites.stats.coverage": "Couverture BST : {count}/{total} choix",
   "favorites.stats.empty": "Aucun choix comparable pour le moment",
   "favorites.stats.options": "Options disponibles",
   "favorites.stats.yours": "Vos choix",
@@ -89,7 +87,6 @@
   "favorites.stats.noEvo": "Sans évolution",
   "favorites.stats.means": "Votre moyenne : {yours} · Options : {expected}",
   "favorites.nav.picker": "Sélection",
-  "favorites.analytics.description": "Explore tes Pokémon préférés par type et génération. Les graphiques comparent tes choix aux options disponibles dans chaque case.",
   "favorites.analytics.empty": "Choisis des Pokémon dans des cases avec plusieurs options pour voir tes préférences.",
   "export.detailedStatsTitle": "Statistiques détaillées"
 }

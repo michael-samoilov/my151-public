@@ -43,7 +43,6 @@ const RULES: { test: (key: string) => boolean; tier: Tier }[] = [
   // Prose attached to an otherwise functional label.
   { test: (k) => k.endsWith('.desc'), tier: 'editorial' },
   { test: (k) => k.startsWith('analytics.') && k.endsWith('.desc'), tier: 'editorial' },
-  { test: (k) => k === 'analytics.type.descDistribution', tier: 'editorial' },
   { test: (k) => k === 'analytics.type.descMatchup', tier: 'editorial' },
   { test: (k) => k === 'analytics.avgCompare', tier: 'editorial' },
   { test: (k) => k === 'viewSettings.statsHint', tier: 'editorial' },
