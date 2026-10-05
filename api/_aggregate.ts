@@ -561,6 +561,7 @@ export interface ReferrerFlowEntry {
   total: number;
   dex: number;
   league: number;
+  favorites?: number;
 }
 
 /** Label for records with no `firstReferrer`: legacy rows, direct visits, and
@@ -582,7 +583,7 @@ const TOP_REFERRER_HOSTS = 8;
  * The top 8 named hosts by total reach are kept; the unknown bucket is always
  * included when it has anyone.
  */
-export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable[]): ReferrerFlowEntry[] {
+export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable[], favoriteRecords?: Referrable[]): ReferrerFlowEntry[] {
   const byHost = (records: Referrable[]) => {
     const out = new Map<string, Set<string>>();
     for (const r of records) {
@@ -596,11 +597,13 @@ export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable
   };
   const dexByHost = byHost(dexRecords);
   const leagueByHost = byHost(leagueRecords);
-  const hosts = new Set([...dexByHost.keys(), ...leagueByHost.keys()]);
+  const favoriteByHost = byHost(favoriteRecords ?? []);
+  const hosts = new Set([...dexByHost.keys(), ...leagueByHost.keys(), ...favoriteByHost.keys()]);
   const rows = [...hosts].map((host) => {
     const dexCids = dexByHost.get(host) ?? new Set<string>();
     const leagueCids = leagueByHost.get(host) ?? new Set<string>();
-    return { host, total: new Set([...dexCids, ...leagueCids]).size, dex: dexCids.size, league: leagueCids.size };
+    const favoriteCids = favoriteByHost.get(host) ?? new Set<string>();
+    return { host, total: new Set([...dexCids, ...leagueCids, ...favoriteCids]).size, dex: dexCids.size, league: leagueCids.size, ...(favoriteRecords ? {favorites:favoriteCids.size}: {}) };
   });
   const unknown = rows.find((r) => r.host === UNKNOWN_REFERRER_HOST);
   const known = rows

@@ -247,7 +247,7 @@ function conversions(catalog: readonly ToolDef[], browsers: Browser[]): LabeledR
 }
 
 function companions(catalog: readonly ToolDef[], browsers: Browser[]): LabeledRate[] {
-  const sorted = catalog.filter((t): t is ToolDef & { launchedAt: number } => t.launchedAt !== null).sort((a, b) => a.launchedAt - b.launchedAt);
+  const sorted = [...catalog].sort((a,b)=>(a.launchedAt ?? Infinity)-(b.launchedAt ?? Infinity));
   const kpis: LabeledRate[] = [];
   for (let i = 1; i < sorted.length; i++) {
     const tool = sorted[i];
@@ -259,7 +259,7 @@ function companions(catalog: readonly ToolDef[], browsers: Browser[]): LabeledRa
     const older = earlier.length === 1 ? earlier[0].short : 'an older tool';
     kpis.push({
       key: `${tool.id}-has-earlier`,
-      label: `${tool.short} has a ${older.toLowerCase()}`,
+      label: `${tool.short} has ${earlier.length === 1 ? 'a ' : ''}${older.toLowerCase()}`,
       hint: `of ${tool.short.toLowerCase()} browsers`,
       n,
       of,

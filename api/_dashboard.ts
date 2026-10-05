@@ -623,7 +623,7 @@ export function buildDashboard(
 
   // Acquisition hosts ranked by reach across both tools. Records with no
   // host count as "referrer not known" rather than dropping out.
-  const referrerRows = referrerFlow(dexNew, leagueNew);
+  const referrerRows = referrerFlow(dexNew, leagueNew, favoriteNew);
 
   // League depth: how far a league gets, on the dex builder's pattern. Two
   // metrics, because a league can be wide (11 cards, one line each) or deep
