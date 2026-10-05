@@ -75,7 +75,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): st
  * Measure or draw the Base-Stat-Total histogram in natural coords at (ox, oy).
  * Mirrors SuperimposedHistogram.tsx with chartScale = 1.
  */
-function histogram(
+export function drawExportHistogram(
   ctx: CanvasRenderingContext2D,
   ox: number,
   oy: number,
@@ -236,8 +236,8 @@ function renderPanel(
       title: t('stats.bst.title'),
       subtitle: `Yours avg: ${data.bst.yoursAvg}, National avg: ${data.bst.nationalAvg}.`,
       legend: true,
-      chartH: (dr) => histogram(ctx, 0, 0, data.bst, heights.bst, dr),
-      drawChart: (c, x, y) => histogram(c, x, y, data.bst, heights.bst, true),
+      chartH: (dr) => drawExportHistogram(ctx, 0, 0, data.bst, heights.bst, dr),
+      drawChart: (c, x, y) => drawExportHistogram(c, x, y, data.bst, heights.bst, true),
     },
   ];
 
