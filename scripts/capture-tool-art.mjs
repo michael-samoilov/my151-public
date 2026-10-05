@@ -2,6 +2,7 @@
 import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { auditBody, APP_HARD_KINDS } from '../.claude/skills/render-audit/audit-core.mjs';
 const base=process.env.ART_BASE_URL || 'http://127.0.0.1:4377';
 const out=resolve(process.env.ART_CAPTURE_DIR || 'docs/evidence/tool-art-rebake/local');
@@ -9,6 +10,9 @@ mkdirSync(out,{recursive:true});
 const wanted=process.argv.slice(2); const has=name=>!wanted.length||wanted.includes(name);
 const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
 const reports=[];
+const sourceRef=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+const sourceRefs=(()=>{try{return JSON.parse(readFileSync(resolve(out,'source-refs.json'),'utf8'))}catch{return {}}})();
+function source(name){sourceRefs[name]=sourceRef;writeFileSync(resolve(out,'source-refs.json'),JSON.stringify(sourceRefs,null,2))}
 async function audit(page,name){
  const result=await page.evaluate(`(()=>{${auditBody({minFont:12,annotate:false,checkFrame:false})}})()`);
  const hard=result.findings.filter(f=>APP_HARD_KINDS.includes(f.kind)||f.kind==='stretched-box');
@@ -19,7 +23,7 @@ async function blob(page,name){
  const image=page.locator('[data-export-preview] img');await image.waitFor({timeout:90000});
  await image.evaluate(el=>el.decode());
  const raw=await image.evaluate(async el=>{const b=await(await fetch(el.src)).blob();return Array.from(new Uint8Array(await b.arrayBuffer()))});
- writeFileSync(resolve(out,`${name}.png`),Buffer.from(raw));
+ writeFileSync(resolve(out,`${name}.png`),Buffer.from(raw));source(name);
  // Audit the entire native artboard, rather than the scaled overlay.
  const native=await browser.newPage();
  await native.setContent(`<style>*{margin:0}img{display:block}</style><img data-audit-scale="intended" src="data:image/png;base64,${Buffer.from(raw).toString('base64')}">`);
@@ -28,14 +32,19 @@ async function blob(page,name){
 }
 async function phonePage(tab,name){
  const p=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:3});
- await p.goto(`${base}/pokedex-builder?demo=151&notme`);await p.locator(`[data-nav="${tab}"]`).first().click();
+ if(tab==='build')await p.addInitScript(()=>{
+  const sections={starter:[387,388,389,255,256,257,656,657,658],'early-bug':[736,737,738,543,544,545,123,212,900],forest:[46,47,453,454,708,709,56,57,979,273,274,275,216,217,901,252,253,254,640]};
+  localStorage.setItem('personal-151-pokedex-v3',JSON.stringify({state:{sections,milestoneMax:37,milestoneCelebrated:[25],localeNoticeSeen:true,locale:'en'},version:10}));
+  localStorage.setItem('p151-league-promo-seen','1');localStorage.setItem('p151-moved-notice-seen','1');
+ });
+ await p.goto(`${base}/pokedex-builder?${tab==='build'?'':'demo=151&'}notme`);await p.locator(`[data-nav="${tab}"]`).first().click();
  await p.waitForTimeout(1000);
  const chrome=await p.evaluate(()=>Math.ceil(Math.max(document.querySelector('header')?.getBoundingClientRect().bottom||0,...[...document.querySelectorAll('.milestone-bar')].map(b=>b.getBoundingClientRect().width?b.closest('.border-b')?.getBoundingClientRect().bottom||0:0))));
  await p.setViewportSize({width:390,height:844+chrome});
  if(tab==='analytics')await p.evaluate(top=>{const h=[...document.querySelectorAll('h1,h2,h3')].find(h=>h.textContent.trim()==='Pokémon Type');if(!h)throw Error('missing type heading');const s=h.closest('.overflow-y-auto')||document.scrollingElement;s.scrollTop+=h.getBoundingClientRect().top-top-16},chrome);
  await p.waitForTimeout(1000);await p.locator('img').evaluateAll(images=>Promise.all(images.filter(i=>i.getBoundingClientRect().width&&i.getBoundingClientRect().top<innerHeight).map(i=>i.decode().catch(()=>null))));
  await audit(p,name);await p.screenshot({path:resolve(out,`${name}-whole.png`),fullPage:true});
- await p.screenshot({path:resolve(out,`${name}.png`),clip:{x:0,y:chrome,width:390,height:844}});await p.close();
+ await p.screenshot({path:resolve(out,`${name}.png`),clip:{x:0,y:chrome,width:390,height:844}});source(name);await p.close();
 }
 try{
  if(has('league')){
@@ -50,7 +59,7 @@ try{
  if(has('favorites')){
  const p=await browser.newPage({viewport:{width:1280,height:900}});
  await p.goto(`${base}/docs/favorite-picker-work/export/portrait/index.html`);await p.waitForFunction(()=>window.ready,{timeout:90000});await audit(p,'picker-portrait-comparison');
- const data=await p.evaluate(()=>window.portrait.data);for(const [i,name]of ['picker-full-portrait','picker-simplified-portrait','picker-full-horizontal','picker-simplified-horizontal'].entries())writeFileSync(resolve(out,`${name}.png`),Buffer.from(data[i].split(',')[1],'base64'));await p.close();
+ const data=await p.evaluate(()=>window.portrait.data);for(const [i,name]of ['picker-full-portrait','picker-simplified-portrait','picker-full-horizontal','picker-simplified-horizontal'].entries()){writeFileSync(resolve(out,`${name}.png`),Buffer.from(data[i].split(',')[1],'base64'));source(name)}await p.close();
  }
  if(has('dex')){
  await phonePage('build','dex-build');

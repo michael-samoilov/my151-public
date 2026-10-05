@@ -382,6 +382,7 @@ function Artwork({ tool }: { tool: Tool }) {
           ending on a straight line at the clip edge. Each rides its own shot's
           `--hf`, so a shadow floats with the shot it belongs to. */}
       <span
+        data-audit-clip="intended"
         style={{
           ...box,
           maskImage: `linear-gradient(to top, transparent 0, #000 ${BLEED})`,
@@ -402,7 +403,7 @@ function Artwork({ tool }: { tool: Tool }) {
       </span>
       {/* The visible shots. They float, so they carry no pointer events — the
           stationary hit layer below owns hovering and clicking. */}
-      <span style={box}>
+      <span style={box} data-audit-clip="intended">
         {FAN.map((f, i) => (
           <span
             key={f.tilt}
@@ -429,7 +430,7 @@ function Artwork({ tool }: { tool: Tool }) {
           itself — the guard against hover flicker. The twins are the click
           target too, so a click on a screenshot still follows the card's link;
           the front twin sits last, so it wins the overlap. */}
-      <span style={box}>
+      <span style={box} data-audit-clip="intended">
         {FAN.map((f, i) => (
           <span
             key={f.tilt}
