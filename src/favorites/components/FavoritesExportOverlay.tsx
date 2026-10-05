@@ -8,6 +8,7 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useLocale, useT } from '@/i18n';
 import { renderFullChart } from '../export/renderFullChart';
 import { renderSimplifiedChart } from '../export/renderSimplifiedChart';
+import { sendFavoriteExportBeacon } from '../hooks/useFavoriteBeacon';
 import { buildFavoritesSnapshot } from '../export/snapshot';
 
 type ExportMode = 'full' | 'simplified';
@@ -81,6 +82,7 @@ export default function FavoritesExportOverlay({ fills, onClose }: {
       const blob = await (await fetch(url)).blob();
       try { await shareOrDownload(blob, 'my151-favorites.png'); }
       catch (err) { if (isShareAbort(err)) return; throw err; }
+      sendFavoriteExportBeacon(snapshot, mode);
       onClose();
     } catch { setErrorKeys(previous => ({ ...previous, [key]: true })); }
     finally { setSaving(false); }
