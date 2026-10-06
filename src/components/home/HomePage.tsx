@@ -49,7 +49,7 @@ import favoritesFront400 from '@/assets/home/tool-favorites-400.webp';
 const U = (n: number) => `${((n / 166) * 100).toFixed(3)}cqw`;
 
 /** Shorter than the artboard's 104: the copy no longer lives inside the panel. */
-const PANEL_ASPECT = '166 / 100';
+const PANEL_ASPECT = '166 / 79.167';
 // Capped in px so the wide desktop band does not take a huge rounded corner:
 // the radius is a share of the card's width, and a third-of-the-page card would
 // otherwise round ~34px, whose bottom-left curve exposes the screenshot behind
@@ -165,10 +165,10 @@ function useTools(placed: number): Tool[] {
       title: t('home.dex.title'),
       blurb: t('home.dex.blurb'),
       progress: placed > 0 ? { count: placed, total: 151, label: t('home.dex.saved', { progress: PROGRESS_TOKEN }) } : undefined,
-      shots: [shot(dexBack400, dexBack), shot(dexFront400, dexFront)],
+      shots: [shot(dexFront400, dexFront), shot(dexBack400, dexBack)],
       alts: [
+        'A custom regional Pokédex in progress on the Pokédex builder Build page',
         'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
-        'A custom regional Pokédex of 151 Pokémon, exported as an image from the Pokédex builder',
       ],
     },
     {
@@ -189,8 +189,8 @@ function useTools(placed: number): Tool[] {
       title: t('home.favorites.title'),
       blurb: t('home.favorites.blurb'),
       progress: favorites.filled > 0 ? { count: favorites.filled, total: favorites.total, label: t('home.favorites.saved', { progress: PROGRESS_TOKEN }) } : undefined,
-      shots: [shot(favoritesFront400, favoritesFront), shot(favoritesBack400, favoritesBack)],
-      alts: [t('home.favorites.simplifiedAlt'), t('home.favorites.fullGridAlt')],
+      shots: [shot(favoritesBack400, favoritesBack), shot(favoritesFront400, favoritesFront)],
+      alts: [t('home.favorites.fullGridAlt'), t('home.favorites.simplifiedAlt')],
     },
     { key: HAMMER_TITLE, title: t('home.next.title'), blurb: t('home.next.blurb') },
   ];
@@ -270,7 +270,7 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       className={`hub-card flex flex-col ${wide ? SPAN : ''}`}
       style={{ containerType: 'inline-size' }}
     >
-      <div style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art))` : 0 }}>{inner}</div>
+      <div style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art) + var(--panel-inset, 0px))` : 0 }}>{inner}</div>
       {wide ? null : <Caption tool={tool} />}
     </div>
   );
@@ -383,7 +383,7 @@ function Artwork({ tool }: { tool: Tool }) {
     position: 'absolute',
     top: `calc((${U(POP_TOP)} * var(--art) + ${BLEED}) * -1)`,
     left: `calc((${U(POP_LEFT)} * var(--art) + ${BLEED}) * -1)`,
-    right: 0,
+    right: 'calc(100cqw - var(--card-width, 100cqw))',
     bottom: 0,
     overflow: 'hidden',
     pointerEvents: 'none',
@@ -393,11 +393,14 @@ function Artwork({ tool }: { tool: Tool }) {
     const f = FAN[i];
     return {
       position: 'absolute' as const,
-      // A shared mobile/desktop `--shot-nudge` keeps both sheets clear of
-      // the bottom rounded corners, including their raised hover state.
-      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px))`,
+      // The nudge clears bottom corners; the front sheet uses half the remaining
+      // right clearance. All visible, shadow and stationary hit copies share it.
+      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${i === 1
+        ? ` + (var(--card-width, 100cqw) - (${U(FAN[1].offset)} - ${U(POP_LEFT)} * var(--art) + var(--shot-nudge, 0px) + ${U(SHOT_W)} * var(--art))) / 2`
+        : ''})`,
       // A common top anchor keeps native screenshot height out of the fan geometry.
-      top: `calc(${BLEED} + ${U(SHOT_TOP)})`,
+      // The shorter detailed-stats sheet keeps its bottom hidden during a 12px lift.
+      top: `calc(${BLEED} + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 18px' : ''})`,
       width: `calc(${U(SHOT_W)} * var(--art))`,
       transformOrigin: '50% 0' as const,
       borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${EXPORT_RADIUS})`,
@@ -455,9 +458,7 @@ function Artwork({ tool }: { tool: Tool }) {
           <span
             key={f.tilt}
             data-shot={i}
-            className={`hub-float-shot block border border-transparent ${tool.key === 'dex' && i === 0
-              ? ''
-              : 'overflow-hidden bg-background'}`}
+            className="hub-float-shot block"
             style={{ ...geom(i), transform: floatTransform(i) }}
           >
             {/* Not lazy: every card sits in the first viewport at every
