@@ -49,3 +49,6 @@ docs/i18n/pokeapi/
 
 # Disposable form-metadata source downloads and browser evidence.
 docs/favorite-picker-work/form-metadata-audit/local/
+
+# Disposable form-shape proof and rendered comparison artifacts.
+docs/favorite-picker-work/form-shape-implementation/local/

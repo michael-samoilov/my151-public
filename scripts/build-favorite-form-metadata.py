@@ -4,6 +4,12 @@ parser.add_argument("sources",type=pathlib.Path)
 parser.add_argument("--write",action="store_true")
 args=parser.parse_args()
 D=pathlib.Path('docs/favorite-picker-work/form-metadata-audit');S=args.sources
+shapePath=pathlib.Path('src/data/form-shapes.json')
+formShapes={int(k):v for k,v in json.loads(shapePath.read_text()).items()}
+shapeReviewPath=pathlib.Path('docs/favorite-picker-work/form-shape-review/review.json')
+shapeIdentities={r['pickerId']:r for r in json.loads(shapeReviewPath.read_text())['documentedFormDifferences']['mismatches']}
+assert formShapes=={pid:r['listedShapeKey'] for pid,r in shapeIdentities.items()}, 'Form-shape overrides differ from the reviewed identities and classifications'
+seenFormShapes=set()
 for entry in json.loads((D/'sources.json').read_text()):
  raw=(S/entry['file']).read_bytes()
  if hashlib.sha256(raw).hexdigest()!=entry['sha256']:raise ValueError('Pinned source changed: '+entry['file'])
@@ -81,6 +87,12 @@ for m in cat:
   source['weightStatus']='unknown; upstream placeholder is not measured weight'
  else:source['heightQualifier']='exact'
  source['shapeScope']='species; no direct per-form shape table in these game resources'
+ if m['id'] in formShapes:
+  reviewed=shapeIdentities[m['id']]
+  assert (m['name'],sid,name)==(reviewed['currentName'],reviewed['sourceSpeciesId'],reviewed['sourceForm']), f"Form-shape identity changed: {m['id']} {m['name']}"
+  source['shape']=formShapes[m['id']]
+  source['shapeScope']='form; documented Bulbapedia classification in form-shape-review/review.json'
+  seenFormShapes.add(m['id'])
  source['generationScope']='species introduction; selectorGeneration preserves tool placement policy'
  for field in ['types','stats','bst','shape','color','captureRate','growthRate','eggGroups','isBaby','isLegendary','isMythical']:
   if source[field] is not None and current.get(field)!=source[field]:delta[field]={'before':current.get(field),'after':source[field]}
@@ -90,7 +102,9 @@ for m in cat:
  inventory.append({'id':m['id'],'name':m['name'],'dexId':m['dexId'],'sourcePokemonId':pid,'sourceSpeciesId':sid,'sourceForm':name,'gamePersonal':game,'metadata':source,'selectorGeneration':m['generation'],'graph':{k:current[k] for k in ['evolutionChainId','evolvesFrom','evolutionStage']},'changes':delta})
 
 # Source values are an explicit audit. No source file is fetched during a build.
+assert seenFormShapes==set(formShapes), 'Form-shape identity coverage must be complete'
 manifest={'pokeapiRevision':'bc92d3b6029ef1abe9e7ad424c400b338f3c11fe','pkhexRevision':'02c9ec108fe3c96735f6c2397eaebc10e29a049f','files':[{ 'name':p.name,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(S.iterdir()) if p.suffix=='.csv' or p.name.startswith('personal_') and not p.name.endswith('.b64')],'inventoryCount':len(inventory),'unknown':unknown,'gameStatsConflicts':[{'id':10280,'name':'Mega Starmie','pokeapiStats':stats[10280],'gameStats':next(r['metadata']['stats'] for r in inventory if r['id']==10280),'decision':'Direct ZA game personal record, species121 form1, takes precedence'}]}
+manifest['formShapes']={'source':'https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_by_shape','review':str(shapeReviewPath),'overrides':len(formShapes),'sha256':hashlib.sha256(shapePath.read_bytes()).hexdigest()}
 if unknown:raise ValueError('Unresolved game records: '+json.dumps(unknown))
 if args.write:
  output={}
@@ -115,4 +129,4 @@ if args.write:
  (D/'corrections.json').write_text(json.dumps(changes,indent=2)+'\n')
  print(f"Audited {len(inventory)} identities; {len(output)} sparse metadata overrides; game unknowns {len(unknown)}")
 else:
- print(json.dumps({'entries':len(inventory),'differences':len(changes),'unknown':unknown}))
+ print(json.dumps({'entries':len(inventory),'differences':len(changes),'formShapeOverrides':len(seenFormShapes),'unknown':unknown}))
