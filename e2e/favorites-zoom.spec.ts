@@ -89,7 +89,7 @@ function cellOnScreen(page: Page) {
 
 test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
   test('a zoomed grid scrolls until its last column and last row are on screen', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     const before = await cellOnScreen(page);
     await pinchGrid(page, testInfo, 2);
     expect(await cellOnScreen(page)).toBeGreaterThan(before * 1.8);
@@ -115,7 +115,7 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
         version: 1,
       }));
     });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await pinchGrid(page, testInfo, 2);
     await scrollGrid(page, testInfo, 1);
 
@@ -157,7 +157,7 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
   });
 
   test('headers stay compact at maximum zoom and the pinch point holds', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     // On-screen header sizes and the body cell under the pinch point, with
     // where in that cell the point falls.
     const measure = (point: { x: number; y: number }, testId?: string) => page.evaluate(({ point, testId }) => {
@@ -208,7 +208,7 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
   });
 
   test('the minimap holds still and unscaled through a pinch', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await expect(page.getByTestId('favorites-minimap')).toBeAttached();
     await page.evaluate(() => {
       const samples: Array<{ right: number; bottom: number; scaleX: number; opacity: number }> = [];
@@ -251,7 +251,7 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
 
   test('a finger on the minimap drives the zoomed grid, and a faded minimap lets taps through', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.use.hasTouch, 'The phone minimap takes finger drags.');
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await pinchGrid(page, testInfo, 2);
     const scroll = page.getByTestId('favorites-grid-scroll');
     const map = page.getByTestId('favorites-minimap');

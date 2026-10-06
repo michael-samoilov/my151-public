@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('desktop grid keeps native sprites, aligned rows, and a larger minimap', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'desktop table geometry');
-  await page.goto('/favorite-pokemon-by-type');
+  await page.goto('/favorite-pokemon-picker');
   await page.screenshot({ path: testInfo.outputPath('desktop-grid.png') });
 
   const scroll = page.getByTestId('favorites-grid-scroll');
@@ -59,7 +59,7 @@ test('neighboring desktop sprites stay at native size without overlapping', asyn
       version: 3,
     }));
   });
-  await page.goto('/favorite-pokemon-by-type');
+  await page.goto('/favorite-pokemon-picker');
   const cells = ['normal', 'fire', 'water', 'grass', 'electric'];
   for (const type of cells) {
     await expect(page.getByTestId(`favorites-cell-${type}-1`).locator('img[data-grid-sprite-size]')).toBeAttached();

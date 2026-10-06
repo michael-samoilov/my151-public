@@ -3,7 +3,7 @@ test('records Full and Simplified only after downloads succeed, with the exporte
  const requests:Record<string,unknown>[]=[];
  await page.addInitScript(()=>localStorage.setItem('favorite-picker',JSON.stringify({state:{fills:{'water|1':7,'favorite|1':7}},version:3})));
  await page.route('**/api/favorites',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({json:{ok:true}});});
- await page.goto('/favorite-pokemon-by-type?lang=en');
+ await page.goto('/favorite-pokemon-picker?lang=en');
  for(const mode of ['full','simplified']){
   await page.getByTestId('favorites-export-open').click();
   await page.locator(`[data-favorites-export-mode="${mode}"]`).click();
@@ -19,7 +19,7 @@ test('records Full and Simplified only after downloads succeed, with the exporte
 });
 test('does not send opted-out Picker activity',async({page},testInfo)=>{
  const requests:string[]=[];await page.route('**/api/favorites',async route=>{requests.push(route.request().url());await route.fulfill({json:{ok:true}});});
- await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+ await page.goto('/favorite-pokemon-picker?notme&lang=en');
  await page.getByTestId('favorites-export-open').click();await expect(page.getByTestId('favorites-export-save')).toBeEnabled({timeout:30000});
  const download=page.waitForEvent('download');await page.getByTestId('favorites-export-save').click();await download;
  expect(requests).toEqual([]);await testInfo.attach('excluded-requests',{body:JSON.stringify({requests:0}),contentType:'application/json'});

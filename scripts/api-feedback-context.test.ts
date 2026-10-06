@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('../api/_shared.js', () => ({ redis: {}, getClientIp: () => '127.0.0.1', isReadOnlyDeployment: () => true }));
 import { sanitizeContext } from '../api/feedback';
 
-const picker = (favorites: unknown) => sanitizeContext({ route: '/favorite-pokemon-by-type', favorites });
+const picker = (favorites: unknown) => sanitizeContext({ route: '/favorite-pokemon-picker', favorites });
 const valid = { filled: 2, total: 257, picksFilled: 1, pointersFilled: 1, selection: { type: 'water', gen: 1 } };
 
 describe('feedback API Picker diagnostics', () => {
@@ -20,6 +20,9 @@ describe('feedback API Picker diagnostics', () => {
       expect(picker({ ...valid, selection }).favorites).toEqual({ ...valid, selection: null });
     }
     expect(picker({ ...valid, selection: { type: 'gimmick', gen: 'gimmick' } }).favorites).toEqual({ ...valid, selection: { type: 'gimmick', gen: 'gimmick' } });
+  });
+  it('retains diagnostics from legacy preview clients', () => {
+    expect(sanitizeContext({ route: '/favorite-pokemon-by-type', favorites: valid }).favorites).toEqual(valid);
   });
   it('does not accept Picker diagnostics on unrelated tools', () => {
     expect(sanitizeContext({ route: 'builder', favorites: valid }).favorites).toBeUndefined();

@@ -32,10 +32,10 @@ const number = (text: string) => Number(text.replace(/[^\d.-]/g, ''));
 
 test('short header retains full search title and keyboard tabs stay on the same URL', async ({ page, request }, testInfo) => {
   await seed(page, { 'fire|1': 6 });
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Favorite Pokémon Picker');
   await expect(page).toHaveTitle(/Favorite Pokémon Picker by Type and Generation \| my151/);
-  const staticHtml = await (await request.get('/favorite-pokemon-by-type')).text();
+  const staticHtml = await (await request.get('/favorite-pokemon-picker')).text();
   expect(staticHtml).toContain('<title>Favorite Pokémon Picker by Type and Generation | my151</title>');
   const url = page.url();
   await expect(picker(page)).toHaveAttribute('aria-selected', 'true');
@@ -62,7 +62,7 @@ test('short header retains full search title and keyboard tabs stay on the same 
 
 test('real selectors exclude favorite pointers and forced cells while guaranteed types stay neutral', async ({ page }, testInfo) => {
   await seed(page, { 'fire|1': 6, 'ghost|2': 200, 'favorite|1': 6, 'fire|favorite': 6, 'favorite|favorite': 6 });
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await openAnalytics(page);
   const fire = await rowValues(page, 'type', 'fire');
   const flying = await rowValues(page, 'type', 'flying');
@@ -77,7 +77,7 @@ test('real selectors exclude favorite pointers and forced cells while guaranteed
 
 test('repeated independent choices remain two votes and charts update after a real new pick', async ({ page }, testInfo) => {
   await seed(page, { 'fire|1': 6, 'flying|1': 6 });
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await openAnalytics(page);
   const before = await rowValues(page, 'type', 'fire');
   expect(number(before[0])).toBe(2);
@@ -96,7 +96,7 @@ test('repeated independent choices remain two votes and charts update after a re
 });
 
 test('empty analytics never invent numeric averages and incomplete BST pools explain the gap', async ({ page }, testInfo) => {
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await openAnalytics(page);
   const emptyText = await dashboard(page).innerText();
   expect(emptyText).not.toMatch(/NaN|Infinity/);
@@ -115,7 +115,7 @@ test('empty analytics never invent numeric averages and incomplete BST pools exp
 
 test('switching tabs retains grid scroll and exporting from Analytics preserves both ordinary modes @viewport', async ({ page }, testInfo) => {
   await seed(page, fullSeed);
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   const scroller = page.getByTestId('favorites-grid-scroll');
   const scroll = await scroller.evaluate(el => { el.scrollLeft = 240; el.scrollTop = 120; return { left: el.scrollLeft, top: el.scrollTop }; });
   const before = await saved(page);
@@ -149,7 +149,7 @@ test('localized header and chart cards remain contained at narrow mobile and des
   page.on('console', message => { if (message.text().includes('[P151]')) errors.push(message.text()); });
   for (const lang of ['en', 'de', 'es', 'fr', 'it', 'ja', 'ko', 'zh-Hans', 'zh-Hant']) {
     errors.length = 0;
-    await page.goto(`/favorite-pokemon-by-type?notme&lang=${lang}`);
+    await page.goto(`/favorite-pokemon-picker?notme&lang=${lang}`);
     const tab = page.locator('#favorites-tab-analytics');
     await tab.click();
     try { await expect(dashboard(page)).toBeVisible(); } catch (error) {
@@ -180,7 +180,7 @@ test('localized header and chart cards remain contained at narrow mobile and des
 
 test('complete saved chart reports every independent vote and honest per-chart coverage', async ({ page }, testInfo) => {
   await seed(page, fullSeed);
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await openAnalytics(page);
   await expect(dashboard(page)).toHaveAttribute('data-favorite-population', '224');
   const coverage: Record<string, unknown> = {};
@@ -203,7 +203,7 @@ test('complete saved chart reports every independent vote and honest per-chart c
 
 test('Analytics retains the chosen chart sort and its scroll position across tab switches @viewport', async ({ page }, testInfo) => {
   await seed(page, fullSeed);
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await openAnalytics(page);
   await chart(page, 'type').locator('svg').getByText('COUNT', { exact: true }).click();
   const ordered = await chart(page, 'type').locator('[data-favorite-chart-row]').evaluateAll(rows => rows.map(row => ({ key: row.getAttribute('data-favorite-chart-row'), count: Number(row.querySelector('td')!.textContent) })));
@@ -220,7 +220,7 @@ test('Analytics retains the chosen chart sort and its scroll position across tab
 
 test('chart identifiers stay distinct from counts and hidden chart data does not add blank page space @viewport', async ({ page }, testInfo) => {
   await seed(page, fullSeed);
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await openAnalytics(page);
   const metrics = await page.evaluate(() => {
     const gap = (dimension: string, header: string) => {
@@ -241,7 +241,7 @@ test('chart identifiers stay distinct from counts and hidden chart data does not
 test('five Analytics charts form one ordered column with the Dex desktop reading width @viewport', async ({ page }, testInfo) => {
   if (testInfo.project.name === 'mobile') await page.setViewportSize({ width: 390, height: 844 });
   await seed(page, fullSeed);
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await openAnalytics(page);
   const measured = await dashboard(page).evaluate(el => {
     const container = el.firstElementChild!.getBoundingClientRect();

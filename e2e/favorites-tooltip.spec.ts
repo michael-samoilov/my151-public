@@ -8,7 +8,7 @@ async function openSeeded(page: Page) {
     localStorage.setItem('favorite-picker', value);
     sessionStorage.setItem('favorites-tooltip-seeded', '1');
   }, JSON.stringify({ state: { fills: FILLS }, version: 1 }));
-  await page.goto('/favorite-pokemon-by-type');
+  await page.goto('/favorite-pokemon-picker');
 }
 
 async function center(locator: Locator) {

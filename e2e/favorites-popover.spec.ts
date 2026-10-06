@@ -18,7 +18,7 @@ function paneBounds(page: Page) {
 
 test('desktop picker opens next to its cell inside the visible grid body', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop');
-  await page.goto('/favorite-pokemon-by-type.html');
+  await page.goto('/favorite-pokemon-picker.html');
   const table = page.getByTestId('favorites-grid-scroll');
   const baseWidth = await table.evaluate((el) => el.getBoundingClientRect().width);
   const measured: Record<string, Awaited<ReturnType<typeof paneBounds>>> = {};
@@ -88,7 +88,7 @@ test('desktop picker opens next to its cell inside the visible grid body', async
 
 test('desktop pane switches grid cells and closes on Escape or outside clicks', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/favorite-pokemon-by-type');
+  await page.goto('/favorite-pokemon-picker');
   const picker = page.getByTestId('favorites-picker');
   const state = async () => ({
     open: await picker.count(),
@@ -138,7 +138,7 @@ test('desktop pane switches grid cells and closes on Escape or outside clicks', 
 
 test('desktop pane scrolls and zooms with its cell, under the sticky headers', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/favorite-pokemon-by-type');
+  await page.goto('/favorite-pokemon-picker');
   await page.getByTestId('favorites-cell-ice-4').click();
   const picker = page.getByTestId('favorites-picker');
   await expect(picker).toBeVisible();
@@ -218,7 +218,7 @@ test('desktop pane scrolls and zooms with its cell, under the sticky headers', a
 
 test('desktop minimap shows on hover, and dragging its window scrolls the grid', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/favorite-pokemon-by-type');
+  await page.goto('/favorite-pokemon-picker');
   const scroll = page.getByTestId('favorites-grid-scroll');
   const map = page.getByTestId('favorites-minimap');
   const opacity = () => map.evaluate((el) => Number(getComputedStyle(el).opacity));
@@ -273,7 +273,7 @@ test('desktop minimap shows on hover, and dragging its window scrolls the grid',
 });
 
 test('icon toggle persists across pickers and reloads', async ({ page }, testInfo) => {
-  await page.goto('/favorite-pokemon-by-type.html');
+  await page.goto('/favorite-pokemon-picker.html');
   await page.getByTestId('favorites-cell-fire-1').click();
   let toggle = page.getByTestId('favorites-type-toggle');
   await expect(toggle).toHaveAccessibleName('Hide Icons');

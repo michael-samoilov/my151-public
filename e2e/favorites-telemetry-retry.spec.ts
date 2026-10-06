@@ -11,7 +11,7 @@ for(const failure of ['network','500','429','contended'] as const){
    }
    await route.fulfill({json:{ok:true}});
   });
-  await page.goto('/favorite-pokemon-by-type?lang=en');
+  await page.goto('/favorite-pokemon-picker?lang=en');
   await expect.poll(()=>requests.length,{timeout:10_000}).toBe(2);
   expect(requests[0].id).toBe(requests[1].id);expect(requests[0].snapshot).toEqual(requests[1].snapshot);
   if(failure==='500'){await page.waitForTimeout(4500);expect(requests).toHaveLength(2);}
@@ -21,7 +21,7 @@ for(const failure of ['network','500','429','contended'] as const){
 test('bounds repeated failure to three attempts and keeps the same exported operation ID',async({page},testInfo)=>{
  const requests:Record<string,unknown>[]=[];
  await page.route('**/api/favorites',async route=>{const body=route.request().postDataJSON();requests.push(body);await route.fulfill({status:body.kind==='export'?500:200,json:body.kind==='export'?{error:'temporary'}:{ok:true}});});
- await page.goto('/favorite-pokemon-by-type?lang=en');await page.getByTestId('favorites-export-open').click();
+ await page.goto('/favorite-pokemon-picker?lang=en');await page.getByTestId('favorites-export-open').click();
  await expect(page.getByTestId('favorites-export-save')).toBeEnabled({timeout:30_000});
  const download=page.waitForEvent('download');await page.getByTestId('favorites-export-save').click();await download;
  await expect.poll(()=>requests.filter(r=>r.kind==='export').length).toBe(3);
@@ -36,7 +36,7 @@ test('an old acknowledgment does not suppress a newer cleared board',async({page
   if(requests.length===1){release=()=>route.fulfill({json:{ok:true}});return;}
   await route.fulfill({json:{ok:true}});
  });
- await page.goto('/favorite-pokemon-by-type?lang=en');await expect.poll(()=>requests.length).toBe(1);
+ await page.goto('/favorite-pokemon-picker?lang=en');await expect.poll(()=>requests.length).toBe(1);
  await page.getByTestId('favorites-cell-water-1').click();await page.getByTestId('favorites-pick-7').click();await page.keyboard.press('Escape');
  await expect.poll(()=>requests.length,{timeout:8000}).toBe(2);
  await release();

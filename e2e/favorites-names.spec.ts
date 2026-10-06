@@ -8,7 +8,7 @@ const { forms: table } = JSON.parse(readFileSync('docs/i18n/sources/pokemon-form
 
 for (const locale of locales) {
   test(`picker form names use official ${locale} text in tooltip and accessible labels`, async ({ page }, testInfo) => {
-    await page.goto(`/favorite-pokemon-by-type?lang=${locale}`);
+    await page.goto(`/favorite-pokemon-picker?lang=${locale}`);
     await page.getByTestId('favorites-cell-legendary-6').click();
     const active = page.getByTestId('favorites-pick-716');
     const neutral = page.getByTestId('favorites-pick-11001');
@@ -31,7 +31,7 @@ for (const locale of locales) {
 }
 
 test('picker identity shifts retain the correct localized species', async ({ page }, testInfo) => {
-  await page.goto('/favorite-pokemon-by-type?lang=en');
+  await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-cell-ground-8').click();
   const yamask = page.getByTestId('favorites-pick-10179');
   const stunfisk = page.getByTestId('favorites-pick-10180');
@@ -44,7 +44,7 @@ test('picker identity shifts retain the correct localized species', async ({ pag
 });
 
 test('picker awaits form overlays before switching language and reuses loaded locales', async ({ page }, testInfo) => {
-  await page.goto('/favorite-pokemon-by-type?lang=en');
+  await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-cell-legendary-6').click();
   const neutral = page.getByTestId('favorites-pick-11001');
   const english = (await neutral.getAttribute('aria-label'))!;

@@ -38,7 +38,7 @@ test('Full stats switches retain plain bytes and download the selected preview',
     if (body.kind === 'export') exportKinds.push(body.exportKind);
     await route.fulfill({ json: { ok: true } });
   });
-  await page.goto('/favorite-pokemon-by-type?lang=en');
+  await page.goto('/favorite-pokemon-picker?lang=en');
   const before = await page.evaluate(() => localStorage.getItem('favorite-picker'));
   await page.getByTestId('favorites-export-open').click();
   await expect(stats(page)).not.toBeChecked();
@@ -85,7 +85,7 @@ test('Full stats switches retain plain bytes and download the selected preview',
 });
 
 test('stats checkbox fits and supports keyboard focus in each viewport @viewport', async ({ page }, testInfo) => {
-  await page.goto('/favorite-pokemon-by-type?lang=de');
+  await page.goto('/favorite-pokemon-picker?lang=de');
   await page.getByTestId('favorites-export-open').click();
   await imageEvidence(page);
   await stats(page).check();
@@ -120,7 +120,7 @@ test('stats retry isolates failures from both plain modes and sends no failed ex
     if (body.kind === 'export') exports.push(body);
     await route.fulfill({ json: { ok: true } });
   });
-  await page.goto('/favorite-pokemon-by-type?lang=en');
+  await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-export-open').click();
   const plain = await imageEvidence(page);
   await page.evaluate(() => {
@@ -159,7 +159,7 @@ test('cancelled stats share keeps selected preview and records no export', async
     if (body.kind === 'export') exports.push(body);
     await route.fulfill({ json: { ok: true } });
   });
-  await page.goto('/favorite-pokemon-by-type?lang=en');
+  await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-export-open').click();
   await imageEvidence(page);
   await stats(page).check();
@@ -173,7 +173,7 @@ test('cancelled stats share keeps selected preview and records no export', async
 });
 
 test('Japanese empty stats use the active localized control', async ({ page }, testInfo) => {
-  await page.goto('/favorite-pokemon-by-type?lang=ja');
+  await page.goto('/favorite-pokemon-picker?lang=ja');
   await page.getByTestId('favorites-export-open').click();
   await imageEvidence(page);
   const label = await stats(page).locator('..').innerText();
@@ -197,7 +197,7 @@ test('failed stats share records only the later successful retry', async ({ page
     if (body.kind === 'export') exportKinds.push(body.exportKind);
     await route.fulfill({ json: { ok: true } });
   });
-  await page.goto('/favorite-pokemon-by-type?lang=en');
+  await page.goto('/favorite-pokemon-picker?lang=en');
   await page.getByTestId('favorites-export-open').click();
   await imageEvidence(page);
   await stats(page).check();

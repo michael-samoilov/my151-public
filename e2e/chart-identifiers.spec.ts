@@ -6,7 +6,7 @@ import { observeChartPaint, paintedAxes } from './support/chartPaintEvidence';
 test.setTimeout(120_000);
 async function openPickerAnalytics(page: Page, lang = 'en') {
   await page.addInitScript(fills => localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills }, version: 3 })), filledPicker);
-  await page.goto(`/favorite-pokemon-by-type?notme&lang=${lang}`);
+  await page.goto(`/favorite-pokemon-picker?notme&lang=${lang}`);
   await page.locator('#favorites-tab-analytics').click();
   await expect(page.locator('[data-favorite-chart=type] svg').first()).toBeVisible();
 }

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 const full = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
 async function seed(page: import('@playwright/test').Page, fills: Record<string, number>) {
   await page.addInitScript(saved => localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: saved }, version: 3 })), fills);
-  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await page.locator('#favorites-tab-analytics').click();
 }
 test('contributors retain repeated votes and only linked favorite origins @viewport', async ({ page }, info) => {

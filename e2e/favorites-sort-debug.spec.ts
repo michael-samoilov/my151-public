@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const PAGE = '/favorite-pokemon-by-type';
+const PAGE = '/favorite-pokemon-picker';
 const REGIONAL_FIRST = 'unownLast,formKind,debut,tier,dex';
 
 /** The open selector's entries, first to last, as `id:name`. */

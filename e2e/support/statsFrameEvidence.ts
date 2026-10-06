@@ -17,7 +17,7 @@ export async function openStatsFlow(page: Page, tool: StatsTool, lang = 'en') {
   });
   if (tool === 'picker') {
     await page.addInitScript(fills => localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills }, version: 3 })), filledPicker);
-    await page.goto(`/favorite-pokemon-by-type?notme&lang=${lang}`);
+    await page.goto(`/favorite-pokemon-picker?notme&lang=${lang}`);
     await page.getByTestId('favorites-export-open').click();
   } else {
     await page.goto(`${TUNE_URL}&notme&lang=${lang}`);

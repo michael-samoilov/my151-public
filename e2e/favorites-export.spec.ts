@@ -6,7 +6,7 @@ test.describe('full favorite chart export', () => {
       localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: { 'fire|1': 4, 'grass|1': 1 } }, version: 3 }));
       localStorage.setItem('personal-151-favorites-show-icons-v1', '0');
     });
-    await page.goto('/favorite-pokemon-by-type?lang=en');
+    await page.goto('/favorite-pokemon-picker?lang=en');
     const before = await page.evaluate(() => [localStorage.getItem('favorite-picker'), localStorage.getItem('personal-151-favorites-show-icons-v1')]);
     await page.getByTestId('favorites-export-open').click();
     const save = page.getByTestId('favorites-export-save');
@@ -49,7 +49,7 @@ test.describe('full favorite chart export', () => {
 
   test('empty and stale charts export, and Escape returns to the unchanged grid', async ({ page }, testInfo) => {
     await page.addInitScript(() => localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: { 'fire|1': 7, 'favorite|favorite': 999999 } }, version: 3 })));
-    await page.goto('/favorite-pokemon-by-type?lang=en');
+    await page.goto('/favorite-pokemon-picker?lang=en');
     await page.getByTestId('favorites-export-open').click();
     await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
     await expect(page.locator('[data-export-preview-layer] img[src^="blob:"]')).toBeVisible();
@@ -60,7 +60,7 @@ test.describe('full favorite chart export', () => {
   });
 
   test('Japanese export chrome and preview use the active locale', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type?lang=ja');
+    await page.goto('/favorite-pokemon-picker?lang=ja');
     await page.getByTestId('favorites-export-open').click();
     await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
     await expect(page.getByTestId('favorites-export-save')).not.toContainText('Save image');
@@ -74,7 +74,7 @@ test.describe('full favorite chart export', () => {
     // Intercept before navigation: the grid loads this sprite too, so a later
     // route can miss the export request when the decoded image is cached.
     await page.route('**/sprites/pokemon/4.png', route => route.abort());
-    await page.goto('/favorite-pokemon-by-type?lang=en');
+    await page.goto('/favorite-pokemon-picker?lang=en');
     const before = await page.evaluate(() => localStorage.getItem('favorite-picker'));
     await page.getByTestId('favorites-export-open').click();
     await expect(page.getByRole('alert')).toBeVisible();
@@ -91,7 +91,7 @@ test.describe('full favorite chart export', () => {
       Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true });
       Object.defineProperty(navigator, 'share', { value: () => Promise.reject(new DOMException('Cancelled', 'AbortError')), configurable: true });
     });
-    await page.goto('/favorite-pokemon-by-type?lang=en');
+    await page.goto('/favorite-pokemon-picker?lang=en');
     await page.getByTestId('favorites-export-open').click();
     await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
     const before = await page.evaluate(() => localStorage.getItem('favorite-picker'));
@@ -105,7 +105,7 @@ test.describe('full favorite chart export', () => {
 
 
   test('export dialog fits the viewport and contains keyboard focus @viewport', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type?lang=de');
+    await page.goto('/favorite-pokemon-picker?lang=de');
     await page.getByTestId('favorites-export-open').click();
     await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
     const dialog = page.locator('[role="dialog"][data-export-chrome]');

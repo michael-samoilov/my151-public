@@ -19,7 +19,7 @@ async function sheetBox(page: Page) {
 }
 
 async function seedFills(page: Page, fills: Record<string, number>) {
-  await page.goto('/favorite-pokemon-by-type');
+  await page.goto('/favorite-pokemon-picker');
   await page.evaluate((saved) => {
     localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: saved }, version: 3 }));
   }, fills);
@@ -57,7 +57,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('type columns keep their header alignment while the chart scrolls', { tag: '@viewport' }, async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     const grid = page.getByTestId('favorites-grid');
     await expect(grid).toHaveAttribute('data-axis', 'gen-major');
     const viewport = page.viewportSize();
@@ -124,7 +124,7 @@ test.describe('favorite Pokémon picker', () => {
     // leaves room for the tallest of these selectors at the dex sprite size.
     const width = page.viewportSize()!.width;
     if (width >= 1024) await page.setViewportSize({ width, height: 1200 });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     const cells = [
       { id: 'favorites-cell-normal-1' },
       { id: 'favorites-cell-water-1' },
@@ -176,7 +176,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('empty balls sit inside the cell', { tag: '@viewport' }, async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await expect(page.getByTestId('favorites-empty-ball').first()).toBeVisible();
     const spec = await page.evaluate(() => {
       const balls = [...document.querySelectorAll('[data-testid="favorites-empty-ball"]')];
@@ -213,7 +213,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('the starter, gimmick, legendary, and favorite headers show their icons', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     const icons = page.locator('[data-testid^="favorites-axis-icon-"]');
     // Four extra columns and three extra rows.
     await expect(icons).toHaveCount(7);
@@ -226,7 +226,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('column headers and the extra row headers show a badge under the icon, inside the header', { tag: '@viewport' }, async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     const frame = page.getByTestId('favorites-grid-scroll');
     await expect(page.getByTestId('favorites-header-badge-normal')).toBeVisible();
     // Off-screen cells skip layout, so measure each end of the grid in view.
@@ -265,7 +265,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('pointer cells show an Ultra Ball, the last cell a Master Ball, and strokes stay in the cell', { tag: '@viewport' }, async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     const frame = page.getByTestId('favorites-grid-scroll');
     await expect(page.getByTestId('favorites-empty-ball').first()).toBeVisible();
     // The Master Ball cell is the far corner, and off-screen empty cells skip layout.
@@ -304,7 +304,7 @@ test.describe('favorite Pokémon picker', () => {
     test.skip(viewport!.width >= 1024, 'desktop uses a side pane');
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-starter-1').click();
     const starter = await sheetBox(page);
     expect(starter.sheetH).toBeLessThan(starter.max - 40);
@@ -361,7 +361,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('generation discs match type badge area and alternating rows are subtly banded', { tag: '@viewport' }, async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     const grid = page.getByTestId('favorites-grid');
     const typeBadge = grid.locator(':scope > div').nth(1).locator('img');
     const genDisc = page.getByRole('img', { name: 'Generation I', exact: true });
@@ -387,7 +387,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('every Gen 8 gimmick sprite loads with visible pixels', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-gimmick-8').click();
     const grid = page.getByTestId('favorites-pretty-grid');
     await expect(grid).toBeVisible();
@@ -414,13 +414,13 @@ test.describe('favorite Pokémon picker', () => {
 
   test('hub card opens the picker', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a[href="/favorite-pokemon-by-type"]').click();
-    await expect(page).toHaveURL(/\/favorite-pokemon-by-type/);
+    await page.locator('a[href="/favorite-pokemon-picker"]').click();
+    await expect(page).toHaveURL(/\/favorite-pokemon-picker/);
     await expect(page.getByTestId('favorites-grid')).toBeVisible();
   });
 
   test('places a Pokémon in a type×gen cell', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await expect(page.getByTestId('favorites-grid')).toBeVisible();
     await page.getByTestId('favorites-cell-fire-1').click();
     await expect(page.getByTestId('favorites-picker')).toBeVisible();
@@ -429,7 +429,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('centres the last pretty-wrap row', { tag: '@viewport' }, async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-starter-1').click();
     const grid = page.getByTestId('favorites-pretty-grid');
     await expect(grid).toBeVisible();
@@ -452,7 +452,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('packing shows one solid sprite per move with old and new marks', { tag: '@viewport' }, async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type?packing=1');
+    await page.goto('/favorite-pokemon-picker?packing=1');
     await page.getByTestId('favorites-cell-fairy-2').click();
     await page.getByTestId('favorites-pick-176').click();
     await page.getByTestId('favorites-cell-water-2').click();
@@ -518,7 +518,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('keeps Clear inside the selected pick and legendary rows contiguous', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.evaluate(() => localStorage.setItem('favorite-picker', JSON.stringify({
       state: { fills: { 'grass|6': 650, 'legendary|7': 718 } }, version: 1,
     })));
@@ -541,7 +541,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('selection ring encloses Vivillon type badges', { tag: '@viewport' }, async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.evaluate(() => localStorage.setItem('favorite-picker', JSON.stringify({
       state: { fills: { 'bug|6': 666 } }, version: 1,
     })));
@@ -565,7 +565,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('Gen 1 starter includes regular Pikachu and Eevee while Hisuian forms finish Gen 8', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-starter-1').click();
     await expect(page.getByTestId('favorites-pick-25')).toHaveCount(1);
     await expect(page.getByTestId('favorites-pick-133')).toHaveCount(1);
@@ -582,7 +582,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('Ultra Necrozma is selectable as a Gen 7 and legendary gimmick', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-gimmick-7').click();
     await expect(page.getByTestId('favorites-pick-10157')).toBeVisible();
     await page.keyboard.press('Escape');
@@ -592,7 +592,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('the Gimmick row includes starter-species forms and its intersection points to row and column picks', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await expect(page.getByTestId('favorites-cell-gimmick-legendary')).toBeDisabled();
     await expect(page.getByTestId('favorites-cell-gimmick-favorite')).toBeDisabled();
     await expect(page.getByTestId('favorites-cell-favorite-gimmick')).toBeDisabled();
@@ -622,7 +622,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('empty favorite pickers explain the next step without ineffective actions', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-favorite-1').click();
     const empty = page.getByTestId('favorites-picker-empty');
     await expect(empty.getByRole('heading', { name: 'Nothing to choose yet' })).toBeVisible();
@@ -639,7 +639,7 @@ test.describe('favorite Pokémon picker', () => {
 
   test('mobile empty state clears the sheet heading and uses the themed Unown-inspired icon', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-favorite-1').click();
     const header = page.getByTestId('bottom-sheet-header');
     const empty = page.getByTestId('favorites-picker-empty');
@@ -656,7 +656,7 @@ test.describe('favorite Pokémon picker', () => {
 
   test('icons start visible and can be toggled from the opposite header corner', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-bug-6').click();
     const toggle = page.getByTestId('favorites-type-toggle');
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
@@ -686,7 +686,7 @@ test.describe('favorite Pokémon picker', () => {
 
   test('desktop type toggle stays in the popover header', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-fire-1').click();
     const pane = page.getByTestId('favorites-picker');
     const header = pane.locator(':scope > div').first();
@@ -703,7 +703,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('an empty cell accepts a repeated pick without a packing sheet', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-poison-1').click();
     await page.getByTestId('favorites-pick-34').click();
     await page.getByTestId('favorites-cell-ground-1').click();
@@ -724,7 +724,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('a repeated pick replaces the opened cell and preserves its other source without showing packing', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-fairy-2').click();
     await page.getByTestId('favorites-pick-176').click();
     await page.getByTestId('favorites-cell-water-2').click();
@@ -747,7 +747,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('a direct trash swap replaces the old pick without a packing sheet', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-electric-1').click();
     await page.getByTestId('favorites-pick-25').click();
     await page.getByTestId('favorites-cell-electric-1').click();
@@ -761,7 +761,7 @@ test.describe('favorite Pokémon picker', () => {
 
   test('the minimap shows only body cells during scroll and fades after idle', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     const map = page.getByTestId('favorites-minimap');
     await expect(map).toBeAttached();
     await page.waitForTimeout(150);
@@ -804,7 +804,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('desktop grid sprites stay native and mobile artwork reaches the cell edge', { tag: '@viewport' }, async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-electric-1').click();
     await page.getByTestId('favorites-pick-25').click();
     await page.getByTestId('favorites-cell-electric-5').click();
@@ -821,7 +821,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('filled sprites can paint outside the cell boundary', { tag: '@viewport' }, async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-fire-1').click();
     await page.getByTestId('favorites-pick-4').click();
     await page.getByTestId('favorites-cell-water-1').click();
@@ -859,7 +859,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('selector icons can be hidden in every cell', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-fire-1').click();
     await expect(page.getByTestId('favorites-type-icon').first()).toBeVisible();
     await page.getByTestId('favorites-type-toggle').click();
@@ -879,7 +879,7 @@ test.describe('favorite Pokémon picker', () => {
 
   test('mobile selector header shows two badges and no back indicator', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-fire-1').click();
     const header = page.getByTestId('bottom-sheet-header');
     await expect(header.locator('svg.lucide-chevron-left')).toHaveCount(0);
@@ -894,7 +894,7 @@ test.describe('favorite Pokémon picker', () => {
 
   test('generation pointer shows its column origin on solid sprites', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.evaluate(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({
         state: { fills: { 'starter|1': 4, 'gimmick|1': 6, 'legendary|1': 144 } },
@@ -920,7 +920,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('pointer picks follow template order, show opposite-axis origin, and show toggled type icons', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.evaluate(() => localStorage.setItem('favorite-picker', JSON.stringify({
       state: { fills: {
         'fighting|6': 701,
@@ -952,7 +952,7 @@ test.describe('favorite Pokémon picker', () => {
 
   test('selection and clear outlines stay inside their tiles and the clear x paints above source badges', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.evaluate(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({
         state: { fills: { 'starter|1': 4, 'gimmick|1': 6, 'legendary|1': 144, 'favorite|1': 6 } },
@@ -986,7 +986,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('overall favorite includes both category favorites and the legendary favorite', async ({ page }) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.evaluate(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({
         state: { fills: {
@@ -1023,7 +1023,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('overall legendary pointer badges omit the implied category and stay within their tile', { tag: '@viewport' }, async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.evaluate(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({
         state: { fills: {
@@ -1080,7 +1080,7 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('Gen 8 wolves have base and Crowned picks while Ogerpon keeps only matching pixel forms', async ({ page }, testInfo) => {
-    await page.goto('/favorite-pokemon-by-type');
+    await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-legendary-8').click();
     for (const id of [888, 10188, 889, 10189]) {
       const pick = page.getByTestId(`favorites-pick-${id}`);
