@@ -57,7 +57,7 @@ export function FavoritesDrillDown({ snapshot, contributors, selection, siblings
   function navigate(item: FavoritesDrillDownSelection | undefined) { if (item) { setDetails(null); onNavigate(item); } }
   return <div ref={panel} data-testid="favorites-drilldown" data-dimension={selection.dimension} data-category={selection.key}
     role="dialog" aria-label={selection.label}
-    className={`absolute z-40 bg-background shadow-xl border flex flex-col overflow-hidden inset-x-0 bottom-0 rounded-t-2xl md:rounded-none md:inset-y-0 md:left-auto md:right-0 md:w-[24rem] ${expanded ? 'h-[85%] md:h-full' : 'h-20 md:h-full'}`}
+    className={`absolute z-40 bg-background shadow-xl border flex flex-col overflow-hidden inset-x-0 bottom-0 rounded-t-2xl md:rounded-none md:inset-y-0 md:left-auto md:right-0 md:w-[24rem] ${expanded ? 'h-full' : 'h-20 md:h-full'}`}
     onKeyDown={event => {
       if (event.key === 'Escape') { event.stopPropagation(); onClose(); }
       if (event.key === 'ArrowLeft') navigate(previous);
