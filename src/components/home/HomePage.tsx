@@ -234,7 +234,7 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       data-card-panel
     >
       {body}
-      <span className="hub-pocket-edge" aria-hidden data-card-pocket />
+      {tool.shots && <span className="hub-pocket-edge" aria-hidden data-card-pocket />}
     </button>
   ) : tool.href ? (
     <a
@@ -251,12 +251,12 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       }
     >
       {body}
-      <span className="hub-pocket-edge" aria-hidden data-card-pocket />
+      {tool.shots && <span className="hub-pocket-edge" aria-hidden data-card-pocket />}
     </a>
   ) : (
     <div className={panel} style={style} data-card-panel>
       {body}
-      <span className="hub-pocket-edge" aria-hidden data-card-pocket />
+      {tool.shots && <span className="hub-pocket-edge" aria-hidden data-card-pocket />}
     </div>
   );
 
@@ -375,7 +375,8 @@ function Artwork({ tool }: { tool: Tool }) {
   const [floated, setFloated] = useState<number | null>(null);
   // Shorter sheets need slightly more paper below the pocket for the extra lift.
   const widerPair = tool.key === 'dex' || tool.key === 'league';
-  const shotWidth = widerPair ? 146 : SHOT_W;
+  const shotWidth = tool.key === 'dex' ? 147 : tool.key === 'league' ? 149 : SHOT_W;
+  const bottomReserve = tool.key === 'dex' ? 0.105 : tool.key === 'league' ? 0.04 : 0;
   // Both clip boxes reach far past the panel's top-left edge, mostly over empty
   // space. That whole rectangle used to be part of the link, so a click well
   // above or beside the artwork still navigated. `pointerEvents: 'none'` here
@@ -398,12 +399,12 @@ function Artwork({ tool }: { tool: Tool }) {
       position: 'absolute' as const,
       // The nudge clears bottom corners; the front sheet uses half the remaining
       // right clearance. All visible, shadow and stationary hit copies share it.
-      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${tool.key === 'dex' && i === 0 ? ` - ${U(3)}` : ''}${i === 1
+      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${i === 0 && widerPair ? ` - ${U(tool.key === 'dex' ? 3 : 1)}` : ''}${i === 1
         ? ` + (var(--card-width, 100cqw) - (${U(FAN[1].offset)} - ${U(POP_LEFT)} * var(--art) + var(--shot-nudge, 0px) + ${U(shotWidth)} * var(--art))) / 2${widerPair ? ` - ${U(5)}` : ''}`
         : ''})`,
       // A common top anchor keeps native screenshot height out of the fan geometry.
-      // Rest is the previous hover height; hover still adds its existing 12px lift.
-      top: `calc(${BLEED} + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 6px' : tool.key === 'league' ? ' - 6px' : ' - 12px'})`,
+      // Short native sheets need reserve below the fold for the larger hover.
+      top: `calc(${BLEED} + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 6px' : tool.key === 'league' ? ' - 6px' : ' - 12px'} + var(--panel-height) * ${bottomReserve})`,
       width: `calc(${U(shotWidth)} * var(--art))`,
       transformOrigin: '50% 0' as const,
       borderRadius: `calc(${U(shotWidth)} * var(--art) * ${EXPORT_RADIUS})`,

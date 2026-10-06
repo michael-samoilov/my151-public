@@ -509,9 +509,7 @@ img {
  * names the hovered shot's index; the pointer handlers on the twins set it only
  * for a mouse or pen, so this needs no `:has()` and no hover/pointer media
  * query — both of which suppress the float on hybrid touch devices in use with
- * a mouse. The float always eases, by the owner's choice: the reveal is a small
- * 12px rise that reads better animated, and snapping it under reduced motion was
- * a worse experience than the gentle ease. */
+ * a mouse. The float retains the owner's gentle ease. */
 /* A bottom inset shadow crosses the sheets without clipping their top overhang. */
 .hub-pocket-edge {
   position: absolute;
@@ -538,7 +536,7 @@ img {
   --panel-ar: 166 / 79.167;
   /* Lower the red band without moving the sheets or the caption. */
   --panel-inset: 12.550cqw;
-  /* Radius, front-sheet lean, and clearance for its 12px hover lift. */
+  /* Radius, front-sheet lean, and clearance for the hover lift. */
   --shot-nudge: calc(min(8.434cqw, 14px) + 1.05cqw + 2px);
 }
 .hub-stage {
@@ -548,6 +546,10 @@ img {
   width: 100%;
   aspect-ratio: 166 / 100;
   container-type: inline-size;
+  /* A share of the red panel height, not the native image height. At 1280px,
+   * 27% is approximately 24px: twice the former 12px lift. */
+  --panel-height: calc(100cqw * 79.167 / 166);
+  --hover-lift: calc(var(--panel-height) * 0.27);
 }
 @media (min-width: 1024px) {
   .hub-grid {
@@ -559,13 +561,14 @@ img {
   }
   .hub-stage {
     width: 72%;
+    --panel-height: calc(100cqw / 0.72 * 57 / 166);
   }
 }
 [data-artwork][data-float='0'] [data-shot='0'] {
-  --hf: -12px;
+  --hf: calc(var(--hover-lift) * -1);
 }
 [data-artwork][data-float='1'] [data-shot='1'] {
-  --hf: -12px;
+  --hf: calc(var(--hover-lift) * -1);
 }
 
 /* Short phones keep complete captions visible while the artwork stays fixed. */
