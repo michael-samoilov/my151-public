@@ -255,7 +255,7 @@ test('desktop minimap shows on hover, and dragging its window scrolls the grid',
 
   // Away from the minimap, it fades as before.
   await page.mouse.move(mapBox.x - 300, mapBox.y - 300);
-  await page.waitForTimeout(800);
+  await expect.poll(opacity, { timeout: 2000, intervals: [50, 100] }).toBe(0);
   const idle = await opacity();
 
   const result = { quickClick, hover, dragging, idle, before, after, paneOpen, window: { before: view, after: moved } };

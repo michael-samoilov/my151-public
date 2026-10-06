@@ -122,8 +122,8 @@ test.describe('the one-Pokémon pickers', () => {
   test('a chain wider than the grid leaves no gap in the rows after it', async ({ page }) => {
     await openCard(page, 9);
     await openPicker(page, 'slot-ace');
-    await scrollTo(page, 'eevee');
-    const rows = await rowsAround(page, 'eevee');
+    await scrollTo(page, 'Eevee');
+    const rows = await rowsAround(page, 'Eevee');
     expect(rows.length, 'rows were rendered around Eevee').toBeGreaterThan(3);
 
     // An empty cell only ever ends a row.
@@ -133,8 +133,8 @@ test.describe('the one-Pokémon pickers', () => {
     expect(Math.max(...rows.map((r) => r.length)), 'no row wider than the grid').toBeLessThanOrEqual(6);
 
     // The row from the report: Omastar's neighbour is Kabuto.
-    const omastar = rows.find((row) => row.includes('omastar'));
+    const omastar = rows.find((row) => row.includes('Omastar'));
     expect(omastar, 'Omastar is in a rendered row').toBeDefined();
-    expect(omastar![omastar!.indexOf('omastar') + 1], `Omastar's row: ${omastar!.join(', ')}`).toBe('kabuto');
+    expect(omastar![omastar!.indexOf('Omastar') + 1], `Omastar's row: ${omastar!.join(', ')}`).toBe('Kabuto');
   });
 });

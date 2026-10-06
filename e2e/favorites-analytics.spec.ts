@@ -95,7 +95,7 @@ test('repeated independent choices remain two votes and charts update after a re
   await artifact(page, testInfo, 'live-repeat-votes', { before, water, fills });
 });
 
-test('empty analytics never invent numeric averages and incomplete BST pools explain the gap', async ({ page }, testInfo) => {
+test('empty analytics never invent numeric averages and sourced BST pools stay covered', async ({ page }, testInfo) => {
   await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await openAnalytics(page);
   const emptyText = await dashboard(page).innerText();
@@ -108,9 +108,9 @@ test('empty analytics never invent numeric averages and incomplete BST pools exp
   expect(number(partial[0])).toBe(1);
   const bst = await chart(page, 'bst').innerText();
   expect(bst).not.toMatch(/NaN|Infinity/);
-  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-covered', '0');
-  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-excluded', '1');
-  await artifact(page, testInfo, 'empty-unknown-bst', { emptyText, partial, bst });
+  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-covered', '1');
+  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-excluded', '0');
+  await artifact(page, testInfo, 'empty-covered-bst', { emptyText, partial, bst });
 });
 
 test('switching tabs retains grid scroll and exporting from Analytics preserves both ordinary modes @viewport', async ({ page }, testInfo) => {
@@ -190,14 +190,14 @@ test('complete saved chart reports every independent vote and honest per-chart c
     await expect(chart(page, dimension).locator('svg')).toBeVisible();
     coverage[dimension] = { covered: 224, excluded: 0, rows: await chart(page, dimension).locator('[data-favorite-chart-row]').count() };
   }
-  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-covered', '154');
-  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-excluded', '5');
+  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-covered', '159');
+  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-excluded', '0');
   await expect(chart(page, 'bst').locator('svg')).toBeVisible();
   await expect(chart(page, 'evolution').locator('[data-favorite-chart-row="baby"]')).toHaveCount(0);
   await expect(chart(page, 'evolution').locator('[data-favorite-chart-row="basic"]')).toHaveCount(1);
   const bstText = await chart(page, 'bst').innerText();
   const means = await chart(page, 'bst').locator('[data-mean-marker] text').allTextContents();
-  expect(means).toEqual(expect.arrayContaining(['Your mean 431', '442.7 Options mean']));
+  expect(means).toEqual(expect.arrayContaining(['Your mean 430.5', '442.1 Options mean']));
   await artifact(page, testInfo, 'complete-live-coverage', { population: 224, coverage, bstText, originalCells: Object.keys(fullSeed).length });
 });
 
