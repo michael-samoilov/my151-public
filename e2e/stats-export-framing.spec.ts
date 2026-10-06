@@ -52,11 +52,11 @@ test('Picker charts and export settings show essential data without explanatory 
   const text = await dashboard.innerText();
   expect(text).not.toMatch(/Explore your favorite|Charts compare|Choices:|BST coverage:/);
   await expect(dashboard.locator('[data-favorite-chart]')).toHaveCount(5);
-  await expect(dashboard.locator('[data-favorite-chart="bst"]')).toHaveAttribute('data-favorite-covered', '154');
-  await expect(dashboard.locator('[data-favorite-chart="bst"]')).toHaveAttribute('data-favorite-excluded', '5');
+  await expect(dashboard.locator('[data-favorite-chart="bst"]')).toHaveAttribute('data-favorite-covered', '159');
+  await expect(dashboard.locator('[data-favorite-chart="bst"]')).toHaveAttribute('data-favorite-excluded', '0');
   await expect(dashboard.locator('[data-favorite-chart=bst] [data-mean-marker]')).toHaveCount(2);
   const meanLabels = await dashboard.locator('[data-favorite-chart=bst] [data-mean-marker] text').allTextContents();
-  expect(meanLabels.join(' ')).toContain('Your mean');
+  expect(meanLabels.join(' ')).toContain('Your Avg');
   await testInfo.attach('concise-analytics', { body: JSON.stringify({ text, settingsEssentialControls: ['Full grid', 'Summary', 'Show detailed stats'] }, null, 2), contentType: 'application/json' });
   await testInfo.attach('concise-analytics-screen', { body: await page.screenshot(), contentType: 'image/png' });
 });

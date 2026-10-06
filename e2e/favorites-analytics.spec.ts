@@ -197,7 +197,7 @@ test('complete saved chart reports every independent vote and honest per-chart c
   await expect(chart(page, 'evolution').locator('[data-favorite-chart-row="basic"]')).toHaveCount(1);
   const bstText = await chart(page, 'bst').innerText();
   const means = await chart(page, 'bst').locator('[data-mean-marker] text').allTextContents();
-  expect(means).toEqual(expect.arrayContaining(['Your mean 430.5', '442.1 Options mean']));
+  expect(means).toEqual(expect.arrayContaining(['Your Avg 430.5', '442.1 Options Avg']));
   await artifact(page, testInfo, 'complete-live-coverage', { population: 224, coverage, bstText, originalCells: Object.keys(fullSeed).length });
 });
 
