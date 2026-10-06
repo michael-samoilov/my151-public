@@ -130,7 +130,7 @@
   "home.dex.blurb": "Créez un dex avec des archétypes régionaux",
   "home.league.title": "Créateur de Ligue et de Champions",
   "home.league.blurb": "Équipes de Champions, Conseil 4 et Maître",
-  "home.dex.saved": "{progress} entrées enregistrées dans ce navigateur",
+  "home.dex.saved": "{progress} entrées enregistrées localement",
   "home.favorites.saved": "{progress} choix enregistrés dans ce navigateur",
   "home.league.saved": "{progress} Dresseurs enregistrés dans ce navigateur"
 }
