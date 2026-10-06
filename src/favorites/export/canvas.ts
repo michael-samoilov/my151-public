@@ -14,11 +14,11 @@ export function image(url: string): Promise<HTMLImageElement> {
   });
 }
 
-export function drawBall(ctx: CanvasRenderingContext2D, kind: BallKind, cx: number, cy: number) {
+export function drawBall(ctx: CanvasRenderingContext2D, kind: BallKind, cx: number, cy: number, size = 48) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(-Math.PI / 6);
-  ctx.scale(48 / 40, 48 / 40);
+  ctx.scale(size / 40, size / 40);
   ctx.translate(-20, -20);
   ctx.strokeStyle = 'rgba(10,10,10,0.14)';
   ctx.fillStyle = ctx.strokeStyle;

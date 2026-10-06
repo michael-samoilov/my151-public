@@ -3,7 +3,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import { t } from '@/i18n';
-import { drawSprite, roundRect, font } from '@/league/export/paint';
+import { drawSprite, roundRect } from '@/league/export/paint';
 import { AXIS_FILL, GEN_FILL, type BadgeStops } from '../components/badgeStyle';
 import { ROMAN_URIS } from '../components/romanDiscAssets';
 import { GEN_NUMBERS, TYPES18, cellKey } from '../model/cells';
@@ -74,13 +74,8 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     const cy = spriteTop + size / 2;
     if (entry.mon) drawSprite(ctx, images.get(entry.mon.sprite)!, cx, cy, size);
     else {
-      drawBall(ctx, entry.type === 'favorite' && entry.generation === 'favorite' ? 'master' : 'ultra', cx, cy);
-      if (special) {
-        ctx.save();
-        ctx.font = font(16, 500); ctx.textAlign = 'center'; ctx.fillStyle = '#737373';
-        ctx.fillText(t('favorites.export.noPick'), cx, spriteTop + size - 12);
-        ctx.restore();
-      }
+      const ultimate = entry.type === 'favorite' && entry.generation === 'favorite';
+      drawBall(ctx, ultimate ? 'master' : 'ultra', cx, cy, ultimate ? 96 : 48);
     }
     return { edge, badgeHeight, paint };
   }
