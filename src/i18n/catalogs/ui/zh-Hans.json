@@ -17,7 +17,7 @@
   "favorites.completion.label": "已选择{filled}个，共{total}个最爱",
   "favorites.empty.back": "返回表格",
   "favorites.empty.column": "先在这一列的其他格子中选择宝可梦，选好的宝可梦就会显示在这里。",
-  "favorites.empty.legendary": "请先在表格的其他格子中选择传说的宝可梦。",
+  "favorites.empty.legendary": "请在此列或此行的其他格子中选择宝可梦。你的选择会显示在这里。",
   "favorites.empty.overall": "请先选出某个世代或某一列的最爱。",
   "favorites.empty.packing.hint": "请尝试其他宝可梦，或清空这个世代中的一个格子。",
   "favorites.empty.packing.title": "无法重新排列",
@@ -114,5 +114,15 @@
   "favorites.analytics.noContributors": "此类别中没有选择。",
   "favorites.analytics.close": "关闭选择列表",
   "favorites.analytics.previous": "上一个类别",
-  "favorites.analytics.next": "下一个类别"
+  "favorites.analytics.next": "下一个类别",
+  "favorites.nav.grid": "网格",
+  "favorites.nav.analytics": "分析",
+  "favorites.empty.pointer": "请在此列或此行的其他格子中选择宝可梦。你的选择会显示在这里。",
+  "chart.header.type": "属性",
+  "chart.header.shape": "体形",
+  "chart.header.count": "数量",
+  "chart.header.overIndexed1": "偏高",
+  "chart.header.overIndexed2": "选择比例 →",
+  "chart.header.underIndexed1": "偏低",
+  "chart.header.underIndexed2": "← 选择比例"
 }

@@ -17,7 +17,7 @@
   "favorites.completion.label": "{filled} von {total} Lieblingen gewählt",
   "favorites.empty.back": "Zurück zur Tabelle",
   "favorites.empty.column": "Wähle ein Pokémon in einer anderen Zelle dieser Spalte. Deine Auswahl erscheint hier.",
-  "favorites.empty.legendary": "Wähle zuerst ein Legendäres Pokémon an einer anderen Stelle der Tabelle.",
+  "favorites.empty.legendary": "Wähle ein Pokémon in einer anderen Zelle dieser Spalte oder Zeile. Deine Auswahl erscheint hier.",
   "favorites.empty.overall": "Wähle zuerst einen Liebling aus einer Generation oder Spalte.",
   "favorites.empty.packing.hint": "Wähle ein anderes Pokémon oder leere eine Zelle in dieser Generation.",
   "favorites.empty.packing.title": "Keine Neuordnung möglich",
@@ -114,5 +114,15 @@
   "favorites.analytics.noContributors": "Keine Auswahlen in dieser Kategorie.",
   "favorites.analytics.close": "Beiträge schließen",
   "favorites.analytics.previous": "Vorherige Kategorie",
-  "favorites.analytics.next": "Nächste Kategorie"
+  "favorites.analytics.next": "Nächste Kategorie",
+  "favorites.nav.grid": "Raster",
+  "favorites.nav.analytics": "Analyse",
+  "favorites.empty.pointer": "Wähle ein Pokémon in einer anderen Zelle dieser Spalte oder Zeile. Deine Auswahl erscheint hier.",
+  "chart.header.type": "TYP",
+  "chart.header.shape": "FORM",
+  "chart.header.count": "ANZAHL",
+  "chart.header.overIndexed1": "ÜBER-",
+  "chart.header.overIndexed2": "REPRÄSENTIERT →",
+  "chart.header.underIndexed1": "UNTER-",
+  "chart.header.underIndexed2": "← REPRÄSENTIERT"
 }

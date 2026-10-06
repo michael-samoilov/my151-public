@@ -17,7 +17,7 @@
   "favorites.completion.label": "{total}칸 중 {filled}칸 선택 완료",
   "favorites.empty.back": "표로 돌아가기",
   "favorites.empty.column": "이 열의 다른 칸에서 포켓몬을 고르면 여기에 나타납니다.",
-  "favorites.empty.legendary": "먼저 표의 다른 칸에서 전설의 포켓몬을 골라 주세요.",
+  "favorites.empty.legendary": "이 열이나 행의 다른 칸에서 포켓몬을 선택하세요. 선택한 포켓몬이 여기에 표시됩니다.",
   "favorites.empty.overall": "먼저 세대나 열에서 좋아하는 포켓몬을 골라 주세요.",
   "favorites.empty.packing.hint": "다른 포켓몬을 고르거나 이 세대의 칸을 비워 주세요.",
   "favorites.empty.packing.title": "재배치할 수 없습니다",
@@ -114,5 +114,15 @@
   "favorites.analytics.noContributors": "이 범주에는 선택이 없습니다.",
   "favorites.analytics.close": "선택 목록 닫기",
   "favorites.analytics.previous": "이전 범주",
-  "favorites.analytics.next": "다음 범주"
+  "favorites.analytics.next": "다음 범주",
+  "favorites.nav.grid": "격자",
+  "favorites.nav.analytics": "분석",
+  "favorites.empty.pointer": "이 열이나 행의 다른 칸에서 포켓몬을 선택하세요. 선택한 포켓몬이 여기에 표시됩니다.",
+  "chart.header.type": "타입",
+  "chart.header.shape": "형태",
+  "chart.header.count": "선택 수",
+  "chart.header.overIndexed1": "높은",
+  "chart.header.overIndexed2": "선택 비중 →",
+  "chart.header.underIndexed1": "낮은",
+  "chart.header.underIndexed2": "← 선택 비중"
 }

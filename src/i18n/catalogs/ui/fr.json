@@ -17,7 +17,7 @@
   "favorites.completion.label": "{filled} favoris choisis sur {total}",
   "favorites.empty.back": "Retour au tableau",
   "favorites.empty.column": "Choisissez un Pokémon dans une autre case de cette colonne. Vos choix apparaîtront ici.",
-  "favorites.empty.legendary": "Choisissez d’abord un Pokémon légendaire ailleurs dans le tableau.",
+  "favorites.empty.legendary": "Choisissez un Pokémon ailleurs dans cette colonne ou ligne. Vos choix apparaîtront ici.",
   "favorites.empty.overall": "Choisissez d’abord un favori dans une génération ou une colonne.",
   "favorites.empty.packing.hint": "Essayez un autre Pokémon ou videz une case de cette génération.",
   "favorites.empty.packing.title": "Aucun réagencement possible",
@@ -114,5 +114,15 @@
   "favorites.analytics.noContributors": "Aucun choix dans cette catégorie.",
   "favorites.analytics.close": "Fermer les contributions",
   "favorites.analytics.previous": "Catégorie précédente",
-  "favorites.analytics.next": "Catégorie suivante"
+  "favorites.analytics.next": "Catégorie suivante",
+  "favorites.nav.grid": "Grille",
+  "favorites.nav.analytics": "Analyse",
+  "favorites.empty.pointer": "Choisissez un Pokémon ailleurs dans cette colonne ou ligne. Vos choix apparaîtront ici.",
+  "chart.header.type": "TYPE",
+  "chart.header.shape": "FORME",
+  "chart.header.count": "NOMBRE",
+  "chart.header.overIndexed1": "SUR-",
+  "chart.header.overIndexed2": "REPRÉSENTÉ →",
+  "chart.header.underIndexed1": "SOUS-",
+  "chart.header.underIndexed2": "← REPRÉSENTÉ"
 }
