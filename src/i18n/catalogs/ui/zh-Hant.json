@@ -49,7 +49,7 @@
   "feedback.category.translation": "翻譯",
   "feedback.title": "回報問題",
   "footer.report": "回報問題",
-  "home.favorites.blurb": "依屬性和世代挑選最愛，匯出你的圖表。",
+  "home.favorites.blurb": "依屬性和世代挑選最愛",
   "home.favorites.fullGridAlt": "從最愛寶可夢挑選工具匯出的屬性和世代完整網格",
   "home.favorites.simplifiedAlt": "從最愛寶可夢挑選工具匯出的屬性和世代摘要圖表，包含最愛的寶可夢",
   "home.favorites.title": "最愛寶可夢挑選工具",
@@ -125,5 +125,12 @@
   "chart.header.overIndexed2": "選擇比例 →",
   "chart.header.underIndexed1": "偏低",
   "chart.header.underIndexed2": "← 選擇比例",
-  "chart.header.evolution": "進化"
+  "chart.header.evolution": "進化",
+  "home.dex.title": "自訂地區與寶可夢圖鑑製作工具",
+  "home.dex.blurb": "依照地區圖鑑的典型角色製作圖鑑",
+  "home.league.title": "聯盟與道館館主製作工具",
+  "home.league.blurb": "道館館主、四天王和冠軍的隊伍",
+  "home.dex.saved": "{progress}個圖鑑條目已儲存在此瀏覽器",
+  "home.favorites.saved": "{progress}個選擇已儲存在此瀏覽器",
+  "home.league.saved": "{progress}位訓練家已儲存在此瀏覽器"
 }

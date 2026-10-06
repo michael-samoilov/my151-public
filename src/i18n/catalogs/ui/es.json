@@ -49,7 +49,7 @@
   "feedback.category.translation": "Traducción",
   "feedback.title": "Informar de un problema",
   "footer.report": "Informar de un problema",
-  "home.favorites.blurb": "Elige tus favoritos por tipo y generación. Exporta tu tabla.",
+  "home.favorites.blurb": "Elige favoritos por tipo y generación",
   "home.favorites.fullGridAlt": "Una cuadrícula completa de Pokémon favoritos por tipo y generación, exportada del selector de Pokémon favoritos",
   "home.favorites.simplifiedAlt": "Una tabla resumen de Pokémon favoritos por tipo y generación con un favorito de todos, exportada del selector de Pokémon favoritos",
   "home.favorites.title": "Selector de Pokémon favoritos",
@@ -125,5 +125,12 @@
   "chart.header.overIndexed2": "REPRESENTADO →",
   "chart.header.underIndexed1": "SUB-",
   "chart.header.underIndexed2": "← REPRESENTADO",
-  "chart.header.evolution": "ETAPA"
+  "chart.header.evolution": "ETAPA",
+  "home.dex.title": "Creador de regiones y Pokédex",
+  "home.dex.blurb": "Crea un dex con arquetipos regionales",
+  "home.league.title": "Creador de ligas y líderes de gimnasio",
+  "home.league.blurb": "Equipos de líderes, Alto Mando y Campeón",
+  "home.dex.saved": "{progress} entradas guardadas en este navegador",
+  "home.favorites.saved": "{progress} elecciones guardadas en este navegador",
+  "home.league.saved": "{progress} entrenadores guardados en este navegador"
 }

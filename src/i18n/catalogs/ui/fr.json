@@ -49,7 +49,7 @@
   "feedback.category.translation": "Traduction",
   "feedback.title": "Signaler un problème",
   "footer.report": "Signaler un problème",
-  "home.favorites.blurb": "Choisissez vos favoris par type et génération. Exportez votre tableau.",
+  "home.favorites.blurb": "Choisissez vos favoris par type et génération",
   "home.favorites.fullGridAlt": "Une grille complète de Pokémon préférés par type et génération, exportée du sélecteur de Pokémon préférés",
   "home.favorites.simplifiedAlt": "Un tableau récapitulatif de Pokémon préférés par type et génération avec un favori parmi tous, exporté du sélecteur de Pokémon préférés",
   "home.favorites.title": "Sélecteur de Pokémon préférés",
@@ -125,5 +125,12 @@
   "chart.header.overIndexed2": "REPRÉSENTÉ →",
   "chart.header.underIndexed1": "SOUS-",
   "chart.header.underIndexed2": "← REPRÉSENTÉ",
-  "chart.header.evolution": "STADE"
+  "chart.header.evolution": "STADE",
+  "home.dex.title": "Créateur de région et de Pokédex",
+  "home.dex.blurb": "Créez un dex avec des archétypes régionaux",
+  "home.league.title": "Créateur de Ligue et de Champions",
+  "home.league.blurb": "Équipes de Champions, Conseil 4 et Maître",
+  "home.dex.saved": "{progress} entrées enregistrées dans ce navigateur",
+  "home.favorites.saved": "{progress} choix enregistrés dans ce navigateur",
+  "home.league.saved": "{progress} Dresseurs enregistrés dans ce navigateur"
 }

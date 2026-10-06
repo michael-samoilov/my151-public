@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SLOT_COUNT } from '@/league/model/constants';
 import { Hammer } from 'lucide-react';
 import { useDocumentLocale, useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -55,8 +56,8 @@ const PANEL_ASPECT = '166 / 100';
 // it. See `--shot-nudge`, which shifts the shots clear of this corner.
 const RADIUS = `min(${U(14)}, 14px)`;
 /** Caption type. Capped in px so a full-width card does not balloon it. */
-const TITLE = `min(${U(9.1)}, 19px)`;
-const BLURB = `min(${U(7.6)}, 15.6px)`;
+const TITLE = `clamp(12px, ${U(9.1)}, 19px)`;
+const BLURB = `clamp(12px, ${U(7.6)}, 15.6px)`;
 // Room for each screenshot's drop shadow to fall outside the clip box without
 // being sliced off at its edge. The artwork shifts by the same amount, so it
 // lands where it would have anyway.
@@ -97,6 +98,7 @@ interface Tool {
   href?: string;
   title: string;
   blurb: string;
+  progress?: { count: number; total: number; label: string };
   shots?: [ReturnType<typeof shot>, ReturnType<typeof shot>];
   /** One description per shot, back then front. The shots are content, not
    *  decoration: they show what each tool produces. */
@@ -110,16 +112,59 @@ const HAMMER_TITLE = 'next';
  * entry here — the grid's column count and the call to action's shape both
  * follow from the length, so nothing else changes. See `gridStyle` below.
  */
+const PROGRESS_TOKEN = '{progress}';
+
+function readSavedState(key: string): Record<string, unknown> | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) ?? 'null');
+    return saved?.state && typeof saved.state === 'object' ? saved.state : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Read saved work without creating a demo league or changing either store. */
+function useSavedToolProgress() {
+  const [league, setLeague] = useState(0);
+  const [favorites, setFavorites] = useState({ filled: 0, total: 257 });
+  useEffect(() => {
+    let active = true;
+    async function readSaved() {
+      try {
+        const cards = readSavedState('league-builder')?.cards;
+        setLeague(Array.isArray(cards) ? cards.slice(0, SLOT_COUNT).filter(
+          card => Array.isArray(card?.lines) && card.lines.length > 0,
+        ).length : 0);
+        const savedFills = readSavedState('favorite-picker')?.fills;
+        if (savedFills && typeof savedFills === 'object' && !Array.isArray(savedFills)) {
+          const fills = Object.fromEntries(Object.entries(savedFills).filter(
+            (entry): entry is [string, number] => typeof entry[1] === 'number',
+          ));
+          const { buildFavoritesSnapshot } = await import('@/favorites/export/snapshot');
+          const { filled, total } = buildFavoritesSnapshot(fills).completion;
+          if (active) setFavorites({ filled, total });
+        } else if (active) setFavorites({ filled: 0, total: 257 });
+      } catch {
+        // Blocked storage or an unreadable save must not stop the homepage.
+      }
+    }
+    void readSaved();
+    window.addEventListener('storage', readSaved);
+    return () => { active = false; window.removeEventListener('storage', readSaved); };
+  }, []);
+  return { league, favorites };
+}
+
 function useTools(placed: number): Tool[] {
   const t = useT();
+  const { league, favorites } = useSavedToolProgress();
   return [
     {
       key: 'dex',
       href: '/pokedex-builder',
       title: t('home.dex.title'),
-      // A saved dex turns the blurb into the way back to it. The store is
-      // read, never written, from this page: the hub must not touch a dex.
-      blurb: placed > 0 ? t('home.dex.continue', { count: placed }) : t('home.dex.blurb'),
+      blurb: t('home.dex.blurb'),
+      progress: placed > 0 ? { count: placed, total: 151, label: t('home.dex.saved', { progress: PROGRESS_TOKEN }) } : undefined,
       shots: [shot(dexBack400, dexBack), shot(dexFront400, dexFront)],
       alts: [
         'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
@@ -131,6 +176,7 @@ function useTools(placed: number): Tool[] {
       href: '/custom-gym-leader',
       title: t('home.league.title'),
       blurb: t('home.league.blurb'),
+      progress: league > 0 ? { count: league, total: SLOT_COUNT, label: t('home.league.saved', { progress: PROGRESS_TOKEN }) } : undefined,
       shots: [shot(leagueBack400, leagueBack), shot(leagueFront400, leagueFront)],
       alts: [
         'A whole league exported from the gym leader maker: eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
@@ -142,6 +188,7 @@ function useTools(placed: number): Tool[] {
       href: '/favorite-pokemon-picker',
       title: t('home.favorites.title'),
       blurb: t('home.favorites.blurb'),
+      progress: favorites.filled > 0 ? { count: favorites.filled, total: favorites.total, label: t('home.favorites.saved', { progress: PROGRESS_TOKEN }) } : undefined,
       shots: [shot(favoritesFront400, favoritesFront), shot(favoritesBack400, favoritesBack)],
       alts: [t('home.favorites.simplifiedAlt'), t('home.favorites.fullGridAlt')],
     },
@@ -280,7 +327,7 @@ function Caption({ tool }: { tool: Tool }) {
   // so it is styled the same and is not a heading.
   const Title = tool.href ? 'h2' : 'p';
   return (
-    <div style={{ padding: `${U(5.6)} ${U(1.7)} 0` }} data-card-caption>
+    <div style={{ padding: `var(--caption-top, ${U(5.6)}) ${U(1.7)} 0` }} data-card-caption>
       <Title
         data-card-title
         className="m-0 font-bold tracking-tight"
@@ -290,10 +337,15 @@ function Caption({ tool }: { tool: Tool }) {
       </Title>
       <p
         className="m-0 text-muted-foreground text-pretty"
-        style={{ fontSize: BLURB, lineHeight: 1.4, marginTop: U(3) }}
+        style={{ fontSize: BLURB, lineHeight: 'var(--caption-leading, 1.4)', marginTop: `var(--caption-gap, ${U(3)})` }}
       >
         {tool.blurb}
       </p>
+      {tool.progress && <p data-card-progress className="m-0 text-muted-foreground" style={{ fontSize: BLURB, lineHeight: 'var(--caption-leading, 1.4)' }}>
+        {tool.progress.label.split(PROGRESS_TOKEN)[0]}
+        <strong className="font-bold tabular-nums whitespace-nowrap"><span className="text-primary">{tool.progress.count}</span><span className="text-foreground">/{tool.progress.total}</span></strong>
+        {tool.progress.label.split(PROGRESS_TOKEN)[1]}
+      </p>}
     </div>
   );
 }
@@ -400,9 +452,9 @@ function Artwork({ tool }: { tool: Tool }) {
           <span
             key={f.tilt}
             data-shot={i}
-            className={`hub-float-shot block ${tool.key === 'dex' && i === 0
-              ? 'border border-transparent'
-              : 'overflow-hidden border border-neutral-300 bg-background'}`}
+            className={`hub-float-shot block border border-transparent ${tool.key === 'dex' && i === 0
+              ? ''
+              : 'overflow-hidden bg-background'}`}
             style={{ ...geom(i), transform: floatTransform(i) }}
           >
             {/* Not lazy: every card sits in the first viewport at every
@@ -553,8 +605,8 @@ export function HomePage() {
               between the hero and the grid, and below the grid all match.
               `min-h-6` is the floor they collapse to when the content is taller
               than the viewport. */}
-          <main className="flex flex-1 flex-col px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
-            <div className="min-h-6 flex-1" />
+          <main className="hub-home flex flex-1 flex-col px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
+            <div className="hub-spacer min-h-6 flex-1" />
             <section className="md:grid md:grid-cols-4 md:items-start md:gap-x-6">
               <h1
                 // Every step here was measured, not guessed — see the README.
@@ -575,7 +627,7 @@ export function HomePage() {
               </div>
             </section>
 
-            <div className="min-h-6 flex-1" />
+            <div className="hub-spacer min-h-6 flex-1" />
 
             {/* `--art` scales the artwork against the card without touching the
                 card itself.
@@ -601,7 +653,7 @@ export function HomePage() {
                 />
               ))}
             </div>
-            <div className="min-h-6 flex-1" />
+            <div className="hub-spacer min-h-6 flex-1" />
           </main>
         </div>
 

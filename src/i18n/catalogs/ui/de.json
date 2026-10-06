@@ -49,7 +49,7 @@
   "feedback.category.translation": "Übersetzung",
   "feedback.title": "Problem melden",
   "footer.report": "Problem melden",
-  "home.favorites.blurb": "Wähle deine Favoriten nach Typ und Generation. Exportiere deine Übersicht.",
+  "home.favorites.blurb": "Wähle Favoriten nach Typ und Generation",
   "home.favorites.fullGridAlt": "Ein vollständiges Raster der Lieblings-Pokémon nach Typ und Generation, aus dem Lieblings-Pokémon-Wähler exportiert",
   "home.favorites.simplifiedAlt": "Eine Übersicht der Lieblings-Pokémon nach Typ und Generation mit einem Gesamtfavoriten, aus dem Lieblings-Pokémon-Wähler exportiert",
   "home.favorites.title": "Lieblings-Pokémon wählen",
@@ -125,5 +125,12 @@
   "chart.header.overIndexed2": "REPRÄSENTIERT →",
   "chart.header.underIndexed1": "UNTER-",
   "chart.header.underIndexed2": "← REPRÄSENTIERT",
-  "chart.header.evolution": "STUFE"
+  "chart.header.evolution": "STUFE",
+  "home.dex.title": "Eigene Region & Pokédex erstellen",
+  "home.dex.blurb": "Erstelle einen Dex nach regionalen Archetypen",
+  "home.league.title": "Liga & Arenaleiter erstellen",
+  "home.league.blurb": "Arenateams, Top Vier & Champ",
+  "home.dex.saved": "{progress} Einträge in diesem Browser gespeichert",
+  "home.favorites.saved": "{progress} Auswahlen in diesem Browser gespeichert",
+  "home.league.saved": "{progress} Trainer in diesem Browser gespeichert"
 }

@@ -49,7 +49,7 @@
   "feedback.category.translation": "翻译",
   "feedback.title": "报告问题",
   "footer.report": "报告问题",
-  "home.favorites.blurb": "按属性和世代挑选最爱，导出你的图表。",
+  "home.favorites.blurb": "按属性和世代挑选最爱",
   "home.favorites.fullGridAlt": "从最爱宝可梦挑选工具导出的属性和世代完整网格",
   "home.favorites.simplifiedAlt": "从最爱宝可梦挑选工具导出的属性和世代汇总图表，包含最爱的宝可梦",
   "home.favorites.title": "最爱宝可梦挑选工具",
@@ -125,5 +125,12 @@
   "chart.header.overIndexed2": "选择比例 →",
   "chart.header.underIndexed1": "偏低",
   "chart.header.underIndexed2": "← 选择比例",
-  "chart.header.evolution": "进化"
+  "chart.header.evolution": "进化",
+  "home.dex.title": "自定义地区与宝可梦图鉴制作工具",
+  "home.dex.blurb": "根据地区图鉴的典型角色制作图鉴",
+  "home.league.title": "联盟与道馆馆主制作工具",
+  "home.league.blurb": "道馆馆主、四天王和冠军的队伍",
+  "home.dex.saved": "{progress}个图鉴条目已保存在此浏览器",
+  "home.favorites.saved": "{progress}个选择已保存在此浏览器",
+  "home.league.saved": "{progress}位训练家已保存在此浏览器"
 }

@@ -49,7 +49,7 @@
   "feedback.category.translation": "誤訳",
   "feedback.title": "問題を報告",
   "footer.report": "問題を報告",
-  "home.favorites.blurb": "タイプ・世代別にお気に入りを選んで、一覧を画像に保存。",
+  "home.favorites.blurb": "タイプ・世代別にお気に入りを選択",
   "home.favorites.fullGridAlt": "お気に入りポケモンの選択ツールから出力した、タイプ・世代別の完全なグリッド",
   "home.favorites.simplifiedAlt": "お気に入りポケモンの選択ツールから出力した、タイプ・世代別のお気に入りと一番のお気に入りを示すまとめチャート",
   "home.favorites.title": "お気に入りポケモンを選ぶ",
@@ -125,5 +125,12 @@
   "chart.header.overIndexed2": "選択 →",
   "chart.header.underIndexed1": "少なめに",
   "chart.header.underIndexed2": "← 選択",
-  "chart.header.evolution": "進化"
+  "chart.header.evolution": "進化",
+  "home.dex.title": "オリジナル地方・図鑑メーカー",
+  "home.dex.blurb": "地方図鑑の定番構成から図鑑を作成",
+  "home.league.title": "リーグ・ジムリーダーメーカー",
+  "home.league.blurb": "ジムリーダー・四天王・チャンピオンのチーム",
+  "home.dex.saved": "{progress}件の図鑑登録をこのブラウザーに保存",
+  "home.favorites.saved": "{progress}件の選択をこのブラウザーに保存",
+  "home.league.saved": "{progress}人のトレーナーをこのブラウザーに保存"
 }

@@ -49,7 +49,7 @@
   "feedback.category.translation": "번역",
   "feedback.title": "문제 신고",
   "footer.report": "문제 신고",
-  "home.favorites.blurb": "타입·세대별로 좋아하는 포켓몬을 고르고 표를 저장하세요.",
+  "home.favorites.blurb": "타입·세대별로 좋아하는 포켓몬 고르기",
   "home.favorites.fullGridAlt": "좋아하는 포켓몬 선택 도구에서 내보낸 타입·세대별 전체 그리드",
   "home.favorites.simplifiedAlt": "좋아하는 포켓몬 선택 도구에서 내보낸 타입·세대별 포켓몬과 가장 좋아하는 포켓몬을 보여 주는 요약 차트",
   "home.favorites.title": "좋아하는 포켓몬 고르기",
@@ -125,5 +125,12 @@
   "chart.header.overIndexed2": "선택 비중 →",
   "chart.header.underIndexed1": "낮은",
   "chart.header.underIndexed2": "← 선택 비중",
-  "chart.header.evolution": "진화"
+  "chart.header.evolution": "진화",
+  "home.dex.title": "나만의 지방·포켓몬 도감 만들기",
+  "home.dex.blurb": "지방 도감의 대표 역할로 도감 만들기",
+  "home.league.title": "리그·체육관 관장 만들기",
+  "home.league.blurb": "체육관 관장, 사천왕, 챔피언의 팀",
+  "home.dex.saved": "{progress}개 도감 항목이 이 브라우저에 저장됨",
+  "home.favorites.saved": "{progress}개 선택이 이 브라우저에 저장됨",
+  "home.league.saved": "{progress}명 트레이너가 이 브라우저에 저장됨"
 }
