@@ -98,6 +98,7 @@ export default function FavoritesAnalyticsDashboard({ fills, active = true }: { 
   const closeDrilldown = () => { setDrilldown(null); trigger.current?.focus(); };
   if (!active && drilldown) setDrilldown(null);
   const openDrilldown = (selection: FavoritesDrillDownSelection, siblings: FavoritesDrillDownSelection[]) => {
+    if (drilldown?.selection.dimension === selection.dimension && drilldown.selection.key === selection.key) { closeDrilldown(); return; }
     trigger.current = document.activeElement instanceof HTMLElement || document.activeElement instanceof SVGElement ? document.activeElement : null;
     setDrilldown({ selection, siblings });
   };
