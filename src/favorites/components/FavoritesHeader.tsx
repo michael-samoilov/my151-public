@@ -1,5 +1,5 @@
 import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
-import { BarChart3, Download, Sheet } from 'lucide-react';
+import { BarChart3, Download, Table2 } from 'lucide-react';
 import { useT } from '@/i18n';
 import { FavoritesCompletionCounter } from './FavoritesCompletionCounter';
 
@@ -14,7 +14,7 @@ export function FavoritesHeader({ fills, currentView, onViewChange, exportOpen, 
 }) {
   const t = useT();
   const tabs = [
-    { view: 'picker', label: t('favorites.nav.grid'), Icon: Sheet },
+    { view: 'picker', label: t('favorites.nav.grid'), Icon: Table2 },
     { view: 'analytics', label: t('favorites.nav.analytics'), Icon: BarChart3 },
   ] as const;
   return <div className="flex h-11 shrink-0 items-center gap-1 border-b bg-card px-3" data-testid="favorites-header">
