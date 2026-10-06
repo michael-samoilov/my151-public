@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Resize untouched app-native PNG captures directly into both WebP widths."""
 from pathlib import Path
-from PIL import Image
+from PIL import Image,ImageDraw,ImageChops
 import argparse,hashlib,json,subprocess
 root=Path(__file__).resolve().parent.parent
 parser=argparse.ArgumentParser(description=__doc__)
@@ -12,7 +12,7 @@ parser.add_argument('--base-ref',default='db5f531c')
 args=parser.parse_args()
 source=root/args.source_dir
 home=root/'src/assets/home'
-pairs={'picker-simplified-portrait':'tool-favorites','picker-full-portrait':'tool-favorites-b','trainer-brock':'tool-league','league-story':'tool-league-b','dex-grid':'tool-dex','dex-stats':'tool-dex-b'}
+pairs={'picker-simplified-portrait':'tool-favorites','picker-full-portrait':'tool-favorites-b','trainer-brock':'tool-league','league-story':'tool-league-b','dex-build':'tool-dex','dex-stats':'tool-dex-b'}
 rows=[]
 source_refs=json.loads((source/'source-refs.json').read_text()) if (source/'source-refs.json').exists() else {}
 for capture,target in pairs.items():
@@ -20,6 +20,14 @@ for capture,target in pairs.items():
     path=source/f'{capture}.png'
     if not path.exists(): continue
     native=Image.open(path).convert('RGBA')
+    # A Build page capture has no native export frame. Match the homepage's
+    # 2%-width paper corners without changing any interior screenshot content.
+    if capture=='dex-build':
+        scale=4
+        mask=Image.new('L',(native.width*scale,native.height*scale),0)
+        ImageDraw.Draw(mask).rounded_rectangle((0,0,mask.width-1,mask.height-1),radius=native.width*0.02*scale,fill=255)
+        mask=mask.resize(native.size,Image.Resampling.LANCZOS)
+        native.putalpha(ImageChops.multiply(native.getchannel('A'),mask))
     for width in [800,400]:
         destination=home/f'{target}{"" if width==800 else "-400"}.webp'
         previous=subprocess.check_output(['git','show',f'{args.base_ref}:{destination.relative_to(root)}'],cwd=root)
