@@ -621,17 +621,20 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('gimmick-origins.png') });
   });
 
-  test('empty favorite pickers explain the next step and return to the grid', async ({ page }) => {
+  test('empty favorite pickers explain the next step without ineffective actions', async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-by-type');
     await page.getByTestId('favorites-cell-favorite-1').click();
     const empty = page.getByTestId('favorites-picker-empty');
     await expect(empty.getByRole('heading', { name: 'Nothing to choose yet' })).toBeVisible();
-    await expect(empty.locator('svg')).toHaveCount(2); // ball plus back chevron
+    await expect(empty.locator('svg')).toHaveCount(1);
     await expect(empty).toContainText('generation');
-    await empty.getByRole('button', { name: 'Back to grid' }).click();
+    await expect(page.getByTestId('favorites-type-toggle')).toHaveCount(0);
+    await expect(empty.getByRole('button', { name: 'Back to grid' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
     await expect(page.getByTestId('favorites-picker')).toBeHidden();
     await page.getByTestId('favorites-cell-fire-favorite').click();
     await expect(page.getByTestId('favorites-picker-empty')).toContainText('column');
+    await testInfo.attach('empty-selector.png', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
   test('mobile empty state clears the sheet heading and uses the themed Unown-inspired icon', async ({ page }, testInfo) => {
@@ -646,7 +649,8 @@ test.describe('favorite Pokémon picker', () => {
     expect(emptyBox!.y).toBeGreaterThan(headerBox!.y + headerBox!.height);
     await expect(empty.getByTestId('favorites-empty-unown').locator('path')).toHaveCount(2);
     await expect(empty.getByTestId('favorites-empty-unown').locator('circle')).toHaveCount(2);
-    await expect(empty.getByRole('button', { name: 'Back to grid' })).toHaveClass(/border-border/);
+    await expect(empty.getByRole('button', { name: 'Back to grid' })).toHaveCount(0);
+    await expect(page.getByTestId('favorites-type-toggle')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath('favorite-empty-state.png') });
   });
 
