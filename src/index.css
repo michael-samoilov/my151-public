@@ -546,10 +546,10 @@ img {
   width: 100%;
   aspect-ratio: 166 / 100;
   container-type: inline-size;
-  /* A share of the red panel height, not the native image height. At 1280px,
-   * 27% is approximately 24px: twice the former 12px lift. */
+  /* Panel-relative rest geometry. The active hover lift is measured per sheet,
+   * leaving room below the fold and above neighboring copy. */
   --panel-height: calc(100cqw * 79.167 / 166);
-  --hover-lift: calc(var(--panel-height) * 0.27);
+  --hover-lift: 0px;
 }
 @media (min-width: 1024px) {
   .hub-grid {

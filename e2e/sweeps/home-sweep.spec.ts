@@ -148,7 +148,27 @@ test.describe('home page responsive sweep', () => {
           // the front sheet halfway into its old clearance: preserve half
           // the original 8% minimum while still guarding against side clipping.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
-            const strip = c.right - R(img).right;
+            // The rotated tail below the pocket is invisible. Measure the
+            // actual sheet polygon above the fold, not that tail's bounding box.
+            const sheet = img.parentElement!;
+            const box = R(sheet);
+            const style = getComputedStyle(sheet);
+            const matrix = new DOMMatrix(style.transform);
+            const w = parseFloat(style.width);
+            const h = parseFloat(style.height);
+            const points = [[-w / 2, -h / 2], [w / 2, -h / 2],
+              [w / 2, h / 2], [-w / 2, h / 2]].map(([x, y]) => ({
+              x: box.left + box.width / 2 + matrix.a * x + matrix.c * y,
+              y: box.top + box.height / 2 + matrix.b * x + matrix.d * y,
+            }));
+            const visible = points.filter(p => p.y <= c.bottom);
+            points.forEach((a, j) => {
+              const b = points[(j + 1) % points.length];
+              if ((a.y < c.bottom) !== (b.y < c.bottom)) {
+                visible.push({ x: a.x + (c.bottom - a.y) * (b.x - a.x) / (b.y - a.y), y: c.bottom });
+              }
+            });
+            const strip = c.right - Math.max(...visible.map(p => p.x));
             if (strip < c.width * 0.04) {
               fail.push(`card ${i} shot ${k} leaves only ${strip.toFixed(1)}px of strip`);
             }

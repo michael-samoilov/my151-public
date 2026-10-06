@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useHomeSheetLift } from './useHomeSheetLift';
 import { SLOT_COUNT } from '@/league/model/constants';
 import { Hammer } from 'lucide-react';
 import { useDocumentLocale, useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useXHeightAlignment } from './useXHeightAlignment';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu, type ToolsCallout } from '@/components/layout/ToolsMenu';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
@@ -373,6 +375,7 @@ function Artwork({ tool }: { tool: Tool }) {
   // guard is unchanged — the handlers sit on the twins, which never move, so a
   // floating shot can never move out from under the pointer and toggle itself.
   const [floated, setFloated] = useState<number | null>(null);
+  const stageRef = useHomeSheetLift(floated);
   // Shorter sheets need slightly more paper below the pocket for the extra lift.
   const widerPair = tool.key === 'dex' || tool.key === 'league';
   const shotWidth = tool.key === 'dex' ? 147 : tool.key === 'league' ? 149 : SHOT_W;
@@ -399,7 +402,7 @@ function Artwork({ tool }: { tool: Tool }) {
       position: 'absolute' as const,
       // The nudge clears bottom corners; the front sheet uses half the remaining
       // right clearance. All visible, shadow and stationary hit copies share it.
-      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${i === 0 && widerPair ? ` - ${U(tool.key === 'dex' ? 3 : 1)}` : ''}${i === 1
+      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${i === 0 ? ` - ${U(1)}` : ''}${i === 1
         ? ` + (var(--card-width, 100cqw) - (${U(FAN[1].offset)} - ${U(POP_LEFT)} * var(--art) + var(--shot-nudge, 0px) + ${U(shotWidth)} * var(--art))) / 2${widerPair ? ` - ${U(5)}` : ''}`
         : ''})`,
       // A common top anchor keeps native screenshot height out of the fan geometry.
@@ -431,7 +434,7 @@ function Artwork({ tool }: { tool: Tool }) {
           narrower on desktop (see `.hub-stage`), so the card can grow wide and
           short while the screenshots keep the size and left-edge position they
           have now — the extra width becomes red to their right. */}
-      <span className="hub-stage">
+      <span className="hub-stage" ref={stageRef}>
       {/* Shadows. Masked so they fade out near the top break-out rather than
           ending on a straight line at the clip edge. Each rides its own shot's
           `--hf`, so a shadow floats with the shot it belongs to. */}
@@ -576,6 +579,7 @@ export function HomePage() {
   // `useIsDesktop` is for elsewhere in this app; the alternative is rendering
   // both and hiding one, which duplicates the call to action's button.
   const isDesktop = useIsDesktop();
+  const { titleRef, descriptionRef, offset: descriptionOffset } = useXHeightAlignment(isDesktop);
   const spansOnPhone = !isDesktop && tools.length % 2 === 1;
   const reserves = reserveByRow(tools, isDesktop ? desktopCols : 2);
 
@@ -615,8 +619,9 @@ export function HomePage() {
               than the viewport. */}
           <main className="hub-home flex flex-1 flex-col px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
             <div className="hub-spacer min-h-6 flex-1" />
-            <section className="md:grid md:grid-cols-4 md:items-start md:gap-x-6">
+            <section className="md:grid md:grid-cols-4 md:items-baseline md:gap-x-6">
               <h1
+                ref={titleRef}
                 // Every step here was measured, not guessed — see the README.
                 // 1.3125rem is 21px at the mobile root size, the largest whole
                 // pixel that keeps this heading to two lines at 320px, the
@@ -628,9 +633,12 @@ export function HomePage() {
               >
                 {t('home.h1')}
               </h1>
-              {/* Match the title's x-height, accounting for paragraph leading. */}
-              <div className="mt-2.5 md:mt-0 md:text-[1.75rem] xl:text-[2.1rem] md:pt-[calc(1cap_-_1ex_+_0.125rem)] flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2">
-                <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
+              {/* Share the first baseline, then align the two fonts' lowercase x tops. */}
+              <div
+                className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2"
+                style={isDesktop ? { transform: `translateY(${descriptionOffset}px)` } : undefined}
+              >
+                <p ref={descriptionRef} className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
                   {t('home.intro')}
                 </p>
               </div>
