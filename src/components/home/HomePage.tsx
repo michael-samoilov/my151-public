@@ -56,8 +56,8 @@ const PANEL_ASPECT = '166 / 100';
 // it. See `--shot-nudge`, which shifts the shots clear of this corner.
 const RADIUS = `min(${U(14)}, 14px)`;
 /** Caption type. Capped in px so a full-width card does not balloon it. */
-const TITLE = `clamp(12px, ${U(9.1)}, 19px)`;
-const BLURB = `clamp(12px, ${U(7.6)}, 15.6px)`;
+const TITLE = `min(${U(9.1)}, 19px)`;
+const BLURB = `min(${U(7.6)}, 15.6px)`;
 // Room for each screenshot's drop shadow to fall outside the clip box without
 // being sliced off at its edge. The artwork shifts by the same amount, so it
 // lands where it would have anyway.
