@@ -13,7 +13,7 @@ import type { FavoritesExportCell, FavoritesSnapshot } from '../export/snapshot'
 import { GEN_AXIS, isGenNumber, ROMAN } from '../model/cells';
 import { pickerDexId } from '../model/catalog';
 import { pointerCoordinates, type SourceCoordinate } from '../model/pointers';
-import { labelOf } from './spriteLabel';
+import { labelOf, pickerLabelOf } from './spriteLabel';
 import { coordinateLabel } from './coordinatePresentation';
 import { CoordinatePills } from './CoordinatePills';
 import { pickerConditionalContributors } from '../stats/pickerConditionalStats';
@@ -79,7 +79,7 @@ export function FavoritesDrillDown({ snapshot, contributors, selection, siblings
               }
               return [{ key: cell.key, members: [pokemon], matchedIds: new Set([mon.id]),
                 tileAttributes: { 'data-contributor-cell': cell.key },
-                tileTestId: `favorites-pick-${mon.id}`, displayName: labelOf(mon),
+                tileTestId: `favorites-pick-${mon.id}`, displayLabel: pickerLabelOf(mon),
                 onSelect: () => setDetails({ name: labelOf(mon), coordinates }),
                 tileOverlay: (_: Pokemon, spritePx: number) => <CoordinatePills origins={coordinates} spritePx={spritePx} inset={spritePx * 0.03} markPx={spritePx * 0.28} pointer={false}
                   drilldown={{ gen: row, type: category.dimension === 'type' ? category.key as TypeName : undefined }} /> }];

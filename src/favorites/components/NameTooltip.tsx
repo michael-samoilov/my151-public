@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type MouseEvent, type PointerEvent as Reac
 import { Tooltip, TooltipArrow, TooltipContent, TooltipPortal, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNamesVersion } from '@/i18n';
 import type { PickerMon } from '../model/catalog';
-import { labelOf } from './spriteLabel';
+import { pickerLabelOf } from './spriteLabel';
+import { PokemonName } from '@/components/shared/PokemonName';
 
 /** A finger held still this long on a tile shows its name. */
 const HOLD_MS = 450;
@@ -25,13 +26,7 @@ export function NameTooltip({ mon, children }: { mon: PickerMon; children: React
     <Tooltip open={open} onOpenChange={setOpen} disableHoverableContent>
       <TooltipTrigger asChild className="select-none" {...hold}>{children}</TooltipTrigger>
       <TooltipPortal>
-        <TooltipContent
-          data-testid="favorites-name-tooltip"
-          className="z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg"
-        >
-          <TooltipArrow className="fill-foreground" />
-          <Name mon={mon} />
-        </TooltipContent>
+        <Name mon={mon} />
       </TooltipPortal>
     </Tooltip>
   );
@@ -109,5 +104,13 @@ function useTouchHold(setOpen: (open: boolean) => void) {
 /** Only an open tooltip renders this, so closed tiles skip the names hook. */
 function Name({ mon }: { mon: PickerMon }) {
   useNamesVersion();
-  return labelOf(mon);
+  const label = pickerLabelOf(mon);
+  return <TooltipContent
+    data-testid="favorites-name-tooltip"
+    aria-label={label.full}
+    className="z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg"
+  >
+    <TooltipArrow className="fill-foreground" />
+    <PokemonName label={label} truncate={false} />
+  </TooltipContent>;
 }

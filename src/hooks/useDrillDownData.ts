@@ -1,3 +1,4 @@
+import type { PokemonLabel } from '@/i18n/names';
 import type { ReactNode } from 'react';
 import { type DrillDownSegment } from '@/store/usePokedexStore';
 import { getPokemonById, getEvolutionLine, getAllPokemon, isSpecial } from '@/hooks/usePokemonData';
@@ -35,6 +36,7 @@ interface SectionGroup {
     tileAttributes?: Record<string, string>;
     tileTestId?: string;
     displayName?: string;
+    displayLabel?: PokemonLabel;
     onSelect?: (pokemon: Pokemon) => void;
 
   }[];

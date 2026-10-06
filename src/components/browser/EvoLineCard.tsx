@@ -1,3 +1,4 @@
+import type { PokemonLabel } from '@/i18n/names';
 import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useRowWindow } from './useRowWindow';
@@ -102,6 +103,7 @@ interface EvoLineGroup {
   tileAttributes?: Record<string, string>;
   tileTestId?: string;
   displayName?: string;
+  displayLabel?: PokemonLabel;
   onSelect?: (pokemon: Pokemon) => void;
 }
 
@@ -177,6 +179,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
             tileAttributes={group.tileAttributes}
             tileTestId={group.tileTestId}
             displayName={group.displayName}
+            displayLabel={group.displayLabel}
             onSelect={group.onSelect}
             assignedIds={assignedIds}
             stagedIds={stagedIds}
@@ -238,6 +241,7 @@ interface EvoLineCardProps {
   tileAttributes?: Record<string, string>;
   tileTestId?: string;
   displayName?: string;
+  displayLabel?: PokemonLabel;
   onSelect?: (pokemon: Pokemon) => void;
   assignedIds: Set<number>;
   stagedIds: Set<number>;
@@ -283,7 +287,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, tileAttributes, tileTestId, displayName, onSelect, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, tileAttributes, tileTestId, displayName, displayLabel, onSelect, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   // Shared press state so clicking any member shrinks the *whole* evo line
@@ -461,6 +465,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, ti
                 <PokemonTileContent
                   pokemon={pokemon}
                   displayName={displayName}
+                  displayLabel={displayLabel}
                   imgLoading={variant === 'analytics' ? 'eager' : 'lazy'}
                   spriteUrl={spriteOverrides?.[pokemon.id]
                     ?? (shinyIds?.has(pokemon.id)

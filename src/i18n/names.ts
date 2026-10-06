@@ -158,7 +158,7 @@ export function formLabel(appId: number): string | null {
 /**
  * The tile label, split so the parts can be laid out independently.
  *
- * `name` is the species name and is the part allowed to truncate. `mark` is the
+ * `name` is the visible name and is the part allowed to truncate. `mark` is the
  * one-grapheme form marker and must not: putting it inside the truncating
  * string is what made alt forms indistinguishable on a narrow tile, because the
  * suffix is exactly the part a text overflow eats first. `full` is the whole
@@ -206,12 +206,33 @@ export function pokemonLabel(appId: number, slug: string, formKey: number | `pic
   const catalog = loaded.get(getLocale());
   const species = speciesName(appId);
   if (!catalog || !species) return { name: slug, mark: null, full: slug, pending: true };
-  const mark = catalog.formMark[appId] ?? null;
-  const descriptor = catalog.forms[formKey];
+  let mark: string | null = catalog.formMark[appId] ?? null;
+  let descriptor = catalog.forms[formKey];
+  // The sourced Pokédex text names all three breeds "Paldean Form" in
+  // several languages. Preserve their identities with readable English breed
+  // names until a localized breed source exists, rather than giving all three P.
+  const breed = ({ 10250: 'Combat Breed', 10251: 'Blaze Breed', 10252: 'Aqua Breed' } as Record<number, string>)[appId];
+  let breedQualifier: string | undefined;
+  if (breed) {
+    const ambiguous = !descriptor || [10250, 10251, 10252].some(id => id !== appId && catalog.forms[id] === descriptor);
+    if (ambiguous) descriptor = `${descriptor ?? ''} (${breed})`.trim();
+    breedQualifier = ambiguous ? breed : descriptor?.match(/\(([^)]+)\)$/u)?.[1];
+  }
+  const full = fullPokemonName(species, descriptor);
+  let name = breed ? breedQualifier ? `${species} (${breedQualifier})` : full
+    : !mark && (appId > 1025 || formKey !== appId) ? full : species;
+  // X/Y are part of the official name. Reserve the final glyph just like a
+  // regional mark so an ellipsis never makes the two Mega forms identical.
+  if ([10034, 10035, 10043, 10044, 10304, 10305].includes(appId)) {
+    const variant = full.match(/[XYＸＹ]$/u)?.[0];
+    if (variant) { mark = variant; name = full.slice(0, -variant.length).trimEnd(); }
+  }
   return {
-    name: species,
+    // Named alternate forms need their full name when no compact marker
+    // distinguishes them. Base/default species keep their existing label.
+    name,
     mark,
-    full: fullPokemonName(species, descriptor),
+    full,
     pending: false,
   };
 }

@@ -1,0 +1,22 @@
+import type { PokemonLabel } from '@/i18n/names';
+import { cn } from '@/lib/utils';
+
+/** Keep a form marker outside the species text so truncation cannot hide it. */
+export function PokemonName({ label, className, truncate = true }: {
+  label: PokemonLabel;
+  className?: string;
+  truncate?: boolean;
+}) {
+  return <span
+    data-i18n-exempt="pokemon-name"
+    className={cn('flex items-baseline justify-center gap-[0.15em]', className)}
+    {...(label.pending ? { 'aria-busy': true } : { title: label.full, 'aria-label': label.full })}
+  >
+    {label.pending ? <span aria-hidden data-name-skeleton className="flex h-[1.25em] w-[62%] items-center">
+      <span className="tile-name-skeleton block h-[0.68em] w-full rounded-full bg-current" />
+    </span> : <>
+      <span className={truncate ? 'truncate' : undefined}>{label.name}</span>
+      {label.mark && <span aria-hidden className="flex-shrink-0 text-[0.8em] font-semibold opacity-70 tabular-nums">{label.mark}</span>}
+    </>}
+  </span>;
+}
