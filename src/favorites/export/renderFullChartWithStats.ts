@@ -33,9 +33,9 @@ export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerCo
   ctx.save();ctx.translate(x,y);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,h,8);ctx.fill();drawExportStatsTitle(ctx,titles()[d],20,12);
   const data=stats.dimensions[d];
   const rows=[...data.rows].sort((a,b)=>(b.deviation??-Infinity)-(a.deviation??-Infinity)).map(row=>({...row,unavailable:row.expected===0,color:d==='type'?TYPE_COLORS[row.key as TypeName]:d==='color'?COLOR_BADGE_FILLS[row.key as ColorName]:'#dc2626',barOpacity:d==='type'||d==='color'?1:undefined,barStroke:d==='color'&&row.key==='white'?'#a3a3a3':undefined,icon:rowIcon(d,row.key,images)}));
-  const rowHeight=Math.min(28,(h-80)/rows.length);
+  const rowHeight=Math.min(28,(h-100)/rows.length);
   ctx.font='400 10px "Inter Variable", system-ui, sans-serif';
-  drawExportButterfly(ctx,20,44,rows,rowHeight,1,headers()[d],true,{alignBaselines:true,fixedIndexDomain:200});
+  drawExportButterfly(ctx,20,36,rows,rowHeight,1,headers()[d],true,{alignBaselines:true,fixedIndexDomain:200});
   if(data.rows.some(row=>row.expected===0))label(ctx,t('favorites.stats.unavailable'),20,h-8,280);ctx.restore();
  }
  card('type',0,0,488);card('color',0,504,360);card('shape',336,0,408);card('evolution',336,424,168);
