@@ -2190,7 +2190,7 @@ export function AdminPage() {
                 <Kpi value={data.favorite?.completed ?? 0} label="Completed"/>
                 <Kpi value={data.favorite?.exporters ?? 0} label="Exporters"/>
                 <Kpi value={data.favorite?.exportsFull ?? 0} label="Full grid exports"/>
-                <Kpi value={data.favorite?.exportsSimplified ?? 0} label="Simplified exports"/>
+                <Kpi value={data.favorite?.exportsSimplified ?? 0} label="Summary exports"/>
               </div>
             </Panel>}
 
