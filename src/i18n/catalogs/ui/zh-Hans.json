@@ -132,5 +132,6 @@
   "home.league.blurb": "道馆馆主、四天王和冠军的队伍",
   "home.dex.saved": "{progress}个图鉴条目已保存在此浏览器",
   "home.favorites.saved": "{progress}个选择已保存在此浏览器",
-  "home.league.saved": "{progress}位训练家已保存在此浏览器"
+  "home.league.saved": "{progress}位训练家已保存在此浏览器",
+  "home.next.blurb": "告诉我们你想看到什么，\n或分享你的反馈"
 }

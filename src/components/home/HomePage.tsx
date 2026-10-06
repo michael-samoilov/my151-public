@@ -234,6 +234,7 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       data-card-panel
     >
       {body}
+      <span className="hub-pocket-edge" aria-hidden data-card-pocket />
     </button>
   ) : tool.href ? (
     <a
@@ -250,10 +251,12 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       }
     >
       {body}
+      <span className="hub-pocket-edge" aria-hidden data-card-pocket />
     </a>
   ) : (
     <div className={panel} style={style} data-card-panel>
       {body}
+      <span className="hub-pocket-edge" aria-hidden data-card-pocket />
     </div>
   );
 
@@ -336,7 +339,7 @@ function Caption({ tool }: { tool: Tool }) {
         {tool.title}
       </Title>
       <p
-        className="m-0 text-muted-foreground text-pretty"
+        className={`m-0 text-muted-foreground ${tool.key === HAMMER_TITLE ? 'whitespace-pre-line' : 'text-pretty'}`}
         style={{ fontSize: BLURB, lineHeight: 'var(--caption-leading, 1.4)', marginTop: `var(--caption-gap, ${U(3)})` }}
       >
         {tool.blurb}

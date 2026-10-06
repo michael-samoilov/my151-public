@@ -274,7 +274,7 @@ export const enUi = {
   'home.league.title': 'League & Gym Leader Maker',
   'home.moved.dismiss': 'Dismiss',
   'home.moved.tip': 'The Pokédex builder moved: find it under Tools. Your Pokédex ({count}/151) is saved in this browser.',
-  'home.next.blurb': 'Tell us what you want to see, or flag a problem',
+  'home.next.blurb': 'Tell us what you want to see,\nor share your feedback',
   'home.next.title': 'What should we build next?',
   'intro.body': 'Hand-pick your favorites from all {total} Pokémon into a Pokédex that’s entirely yours.',
   'intro.cta': 'Choose your starters',
