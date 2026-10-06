@@ -182,7 +182,7 @@ function SuperimposedHistogramImpl({
               <g data-mean-stem={point.color}>{point.segments.map(([start, end], index) => <line key={index} x1={point.x} x2={point.x} y1={plotH + start} y2={plotH + end} stroke={point.color} strokeWidth={1}/>)}</g>
               <g data-mean-marker={point.exact ? 'exact' : point.color} transform={`translate(0,${plotH + meanLayout.rail})`}>
                 <path d={`M${point.x},-4 L${point.x+4},0 L${point.x},4 L${point.x-4},0 Z`} fill={point.color} stroke={point.exact ? '#94a3b8' : undefined} strokeWidth={point.exact ? 2 : undefined}/>
-                <text x={point.labelX} y={point.labelRail * 17} dominantBaseline="middle" textAnchor={point.anchor} fontSize={10} fill={point.color}>
+                <text xmlSpace="preserve" x={point.labelX} y={point.labelRail * 17} dominantBaseline="middle" textAnchor={point.anchor} fontSize={10} fill={point.color}>
                   {point.runs.map((run, index) => <tspan key={index} data-mean-number={run.bold ? 'true' : undefined} fontWeight={run.bold ? 700 : 400}>{run.text}</tspan>)}
                 </text>
               </g>
