@@ -394,6 +394,7 @@ function ButterflyChartImpl({ alignBaselines = false, fixedIndexDomain, data, ro
 
             const key = rowKey(d);
             const isActive = activeKey === key;
+            const highlightColor = /^(?:white|#fff(?:fff)?)$/i.test(d.color) ? '#737373' : d.color;
 
             // Highlight extends to midpoints between this row and neighbors
             const prevBottom = rowIdx > 0 ? yScale(data[rowIdx - 1].label)! + barHeight : topOffset;
@@ -408,7 +409,7 @@ function ButterflyChartImpl({ alignBaselines = false, fixedIndexDomain, data, ro
                 {/* Full-row hit target + active highlight */}
                 <rect
                   x={0} y={highlightY} width={width} height={highlightH}
-                  fill={isActive ? d.color : 'transparent'}
+                  fill={isActive ? highlightColor : 'transparent'}
                   opacity={isActive ? 0.12 : 1}
                   className={!isActive && onBarClick && hasData ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
                 />
