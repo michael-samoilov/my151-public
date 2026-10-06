@@ -1,10 +1,10 @@
 {
   "chart.header.color": "COULEUR",
   "browser.myFavorites": "Mes favoris",
-  "faq.favorites.a1": "Choisissez une case pour sélectionner un Pokémon de ce type et de cette génération. Choisissez ensuite vos favoris dans chaque ligne et colonne, puis votre favori parmi tous.",
-  "faq.favorites.a2": "Oui. Enregistrez une image PNG de la grille complète ou de la vue Résumé. Vous pouvez filtrer les Pokémon selon vos favoris dans les créateurs de Pokédex et de Champions d’Arène.",
-  "faq.favorites.q1": "Comment choisir un Pokémon ?",
-  "faq.favorites.q2": "Puis-je exporter le tableau ?",
+  "faq.favorites.a1": "Choisissez un Pokémon pour chaque combinaison de type et de génération. Puis choisissez vos favoris dans chaque ligne et colonne, y compris votre favori parmi tous.",
+  "faq.favorites.a2": "Oui. Ouvrez la page d’analyse pour voir si vos choix privilégient un type, une couleur, une forme, un stade d’évolution ou un total de statistiques de base particulier.",
+  "faq.favorites.q1": "Comment créer un tableau de mes Pokémon préférés par type et génération ?",
+  "faq.favorites.q2": "Puis-je comparer mes Pokémon préférés au Pokémon moyen ?",
   "faq.summary": "À propos de cet outil",
   "export.dexTitle": "Pokédex personnalisé",
   "favorites.axis.favorite": "Favori",
@@ -133,5 +133,11 @@
   "home.dex.saved": "{progress} entrées enregistrées localement",
   "home.favorites.saved": "{progress} choix enregistrés dans ce navigateur",
   "home.league.saved": "{progress} Dresseurs enregistrés dans ce navigateur",
-  "home.next.blurb": "Dites-nous vos envies,\nou partagez vos avis"
+  "home.next.blurb": "Dites-nous vos envies,\nou partagez vos avis",
+  "faq.favorites.q3": "Puis-je exporter un tableau de mes Pokémon préférés de chaque type ?",
+  "faq.favorites.a3": "Oui. Exportez la Grille complète ou choisissez Résumé pour vos favoris par type et génération, vos Pokémon de départ, légendaires, formes spéciales et votre favori parmi tous. Les deux vues s’enregistrent en PNG.",
+  "faq.favorites.q4": "Est-ce gratuit ? Faut-il une application ou un compte ?",
+  "faq.favorites.a4": "Gratuit, dans le navigateur, sans inscription ni téléchargement. Vos choix s’enregistrent dans ce navigateur. Effacer ses données peut les supprimer : exportez un PNG pour conserver votre tableau.",
+  "faq.favorites.q5": "Puis-je utiliser mes favoris dans les autres outils my151 ?",
+  "faq.favorites.a5": "Oui. Les créateurs de Pokédex et de Champions d’Arène peuvent filtrer leurs listes de Pokémon selon vos favoris enregistrés dans ce navigateur."
 }

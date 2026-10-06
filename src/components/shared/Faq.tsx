@@ -31,6 +31,9 @@ const FAQ: Record<FaqPage, [NoArgKey, NoArgKey][]> = {
   favorites: [
     ['faq.favorites.q1', 'faq.favorites.a1'],
     ['faq.favorites.q2', 'faq.favorites.a2'],
+    ['faq.favorites.q3', 'faq.favorites.a3'],
+    ['faq.favorites.q4', 'faq.favorites.a4'],
+    ['faq.favorites.q5', 'faq.favorites.a5'],
   ],
 };
 

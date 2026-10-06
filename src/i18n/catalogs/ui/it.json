@@ -1,10 +1,10 @@
 {
   "chart.header.color": "COLORE",
   "browser.myFavorites": "I miei preferiti",
-  "faq.favorites.a1": "Scegli una casella per selezionare un Pokémon di quel tipo e di quella generazione. Poi scegli i preferiti di ogni riga e colonna e il tuo preferito in assoluto.",
-  "faq.favorites.a2": "Sì. Salva la griglia completa o la vista Riepilogo come immagine PNG. Puoi filtrare i Pokémon in base ai tuoi preferiti nei creatori di Pokédex e di Capipalestra.",
-  "faq.favorites.q1": "Come si scelgono i Pokémon?",
-  "faq.favorites.q2": "Posso esportare la tabella?",
+  "faq.favorites.a1": "Scegli un Pokémon per ogni combinazione di tipo e generazione. Poi scegli i tuoi preferiti da ogni riga e colonna, incluso il tuo preferito in assoluto.",
+  "faq.favorites.a2": "Sì. Apri la pagina delle analisi per vedere se le tue scelte tendono a includere Pokémon di un certo tipo, colore, forma, stadio evolutivo o totale delle statistiche di base.",
+  "faq.favorites.q1": "Come creo un elenco dei miei Pokémon preferiti per tipo e generazione?",
+  "faq.favorites.q2": "Posso confrontare i miei Pokémon preferiti con il Pokémon medio?",
   "faq.summary": "Informazioni sullo strumento",
   "export.dexTitle": "Pokédex personalizzato",
   "favorites.axis.favorite": "Preferito",
@@ -133,5 +133,11 @@
   "home.dex.saved": "{progress} voci salvate in questo browser",
   "home.favorites.saved": "{progress} scelte salvate in questo browser",
   "home.league.saved": "{progress} Allenatori salvati in questo browser",
-  "home.next.blurb": "Dicci cosa vorresti vedere\no condividi la tua opinione"
+  "home.next.blurb": "Dicci cosa vorresti vedere\no condividi la tua opinione",
+  "faq.favorites.q3": "Posso esportare un elenco dei miei Pokémon preferiti di ogni tipo?",
+  "faq.favorites.a3": "Sì. Esporta la Griglia completa oppure scegli Riepilogo per i tuoi preferiti per tipo e generazione, iniziali, leggendari, forme speciali e il tuo preferito in assoluto. Entrambe le viste si salvano come PNG.",
+  "faq.favorites.q4": "È gratis? Mi serve un’app o un account?",
+  "faq.favorites.a4": "Gratis, nel browser, senza registrazione né download. Le tue scelte si salvano in questo browser. Cancellare i dati del browser può eliminarle, quindi esporta un PNG per conservare il tuo elenco.",
+  "faq.favorites.q5": "Posso usare i miei preferiti negli altri strumenti my151?",
+  "faq.favorites.a5": "Sì. Il creatore di Pokédex e quello di Capipalestra possono filtrare i loro elenchi di Pokémon in base ai tuoi preferiti salvati in questo browser."
 }

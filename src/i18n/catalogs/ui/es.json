@@ -1,10 +1,10 @@
 {
   "chart.header.color": "COLOR",
   "browser.myFavorites": "Mis favoritos",
-  "faq.favorites.a1": "Elige una casilla para escoger un Pokémon de ese tipo y generación. Después elige tus favoritos de cada fila y columna, y tu favorito de todos.",
-  "faq.favorites.a2": "Sí. Guarda la cuadrícula completa o la vista Resumen como imagen PNG. Puedes filtrar Pokémon según tus favoritos en los creadores de Pokédex y de Líderes de Gimnasio.",
-  "faq.favorites.q1": "¿Cómo elijo los Pokémon?",
-  "faq.favorites.q2": "¿Puedo exportar la tabla?",
+  "faq.favorites.a1": "Elige un Pokémon para cada combinación de tipo y generación. Luego elige tus favoritos de cada fila y columna, incluido tu favorito de todos.",
+  "faq.favorites.a2": "Sí. Abre la página de análisis para ver si tus elecciones tienden a incluir Pokémon de un determinado tipo, color, forma, etapa evolutiva o total de estadísticas base.",
+  "faq.favorites.q1": "¿Cómo hago un cuadro de mis Pokémon favoritos por tipo y generación?",
+  "faq.favorites.q2": "¿Puedo comparar mis Pokémon favoritos con el Pokémon promedio?",
   "faq.summary": "Acerca de esta herramienta",
   "export.dexTitle": "Pokédex personalizado",
   "favorites.axis.favorite": "Favorito",
@@ -133,5 +133,11 @@
   "home.dex.saved": "{progress} entradas guardadas en este navegador",
   "home.favorites.saved": "{progress} elecciones guardadas en este navegador",
   "home.league.saved": "{progress} entrenadores guardados localmente",
-  "home.next.blurb": "Dinos qué quieres ver\no comparte tu opinión"
+  "home.next.blurb": "Dinos qué quieres ver\no comparte tu opinión",
+  "faq.favorites.q3": "¿Puedo exportar un cuadro de mis Pokémon favoritos de cada tipo?",
+  "faq.favorites.a3": "Sí. Exporta la Cuadrícula completa o elige Resumen para tus favoritos de cada tipo y generación, iniciales, legendarios, formas especiales y tu favorito de todos. Ambas vistas se guardan como PNG.",
+  "faq.favorites.q4": "¿Es gratis? ¿Necesito una aplicación o una cuenta?",
+  "faq.favorites.a4": "Gratis, en el navegador, sin registro ni descarga. Tus elecciones se guardan en este navegador. Borrar los datos del navegador puede eliminarlas, así que exporta un PNG para conservar tu cuadro.",
+  "faq.favorites.q5": "¿Puedo usar mis favoritos en las otras herramientas de my151?",
+  "faq.favorites.a5": "Sí. El creador de Pokédex y el de líderes de gimnasio pueden filtrar sus listas de Pokémon por tus favoritos guardados en este navegador."
 }
