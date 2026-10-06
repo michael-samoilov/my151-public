@@ -1,4 +1,5 @@
 import { scaleLinear } from 'd3-scale';
+import { histogramMeans } from './histogramMeans';
 import { drawGenerationBadge } from './drawAttributeBadge';
 import type { GenNumber } from '@/favorites/model/cells';
 import { drawExportButterfly as butterfly, drawExportStatsTitle, type ButterflyRowInput, type IconDrawer } from './exportButterfly';
@@ -83,9 +84,10 @@ export function drawExportHistogram(
   bst: DetailedStatsData['bst'],
   heightScale: number,
   draw: boolean,
+  meanRail?: { labels: { yours:string; options:string; exact:string }; legend: { yours:string; options:string } },
 ): number {
-  const height = 200 * heightScale;
-  const margin = { top: 8, right: 12, bottom: 24, left: 40 };
+  const height = 200 * heightScale + (meanRail ? 76 : 0);
+  const margin = { top: 8, right: 12, bottom: 24 + (meanRail ? 76 : 0), left: 40 };
   const plotW = Math.max(0, CONTENT_W - margin.left - margin.right);
   const plotH = height - margin.top - margin.bottom;
 
@@ -124,13 +126,27 @@ export function drawExportHistogram(
   }
   ctx.globalAlpha = 1;
 
+  if(meanRail){
+    ctx.font=font(400,CHART_TEXT);
+    const means=histogramMeans(bst.yoursAvg,bst.nationalAvg,plotW,xScale,meanRail.labels,text=>ctx.measureText(text).width);
+    for(const point of means){
+      const cy=plotH+34+point.rail*17;
+      ctx.strokeStyle=point.color;ctx.fillStyle=point.color;
+      if(point.rail>0)line(ctx,point.x,plotH+34,point.x,cy);
+      ctx.beginPath();ctx.moveTo(point.x,cy-4);ctx.lineTo(point.x+4,cy);ctx.lineTo(point.x,cy+4);ctx.lineTo(point.x-4,cy);ctx.closePath();ctx.fill();if(point.exact){ctx.strokeStyle=NAT_HIST;ctx.lineWidth=2;ctx.stroke();}
+      ctx.textAlign=point.anchor==='middle'?'center':point.anchor==='end'?'right':'left';ctx.textBaseline='middle';ctx.fillText(point.text,point.labelX,cy+((point.labelRail ?? point.rail)-point.rail)*17);
+    }
+    const lx=Math.max(0,plotW-110);ctx.fillStyle='#fff';ctx.globalAlpha=.92;ctx.fillRect(lx,6,110,32);ctx.globalAlpha=1;
+    [{text:meanRail.legend.options,color:NAT_HIST},{text:meanRail.legend.yours,color:YOURS}].forEach((item,i)=>{ctx.fillStyle=item.color;ctx.fillRect(lx+4,11+i*15,7,7);ctx.fillStyle=MUTED;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillText(item.text,lx+16,18+i*15);});
+  }
   // X ticks
   ctx.fillStyle = MUTED;
   ctx.strokeStyle = MUTED;
   ctx.font = font(400, CHART_TEXT);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  for (const t of bst.xTicks) {
+  const tickStep=meanRail?Math.max(1,Math.ceil(32/plotW*(bst.xDomain[1]-bst.xDomain[0])/100)):1;
+  for (const t of bst.xTicks.filter((_,i)=>i%tickStep===0)) {
     line(ctx, xScale(t), plotH, xScale(t), plotH + 4);
     ctx.fillText(`${t}`, xScale(t), plotH + 15);
   }

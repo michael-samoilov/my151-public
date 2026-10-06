@@ -12,7 +12,7 @@ export async function composeStatsExport(
   naturalSize: { w: number; h: number },
   title: string,
   draw: (ctx: CanvasRenderingContext2D) => void,
-  credit = { size: CREDIT_PX, bottomOffset: FRAME + FOOT / 2 },
+  credit: { size?: number; bottomOffset?: number; prefix?: string } = {},
 ): Promise<Blob> {
   const url = URL.createObjectURL(main);
   try {
@@ -66,7 +66,7 @@ export async function composeStatsExport(
     ctx.imageSmoothingEnabled = true;
     draw(ctx);
     ctx.restore();
-    drawExportCredit(ctx, panelWidth / 2, height - credit.bottomOffset, credit.size);
+    drawExportCredit(ctx, panelWidth / 2, height - (credit.bottomOffset ?? FRAME + FOOT / 2), credit.size ?? CREDIT_PX, credit.prefix);
     ctx.restore();
     return await new Promise<Blob>((resolve, reject) => {
       const timeout = window.setTimeout(() => reject(new Error('Canvas toBlob timed out')), 15000);

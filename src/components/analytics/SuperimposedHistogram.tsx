@@ -1,6 +1,15 @@
 import { memo, useRef, useEffect, useState } from 'react';
 import { scaleLinear } from 'd3-scale';
+import { histogramMeans } from '@/lib/histogramMeans';
 
+let meanMeasureCanvas: HTMLCanvasElement | undefined;
+function measureMean(text:string){
+ meanMeasureCanvas ??= document.createElement('canvas');
+ const ctx=meanMeasureCanvas.getContext('2d');
+ if(!ctx)return text.length*6;
+ ctx.font='400 10px "Inter Variable", system-ui, sans-serif';
+ return ctx.measureText(text).width;
+}
 interface HistogramBin {
   x: number;
   nationalPct: number;
@@ -21,6 +30,7 @@ interface SuperimposedHistogramProps {
   heightScale?: number;
   /** Overrides the font-size class on the axis tick labels (default text-xs). */
   textClass?: string;
+  meanRail?: { yours: number; options: number; labels: { yours: string; options: string; exact: string }; legend: { yours: string; options: string } };
 }
 
 function SuperimposedHistogramImpl({
@@ -35,6 +45,7 @@ function SuperimposedHistogramImpl({
   activeBin,
   heightScale = 1,
   textClass,
+  meanRail,
 }: SuperimposedHistogramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -56,11 +67,11 @@ function SuperimposedHistogramImpl({
   // height. chartScale matches the formula in ButterflyChart — 1 at
   // mobile, 2 at desktop — so both analytics charts scale consistently.
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
-  const height = 200 * chartScale * heightScale;
+  const height = 200 * chartScale * heightScale + (meanRail ? 76 : 0);
   const margin = {
     top: 8,
     right: 12,
-    bottom: 24 * chartScale,
+    bottom: 24 * chartScale + (meanRail ? 76 : 0),
     left: 40 * chartScale,
   };
   const plotW = Math.max(0, width - margin.left - margin.right);
@@ -69,6 +80,7 @@ function SuperimposedHistogramImpl({
   const xScale = scaleLinear().domain(xDomain).range([0, plotW]);
   const yScale = scaleLinear().domain([0, yDomain]).range([plotH, 0]);
 
+  const means = meanRail ? histogramMeans(meanRail.yours, meanRail.options, plotW, xScale, meanRail.labels, measureMean) : [];
   const barFullWidth = xScale(binSize) - xScale(0);
   const barNarrowWidth = barFullWidth * 0.5;
 
@@ -131,12 +143,22 @@ function SuperimposedHistogramImpl({
                   height={plotH}
                   fill={isActive ? '#ef4444' : 'transparent'}
                   opacity={isActive ? 0.12 : 0}
+                  role={d.yoursPct>0?'button':undefined} tabIndex={d.yoursPct>0?0:undefined} aria-label={`${d.x-binSize/2}–${d.x+binSize/2}`} onKeyDown={event=>{if(d.yoursPct>0&&(event.key==='Enter'||event.key===' ')){event.preventDefault();onBarClick(d.x);}}}
                   className={d.yoursPct > 0 ? 'cursor-pointer hover:fill-[#ef4444] hover:opacity-[0.08]' : ''}
                   onClick={() => { if (d.yoursPct > 0) onBarClick(d.x); }}
                 />
               );
             })}
 
+            {meanRail && <g data-histogram-legend="true" transform={`translate(${Math.max(0,plotW-110)},6)`}>
+              <rect width={110} height={32} fill="var(--color-background)" opacity={.92}/>
+              {[{text:meanRail.legend.options,color:'#94a3b8'},{text:meanRail.legend.yours,color:'#ef4444'}].map((item,index)=><g key={item.text} transform={`translate(4,${index*15+5})`}><rect width={7} height={7} fill={item.color}/><text x={12} y={7} fontSize={10} fill="var(--color-muted-foreground)">{item.text}</text></g>)}
+            </g>}
+            {means.map(point=><g key={point.color} data-mean-marker={point.exact?'exact':point.color} transform={`translate(0,${plotH+34+point.rail*17})`}>
+              {point.rail>0&&<line x1={point.x} x2={point.x} y1={-point.rail*17} y2={0} stroke={point.color} opacity={.5}/>}
+              <path d={`M${point.x},-4 L${point.x+4},0 L${point.x},4 L${point.x-4},0 Z`} fill={point.color} stroke={point.exact?'#94a3b8':undefined} strokeWidth={point.exact?2:undefined}/>
+              <text x={point.labelX} y={(point.labelRail ?? point.rail)*17-point.rail*17} dominantBaseline="middle" textAnchor={point.anchor} fontSize={10} fill={point.color}>{point.text}</text>
+            </g>)}
             {/* X axis tick marks + labels */}
             {xTicks.map((t) => (
               <g key={`xtick-${t}`}>

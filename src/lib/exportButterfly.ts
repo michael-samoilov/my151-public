@@ -1,5 +1,6 @@
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { MAX_LABEL_STRETCH } from '@/lib/sectionOutlines';
+import { t } from '@/i18n';
 import { butterflyColumns } from './butterflyLayout';
 const MUTED = '#737373';
 const CHART_TEXT = 10;
@@ -31,6 +32,7 @@ export type IconDrawer = (ctx: CanvasRenderingContext2D, x: number, y: number, w
 
 export interface ButterflyRowInput {
   count: number;
+  unavailable?: boolean;
   deviation: number | null;
   color: string;
   barStroke?: string;
@@ -53,7 +55,7 @@ export function drawExportButterfly(
   heightScale: number,
   labelHeader: string,
   draw: boolean,
-  options: { contentWidth?: number; iconColAspect?: number; alignBaselines?: boolean } = {},
+  options: { contentWidth?: number; iconColAspect?: number; alignBaselines?: boolean; fixedIndexDomain?: number } = {},
 ): number {
   const n = rows.length;
   const iconSize = 14;
@@ -113,7 +115,8 @@ export function drawExportButterfly(
     if (dl / dTotal < minSideFrac) dl = dr * minSideFrac / (1 - minSideFrac);
     if (dr / dTotal < minSideFrac) dr = dl * minSideFrac / (1 - minSideFrac);
   }
-  if (options.alignBaselines) dl = dr = Math.max(dl, dr);
+  if (options.fixedIndexDomain !== undefined) dl = dr = options.fixedIndexDomain;
+  else if (options.alignBaselines) dl = dr = Math.max(dl, dr);
   const devLeft = -dl;
   const devRight = dr;
   const devScale = scaleLinear().domain([devLeft, devRight]).range([barPad, chart2Width - barPad]);
@@ -127,13 +130,13 @@ export function drawExportButterfly(
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(600, CHART_TEXT);
   spacedText(ctx, labelHeader, iconStart + iconColW / 2, headerBaseline, 0.05 * CHART_TEXT, 'middle');
-  spacedText(ctx, 'COUNT', countSectionStart, headerBaseline, 0.05 * CHART_TEXT, 'start');
+  spacedText(ctx, t('chart.header.count'), countSectionStart, headerBaseline, 0.05 * CHART_TEXT, 'start');
   // Deviation two-line headers, bottom line on headerBaseline.
   const dy = 1.1 * CHART_TEXT;
-  spacedText(ctx, 'UNDER-', devSectionStart + zeroX - 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'end');
-  spacedText(ctx, '← INDEXED', devSectionStart + zeroX - 5, headerBaseline, 0.05 * CHART_TEXT, 'end');
-  spacedText(ctx, 'OVER-', devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'start');
-  spacedText(ctx, 'INDEXED →', devSectionStart + zeroX + 5, headerBaseline, 0.05 * CHART_TEXT, 'start');
+  spacedText(ctx, t('chart.header.underIndexed1'), devSectionStart + zeroX - 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'end');
+  spacedText(ctx, t('chart.header.underIndexed2'), devSectionStart + zeroX - 5, headerBaseline, 0.05 * CHART_TEXT, 'end');
+  spacedText(ctx, t('chart.header.overIndexed1'), devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'start');
+  spacedText(ctx, t('chart.header.overIndexed2'), devSectionStart + zeroX + 5, headerBaseline, 0.05 * CHART_TEXT, 'start');
 
   // Rows
   rows.forEach((d, i) => {
@@ -141,7 +144,10 @@ export function drawExportButterfly(
     const rowMid = y + barHeight / 2;
 
     // Icon
+    ctx.globalAlpha = d.unavailable ? .3 : 1;
     d.icon(ctx, iconStart, rowMid - iconBoxH / 2, iconColW, iconBoxH);
+    ctx.globalAlpha = 1;
+    if (d.unavailable) return;
 
     // Count bar + number
     const countBarW = countScale(d.count);

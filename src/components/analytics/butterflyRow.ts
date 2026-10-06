@@ -13,6 +13,8 @@ export interface ButterflyRow {
   key?: string;
   label: string;
   count: number;
+  /** Category never occurs in the reference options; paint only its muted identifier. */
+  unavailable?: boolean;
   deviation: number; // percentage, e.g. +100 = double, -50 = half (or raw diff in scoreMode)
   color: string;
   /** Optional outline for a bar fill that matches the chart background. */

@@ -47,6 +47,6 @@ export function pickerConditionalStats(snapshot:FavoritesSnapshot){
  const yoursAvg=covered.length?covered.reduce((sum,pick)=>sum+sourcedBst[pick.id],0)/covered.length:0;
  const nationalAvg=covered.length?covered.reduce((sum,pick)=>sum+pick.pool.reduce((n,id)=>n+sourcedBst[id],0)/pick.pool.length,0)/covered.length:0;
  const bst:StatsBst={merged,binSize:50,xDomain:[low,high],xTicks:Array.from({length:Math.floor((high-low)/100)+1},(_,i)=>low+i*100),yDomain,yTicks:Array.from({length:yDomain/10+1},(_,i)=>i*10),yoursAvg,nationalAvg};
- return {...result,bst};
+ return {...result,bst,incomplete:snapshot.completion.picksFilled<snapshot.completion.picksTotal};
 }
 export type PickerConditionalStats=ReturnType<typeof pickerConditionalStats>;

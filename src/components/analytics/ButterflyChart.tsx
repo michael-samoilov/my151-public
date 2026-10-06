@@ -10,6 +10,7 @@ export type { ButterflyRow };
 interface ButterflyChartProps {
   /** Use a fixed identifier rail and centered index reference across sibling charts. */
   alignBaselines?: boolean;
+  fixedIndexDomain?: number;
   data: ButterflyRow[];
   /** Row height in px. Default 22 */
   rowHeight?: number;
@@ -84,7 +85,7 @@ function countLabelPadding(data: ButterflyRow[], textClass: string | undefined):
   return (Math.max(0, ...data.map(row => ctx.measureText(String(row.count)).width)) + 6);
 }
 
-function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
+function ButterflyChartImpl({ alignBaselines = false, fixedIndexDomain, data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -276,7 +277,8 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
     if (dl / dTotal < minSideFrac) dl = dr * minSideFrac / (1 - minSideFrac);
     if (dr / dTotal < minSideFrac) dr = dl * minSideFrac / (1 - minSideFrac);
   }
-  if (alignBaselines) dl = dr = Math.max(dl, dr);
+  if (fixedIndexDomain !== undefined) dl = dr = fixedIndexDomain;
+  else if (alignBaselines) dl = dr = Math.max(dl, dr);
   const devLeft = -dl;
   const devRight_ = dr;
 
@@ -292,7 +294,7 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
   return (
     <div ref={containerRef} className="w-full">
       {width > 0 && (
-        <svg width={width} height={chartHeight} className="overflow-visible" data-count-baseline={countSectionStart + countZeroX} data-index-baseline={hideDeviation ? undefined : devSectionStart + zeroX}>
+        <svg width={width} height={chartHeight} className="overflow-visible" data-index-domain={hideDeviation ? undefined : `${devLeft},${devRight_}`} data-count-baseline={countSectionStart + countZeroX} data-index-baseline={hideDeviation ? undefined : devSectionStart + zeroX}>
           {/* Label column header (e.g. "TYPE", "GEN"). Sortable only when
               `labelSortable` is true — e.g. the gen chart uses natural-order
               sort; the type chart does not. With the label text hidden the header
@@ -399,10 +401,10 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
             const highlightY = (prevBottom + y) / 2;
             const highlightH = ((y + barHeight + nextTop) / 2) - highlightY;
 
-            const hasData = !disableEmptyRows || d.count > 0;
+            const hasData = !d.unavailable && (!disableEmptyRows || d.count > 0);
 
             return (
-              <g key={key} className={onBarClick && hasData ? 'cursor-pointer' : ''} onClick={onBarClick && hasData ? () => onBarClick(key) : undefined}>
+              <g key={key} data-row-key={key} data-unavailable={d.unavailable || undefined} role={onBarClick && hasData ? 'button' : undefined} tabIndex={onBarClick && hasData ? 0 : undefined} aria-label={onBarClick && hasData ? d.label : undefined} aria-pressed={onBarClick && hasData ? isActive : undefined} onKeyDown={onBarClick && hasData ? event => { if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onBarClick(key); } } : undefined} className={onBarClick && hasData ? 'cursor-pointer' : ''} onClick={onBarClick && hasData ? () => onBarClick(key) : undefined}>
                 {/* Full-row hit target + active highlight */}
                 <rect
                   x={0} y={highlightY} width={width} height={highlightH}
@@ -424,6 +426,7 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
                   </text>
                 )}
 
+                <g opacity={d.unavailable ? .3 : 1}>
                 {/* Row icon */}
                 {d.icon && (
                   typeof d.icon === 'string' ? (
@@ -438,6 +441,8 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
                   ) : d.icon(iconStart, y + barHeight / 2 - iconBoxH / 2, iconBoxH, iconColW)
                 )}
 
+                </g>
+                {!d.unavailable && <>
                 {/* Count bar */}
                 <rect
                   x={countBarX}
@@ -551,6 +556,7 @@ function ButterflyChartImpl({ alignBaselines = false, data, rowHeight: rowHeight
                   );
                 })()}
                 </>)}
+                </>}
               </g>
             );
           })}
