@@ -388,7 +388,7 @@ function Artwork({ tool }: { tool: Tool }) {
   // the two screenshots, nothing more.
   const box = {
     position: 'absolute',
-    top: `calc((${U(POP_TOP)} * var(--art) + ${BLEED}) * -1)`,
+    top: `calc((${U(POP_TOP)} * var(--art) + ${BLEED} + var(--panel-height) * 0.55) * -1)`,
     left: `calc((${U(POP_LEFT)} * var(--art) + ${BLEED}) * -1)`,
     right: 'calc(100cqw - var(--card-width, 100cqw))',
     bottom: 0,
@@ -398,6 +398,8 @@ function Artwork({ tool }: { tool: Tool }) {
   // The rest geometry of a shot: where it sits and how it tilts, with no float.
   const geom = (i: number) => {
     const f = FAN[i];
+    // The shorter league summary needs extra paper below the shared hover fold.
+    const scale = tool.key === 'league' && i === 0 ? 'var(--rear-scale, 1)' : '1';
     return {
       position: 'absolute' as const,
       // The nudge clears bottom corners; the front sheet uses half the remaining
@@ -407,10 +409,10 @@ function Artwork({ tool }: { tool: Tool }) {
         : ''})`,
       // A common top anchor keeps native screenshot height out of the fan geometry.
       // Short native sheets need reserve below the fold for the larger hover.
-      top: `calc(${BLEED} + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 6px' : tool.key === 'league' ? ' - 6px' : ' - 12px'} + var(--panel-height) * ${bottomReserve})`,
-      width: `calc(${U(shotWidth)} * var(--art))`,
+      top: `calc(${BLEED} + var(--panel-height) * 0.55 + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 6px' : tool.key === 'league' ? ' - 6px' : ' - 12px'} + var(--panel-height) * ${bottomReserve})`,
+      width: `calc(${U(shotWidth)} * var(--art) * ${scale})`,
       transformOrigin: '50% 0' as const,
-      borderRadius: `calc(${U(shotWidth)} * var(--art) * ${EXPORT_RADIUS})`,
+      borderRadius: `calc(${U(shotWidth)} * var(--art) * ${scale} * ${EXPORT_RADIUS})`,
     };
   };
   // The floating shots carry `--hf`, the per-shot hover float that `index.css`

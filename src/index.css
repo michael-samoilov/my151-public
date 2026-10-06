@@ -561,6 +561,7 @@ img {
   }
   .hub-stage {
     width: 72%;
+    --rear-scale: 1.08;
     --panel-height: calc(100cqw / 0.72 * 57 / 166);
   }
 }
