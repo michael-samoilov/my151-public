@@ -23,6 +23,13 @@
 - Integrate compatible worker results, run final verification on the combined change, and report the shipped result and evidence in the coordinator chat.
 - Never claim a worker is running, finished, verified, or merged unless you have checked its actual state.
 
+## Reuse existing UI exactly
+
+- When a tool reuses a feature from another tool, use the existing component implementation. Do not build a separate visual approximation.
+- If the existing component needs tool-specific inputs, extend its API or extract one shared implementation used by both tools. Keep data adapters separate from the shared presentation.
+- Preserve existing header icons, title styling, navigation, dismissal, shadows, tile borders, spacing and interaction behavior unless Michael explicitly requests a change.
+- Compare the reused component in both tools on mobile and desktop with the same relevant states. Verify consistency from the rendered output, not from similar class names.
+
 ## ChatGPT Mobile Remote and cloud workers
 
 - Run the six user-facing coordinator tasks through ChatGPT Mobile Remote on the owner's computer.
