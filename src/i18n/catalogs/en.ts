@@ -413,7 +413,7 @@ export const enUi = {
   'term.shape.quadruped': 'Quadruped',
   'term.shape.squiggle': 'Serpent',
   'term.shape.tentacles': 'Tentacles',
-  'term.shape.upright': 'Biped, Tail',
+  'term.shape.upright': 'Biped & Tail',
   'term.shape.wings': 'Winged',
   'term.type.bug': 'Bug',
   'term.type.dark': 'Dark',
