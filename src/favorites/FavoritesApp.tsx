@@ -108,7 +108,7 @@ function FavoritesContent({ sel, setSel }: {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
     setCurrentView('picker');
-    setSel({ type, gen, keyboard });
+    setSel(desktop && sel?.type === type && sel.gen === gen ? null : { type, gen, keyboard });
   }
 
   // Desktop shows the picker inside the grid, next to its cell. Mobile shows

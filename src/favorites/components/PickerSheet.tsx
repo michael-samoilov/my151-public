@@ -92,7 +92,7 @@ export function PickerSheet({
     const observer = new ResizeObserver(measure);
     observer.observe(button);
     return () => observer.disconnect();
-  }, [desktop, showIcons, t]);
+  }, [desktop, t, type, gen]);
 
   function backFromPack() {
     if (packStack.length > 1) setPackStack(packStack.slice(0, -1));
@@ -122,7 +122,7 @@ export function PickerSheet({
 
   const emptyHint = kind !== 'pointer' ? t('favorites.empty.unavailable')
     : type === 'favorite' && gen === 'favorite' ? t('favorites.empty.overall')
-      : type === 'legendary' && gen === 'legendary' ? t('favorites.empty.legendary')
+      : (type === 'legendary' && gen === 'legendary') || (type === 'gimmick' && gen === 'gimmick') ? t('favorites.empty.pointer')
         : type === 'favorite' ? t('favorites.empty.row')
           : t('favorites.empty.column');
 
@@ -159,7 +159,7 @@ export function PickerSheet({
   ) : (
     <div ref={bodyRef} id="favorites-selector" className={mons.length === 0 && currentId == null ? 'pb-4 pt-3' : 'pb-4'} style={{ paddingTop: mons.length > 0 && currentId != null ? 4 : undefined, paddingLeft: inset, paddingRight: inset }}>
       {mons.length === 0 && currentId == null ? (
-        <PickerEmptyState title={t('favorites.empty.title')} hint={emptyHint} backLabel={t('favorites.empty.back')} onBack={onClose} />
+        <PickerEmptyState title={t('favorites.empty.title')} hint={emptyHint} />
       ) : (
         <PrettySpriteGrid
           mons={mons}
@@ -190,9 +190,9 @@ export function PickerSheet({
 
   // Mobile reserves the measured action width and a 4px gap before fitting badges.
   const title = <PickerTitle type={type} gen={gen}
-    maxWidth={desktop ? undefined : Math.max(1, viewportPx - iconToggleWidth - 16 - (packing ? 20 : 0))}
+    maxWidth={desktop ? undefined : Math.max(1, viewportPx - (mons.length > 0 ? iconToggleWidth : 0) - 16 - (packing ? 20 : 0))}
     gapPx={desktop ? 6 : 2} />;
-  const iconToggle = (
+  const iconToggle = mons.length === 0 ? null : (
     <button
       type="button"
       ref={iconToggleRef}
@@ -201,10 +201,14 @@ export function PickerSheet({
       aria-label={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
       title={showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
       onClick={onToggleIcons}
-      className={`inline-flex h-7 shrink-0 cursor-pointer items-center rounded-md border text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${desktop ? 'gap-1.5 px-2.5' : 'gap-1 px-1'} ${showIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
+      className={`inline-flex h-7 shrink-0 cursor-pointer items-center rounded-md border text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${desktop ? 'gap-1.5 px-2.5' : 'gap-1 px-1'} whitespace-nowrap ${showIcons ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:text-foreground'}`}
     >
       {showIcons ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
-      {showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}
+      <span className="grid">
+        <span className="invisible col-start-1 row-start-1" aria-hidden>{t('favorites.icons.hide')}</span>
+        <span className="invisible col-start-1 row-start-1" aria-hidden>{t('favorites.icons.show')}</span>
+        <span className="col-start-1 row-start-1">{showIcons ? t('favorites.icons.hide') : t('favorites.icons.show')}</span>
+      </span>
     </button>
   );
   const mobileTitle = (
@@ -299,20 +303,16 @@ function PackList({
 function PickerEmptyState({
   title,
   hint,
-  backLabel,
-  onBack,
 }: {
   title: string;
   hint: string;
-  backLabel?: string;
-  onBack?: () => void;
 }) {
   return (
     <section
       data-testid="favorites-picker-empty"
-      className="mx-auto flex w-full max-w-[270px] flex-col items-center rounded-xl border border-border bg-muted/30 px-5 py-5 text-center"
+      className="mx-auto flex w-full max-w-[270px] flex-col items-center px-5 py-5 text-center"
     >
-      <div className="mb-3 grid h-[76px] w-[76px] place-items-center rounded-2xl border border-border bg-card" aria-hidden>
+      <div className="mb-3 grid h-[76px] w-[76px] place-items-center" aria-hidden>
         <svg data-testid="favorites-empty-unown" viewBox="0 0 500 900" className="h-[68px] w-[40px] text-foreground" fill="none">
           <path d="M172 109C245 73 347 99 392 176C455 284 388 401 246 421V521" stroke="currentColor" strokeWidth="90" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="246" cy="680" r="208" fill="currentColor" />
@@ -322,14 +322,6 @@ function PickerEmptyState({
       </div>
       <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
       <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{hint}</p>
-      {backLabel && onBack ? <button
-        type="button"
-        onClick={onBack}
-        className="mt-5 inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border bg-card px-3.5 py-2 text-xs font-medium text-foreground hover:border-primary/40 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-      >
-        <ChevronLeft size={14} aria-hidden />
-        {backLabel}
-      </button> : null}
     </section>
   );
 }

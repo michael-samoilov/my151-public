@@ -142,11 +142,18 @@ export const SORT_PRESETS: readonly { id: string; label: string; order: SortOrde
 export function sortComparator(order: SortOrder, cell: SortCell): (a: PickerMon, b: PickerMon) => number {
   const compares: Compare[] = order.map((id) => sortKey(id).compare);
   return (a, b) => {
+    // Non-gimmick battle forms belong to their species group. Classification
+    // still describes their battle behavior; it does not define family position.
+    const anchor = (mon: PickerMon) => OTHER_BATTLE_FORM_IDS.has(mon.id)
+      ? getPickerMon(mon.ownerId) ?? mon : mon;
+    const sameSpecies = a.ownerId === b.ownerId;
+    const left = sameSpecies ? a : anchor(a);
+    const right = sameSpecies ? b : anchor(b);
     for (const compare of compares) {
-      const result = compare(a, b, cell);
+      const result = compare(left, right, cell);
       if (result !== 0) return result;
     }
-    return comparePickerOrder(a, b);
+    return comparePickerOrder(left, right) || comparePickerOrder(a, b);
   };
 }
 

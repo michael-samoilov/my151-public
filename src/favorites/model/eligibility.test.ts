@@ -76,7 +76,7 @@ describe('eligibleFor', () => {
     expect(eligibleFor('legendary', 'gimmick').length).toBeGreaterThan(0);
   });
 
-  it('orders by debut game, then regular before battle forms, then native, older-family, legendary, and older legendary families', () => {
+  it('orders species groups by debut game, then regular before battle forms, then family tier', () => {
     for (const gen of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
       for (const type of [...TYPE_NAMES, 'gimmick', 'legendary'] as const) {
         const mons = eligibleFor(type, gen);
@@ -86,7 +86,8 @@ describe('eligibleFor', () => {
         const ranks = tieredMons.map(debutSortRank);
         expect(ranks, `${type}|${gen} debut games`).toEqual(ranks.slice().sort((a, b) => a - b));
         for (const rank of new Set(ranks)) {
-          const game = tieredMons.filter((mon) => debutSortRank(mon) === rank);
+          // Eternamax stays inside Eternatus's group despite its battle classification.
+          const game = tieredMons.filter((mon) => debutSortRank(mon) === rank && mon.id !== 10190);
           const kinds = game.map((mon) => Number(isBattleForm(mon)));
           expect(kinds, `${type}|${gen} battle forms`).toEqual(kinds.slice().sort((a, b) => a - b));
           for (const kind of new Set(kinds)) {

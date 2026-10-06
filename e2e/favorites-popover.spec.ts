@@ -103,11 +103,10 @@ test('desktop pane closes on Escape or a click outside it, and that click opens 
   // Clicks inside the pane keep it open.
   await page.getByTestId('favorites-type-toggle').click();
   steps.toggled = await state();
-  // Another cell only closes the pane; the next click opens that cell.
+  // Another cell switches the open pane directly.
   await page.getByTestId('favorites-cell-water-1').click();
   steps.otherCell = await state();
-  await page.getByTestId('favorites-cell-water-1').click();
-  await expect(picker).toBeVisible();
+  await expect(page.getByTestId('favorites-pick-7')).toBeVisible();
   steps.reopened = await state();
   // The selected cell closes its own pane.
   await page.getByTestId('favorites-cell-water-1').click();
@@ -129,7 +128,7 @@ test('desktop pane closes on Escape or a click outside it, and that click opens 
   expect(steps).toEqual({
     opened: { open: 1, rings: 1, closeIcons: 0 },
     toggled: { open: 1, rings: 1, closeIcons: 0 },
-    otherCell: { open: 0, rings: 0, closeIcons: 0 },
+    otherCell: { open: 1, rings: 1, closeIcons: 0 },
     reopened: { open: 1, rings: 1, closeIcons: 0 },
     selectedCell: { open: 0, rings: 0, closeIcons: 0 },
     outsideGrid: { open: 0, rings: 0, closeIcons: 0 },
