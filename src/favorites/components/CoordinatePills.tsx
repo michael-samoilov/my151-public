@@ -4,7 +4,7 @@ import { RomanDisc, TypeIcon } from './marks';
 import { ExtraSymbol } from './ExtraSymbol';
 import { axisBackground, coordinateLabel, displayCoordinate } from './coordinatePresentation';
 import { ROMAN_URIS } from './romanDiscAssets';
-import { coordinateOverlayLayout, originShapeGeometry, originMarkBox, visibleOriginCount, singleOriginMark, type OriginContext } from './coordinatePillLayout';
+import { coordinateOverlayLayout, originShapeGeometry, originMarkBox, visibleOriginCount, singleOriginMark, drillDownOriginMarks, type OriginContext, type DrillDownOriginContext } from './coordinatePillLayout';
 
 // Keep the shared numeral, outline and font; only remove its disc. A tighter
 // viewBox gives the glyph room inside the generation-colored half.
@@ -15,23 +15,24 @@ const ROMAN_GLYPHS = Object.fromEntries(GEN_NUMBERS.map(gen => [gen,
 ])) as Record<GenNumber, string>;
 
 /** Show each immediate origin, omitting coordinates supplied by the selector. */
-export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, current, id }: {
-  origins: SourceCoordinate[]; spritePx: number; inset: number; markPx: number; pointer: boolean; current?: OriginContext; id?: string;
+export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, current, drilldown, id }: {
+  origins: SourceCoordinate[]; spritePx: number; inset: number; markPx: number; pointer: boolean; current?: OriginContext; drilldown?: DrillDownOriginContext; id?: string;
 }) {
   const layout = coordinateOverlayLayout(spritePx, inset, markPx);
   const { size, circleSize, radius, roundedRadius, circleDiameter, outlineOutset, gap, width, height } = layout;
-  const visible = visibleOriginCount(origins, pointer, current, layout);
-  const hidden = origins.length - visible;
+  const marks = drilldown ? drillDownOriginMarks(origins, drilldown)
+    : origins.map(origin => ({ origin, single: singleOriginMark(origin, pointer, current) }));
+  const visible = visibleOriginCount(marks.map(entry => entry.origin), pointer, current, layout, marks.map(entry => entry.single));
+  const hidden = marks.length - visible;
   const label = coordinateLabel;
   return <span data-testid="favorites-origin-overlay" className="pointer-events-none absolute z-[16] flex items-center justify-end leading-none"
     style={{ top: inset, right: inset, width, height, opacity: pointer ? 0.85 : 1 }}>
     <span id={id} className="sr-only">{origins.map(origin => label(origin.type, origin.gen)).join('; ')}</span>
-    {origins.slice(0, visible).map((origin, index) => {
+    {marks.slice(0, visible).map(({ origin, single }, index) => {
       const { type, gen, mark } = origin;
-      const single = singleOriginMark(origin, pointer, current);
       const fullLabel = label(type, gen);
       const box = originMarkBox(single, layout);
-      const previous = index > 0 ? originMarkBox(singleOriginMark(origins[index - 1], pointer, current), layout).padding : 0;
+      const previous = index > 0 ? originMarkBox(marks[index - 1].single, layout).padding : 0;
       return <span key={cellKey(type, gen)} role="img" aria-label={fullLabel} title={fullLabel}
         data-origin-mode={single ? 'single' : 'pair'}
         data-testid={pointer ? 'favorites-pointer-mark' : 'favorites-used-mark'}
@@ -46,7 +47,7 @@ export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, cur
       title={origins.map(origin => label(origin.type, origin.gen)).join('; ')}
       className="pointer-events-auto flex shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-foreground"
       style={{ width: circleDiameter, height: circleDiameter, fontSize: size * 0.55,
-        marginLeft: visible ? gap - originMarkBox(singleOriginMark(origins[visible - 1], pointer, current), layout).padding + outlineOutset : 0,
+        marginLeft: visible ? gap - originMarkBox(marks[visible - 1].single, layout).padding + outlineOutset : 0,
         boxShadow: `0 0 0 ${outlineOutset}px #d4d4d8` }}>+{hidden}</span> : null}
   </span>;
 }

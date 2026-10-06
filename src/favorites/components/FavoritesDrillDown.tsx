@@ -81,7 +81,8 @@ export function FavoritesDrillDown({ snapshot, contributors, selection, siblings
                 tileAttributes: { 'data-contributor-cell': cell.key },
                 tileTestId: `favorites-pick-${mon.id}`, displayName: labelOf(mon),
                 onSelect: () => setDetails({ name: labelOf(mon), coordinates }),
-                tileOverlay: (_: Pokemon, spritePx: number) => <CoordinatePills origins={coordinates} spritePx={spritePx} inset={spritePx * 0.03} markPx={spritePx * 0.28} pointer={false} /> }];
+                tileOverlay: (_: Pokemon, spritePx: number) => <CoordinatePills origins={coordinates} spritePx={spritePx} inset={spritePx * 0.03} markPx={spritePx * 0.28} pointer={false}
+                  drilldown={{ gen: row, type: category.dimension === 'type' ? category.key as TypeName : undefined }} /> }];
             });
             return groups.length ? [{ sectionId: String(row), sectionName: isGenNumber(row) ? t('favorites.generation', { gen: ROMAN[row] }) : t(`favorites.axis.${row}`), sectionColor: color, attributes: { 'data-contributor-row': String(row) }, groups }] : [];
           }),

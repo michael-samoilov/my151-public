@@ -1,8 +1,34 @@
 import { isGenNumber, isTypeName, type GenAxisId, type TypeAxisId } from '../model/cells';
 import type { PointerMark, SourceCoordinate } from '../model/pointers';
 import { sharedPickOtherCoordinate } from '../model/taken';
+import { displayCoordinate } from './coordinatePresentation';
 
 export type OriginContext = { type: TypeAxisId; gen: GenAxisId };
+export type DrillDownOriginContext = { gen: GenAxisId; type?: TypeAxisId };
+
+/** Keep source coordinates intact while omitting axes supplied by the drilldown. */
+export function drillDownOriginMarks(origins: SourceCoordinate[], context: DrillDownOriginContext) {
+  const favoriteAxes = new Set(origins.flatMap<TypeAxisId | GenAxisId>(origin => {
+    const display = displayCoordinate(origin.type, origin.gen);
+    return display.type === 'favorite' && display.gen != null ? [display.gen]
+      : display.gen === 'favorite' ? [display.type] : [];
+  }));
+  const impliedByFavorite = (axis: TypeAxisId | GenAxisId) =>
+    axis !== 'legendary' && axis !== 'gimmick' && favoriteAxes.has(axis);
+  return origins.flatMap(origin => {
+    const display = displayCoordinate(origin.type, origin.gen);
+    // A favorite pair records which row or column was summarized.
+    if (display.type === 'favorite' || display.gen === 'favorite') return [{ origin, single: undefined }];
+    const omitGen = origin.gen === context.gen || impliedByFavorite(origin.gen);
+    const omitType = origin.type === context.type || impliedByFavorite(origin.type);
+    if (omitGen && omitType) return [];
+    const axis = omitGen ? origin.type : omitType ? origin.gen : undefined;
+    const single: PointerMark | undefined = axis == null || axis === 'favorite' ? undefined
+      : isGenNumber(axis) ? { source: 'gen', value: axis }
+        : isTypeName(axis) ? { source: 'type', value: axis } : { source: axis };
+    return [{ origin, single }];
+  });
+}
 
 /** The selector supplies the shared coordinate; summaries supply their category. */
 export function singleOriginMark(origin: SourceCoordinate, pointer: boolean, current?: OriginContext): PointerMark | undefined {
@@ -59,8 +85,8 @@ export function originMarkBox(single: PointerMark | undefined, layout: ReturnTyp
 }
 
 export function visibleOriginCount(origins: SourceCoordinate[], pointer: boolean, current: OriginContext | undefined,
-  layout: ReturnType<typeof coordinateOverlayLayout>): number {
-  const units = origins.map(origin => originMarkBox(singleOriginMark(origin, pointer, current), layout).units);
+  layout: ReturnType<typeof coordinateOverlayLayout>, marks?: (PointerMark | undefined)[]): number {
+  const units = origins.map((origin, index) => originMarkBox(marks ? marks[index] : singleOriginMark(origin, pointer, current), layout).units);
   if (units.reduce((sum, count) => sum + count, 0) <= 4) return origins.length;
   let used = 0;
   let count = 0;
