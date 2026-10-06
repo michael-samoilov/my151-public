@@ -660,7 +660,8 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-bug-6').click();
     const toggle = page.getByTestId('favorites-type-toggle');
     await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    await expect(toggle).toHaveText('Hide Icons');
+    await expect(toggle).toHaveAccessibleName('Hide Icons');
+    await expect(toggle).toHaveText('Hide Icons', { useInnerText: true });
     const [headerBox, toggleBox] = await Promise.all([
       page.getByTestId('bottom-sheet-header-frame').boundingBox(),
       toggle.boundingBox(),
@@ -677,6 +678,10 @@ test.describe('favorite Pokémon picker', () => {
     await expect(page.getByTestId('favorites-picker')).toBeVisible();
     await toggle.click();
     await expect(page.getByTestId('favorites-type-icon').first()).toBeVisible();
+    await testInfo.attach('icon-toggle-final-state', {
+      body: JSON.stringify({ action: await toggle.innerText(), pressed: await toggle.getAttribute('aria-pressed'), visibleIcons: await page.getByTestId('favorites-type-icon').count() }),
+      contentType: 'application/json',
+    });
   });
 
   test('desktop type toggle stays in the popover header', async ({ page }) => {

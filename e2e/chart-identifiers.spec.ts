@@ -15,7 +15,8 @@ async function svgEvidence(page: Page) {
     const svg = card.querySelector('svg')!;
     const axes = [...svg.querySelectorAll(':scope > line')].map(line => Number(line.getAttribute('x1')));
     const circles = [...svg.querySelectorAll('circle')].map(circle => ({
-      title: (circle.closest('g')?.querySelector('title') ?? circle.closest('g')?.parentElement?.querySelector('title'))?.textContent,
+      title: circle.closest('[data-row-key]')?.getAttribute('aria-label'),
+      role: circle.closest('[data-evolution-dots]')?.getAttribute('data-evolution-dots'),
       r: Number(circle.getAttribute('r')), cx: Number(circle.getAttribute('cx')),
     }));
     const texts = [...svg.querySelectorAll('text')].filter(text => !text.closest('[data-audit-clip]')).map(text => {
@@ -36,9 +37,9 @@ test('fixed chart axes and equal-area standalone evolution dot survive sorting @
     card.axes.forEach((axis, index) => expect(axis).toBeCloseTo(evidence[0].axes[index], 1));
   }
   const circles = evidence.find(card => card.chart === 'evolution')!.circles;
-  const standalone = circles.filter(circle => circle.title === 'No evo');
+  const standalone = circles.filter(circle => circle.role === 'standalone');
   expect(standalone).toHaveLength(1);
-  const stages = circles.filter(circle => circle.title !== 'No evo');
+  const stages = circles.filter(circle => circle.role !== 'standalone');
   expect(stages.length).toBeGreaterThan(3);
   for (const circle of stages) expect(circle.r ** 2).toBeCloseTo(standalone[0].r ** 2, 2);
   const middleDots = stages.filter((_, index) => index % 3 === 1);
@@ -86,7 +87,7 @@ test('native detailed sheets use matching local axes and readable badge labels @
     const labels = texts.filter(record => record.bounds.left > plain.width && record.text.length > 1).map(record => record.text);
     expect(labels).toContain('FIRE');
     if (tool === 'picker') {
-      expect(labels).toContain('BROWN'); expect(labels).toContain('BIPED, TAIL');
+      expect(labels).toContain('BROWN'); expect(labels).toContain('BIPED & TAIL');
       const circles = await page.evaluate(mainWidth => (window as unknown as { chartCircles: { x:number; y:number; r:number }[] }).chartCircles.filter(circle => circle.x > mainWidth && circle.r < 10), plain.width);
       expect(circles.length).toBeGreaterThanOrEqual(10);
       for (const circle of circles) expect(circle.r ** 2).toBeCloseTo(circles[0].r ** 2, 2);
@@ -137,7 +138,7 @@ test('native localized badge ink stays within its painted pill @viewport', async
       const badge = paint.badges.find(b => text.top >= b.top - .5 && text.bottom <= b.bottom + .5 && text.left >= b.left - .5 && text.right <= b.right + .5);
       expect(badge, `${locale}: ${text.text} painted outside pill`).toBeDefined();
       expect(text.right - text.left).toBeGreaterThan(2);
-      expect(text.color, `${locale}: ${text.text} pill ink`).toBe(badge!.fill === '#ffffff' ? '#000000' : '#ffffff');
+      expect(text.color, `${locale}: ${text.text} pill ink`).toBe(badge!.fill === '#ffffff' ? '#171717' : '#ffffff');
       const rowBar=paint.bars.find(bar=>bar.left>=badge!.right && Math.abs((bar.top+bar.bottom)-(badge!.top+badge!.bottom))<.5);
       if(rowBar && badge!.fill!=='#ffffff') expect(rowBar.fill?.toLowerCase(),`${locale}: ${text.text} native badge/bar`).toBe(badge!.fill?.toLowerCase());
       const glyph = paint.glyphs.find(g => g.left >= badge!.left && g.right <= badge!.right && g.top >= badge!.top && g.bottom <= badge!.bottom);
@@ -219,7 +220,7 @@ test('count labels stay numeric and badge whitespace keeps colored text and shap
   for(const card of evidence) {
     expect.soft(card.countLabels.length).toBeGreaterThan(0);
     expect.soft(card.countLabels.filter(label => !/^\d+$/.test(label)), `${card.dimension} counts`).toEqual([]);
-    if(card.dimension==='color') for (const label of card.badgeTexts) expect.soft(label.fill, `${label.text} color ink`).toBe(label.badgeFill?.toLowerCase() === '#ffffff' ? '#000000' : '#ffffff');
+    if(card.dimension==='color') for (const label of card.badgeTexts) expect.soft(label.fill, `${label.text} color ink`).toBe(label.badgeFill?.toLowerCase() === '#ffffff' ? '#171717' : '#ffffff');
     expect.soft(card.shapeGaps.filter(shape => shape.textGap < shape.leftInset-.5), 'shape glyph gap').toEqual([]);
   }
   expect(await page.locator('[data-favorite-chart=bst] svg text').allTextContents()).toEqual(expect.arrayContaining([expect.stringMatching(/%$/)]));
@@ -243,10 +244,10 @@ test('color identifiers match row bars and retain categorical headers @viewport'
     expect(chart.headers).toContain(chart.dimension!.toUpperCase());
     expect(chart.rows.length).toBeGreaterThan(5);
     if(chart.dimension==='shape')continue;
-    for(const row of chart.rows){expect(row.bar,`${chart.dimension}/${row.label} palette`).toBe(row.badge);expect(row.ink).toBe(row.badge==='#ffffff'?'#000000':'#ffffff');}
+    for(const row of chart.rows){expect(row.bar,`${chart.dimension}/${row.label} palette`).toBe(row.badge);expect(row.ink).toBe(row.badge==='#ffffff'?'#171717':'#ffffff');}
   }
   const colors=evidence.find(chart=>chart.dimension==='color')!.rows;
-  expect(colors.find(row=>row.label==='WHITE')).toMatchObject({badge:'#ffffff',ink:'#000000',stroke:'#a3a3a3',strokeWidth:.75,opacity:1});
+  expect(colors.find(row=>row.label==='WHITE')).toMatchObject({badge:'#ffffff',ink:'#171717',stroke:'#a3a3a3',strokeWidth:.75,opacity:1});
   const types=evidence.find(chart=>chart.dimension==='type')!.rows;
   for(const [color,type] of Object.entries({YELLOW:'ELECTRIC',PINK:'FAIRY',PURPLE:'POISON',GRAY:'NORMAL',BLUE:'WATER',BROWN:'GROUND',BLACK:'DARK',RED:'FIRE',GREEN:'GRASS'}))
     expect(colors.find(row=>row.label===color)?.badge,`${color} follows ${type}`).toBe(types.find(row=>row.label===type)?.badge);

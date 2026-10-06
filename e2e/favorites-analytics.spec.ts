@@ -5,7 +5,7 @@ import { seedDex, TUNE_URL } from './support/dexSeed';
 test.setTimeout(60_000);
 const fullSeed = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
 const analytics = (page: Page) => page.getByRole('tab', { name: 'Analytics', exact: true });
-const picker = (page: Page) => page.getByRole('tab', { name: 'Picker', exact: true });
+const picker = (page: Page) => page.getByRole('tab', { name: 'Grid', exact: true });
 const dashboard = (page: Page) => page.getByTestId('favorites-analytics');
 const chart = (page: Page, name: string) => dashboard(page).locator(`[data-favorite-chart="${name}"]`);
 async function seed(page: Page, fills: Record<string, number>) {
@@ -190,13 +190,14 @@ test('complete saved chart reports every independent vote and honest per-chart c
     await expect(chart(page, dimension).locator('svg')).toBeVisible();
     coverage[dimension] = { covered: 224, excluded: 0, rows: await chart(page, dimension).locator('[data-favorite-chart-row]').count() };
   }
-  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-covered', '219');
+  await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-covered', '154');
   await expect(chart(page, 'bst')).toHaveAttribute('data-favorite-excluded', '5');
   await expect(chart(page, 'bst').locator('svg')).toBeVisible();
   await expect(chart(page, 'evolution').locator('[data-favorite-chart-row="baby"]')).toHaveCount(0);
   await expect(chart(page, 'evolution').locator('[data-favorite-chart-row="basic"]')).toHaveCount(1);
   const bstText = await chart(page, 'bst').innerText();
-  expect(bstText).toMatch(/Your avg: [\d.,]+ · Selector avg: [\d.,]+/);
+  const means = await chart(page, 'bst').locator('[data-mean-marker] text').allTextContents();
+  expect(means).toEqual(expect.arrayContaining(['Your mean 431', '442.7 Options mean']));
   await artifact(page, testInfo, 'complete-live-coverage', { population: 224, coverage, bstText, originalCells: Object.keys(fullSeed).length });
 });
 
