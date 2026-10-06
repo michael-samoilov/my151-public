@@ -34,6 +34,20 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
 
+## Pokopia candidates
+
+Requested by Michael on 2026-10-06. Sprite sources and picker placement have not been researched. These candidates need distinct, verified Gen 5-style front sprites before they can enter the selector.
+
+| Wanted character | Status / note |
+| --- | --- |
+| Professor Tangrowth | Sprite search pending. |
+| Mosslax | Sprite search pending. |
+| Tinkmaster Tinkaton | Sprite search pending. |
+| Peakychu | Sprite search pending. |
+| Smearguru | Sprite search pending. |
+| DJ Rotom | Sprite search pending. |
+| Chef Dente Greedent | Sprite search pending. |
+
 ## Sprites to replace
 
 These forms are in the picker, but Michael (2026-09-30) finds their sprites poor. He has seen Gen 5-style versions elsewhere and will share details. Find the candidates, and show them to him side by side with the current sprite before you replace a file.
