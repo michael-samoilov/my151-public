@@ -322,6 +322,7 @@ const SAME_AS_ENGLISH_OK = new Set([
   'it:feedback.category.idea', // And the Italian one.
   'de:favorites.axis.starter',
   'de:favorites.generation',
+  'fr:term.shape.squiggle', // Serpent is the French noun as well.
   'fr:favorites.stats.final', // Final is the French masculine evolution-role adjective.
   'es:favorites.stats.final', // Final is also the Spanish evolution-role adjective.
   'fr:feedback.category.bug', // French tech writing uses "Bug".
