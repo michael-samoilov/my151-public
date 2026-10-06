@@ -134,7 +134,8 @@
   --background-x: 50%;
   --background-y: 50%;
   position: relative;
-  border-radius: var(--export-card-radius, 4%);
+  /* The PNG alpha owns the outline, including each joined pane's corners. */
+  border-radius: 0;
   isolation: isolate;
   background-color: transparent;
   overflow: hidden;
