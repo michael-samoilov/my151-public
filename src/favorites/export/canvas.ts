@@ -62,7 +62,7 @@ export function createFavoritesCanvas(width: number, height: number) {
 
 /** The trainer credit's 14px face, centered in the same 36px footer strip. */
 export function drawFavoritesCredit(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-  drawExportCredit(ctx, width / 2, height - EXPORT_FRAME_PX - FOOT / 2, CREDIT_PX);
+  drawExportCredit(ctx, width / 2, height - EXPORT_FRAME_PX - FOOT / 2, CREDIT_PX, t('tools.favorites'));
 }
 
 export function encodeFavoritesCanvas(canvas: HTMLCanvasElement): Promise<Blob> {
