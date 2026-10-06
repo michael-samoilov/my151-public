@@ -170,7 +170,22 @@ export function drawExportButterfly(
     if (barW > 0 && d.deviation !== null) {
       ctx.fillStyle = d.color;
       ctx.globalAlpha = d.barOpacity ?? 0.85;
-      roundRect(ctx, devSectionStart + barX, y, barW, barHeight, 1);
+      if (options.fixedIndexDomain !== undefined && Math.abs(d.deviation) > options.fixedIndexDomain) {
+        // Match the SVG chart's torn edge while the label retains the true index.
+        const bx = devSectionStart + barX;
+        const right = (d.deviation ?? 0) >= 0;
+        const edge = right ? bx + barW : bx;
+        const inner = right ? bx : bx + barW;
+        ctx.beginPath();
+        ctx.moveTo(inner, y);
+        ctx.lineTo(edge, y);
+        for (let tooth = 0; tooth < 4; tooth++) {
+          ctx.lineTo(edge + (right ? -3 : 3), y + barHeight * (tooth + .5) / 4);
+          ctx.lineTo(edge, y + barHeight * (tooth + 1) / 4);
+        }
+        ctx.lineTo(inner, y + barHeight);
+        ctx.closePath();
+      } else roundRect(ctx, devSectionStart + barX, y, barW, barHeight, 1);
       ctx.fill();
       if (d.barStroke) { ctx.strokeStyle = d.barStroke; ctx.lineWidth = .75; ctx.stroke(); }
       ctx.globalAlpha = 1;

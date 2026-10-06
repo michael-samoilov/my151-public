@@ -12,6 +12,7 @@ import { MAX_LABEL_STRETCH, measureLabelWidth } from '@/lib/sectionOutlines';
 import type { ColorName, ShapeName, TypeName } from '@/types/pokemon';
 import { buildFavoritesSnapshot } from '../export/snapshot';
 import { pickerConditionalStats, pickerConditionalContributors, type PickerConditionalStats } from '../stats/pickerConditionalStats';
+import { pickerIndexDomain } from '../stats/pickerIndexDomain';
 
 type Dimension = 'type' | 'color' | 'shape' | 'evolution';
 type Sort = 'count' | 'deviation' | 'label';
@@ -70,7 +71,7 @@ function Distribution({ dimension, stats, onOpen, activeKey }: { dimension: Dime
   return <Card dimension={dimension} covered={data.coveredChoices} excluded={data.excludedChoices} title={titles[dimension]}>
     {rows.some(row => row.unavailable) && <p className="text-xs text-muted-foreground mb-2">{t('favorites.stats.unavailable')}</p>}
     <>
-      <ButterflyChart data={rows} fixedIndexDomain={200} activeKey={activeKey} onBarClick={key => { const siblings = rows.map(row => ({ dimension, key: row.key!, label: row.label })); const selected = siblings.find(row => row.key === key); if (selected) onOpen(selected, siblings); }} rowHeight={22} hideLabelText alignBaselines iconFillsRow sortBy={sort} onSortChange={setSort} labelHeader={labelHeader} textClass={TEXT} />
+      <ButterflyChart data={rows} fixedIndexDomain={pickerIndexDomain(rows)} activeKey={activeKey} onBarClick={key => { const siblings = rows.map(row => ({ dimension, key: row.key!, label: row.label })); const selected = siblings.find(row => row.key === key); if (selected) onOpen(selected, siblings); }} rowHeight={22} hideLabelText alignBaselines iconFillsRow sortBy={sort} onSortChange={setSort} labelHeader={labelHeader} textClass={TEXT} />
       <div className="sr-only" data-audit-clip="intended"><table><caption>{titles[dimension]}</caption><thead><tr><th>{titles[dimension]}</th><th>{t('chart.header.count')}</th><th>{t('favorites.stats.options')}</th><th>{t('chart.header.overIndexed2')}</th></tr></thead><tbody>{rows.map(row => <tr key={row.key} data-favorite-chart-row={row.key}><th>{row.label}</th><td>{formatNumber(row.count)}</td><td>{formatNumber(row.expected, { maximumFractionDigits: 4 })}</td><td>{row.unavailable ? t('favorites.stats.unavailable') : `${formatNumber(1 + row.deviation / 100, { maximumFractionDigits: 2 })}×`}</td></tr>)}</tbody></table></div>
     </>
   </Card>;
