@@ -80,6 +80,7 @@ function SuperimposedHistogramImpl({
   const xScale = scaleLinear().domain(xDomain).range([0, plotW]);
   const yScale = scaleLinear().domain([0, yDomain]).range([plotH, 0]);
 
+  const legendWidth=meanRail?Math.min(plotW,Math.max(90,measureMean(meanRail.legend.options)+20,measureMean(meanRail.legend.yours)+20)):0;
   const means = meanRail ? histogramMeans(meanRail.yours, meanRail.options, plotW, xScale, meanRail.labels, measureMean) : [];
   const barFullWidth = xScale(binSize) - xScale(0);
   const barNarrowWidth = barFullWidth * 0.5;
@@ -150,14 +151,15 @@ function SuperimposedHistogramImpl({
               );
             })}
 
-            {meanRail && <g data-histogram-legend="true" transform={`translate(${Math.max(0,plotW-110)},6)`}>
-              <rect width={110} height={32} fill="var(--color-background)" opacity={.92}/>
+            {meanRail && <g data-histogram-legend="true" transform={`translate(${Math.max(0,plotW-legendWidth)},6)`}>
+              <rect width={legendWidth} height={32} fill="var(--color-background)" opacity={.92}/>
               {[{text:meanRail.legend.options,color:'#94a3b8'},{text:meanRail.legend.yours,color:'#ef4444'}].map((item,index)=><g key={item.text} transform={`translate(4,${index*15+5})`}><rect width={7} height={7} fill={item.color}/><text x={12} y={7} fontSize={10} fill="var(--color-muted-foreground)">{item.text}</text></g>)}
             </g>}
             {means.map(point=><g key={point.color} data-mean-marker={point.exact?'exact':point.color} transform={`translate(0,${plotH+34+point.rail*17})`}>
               {point.rail>0&&<line x1={point.x} x2={point.x} y1={-point.rail*17} y2={0} stroke={point.color} opacity={.5}/>}
               <path d={`M${point.x},-4 L${point.x+4},0 L${point.x},4 L${point.x-4},0 Z`} fill={point.color} stroke={point.exact?'#94a3b8':undefined} strokeWidth={point.exact?2:undefined}/>
               <text x={point.labelX} y={(point.labelRail ?? point.rail)*17-point.rail*17} dominantBaseline="middle" textAnchor={point.anchor} fontSize={10} fill={point.color}>{point.text}</text>
+              {point.subtitle&&<text x={point.subtitleX} y={17} dominantBaseline="middle" textAnchor={point.subtitleAnchor} fontSize={10} fill={point.color}>{point.subtitle}</text>}
             </g>)}
             {/* X axis tick marks + labels */}
             {xTicks.map((t) => (

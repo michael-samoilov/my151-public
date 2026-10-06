@@ -135,8 +135,9 @@ export function drawExportHistogram(
       if(point.rail>0)line(ctx,point.x,plotH+34,point.x,cy);
       ctx.beginPath();ctx.moveTo(point.x,cy-4);ctx.lineTo(point.x+4,cy);ctx.lineTo(point.x,cy+4);ctx.lineTo(point.x-4,cy);ctx.closePath();ctx.fill();if(point.exact){ctx.strokeStyle=NAT_HIST;ctx.lineWidth=2;ctx.stroke();}
       ctx.textAlign=point.anchor==='middle'?'center':point.anchor==='end'?'right':'left';ctx.textBaseline='middle';ctx.fillText(point.text,point.labelX,cy+((point.labelRail ?? point.rail)-point.rail)*17);
+      if(point.subtitle){ctx.textAlign=point.subtitleAnchor==='end'?'right':'left';ctx.fillText(point.subtitle,point.subtitleX!,cy+17);}
     }
-    const lx=Math.max(0,plotW-110);ctx.fillStyle='#fff';ctx.globalAlpha=.92;ctx.fillRect(lx,6,110,32);ctx.globalAlpha=1;
+    const legendWidth=Math.min(plotW,Math.max(90,ctx.measureText(meanRail.legend.options).width+20,ctx.measureText(meanRail.legend.yours).width+20)),lx=Math.max(0,plotW-legendWidth);ctx.fillStyle='#fff';ctx.globalAlpha=.92;ctx.fillRect(lx,6,legendWidth,32);ctx.globalAlpha=1;
     [{text:meanRail.legend.options,color:NAT_HIST},{text:meanRail.legend.yours,color:YOURS}].forEach((item,i)=>{ctx.fillStyle=item.color;ctx.fillRect(lx+4,11+i*15,7,7);ctx.fillStyle=MUTED;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillText(item.text,lx+16,18+i*15);});
   }
   // X ticks
