@@ -144,10 +144,12 @@ test.describe('home page responsive sweep', () => {
           }
 
           // 7. Artwork never reaches the card's right edge: a bare red strip has
-          // to remain, or the screenshot reads as clipped there.
+          // to remain, or the screenshot reads as clipped there. The owner moved
+          // the front sheet halfway into its old clearance: preserve half
+          // the original 8% minimum while still guarding against side clipping.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
             const strip = c.right - R(img).right;
-            if (strip < c.width * 0.08) {
+            if (strip < c.width * 0.04) {
               fail.push(`card ${i} shot ${k} leaves only ${strip.toFixed(1)}px of strip`);
             }
           });
