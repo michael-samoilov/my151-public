@@ -16,7 +16,7 @@ const font=data('node_modules/@fontsource-variable/inter/files/inter-latin-wght-
 const tools={
  pokedex:{file:'og-image.png',title:'Custom Region &<br>Pokédex Builder',images:[['build','public/og-sources/dex-build.webp','In-progress Pokédex Build page'],['front','public/og-sources/dex-stats.webp','Custom regional Pokédex export with detailed statistics and no section outlines']]},
  league:{file:'og-gym-leader.png',title:'Trainer Card &<br>Gym Leader Maker',images:[['back','src/assets/home/tool-league-b.webp','Kanto league story-team export'],['front','src/assets/home/tool-league.webp','Brock trainer-card export']]},
- favorites:{file:'og-favorite-picker.png',title:'Favorite Pokémon<br> Picker by Type &amp; Gen',images:[['back','src/assets/home/tool-favorites.webp','Simplified portrait favorite Pokémon chart'],['front','src/assets/home/tool-favorites-b.webp','Full grid portrait favorite Pokémon chart']]},
+ favorites:{file:'og-favorite-picker.png',title:'Favorite Pokémon<br> Picker by Type &amp; Gen',images:[['back','src/assets/home/tool-favorites.webp','Summary portrait favorite Pokémon chart'],['front','src/assets/home/tool-favorites-b.webp','Full grid portrait favorite Pokémon chart']]},
 };
 const FAN_WIDTH = 480;
 const FAN_STEP = 7;
