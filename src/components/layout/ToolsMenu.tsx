@@ -13,7 +13,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } 
 const TOOLS = [
   { id: 'dex', href: '/pokedex-builder', label: 'tools.dex' },
   { id: 'league', href: '/custom-gym-leader', label: 'tools.league' },
-  { id: 'favorites', href: '/favorite-pokemon-by-type', label: 'tools.favorites' },
+  { id: 'favorites', href: '/favorite-pokemon-picker', label: 'tools.favorites' },
 ] as const;
 
 export type ToolId = (typeof TOOLS)[number]['id'];

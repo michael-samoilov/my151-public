@@ -28,5 +28,17 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/favorite-pokemon-by-type",
+      "destination": "/favorite-pokemon-picker",
+      "permanent": true
+    },
+    {
+      "source": "/favorite-pokemon-by-type.html",
+      "destination": "/favorite-pokemon-picker",
+      "permanent": true
+    }
   ]
 }

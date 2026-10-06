@@ -139,7 +139,7 @@ function useTools(placed: number): Tool[] {
     },
     {
       key: 'favorites',
-      href: '/favorite-pokemon-by-type',
+      href: '/favorite-pokemon-picker',
       title: t('home.favorites.title'),
       blurb: t('home.favorites.blurb'),
       shots: [shot(favoritesFront400, favoritesFront), shot(favoritesBack400, favoritesBack)],

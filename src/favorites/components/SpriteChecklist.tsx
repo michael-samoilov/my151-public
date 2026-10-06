@@ -25,7 +25,7 @@ export function SpriteChecklist() {
   return (
     <main className="min-h-dvh bg-background px-4 py-5 text-foreground sm:px-6" data-testid="sprite-checklist">
       <div className="mx-auto max-w-5xl space-y-5">
-        <a href="/favorite-pokemon-by-type" className="inline-flex min-h-11 items-center text-sm text-primary underline">Back to picker</a>
+        <a href="/favorite-pokemon-picker" className="inline-flex min-h-11 items-center text-sm text-primary underline">Back to picker</a>
         <header className="space-y-2">
           <h1 className="text-2xl font-bold">Sprite checklist</h1>
           <p className="text-sm">Gen 5 pixel art. No shinies. Preview only. Compare candidates before choosing.</p>

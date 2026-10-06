@@ -58,7 +58,7 @@ export function FavoritesApp() {
     <ErrorBoundary where="favorite-picker">
       <FavoritesContent sel={sel} setSel={setSel} />
     </ErrorBoundary>
-    <FeedbackHost route="/favorite-pokemon-by-type" getToolContext={() => {
+    <FeedbackHost route="/favorite-pokemon-picker" getToolContext={() => {
       const completion = buildFavoritesSnapshot(useFavoritesStore.getState().fills ?? {}).completion;
       return {
         placed: completion.filled, search: false, filters: [],

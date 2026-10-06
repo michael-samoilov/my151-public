@@ -91,7 +91,7 @@ export function sanitizeContext(raw: unknown): Record<string, unknown> {
     demo: c.demo === true,
   };
 
-  if (out.route === '/favorite-pokemon-by-type') {
+  if (out.route === '/favorite-pokemon-picker' || out.route === '/favorite-pokemon-by-type') {
     const favorites = sanitizeFavoriteFeedback(c.favorites);
     if (favorites) out.favorites = favorites;
   }

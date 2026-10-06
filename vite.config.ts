@@ -1,10 +1,29 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin, type PreviewServer, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
+/** Keep saved preview links on the canonical picker route in dev and preview. */
+function pickerRouteRedirect(): Plugin {
+  const install = (server: ViteDevServer | PreviewServer) => {
+    server.middlewares.use((request, response, next) => {
+      const url = request.url ?? '';
+      const queryStart = url.indexOf('?');
+      const pathname = queryStart < 0 ? url : url.slice(0, queryStart);
+      if (pathname !== '/favorite-pokemon-by-type' && pathname !== '/favorite-pokemon-by-type.html') {
+        next();
+        return;
+      }
+      response.statusCode = 308;
+      response.setHeader('Location', `/favorite-pokemon-picker${queryStart < 0 ? '' : url.slice(queryStart)}`);
+      response.end();
+    });
+  };
+  return { name: 'picker-route-redirect', configureServer: install, configurePreviewServer: install };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss()],
   define: {
     __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
     // Vercel deployment environment ('production' | 'preview' | ''), used to
@@ -42,7 +61,7 @@ export default defineConfig({
         slotlab: path.resolve(__dirname, 'slot-lab.html'),
         // Preview-only lighting studio for the league export card.
         foilworkshop: path.resolve(__dirname, 'foil-workshop.html'),
-        favorites: path.resolve(__dirname, 'favorite-pokemon-by-type.html'),
+        favorites: path.resolve(__dirname, 'favorite-pokemon-picker.html'),
       },
     },
   },
