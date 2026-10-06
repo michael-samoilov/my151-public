@@ -40,7 +40,10 @@ export function pickerConditionalStats(snapshot:FavoritesSnapshot){
  }
  const dimension=result.dimensions.bst,denominator=dimension.coveredChoices;
  const merged=dimension.rows.filter(row=>row.expected>0).map(row=>({x:Number(row.key)+25,nationalPct:denominator?row.expected/denominator*100:0,yoursPct:denominator?row.count/denominator*100:0})).sort((a,b)=>a.x-b.x);
- const low=Math.floor((merged[0]?.x??0)/100)*100,high=merged.length?(merged.at(-1)!.x+25):100;
+ // Keep complete reference bins; only valid observed choices extend the displayed tail.
+ const low=Math.floor((merged[0]?.x??0)/100)*100;
+ const selectedHigh=Math.max(0,...merged.filter(row=>row.yoursPct>0).map(row=>row.x+25));
+ const high=merged.length?Math.max(800,selectedHigh):100;
  const yDomain=Math.max(10,Math.ceil(Math.max(0,...merged.flatMap(row=>[row.nationalPct,row.yoursPct]))/10)*10);
  // nationalPct is only the shared Dex painter's structural field name; the displayed legend says Selector options.
  const covered=bstPicks.map(pick=>({...pick,pool:[...new Set(pick.pool)]})).filter(pick=>pick.pool.length>1&&pick.pool.includes(pick.id)&&pick.pool.every(id=>Number.isFinite(sourcedBst[id])));

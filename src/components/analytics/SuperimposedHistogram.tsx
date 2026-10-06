@@ -1,6 +1,6 @@
 import { memo, useRef, useEffect, useState } from 'react';
 import { scaleLinear } from 'd3-scale';
-import { histogramMeans } from '@/lib/histogramMeans';
+import { histogramMeans, histogramLegend } from '@/lib/histogramMeans';
 
 let meanMeasureCanvas: HTMLCanvasElement | undefined;
 function measureMean(text:string){
@@ -68,9 +68,9 @@ function SuperimposedHistogramImpl({
   // mobile, 2 at desktop — so both analytics charts scale consistently.
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
   const height = 200 * chartScale * heightScale + (meanRail ? 76 : 0);
-  // Keep the conditional legend above the bars without moving the baseline or mean rail.
+  // Conditional legend headroom comes from the y scale inside the plot.
   const margin = {
-    top: meanRail ? 44 : 8,
+    top: 8,
     right: 12,
     bottom: 24 * chartScale + (meanRail ? 76 : 0),
     left: 40 * chartScale,
@@ -79,11 +79,12 @@ function SuperimposedHistogramImpl({
   const plotH = height - margin.top - margin.bottom;
 
   const xScale = scaleLinear().domain(xDomain).range([0, plotW]);
-  const yScale = scaleLinear().domain([0, yDomain]).range([plotH, 0]);
-
-  const legendWidth=meanRail?Math.min(plotW,Math.max(90,measureMean(meanRail.legend.options)+20,measureMean(meanRail.legend.yours)+20)):0;
+  const visibleData = meanRail ? data.filter(bin => bin.x >= xDomain[0] && bin.x < xDomain[1]) : data;
+  const legend = meanRail ? histogramLegend(plotW, plotH, yDomain, Math.max(0, ...visibleData.flatMap(bin => [bin.nationalPct, bin.yoursPct])), meanRail.legend, measureMean) : undefined;
+  const scaleDomain = legend?.yDomain ?? yDomain;
+  const yScale = scaleLinear().domain([0, scaleDomain]).range([plotH, 0]);
   const means = meanRail ? histogramMeans(meanRail.yours, meanRail.options, plotW, xScale, meanRail.labels, measureMean) : [];
-  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH/Math.max(1,yTicks.length-1)))):1;
+  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH*yDomain/scaleDomain/Math.max(1,yTicks.length-1)))):1;
   const visibleYTicks=yTicks.filter((_,index)=>index%yTickStep===0 || index===yTicks.length-1);
   const barFullWidth = xScale(binSize) - xScale(0);
   const barNarrowWidth = barFullWidth * 0.5;
@@ -97,7 +98,7 @@ function SuperimposedHistogramImpl({
             <line x1={0} x2={plotW} y1={plotH} y2={plotH} stroke="var(--color-muted-foreground)" strokeWidth={1} />
 
             {/* National bars (full width, behind) */}
-            {data.map((d) => {
+            {visibleData.map((d) => {
               const barX = xScale(d.x - binSize / 2);
               const barH = plotH - yScale(d.nationalPct);
               if (barH <= 0) return null;
@@ -116,7 +117,7 @@ function SuperimposedHistogramImpl({
             })}
 
             {/* Yours bars (narrower, in front) */}
-            {data.map((d) => {
+            {visibleData.map((d) => {
               const barX = xScale(d.x - binSize / 2) + (barFullWidth - barNarrowWidth) / 2;
               const barH = plotH - yScale(d.yoursPct);
               if (barH <= 0) return null;
@@ -135,7 +136,7 @@ function SuperimposedHistogramImpl({
             })}
 
             {/* Clickable hit targets per bin (full height, full bin width) */}
-            {onBarClick && data.map((d) => {
+            {onBarClick && visibleData.map((d) => {
               const barX = xScale(d.x - binSize / 2);
               const isActive = activeBin === d.x;
               return (
@@ -154,15 +155,15 @@ function SuperimposedHistogramImpl({
               );
             })}
 
-            {meanRail && <g data-histogram-legend="true" transform={`translate(${Math.max(0,plotW-legendWidth)},${6-margin.top})`}>
-              <rect width={legendWidth} height={32} fill="var(--color-background)" opacity={.92}/>
-              {[{text:meanRail.legend.options,color:'#94a3b8'},{text:meanRail.legend.yours,color:'#ef4444'}].map((item,index)=><g key={item.text} transform={`translate(4,${index*15+5})`}><rect width={7} height={7} fill={item.color}/><text x={12} y={7} fontSize={10} fill="var(--color-muted-foreground)">{item.text}</text></g>)}
+            {legend && <g data-histogram-legend="true" transform={`translate(${legend.x},${legend.top})`}>
+              {legend.items.map(item => <g key={item.color} transform={`translate(4,${item.y + 5})`}>
+                <rect width={7} height={7} fill={item.color}/>
+                {item.lines.map((line, index) => <text key={index} x={12} y={7 + index * 15} fontSize={10} fill="var(--color-muted-foreground)">{line}</text>)}
+              </g>)}
             </g>}
-            {means.map(point=><g key={point.color} data-mean-marker={point.exact?'exact':point.color} transform={`translate(0,${plotH+34+point.rail*17})`}>
-              {point.rail>0&&<line x1={point.x} x2={point.x} y1={-point.rail*17} y2={0} stroke={point.color} opacity={.5}/>}
+            {means.map(point => <g key={point.color} data-mean-marker={point.exact ? 'exact' : point.color} transform={`translate(0,${plotH + 34})`}>
               <path d={`M${point.x},-4 L${point.x+4},0 L${point.x},4 L${point.x-4},0 Z`} fill={point.color} stroke={point.exact?'#94a3b8':undefined} strokeWidth={point.exact?2:undefined}/>
-              <text x={point.labelX} y={(point.labelRail ?? point.rail)*17-point.rail*17} dominantBaseline="middle" textAnchor={point.anchor} fontSize={10} fill={point.color}>{point.text}</text>
-              {point.subtitle&&<text x={point.subtitleX} y={17} dominantBaseline="middle" textAnchor={point.subtitleAnchor} fontSize={10} fill={point.color}>{point.subtitle}</text>}
+              <text x={point.labelX} y={point.labelRail * 17} dominantBaseline="middle" textAnchor={point.anchor} fontSize={10} fill={point.color}>{point.text}</text>
             </g>)}
             {/* X axis tick marks + labels */}
             {xTicks.map((t) => (

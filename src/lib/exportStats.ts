@@ -1,5 +1,5 @@
 import { scaleLinear } from 'd3-scale';
-import { histogramMeans } from './histogramMeans';
+import { histogramMeans, histogramLegend } from './histogramMeans';
 import { drawGenerationBadge } from './drawAttributeBadge';
 import type { GenNumber } from '@/favorites/model/cells';
 import { drawExportButterfly as butterfly, drawExportStatsTitle, type ButterflyRowInput, type IconDrawer } from './exportButterfly';
@@ -87,19 +87,23 @@ export function drawExportHistogram(
   meanRail?: { labels: { yours:string; options:string; exact:string }; legend: { yours:string; options:string } },
 ): number {
   const height = 200 * heightScale + (meanRail ? 76 : 0);
-  // The conditional legend gets its own band; the baseline and mean rail stay fixed.
-  const margin = { top: meanRail ? 44 : 8, right: 12, bottom: 24 + (meanRail ? 76 : 0), left: 40 };
+  // Reserve conditional legend headroom through the same geometry as the live chart.
+  const margin = { top: 8, right: 12, bottom: 24 + (meanRail ? 76 : 0), left: 40 };
   const plotW = Math.max(0, CONTENT_W - margin.left - margin.right);
   const plotH = height - margin.top - margin.bottom;
 
   if (!draw) return height;
 
+  ctx.save();
   const xScale = scaleLinear().domain(bst.xDomain).range([0, plotW]);
-  const yScale = scaleLinear().domain([0, bst.yDomain]).range([plotH, 0]);
+  const visibleData = meanRail ? bst.merged.filter(bin => bin.x >= bst.xDomain[0] && bin.x < bst.xDomain[1]) : bst.merged;
+  if (meanRail) ctx.font = font(400, CHART_TEXT);
+  const legend = meanRail ? histogramLegend(plotW, plotH, bst.yDomain, Math.max(0, ...visibleData.flatMap(bin => [bin.nationalPct, bin.yoursPct])), meanRail.legend, text => ctx.measureText(text).width) : undefined;
+  const scaleDomain = legend?.yDomain ?? bst.yDomain;
+  const yScale = scaleLinear().domain([0, scaleDomain]).range([plotH, 0]);
   const barFullWidth = xScale(bst.binSize) - xScale(0);
   const barNarrowWidth = barFullWidth * 0.5;
 
-  ctx.save();
   ctx.translate(ox + margin.left, oy + margin.top);
 
   // Baseline
@@ -108,7 +112,7 @@ export function drawExportHistogram(
   line(ctx, 0, plotH, plotW, plotH);
 
   // National bars
-  for (const d of bst.merged) {
+  for (const d of visibleData) {
     const barH = plotH - yScale(d.nationalPct);
     if (barH <= 0) continue;
     ctx.fillStyle = NAT_HIST;
@@ -117,7 +121,7 @@ export function drawExportHistogram(
     ctx.fill();
   }
   // Yours bars
-  for (const d of bst.merged) {
+  for (const d of visibleData) {
     const barH = plotH - yScale(d.yoursPct);
     if (barH <= 0) continue;
     ctx.fillStyle = YOURS;
@@ -131,15 +135,16 @@ export function drawExportHistogram(
     ctx.font=font(400,CHART_TEXT);
     const means=histogramMeans(bst.yoursAvg,bst.nationalAvg,plotW,xScale,meanRail.labels,text=>ctx.measureText(text).width);
     for(const point of means){
-      const cy=plotH+34+point.rail*17;
+      const cy=plotH+34;
       ctx.strokeStyle=point.color;ctx.fillStyle=point.color;
-      if(point.rail>0)line(ctx,point.x,plotH+34,point.x,cy);
-      ctx.beginPath();ctx.moveTo(point.x,cy-4);ctx.lineTo(point.x+4,cy);ctx.lineTo(point.x,cy+4);ctx.lineTo(point.x-4,cy);ctx.closePath();ctx.fill();if(point.exact){ctx.strokeStyle=NAT_HIST;ctx.lineWidth=2;ctx.stroke();}
-      ctx.textAlign=point.anchor==='middle'?'center':point.anchor==='end'?'right':'left';ctx.textBaseline='middle';ctx.fillText(point.text,point.labelX,cy+((point.labelRail ?? point.rail)-point.rail)*17);
-      if(point.subtitle){ctx.textAlign=point.subtitleAnchor==='end'?'right':'left';ctx.fillText(point.subtitle,point.subtitleX!,cy+17);}
+      ctx.beginPath();ctx.moveTo(point.x,cy-4);ctx.lineTo(point.x+4,cy);ctx.lineTo(point.x,cy+4);ctx.lineTo(point.x-4,cy);ctx.closePath();ctx.fill();if(point.exact){ctx.strokeStyle=NAT_HIST;ctx.lineWidth=2;ctx.stroke();ctx.lineWidth=1;}
+      ctx.textAlign=point.anchor==='middle'?'center':point.anchor==='end'?'right':'left';ctx.textBaseline='middle';ctx.fillText(point.text,point.labelX,cy+point.labelRail*17);
     }
-    const legendWidth=Math.min(plotW,Math.max(90,ctx.measureText(meanRail.legend.options).width+20,ctx.measureText(meanRail.legend.yours).width+20)),lx=Math.max(0,plotW-legendWidth),legendTop=6-margin.top;ctx.fillStyle='#fff';ctx.globalAlpha=.92;ctx.fillRect(lx,legendTop,legendWidth,32);ctx.globalAlpha=1;
-    [{text:meanRail.legend.options,color:NAT_HIST},{text:meanRail.legend.yours,color:YOURS}].forEach((item,i)=>{ctx.fillStyle=item.color;ctx.fillRect(lx+4,legendTop+5+i*15,7,7);ctx.fillStyle=MUTED;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillText(item.text,lx+16,legendTop+12+i*15);});
+    for (const item of legend!.items) {
+      ctx.fillStyle=item.color;ctx.fillRect(legend!.x+4,legend!.top+5+item.y,7,7);
+      ctx.fillStyle=MUTED;ctx.textAlign='left';ctx.textBaseline='alphabetic';
+      item.lines.forEach((text,index)=>ctx.fillText(text,legend!.x+16,legend!.top+12+item.y+index*15));
+    }
   }
   // X ticks
   ctx.fillStyle = MUTED;
@@ -155,7 +160,7 @@ export function drawExportHistogram(
   // Y ticks
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH/Math.max(1,bst.yTicks.length-1)))):1;
+  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH*bst.yDomain/scaleDomain/Math.max(1,bst.yTicks.length-1)))):1;
   for (const t of bst.yTicks.filter((_,index)=>index%yTickStep===0 || index===bst.yTicks.length-1)) {
     line(ctx, -4, yScale(t), 0, yScale(t));
     ctx.fillText(`${t}%`, -7, yScale(t));
