@@ -2,7 +2,7 @@
   "chart.header.color": "COULEUR",
   "browser.myFavorites": "Mes favoris",
   "faq.favorites.a1": "Choisissez une case pour sélectionner un Pokémon de ce type et de cette génération. Choisissez ensuite vos favoris dans chaque ligne et colonne, puis votre favori parmi tous.",
-  "faq.favorites.a2": "Oui. Enregistrez une image PNG de la grille complète ou de la vue simplifiée. Vous pouvez filtrer les Pokémon selon vos favoris dans les créateurs de Pokédex et de Champions d’Arène.",
+  "faq.favorites.a2": "Oui. Enregistrez une image PNG de la grille complète ou de la vue Résumé. Vous pouvez filtrer les Pokémon selon vos favoris dans les créateurs de Pokédex et de Champions d’Arène.",
   "faq.favorites.q1": "Comment choisir un Pokémon ?",
   "faq.favorites.q2": "Puis-je exporter le tableau ?",
   "faq.summary": "À propos de cet outil",
@@ -51,7 +51,7 @@
   "footer.report": "Signaler un problème",
   "home.favorites.blurb": "Choisissez vos favoris par type et génération. Exportez votre tableau.",
   "home.favorites.fullGridAlt": "Une grille complète de Pokémon préférés par type et génération, exportée du sélecteur de Pokémon préférés",
-  "home.favorites.simplifiedAlt": "Un tableau simplifié de Pokémon préférés par type et génération avec un favori parmi tous, exporté du sélecteur de Pokémon préférés",
+  "home.favorites.simplifiedAlt": "Un tableau récapitulatif de Pokémon préférés par type et génération avec un favori parmi tous, exporté du sélecteur de Pokémon préférés",
   "home.favorites.title": "Sélecteur de Pokémon préférés",
   "lang.change": "Changer de langue",
   "lang.title": "Langue",
@@ -124,5 +124,6 @@
   "chart.header.overIndexed1": "SUR-",
   "chart.header.overIndexed2": "REPRÉSENTÉ →",
   "chart.header.underIndexed1": "SOUS-",
-  "chart.header.underIndexed2": "← REPRÉSENTÉ"
+  "chart.header.underIndexed2": "← REPRÉSENTÉ",
+  "chart.header.evolution": "STADE"
 }

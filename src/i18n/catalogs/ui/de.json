@@ -2,7 +2,7 @@
   "chart.header.color": "FARBE",
   "browser.myFavorites": "Meine Lieblinge",
   "faq.favorites.a1": "Wähle eine Zelle und dann ein Pokémon für diesen Typ und diese Generation. Wähle danach deine Lieblinge aus jeder Zeile und Spalte und deinen Liebling aus allen Pokémon.",
-  "faq.favorites.a2": "Ja. Speichere das ganze Raster oder die vereinfachte Ansicht als PNG. Im Pokédex-Builder und im Arenaleiter-Builder kannst du Pokémon nach deinen Lieblingen filtern.",
+  "faq.favorites.a2": "Ja. Speichere das ganze Raster oder die Übersicht als PNG. Im Pokédex-Builder und im Arenaleiter-Builder kannst du Pokémon nach deinen Lieblingen filtern.",
   "faq.favorites.q1": "Wie wähle ich Pokémon aus?",
   "faq.favorites.q2": "Kann ich die Tabelle exportieren?",
   "faq.summary": "Über dieses Tool",
@@ -51,7 +51,7 @@
   "footer.report": "Problem melden",
   "home.favorites.blurb": "Wähle deine Favoriten nach Typ und Generation. Exportiere deine Übersicht.",
   "home.favorites.fullGridAlt": "Ein vollständiges Raster der Lieblings-Pokémon nach Typ und Generation, aus dem Lieblings-Pokémon-Wähler exportiert",
-  "home.favorites.simplifiedAlt": "Eine vereinfachte Übersicht der Lieblings-Pokémon nach Typ und Generation mit einem Gesamtfavoriten, aus dem Lieblings-Pokémon-Wähler exportiert",
+  "home.favorites.simplifiedAlt": "Eine Übersicht der Lieblings-Pokémon nach Typ und Generation mit einem Gesamtfavoriten, aus dem Lieblings-Pokémon-Wähler exportiert",
   "home.favorites.title": "Lieblings-Pokémon wählen",
   "lang.change": "Sprache ändern",
   "lang.title": "Sprache",
@@ -124,5 +124,6 @@
   "chart.header.overIndexed1": "ÜBER-",
   "chart.header.overIndexed2": "REPRÄSENTIERT →",
   "chart.header.underIndexed1": "UNTER-",
-  "chart.header.underIndexed2": "← REPRÄSENTIERT"
+  "chart.header.underIndexed2": "← REPRÄSENTIERT",
+  "chart.header.evolution": "STUFE"
 }

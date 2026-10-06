@@ -131,6 +131,7 @@ export const enUi = {
   // The red X on a builder tile. One press can remove the whole evolution
   // line.
   'builder.remove': 'Remove {name}',
+  'chart.header.evolution': 'STAGE',
   'chart.header.color': 'COLOR',
   'chart.header.count': 'COUNT',
   'chart.header.gen': 'GEN',
@@ -177,7 +178,7 @@ export const enUi = {
   'faq.dex.q3': 'Is it free? Do I need an app or an account?',
   'faq.dex.q4': 'Can I add fakemon?',
   'faq.favorites.a1': 'Choose a cell to pick a Pokémon for that type and generation. Then choose your favorites from each row and column, and an overall favorite.',
-  'faq.favorites.a2': 'Yes. Save the Full grid or Simplified view as a PNG. You can filter Pokémon by your favorites in the Pokédex and gym leader builders.',
+  'faq.favorites.a2': 'Yes. Save the Full grid or Summary view as a PNG. You can filter Pokémon by your favorites in the Pokédex and gym leader builders.',
   'faq.favorites.q1': 'How does picking work?',
   'faq.favorites.q2': 'Can I export the chart?',
   'faq.hub.a1': 'Yes. No account, no download. Everything saves in your browser (the webapp supports mobile, tablet, and desktop!) and exports as a PNG you can save or share anywhere.',
@@ -263,7 +264,7 @@ export const enUi = {
   'home.dex.title': 'Custom Region & Pokédex Builder',
   'home.favorites.blurb': 'Pick favorites by type and generation. Export your chart.',
   'home.favorites.fullGridAlt': 'A full grid of favorite Pokémon by type and generation, exported from the Favorite Pokémon Picker',
-  'home.favorites.simplifiedAlt': 'A simplified chart of favorite Pokémon by type and generation with an overall favorite, exported from the Favorite Pokémon Picker',
+  'home.favorites.simplifiedAlt': 'A summary chart of favorite Pokémon by type and generation with an overall favorite, exported from the Favorite Pokémon Picker',
   'home.favorites.title': 'Favorite Pokémon Picker',
   'home.h1': 'Make a custom Pokédex, Gym Leaders, and more',
   'home.intro': 'Build a custom regional Pokédex, create gym leader teams and trainer cards, or pick your favorite Pokémon by type and generation. Save and share your creations as PNGs.',

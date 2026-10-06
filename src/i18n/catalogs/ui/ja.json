@@ -51,7 +51,7 @@
   "footer.report": "問題を報告",
   "home.favorites.blurb": "タイプ・世代別にお気に入りを選んで、一覧を画像に保存。",
   "home.favorites.fullGridAlt": "お気に入りポケモンの選択ツールから出力した、タイプ・世代別の完全なグリッド",
-  "home.favorites.simplifiedAlt": "お気に入りポケモンの選択ツールから出力した、タイプ・世代別のお気に入りと一番のお気に入りを示す簡易チャート",
+  "home.favorites.simplifiedAlt": "お気に入りポケモンの選択ツールから出力した、タイプ・世代別のお気に入りと一番のお気に入りを示すまとめチャート",
   "home.favorites.title": "お気に入りポケモンを選ぶ",
   "lang.change": "言語を変更",
   "lang.title": "言語",
@@ -124,5 +124,6 @@
   "chart.header.overIndexed1": "多めに",
   "chart.header.overIndexed2": "選択 →",
   "chart.header.underIndexed1": "少なめに",
-  "chart.header.underIndexed2": "← 選択"
+  "chart.header.underIndexed2": "← 選択",
+  "chart.header.evolution": "進化"
 }

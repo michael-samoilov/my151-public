@@ -51,7 +51,7 @@
   "footer.report": "报告问题",
   "home.favorites.blurb": "按属性和世代挑选最爱，导出你的图表。",
   "home.favorites.fullGridAlt": "从最爱宝可梦挑选工具导出的属性和世代完整网格",
-  "home.favorites.simplifiedAlt": "从最爱宝可梦挑选工具导出的属性和世代简化图表，包含最爱的宝可梦",
+  "home.favorites.simplifiedAlt": "从最爱宝可梦挑选工具导出的属性和世代汇总图表，包含最爱的宝可梦",
   "home.favorites.title": "最爱宝可梦挑选工具",
   "lang.change": "更改语言",
   "lang.title": "语言",
@@ -124,5 +124,6 @@
   "chart.header.overIndexed1": "偏高",
   "chart.header.overIndexed2": "选择比例 →",
   "chart.header.underIndexed1": "偏低",
-  "chart.header.underIndexed2": "← 选择比例"
+  "chart.header.underIndexed2": "← 选择比例",
+  "chart.header.evolution": "进化"
 }

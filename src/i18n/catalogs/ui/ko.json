@@ -51,7 +51,7 @@
   "footer.report": "문제 신고",
   "home.favorites.blurb": "타입·세대별로 좋아하는 포켓몬을 고르고 표를 저장하세요.",
   "home.favorites.fullGridAlt": "좋아하는 포켓몬 선택 도구에서 내보낸 타입·세대별 전체 그리드",
-  "home.favorites.simplifiedAlt": "좋아하는 포켓몬 선택 도구에서 내보낸 타입·세대별 포켓몬과 가장 좋아하는 포켓몬을 보여 주는 간략한 차트",
+  "home.favorites.simplifiedAlt": "좋아하는 포켓몬 선택 도구에서 내보낸 타입·세대별 포켓몬과 가장 좋아하는 포켓몬을 보여 주는 요약 차트",
   "home.favorites.title": "좋아하는 포켓몬 고르기",
   "lang.change": "언어 변경",
   "lang.title": "언어",
@@ -124,5 +124,6 @@
   "chart.header.overIndexed1": "높은",
   "chart.header.overIndexed2": "선택 비중 →",
   "chart.header.underIndexed1": "낮은",
-  "chart.header.underIndexed2": "← 선택 비중"
+  "chart.header.underIndexed2": "← 선택 비중",
+  "chart.header.evolution": "진화"
 }

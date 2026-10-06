@@ -51,7 +51,7 @@
   "footer.report": "回報問題",
   "home.favorites.blurb": "依屬性和世代挑選最愛，匯出你的圖表。",
   "home.favorites.fullGridAlt": "從最愛寶可夢挑選工具匯出的屬性和世代完整網格",
-  "home.favorites.simplifiedAlt": "從最愛寶可夢挑選工具匯出的屬性和世代簡化圖表，包含最愛的寶可夢",
+  "home.favorites.simplifiedAlt": "從最愛寶可夢挑選工具匯出的屬性和世代摘要圖表，包含最愛的寶可夢",
   "home.favorites.title": "最愛寶可夢挑選工具",
   "lang.change": "變更語言",
   "lang.title": "語言",
@@ -124,5 +124,6 @@
   "chart.header.overIndexed1": "偏高",
   "chart.header.overIndexed2": "選擇比例 →",
   "chart.header.underIndexed1": "偏低",
-  "chart.header.underIndexed2": "← 選擇比例"
+  "chart.header.underIndexed2": "← 選擇比例",
+  "chart.header.evolution": "進化"
 }
