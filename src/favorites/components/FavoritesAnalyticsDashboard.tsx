@@ -83,6 +83,17 @@ export default function FavoritesAnalyticsDashboard({ fills, active = true }: { 
   const snapshot = useMemo(() => buildFavoritesSnapshot(fills), [fills]);
   const stats = useMemo(() => pickerConditionalStats(snapshot), [snapshot]);
   const [drilldown, setDrilldown] = useState<{ selection: FavoritesDrillDownSelection; siblings: FavoritesDrillDownSelection[] } | null>(null);
+  const container = useRef<HTMLDivElement>(null);
+  const [topGap, setTopGap] = useState(0);
+  useLayoutEffect(() => {
+    const el = container.current;
+    if (!el) return;
+    const measure = () => setTopGap(el.getBoundingClientRect().top);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const trigger = useRef<HTMLElement | SVGElement | null>(null);
   const closeDrilldown = () => { setDrilldown(null); trigger.current?.focus(); };
   if (!active && drilldown) setDrilldown(null);
@@ -91,7 +102,7 @@ export default function FavoritesAnalyticsDashboard({ fills, active = true }: { 
     setDrilldown({ selection, siblings });
   };
   const coverage = stats.dimensions.bst.coveredChoices;
-  return <div className="relative h-full min-h-0"><div data-favorites-analytics data-testid="favorites-analytics" data-favorite-population={stats.populationSize} className="h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+  return <div ref={container} className="relative flex h-full min-h-0"><div data-favorites-analytics data-testid="favorites-analytics" data-favorite-population={stats.populationSize} className="flex-1 min-w-0 h-full min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
     <div className="max-w-6xl md:max-w-2xl mx-auto p-4 sm:p-6">
       {!stats.populationSize && <p className="text-sm text-muted-foreground mb-5">{t('favorites.analytics.empty')}</p>}
       <div className="space-y-4 sm:space-y-6 md:space-y-8 min-w-0">
@@ -113,7 +124,7 @@ export default function FavoritesAnalyticsDashboard({ fills, active = true }: { 
       </div>
     </div>
   </div>
-    {drilldown && active && <FavoritesDrillDown snapshot={snapshot} selection={drilldown.selection} siblings={drilldown.siblings}
+    {drilldown && active && <FavoritesDrillDown topGap={topGap} snapshot={snapshot} selection={drilldown.selection} siblings={drilldown.siblings}
       contributors={pickerConditionalContributors(snapshot, drilldown.selection.dimension, drilldown.selection.key)}
       onNavigate={selection => setDrilldown({ ...drilldown, selection })} onClose={closeDrilldown} />}
   </div>;

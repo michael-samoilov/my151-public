@@ -13,6 +13,7 @@ test('contributors retain repeated votes and only linked favorite origins @viewp
   await page.keyboard.press('Enter');
   const pane = page.getByTestId('favorites-drilldown');
   await expect(pane).toBeVisible();
+  if (info.project.name !== 'desktop') await pane.getByText('Fire Type', { exact: true }).click();
   await expect(pane).toHaveAttribute('data-category', 'fire');
   await expect(pane.locator('[data-contributor-cell]')).toHaveCount(2);
   await expect(pane.locator('[data-contributor-cell="fire|1"]')).toContainText(/(?:Gen|Generation) I · Fire/) ;
@@ -22,7 +23,7 @@ test('contributors retain repeated votes and only linked favorite origins @viewp
   await pane.locator('[data-contributor-cell="fire|1"]').getByTestId('favorites-pick-6').click();
   await expect(pane).toContainText('Charizard');
   expect(await page.evaluate(() => localStorage.getItem('favorite-picker'))).toBe(before);
-  await pane.getByRole('button', { name: 'Next category' }).click();
+  await pane.getByRole('button', { name: 'Flying', exact: true }).click();
   await expect(pane).not.toHaveAttribute('data-category', 'fire');
   await page.keyboard.press('Escape');
   await expect(pane).toHaveCount(0);
@@ -36,6 +37,7 @@ test('complete chart opens row-grouped contributors and BST excludes special cel
   const typeChart = page.locator('[data-favorite-chart="type"]');
   await typeChart.getByRole('button', { name: 'Fire', exact: true }).click();
   const pane = page.getByTestId('favorites-drilldown');
+  if (info.project.name !== 'desktop') await pane.getByText('Fire Type', { exact: true }).click();
   const cells = await pane.locator('[data-contributor-cell]').evaluateAll(elements => elements.map(el => el.getAttribute('data-contributor-cell')));
   expect(cells.length).toBeGreaterThan(0);
   const groups = await pane.locator('[data-contributor-row]').evaluateAll(elements => elements.map(el => el.getAttribute('data-contributor-row')));
@@ -44,6 +46,8 @@ test('complete chart opens row-grouped contributors and BST excludes special cel
   await page.keyboard.press('Escape');
   await page.locator('[data-favorite-chart="bst"]').getByRole('button').first().click();
   await expect(pane).toHaveAttribute('data-dimension', 'bst');
+  if (info.project.name !== 'desktop') await pane.locator('span.font-semibold').first().click();
+  await page.waitForTimeout(350);
   const bstCells = await pane.locator('[data-contributor-cell]').evaluateAll(elements => elements.map(el => el.getAttribute('data-contributor-cell')));
   expect(bstCells.every(key => !/starter|legendary|gimmick|favorite/.test(key!))).toBe(true);
   const bounds = await pane.evaluate(el => { const b = el.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: innerWidth, height: innerHeight, scroll: el.scrollWidth, client: el.clientWidth }; });
