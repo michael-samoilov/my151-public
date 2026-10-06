@@ -35,6 +35,7 @@ export function PrettySpriteGrid({
   originContext,
   onClear,
   clearLabel,
+  fitToHeight = true,
 }: {
   mons: readonly PickerMon[];
   maxCols: number;
@@ -52,6 +53,7 @@ export function PrettySpriteGrid({
   originContext?: OriginContext;
   onClear?: () => void;
   clearLabel?: string;
+  fitToHeight?: boolean;
 }) {
   useNamesVersion();
   const viewportPx = useLayoutViewportCssPx();
@@ -65,7 +67,7 @@ export function PrettySpriteGrid({
 
   useLayoutEffect(() => {
     const grid = gridRef.current;
-    if (!grid) return;
+    if (!grid || !fitToHeight) return;
     let scroller = grid.parentElement;
     while (scroller && !['auto', 'scroll'].includes(getComputedStyle(scroller).overflowY)) {
       scroller = scroller.parentElement;
@@ -97,7 +99,7 @@ export function PrettySpriteGrid({
       observer.disconnect();
       window.visualViewport?.removeEventListener('resize', resize);
     };
-  }, [baseSpritePx, fitRows]);
+  }, [baseSpritePx, fitRows, fitToHeight]);
   return (
     <div
       ref={gridRef}

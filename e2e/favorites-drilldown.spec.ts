@@ -1,0 +1,56 @@
+import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+const full = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
+async function seed(page: import('@playwright/test').Page, fills: Record<string, number>) {
+  await page.addInitScript(saved => localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: saved }, version: 3 })), fills);
+  await page.goto('/favorite-pokemon-by-type?notme&lang=en');
+  await page.locator('#favorites-tab-analytics').click();
+}
+test('contributors retain repeated votes and only linked favorite origins @viewport', async ({ page }, info) => {
+  await seed(page, { 'fire|1': 6, 'flying|1': 6, 'favorite|1': 6, 'fire|favorite': 6, 'favorite|favorite': 6 });
+  const fire = page.locator('[data-favorite-chart="type"]').getByRole('button', { name: 'Fire', exact: true });
+  await fire.focus();
+  await page.keyboard.press('Enter');
+  const pane = page.getByTestId('favorites-drilldown');
+  await expect(pane).toBeVisible();
+  await expect(pane).toHaveAttribute('data-category', 'fire');
+  await expect(pane.locator('[data-contributor-cell]')).toHaveCount(2);
+  await expect(pane.locator('[data-contributor-cell="fire|1"]')).toContainText(/Generation I · Fire/) ;
+  await expect(pane.locator('[data-contributor-cell="fire|1"]')).toContainText('Favorite · Fire');
+  await expect(pane.locator('[data-contributor-cell="flying|1"]')).not.toContainText('Favorite · Fire');
+  const before = await page.evaluate(() => localStorage.getItem('favorite-picker'));
+  await pane.locator('[data-contributor-cell="fire|1"]').getByTestId('favorites-pick-6').click();
+  await expect(pane).toContainText('Charizard');
+  expect(await page.evaluate(() => localStorage.getItem('favorite-picker'))).toBe(before);
+  await pane.getByRole('button', { name: 'Next category' }).click();
+  await expect(pane).not.toHaveAttribute('data-category', 'fire');
+  await page.keyboard.press('Escape');
+  await expect(pane).toHaveCount(0);
+  await expect(fire).toBeFocused();
+  await info.attach('repeat-origin-state', { body: JSON.stringify({ before, preserved: true }), contentType: 'application/json' });
+  await info.attach('closed-and-restored', { body: await page.screenshot(), contentType: 'image/png' });
+});
+test('complete chart opens row-grouped contributors and BST excludes special cells @viewport', async ({ page }, info) => {
+  if (info.project.name === 'mobile') await page.setViewportSize({ width: 390, height: 844 });
+  await seed(page, full);
+  const typeChart = page.locator('[data-favorite-chart="type"]');
+  await typeChart.getByRole('button', { name: 'Fire', exact: true }).click();
+  const pane = page.getByTestId('favorites-drilldown');
+  const cells = await pane.locator('[data-contributor-cell]').evaluateAll(elements => elements.map(el => el.getAttribute('data-contributor-cell')));
+  expect(cells.length).toBeGreaterThan(0);
+  const groups = await pane.locator('[data-contributor-row]').evaluateAll(elements => elements.map(el => el.getAttribute('data-contributor-row')));
+  expect(groups).toEqual([...groups].sort((a, b) => ['1','2','3','4','5','6','7','8','9','gimmick','legendary'].indexOf(a!) - ['1','2','3','4','5','6','7','8','9','gimmick','legendary'].indexOf(b!)));
+  await info.attach('full-contributors', { body: await page.screenshot(), contentType: 'image/png' });
+  await page.keyboard.press('Escape');
+  await page.locator('[data-favorite-chart="bst"]').getByRole('button').first().click();
+  await expect(pane).toHaveAttribute('data-dimension', 'bst');
+  const bstCells = await pane.locator('[data-contributor-cell]').evaluateAll(elements => elements.map(el => el.getAttribute('data-contributor-cell')));
+  expect(bstCells.every(key => !/starter|legendary|gimmick|favorite/.test(key!))).toBe(true);
+  const bounds = await pane.evaluate(el => { const b = el.getBoundingClientRect(); return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: innerWidth, height: innerHeight, scroll: el.scrollWidth, client: el.clientWidth }; });
+  expect(bounds.left).toBeGreaterThanOrEqual(0);
+  expect(bounds.right).toBeLessThanOrEqual(bounds.width + 1);
+  expect(bounds.bottom).toBeLessThanOrEqual(bounds.height + 1);
+  expect(bounds.scroll).toBeLessThanOrEqual(bounds.client + 1);
+  await info.attach('group-and-bst-measurements', { body: JSON.stringify({ cells, groups, bstCells, bounds }), contentType: 'application/json' });
+  await info.attach('bst-contributors', { body: await page.screenshot(), contentType: 'image/png' });
+});
