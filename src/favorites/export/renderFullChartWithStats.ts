@@ -16,7 +16,7 @@ import type { ColorName, ShapeName, TypeName } from '@/types/pokemon';
 type Dimension='type'|'color'|'shape'|'evolution';
 function titles():Record<Dimension,string>{return {type:t('stats.type.title'),color:t('favorites.stats.color'),shape:t('favorites.stats.shape'),evolution:t('favorites.stats.evolution')};}
 function headers():Record<Dimension,string>{return {type:t('chart.header.type'),color:t('chart.header.color'),shape:t('chart.header.shape'),evolution:t('chart.header.evolution')};}
-const W=320,GAP=16,PANEL_H=960,PANEL_W=W*2+GAP;
+const W=320,GAP=16,PANEL_W=W*2+GAP;
 function label(ctx:CanvasRenderingContext2D,text:string,x:number,y:number,maxWidth?:number){ctx.font='400 10px "Inter Variable", system-ui, sans-serif';ctx.fillStyle='#737373';ctx.textAlign='left';ctx.textBaseline='alphabetic';if(maxWidth===undefined)ctx.fillText(text,x,y);else ctx.fillText(text,x,y,maxWidth);}
 function snapshotIncomplete(stats:PickerConditionalStats){return stats.incomplete;}
 function rowIcon(dimension:Dimension,key:string,images:Map<string,HTMLImageElement>):IconDrawer{
@@ -27,6 +27,16 @@ function rowIcon(dimension:Dimension,key:string,images:Map<string,HTMLImageEleme
   else if(dimension==='color') drawColorBadge(ctx,key as ColorName,sx,sy,height);
   else drawEvolutionBadge(ctx,key as EvolutionRole,sx,sy,height);
  };
+}
+function meanLabels() { return { labels: { yours: t('favorites.stats.meanYours'), options: t('favorites.stats.meanOptions'), exact: t('favorites.stats.meanExact') } }; }
+function bstCardGeometry(ctx: CanvasRenderingContext2D, stats: PickerConditionalStats) {
+ const chartY = snapshotIncomplete(stats) ? 70 : 56;
+ const chartHeight = stats.dimensions.bst.coveredChoices ? drawExportHistogram(ctx, 0, 0, stats.bst, .87, false, meanLabels()) : 36;
+ return { chartY, height: chartY + chartHeight + 12 };
+}
+/** Natural panel bounds come from the same histogram measurement used by its painter. */
+export function pickerStatsPanelSize(ctx: CanvasRenderingContext2D, stats: PickerConditionalStats) {
+ return { w: PANEL_W, h: Math.max(864, 608 + bstCardGeometry(ctx, stats).height) };
 }
 /** Native panel, exported for the preview audit; the live export uses exactly this painter. */
 export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerConditionalStats,images:Map<string,HTMLImageElement>){
@@ -40,10 +50,11 @@ export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerCo
   if(data.rows.some(row=>row.expected===0))label(ctx,t('favorites.stats.unavailable'),20,h-8,280);ctx.restore();
  }
  card('type',0,0,488);card('color',0,504,360);card('shape',336,0,408);card('evolution',336,424,168);
- ctx.save();ctx.translate(336,608);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,352,8);ctx.fill();drawExportStatsTitle(ctx,t('stats.bst.title'),20,12);
+ const bstGeometry = bstCardGeometry(ctx, stats);
+ ctx.save();ctx.translate(336,608);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,bstGeometry.height,8);ctx.fill();drawExportStatsTitle(ctx,t('stats.bst.title'),20,12);
  label(ctx,t('favorites.stats.bstScope'),20,46,280);
  if(snapshotIncomplete(stats))label(ctx,t('favorites.stats.selectedOptions'),20,60,280);
- if(stats.dimensions.bst.coveredChoices)drawExportHistogram(ctx,20,72,stats.bst,.87,true,{labels:{yours:t('favorites.stats.meanYours'),options:t('favorites.stats.meanOptions'),exact:t('favorites.stats.meanExact')},legend:{yours:t('favorites.stats.yours'),options:t('favorites.stats.options')}});
+ if(stats.dimensions.bst.coveredChoices)drawExportHistogram(ctx,20,bstGeometry.chartY,stats.bst,.87,true,meanLabels());
  else label(ctx,t('favorites.stats.empty'),20,92);
 
  ctx.restore();
@@ -54,5 +65,6 @@ export async function renderFullChartWithStats(snapshot:FavoritesSnapshot):Promi
  const urls=[...stats.dimensions.type.rows.map(row=>typeGlyphPath(row.key as TypeName)),...stats.dimensions.shape.rows.map(row=>`/shapes/${row.key}.png`)];
  const images=new Map(await Promise.all(urls.map(async url=>[url,await image(url)] as const)));
  const base=await renderFullChart(snapshot);
- return composeStatsExport(base,{w:PANEL_W,h:PANEL_H},t('export.detailedStatsTitle'),ctx=>drawPickerStatsPanel(ctx,stats,images),{prefix:t('tools.favorites')});
+ const measure = document.createElement('canvas').getContext('2d')!;
+ return composeStatsExport(base,pickerStatsPanelSize(measure, stats),t('export.detailedStatsTitle'),ctx=>drawPickerStatsPanel(ctx,stats,images),{prefix:t('tools.favorites')});
 }

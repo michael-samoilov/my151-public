@@ -1,5 +1,5 @@
 import { scaleLinear } from 'd3-scale';
-import { histogramMeans, histogramLegend } from './histogramMeans';
+import { histogramMeans, histogramMeanLayout } from './histogramMeans';
 import { drawGenerationBadge } from './drawAttributeBadge';
 import type { GenNumber } from '@/favorites/model/cells';
 import { drawExportButterfly as butterfly, drawExportStatsTitle, type ButterflyRowInput, type IconDrawer } from './exportButterfly';
@@ -84,23 +84,30 @@ export function drawExportHistogram(
   bst: DetailedStatsData['bst'],
   heightScale: number,
   draw: boolean,
-  meanRail?: { labels: { yours:string; options:string; exact:string }; legend: { yours:string; options:string } },
+  meanRail?: { labels: { yours:string; options:string; exact:string } },
 ): number {
-  const height = 200 * heightScale + (meanRail ? 76 : 0);
-  // Reserve conditional legend headroom through the same geometry as the live chart.
-  const margin = { top: 8, right: 12, bottom: 24 + (meanRail ? 76 : 0), left: 40 };
+  const baseHeight = 200 * heightScale;
+  const margin = { top: 8, right: 12, bottom: 24, left: 40 };
   const plotW = Math.max(0, CONTENT_W - margin.left - margin.right);
-  const plotH = height - margin.top - margin.bottom;
-
+  const plotH = baseHeight - margin.top - margin.bottom;
+  const xScale = scaleLinear().domain(bst.xDomain).range([0, plotW]);
+  const tickStep = meanRail ? Math.max(1, Math.ceil(32 / plotW * (bst.xDomain[1] - bst.xDomain[0]) / 100)) : 1;
+  const ticks = bst.xTicks.filter((_, i) => i % tickStep === 0);
+  const measure = (text: string, bold = false, middle = false) => {
+    ctx.save(); ctx.font = font(bold ? 700 : 400, CHART_TEXT);
+    ctx.textAlign = 'left'; ctx.textBaseline = middle ? 'middle' : 'alphabetic';
+    const m = ctx.measureText(text); ctx.restore();
+    return { width: m.width, left: m.actualBoundingBoxLeft, right: m.actualBoundingBoxRight, ascent: m.actualBoundingBoxAscent, descent: m.actualBoundingBoxDescent };
+  };
+  const means = meanRail ? histogramMeans(bst.yoursAvg, bst.nationalAvg, plotW, xScale, meanRail.labels, measure,
+    { left: -margin.left + 4, right: plotW + margin.right - 4 }) : [];
+  const meanLayout = histogramMeanLayout(means, ticks, xScale, measure);
+  const height = meanRail ? margin.top + plotH + meanLayout.bottom : baseHeight;
   if (!draw) return height;
 
   ctx.save();
-  const xScale = scaleLinear().domain(bst.xDomain).range([0, plotW]);
   const visibleData = meanRail ? bst.merged.filter(bin => bin.x >= bst.xDomain[0] && bin.x < bst.xDomain[1]) : bst.merged;
-  if (meanRail) ctx.font = font(400, CHART_TEXT);
-  const legend = meanRail ? histogramLegend(plotW, plotH, bst.yDomain, Math.max(0, ...visibleData.flatMap(bin => [bin.nationalPct, bin.yoursPct])), meanRail.legend, text => ctx.measureText(text).width) : undefined;
-  const scaleDomain = legend?.yDomain ?? bst.yDomain;
-  const yScale = scaleLinear().domain([0, scaleDomain]).range([plotH, 0]);
+  const yScale = scaleLinear().domain([0, bst.yDomain]).range([plotH, 0]);
   const barFullWidth = xScale(bst.binSize) - xScale(0);
   const barNarrowWidth = barFullWidth * 0.5;
 
@@ -131,36 +138,35 @@ export function drawExportHistogram(
   }
   ctx.globalAlpha = 1;
 
-  if(meanRail){
-    ctx.font=font(400,CHART_TEXT);
-    const means=histogramMeans(bst.yoursAvg,bst.nationalAvg,plotW,xScale,meanRail.labels,text=>ctx.measureText(text).width);
-    for(const point of means){
-      const cy=plotH+34;
-      ctx.strokeStyle=point.color;ctx.fillStyle=point.color;
-      ctx.beginPath();ctx.moveTo(point.x,cy-4);ctx.lineTo(point.x+4,cy);ctx.lineTo(point.x,cy+4);ctx.lineTo(point.x-4,cy);ctx.closePath();ctx.fill();if(point.exact){ctx.strokeStyle=NAT_HIST;ctx.lineWidth=2;ctx.stroke();ctx.lineWidth=1;}
-      ctx.textAlign=point.anchor==='middle'?'center':point.anchor==='end'?'right':'left';ctx.textBaseline='middle';ctx.fillText(point.text,point.labelX,cy+point.labelRail*17);
-    }
-    for (const item of legend!.items) {
-      ctx.fillStyle=item.color;ctx.fillRect(legend!.x+4,legend!.top+5+item.y,7,7);
-      ctx.fillStyle=MUTED;ctx.textAlign='left';ctx.textBaseline='alphabetic';
-      item.lines.forEach((text,index)=>ctx.fillText(text,legend!.x+16,legend!.top+12+item.y+index*15));
-    }
-  }
   // X ticks
   ctx.fillStyle = MUTED;
   ctx.strokeStyle = MUTED;
   ctx.font = font(400, CHART_TEXT);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  const tickStep=meanRail?Math.max(1,Math.ceil(32/plotW*(bst.xDomain[1]-bst.xDomain[0])/100)):1;
-  for (const t of bst.xTicks.filter((_,i)=>i%tickStep===0)) {
+  for (const t of ticks) {
     line(ctx, xScale(t), plotH, xScale(t), plotH + 4);
     ctx.fillText(`${t}`, xScale(t), plotH + 15);
   }
+  for (const point of meanLayout.points) {
+    const cy = plotH + meanLayout.rail;
+    ctx.strokeStyle = point.color; ctx.fillStyle = point.color;
+    for (const [start, end] of point.segments) line(ctx, point.x, plotH + start, point.x, plotH + end);
+    ctx.beginPath(); ctx.moveTo(point.x, cy - 4); ctx.lineTo(point.x + 4, cy); ctx.lineTo(point.x, cy + 4); ctx.lineTo(point.x - 4, cy); ctx.closePath(); ctx.fill();
+    if (point.exact) { ctx.strokeStyle = NAT_HIST; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1; }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    let labelX = point.labelX - (point.anchor === 'end' ? point.width : point.anchor === 'middle' ? point.width / 2 : 0);
+    for (const run of point.runs) {
+      ctx.font = font(run.bold ? 700 : 400, CHART_TEXT);
+      ctx.fillText(run.text, labelX, cy + point.labelRail * 17);
+      labelX += ctx.measureText(run.text).width;
+    }
+  }
+  ctx.font = font(400, CHART_TEXT); ctx.fillStyle = MUTED; ctx.strokeStyle = MUTED;
   // Y ticks
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH*bst.yDomain/scaleDomain/Math.max(1,bst.yTicks.length-1)))):1;
+  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH/Math.max(1,bst.yTicks.length-1)))):1;
   for (const t of bst.yTicks.filter((_,index)=>index%yTickStep===0 || index===bst.yTicks.length-1)) {
     line(ctx, -4, yScale(t), 0, yScale(t));
     ctx.fillText(`${t}%`, -7, yScale(t));

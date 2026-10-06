@@ -1,14 +1,15 @@
 import { memo, useRef, useEffect, useState } from 'react';
 import { scaleLinear } from 'd3-scale';
-import { histogramMeans, histogramLegend } from '@/lib/histogramMeans';
+import { histogramMeans, histogramMeanLayout } from '@/lib/histogramMeans';
 
 let meanMeasureCanvas: HTMLCanvasElement | undefined;
-function measureMean(text:string){
+function measureMean(text: string, bold = false, middle = false) {
  meanMeasureCanvas ??= document.createElement('canvas');
- const ctx=meanMeasureCanvas.getContext('2d');
- if(!ctx)return text.length*6;
- ctx.font='400 10px "Inter Variable", system-ui, sans-serif';
- return ctx.measureText(text).width;
+ const ctx = meanMeasureCanvas.getContext('2d')!;
+ ctx.font = `${bold ? 700 : 400} 10px "Inter Variable", system-ui, sans-serif`;
+ ctx.textAlign = 'left'; ctx.textBaseline = middle ? 'middle' : 'alphabetic';
+ const m = ctx.measureText(text);
+ return { width: m.width, left: m.actualBoundingBoxLeft, right: m.actualBoundingBoxRight, ascent: m.actualBoundingBoxAscent, descent: m.actualBoundingBoxDescent };
 }
 interface HistogramBin {
   x: number;
@@ -30,7 +31,7 @@ interface SuperimposedHistogramProps {
   heightScale?: number;
   /** Overrides the font-size class on the axis tick labels (default text-xs). */
   textClass?: string;
-  meanRail?: { yours: number; options: number; labels: { yours: string; options: string; exact: string }; legend: { yours: string; options: string } };
+  meanRail?: { yours: number; options: number; labels: { yours: string; options: string; exact: string } };
 }
 
 function SuperimposedHistogramImpl({
@@ -67,24 +68,24 @@ function SuperimposedHistogramImpl({
   // height. chartScale matches the formula in ButterflyChart — 1 at
   // mobile, 2 at desktop — so both analytics charts scale consistently.
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
-  const height = 200 * chartScale * heightScale + (meanRail ? 76 : 0);
-  // Conditional legend headroom comes from the y scale inside the plot.
+  const baseHeight = 200 * chartScale * heightScale;
   const margin = {
     top: 8,
     right: 12,
-    bottom: 24 * chartScale + (meanRail ? 76 : 0),
+    bottom: 24 * chartScale,
     left: 40 * chartScale,
   };
   const plotW = Math.max(0, width - margin.left - margin.right);
-  const plotH = height - margin.top - margin.bottom;
+  const plotH = baseHeight - margin.top - margin.bottom;
 
   const xScale = scaleLinear().domain(xDomain).range([0, plotW]);
   const visibleData = meanRail ? data.filter(bin => bin.x >= xDomain[0] && bin.x < xDomain[1]) : data;
-  const legend = meanRail ? histogramLegend(plotW, plotH, yDomain, Math.max(0, ...visibleData.flatMap(bin => [bin.nationalPct, bin.yoursPct])), meanRail.legend, measureMean) : undefined;
-  const scaleDomain = legend?.yDomain ?? yDomain;
-  const yScale = scaleLinear().domain([0, scaleDomain]).range([plotH, 0]);
-  const means = meanRail ? histogramMeans(meanRail.yours, meanRail.options, plotW, xScale, meanRail.labels, measureMean) : [];
-  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH*yDomain/scaleDomain/Math.max(1,yTicks.length-1)))):1;
+  const yScale = scaleLinear().domain([0, yDomain]).range([plotH, 0]);
+  const means = meanRail ? histogramMeans(meanRail.yours, meanRail.options, plotW, xScale, meanRail.labels, measureMean,
+    { left: -margin.left + 4, right: plotW + margin.right - 4 }) : [];
+  const meanLayout = histogramMeanLayout(means, xTicks, xScale, measureMean);
+  const height = meanRail ? margin.top + plotH + meanLayout.bottom : baseHeight;
+  const yTickStep = meanRail ? Math.max(1, Math.ceil(14 / Math.max(1, plotH / Math.max(1, yTicks.length - 1)))) : 1;
   const visibleYTicks=yTicks.filter((_,index)=>index%yTickStep===0 || index===yTicks.length-1);
   const barFullWidth = xScale(binSize) - xScale(0);
   const barNarrowWidth = barFullWidth * 0.5;
@@ -155,16 +156,6 @@ function SuperimposedHistogramImpl({
               );
             })}
 
-            {legend && <g data-histogram-legend="true" transform={`translate(${legend.x},${legend.top})`}>
-              {legend.items.map(item => <g key={item.color} transform={`translate(4,${item.y + 5})`}>
-                <rect width={7} height={7} fill={item.color}/>
-                {item.lines.map((line, index) => <text key={index} x={12} y={7 + index * 15} fontSize={10} fill="var(--color-muted-foreground)">{line}</text>)}
-              </g>)}
-            </g>}
-            {means.map(point => <g key={point.color} data-mean-marker={point.exact ? 'exact' : point.color} transform={`translate(0,${plotH + 34})`}>
-              <path d={`M${point.x},-4 L${point.x+4},0 L${point.x},4 L${point.x-4},0 Z`} fill={point.color} stroke={point.exact?'#94a3b8':undefined} strokeWidth={point.exact?2:undefined}/>
-              <text x={point.labelX} y={point.labelRail * 17} dominantBaseline="middle" textAnchor={point.anchor} fontSize={10} fill={point.color}>{point.text}</text>
-            </g>)}
             {/* X axis tick marks + labels */}
             {xTicks.map((t) => (
               <g key={`xtick-${t}`}>
@@ -179,6 +170,7 @@ function SuperimposedHistogramImpl({
                   y={plotH + 15}
                   textAnchor="middle"
                   className={textClass ?? 'text-xs'}
+                  fontSize={meanRail ? 10 : undefined}
                   fill="var(--color-muted-foreground)"
                 >
                   {t}
@@ -186,6 +178,15 @@ function SuperimposedHistogramImpl({
               </g>
             ))}
 
+            {meanLayout.points.map(point => <g key={point.color}>
+              <g data-mean-stem={point.color}>{point.segments.map(([start, end], index) => <line key={index} x1={point.x} x2={point.x} y1={plotH + start} y2={plotH + end} stroke={point.color} strokeWidth={1}/>)}</g>
+              <g data-mean-marker={point.exact ? 'exact' : point.color} transform={`translate(0,${plotH + meanLayout.rail})`}>
+                <path d={`M${point.x},-4 L${point.x+4},0 L${point.x},4 L${point.x-4},0 Z`} fill={point.color} stroke={point.exact ? '#94a3b8' : undefined} strokeWidth={point.exact ? 2 : undefined}/>
+                <text x={point.labelX} y={point.labelRail * 17} dominantBaseline="middle" textAnchor={point.anchor} fontSize={10} fill={point.color}>
+                  {point.runs.map((run, index) => <tspan key={index} data-mean-number={run.bold ? 'true' : undefined} fontWeight={run.bold ? 700 : 400}>{run.text}</tspan>)}
+                </text>
+              </g>
+            </g>)}
             {/* Y axis tick marks + labels */}
             {visibleYTicks.map((t) => (
               <g key={`ytick-${t}`}>
@@ -201,6 +202,7 @@ function SuperimposedHistogramImpl({
                   textAnchor="end"
                   dominantBaseline="middle"
                   className={textClass ?? 'text-xs'}
+                  fontSize={meanRail ? 10 : undefined}
                   fill="var(--color-muted-foreground)"
                 >
                   {t}%
