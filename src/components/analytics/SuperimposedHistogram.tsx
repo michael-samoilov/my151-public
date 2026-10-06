@@ -170,7 +170,7 @@ function SuperimposedHistogramImpl({
                   y={plotH + 15}
                   textAnchor="middle"
                   className={textClass ?? 'text-xs'}
-                  fontSize={meanRail ? 10 : undefined}
+                  style={meanRail ? { fontSize: 10 } : undefined}
                   fill="var(--color-muted-foreground)"
                 >
                   {t}
@@ -202,7 +202,7 @@ function SuperimposedHistogramImpl({
                   textAnchor="end"
                   dominantBaseline="middle"
                   className={textClass ?? 'text-xs'}
-                  fontSize={meanRail ? 10 : undefined}
+                  style={meanRail ? { fontSize: 10 } : undefined}
                   fill="var(--color-muted-foreground)"
                 >
                   {t}%
