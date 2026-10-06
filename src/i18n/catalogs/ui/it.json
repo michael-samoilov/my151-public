@@ -104,7 +104,7 @@
   "term.shape.tentacles": "Tentacoli",
   "term.shape.upright": "Bipede con coda",
   "term.shape.wings": "Alato",
-  "favorites.stats.bstScope": "Esclude la colonna Iniziale e le righe e colonne Leggendario e Meccanica.",
+  "favorites.stats.bstScope": "Esclude la colonna Iniziale e le righe e colonne Leggendario e Forma speciale.",
   "favorites.stats.selectedOptions": "Riferimento: opzioni dei selettori validi scelti.",
   "favorites.stats.unavailable": "Le categorie attenuate non sono presenti in queste opzioni.",
   "favorites.stats.meanExact": "Stessa media",

@@ -104,7 +104,7 @@
   "term.shape.tentacles": "Tentáculos",
   "term.shape.upright": "Bípedo con cola",
   "term.shape.wings": "Alado",
-  "favorites.stats.bstScope": "Excluye la columna Inicial y las filas y columnas Legendario y Mecánica.",
+  "favorites.stats.bstScope": "Excluye la columna Inicial y las filas y columnas Legendario y Forma especial.",
   "favorites.stats.selectedOptions": "Referencia: opciones de los selectores válidos elegidos.",
   "favorites.stats.unavailable": "Las categorías atenuadas no están en estas opciones.",
   "favorites.stats.meanExact": "Misma media",
