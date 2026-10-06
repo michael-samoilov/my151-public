@@ -10,6 +10,6 @@ export function histogramMeans(yours:number,options:number,width:number,position
   const labelX=x+(anchor==='end'?-7:7);
   return {...point,x,text:fits?text:compact(point.value),labelX,anchor,rail:fits?0:index+1,labelRail:undefined,exact:false,subtitle:fits||measure(point.label)>width?undefined:point.label,subtitleX:fits?undefined:(index===0?Math.max(0,Math.min(width-measure(point.label),labelX)):Math.min(width,Math.max(measure(point.label),labelX))),subtitleAnchor:fits?undefined:anchor};});
  const bounds=result.map(point=>{const w=measure(point.text);return point.anchor==='end'?[point.labelX-w,point.labelX]:[point.labelX,point.labelX+w];});
- if(result[0].rail===result[1].rail&&bounds[0][1]+6>bounds[1][0])result[1].rail=result[0].rail+1;
+ if(result[0].rail===result[1].rail&&(Math.abs(result[0].x-result[1].x)<10||bounds[0][1]+6>bounds[1][0]))result[1].rail=result[0].rail+1;
  return result;
 }
