@@ -1310,24 +1310,25 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       return lead&&lead.parentElement?lead.parentElement.textContent.replace(/\\s+/g,' ').trim():'';`).catch(() => '');
     checks.push(ok('league-change:ace-picker-names-slot', pickerUp && /Ace Pok/.test(heading), heading || 'no heading found'));
 
+    // Read stable sprite IDs: full localized labels differ between builds.
     let eevee = false;
     for (let i = 0; i < 60 && !eevee; i++) {
       eevee = await s.evalJson<boolean>(`const scrollerOf=(el)=>{let n=el.parentElement;while(n){const oy=getComputedStyle(n).overflowY;if(oy==='auto'||oy==='scroll')return n;n=n.parentElement;}return null;};
-        const img=document.querySelector('img[alt="eevee"]'); if(img){img.scrollIntoView({block:'center'});return true;}
+        const img=document.querySelector('img[src$="/133.png"]'); if(img){img.scrollIntoView({block:'center'});return true;}
         const cell=document.querySelector('[data-row-cell]'); const sc=cell?scrollerOf(cell):null; if(!sc) return false; sc.scrollTop+=sc.clientHeight*0.8; return false;`).catch(() => false);
       await sleep(150);
     }
     await sleep(400);
-    const rows = await s.evalJson<string[][]>(`const img=document.querySelector('img[alt="eevee"]'); const grid=img&&img.closest('[data-row-cell]')&&img.closest('[data-row-cell]').parentElement; if(!grid) return [];
+    const rows = await s.evalJson<string[][]>(`const img=document.querySelector('img[src$="/133.png"]'); const grid=img&&img.closest('[data-row-cell]')&&img.closest('[data-row-cell]').parentElement; if(!grid) return [];
       const byTop=new Map(); for(const child of grid.children){ if(child.hasAttribute('aria-hidden')) continue; const top=Math.round(child.getBoundingClientRect().top);
         const sprite=[...child.querySelectorAll('img')].find(i=>(i.getAttribute('src')||'').includes('/sprites/pokemon/'));
-        const label=child.hasAttribute('data-row-cell')?(sprite?sprite.getAttribute('alt'):'?'):'·'; if(!byTop.has(top)) byTop.set(top,[]); byTop.get(top).push(label);}
+        const label=child.hasAttribute('data-row-cell')?(sprite?(sprite.getAttribute('src')||'').split('/').pop().split('.')[0]:'?'):'·'; if(!byTop.has(top)) byTop.set(top,[]); byTop.get(top).push(label);}
       return [...byTop.entries()].sort((a,b)=>a[0]-b[0]).map(e=>e[1]);`).catch(() => [] as string[][]);
     const gapped = rows.filter((row) => row.some((c, i) => c === '·' && row.slice(i + 1).some((d) => d !== '·')));
-    const omastar = rows.find((row) => row.includes('omastar'));
-    const neighbour = omastar ? omastar[omastar.indexOf('omastar') + 1] : undefined;
+    const omastar = rows.find((row) => row.includes('139'));
+    const neighbour = omastar ? omastar[omastar.indexOf('139') + 1] : undefined;
     checks.push(ok('league-change:picker-rows-have-no-mid-row-gap', eevee && rows.length > 3 && gapped.length === 0, eevee ? `${rows.length} rows read, gapped: ${JSON.stringify(gapped)}` : 'Eevee never scrolled into view'));
-    checks.push(ok('league-change:omastar-beside-kabuto', neighbour === 'kabuto', omastar ? omastar.join(', ') : 'no Omastar row rendered'));
+    checks.push(ok('league-change:omastar-beside-kabuto', neighbour === '140', omastar ? omastar.join(', ') : 'no Omastar row rendered'));
     await s.screenshot(ctx.shot('league-change-ace-picker'));
   } else {
     checks.push({ name: 'league-change:ace-picker-names-slot', status: 'skip', detail: 'card never opened' });
