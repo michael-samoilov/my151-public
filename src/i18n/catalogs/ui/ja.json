@@ -104,7 +104,7 @@
   "term.shape.tentacles": "触手",
   "term.shape.upright": "二足・尾",
   "term.shape.wings": "翼",
-  "favorites.stats.bstScope": "「最初の相棒」の列、「伝説」と「特別な姿」の行・列は除外。",
+  "favorites.stats.bstScope": "最初の相棒・伝説・特別な姿の行・列は除外。",
   "favorites.stats.selectedOptions": "比較対象：選択済みの対象セルで選べる候補。",
   "favorites.stats.unavailable": "薄いカテゴリは、これらの選択候補に含まれません。",
   "favorites.stats.meanExact": "平均が同じ",
