@@ -20,7 +20,13 @@ for (const tool of ['picker', 'dex'] as StatsTool[]) {
     expect(measured.whiteHeaderPixels).toBeGreaterThan(20);
     const labels = measured.texts.map(record => record.text);
     expect(labels.some(text => /^\d+$/.test(text))).toBe(true);
-    for (const legend of tool === 'picker' ? ['Selector options', 'Your picks'] : ['National Dex', 'Yours']) expect(labels).toContain(legend);
+    if (tool === 'picker') {
+      for (const legend of ['Selector options', 'Your picks']) expect(labels).not.toContain(legend);
+      const meanRuns = labels.map(label => label.trim());
+      for (const label of ['Your Avg', 'Options Avg']) expect(meanRuns).toContain(label);
+    } else {
+      for (const legend of ['National Dex', 'Yours']) expect(labels).toContain(legend);
+    }
     expect(labels.some(text => /Choices:|coverage:|selector-option reference/.test(text))).toBe(false);
     const parity = await page.locator('[data-export-preview-layer] img[src^="blob:"]').first().evaluate(async (el, plain) => {
       const native = el as HTMLImageElement;
