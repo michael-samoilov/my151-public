@@ -3,9 +3,9 @@ import { expect, it } from 'vitest';
 import { buildFavoritesSnapshot } from '../export/snapshot';
 import { pickerConditionalStats } from './pickerConditionalStats';
 import formBst from '../data/formBst.json';
-it('uses exact sourced battle-form values, with unknown gender variants explicit',()=>{
+it('uses exact sourced battle-form values and sourced cosmetic gender variants',()=>{
  expect(formBst[10008]).toBe(520);expect(formBst[10017]).toBe(540);expect(formBst[11004]).toBe(650);expect(formBst[888]).toBe(660);
- expect((formBst as Record<number,number>)[11067]).toBeUndefined();
+ expect((formBst as Record<number,number>)[11067]).toBe(330);
 });
 it('ignores pointers/singletons and uses actual Fire1 choices, preserving dual-type membership',()=>{
  const stats=pickerConditionalStats(buildFavoritesSnapshot({'fire|1':6,'ghost|2':200,'favorite|1':6}));

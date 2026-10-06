@@ -10,6 +10,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { sourceSpeciesId } from './pokemon-source-identity.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -40,7 +41,7 @@ for (const r of rows('pokemon_egg_groups.csv')) {
   speciesEgg.set(sid, arr);
 }
 
-const formSpecies = new Map(rows('pokemon.csv').map((r) => [Number(r[0]), Number(r[2])]));
+const formColors = JSON.parse(readFileSync(join(ROOT, 'scripts', 'data', 'form-color-overrides.json'), 'utf8'));
 
 const pkPath = join(ROOT, 'src', 'data', 'pokemon.json');
 const pokemon = JSON.parse(readFileSync(pkPath, 'utf8'));
@@ -50,8 +51,10 @@ let eggSet = 0;
 const missingColor = [];
 const missingEgg = [];
 for (const p of pokemon) {
-  const speciesId = p.id <= 1025 ? p.id : formSpecies.get(p.id) ?? p.id;
-  const color = speciesColor.get(speciesId);
+  const speciesId = sourceSpeciesId(p);
+  const formColor = formColors[p.id];
+  if (formColor && (formColor.name !== p.name || formColor.speciesId !== speciesId)) throw new Error(`Stale form color identity: ${p.id} ${p.name}`);
+  const color = formColor?.color ?? speciesColor.get(speciesId);
   if (color) { p.color = color; colorSet++; } else { missingColor.push(`${p.id} ${p.name}`); }
   const eggs = speciesEgg.get(speciesId);
   if (eggs && eggs.length) { p.eggGroups = eggs; eggSet++; } else { p.eggGroups = []; missingEgg.push(`${p.id} ${p.name}`); }

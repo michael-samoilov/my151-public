@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { allPickerMons, pickerDexId } from '../src/favorites/model/catalog';
 import reviewed from './i18n/pokemon-id-map.json';
 import powerups from '../docs/favorite-picker-work/form-types/provenance.json';
+import formAudit from '../docs/favorite-picker-work/form-metadata-audit/provenance.json';
 const revision='bc92d3b6029ef1abe9e7ad424c400b338f3c11fe';
 const directory=process.argv[2];if(!directory)throw Error('Provide a directory of pokemon.csv, pokemon_forms.csv and pokemon_stats.csv from the pinned revision.');
 function table(name:string){const raw=readFileSync(`${directory}/${name}.csv`,'utf8'),[head,...lines]=raw.trim().split('\n');const fields=head.split(',');return {name,sha256:createHash('sha256').update(raw).digest('hex'),rows:lines.map(line=>Object.fromEntries(line.split(',').map((v,i)=>[fields[i],v])))};}
@@ -13,6 +14,7 @@ if(pokemon.sha256!=='16c81c33188b0eac403aa2f759fcbe9e42c611f722d263f5b5a6a5bff9f
 const byId=new Map(pokemon.rows.map(row=>[Number(row.id),row]));const byName=new Map(pokemon.rows.map(row=>[row.identifier,row]));
 const formByName=new Map(forms.rows.map(row=>[row.identifier,row]));const map=new Map(reviewed.entries.map(row=>[row.appId,row]));
 const bst:Record<number,number>={},inventory:unknown[]=[],unknown:unknown[]=[];
+const cosmeticGenderIds=new Set([11067,11068,11094,11095]);
 for(const mon of allPickerMons()){
  const reviewedMon=map.get(pickerDexId(mon)),owner=map.get(mon.ownerId),speciesId=reviewedMon?.speciesId??owner?.speciesId??mon.ownerId;
  let row;
@@ -23,10 +25,12 @@ for(const mon of allPickerMons()){
  row=byName.get(slug)??(form?byId.get(Number(form.pokemon_id)):undefined);
  if(!row&&reviewedMon&&mon.id===pickerDexId(mon)){const candidate=byName.get(reviewedMon.formIdentifier);if(candidate)row=candidate;}
  const battle=powerups.forms.find(form=>form.id===mon.id);if(!row&&battle){const candidate=byId.get(battle.id);if(candidate?.identifier===battle.identifier&&Number(candidate.species_id)===battle.owner)row=candidate;}
+ if(!row&&cosmeticGenderIds.has(mon.id)){const candidate=byId.get(speciesId);if(candidate&&Number(candidate.species_id)===speciesId)row=candidate;}
  if(!row||Number(row.species_id)!==speciesId){unknown.push({id:mon.id,name:mon.name,reason:'No identity-checked upstream Pokémon/form mapping'});continue;}
  const values=stats.rows.filter(s=>Number(s.pokemon_id)===Number(row.id));
  if(values.length!==6||new Set(values.map(v=>v.stat_id)).size!==6||values.some(v=>!Number.isFinite(Number(v.base_stat))||Number(v.base_stat)<=0))throw Error(`Incomplete stats ${row.id}`);
- bst[mon.id]=values.reduce((sum,v)=>sum+Number(v.base_stat),0);inventory.push({id:mon.id,name:mon.name,sourceId:Number(row.id),identifier:row.identifier,speciesId,bst:bst[mon.id]});
+ const gameCorrection=formAudit.gameStatsConflicts.find(correction=>correction.id===mon.id);
+ bst[mon.id]=gameCorrection?Object.values(gameCorrection.gameStats).reduce((sum,value)=>sum+value,0):values.reduce((sum,v)=>sum+Number(v.base_stat),0);inventory.push({id:mon.id,name:mon.name,sourceId:Number(row.id),identifier:row.identifier,speciesId,bst:bst[mon.id],...(cosmeticGenderIds.has(mon.id)?{mapping:'Cosmetic female sprite uses species personal record'}:{}),...(gameCorrection?{gameCorrection:'Direct ZA personal record; see form-metadata-audit/provenance.json'}:{})});
 }
 writeFileSync('src/favorites/data/formBst.json',JSON.stringify(bst,null,2)+'\n');
 writeFileSync('docs/favorite-picker-work/conditional-stats/bst-provenance.json',JSON.stringify({repository:'https://github.com/PokeAPI/pokeapi',revision,sources:[pokemon,forms,stats].map(({name,sha256})=>({name,sha256,url:`https://raw.githubusercontent.com/PokeAPI/pokeapi/${revision}/data/v2/csv/${name}.csv`})),inventory,unknown},null,2)+'\n');

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useT } from '@/i18n';
 import { AnalyticsDrillDownPanel, AnalyticsDrillDownSheet, type AnalyticsDrillDownItem } from '@/components/analytics/DrillDownSheet';
 import type { DrillDownData } from '@/hooks/useDrillDownData';
-import { getPokemonById } from '@/hooks/usePokemonData';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
@@ -11,7 +10,7 @@ import { evolutionDotsSvg } from '@/components/shared/attributeBadgeSvg';
 import type { ColorName, Pokemon, ShapeName, TypeName } from '@/types/pokemon';
 import type { FavoritesExportCell, FavoritesSnapshot } from '../export/snapshot';
 import { GEN_AXIS, isGenNumber, ROMAN } from '../model/cells';
-import { pickerDexId } from '../model/catalog';
+import { pickerPokemonMetadata } from '../model/metadata';
 import { pointerCoordinates, type SourceCoordinate } from '../model/pointers';
 import { labelOf, pickerLabelOf } from './spriteLabel';
 import { coordinateLabel } from './coordinatePresentation';
@@ -64,9 +63,8 @@ export function FavoritesDrillDown({ snapshot, contributors, selection, siblings
             const groups = cells.filter(cell => cell.generation === row).flatMap(cell => {
               if (!cell.mon) return [];
               const mon = cell.mon;
-              const metadata = getPokemonById(pickerDexId(mon)) ?? getPokemonById(mon.ownerId);
-              if (!metadata) return [];
-              const pokemon = { ...metadata, id: mon.id, name: mon.name, types: mon.types, sprite: mon.sprite, generation: mon.generation };
+              const pokemon = pickerPokemonMetadata(mon);
+              if (!pokemon) return [];
               const linked = new Set([cell.key]);
               const coordinates: SourceCoordinate[] = [{ type: cell.type, gen: cell.generation,
                 mark: isGenNumber(cell.generation) ? { source: 'gen', value: cell.generation } : { source: 'gimmick' } }];

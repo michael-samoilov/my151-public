@@ -1,0 +1,242 @@
+{
+  "666": {
+    "name": "vivillon",
+    "speciesId": 666,
+    "color": "pink"
+  },
+  "893": {
+    "name": "zarude",
+    "speciesId": 893,
+    "color": "black"
+  },
+  "899": {
+    "name": "wyrdeer",
+    "speciesId": 899,
+    "color": "white"
+  },
+  "903": {
+    "name": "sneasler",
+    "speciesId": 903,
+    "color": "purple"
+  },
+  "912": {
+    "name": "quaxly",
+    "speciesId": 912,
+    "color": "blue"
+  },
+  "937": {
+    "name": "ceruledge",
+    "speciesId": 937,
+    "color": "purple"
+  },
+  "978": {
+    "name": "tatsugiri",
+    "speciesId": 978,
+    "color": "red"
+  },
+  "988": {
+    "name": "slither-wing",
+    "speciesId": 988,
+    "color": "white"
+  },
+  "994": {
+    "name": "iron-moth",
+    "speciesId": 994,
+    "color": "white"
+  },
+  "997": {
+    "name": "arctibax",
+    "speciesId": 997,
+    "color": "blue"
+  },
+  "998": {
+    "name": "baxcalibur",
+    "speciesId": 998,
+    "color": "blue"
+  },
+  "999": {
+    "name": "gimmighoul",
+    "speciesId": 999,
+    "color": "red"
+  },
+  "1005": {
+    "name": "roaring-moon",
+    "speciesId": 1005,
+    "color": "blue"
+  },
+  "1008": {
+    "name": "miraidon",
+    "speciesId": 1008,
+    "color": "purple"
+  },
+  "10091": {
+    "name": "rattata-alola",
+    "speciesId": 19,
+    "color": "black"
+  },
+  "10092": {
+    "name": "raticate-alola",
+    "speciesId": 20,
+    "color": "black"
+  },
+  "10100": {
+    "name": "raichu-alola",
+    "speciesId": 26,
+    "color": "brown"
+  },
+  "10101": {
+    "name": "sandshrew-alola",
+    "speciesId": 27,
+    "color": "white"
+  },
+  "10102": {
+    "name": "sandslash-alola",
+    "speciesId": 28,
+    "color": "blue"
+  },
+  "10103": {
+    "name": "vulpix-alola",
+    "speciesId": 37,
+    "color": "white"
+  },
+  "10104": {
+    "name": "ninetales-alola",
+    "speciesId": 38,
+    "color": "blue"
+  },
+  "10107": {
+    "name": "meowth-alola",
+    "speciesId": 52,
+    "color": "blue"
+  },
+  "10108": {
+    "name": "persian-alola",
+    "speciesId": 53,
+    "color": "blue"
+  },
+  "10109": {
+    "name": "geodude-alola",
+    "speciesId": 74,
+    "color": "gray"
+  },
+  "10110": {
+    "name": "graveler-alola",
+    "speciesId": 75,
+    "color": "gray"
+  },
+  "10111": {
+    "name": "golem-alola",
+    "speciesId": 76,
+    "color": "gray"
+  },
+  "10112": {
+    "name": "grimer-alola",
+    "speciesId": 88,
+    "color": "green"
+  },
+  "10113": {
+    "name": "muk-alola",
+    "speciesId": 89,
+    "color": "green"
+  },
+  "10115": {
+    "name": "marowak-alola",
+    "speciesId": 105,
+    "color": "purple"
+  },
+  "10161": {
+    "name": "meowth-galar",
+    "speciesId": 52,
+    "color": "brown"
+  },
+  "10162": {
+    "name": "ponyta-galar",
+    "speciesId": 77,
+    "color": "white"
+  },
+  "10163": {
+    "name": "rapidash-galar",
+    "speciesId": 78,
+    "color": "white"
+  },
+  "10167": {
+    "name": "weezing-galar",
+    "speciesId": 110,
+    "color": "gray"
+  },
+  "10168": {
+    "name": "mr-mime-galar",
+    "speciesId": 122,
+    "color": "white"
+  },
+  "10169": {
+    "name": "articuno-galar",
+    "speciesId": 144,
+    "color": "purple"
+  },
+  "10171": {
+    "name": "moltres-galar",
+    "speciesId": 146,
+    "color": "red"
+  },
+  "10173": {
+    "name": "corsola-galar",
+    "speciesId": 222,
+    "color": "white"
+  },
+  "10174": {
+    "name": "zigzagoon-galar",
+    "speciesId": 263,
+    "color": "white"
+  },
+  "10176": {
+    "name": "darumaka-galar",
+    "speciesId": 554,
+    "color": "white"
+  },
+  "10177": {
+    "name": "darmanitan-galar",
+    "speciesId": 555,
+    "color": "white"
+  },
+  "10179": {
+    "name": "stunfisk-galar",
+    "speciesId": 618,
+    "color": "green"
+  },
+  "10234": {
+    "name": "qwilfish-hisui",
+    "speciesId": 211,
+    "color": "black"
+  },
+  "10235": {
+    "name": "sneasel-hisui",
+    "speciesId": 215,
+    "color": "gray"
+  },
+  "10240": {
+    "name": "braviary-hisui",
+    "speciesId": 628,
+    "color": "white"
+  },
+  "10250": {
+    "name": "tauros-paldea-combat",
+    "speciesId": 128,
+    "color": "black"
+  },
+  "10251": {
+    "name": "tauros-paldea-blaze",
+    "speciesId": 128,
+    "color": "black"
+  },
+  "10252": {
+    "name": "tauros-paldea-aqua",
+    "speciesId": 128,
+    "color": "black"
+  },
+  "10253": {
+    "name": "wooper-paldea",
+    "speciesId": 194,
+    "color": "brown"
+  }
+}

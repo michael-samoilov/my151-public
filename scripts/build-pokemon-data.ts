@@ -17,7 +17,7 @@ const TYPE_MAP: Record<number, string> = {
 };
 
 const GROWTH_RATE_MAP: Record<number, string> = {
-  1: 'slow', 2: 'medium', 3: 'fast', 4: 'medium-slow', 5: 'slow', 6: 'fast',
+  1: 'slow', 2: 'medium', 3: 'fast', 4: 'medium-slow', 5: 'erratic', 6: 'fluctuating',
 };
 
 async function fetchCSV(filename: string): Promise<string[][]> {

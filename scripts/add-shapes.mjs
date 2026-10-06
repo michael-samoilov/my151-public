@@ -8,6 +8,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { sourceSpeciesId } from './pokemon-source-identity.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,7 +28,6 @@ for (const r of rows('pokemon_species.csv')) {
   const shape = SHAPE_NAMES[Number(r[6])];
   if (shape) speciesShape.set(Number(r[0]), shape);
 }
-const formSpecies = new Map(rows('pokemon.csv').map((r) => [Number(r[0]), Number(r[2])]));
 
 const pkPath = join(ROOT, 'src', 'data', 'pokemon.json');
 const pokemon = JSON.parse(readFileSync(pkPath, 'utf8'));
@@ -35,7 +35,7 @@ const pokemon = JSON.parse(readFileSync(pkPath, 'utf8'));
 let set = 0;
 const missing = [];
 for (const p of pokemon) {
-  const speciesId = p.id <= 1025 ? p.id : formSpecies.get(p.id) ?? p.id;
+  const speciesId = sourceSpeciesId(p);
   const shape = speciesShape.get(speciesId);
   if (shape) {
     p.shape = shape;

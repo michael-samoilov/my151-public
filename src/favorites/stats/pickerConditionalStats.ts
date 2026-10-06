@@ -1,17 +1,15 @@
-import pokemonData from '@/data/pokemon.json';
 import formBst from '../data/formBst.json';
-import { allPickerMons, pickerDexId } from '../model/catalog';
+import { allPickerMons } from '../model/catalog';
+import { pickerEvolutionRole, pickerPokemonMetadata } from '../model/metadata';
 import { eligibleFor } from '../model/eligibility';
 import type { FavoritesExportCell, FavoritesSnapshot } from '../export/snapshot';
 import { computeConditionalStats } from './conditionalStats';
 import type { StatsBst } from '@/components/view/useDetailedStatsData';
-const metadata=new Map(pokemonData.map(mon=>[mon.id,mon]));
-const parents=new Set(pokemonData.flatMap(mon=>mon.evolvesFrom==null?[]:[mon.evolvesFrom]));
 const sourcedBst=formBst as Record<number,number>;
 const entries=allPickerMons().map(mon=>{
- const data=metadata.get(pickerDexId(mon));
+ const data=pickerPokemonMetadata(mon);
  // Roles, not exact numbered stages: a baby is Basic; Final includes two-stage lines.
- const evolution=!data?undefined:data.isBaby?'basic':data.evolvesFrom==null?(parents.has(data.id)?'basic':'standalone'):parents.has(data.id)?'intermediate':'final';
+ const evolution=pickerEvolutionRole(mon);
  const bst=sourcedBst[mon.id];
  return {id:mon.id,attributes:{type:mon.types,shape:data?.shape?[data.shape]:undefined,color:data?.color?[data.color]:undefined,evolution:evolution?[evolution]:undefined,bst:Number.isFinite(bst)?[String(Math.floor(bst/50)*50)]:undefined}};
 });

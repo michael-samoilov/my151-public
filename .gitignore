@@ -46,3 +46,6 @@ docs/i18n/pokeapi/
 
 # Scratch worktree the home page screenshot capture makes (see docs/future-tools/home-page).
 .league-shot-tree/
+
+# Disposable form-metadata source downloads and browser evidence.
+docs/favorite-picker-work/form-metadata-audit/local/
