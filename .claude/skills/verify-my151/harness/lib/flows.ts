@@ -1893,7 +1893,10 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     await waitFor(s, '[data-testid="favorites-picker"]');
     const emptyCard = await s.evalJson<boolean>(`
       const empty = document.querySelector('[data-testid="favorites-picker-empty"]');
-      return !!empty && !!empty.querySelector('svg') && !!empty.querySelector('button');
+      return !!empty && !!empty.querySelector('svg')
+        && !!empty.querySelector('h2')?.textContent?.trim()
+        && !!empty.querySelector('p')?.textContent?.trim()
+        && !empty.querySelector('button');
     `);
     checks.push(ok('favorites:pointer-empty-guidance', emptyCard));
     await s.screenshot(ctx.shot('favorites-pointer-empty'));
