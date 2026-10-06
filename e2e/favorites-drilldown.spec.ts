@@ -15,7 +15,7 @@ test('contributors retain repeated votes and only linked favorite origins @viewp
   await expect(pane).toBeVisible();
   await expect(pane).toHaveAttribute('data-category', 'fire');
   await expect(pane.locator('[data-contributor-cell]')).toHaveCount(2);
-  await expect(pane.locator('[data-contributor-cell="fire|1"]')).toContainText(/Generation I · Fire/) ;
+  await expect(pane.locator('[data-contributor-cell="fire|1"]')).toContainText(/(?:Gen|Generation) I · Fire/) ;
   await expect(pane.locator('[data-contributor-cell="fire|1"]')).toContainText('Favorite · Fire');
   await expect(pane.locator('[data-contributor-cell="flying|1"]')).not.toContainText('Favorite · Fire');
   const before = await page.evaluate(() => localStorage.getItem('favorite-picker'));
@@ -53,4 +53,18 @@ test('complete chart opens row-grouped contributors and BST excludes special cel
   expect(bounds.scroll).toBeLessThanOrEqual(bounds.client + 1);
   await info.attach('group-and-bst-measurements', { body: JSON.stringify({ cells, groups, bstCells, bounds }), contentType: 'application/json' });
   await info.attach('bst-contributors', { body: await page.screenshot(), contentType: 'image/png' });
+});
+
+test('repeated alternate forms retain separate origins and singleton pools add no contributors', async ({ page }, info) => {
+  await seed(page, { 'fire|1': 6, 'ghost|2': 200, 'fire|gimmick': 10034, 'dragon|gimmick': 10034, 'gimmick|1': 10034 });
+  await page.locator('[data-favorite-chart="type"]').getByRole('button', { name: 'Fire', exact: true }).click();
+  const pane = page.getByTestId('favorites-drilldown');
+  const cells = await pane.locator('[data-contributor-cell]').evaluateAll(elements => elements.map(el => el.getAttribute('data-contributor-cell')));
+  expect(cells).toEqual(['fire|1', 'gimmick|1', 'fire|gimmick', 'dragon|gimmick']);
+  await expect(pane.getByTestId('favorites-pick-10034')).toHaveCount(3);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-favorite-chart="type"]').getByRole('button', { name: 'Ghost', exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-favorite-chart="type"] [data-favorite-chart-row="ghost"] td').first()).toHaveText('0');
+  await info.attach('form-and-singleton-contributors', { body: JSON.stringify({ cells, formEntries: 3, singletonContributors: 0 }), contentType: 'application/json' });
+  await info.attach('singleton-category', { body: await page.screenshot(), contentType: 'image/png' });
 });
