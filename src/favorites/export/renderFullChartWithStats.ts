@@ -13,7 +13,7 @@ import { COLOR_BADGE_FILLS } from '@/lib/attributeBadgeStyle';
 import { t } from '@/i18n';
 import type { ColorName, ShapeName, TypeName } from '@/types/pokemon';
 type Dimension='type'|'color'|'shape'|'evolution';
-function titles():Record<Dimension,string>{return {type:t('stats.type.title'),color:t('favorites.stats.color'),shape:t('favorites.stats.shape'),evolution:t('chart.header.evolution')};}
+function titles():Record<Dimension,string>{return {type:t('stats.type.title'),color:t('favorites.stats.color'),shape:t('favorites.stats.shape'),evolution:t('favorites.stats.evolution')};}
 function headers():Record<Dimension,string>{return {type:t('chart.header.type'),color:t('chart.header.color'),shape:t('chart.header.shape'),evolution:t('chart.header.evolution')};}
 const W=320,GAP=16,PANEL_H=960,PANEL_W=W*2+GAP;
 function label(ctx:CanvasRenderingContext2D,text:string,x:number,y:number,maxWidth?:number){ctx.font='400 10px "Inter Variable", system-ui, sans-serif';ctx.fillStyle='#737373';ctx.textAlign='left';ctx.textBaseline='alphabetic';if(maxWidth===undefined)ctx.fillText(text,x,y);else ctx.fillText(text,x,y,maxWidth);}
