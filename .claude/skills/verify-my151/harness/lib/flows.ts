@@ -1632,7 +1632,7 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
   return checks;
 }
 
-const FAV_PATH = '/favorite-pokemon-by-type';
+const FAV_PATH = '/favorite-pokemon-picker';
 const FAV_KEY = 'favorite-picker';
 
 async function waitGone(s: Session, selector: string, tries = 40): Promise<boolean> {
@@ -1697,7 +1697,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
 
   await s.navigate(ctx.base + '/');
   await waitForApp(s);
-  const hub = await waitFor(s, 'a[href="/favorite-pokemon-by-type"]');
+  const hub = await waitFor(s, `a[href="${FAV_PATH}"]`);
   checks.push(ok('favorites:hub-card', hub));
   await s.screenshot(ctx.shot('favorites-hub'));
 
