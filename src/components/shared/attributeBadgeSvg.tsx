@@ -1,18 +1,19 @@
 import type { ReactNode } from 'react';
 import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W, typeBadgeGlyphBox } from '@/lib/typeBadgeGeometry';
-import { attributeBadgeLayout, COLOR_BADGE_FILLS, colorBadgeTextFill } from '@/lib/attributeBadgeStyle';
+import { attributeBadgeLayout, COLOR_BADGE_FILLS, colorBadgeTextFill, type EvolutionRole } from '@/lib/attributeBadgeStyle';
 import type { ColorName, ShapeName } from '@/types/pokemon';
 import { GenerationBadge } from '@/favorites/components/WordBadge';
 import type { GenNumber } from '@/favorites/model/cells';
 import { shapeIconPath } from './ShapeIcon';
 
-function attributeBadgeSvg(kind: 'color' | 'shape', value: ColorName | ShapeName): ReactNode {
+function attributeBadgeSvg(kind: 'color' | 'shape' | 'evolution', value: ColorName | ShapeName | EvolutionRole): ReactNode {
   const { label, centerX, fit } = attributeBadgeLayout(kind, value);
-  const color = kind === 'color' ? colorBadgeTextFill(value as ColorName) : '#000000';
+  const color = kind === 'color' ? colorBadgeTextFill(value as ColorName) : '#171717';
   const box = typeBadgeGlyphBox();
   return <>
     <rect x={.5} y={.5} width={TYPE_BADGE_W - 1} height={TYPE_BADGE_H - 1} rx={TYPE_BADGE.radius - .5}
-      fill={kind === 'color' ? COLOR_BADGE_FILLS[value as ColorName] : '#ffffff'} stroke="#a3a3a3" strokeWidth={1} />
+      fill={kind === 'color' ? COLOR_BADGE_FILLS[value as ColorName] : '#ffffff'} stroke={kind === 'color' && value !== 'white' ? undefined : "#a3a3a3"} strokeWidth={1} />
+    {kind === 'evolution' && evolutionDotsSvg(value as EvolutionRole)}
     {kind === 'shape' && <image href={shapeIconPath(value)} x={box.x} y={box.y} width={box.size} height={box.size} preserveAspectRatio="xMidYMid meet" />}
     <g transform={`translate(${centerX} 0) scale(${fit.scaleX} 1) translate(${-centerX} 0)`}>
       <text x={centerX} y={fit.baseline} textAnchor="middle" fontSize={fit.fontSize} fontWeight={TYPE_BADGE.fontWeight} fill={color}>{label}</text>
@@ -20,6 +21,15 @@ function attributeBadgeSvg(kind: 'color' | 'shape', value: ColorName | ShapeName
   </>;
 }
 
+export function evolutionDotsSvg(role: EvolutionRole): ReactNode {
+  const filled = role === 'basic' ? 1 : role === 'intermediate' ? 2 : 3;
+  // All roles reserve the same three-dot slot; standalone paints its center only.
+  return <g data-evolution-dots={role}>{[0, 1, 2].filter(index => role !== 'standalone' || index === 1).map(index =>
+    <circle key={index} cx={18 + index * 14} cy={TYPE_BADGE_H / 2} r={4.5}
+      fill={role === 'standalone' || index < filled ? '#dc2626' : 'none'} stroke="#dc2626" strokeWidth={1.5} />)}</g>;
+}
+
+export const evolutionBadgeSvg = (role: EvolutionRole) => attributeBadgeSvg('evolution', role);
 export const colorBadgeSvg = (color: ColorName) => attributeBadgeSvg('color', color);
 export const shapeBadgeSvg = (shape: ShapeName) => attributeBadgeSvg('shape', shape);
 
@@ -46,3 +56,5 @@ export function generationChartIcon(gen: GenNumber) {
     </svg>;
   };
 }
+
+export const evolutionChartIcon = (role: EvolutionRole) => badgeChartIcon(() => evolutionBadgeSvg(role));
