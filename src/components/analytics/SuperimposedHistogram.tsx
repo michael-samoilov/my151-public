@@ -68,8 +68,9 @@ function SuperimposedHistogramImpl({
   // mobile, 2 at desktop — so both analytics charts scale consistently.
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
   const height = 200 * chartScale * heightScale + (meanRail ? 76 : 0);
+  // Keep the conditional legend above the bars without moving the baseline or mean rail.
   const margin = {
-    top: 8,
+    top: meanRail ? 44 : 8,
     right: 12,
     bottom: 24 * chartScale + (meanRail ? 76 : 0),
     left: 40 * chartScale,
@@ -82,6 +83,8 @@ function SuperimposedHistogramImpl({
 
   const legendWidth=meanRail?Math.min(plotW,Math.max(90,measureMean(meanRail.legend.options)+20,measureMean(meanRail.legend.yours)+20)):0;
   const means = meanRail ? histogramMeans(meanRail.yours, meanRail.options, plotW, xScale, meanRail.labels, measureMean) : [];
+  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH/Math.max(1,yTicks.length-1)))):1;
+  const visibleYTicks=yTicks.filter((_,index)=>index%yTickStep===0 || index===yTicks.length-1);
   const barFullWidth = xScale(binSize) - xScale(0);
   const barNarrowWidth = barFullWidth * 0.5;
 
@@ -151,7 +154,7 @@ function SuperimposedHistogramImpl({
               );
             })}
 
-            {meanRail && <g data-histogram-legend="true" transform={`translate(${Math.max(0,plotW-legendWidth)},6)`}>
+            {meanRail && <g data-histogram-legend="true" transform={`translate(${Math.max(0,plotW-legendWidth)},${6-margin.top})`}>
               <rect width={legendWidth} height={32} fill="var(--color-background)" opacity={.92}/>
               {[{text:meanRail.legend.options,color:'#94a3b8'},{text:meanRail.legend.yours,color:'#ef4444'}].map((item,index)=><g key={item.text} transform={`translate(4,${index*15+5})`}><rect width={7} height={7} fill={item.color}/><text x={12} y={7} fontSize={10} fill="var(--color-muted-foreground)">{item.text}</text></g>)}
             </g>}
@@ -183,7 +186,7 @@ function SuperimposedHistogramImpl({
             ))}
 
             {/* Y axis tick marks + labels */}
-            {yTicks.map((t) => (
+            {visibleYTicks.map((t) => (
               <g key={`ytick-${t}`}>
                 <line
                   x1={-4} x2={0}

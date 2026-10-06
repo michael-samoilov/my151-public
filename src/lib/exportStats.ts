@@ -87,7 +87,8 @@ export function drawExportHistogram(
   meanRail?: { labels: { yours:string; options:string; exact:string }; legend: { yours:string; options:string } },
 ): number {
   const height = 200 * heightScale + (meanRail ? 76 : 0);
-  const margin = { top: 8, right: 12, bottom: 24 + (meanRail ? 76 : 0), left: 40 };
+  // The conditional legend gets its own band; the baseline and mean rail stay fixed.
+  const margin = { top: meanRail ? 44 : 8, right: 12, bottom: 24 + (meanRail ? 76 : 0), left: 40 };
   const plotW = Math.max(0, CONTENT_W - margin.left - margin.right);
   const plotH = height - margin.top - margin.bottom;
 
@@ -137,8 +138,8 @@ export function drawExportHistogram(
       ctx.textAlign=point.anchor==='middle'?'center':point.anchor==='end'?'right':'left';ctx.textBaseline='middle';ctx.fillText(point.text,point.labelX,cy+((point.labelRail ?? point.rail)-point.rail)*17);
       if(point.subtitle){ctx.textAlign=point.subtitleAnchor==='end'?'right':'left';ctx.fillText(point.subtitle,point.subtitleX!,cy+17);}
     }
-    const legendWidth=Math.min(plotW,Math.max(90,ctx.measureText(meanRail.legend.options).width+20,ctx.measureText(meanRail.legend.yours).width+20)),lx=Math.max(0,plotW-legendWidth);ctx.fillStyle='#fff';ctx.globalAlpha=.92;ctx.fillRect(lx,6,legendWidth,32);ctx.globalAlpha=1;
-    [{text:meanRail.legend.options,color:NAT_HIST},{text:meanRail.legend.yours,color:YOURS}].forEach((item,i)=>{ctx.fillStyle=item.color;ctx.fillRect(lx+4,11+i*15,7,7);ctx.fillStyle=MUTED;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillText(item.text,lx+16,18+i*15);});
+    const legendWidth=Math.min(plotW,Math.max(90,ctx.measureText(meanRail.legend.options).width+20,ctx.measureText(meanRail.legend.yours).width+20)),lx=Math.max(0,plotW-legendWidth),legendTop=6-margin.top;ctx.fillStyle='#fff';ctx.globalAlpha=.92;ctx.fillRect(lx,legendTop,legendWidth,32);ctx.globalAlpha=1;
+    [{text:meanRail.legend.options,color:NAT_HIST},{text:meanRail.legend.yours,color:YOURS}].forEach((item,i)=>{ctx.fillStyle=item.color;ctx.fillRect(lx+4,legendTop+5+i*15,7,7);ctx.fillStyle=MUTED;ctx.textAlign='left';ctx.textBaseline='alphabetic';ctx.fillText(item.text,lx+16,legendTop+12+i*15);});
   }
   // X ticks
   ctx.fillStyle = MUTED;
@@ -154,7 +155,8 @@ export function drawExportHistogram(
   // Y ticks
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  for (const t of bst.yTicks) {
+  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH/Math.max(1,bst.yTicks.length-1)))):1;
+  for (const t of bst.yTicks.filter((_,index)=>index%yTickStep===0 || index===bst.yTicks.length-1)) {
     line(ctx, -4, yScale(t), 0, yScale(t));
     ctx.fillText(`${t}%`, -7, yScale(t));
   }
