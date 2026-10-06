@@ -18,9 +18,11 @@ export default defineConfig({
         codeSplitting: {
           // These shared startup modules keep their common dependencies in one
           // chunk when a new lazy export entry changes automatic partitioning.
+          // React DOM always loads with React. Keeping them together avoids
+          // separate Brotli dictionaries and preserves first-load headroom.
           groups: [{
             name: 'shared-chrome',
-            test: /\/src\/(?:components\/shared\/PageFooter\.tsx|lib\/(?:feedbackContext|usePixelPerfectSprite)\.ts|hooks\/useJsErrorCounter\.ts)$/,
+            test: /(?:\/src\/(?:components\/shared\/PageFooter\.tsx|lib\/(?:feedbackContext|usePixelPerfectSprite)\.ts|hooks\/useJsErrorCounter\.ts)$|\/node_modules\/react-dom\/)/,
           }],
         },
       },
