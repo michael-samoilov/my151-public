@@ -1,59 +1,59 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "781ea081",
+  "sourceRevision": "a67829ce",
   "groups": [
     {
       "id": "picker",
       "title": "1. Picker copy",
-      "note": "Review the search title, description, and FAQ draft. The approved route and short H1 remain fixed. Your Trends evidence supports Favorite Pokémon Picker as the primary name; autocomplete supplies useful type/generation wording, not ranking guarantees.",
+      "note": "Search title, description, and FAQs are approved in chat. The approved route and short H1 remain fixed.",
       "fields": [
         {
           "id": "picker_title",
           "label": "Search title",
           "current": "Favorite Pokémon Picker by Type and Generation | my151",
           "proposed": "Favorite Pokémon Picker by Type and Generation | my151",
-          "recommendation": "Keep the primary phrase first. Type and Generation explain this grid without crowding its approved short H1."
+          "resolved": true
         },
         {
           "id": "picker_description",
           "label": "Search description",
-          "current": "Favorite Pokémon picker by type and generation. Export your chart and filter Pokémon by your favorites in the Pokédex and gym leader builders.",
-          "proposed": "Pick your favorite Pokémon of each type and generation. Create a favorites chart, then export the Full grid or Summary view as a PNG. Free, no account.",
+          "current": "Pick your favorite Pokémon of each type and generation. Fill the grid, see detailed stats on which sorts of Pokémon you tend to prefer, then export the full grid or summary view as a PNG. Free, no account.",
+          "proposed": "Pick your favorite Pokémon of each type and generation. Fill the grid, see detailed stats on which sorts of Pokémon you tend to prefer, then export the full grid or summary view as a PNG. Free, no account.",
           "previousProposals": [
             "Pick your favorite Pokémon of each type and generation. Create a favorites chart, then export the Full grid or Simplified view as a PNG. Free, no account."
           ],
-          "recommendation": "Use natural “of each type” wording. Summary is the current export label. Search engines can rewrite snippets."
+          "resolved": true
         },
         {
           "id": "picker_faqs",
           "label": "FAQs (question followed by answer)",
-          "current": "How does picking work?\nChoose a cell to pick a Pokémon for that type and generation. Then choose your favorites from each row and column, and an overall favorite.\n\nCan I export the chart?\nYes. Save the Full grid or Summary view as a PNG. You can filter Pokémon by your favorites in the Pokédex and gym leader builders.",
-          "proposed": "How do I make a favorite Pokémon chart by type and generation?\nChoose a Pokémon for each type and generation cell. Then pick your favorites from each row and column, including an overall favorite.\n\nCan I export a chart of my favorite Pokémon of each type?\nYes. Export the Full grid, or choose Summary for your type, generation, starter, legendary, gimmick, and overall favorites. Both save as PNGs.\n\nIs it free? Do I need an app or an account?\nFree, in the browser, no sign-up, no download. Your choices save in this browser. Clearing browser data can remove them, so export a PNG to keep your chart.\n\nCan I choose alternate forms or shiny Pokémon?\nThe picker includes alternate forms, including regional forms and Mega Evolutions. It uses non-shiny pixel-art sprites. Available choices depend on the cell's type and generation.\n\nCan I use my favorites in the other my151 tools?\nYes. The Pokédex builder and gym leader maker can filter their Pokémon lists to your saved favorites in this browser.",
+          "current": "How do I make a favorite Pokémon chart by type and generation?\nChoose a Pokémon for each intersection of type and generation. Then pick your favorites from each row and column, including an overall favorite.\n\nCan I see how my favorite Pokémon compare to the average Pokémon?\nYes. Open the analytics page to see if your picks tend to include Pokémon of a certain type, color, shape, evolution stage, or base stat total.\n\nCan I export a chart of my favorite Pokémon of each type?\nYes. Export the Full grid, or choose Summary for your type, generation, starter, legendary, gimmick, and overall favorites. Both save as PNGs.\n\nIs it free? Do I need an app or an account?\nFree, in the browser, no sign-up, no download. Your choices save in this browser. Clearing browser data can remove them, so export a PNG to keep your chart.\n\nCan I use my favorites in the other my151 tools?\nYes. The Pokédex builder and gym leader maker can filter their Pokémon lists to your saved favorites in this browser.",
+          "proposed": "How do I make a favorite Pokémon chart by type and generation?\nChoose a Pokémon for each intersection of type and generation. Then pick your favorites from each row and column, including an overall favorite.\n\nCan I see how my favorite Pokémon compare to the average Pokémon?\nYes. Open the analytics page to see if your picks tend to include Pokémon of a certain type, color, shape, evolution stage, or base stat total.\n\nCan I export a chart of my favorite Pokémon of each type?\nYes. Export the Full grid, or choose Summary for your type, generation, starter, legendary, gimmick, and overall favorites. Both save as PNGs.\n\nIs it free? Do I need an app or an account?\nFree, in the browser, no sign-up, no download. Your choices save in this browser. Clearing browser data can remove them, so export a PNG to keep your chart.\n\nCan I use my favorites in the other my151 tools?\nYes. The Pokédex builder and gym leader maker can filter their Pokémon lists to your saved favorites in this browser.",
           "previousProposals": [
             "How do I make a favorite Pokémon chart by type and generation?\nChoose a Pokémon for each type and generation cell. Then pick your favorites from each row and column, including an overall favorite.\n\nCan I export a chart of my favorite Pokémon of each type?\nYes. Export the Full grid, or choose Simplified for your type, generation, starter, legendary, gimmick, and overall favorites. Both save as PNGs.\n\nIs it free? Do I need an app or an account?\nFree, in the browser, no sign-up, no download. Your choices save in this browser. Clearing browser data can remove them, so export a PNG to keep your chart.\n\nCan I choose alternate forms or shiny Pokémon?\nThe picker includes alternate forms, including regional forms and Mega Evolutions. It uses non-shiny pixel-art sprites. Available choices depend on the cell's type and generation.\n\nCan I use my favorites in the other my151 tools?\nYes. The Pokédex builder and gym leader maker can filter their Pokémon lists to your saved favorites in this browser."
           ],
-          "recommendation": "The expanded questions cover chart creation, PNG exports, browser saving, forms, and using favorites in other tools. They describe current behavior."
+          "resolved": true
         }
       ]
     },
     {
       "id": "home",
       "title": "2. Homepage copy",
-      "note": "Review only the homepage search title and description. The approved compact intro, portrait artwork, card text, and restored caption sizes stay unchanged.",
+      "note": "Homepage search title and description are approved in chat. The compact intro, portrait artwork, card text, and restored caption sizes stay unchanged.",
       "fields": [
         {
           "id": "home_title",
           "label": "Search title",
-          "current": "my151 | Pokédex Builder, Gym Leader Maker & Favorite Pokémon Picker",
+          "current": "my151 | Pokémon Tools: Pokédex, Gym Leaders & Favorites",
           "proposed": "my151 | Pokémon Tools: Pokédex, Gym Leaders & Favorites",
-          "recommendation": "The proposal is shorter and covers all three tools. Keep the existing title if you prefer each complete tool name."
+          "resolved": true
         },
         {
           "id": "home_description",
           "label": "Search description",
-          "current": "Free Pokémon fan tools: a custom regional Pokédex builder, gym leader and trainer card maker, and favorite Pokémon picker by type and generation. Export PNGs.",
-          "proposed": "Free Pokémon fan tools: build a custom regional Pokédex, create gym leader teams and trainer cards, or pick favorites by type and generation. Export PNGs.",
-          "recommendation": "Both versions describe the three tools and PNG export. The proposal uses the actions a visitor can take."
+          "current": "Free Pokémon fan tools: build a custom regional Pokédex, create a full league of custom gym leader teams, or pick favorites by type and generation. Export PNGs.",
+          "proposed": "Free Pokémon fan tools: build a custom regional Pokédex, create a full league of custom gym leader teams, or pick favorites by type and generation. Export PNGs.",
+          "resolved": true
         }
       ]
     },
@@ -130,9 +130,9 @@
   ],
   "launchReview": [
     {
-      "title": "Copy review — your feedback",
-      "status": "Pending",
-      "text": "Approve or edit the five fields above. Partial feedback is fine. The coordinator then applies it to metadata, FAQs, and localizations."
+      "title": "Copy review — approved in chat",
+      "status": "Approved",
+      "text": "The five copy fields above are approved. Metadata, FAQs, and localizations use this copy. Further changes can be sent through Notes."
     },
     {
       "title": "Safari, Firefox, and iOS sharing",
