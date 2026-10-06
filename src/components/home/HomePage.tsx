@@ -373,6 +373,9 @@ function Artwork({ tool }: { tool: Tool }) {
   // guard is unchanged — the handlers sit on the twins, which never move, so a
   // floating shot can never move out from under the pointer and toggle itself.
   const [floated, setFloated] = useState<number | null>(null);
+  // Shorter sheets need slightly more paper below the pocket for the extra lift.
+  const widerPair = tool.key === 'dex' || tool.key === 'league';
+  const shotWidth = widerPair ? 146 : SHOT_W;
   // Both clip boxes reach far past the panel's top-left edge, mostly over empty
   // space. That whole rectangle used to be part of the link, so a click well
   // above or beside the artwork still navigated. `pointerEvents: 'none'` here
@@ -395,15 +398,15 @@ function Artwork({ tool }: { tool: Tool }) {
       position: 'absolute' as const,
       // The nudge clears bottom corners; the front sheet uses half the remaining
       // right clearance. All visible, shadow and stationary hit copies share it.
-      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${i === 1
-        ? ` + (var(--card-width, 100cqw) - (${U(FAN[1].offset)} - ${U(POP_LEFT)} * var(--art) + var(--shot-nudge, 0px) + ${U(SHOT_W)} * var(--art))) / 2`
+      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${tool.key === 'dex' && i === 0 ? ` - ${U(3)}` : ''}${i === 1
+        ? ` + (var(--card-width, 100cqw) - (${U(FAN[1].offset)} - ${U(POP_LEFT)} * var(--art) + var(--shot-nudge, 0px) + ${U(shotWidth)} * var(--art))) / 2${widerPair ? ` - ${U(5)}` : ''}`
         : ''})`,
       // A common top anchor keeps native screenshot height out of the fan geometry.
-      // Shorter Dex stats and League summary sheets keep their bottoms hidden on lift.
-      top: `calc(${BLEED} + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 18px' : tool.key === 'league' ? ' + 6px' : ''})`,
-      width: `calc(${U(SHOT_W)} * var(--art))`,
+      // Rest is the previous hover height; hover still adds its existing 12px lift.
+      top: `calc(${BLEED} + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 6px' : tool.key === 'league' ? ' - 6px' : ' - 12px'})`,
+      width: `calc(${U(shotWidth)} * var(--art))`,
       transformOrigin: '50% 0' as const,
-      borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${EXPORT_RADIUS})`,
+      borderRadius: `calc(${U(shotWidth)} * var(--art) * ${EXPORT_RADIUS})`,
     };
   };
   // The floating shots carry `--hf`, the per-shot hover float that `index.css`
@@ -445,7 +448,7 @@ function Artwork({ tool }: { tool: Tool }) {
             aria-hidden
             data-shot={i}
             className="hub-float-shot block"
-            style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
+            style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 9px 21px -5px rgba(10, 10, 10, 0.42)' }}
           >
             <img {...tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
           </span>
@@ -624,7 +627,8 @@ export function HomePage() {
               >
                 {t('home.h1')}
               </h1>
-              <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2">
+              {/* Match the title's x-height, accounting for paragraph leading. */}
+              <div className="mt-2.5 md:mt-0 md:text-[1.75rem] xl:text-[2.1rem] md:pt-[calc(1cap_-_1ex_+_0.125rem)] flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2">
                 <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
                   {t('home.intro')}
                 </p>
