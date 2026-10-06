@@ -399,8 +399,8 @@ function Artwork({ tool }: { tool: Tool }) {
         ? ` + (var(--card-width, 100cqw) - (${U(FAN[1].offset)} - ${U(POP_LEFT)} * var(--art) + var(--shot-nudge, 0px) + ${U(SHOT_W)} * var(--art))) / 2`
         : ''})`,
       // A common top anchor keeps native screenshot height out of the fan geometry.
-      // The shorter detailed-stats sheet keeps its bottom hidden during a 12px lift.
-      top: `calc(${BLEED} + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 18px' : ''})`,
+      // Shorter Dex stats and League summary sheets keep their bottoms hidden on lift.
+      top: `calc(${BLEED} + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 18px' : tool.key === 'league' ? ' + 6px' : ''})`,
       width: `calc(${U(SHOT_W)} * var(--art))`,
       transformOrigin: '50% 0' as const,
       borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${EXPORT_RADIUS})`,
