@@ -63,7 +63,9 @@ test('repeated alternate forms retain separate origins and singleton pools add n
   expect(cells).toEqual(['fire|1', 'gimmick|1', 'fire|gimmick', 'dragon|gimmick']);
   await expect(pane.getByTestId('favorites-pick-10034')).toHaveCount(3);
   await page.keyboard.press('Escape');
-  await expect(page.locator('[data-favorite-chart="type"]').getByRole('button', { name: 'Ghost', exact: true })).toHaveCount(0);
+  await page.locator('[data-favorite-chart="type"]').getByRole('button', { name: 'Ghost', exact: true }).click();
+  await expect(pane.locator('[data-contributor-cell]')).toHaveCount(0);
+  await expect(pane).toContainText('No choices in this category.');
   await expect(page.locator('[data-favorite-chart="type"] [data-favorite-chart-row="ghost"] td').first()).toHaveText('0');
   await info.attach('form-and-singleton-contributors', { body: JSON.stringify({ cells, formEntries: 3, singletonContributors: 0 }), contentType: 'application/json' });
   await info.attach('singleton-category', { body: await page.screenshot(), contentType: 'image/png' });
