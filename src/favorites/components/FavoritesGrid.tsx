@@ -67,9 +67,8 @@ const MINIMAP_HOVER = '1';
 // The desktop minimap takes the pointer only after the pointer rests on it
 // this long, so a quick click on a cell under it still reaches the cell.
 const MINIMAP_HOVER_MS = 200;
-// How long the minimap stays after the last scroll, zoom, or drag. The phone
-// minimap stays long enough for a finger to reach it.
-const MINIMAP_LINGER_MS = { desktop: 350, mobile: 2000 };
+// Shared idle delay after the last scroll, zoom, or drag.
+const MINIMAP_LINGER_MS = 1200;
 
 /** A length inside a 0.5px-bordered track of size `track`, as a fraction of
  *  it. A container unit would give the same size, but 300 size containers
@@ -303,7 +302,7 @@ function useZoomFrame(
         if (armed || drag) return;
         map.style.opacity = '0';
         if (!desktop) map.style.pointerEvents = '';
-      }, desktop ? MINIMAP_LINGER_MS.desktop : MINIMAP_LINGER_MS.mobile);
+      }, MINIMAP_LINGER_MS);
     };
     const draw = () => {
       frame = 0;
