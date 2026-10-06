@@ -1,3 +1,4 @@
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePokedexStore } from '@/store/usePokedexStore';
@@ -678,12 +679,13 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
 
   return (
     <div ref={menuRef} className="relative">
-      <button type="button"
+      <HeaderActionButton type="button"
         onClick={() => { setOpen(!open); setConfirming(false); }}
-        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+        aria-label="Settings"
+        className="text-muted-foreground hover:text-foreground hover:bg-muted"
       >
         <Settings className="w-4 h-4" />
-      </button>
+      </HeaderActionButton>
       {open && (
         <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
           <button type="button"

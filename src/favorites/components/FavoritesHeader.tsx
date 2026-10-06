@@ -1,4 +1,5 @@
-import { BarChart3, Download, Grid2X2 } from 'lucide-react';
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
+import { BarChart3, Download, Sheet } from 'lucide-react';
 import { useT } from '@/i18n';
 import { FavoritesCompletionCounter } from './FavoritesCompletionCounter';
 
@@ -13,8 +14,8 @@ export function FavoritesHeader({ fills, currentView, onViewChange, exportOpen, 
 }) {
   const t = useT();
   const tabs = [
-    { view: 'picker', label: t('favorites.nav.picker'), Icon: Grid2X2 },
-    { view: 'analytics', label: t('nav.analytics'), Icon: BarChart3 },
+    { view: 'picker', label: t('favorites.nav.grid'), Icon: Sheet },
+    { view: 'analytics', label: t('favorites.nav.analytics'), Icon: BarChart3 },
   ] as const;
   return <div className="flex h-11 shrink-0 items-center gap-1 border-b bg-card px-3" data-testid="favorites-header">
     <div className="mr-auto flex min-w-0 flex-col justify-center gap-[0.0625rem]">
@@ -45,10 +46,10 @@ export function FavoritesHeader({ fills, currentView, onViewChange, exportOpen, 
         </button>;
       })}
     </div>
-    <button type="button" data-testid="favorites-export-open" aria-label={t('favorites.export.title')}
+    <HeaderActionButton type="button" data-testid="favorites-export-open" aria-label={t('favorites.export.title')}
       aria-expanded={exportOpen} onClick={onExport}
-      className="shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+      className="text-primary hover:bg-primary hover:text-primary-foreground">
       <Download className="h-4 w-4" aria-hidden />
-    </button>
+    </HeaderActionButton>
   </div>;
 }

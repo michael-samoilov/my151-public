@@ -1,3 +1,4 @@
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { useDragSensors } from '@/lib/dragSensors';
 import { createPortal } from 'react-dom';
@@ -1123,10 +1124,10 @@ export function ViewPage() {
             are the header's job now. */}
         {toolbarSlot && createPortal(
           <>
-            <button type="button"
+            <HeaderActionButton type="button"
               ref={settingsBtnRef}
               onClick={() => setSettingsOpen(true)}
-              className="relative p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted"
               aria-label="View settings"
             >
               <Settings className="w-4 h-4" />
@@ -1136,17 +1137,17 @@ export function ViewPage() {
                   aria-label="Custom order active"
                 />
               )}
-            </button>
-            <button type="button"
+            </HeaderActionButton>
+            <HeaderActionButton type="button"
               ref={exportBtnRef}
               onClick={openExport}
               disabled={count === 0}
               data-dex-export
               aria-label="Export"
-              className="p-1.5 rounded-md border border-border text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-primary"
+              className="text-primary hover:bg-primary hover:text-primary-foreground disabled:hover:bg-card disabled:hover:text-primary"
             >
               <Download className="w-4 h-4" />
-            </button>
+            </HeaderActionButton>
           </>,
           toolbarSlot,
         )}
