@@ -379,7 +379,7 @@ function Artwork({ tool }: { tool: Tool }) {
   // Shorter sheets need slightly more paper below the pocket for the extra lift.
   const widerPair = tool.key === 'dex' || tool.key === 'league';
   const shotWidth = tool.key === 'dex' ? 147 : tool.key === 'league' ? 149 : SHOT_W;
-  const bottomReserve = tool.key === 'dex' ? 0.105 : tool.key === 'league' ? 0.04 : 0;
+  // The shortest front sheet sets a shared resting top and bottom reserve.
   // Both clip boxes reach far past the panel's top-left edge, mostly over empty
   // space. That whole rectangle used to be part of the link, so a click well
   // above or beside the artwork still navigated. `pointerEvents: 'none'` here
@@ -407,9 +407,9 @@ function Artwork({ tool }: { tool: Tool }) {
       left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${i === 0 ? ` - ${U(1)}` : ''}${i === 1
         ? ` + (var(--card-width, 100cqw) - (${U(FAN[1].offset)} - ${U(POP_LEFT)} * var(--art) + var(--shot-nudge, 0px) + ${U(shotWidth)} * var(--art))) / 2${widerPair ? ` - ${U(5)}` : ''}`
         : ''})`,
-      // A common top anchor keeps native screenshot height out of the fan geometry.
-      // Short native sheets need reserve below the fold for the larger hover.
-      top: `calc(${BLEED} + var(--panel-height) * 0.55 + ${U(SHOT_TOP)}${tool.key === 'dex' ? ' + 6px' : tool.key === 'league' ? ' - 6px' : ' - 12px'} + var(--panel-height) * ${bottomReserve})`,
+      // Share the Dex's safe resting top. Compensate for the tilted top edge's
+      // half-width projection, so different sheet widths have the same top.
+      top: `calc(${BLEED} + var(--panel-height) * 0.55 + ${U(SHOT_TOP)} + 6px + var(--panel-height) * 0.105 + (${U(shotWidth)} * var(--art) * ${scale} - ${U(147)} * var(--art)) * ${Math.sin(Math.abs(f.tilt) * Math.PI / 180) / 2})`,
       width: `calc(${U(shotWidth)} * var(--art) * ${scale})`,
       transformOrigin: '50% 0' as const,
       borderRadius: `calc(${U(shotWidth)} * var(--art) * ${scale} * ${EXPORT_RADIUS})`,
