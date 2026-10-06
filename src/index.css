@@ -572,7 +572,8 @@ img {
 @media (max-width: 639px) and (max-height: 760px) {
   .hub-home > .hub-spacer { min-height: 2px; }
   .hub-home .hub-grid {
-    row-gap: 4px;
+    /* Leave room for the newly raised second-row sheets above their pockets. */
+    row-gap: 16px;
     --caption-top: 2px;
     --caption-gap: 1px;
     --caption-leading: 1.25;
