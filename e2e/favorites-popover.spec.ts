@@ -86,7 +86,7 @@ test('desktop picker opens next to its cell inside the visible grid body', async
   await testInfo.attach('pane-bounds.json', { body: JSON.stringify({ measured, header }, null, 2), contentType: 'application/json' });
 });
 
-test('desktop pane closes on Escape or a click outside it, and that click opens nothing', async ({ page }, testInfo) => {
+test('desktop pane switches grid cells and closes on Escape or outside clicks', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/favorite-pokemon-by-type');
   const picker = page.getByTestId('favorites-picker');
