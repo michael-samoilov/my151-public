@@ -15,15 +15,24 @@ function spacedText(
   y: number,
   spacing: number,
   align: 'start' | 'middle' | 'end',
+  maxWidth?: number,
 ) {
   const widths = [...text].map((c) => ctx.measureText(c).width);
   const total = widths.reduce((a, b) => a + b, 0) + spacing * Math.max(0, text.length - 1);
-  let cx = align === 'start' ? x : align === 'middle' ? x - total / 2 : x - total;
+  const fit = maxWidth === undefined || total <= maxWidth ? 1 : maxWidth / total;
+  let cx = align === 'start' ? x : align === 'middle' ? x - total * fit / 2 : x - total * fit;
   const prevAlign = ctx.textAlign;
   ctx.textAlign = 'left';
   [...text].forEach((c, i) => {
-    ctx.fillText(c, cx, y);
-    cx += widths[i] + spacing;
+    if (fit === 1) ctx.fillText(c, cx, y);
+    else {
+      ctx.save();
+      ctx.translate(cx, y);
+      ctx.scale(fit, 1);
+      ctx.fillText(c, 0, 0);
+      ctx.restore();
+    }
+    cx += (widths[i] + spacing) * fit;
   });
   ctx.textAlign = prevAlign;
 }
@@ -132,11 +141,20 @@ export function drawExportButterfly(
   spacedText(ctx, labelHeader, iconStart + iconColW / 2, headerBaseline, 0.05 * CHART_TEXT, 'middle');
   spacedText(ctx, t('chart.header.count'), countSectionStart, headerBaseline, 0.05 * CHART_TEXT, 'start');
   // Deviation two-line headers, bottom line on headerBaseline.
-  const dy = 1.1 * CHART_TEXT;
-  spacedText(ctx, t('chart.header.underIndexed1'), devSectionStart + zeroX - 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'end');
-  spacedText(ctx, t('chart.header.underIndexed2'), devSectionStart + zeroX - 5, headerBaseline, 0.05 * CHART_TEXT, 'end');
-  spacedText(ctx, t('chart.header.overIndexed1'), devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'start');
-  spacedText(ctx, t('chart.header.overIndexed2'), devSectionStart + zeroX + 5, headerBaseline, 0.05 * CHART_TEXT, 'start');
+  // CJK glyphs can exceed the Latin line box. Keep both header lines separate
+  // without moving the lower baseline or the chart rows.
+  const headerLines = [t('chart.header.underIndexed1'), t('chart.header.underIndexed2'), t('chart.header.overIndexed1'), t('chart.header.overIndexed2')];
+  const fitIndexHeaders = options.alignBaselines && options.fixedIndexDomain !== undefined;
+  const dy = fitIndexHeaders ? Math.max(1.1 * CHART_TEXT, ...headerLines.map(text => {
+    const metrics = ctx.measureText(text);
+    return metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + 1;
+  })) : 1.1 * CHART_TEXT;
+  const underHeaderWidth = fitIndexHeaders ? zeroX - 5 : undefined;
+  const overHeaderWidth = fitIndexHeaders ? chart2Width - zeroX - 5 : undefined;
+  spacedText(ctx, t('chart.header.underIndexed1'), devSectionStart + zeroX - 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'end', underHeaderWidth);
+  spacedText(ctx, t('chart.header.underIndexed2'), devSectionStart + zeroX - 5, headerBaseline, 0.05 * CHART_TEXT, 'end', underHeaderWidth);
+  spacedText(ctx, t('chart.header.overIndexed1'), devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'start', overHeaderWidth);
+  spacedText(ctx, t('chart.header.overIndexed2'), devSectionStart + zeroX + 5, headerBaseline, 0.05 * CHART_TEXT, 'start', overHeaderWidth);
 
   // Rows
   rows.forEach((d, i) => {
