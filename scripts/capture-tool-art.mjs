@@ -47,7 +47,12 @@ async function phonePage(tab,name){
  if(tab==='analytics')await p.evaluate(top=>{const h=[...document.querySelectorAll('h1,h2,h3')].find(h=>h.textContent.trim()==='Pokémon Type');if(!h)throw Error('missing type heading');const s=h.closest('.overflow-y-auto')||document.scrollingElement;s.scrollTop+=h.getBoundingClientRect().top-top-16},chrome);
  await p.waitForTimeout(1000);await p.locator('img').evaluateAll(images=>Promise.all(images.filter(i=>i.getBoundingClientRect().width&&i.getBoundingClientRect().top<innerHeight).map(i=>i.decode().catch(()=>null))));
  await audit(p,name);await p.screenshot({path:resolve(out,`${name}-whole.png`),fullPage:true});
- await p.screenshot({path:resolve(out,`${name}.png`),clip:{x:0,y:chrome,width:390,height:844}});source(name);await p.close();
+ // The Build pane reserves a scrollbar rail. Exclude that rail from artwork
+ // so its right gutter matches the native left/top content padding.
+ const clip=tab==='build'
+  ? await p.locator('[data-build-scroll]').evaluate(el=>{const r=el.getBoundingClientRect();return{x:r.left+el.clientLeft,y:r.top+el.clientTop,width:el.clientWidth,height:844}})
+  : {x:0,y:chrome,width:390,height:844};
+ await p.screenshot({path:resolve(out,`${name}.png`),clip});source(name);await p.close();
 }
 try{
  if(has('league')||has('league-summary')){
@@ -75,8 +80,8 @@ try{
  await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});
  await blob(p,'dex-share-stats');await p.close();
  }
+ if(has('dex')||has('dex-build'))await phonePage('build','dex-build');
  if(has('dex')){
- await phonePage('build','dex-build');
  const p=await browser.newPage({viewport:{width:1280,height:900}});await p.goto(`${base}/pokedex-builder?demo=151&notme`);await p.locator('[data-nav="view"]').first().click();await p.locator('[data-dex-export]').click();await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'dex-grid');await p.locator('[data-export-stats]').click();await p.waitForTimeout(1000);await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'dex-stats');await p.close();
  }
  if(has('audit-native'))for(const name of ['league-story','trainer-brock','picker-full-portrait','picker-simplified-portrait','picker-full-horizontal','picker-simplified-horizontal','dex-grid','dex-stats']){
