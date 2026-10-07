@@ -11,10 +11,6 @@ import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import {
   CARD_FILENAME,
   HOME_FILENAME,
-  exportGymCard,
-  exportLeagueHome,
-} from '../export/exportLeague';
-import {
   leagueLayoutFrameKey,
   leagueLayoutPermutations,
   parseLeagueHomeExportLayout,
@@ -61,6 +57,7 @@ export function LeagueExportOverlay() {
         key: `card:${exportCardIndex ?? 0}:${order}`,
         render: async () => {
           const { cards } = useLeagueStore.getState();
+          const { exportGymCard } = await import('../export/exportLeague');
           return exportGymCard(cards[exportCardIndex!], order);
         },
       }));
@@ -69,6 +66,7 @@ export function LeagueExportOverlay() {
       key: leagueLayoutFrameKey(item),
       render: async () => {
         const { name, cards, view } = useLeagueStore.getState();
+        const { exportLeagueHome } = await import('../export/exportLeague');
         return exportLeagueHome(name, cards, view, item);
       },
     }));
@@ -87,11 +85,15 @@ export function LeagueExportOverlay() {
       const { name, cards, view } = useLeagueStore.getState();
       const ids = exportPokemonIds(isLeague ? cards : [cards[exportCardIndex!]]);
       const cached = urls[activeKey];
-      const blob = cached
-        ? await fetch(cached).then((r) => r.blob())
-        : isLeague
+      let blob: Blob;
+      if (cached) {
+        blob = await fetch(cached).then((r) => r.blob());
+      } else {
+        const { exportLeagueHome, exportGymCard } = await import('../export/exportLeague');
+        blob = isLeague
           ? await exportLeagueHome(name, cards, view, layout)
           : await exportGymCard(cards[exportCardIndex!], cardTeamOrder);
+      }
       await shareOrDownload(blob, isLeague ? HOME_FILENAME : CARD_FILENAME);
       incrementLeagueExportCount();
       const { event, exportTool } = leagueExportEventBody(exportKind);

@@ -37,6 +37,7 @@ export function buildTypeRows(
       count: typeCounts[t],
       deviation,
       color: TYPE_COLORS[t as keyof typeof TYPE_COLORS],
+      barOpacity: 1,
       icon: typeIconPath(t as TypeName),
     };
   });

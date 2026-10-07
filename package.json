@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "cache-sprites": "bash scripts/cache-sprites.sh",
+    "sprites:measure": "node scripts/build-favorite-sprite-ink.mjs",
     "build-type-glyphs": "tsx scripts/build-type-glyphs.ts",
     "league:powerups": "tsx --tsconfig tsconfig.node.json scripts/league/fetch-powerup-forms.ts",
     "shade-report": "tsx --tsconfig tsconfig.node.json scripts/shade-report.ts",
@@ -28,7 +29,8 @@
     "i18n:terms": "tsx scripts/i18n/build-term-catalogs.ts",
     "i18n:game-text": "tsx scripts/i18n/fetch-game-text.ts",
     "i18n:verify": "tsx scripts/i18n/verify.ts",
-    "i18n:extract": "tsx scripts/i18n/translate/extract.ts"
+    "i18n:extract": "tsx scripts/i18n/translate/extract.ts",
+    "favorites:browser-ids": "tsx --tsconfig tsconfig.node.json scripts/build-favorite-browser-ids.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

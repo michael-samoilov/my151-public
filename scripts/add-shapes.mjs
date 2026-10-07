@@ -2,12 +2,15 @@
 // to every entry in src/data/pokemon.json, sourced from the PokeAPI CSV dumps
 // cached in docs/biome-research/pokeapi/ (pokemon_species.csv shape_id; alt
 // forms resolve through pokemon.csv's species_id). Idempotent — rerunning
-// just rewrites the same values.
+// just rewrites the same values. Reviewed form exceptions take precedence
+// over the species-level fallback (see form-shape-overrides.mjs).
 //
 // Run:  node scripts/add-shapes.mjs
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { sourceSpeciesId } from './pokemon-source-identity.mjs';
+import { refreshedShape } from './form-shape-overrides.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,7 +30,6 @@ for (const r of rows('pokemon_species.csv')) {
   const shape = SHAPE_NAMES[Number(r[6])];
   if (shape) speciesShape.set(Number(r[0]), shape);
 }
-const formSpecies = new Map(rows('pokemon.csv').map((r) => [Number(r[0]), Number(r[2])]));
 
 const pkPath = join(ROOT, 'src', 'data', 'pokemon.json');
 const pokemon = JSON.parse(readFileSync(pkPath, 'utf8'));
@@ -35,8 +37,8 @@ const pokemon = JSON.parse(readFileSync(pkPath, 'utf8'));
 let set = 0;
 const missing = [];
 for (const p of pokemon) {
-  const speciesId = p.id <= 1025 ? p.id : formSpecies.get(p.id) ?? p.id;
-  const shape = speciesShape.get(speciesId);
+  const speciesId = sourceSpeciesId(p);
+  const shape = refreshedShape(p, speciesShape.get(speciesId));
   if (shape) {
     p.shape = shape;
     set++;
@@ -45,6 +47,6 @@ for (const p of pokemon) {
   }
 }
 
-writeFileSync(pkPath, JSON.stringify(pokemon));
+writeFileSync(pkPath, JSON.stringify(pokemon) + '\n');
 console.log(`shapes set: ${set}/${pokemon.length}`);
 if (missing.length) console.log('missing shape:', missing.join(', '));

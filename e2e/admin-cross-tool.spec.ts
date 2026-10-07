@@ -21,7 +21,8 @@ test.describe('admin cross-tool tile', () => {
     await expect(tile.getByText('Before 8 Sep')).toHaveCount(0);
     await expect(tile.getByTestId('cross-tool-legend')).toHaveCount(0);
     const names = tile.getByTestId('cross-tool-circle-label');
-    await expect(names).toHaveCount(2);
+    await expect(names).toHaveCount(3);
+    await expect(names.filter({hasText:'Picker 6'})).toBeVisible();
     await expect(names.filter({ hasText: 'Dex 49' })).toBeVisible();
     await expect(names.filter({ hasText: 'League 2' })).toBeVisible();
     const svg = tile.locator('svg[role="img"]');
@@ -41,6 +42,7 @@ test.describe('admin cross-tool tile', () => {
     await expect(page.getByRole('heading', { name: /What people pick/ })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: /Newest browsers/ })).toHaveCount(0);
 
+    await test.info().attach('cross-tool.svg', {body:await svg.evaluate(el=>el.outerHTML),contentType:'image/svg+xml'});
     await page.getByRole('button', { name: 'Dex', exact: true }).click();
     await expect(page.getByRole('heading', { name: /Cross-tool/ })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: /Build depth/ })).toBeVisible();

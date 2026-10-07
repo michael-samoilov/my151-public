@@ -1,3 +1,5 @@
+import type { PokemonLabel } from '@/i18n/names';
+import type { ReactNode } from 'react';
 import { type DrillDownSegment } from '@/store/usePokedexStore';
 import { getPokemonById, getEvolutionLine, getAllPokemon, isSpecial } from '@/hooks/usePokemonData';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -14,6 +16,7 @@ const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1ab
 
 interface SectionGroup {
   sectionId: string;
+  attributes?: Record<string, string>;
   sectionName: string;
   sectionColor: string;
   groups: {
@@ -29,10 +32,21 @@ interface SectionGroup {
     /** Explicit home gen for this placement (regional drilldown places a
      *  line once per gen that has a matching member in it). */
     anchorGen?: number;
+    tileOverlay?: (pokemon: Pokemon, spritePx: number) => ReactNode;
+    tileAttributes?: Record<string, string>;
+    tileTestId?: string;
+    displayName?: string;
+    displayLabel?: PokemonLabel;
+    onSelect?: (pokemon: Pokemon) => void;
+
   }[];
 }
 
 export interface DrillDownData {
+  /** Optional tool metadata, rendered in the canonical shell and tile grid. */
+  headerContent?: ReactNode;
+  emptyContent?: ReactNode;
+  standaloneTiles?: boolean;
   title: string;
   subtitle: string;
   color: string;

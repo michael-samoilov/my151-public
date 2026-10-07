@@ -1,0 +1,44 @@
+{
+  "source": "Pokémon Scarlet/Violet and X/Y game text",
+  "mirror": "https://github.com/abcboy101/poke-corpus",
+  "commit": "d74a89ba69cbabc491b65c3e88af8722bb34a927",
+  "table": "ScarletViolet/*_common.txt.gz",
+  "terms": [
+    {
+      "qid": "sv.trtype.MSG_TRTYPE_GYMLEADER",
+      "text": {
+        "en": "Gym Leader",
+        "ja": "ジムリーダー",
+        "ko": "체육관 관장",
+        "zh-Hans": "道馆馆主",
+        "zh-Hant": "道館館主",
+        "fr": "Champion d’Arène",
+        "de": "Arenaleiter",
+        "es": "Líder de Gimnasio",
+        "it": "Capopalestra"
+      }
+    },
+    {
+      "qid": "sv.iteminfo.ITEMINFO_2522",
+      "text": {
+        "en": "A snack made from ingredients favored by the\\nLegendary Pokémon Articuno.",
+        "ja": "伝説のポケモン　フリーザーが\\n好む食材で　作られた　おやつ。",
+        "ko": "전설의 포켓몬 프리져가\\n좋아하는 식재료로 만들어진 간식.",
+        "zh-Hans": "用传说的宝可梦急冻鸟\\n喜欢的食材制作的点心。",
+        "zh-Hant": "用傳說的寶可夢急凍鳥\\n喜愛的食材製成的點心。",
+        "fr": "Une friandise préparée avec les ingrédients favoris\\ndu Pokémon légendaire Artikodin.",
+        "de": "Dieser Snack wurde mit den Lieblingszutaten des\\nLegendären Pokémon Arktos zubereitet.",
+        "es": "Galleta preparada con los ingredientes favoritos\\ndel Pokémon legendario Articuno.",
+        "it": "Uno spuntino fatto con gli ingredienti preferiti\\ndal Pokémon leggendario Articuno."
+      }
+    },
+    {
+      "qid": "xy.common.75.30",
+      "table": "XY/*_common.txt.gz",
+      "text": {
+        "de": "Starter-Pokémon"
+      },
+      "usage": "The short German badge uses Starter from Starter-Pokémon."
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import '../../lib/visitorAtBoot';
 import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import { KANTO_LEAGUE_NAME, kantoCards } from '../data/kantoLeague';
 import { reachedNudges } from '../model/funnelNudges';

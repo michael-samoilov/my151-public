@@ -1,267 +1,67 @@
 #!/usr/bin/env node
-/**
- * Renders the 1200x630 Open Graph images that og:image / twitter:image tags
- * point at. One image per page, so a shared link to the gym leader maker shows
- * a gym leader card, not the Pokédex grid.
- *
- * They are generated rather than hand-drawn so they stay in sync with the app's
- * own assets: the sprites come straight out of public/sprites/pokemon and the
- * colors and wordmark match src/index.css. Re-run with:
- *
- *   node scripts/generate-og-image.mjs            # every page
- *   node scripts/generate-og-image.mjs pokedex    # one page
- *   OG_OUT_DIR=/tmp/og node scripts/generate-og-image.mjs   # preview elsewhere
- *
- * Sprites and the Inter subset are inlined as data URIs so the render needs no
- * dev server and no network. Headless Chromium loads a single self-contained page.
+/** Render route previews from captured app artwork. Hub artwork is unchanged.
+ * Run under flock /tmp/my151-browser.lock. OG_OUT_DIR and OG_HTML_OUT_DIR support review copies.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { chromium } from '@playwright/test';
-
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const outDir = process.env.OG_OUT_DIR || join(root, 'public');
-
-const WIDTH = 1200;
-const HEIGHT = 630;
-
-/**
- * One entry per page. `file` is the name under public/. `heading` is HTML so
- * the accent span can sit inside it. `sprites` is a 6x4 spread of Pokédex ids.
- */
-const PAGES = {
-  // The Pokédex builder keeps the historical file name because index.html and
-  // every existing share of the site already point at it.
-  pokedex: {
-    file: 'og-image.png',
-    heading: 'Build your own <span class="accent">Pokédex</span>',
-    subtitle:
-      'Pick your 151 favorites, arrange your personal regional dex, and compare your type distribution to the National Dex.',
-    // Starters and their finals, the mascots, the birds, the pseudo-legendaries.
-    // Reads as "Pokédex" at thumbnail size, which is how OG cards are seen.
-    sprites: [
-      1, 4, 7, 25, 39, 52,
-      3, 6, 9, 133, 143, 94,
-      65, 68, 76, 112, 130, 131,
-      144, 145, 146, 149, 150, 54,
-    ],
-  },
-  hub: {
-    file: 'og-hub.png',
-    // "Pokémon fan tools", not "Pokémon tools": the latter is a TCG phrase
-    // (docs/seo/HANDOFF.md, section 10).
-    heading: 'Free <span class="accent">Pokémon fan tools</span>',
-    subtitle:
-      'A custom regional Pokédex builder, and a gym leader &amp; trainer card maker with an Elite Four and Champion. Free, in the browser.',
-    // A cross-generation spread: one recognizable face per generation and type
-    // family, so the image reads as "all of Pokémon", not "Gen 1".
-    sprites: [
-      25, 6, 150, 196, 248, 249,
-      257, 384, 445, 448, 493, 571,
-      635, 658, 700, 778, 792, 815,
-      887, 906, 1007, 1008, 1024, 1025,
-    ],
-  },
-  league: {
-    file: 'og-gym-leader.png',
-    heading: 'Custom <span class="accent">Gym Leader</span> &amp; trainer card maker',
-    subtitle:
-      'Give each leader a signature Pokémon, badge and team, then add the Elite Four and Champion. Export every trainer as a card.',
-    // Six aces per row, one row per "tier": gym leader signature Pokémon, then
-    // Elite Four and Champion style powerhouses.
-    sprites: [
-      95, 121, 26, 45, 82, 65,
-      94, 130, 208, 229, 373, 376,
-      445, 448, 530, 612, 635, 706,
-      149, 248, 461, 260, 887, 1000,
-    ],
-  },
+import { auditBody, APP_HARD_KINDS } from '../.claude/skills/render-audit/audit-core.mjs';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const out=process.env.OG_OUT_DIR||resolve(root,'public');
+const evidence=process.env.OG_HTML_OUT_DIR||resolve(root,'docs/evidence/tool-art-rebake/local/og');
+const data=(path,mime)=>`data:${mime};base64,${readFileSync(resolve(root,path)).toString('base64')}`;
+const font=data('node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2','font/woff2');
+const tools={
+ pokedex:{file:'og-image.png',title:'Custom Region &<br>Pokédex Builder',images:[['build','public/og-sources/dex-build.webp','In-progress Pokédex Build page'],['front','public/og-sources/dex-stats.webp','Custom regional Pokédex export with detailed statistics and no section outlines']]},
+ league:{file:'og-gym-leader.png',title:'Trainer Card &<br>Gym Leader Maker',images:[['back','src/assets/home/tool-league-b.webp','Kanto league story-team export'],['front','src/assets/home/tool-league.webp','Brock trainer-card export']]},
+ favorites:{file:'og-favorite-picker.png',title:'Favorite Pokémon<br> Picker by Type &amp; Gen',images:[['back','src/assets/home/tool-favorites.webp','Summary portrait favorite Pokémon chart'],['front','src/assets/home/tool-favorites-b.webp','Full grid portrait favorite Pokémon chart']]},
 };
-
-function dataUri(relPath, mime) {
-  return `data:${mime};base64,${readFileSync(join(root, relPath)).toString('base64')}`;
-}
-
-const interUri = dataUri(
-  'node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2',
-  'font/woff2',
-);
-
-function pageHtml({ heading, subtitle, sprites }) {
-  const spriteTags = sprites
-    .map((id) => {
-      const uri = dataUri(`public/sprites/pokemon/${id}.png`, 'image/png');
-      return `<div class="cell"><img src="${uri}" alt="" /></div>`;
-    })
-    .join('\n        ');
-
-  return `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <style>
-      @font-face {
-        font-family: 'InterOG';
-        src: url('${interUri}') format('woff2');
-        font-weight: 100 900;
-        font-display: block;
-      }
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        width: ${WIDTH}px;
-        height: ${HEIGHT}px;
-        display: flex;
-        align-items: center;
-        gap: 56px;
-        padding: 64px;
-        background: #0a0a0a;
-        background-image:
-          radial-gradient(circle at 88% 18%, rgba(220, 38, 38, 0.22), transparent 58%),
-          radial-gradient(circle at 4% 92%, rgba(99, 144, 240, 0.16), transparent 55%);
-        font-family: 'InterOG', system-ui, sans-serif;
-        color: #fafafa;
-        overflow: hidden;
-      }
-      .left { display: flex; flex-direction: column; width: 520px; flex: none; }
-      .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 30px; }
-      .brand svg { width: 46px; height: 46px; }
-      .brand .wordmark { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; }
-      h1 {
-        font-size: 62px;
-        font-weight: 700;
-        line-height: 1.04;
-        letter-spacing: -0.035em;
-      }
-      h1 .accent { color: #f87171; }
-      .rule { width: 76px; height: 5px; border-radius: 999px; background: #dc2626; margin: 28px 0; }
-      p { font-size: 24px; line-height: 1.42; color: #a3a3a3; }
-      .domain { margin-top: 34px; font-size: 21px; font-weight: 600; color: #d4d4d4; letter-spacing: 0.01em; }
-
-      .grid {
-        flex: 1;
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 10px;
-      }
-      .cell {
-        aspect-ratio: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.045);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      .cell img {
-        width: 82%;
-        height: 82%;
-        object-fit: contain;
-        /* Sprites are 96px pixel art; nearest-neighbor keeps them crisp when scaled. */
-        image-rendering: pixelated;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="left">
-      <div class="brand">
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="16" cy="16" r="15" fill="#fafafa" stroke="#dc2626" stroke-width="1.5"/>
-          <path d="M2 16 A14 14 0 0 1 30 16" fill="#dc2626"/>
-          <line x1="2" y1="16" x2="30" y2="16" stroke="#fafafa" stroke-width="2"/>
-          <circle cx="16" cy="16" r="4.5" fill="#fafafa" stroke="#dc2626" stroke-width="2"/>
-        </svg>
-        <span class="wordmark">my151</span>
-      </div>
-      <h1>${heading}</h1>
-      <div class="rule"></div>
-      <p>${subtitle}</p>
-      <div class="domain">my151.app</div>
-    </div>
-    <div class="grid">
-        ${spriteTags}
-    </div>
-  </body>
-</html>`;
-}
-
-const wanted = process.argv.slice(2);
-const unknown = wanted.filter((name) => !(name in PAGES));
-if (unknown.length) {
-  console.error(`Unknown page(s): ${unknown.join(', ')}. Known: ${Object.keys(PAGES).join(', ')}`);
-  process.exit(1);
-}
-const names = wanted.length ? wanted : Object.keys(PAGES);
-
-/**
- * Find a Chromium this machine actually has, without assuming a revision.
- *
- * An image that preinstalls browsers under PLAYWRIGHT_BROWSERS_PATH pins one
- * revision, and the pinned @playwright/test revision moves independently of it.
- * Once the two diverge, Playwright's own resolution fails on a path that was
- * never installed, and the browser CDN is blocked there, so
- * `npx playwright install` cannot repair it. So never name a revision. Ask, in
- * order: an explicit override, then the unversioned `chromium` symlink the
- * image maintains beside the revision directories, then the highest
- * `chromium-<digits>` directory. That pattern deliberately matches neither
- * chromium_headless_shell-* nor chromium-tip-of-tree-*. Undefined leaves
- * Playwright to resolve its own, which is right wherever browsers are
- * installed normally.
- *
- * PLAYWRIGHT_CHROMIUM_PATH is the name the rest of the repo uses; CHROMIUM_PATH
- * stays accepted because this script documented it first.
- *
- * playwright.config.ts and .claude/skills/verify-my151/harness/lib/engines.ts
- * carry the same lookup. All three stay separate: this script is plain ESM and
- * cannot import either TypeScript copy.
- */
-const CHROMIUM_LAYOUTS = [
-  ['chrome-linux', 'chrome'],
-  ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
-  ['chrome-win', 'chrome.exe'],
-];
-
-function resolveChromium() {
-  const explicit = process.env.PLAYWRIGHT_CHROMIUM_PATH || process.env.CHROMIUM_PATH;
-  if (explicit) return explicit;
-  const browsersRoot = process.env.PLAYWRIGHT_BROWSERS_PATH;
-  if (!browsersRoot) return undefined;
-  try {
-    const stable = join(browsersRoot, 'chromium');
-    if (existsSync(stable) && statSync(stable).isFile()) return stable;
-    const revisions = readdirSync(browsersRoot)
-      .map((d) => /^chromium-(\d+)$/.exec(d))
-      .filter((m) => m !== null)
-      .sort((a, b) => Number(b[1]) - Number(a[1]));
-    for (const match of revisions) {
-      for (const layout of CHROMIUM_LAYOUTS) {
-        const bin = join(browsersRoot, match[0], ...layout);
-        if (existsSync(bin)) return bin;
-      }
-    }
-  } catch {
-    /* fall through to Playwright's own resolution */
-  }
-  return undefined;
-}
-
-const executablePath = resolveChromium();
-const browser = await chromium.launch(executablePath ? { executablePath } : {});
-try {
-  mkdirSync(outDir, { recursive: true });
-  const page = await browser.newPage({
-    viewport: { width: WIDTH, height: HEIGHT },
-    deviceScaleFactor: 1,
-  });
-  for (const name of names) {
-    const spec = PAGES[name];
-    await page.setContent(pageHtml(spec), { waitUntil: 'load' });
-    await page.evaluate(() => document.fonts.ready);
-    const png = await page.screenshot({ type: 'png' });
-    const out = join(outDir, spec.file);
-    writeFileSync(out, png);
-    console.log(`Wrote ${out} (${WIDTH}x${HEIGHT}, ${png.length} bytes)`);
-  }
-} finally {
-  await browser.close();
-}
+const FAN_WIDTH = 480;
+const FAN_STEP = 7;
+const FAN_TOP = 140;
+const FAN_CENTER = 300;
+const FAN_SPREAD = 100;
+const FAN_REAR_SHIFT = 24;
+const FAN_LEFT = 600 - FAN_REAR_SHIFT;
+const styles=`@font-face{font-family:Inter;src:url('${font}');font-weight:100 900}*{box-sizing:border-box;margin:0}html,body{width:1200px;height:630px;background:#171719;font-family:Inter,sans-serif;color:#fafafa}.frame{width:1200px;height:630px;position:relative}.brand{position:absolute;top:54px;left:56px;font-size:42px;line-height:1.1;font-weight:800;letter-spacing:-1.8px}.brand b{color:#ef3438}.title{position:absolute;left:56px;bottom:58px;width:540px;font-size:54px;line-height:1.09;font-weight:750;letter-spacing:-1.8px}.fan{position:absolute;left:${FAN_LEFT}px;top:0;width:${1200 - FAN_LEFT}px;height:630px;overflow:hidden}.shot{position:absolute;left:${FAN_CENTER - FAN_WIDTH / 2}px;top:${FAN_TOP}px;width:${FAN_WIDTH}px;height:auto;transform-origin:50% 0;object-fit:contain;filter:drop-shadow(0 14px 16px rgba(0,0,0,.4));border-radius:8px}.favorites .title{font-size:52px}`;
+const html=(id,tool)=>`<!doctype html><html><head><meta charset="utf-8"><style>${styles}</style></head><body><main class="frame ${id}"><div class="brand"><b>my151</b>.app</div><h1 class="title">${tool.title}</h1><!-- Only the artwork fan intentionally continues below the canvas. Copy remains wholly inside. --><div class="fan" data-audit-clip="intended" data-audit-scale="intended">${tool.images.map(([cls,path,alt],index)=>`<img class="shot ${cls}" style="left:${FAN_CENTER - FAN_WIDTH / 2 + (index - (tool.images.length - 1) / 2) * FAN_SPREAD + (index === 0 ? 0 : FAN_REAR_SHIFT)}px;transform:rotate(${(index - (tool.images.length - 1) / 2) * FAN_STEP}deg)" src="${data(path,'image/webp')}" alt="${alt}">`).join('')}</div></main></body></html>`;
+const names=process.argv.slice(2);
+if(names.includes('hub'))execFileSync(process.execPath,[resolve(root,'scripts/generate-og-hub-image.mjs'),'hub'],{env:process.env,stdio:'inherit'});
+const wanted=names.length?names.filter(name=>name!=='hub'):Object.keys(tools);
+for(const name of wanted)if(!tools[name])throw Error(`Unknown tool ${name}. Use ${[...Object.keys(tools),'hub'].join(', ')}.`);
+if(!wanted.length)process.exit(0);
+mkdirSync(out,{recursive:true});mkdirSync(evidence,{recursive:true});
+const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_PATH||process.env.CHROMIUM_PATH||'/usr/bin/chromium',args:['--no-sandbox']});
+try{
+ const page=await browser.newPage({viewport:{width:1200,height:630},deviceScaleFactor:1});const reports=[];
+ for(const name of wanted){
+  const source=html(name,tools[name]);writeFileSync(resolve(evidence,`${name}.html`),source);
+  await page.setContent(source,{waitUntil:'load'});await page.evaluate(()=>document.fonts.ready);
+  await page.locator('img').evaluateAll(images=>Promise.all(images.map(i=>i.decode())));
+  const audit=await page.evaluate(`(()=>{${auditBody({minFont:12,annotate:false,checkFrame:true})}})()`);
+  const hard=audit.findings.filter(f=>APP_HARD_KINDS.includes(f.kind)||f.kind==='stretched-box');
+  // All export sheets must visibly continue past the bottom edge. No copy may cross it.
+  const geometry=await page.locator('.shot').evaluateAll(images=>images.map(i=>({class:i.className,width:parseFloat(getComputedStyle(i).width),anchorY:parseFloat(getComputedStyle(i).top),angle:Math.atan2(new DOMMatrixReadOnly(getComputedStyle(i).transform).b,new DOMMatrixReadOnly(getComputedStyle(i).transform).a)*180/Math.PI,...Object.fromEntries(['top','bottom','left','right'].map(k=>[k,i.getBoundingClientRect()[k]]))})));
+  if(geometry.some(g=>Math.abs(g.width-FAN_WIDTH)>0.05||Math.abs(g.anchorY-FAN_TOP)>0.05))throw Error(`${name}: unequal top-edge width or top anchor`);
+  if(geometry.slice(1).some((g,index)=>Math.abs(g.angle-geometry[index].angle-FAN_STEP)>0.05))throw Error(`${name}: unequal fan angle increment`);
+  if(geometry.some(g=>g.left<FAN_LEFT||g.right>1200||g.top<0))throw Error(`${name}: only bottom-edge cropping is intentional`);
+  if(geometry.some(g=>g.bottom<=630))throw Error(`${name}: sheet does not extend below canvas`);
+  const title=await page.locator('.title').evaluate(el=>({text:el.textContent,lines:Math.round(el.getBoundingClientRect().height/parseFloat(getComputedStyle(el).lineHeight)),...Object.fromEntries(['top','bottom','left','right'].map(k=>[k,el.getBoundingClientRect()[k]]))}));
+  if(name==='favorites' && (title.lines!==2 || title.text!=='Favorite Pokémon Picker by Type & Gen'))throw Error(`${name}: title must fit the requested two lines`);
+  // Use the rotated left edge at title height, not its top-corner bounding box.
+  const titleGap=await page.locator('.shot').evaluateAll((images,title)=>Math.min(...images.map(image=>{
+    const style=getComputedStyle(image);const m=new DOMMatrixReadOnly(style.transform);
+    const origin=parseFloat(style.transformOrigin.split(' ')[0]);const parent=image.parentElement.getBoundingClientRect();
+    const topLeftX=parent.left+parseFloat(style.left)+origin-m.a*origin;
+    const topLeftY=parent.top+parseFloat(style.top)-m.b*origin;
+    const edgeX=y=>topLeftX+(y-topLeftY)*m.c/m.d;
+    return Math.min(edgeX(title.top),edgeX(title.bottom))-title.right;
+  })),title);
+  if(titleGap<6)throw Error(`${name}: artwork approaches title by less than 6px`);
+  reports.push({name,...audit,hardCount:hard.length,titleGap,geometry:geometry.map(g=>({...g,hiddenBottom:g.bottom-630})),title});if(hard.length)throw Error(JSON.stringify(hard));
+  const path=resolve(out,tools[name].file);await page.screenshot({path});console.log(`Wrote ${path} (1200x630)`);
+ }
+ writeFileSync(resolve(evidence,'audit.json'),JSON.stringify(reports,null,2));
+}finally{await browser.close()}

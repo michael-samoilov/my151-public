@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { FAVORITES_NOTICE_END, isReturningVisitor, isFavoritesNoticeWindow, isFavoritesNoticeSeen, markFavoritesNoticeSeen, markVisited } from '@/lib/launchFlags';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 
 /**
@@ -10,8 +12,9 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } 
  */
 
 const TOOLS = [
-  { id: 'dex', href: '/pokedex-builder', label: 'Pokédex Builder' },
-  { id: 'league', href: '/custom-gym-leader', label: 'Gym Leader Maker' },
+  { id: 'dex', href: '/pokedex-builder', label: 'tools.dex' },
+  { id: 'league', href: '/custom-gym-leader', label: 'tools.league' },
+  { id: 'favorites', href: '/favorite-pokemon-picker', label: 'tools.favorites' },
 ] as const;
 
 export type ToolId = (typeof TOOLS)[number]['id'];
@@ -27,10 +30,30 @@ export interface ToolsCallout {
   text: string;
   dismissLabel: string;
   testId: string;
+  /** Keep navigation beneath an announcement usable. */
+  allowThrough?: boolean;
   onDismiss: (reason: 'menu' | 'close') => void;
 }
 
-export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: ToolsCallout | null }) {
+export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId; callout?: ToolsCallout | null }) {
+  const t = useT();
+  const [launchNotice, setLaunchNotice] = useState(() =>
+    isReturningVisitor && isFavoritesNoticeWindow() && !isFavoritesNoticeSeen());
+  useEffect(() => { markVisited(); }, []);
+  useEffect(() => {
+    if (!launchNotice) return;
+    const timer = window.setTimeout(() => setLaunchNotice(false), FAVORITES_NOTICE_END - Date.now());
+    return () => window.clearTimeout(timer);
+  }, [launchNotice]);
+  const callout = useMemo<ToolsCallout | null | undefined>(() => launchNotice
+    ? {
+        text: t('home.favorites.tip'),
+        dismissLabel: t('home.favorites.dismiss'),
+        testId: 'favorites-launch-notice',
+        allowThrough: true,
+        onDismiss: () => { markFavoritesNoticeSeen(); setLaunchNotice(false); },
+      }
+    : isFavoritesNoticeWindow() ? null : pageCallout, [launchNotice, pageCallout, t]);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -70,7 +93,7 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
       data-testid="tools-menu"
       className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
-      Tools
+      {t('tools.title')}
       <ChevronDown size={14} className={cn('transition-transform', open && 'rotate-180')} />
     </button>
   );
@@ -88,6 +111,7 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
               side="bottom"
               align="end"
               data-testid={callout.testId}
+              data-callout-click-through={callout.allowThrough || undefined}
               role="status"
               // Radix mirrors the content into a hidden copy for screen
               // readers; with a label it mirrors only the words, not the
@@ -106,7 +130,7 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
               // The arrow is red too: filled with the popover colour it was
               // white on a white header, so the notice never visibly pointed
               // at the menu it talks about.
-              className="z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-xl ring-2 ring-primary"
+              className={cn('z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-xl ring-2 ring-primary', callout.allowThrough && 'pointer-events-none')}
             >
               <TooltipArrow className="fill-primary" />
               <div className="text-xs font-medium leading-snug">{callout.text}</div>
@@ -114,7 +138,7 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
                 type="button"
                 aria-label={callout.dismissLabel}
                 onClick={() => callout.onDismiss('close')}
-                className="absolute right-1 top-1 rounded p-1 opacity-70 hover:opacity-100 cursor-pointer"
+                className="pointer-events-auto absolute right-1 top-1 rounded p-1 opacity-70 hover:opacity-100 cursor-pointer"
               >
                 <X size={12} />
               </button>
@@ -126,16 +150,16 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
       )}
       {open && (
         <div className="absolute right-0 top-full z-30 mt-1 min-w-[170px] rounded-lg border bg-popover py-1 shadow-lg">
-          {TOOLS.map((t) => (
+          {TOOLS.map((tool) => (
             <a
-              key={t.id}
-              href={t.href}
+              key={tool.id}
+              href={tool.href}
               className={cn(
                 'flex w-full items-center whitespace-nowrap px-3 py-2 text-sm transition-colors hover:bg-muted',
-                t.id === current ? 'font-semibold text-foreground' : 'text-muted-foreground',
+                tool.id === current ? 'font-semibold text-foreground' : 'text-muted-foreground',
               )}
             >
-              {t.label}
+              {t(tool.label)}
             </a>
           ))}
         </div>

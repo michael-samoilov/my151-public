@@ -1,3 +1,4 @@
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { Download } from 'lucide-react';
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -75,19 +76,19 @@ export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
   );
 
   return (
-    <button
+    <HeaderActionButton
       type="button"
       onClick={() => openLeagueExport(cardIndex)}
       aria-label={cardIndex === undefined ? 'Export league' : 'Export trainer card'}
       data-league-export={cardIndex === undefined ? 'league' : 'card'}
       data-nudge-pulse={pulse || undefined}
       className={cn(
-        'shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground',
+        'text-primary hover:bg-primary hover:text-primary-foreground',
         pulse && 'league-export-pulse',
       )}
       style={pulse ? { animationDelay: `${REVEAL_DELAY_MS}ms` } : undefined}
     >
       <Download className="h-4 w-4" />
-    </button>
+    </HeaderActionButton>
   );
 }

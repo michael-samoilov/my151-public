@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { Pokemon } from '@/types/pokemon';
 import pokemonData from '@/data/pokemon.json';
+import { pokemonShape } from '@/data/pokemonShape';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { normalizeSearch, speciesSearchText, useNamesVersion } from '@/i18n';
@@ -28,6 +29,7 @@ for (const archetype of ARCHETYPES) {
 const pokemonById = new Map<number, Pokemon>();
 const pokemonByChain = new Map<number, Pokemon[]>();
 for (const p of pokemonList) {
+  p.shape = pokemonShape(p.id, p.shape);
   // Attach archetypes
   p.archetypes = archetypesByPokemonId.get(p.id) ?? [];
   pokemonById.set(p.id, p);

@@ -9,8 +9,8 @@ change-specific flow builds on.
 my151.app is a multi-page app. The hub is at `/`, the pokedex builder with its
 view and analytics tabs at `/pokedex-builder`, and the Pokémon League Builder at
 `/custom-gym-leader`. Feedback and the language picker sit in the header of
-every page. The admin dashboard is at `/?admin`. The favorite picker adds its
-own file when it ships. Grow this list with the app and keep it honest with
+every page. The admin dashboard is at `/?admin`. The favorite Pokémon picker is at
+`/favorite-pokemon-by-type`. Grow this list with the app and keep it honest with
 `/maintain-verification-skill`.
 
 | Feature | File | Owner (source) |
@@ -26,6 +26,7 @@ own file when it ships. Grow this list with the app and keep it honest with
 | Feedback form | `feedback.md` | `src/components/feedback/FeedbackSheet.tsx` |
 | Language picker | `language.md` | `src/components/layout/LanguagePicker.tsx`, `src/i18n/` |
 | Admin dashboard | `admin.md` | `src/components/admin/AdminPage.tsx` |
+| Favorite Pokémon picker | `favorite-picker.md` | `src/favorites/FavoritesApp.tsx`, `src/favorites/components/FavoritesGrid.tsx` |
 
 ## Stable handles
 
@@ -45,6 +46,8 @@ own file when it ships. Grow this list with the app and keep it honest with
   `{state:{sections:{groupId:number[]},locale,…},version:10}`. `sections` is
   the source of truth for a build. `locale` holds the language picker's choice.
 - League builder: see `league-builder.md`. Its oracle is the `league-builder`
+  localStorage key.
+- Favorite picker: see `favorite-picker.md`. Its oracle is the `favorite-picker`
   localStorage key.
 
 The three dex tabs are React state, not URL-addressable, so navigate by clicking

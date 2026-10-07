@@ -3,10 +3,14 @@ import { scaleBand, scaleLinear } from 'd3-scale';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
 import { rowKey, type ButterflyRow } from './butterflyRow';
+import { butterflyColumns } from '@/lib/butterflyLayout';
 
 export type { ButterflyRow };
 
 interface ButterflyChartProps {
+  /** Use a fixed identifier rail and centered index reference across sibling charts. */
+  alignBaselines?: boolean;
+  fixedIndexDomain?: number;
   data: ButterflyRow[];
   /** Row height in px. Default 22 */
   rowHeight?: number;
@@ -63,21 +67,25 @@ interface ButterflyChartProps {
   iconScale?: number;
   /** When true, rows with count === 0 are not clickable */
   disableEmptyRows?: boolean;
-  /** Override the denominator used for the per-bar percentage label. Defaults
-   *  to the sum of all counts in `data`. That default is correct for
-   *  disjoint categories (e.g. generations), but for overlapping categories
-   *  like types — where a dual-type pokemon contributes to two bars — the
-   *  correct denominator is the number of pokemon, not the sum of type-slot
-   *  mentions. Pass `pokemon.length` in that case so each bar reads as
-   *  "share of the dex" rather than "share of type mentions". */
-  countDenominator?: number;
   /** When set, overrides the font-size class on every text element (headers,
    *  count numbers, value labels) so they render at a single uniform size.
    *  Defaults to the per-element sizes (used by the analytics dashboard). */
   textClass?: string;
 }
 
-function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
+let countMeasureCanvas: HTMLCanvasElement | undefined;
+function countLabelPadding(data: ButterflyRow[], textClass: string | undefined): number {
+  countMeasureCanvas ??= document.createElement('canvas');
+  const ctx = countMeasureCanvas.getContext('2d');
+  const size = textClass?.match(/text-\[([\d.]+)(rem|px)\]/);
+  const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  const fontSize = size ? Number(size[1]) * (size[2] === 'rem' ? rootPx : 1) : textClass === 'text-xs' ? rootPx * .75 : rootPx * .6875;
+  if (!ctx) return (Math.max(1, ...data.map(row => String(row.count).length)) * fontSize * .65 + 6);
+  ctx.font = `400 ${fontSize}px 'Inter Variable', system-ui, sans-serif`;
+  return (Math.max(0, ...data.map(row => ctx.measureText(String(row.count)).width)) + 6);
+}
+
+function ButterflyChartImpl({ alignBaselines = false, fixedIndexDomain, data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -130,19 +138,20 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
   const titleHeight = 28;
   const topOffset = titleHeight;
   const headerBaseline = topOffset - 8;
-  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale * heightScale, iconSize + 4);
+  const columns = butterflyColumns(width, chartScale, hideDeviation, !!scoreMode);
+  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale * heightScale, alignBaselines ? columns.identifierWidth / 5 + 4 : iconSize + 4);
   const chartHeight = topOffset + data.length * rowHeight;
 
   // Icon box height: a fixed ~14px square by default, or the full row height for
   // tall identifiers (type-name badges) so the name reads at roughly bar height.
-  const iconBoxH = hasIcons ? (iconFillsRow ? rowHeight : iconSize) : 0;
+  const iconBoxH = hasIcons ? (alignBaselines ? columns.identifierWidth / 5 : iconFillsRow ? rowHeight : iconSize) : 0;
   // Reserved icon-column width. Square by default; wider for type-name badges etc.
-  const iconColW = iconBoxH * iconColAspect;
+  const iconColW = alignBaselines ? columns.identifierWidth : iconBoxH * iconColAspect;
 
   const iconStart = hideLabelText ? 0 : labelWidth + iconGap;
 
   // Column A: labels + icons (fixed width)
-  const labelColEnd = iconStart + iconColW + gap;
+  const labelColEnd = alignBaselines ? columns.countStart : iconStart + iconColW + gap;
 
   // Determine directionality BEFORE width distribution
   const countHasNeg = scoreMode ? data.some(d => d.count < 0) : false;
@@ -165,14 +174,13 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
     chart2Width = available - chart1Width;
   }
 
+  if (alignBaselines) { chart1Width = columns.countWidth; chart2Width = columns.indexWidth; }
   const countSectionStart = labelColEnd;
-  const devSectionStart = labelColEnd + chart1Width + gutter;
+  const devSectionStart = alignBaselines ? columns.indexStart : labelColEnd + chart1Width + gutter;
 
-  // Chart 1 (count/score): directionality-aware margins. Reserves room for
-  // value labels at bar ends — "-0.54" (~28px) in score mode, "25 (16%)"
-  // (~48px) with percentages, "25" (~20px) without. Scales with chartScale
-  // so labels don't clip on desktop where the root font grows.
-  const countLabelPad = (scoreMode ? 32 : countDenominator ? 52 : 28) * chartScale;
+  // Count labels reserve their measured width, leaving the rest for bars.
+  // Signed scores retain their existing allowance and formatting.
+  const countLabelPad = scoreMode ? 32 * chartScale : countLabelPadding(data, textClass);
   const countLeftPad = countHasNeg ? countLabelPad : 0;
   const countRightPad = countHasPos ? countLabelPad : 0;
   const countBarArea = Math.max(0, chart1Width - countLeftPad - countRightPad);
@@ -201,6 +209,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
   const maxPosDev = scoreMode ? Math.max(...data.map(d => d.deviation > 0 ? d.deviation : 0), 0) : 0;
 
   const countZeroX = (() => {
+    if (alignBaselines && scoreMode && countIsBidirectional) return countLeftPad + countBarArea / 2;
     if (!scoreMode) return countLeftPad;
     if (countIsBidirectional) {
       // Zero's proportional position follows this chart's own asymmetry
@@ -212,7 +221,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
   })();
   // For bidirectional: uniform scale across the full bar area
   const countTotalExtent = countIsBidirectional
-    ? (rawMaxNeg + rawMaxPos) || 0.01
+    ? (alignBaselines ? Math.max(rawMaxNeg, rawMaxPos) * 2 : rawMaxNeg + rawMaxPos) || 0.01
     : maxCount;
   const countScale = scaleLinear().domain([0, countTotalExtent]).range([0, countBarArea]);
 
@@ -268,6 +277,8 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
     if (dl / dTotal < minSideFrac) dl = dr * minSideFrac / (1 - minSideFrac);
     if (dr / dTotal < minSideFrac) dr = dl * minSideFrac / (1 - minSideFrac);
   }
+  if (fixedIndexDomain !== undefined) dl = dr = fixedIndexDomain;
+  else if (alignBaselines) dl = dr = Math.max(dl, dr);
   const devLeft = -dl;
   const devRight_ = dr;
 
@@ -283,7 +294,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
   return (
     <div ref={containerRef} className="w-full">
       {width > 0 && (
-        <svg width={width} height={chartHeight} className="overflow-visible">
+        <svg width={width} height={chartHeight} className="overflow-visible" data-index-domain={hideDeviation ? undefined : `${devLeft},${devRight_}`} data-count-baseline={countSectionStart + countZeroX} data-index-baseline={hideDeviation ? undefined : devSectionStart + zeroX}>
           {/* Label column header (e.g. "TYPE", "GEN"). Sortable only when
               `labelSortable` is true — e.g. the gen chart uses natural-order
               sort; the type chart does not. With the label text hidden the header
@@ -383,6 +394,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
 
             const key = rowKey(d);
             const isActive = activeKey === key;
+            const highlightColor = /^(?:white|#fff(?:fff)?)$/i.test(d.color) ? '#737373' : d.color;
 
             // Highlight extends to midpoints between this row and neighbors
             const prevBottom = rowIdx > 0 ? yScale(data[rowIdx - 1].label)! + barHeight : topOffset;
@@ -390,14 +402,14 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
             const highlightY = (prevBottom + y) / 2;
             const highlightH = ((y + barHeight + nextTop) / 2) - highlightY;
 
-            const hasData = !disableEmptyRows || d.count > 0;
+            const hasData = !d.unavailable && (!disableEmptyRows || d.count > 0);
 
             return (
-              <g key={key} className={onBarClick && hasData ? 'cursor-pointer' : ''} onClick={onBarClick && hasData ? () => onBarClick(key) : undefined}>
+              <g key={key} data-row-key={key} data-unavailable={d.unavailable || undefined} role={onBarClick && hasData ? 'button' : undefined} tabIndex={onBarClick && hasData ? 0 : undefined} aria-label={onBarClick && hasData ? d.label : undefined} aria-pressed={onBarClick && hasData ? isActive : undefined} onKeyDown={onBarClick && hasData ? event => { if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onBarClick(key); } } : undefined} className={onBarClick && hasData ? 'cursor-pointer' : ''} onClick={onBarClick && hasData ? () => onBarClick(key) : undefined}>
                 {/* Full-row hit target + active highlight */}
                 <rect
                   x={0} y={highlightY} width={width} height={highlightH}
-                  fill={isActive ? d.color : 'transparent'}
+                  fill={isActive ? highlightColor : 'transparent'}
                   opacity={isActive ? 0.12 : 1}
                   className={!isActive && onBarClick && hasData ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
                 />
@@ -415,6 +427,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
                   </text>
                 )}
 
+                <g opacity={d.unavailable ? .3 : 1}>
                 {/* Row icon */}
                 {d.icon && (
                   typeof d.icon === 'string' ? (
@@ -429,6 +442,8 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
                   ) : d.icon(iconStart, y + barHeight / 2 - iconBoxH / 2, iconBoxH, iconColW)
                 )}
 
+                </g>
+                {!d.unavailable && <>
                 {/* Count bar */}
                 <rect
                   x={countBarX}
@@ -436,7 +451,9 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
                   width={countBarW}
                   height={barHeight}
                   fill={d.color}
-                  opacity={0.85}
+                  stroke={countBarW > 0 ? d.barStroke : undefined}
+                  strokeWidth={d.barStroke ? .75 : undefined}
+                  opacity={d.barOpacity ?? 0.85}
                   rx={1}
                 />
                 {/* Count/score number */}
@@ -453,9 +470,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
                 >
                   {scoreMode
                     ? (d.count >= 0 ? '+' : '') + d.count.toFixed(2)
-                    : countDenominator
-                      ? `${d.count} (${countDenominator > 0 ? ((d.count / countDenominator) * 100).toFixed(0) : 0}%)`
-                      : `${d.count}`
+                    : `${d.count}`
                   }
                 </text>
 
@@ -486,7 +501,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
                   if (!isClipped) {
                     return (
                       <rect x={bx} y={y} width={bw} height={barHeight}
-                        fill={d.color} opacity={0.85} rx={1} />
+                        fill={d.color} stroke={d.barStroke} strokeWidth={d.barStroke ? .75 : undefined} opacity={d.barOpacity ?? 0.85} rx={1} />
                     );
                   }
                   // Build path with jagged torn edge on the clipped side
@@ -513,7 +528,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
                     }
                     p += ` L${bx + bw},${bot} Z`;
                   }
-                  return <path d={p} fill={d.color} opacity={0.85} />;
+                  return <path d={p} fill={d.color} stroke={d.barStroke} strokeWidth={d.barStroke ? .75 : undefined} opacity={d.barOpacity ?? 0.85} />;
                 })()}
 
                 {/* Value label at bar end */}
@@ -542,6 +557,7 @@ function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviation
                   );
                 })()}
                 </>)}
+                </>}
               </g>
             );
           })}

@@ -106,7 +106,7 @@ test.describe('the longest move in the TM box', () => {
 });
 
 test.describe('gym card slots', () => {
-  test('the signature pane reads the team as lines, in league order', async ({ page }) => {
+  test('the signature pane reads the team as lines, in league order', async ({ page }, testInfo) => {
     await openCard(page);
     // Seeded out of order on purpose. Magnezone is a generation 4 Pokémon
     // whose line starts at Magnemite in generation 1 — the line's own
@@ -129,14 +129,15 @@ test.describe('gym card slots', () => {
     // One group, not a generation heading in sight.
     expect(view.headings).toEqual(['Current Team']);
     expect(view.members).toEqual([
-      'caterpie', 'metapod', 'butterfree',
-      'magnemite', 'magneton', 'magnezone',
-      'chinchou', 'lanturn',
-      'lotad', 'lombre', 'ludicolo',
+      'Caterpie', 'Metapod', 'Butterfree',
+      'Magnemite', 'Magneton', 'Magnezone',
+      'Chinchou', 'Lanturn',
+      'Lotad', 'Lombre', 'Ludicolo',
     ]);
+    await testInfo.attach('team-line-order', { body: JSON.stringify(view), contentType: 'application/json' });
   });
 
-  test('the team scope draws the seated branch, not the whole chain', async ({ page }) => {
+  test('the team scope draws the seated branch, not the whole chain', async ({ page }, testInfo) => {
     await openCard(page);
     // Scyther's chain splits: Scizor and Kleavor. Only the seated branch
     // belongs in the pane, and Scyther belongs in it once.
@@ -164,13 +165,14 @@ test.describe('gym card slots', () => {
       };
     });
 
-    expect(view.names).toEqual(['scyther', 'scizor', 'chinchou', 'lanturn']);
-    expect(view.names).not.toContain('kleavor');
+    expect(view.names).toEqual(['Scyther', 'Scizor', 'Chinchou', 'Lanturn']);
+    expect(view.names).not.toContain('Kleavor');
     // The count beside the search box agrees with what is drawn.
     expect(view.count).toBe(4);
     // Every backing rectangle fits inside one cell: each Pokémon is its own
     // tile, not one rectangle stretched over a line.
     expect(view.widestBack).toBeLessThan(view.cell);
+    await testInfo.attach('seated-branch', { body: JSON.stringify(view), contentType: 'application/json' });
   });
 
   test('My dex on an empty dex filters to nothing, not to everything', async ({ page }) => {
@@ -914,4 +916,3 @@ test.describe('the badge word stays fully visible', () => {
     });
   }
 });
-

@@ -7,10 +7,12 @@ import {
   CLIENTS_KEY,
   type ClientRecord,
 } from './_shared.js';
+import { FAVORITE_CLIENTS_KEY } from './_favoriteRecord.js';
 import { LEAGUE_CLIENTS_KEY } from './_leagueRecord.js';
 import {
   HAS_DEX,
   HAS_LEAGUE,
+  HAS_FAVORITES,
   JOURNAL_MAX_PER_DAY,
   JOURNAL_PREFIX,
   parseJournalEntry,
@@ -111,9 +113,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // "ever", not "in this window": the question is whether a hub visitor
     // became a user at all, and the answer can arrive after the window closes.
     const seen = new Set(entries.map((e) => e.cid));
-    const [dexAll, leagueAll] = await Promise.all([
+    const [dexAll, leagueAll, favoriteAll] = await Promise.all([
       redis.hgetall(CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
       redis.hkeys(LEAGUE_CLIENTS_KEY),
+      redis.hkeys(FAVORITE_CLIENTS_KEY),
     ]);
     const membership: Record<string, number> = {};
     for (const raw of Object.values(dexAll ?? {})) {
@@ -124,6 +127,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     for (const cid of leagueAll ?? []) {
       if (seen.has(cid)) membership[cid] = (membership[cid] ?? 0) | HAS_LEAGUE;
+    }
+
+    for (const cid of favoriteAll ?? []) {
+      if (seen.has(cid)) membership[cid] = (membership[cid] ?? 0) | HAS_FAVORITES;
     }
 
     // Private data — never cache.

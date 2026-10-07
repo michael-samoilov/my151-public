@@ -69,7 +69,8 @@ test.describe('wordmark links home', () => {
     await expect(page).toHaveURL(/\/$/);
     // The router page's own heading, not the app's wordmark.
     await expect(page.locator('h1')).toContainText('Pokédex');
-    await expect(page.locator('[data-card-panel]')).toHaveCount(3);
+    // Dex, league, favorite picker, then the next-tool call.
+    await expect(page.locator('[data-card-panel]')).toHaveCount(4);
   });
 
 });

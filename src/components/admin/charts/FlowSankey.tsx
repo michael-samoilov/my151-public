@@ -265,11 +265,13 @@ export function FlowSankey({
   links,
   ariaLabel,
   kind = 'funnel',
+  labelHalo = false,
 }: {
   nodes: SankeyNode[];
   links: SankeyLink[];
   ariaLabel: string;
   kind?: 'funnel' | 'referrer';
+  labelHalo?: boolean;
 }) {
   const stack = fattestColumn(nodes, links);
   const ref = useECharts(
@@ -314,6 +316,7 @@ export function FlowSankey({
               fontWeight: 600,
               formatter: '{b}',
               lineHeight: g.fontSize + 2,
+              ...(labelHalo ? { textBorderColor: cssVar(el, '--color-card', '#ffffff'), textBorderWidth: 3 } : {}),
             },
             labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
             data: nodes.map((n) => ({
@@ -333,7 +336,7 @@ export function FlowSankey({
         ],
       };
     },
-    [nodes, links, kind],
+    [nodes, links, kind, labelHalo],
     {
       afterRender: (chart, el) => {
         const ink = cssVar(el, '--color-foreground', '#0a0a0a');

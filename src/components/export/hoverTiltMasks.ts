@@ -1,5 +1,5 @@
 import { typeGlyphPath } from '@/data/type-ids';
-import { DEX_EXPORT_FRAME, layoutDexExportGrid } from '@/lib/dexExportLayout';
+import { DEX_EXPORT_FRAME, DEX_EXPORT_HEADER, layoutDexExportGrid } from '@/lib/dexExportLayout';
 import { CARD_IMG_H, CARD_IMG_W, FRAME } from '@/league/export/layout';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import type { HoverTiltMaskId } from './hoverTiltRecipe';
@@ -85,10 +85,10 @@ export function hoverTiltMaskContextFromDex(
   const grid = layoutDexExportGrid(pokemon, sections);
   return {
     width: grid.width + 2 * DEX_EXPORT_FRAME,
-    height: grid.height + 2 * DEX_EXPORT_FRAME,
+    height: grid.height + 2 * DEX_EXPORT_FRAME + DEX_EXPORT_HEADER,
     sprites: grid.sprites.map((s) => ({
       cx: s.cx + DEX_EXPORT_FRAME,
-      cy: s.cy + DEX_EXPORT_FRAME,
+      cy: s.cy + DEX_EXPORT_FRAME + DEX_EXPORT_HEADER,
       r: s.r,
       type: s.pokemon.types[0] ?? 'normal',
       dexNumber: s.pokemon.id,

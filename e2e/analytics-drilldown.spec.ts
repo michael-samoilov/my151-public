@@ -19,7 +19,7 @@ async function openAnalytics(page: import('@playwright/test').Page) {
 
 /** Charts are SVG; a row's clickable <g> is found via its label text. */
 function chartRow(page: import('@playwright/test').Page, label: string) {
-  return page.locator('svg g').filter({ has: page.locator(`text:text-is("${label}")`) }).first();
+  return page.locator('svg > g.cursor-pointer:visible').filter({ has: page.locator(`text:text-is("${label}")`) }).first();
 }
 
 /**
@@ -34,7 +34,7 @@ function drillTitle(page: import('@playwright/test').Page, title: string) {
 test.describe('analytics drill-down', () => {
   test('a generation row opens that generation', async ({ page }) => {
     await openAnalytics(page);
-    await chartRow(page, 'Gen 1').click();
+    await page.getByRole('img', { name: 'Gen I', exact: true }).click();
     // Seeded dex is ids 1..100, i.e. all Gen 1 — the drill-down must name it.
     await expect(drillTitle(page, 'Generation 1')).toBeVisible();
   });
@@ -43,13 +43,13 @@ test.describe('analytics drill-down', () => {
     await openAnalytics(page);
     await page.getByRole('heading', { name: 'Body Shape' }).scrollIntoViewIfNeeded();
     // "Quadruped" is well represented across ids 1..100.
-    await chartRow(page, 'Quadruped').click();
+    await chartRow(page, 'QUADRUPED').click();
     await expect(drillTitle(page, 'Quadruped Shape')).toBeVisible();
   });
 
   test('a type row opens that type', async ({ page }) => {
     await openAnalytics(page);
-    await chartRow(page, 'Poison').click();
+    await chartRow(page, 'POISON').click();
     await expect(drillTitle(page, 'Poison Type')).toBeVisible();
   });
 });

@@ -46,7 +46,7 @@ function kpi(snap: ReturnType<typeof buildCrossTool>, key: string) {
 
 describe('eraBounds', () => {
   it('cuts once per tool after the first', () => {
-    const bounds = eraBounds(TOOL_CATALOG);
+    const bounds = eraBounds(TOOL_CATALOG.filter(tool => tool.id !== 'favorites'));
     expect(bounds.map((b) => b.key)).toEqual(['before-league', 'since-league']);
     expect(bounds.map((b) => b.shortLabel)).toEqual(['Before 8 Sep', 'After 8 Sep']);
     expect(bounds[0].until).toBe(LAUNCH);
@@ -55,7 +55,7 @@ describe('eraBounds', () => {
 
   it('opens a new era when a later tool is added to the catalog', () => {
     const catalog: ToolDef[] = [
-      ...TOOL_CATALOG,
+      ...TOOL_CATALOG.filter(tool => tool.id !== 'favorites'),
       { id: 'fav', label: 'Favourites', short: 'Fav', launchedAt: Date.UTC(2026, 10, 1) },
     ];
     expect(eraBounds(catalog)).toHaveLength(3);
@@ -74,7 +74,7 @@ describe('eraBounds', () => {
 
 describe('multiToolEras', () => {
   it('drops the era before a second tool existed', () => {
-    expect(multiToolEras(eraBounds(TOOL_CATALOG)).map((b) => b.key)).toEqual(['since-league']);
+    expect(multiToolEras(eraBounds(TOOL_CATALOG.filter(tool => tool.id !== 'favorites'))).map((b) => b.key)).toEqual(['since-league']);
   });
 });
 
@@ -136,7 +136,7 @@ describe('buildCrossTool eras', () => {
       [league('came-back', POST, POST), league('fresh', POST, POST)],
     );
     const pre = snap.eras.find((e) => e.key === 'before-league')!;
-    const post = snap.eras.find((e) => e.key === 'since-league')!;
+    const post = snap.eras.find((e) => e.key === 'before-favorites')!;
     expect(pre.regions).toEqual({ dex: 1, 'dex+league': 1 });
     expect(post.regions).toEqual({ league: 1 });
     expect(pre.browsers + post.browsers).toBe(3);

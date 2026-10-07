@@ -4,6 +4,7 @@ import type { ToolDef } from '../../../../api/_crossTool';
 const TOOL_COLOR: Record<string, string> = {
   dex: 'rgb(37, 99, 235)',
   league: 'rgb(217, 119, 6)',
+  favorites: 'rgb(14, 116, 94)',
 };
 const FALLBACK = ['rgb(14, 116, 94)', 'rgb(109, 40, 217)', 'rgb(190, 18, 60)'] as const;
 
@@ -239,6 +240,24 @@ export function placeCircleLabels(
  * size sit beside each circle. Tiny pairwise overlap gets an outside
  * count plus a leader. Three-set regions use exclusive / pairwise / triple keys.
  */
+/** Find an interior point for an exclusive region, including three-set crescents.
+ *  Pairwise midpoints can lie in the triple intersection and hide a real count. */
+function regionInterior(inside:VennCircle[],outside:VennCircle[]):{x:number;y:number}|null {
+  const left=Math.max(...inside.map(c=>c.x-c.radius));
+  const right=Math.min(...inside.map(c=>c.x+c.radius));
+  const top=Math.max(...inside.map(c=>c.y-c.radius));
+  const bottom=Math.min(...inside.map(c=>c.y+c.radius));
+  if(right<=left || bottom<=top)return null;
+  let best:{x:number;y:number}|null=null;
+  let clearance=0;
+  for(let x=0;x<=30;x++)for(let y=0;y<=30;y++){
+    const point={x:left+(right-left)*x/30,y:top+(bottom-top)*y/30};
+    const space=Math.min(...inside.map(c=>c.radius-dist(point,c)),...outside.map(c=>dist(point,c)-c.radius));
+    if(space>clearance){clearance=space;best=point;}
+  }
+  return best;
+}
+
 export function placeRegionLabels(
   regions: Record<string, number>,
   catalog: ToolDef[],
@@ -264,6 +283,11 @@ export function placeRegionLabels(
       .filter((t) => !ids.includes(t.id))
       .map((t) => circles[t.short])
       .filter((c): c is VennCircle => c !== undefined);
+
+    if(present.length>=3){
+      const point=regionInterior(interior,exterior);
+      if(point){labels.push({key,count,x:point.x,y:point.y,placement:'inside',fromX:point.x,fromY:point.y,hitR:12});continue;}
+    }
 
     let placed: { x: number; y: number } | null = null;
     let from = { x: 0, y: 0 };

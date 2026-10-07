@@ -19,16 +19,20 @@ export interface ToolDef {
   /** Few characters, for KPI labels (`Dex`, `League`). */
   short: string;
   /** UTC ms. `0` means "before any user" (the first tool). */
-  launchedAt: number;
+  launchedAt: number | null;
 }
 
 /** First production day of the hub and gym leader maker. Same day as
  *  `docs/analytics-accuracy.md` §1b. */
 export const LEAGUE_LAUNCH_TS = Date.UTC(2026, 8, 8);
 
+/** Production rollout cutoff for conversion-era cohorts; deployment Ready is recorded in release evidence. */
+export const FAVORITES_LAUNCH_TS: number | null = 1791336876298;
+
 export const TOOL_CATALOG: readonly ToolDef[] = [
   { id: 'dex', label: 'Dex builder', short: 'Dex', launchedAt: 0 },
   { id: 'league', label: 'Gym leader maker', short: 'League', launchedAt: LEAGUE_LAUNCH_TS },
+  { id: 'favorites', label: 'Favorite Pokémon Picker', short: 'Picker', launchedAt: FAVORITES_LAUNCH_TS },
 ];
 
 export interface LabeledRate {
@@ -143,7 +147,7 @@ export function multiToolEras<T extends { since: number | null }>(eras: readonly
 }
 
 export function eraBounds(catalog: readonly ToolDef[]): Omit<EraOverlap, 'browsers' | 'regions'>[] {
-  const sorted = [...catalog].sort((a, b) => a.launchedAt - b.launchedAt);
+  const sorted = catalog.filter((t): t is ToolDef & { launchedAt: number } => t.launchedAt !== null).sort((a, b) => a.launchedAt - b.launchedAt);
   const cuts = sorted.slice(1);
   if (cuts.length === 0) return [];
   const out: Omit<EraOverlap, 'browsers' | 'regions'>[] = [];
@@ -181,7 +185,7 @@ function eraOf(
   return bounds[bounds.length - 1];
 }
 
-function mergeBrowsers(dexRecords: DexLike[], leagueRecords: LeagueLike[]): Browser[] {
+function mergeBrowsers(dexRecords: DexLike[], leagueRecords: LeagueLike[], favoriteRecords: DexLike[]): Browser[] {
   const byCid = new Map<string, Browser>();
   const take = (cid: string): Browser => {
     const id = bareCid(cid);
@@ -203,11 +207,16 @@ function mergeBrowsers(dexRecords: DexLike[], leagueRecords: LeagueLike[]): Brow
     b.firstByTool.league = Math.min(b.firstByTool.league ?? Infinity, r.firstTs);
     b.lastByTool.league = Math.max(b.lastByTool.league ?? 0, r.lastTs);
   }
+  for (const r of favoriteRecords) {
+    const b = take(r.cid);
+    b.firstByTool.favorites = Math.min(b.firstByTool.favorites ?? Infinity, r.firstTs);
+    b.lastByTool.favorites = Math.max(b.lastByTool.favorites ?? 0, r.lastTs);
+  }
   return [...byCid.values()];
 }
 
 function conversions(catalog: readonly ToolDef[], browsers: Browser[]): LabeledRate[] {
-  const sorted = [...catalog].sort((a, b) => a.launchedAt - b.launchedAt);
+  const sorted = catalog.filter((t): t is ToolDef & { launchedAt: number } => t.launchedAt !== null).sort((a, b) => a.launchedAt - b.launchedAt);
   const kpis: LabeledRate[] = [];
   for (let i = 1; i < sorted.length; i++) {
     const tool = sorted[i];
@@ -238,7 +247,7 @@ function conversions(catalog: readonly ToolDef[], browsers: Browser[]): LabeledR
 }
 
 function companions(catalog: readonly ToolDef[], browsers: Browser[]): LabeledRate[] {
-  const sorted = [...catalog].sort((a, b) => a.launchedAt - b.launchedAt);
+  const sorted = [...catalog].sort((a,b)=>(a.launchedAt ?? Infinity)-(b.launchedAt ?? Infinity));
   const kpis: LabeledRate[] = [];
   for (let i = 1; i < sorted.length; i++) {
     const tool = sorted[i];
@@ -250,7 +259,7 @@ function companions(catalog: readonly ToolDef[], browsers: Browser[]): LabeledRa
     const older = earlier.length === 1 ? earlier[0].short : 'an older tool';
     kpis.push({
       key: `${tool.id}-has-earlier`,
-      label: `${tool.short} has a ${older.toLowerCase()}`,
+      label: `${tool.short} has ${earlier.length === 1 ? 'a ' : ''}${older.toLowerCase()}`,
       hint: `of ${tool.short.toLowerCase()} browsers`,
       n,
       of,
@@ -343,8 +352,9 @@ export function buildCrossTool(
   dexRecords: DexLike[],
   leagueRecords: LeagueLike[],
   catalog: readonly ToolDef[] = TOOL_CATALOG,
+  favoriteRecords: DexLike[] = [],
 ): CrossToolSnapshot {
-  const browsers = mergeBrowsers(dexRecords, leagueRecords);
+  const browsers = mergeBrowsers(dexRecords, leagueRecords, favoriteRecords);
   const leagueByCid = new Map(leagueRecords.map((r) => [bareCid(r.cid), r]));
   const kpis = [...conversions(catalog, browsers), ...companions(catalog, browsers)];
   const native = dexNativeKpi(browsers, leagueByCid);

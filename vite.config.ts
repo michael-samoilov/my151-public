@@ -1,10 +1,29 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin, type PreviewServer, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
+/** Keep saved preview links on the canonical picker route in dev and preview. */
+function pickerRouteRedirect(): Plugin {
+  const install = (server: ViteDevServer | PreviewServer) => {
+    server.middlewares.use((request, response, next) => {
+      const url = request.url ?? '';
+      const queryStart = url.indexOf('?');
+      const pathname = queryStart < 0 ? url : url.slice(0, queryStart);
+      if (pathname !== '/favorite-pokemon-by-type' && pathname !== '/favorite-pokemon-by-type.html') {
+        next();
+        return;
+      }
+      response.statusCode = 308;
+      response.setHeader('Location', `/favorite-pokemon-picker${queryStart < 0 ? '' : url.slice(queryStart)}`);
+      response.end();
+    });
+  };
+  return { name: 'picker-route-redirect', configureServer: install, configurePreviewServer: install };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss()],
   define: {
     __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
     // Vercel deployment environment ('production' | 'preview' | ''), used to
@@ -14,6 +33,18 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      output: {
+        codeSplitting: {
+          // These shared startup modules keep their common dependencies in one
+          // chunk when a new lazy export entry changes automatic partitioning.
+          // React DOM always loads with React. Keeping them together avoids
+          // separate Brotli dictionaries and preserves first-load headroom.
+          groups: [{
+            name: 'shared-chrome',
+            test: /(?:\/src\/(?:components\/shared\/PageFooter\.tsx|lib\/(?:feedbackContext|usePixelPerfectSprite)\.ts|hooks\/useJsErrorCounter\.ts)$|\/node_modules\/react-dom\/)/,
+          }],
+        },
+      },
       input: {
         // One served HTML file per page, each with its own head and crawlable
         // copy — see docs/seo/PAGE-SEO-CONTRACT.md. `cleanUrls` in vercel.json
@@ -30,6 +61,7 @@ export default defineConfig({
         slotlab: path.resolve(__dirname, 'slot-lab.html'),
         // Preview-only lighting studio for the league export card.
         foilworkshop: path.resolve(__dirname, 'foil-workshop.html'),
+        favorites: path.resolve(__dirname, 'favorite-pokemon-picker.html'),
       },
     },
   },

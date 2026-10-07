@@ -60,12 +60,9 @@ function Stat({ value, label }: { value: number | string; label: string }) {
 /** What became of the browsers that saw the hub, as one stacked bar. The four
  *  outcomes are exhaustive, so a bar is the honest shape: shares of one whole. */
 function OutcomeBar({ c }: { c: HubCounts }) {
-  const rows = [
-    { label: 'Both tools', n: c.becameBoth, color: 'var(--color-primary)' },
-    { label: 'Dex only', n: c.becameDex, color: 'rgb(37,99,235)' },
-    { label: 'League only', n: c.becameLeague, color: 'rgb(217,119,6)' },
-    { label: 'Neither', n: c.becameNeither, color: 'var(--color-muted-foreground)' },
-  ].filter((r) => r.n > 0);
+  const names:Record<string,string> = {dex:'Dex only',league:'League only',favorites:'Picker only','dex+league':'Dex + League','dex+favorites':'Dex + Picker','favorites+league':'Picker + League','dex+favorites+league':'All three',neither:'None'};
+  const colors:Record<string,string> = {dex:'rgb(37,99,235)',league:'rgb(217,119,6)',favorites:'rgb(14,116,94)','dex+league':'rgb(109,40,217)','dex+favorites':'rgb(2,132,199)','favorites+league':'rgb(190,18,60)','dex+favorites+league':'var(--color-primary)',neither:'var(--color-muted-foreground)'};
+  const rows = Object.entries(c.outcomes).filter(([,n])=>n>0).map(([key,n])=>({label:names[key] ?? key,n,color:colors[key]}));
   if (c.shown === 0) return null;
   return (
     <div>
@@ -169,9 +166,10 @@ export function HubCard({ token }: { token: string }) {
             <Stat value={t.shown} label="Saw the hub" />
             <Stat value={`${t.dexClicks} (${pct(t.dexClicks, t.shown)})`} label="Clicked the dex card" />
             <Stat value={`${t.leagueClicks} (${pct(t.leagueClicks, t.shown)})`} label="Clicked the league card" />
+            <Stat value={`${t.favoriteClicks} (${pct(t.favoriteClicks,t.shown)})`} label="Clicked the picker card" />
             <Stat
               value={`${t.shown - t.becameNeither} (${pct(t.shown - t.becameNeither, t.shown)})`}
-              label="Became a user of either"
+              label="Became a tool user"
             />
           </div>
 
@@ -203,6 +201,7 @@ export function HubCard({ token }: { token: string }) {
                     <th className="pr-2 font-medium">Saw hub</th>
                     <th className="pr-2 font-medium">→ Dex</th>
                     <th className="pr-2 font-medium">→ League</th>
+                    <th className="pr-2 font-medium">→ Picker</th>
                     <th className="pr-2 font-medium">Became a user</th>
                     <th className="font-medium">Bounced</th>
                   </tr>
@@ -219,6 +218,7 @@ export function HubCard({ token }: { token: string }) {
                         {d.leagueClicks}{' '}
                         <span className="text-muted-foreground">({pct(d.leagueClicks, d.shown)})</span>
                       </td>
+                      <td className="pr-2 tabular-nums">{d.favoriteClicks} <span className="text-muted-foreground">({pct(d.favoriteClicks,d.shown)})</span></td>
                       <td className="pr-2 tabular-nums">{d.shown - d.becameNeither}</td>
                       <td className="tabular-nums">{d.becameNeither}</td>
                     </tr>

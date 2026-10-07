@@ -25,6 +25,8 @@
  * Run: npm run i18n:fixture  (after `npm run i18n:names`, which populates the cache)
  */
 import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { LANGUAGE_IDS, ensureCsvs, readCsv } from './pokeapi';
 import type { IdMapEntry } from './propose-id-map';
 
@@ -110,4 +112,6 @@ function main(): void {
   });
 }
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  void main();
+}

@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
 import {
   registerFeedbackOpener,
   takePendingCrash,
   type FeedbackAnchor,
 } from '@/components/feedback/feedbackChannel';
-import type { FeedbackCategory, FeedbackContext } from '@/lib/feedbackContext';
+import type { FeedbackCategory, FeedbackContext, FeedbackToolContext } from '@/lib/feedbackContext';
 
 /**
  * The single mount point for the report form.
@@ -24,7 +24,13 @@ import type { FeedbackCategory, FeedbackContext } from '@/lib/feedbackContext';
  * rather than from whichever button was clicked, so the footer link, which
  * belongs to no page, reports the page the reader is actually on.
  */
-export function FeedbackHost({ route }: { route: string }) {
+export function FeedbackHost({ route, getToolContext }: {
+  route: string;
+  getToolContext?: () => FeedbackToolContext;
+}) {
+  const contextRef = useRef(getToolContext);
+  useEffect(() => { contextRef.current = getToolContext; }, [getToolContext]);
+  const [toolContext, setToolContext] = useState<FeedbackToolContext | undefined>();
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<FeedbackCategory>('bug');
   const [crash, setCrash] = useState<FeedbackContext['error']>(undefined);
@@ -40,6 +46,7 @@ export function FeedbackHost({ route }: { route: string }) {
         // opening the form, because the tree that would have carried it as a
         // prop is the one that just died.
         setCrash(takePendingCrash());
+        setToolContext(contextRef.current?.());
         setOpen(true);
       }),
     [],
@@ -49,6 +56,7 @@ export function FeedbackHost({ route }: { route: string }) {
   return (
     <FeedbackSheet
       route={route}
+      toolContext={toolContext}
       initialCategory={category}
       error={crash}
       anchor={anchor}

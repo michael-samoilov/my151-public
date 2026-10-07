@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -10,10 +10,11 @@ import { getPokemonById, getPokemonByIds, getAllPokemon, withoutSpecials } from 
 import { TYPE_NAMES, type TypeName, type Pokemon } from '@/types/pokemon';
 import { countTypes, buildTypeRows } from './typeDistribution';
 import { STARTER_IDS } from '@/data/categories';
-import { typeIconPath } from '@/data/type-ids';
+import { typeChartIcon } from '@/components/shared/typeBadgeSvg';
+import { generationChartIcon, shapeBadgeChartIcon } from '@/components/shared/attributeBadgeSvg';
+import type { GenNumber } from '@/favorites/model/cells';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
-import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { SHAPE_ORDER, shapeChartIcon, SHAPE_ICON_SCALE } from '@/components/shared/ShapeIcon';
+import { SHAPE_ORDER } from '@/components/shared/ShapeIcon';
 import { regionName, shapeLabel, t, typeLabel } from '@/i18n';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { PageFooter } from '@/components/shared/PageFooter';
@@ -106,10 +107,7 @@ export function AnalyticsDashboard() {
     }
   }, [drillDownDexId, drillDownSegment, closeDrillDown, openDrillDown]);
 
-  // "Yours" type chart — computed locally so excludeSpecial only affects this chart.
-  // Returns the row data plus the pokemon count, which the chart needs as the
-  // percentage-label denominator — a dual-type pokemon contributes to two bars,
-  // so summing the bar counts would overcount the "dex size" the label refers to.
+  // The Yours type chart keeps its existing independent exclusion filter.
   const typeChart = useMemo<{ rows: ButterflyRow[]; total: number }>(() => {
     const base = excludeSpecial ? filteredBaseline : fullBaseline;
     const allIds = Object.values(sections).flat();
@@ -130,37 +128,13 @@ export function AnalyticsDashboard() {
   const genChartData: ButterflyRow[] = useMemo(() =>
     analytics.generationDeviation.map((d) => {
       const gen = d.generation;
-      const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
       return {
         key: String(gen),
         label: t('browser.genChip', { gen }),
         count: d.count,
         deviation: d.deviation,
         color: CHART_BAR_RED,
-        icon: (x: number, y: number, size: number) => {
-          const gradId = `gen-icon-grad-${gen}`;
-          const r = size / 2;
-          return (
-            <React.Fragment key={`gen-icon-${gen}`}>
-              <defs>
-                <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-                  {stops.map((s, si) => (
-                    <stop key={si} offset={s.offset} stopColor={s.color} />
-                  ))}
-                </linearGradient>
-              </defs>
-              <circle cx={x + r} cy={y + r} r={r} fill={`url(#${gradId})`} />
-              <text
-                x={x + r} y={y + r} textAnchor="middle" dominantBaseline="central"
-                fill="white" fontSize={size * 0.55} fontWeight="800"
-                fontFamily="system-ui, sans-serif"
-                paintOrder="stroke" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5"
-              >
-                {gen}
-              </text>
-            </React.Fragment>
-          );
-        },
+        icon: generationChartIcon(gen as GenNumber),
       };
     }),
     [analytics.generationDeviation],
@@ -189,7 +163,7 @@ export function AnalyticsDashboard() {
         count,
         deviation: natShare > 0 ? (yourShare / natShare - 1) * 100 : 0,
         color: CHART_BAR_RED,
-        icon: shapeChartIcon(shape),
+        icon: shapeBadgeChartIcon(shape),
       };
     });
   }, [sections, excludeSpecial]);
@@ -205,8 +179,7 @@ export function AnalyticsDashboard() {
     shapeChartData.filter(d => d.count > 0).map(d => ({ kind: 'shape' as const, shape: rowKey(d) })),
     [shapeChartData]);
 
-  // Compute type chart data for a regional/national dex (also returns the
-  // pokemon count for the chart's percentage-label denominator).
+  // Compute type chart data for a regional or National Dex.
   const regionalTypeChart = useMemo<{ rows: ButterflyRow[]; total: number }>(() => {
     if (selectedTypeChart === 'yours') return { rows: [], total: 0 };
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
@@ -239,7 +212,6 @@ export function AnalyticsDashboard() {
     [regionalTypeChartData]);
 
   const activeTypeChartData = selectedTypeChart === 'yours' ? typeChartData : regionalTypeChartData;
-  const activeTypeChartTotal = selectedTypeChart === 'yours' ? typeChart.total : regionalTypeChart.total;
   const isNationalSelected = selectedTypeChart === 'national';
   const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
 
@@ -289,7 +261,8 @@ export function AnalyticsDashboard() {
       count: r.score,
       deviation: r.score - (baseline.get(r.type) ?? 0),
       color: TYPE_COLORS[r.type as keyof typeof TYPE_COLORS],
-      icon: typeIconPath(r.type as TypeName),
+      barOpacity: 1,
+      icon: typeChartIcon(r.type as TypeName),
     })).sort((a, b) => isNationalSelected ? b.count - a.count : b.deviation - a.deviation);
   }, [matchupVisible, sections, selectedTypeChart, excludeSpecial, newPokemonOnly, isNationalSelected]);
 
@@ -331,7 +304,7 @@ export function AnalyticsDashboard() {
   // Sorted copies for each chart. These used to be inline `[...data].sort()`
   // in JSX, which handed every chart a new array identity on every dashboard
   // render and defeated the React.memo boundaries below.
-  const sortedTypeChartData = useMemo(() => [...activeTypeChartData].sort((a, b) =>
+  const sortedTypeChartData = useMemo(() => activeTypeChartData.map(row => ({ ...row, icon: typeChartIcon(rowKey(row) as TypeName) })).sort((a, b) =>
     typeSortBy === 'deviation' ? b.deviation - a.deviation
       : typeSortBy === 'label' ? a.label.localeCompare(b.label)
       : b.count - a.count
@@ -621,14 +594,13 @@ export function AnalyticsDashboard() {
             </div>
             <div className="h-[3px] bg-primary" />
             <div className="py-2 md:py-4">
-            <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3 min-h-[4.125rem] md:min-h-[2.75rem]">
-              {typeView === 'distribution'
-                ? t('analytics.type.descDistribution')
-                : t('analytics.type.descMatchup')}
-            </p>
-            <div className="px-6">
+            {typeView === 'matchup' && <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3">
+              {t('analytics.type.descMatchup')}
+            </p>}
+            <div className="px-4">
             {typeView === 'distribution' ? (
               <ButterflyChart
+                alignBaselines hideLabelText iconFillsRow
                 data={sortedTypeChartData}
                 rowHeight={16}
                 hideDeviation={isNationalSelected}
@@ -638,11 +610,6 @@ export function AnalyticsDashboard() {
                 onSortChange={setTypeSortBy}
                 labelHeader={t('chart.header.type')}
                 disableEmptyRows
-                // Types overlap (dual-types contribute to two bars), so the
-                // default "share of type mentions" denominator would dilute
-                // every percentage. Pass the pokemon count so each bar reads
-                // as "share of the dex".
-                countDenominator={isNationalSelected ? activeTypeChartTotal : undefined}
                 onBarClick={handleTypeBarClick}
                 activeKey={
                   (selectedTypeChart === 'yours' && drillDownIsYours) ||
@@ -652,6 +619,7 @@ export function AnalyticsDashboard() {
               />
             ) : typeMatchupData.length > 0 ? (
               <ButterflyChart
+                alignBaselines hideLabelText iconFillsRow
                 data={sortedMatchupData}
                 rowHeight={16}
                 scoreMode
@@ -674,11 +642,9 @@ export function AnalyticsDashboard() {
         {/* Generation Origin */}
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.gen.heading')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('analytics.gen.desc')}
-          </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
+                alignBaselines hideLabelText iconFillsRow
               data={sortedGenChartData}
               rowHeight={28}
               disableEmptyRows
@@ -695,11 +661,9 @@ export function AnalyticsDashboard() {
         {/* Body Shape Distribution */}
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.shape.heading')}</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('analytics.shape.desc')}
-          </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
+                alignBaselines hideLabelText iconFillsRow
               data={sortedShapeChartData}
               rowHeight={22}
               disableEmptyRows
@@ -707,7 +671,6 @@ export function AnalyticsDashboard() {
               onSortChange={setShapeSortBy}
               labelHeader={t('chart.header.shape')}
               labelWidthBase={80}
-              iconScale={SHAPE_ICON_SCALE}
               onBarClick={handleShapeBarClick}
               activeKey={activeShapeKey}
             />

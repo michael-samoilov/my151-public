@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
-import { useFluidSpritePx, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import type { PokemonLabel } from '@/i18n/names';
+import { PokemonName } from './PokemonName';
+import { tileImageCssPx } from '@/lib/tileImage';
+import { useFluidSpritePx, useLayoutViewportCssPx, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
@@ -82,13 +85,7 @@ export function useTileSpritePx(): number {
  * they stay at 1×. On mobile, the fluid continuous value is kept.
  */
 function useTileImagePx(): number {
-  const isDesktop = useViewportAtLeast(1024);
-  const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
-  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
-  if (!isDesktop) return Math.round(oneX * SPRITE_IMG_SCALE);
-  const fluidImage = oneX * SPRITE_IMG_SCALE;
-  const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
-  return multiple * SPRITE_NATIVE;
+  return tileImageCssPx(useLayoutViewportCssPx());
 }
 
 /**
@@ -132,6 +129,9 @@ export const TILE_ACTION_BUTTON_CLASS =
   'absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.05)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-[15]';
 
 interface PokemonTileContentProps {
+  /** A tool can supply a localized form name while retaining the shared tile. */
+  displayName?: string;
+  displayLabel?: PokemonLabel;
   pokemon: Pokemon;
   /** Override the sprite URL (shiny variants, regional art overrides). */
   spriteUrl?: string;
@@ -157,6 +157,8 @@ interface PokemonTileContentProps {
  */
 export function PokemonTileContent({
   pokemon,
+  displayName,
+  displayLabel,
   spriteUrl,
   contentClassName,
   afterTypes,
@@ -170,7 +172,7 @@ export function PokemonTileContent({
   // Re-render when the name catalog lands: it is fetched after first paint, so
   // the first frame legitimately shows the slug.
   useNamesVersion();
-  const label = pokemonLabel(pokemon.id, pokemon.name);
+  const label = displayLabel ?? (displayName ? { name: displayName, full: displayName, mark: '', pending: false } : pokemonLabel(pokemon.id, pokemon.name));
   return (
     <div className={cn('flex flex-col items-center w-full', contentClassName)}>
       {/*
@@ -194,7 +196,7 @@ export function PokemonTileContent({
       >
         <img
           src={spriteUrl ?? pokemon.sprite}
-          alt={pokemon.name}
+          alt={label.pending ? '' : label.full}
           width={imagePx}
           height={imagePx}
           loading={imgLoading}
@@ -205,55 +207,7 @@ export function PokemonTileContent({
           style={{ imageRendering: 'pixelated', maxWidth: 'none' }}
         />
       </div>
-      {/* Species name and form marker are separate boxes, because they have
-          opposite jobs. The name may truncate — it is long, and the tile is
-          narrow. The marker may not: it is the only thing on the label that
-          says which form this is, and when both lived in one string the
-          overflow ate the suffix first, so "Raichu-A" and "Raichu" rendered
-          identically on exactly the tiles where telling them apart matters.
-
-          The marker is `flex-shrink-0`, so it survives whatever the name has
-          to give up. The full form name is on the title and the accessible
-          name, since a single grapheme is a reminder rather than an
-          explanation. */}
-      <span
-        data-i18n-exempt="pokemon-name"
-        className="flex items-baseline justify-center gap-[0.15em] w-full text-[calc(var(--tile-sprite)*0.18)] font-medium leading-tight"
-        // While the catalog is in flight there is no name to announce or put in
-        // a tooltip. The slug is not one: it is English, lowercase and
-        // hyphenated in every locale, so offering it as the accessible name
-        // would tell a screen reader "mr-mime" and then quietly change its mind.
-        {...(label.pending
-          ? { 'aria-busy': true, 'aria-label': undefined }
-          : { title: label.full, 'aria-label': label.full })}
-      >
-        {label.pending ? (
-          /* A placeholder the exact height of the line it replaces, so the tile
-             does not resize when the real name lands — a grid of 151 tiles all
-             reflowing at once is a worse artefact than the flash this removes.
-             `aria-hidden` because a decorative bar has nothing to say; the
-             `aria-busy` above is what reports the state. */
-          <span
-            aria-hidden
-            data-name-skeleton
-            className="flex h-[1.25em] w-[62%] items-center"
-          >
-            <span className="tile-name-skeleton block h-[0.68em] w-full rounded-full bg-current" />
-          </span>
-        ) : (
-          <>
-            <span className="truncate">{label.name}</span>
-            {label.mark && (
-              <span
-                aria-hidden
-                className="flex-shrink-0 text-[0.8em] font-semibold opacity-70 tabular-nums"
-              >
-                {label.mark}
-              </span>
-            )}
-          </>
-        )}
-      </span>
+      <PokemonName label={label} className="w-full text-[calc(var(--tile-sprite)*0.18)] font-medium leading-tight" />
       {/* The sprite overhangs its column on purpose; a badge may not. The
           sprite is a picture with transparent margins, so an overhang reads as
           a creature standing in its cell — a badge is a solid pill, so the same

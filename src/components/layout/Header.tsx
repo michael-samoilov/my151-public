@@ -10,7 +10,7 @@ import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu, type ToolsCallout } from '@/components/layout/ToolsMenu';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
-import { isLeaguePromoSeen, markLeaguePromoSeen } from '@/lib/launchFlags';
+import { isFavoritesNoticeWindow, isLeaguePromoSeen, markLeaguePromoSeen } from '@/lib/launchFlags';
 
 export type AppView = 'builder' | 'view' | 'analytics';
 
@@ -78,7 +78,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
   // same message as a page. The hub marks it seen for anyone who came that
   // way. A tooltip on the Tools menu, so it points at where the tool is.
   const [placedAtMount] = useState(count);
-  const [promo, setPromo] = useState(() => placedAtMount > 0 && !isLeaguePromoSeen());
+  const [promo, setPromo] = useState(() => !isFavoritesNoticeWindow() && placedAtMount > 0 && !isLeaguePromoSeen());
   useEffect(() => {
     if (!promo) return;
     markLeaguePromoSeen();

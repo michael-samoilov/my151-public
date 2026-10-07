@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { createHash, randomUUID } from 'node:crypto';
+import { sanitizeFavoriteFeedback } from './_favoriteFeedback.js';
 import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
 
 /**
@@ -73,7 +74,7 @@ function strArray(value: unknown, maxItems: number, maxLen: number): string[] {
  * feedback form turns into a persistence and injection surface; every field
  * here is one this app's own collector produces, clamped to its own type.
  */
-function sanitizeContext(raw: unknown): Record<string, unknown> {
+export function sanitizeContext(raw: unknown): Record<string, unknown> {
   const c = (raw ?? {}) as Record<string, unknown>;
   const out: Record<string, unknown> = {
     route: str(c.route, 40) ?? 'unknown',
@@ -89,6 +90,11 @@ function sanitizeContext(raw: unknown): Record<string, unknown> {
     filters: strArray(c.filters, 12, 24),
     demo: c.demo === true,
   };
+
+  if (out.route === '/favorite-pokemon-picker' || out.route === '/favorite-pokemon-by-type') {
+    const favorites = sanitizeFavoriteFeedback(c.favorites);
+    if (favorites) out.favorites = favorites;
+  }
 
   if (c.exportSurvey === true) out.exportSurvey = true;
   if (c.exportTool === 'pokedex' || c.exportTool === 'league' || c.exportTool === 'card') {

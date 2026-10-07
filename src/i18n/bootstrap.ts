@@ -3,8 +3,8 @@ import { en } from './catalogs/en';
 import { DEFAULT_LOCALE, isLocale, type Locale } from './config';
 import { setCatalog } from './core';
 import { negotiateLocale } from './detect';
-import { loadNames } from './names';
-import { buildPseudoCatalog, isPseudoLocale, type PseudoLocale } from './pseudo';
+import { loadNames, hasNameExtension } from './names';
+import { isPseudoLocale, type PseudoLocale } from './pseudoLocale';
 import type { Messages } from './types';
 
 /**
@@ -78,7 +78,10 @@ const UI_SOURCES = import.meta.glob<Record<string, string>>('./catalogs/ui/*.jso
  * is a coherent intermediate state rather than a half-broken one.
  */
 export async function loadCatalog(locale: ActiveLocale): Promise<Messages> {
-  if (isPseudoLocale(locale)) return buildPseudoCatalog(locale);
+  if (isPseudoLocale(locale)) {
+    const { buildPseudoCatalog } = await import('./pseudo');
+    return buildPseudoCatalog(locale, en);
+  }
   const loadTerms = TERM_SOURCES[`./catalogs/terms/${locale}.json`];
   if (!loadTerms) return en;
   const loadUi = UI_SOURCES[`./catalogs/ui/${locale}.json`];
@@ -113,8 +116,8 @@ export function baseLocale(locale: ActiveLocale): Locale {
  */
 export async function applyLocale(locale: ActiveLocale): Promise<void> {
   const base = baseLocale(locale);
-  // Both chunks start together, but the language is committed the moment the
-  // *catalog* lands and never waits on the names.
+  // Shared pages commit when the UI catalog lands so startup can time out.
+  // Picker waits for its optional form names before committing a locale.
   //
   // Awaiting the two as a pair is the obvious way to write this and it is
   // wrong. `initLocale` races this against a timeout so a bad connection
@@ -124,7 +127,9 @@ export async function applyLocale(locale: ActiveLocale): Promise<void> {
   // Japanese stored reloads and gets an entirely English app, `<html lang>` and
   // all. That is far worse than the flash this function exists to prevent.
   const names = loadNames(base);
-  setCatalog(base, await loadCatalog(locale));
+  const catalog = await loadCatalog(locale);
+  if (hasNameExtension()) await names;
+  setCatalog(base, catalog);
   // Then wait for the names, so a caller that awaits this — the picker, and
   // boot — does not paint the slug. If they are slow enough to lose the race,
   // the worst case degrades to the old flash rather than to the wrong language.
@@ -158,8 +163,7 @@ export async function initLocale(opts: {
   // what loads them.
   const ready = locale === DEFAULT_LOCALE ? loadNames(DEFAULT_LOCALE) : applyLocale(locale);
 
-  // Raced, not simply awaited: a stalled fetch on a flaky connection must
-  // degrade to the slug rather than hold the first paint open indefinitely. The
-  // boot spinner in index.html already covers this window.
-  await Promise.race([ready, timeout]);
+  // Shared pages retain the startup timeout. Picker keeps the boot spinner
+  // until its complete name catalog is ready, so no raw form slug can paint.
+  await (hasNameExtension() ? ready : Promise.race([ready, timeout]));
 }

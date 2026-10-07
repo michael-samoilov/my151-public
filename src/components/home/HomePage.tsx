@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useHomeSheetLift } from './useHomeSheetLift';
+import { SLOT_COUNT } from '@/league/model/constants';
 import { Hammer } from 'lucide-react';
 import { useDocumentLocale, useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useXHeightAlignment } from './useXHeightAlignment';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
-import { ToolsMenu, type ToolsCallout } from '@/components/layout/ToolsMenu';
+import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
@@ -12,7 +15,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
-import { isMovedNoticeSeen, markLeaguePromoSeen, markMovedNoticeSeen } from '@/lib/launchFlags';
+import { markLeaguePromoSeen } from '@/lib/launchFlags';
 import dexBack from '@/assets/home/tool-dex-b.webp';
 import dexBack400 from '@/assets/home/tool-dex-b-400.webp';
 import dexFront from '@/assets/home/tool-dex.webp';
@@ -21,6 +24,10 @@ import leagueBack from '@/assets/home/tool-league-b.webp';
 import leagueBack400 from '@/assets/home/tool-league-b-400.webp';
 import leagueFront from '@/assets/home/tool-league.webp';
 import leagueFront400 from '@/assets/home/tool-league-400.webp';
+import favoritesBack from '@/assets/home/tool-favorites-b.webp';
+import favoritesBack400 from '@/assets/home/tool-favorites-b-400.webp';
+import favoritesFront from '@/assets/home/tool-favorites.webp';
+import favoritesFront400 from '@/assets/home/tool-favorites-400.webp';
 
 /**
  * The router page: one card per tool, plus a call to action.
@@ -44,7 +51,7 @@ import leagueFront400 from '@/assets/home/tool-league-400.webp';
 const U = (n: number) => `${((n / 166) * 100).toFixed(3)}cqw`;
 
 /** Shorter than the artboard's 104: the copy no longer lives inside the panel. */
-const PANEL_ASPECT = '166 / 100';
+const PANEL_ASPECT = '166 / 79.167';
 // Capped in px so the wide desktop band does not take a huge rounded corner:
 // the radius is a share of the card's width, and a third-of-the-page card would
 // otherwise round ~34px, whose bottom-left curve exposes the screenshot behind
@@ -58,37 +65,29 @@ const BLURB = `min(${U(7.6)}, 15.6px)`;
 // lands where it would have anyway.
 const BLEED = U(34);
 
-/**
- * Corner radius as a share of the screenshot's width.
- *
- * A phone's own proportion, not this app's card radius: the shot is a picture
- * of a phone screen, so its corners should read as that phone's. An iPhone 14
- * rounds 47.3pt on a 390pt screen. The radius is applied here rather than baked
- * into the asset, so one flat rectangle serves the 110px phone card and the
- * 263px desktop card alike. `capture-shots.mjs` keeps the same number and
- * refuses to write an asset with ink inside this curve.
- */
-const PHONE_RADIUS = 0.121;
+/** Export-paper corners are gentle and leave each native title band intact. */
+const EXPORT_RADIUS = 0.02;
 
-/** The fan: back card lower and further left, and turned a little more. */
+/** Equal-width sheets share their top anchor and rotate in 7° steps. */
 const FAN = [
-  { tilt: -8, offset: 0, drop: 6 },
-  { tilt: -3, offset: 16, drop: 0 },
+  { tilt: -3.5, offset: 0 },
+  { tilt: 3.5, offset: 16 },
 ];
-const SHOT_W = 116;
+// One width makes the shortest native export bleed below the unchanged panel.
+const SHOT_W = 134;
 const SHOT_TOP = 8;
 const POP_TOP = 56;
 const POP_LEFT = 9.6;
 
 /**
  * The CSS width a shot renders at in each band of the hub's layout, measured
- * from 320px to 2560px: 109px on a 390px phone, 164px at 1280. With it, a phone
+ * from the current layout: 128px on a 390px phone, 140px at 1280. With it, a phone
  * or a 1x desktop loads the 400px copy instead of the 800px original, which
  * only a 2x desktop or a landscape phone needs. `scripts/resize-shots.sh`
  * writes the copies.
  */
 const SHOT_SIZES =
-  '(min-width: 1024px) calc(13.7vw - 11px), (min-width: 640px) calc(28.5vw - 10px), calc(30vw - 8px)';
+  '(min-width: 1024px) calc(11.87vw - 0.602rem), (min-width: 640px) calc(33.197vw - 0.65rem), calc(34.163vw - 0.325rem)';
 const shot = (small: string, full: string) => ({
   src: full,
   srcSet: `${small} 400w, ${full} 800w`,
@@ -101,6 +100,7 @@ interface Tool {
   href?: string;
   title: string;
   blurb: string;
+  progress?: { count: number; total: number; label: string };
   shots?: [ReturnType<typeof shot>, ReturnType<typeof shot>];
   /** One description per shot, back then front. The shots are content, not
    *  decoration: they show what each tool produces. */
@@ -114,20 +114,63 @@ const HAMMER_TITLE = 'next';
  * entry here — the grid's column count and the call to action's shape both
  * follow from the length, so nothing else changes. See `gridStyle` below.
  */
+const PROGRESS_TOKEN = '{progress}';
+
+function readSavedState(key: string): Record<string, unknown> | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) ?? 'null');
+    return saved?.state && typeof saved.state === 'object' ? saved.state : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Read saved work without creating a demo league or changing either store. */
+function useSavedToolProgress() {
+  const [league, setLeague] = useState(0);
+  const [favorites, setFavorites] = useState({ filled: 0, total: 257 });
+  useEffect(() => {
+    let active = true;
+    async function readSaved() {
+      try {
+        const cards = readSavedState('league-builder')?.cards;
+        setLeague(Array.isArray(cards) ? cards.slice(0, SLOT_COUNT).filter(
+          card => Array.isArray(card?.lines) && card.lines.length > 0,
+        ).length : 0);
+        const savedFills = readSavedState('favorite-picker')?.fills;
+        if (savedFills && typeof savedFills === 'object' && !Array.isArray(savedFills)) {
+          const fills = Object.fromEntries(Object.entries(savedFills).filter(
+            (entry): entry is [string, number] => typeof entry[1] === 'number',
+          ));
+          const { buildFavoritesSnapshot } = await import('@/favorites/export/snapshot');
+          const { filled, total } = buildFavoritesSnapshot(fills).completion;
+          if (active) setFavorites({ filled, total });
+        } else if (active) setFavorites({ filled: 0, total: 257 });
+      } catch {
+        // Blocked storage or an unreadable save must not stop the homepage.
+      }
+    }
+    void readSaved();
+    window.addEventListener('storage', readSaved);
+    return () => { active = false; window.removeEventListener('storage', readSaved); };
+  }, []);
+  return { league, favorites };
+}
+
 function useTools(placed: number): Tool[] {
   const t = useT();
+  const { league, favorites } = useSavedToolProgress();
   return [
     {
       key: 'dex',
       href: '/pokedex-builder',
       title: t('home.dex.title'),
-      // A saved dex turns the blurb into the way back to it. The store is
-      // read, never written, from this page: the hub must not touch a dex.
-      blurb: placed > 0 ? t('home.dex.continue', { count: placed }) : t('home.dex.blurb'),
-      shots: [shot(dexBack400, dexBack), shot(dexFront400, dexFront)],
+      blurb: t('home.dex.blurb'),
+      progress: placed > 0 ? { count: placed, total: 151, label: t('home.dex.saved', { progress: PROGRESS_TOKEN }) } : undefined,
+      shots: [shot(dexFront400, dexFront), shot(dexBack400, dexBack)],
       alts: [
-        'The Pokédex builder’s analytics page: type distribution charts for a custom region against the National Dex',
-        'A custom regional Pokédex of 151 Pokémon, exported as an image from the Pokédex builder',
+        'A custom regional Pokédex in progress on the Pokédex builder Build page',
+        'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
       ],
     },
     {
@@ -135,11 +178,21 @@ function useTools(placed: number): Tool[] {
       href: '/custom-gym-leader',
       title: t('home.league.title'),
       blurb: t('home.league.blurb'),
+      progress: league > 0 ? { count: league, total: SLOT_COUNT, label: t('home.league.saved', { progress: PROGRESS_TOKEN }) } : undefined,
       shots: [shot(leagueBack400, leagueBack), shot(leagueFront400, leagueFront)],
       alts: [
-        'A whole league exported from the gym leader maker: eight gym leaders, the Elite Four and the Champion with their teams',
+        'A whole league exported from the gym leader maker: eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
         'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
       ],
+    },
+    {
+      key: 'favorites',
+      href: '/favorite-pokemon-picker',
+      title: t('home.favorites.title'),
+      blurb: t('home.favorites.blurb'),
+      progress: favorites.filled > 0 ? { count: favorites.filled, total: favorites.total, label: t('home.favorites.saved', { progress: PROGRESS_TOKEN }) } : undefined,
+      shots: [shot(favoritesBack400, favoritesBack), shot(favoritesFront400, favoritesFront)],
+      alts: [t('home.favorites.fullGridAlt'), t('home.favorites.simplifiedAlt')],
     },
     { key: HAMMER_TITLE, title: t('home.next.title'), blurb: t('home.next.blurb') },
   ];
@@ -183,6 +236,7 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       data-card-panel
     >
       {body}
+      {tool.shots && <span className="hub-pocket-edge" aria-hidden data-card-pocket />}
     </button>
   ) : tool.href ? (
     <a
@@ -190,14 +244,21 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       className={panel}
       style={style}
       data-card-panel
+      aria-label={tool.shots ? undefined : tool.title}
       // fetch keepalive lets the beacon outlive the navigation this starts.
-      onClick={() => sendEventBeacon(tool.key === 'dex' ? 'hub-cta-dex' : 'hub-cta-league')}
+      onClick={() =>
+        sendEventBeacon(
+          tool.key === 'dex' ? 'hub-cta-dex' : tool.key === 'league' ? 'hub-cta-league' : 'hub-cta-favorites',
+        )
+      }
     >
       {body}
+      {tool.shots && <span className="hub-pocket-edge" aria-hidden data-card-pocket />}
     </a>
   ) : (
     <div className={panel} style={style} data-card-panel>
       {body}
+      {tool.shots && <span className="hub-pocket-edge" aria-hidden data-card-pocket />}
     </div>
   );
 
@@ -211,7 +272,7 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       className={`hub-card flex flex-col ${wide ? SPAN : ''}`}
       style={{ containerType: 'inline-size' }}
     >
-      <div style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art))` : 0 }}>{inner}</div>
+      <div style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art) + var(--panel-inset, 0px))` : 0 }}>{inner}</div>
       {wide ? null : <Caption tool={tool} />}
     </div>
   );
@@ -271,7 +332,7 @@ function Caption({ tool }: { tool: Tool }) {
   // so it is styled the same and is not a heading.
   const Title = tool.href ? 'h2' : 'p';
   return (
-    <div style={{ padding: `${U(5.6)} ${U(1.7)} 0` }} data-card-caption>
+    <div style={{ padding: `var(--caption-top, ${U(5.6)}) ${U(1.7)} 0` }} data-card-caption>
       <Title
         data-card-title
         className="m-0 font-bold tracking-tight"
@@ -280,11 +341,16 @@ function Caption({ tool }: { tool: Tool }) {
         {tool.title}
       </Title>
       <p
-        className="m-0 text-muted-foreground text-pretty"
-        style={{ fontSize: BLURB, lineHeight: 1.4, marginTop: U(3) }}
+        className={`m-0 text-muted-foreground ${tool.key === HAMMER_TITLE ? 'whitespace-pre-line' : 'text-pretty'}`}
+        style={{ fontSize: BLURB, lineHeight: 'var(--caption-leading, 1.4)', marginTop: `var(--caption-gap, ${U(3)})` }}
       >
         {tool.blurb}
       </p>
+      {tool.progress && <p data-card-progress className="m-0 text-muted-foreground" style={{ fontSize: BLURB, lineHeight: 'var(--caption-leading, 1.4)' }}>
+        {tool.progress.label.split(PROGRESS_TOKEN)[0]}
+        <strong className="font-bold tabular-nums whitespace-nowrap"><span className="text-primary">{tool.progress.count}</span><span className="text-foreground">/{tool.progress.total}</span></strong>
+        {tool.progress.label.split(PROGRESS_TOKEN)[1]}
+      </p>}
     </div>
   );
 }
@@ -309,6 +375,11 @@ function Artwork({ tool }: { tool: Tool }) {
   // guard is unchanged — the handlers sit on the twins, which never move, so a
   // floating shot can never move out from under the pointer and toggle itself.
   const [floated, setFloated] = useState<number | null>(null);
+  const stageRef = useHomeSheetLift(floated);
+  // Shorter sheets need slightly more paper below the pocket for the extra lift.
+  const widerPair = tool.key === 'dex' || tool.key === 'league';
+  const shotWidth = tool.key === 'dex' ? 147 : tool.key === 'league' ? 149 : SHOT_W;
+  // The shortest front sheet sets a shared resting top and bottom reserve.
   // Both clip boxes reach far past the panel's top-left edge, mostly over empty
   // space. That whole rectangle used to be part of the link, so a click well
   // above or beside the artwork still navigated. `pointerEvents: 'none'` here
@@ -317,9 +388,9 @@ function Artwork({ tool }: { tool: Tool }) {
   // the two screenshots, nothing more.
   const box = {
     position: 'absolute',
-    top: `calc((${U(POP_TOP)} * var(--art) + ${BLEED}) * -1)`,
+    top: `calc((${U(POP_TOP)} * var(--art) + ${BLEED} + var(--panel-height) * 0.55) * -1)`,
     left: `calc((${U(POP_LEFT)} * var(--art) + ${BLEED}) * -1)`,
-    right: 0,
+    right: 'calc(100cqw - var(--card-width, 100cqw))',
     bottom: 0,
     overflow: 'hidden',
     pointerEvents: 'none',
@@ -327,16 +398,21 @@ function Artwork({ tool }: { tool: Tool }) {
   // The rest geometry of a shot: where it sits and how it tilts, with no float.
   const geom = (i: number) => {
     const f = FAN[i];
+    // The shorter league summary needs extra paper below the shared hover fold.
+    const scale = tool.key === 'league' && i === 0 ? 'var(--rear-scale, 1)' : '1';
     return {
       position: 'absolute' as const,
-      // `--shot-nudge` (0 by default, a desktop value in `.hub-grid`) shifts the
-      // fan right so its bottom-left clears the card's rounded corner. Without it
-      // the shots break past that corner on the wide desktop band.
-      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px))`,
-      top: `calc(${BLEED} + ${U(SHOT_TOP)} + ${U(f.drop)})`,
-      width: `calc(${U(SHOT_W)} * var(--art))`,
-      transformOrigin: '0 0' as const,
-      borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${PHONE_RADIUS})`,
+      // The nudge clears bottom corners; the front sheet uses half the remaining
+      // right clearance. All visible, shadow and stationary hit copies share it.
+      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${i === 0 ? ` - ${U(1)}` : ''}${i === 1
+        ? ` + (var(--card-width, 100cqw) - (${U(FAN[1].offset)} - ${U(POP_LEFT)} * var(--art) + var(--shot-nudge, 0px) + ${U(shotWidth)} * var(--art))) / 2${widerPair ? ` - ${U(5)}` : ''}`
+        : ''})`,
+      // Share the Dex's safe resting top. Compensate for the tilted top edge's
+      // half-width projection, so different sheet widths have the same top.
+      top: `calc(${BLEED} + var(--panel-height) * 0.55 + ${U(SHOT_TOP)} + 6px + var(--panel-height) * 0.105 + (${U(shotWidth)} * var(--art) * ${scale} - ${U(147)} * var(--art)) * ${Math.sin(Math.abs(f.tilt) * Math.PI / 180) / 2})`,
+      width: `calc(${U(shotWidth)} * var(--art) * ${scale})`,
+      transformOrigin: '50% 0' as const,
+      borderRadius: `calc(${U(shotWidth)} * var(--art) * ${scale} * ${EXPORT_RADIUS})`,
     };
   };
   // The floating shots carry `--hf`, the per-shot hover float that `index.css`
@@ -360,11 +436,12 @@ function Artwork({ tool }: { tool: Tool }) {
           narrower on desktop (see `.hub-stage`), so the card can grow wide and
           short while the screenshots keep the size and left-edge position they
           have now — the extra width becomes red to their right. */}
-      <span className="hub-stage">
+      <span className="hub-stage" ref={stageRef}>
       {/* Shadows. Masked so they fade out near the top break-out rather than
           ending on a straight line at the clip edge. Each rides its own shot's
           `--hf`, so a shadow floats with the shot it belongs to. */}
       <span
+        data-audit-clip="intended"
         style={{
           ...box,
           maskImage: `linear-gradient(to top, transparent 0, #000 ${BLEED})`,
@@ -377,7 +454,7 @@ function Artwork({ tool }: { tool: Tool }) {
             aria-hidden
             data-shot={i}
             className="hub-float-shot block"
-            style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
+            style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 9px 21px -5px rgba(10, 10, 10, 0.42)' }}
           >
             <img {...tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
           </span>
@@ -385,12 +462,12 @@ function Artwork({ tool }: { tool: Tool }) {
       </span>
       {/* The visible shots. They float, so they carry no pointer events — the
           stationary hit layer below owns hovering and clicking. */}
-      <span style={box}>
+      <span style={box} data-audit-clip="intended">
         {FAN.map((f, i) => (
           <span
             key={f.tilt}
             data-shot={i}
-            className="hub-float-shot block overflow-hidden border border-neutral-300 bg-background"
+            className="hub-float-shot block"
             style={{ ...geom(i), transform: floatTransform(i) }}
           >
             {/* Not lazy: every card sits in the first viewport at every
@@ -412,7 +489,7 @@ function Artwork({ tool }: { tool: Tool }) {
           itself — the guard against hover flicker. The twins are the click
           target too, so a click on a screenshot still follows the card's link;
           the front twin sits last, so it wins the overlap. */}
-      <span style={box}>
+      <span style={box} data-audit-clip="intended">
         {FAN.map((f, i) => (
           <span
             key={f.tilt}
@@ -471,26 +548,7 @@ export function HomePage() {
   const placed = usePokedexStore((s) => Object.values(s.sections).reduce((n, ids) => n + ids.length, 0));
   const tools = useTools(placed);
 
-  // Shown once to a visitor who saved a dex before the launch, when "/" was
-  // the builder: a tooltip on the Tools menu says where the builder went and
-  // that nothing was lost. Seeing the hub is also seeing the gym leader
-  // card, so the dex builder's own callout for it is marked seen here and
-  // never repeats there.
-  const [moved, setMoved] = useState(() => placed > 0 && !isMovedNoticeSeen());
-  useEffect(() => {
-    if (moved) markLeaguePromoSeen();
-  }, [moved]);
-  const movedCallout: ToolsCallout | null = moved
-    ? {
-        text: t('home.moved.tip', { count: placed }),
-        dismissLabel: t('home.moved.dismiss'),
-        testId: 'moved-notice',
-        onDismiss: () => {
-          markMovedNoticeSeen();
-          setMoved(false);
-        },
-      }
-    : null;
+  useEffect(() => { markLeaguePromoSeen(); }, []);
   // Desktop lays the tools on one row that fills the width: three cards spread
   // to where a fourth card's right edge would sit. The cards go wide and short
   // so the red reads as a low band, not a block; the screenshots do not change,
@@ -504,6 +562,7 @@ export function HomePage() {
   // `useIsDesktop` is for elsewhere in this app; the alternative is rendering
   // both and hiding one, which duplicates the call to action's button.
   const isDesktop = useIsDesktop();
+  const { titleRef, descriptionRef, offset: descriptionOffset } = useXHeightAlignment(isDesktop);
   const spansOnPhone = !isDesktop && tools.length % 2 === 1;
   const reserves = reserveByRow(tools, isDesktop ? desktopCols : 2);
 
@@ -523,10 +582,10 @@ export function HomePage() {
                 <span className="text-foreground">.app</span>
               </span>
               {/* The same site bar as every tool page: language, report, tools. */}
-              <div className="flex flex-shrink-0 items-center gap-1">
+              <div className="flex flex-shrink-0 items-center gap-0 min-[360px]:gap-1">
                 <LanguagePicker />
                 <FeedbackButton />
-                <ToolsMenu callout={movedCallout} />
+                <ToolsMenu />
               </div>
             </div>
           </header>
@@ -541,33 +600,34 @@ export function HomePage() {
               between the hero and the grid, and below the grid all match.
               `min-h-6` is the floor they collapse to when the content is taller
               than the viewport. */}
-          <main className="flex flex-1 flex-col px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
-            <div className="min-h-6 flex-1" />
-            <section className="md:flex md:items-start md:justify-between">
+          <main className="hub-home flex flex-1 flex-col px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
+            <div className="hub-spacer min-h-6 flex-1" />
+            <section className="md:grid md:grid-cols-4 md:items-baseline md:gap-x-6">
               <h1
+                ref={titleRef}
                 // Every step here was measured, not guessed — see the README.
                 // 1.3125rem is 21px at the mobile root size, the largest whole
                 // pixel that keeps this heading to two lines at 320px, the
                 // narrowest width the e2e projects cover; 22px spills to three.
-                // The split hero gives the h1 a 375px column at 1024, where
-                // anything over 1.75rem runs to four lines, so the big size waits
-                // for xl.
-                className="m-0 font-extrabold tracking-tight text-pretty text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:w-[41%] md:shrink-0"
+                // Desktop copy spans the same two-card halves as the grid.
+                // Keep the larger heading size at xl to preserve its line fit.
+                className="m-0 font-extrabold tracking-tight text-pretty text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:col-span-2"
                 style={{ lineHeight: 1.08 }}
               >
                 {t('home.h1')}
               </h1>
-              <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:w-[55%] md:shrink-0">
-                <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
+              {/* Share the first baseline, then align the two fonts' lowercase x tops. */}
+              <div
+                className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2"
+                style={isDesktop ? { transform: `translateY(${descriptionOffset}px)` } : undefined}
+              >
+                <p ref={descriptionRef} className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
                   {t('home.intro')}
-                </p>
-                <p className="m-0 text-[0.72rem] leading-relaxed text-muted-foreground/70 text-pretty">
-                  {t('home.note')}
                 </p>
               </div>
             </section>
 
-            <div className="min-h-6 flex-1" />
+            <div className="hub-spacer min-h-6 flex-1" />
 
             {/* `--art` scales the artwork against the card without touching the
                 card itself.
@@ -593,7 +653,7 @@ export function HomePage() {
                 />
               ))}
             </div>
-            <div className="min-h-6 flex-1" />
+            <div className="hub-spacer min-h-6 flex-1" />
           </main>
         </div>
 

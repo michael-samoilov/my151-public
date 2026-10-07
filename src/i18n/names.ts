@@ -37,7 +37,7 @@ interface NameCatalog {
 }
 
 /**
- * Only the 64 alt forms need an appId -> speciesId entry; for the 1,025 base
+ * Only alt forms need an appId -> speciesId entry; for the 1,025 base
  * species the two are equal. Importing the full id map instead put ~95 kB of
  * slugs, form ids and notes into the main bundle for nothing.
  *
@@ -53,7 +53,23 @@ const inFlight = new Map<Locale, Promise<void>>();
 /** Vite turns each of these into its own hashed chunk, fetched on demand. */
 const SOURCES = import.meta.glob<NameCatalog>('./names/*.json', { import: 'default' });
 
-export function loadNames(locale: Locale): Promise<void> {
+let extensionLoader: ((locale: Locale, catalog: NameCatalog, species: Record<string, number>) => Promise<void>) | undefined;
+/** Picker installs its optional names before boot; other pages never import them. */
+export function registerNameExtension(loader: typeof extensionLoader): void {
+  extensionLoader = loader;
+}
+export function hasNameExtension(): boolean { return !!extensionLoader; }
+
+export async function loadNames(locale: Locale): Promise<void> {
+  await loadSharedNames(locale);
+  const catalog = loaded.get(locale);
+  if (extensionLoader && catalog) {
+    await extensionLoader(locale, catalog, ALT_FORM_SPECIES);
+    notify();
+  }
+}
+
+function loadSharedNames(locale: Locale): Promise<void> {
   if (loaded.has(locale)) return Promise.resolve();
   let pending = inFlight.get(locale);
   if (!pending) {
@@ -142,7 +158,7 @@ export function formLabel(appId: number): string | null {
 /**
  * The tile label, split so the parts can be laid out independently.
  *
- * `name` is the species name and is the part allowed to truncate. `mark` is the
+ * `name` is the visible name and is the part allowed to truncate. `mark` is the
  * one-grapheme form marker and must not: putting it inside the truncating
  * string is what made alt forms indistinguishable on a narrow tile, because the
  * suffix is exactly the part a text overflow eats first. `full` is the whole
@@ -167,18 +183,56 @@ export interface PokemonLabel {
   pending: boolean;
 }
 
-export function pokemonLabel(appId: number, slug: string): PokemonLabel {
+/** Complete form names already include their species; descriptors do not. */
+export function fullPokemonName(species: string, descriptor?: string): string {
+  if (!descriptor) return species;
+  const name = species.normalize('NFKC').toLocaleLowerCase();
+  const form = descriptor.normalize('NFKC').toLocaleLowerCase();
+  let index = form.indexOf(name);
+  while (index !== -1) {
+    // Latin names need word boundaries: Mew is not the species in Mewtwo.
+    // Japanese, Korean and Chinese complete names join the prefix directly.
+    const latin = /\p{Script=Latin}/u.test(name);
+    const before = form[index - 1] ?? '';
+    const after = form[index + name.length] ?? '';
+    const joinedPrefix = /^(mega|ultra)$/.test(form.slice(0, index));
+    if (!latin || ((!/[\p{L}\p{N}]/u.test(before) || joinedPrefix) && !/[\p{L}\p{N}]/u.test(after))) return descriptor;
+    index = form.indexOf(name, index + name.length);
+  }
+  return `${species} — ${descriptor}`;
+}
+
+export function pokemonLabel(appId: number, slug: string, formKey: number | `picker:${number}` = appId): PokemonLabel {
   const catalog = loaded.get(getLocale());
   const species = speciesName(appId);
   if (!catalog || !species) return { name: slug, mark: null, full: slug, pending: true };
-  const mark = catalog.formMark[appId] ?? null;
-  const descriptor = catalog.forms[appId];
+  let mark: string | null = catalog.formMark[appId] ?? null;
+  let descriptor = catalog.forms[formKey];
+  // The sourced Pokédex text names all three breeds "Paldean Form" in
+  // several languages. Preserve their identities with readable English breed
+  // names until a localized breed source exists, rather than giving all three P.
+  const breed = ({ 10250: 'Combat Breed', 10251: 'Blaze Breed', 10252: 'Aqua Breed' } as Record<number, string>)[appId];
+  let breedQualifier: string | undefined;
+  if (breed) {
+    const ambiguous = !descriptor || [10250, 10251, 10252].some(id => id !== appId && catalog.forms[id] === descriptor);
+    if (ambiguous) descriptor = `${descriptor ?? ''} (${breed})`.trim();
+    breedQualifier = ambiguous ? breed : descriptor?.match(/\(([^)]+)\)$/u)?.[1];
+  }
+  const full = fullPokemonName(species, descriptor);
+  let name = breed ? breedQualifier ? `${species} (${breedQualifier})` : full
+    : !mark && (appId > 1025 || formKey !== appId) ? full : species;
+  // X/Y are part of the official name. Reserve the final glyph just like a
+  // regional mark so an ellipsis never makes the two Mega forms identical.
+  if ([10034, 10035, 10043, 10044, 10304, 10305].includes(appId)) {
+    const variant = full.match(/[XYＸＹ]$/u)?.[0];
+    if (variant) { mark = variant; name = full.slice(0, -variant.length).trimEnd(); }
+  }
   return {
-    name: species,
+    // Named alternate forms need their full name when no compact marker
+    // distinguishes them. Base/default species keep their existing label.
+    name,
     mark,
-    // "Raichu — Alolan Form". An em dash rather than a bracket because this is
-    // read aloud as often as it is seen.
-    full: descriptor ? `${species} — ${descriptor}` : species,
+    full,
     pending: false,
   };
 }

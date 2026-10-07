@@ -13,8 +13,14 @@ export interface ButterflyRow {
   key?: string;
   label: string;
   count: number;
+  /** Category never occurs in the reference options; paint only its muted identifier. */
+  unavailable?: boolean;
   deviation: number; // percentage, e.g. +100 = double, -50 = half (or raw diff in scoreMode)
   color: string;
+  /** Optional outline for a bar fill that matches the chart background. */
+  barStroke?: string;
+  /** Override the standard translucent bar paint for badge-matched colors. */
+  barOpacity?: number;
   /** Optional icon path (e.g. "/types/fire.svg") or an inline SVG render
    *  function. The function is handed the icon column's left edge, the row's
    *  vertical position, the square icon size and the column's full width — wide

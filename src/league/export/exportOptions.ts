@@ -4,6 +4,10 @@
  * The export-settings pane surfaces these; URL query flags seed the overlay for QA.
  */
 
+/** Stable download names, shared without loading the canvas renderer. */
+export const CARD_FILENAME = 'my151-trainer-card.png';
+export const HOME_FILENAME = 'my151-league.png';
+
 export type LeagueHomeTeamMode = 'story' | 'rematch' | 'both';
 
 export interface LeagueHomeExportLayout {

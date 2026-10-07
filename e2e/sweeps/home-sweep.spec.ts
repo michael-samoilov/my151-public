@@ -18,11 +18,11 @@ const WIDTHS = [
 ];
 
 /**
- * Three tools ship today. The favorite picker returns as a fourth, and when it
- * does this number changes with it — the page reads the count and lays itself
- * out from that, so a stale number here would pass while the page is wrong.
+ * Four hub cards: dex, league, favorite picker, then the feedback call.
+ * The page reads the count and lays itself out from that, so a stale number
+ * here would pass while the page is wrong.
  */
-const CARDS = 3;
+const CARDS = 4;
 
 type Problem = string;
 
@@ -93,7 +93,8 @@ test.describe('home page responsive sweep', () => {
         const wide = cards.filter((cell) => !cell.querySelector('[data-card-title]'));
         if (desktop && wide.length) fail.push(`${wide.length} cards have no caption at desktop width`);
         if (!desktop) {
-          if (wide.length !== 1) fail.push(`expected 1 wide bar on a phone, found ${wide.length}`);
+          const wantWide = cardCount % 2 === 1 ? 1 : 0;
+          if (wide.length !== wantWide) fail.push(`expected ${wantWide} wide bar on a phone, found ${wide.length}`);
           wide.forEach((cell) => {
             const spread = R(grid!).width - R(cell).width;
             if (spread > 0.5) fail.push(`the wide bar is ${spread.toFixed(1)}px short of the grid`);
@@ -112,16 +113,23 @@ test.describe('home page responsive sweep', () => {
           const h2 = cell.querySelector('[data-card-title]');
           const p = cell.querySelector('[data-card-title] + p');
 
-          // 6. Copy fits. A caption's title stays on one line and its blurb is
-          // never clipped; the wide bar's copy stays inside the panel it sits
-          // in. A block reports one client rect whatever it does, so the line
-          // count comes from the text range.
+          // 6. Copy fits. Caption titles may wrap, with every line visible;
+          // the blurb is never clipped. The wide bar's copy stays in its panel.
+          // A text range measures each rendered line inside the title's box.
           if (h2 && p) {
             const range = document.createRange();
             range.selectNodeContents(h2);
-            const lines = range.getClientRects().length;
             const text = range.getBoundingClientRect().width;
-            if (lines > 1) fail.push(`card ${i} title wrapped to ${lines} lines`);
+            if (h2.scrollHeight - h2.clientHeight > 0.5) {
+              fail.push(`card ${i} title clipped by ${h2.scrollHeight - h2.clientHeight}`);
+            }
+            for (const line of range.getClientRects()) {
+              const title = R(h2);
+              if (line.left < title.left - 0.5 || line.right > title.right + 0.5
+                || line.top < title.top - 0.5 || line.bottom > title.bottom + 0.5) {
+                fail.push(`card ${i} title text escapes its caption`);
+              }
+            }
             if (text - R(h2).width > 0.5) fail.push(`card ${i} title overruns by ${(text - R(h2).width).toFixed(1)}`);
             if (p.scrollHeight - p.clientHeight > 0.5) {
               fail.push(`card ${i} blurb clipped by ${p.scrollHeight - p.clientHeight}`);
@@ -136,10 +144,32 @@ test.describe('home page responsive sweep', () => {
           }
 
           // 7. Artwork never reaches the card's right edge: a bare red strip has
-          // to remain, or the screenshot reads as clipped there.
+          // to remain, or the screenshot reads as clipped there. The owner moved
+          // the front sheet halfway into its old clearance: preserve half
+          // the original 8% minimum while still guarding against side clipping.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
-            const strip = c.right - R(img).right;
-            if (strip < c.width * 0.08) {
+            // The rotated tail below the pocket is invisible. Measure the
+            // actual sheet polygon above the fold, not that tail's bounding box.
+            const sheet = img.parentElement!;
+            const box = R(sheet);
+            const style = getComputedStyle(sheet);
+            const matrix = new DOMMatrix(style.transform);
+            const w = parseFloat(style.width);
+            const h = parseFloat(style.height);
+            const points = [[-w / 2, -h / 2], [w / 2, -h / 2],
+              [w / 2, h / 2], [-w / 2, h / 2]].map(([x, y]) => ({
+              x: box.left + box.width / 2 + matrix.a * x + matrix.c * y,
+              y: box.top + box.height / 2 + matrix.b * x + matrix.d * y,
+            }));
+            const visible = points.filter(p => p.y <= c.bottom);
+            points.forEach((a, j) => {
+              const b = points[(j + 1) % points.length];
+              if ((a.y < c.bottom) !== (b.y < c.bottom)) {
+                visible.push({ x: a.x + (c.bottom - a.y) * (b.x - a.x) / (b.y - a.y), y: c.bottom });
+              }
+            });
+            const strip = c.right - Math.max(...visible.map(p => p.x));
+            if (strip < c.width * 0.04) {
               fail.push(`card ${i} shot ${k} leaves only ${strip.toFixed(1)}px of strip`);
             }
           });

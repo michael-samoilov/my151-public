@@ -26,11 +26,34 @@ test.describe('admin flows', () => {
     expect(label).toContain('121–150');
   });
 
+  test('picker flows include every progress stage and exclusive export outcomes', async ({ page }, info) => {
+    await page.getByRole('button', { name: 'Picker', exact: true }).click();
+    const funnel = page.getByRole('img', { name: /Favorite Pokémon usage funnel/ });
+    await expect(funnel).toBeVisible();
+    await expect(funnel.locator('canvas')).toBeVisible();
+    const label = await funnel.getAttribute('aria-label');
+    for (const stage of ['Not started', '1–64 cells', '65–128 cells', '129–192 cells', '193–256 cells', 'Completed']) {
+      expect(label).toContain(stage);
+    }
+    expect(label).toMatch(/full grid only.*simplified only.*both views.*not exported/);
+    await info.attach('picker-flow-stages', { body: JSON.stringify({ label }), contentType: 'application/json' });
+  });
+
+  test('picker flow fits every viewport without sideways pan', { tag: '@viewport' }, async ({ page }, info) => {
+    await page.getByRole('button', { name: 'Picker', exact: true }).click();
+    const funnel = page.getByRole('img', { name: /Favorite Pokémon usage funnel/ });
+    await expect(funnel.locator('canvas')).toBeVisible();
+    await expectNoSidewaysPan(funnel);
+    if (info.project.name !== 'desktop') await expectFitsPhoneHeight(funnel);
+    await info.attach('picker-flow-viewport', { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
+  });
+
   test('referrer flow keeps an unknown-referrer source', async ({ page }) => {
     await page.getByRole('button', { name: 'Referrer → landing' }).click();
     const chart = page.getByRole('img', { name: /Referrer to landing/ });
     await expect(chart).toBeVisible();
     await expect(chart).toHaveAttribute('aria-label', /referrer not known/);
+    await expect(chart).toHaveAttribute('aria-label', /favorites/);
   });
 
   test('league tab shows a gym-leader usage funnel', async ({ page }) => {

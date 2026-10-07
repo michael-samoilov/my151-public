@@ -305,8 +305,8 @@ function killGroup(driver: ChildProcess) {
 // run. WebKit is single-session, so a leaked process blocks the port. Normal
 // teardown kills the session's own process group by pid (killGroup), never by name.
 async function clearStrayWebKit() {
-  await new Promise((r) => { spawn('pkill', ['-9', '-f', 'WebKitWebDriver']).on('exit', r); });
-  await new Promise((r) => { spawn('pkill', ['-9', '-f', 'MiniBrowser']).on('exit', r); });
+  await new Promise((r) => { spawn('pkill', ['-9', '-x', 'WebKitWebDriver']).on('exit', r); });
+  await new Promise((r) => { spawn('pkill', ['-9', '-x', 'MiniBrowser']).on('exit', r); });
 }
 
 class WebKitSession implements Session {

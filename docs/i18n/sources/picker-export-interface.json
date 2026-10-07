@@ -1,0 +1,28 @@
+{
+  "surface": "Favorite Pokémon Picker full-chart export",
+  "provenance": "authored",
+  "scope": "App interface copy; no new official game terms or Pokémon names.",
+  "keys": [
+    "favorites.export.close",
+    "favorites.export.description",
+    "favorites.export.error",
+    "favorites.export.fullChart",
+    "favorites.export.preview",
+    "favorites.export.retry",
+    "favorites.export.save",
+    "favorites.export.title"
+  ],
+  "locales": [
+    "en",
+    "de",
+    "es",
+    "fr",
+    "it",
+    "ja",
+    "ko",
+    "zh-Hans",
+    "zh-Hant"
+  ],
+  "feature": "Full chart PNG, including empty cells. No simplified/statistics modes are described.",
+  "review": "Catalog parity, placeholder/unicode/English-leftover checks, and actual settings/preview fit at320/390/1280; language quality is authored and has no independent native-speaker review."
+}

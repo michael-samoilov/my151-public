@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* A launch notice points at Tools without covering the navigation below it. */
+[data-radix-popper-content-wrapper]:has([data-callout-click-through]) {
+  pointer-events: none;
+}
+[data-callout-click-through], [data-callout-click-through] > div {
+  pointer-events: none;
+}
+
 html {
   /* overscroll-behavior handled per scroll-container so pull-to-refresh works from the header */
 
@@ -509,9 +517,16 @@ img {
  * names the hovered shot's index; the pointer handlers on the twins set it only
  * for a mouse or pen, so this needs no `:has()` and no hover/pointer media
  * query — both of which suppress the float on hybrid touch devices in use with
- * a mouse. The float always eases, by the owner's choice: the reveal is a small
- * 12px rise that reads better animated, and snapping it under reduced motion was
- * a worse experience than the gentle ease. */
+ * a mouse. The float retains the owner's gentle ease. */
+/* A bottom inset shadow crosses the sheets without clipping their top overhang. */
+.hub-pocket-edge {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 -10px 9px -7px rgb(0 0 0 / 26%);
+  mask-image: linear-gradient(to top, #000, transparent 15px);
+  pointer-events: none;
+}
 .hub-float-shot {
   transition: transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
   will-change: transform;
@@ -521,12 +536,16 @@ img {
  * red reads as a low band rather than a block. The screenshots do not change:
  * `.hub-stage` is a fixed-size box pinned to each card's bottom-left, and every
  * screenshot measurement is a share of the stage, not the card. On a phone the
- * stage is the whole card and the card keeps its tall proportion, so nothing
- * moves there. `--panel-ar` is the panel's aspect ratio; the stage keeps the
+ * stage is the whole card. Its reserve keeps the sheets fixed while the red
+ * band has the same relative height as desktop. `--panel-ar` is the panel's
+ * aspect ratio; the stage keeps the
  * phone proportion so the screenshots render at their current size. */
 .hub-grid {
-  --panel-ar: 166 / 100;
-  --shot-nudge: 0px;
+  --panel-ar: 166 / 79.167;
+  /* Lower the red band without moving the sheets or the caption. */
+  --panel-inset: 12.550cqw;
+  /* Radius, front-sheet lean, and clearance for the hover lift. */
+  --shot-nudge: calc(min(8.434cqw, 14px) + 1.05cqw + 2px);
 }
 .hub-stage {
   position: absolute;
@@ -535,19 +554,40 @@ img {
   width: 100%;
   aspect-ratio: 166 / 100;
   container-type: inline-size;
+  /* Panel-relative rest geometry. The active hover lift is measured per sheet,
+   * leaving room below the fold and above neighboring copy. */
+  --panel-height: calc(100cqw * 79.167 / 166);
+  --hover-lift: 0px;
 }
 @media (min-width: 1024px) {
   .hub-grid {
     --panel-ar: 166 / 57;
+    --panel-inset: 0px;
+    /* The stage is 72% of the card; its clip and front shift use the full width. */
+    --card-width: 138.889cqw;
     --shot-nudge: 30px;
   }
   .hub-stage {
     width: 72%;
+    --rear-scale: 1.08;
+    --panel-height: calc(100cqw / 0.72 * 57 / 166);
   }
 }
 [data-artwork][data-float='0'] [data-shot='0'] {
-  --hf: -12px;
+  --hf: calc(var(--hover-lift) * -1);
 }
 [data-artwork][data-float='1'] [data-shot='1'] {
-  --hf: -12px;
+  --hf: calc(var(--hover-lift) * -1);
+}
+
+/* Short phones keep complete captions visible while the artwork stays fixed. */
+@media (max-width: 639px) and (max-height: 760px) {
+  .hub-home > .hub-spacer { min-height: 2px; }
+  .hub-home .hub-grid {
+    /* Leave room for the newly raised second-row sheets above their pockets. */
+    row-gap: 16px;
+    --caption-top: 2px;
+    --caption-gap: 1px;
+    --caption-leading: 1.25;
+  }
 }

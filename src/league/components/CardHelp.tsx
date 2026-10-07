@@ -1,3 +1,4 @@
+import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { useCallback, useEffect, useId, useRef, useState, type ComponentType, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeftRight, ArrowUpDown, Info, RotateCcw, X } from 'lucide-react';
@@ -209,17 +210,17 @@ export function CardHelpButton() {
 
   return (
     <>
-      <button
+      <HeaderActionButton
         type="button"
         onClick={(e) => setAnchor(e.currentTarget)}
         aria-label={TITLE}
         aria-haspopup="dialog"
         aria-expanded={anchor !== null}
         data-league-help="card"
-        className="shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="text-muted-foreground hover:bg-muted hover:text-foreground"
       >
         <Info className="h-4 w-4" />
-      </button>
+      </HeaderActionButton>
       {anchor && <CardHelpDialog anchor={anchor} onClose={close} />}
     </>
   );

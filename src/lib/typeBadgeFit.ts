@@ -253,11 +253,16 @@ function scriptBand(c: CanvasRenderingContext2D, cohort: readonly string[]): Scr
  * measure against, so test-time or non-browser rendering still produces a
  * sensible badge rather than throwing.
  */
-export function typeBadgeFit(label: string, cohort: readonly string[] = [label]): TypeBadgeFit {
+export function typeBadgeFit(
+  label: string,
+  cohort: readonly string[] = [label],
+  /** Room for the word. A badge with no symbol has more. */
+  textWidth: number = TYPE_BADGE_TEXT_WIDTH,
+): TypeBadgeFit {
   // Keyed by the cohort as well as the label. `一般` is the Normal type in both
   // Chinese locales but they can resolve to different fonts, and `Normal` is
   // shared by four Latin locales whose cohorts differ.
-  const cacheKey = `${label} @ ${cohort.join(' ')}`;
+  const cacheKey = `${label} @ ${cohort.join(' ')} @ ${textWidth}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
@@ -271,8 +276,8 @@ export function typeBadgeFit(label: string, cohort: readonly string[] = [label])
   c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
   let scaleX = TYPE_BADGE.textScaleX;
   const natural = c.measureText(label).width * scaleX;
-  if (natural > TYPE_BADGE_TEXT_WIDTH) {
-    const needed = TYPE_BADGE_TEXT_WIDTH / natural;
+  if (natural > textWidth) {
+    const needed = textWidth / natural;
     const condense = Math.max(needed, MIN_CONDENSE);
     scaleX *= condense;
     if (needed < condense) {
@@ -297,12 +302,25 @@ export function typeBadgeFit(label: string, cohort: readonly string[] = [label])
     // makes the fit exact on whatever engine is actually running.
     c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
     const painted = c.measureText(label).width;
-    if (painted * scaleX > TYPE_BADGE_TEXT_WIDTH) scaleX = TYPE_BADGE_TEXT_WIDTH / painted;
+    if (painted * scaleX > textWidth) scaleX = textWidth / painted;
   }
 
   const fit: TypeBadgeFit = { fontSize, baseline, scaleX };
   cache.set(cacheKey, fit);
   return fit;
+}
+
+/**
+ * A word's natural width in badge units: set at its language's band size with
+ * the base condense, before any fitting. A badge whose pill may grow sizes the
+ * pill from it. Null where nothing can measure.
+ */
+export function typeBadgeNaturalWidth(label: string, cohort: readonly string[] = [label]): number | null {
+  const c = measureContext();
+  if (!c) return null;
+  const { fontSize } = scriptBand(c, cohort);
+  c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
+  return c.measureText(label).width * TYPE_BADGE.textScaleX;
 }
 
 /**

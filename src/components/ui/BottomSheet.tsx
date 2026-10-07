@@ -8,10 +8,18 @@ const DISMISS_THRESHOLD = 120;
 
 interface BottomSheetProps {
   onClose: () => void;
+  /** Optional header action. Drag, Escape, and the scrim still dismiss the sheet. */
+  onHeaderClick?: () => void;
+  /** Accessible name when the header action differs from dismissal. */
+  headerLabel?: string;
   /** Header content beside the grab handle. Rich nodes are fine. */
   title: React.ReactNode;
+  /** Optional independent action opposite the title, outside the drag button. */
+  headerAccessory?: React.ReactNode;
   /** Accessible name for the grab-handle button, which also closes on tap. */
   closeLabel: string;
+  /** Optional dialog name distinct from the dismissal control. */
+  dialogLabel?: string;
   /**
    * 'full' fills the viewport below `topGap`; 'content' sizes to its content
    * and only caps at that height. Either way the header stays on-screen — a
@@ -58,8 +66,12 @@ interface BottomSheetProps {
  */
 export function BottomSheet({
   onClose,
+  onHeaderClick,
+  headerLabel,
   title,
+  headerAccessory,
   closeLabel,
+  dialogLabel,
   size = 'content',
   topGap = 56,
   layerZIndex = 110,
@@ -114,8 +126,10 @@ export function BottomSheet({
 
   // Tap-to-close, but not as the tail of a drag gesture.
   const handleTap = useCallback(() => {
-    if (!isDragging.current) requestClose('handle');
-  }, [requestClose]);
+    if (isDragging.current) return;
+    if (onHeaderClick) onHeaderClick();
+    else requestClose('handle');
+  }, [onHeaderClick, requestClose]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -379,7 +393,8 @@ export function BottomSheet({
       className="pointer-events-none fixed inset-x-0 z-[110] flex flex-col justify-end md:hidden"
       onFocusCapture={(e) => {
         const t = e.target;
-        if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+        if (t instanceof HTMLTextAreaElement
+          || (t instanceof HTMLInputElement && t.type !== 'checkbox' && t.type !== 'radio')) {
           collapsePending.current = false;
           setTextFocus(true);
         }
@@ -410,7 +425,7 @@ export function BottomSheet({
       )}
       <div
         role="dialog"
-        aria-label={closeLabel}
+        aria-label={dialogLabel ?? closeLabel}
         data-export-chrome={exportChrome ? '' : undefined}
         className="relative flex max-h-full min-h-0 flex-col rounded-t-2xl bg-background shadow-2xl pointer-events-auto"
         data-sheet-keyboard={keyboardOpen ? '' : undefined}
@@ -439,24 +454,35 @@ export function BottomSheet({
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
       >
-        {/* Grab handle — drag down or tap to close. Min 44px touch target per
-            Apple HIG, which is why the padding tightens rather than collapses
-            when a keyboard is open: the header is still something to aim at,
-            just not something to spend 24px of a third of a screen on. */}
-        <button
-          type="button"
-          aria-label={closeLabel}
-          className={`w-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none ${
-            keyboardOpen ? 'py-1.5' : 'py-3'
-          }`}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onClick={handleTap}
-        >
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
-          <span className="text-sm font-semibold">{title}</span>
-        </button>
+        {/* The header and its accessory share a box, so the accessory can
+            be placed against the header alone. */}
+        <div className="relative shrink-0" data-testid="bottom-sheet-header-frame">
+          {/* Grab handle — drag down or tap to close. Min 44px touch target per
+              Apple HIG, which is why the padding tightens rather than collapses
+              when a keyboard is open: the header is still something to aim at,
+              just not something to spend 24px of a third of a screen on. */}
+          <button
+            type="button"
+            data-testid="bottom-sheet-header"
+            aria-label={headerLabel ?? closeLabel}
+            className={`w-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none ${
+              keyboardOpen ? 'py-1.5' : 'py-3'
+            }`}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onClick={handleTap}
+          >
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
+            <span className="w-full text-sm font-semibold">{title}</span>
+          </button>
+          {/* Inline accessories align with the title below the grab handle. */}
+          {headerAccessory ? (
+            <div className={`absolute right-2 z-10 flex items-center ${keyboardOpen ? 'top-3.5 bottom-1.5' : 'top-5 bottom-3'}`}>
+              {headerAccessory}
+            </div>
+          ) : null}
+        </div>
         <div className="border-b" />
         {/* Its own scroll container: a long form scrolls here, and
             `overscroll-contain` stops that scroll continuing into the app once

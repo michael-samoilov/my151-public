@@ -1,3 +1,4 @@
+import type { PokemonLabel } from '@/i18n/names';
 import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useRowWindow } from './useRowWindow';
@@ -98,6 +99,12 @@ interface EvoLineGroup {
    *  placement declares its bucket as the home gen so members from other gens
    *  get cross-gen badges / muting regardless of which one is placed. */
   anchorGen?: number;
+  tileOverlay?: (pokemon: Pokemon, spritePx: number) => React.ReactNode;
+  tileAttributes?: Record<string, string>;
+  tileTestId?: string;
+  displayName?: string;
+  displayLabel?: PokemonLabel;
+  onSelect?: (pokemon: Pokemon) => void;
 }
 
 interface EvoLineGridProps {
@@ -168,6 +175,12 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
             matchedIds={group.matchedIds}
             mutedIds={group.mutedIds}
             anchorGen={group.anchorGen}
+            tileOverlay={group.tileOverlay}
+            tileAttributes={group.tileAttributes}
+            tileTestId={group.tileTestId}
+            displayName={group.displayName}
+            displayLabel={group.displayLabel}
+            onSelect={group.onSelect}
             assignedIds={assignedIds}
             stagedIds={stagedIds}
             onToggleStage={onToggleStage}
@@ -224,6 +237,12 @@ interface EvoLineCardProps {
   mutedIds?: Set<number>;
   /** Explicit home gen for this placement. Overrides the inferred line gen. */
   anchorGen?: number;
+  tileOverlay?: (pokemon: Pokemon, spritePx: number) => React.ReactNode;
+  tileAttributes?: Record<string, string>;
+  tileTestId?: string;
+  displayName?: string;
+  displayLabel?: PokemonLabel;
+  onSelect?: (pokemon: Pokemon) => void;
   assignedIds: Set<number>;
   stagedIds: Set<number>;
   onToggleStage: (memberIds: number[]) => void;
@@ -268,7 +287,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, tileAttributes, tileTestId, displayName, displayLabel, onSelect, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   // Shared press state so clicking any member shrinks the *whole* evo line
@@ -309,6 +328,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
   const actedOn = (i: number) => (standaloneTiles ? [members[i].id] : members.map((p) => p.id));
 
   const handleClick = (i: number) => {
+    if (onSelect) { onSelect(members[i]); return; }
     // Analytics variant: any placed member → toggle removal (partial lines ok)
     // Browser variant: all placed → toggle removal, else toggle staging
     const placed = standaloneTiles
@@ -354,6 +374,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
           <div
             key={pokemon.id}
             data-row-cell=""
+            {...tileAttributes}
             className="relative px-[3px] overflow-visible"
             style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
           >
@@ -388,7 +409,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
             <div
               role="button"
               tabIndex={0}
-              data-testid="verify-evo-card"
+              data-testid={tileTestId ?? "verify-evo-card"}
               onClick={() => handleClick(i)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startPress(i); handleClick(i); } }}
               onKeyUp={endPress}
@@ -408,6 +429,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               style={{ scale: pressedIdx === i ? '0.96' : '1' }}
             >
               <div className="relative flex flex-col items-center w-full">
+                {tileOverlay?.(pokemon, spritePx)}
                 {/* Gen badge + icons — always full opacity, outside the grey wrapper */}
                 {showGenBadge && (
                   <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
@@ -442,6 +464,8 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                      or explicitly muted (e.g. filtered starters/legendaries shown for context). */}
                 <PokemonTileContent
                   pokemon={pokemon}
+                  displayName={displayName}
+                  displayLabel={displayLabel}
                   imgLoading={variant === 'analytics' ? 'eager' : 'lazy'}
                   spriteUrl={spriteOverrides?.[pokemon.id]
                     ?? (shinyIds?.has(pokemon.id)

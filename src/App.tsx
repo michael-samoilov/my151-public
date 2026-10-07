@@ -4,7 +4,7 @@ import type { AppView } from '@/components/layout/Header';
 import { ToolbarSlotContext } from '@/components/layout/toolbarSlot';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
-import { DrillDownSheet, DrillDownPanel } from '@/components/analytics/DrillDownSheet';
+
 import { usePokedexStore } from '@/store/usePokedexStore';
 
 // Route chunks stay lazy so boot ships small, and are prefetched when the
@@ -18,6 +18,9 @@ const importViewPage = () => import('@/components/view/ViewPage');
 const AnalyticsDashboard = lazy(() =>
   importAnalyticsDashboard().then((m) => ({ default: m.AnalyticsDashboard })),
 );
+const importDrillDown = () => import('@/components/analytics/DrillDownSheet');
+const DrillDownSheet = lazy(() => importDrillDown().then(module => ({ default: module.DrillDownSheet })));
+const DrillDownPanel = lazy(() => importDrillDown().then(module => ({ default: module.DrillDownPanel })));
 const ViewPage = lazy(() =>
   importViewPage().then((m) => ({ default: m.ViewPage })),
 );
@@ -97,6 +100,9 @@ function App() {
   // a navigation. Once true they stay true: routes mount once and live on.
   const [viewMounted, setViewMounted] = useState(false);
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
+  useEffect(() => {
+    if (analyticsMounted) void importDrillDown();
+  }, [analyticsMounted]);
   const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const activeSection = usePokedexStore((s) => s.activeSection);
@@ -305,7 +311,7 @@ function App() {
           </div>
           {drillDownSegment && isDesktop && (
             <div className="hidden md:flex w-1/2 flex-shrink-0 border-l">
-              <DrillDownPanel />
+              <Suspense fallback={null}><DrillDownPanel /></Suspense>
             </div>
           )}
         </div>
@@ -320,7 +326,7 @@ function App() {
       {/* Analytics drill-down sheet — only on analytics view, mobile only.
           The desktop pane above covers >=1024px; mounting both built three
           hidden carousel panels per desktop chart tap. */}
-      {currentView === 'analytics' && drillDownSegment && !isDesktop && <DrillDownSheet topGap={headerHeight} />}
+      {currentView === 'analytics' && drillDownSegment && !isDesktop && <Suspense fallback={null}><DrillDownSheet topGap={headerHeight} /></Suspense>}
 
       {/* The report form's single mount point, outside every page's hidden
           subtree and error boundary, so the footer link and the crash fallback

@@ -79,3 +79,28 @@ and update `COMMIT` in `scripts/i18n/fetch-game-text.ts`. A changed string will
 then fail `i18n:verify` until the catalog is regenerated to match, which is the
 intended behaviour: upstream changing what the game says should be a decision,
 not a silent update.
+
+## Pokémon form names
+
+`pokemon-formnames.json` records form descriptors from Scarlet/Violet and
+Legends: Z-A's `zkn_form` tables. It also records the Cosplay Pikachu names in
+Omega Ruby/Alpha Sapphire and the atomic Spiky-eared descriptor in HeartGold/
+SoulSilver (`hgss.802.166`). The fixture pins the same corpus commit and records
+the SHA-256 of each source file.
+
+Regenerate from that commit's extracted `corpus` directory:
+
+```sh
+node --import tsx scripts/i18n/extract-picker-form-text.ts <corpus-directory>
+npm run i18n:names
+node --import tsx scripts/i18n/report-picker-name-coverage.ts
+```
+
+The extractor rejects source files whose hashes differ from the pin. The name
+generator checks each picker form's species before it imports a descriptor.
+Combinations of official pieces retain `official-composed` provenance.
+
+Chinese sources contain no descriptor for the six Cosplay Pikachu variants or
+Spiky-eared Pichu. Those sprites show their localized species name. Female
+sprite variants without a published form descriptor use the sex symbol `♀`.
+Neither case invents official form wording.

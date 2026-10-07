@@ -5,7 +5,7 @@
 - Treat the repository root that contains this file as the main my151 repository.
 - Keep all code, documentation, tests, screenshots, and Git work inside this repository or its Git worktrees.
 - For cloud work, use the checked-out GitHub repository `michael-samoilov/my151` and start from `claude/pokedex-region-builder-AviYF` unless the user names another base.
-- Favorite Pokémon Picker (`/favorite-pokemon-by-type`): the code and its to-do list live on branch `claude/jolly-meitner-opefey` (PR 111), not on production. Before picker work, check out that branch and read `docs/favorite-picker-handoff.md` there.
+- Favorite Pokémon Picker (`/favorite-pokemon-picker`): the launch is authorized through PR 111 from `claude/jolly-meitner-opefey`. Check current release status before changing it. Before picker work, check out that branch and read `docs/favorite-picker-handoff.md` there.
 - League Builder (`/custom-gym-leader`, `/league-card`): the state, rules, and to-do list are in `docs/handoff/league-builder-2026-09-30.md` on production. Read it before league work.
 - Pokédex builder (`/pokedex-builder`, the Dex Builder surface): the state, Michael's decisions, and open ideas are in `docs/handoff/dex-builder-2026-09-30.md` on production. Read it before Dex work.
 - Admin Dashboard (`/?admin`): the state, open decisions, rules, and to-do list are in `docs/handoff/admin-dashboard-2026-09-30.md` on production, and its verification tools are in `docs/handoff/admin-dashboard-tools/`. Read it before admin work.
@@ -22,6 +22,13 @@
 - Actively follow worker progress. Handle routine questions, retries, and integration yourself; involve the user only for a material product choice, external permission, destructive action, or a review required by the policy below.
 - Integrate compatible worker results, run final verification on the combined change, and report the shipped result and evidence in the coordinator chat.
 - Never claim a worker is running, finished, verified, or merged unless you have checked its actual state.
+
+## Reuse existing UI exactly
+
+- When a tool reuses a feature from another tool, use the existing component implementation. Do not build a separate visual approximation.
+- If the existing component needs tool-specific inputs, extend its API or extract one shared implementation used by both tools. Keep data adapters separate from the shared presentation.
+- Preserve existing header icons, title styling, navigation, dismissal, shadows, tile borders, spacing and interaction behavior unless Michael explicitly requests a change.
+- Compare the reused component in both tools on mobile and desktop with the same relevant states. Verify consistency from the rendered output, not from similar class names.
 
 ## ChatGPT Mobile Remote and cloud workers
 

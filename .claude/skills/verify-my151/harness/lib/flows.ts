@@ -1310,24 +1310,25 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       return lead&&lead.parentElement?lead.parentElement.textContent.replace(/\\s+/g,' ').trim():'';`).catch(() => '');
     checks.push(ok('league-change:ace-picker-names-slot', pickerUp && /Ace Pok/.test(heading), heading || 'no heading found'));
 
+    // Read stable sprite IDs: full localized labels differ between builds.
     let eevee = false;
     for (let i = 0; i < 60 && !eevee; i++) {
       eevee = await s.evalJson<boolean>(`const scrollerOf=(el)=>{let n=el.parentElement;while(n){const oy=getComputedStyle(n).overflowY;if(oy==='auto'||oy==='scroll')return n;n=n.parentElement;}return null;};
-        const img=document.querySelector('img[alt="eevee"]'); if(img){img.scrollIntoView({block:'center'});return true;}
+        const img=document.querySelector('img[src$="/133.png"]'); if(img){img.scrollIntoView({block:'center'});return true;}
         const cell=document.querySelector('[data-row-cell]'); const sc=cell?scrollerOf(cell):null; if(!sc) return false; sc.scrollTop+=sc.clientHeight*0.8; return false;`).catch(() => false);
       await sleep(150);
     }
     await sleep(400);
-    const rows = await s.evalJson<string[][]>(`const img=document.querySelector('img[alt="eevee"]'); const grid=img&&img.closest('[data-row-cell]')&&img.closest('[data-row-cell]').parentElement; if(!grid) return [];
+    const rows = await s.evalJson<string[][]>(`const img=document.querySelector('img[src$="/133.png"]'); const grid=img&&img.closest('[data-row-cell]')&&img.closest('[data-row-cell]').parentElement; if(!grid) return [];
       const byTop=new Map(); for(const child of grid.children){ if(child.hasAttribute('aria-hidden')) continue; const top=Math.round(child.getBoundingClientRect().top);
         const sprite=[...child.querySelectorAll('img')].find(i=>(i.getAttribute('src')||'').includes('/sprites/pokemon/'));
-        const label=child.hasAttribute('data-row-cell')?(sprite?sprite.getAttribute('alt'):'?'):'·'; if(!byTop.has(top)) byTop.set(top,[]); byTop.get(top).push(label);}
+        const label=child.hasAttribute('data-row-cell')?(sprite?(sprite.getAttribute('src')||'').split('/').pop().split('.')[0]:'?'):'·'; if(!byTop.has(top)) byTop.set(top,[]); byTop.get(top).push(label);}
       return [...byTop.entries()].sort((a,b)=>a[0]-b[0]).map(e=>e[1]);`).catch(() => [] as string[][]);
     const gapped = rows.filter((row) => row.some((c, i) => c === '·' && row.slice(i + 1).some((d) => d !== '·')));
-    const omastar = rows.find((row) => row.includes('omastar'));
-    const neighbour = omastar ? omastar[omastar.indexOf('omastar') + 1] : undefined;
+    const omastar = rows.find((row) => row.includes('139'));
+    const neighbour = omastar ? omastar[omastar.indexOf('139') + 1] : undefined;
     checks.push(ok('league-change:picker-rows-have-no-mid-row-gap', eevee && rows.length > 3 && gapped.length === 0, eevee ? `${rows.length} rows read, gapped: ${JSON.stringify(gapped)}` : 'Eevee never scrolled into view'));
-    checks.push(ok('league-change:omastar-beside-kabuto', neighbour === 'kabuto', omastar ? omastar.join(', ') : 'no Omastar row rendered'));
+    checks.push(ok('league-change:omastar-beside-kabuto', neighbour === '140', omastar ? omastar.join(', ') : 'no Omastar row rendered'));
     await s.screenshot(ctx.shot('league-change-ace-picker'));
   } else {
     checks.push({ name: 'league-change:ace-picker-names-slot', status: 'skip', detail: 'card never opened' });
@@ -1629,6 +1630,782 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
     const got = await readSlotBadges(s);
     checks.push(ok(c.name, got.join('|') === c.expect.join('|'), `got ${got.join(',')}`));
   }
+  return checks;
+}
+
+const FAV_PATH = '/favorite-pokemon-picker';
+const FAV_KEY = 'favorite-picker';
+
+async function waitGone(s: Session, selector: string, tries = 40): Promise<boolean> {
+  for (let i = 0; i < tries; i++) {
+    const there = await s.evalJson<boolean>(`return !!document.querySelector(${JSON.stringify(selector)});`).catch(() => true);
+    if (!there) return true;
+    await sleep(200);
+  }
+  return false;
+}
+
+async function waitFavoritesGrid(s: Session): Promise<boolean> {
+  return waitFor(s, '[data-testid="favorites-grid"]');
+}
+
+/**
+ * Click a grid cell after scrolling it into the grid frame.
+ *
+ * The grid scrolls inside its own frame. WebKitGTK's WebDriver scrolls only
+ * the page before a click, so a row below the frame reads as not
+ * interactable there. A user scrolls the frame first, and so does this.
+ */
+async function clickCell(s: Session, selector: string): Promise<void> {
+  await s.evalJson(`document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true;`);
+  await s.click(selector);
+}
+
+async function pickFavorite(s: Session, cell: string, id: number): Promise<boolean> {
+  await clickCell(s, `[data-testid="${cell}"]`);
+  if (!(await waitFor(s, `[data-testid="favorites-pick-${id}"]`))) return false;
+  await s.click(`[data-testid="favorites-pick-${id}"]`);
+  await sleep(400);
+  return true;
+}
+
+export async function runFavoritesSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + FAV_PATH;
+
+  try {
+    const res = await fetch(url);
+    const html = await res.text();
+    const hasH1 = /<h1[^>]*>[^<]*Favorite Pokémon Picker/i.test(html);
+    const hasTitle = /<title>[^<]*Favorite Pokémon Picker/i.test(html);
+    if (!res.ok) {
+      checks.push(ok('favorites:static-seo-content', false, `status ${res.status}`));
+      return checks;
+    }
+    if (!hasH1 || !hasTitle) {
+      checks.push({
+        name: 'favorites:static-seo-content',
+        status: 'skip',
+        detail: `favorite picker not in this build yet (SPA fallback at ${FAV_PATH})`,
+      });
+      return checks;
+    }
+    checks.push(ok('favorites:static-seo-content', true, `status ${res.status}`));
+  } catch (e) {
+    checks.push({ name: 'favorites:static-seo-content', status: 'fail', detail: (e as Error).message });
+    return checks;
+  }
+
+  await s.navigate(ctx.base + '/');
+  await waitForApp(s);
+  const hub = await waitFor(s, `a[href="${FAV_PATH}"]`);
+  checks.push(ok('favorites:hub-card', hub));
+  await s.screenshot(ctx.shot('favorites-hub'));
+
+  await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);
+  await s.navigate(url);
+  const hydrated = await waitFavoritesGrid(s);
+  checks.push(ok('favorites:hydrated-grid', hydrated));
+  await s.evalJson(`
+    window.scrollTo(0, 0);
+    if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+    const scroller = document.querySelector('[data-testid="favorites-grid-scroll"]');
+    if (scroller) scroller.scrollLeft = 0;
+    return true;
+  `);
+  await s.screenshot(ctx.shot('favorites-grid'));
+  if (hydrated) {
+    const balls = await s.evalJson<{ count: number; inside: number; centered: number }>(`
+      const balls = [...document.querySelectorAll('[data-testid="favorites-empty-ball"]')];
+      let inside = 0, centered = 0;
+      for (const ball of balls) {
+        const cell = ball.closest('button');
+        const svg = ball.querySelector('svg');
+        if (!cell || !svg) continue;
+        const cb = cell.getBoundingClientRect();
+        const bb = svg.getBoundingClientRect();
+        const pad = 0.75;
+        if (bb.width > 8 && bb.height > 8 && bb.left >= cb.left - pad && bb.right <= cb.right + pad && bb.top >= cb.top - pad && bb.bottom <= cb.bottom + pad) inside++;
+        const dx = Math.abs((bb.left + bb.right) / 2 - (cb.left + cb.right) / 2);
+        const dy = Math.abs((bb.top + bb.bottom) / 2 - (cb.top + cb.bottom) / 2);
+        if (dx < 1.5 && dy < 1.5) centered++;
+      }
+      return { count: balls.length, inside, centered };
+    `);
+    checks.push(ok(
+      'favorites:empty-ball-inside-cell',
+      balls.count > 20 && balls.inside === balls.count && balls.centered === balls.count,
+      `count=${balls.count} inside=${balls.inside} centered=${balls.centered}`,
+    ));
+    checks.push(await auditRender(s, 'favorites:render-grid'));
+  }
+
+  const layout = await s.evalJson<{ scrollWidth: number; innerWidth: number; bodyH: number }>(LAYOUT);
+  checks.push(ok(
+    'favorites:no-horizontal-overflow',
+    layout.scrollWidth <= layout.innerWidth + 2,
+    `scrollWidth ${layout.scrollWidth} vs innerWidth ${layout.innerWidth}`,
+  ));
+
+  if (!hydrated) {
+    const errs = await s.errors();
+    checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
+    return checks;
+  }
+
+  await clickCell(s, '[data-testid="favorites-cell-electric-5"]');
+  const pretty = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+  checks.push(ok('favorites:picker-opens', pretty));
+  await settle(s);
+  if (pretty) {
+    const row = await s.evalJson<{
+      lastShorter: boolean;
+      lastInset: boolean;
+      justify: string;
+      firstX: number;
+      lastX: number;
+      firstLen: number;
+      lastLen: number;
+    }>(`
+      const rows = [...document.querySelectorAll('[data-pretty-row]')];
+      if (rows.length < 2) return { lastShorter:false, lastInset:false, justify:'', firstX:0, lastX:0, firstLen:0, lastLen:0 };
+      const first = rows[0], last = rows[rows.length-1];
+      const firstBtn = first.querySelector('button');
+      const lastBtn = last.querySelector('button');
+      const firstLen = first.querySelectorAll('button').length;
+      const lastLen = last.querySelectorAll('button').length;
+      const firstX = firstBtn ? firstBtn.getBoundingClientRect().left : 0;
+      const lastX = lastBtn ? lastBtn.getBoundingClientRect().left : 0;
+      const justify = getComputedStyle(last).justifyContent;
+      return {
+        lastShorter: lastLen < firstLen,
+        lastInset: lastX > firstX + 4,
+        justify, firstX, lastX, firstLen, lastLen,
+      };
+    `);
+    const centred = row.justify === 'center' && (!row.lastShorter || row.lastInset);
+    checks.push(ok(
+      'favorites:last-row-centred',
+      centred,
+      `justify=${row.justify} firstLen=${row.firstLen} lastLen=${row.lastLen} firstX=${Math.round(row.firstX)} lastX=${Math.round(row.lastX)}`,
+    ));
+    await s.screenshot(ctx.shot('favorites-picker-last-row'));
+    const sprite = await s.evalJson<{
+      css: number; dex: number; w: number; dpr: number; natural: number; max: number; same: boolean; inside: boolean;
+    }>(`
+      const el = document.querySelector('[data-testid="favorites-pretty-grid"]');
+      if (!el) return { css:0, dex:0, w:0, dpr:1, natural:96, max:0, same:false, inside:false };
+      const imgs = [...el.querySelectorAll('img[alt]:not([alt=""])')];
+      const widths = imgs.map((node) => node.getBoundingClientRect().width);
+      const rows = [...el.querySelectorAll('[data-pretty-row]')].map((row) => row.querySelectorAll('button').length);
+      const dpr = window.devicePixelRatio || 1;
+      const css = Number(el.getAttribute('data-sprite-px'));
+      const dex = Number(el.getAttribute('data-sprite-dex'));
+      const natural = Number(el.getAttribute('data-sprite-native')) || 96;
+      const w = widths[0] || 0;
+      const same = widths.every((n) => Math.abs(n - w) < 0.6);
+      const six = el.querySelector('[data-pretty-len="6"]');
+      const host = document.querySelector('[role="dialog"]') || document.querySelector('[data-testid="favorites-picker"]');
+      const sb = six ? six.getBoundingClientRect() : null;
+      const hb = host ? host.getBoundingClientRect() : null;
+      const inside = !!sb && !!hb && sb.left >= hb.left - 0.5 && sb.right <= hb.right + 0.5;
+      return { css, dex, w, dpr, natural, max: Math.max(...rows, 0), same, inside };
+    `);
+    const oneX = sprite.natural / Math.max(sprite.dpr, 1);
+    const notShrunk = sprite.dex <= oneX + 1 || sprite.css > oneX + 1;
+    checks.push(ok(
+      'favorites:sprite-matches-six-col',
+      sprite.same && sprite.max <= 6 && sprite.max > 0
+        && Math.abs(sprite.w - sprite.css) < 0.6
+        && Math.abs(sprite.css - sprite.dex) < 0.6
+        && sprite.inside
+        && notShrunk,
+      `css=${sprite.css} dex=${sprite.dex} w=${sprite.w.toFixed(1)} inside=${sprite.inside} dpr=${sprite.dpr} oneX=${oneX.toFixed(1)}`,
+    ));
+    checks.push(await auditRender(s, 'favorites:render-picker'));
+
+    const rowLens = () => s.evalJson<number[]>(`
+      return [...document.querySelectorAll('[data-pretty-row]')].map((row) => Number(row.getAttribute('data-pretty-len')));
+    `);
+    // Escape closes the mobile sheet and the desktop pane alike.
+    const closePicker = async () => {
+      await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
+      await sleep(250);
+    };
+
+    const sheetOpen = await s.evalJson<boolean>(`return !!document.querySelector('[role="dialog"]');`);
+    let starterRows: number[] = [];
+    if (!sheetOpen) {
+      checks.push({ name: 'favorites:short-sheet', status: 'skip', detail: 'desktop pane' });
+      await closePicker();
+      await clickCell(s, '[data-testid="favorites-cell-starter-1"]');
+      if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) starterRows = await rowLens();
+    } else {
+      await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
+      await sleep(300);
+      await clickCell(s, '[data-testid="favorites-cell-starter-1"]');
+      const starter = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+      if (!starter) {
+        checks.push({ name: 'favorites:short-sheet', status: 'fail', detail: 'starter picker did not open' });
+      } else {
+        const sheet = await s.evalJson<{
+          sheetH: number; sheetTop: number; max: number; gridTop: number; scrollH: number; clientH: number;
+        }>(`
+          const dialog = document.querySelector('[role="dialog"]');
+          const grid = document.querySelector('[data-testid="favorites-grid"]');
+          if (!dialog || !grid) return { sheetH:0, sheetTop:0, max:0, gridTop:0, scrollH:0, clientH:0 };
+          const box = dialog.getBoundingClientRect();
+          const gb = grid.getBoundingClientRect();
+          const scroller = dialog.querySelector('.overflow-y-auto');
+          return {
+            sheetH: box.height,
+            sheetTop: box.top,
+            max: window.innerHeight - 56,
+            gridTop: gb.top,
+            scrollH: scroller ? scroller.scrollHeight : 0,
+            clientH: scroller ? scroller.clientHeight : 0,
+          };
+        `);
+        checks.push(ok(
+          'favorites:short-sheet',
+          sheet.sheetH < sheet.max - 40 && sheet.gridTop < sheet.sheetTop - 8 && sheet.scrollH <= sheet.clientH + 2,
+          `sheetH=${Math.round(sheet.sheetH)} max=${Math.round(sheet.max)} gridTop=${Math.round(sheet.gridTop)} sheetTop=${Math.round(sheet.sheetTop)}`,
+        ));
+        starterRows = await rowLens();
+      }
+    }
+    checks.push(ok('favorites:starter-lines', starterRows.join('+') === '6+5', starterRows.join('+')));
+    const kantoPartners = await s.evalJson<boolean>(`
+      return !!document.querySelector('[data-testid="favorites-pick-25"]')
+        && !!document.querySelector('[data-testid="favorites-pick-133"]');
+    `);
+    checks.push(ok('favorites:kanto-starter-partners', kantoPartners));
+    await closePicker();
+    await clickCell(s, '[data-testid="favorites-cell-starter-8"]');
+    await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    const hisuiLast = await s.evalJson<boolean>(`
+      const ids = [...document.querySelectorAll('[data-testid^="favorites-pick-"]')]
+        .map((el) => Number(el.getAttribute('data-testid').slice('favorites-pick-'.length)));
+      return ids.slice(-3).join(',') === '10233,10236,10244';
+    `);
+    checks.push(ok('favorites:hisui-starters-last', hisuiLast));
+    await closePicker();
+    await clickCell(s, '[data-testid="favorites-cell-favorite-1"]');
+    await waitFor(s, '[data-testid="favorites-picker"]');
+    const emptyCard = await s.evalJson<boolean>(`
+      const empty = document.querySelector('[data-testid="favorites-picker-empty"]');
+      return !!empty && !!empty.querySelector('svg')
+        && !!empty.querySelector('h2')?.textContent?.trim()
+        && !!empty.querySelector('p')?.textContent?.trim()
+        && !empty.querySelector('button');
+    `);
+    checks.push(ok('favorites:pointer-empty-guidance', emptyCard));
+    await s.screenshot(ctx.shot('favorites-pointer-empty'));
+    checks.push(await auditRender(s, 'favorites:render-pointer-empty'));
+    await closePicker();
+    await clickCell(s, '[data-testid="favorites-cell-legendary-4"]');
+    const legendOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    const legendRows = legendOpen ? await rowLens() : [];
+    checks.push(ok('favorites:legend-spread', legendRows.length >= 3 && legendRows.every((n) => n > 0 && n <= 6), legendRows.join('+')));
+    await closePicker();
+    await clickCell(s, '[data-testid="favorites-cell-water-1"]');
+    const waterOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    const waterRows = waterOpen ? await rowLens() : [];
+    checks.push(ok('favorites:water-tail', waterRows.length >= 5 && waterRows.every((n) => n > 0 && n <= 6), waterRows.join('+')));
+    await closePicker();
+    await clickCell(s, '[data-testid="favorites-cell-gimmick-8"]');
+    const gimmickOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    const tall = gimmickOpen ? await s.evalJson<{
+      mobile: boolean; rows: number; inside: boolean; noScroll: boolean; same: boolean;
+    }>(`
+      const dialog = document.querySelector('[role="dialog"]');
+      const body = dialog?.querySelector('.overflow-y-auto');
+      const grid = document.querySelector('[data-testid="favorites-pretty-grid"]');
+      if (!dialog || !body || !grid) return { mobile:false, rows:0, inside:false, noScroll:false, same:false };
+      const gb = grid.getBoundingClientRect();
+      const bb = body.getBoundingClientRect();
+      const widths = [...grid.querySelectorAll('img[alt]:not([alt=""])')].map((img) => img.getBoundingClientRect().width);
+      return {
+        mobile:true,
+        rows:grid.querySelectorAll('[data-pretty-row]').length,
+        inside:gb.top >= bb.top - 1 && gb.bottom <= bb.bottom + 1,
+        noScroll:body.scrollHeight <= body.clientHeight + 2,
+        same:widths.length > 0 && Math.max(...widths) - Math.min(...widths) < 0.6,
+      };
+    `) : { mobile: false, rows: 0, inside: false, noScroll: false, same: false };
+    checks.push(tall.mobile
+      ? ok('favorites:tall-selector-fits', tall.rows >= 9 && tall.inside && tall.noScroll && tall.same,
+        `rows=${tall.rows} inside=${tall.inside} noScroll=${tall.noScroll} same=${tall.same}`)
+      : { name: 'favorites:tall-selector-fits', status: 'skip', detail: 'desktop pane' });
+    if (tall.mobile) {
+      const deadline = Date.now() + 10_000;
+      while (Date.now() < deadline) {
+        const loaded = await s.evalJson<boolean>(`
+          const grid = document.querySelector('[data-testid="favorites-pretty-grid"]');
+          const images = grid ? [...grid.querySelectorAll('button img[src^="/sprites/pokemon/"]')] : [];
+          return images.length >= 50 && images.every((img) => img.complete && img.naturalWidth > 0);
+        `);
+        if (loaded) break;
+        await sleep(100);
+      }
+      await s.screenshot(ctx.shot('favorites-gimmick-8-fit'));
+    }
+    await closePicker();
+  }
+
+  await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);
+  await s.navigate(url);
+  if (!(await waitFavoritesGrid(s))) {
+    checks.push({ name: 'favorites:packing-disabled', status: 'fail', detail: 'grid missing after reload' });
+    const errs = await s.errors();
+    checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
+    return checks;
+  }
+
+  const placedTogetic = await pickFavorite(s, 'favorites-cell-fairy-2', 176);
+  await waitGone(s, '[data-testid="favorites-picker"]');
+  const placedAzu = placedTogetic && await pickFavorite(s, 'favorites-cell-water-2', 184);
+  await waitGone(s, '[data-testid="favorites-picker"]');
+  let openedPack = false;
+  if (placedAzu) {
+    await clickCell(s, '[data-testid="favorites-cell-fairy-2"]');
+    if (await waitFor(s, '[data-testid="favorites-pick-184"]')) {
+      const used = await s.evalJson<{
+        opacity: number; mark: string | null; freeOpacity: number; freeMark: boolean;
+      }>(`
+        const used = document.querySelector('[data-testid="favorites-pick-184"]');
+        const sprite = used ? used.querySelector('img[alt]:not([alt=""])') : null;
+        const mark = used ? used.querySelector('[data-testid="favorites-used-mark"]') : null;
+        const free = [...document.querySelectorAll('[data-testid^="favorites-pick-"]')].find((node) => node.getAttribute('data-testid') !== 'favorites-pick-184');
+        const freeSprite = free ? free.querySelector('img[alt]:not([alt=""])') : null;
+        const freeMark = free ? !!free.querySelector('[data-testid="favorites-used-mark"]') : true;
+        return {
+          opacity: sprite ? Number(getComputedStyle(sprite).opacity) : 1,
+          mark: mark ? mark.getAttribute('data-value') : null,
+          freeOpacity: freeSprite ? Number(getComputedStyle(freeSprite).opacity) : 0,
+          freeMark,
+        };
+      `);
+      checks.push(ok(
+        'favorites:used-elsewhere-mark',
+        used.opacity > 0.9 && used.mark === 'water' && used.freeOpacity > 0.9 && !used.freeMark,
+        `opacity=${used.opacity} mark=${used.mark} freeOpacity=${used.freeOpacity} freeMark=${used.freeMark}`,
+      ));
+      const iconsHidden = await s.evalJson<boolean>(`return document.querySelector('[data-testid="favorites-type-toggle"]')?.getAttribute('aria-pressed') === 'false';`);
+      if (iconsHidden) await s.click('[data-testid="favorites-type-toggle"]');
+      const types = await s.evalJson<{ icons: string[]; same: boolean }>(`
+        const btn = document.querySelector('[data-testid="favorites-pick-184"]');
+        if (!btn) return { icons: [], same: false };
+        const icons = [...btn.querySelectorAll('[data-testid="favorites-type-icon"]')].map((node) => node.getAttribute('data-type') || '');
+        const sprite = btn.querySelector('img[alt]:not([alt=""])');
+        const same = !!sprite && Math.abs(btn.getBoundingClientRect().height - sprite.getBoundingClientRect().height) < 1;
+        return { icons, same };
+      `);
+      const iconSet = types.icons.slice().sort().join(',');
+      checks.push(ok(
+        'favorites:selector-type-icons',
+        iconSet === 'fairy,water' && types.same,
+        `icons=${types.icons.join(',')} same=${types.same}`,
+      ));
+      await s.click('[data-testid="favorites-pick-184"]');
+      openedPack = await waitFor(s, '[data-testid="favorites-packing"]');
+    } else {
+      checks.push({ name: 'favorites:used-elsewhere-mark', status: 'fail', detail: 'fairy picker did not list Azumarill' });
+      checks.push({ name: 'favorites:selector-type-icons', status: 'fail', detail: 'fairy picker did not list Azumarill' });
+    }
+  }
+  checks.push(ok('favorites:packing-disabled', placedTogetic && placedAzu && !openedPack, `togetic=${placedTogetic} azu=${placedAzu} packing=${openedPack}`));
+  if (openedPack) {
+    const moved = await s.evalJson<{
+      count: number; azu: number; opacity: number; oldLeft: boolean; arrowBetween: boolean; newRight: boolean; layered: boolean;
+    }>(`
+      const options = [...document.querySelectorAll('[data-testid="favorites-pack-option"]')];
+      const option = options.find((node) => !node.querySelector('[data-role="trash"]'));
+      const slot = option?.querySelector('[data-testid="favorites-pack-slot"]');
+      const sprites = [...(option?.querySelectorAll('[data-testid="favorites-pack-sprite"]') || [])];
+      const sprite = slot?.querySelector('[data-testid="favorites-pack-sprite"]');
+      const old = slot?.querySelector('[data-testid="favorites-pack-old-mark"]');
+      const arrow = slot?.querySelector('[data-testid="favorites-pack-move-arrow"]');
+      const next = slot?.querySelector('[data-testid="favorites-pack-new-mark"]');
+      const box = slot?.getBoundingClientRect();
+      const a = old?.getBoundingClientRect();
+      const b = arrow?.getBoundingClientRect();
+      const c = next?.getBoundingClientRect();
+      return {
+        count: sprites.length,
+        azu: sprites.filter((node) => /azumarill/i.test(node.getAttribute('alt') || '')).length,
+        opacity: sprite ? Number(getComputedStyle(sprite).opacity) : 0,
+        oldLeft: !!(a && box && a.left <= box.left + 1),
+        arrowBetween: !!(a && b && c && a.right < b.left && b.right < c.left),
+        newRight: !!(c && box && c.right >= box.right - 1),
+        layered: !!(old && next && sprite && Number(getComputedStyle(old).zIndex) > Number(getComputedStyle(sprite).zIndex) && Number(getComputedStyle(next).zIndex) > Number(getComputedStyle(sprite).zIndex)),
+      };
+    `);
+    checks.push(ok(
+      'favorites:pack-one-solid-move',
+      moved.count === 2 && moved.azu === 1 && moved.opacity === 1 && moved.oldLeft && moved.arrowBetween && moved.newRight && moved.layered,
+      `sprites=${moved.count} azumarill=${moved.azu} opacity=${moved.opacity} oldLeft=${moved.oldLeft} arrow=${moved.arrowBetween} newRight=${moved.newRight} layered=${moved.layered}`,
+    ));
+    const trash = await s.evalJson<{
+      found: boolean; opacity: number; alt: string; outlined: boolean;
+      red: boolean; white: boolean; layered: boolean; oldLeft: boolean; arrowBetween: boolean; trashRight: boolean; mark: string;
+    }>(`
+      const slot = document.querySelector('[data-testid="favorites-pack-slot"][data-role="trash"]');
+      if (!slot) return { found:false, opacity:1, alt:'', outlined:true, red:false, white:false, layered:false, oldLeft:false, arrowBetween:false, trashRight:false, mark:'' };
+      const sprite = slot.querySelector('[data-testid="favorites-pack-sprite"]');
+      const old = slot.querySelector('[data-testid="favorites-pack-old-mark"]');
+      const arrow = slot.querySelector('[data-testid="favorites-pack-move-arrow"]');
+      const mark = slot.querySelector('[data-testid="favorites-trash-mark"]');
+      const box = slot.getBoundingClientRect();
+      const a = old?.getBoundingClientRect();
+      const b = arrow?.getBoundingClientRect();
+      const c = mark?.getBoundingClientRect();
+      const outlined = Number.parseFloat(getComputedStyle(slot).borderTopWidth) > 0;
+      const bg = mark ? getComputedStyle(mark).backgroundColor : '';
+      const icon = mark ? getComputedStyle(mark).color : '';
+      const oklch = bg.match(/oklch\\(([\\d.]+)\\s+([\\d.]+)\\s+([\\d.]+)/);
+      const rgb = bg.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+      const hue = oklch ? Number(oklch[3]) : -1;
+      const red = (hue >= 0 && (hue <= 40 || hue >= 350)) || (rgb ? Number(rgb[1]) > 150 && Number(rgb[2]) < 90 && Number(rgb[3]) < 90 : false);
+      return {
+        found: true,
+        opacity: sprite ? Number(getComputedStyle(sprite).opacity) : 1,
+        alt: sprite ? sprite.getAttribute('alt') || '' : '',
+        outlined,
+        red,
+        white: icon === 'rgb(255, 255, 255)',
+        layered: !!(mark && sprite && Number(getComputedStyle(mark).zIndex) > Number(getComputedStyle(sprite).zIndex)),
+        oldLeft: !!(a && a.left <= box.left + 1),
+        arrowBetween: !!(a && b && c && a.right < b.left && b.right < c.left),
+        trashRight: !!(c && c.right >= box.right - 1),
+        mark: bg,
+      };
+    `);
+    checks.push(ok(
+      'favorites:trash-kicked-sprite',
+      trash.found && trash.opacity < 0.5 && trash.alt.length > 0 && !trash.outlined && trash.red && trash.white && trash.layered && trash.oldLeft && trash.arrowBetween && trash.trashRight,
+      `alt=${trash.alt} opacity=${trash.opacity} outlined=${trash.outlined} layered=${trash.layered} oldLeft=${trash.oldLeft} arrow=${trash.arrowBetween} trashRight=${trash.trashRight} mark=${trash.mark}`,
+    ));
+    await s.screenshot(ctx.shot('favorites-packing-moves'));
+    // Keep this audit scoped to the packing sheet so grid findings stay separate.
+    try {
+      const result = await s.evalJson<{ findings: AuditFinding[] }>(auditBody({ minFont: 8, annotate: false, checkFrame: false, offCanvasOk: true }));
+      const hard = result.findings.filter((f) => APP_HARD_KINDS.includes(f.kind) && /pack/i.test(`${f.path} ${f.text}`));
+      const detail = hard.slice(0, 4).map((f) => `${f.kind}: ${f.detail} (${f.text || f.path})`).join(' | ');
+      checks.push({
+        name: 'favorites:render-packing',
+        status: hard.length === 0 ? 'pass' : 'fail',
+        detail: hard.length ? `${hard.length} hard finding(s): ${detail}` : `${result.findings.length} page finding(s), none in packing UI`,
+        findings: hard.map(findingKey),
+      });
+    } catch (e) {
+      checks.push({ name: 'favorites:render-packing', status: 'fail', detail: `audit did not run: ${(e as Error).message.slice(0, 120)}` });
+    }
+  }
+
+  const oracle = await s.evalJson<{ has: boolean; fairy?: number; water?: number }>(`
+    const raw=localStorage.getItem(${JSON.stringify(FAV_KEY)});
+    if(!raw) return {has:false};
+    try { const d=JSON.parse(raw); const f=d.state?.fills||{}; return {has:true, fairy:f['fairy|2'], water:f['water|2']}; }
+    catch { return {has:false}; }
+  `);
+  checks.push(ok(
+    'favorites:store-has-placements',
+    Boolean(oracle.has && oracle.fairy === 184 && oracle.water === 184),
+    `fairy=${oracle.fairy} water=${oracle.water}`,
+  ));
+
+  if (openedPack) {
+    const applied = await s.evalJson<boolean>(`
+      const options = [...document.querySelectorAll('[data-testid="favorites-pack-option"]')];
+      const trash = options.find((node) => node.querySelector('[data-role="trash"]'));
+      const target = trash || options[0];
+      if (!target) return false;
+      target.click();
+      return true;
+    `);
+    await sleep(350);
+    const landed = await s.evalJson<{ fairy?: number; water?: number; togetic: boolean }>(`
+      const raw = localStorage.getItem(${JSON.stringify(FAV_KEY)});
+      const fills = raw ? (JSON.parse(raw).state?.fills || {}) : {};
+      const values = Object.values(fills);
+      return { fairy: fills['fairy|2'], water: fills['water|2'], togetic: values.includes(176) };
+    `);
+    checks.push(ok(
+      'favorites:pack-lands-in-opened-cell',
+      Boolean(applied && landed.fairy === 184 && landed.water !== 184 && !landed.togetic),
+      `applied=${applied} fairy=${landed.fairy} water=${landed.water} togetic=${landed.togetic}`,
+    ));
+  } else {
+    checks.push(ok('favorites:direct-replacement', oracle.fairy === 184 && oracle.water === 184, `fairy=${oracle.fairy} water=${oracle.water}`));
+  }
+
+  const dismiss = async () => {
+    const open = await s.evalJson<boolean>(`return !!document.querySelector('[data-testid="favorites-picker"]');`);
+    if (!open) return;
+    await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
+    await sleep(250);
+  };
+
+  await dismiss();
+  await clickCell(s, '[data-testid="favorites-cell-normal-1"]');
+  if (await waitFor(s, '[data-testid="favorites-picker"]')) {
+    const emptyRing = await s.evalJson<{ ring: string; ball: string }>(`
+      const cell = document.querySelector('[data-testid="favorites-cell-normal-1"]');
+      const ring = cell ? cell.querySelector('[data-testid="favorites-focus-ring"]') : null;
+      const ball = cell ? cell.querySelector('[data-testid="favorites-empty-ball"]') : null;
+      return {
+        ring: ring ? getComputedStyle(ring).zIndex : '',
+        ball: ball ? getComputedStyle(ball).zIndex : '',
+      };
+    `);
+    const ballUnder = emptyRing.ball === 'auto' || Number(emptyRing.ball) < Number(emptyRing.ring);
+    checks.push(ok(
+      'favorites:empty-ring-above-ball',
+      Number(emptyRing.ring) >= 5 && ballUnder,
+      `ring=${emptyRing.ring} ball=${emptyRing.ball}`,
+    ));
+  } else {
+    checks.push({ name: 'favorites:empty-ring-above-ball', status: 'fail', detail: 'empty cell did not open' });
+  }
+  await dismiss();
+
+  await clickCell(s, '[data-testid="favorites-cell-fairy-2"]');
+  if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) {
+    await s.screenshot(ctx.shot('favorites-selector-clear'));
+    const filled = await s.evalJson<{
+      ring: string; sprite: string; top: number; scrollTop: number; clearW: number; pickW: number; inGrid: boolean; text: string;
+    }>(`
+      const cell = document.querySelector('[data-testid="favorites-cell-fairy-2"]');
+      const ring = cell ? cell.querySelector('[data-testid="favorites-focus-ring"]') : null;
+      const sprite = cell ? cell.querySelector('img[alt]') : null;
+      const btn = document.querySelector('[data-testid^="favorites-pick-"]');
+      const scroller = btn ? btn.closest('.overflow-y-auto') : null;
+      const br = btn ? btn.getBoundingClientRect() : null;
+      const sr = scroller ? scroller.getBoundingClientRect() : null;
+      const clear = document.querySelector('[data-testid="favorites-clear"]');
+      const pick = document.querySelector('[data-testid^="favorites-pick-"]');
+      return {
+        ring: ring ? getComputedStyle(ring).zIndex : '',
+        sprite: sprite ? getComputedStyle(sprite).zIndex : '',
+        top: br && sr ? br.top - 3 - sr.top : -1,
+        scrollTop: sr ? sr.top : 0,
+        clearW: clear ? clear.getBoundingClientRect().width : 0,
+        pickW: pick ? pick.getBoundingClientRect().width : 0,
+        inGrid: !!(clear && clear.closest('[data-testid="favorites-pretty-grid"]')),
+        text: clear ? (clear.textContent || '').trim() : '',
+      };
+    `);
+    checks.push(ok(
+      'favorites:filled-sprite-above-ring',
+      Number(filled.sprite) > Number(filled.ring) && Number(filled.ring) >= 5,
+      `sprite=${filled.sprite} ring=${filled.ring}`,
+    ));
+    checks.push(ok(
+      'favorites:selector-ring-inside',
+      filled.top >= -0.5,
+      `ringTopGap=${filled.top.toFixed(1)}`,
+    ));
+    checks.push(ok(
+      'favorites:clear-inside-selected-cell',
+      filled.inGrid && filled.text === '' && filled.clearW >= filled.pickW * 0.5 && filled.clearW < filled.pickW && filled.pickW > 20,
+      `inGrid=${filled.inGrid} text=${JSON.stringify(filled.text)} clearW=${filled.clearW.toFixed(1)} pickW=${filled.pickW.toFixed(1)}`,
+    ));
+    const overflow = await s.evalJson<{ x: string; y: string }>(`
+      const cell = document.querySelector('[data-testid="favorites-cell-fairy-2"]');
+      const style = cell ? getComputedStyle(cell) : null;
+      return { x: style?.overflowX || '', y: style?.overflowY || '' };
+    `);
+    checks.push(ok(
+      'favorites:filled-sprite-unclipped',
+      overflow.x === 'visible' && overflow.y === 'visible',
+      `overflowX=${overflow.x} overflowY=${overflow.y}`,
+    ));
+  } else {
+    checks.push({ name: 'favorites:filled-sprite-above-ring', status: 'fail', detail: 'filled picker did not open' });
+    checks.push({ name: 'favorites:selector-ring-inside', status: 'fail', detail: 'filled picker did not open' });
+    checks.push({ name: 'favorites:clear-inside-selected-cell', status: 'fail', detail: 'filled picker did not open' });
+    checks.push({ name: 'favorites:filled-sprite-unclipped', status: 'fail', detail: 'filled picker did not open' });
+  }
+  await dismiss();
+
+  await s.evalJson(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    const seen = { shown: false };
+    window.__verifyFavoritesMinimap = seen;
+    if (map) new MutationObserver(() => {
+      if (Number(map.style.opacity) > 0.05) seen.shown = true;
+    }).observe(map, { attributes: true, attributeFilter: ['style'] });
+    if (el) {
+      el.scrollLeft = Math.round(el.clientWidth * 0.85);
+      el.dispatchEvent(new Event('scroll'));
+    }
+    return true;
+  `);
+  await sleep(40);
+  const mini = await s.evalJson<{
+    overflow: boolean; shown: boolean; vpNarrower: boolean;
+    cells: number; gridCells: number; filled: number; empty: number; stroke: string; offset: string; primary: string; tinted: boolean;
+  }>(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]') || document.querySelector('[data-testid="favorites-grid"]');
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    const vp = document.querySelector('[data-testid="favorites-minimap-viewport"]');
+    const overflow = !!el && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
+    const shown = !!map && (window.__verifyFavoritesMinimap?.shown || Number(getComputedStyle(map).opacity) > 0.05);
+    const vpNarrower = !!(map && vp && vp.getBoundingClientRect().width < map.getBoundingClientRect().width - 1 && vp.getBoundingClientRect().width > 2);
+    const sample = document.createElement('span');
+    sample.style.color = 'var(--color-primary)';
+    document.body.appendChild(sample);
+    const primary = getComputedStyle(sample).color;
+    sample.remove();
+    const filledCell = map?.querySelector('[data-type="fairy"][data-filled="true"]');
+    const emptyCell = map?.querySelector('[data-type="fairy"][data-filled="false"]');
+    return {
+      overflow, shown, vpNarrower,
+      cells: map?.querySelectorAll('[data-kind]').length || 0,
+      gridCells: document.querySelectorAll('[data-testid="favorites-grid"] [data-testid^="favorites-cell-"]').length,
+      filled: map?.querySelectorAll('[data-filled="true"]').length || 0,
+      empty: map?.querySelectorAll('[data-filled="false"]').length || 0,
+      stroke: vp ? getComputedStyle(vp).outlineColor : '',
+      offset: vp ? getComputedStyle(vp).outlineOffset : '',
+      tinted: !!filledCell && !!emptyCell && getComputedStyle(filledCell).backgroundColor !== getComputedStyle(emptyCell).backgroundColor,
+      primary,
+    };
+  `);
+  checks.push(ok(
+    'favorites:minimap-when-overflow',
+    mini.overflow ? mini.shown && mini.vpNarrower : !mini.shown,
+    `overflow=${mini.overflow} shown=${mini.shown} vp=${mini.vpNarrower}`,
+  ));
+  checks.push(ok(
+    'favorites:minimap-body-cells',
+    !mini.overflow || (mini.gridCells > 0 && mini.cells === mini.gridCells && mini.filled > 0 && mini.empty > 0 && mini.stroke === mini.primary && mini.offset === '1px' && mini.tinted),
+    `cells=${mini.cells} gridCells=${mini.gridCells} filled=${mini.filled} empty=${mini.empty} stroke=${mini.stroke} offset=${mini.offset} tinted=${mini.tinted} primary=${mini.primary}`,
+  ));
+  if (mini.shown) await s.screenshot(ctx.shot('favorites-minimap-scrolling'));
+  // The phone minimap stays 2 s after the last scroll so a finger can reach
+  // it, so allow up to 3.5 s for the fade.
+  let miniIdle = 1;
+  for (let waited = 0; waited < 3500 && miniIdle >= 0.05; waited += 250) {
+    await sleep(250);
+    miniIdle = await s.evalJson<number>(`
+      const map = document.querySelector('[data-testid="favorites-minimap"]');
+      return map ? Number(getComputedStyle(map).opacity) : 0;
+    `);
+  }
+  checks.push(ok('favorites:minimap-fades-idle', miniIdle < 0.05, `opacity=${miniIdle}`));
+
+  await clickCell(s, '[data-testid="favorites-cell-poison-1"]');
+  const poisonOpen = await waitFor(s, '[data-testid="favorites-pick-34"]');
+  if (poisonOpen) await s.click('[data-testid="favorites-pick-34"]');
+  await sleep(250);
+  await dismiss();
+  await clickCell(s, '[data-testid="favorites-cell-ground-1"]');
+  const groundOpen = await waitFor(s, '[data-testid="favorites-pick-76"]');
+  if (groundOpen) await s.click('[data-testid="favorites-pick-76"]');
+  await sleep(300);
+  await dismiss();
+  await clickCell(s, '[data-testid="favorites-cell-rock-1"]');
+  const rockOpen = await waitFor(s, '[data-testid="favorites-pick-76"]');
+  if (rockOpen) await s.click('[data-testid="favorites-pick-76"]');
+  await sleep(350);
+  const moved = await s.evalJson<{ packing: boolean; rock?: number; ground?: number; poison?: number }>(`
+    const raw = localStorage.getItem(${JSON.stringify(FAV_KEY)});
+    const fills = raw ? (JSON.parse(raw).state?.fills || {}) : {};
+    return {
+      packing: !!document.querySelector('[data-testid="favorites-packing"]'),
+      rock: fills['rock|1'],
+      ground: fills['ground|1'],
+      poison: fills['poison|1'],
+    };
+  `);
+  checks.push(ok(
+    'favorites:empty-dest-preserves-source',
+    Boolean(poisonOpen && groundOpen && rockOpen && !moved.packing && moved.rock === 76 && moved.ground === 76 && moved.poison === 34),
+    `packing=${moved.packing} rock=${moved.rock} ground=${moved.ground} poison=${moved.poison}`,
+  ));
+  await dismiss();
+
+  await s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)});}catch{} return true;`);
+  await s.navigate(url);
+  const directReady = await waitFavoritesGrid(s);
+  const placedPikachu = directReady && await pickFavorite(s, 'favorites-cell-electric-1', 25);
+  await waitGone(s, '[data-testid="favorites-picker"]');
+  const placedRaichu = placedPikachu && await pickFavorite(s, 'favorites-cell-electric-1', 26);
+  const direct = await s.evalJson<{ id?: number; packing: boolean; picker: boolean }>(`
+    const raw = localStorage.getItem(${JSON.stringify(FAV_KEY)});
+    const fills = raw ? (JSON.parse(raw).state?.fills || {}) : {};
+    return {
+      id: fills['electric|1'],
+      packing: !!document.querySelector('[data-testid="favorites-packing"]'),
+      picker: !!document.querySelector('[data-testid="favorites-picker"]'),
+    };
+  `);
+  checks.push(ok(
+    'favorites:direct-trash-swap',
+    Boolean(placedRaichu && direct.id === 26 && !direct.packing && !direct.picker),
+    `ready=${directReady} pikachu=${placedPikachu} raichu=${placedRaichu} id=${direct.id} packing=${direct.packing}`,
+  ));
+
+  // App zoom. Synthetic ctrl+wheel events reach the same handler as a
+  // trackpad pinch on every engine. Zoomed and scrolled to the far corner,
+  // the last cell must sit inside the frame, the headers on its edges, and
+  // the minimap inside it without a transform.
+  await s.evalJson(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]');
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    for (let i = 0; i < 4; i++) {
+      el.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -50, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, bubbles: true, cancelable: true }));
+    }
+    return true;
+  `);
+  await sleep(300);
+  const zoom = await s.evalJson<{
+    zoom: number; cellGrew: boolean; lastInside: boolean; headerTop: number; genLeft: number; mapInside: boolean; mapTransform: string;
+  }>(`
+    const el = document.querySelector('[data-testid="favorites-grid-scroll"]');
+    const before = Number(el?.getAttribute('data-zoom') || 0);
+    if (!el) return { zoom: 0, cellGrew: false, lastInside: false, headerTop: -1, genLeft: -1, mapInside: false, mapTransform: '' };
+    el.scrollLeft = el.scrollWidth;
+    el.scrollTop = el.scrollHeight;
+    const frame = el.getBoundingClientRect();
+    const inner = { left: frame.left + el.clientLeft, top: frame.top + el.clientTop };
+    inner.right = inner.left + el.clientWidth;
+    inner.bottom = inner.top + el.clientHeight;
+    const last = document.querySelector('[data-testid="favorites-cell-favorite-favorite"]').getBoundingClientRect();
+    const grid = document.querySelector('[data-testid="favorites-grid"]');
+    const headers = [...grid.querySelectorAll(':scope > div:not([data-row-banded])')].map((h) => h.getBoundingClientRect().top);
+    const gens = [...document.querySelectorAll('div[data-row-banded]')].map((g) => g.getBoundingClientRect().left);
+    const map = document.querySelector('[data-testid="favorites-minimap"]');
+    const box = map ? map.getBoundingClientRect() : null;
+    return {
+      zoom: before,
+      cellGrew: document.querySelector('[data-testid="favorites-cell-normal-1"]').getBoundingClientRect().width > el.clientHeight / 13 * 1.5,
+      lastInside: last.right <= inner.right + 1 && last.bottom <= inner.bottom + 1 && last.left >= inner.left - 1 && last.top >= inner.top - 1,
+      headerTop: Math.round((Math.min(...headers) - inner.top) * 10) / 10,
+      genLeft: Math.round((Math.min(...gens) - inner.left) * 10) / 10,
+      mapInside: !!box && box.left >= frame.left && box.right <= frame.right && box.top >= frame.top && box.bottom <= frame.bottom,
+      mapTransform: map ? getComputedStyle(map).transform : '',
+    };
+  `);
+  checks.push(ok('favorites:zoom-grows-cells', zoom.zoom > 1.5 && zoom.cellGrew, `data-zoom=${zoom.zoom} cellGrew=${zoom.cellGrew}`));
+  checks.push(ok('favorites:zoom-reaches-far-corner', zoom.zoom > 1.5 && zoom.lastInside, `lastInside=${zoom.lastInside}`));
+  checks.push(ok(
+    'favorites:zoom-sticky-headers',
+    zoom.zoom > 1.5 && Math.abs(zoom.headerTop) < 1 && Math.abs(zoom.genLeft) < 1,
+    `headerTop-frame=${zoom.headerTop} genLeft-frame=${zoom.genLeft}`,
+  ));
+  checks.push(ok(
+    'favorites:zoom-minimap-in-frame',
+    zoom.mapInside && zoom.mapTransform === 'none',
+    `inside=${zoom.mapInside} transform=${zoom.mapTransform}`,
+  ));
+  if (zoom.zoom > 1.5) await s.screenshot(ctx.shot('favorites-zoomed-far-corner'));
+
+  const errs = await s.errors();
+  checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
 }
 

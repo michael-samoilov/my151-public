@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useFavoriteBrowserStore } from '@/components/browser/browserStore';
 import type { BrowserStoreState } from '@/components/browser/browserStore';
 import { getAllPokemon, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
@@ -130,6 +131,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
     standaloneTiles: false,
 
     openFor: (card) => {
+      useFavoriteBrowserStore.getState().refreshFavorites();
       const purpose = ui().browserPurpose;
       const type = league().cards[card]?.type ?? null;
       const lines = league().cards[card]?.lines ?? [];

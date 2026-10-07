@@ -62,7 +62,8 @@ interface Entry {
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
+    // Keep generated call sites and exclusion checks platform-independent.
+    const path = join(dir, name).replaceAll('\\', '/');
     if (statSync(path).isDirectory()) walk(path, out);
     else if (/\.(ts|tsx)$/.test(path) && !EXCLUDE.some((re) => re.test(path))) out.push(path);
   }

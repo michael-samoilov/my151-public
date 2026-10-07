@@ -99,8 +99,8 @@ test.describe('one-Pokémon pickers', () => {
     await search(page, 'eevee');
     const tiles = await drawn(page);
     expect(new Set(tiles).size, 'no Pokémon twice').toBe(tiles.length);
-    expect(tiles).toContain('eevee');
-    expect(tiles).toContain('sylveon');
+    expect(tiles).toContain('Eevee');
+    expect(tiles).toContain('Sylveon');
     expect(await reported(page), 'the count agrees with the grid').toBe(String(tiles.length));
     expect(await chevrons(page), 'no evolution arrows between standalone tiles').toBe(0);
   });
@@ -115,7 +115,7 @@ test.describe('one-Pokémon pickers', () => {
     // Cosmog leads to both Solgaleo and Lunala, so it and Cosmoem used to
     // arrive twice each.
     await search(page, 'cosmog');
-    expect(await drawn(page)).toEqual(['cosmog', 'cosmoem', 'solgaleo', 'lunala']);
+    expect(await drawn(page)).toEqual(['Cosmog', 'Cosmoem', 'Solgaleo', 'Lunala']);
     expect(await chevrons(page)).toBe(0);
   });
 
@@ -129,14 +129,14 @@ test.describe('one-Pokémon pickers', () => {
 
     // The slot used to re-derive its member from the boss row, which fields
     // the line's leaf: a tap on Geodude answered with Golem.
-    await pickSignature(page, 'geodude', 'geodude');
+    await pickSignature(page, 'geodude', 'Geodude');
     expect(await signatureAlt(page)).toBe('geodude');
 
-    await pickSignature(page, 'geodude', 'graveler');
+    await pickSignature(page, 'geodude', 'Graveler');
     expect(await signatureAlt(page)).toBe('graveler');
 
     // The leaf is a pick like any other, not a fallback.
-    await pickSignature(page, 'geodude', 'golem');
+    await pickSignature(page, 'geodude', 'Golem');
     expect(await signatureAlt(page)).toBe('golem');
     await testInfo.attach('signature-and-team', {
       body: JSON.stringify(await page.evaluate(() => JSON.parse(localStorage.getItem('league-builder')!).state.cards[0])),
@@ -152,7 +152,7 @@ test.describe('one-Pokémon pickers', () => {
     await search(page, 'scyther');
     const tiles = await drawn(page);
     // Scyther leads to Scizor and to Kleavor: two lines, so Scyther twice.
-    expect(tiles.filter((n) => n === 'scyther').length).toBeGreaterThan(1);
+    expect(tiles.filter((n) => n === 'Scyther').length).toBeGreaterThan(1);
     expect(await chevrons(page), 'a line still shows what evolves into what').toBeGreaterThan(0);
   });
 });

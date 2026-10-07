@@ -13,23 +13,30 @@ const EXPAND_THRESHOLD = 40;
 const DISMISS_THRESHOLD = 80;
 const SWIPE_THRESHOLD = 50;
 
-/** The body shape carried by a segment, if it's a shape drilldown — used to show
- *  the shape silhouette in the header and prev/next nav (shape drilldowns only). */
-function getSegmentShape(seg: DrillDownSegment): ShapeName | undefined {
-  return seg.kind === 'shape' ? (seg.shape as ShapeName) : undefined;
+/** A tool supplies data and navigation; the sheet and pane own presentation. */
+export interface AnalyticsDrillDownItem {
+  id: string;
+  label: string;
+  shape?: ShapeName;
+  getData: () => DrillDownData | null;
+  onSelect: () => void;
 }
-
-function getSegmentLabel(seg: DrillDownSegment): string {
-  switch (seg.kind) {
-    case 'type': return typeLabel(seg.type as TypeName);
-    case 'generation': return `Gen ${seg.generation}`;
-    case 'evoLevel': return `Lv ${seg.binStart}–${seg.binEnd - 1}`;
-    case 'bst': return `${seg.binStart}–${seg.binEnd - 1}`;
-    case 'typeMatchup': return typeLabel(seg.type as TypeName);
-    case 'shape': return shapeLabel(seg.shape as ShapeName);
-    default: return '';
-  }
+export interface AnalyticsDrillDownProps {
+  panelAttributes?: Record<string, string>;
+  segment: AnalyticsDrillDownItem | null;
+  siblings: AnalyticsDrillDownItem[];
+  assignedIds: Set<number>;
+  closeDrillDown: () => void;
+  expandDrillDown?: () => void;
+  peek?: boolean;
+  spriteOverrides?: Record<number, string>;
+  removalStagedIds?: number[];
+  handleToggleRemoval?: (memberIds: number[]) => void;
+  handleConfirmRemoval?: () => void;
 }
+const getSegmentLabel = (segment: AnalyticsDrillDownItem) => segment.label;
+const getSegmentShape = (segment: AnalyticsDrillDownItem) => segment.shape;
+const computeData = (segment: AnalyticsDrillDownItem | null) => segment?.getData() ?? null;
 
 /** Wishiwashi's pokemon.json sprite is the school form, but the BST data
  *  reflects the solo form — show the original solo sprite in BST drilldowns. */
@@ -38,6 +45,7 @@ const BST_SPRITE_OVERRIDES: Record<number, string> = { 746: '/sprites/pokemon/74
 /** A full card panel: drag handle + header + accent line + scrollable content */
 function CardPanel({
   data,
+  panelAttributes,
   assignedIds,
   prevLabel,
   nextLabel,
@@ -57,6 +65,7 @@ function CardPanel({
   onConfirmRemoval,
 }: {
   data: DrillDownData;
+  panelAttributes?: Record<string, string>;
   assignedIds: Set<number>;
   prevLabel?: string;
   nextLabel?: string;
@@ -80,7 +89,7 @@ function CardPanel({
   const removalCount = removalStagedIds?.size ?? 0;
 
   return (
-    <div className="flex flex-col h-full bg-background rounded-t-2xl overflow-hidden" style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.2)' }}>
+    <div {...panelAttributes} className="flex flex-col h-full bg-background rounded-t-2xl overflow-hidden" style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.2)' }}>
       {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
       <div
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
@@ -116,6 +125,7 @@ function CardPanel({
               {data.icon && (
                 <img src={data.icon} alt="" className="w-4 h-4" />
               )}
+              {data.headerContent}
               {data.shape && (
                 <ShapeIconCircle shape={data.shape} />
               )}
@@ -157,8 +167,9 @@ function CardPanel({
         }}
       >
         <div className="px-2 pb-2" style={{ minHeight: 'calc(100% + 1px)' }}>
+          {data.emptyContent}
           {data.sections.map((section) => (
-            <div key={section.sectionId}>
+            <div key={section.sectionId} {...section.attributes}>
               <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
                 {section.sectionName}
               </div>
@@ -171,6 +182,7 @@ function CardPanel({
                   removalStagedIds={removalStagedIds}
                   onToggleRemoval={onToggleRemoval}
                   spriteOverrides={spriteOverrides}
+                  standaloneTiles={data.standaloneTiles}
                   cols={6}
                   variant="analytics"
                   showGenBadges={data.showGenBadges}
@@ -203,55 +215,12 @@ function CardPanel({
 
 /** `topGap` is the space in px above the expanded sheet. App passes the
  *  header's measured height, so the nav tabs stay visible and tappable. */
-export function DrillDownSheet({ topGap }: { topGap: number }) {
-  const expandDrillDown = usePokedexStore((s) => s.expandDrillDown);
-  const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
-  const navigateDrillDown = usePokedexStore((s) => s.navigateDrillDown);
-  const peek = usePokedexStore((s) => s.drillDownPeek);
-  const storeSections = usePokedexStore((s) => s.sections);
-  const siblings = usePokedexStore((s) => s.drillDownSiblings);
-  const segment = usePokedexStore((s) => s.drillDownSegment);
-  const excludeSpecial = usePokedexStore((s) => s.drillDownExcludeSpecial);
-  const dexId = usePokedexStore((s) => s.drillDownDexId);
-  const newOnly = usePokedexStore((s) => s.drillDownNewOnly);
-
-  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
-
+export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, siblings, assignedIds, closeDrillDown, expandDrillDown = () => {}, peek = false, spriteOverrides, removalStagedIds = [], handleToggleRemoval, handleConfirmRemoval }: AnalyticsDrillDownProps & { topGap: number }) {
   const [dragY, setDragY] = useState(0);
   const [swipeX, setSwipeX] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [swipeLocked, setSwipeLocked] = useState(false);
-
-  // Staged removals — pending user confirmation
-  const [removalStagedIds, setRemovalStagedIds] = useState<number[]>([]);
   const removalStagedSet = useMemo(() => new Set(removalStagedIds), [removalStagedIds]);
-
-  const handleToggleRemoval = useCallback((memberIds: number[]) => {
-    setRemovalStagedIds(prev => {
-      const prevSet = new Set(prev);
-      const allStaged = memberIds.every(id => prevSet.has(id));
-      if (allStaged) {
-        const removeSet = new Set(memberIds);
-        return prev.filter(id => !removeSet.has(id));
-      }
-      return [...prev, ...memberIds.filter(id => !prevSet.has(id))];
-    });
-  }, []);
-
-  const handleConfirmRemoval = useCallback(() => {
-    const removed = new Set<number>();
-    for (const id of removalStagedIds) {
-      if (removed.has(id)) continue;
-      for (const [sectionId, ids] of Object.entries(storeSections)) {
-        if (ids.includes(id)) {
-          removeEvoLine(sectionId, id);
-          break;
-        }
-      }
-      removed.add(id);
-    }
-    setRemovalStagedIds([]);
-  }, [removalStagedIds, storeSections, removeEvoLine]);
   const dragStartY = useRef<number | null>(null);
   const dragStartX = useRef<number | null>(null);
   const isDragging = useRef(false);
@@ -259,20 +228,12 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const currentScrollRef = useRef<HTMLDivElement>(null);
-  const pendingNav = useRef<DrillDownSegment | null>(null);
-
-  const assignedIds = useMemo(() => {
-    const ids = new Set<number>();
-    for (const arr of Object.values(storeSections)) {
-      for (const id of arr) ids.add(id);
-    }
-    return ids;
-  }, [storeSections]);
+  const pendingNav = useRef<AnalyticsDrillDownItem | null>(null);
 
   // Current index in siblings
   const currentIdx = useMemo(() => {
     if (!segment || siblings.length < 2) return -1;
-    return siblings.findIndex(s => JSON.stringify(s) === JSON.stringify(segment));
+    return siblings.findIndex(s => s.id === segment.id);
   }, [segment, siblings]);
 
   const prevSibling = siblings.length >= 2 && currentIdx >= 0
@@ -282,8 +243,8 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
 
   // Current panel data: computed synchronously (blocks render)
   const currentData = useMemo(() =>
-    computeDrillDownData(segment, storeSections, excludeSpecial, dexId, newOnly),
-    [segment, storeSections, excludeSpecial, dexId, newOnly]);
+    computeData(segment),
+    [segment]);
 
   // Prev/next panel data: deferred to after paint so the current panel
   // shows instantly even for expensive drilldowns (e.g. national-dex type
@@ -299,17 +260,17 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
     // effect body itself runs before paint, so the work is scheduled on the
     // next frame and its state update is marked non-urgent.
     const id = requestAnimationFrame(() => {
-      const prev = prevSibling ? computeDrillDownData(prevSibling, storeSections, excludeSpecial, dexId, newOnly) : null;
-      const next = nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial, dexId, newOnly) : null;
+      const prev = prevSibling ? computeData(prevSibling) : null;
+      const next = nextSibling ? computeData(nextSibling) : null;
       startTransition(() => {
         setPrevData(prev);
         setNextData(next);
       });
     });
     return () => cancelAnimationFrame(id);
-  }, [prevSibling, nextSibling, storeSections, excludeSpecial, dexId, newOnly]);
+  }, [prevSibling, nextSibling]);
 
-  const bstOverrides = segment?.kind === 'bst' ? BST_SPRITE_OVERRIDES : undefined;
+  const bstOverrides = spriteOverrides;
 
   // Only lock body scroll when fully expanded (not peek) — mobile only
   // Desktop uses the side panel (DrillDownPanel), so body scroll must stay free
@@ -324,7 +285,6 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
 
   // Reset scroll + staged removals when segment changes
   useEffect(() => {
-    setRemovalStagedIds([]);
     if (currentScrollRef.current) {
       currentScrollRef.current.scrollTop = 0;
     }
@@ -340,11 +300,11 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
 
     // Flush state update synchronously so React updates DOM before browser paints
     flushSync(() => {
-      navigateDrillDown(target);
+      target.onSelect();
       setSwipeX(0);
       setIsAnimating(false);
     });
-  }, [navigateDrillDown]);
+  }, []);
 
   // After navigation state update, snap carousel to center before paint
   useLayoutEffect(() => {
@@ -360,7 +320,7 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
     }
   }, [segment]);
 
-  const commitSwipe = useCallback((targetSibling: DrillDownSegment, direction: number) => {
+  const commitSwipe = useCallback((targetSibling: AnalyticsDrillDownItem, direction: number) => {
     if (!sheetRef.current) return;
     const width = sheetRef.current.offsetWidth;
     pendingNav.current = targetSibling;
@@ -506,7 +466,7 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
                 and painted sprites) instead of destroying index 2 and
                 rebuilding index 1 from scratch (which flashes white). */}
             <div
-              key={prevSibling ? JSON.stringify(prevSibling) : 'empty-prev'}
+              key={prevSibling ? prevSibling.id : 'empty-prev'}
               className="h-full flex-1 min-w-0"
               style={{ clipPath: 'inset(-100px 0 0 0)' }}
               onTouchStart={touchStart}
@@ -535,7 +495,7 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
 
             {/* Current panel */}
             <div
-              key={segment ? JSON.stringify(segment) : 'empty-current'}
+              key={segment ? segment.id : 'empty-current'}
               className="h-full flex-1 min-w-0"
               style={{ clipPath: 'inset(-100px 0 0 0)' }}
               onTouchStart={touchStart}
@@ -544,6 +504,7 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
             >
               <CardPanel
                 data={currentData}
+                panelAttributes={panelAttributes}
                 assignedIds={assignedIds}
                 prevLabel={prevSibling ? getSegmentLabel(prevSibling) : undefined}
                 nextLabel={nextSibling ? getSegmentLabel(nextSibling) : undefined}
@@ -566,7 +527,7 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
 
             {/* Next panel */}
             <div
-              key={nextSibling ? JSON.stringify(nextSibling) : 'empty-next'}
+              key={nextSibling ? nextSibling.id : 'empty-next'}
               className="h-full flex-1 min-w-0"
               style={{ clipPath: 'inset(-100px 0 0 0)' }}
               onTouchStart={touchStart}
@@ -600,80 +561,26 @@ export function DrillDownSheet({ topGap }: { topGap: number }) {
 }
 
 /** Desktop side panel for analytics drilldown — no drag/carousel, static layout */
-export function DrillDownPanel() {
-  const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
-  const navigateDrillDown = usePokedexStore((s) => s.navigateDrillDown);
-  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
-  const storeSections = usePokedexStore((s) => s.sections);
-  const siblings = usePokedexStore((s) => s.drillDownSiblings);
-  const segment = usePokedexStore((s) => s.drillDownSegment);
-  const excludeSpecial = usePokedexStore((s) => s.drillDownExcludeSpecial);
-  const dexId = usePokedexStore((s) => s.drillDownDexId);
-  const newOnly = usePokedexStore((s) => s.drillDownNewOnly);
-
-  const assignedIds = useMemo(() => {
-    const ids = new Set<number>();
-    for (const arr of Object.values(storeSections)) {
-      for (const id of arr) ids.add(id);
-    }
-    return ids;
-  }, [storeSections]);
-
+export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, assignedIds, closeDrillDown, spriteOverrides, removalStagedIds = [], handleToggleRemoval, handleConfirmRemoval }: AnalyticsDrillDownProps) {
   const currentIdx = useMemo(() => {
     if (!segment || siblings.length < 2) return -1;
-    return siblings.findIndex(s => JSON.stringify(s) === JSON.stringify(segment));
+    return siblings.findIndex(s => s.id === segment.id);
   }, [segment, siblings]);
-
   const prevSibling = siblings.length >= 2 && currentIdx >= 0
     ? siblings[(currentIdx - 1 + siblings.length) % siblings.length] : null;
   const nextSibling = siblings.length >= 2 && currentIdx >= 0
     ? siblings[(currentIdx + 1) % siblings.length] : null;
-
-  const currentData = useMemo(() =>
-    computeDrillDownData(segment, storeSections, excludeSpecial, dexId, newOnly),
-    [segment, storeSections, excludeSpecial, dexId, newOnly]);
-
-  const desktopBstOverrides = segment?.kind === 'bst' ? BST_SPRITE_OVERRIDES : undefined;
-
+  const currentData = useMemo(() => computeData(segment), [segment]);
+  const desktopBstOverrides = spriteOverrides;
   const emptySet = useMemo(() => new Set<number>(), []);
   const noOp = useCallback(() => {}, []);
 
-  // Staged removals — pending user confirmation
-  const [removalStagedIds, setRemovalStagedIds] = useState<number[]>([]);
   const removalStagedSet = useMemo(() => new Set(removalStagedIds), [removalStagedIds]);
-
-  const handleToggleRemoval = useCallback((memberIds: number[]) => {
-    setRemovalStagedIds(prev => {
-      const prevSet = new Set(prev);
-      const allStaged = memberIds.every(id => prevSet.has(id));
-      if (allStaged) {
-        const removeSet = new Set(memberIds);
-        return prev.filter(id => !removeSet.has(id));
-      }
-      return [...prev, ...memberIds.filter(id => !prevSet.has(id))];
-    });
-  }, []);
-
-  const handleConfirmRemoval = useCallback(() => {
-    const removed = new Set<number>();
-    for (const id of removalStagedIds) {
-      if (removed.has(id)) continue;
-      for (const [sectionId, ids] of Object.entries(storeSections)) {
-        if (ids.includes(id)) {
-          removeEvoLine(sectionId, id);
-          break;
-        }
-      }
-      removed.add(id);
-    }
-    setRemovalStagedIds([]);
-  }, [removalStagedIds, storeSections, removeEvoLine]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Reset staged removals when navigating to a different segment
   useEffect(() => {
-    setRemovalStagedIds([]);
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
@@ -682,7 +589,7 @@ export function DrillDownPanel() {
   if (!currentData) return null;
 
   return (
-    <div className="relative flex flex-col h-full bg-background w-full">
+    <div {...panelAttributes} className="relative flex flex-col h-full bg-background w-full">
       {/* Header */}
       <div className="shrink-0 border-b">
         <div className="flex items-center justify-between px-3 py-2">
@@ -690,6 +597,7 @@ export function DrillDownPanel() {
             {currentData.icon && (
               <img src={currentData.icon} alt="" className="w-4 h-4 shrink-0" />
             )}
+            {currentData.headerContent}
             {currentData.shape && (
               <ShapeIconCircle shape={currentData.shape} />
             )}
@@ -712,7 +620,7 @@ export function DrillDownPanel() {
           <div className="flex items-center justify-between px-3 pb-2">
             {prevSibling ? (
               <button type="button"
-                onClick={() => navigateDrillDown(prevSibling)}
+                onClick={() => prevSibling.onSelect()}
                 className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
@@ -724,7 +632,7 @@ export function DrillDownPanel() {
             ) : <div />}
             {nextSibling ? (
               <button type="button"
-                onClick={() => navigateDrillDown(nextSibling)}
+                onClick={() => nextSibling.onSelect()}
                 className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <span className="flex flex-col items-center min-w-0 leading-tight">
@@ -746,8 +654,9 @@ export function DrillDownPanel() {
         className="flex-1 min-h-0 overflow-y-auto"
       >
         <div className="px-2 pb-2">
+          {currentData.emptyContent}
           {currentData.sections.map((section) => (
-            <div key={section.sectionId}>
+            <div key={section.sectionId} {...section.attributes}>
               <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
                 {section.sectionName}
               </div>
@@ -760,6 +669,7 @@ export function DrillDownPanel() {
                   removalStagedIds={removalStagedSet}
                   onToggleRemoval={handleToggleRemoval}
                   spriteOverrides={desktopBstOverrides}
+                  standaloneTiles={currentData.standaloneTiles}
                   cols={6}
                   variant="analytics"
                   showGenBadges={currentData.showGenBadges}
@@ -788,4 +698,59 @@ export function DrillDownPanel() {
       )}
     </div>
   );
+}
+
+/** Dex keeps its store and removal workflow; both tools use the same views. */
+function useDexDrillDown(): AnalyticsDrillDownProps {
+  const sections = usePokedexStore(s => s.sections);
+  const segment = usePokedexStore(s => s.drillDownSegment);
+  const siblings = usePokedexStore(s => s.drillDownSiblings);
+  const excludeSpecial = usePokedexStore(s => s.drillDownExcludeSpecial);
+  const dexId = usePokedexStore(s => s.drillDownDexId);
+  const newOnly = usePokedexStore(s => s.drillDownNewOnly);
+  const navigateDrillDown = usePokedexStore(s => s.navigateDrillDown);
+  const closeDrillDown = usePokedexStore(s => s.closeDrillDown);
+  const expandDrillDown = usePokedexStore(s => s.expandDrillDown);
+  const peek = usePokedexStore(s => s.drillDownPeek);
+  const removeEvoLine = usePokedexStore(s => s.removeEvoLine);
+  const [removalStagedIds, setRemovalStagedIds] = useState<number[]>([]);
+  const assignedIds = useMemo(() => new Set(Object.values(sections).flat()), [sections]);
+  const items = useMemo(() => {
+    const entry = (item: DrillDownSegment): AnalyticsDrillDownItem => ({
+      id: JSON.stringify(item),
+      label: item.kind === 'type' || item.kind === 'typeMatchup' ? typeLabel(item.type as TypeName)
+        : item.kind === 'shape' ? shapeLabel(item.shape as ShapeName)
+        : item.kind === 'generation' ? `Gen ${item.generation}`
+        : item.kind === 'evoLevel' ? `Lv ${item.binStart}–${item.binEnd - 1}`
+        : item.kind === 'bst' ? `${item.binStart}–${item.binEnd - 1}` : '',
+      shape: item.kind === 'shape' ? item.shape as ShapeName : undefined,
+      getData: () => computeDrillDownData(item, sections, excludeSpecial, dexId, newOnly),
+      onSelect: () => navigateDrillDown(item),
+    });
+    return { segment: segment ? entry(segment) : null, siblings: siblings.map(entry) };
+  }, [segment, siblings, sections, excludeSpecial, dexId, newOnly, navigateDrillDown]);
+  useEffect(() => { setRemovalStagedIds([]); }, [segment]);
+  const handleToggleRemoval = useCallback((memberIds: number[]) => {
+    setRemovalStagedIds(prev => {
+      const prevSet = new Set(prev);
+      if (memberIds.every(id => prevSet.has(id))) return prev.filter(id => !memberIds.includes(id));
+      return [...prev, ...memberIds.filter(id => !prevSet.has(id))];
+    });
+  }, []);
+  const handleConfirmRemoval = useCallback(() => {
+    for (const id of new Set(removalStagedIds)) {
+      for (const [sectionId, ids] of Object.entries(sections)) {
+        if (ids.includes(id)) { removeEvoLine(sectionId, id); break; }
+      }
+    }
+    setRemovalStagedIds([]);
+  }, [removalStagedIds, sections, removeEvoLine]);
+  return { ...items, assignedIds, closeDrillDown, expandDrillDown, peek, removalStagedIds, handleToggleRemoval, handleConfirmRemoval,
+    spriteOverrides: segment?.kind === 'bst' ? BST_SPRITE_OVERRIDES : undefined };
+}
+export function DrillDownSheet({ topGap }: { topGap: number }) {
+  return <AnalyticsDrillDownSheet {...useDexDrillDown()} topGap={topGap} />;
+}
+export function DrillDownPanel() {
+  return <AnalyticsDrillDownPanel {...useDexDrillDown()} />;
 }

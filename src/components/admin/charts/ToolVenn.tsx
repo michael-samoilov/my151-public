@@ -55,6 +55,7 @@ export function ToolVenn({
   const summary = [
     ...present.map((t) => `${t.short} ${inclusive(t.id, era.regions)}`),
     ...(present.length === 2 ? [`both ${both}`] : []),
+    ...Object.entries(era.regions).filter(([key]) => key.includes('+')).map(([key, n]) => `${key.split('+').map(id => catalog.find(t => t.id === id)?.short ?? id).join(' + ')} only ${n}`),
   ].join(', ');
   const title = captionOf(era);
 
@@ -93,7 +94,7 @@ export function ToolVenn({
             );
           })}
           {labels.map((l) => {
-            const name = l.key.includes('+') ? 'both' : (catalog.find((t) => t.id === l.key)?.short ?? l.key);
+            const name = l.key.split('+').map((id) => catalog.find((t) => t.id === id)?.short ?? id).join(' + ');
             const tip = `${name} ${l.count}`;
             return (
               <g key={l.key}>

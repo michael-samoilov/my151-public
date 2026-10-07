@@ -15,7 +15,7 @@ export function CrossToolCard({ data }: { data: CrossToolSnapshot }) {
   return (
     <Panel
       title="Cross-tool"
-      sub={['dex & league']}
+      sub={[data.catalog.map(t => t.short.toLowerCase()).join(' & ')]}
       actions={
         <span className="text-[0.7rem] font-semibold tabular-nums text-muted-foreground">
           {browsers} browsers

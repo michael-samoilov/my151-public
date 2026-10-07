@@ -8,7 +8,7 @@ export type TypeName = typeof TYPE_NAMES[number];
 
 /** Official dex body-shape groups (the 14 HOME/Pokédex shape icons), in the
  *  canonical shape-id order. Populated onto pokemon.json by
- *  scripts/add-shapes.mjs from the PokeAPI species data. */
+ *  scripts/add-shapes.mjs from species data plus documented form exceptions. */
 export const SHAPE_NAMES = [
   'ball', 'squiggle', 'fish', 'arms', 'blob', 'upright', 'legs',
   'quadruped', 'wings', 'tentacles', 'heads', 'humanoid', 'bug-wings', 'armor',

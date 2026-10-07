@@ -274,6 +274,6 @@ survives every cleanup.
 `Gotchas`). It covers the hub (`hub.md`), the pokedex builder and its tabs, the
 Pokémon League Builder and its export (`league-export.md`), the feedback form
 (`feedback.md`), the language picker (`language.md`), and the admin dashboard
-(`admin.md`). `features/README.md` lists every file with its source owner. The
-favorite picker adds its own file when it ships. Keep the map honest with
-`/maintain-verification-skill`.
+(`admin.md`), and the favorite Pokémon picker (`favorite-picker.md`).
+`features/README.md` lists every file with its source owner. Keep the map
+honest with `/maintain-verification-skill`.

@@ -12,6 +12,7 @@ import {
   sendFeedback,
   type FeedbackCategory,
   type FeedbackContext,
+  type FeedbackToolContext,
 } from '@/lib/feedbackContext';
 import type { NoArgKey } from '@/i18n';
 
@@ -69,6 +70,11 @@ function contextLines(context: FeedbackContext): string[] {
     `search active: ${context.search ? 'yes' : 'no'}`,
     `filters active: ${context.filters.join(', ') || 'none'}`,
   ];
+  if (context.favorites) {
+    const f = context.favorites;
+    lines.push(`favorites selected: ${f.filled}/${f.total} (${f.picksFilled} picks, ${f.pointersFilled} summaries)`);
+    lines.push(`picker cell: ${f.selection ? `${f.selection.type} · ${f.selection.gen}` : 'none'}`);
+  }
   if (context.error) lines.push(`error: ${context.error.name}: ${context.error.message}`);
   if (context.message) lines.push(`string: ${context.message.key}`);
   return lines;
@@ -76,12 +82,14 @@ function contextLines(context: FeedbackContext): string[] {
 
 function FeedbackForm({
   route,
+  toolContext,
   initialCategory,
   error,
   fill,
   onDone,
 }: {
   route: string;
+  toolContext?: FeedbackToolContext;
   initialCategory: FeedbackCategory;
   error?: FeedbackContext['error'];
   /**
@@ -112,9 +120,9 @@ function FeedbackForm({
   // looking at when something went wrong, not the state after they navigated to
   // the form.
   const context = useMemo(() => {
-    const c = collectFeedbackContext(route);
+    const c = collectFeedbackContext(route, toolContext);
     return error ? { ...c, error } : c;
-  }, [route, error]);
+  }, [route, error, toolContext]);
 
   // Close a moment after success so the acknowledgement is actually read.
   useEffect(() => {
@@ -305,12 +313,14 @@ function FeedbackForm({
 
 export function FeedbackSheet({
   route,
+  toolContext,
   initialCategory = 'bug',
   error,
   anchor = null,
   onClose,
 }: {
   route: string;
+  toolContext?: FeedbackToolContext;
   initialCategory?: FeedbackCategory;
   error?: FeedbackContext['error'];
   /** The control that opened the form; the desktop card opens beside it. */
@@ -340,6 +350,7 @@ export function FeedbackSheet({
   const form = (fill?: boolean) => (
     <FeedbackForm
       route={route}
+      toolContext={toolContext}
       initialCategory={initialCategory}
       error={error}
       fill={fill}

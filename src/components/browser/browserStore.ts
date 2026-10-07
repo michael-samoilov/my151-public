@@ -1,3 +1,5 @@
+import { create } from 'zustand';
+import { readFavoritePickerIds } from './favoritePickerBridge';
 import { createContext, useContext } from 'react';
 import type { StoreApi, UseBoundStore } from 'zustand';
 import { usePokedexStore } from '@/store/usePokedexStore';
@@ -128,3 +130,17 @@ export function useBrowserStore<T>(selector: (s: BrowserStoreState) => T): T {
   const store = useContext(BrowserStoreContext);
   return store(selector);
 }
+
+interface FavoriteBrowserState {
+  favoritesFilter: boolean;
+  favoriteIds: Set<number>;
+  setFavoritesFilter: (on: boolean) => void;
+  refreshFavorites: () => void;
+}
+
+export const useFavoriteBrowserStore = create<FavoriteBrowserState>()((set) => ({
+  favoritesFilter: false,
+  favoriteIds: new Set(),
+  setFavoritesFilter: (on) => set({ favoritesFilter: on, favoriteIds: readFavoritePickerIds() }),
+  refreshFavorites: () => set({ favoriteIds: readFavoritePickerIds() }),
+}));

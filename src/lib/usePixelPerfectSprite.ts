@@ -110,6 +110,24 @@ function subscribeFn(cb: () => void) {
  * tile lives inside a half-pane (desktop side-panel layout) so the
  * formula sizes for the pane width rather than the full window.
  */
+/** CSS px for the fluid 1× sprite base at a known layout width. */
+export function fluidSpriteCssPx(
+  viewportCssPx: number,
+  mobileVw: number,
+  desktopMin: number,
+  desktopVw: number,
+  desktopMax: number,
+  divisor: number = 1,
+): number {
+  const effectiveWidth = viewportCssPx / divisor;
+  const vw = effectiveWidth / 100;
+  const isDesktop = effectiveWidth >= 1024;
+  const cssPx = isDesktop
+    ? Math.max(desktopMin, Math.min(desktopVw * vw, desktopMax))
+    : mobileVw * vw;
+  return Math.round(cssPx);
+}
+
 export function useFluidSpritePx(
   mobileVw: number,
   desktopMin: number,
@@ -119,13 +137,14 @@ export function useFluidSpritePx(
 ): number {
   const compute = (): number => {
     if (typeof window === 'undefined') return desktopMax;
-    const effectiveWidth = getUnzoomedViewportWidth() / divisor;
-    const vw = effectiveWidth / 100;
-    const isDesktop = effectiveWidth >= 1024;
-    const cssPx = isDesktop
-      ? Math.max(desktopMin, Math.min(desktopVw * vw, desktopMax))
-      : mobileVw * vw;
-    return Math.round(cssPx);
+    return fluidSpriteCssPx(
+      getUnzoomedViewportWidth(),
+      mobileVw,
+      desktopMin,
+      desktopVw,
+      desktopMax,
+      divisor,
+    );
   };
 
   return useSyncExternalStore(
@@ -149,6 +168,18 @@ export function useViewportAtLeast(minPx: number): boolean {
       return (typeof window === 'undefined' ? 1024 : getUnzoomedViewportWidth()) >= minPx;
     },
     () => true,
+  );
+}
+
+/** Layout viewport width in CSS px, on the same subscription as the sprite hooks. */
+export function useLayoutViewportCssPx(): number {
+  return useSyncExternalStore(
+    subscribeFn,
+    () => {
+      void vpVersion;
+      return typeof window === 'undefined' ? 1024 : getUnzoomedViewportWidth();
+    },
+    () => 1024,
   );
 }
 

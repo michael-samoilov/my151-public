@@ -35,9 +35,9 @@ export const ARCHIVE_FILTER_OPTIONS: { key: ArchiveFilter; label: string }[] = [
 
 export const TOOL_FILTER_OPTIONS: { key: ToolFilter; label: string }[] = [
   { key: 'any', label: 'Any' },
-  { key: 'dex', label: 'Only dex' },
-  { key: 'league', label: 'Only league' },
-  { key: 'both', label: 'Only both' },
+  { key: 'dex', label: 'Dex, no League' },
+  { key: 'league', label: 'League, no Dex' },
+  { key: 'both', label: 'Dex + League' },
 ];
 
 export type PreviewPlatform = {

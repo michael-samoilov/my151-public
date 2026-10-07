@@ -17,11 +17,10 @@ import type { MessageKey } from './types';
  * user. That exhaustiveness is the whole reason this file exists instead of a
  * one-line `t(\`term.type.\${type}\`)` helper.
  *
- * Every one of these has an official published translation in all nine target
- * languages (PokeAPI's `type_names`, `pokemon_color_names`, `egg_group_prose`),
- * with one exception: `pokemon_shape_prose` carries only English and French, so
- * the shape labels are the only terms here that will need translating rather
- * than sourcing.
+ * Type, color and egg-group translations have published source catalogs.
+ * Games display body-shape symbols rather than translated shape names.
+ * The concise shape labels are authored UI descriptions in all nine locales.
+ * See docs/i18n/sources/pokemon-shape-provenance.md for source distinctions.
  */
 
 const TYPE_KEYS = {

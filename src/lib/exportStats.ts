@@ -1,10 +1,12 @@
-import { scaleBand, scaleLinear } from 'd3-scale';
-import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { MAX_LABEL_STRETCH } from '@/lib/sectionOutlines';
+import { scaleLinear } from 'd3-scale';
+import { histogramMeans, histogramMeanLayout } from './histogramMeans';
+import { drawGenerationBadge } from './drawAttributeBadge';
+import type { GenNumber } from '@/favorites/model/cells';
+import { drawExportButterfly as butterfly, drawExportStatsTitle, type ButterflyRowInput, type IconDrawer } from './exportButterfly';
 import { typeGlyphPath } from '@/data/type-ids';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
-import { t } from '@/i18n';
+import { t, formatNumber } from '@/i18n';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import type { TypeName } from '@/types/pokemon';
 
@@ -33,13 +35,11 @@ const CARD_PADY = 12; // py-3
 const CARD_RADIUS = 8; // rounded-lg
 const CONTENT_W = STATS_NAT_W - CARD_PADX * 2;
 
-const FG = '#0a0a0a';
 const MUTED = '#737373';
 const CARD_BG = '#ffffff';
 const NAT_HIST = '#94a3b8';
 const YOURS = '#ef4444';
 
-const TITLE_SIZE = 14;
 const TITLE_LH = 20;
 const SUB_SIZE = 10; // matches CHART_TEXT (subtitle unified with chart text)
 const SUB_LH = 14; // 10px * leading-snug (1.375)
@@ -73,209 +73,44 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): st
   return lines;
 }
 
-/** Draw text with manual letter-spacing (ctx.letterSpacing isn't reliable on
- *  older iOS). `align` controls anchoring around `x`. */
-function spacedText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  spacing: number,
-  align: 'start' | 'middle' | 'end',
-) {
-  const widths = [...text].map((c) => ctx.measureText(c).width);
-  const total = widths.reduce((a, b) => a + b, 0) + spacing * Math.max(0, text.length - 1);
-  let cx = align === 'start' ? x : align === 'middle' ? x - total / 2 : x - total;
-  const prevAlign = ctx.textAlign;
-  ctx.textAlign = 'left';
-  [...text].forEach((c, i) => {
-    ctx.fillText(c, cx, y);
-    cx += widths[i] + spacing;
-  });
-  ctx.textAlign = prevAlign;
-}
-
-type IconDrawer = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => void;
-
-interface ButterflyRowInput {
-  count: number;
-  deviation: number;
-  color: string;
-  icon: IconDrawer;
-}
-
-/**
- * Measure or draw one butterfly chart (Type / Generation) in natural coords with
- * its top-left at (ox, oy). Returns the chart's natural height. Mirrors
- * ButterflyChart.tsx with chartScale = 1, hideLabelText, iconFillsRow.
- */
-function butterfly(
-  ctx: CanvasRenderingContext2D,
-  ox: number,
-  oy: number,
-  rows: ButterflyRowInput[],
-  rowHeightBase: number,
-  heightScale: number,
-  labelHeader: string,
-  draw: boolean,
-): number {
-  const n = rows.length;
-  const iconSize = 14;
-  const rowHeight = Math.max(rowHeightBase * heightScale, iconSize + 4);
-  const gap = 6;
-  const gutter = 8;
-  const topOffset = 28;
-  const headerBaseline = topOffset - 8;
-  const iconBoxH = rowHeight;
-  const iconColAspect = 128 / 40;
-  const iconColW = iconBoxH * iconColAspect;
-  const iconStart = 0;
-  const labelColEnd = iconStart + iconColW + gap;
-  const countLabelPad = 28;
-  const countLeftPad = 0;
-  const countRightPad = countLabelPad;
-  const chartsWidth = CONTENT_W - labelColEnd;
-  const available = chartsWidth - gutter;
-  const chart1Width = Math.floor((available * 1) / 3); // count w=1, deviation w=2
-  const chart2Width = available - chart1Width;
-  const countSectionStart = labelColEnd;
-  const devSectionStart = labelColEnd + chart1Width + gutter;
-  const countBarArea = Math.max(0, chart1Width - countLeftPad - countRightPad);
-  const countZeroX = countLeftPad;
-  const chartHeight = topOffset + n * rowHeight;
-
-  if (!draw) return chartHeight;
-
-  const labels = rows.map((_, i) => String(i));
-  const yScale = scaleBand<string>()
-    .domain(labels)
-    .range([topOffset, topOffset + n * rowHeight])
-    .padding(0.25);
-  const barHeight = yScale.bandwidth();
-
-  const maxCount = Math.max(...rows.map((d) => Math.abs(d.count)), 1);
-  const countScale = scaleLinear().domain([0, maxCount]).range([0, countBarArea]);
-
-  // Deviation scale (non-score mode), faithful to ButterflyChart.
-  const maxUnderDev = Math.max(...rows.map((d) => -d.deviation), 0);
-  const DEV_OVER_CAP = 200;
-  const maxOverDev = Math.max(...rows.map((d) => d.deviation), 0);
-  const devLeftRaw = Math.min(Math.max(maxUnderDev, 25), DEV_OVER_CAP);
-  const devRightRaw = Math.min(Math.max(maxOverDev, 25), DEV_OVER_CAP);
-  const labelPx = 66;
-  const barPad = 32;
-  const usableW = Math.max(0, chart2Width - 2 * barPad);
-  const minSideFrac = usableW > 0 ? Math.min(0.48, Math.max(0, (labelPx - barPad + 2) / usableW)) : 0;
-  let dl = devLeftRaw;
-  let dr = devRightRaw;
-  const dTotal = dl + dr;
-  if (dTotal > 0 && minSideFrac > 0) {
-    if (dl / dTotal < minSideFrac) dl = dr * minSideFrac / (1 - minSideFrac);
-    if (dr / dTotal < minSideFrac) dr = dl * minSideFrac / (1 - minSideFrac);
-  }
-  const devLeft = -dl;
-  const devRight = dr;
-  const devScale = scaleLinear().domain([devLeft, devRight]).range([barPad, chart2Width - barPad]);
-  const zeroX = devScale(0);
-
-  ctx.save();
-  ctx.translate(ox, oy);
-
-  // Headers — all at the uniform CHART_TEXT size.
-  ctx.fillStyle = MUTED;
-  ctx.textBaseline = 'alphabetic';
-  ctx.font = font(600, CHART_TEXT);
-  spacedText(ctx, labelHeader, iconStart + iconColW / 2, headerBaseline, 0.05 * CHART_TEXT, 'middle');
-  spacedText(ctx, 'COUNT', countSectionStart, headerBaseline, 0.05 * CHART_TEXT, 'start');
-  // Deviation two-line headers, bottom line on headerBaseline.
-  const dy = 1.1 * CHART_TEXT;
-  spacedText(ctx, 'UNDER-', devSectionStart + zeroX - 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'end');
-  spacedText(ctx, '← INDEXED', devSectionStart + zeroX - 5, headerBaseline, 0.05 * CHART_TEXT, 'end');
-  spacedText(ctx, 'OVER-', devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'start');
-  spacedText(ctx, 'INDEXED →', devSectionStart + zeroX + 5, headerBaseline, 0.05 * CHART_TEXT, 'start');
-
-  // Rows
-  rows.forEach((d, i) => {
-    const y = yScale(String(i))!;
-    const rowMid = y + barHeight / 2;
-
-    // Icon
-    d.icon(ctx, iconStart, rowMid - iconBoxH / 2, iconColW, iconBoxH);
-
-    // Count bar + number
-    const countBarW = countScale(d.count);
-    ctx.fillStyle = d.color;
-    ctx.globalAlpha = 0.85;
-    roundRect(ctx, countSectionStart, y, countBarW, barHeight, 1);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = MUTED;
-    ctx.font = font(400, CHART_TEXT);
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`${d.count}`, countSectionStart + countBarW + 3, rowMid);
-
-    // Deviation bar
-    const clampedDev = Math.max(devLeft, Math.min(devRight, d.deviation));
-    const barX = clampedDev >= 0 ? zeroX : devScale(clampedDev);
-    const barW = Math.abs(devScale(clampedDev) - zeroX);
-    if (barW > 0) {
-      ctx.fillStyle = d.color;
-      ctx.globalAlpha = 0.85;
-      roundRect(ctx, devSectionStart + barX, y, barW, barHeight, 1);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-    // Value label
-    const val = ((d.deviation / 100) + 1).toFixed(2) + 'x';
-    const barEnd = devSectionStart + devScale(clampedDev);
-    ctx.fillStyle = MUTED;
-    ctx.textBaseline = 'middle';
-    if (d.deviation >= 0) {
-      ctx.textAlign = 'left';
-      ctx.fillText(val, barEnd + 3, rowMid);
-    } else {
-      ctx.textAlign = 'right';
-      ctx.fillText(val, barEnd - 3, rowMid);
-    }
-    ctx.textAlign = 'left';
-  });
-
-  // Zero lines
-  ctx.strokeStyle = MUTED;
-  ctx.lineWidth = 1;
-  line(ctx, countSectionStart + countZeroX, topOffset, countSectionStart + countZeroX, topOffset + n * rowHeight);
-  line(ctx, devSectionStart + zeroX, topOffset, devSectionStart + zeroX, topOffset + n * rowHeight);
-
-  ctx.restore();
-  return chartHeight;
-}
-
 /**
  * Measure or draw the Base-Stat-Total histogram in natural coords at (ox, oy).
  * Mirrors SuperimposedHistogram.tsx with chartScale = 1.
  */
-function histogram(
+export function drawExportHistogram(
   ctx: CanvasRenderingContext2D,
   ox: number,
   oy: number,
   bst: DetailedStatsData['bst'],
   heightScale: number,
   draw: boolean,
+  meanRail?: { labels: { yours:string; options:string; exact:string } },
 ): number {
-  const height = 200 * heightScale;
+  const baseHeight = 200 * heightScale;
   const margin = { top: 8, right: 12, bottom: 24, left: 40 };
   const plotW = Math.max(0, CONTENT_W - margin.left - margin.right);
-  const plotH = height - margin.top - margin.bottom;
-
+  const plotH = baseHeight - margin.top - margin.bottom;
+  const xScale = scaleLinear().domain(bst.xDomain).range([0, plotW]);
+  const tickStep = meanRail ? Math.max(1, Math.ceil(32 / plotW * (bst.xDomain[1] - bst.xDomain[0]) / 100)) : 1;
+  const ticks = bst.xTicks.filter((_, i) => i % tickStep === 0);
+  const measure = (text: string, bold = false, middle = false) => {
+    ctx.save(); ctx.font = font(bold ? 700 : 400, CHART_TEXT);
+    ctx.textAlign = 'left'; ctx.textBaseline = middle ? 'middle' : 'alphabetic';
+    const m = ctx.measureText(text); ctx.restore();
+    return { width: m.width, left: m.actualBoundingBoxLeft, right: m.actualBoundingBoxRight, ascent: m.actualBoundingBoxAscent, descent: m.actualBoundingBoxDescent };
+  };
+  const means = meanRail ? histogramMeans(bst.yoursAvg, bst.nationalAvg, plotW, xScale, meanRail.labels, measure,
+    { left: -margin.left + 4, right: plotW + margin.right - 4 }) : [];
+  const meanLayout = histogramMeanLayout(means, ticks, xScale, measure);
+  const height = meanRail ? margin.top + plotH + meanLayout.bottom : baseHeight;
   if (!draw) return height;
 
-  const xScale = scaleLinear().domain(bst.xDomain).range([0, plotW]);
+  ctx.save();
+  const visibleData = meanRail ? bst.merged.filter(bin => bin.x >= bst.xDomain[0] && bin.x < bst.xDomain[1]) : bst.merged;
   const yScale = scaleLinear().domain([0, bst.yDomain]).range([plotH, 0]);
   const barFullWidth = xScale(bst.binSize) - xScale(0);
   const barNarrowWidth = barFullWidth * 0.5;
 
-  ctx.save();
   ctx.translate(ox + margin.left, oy + margin.top);
 
   // Baseline
@@ -284,7 +119,7 @@ function histogram(
   line(ctx, 0, plotH, plotW, plotH);
 
   // National bars
-  for (const d of bst.merged) {
+  for (const d of visibleData) {
     const barH = plotH - yScale(d.nationalPct);
     if (barH <= 0) continue;
     ctx.fillStyle = NAT_HIST;
@@ -293,7 +128,7 @@ function histogram(
     ctx.fill();
   }
   // Yours bars
-  for (const d of bst.merged) {
+  for (const d of visibleData) {
     const barH = plotH - yScale(d.yoursPct);
     if (barH <= 0) continue;
     ctx.fillStyle = YOURS;
@@ -309,14 +144,30 @@ function histogram(
   ctx.font = font(400, CHART_TEXT);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  for (const t of bst.xTicks) {
+  for (const t of ticks) {
     line(ctx, xScale(t), plotH, xScale(t), plotH + 4);
     ctx.fillText(`${t}`, xScale(t), plotH + 15);
   }
+  for (const point of meanLayout.points) {
+    const cy = plotH + meanLayout.rail;
+    ctx.strokeStyle = point.color; ctx.fillStyle = point.color;
+    for (const [start, end] of point.segments) line(ctx, point.x, plotH + start, point.x, plotH + end);
+    ctx.beginPath(); ctx.moveTo(point.x, cy - 4); ctx.lineTo(point.x + 4, cy); ctx.lineTo(point.x, cy + 4); ctx.lineTo(point.x - 4, cy); ctx.closePath(); ctx.fill();
+    if (point.exact) { ctx.strokeStyle = NAT_HIST; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1; }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    let labelX = point.labelX - (point.anchor === 'end' ? point.width : point.anchor === 'middle' ? point.width / 2 : 0);
+    for (const run of point.runs) {
+      ctx.font = font(run.bold ? 700 : 400, CHART_TEXT);
+      ctx.fillText(run.text, labelX, cy + point.labelRail * 17);
+      labelX += ctx.measureText(run.text).width;
+    }
+  }
+  ctx.font = font(400, CHART_TEXT); ctx.fillStyle = MUTED; ctx.strokeStyle = MUTED;
   // Y ticks
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  for (const t of bst.yTicks) {
+  const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH/Math.max(1,bst.yTicks.length-1)))):1;
+  for (const t of bst.yTicks.filter((_,index)=>index%yTickStep===0 || index===bst.yTicks.length-1)) {
     line(ctx, -4, yScale(t), 0, yScale(t));
     ctx.fillText(`${t}%`, -7, yScale(t));
   }
@@ -326,29 +177,11 @@ function histogram(
   return height;
 }
 
-/** Build the per-row icon drawer for a generation badge (gradient disc + number). */
+/** A generation uses the same pill geometry as its neighboring type identifiers. */
 function genIcon(gen: number): IconDrawer {
-  const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
   return (ctx, x, y, w, h) => {
-    // Function icons render square (size = row height), centred in the column.
-    const size = h;
-    const cx = x + (w - size) / 2;
-    const r = size / 2;
-    const grad = ctx.createLinearGradient(cx, y, cx + size, y + size);
-    for (const s of stops) grad.addColorStop(Math.min(1, Math.max(0, parseFloat(s.offset) / 100)), s.color);
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(cx + r, y + r, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.font = font(800, size * 0.55);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-    ctx.strokeText(`${gen}`, cx + r, y + r + size * 0.02);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`${gen}`, cx + r, y + r + size * 0.02);
-    ctx.textAlign = 'left';
+    const height = Math.min(h, w / TYPE_BADGE_ASPECT);
+    drawGenerationBadge(ctx, gen as GenNumber, x + (w - height * TYPE_BADGE_ASPECT) / 2, y + (h - height) / 2, height);
   };
 }
 
@@ -390,6 +223,7 @@ function renderPanel(
     count: d.count,
     deviation: d.deviation,
     color: d.color,
+    barOpacity: 1,
     icon: typeBadgeIcon(d.type as TypeName, badges.get(d.type) ?? null),
   }));
   const genRows: ButterflyRowInput[] = data.genData.map((d) => ({
@@ -402,22 +236,22 @@ function renderPanel(
   const cards: CardSpec[] = [
     {
       title: t('stats.type.title'),
-      subtitle: t('stats.type.subtitle'),
-      chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, 'TYPE', dr),
-      drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, 'TYPE', true),
+      subtitle: '',
+      chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, 'TYPE', dr, { alignBaselines: true }),
+      drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, 'TYPE', true, { alignBaselines: true }),
     },
     {
       title: t('stats.gen.title'),
-      subtitle: t('stats.gen.subtitle'),
-      chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, 'GEN', dr),
-      drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, 'GEN', true),
+      subtitle: '',
+      chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, 'GEN', dr, { alignBaselines: true }),
+      drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, 'GEN', true, { alignBaselines: true }),
     },
     {
       title: t('stats.bst.title'),
-      subtitle: `Yours avg: ${data.bst.yoursAvg}, National avg: ${data.bst.nationalAvg}.`,
+      subtitle: t('analytics.avgCompare', { yours: formatNumber(data.bst.yoursAvg, { maximumFractionDigits: 1 }), national: formatNumber(data.bst.nationalAvg, { maximumFractionDigits: 1 }) }),
       legend: true,
-      chartH: (dr) => histogram(ctx, 0, 0, data.bst, heights.bst, dr),
-      drawChart: (c, x, y) => histogram(c, x, y, data.bst, heights.bst, true),
+      chartH: (dr) => drawExportHistogram(ctx, 0, 0, data.bst, heights.bst, dr),
+      drawChart: (c, x, y) => drawExportHistogram(c, x, y, data.bst, heights.bst, true),
     },
   ];
 
@@ -445,18 +279,7 @@ function renderPanel(
       const x = CARD_PADX;
       // Title — outline-section style: Inter Black, uppercase, stretched (scaleX)
       // to fill the card width, capped at the same MAX_LABEL_STRETCH the grid uses.
-      ctx.fillStyle = FG;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'alphabetic';
-      const up = card.title.toUpperCase();
-      ctx.font = font(900, TITLE_SIZE);
-      const tw = ctx.measureText(up).width;
-      const sx = tw > 0 ? Math.min(MAX_LABEL_STRETCH, CONTENT_W / tw) : 1;
-      ctx.save();
-      ctx.translate(x, y + TITLE_SIZE);
-      ctx.scale(sx, 1);
-      ctx.fillText(up, 0, 0);
-      ctx.restore();
+      drawExportStatsTitle(ctx, card.title, x, y, CONTENT_W);
       y += TITLE_LH + 2;
       // Subtitle
       ctx.fillStyle = MUTED;

@@ -2,19 +2,20 @@
 // now? Run before any verification, and again after anything looks off. Prints a
 // matrix and exits 0 if at least Blink (the guaranteed floor) is up.
 import fs from 'node:fs';
+import { once } from 'node:events';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { openSession, blinkDriverChoice, ENGINE_PATHS, type EngineName } from './lib/engines.ts';
-
-const DATA_URL = 'data:text/html,<title>doctor</title><h1 id=x>ok</h1>';
 
 export interface EngineHealth { engine: EngineName; available: boolean; detail: string; }
 
-async function probe(engine: EngineName, pre: () => string | null): Promise<EngineHealth> {
+async function probe(engine: EngineName, pre: () => string | null, url: string): Promise<EngineHealth> {
   const missing = pre();
   if (missing) return { engine, available: false, detail: missing };
   try {
     const s = await openSession(engine);
     try {
-      await s.navigate(DATA_URL);
+      await s.navigate(url);
       const r = await s.evalJson<{ h1: string; ua: string }>(`return { h1: document.getElementById('x')?.textContent, ua: navigator.userAgent };`);
       const good = r.h1 === 'ok';
       return { engine, available: good, detail: good ? r.ua : `unexpected eval: ${JSON.stringify(r)}` };
@@ -23,11 +24,23 @@ async function probe(engine: EngineName, pre: () => string | null): Promise<Engi
 }
 
 export async function probeEngines(): Promise<EngineHealth[]> {
-  const results: EngineHealth[] = [];
-  results.push(await probe('blink', () => null));
-  results.push(await probe('webkit', () => (fs.existsSync(ENGINE_PATHS.webkitBrowser) ? null : `missing MiniBrowser at ${ENGINE_PATHS.webkitBrowser} (run setup-engines.sh)`)));
-  results.push(await probe('gecko', () => (fs.existsSync(ENGINE_PATHS.firefox) ? null : `missing Firefox at ${ENGINE_PATHS.firefox} (run setup-engines.sh)`)));
-  return results;
+  const server = createServer((_request, response) => {
+    response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    response.end('<!doctype html><title>doctor</title><h1 id="x">ok</h1>');
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  try {
+    const { port } = server.address() as AddressInfo;
+    const url = `http://127.0.0.1:${port}/`;
+    const results: EngineHealth[] = [];
+    results.push(await probe('blink', () => null, url));
+    results.push(await probe('webkit', () => (fs.existsSync(ENGINE_PATHS.webkitBrowser) ? null : `missing MiniBrowser at ${ENGINE_PATHS.webkitBrowser} (run setup-engines.sh)`), url));
+    results.push(await probe('gecko', () => (fs.existsSync(ENGINE_PATHS.firefox) ? null : `missing Firefox at ${ENGINE_PATHS.firefox} (run setup-engines.sh)`), url));
+    return results;
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
 }
 
 async function main() {

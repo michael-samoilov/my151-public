@@ -10,6 +10,8 @@ const SEEDED = JSON.stringify({ state: { sections: { starter: [1, 4, 7] }, miles
 
 test.describe('gym leader maker callout', () => {
   test.beforeEach(async ({ page }) => {
+    // The legacy League announcement is tested outside the Picker launch week.
+    await page.clock.setFixedTime(new Date('2026-10-01T12:00:00Z'));
     await page.route('**/api/**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }),
     );
