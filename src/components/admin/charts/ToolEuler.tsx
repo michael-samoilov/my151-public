@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ToolDef } from '../../../../api/_crossTool';
-import { colorOf, eulerScene, inclusive, regionName, type Measure } from './eulerLayout';
+import { colorOf, eulerScene, inclusive, regionKey, regionName, type Measure } from './eulerLayout';
 
 const INK = 'rgb(15, 23, 42)';
 const HALO = 'rgb(255, 255, 255)';
@@ -41,12 +41,21 @@ export function ToolEuler({ regions, catalog }: { regions: Record<string, number
   }, [regions, catalog, width, face]);
   const present = catalog.filter((t) => inclusive(t.id, regions) > 0);
   const browsers = Object.values(regions).reduce((s, n) => s + n, 0);
+  // Every combination of the tools in use that no browser has: it has no
+  // cell, so it is listed as text instead.
+  const ids = present.map((t) => t.id);
+  const zeros: string[] = [];
+  for (let m = 1; m < 1 << ids.length; m++) {
+    const key = regionKey(ids.filter((_, i) => m & (1 << i)));
+    if (!regions[key]) zeros.push(`${regionName(key, catalog)} 0`);
+  }
   const summary = [
     present.map((t) => `${t.short} ${inclusive(t.id, regions)}`).join(', '),
     Object.entries(regions)
       .filter(([, n]) => n > 0)
       .map(([key, n]) => `${regionName(key, catalog)}${key.includes('+') ? '' : ' only'} ${n}`)
       .join(', '),
+    ...zeros,
   ].join('. ');
 
   return (
@@ -54,6 +63,7 @@ export function ToolEuler({ regions, catalog }: { regions: Record<string, number
       {present.length === 0 ? (
         <p className="text-xs text-muted-foreground">No browsers in this range.</p>
       ) : scene ? (
+        <>
         <svg
           width={scene.width}
           height={scene.height}
@@ -126,6 +136,12 @@ export function ToolEuler({ regions, catalog }: { regions: Record<string, number
             </text>
           ))}
         </svg>
+        {zeros.length > 0 && (
+          <p data-testid="cross-tool-zero-regions" className="text-center font-bold tabular-nums" style={{ fontSize: scene.font, color: INK }}>
+            {zeros.join(' · ')}
+          </p>
+        )}
+        </>
       ) : null}
     </div>
   );
