@@ -3,7 +3,6 @@ import * as echarts from 'echarts/core';
 import { LineChart, SankeyChart, BarChart, CustomChart } from 'echarts/charts';
 import {
   GridComponent,
-  GraphicComponent,
   TooltipComponent,
   MarkLineComponent,
   MarkAreaComponent,
@@ -22,7 +21,6 @@ echarts.use([
   BarChart,
   CustomChart,
   GridComponent,
-  GraphicComponent,
   TooltipComponent,
   MarkLineComponent,
   MarkAreaComponent,
@@ -85,7 +83,6 @@ export function useECharts(
   deps: unknown[],
   opts: {
     scrub?: ChartScrub;
-    afterRender?: (chart: echarts.ECharts, el: HTMLDivElement) => void;
   } = {},
 ): (el: HTMLDivElement | null) => void {
   const elRef = useRef<HTMLDivElement | null>(null);
@@ -95,11 +92,9 @@ export function useECharts(
   const scrubs = opts.scrub != null;
   // Keep the latest builder without re-subscribing anything each render.
   const buildRef = useRef(build);
-  const afterRenderRef = useRef(opts.afterRender);
   const scrubRef = useRef(opts.scrub);
   useEffect(() => {
     buildRef.current = build;
-    afterRenderRef.current = opts.afterRender;
     scrubRef.current = opts.scrub;
   });
 
@@ -121,10 +116,6 @@ export function useECharts(
     if (!el) return;
     const chart = echarts.init(el, undefined, { renderer: 'canvas' });
     chartRef.current = chart;
-    const onFinished = () => {
-      afterRenderRef.current?.(chart, el);
-    };
-    chart.on('finished', onFinished);
     chart.setOption(buildRef.current(el), true);
     const ro = new ResizeObserver(() => {
       chart.resize();
@@ -262,11 +253,6 @@ export function useECharts(
         readout.remove();
       };
     }
-    const prevCleanup = cleanupRef.current;
-    cleanupRef.current = () => {
-      chart.off('finished', onFinished);
-      prevCleanup?.();
-    };
   }, [scrubs]);
 
   // Redraw when the caller's data changes. `deps` is the caller's own list, so
