@@ -19,21 +19,35 @@ const OPT_OUT_KEY = 'p151-opt-out';
  * gym leader maker did not, so `?notme` there did nothing.
  *
  * The flag lives in localStorage, which is scoped to the ORIGIN and not to the
- * path — so one `?notme` on any page covers the hub, the dex builder and the
- * gym leader maker together, for as long as that browser keeps its storage. A
- * preview deployment is a different origin and needs its own.
+ * path — so one `?notme` on any page covers the hub, the dex builder, the
+ * gym leader maker and the picker together, for as long as that browser keeps
+ * its storage. A preview deployment is a different origin and needs its own.
  *
- * Deliberately query-only, with no page and nothing in the UI: it is the
- * owner's switch, and a discoverable page would invite anyone to erase
- * themselves from the analytics.
+ * `?countme` removes the flag and nothing else, so the owner can test as a
+ * normal visitor without clearing site data, which would delete saved
+ * selections. `?notme` wins when a URL has both.
+ *
+ * Deliberately query-only, with no public page and nothing in the public UI:
+ * it is the owner's switch, and a discoverable page would invite anyone to
+ * erase themselves from the analytics. The admin dashboard shows the flag and
+ * toggles it through `setOptedOut`.
  */
 export function installOptOut(search: string = window.location.search): void {
   try {
-    if (new URLSearchParams(search).has('notme')) {
-      localStorage.setItem(OPT_OUT_KEY, '1');
-    }
+    const params = new URLSearchParams(search);
+    if (params.has('notme')) setOptedOut(true);
+    else if (params.has('countme')) setOptedOut(false);
   } catch {
-    // localStorage / URL may be unavailable
+    // URL may be unavailable
+  }
+}
+
+export function setOptedOut(optedOut: boolean): void {
+  try {
+    if (optedOut) localStorage.setItem(OPT_OUT_KEY, '1');
+    else localStorage.removeItem(OPT_OUT_KEY);
+  } catch {
+    // localStorage may be unavailable
   }
 }
 
@@ -114,4 +128,14 @@ export function getClientId(): string {
   ]);
   resolvedCid = cid;
   return cid;
+}
+
+/** This browser's stored id, without minting one, so the admin dashboard can
+ *  show it next to the opt-out state. */
+export function storedClientId(): string | null {
+  try {
+    return localStorage.getItem(CID_KEY);
+  } catch {
+    return null;
+  }
 }

@@ -55,20 +55,23 @@ Two boundaries:
 
 End every turn that changes anything with the five-part report in `.claude/skills/work-report/SKILL.md`: Changed, Merge, Verified, Tradeoffs, You test. The SessionStart hook injects the template each session. "Verified" means measured — root-cause tests, or screenshots from the running app — never inferred from code alone. For UI changes, send a before-and-after side by side so review needs no preview deploy. Show the whole screen with the place to look marked on it, never only a crop — see "Showing a defect" in the same file. Any visual change (bugfix, feature, polish) must run `/verify-my151` and show the same input on the old build, then the new build. Paint those shots in the chat. Do not only link PNG paths. Do not ask Michael to retest a change you can drive here. **You test** is `Nothing` unless the hand-off test names a device-only gap.
 
-Before you share a rendered mockup, an image export, or a static page, run the fix loop in `.claude/skills/render-audit/SKILL.md` until a round is clean: render, audit, fix at the source, repeat. A clipped icon, a truncated name, or a label wrapped onto three lines is a defect you find, not one the reviewer points out. When the real app changed, the loop ends with the verify-my151 diff, which runs the same audit on every engine. The clean round belongs under "Verified".
+Before you share a rendered mockup, an image export, or a static page, run the fix loop in `.claude/skills/render-audit/SKILL.md` until a round is clean: render, audit, fix at the source, repeat. A clipped icon, a truncated name, or a label wrapped onto three lines is a defect you find, not one the reviewer points out. When the real app changed, the loop ends with the verify-my151 diff, which runs the same audit on the surfaces of the change's production tier. The clean round belongs under "Verified".
 
 ## Build Verification
 
 GitHub Actions is not used. Do not retry Actions. Do not wait for PR checks. The workflow file is `workflow_dispatch` only. Restore `push` / `pull_request` only if billing allows jobs to start.
 
-Verification has two tiers. Run the tier that matches the push.
+Every work-branch push runs the work-branch checks. A production merge adds the checks of its risk tier, chosen by what the change touches. Michael set these tiers on 2026-10-07, so the checks stay in proportion to the fix. They supersede check steps in older handoff files.
 
-| Push | Run |
-|---|---|
-| Work branch | `npm run lint`, `npm test`, `npm run build`, and the Playwright specs that cover the change. |
-| Production merge | `bash scripts/ci-local.sh` once, on the merged result. |
+| Production tier | When | Run before the merge | About |
+|---|---|---|---|
+| Small | One tool and a few files. No saved data, store, API, analytics write, i18n catalog, build config, dependency, or component that another tool also uses. | The work-branch checks, the repo guards (`check-viewport-tags`, `check-test-rules`, `check-sprite-revisions`, `check-bundle-budget`), the proof test, and the specs for the changed area. A visual change adds `/verify-my151` diff with `--surfaces blink`. | 6 min |
+| Standard | Shared code, or a change that more than one tool shows. | `bash scripts/ci-local.sh` once, on the merged result. A visual change adds `/verify-my151` diff with `--surfaces blink,blink-ios-safari`. | 20 min |
+| Full | Saved-data shape or migration, a store, an API or analytics write, build or deploy config, a dependency upgrade, or a launch. | `bash scripts/ci-local.sh` once, on the merged result, and `/verify-my151` diff on all engines. | 40 min |
 
-A change that touches only Markdown files runs neither tier.
+When unsure, take the higher tier. A batch takes the tier of its riskiest change. A change that touches only Markdown files runs no tier.
+
+Batch the work. Start a Standard or Full run only when the batch is final. A request that arrives during the run goes into the next batch, unless it fixes a failure in this run. A stopped and restarted run costs more than the wait.
 
 Work-branch tier:
 
@@ -77,10 +80,11 @@ Work-branch tier:
 3. For a layout change, also add `--project=mobile --project=narrow`.
 4. When a test fails, fix the cause. Then run `npx playwright test --last-failed`. Do not rerun the whole suite for one failure.
 
-Production tier:
+Production tiers:
 
-1. Run `bash scripts/ci-local.sh` once, before the merge. That is lint, unit tests, Playwright, `npm run build`, then the bundle budget.
-2. A failure outside your change does not block the merge. Report it as pre-existing, with evidence: the same failure on production HEAD.
+1. Run the checks of the tier in the table. `bash scripts/ci-local.sh` is lint, unit tests, the repo guards, the whole Playwright suite, `npm run build`, then the bundle budget. On September 30 it took 741 s for 562 browser tests.
+2. A failure outside your change does not block the merge. Report it as pre-existing, with evidence: the same failure on production HEAD. In a verify-my151 diff, `(before=fail)` is that evidence.
+3. A check that fails once and passes on one rerun of the same build is a timing miss, not a pass. Report it, and fix the check when the same miss repeats.
 
 Test rules: read `AGENTS.md` section 4, "Testing", before you write, change, or delete a test. Those rules apply to every agent in this repository. In short: prove a change with a proof test that fails on the old code and passes on the new code, report both results, and do not commit that test. Prefer E2E tests that end with a repeatable artifact. Keep a unit test only when it catches a bug that E2E misses.
 
@@ -96,6 +100,7 @@ The other checks, which `scripts/ci-local.sh` also runs:
 | `npm test` | Vitest unit tests (`src/**/*.test.ts`, `scripts/**/*.test.ts`). |
 | `node scripts/check-viewport-tags.mjs` | Fails when a test that is not tagged `@viewport` skips `desktop`. That test runs in no project. Tag a test or describe `@viewport` when its result depends on the project width or device: a measured box, overflow, wrap, scroll, fit, touch, or a sheet-versus-pane branch. Leave a test untagged when it checks only state, copy, storage, or network, or when it pins its own viewport. |
 | `node scripts/check-test-rules.mjs` | Enforces two rules from `AGENTS.md` section 4. It fails on a committed proof test: a test or spec named `proof-*` or `zz-proof*`, or one with a `// proof:` comment. It also fails on a unit test that is new since the merge base with production, unless the test imports `api/` or `scripts/` code, touches saved data (`store`, `persist`, `migrat`), or has `// keeps: <bug E2E misses>` in its first 5 lines. |
+| `node scripts/check-sprite-revisions.mjs` | Fails when a file under `public/sprites` was replaced under the same name since production without a matching entry in `src/data/spriteRevisions.json`, or when an entry no longer matches its file. Sprites are cached `immutable` for a year and the service worker keeps them forever, so a replaced file needs a new URL. `src/lib/spriteUrl.ts` adds the entry as `?v=`. The error prints the entry to add. |
 | `node scripts/check-bundle-budget.mjs` | Fails when the first-load download of the hub, the Pokédex builder, or the league builder grows more than 5% over its baseline in `scripts/performance/budgets.json`. Text is measured with Brotli, images as emitted, every `srcset` size included. It builds its own copy with a Vite manifest, so `dist/` does not change. After a change that shrinks a page, or an increase that was agreed on, run it with `--rebase` and commit the new baselines. |
 | `npm run test:e2e` | Playwright. Required for UI changes. Auto-starts isolated preview and development servers on ports derived from the worktree path. Use `PLAYWRIGHT_PREVIEW_PORT` and `PLAYWRIGHT_DEV_PORT` to override them. Projects: `mobile`, `desktop`, `narrow` (320px). `desktop` runs every test; `mobile` and `narrow` run only `@viewport` tests. Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
 
@@ -121,7 +126,7 @@ Do not wait for Michael to ship low-risk, already-verified work. Merge it to `cl
 The approval rule keeps an untested change that **end users** see out of the live app.
 Judge the change by what it does, not only by which folder the files sit in.
 
-Before every production push, run the production tier of Build Verification (`bash scripts/ci-local.sh`). GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the compile and deploy signal.
+Before every production push, run the checks of the change's production tier in Build Verification. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the compile and deploy signal.
 
 After every production push, check out the work branch again. A merge leaves you on production, so the next commit would land there. Run `git rev-parse --abbrev-ref HEAD` before any later commit.
 
@@ -134,7 +139,7 @@ Ship without asking when the change is:
 - Docs, tests, scripts, `.claude/`, `.github/`, or other files a browser never receives.
 - Admin dashboard (`/?admin`) copy, counts, or small layout, when you already have a measured before/after or a test that failed then passed.
 - Internal refactors, types, and dead-code removal with no user-noticeable behavior.
-- A public-UI bugfix that restores the intended behavior and changes no design, when `/verify-my151` proves it on every engine. Report it with that evidence.
+- A public-UI bugfix that restores the intended behavior and changes no design, when `/verify-my151` proves it on the surfaces its tier requires. Report it with that evidence.
 
 Admin is not public product UI. A verified admin Dex-chip count ships. A verified admin layout tweak ships.
 

@@ -7,7 +7,7 @@ describe('grid sprite sizing', () => {
   it('measures every selectable local sprite', () => {
     const measured = spriteInk as Record<string, number>;
     for (const mon of allPickerMons()) {
-      const id = /^\/sprites\/pokemon\/([^/]+)\.png$/.exec(mon.sprite)?.[1];
+      const id = /^\/sprites\/pokemon\/([^/?]+)\.png(?:\?|$)/.exec(mon.sprite)?.[1];
       expect(id, mon.name).toBeDefined();
       expect(measured[id!], mon.name).toBeGreaterThan(0);
     }

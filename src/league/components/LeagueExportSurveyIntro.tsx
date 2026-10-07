@@ -12,6 +12,7 @@ import {
   type ExportHighlight,
 } from '../export/exportPersonalization';
 import { cardShades } from '../theme';
+import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
 function takeLine(tool: ExportSurveyTool): string {
   if (tool === 'pokedex') {
@@ -43,7 +44,7 @@ export function LeagueExportSurveyIntro({
   const primary = pokemon?.types[0];
   const nameColor = primary ? cardShades(primary).band : undefined;
   const sprite = pokemon?.sprite ?? (highlight?.firstPokemonId != null
-    ? `/sprites/pokemon/${highlight.firstPokemonId}.png`
+    ? pokemonSpriteUrl(highlight.firstPokemonId)
     : null);
 
   return (

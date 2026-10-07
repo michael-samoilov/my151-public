@@ -134,8 +134,8 @@ describe('alternate picker forms', () => {
     together(ids('fairy', 8), [888, 10188]);
     together(ids('fighting', 8), [889, 10189]);
     expect(getPickerMon(888)?.types).toEqual(['fairy']);
-    expect(getPickerMon(888)?.sprite).toBe('/sprites/pokemon/888.png');
-    expect(getPickerMon(889)?.sprite).toBe('/sprites/pokemon/889.png');
+    expect(getPickerMon(888)?.sprite).toMatch(/^\/sprites\/pokemon\/888\.png(\?|$)/);
+    expect(getPickerMon(889)?.sprite).toMatch(/^\/sprites\/pokemon\/889\.png(\?|$)/);
     expect(getPickerMon(889)?.types).toEqual(['fighting']);
     expect(getPickerMon(746)?.sprite).toBe('/sprites/pokemon/746.png');
   });

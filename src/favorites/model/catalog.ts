@@ -1,4 +1,5 @@
 import pokemonData from '@/data/pokemon.json';
+import { pokemonSpriteUrl, revisedSprite } from '@/lib/spriteUrl';
 import {
   LEGENDARY_PARADOX_IDS,
   PARADOX_IDS,
@@ -85,7 +86,7 @@ for (const p of SPECIES) {
     name: p.id === 892 ? 'urshifu-single-strike' : p.name,
     types: p.id === 888 ? ['fairy'] : p.id === 889 ? ['fighting'] : p.types,
     generation: asGen(p.generation),
-    sprite: [746, 888, 889, 964, 1024].includes(p.id) ? `/sprites/pokemon/${p.id}.png` : pickerId === 10191 ? '/sprites/pokemon/10191.png' : p.sprite,
+    sprite: [746, 888, 889, 964, 1024].includes(p.id) ? pokemonSpriteUrl(p.id) : pickerId === 10191 ? pokemonSpriteUrl(10191) : revisedSprite(p.sprite),
     source: 'dex',
     ownerId: p.id === 10227 ? 892 : pickerId,
   });
@@ -100,7 +101,7 @@ for (const form of ALTERNATE_PICKER_FORMS) {
     name: form.name,
     types: form.types,
     generation: form.generation ?? owner.generation,
-    sprite: `/sprites/pokemon/${form.id}.png`,
+    sprite: pokemonSpriteUrl(form.id),
     source: form.id === 10228 ? 'powerup' : 'dex',
     ownerId: owner.id,
   });
@@ -119,7 +120,7 @@ for (const [ownerRaw, kinds] of Object.entries(FORMS)) {
         name: form.label,
         types,
         generation: owner.generation,
-        sprite: `/sprites/pokemon/${form.id}.png`,
+        sprite: pokemonSpriteUrl(form.id),
         source: 'powerup',
         ownerId,
       });
@@ -133,7 +134,7 @@ if (rapidStrike) {
     ...rapidStrike,
     id: 10227,
     name: 'Gigantamax Urshifu Rapid Strike',
-    sprite: '/sprites/pokemon/10227.png',
+    sprite: pokemonSpriteUrl(10227),
     source: 'powerup',
   });
 }

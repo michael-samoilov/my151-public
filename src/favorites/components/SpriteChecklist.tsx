@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { pickerSpriteCssPx } from '../model/pickerSprite';
 import { SPRITE_REVIEWS, type SpriteReview } from '../model/spriteChecklist';
+import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
 const STATUS = {
   'needs-art': 'Needs art',
@@ -86,7 +87,7 @@ function ReviewCard({ entry, spritePx, visible }: { entry: SpriteReview; spriteP
       {entry.interpretations ? <div className="flex flex-wrap gap-2">{entry.interpretations.map((name) => <span key={name} className="rounded border px-2 py-1 text-sm">{name}</span>)}</div> : null}
       <div className="grid grid-cols-2 gap-4">
         {entry.currentId ? <figure className="space-y-1">
-          <img data-audit-scale="intended" src={`/sprites/pokemon/${entry.currentId}.png`} alt={`${entry.name} current sprite`} width={spritePx} height={spritePx} style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx, objectFit: 'contain' }} />
+          <img data-audit-scale="intended" src={pokemonSpriteUrl(entry.currentId)} alt={`${entry.name} current sprite`} width={spritePx} height={spritePx} style={{ imageRendering: 'pixelated', width: spritePx, height: spritePx, objectFit: 'contain' }} />
           <figcaption className="text-sm">Current sprite</figcaption>
         </figure> : null}
         {entry.candidates.map((candidate) => <figure key={candidate.sprite} className="min-w-0 space-y-1">

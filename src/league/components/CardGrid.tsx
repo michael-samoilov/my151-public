@@ -55,6 +55,7 @@ import { headingInline, headingLines } from '../slotHeadings';
 import { tmBodyShiftRem } from '../export/layout';
 import { useSlotLab } from '../slotLab';
 import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
+import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
 /**
  * The 11-row gym leader card. Geometry mirrors the design canvas
@@ -342,7 +343,7 @@ function stageTint(pokemonId: number): string {
 
 /** A powerup form's sprite: the form's own id is its filename. */
 function formSprite(form: PowerupForm): string {
-  return `/sprites/pokemon/${form.id}.png`;
+  return pokemonSpriteUrl(form.id);
 }
 
 function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint, columnHovered }: {
