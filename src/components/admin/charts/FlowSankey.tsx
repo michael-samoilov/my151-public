@@ -127,7 +127,7 @@ function nodeLabel(
 }
 
 type SankeyLayoutSeries = {
-  layoutInfo: { x: number; y: number };
+  layoutInfo: { x: number; y: number; width: number };
   getGraph(): {
     getNodeById(name: string): { getLayout(): { x: number; y: number; dx: number; dy: number; value: number } };
   };
@@ -137,12 +137,15 @@ type SankeyLayoutSeries = {
  * A node's count chip, drawn by a custom series in the same pass as the
  * Sankey, so every frame that shows the bars shows their counts. echarts lays
  * the Sankey out before it renders any series, so the node's layout is ready.
- * A right label's chip ends at the bar's right edge, a left label's chip
- * centers on that edge, and a top or bottom label's chip centers on the bar.
+ * Like echarts' Sankey view, a node's `localX` share of the plot width wins
+ * over the laid-out x. A right label's chip ends at the bar's right edge, a
+ * left label's chip centers on that edge, and a top or bottom label's chip
+ * centers on the bar.
  */
 function countChip(
   el: HTMLDivElement,
   node: SankeyNode,
+  localX: number | undefined,
   side: FunnelLabelSide,
   roleColor: (role?: FunnelRole) => string,
   fontSize: number,
@@ -150,7 +153,7 @@ function countChip(
   const chart = echarts.getInstanceByDom(el) as unknown as { getModel(): { getSeriesByIndex(i: number): SankeyLayoutSeries } };
   const sankey = chart.getModel().getSeriesByIndex(0);
   const bar = sankey.getGraph().getNodeById(node.name).getLayout();
-  const left = sankey.layoutInfo.x + bar.x;
+  const left = sankey.layoutInfo.x + (localX != null ? localX * sankey.layoutInfo.width : bar.x);
   return {
     type: 'text' as const,
     x: side === 'top' || side === 'bottom' ? left + bar.dx / 2 : left + bar.dx,
@@ -301,7 +304,7 @@ export function FlowSankey({
             renderItem: (params: { dataIndex: number }) => {
               const n = chips[params.dataIndex];
               const side = g.compact ? compactFunnelLabelSide(n, nodes, links) : n.label;
-              return countChip(el, n, side, roleColor, g.fontSize);
+              return countChip(el, n, shares?.get(n.name), side, roleColor, g.fontSize);
             },
           },
         ],
