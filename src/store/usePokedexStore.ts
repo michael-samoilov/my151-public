@@ -1,3 +1,4 @@
+import '../lib/visitorAtBoot';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';

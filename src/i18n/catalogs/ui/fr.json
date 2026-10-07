@@ -48,6 +48,8 @@
   "home.favorites.fullGridAlt": "Une grille complète de Pokémon préférés par type et génération, exportée du sélecteur de Pokémon préférés",
   "home.favorites.simplifiedAlt": "Un tableau récapitulatif de Pokémon préférés par type et génération avec un favori parmi tous, exporté du sélecteur de Pokémon préférés",
   "home.favorites.title": "Sélecteur de Pokémon préférés",
+  "home.favorites.dismiss": "Fermer",
+  "home.favorites.tip": "Nouveau : Sélecteur de Pokémon préférés. Choisissez vos favoris par type et génération, puis filtrez les choix du créateur de Pokédex et du créateur de Champions selon vos favoris enregistrés.",
   "lang.change": "Changer de langue",
   "lang.title": "Langue",
   "league.head.ace": "Pokémon\nphare",

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
+import { FAVORITES_NOTICE_END, isReturningVisitor, isFavoritesNoticeWindow, isFavoritesNoticeSeen, markFavoritesNoticeSeen, markVisited } from '@/lib/launchFlags';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 
 /**
@@ -29,11 +30,30 @@ export interface ToolsCallout {
   text: string;
   dismissLabel: string;
   testId: string;
+  /** Keep navigation beneath an announcement usable. */
+  allowThrough?: boolean;
   onDismiss: (reason: 'menu' | 'close') => void;
 }
 
-export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: ToolsCallout | null }) {
+export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId; callout?: ToolsCallout | null }) {
   const t = useT();
+  const [launchNotice, setLaunchNotice] = useState(() =>
+    isReturningVisitor && isFavoritesNoticeWindow() && !isFavoritesNoticeSeen());
+  useEffect(() => { markVisited(); }, []);
+  useEffect(() => {
+    if (!launchNotice) return;
+    const timer = window.setTimeout(() => setLaunchNotice(false), FAVORITES_NOTICE_END - Date.now());
+    return () => window.clearTimeout(timer);
+  }, [launchNotice]);
+  const callout = useMemo<ToolsCallout | null | undefined>(() => launchNotice
+    ? {
+        text: t('home.favorites.tip'),
+        dismissLabel: t('home.favorites.dismiss'),
+        testId: 'favorites-launch-notice',
+        allowThrough: true,
+        onDismiss: () => { markFavoritesNoticeSeen(); setLaunchNotice(false); },
+      }
+    : isFavoritesNoticeWindow() ? null : pageCallout, [launchNotice, pageCallout, t]);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -91,6 +111,7 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
               side="bottom"
               align="end"
               data-testid={callout.testId}
+              data-callout-click-through={callout.allowThrough || undefined}
               role="status"
               // Radix mirrors the content into a hidden copy for screen
               // readers; with a label it mirrors only the words, not the
@@ -109,7 +130,7 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
               // The arrow is red too: filled with the popover colour it was
               // white on a white header, so the notice never visibly pointed
               // at the menu it talks about.
-              className="z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-xl ring-2 ring-primary"
+              className={cn('z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-xl ring-2 ring-primary', callout.allowThrough && 'pointer-events-none')}
             >
               <TooltipArrow className="fill-primary" />
               <div className="text-xs font-medium leading-snug">{callout.text}</div>
@@ -117,7 +138,7 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
                 type="button"
                 aria-label={callout.dismissLabel}
                 onClick={() => callout.onDismiss('close')}
-                className="absolute right-1 top-1 rounded p-1 opacity-70 hover:opacity-100 cursor-pointer"
+                className="pointer-events-auto absolute right-1 top-1 rounded p-1 opacity-70 hover:opacity-100 cursor-pointer"
               >
                 <X size={12} />
               </button>

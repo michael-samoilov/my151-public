@@ -6,10 +6,10 @@ test('new picker route serves its own metadata without JavaScript', async ({ bro
   const metadata = await page.evaluate(() => ({ canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href'), robots: document.querySelector('meta[name="robots"]')?.getAttribute('content'), title: document.title, h1: document.querySelector('h1')?.textContent }));
   await info.attach('static-metadata.json', { body: JSON.stringify(metadata), contentType: 'application/json' });
   expect(metadata.canonical).toBe('https://my151.app/favorite-pokemon-picker');
-  expect(metadata.robots).toBe('noindex, nofollow');
+  expect(metadata.robots ?? '').not.toMatch(/noindex|nofollow/);
   expect(metadata.h1).toBe('Favorite Pokémon Picker');
   expect(metadata.title).toBe('Favorite Pokémon Picker by Type and Generation | my151');
-  expect(await (await page.request.get('/sitemap.xml')).text()).not.toContain('/favorite-pokemon-picker');
+  expect(await (await page.request.get('/sitemap.xml')).text()).toContain('/favorite-pokemon-picker');
   const ld = await page.locator('script[type="application/ld+json"]').textContent();
   expect(JSON.parse(ld ?? '{}').url).toBe('https://my151.app/favorite-pokemon-picker');
   await context.close();

@@ -6,7 +6,7 @@ import { useDocumentLocale, useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useXHeightAlignment } from './useXHeightAlignment';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
-import { ToolsMenu, type ToolsCallout } from '@/components/layout/ToolsMenu';
+import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
@@ -15,7 +15,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
-import { isMovedNoticeSeen, markLeaguePromoSeen, markMovedNoticeSeen } from '@/lib/launchFlags';
+import { markLeaguePromoSeen } from '@/lib/launchFlags';
 import dexBack from '@/assets/home/tool-dex-b.webp';
 import dexBack400 from '@/assets/home/tool-dex-b-400.webp';
 import dexFront from '@/assets/home/tool-dex.webp';
@@ -548,26 +548,7 @@ export function HomePage() {
   const placed = usePokedexStore((s) => Object.values(s.sections).reduce((n, ids) => n + ids.length, 0));
   const tools = useTools(placed);
 
-  // Shown once to a visitor who saved a dex before the launch, when "/" was
-  // the builder: a tooltip on the Tools menu says where the builder went and
-  // that nothing was lost. Seeing the hub is also seeing the gym leader
-  // card, so the dex builder's own callout for it is marked seen here and
-  // never repeats there.
-  const [moved, setMoved] = useState(() => placed > 0 && !isMovedNoticeSeen());
-  useEffect(() => {
-    if (moved) markLeaguePromoSeen();
-  }, [moved]);
-  const movedCallout: ToolsCallout | null = moved
-    ? {
-        text: t('home.moved.tip', { count: placed }),
-        dismissLabel: t('home.moved.dismiss'),
-        testId: 'moved-notice',
-        onDismiss: () => {
-          markMovedNoticeSeen();
-          setMoved(false);
-        },
-      }
-    : null;
+  useEffect(() => { markLeaguePromoSeen(); }, []);
   // Desktop lays the tools on one row that fills the width: three cards spread
   // to where a fourth card's right edge would sit. The cards go wide and short
   // so the red reads as a low band, not a block; the screenshots do not change,
@@ -604,7 +585,7 @@ export function HomePage() {
               <div className="flex flex-shrink-0 items-center gap-0 min-[360px]:gap-1">
                 <LanguagePicker />
                 <FeedbackButton />
-                <ToolsMenu callout={movedCallout} />
+                <ToolsMenu />
               </div>
             </div>
           </header>

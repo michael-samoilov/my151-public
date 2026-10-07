@@ -27,7 +27,7 @@ export interface ToolDef {
 export const LEAGUE_LAUNCH_TS = Date.UTC(2026, 8, 8);
 
 /** Set to the actual production deployment timestamp when the Picker launches. */
-export const FAVORITES_LAUNCH_TS: number | null = null;
+export const FAVORITES_LAUNCH_TS: number | null = 1791333665273;
 
 export const TOOL_CATALOG: readonly ToolDef[] = [
   { id: 'dex', label: 'Dex builder', short: 'Dex', launchedAt: 0 },

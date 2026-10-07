@@ -48,6 +48,8 @@
   "home.favorites.fullGridAlt": "좋아하는 포켓몬 선택 도구에서 내보낸 타입·세대별 전체 그리드",
   "home.favorites.simplifiedAlt": "좋아하는 포켓몬 선택 도구에서 내보낸 타입·세대별 포켓몬과 가장 좋아하는 포켓몬을 보여 주는 요약 차트",
   "home.favorites.title": "좋아하는 포켓몬 고르기",
+  "home.favorites.dismiss": "닫기",
+  "home.favorites.tip": "새 도구: 좋아하는 포켓몬 고르기. 타입과 세대별로 좋아하는 포켓몬을 고르면, 포켓몬 도감과 체육관 관장 만들기 도구의 후보를 저장한 즐겨찾기로 필터링할 수 있어요.",
   "lang.change": "언어 변경",
   "lang.title": "언어",
   "league.head.ace": "에이스\n포켓몬",

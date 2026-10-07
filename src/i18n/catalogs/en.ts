@@ -260,6 +260,8 @@ export const enUi = {
   'home.dex.saved': '{progress} entries saved in this browser',
   'home.dex.title': 'Custom Region & Pokédex Builder',
   'home.favorites.blurb': 'Pick favorites by type and generation',
+  'home.favorites.dismiss': 'Dismiss',
+  'home.favorites.tip': 'New: Favorite Pokémon Picker. Pick favorites by type and generation, then filter the Pokédex builder and gym leader maker to your saved favorites.',
   'home.favorites.fullGridAlt': 'A full grid of favorite Pokémon by type and generation, exported from the Favorite Pokémon Picker',
   'home.favorites.simplifiedAlt': 'A summary chart of favorite Pokémon by type and generation with an overall favorite, exported from the Favorite Pokémon Picker',
   'home.favorites.saved': '{progress} picks saved in this browser',

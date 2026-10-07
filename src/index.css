@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* A launch notice points at Tools without covering the navigation below it. */
+[data-radix-popper-content-wrapper]:has([data-callout-click-through]) {
+  pointer-events: none;
+}
+[data-callout-click-through], [data-callout-click-through] > div {
+  pointer-events: none;
+}
+
 html {
   /* overscroll-behavior handled per scroll-container so pull-to-refresh works from the header */
 

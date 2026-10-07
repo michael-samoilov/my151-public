@@ -48,6 +48,8 @@
   "home.favorites.fullGridAlt": "Una griglia completa di Pokémon preferiti per tipo e generazione, esportata dal selettore di Pokémon preferiti",
   "home.favorites.simplifiedAlt": "Una tabella riepilogativa di Pokémon preferiti per tipo e generazione con un preferito in assoluto, esportata dal selettore di Pokémon preferiti",
   "home.favorites.title": "Selettore di Pokémon preferiti",
+  "home.favorites.dismiss": "Chiudi",
+  "home.favorites.tip": "Novità: Selettore di Pokémon preferiti. Scegli i tuoi preferiti per tipo e generazione, poi filtra le opzioni dei creatori di Pokédex e Capipalestra in base ai preferiti salvati.",
   "lang.change": "Cambia lingua",
   "lang.title": "Lingua",
   "league.head.ace": "Pokémon\nasso",

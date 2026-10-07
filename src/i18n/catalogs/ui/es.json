@@ -48,6 +48,8 @@
   "home.favorites.fullGridAlt": "Una cuadrícula completa de Pokémon favoritos por tipo y generación, exportada del selector de Pokémon favoritos",
   "home.favorites.simplifiedAlt": "Una tabla resumen de Pokémon favoritos por tipo y generación con un favorito de todos, exportada del selector de Pokémon favoritos",
   "home.favorites.title": "Selector de Pokémon favoritos",
+  "home.favorites.dismiss": "Cerrar",
+  "home.favorites.tip": "Nuevo: Selector de Pokémon favoritos. Elige tus favoritos por tipo y generación y filtra las opciones del creador de Pokédex y del creador de líderes de gimnasio según tus favoritos guardados.",
   "lang.change": "Cambiar idioma",
   "lang.title": "Idioma",
   "league.head.ace": "Pokémon\nestrella",

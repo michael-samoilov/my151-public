@@ -48,6 +48,8 @@
   "home.favorites.fullGridAlt": "お気に入りポケモンの選択ツールから出力した、タイプ・世代別の完全なグリッド",
   "home.favorites.simplifiedAlt": "お気に入りポケモンの選択ツールから出力した、タイプ・世代別のお気に入りと一番のお気に入りを示すまとめチャート",
   "home.favorites.title": "お気に入りポケモンを選ぶ",
+  "home.favorites.dismiss": "閉じる",
+  "home.favorites.tip": "新登場：お気に入りポケモンを選ぶ。タイプと世代ごとにお気に入りを選ぶと、図鑑メーカーとジムリーダーメーカーの候補を、保存したお気に入りに絞り込めます。",
   "lang.change": "言語を変更",
   "lang.title": "言語",
   "league.head.ace": "エース\nポケモン",
