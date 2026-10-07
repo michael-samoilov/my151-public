@@ -1,7 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { buildDashboard, type DashboardSource } from '../../api/_dashboard';
 import { DAY_MS, HOUR_MS } from '../../api/_aggregate';
 import { DASHBOARD_RANGES, funnelDayKeys, type DashboardRange } from '../../api/_range';
+import { LEAGUE_LAUNCH_TS } from '../../api/_crossTool';
+
+vi.hoisted(() => {
+  process.env.UPSTASH_REDIS_REST_URL ||= 'https://example.upstash.io';
+  process.env.UPSTASH_REDIS_REST_TOKEN ||= 'test-token';
+});
+vi.mock('../../api/_shared.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../api/_shared.js')>()),
+  requireAdmin: async () => true,
+}));
 
 // How the date range can go wrong, and the test that catches each:
 // 1. Suite counts a browser the Active users label does not: an off-by-one
@@ -14,6 +25,8 @@ import { DASHBOARD_RANGES, funnelDayKeys, type DashboardRange } from '../../api/
 // 4. A funnel opens on fewer browsers than it built, so bounced goes negative.
 // 5. A funnel reads the wrong counters: a day outside the window, or day
 //    counters past their 120-day lifetime instead of the all-time hash.
+// 6. A launch range opens anywhere but its tool's launch, or reads other
+//    day counters than a rolling range that opens at the same instant.
 
 const NOW = Date.UTC(2026, 8, 27, 17, 0, 0);
 const ago = (ms: number) => NOW - ms;
@@ -172,5 +185,54 @@ describe('dashboard funnels by date range', () => {
     expect(funnelDayKeys('180d', NOW)).toBeNull();
     expect(funnels('180d').dexFunnel.opened).toBe(12);
     expect(funnels('all').leagueFunnel.opened).toBe(5);
+  });
+});
+
+/** The commands /api/submissions sends for one range. Upstash bills each
+ *  command, pipelined or not, so this list is the bill. */
+async function submissionsBill(range: string, now: number): Promise<unknown[]> {
+  const commands: unknown[] = [];
+  vi.useFakeTimers({ now, toFake: ['Date'] });
+  vi.stubGlobal('fetch', async (_url: string, init: { body: string }) => {
+    const body = JSON.parse(init.body) as unknown[];
+    const batch = Array.isArray(body[0]) ? body : [body];
+    commands.push(...batch);
+    const result = batch.map(() => ({ result: [] }));
+    return new Response(JSON.stringify(Array.isArray(body[0]) ? result : result[0]));
+  });
+  const { default: handler } = await import('../../api/submissions');
+  let status = 0;
+  const res = {
+    status: (code: number) => ((status = code), res),
+    json: () => res,
+    setHeader: () => res,
+  };
+  await handler({ method: 'GET', query: { range }, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse);
+  expect(status, range).toBe(200);
+  return commands;
+}
+
+describe('dashboard launch ranges', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('costs the same Redis commands as a rolling range that opens at the launch', async () => {
+    const now = LEAGUE_LAUNCH_TS + 7 * DAY_MS;
+    const launch = await submissionsBill('since-league', now);
+    expect(launch).toEqual(await submissionsBill('7d', now));
+    // One script call sums the window's 8 day counters.
+    expect(launch.filter((c) => (c as string[])[0] === 'eval')).toHaveLength(1);
+  });
+
+  it('counts the same browsers as a rolling range that opens at the launch', () => {
+    const now = LEAGUE_LAUNCH_TS + 7 * DAY_MS;
+    const summed = { ...source, funnelWindow: { 'intro-shown': 6 } };
+    const { range: a, ...launch } = buildDashboard(summed, { ...page, range: 'since-league' }, now);
+    const { range: b, ...rolling } = buildDashboard(summed, { ...page, range: '7d' }, now);
+    expect([a, b]).toEqual(['since-league', '7d']);
+    expect(launch.rangeStart).toBe(LEAGUE_LAUNCH_TS);
+    expect(launch).toEqual(rolling);
   });
 });
