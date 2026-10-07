@@ -3,7 +3,6 @@ import { Panel } from '@/components/admin/ui';
 import { useECharts, cssVar, type EChartsOption } from './useECharts';
 import { rangeStart, type DashboardRange } from '../../../../api/_range';
 import {
-  activityShape,
   chartDailyValues,
   chartWeeklyValues,
   dailyWeekdayTicks,
@@ -483,21 +482,19 @@ export function ActiveUsersPanel({
   nowMs: number;
   range: DashboardRange;
 }) {
-  const start = rangeStart(range, nowMs);
-  const shape = activityShape(start, nowMs);
   const padded = useMemo(() => extendThroughToday(series, nowMs), [series, nowMs]);
-  const visible = useMemo(() => sliceActivityRange(padded, start), [padded, start]);
-  const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs, start), [hourly, nowMs, start]);
-  const daily7 = useMemo(() => sliceLastUtcDays(padded, nowMs, 7, start), [padded, nowMs, start]);
+  const visible = useMemo(() => sliceActivityRange(padded, rangeStart(range, nowMs)), [padded, nowMs, range]);
+  const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);
+  const daily7 = useMemo(() => sliceLastUtcDays(padded, nowMs, 7), [padded, nowMs]);
   const counts = windowCounts(padded);
   const faint = 'var(--color-muted-foreground)';
   const legend =
-    shape === 'hourly' ? (
+    range === '24h' ? (
       <span className="inline-flex items-center gap-1">
         <LegendSwatch color={faint} />
         hourly
       </span>
-    ) : shape === 'weekday' ? (
+    ) : range === '7d' ? (
       <span className="inline-flex items-center gap-1">
         <LegendSwatch color={faint} />
         daily
@@ -520,9 +517,9 @@ export function ActiveUsersPanel({
       title="Active users"
       legend={<span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">{legend}</span>}
     >
-      {shape === 'hourly' ? (
+      {range === '24h' ? (
         <HourlyTrendChart series={hourly24} counts={counts} nowMs={nowMs} />
-      ) : shape === 'weekday' ? (
+      ) : range === '7d' ? (
         <DailyWeekdayChart series={daily7} counts={counts} nowMs={nowMs} />
       ) : (
         <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} />

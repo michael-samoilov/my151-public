@@ -26,7 +26,7 @@ function userCard(page: import('@playwright/test').Page, cidPrefix: string) {
 test.describe('admin user pages', () => {
   test('league visits fit the viewport and hide a count-only phantom dip', { tag: '@viewport' }, async ({ page }, info) => {
     await openDemo(page);
-    await page.getByRole('button', { name: 'League', exact: true }).click();
+    await page.getByRole('button', { name: 'League' }).click();
     await userCard(page, '70cd').click();
     await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
 
@@ -348,7 +348,7 @@ test.describe('admin user pages', () => {
 
   test('a user page toggles between dex and league', async ({ page }) => {
     await openDemo(page);
-    await page.getByRole('button', { name: 'League', exact: true }).click();
+    await page.getByRole('button', { name: 'League' }).click();
     await userCard(page, '70cd').click();
     const tools = userTools(page);
     await expect(tools.getByRole('button', { name: 'League' })).toHaveAttribute('aria-pressed', 'true');
@@ -362,7 +362,7 @@ test.describe('admin user pages', () => {
 
   test('an unused tool stays visible and is not pressable', async ({ page }) => {
     await openDemo(page);
-    await page.getByRole('button', { name: 'League', exact: true }).click();
+    await page.getByRole('button', { name: 'League' }).click();
     await userCard(page, '9d19').click();
     const tools = userTools(page);
     await expect(tools.getByRole('button', { name: 'League' })).toBeEnabled();
@@ -407,7 +407,7 @@ test.describe('admin user pages', () => {
 
   test('league user-detail shows one playhead label for the scrubbed sitting', async ({ page }) => {
     await openDemo(page);
-    await page.getByRole('button', { name: 'League', exact: true }).click();
+    await page.getByRole('button', { name: 'League' }).click();
     await userCard(page, '70cd').click();
     const marks = page.locator('[data-testid="session-milestone"]');
     await expect(marks).toHaveCount(1);

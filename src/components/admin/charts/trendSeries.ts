@@ -46,43 +46,26 @@ export function chartDailyValues(series: DailyPoint[]): number[] {
 
 export const INCOMPLETE_WEEKLY_DAYS = 6;
 
-/** The points from the bucket that holds `start` on, or the last two when
- *  fewer remain: a line needs two points. */
-function fromStart<T>(series: T[], start: number | null, bucketOf: (p: T) => number, size: number): T[] {
+/** Days that overlap the window opening at `start`; every day for `null`. */
+export function sliceActivityRange(series: DailyPoint[], start: number | null): DailyPoint[] {
   if (start == null || series.length === 0) return series;
-  const sliced = series.filter((p) => bucketOf(p) + size > start);
+  const sliced = series.filter((p) => p.day + DAY_MS > start);
   if (sliced.length >= 2 || sliced.length === series.length) return sliced;
   return series.slice(Math.max(0, series.length - 2));
 }
 
-/** Days that overlap the window opening at `start`; every day for `null`. */
-export function sliceActivityRange(series: DailyPoint[], start: number | null): DailyPoint[] {
-  return fromStart(series, start, (p) => p.day, DAY_MS);
-}
-
-/** The last 24 hours, from the hour that holds `start` on when it is later. */
-export function sliceHourlyRange(series: HourlyPoint[], nowMs: number, start: number | null = null): HourlyPoint[] {
+export function sliceHourlyRange(series: HourlyPoint[], nowMs: number): HourlyPoint[] {
   if (series.length === 0) return series;
   const last = hourStart(nowMs);
   const first = last - 23 * HOUR_MS;
-  return fromStart(series.filter((p) => p.hour >= first && p.hour <= last), start, (p) => p.hour, HOUR_MS);
+  return series.filter((p) => p.hour >= first && p.hour <= last);
 }
 
-/** The last `days` UTC days, from the day that holds `start` on when it is later. */
-export function sliceLastUtcDays(series: DailyPoint[], nowMs: number, days: number, start: number | null = null): DailyPoint[] {
+export function sliceLastUtcDays(series: DailyPoint[], nowMs: number, days: number): DailyPoint[] {
   if (series.length === 0 || days <= 0) return [];
   const last = dayStart(nowMs);
   const first = last - (days - 1) * DAY_MS;
-  return fromStart(series.filter((p) => p.day >= first && p.day <= last), start, (p) => p.day, DAY_MS);
-}
-
-export type ActivityShape = 'hourly' | 'weekday' | 'trend';
-
-/** The chart a window opening at `start` gets: hours for a day or less,
- *  weekdays for a week or less, then the daily trend. */
-export function activityShape(start: number | null, nowMs: number): ActivityShape {
-  const span = start === null ? Infinity : nowMs - start;
-  return span <= DAY_MS ? 'hourly' : span <= 7 * DAY_MS ? 'weekday' : 'trend';
+  return series.filter((p) => p.day >= first && p.day <= last);
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
