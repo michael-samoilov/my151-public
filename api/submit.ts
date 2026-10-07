@@ -23,8 +23,15 @@ import {
   type ClientRecord,
 } from './_shared.js';
 import { alignSessionMs, isSubsetRegression, parseCapturedAt, sessionTarget } from './_sessionize.js';
+import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
 
-const MAX_POKEMON_ID = 1025;
+/** A Pokédex holds species and forms, such as Alolan Raichu (10100). The chain
+ *  table is generated from src/data/pokemon.json, so its keys are exactly the
+ *  ids a build can hold. A fixed 1025 ceiling rejected every beacon from a
+ *  build with a form in it. */
+function isDexId(id: unknown): id is number {
+  return typeof id === 'number' && Number.isInteger(id) && Object.hasOwn(EVOLUTION_CHAIN_BY_ID, id);
+}
 
 // Rate limiters: per-IP, analytics disabled to avoid doubling Upstash command count.
 const burstLimiter = new Ratelimit({
@@ -96,7 +103,7 @@ function validIds(ids: unknown): number[] | null {
   if (!Array.isArray(ids) || ids.length === 0 || ids.length > 151) return null;
   const seen = new Set<number>();
   for (const id of ids) {
-    if (typeof id !== 'number' || !Number.isInteger(id) || id < 1 || id > MAX_POKEMON_ID) return null;
+    if (!isDexId(id)) return null;
     if (seen.has(id)) return null;
     seen.add(id);
   }
@@ -115,7 +122,7 @@ function validSections(sections: unknown): Record<string, number[]> | undefined 
     if (!Array.isArray(val) || val.length === 0 || val.length > 151) continue;
     const ids: number[] = [];
     for (const id of val) {
-      if (typeof id === 'number' && Number.isInteger(id) && id >= 1 && id <= MAX_POKEMON_ID) ids.push(id);
+      if (isDexId(id)) ids.push(id);
     }
     if (ids.length > 0) {
       out[key] = ids;
