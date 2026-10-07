@@ -5,7 +5,7 @@
  * denominator. The gym leader maker launched later, so that ratio mixed
  * "did not convert" with "never had a chance." Everything here is derived
  * from a tool catalog: add a row when a tool ships, and the KPIs, eras, and
- * Venns follow. Nothing here touches Redis.
+ * diagram follow. Nothing here touches Redis.
  *
  * Driven by `src/lib/crossTool.test.ts`.
  */
@@ -138,12 +138,15 @@ function regionKey(ids: string[]): string {
 }
 
 /**
- * Eras that start at or after the second tool. Before that, only one tool
- * existed, so a cross-tool Venn is not a question. A later tool (favourites)
- * adds another visible cut: 8 Sep to launch, then after launch.
+ * Where each later tool's since-launch window opens: the later of the range
+ * start and the tool's launch. One entry per tool after the first that has a
+ * launch day. `rangeStart` is `null` for `all`.
  */
-export function multiToolEras<T extends { since: number | null }>(eras: readonly T[]): T[] {
-  return eras.filter((e) => e.since !== null);
+export function sinceLaunchStarts(catalog: readonly ToolDef[], rangeStart: number | null): { id: string; start: number }[] {
+  return catalog
+    .slice(1)
+    .filter((t): t is ToolDef & { launchedAt: number } => t.launchedAt !== null)
+    .map((t) => ({ id: t.id, start: rangeStart === null ? t.launchedAt : Math.max(rangeStart, t.launchedAt) }));
 }
 
 export function eraBounds(catalog: readonly ToolDef[]): Omit<EraOverlap, 'browsers' | 'regions'>[] {

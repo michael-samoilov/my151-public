@@ -95,9 +95,9 @@ test('a three-tool overlap keeps all seven exclusive region counts visible',asyn
   await page.route('**/api/submissions?**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({totalUsers:0,offset:0,limit:50,funnel:{users:0,completed:0,exported:0},retention:{returning:0,activeLast7:0,newUsers:0},timeSurvival:[],timeStats:empty.stats,depthSurvival:[],depthStats:empty.stats,countries:{},devices:{},os:{},popularFinal:[],mostDropped:[],popularBySection:{},droppedBySection:{},picksBySectionAll:{},records:[],crossTool:{catalog,kpis:[],eras:[{key:'synthetic',label:'Demo overlap',shortLabel:'Demo overlap',since:1,until:null,browsers:7,regions}]}})}));
   await page.goto('/?admin');
   const chart=page.locator('[data-testid="cross-tool-venns"] svg');
-  await expect(chart.locator('g text')).toHaveCount(7);
-  await expect(chart.locator('g text title',{hasText:'Dex + Picker 1'})).toHaveCount(1);
-  await expect(chart.locator('g text title',{hasText:'Dex + Picker + League 1'})).toHaveCount(1);
+  await expect(chart.getByTestId('cross-tool-region-label')).toHaveCount(7);
+  await expect(chart.locator('rect[data-region] title',{hasText:'Dex + Picker 1'})).toHaveCount(1);
+  await expect(chart.locator('rect[data-region] title',{hasText:'Dex + League + Picker 1'})).toHaveCount(1);
   await testInfo.attach('seven-regions.svg',{body:await chart.evaluate(el=>el.outerHTML),contentType:'image/svg+xml'});
 });
 

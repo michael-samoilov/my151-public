@@ -4,7 +4,6 @@ import {
   TOOL_CATALOG,
   buildCrossTool,
   eraBounds,
-  multiToolEras,
   leagueIsDexNative,
   seatedPokemonIds,
   type DexLike,
@@ -69,12 +68,6 @@ describe('eraBounds', () => {
       '8 Sep to 1 Nov',
       'After 1 Nov',
     ]);
-  });
-});
-
-describe('multiToolEras', () => {
-  it('drops the era before a second tool existed', () => {
-    expect(multiToolEras(eraBounds(TOOL_CATALOG.filter(tool => tool.id !== 'favorites'))).map((b) => b.key)).toEqual(['since-league']);
   });
 });
 

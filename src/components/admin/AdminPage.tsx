@@ -428,6 +428,8 @@ export interface ApiResponse {
   referrerFlow?: { host: string; total: number; dex: number; league: number; favorites?:number }[];
   /** Opportunity conversion, companion share, league⊂dex, and arrival-era overlap. */
   crossTool?: CrossToolSnapshot;
+  /** `crossTool` again, per later tool, with the window opening no earlier than its launch. */
+  crossToolSince?: Record<string, CrossToolSnapshot>;
   /** Cross-tool order and weekly crossover, for browsers in both stores. */
   journeys?: {
     both: number;
@@ -2226,7 +2228,7 @@ export function AdminPage() {
               </div>
             </Panel>}
 
-            {tool === 'all' && data.crossTool && <CrossToolCard data={data.crossTool} />}
+            {tool === 'all' && data.crossTool && <CrossToolCard data={data.crossTool} since={data.crossToolSince} />}
 
             {showFlows && (
               <Panel
