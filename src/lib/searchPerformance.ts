@@ -1,5 +1,3 @@
-import { DASHBOARD_RANGES, isLaunchRange, toolLaunch, type DashboardRange, type RollingRange } from '../../api/_range.js';
-
 export type SearchProviderKey = 'google' | 'bing';
 
 export type SearchProviderStatus = 'ready' | 'stale' | 'not_configured' | 'error';
@@ -29,21 +27,19 @@ export interface SearchPageQueryRow extends SearchMetric {
 
 export type SearchGranularity = 'day' | 'hour';
 
-/** The dashboard's ranges: the Search tab follows the date ribbon. */
-export const SEARCH_RANGES = DASHBOARD_RANGES;
-export type SearchRangeKey = DashboardRange;
+export const SEARCH_RANGES = ['24h', '7d', '28d', '90d', '180d', '365d', 'all'] as const;
+export type SearchRangeKey = (typeof SEARCH_RANGES)[number];
 
-/** A range spans a fixed number of buckets, every reported bucket, or the days from a Pacific date on. */
+/** A range spans a fixed number of buckets, or every reported bucket. */
 export type SearchRangeSpec =
   | { granularity: SearchGranularity; buckets: number; compare: boolean }
-  | { granularity: 'day'; buckets: 'all' }
-  | { granularity: 'day'; since: string };
+  | { granularity: 'day'; buckets: 'all' };
 
 /**
  * Search Console keeps hourly data for 10 days and daily data for 16 months,
  * so 365d has no full year before it to compare with.
  */
-const ROLLING_SPECS: Record<RollingRange, SearchRangeSpec> = {
+export const SEARCH_RANGE_SPECS: Record<SearchRangeKey, SearchRangeSpec> = {
   '24h': { granularity: 'hour', buckets: 24, compare: true },
   '7d': { granularity: 'day', buckets: 7, compare: true },
   '28d': { granularity: 'day', buckets: 28, compare: true },
@@ -52,19 +48,6 @@ const ROLLING_SPECS: Record<RollingRange, SearchRangeSpec> = {
   '365d': { granularity: 'day', buckets: 365, compare: false },
   all: { granularity: 'day', buckets: 'all' },
 };
-
-/** Search Console reads startDate and endDate, and keys its days, as Pacific dates. */
-export const PACIFIC_DATE = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'America/Los_Angeles',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
-
-/** A launch range opens on the Pacific day the tool launched, and compares with as many days before it. */
-export function searchRangeSpec(range: SearchRangeKey): SearchRangeSpec {
-  return isLaunchRange(range) ? { granularity: 'day', since: PACIFIC_DATE.format(toolLaunch(range).at) } : ROLLING_SPECS[range];
-}
 
 export function mapSearchRanges<T>(build: (range: SearchRangeKey) => T): Record<SearchRangeKey, T> {
   return Object.fromEntries(SEARCH_RANGES.map((range) => [range, build(range)])) as Record<SearchRangeKey, T>;
@@ -167,40 +150,25 @@ export function bucketStarts(range: SearchDateRange, granularity: SearchGranular
 
 /**
  * The window a range covers, ending at the `anchor` bucket, and the same span
- * right before it when the range compares. `all` starts at `earliest`. Null
- * when a launch range opens after the anchor: no reported day falls inside it.
+ * right before it when the range compares. `all` starts at `earliest`.
  */
 export function searchRangeWindows(
   range: SearchRangeKey,
   anchor: string,
   earliest: string,
-): { window: SearchDateRange; previous: SearchDateRange | null } | null {
-  const spec = searchRangeSpec(range);
-  if ('since' in spec) {
-    if (spec.since > anchor) return null;
-    const days = (bucketMs(anchor, 'day') - bucketMs(spec.since, 'day')) / BUCKET_MS.day + 1;
-    return spanWindows(anchor, 'day', days, true);
-  }
-  if (spec.buckets === 'all') return { window: { start: earliest, end: anchor }, previous: null };
-  return spanWindows(anchor, spec.granularity, spec.buckets, spec.compare);
-}
-
-function spanWindows(
-  anchor: string,
-  granularity: SearchGranularity,
-  buckets: number,
-  compare: boolean,
 ): { window: SearchDateRange; previous: SearchDateRange | null } {
-  const step = BUCKET_MS[granularity];
-  const start = bucketMs(anchor, granularity) - (buckets - 1) * step;
-  const window = { start: bucketStart(start, granularity), end: anchor };
-  if (!compare) return { window, previous: null };
+  const spec = SEARCH_RANGE_SPECS[range];
+  if (spec.buckets === 'all') return { window: { start: earliest, end: anchor }, previous: null };
+  const step = BUCKET_MS[spec.granularity];
+  const start = bucketMs(anchor, spec.granularity) - (spec.buckets - 1) * step;
+  const window = { start: bucketStart(start, spec.granularity), end: anchor };
+  if (!spec.compare) return { window, previous: null };
   const previousEnd = start - step;
   return {
     window,
     previous: {
-      start: bucketStart(previousEnd - (buckets - 1) * step, granularity),
-      end: bucketStart(previousEnd, granularity),
+      start: bucketStart(previousEnd - (spec.buckets - 1) * step, spec.granularity),
+      end: bucketStart(previousEnd, spec.granularity),
     },
   };
 }

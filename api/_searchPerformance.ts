@@ -1,10 +1,9 @@
 import { createSign } from 'node:crypto';
 
 import {
-  PACIFIC_DATE,
   SEARCH_RANGES,
+  SEARCH_RANGE_SPECS,
   bucketStart,
-  searchRangeSpec,
   searchRangeWindows,
   sumSearchMetrics,
   type SearchDateRange,
@@ -30,7 +29,7 @@ const SEARCH_CONSOLE_MONTHS = 16;
 /** Two 24-hour windows, even when the latest reported hour lags a day behind. */
 const HOURLY_FETCH_DAYS = 4;
 const BING_TOP_ROWS = 25;
-const DAY_RANGES = SEARCH_RANGES.filter((range) => searchRangeSpec(range).granularity === 'day');
+const DAY_RANGES = SEARCH_RANGES.filter((range) => SEARCH_RANGE_SPECS[range].granularity === 'day');
 
 interface GoogleRow {
   keys?: unknown[];
@@ -197,6 +196,14 @@ function todayUtcMs(): number {
   return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
 }
 
+/** Search Console reads startDate and endDate as Pacific dates. */
+const PACIFIC_DATE = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Los_Angeles',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
 async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
   const response = await fetch(url, { ...init, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   if (!response.ok) throw new Error(`Search provider returned HTTP ${response.status}`);
@@ -333,9 +340,7 @@ export async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
   const inWindow = (window: SearchDateRange, dimensions: GoogleDimension[]) =>
     query({ startDate: window.start, endDate: window.end, dimensions, rowLimit: 250 });
   const ranges = await Promise.all(DAY_RANGES.map(async (range) => {
-    const windows = searchRangeWindows(range, dataThrough, series[0]?.start ?? retainedFrom);
-    if (!windows) return [];
-    const { window, previous } = windows;
+    const { window, previous } = searchRangeWindows(range, dataThrough, series[0]?.start ?? retainedFrom);
     const [pages, queries, pageQueries, previousDetail] = await Promise.all([
       inWindow(window, ['page']).then(googleDimensionRows),
       inWindow(window, ['query']).then(googleDimensionRows),
@@ -345,7 +350,7 @@ export async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
         : undefined,
     ]);
     const detail: SearchRangeDetail = { window, previous: previousDetail, pages, queries, pageQueries };
-    return [[range, detail] as const];
+    return [range, detail] as const;
   }));
   return {
     provider: 'google',
@@ -353,7 +358,7 @@ export async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
     fetchedAt: new Date().toISOString(),
     dataThrough,
     series,
-    ranges: Object.fromEntries(ranges.flat()),
+    ranges: Object.fromEntries(ranges),
   };
 }
 
@@ -388,9 +393,8 @@ export async function fetchGoogleHourly(): Promise<SearchProviderSnapshot> {
     series,
     ranges: {},
   };
-  const windows = dataThrough ? searchRangeWindows('24h', dataThrough, series[0].start) : null;
-  if (!windows) return snapshot;
-  const { window, previous } = windows;
+  if (!dataThrough) return snapshot;
+  const { window, previous } = searchRangeWindows('24h', dataThrough, series[0].start);
   snapshot.ranges['24h'] = {
     window,
     previous: previous ? { window: previous, pages: rollUp(pages, previous).map(asDimension) } : undefined,
@@ -432,10 +436,8 @@ export async function fetchBingSearchPerformance(): Promise<SearchProviderSnapsh
     message: 'Bing page and query detail may update less often than the daily totals.',
     series,
     ranges: dataThrough
-      ? Object.fromEntries(DAY_RANGES.flatMap((range) => {
-          const windows = searchRangeWindows(range, dataThrough, series[0].start);
-          if (!windows) return [];
-          const { window, previous } = windows;
+      ? Object.fromEntries(DAY_RANGES.map((range) => {
+          const { window, previous } = searchRangeWindows(range, dataThrough, series[0].start);
           const detail: SearchRangeDetail = {
             window,
             previous: previous ? { window: previous, pages: top(pages, previous) } : undefined,
@@ -443,7 +445,7 @@ export async function fetchBingSearchPerformance(): Promise<SearchProviderSnapsh
             queries: top(queries, window),
             pageQueries: [],
           };
-          return [[range, detail]];
+          return [range, detail];
         }))
       : {},
   };

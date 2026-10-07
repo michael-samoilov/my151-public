@@ -1,8 +1,8 @@
 import {
   EMPTY_SEARCH_METRIC,
+  SEARCH_RANGE_SPECS,
   bucketStarts,
   mapSearchRanges,
-  searchRangeSpec,
   sumSearchMetrics,
   type SearchDailyPoint,
   type SearchDateRange,
@@ -318,7 +318,7 @@ function providerRangeView(
 }
 
 function rangeView(snapshot: SearchPerformanceSnapshot, range: SearchRangeKey): SearchRangeView {
-  const { granularity } = searchRangeSpec(range);
+  const { granularity } = SEARCH_RANGE_SPECS[range];
   const part: Partial<Record<SearchProviderKey, SearchProviderSnapshot>> =
     granularity === 'hour' ? snapshot.hourly.providers : snapshot.daily.providers;
   // A provider without this granularity (Bing has no hours) shows its daily status and no data.
