@@ -27,20 +27,27 @@ const OPT_OUT_KEY = 'p151-opt-out';
  * normal visitor without clearing site data, which would delete saved
  * selections. `?notme` wins when a URL has both.
  *
- * Deliberately query-only, with no page and nothing in the UI: it is the
- * owner's switch, and a discoverable page would invite anyone to erase
- * themselves from the analytics.
+ * Deliberately query-only, with no public page and nothing in the public UI:
+ * it is the owner's switch, and a discoverable page would invite anyone to
+ * erase themselves from the analytics. The admin dashboard shows the flag and
+ * toggles it through `setOptedOut`.
  */
 export function installOptOut(search: string = window.location.search): void {
   try {
     const params = new URLSearchParams(search);
-    if (params.has('notme')) {
-      localStorage.setItem(OPT_OUT_KEY, '1');
-    } else if (params.has('countme')) {
-      localStorage.removeItem(OPT_OUT_KEY);
-    }
+    if (params.has('notme')) setOptedOut(true);
+    else if (params.has('countme')) setOptedOut(false);
   } catch {
-    // localStorage / URL may be unavailable
+    // URL may be unavailable
+  }
+}
+
+export function setOptedOut(optedOut: boolean): void {
+  try {
+    if (optedOut) localStorage.setItem(OPT_OUT_KEY, '1');
+    else localStorage.removeItem(OPT_OUT_KEY);
+  } catch {
+    // localStorage may be unavailable
   }
 }
 
@@ -121,4 +128,14 @@ export function getClientId(): string {
   ]);
   resolvedCid = cid;
   return cid;
+}
+
+/** This browser's stored id, without minting one, so the admin dashboard can
+ *  show it next to the opt-out state. */
+export function storedClientId(): string | null {
+  try {
+    return localStorage.getItem(CID_KEY);
+  } catch {
+    return null;
+  }
 }
