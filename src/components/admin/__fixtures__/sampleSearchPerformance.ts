@@ -1,6 +1,6 @@
 import {
   SEARCH_RANGES,
-  SEARCH_RANGE_SPECS,
+  searchRangeSpec,
   searchRangeWindows,
   type SearchDimensionRow,
   type SearchPageQueryRow,
@@ -72,19 +72,20 @@ function sampleProvider(
     dataThrough,
     message: provider === 'bing' ? 'Bing page and query detail may update less often than the daily totals.' : undefined,
     series,
-    ranges: Object.fromEntries(ranges.map((range) => {
-      const { window, previous } = searchRangeWindows(range, dataThrough, series[0].start);
+    ranges: Object.fromEntries(ranges.flatMap((range) => {
+      const windows = searchRangeWindows(range, dataThrough, series[0].start);
+      if (!windows) return [];
       const detail: SearchRangeDetail = {
-        window,
-        previous: previous ? { window: previous, pages: scaled(rows.pages, 0.8) } : undefined,
+        window: windows.window,
+        previous: windows.previous ? { window: windows.previous, pages: scaled(rows.pages, 0.8) } : undefined,
         ...rows,
       };
-      return [range, detail];
+      return [[range, detail]];
     })),
   };
 }
 
-const DAY_RANGES = SEARCH_RANGES.filter((range) => SEARCH_RANGE_SPECS[range].granularity === 'day');
+const DAY_RANGES = SEARCH_RANGES.filter((range) => searchRangeSpec(range).granularity === 'day');
 
 const googleRows = {
   pages: [

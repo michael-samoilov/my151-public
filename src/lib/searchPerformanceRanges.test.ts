@@ -103,7 +103,8 @@ interface Expected {
 }
 
 // Windows end at the Google daily cutoff (three days back) or at the last reported hour.
-const EXPECTED: Record<SearchRangeKey, Expected> = {
+// Null: the range opens after the cutoff, so no reported day falls inside it.
+const EXPECTED: Record<SearchRangeKey, Expected | null> = {
   '24h': {
     window: ['2026-09-26T16:00:00.000Z', '2026-09-27T15:00:00.000Z'],
     previous: ['2026-09-25T16:00:00.000Z', '2026-09-26T15:00:00.000Z'],
@@ -118,6 +119,9 @@ const EXPECTED: Record<SearchRangeKey, Expected> = {
   '180d': { window: ['2026-03-29', '2026-09-24'], previous: null, googleClicks: 180, buckets: 180, bingPrevious: false },
   '365d': { window: ['2025-09-25', '2026-09-24'], previous: null, googleClicks: 208, buckets: 365, bingPrevious: false },
   all: { window: ['2026-03-01', '2026-09-24'], previous: null, googleClicks: 208, buckets: 208, bingPrevious: false },
+  // League launched at 00:00 UTC on 8 Sep, which is 7 Sep in Pacific time.
+  'since-league': { window: ['2026-09-07', '2026-09-24'], previous: ['2026-08-20', '2026-09-06'], googleClicks: 18, buckets: 18, bingPrevious: true },
+  'since-favorites': null,
 };
 
 describe('search performance by range', () => {
@@ -147,9 +151,10 @@ describe('search performance by range', () => {
     vi.unstubAllGlobals();
   });
 
-  it('spends 24 Google calls on a daily refresh and 5 on an hourly one, token included', () => {
+  it('spends 28 Google calls on a daily refresh and 5 on an hourly one, token included', () => {
     expect(view.providers.google.status).toBe('ready');
-    expect(dailyCalls).toBe(24);
+    // A range that opens after the cutoff asks Google nothing.
+    expect(dailyCalls).toBe(28);
     expect(hourlyCalls).toBe(5);
   });
 
@@ -166,6 +171,11 @@ describe('search performance by range', () => {
   it.each(SEARCH_RANGES)('%s: window, comparison, and pages match the range', (range) => {
     const expected = EXPECTED[range];
     const { google, bing } = view.byRange[range].providers;
+    if (!expected) {
+      for (const provider of [google, bing]) expect(provider).toMatchObject({ current: null, comparison: null, series: [] });
+      expect(view.byRange[range].pages).toEqual([]);
+      return;
+    }
     const pageRequests = providers.googleBodies
       .filter((body) => body.dimensions.join('+') === 'page')
       .map((body) => [body.startDate, body.endDate].join('..'));
