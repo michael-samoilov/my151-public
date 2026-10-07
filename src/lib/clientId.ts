@@ -19,9 +19,13 @@ const OPT_OUT_KEY = 'p151-opt-out';
  * gym leader maker did not, so `?notme` there did nothing.
  *
  * The flag lives in localStorage, which is scoped to the ORIGIN and not to the
- * path — so one `?notme` on any page covers the hub, the dex builder and the
- * gym leader maker together, for as long as that browser keeps its storage. A
- * preview deployment is a different origin and needs its own.
+ * path — so one `?notme` on any page covers the hub, the dex builder, the
+ * gym leader maker and the picker together, for as long as that browser keeps
+ * its storage. A preview deployment is a different origin and needs its own.
+ *
+ * `?countme` removes the flag and nothing else, so the owner can test as a
+ * normal visitor without clearing site data, which would delete saved
+ * selections. `?notme` wins when a URL has both.
  *
  * Deliberately query-only, with no page and nothing in the UI: it is the
  * owner's switch, and a discoverable page would invite anyone to erase
@@ -29,8 +33,11 @@ const OPT_OUT_KEY = 'p151-opt-out';
  */
 export function installOptOut(search: string = window.location.search): void {
   try {
-    if (new URLSearchParams(search).has('notme')) {
+    const params = new URLSearchParams(search);
+    if (params.has('notme')) {
       localStorage.setItem(OPT_OUT_KEY, '1');
+    } else if (params.has('countme')) {
+      localStorage.removeItem(OPT_OUT_KEY);
     }
   } catch {
     // localStorage / URL may be unavailable
