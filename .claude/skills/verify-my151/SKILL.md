@@ -124,6 +124,8 @@ node_modules/.bin/tsx .claude/skills/verify-my151/harness/verify.ts diff --base 
 ... verify.ts absolute --surfaces blink,webkit
 ```
 
+The change's production tier in `CLAUDE.md` picks the surfaces: `--surfaces blink` for Small, `--surfaces blink,blink-ios-safari` for Standard, and every surface for Full. A full diff on every surface takes about 25 minutes on a 4-core machine.
+
 Flags: `--base <ref>` (diff), `--surfaces a,b`, `--no-build` (reuse an existing
 `dist/`). The standard suite per surface is boot (React mounts), no horizontal
 overflow, the localStorage seed oracle round-trips, the seeded grid renders
