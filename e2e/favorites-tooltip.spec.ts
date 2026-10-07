@@ -23,8 +23,8 @@ function savedFill(page: Page, key: string) {
 test.describe('favorite picker name tooltip', () => {
   test('names a hovered grid sprite and selector sprite in a dark tip outside the grid', async ({ page }, testInfo) => {
     await openSeeded(page);
-    const name = page.getByRole('tooltip');
     const tip = page.getByTestId('favorites-name-tooltip');
+    const name = tip.getByRole('tooltip');
 
     await page.getByTestId('favorites-cell-fire-1').hover();
     await expect(name).toHaveText('Charizard');

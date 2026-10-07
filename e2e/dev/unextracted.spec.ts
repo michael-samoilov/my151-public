@@ -83,20 +83,23 @@ test.describe('extraction coverage', () => {
    * type filter's mode hint survived the first extraction pass. Every filter
    * panel gets opened here instead.
    */
-  test('no visible text bypasses the catalog in the browser filters', async ({ page }) => {
+  test('no visible text bypasses the catalog in the browser filters', async ({ page }, testInfo) => {
     // Desktop: the filter panels render inline rather than as a second sheet
     // stacked on the browser's own, so they can be opened one after another.
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/pokedex-builder?lang=en-XA');
+    await expect(page.locator('h1')).toContainText('[');
     // By attribute, not by accessible name: the pseudo-locale rewrites the name.
     await page.locator('[data-add-slot]').first().click();
 
+    // Open disclosure panels, rather than the My favorites/My dex toggles,
+    // whose entry buttons are replaced by active chips when selected.
     // Visible only: the mobile and desktop chip rows are both in the DOM.
-    const chips = page.locator('[data-filter-chip]').filter({ visible: true });
+    const chips = page.locator('[data-filter-chip]').filter({ visible: true, has: page.locator('.lucide-chevron-down') });
     const count = await chips.count();
     expect(count, 'the browser should offer filter panels to open').toBeGreaterThan(5);
 
-    const report: string[] = [];
+    const report: string[] = await unextractedText(page);
     for (let i = 0; i < count; i++) {
       const chip = chips.nth(i);
       const name = (await chip.getAttribute('data-filter-chip')) ?? String(i);
@@ -106,5 +109,6 @@ test.describe('extraction coverage', () => {
       await chip.click();
     }
     expect(report, 'strings not routed through t() inside the browser filters').toEqual([]);
+    await testInfo.attach('filter-extraction', { body: JSON.stringify({ panels: count, report }), contentType: 'application/json' });
   });
 });

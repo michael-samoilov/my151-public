@@ -128,7 +128,9 @@ test('native localized badge ink stays within its painted pill @viewport', async
       type Bounds = { width:number; left:number;right:number;top:number;bottom:number; text?:string; fill?:string; color?:string };
       const target = window as unknown as { chartBadges:Bounds[]; chartBadgeTexts:Bounds[]; chartShapeGlyphs:Bounds[]; chartBars:Bounds[] };
       const badges = target.chartBadges.filter(item => item.width === outputWidth && item.left > mainWidth);
-      const texts = target.chartBadgeTexts.filter(item => item.width === outputWidth && item.left > mainWidth);
+      // Bold BST averages are not pill labels. Match the badge row vertically,
+      // retaining horizontal overflows so the containment assertion catches them.
+      const texts = target.chartBadgeTexts.filter(item => item.width === outputWidth && item.left > mainWidth && badges.some(badge => (item.top + item.bottom) / 2 >= badge.top && (item.top + item.bottom) / 2 <= badge.bottom));
       const glyphs = target.chartShapeGlyphs.filter(item => item.width === outputWidth && item.left > mainWidth);
       return { badges, texts, glyphs, bars:target.chartBars.filter(item => item.width === outputWidth && item.left > mainWidth) };
     }, { mainWidth: plain.width, outputWidth: detailed.width });
@@ -176,6 +178,7 @@ test('Dex type generation and shape charts share axes and pill identifiers @view
   await seedDex(page);
   await page.locator('[data-nav=analytics]').click();
   await expect(page.getByRole('heading', { name: 'Generation Origin' })).toBeVisible();
+  await expect(page.locator('svg > text').filter({ hasText: /^GEN$/ })).toBeVisible();
   const evidence = await page.locator('svg').evaluateAll(svgs => svgs.flatMap(svg => {
     const header = [...svg.querySelectorAll(':scope > text')].find(text => ['TYPE','GEN','SHAPE'].includes(text.textContent ?? ''));
     const lines = [...svg.querySelectorAll(':scope > line')];

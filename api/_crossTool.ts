@@ -26,8 +26,8 @@ export interface ToolDef {
  *  `docs/analytics-accuracy.md` §1b. */
 export const LEAGUE_LAUNCH_TS = Date.UTC(2026, 8, 8);
 
-/** Set to the actual production deployment timestamp when the Picker launches. */
-export const FAVORITES_LAUNCH_TS: number | null = 1791333665273;
+/** Production rollout cutoff for conversion-era cohorts; deployment Ready is recorded in release evidence. */
+export const FAVORITES_LAUNCH_TS: number | null = 1791336876298;
 
 export const TOOL_CATALOG: readonly ToolDef[] = [
   { id: 'dex', label: 'Dex builder', short: 'Dex', launchedAt: 0 },
