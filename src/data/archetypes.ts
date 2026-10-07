@@ -1,4 +1,5 @@
 import type { Archetype } from '@/types/pokemon';
+import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
 export const ARCHETYPES: Archetype[] = [
   {
@@ -651,7 +652,7 @@ export const ARCHETYPES: Archetype[] = [
     // Red Gyarados (Lake of Rage), Shiny Ponyta (PLA), Shiny Haxorus (BW2 Nature Preserve)
     shinyIds: [130, 77, 612],
     // Zen Mode Darmanitan in BW overworld
-    spriteOverrides: { 555: '/sprites/pokemon/10017.png' },
+    spriteOverrides: { 555: pokemonSpriteUrl(10017) },
     subgroups: [
       { label: 'Red/Blue/Yellow', pokemonIds: [100,101, 131, 143] },
       { label: 'Gold/Silver/Crystal', pokemonIds: [130, 185] },

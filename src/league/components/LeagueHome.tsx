@@ -46,6 +46,7 @@ import {
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
 import { LeagueRosterNudge } from './LeagueFunnelNudge';
+import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
 /**
  * The league home: the card, zoomed out. One row per slot, led by the glyph
@@ -199,8 +200,8 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
             <span key={cell.seat} className="flex items-center justify-center">
               {p ? (
                 <img
-                  key={form ? `/sprites/pokemon/${form.id}.png` : p.sprite}
-                  src={form ? `/sprites/pokemon/${form.id}.png` : p.sprite}
+                  key={form ? pokemonSpriteUrl(form.id) : p.sprite}
+                  src={form ? pokemonSpriteUrl(form.id) : p.sprite}
                   alt={form ? form.label : p.name}
                   className="max-w-none"
                   style={{

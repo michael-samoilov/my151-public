@@ -63,6 +63,7 @@ import {
   wrapLines,
   wrapTracked,
 } from './paint';
+import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
 export { CARD_FILENAME, HOME_FILENAME } from './exportOptions';
 
@@ -112,9 +113,9 @@ export function exportRow(card: GymCard, row: number): ExportCell[] {
 
 /** A seat's sprite, or null when the seat is empty or the id is unknown. */
 function spriteUrl(pokemonId: number | null, form: PowerupForm | null): string | null {
-  if (form) return `/sprites/pokemon/${form.id}.png`;
+  if (form) return pokemonSpriteUrl(form.id);
   if (pokemonId === null) return null;
-  return getPokemonById(pokemonId)?.sprite ?? `/sprites/pokemon/${pokemonId}.png`;
+  return getPokemonById(pokemonId)?.sprite ?? pokemonSpriteUrl(pokemonId);
 }
 
 /** The two colours a Pokémon's pokeball is painted in. */

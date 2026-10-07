@@ -7,6 +7,7 @@ import { ShapeIconCircle } from '@/components/shared/ShapeIcon';
 import { shapeLabel, typeLabel } from '@/i18n';
 import type { ShapeName, TypeName } from '@/types/pokemon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
 const PEEK_HEIGHT = 68;
 const EXPAND_THRESHOLD = 40;
@@ -40,7 +41,7 @@ const computeData = (segment: AnalyticsDrillDownItem | null) => segment?.getData
 
 /** Wishiwashi's pokemon.json sprite is the school form, but the BST data
  *  reflects the solo form — show the original solo sprite in BST drilldowns. */
-const BST_SPRITE_OVERRIDES: Record<number, string> = { 746: '/sprites/pokemon/746.png' };
+const BST_SPRITE_OVERRIDES: Record<number, string> = { 746: pokemonSpriteUrl(746) };
 
 /** A full card panel: drag handle + header + accent line + scrollable content */
 function CardPanel({

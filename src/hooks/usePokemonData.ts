@@ -5,8 +5,13 @@ import { pokemonShape } from '@/data/pokemonShape';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { normalizeSearch, speciesSearchText, useNamesVersion } from '@/i18n';
+import { revisedSprite } from '@/lib/spriteUrl';
 
-const pokemonList = pokemonData as Pokemon[];
+// A replaced sprite file gets a new URL, so no cache keeps serving the old art.
+const pokemonList = (pokemonData as Pokemon[]).map((p) => {
+  const sprite = revisedSprite(p.sprite);
+  return sprite === p.sprite ? p : { ...p, sprite };
+});
 
 // Reverse index of archetype membership, built by walking each archetype's
 // own id list once. The previous shape — a `.filter()` over every archetype
