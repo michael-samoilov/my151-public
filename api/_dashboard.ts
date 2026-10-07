@@ -37,7 +37,7 @@ import {
   type SessionRecord,
 } from './_aggregate.js';
 import { asArchivedSet, bareCid, isArchived, withoutArchived } from './_archive.js';
-import { buildCrossTool } from './_crossTool.js';
+import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot } from './_crossTool.js';
 import { leaguePicks } from './_leaguePicks.js';
 import { activeSince, firstSeenSince, rangeStart, type DashboardRange } from './_range.js';
 /** Distinct evolution lines represented by a set of ids (unknown ids count as
@@ -380,10 +380,18 @@ export function buildDashboard(
   const leagueIn = within(leagueRecords, active);
   const favoriteIn = within(favoriteRecords, active);
   const favoriteNew = within(favoriteRecords, (r) => firstSeenSince(r, start));
-  const crossCids = new Set([...dexIn, ...leagueIn, ...favoriteIn].map((r) => bareCid(r.cid)));
-  const crossDex = within(records, (r) => crossCids.has(bareCid(r.cid)));
-  const crossLeague = within(leagueRecords, (r) => crossCids.has(r.cid));
-  const crossFavorite = within(favoriteRecords, (r) => crossCids.has(bareCid(r.cid)));
+  // Cross-tool cards: every record, of any tool, of the browsers active after `from`.
+  const crossWindow = (from: number | null) => {
+    const keep = <T>(list: T[], test: (r: T) => boolean): T[] => (from === null ? list : list.filter(test));
+    const on = (r: SessionRecord) => activeSince(r, from);
+    const cids = new Set([...keep(records, on), ...keep(leagueRecords, on), ...keep(favoriteRecords, on)].map((r) => bareCid(r.cid)));
+    return {
+      dex: keep(records, (r) => cids.has(bareCid(r.cid))),
+      league: keep(leagueRecords, (r) => cids.has(r.cid)),
+      favorite: keep(favoriteRecords, (r) => cids.has(bareCid(r.cid))),
+    };
+  };
+  const { dex: crossDex, league: crossLeague, favorite: crossFavorite } = crossWindow(start);
   const dexNew = within(records, (r) => firstSeenSince(r, start));
   const leagueNew = within(leagueRecords, (r) => firstSeenSince(r, start));
 
@@ -406,6 +414,13 @@ export function buildDashboard(
   const dexFirstTs = firstTsByCid(records);
   const journeys = crossToolJourneys(firstTsByCid(crossDex), firstTsByCid(crossLeague));
   const crossTool = buildCrossTool(crossDex, crossLeague, undefined, crossFavorite);
+  // The same snapshot per later tool, with the window opening no earlier than
+  // its launch. Built from the records already read: no Redis command.
+  const crossToolSince: Record<string, CrossToolSnapshot> = {};
+  for (const { id, start: from } of sinceLaunchStarts(TOOL_CATALOG, start)) {
+    const w = crossWindow(from);
+    crossToolSince[id] = buildCrossTool(w.dex, w.league, undefined, w.favorite);
+  }
 
   // The league funnel, from the records: opened is a record at all (the
   // first beacon needs a seated line), then named, then exported.
@@ -731,6 +746,7 @@ export function buildDashboard(
     totalFavoriteUsers:allFavoriteRecords.length,
     tools,
     crossTool,
+    crossToolSince,
     league,
     cohort,
     activity,

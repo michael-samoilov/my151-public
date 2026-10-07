@@ -112,3 +112,83 @@ test.describe('cross-tool diagram @viewport', () => {
     });
   });
 });
+
+/** A launch chip narrows the card to the matching `crossToolSince` snapshot. */
+const kpi = (n: number, of: number) => ({ key: 'dex-to-league', label: 'Dex → League', hint: 'of dex users active after 8 Sep 2026', n, of, pct: Math.round((n / of) * 100) });
+const snapshot = (regions: Record<string, number>, conv: [number, number]) => ({
+  catalog,
+  kpis: [kpi(...conv)],
+  eras: [{ key: 'since-league', label: 'Arrived after 8 Sep 2026', shortLabel: 'After 8 Sep', since: LEAGUE, until: null, browsers: Object.values(regions).reduce((s, n) => s + n, 0), regions }],
+});
+const crossToolSince = {
+  league: snapshot({ dex: 160, league: 227, 'dex+league': 129, 'dex+favorites': 3, 'dex+favorites+league': 4, favorites: 3 }, [129, 289]),
+  favorites: snapshot({ dex: 2, league: 3, 'dex+league': 1, 'dex+favorites': 1, 'dex+favorites+league': 3, favorites: 2 }, [4, 6]),
+};
+
+test.describe('cross-tool launch chips @viewport', () => {
+  test.use({ timezoneId: 'America/Los_Angeles' });
+
+  test('a chip narrows the card to its snapshot and leaves the date range alone', async ({ page }, testInfo) => {
+    const stats = { p50: 0, p75: 0, p90: 0 };
+    const asked: string[] = [];
+    await page.addInitScript(() => localStorage.setItem('p151-admin-token', 'e2e'));
+    await page.route('**/api/search-performance**', (route) => route.fulfill({ status: 503, json: { error: 'off' } }));
+    await page.route('**/api/submissions?**', (route) => {
+      asked.push(new URL(route.request().url()).searchParams.get('range') ?? '');
+      return route.fulfill({
+        status: 200,
+        json: { totalUsers: 0, offset: 0, limit: 50, funnel: { users: 0, completed: 0, exported: 0 }, retention: { returning: 0, activeLast7: 0, newUsers: 0 }, timeSurvival: [], timeStats: stats, depthSurvival: [], depthStats: stats, countries: {}, devices: {}, os: {}, popularFinal: [], mostDropped: [], popularBySection: {}, droppedBySection: {}, picksBySectionAll: {}, records: [], crossTool: { catalog, kpis: [kpi(156, 333)], eras }, crossToolSince },
+      });
+    });
+    await page.goto('/?admin');
+    const tile = page.locator('section', { has: page.getByRole('heading', { name: /Cross-tool/ }) });
+    const chips = tile.getByRole('group', { name: 'Since launch' }).getByRole('button');
+    const leagueChip = chips.filter({ hasText: 'League 7 Sep' });
+    const pickerChip = chips.filter({ hasText: 'Picker 6 Oct' });
+    await expect(chips).toHaveCount(2);
+    await expect(leagueChip).toHaveAttribute('aria-pressed', 'false');
+    await expect(pickerChip).toHaveAttribute('aria-pressed', 'false');
+    const ribbon = page.getByRole('group', { name: 'Date range' });
+    const rangeBefore = await ribbon.locator('[aria-pressed="true"]').textContent();
+    const requestsBefore = asked.length;
+
+    const read = async () => ({
+      browsers: (await tile.getByText(/^\d+ browsers$/).textContent()) ?? '',
+      totals: await tile.getByTestId('cross-tool-total').allTextContents(),
+      kpi: (await tile.getByText(/^\d+ \/ \d+$/).first().textContent()) ?? '',
+      range: (await ribbon.locator('[aria-pressed="true"]').textContent()) ?? '',
+    });
+    const states: Record<string, Awaited<ReturnType<typeof read>>> = { none: await read() };
+    expect(states.none.browsers).toBe('901 browsers');
+
+    await leagueChip.click();
+    await expect(leagueChip).toHaveAttribute('aria-pressed', 'true');
+    await expect(tile.getByText('526 browsers')).toBeVisible();
+    states.league = await read();
+    expect(states.league.totals).toEqual(['Dex 296', 'League 360', 'Picker 10']);
+    expect(states.league.kpi).toBe('129 / 289');
+
+    await pickerChip.click();
+    await expect(pickerChip).toHaveAttribute('aria-pressed', 'true');
+    await expect(leagueChip).toHaveAttribute('aria-pressed', 'false');
+    await expect(tile.getByText('12 browsers')).toBeVisible();
+    states.favorites = await read();
+    expect(states.favorites.totals).toEqual(['Dex 7', 'League 7', 'Picker 6']);
+
+    await pickerChip.click();
+    await expect(pickerChip).toHaveAttribute('aria-pressed', 'false');
+    await expect(tile.getByText('901 browsers')).toBeVisible();
+
+    // The chips fit on one line, whole, at every width.
+    const fit = await chips.evaluateAll((els) =>
+      els.map((el) => ({ top: Math.round(el.getBoundingClientRect().top), cut: el.scrollWidth > el.clientWidth, lines: Math.round(el.getBoundingClientRect().height) })),
+    );
+    expect(new Set(fit.map((f) => f.top)).size, 'chips on one line').toBe(1);
+    expect(fit.filter((f) => f.cut), 'chips cut short').toHaveLength(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
+
+    for (const s of Object.values(states)) expect(s.range).toBe(rangeBefore);
+    expect(asked.length, 'no new request for a chip').toBe(requestsBefore);
+    await testInfo.attach('cross-tool-chips.json', { body: JSON.stringify({ states, fit, requests: asked }, null, 1), contentType: 'application/json' });
+  });
+});

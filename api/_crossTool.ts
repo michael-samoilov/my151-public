@@ -137,6 +137,18 @@ function regionKey(ids: string[]): string {
   return [...ids].sort().join('+');
 }
 
+/**
+ * Where each later tool's since-launch window opens: the later of the range
+ * start and the tool's launch. One entry per tool after the first that has a
+ * launch day. `rangeStart` is `null` for `all`.
+ */
+export function sinceLaunchStarts(catalog: readonly ToolDef[], rangeStart: number | null): { id: string; start: number }[] {
+  return catalog
+    .slice(1)
+    .filter((t): t is ToolDef & { launchedAt: number } => t.launchedAt !== null)
+    .map((t) => ({ id: t.id, start: rangeStart === null ? t.launchedAt : Math.max(rangeStart, t.launchedAt) }));
+}
+
 export function eraBounds(catalog: readonly ToolDef[]): Omit<EraOverlap, 'browsers' | 'regions'>[] {
   const sorted = catalog.filter((t): t is ToolDef & { launchedAt: number } => t.launchedAt !== null).sort((a, b) => a.launchedAt - b.launchedAt);
   const cuts = sorted.slice(1);

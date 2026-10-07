@@ -1,23 +1,38 @@
+import { useMemo, useState } from 'react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
 import { Panel, Kpi } from '@/components/admin/ui';
 import { ToolEuler } from '@/components/admin/charts/ToolEuler';
-import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 
 function fmtPct(pct: number | null): string {
   return pct === null ? '–' : `${pct}%`;
 }
 
+/** The launch day in the viewer's time zone: `7 Sep`. */
+function launchDay(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
 /**
  * Opportunity conversion, companion share, league⊂dex, and one area-exact
- * diagram of every browser in the range by the tools it ever used.
+ * diagram of every browser in the range by the tools it ever used. A launch
+ * chip narrows the whole card to browsers active since that tool launched.
  */
-export function CrossToolCard({ data }: { data: CrossToolSnapshot }) {
-  const browsers = data.eras.reduce((n, e) => n + e.browsers, 0);
+export function CrossToolCard({ data, since }: { data: CrossToolSnapshot; since?: Record<string, CrossToolSnapshot> }) {
+  const [pick, setPick] = useState<string | null>(null);
+  const chips = data.catalog.filter(
+    (t, i): t is typeof t & { launchedAt: number } => i > 0 && t.launchedAt !== null && since?.[t.id] !== undefined,
+  );
+  const snap = (pick !== null ? since?.[pick] : undefined) ?? data;
+  const browsers = snap.eras.reduce((n, e) => n + e.browsers, 0);
   const regions = useMemo(() => {
     const sum: Record<string, number> = {};
-    for (const era of data.eras) for (const [key, n] of Object.entries(era.regions)) sum[key] = (sum[key] ?? 0) + n;
+    for (const era of snap.eras) for (const [key, n] of Object.entries(era.regions)) sum[key] = (sum[key] ?? 0) + n;
     return sum;
-  }, [data.eras]);
+  }, [snap.eras]);
   return (
     <Panel
       title="Cross-tool"
@@ -28,8 +43,29 @@ export function CrossToolCard({ data }: { data: CrossToolSnapshot }) {
         </span>
       }
     >
+      {chips.length > 0 && (
+        <div role="group" aria-label="Since launch" className="mb-3 flex gap-1">
+          {chips.map((t) => {
+            const on = pick === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setPick(on ? null : t.id)}
+                className={cn(
+                  'shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-[0.7rem] font-semibold tabular-nums transition-colors',
+                  on ? 'border-foreground bg-foreground text-card' : 'border-border text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {t.short} {launchDay(t.launchedAt)}
+              </button>
+            );
+          })}
+        </div>
+      )}
       <div className="flex flex-wrap gap-x-6 gap-y-3">
-        {data.kpis.map((k) => (
+        {snap.kpis.map((k) => (
           <div key={k.key} title={k.hint}>
             <Kpi value={fmtPct(k.pct)} label={k.label} denom={`${k.n} / ${k.of}`} />
           </div>
