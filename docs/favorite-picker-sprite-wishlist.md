@@ -31,6 +31,8 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Lunala Full Moon phase | Gen 7 legendary | Requested 2026-09-30. No separately named Gen 5 front sprite found in the current Smogon source. |
 | Koraidon ride builds (Sprinting, Swimming, Gliding) | Gen 9 Koraidon family | Requested 2026-09-30. No separately named Gen 5 front sprite found for these ride builds in the current Smogon source. |
 | Miraidon ride modes (Drive, Aquatic, Glide) | Gen 9 Miraidon family | Requested 2026-09-30. No separately named Gen 5 front sprite found for these ride builds in the current Smogon source. |
+| Mega Zygarde (PokeAPI 10301) | Gen 6 gimmick / Zygarde family | Michael (2026-10-07): important. Checked 2026-10-07: PokeAPI has no sprite (404), and Showdown's Gen 5 index has no `zygarde-mega`. Add it as a picker-only `source: 'powerup'` form once a Gen 5-style sprite is found. |
+| Female Mega Meowstic (PokeAPI 10326) | Gen 6 gimmick / Meowstic family | Checked 2026-10-07: PokeAPI's 10326 and Showdown's `meowstic-fmega` are pixel-identical to the male Mega Meowstic, so neither is a distinct sprite. Showdown's file is also a smoothed render, not pixel art. |
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
 
