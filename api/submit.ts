@@ -33,6 +33,10 @@ function isDexId(id: unknown): id is number {
   return typeof id === 'number' && Number.isInteger(id) && Object.hasOwn(EVOLUTION_CHAIN_BY_ID, id);
 }
 
+/** A Pokédex may grow past 151. Unique known ids bound a build, and a section,
+ *  at this many entries. */
+const DEX_ID_COUNT = Object.keys(EVOLUTION_CHAIN_BY_ID).length;
+
 // Rate limiters: per-IP, analytics disabled to avoid doubling Upstash command count.
 const burstLimiter = new Ratelimit({
   redis,
@@ -98,9 +102,9 @@ function localDowIn(tz: string | undefined, when: number): number {
   }
 }
 
-/** Validate a 1–151 unique-id build array; returns the ids or null. */
+/** Validate a non-empty build of unique known ids; returns the ids or null. */
 function validIds(ids: unknown): number[] | null {
-  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 151) return null;
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > DEX_ID_COUNT) return null;
   const seen = new Set<number>();
   for (const id of ids) {
     if (!isDexId(id)) return null;
@@ -119,7 +123,7 @@ function validSections(sections: unknown): Record<string, number[]> | undefined 
   let groups = 0;
   for (const [key, val] of Object.entries(sections as Record<string, unknown>)) {
     if (groups >= 40 || typeof key !== 'string' || key.length > 40) break;
-    if (!Array.isArray(val) || val.length === 0 || val.length > 151) continue;
+    if (!Array.isArray(val) || val.length === 0 || val.length > DEX_ID_COUNT) continue;
     const ids: number[] = [];
     for (const id of val) {
       if (isDexId(id)) ids.push(id);
@@ -189,7 +193,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const kind: BeaconKind = body.kind;
 
     const ids = validIds(body.ids);
-    if (!ids) return res.status(400).json({ error: 'Expected 1-151 Pokemon IDs' });
+    if (!ids) return res.status(400).json({ error: 'Expected unique Pokémon IDs' });
     if (kind === 'completion' && ids.length !== 151) {
       return res.status(400).json({ error: 'Completion requires exactly 151 Pokemon IDs' });
     }
@@ -206,7 +210,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Distinct evolution lines reached, computed client-side; clamp defensively.
     const depth =
       typeof body.depth === 'number' && Number.isFinite(body.depth)
-        ? Math.max(0, Math.min(151, Math.round(body.depth)))
+        ? Math.max(0, Math.min(ids.length, Math.round(body.depth)))
         : ids.length;
 
     // Count the paths where a genuine beacon is dropped server-side, into the
