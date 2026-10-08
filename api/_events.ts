@@ -97,6 +97,9 @@ export const FUNNEL_EVENTS = [
   // that included the detailed stats, beside its favorites-export-full.
   'favorites-export-shown',
   'favorites-export-stats',
+  // The popup that points at Export when the Picker grid is first complete,
+  // named like league-nudge-card-shown.
+  'favorites-nudge-complete-shown',
   // The gym leader maker.
   'league-open',
   'league-first-seat',
