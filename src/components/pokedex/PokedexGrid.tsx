@@ -536,7 +536,6 @@ function GroupBox({
         className="text-xs font-semibold uppercase tracking-wide px-1.5"
         style={{
           color: sectionStroke,
-          opacity: showEmptyState ? 0.75 : 1,
           paddingTop: showEmptyState ? '0px' : '4px',
           paddingBottom: showEmptyState ? '0px' : '2px',
         }}
