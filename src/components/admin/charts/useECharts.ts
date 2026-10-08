@@ -10,7 +10,7 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsCoreOption } from 'echarts/core';
-import { categoryIndexAtX, clampToRect, lineLeftInPlot, type PlotRect } from './scrubPlot';
+import { categoryIndexAtX, categoryX, clampToRect, lineLeftInPlot, type PlotRect } from './scrubPlot';
 
 // Tree-shaken registration: only the chart types and components the admin
 // dashboard uses, so the admin bundle carries a fraction of full echarts. The
@@ -58,8 +58,9 @@ export function cssVar(el: HTMLElement | null, name: string, fallback = ''): str
 /**
  * The one scrub every admin line chart shares. The x positions are evenly
  * spaced across the plot: index 0 at its left edge, `count - 1` at its right.
- * A hover shows the readout; a press adds the vertical line, and a drag keeps
- * both pinned to the plot edge. Release or leave hides them.
+ * A hover shows the readout; a press adds the vertical line. Both snap to the
+ * nearest x position, so a drag steps from point to point and never sits
+ * between two dates. Release or leave hides them.
  */
 export interface ChartScrub {
   count: number;
@@ -180,23 +181,16 @@ export function useECharts(
         }
       };
 
-      const placeReadout = (plot: PlotRect, pinnedX: number) => {
+      const hide = () => {
+        line.style.display = 'none';
+        readout.style.display = 'none';
+      };
+      const showAt = (clientX: number, clientY: number) => {
         const scrub = scrubRef.current;
         if (!scrub || scrub.count <= 0) {
-          readout.style.display = 'none';
+          hide();
           return;
         }
-        readout.innerHTML = scrub
-          .label(categoryIndexAtX(pinnedX, plot, scrub.count - 1))
-          .map((part) => `<span style="white-space:nowrap">${part}</span>`)
-          .join(' · ');
-        readout.style.display = 'block';
-        const w = readout.offsetWidth;
-        const maxX = Math.max(el.clientWidth - w, 0);
-        readout.style.left = `${Math.max(0, Math.min(pinnedX - w / 2, maxX))}px`;
-      };
-
-      const showAt = (clientX: number, clientY: number) => {
         const r = el.getBoundingClientRect();
         const plot =
           gridRect() ?? {
@@ -206,9 +200,18 @@ export function useECharts(
             height: Math.max(r.height - 2, 1),
           };
         const pinned = clampToRect(clientX - r.left, clientY - r.top, plot);
-        placeReadout(plot, pinned.x);
+        const index = categoryIndexAtX(pinned.x, plot, scrub.count - 1);
+        const x = categoryX(index, plot, scrub.count - 1);
+        readout.innerHTML = scrub
+          .label(index)
+          .map((part) => `<span style="white-space:nowrap">${part}</span>`)
+          .join(' · ');
+        readout.style.display = 'block';
+        const w = readout.offsetWidth;
+        const maxX = Math.max(el.clientWidth - w, 0);
+        readout.style.left = `${Math.max(0, Math.min(x - w / 2, maxX))}px`;
         if (pressed) {
-          line.style.left = `${lineLeftInPlot(pinned.x, plot)}px`;
+          line.style.left = `${lineLeftInPlot(x, plot)}px`;
           line.style.top = `${plot.y}px`;
           line.style.height = `${plot.height}px`;
           line.style.bottom = 'auto';
@@ -216,10 +219,6 @@ export function useECharts(
         } else {
           line.style.display = 'none';
         }
-      };
-      const hide = () => {
-        line.style.display = 'none';
-        readout.style.display = 'none';
       };
       const onDown = (e: PointerEvent) => {
         pressed = true;

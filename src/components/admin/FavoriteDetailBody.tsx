@@ -22,6 +22,18 @@ import {SessionsChip,TimeChip} from './SessionRailChips';
 export function FavoriteDetailBody({user}:{user:FavoriteUser}) {
   const sessions = useMemo(()=>[...user.sessionLog].sort((a,b)=>a.endTs-b.endTs),[user.sessionLog]);
   const [index,setIndex] = useState(Math.max(0,sessions.length-1));
+  // SessionTimeline holds its snapshot until release. Like the Dex and League
+  // boards, follow the slider's input events so the grid tracks the drag.
+  useLayoutEffect(()=>{
+    const fromSlider=()=>{
+      const el=document.querySelector('input[aria-label="Scrub sessions"]');
+      if(!(el instanceof HTMLInputElement))return;
+      const i=Number(el.value);
+      if(Number.isInteger(i)&&i>=0&&i<sessions.length)setIndex(i);
+    };
+    document.addEventListener('input',fromSlider,true);
+    return ()=>document.removeEventListener('input',fromSlider,true);
+  },[sessions.length]);
   const current = Math.min(index,Math.max(0,sessions.length-1));
   const snapshot = sessions[current]?.snapshot ?? user.latest;
   const points = useMemo(()=>sessions.map((s,i):TimelinePoint=>{
