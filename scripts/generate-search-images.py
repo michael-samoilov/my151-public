@@ -27,10 +27,10 @@ out = root / args.out_dir
 CROPS = {
     # Ten full rows of ten, below the header bar.
     'dex': ('dex-plain', 32, 84, 966),
-    # The icon header and Gen I-IV of the Normal to Grass columns.
-    'favorites': ('picker-full-icons', 146, 106, 620),
-    # From the theme box down to the last Gym Leader row.
-    'trainer-card': ('trainer-textless', 0, 84, 888),
+    # The gen discs, the icon header, and Gen I-V of the Normal to Grass columns.
+    'favorites': ('picker-full-icons', 26, 106, 740),
+    # The whole card width, from the top of the header band.
+    'trainer-card': ('trainer-textless', 0, 0, 888),
 }
 PAGES = {
     'hub': 'dex',
@@ -42,7 +42,10 @@ PAGES = {
 
 def crop(name):
     capture, left, top, size = CROPS[name]
-    return Image.open(source / f'{capture}.png').convert('RGB').crop((left, top, left + size, top + size))
+    image = Image.open(source / f'{capture}.png').convert('RGBA')
+    # JPEG has no alpha: flatten the exports' transparent rounded corners onto white, not black.
+    flat = Image.alpha_composite(Image.new('RGBA', image.size, 'white'), image).convert('RGB')
+    return flat.crop((left, top, left + size, top + size))
 
 
 def save(image, name):
