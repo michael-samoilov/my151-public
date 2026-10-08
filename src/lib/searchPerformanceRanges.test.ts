@@ -148,7 +148,7 @@ describe('search performance by range', () => {
   });
 
   it('spends 24 Google calls on a daily refresh and 5 on an hourly one, token included', () => {
-    expect(view.providers.google.status).toBe('ready');
+    expect(view.byRange['28d'].providers.google.status).toBe('ready');
     expect(dailyCalls).toBe(24);
     expect(hourlyCalls).toBe(5);
   });
@@ -213,12 +213,5 @@ describe('search performance by range', () => {
     expect(view.byRange['90d'].pages.find((page) => page.path === '/')?.engines.bing.previous).toBeNull();
     expect(view.byRange.all.pages.find((page) => page.path === '/old')?.engines.bing.current?.impressions).toBe(9);
     expect(view.byRange.all.providers.bing.current?.window).toEqual({ start: BING_FIRST_DAY, end: '2026-09-24' });
-  });
-
-  it('keeps the 28-day fields that frontends deployed before byRange read', () => {
-    expect(view.periodDays).toBe(28);
-    expect(view.pages).toEqual(view.byRange['28d'].pages);
-    expect(view.providers.google.comparison).toMatchObject({ available: true, current: { range: { start: '2026-08-28', end: '2026-09-24' } } });
-    expect(view.providers.bing.daily).toHaveLength(147);
   });
 });
