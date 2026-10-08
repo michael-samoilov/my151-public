@@ -4,7 +4,7 @@ import { redis, requireAdmin, firstQueryValue, CLIENTS_KEY } from './_shared.js'
 import { EXPORT_SURVEY_SKIPS_KEY } from './_events.js';
 import { LEAGUE_CLIENTS_KEY } from './_leagueRecord.js';
 import { ARCHIVED_KEY } from './_archive.js';
-import { buildDashboard } from './_dashboard.js';
+import { buildBrowser, buildDashboard } from './_dashboard.js';
 import { funnelDayKeys, isDashboardRange } from './_range.js';
 
 // Sums every field across the window's day counters inside Redis, so the
@@ -40,6 +40,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (!(await requireAdmin(req, res))) return;
+    // Private data — never cache.
+    res.setHeader('Cache-Control', 'no-store');
+
+    // One browser, for a feedback sender who is not on a loaded page: one
+    // read per store plus its export-survey skips, 4 commands in all.
+    const cid = firstQueryValue(req.query.cid as string | string[] | undefined);
+    if (cid) {
+      if (cid.length > 64) return res.status(400).json({ error: 'Invalid cid' });
+      // submit.ts keys a second person on the same browser, in another
+      // country, as `<cid>::<country>`, with the raw x-vercel-ip-country value.
+      // The report's country names that record; it wins when it exists.
+      const country = firstQueryValue(req.query.country as string | string[] | undefined).trim();
+      if (country && !/^[A-Za-z0-9]{1,4}$/.test(country)) return res.status(400).json({ error: 'Invalid country' });
+      const dexFields = country ? [`${cid}::${country}`, cid] : [cid];
+      const [dexHits, league, favorite, exportSurveySkips] = await Promise.all([
+        redis.hmget<Record<string, unknown>>(CLIENTS_KEY, ...dexFields),
+        redis.hget(LEAGUE_CLIENTS_KEY, cid),
+        redis.hget(FAVORITE_CLIENTS_KEY, cid),
+        redis.hget(EXPORT_SURVEY_SKIPS_KEY, cid),
+      ]);
+      const dex = dexFields.map((f) => dexHits?.[f]).find((v) => v != null) ?? null;
+      return res.status(200).json(buildBrowser(cid, { dex, league, favorite, exportSurveySkips }));
+    }
 
     const rawLimit = parseInt(firstQueryValue(req.query.limit as string | string[] | undefined), 10);
     const rawOffset = parseInt(firstQueryValue(req.query.offset as string | string[] | undefined), 10);
@@ -73,8 +96,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       now,
     );
 
-    // Private data — never cache.
-    res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json(body);
   } catch (err) {
     console.error('Submissions error:', err);

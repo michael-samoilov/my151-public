@@ -72,6 +72,7 @@ describe('referrerFlowSankey', () => {
 
 
 describe('favoriteFunnelSankey', () => {
+  const stageNode = (label: string) => (label === 'Not started' ? 'Bounced' : label);
   it('conserves each browser through every progress and export combination', () => {
     const stages = ['Not started', '1–64 cells', '65–128 cells', '129–192 cells', '193–256 cells', 'Completed'];
     for (const label of stages) {
@@ -80,14 +81,17 @@ describe('favoriteFunnelSankey', () => {
           for (let both = 0; both <= 2; both++) {
             for (let notExported = 0; notExported <= 2; notExported++) {
               const count = full + simplified + both + notExported;
+              const completed = label === 'Completed';
               const s = favoriteFunnelSankey({ opened: count, buckets: [{ label, count, exports: { full, simplified, both }, notExported }] });
               expect(flowOut(s, 'Opened')).toBe(count);
-              expect(flowInto(s, label)).toBe(count);
-              expect(flowOut(s, label)).toBe(count);
+              expect(flowInto(s, stageNode(label))).toBe(count);
+              expect(flowInto(s, 'Placed a Pokémon')).toBe(label === 'Not started' ? 0 : count);
+              // Only Completed peels to Not exported. Every other stage ends there.
+              expect(flowOut(s, stageNode(label))).toBe(completed ? count : count - notExported);
+              expect(flowInto(s, 'Not exported')).toBe(completed ? notExported : 0);
               expect(flowInto(s, 'Full grid')).toBe(full);
               expect(flowInto(s, 'Simplified')).toBe(simplified);
-              expect(flowInto(s, 'Both views')).toBe(both);
-              expect(flowInto(s, 'Not exported')).toBe(notExported);
+              expect(flowInto(s, 'Both exported')).toBe(both);
               expect(s.links.every(l => l.value > 0)).toBe(true);
             }
           }
@@ -95,16 +99,18 @@ describe('favoriteFunnelSankey', () => {
       }
     }
   });
-  it('keeps export destinations distinct and progress peers in one column', () => {
-    const s = favoriteFunnelSankey({ opened: 4, buckets: [
+  it('ends Bounced, keeps progress peers in one column, and puts Not exported on top', () => {
+    const s = favoriteFunnelSankey({ opened: 5, buckets: [
       { label: 'Not started', count: 1, exports: { full: 0, simplified: 0, both: 0 }, notExported: 1 },
       { label: '1–64 cells', count: 1, exports: { full: 1, simplified: 0, both: 0 }, notExported: 0 },
       { label: '193–256 cells', count: 1, exports: { full: 0, simplified: 0, both: 1 }, notExported: 0 },
-      { label: 'Completed', count: 1, exports: { full: 0, simplified: 1, both: 0 }, notExported: 0 },
+      { label: 'Completed', count: 2, exports: { full: 0, simplified: 1, both: 0 }, notExported: 1 },
     ] });
-    expect(targetsFrom(s, 'Opened')).toEqual(['Completed', '193–256 cells', '1–64 cells', 'Not started']);
-    expect(flowOut(s, 'Opened')).toBe(4);
-    expect(s.nodes.filter(n => ['Full grid', 'Both views', 'Simplified', 'Not exported'].includes(n.name)).map(n => n.name)).toEqual(['Full grid', 'Both views', 'Simplified', 'Not exported']);
+    expect(targetsFrom(s, 'Opened')).toEqual(['Placed a Pokémon', 'Bounced']);
+    expect(targetsFrom(s, 'Bounced')).toEqual([]);
+    expect(targetsFrom(s, 'Placed a Pokémon')).toEqual(['Completed', '193–256 cells', '1–64 cells']);
+    expect(targetsFrom(s, 'Completed')[0]).toBe('Not exported');
+    expect(s.nodes.filter(n => ['Not exported', 'Full grid', 'Simplified', 'Both exported'].includes(n.name)).map(n => n.name)).toEqual(['Not exported', 'Full grid', 'Both exported', 'Simplified']);
     expect(s.ariaLabel).toContain('maximum filled cells');
   });
 });

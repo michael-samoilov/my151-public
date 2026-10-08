@@ -6,7 +6,7 @@ test.describe('Picker admin @viewport',()=>{
     await expect(page.getByRole('heading',{name:/^Picker activity/})).toBeVisible();
     const funnel=page.getByRole('img',{name:/Favorite Pokémon usage funnel/});
     await expect(funnel).toBeVisible();
-    await expect(funnel).toHaveAttribute('aria-label',/Completed/);
+    await expect(funnel).toHaveAttribute('aria-label',/placed a Pokémon.*completed/);
     await page.locator('[data-favorite-user="demo-picker-6"]').click();
     const detail=page.getByTestId('admin-favorite-detail');
     const desktop=page.viewportSize()!.width>=1024;

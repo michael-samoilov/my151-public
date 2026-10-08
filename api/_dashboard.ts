@@ -793,3 +793,31 @@ export function buildDashboard(
     records: page,
   };
 }
+
+/** The stored values one browser has in each store, from one HGET apiece. */
+export interface BrowserSource {
+  dex: unknown;
+  league: unknown;
+  favorite: unknown;
+  exportSurveySkips: unknown;
+}
+
+/**
+ * One browser's Dex, League, and Picker records, shaped as the dashboard
+ * shapes them, so the admin can open a browser that is not on a loaded page.
+ * A store the browser never used is null.
+ */
+export function buildBrowser(cid: string, source: BrowserSource) {
+  const skipMap = parseExportSurveySkipMap(
+    source.exportSurveySkips == null ? null : { [cid]: source.exportSurveySkips },
+  );
+  const dex = source.dex == null ? null : parseRecord(source.dex);
+  const league = source.league == null ? null : parseLeagueRecord(source.league);
+  const favorite = source.favorite == null ? null : parseFavoriteRecord(source.favorite);
+  return {
+    cid,
+    dex: dex ? stampExportSurveySkips(dex, skipMap) : null,
+    league: league ? stampExportSurveySkips(leagueUser(league, dex?.firstTs), skipMap) : null,
+    favorite: favorite ? favoriteUser(favorite, false) : null,
+  };
+}

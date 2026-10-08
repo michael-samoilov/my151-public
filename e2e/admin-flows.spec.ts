@@ -32,10 +32,10 @@ test.describe('admin flows', () => {
     await expect(funnel).toBeVisible();
     await expect(funnel.locator('canvas')).toBeVisible();
     const label = await funnel.getAttribute('aria-label');
-    for (const stage of ['Not started', '1–64 cells', '65–128 cells', '129–192 cells', '193–256 cells', 'Completed']) {
+    for (const stage of ['bounced', 'placed a Pokémon', '1–64 cells', '65–128 cells', '129–192 cells', '193–256 cells', 'completed']) {
       expect(label).toContain(stage);
     }
-    expect(label).toMatch(/full grid only.*simplified only.*both views.*not exported/);
+    expect(label).toMatch(/full grid only.*simplified only.*both exported.*not exported/);
     await info.attach('picker-flow-stages', { body: JSON.stringify({ label }), contentType: 'application/json' });
   });
 
