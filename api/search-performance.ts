@@ -38,6 +38,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!(await requireAdmin(req, res))) return;
 
   res.setHeader('Cache-Control', 'no-store');
+  // One-time cleanup, approved by Michael on 8 October 2026: delete the v1
+  // cache that the v2 keys replaced on 29 September. Nothing reads it. Remove
+  // this branch once it has run.
+  if (firstQueryValue(req.query.dropLegacyCache) === '1') {
+    return res.status(200).json({ deleted: await redis.del('admin:search-performance:v1') });
+  }
   let cached: [Daily | null, Hourly | null] = [null, null];
   try {
     cached = await redis.mget<[Daily | null, Hourly | null]>(DAILY_KEY, HOURLY_KEY);
