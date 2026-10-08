@@ -140,11 +140,18 @@ async function snapshot(browser, url, profile) {
   const { text, images } = await page.evaluate(() => ({
     text: document.body.innerText,
     images: [...document.images]
-      .filter((img) => img.getBoundingClientRect().width > 0 && img.complete && img.naturalWidth > 0)
-      .map((img) => ({
-        name: img.alt || img.currentSrc.split('/').pop(),
-        sharpness: img.naturalWidth / (img.getBoundingClientRect().width * devicePixelRatio),
-      })),
+      .filter((img) => img.offsetWidth > 0 && img.complete && img.naturalWidth > 0)
+      .map((img) => {
+        // For a `srcset` image, naturalWidth is the width `sizes` declares,
+        // whichever copy loaded. The file's own pixel width is in the
+        // descriptor of the copy that loaded.
+        const [, descriptor = ''] = img.srcset.split(',').map((c) => c.trim().split(/\s+/))
+          .find(([url]) => new URL(url, location.href).href === img.currentSrc) ?? [];
+        const filePixels = descriptor.endsWith('w') ? parseFloat(descriptor)
+          : descriptor.endsWith('x') ? img.naturalWidth * parseFloat(descriptor) : img.naturalWidth;
+        // offsetWidth is the layout width, before rotation or scale.
+        return { name: img.alt || img.currentSrc.split('/').pop(), sharpness: filePixels / (img.offsetWidth * devicePixelRatio) };
+      }),
   }));
   await context.close();
   return { png, text, images };
