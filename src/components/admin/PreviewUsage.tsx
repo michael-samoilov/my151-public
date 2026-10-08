@@ -10,20 +10,20 @@ import { PREVIEW_PROGRESS, sessionChipParts } from '@/components/admin/userPrevi
 const CHIP =
   'inline-flex shrink-0 flex-col items-center justify-center whitespace-nowrap rounded-xl border border-border bg-card px-1 py-0.5 text-xs leading-tight tabular-nums md:px-2';
 
-/** Progress over the tool's noun: "12/151" over "Dex", and a camera once exported. */
+/** Progress over the tool's noun: "12/151" over "Dex". The count is red
+ *  once it reaches the total, and a red camera follows an exported tool. */
 function ProgressChip({ cell, className }: { cell: ToolCell; className?: string }) {
   const { of, noun } = PREVIEW_PROGRESS[cell.tool];
-  const empty = cell.count === 0;
   return (
     <span
       data-metric={cell.tool}
-      data-empty={empty ? 'true' : undefined}
-      className={cn(CHIP, empty && 'opacity-40', className)}
+      data-empty={cell.used ? undefined : 'true'}
+      className={cn(CHIP, !cell.used && 'opacity-40', className)}
     >
-      <span className="font-bold text-foreground">{`${cell.count}/${of}`}</span>{' '}
+      <span className={cn('font-bold', cell.count >= of ? 'text-red-600' : 'text-foreground')}>{`${cell.count}/${of}`}</span>{' '}
       <span className="inline-flex items-center gap-0.5 font-medium text-muted-foreground">
         {noun}
-        {cell.exported && !empty ? <Camera className="h-3 w-3 shrink-0" aria-label="exported" /> : null}
+        {cell.exported ? <Camera className="h-3 w-3 shrink-0 text-red-600" aria-label="exported" /> : null}
       </span>
     </span>
   );
@@ -34,11 +34,13 @@ function TimeChip({
   tool,
   sessions,
   totalMs,
+  used = true,
   className,
 }: {
   tool: UsageTool | 'total';
   sessions: number;
   totalMs: number;
+  used?: boolean;
   className?: string;
 }) {
   const parts = sessionChipParts(sessions, totalMs);
@@ -47,7 +49,7 @@ function TimeChip({
       data-metric="session"
       data-tool={tool}
       title={tool === 'total' ? 'Browser total: sessions merged across tools, time counted once' : undefined}
-      className={cn(CHIP, tool === 'total' && 'border-foreground/25 bg-muted', className)}
+      className={cn(CHIP, tool === 'total' && 'border-foreground/25 bg-muted', !used && 'opacity-40', className)}
     >
       <span>
         <span className="font-bold text-foreground">{parts.count}</span>{' '}
@@ -89,6 +91,7 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: { sessions: num
           tool={c.tool}
           sessions={c.usage.sessions}
           totalMs={c.usage.totalMs}
+          used={c.used}
           className={cn('row-start-2 self-stretch justify-self-stretch md:row-start-2', PHONE_COL[i], DESKTOP_COL[c.tool])}
         />
       ))}
@@ -118,7 +121,7 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: { sessions: num
 
 /** The usage block of one Newest browsers card. */
 export function BrowserUsage({ cells }: { cells: ToolCell[] }) {
-  const total = cells.length >= 2 ? browserTotal(cells.map((c) => c.usage)) : null;
+  const total = browserTotal(cells.filter((c) => c.used).map((c) => c.usage));
   return (
     <div className="min-w-0 md:contents">
       <FitNowrap contentsOnMd lockZoom innerClassName="grid items-center">
