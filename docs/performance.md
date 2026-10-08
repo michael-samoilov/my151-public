@@ -116,6 +116,7 @@ Lighthouse findings left open on purpose:
 |---|---|
 | "Image elements do not have explicit width and height" on the hub screenshots | Each screenshot's shadow would show as an empty frame while the image loads. CLS is already 0. |
 | "Improve image delivery": compression of the hub's back shots | These are UI screenshots with small text and sprites at quality 86. A lower quality saves about 20–30 KiB and risks visible artifacts. |
+| "Background and foreground colors do not have a sufficient contrast ratio" on the type filter chips in the Pokémon browser | White text on the official type colors: 13 of the 18 are under 4.5:1. They are the games' own badge colors, and Michael keeps them (October 8). |
 
 The first plan, with earlier targets and a phase list, is on the unmerged
 branch `codex/performance-program-plan`. This page replaces its targets.

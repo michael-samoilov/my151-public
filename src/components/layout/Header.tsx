@@ -226,7 +226,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
                   variant="ghost"
                   size="pill"
                   onClick={() => setLockTip((o) => !o)}
-                  className="px-2 text-muted-foreground/70 hover:bg-transparent hover:text-muted-foreground sm:px-3"
+                  className="px-2 text-muted-foreground hover:bg-transparent sm:px-3"
                   data-nav="analytics"
                   data-state="inactive"
                   aria-label={t('nav.analyticsLocked', { count: ANALYTICS_UNLOCK_AT })}

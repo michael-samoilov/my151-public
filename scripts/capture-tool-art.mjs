@@ -67,7 +67,7 @@ try{
  if(has('favorites')){
  const p=await browser.newPage({viewport:{width:1280,height:900}});
  await p.goto(`${base}/docs/favorite-picker-work/export/portrait/index.html`);await p.waitForFunction(()=>window.ready,{timeout:90000});await audit(p,'picker-portrait-comparison');
- const data=await p.evaluate(()=>window.portrait.data);for(const [i,name]of ['picker-full-portrait','picker-simplified-portrait','picker-full-horizontal','picker-simplified-horizontal'].entries()){writeFileSync(resolve(out,`${name}.png`),Buffer.from(data[i].split(',')[1],'base64'));source(name)}await p.close();
+ const data=await p.evaluate(()=>window.portrait.data);for(const [i,name]of ['picker-full-portrait','picker-simplified-portrait','picker-full-horizontal','picker-simplified-horizontal','picker-full-icons'].entries()){writeFileSync(resolve(out,`${name}.png`),Buffer.from(data[i].split(',')[1],'base64'));source(name)}await p.close();
  }
  if(has('dex-share')){
  const p=await browser.newPage({viewport:{width:1280,height:900}});
@@ -79,6 +79,18 @@ try{
  if(!(await stats.getAttribute('class')).includes('bg-primary/10'))await stats.click();
  await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});
  await blob(p,'dex-share-stats');await p.close();
+ }
+ if(has('dex-plain')){
+ // The 151 demo grid with section outlines and Detailed Stats off: sprites and dex numbers only.
+ const p=await browser.newPage({viewport:{width:1280,height:900}});
+ await p.goto(`${base}/pokedex-builder?demo=151&notme`);await p.locator('[data-nav="view"]').first().click();await p.locator('[data-dex-export]').click();
+ await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});
+ const outlines=p.locator('[data-export-outlines]');
+ if((await outlines.getAttribute('class')).includes('bg-primary/10'))await outlines.click();
+ const stats=p.locator('[data-export-stats]');
+ if((await stats.getAttribute('class')).includes('bg-primary/10'))await stats.click();
+ await p.waitForTimeout(1000);await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});
+ await blob(p,'dex-plain');await p.close();
  }
  if(has('dex')||has('dex-build'))await phonePage('build','dex-build');
  if(has('dex')){
