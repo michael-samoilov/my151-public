@@ -32,6 +32,8 @@
   "favorites.export.simplified": "Résumé",
   "favorites.export.title": "Exporter",
   "favorites.generation": "Génération {gen}",
+  "favorites.nudge.complete.body": "Touchez l’icône de téléchargement pour enregistrer votre tableau en image et le partager.",
+  "favorites.nudge.complete.title": "Grille terminée",
   "favorites.packing.back": "Choisir un autre Pokémon",
   "favorites.packing.heading": "Ce Pokémon se trouve déjà dans cette génération. Choisissez comment réagencer la ligne.",
   "favorites.scrollMore": "Faites défiler pour voir la suite",

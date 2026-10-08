@@ -32,6 +32,8 @@
   "favorites.export.simplified": "汇总",
   "favorites.export.title": "导出",
   "favorites.generation": "第{gen}世代",
+  "favorites.nudge.complete.body": "点按下载图标，即可将图表保存为图片并分享。",
+  "favorites.nudge.complete.title": "表格已完成",
   "favorites.packing.back": "选择其他宝可梦",
   "favorites.packing.heading": "这只宝可梦已在这个世代中。请选择如何调整这一行。",
   "favorites.scrollMore": "滚动查看更多",

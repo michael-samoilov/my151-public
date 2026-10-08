@@ -15,7 +15,7 @@ test.describe('Picker admin @viewport',()=>{
     await expect(page.getByTestId('session-playhead-count')).toHaveText('257');
     await expect(page.getByTestId('admin-rail-chip')).toHaveText([/^2\ssessions\s*2\sdays$/,/^\d+m\s*time spent$/]);
     await expect(page.getByTestId('session-milestone')).toHaveCount(1);
-    await expect(page.getByTestId('session-playhead-milestone')).toHaveText('full grid · simplified · export popup');
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveText('full grid · simplified · export nudge · export opened');
     const grid=page.getByTestId('admin-favorite-snapshot');
     const images=grid.locator('[data-favorite-sprite]');
     await expect(images).toHaveCount(257);
@@ -78,11 +78,11 @@ test('resizing across the desktop breakpoint preserves every selected coordinate
   await testInfo.attach('picker-admin-breakpoint.png',{body:await page.screenshot(),contentType:'image/png'});
 });
 
-test('the milestone row tells an export popup without export from a detailed-stats export',async({page},testInfo)=>{
+test('the milestone row tells the completion popup and an opened export dialog from an export',async({page},testInfo)=>{
   await page.goto('/?admin&demo');
   await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
   const labels:Record<string,string|null>={};
-  for(const [cid,label,diamonds] of [['demo-picker-2','export popup',0],['demo-picker-5','full grid · detailed stats · export popup',1]] as const){
+  for(const [cid,label,diamonds] of [['demo-picker-2','export opened',0],['demo-picker-5','full grid · detailed stats · export opened',1],['demo-picker-6','full grid · simplified · export nudge · export opened',1]] as const){
     await page.locator(`[data-favorite-user="${cid}"]`).click();
     await expect(page.getByTestId('session-playhead-milestone')).toHaveText(label);
     await expect(page.getByTestId('session-milestone')).toHaveCount(diamonds);

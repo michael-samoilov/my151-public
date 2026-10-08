@@ -22,6 +22,7 @@ export function FollowUpHint({
   anchorRef,
   title,
   body,
+  onShown,
 }: {
   armed: boolean;
   dismiss: () => void;
@@ -31,6 +32,9 @@ export function FollowUpHint({
   anchorRef: RefObject<HTMLElement | null>;
   title: string;
   body: string;
+  /** Called each time the hint appears on screen, for a "shown" beacon. Pass a
+   *  stable function, or it runs again on every render. */
+  onShown?: () => void;
 }) {
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
 
@@ -71,7 +75,12 @@ export function FollowUpHint({
     return () => clearTimeout(t);
   }, [armed, ready, dismiss]);
 
-  if (!armed || !ready || !anchor || fulfilled) return null;
+  const visible = armed && ready && anchor !== null && !fulfilled;
+  useEffect(() => {
+    if (visible) onShown?.();
+  }, [visible, onShown]);
+
+  if (!visible || !anchor) return null;
 
   const centerX = anchor.left + anchor.width / 2;
   const left = Math.max(8, Math.min(centerX - CARD_W / 2, window.innerWidth - CARD_W - 8));

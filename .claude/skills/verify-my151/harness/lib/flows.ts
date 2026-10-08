@@ -1,6 +1,8 @@
 // Standard-surface invariants every change re-checks, driven through the Session
 // interface so one flow runs on all three engines. Handles are structural
 // (data-nav, computed style, the localStorage oracle), never localized text.
+import fs from 'node:fs';
+import path from 'node:path';
 import type { Session } from './engines.ts';
 import { READ_PERSONA, assertPersona, type PersonaReadback, type PersonaName } from './personas.ts';
 import type { Check } from './evidence.ts';
@@ -2404,9 +2406,82 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   ));
   if (zoom.zoom > 1.5) await s.screenshot(ctx.shot('favorites-zoomed-far-corner'));
 
+  checks.push(...await runFavoritesCompletionPopup(s, url, ctx));
+
   const errs = await s.errors();
   checks.push(ok('favorites:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
+}
+
+const FAV_NUDGE_KEY = 'personal-151-favorites-complete-nudge-v1';
+
+/** Every eligible Picker cell filled except Normal × Gen I, with no pointer on that cell. */
+function almostFullFavorites(): Record<string, number> {
+  type Cell = { kind: string; ids?: number[]; sources?: string[] };
+  const cells = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'api/_favoriteCells.json'), 'utf8')) as Record<string, Cell>;
+  const fills: Record<string, number> = {};
+  for (const [key, cell] of Object.entries(cells)) if (cell.kind === 'pick' && key !== 'normal|1' && cell.ids?.length) fills[key] = cell.ids[0];
+  for (const [key, cell] of Object.entries(cells)) {
+    if (cell.kind !== 'pointer') continue;
+    const source = cell.sources?.find((s) => fills[s] != null);
+    if (source) fills[key] = fills[source];
+  }
+  return fills;
+}
+
+/**
+ * The completion popup. With 256 of 257 cells saved, the user fills the last
+ * one. A popup must appear under Export with its arrow on the button, and its
+ * view must post a `nudge-shown` beacon. Structural only: the popup is the
+ * fixed `role="status"` card portaled to the body, with its rotated arrow.
+ */
+async function runFavoritesCompletionPopup(s: Session, url: string, ctx: FlowContext): Promise<Check[]> {
+  const saved = JSON.stringify({ state: { fills: almostFullFavorites() }, version: 3 });
+  await s.evalJson(`try{localStorage.setItem(${JSON.stringify(FAV_KEY)}, ${JSON.stringify(saved)}); localStorage.removeItem(${JSON.stringify(FAV_NUDGE_KEY)});}catch{} return true;`);
+  await s.navigate(url);
+  const cleanup = () => s.evalJson(`try{localStorage.removeItem(${JSON.stringify(FAV_KEY)}); localStorage.removeItem(${JSON.stringify(FAV_NUDGE_KEY)});}catch{} return true;`).catch(() => false);
+  if (!(await waitFavoritesGrid(s))) {
+    await cleanup();
+    return [ok('favorites:complete-popup-shown', false, 'grid missing')];
+  }
+  await s.evalJson(`window.__favoriteBeacons=[]; const f=window.fetch.bind(window);
+    window.fetch=(u,o)=>{ if(String(u).includes('/api/favorites')) window.__favoriteBeacons.push(String((o&&o.body)||'')); return f(u,o); };
+    return true;`);
+  await clickCell(s, '[data-testid="favorites-cell-normal-1"]');
+  const opened = await waitFor(s, '[data-testid="favorites-picker"] [data-testid^="favorites-pick-"]');
+  const first = opened
+    ? await s.evalJson<string>(`return document.querySelector('[data-testid="favorites-picker"] [data-testid^="favorites-pick-"]').getAttribute('data-testid');`)
+    : '';
+  if (first) await s.click(`[data-testid="${first}"]`);
+  const popupSelector = 'body > div.fixed[role="status"]';
+  const shown = first ? await waitFor(s, popupSelector, 25) : false;
+  // Let the 520 ms entrance animation finish before measuring.
+  await sleep(900);
+  const m = await s.evalJson<{ filled: string; popup: boolean; offset: number; gap: number; inside: boolean; beacons: number }>(`
+    const card = document.querySelector('${popupSelector}');
+    const button = document.querySelector('[data-testid="favorites-export-open"]');
+    const filled = document.querySelector('[data-testid="favorites-completion"]')?.textContent ?? '';
+    const beacons = (window.__favoriteBeacons || []).filter((b) => b.includes('"nudge-shown"')).length;
+    if (!card || !button) return { filled, popup: !!card, offset: 999, gap: -1, inside: false, beacons };
+    const arrow = card.querySelector('.rotate-45');
+    const a = arrow ? arrow.getBoundingClientRect() : { left: -999, width: 0 };
+    const b = button.getBoundingClientRect();
+    const c = card.getBoundingClientRect();
+    return {
+      filled, popup: true, beacons,
+      offset: Math.round((a.left + a.width / 2 - (b.left + b.width / 2)) * 10) / 10,
+      gap: Math.round((c.top - b.bottom) * 10) / 10,
+      inside: c.left >= 0 && c.right <= innerWidth && c.bottom <= innerHeight,
+    };
+  `);
+  await s.screenshot(ctx.shot('favorites-complete-popup'));
+  await cleanup();
+  return [
+    ok('favorites:complete-popup-shown', shown && m.popup && m.filled === '257/257', `filled=${m.filled} popup=${m.popup}`),
+    ok('favorites:complete-popup-points-at-export', m.popup && Math.abs(m.offset) <= 1.5 && m.gap > 0 && m.gap <= 14 && m.inside,
+      `arrow-button=${m.offset}px gap=${m.gap}px inside=${m.inside}`),
+    ok('favorites:complete-popup-beacon', m.beacons === 1, `nudge-shown posts=${m.beacons}`),
+  ];
 }
 
 export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {

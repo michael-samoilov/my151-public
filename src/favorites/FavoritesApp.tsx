@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { FollowUpHint } from '@/components/milestone/FollowUpHint';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -15,7 +16,8 @@ import { prewarmPickerSprites } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
-import { sendFavoriteExportShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
+import { sendFavoriteExportShownBeacon, sendFavoriteNudgeShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
+import { useCompletionNudge } from './hooks/useCompletionNudge';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
 import { FavoritesHeader, type FavoritesView } from './components/FavoritesHeader';
@@ -86,6 +88,8 @@ function FavoritesContent({ sel, setSel }: {
   const [exportOpen, setExportOpen] = useState(false);
   const [currentView, setCurrentView] = useState<FavoritesView>('picker');
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
+  const exportRef = useRef<HTMLButtonElement>(null);
+  const completionNudge = useCompletionNudge();
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
@@ -141,7 +145,7 @@ function FavoritesContent({ sel, setSel }: {
     <>
       <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
         <GlobalHeader />
-        <FavoritesHeader fills={fills} currentView={currentView} exportOpen={exportOpen}
+        <FavoritesHeader fills={fills} currentView={currentView} exportOpen={exportOpen} exportRef={exportRef}
           onViewChange={(view) => {
             setSel(null);
             if (view === 'analytics') setAnalyticsMounted(true);
@@ -178,6 +182,16 @@ function FavoritesContent({ sel, setSel }: {
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
+      {/* The Dex builder's follow-up popup, pointing at Export once the grid is first complete. */}
+      <FollowUpHint
+        armed={completionNudge.armed}
+        dismiss={completionNudge.dismiss}
+        fulfilled={exportOpen}
+        anchorRef={exportRef}
+        title={t('favorites.nudge.complete.title')}
+        body={t('favorites.nudge.complete.body')}
+        onShown={sendFavoriteNudgeShownBeacon}
+      />
       {exportOpen && <Suspense fallback={null}>
         <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)}
           onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />
