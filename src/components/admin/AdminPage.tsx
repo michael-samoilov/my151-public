@@ -1637,7 +1637,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     <nav
       ref={navRef}
       aria-label="Admin section"
-      className="flex justify-around gap-1 px-2 py-2 md:justify-center md:px-4"
+      className="flex justify-around gap-0.5 py-2 md:justify-center md:gap-1 md:px-4"
     >
       {items.map((it) => {
         const on = it.key === value;
@@ -1648,7 +1648,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
             aria-pressed={on}
             onClick={() => onChange(it.key)}
             className={cn(
-              'min-w-0 flex-1 rounded-lg px-1.5 py-1.5 text-xs font-semibold transition-colors md:flex-none md:px-3 md:text-sm',
+              'flex-auto whitespace-nowrap rounded-lg px-1 py-1.5 text-xs font-semibold transition-colors md:flex-none md:px-3 md:text-sm',
               on ? 'bg-foreground text-card' : 'text-muted-foreground hover:text-foreground',
             )}
           >
