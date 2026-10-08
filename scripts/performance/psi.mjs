@@ -82,8 +82,17 @@ for (const pageName of PAGE_NAMES) {
     const runs = [];
     for (let i = 1; i <= RUNS; i++) {
       process.stdout.write(`\r${strategy} ${pageName}: run ${i} of ${RUNS}   `);
-      runs.push(runPsi(url, strategy));
-      fs.writeFileSync(path.join(saveDir, `${strategy}-${pageName}-${i}.json`), JSON.stringify(runs.at(-1)));
+      // PageSpeed Insights answers a repeat of a recent request from its cache,
+      // with the same fetchTime. A cached copy is not a new run, so wait for a
+      // fresh one.
+      let json = runPsi(url, strategy);
+      for (let wait = 1; runs.some((r) => r.lighthouseResult.fetchTime === json.lighthouseResult.fetchTime); wait++) {
+        if (wait > 6) throw new Error(`PageSpeed Insights kept returning a cached run for ${strategy} ${pageName}`);
+        await new Promise((resolve) => setTimeout(resolve, 20_000));
+        json = runPsi(url, strategy);
+      }
+      runs.push(json);
+      fs.writeFileSync(path.join(saveDir, `${strategy}-${pageName}-${i}.json`), JSON.stringify(json));
     }
     process.stdout.write('\n');
     const lhrs = runs.map((r) => r.lighthouseResult);
