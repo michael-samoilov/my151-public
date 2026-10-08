@@ -9,11 +9,9 @@ export function FavoritesCompletionCounter({ fills, label }: {
   return (
     // `aria-label` on a plain span is not read by every screen reader, so the
     // spoken phrase is hidden text and the visible "12/257" is hidden from them.
-    <span
-      data-testid="favorites-completion"
-      className="shrink-0 whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums"
-    >
-      <span aria-hidden="true">
+    // The test id names the visible count, which tests and verify-my151 read.
+    <span className="shrink-0 whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
+      <span data-testid="favorites-completion" aria-hidden="true">
         <span className="font-extrabold text-primary">{filled}</span>
         <span className="text-foreground">/{total}</span>
       </span>
