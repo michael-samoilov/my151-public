@@ -110,12 +110,15 @@ export function browserTotal(tools: readonly ToolUsage[]): { sessions: number; t
 
 export type UsageTool = 'dex' | 'league' | 'picker';
 
-/** One tool a browser used: its progress, and its sessions and time. */
-export type ToolCell = { tool: UsageTool; count: number; exported: boolean; usage: ToolUsage };
+/** One tool on a card: its progress, and its sessions and time. `used` is
+ *  false when the browser never opened the tool; the card still shows it. */
+export type ToolCell = { tool: UsageTool; used: boolean; count: number; exported: boolean; usage: ToolUsage };
+
+const UNUSED: ToolUsage = { sessions: 0, totalMs: 0, spans: [] };
 
 type SessionRecord = { sessions?: number; sessionMs?: number[] };
 
-/** The tools one browser used, in card order: Dex, League, Picker. */
+/** All three tools of one browser, in card order: Dex, League, Picker. */
 export function toolCells(t: {
   dex?: SessionRecord & { latestIds?: number[]; exported?: boolean; sessionLog?: { ts: number }[] };
   league?: SessionRecord & { maxCards: number; exportsCard: number; exportsLeague: number; sessionLog?: { ts: number }[] };
@@ -128,23 +131,31 @@ export function toolCells(t: {
 }): ToolCell[] {
   const cells: ToolCell[] = [];
   if (t.dex) {
-    cells.push({ tool: 'dex', count: dexPokemonCount(t.dex.latestIds), exported: !!t.dex.exported, usage: endStampedUsage(t.dex) });
+    cells.push({ tool: 'dex', used: true, count: dexPokemonCount(t.dex.latestIds), exported: !!t.dex.exported, usage: endStampedUsage(t.dex) });
+  } else {
+    cells.push({ tool: 'dex', used: false, count: 0, exported: false, usage: UNUSED });
   }
   if (t.league) {
     cells.push({
       tool: 'league',
+      used: true,
       count: t.league.maxCards,
       exported: leagueExported(t.league.exportsCard, t.league.exportsLeague),
       usage: endStampedUsage(t.league),
     });
+  } else {
+    cells.push({ tool: 'league', used: false, count: 0, exported: false, usage: UNUSED });
   }
   if (t.picker) {
     cells.push({
       tool: 'picker',
+      used: true,
       count: t.picker.latest.filled,
       exported: t.picker.exportsFull + t.picker.exportsSimplified > 0,
       usage: spanUsage(t.picker),
     });
+  } else {
+    cells.push({ tool: 'picker', used: false, count: 0, exported: false, usage: UNUSED });
   }
   return cells;
 }
