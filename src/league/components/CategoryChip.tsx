@@ -19,7 +19,7 @@ export function CategoryChip({ category, className }: {
       style={{ background: CATEGORY_COLORS[category] }}
       title={category}
     >
-      <img src={`/sprites/moves/${category}.png`} alt={category} className="h-auto w-[62%]" />
+      <img src={`/sprites/moves/${category}.png`} alt={category} width={50} height={40} className="h-auto w-[62%]" />
     </span>
   );
 }

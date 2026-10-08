@@ -234,6 +234,7 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       className={`${panel} cursor-pointer`}
       style={wide ? wideStyle : style}
       data-card-panel
+      aria-label={tool.shots ? undefined : tool.title}
     >
       {body}
       {tool.shots && <span className="hub-pocket-edge" aria-hidden data-card-pocket />}

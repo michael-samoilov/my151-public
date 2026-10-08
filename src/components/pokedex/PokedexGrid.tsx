@@ -3,7 +3,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { createPortal } from 'react-dom';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
-import { pokemonLabel, sectionName, t, useNamesVersion } from '@/i18n';
+import { pokemonLabel, sectionName, t, typeLabel, useNamesVersion } from '@/i18n';
 import { computeRemovalCascade, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
@@ -306,7 +306,7 @@ function StarterContent({
     // height, otherwise it stays a square rather than a short strip.
     type Slot =
       | { kind: 'tile'; pid: number }
-      | { kind: 'ph'; type: string; color: string; i: number };
+      | { kind: 'ph'; type: (typeof STARTER_TYPES)[number][0]; color: string; i: number };
     const slots: Slot[] = [];
     for (const [type, color] of STARTER_TYPES) {
       const typePids = pidsByType.get(type);
@@ -344,6 +344,7 @@ function StarterContent({
             <button type="button"
               key={`${s.type}-${s.i}`}
               onClick={() => onTypeClick(s.type)}
+              aria-label={`${sectionName('starter')}: ${typeLabel(s.type)}`}
               className={`${aspect} rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,opacity,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer hover:opacity-80`}
               style={{ borderColor: `${s.color}40`, color: `${s.color}90`, backgroundColor: `${s.color}10` }}
             >
