@@ -93,13 +93,15 @@ a new animation) goes to Michael first, with before and after.
 | `dir="ltr"` on the hub and league HTML | No measurable effect. |
 | Load the hub's page code with its entry script, not a dynamic import (October 8) | Lab phone first paint 600 → 804 ms (+34%), and the hub was not usable sooner (2110 → 2076 ms, within noise). |
 | `fetchpriority="high"` on the hub's largest screenshot (October 8) | No effect, LCP 3484 → 3500 ms: Chrome already raises every image in the viewport to high priority. |
+| Load the feedback form on idle or first open (October 8) | First-load text only 2.7 KiB smaller on the hub, about 1 KiB on dex and league: the form's dependencies are needed at startup anyway. |
+| A `sizes` that follows the widest hub shot (October 8) | Accurate, but a 3x iPhone then loaded the 800px originals (722 KiB, not 270 KiB). Browsers pick the smallest copy that covers `sizes` times the pixel ratio. |
 
 Lighthouse findings left open on purpose:
 
 | Finding | Why it stays |
 |---|---|
 | "Image elements do not have explicit width and height" on the hub screenshots | Each screenshot's shadow would show as an empty frame while the image loads. CLS is already 0. |
-| "Properly size images" on the hub | Lighthouse tests a phone at 1.75x. Real phones are 2.6x to 3x, and a smaller copy would blur there. |
+| "Improve image delivery": compression of the hub's back shots | These are UI screenshots with small text and sprites at quality 86. A lower quality saves about 20–30 KiB and risks visible artifacts. |
 
 The first plan, with earlier targets and a phase list, is on the unmerged
 branch `codex/performance-program-plan`. This page replaces its targets.
