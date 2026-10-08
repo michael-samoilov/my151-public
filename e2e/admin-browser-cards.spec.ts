@@ -126,7 +126,11 @@ test.describe('Newest browsers cards @viewport', () => {
       if (tab === 'Picker') {
         const one = card(page, 'e2e-one');
         await expect(one.locator('[data-metric="session"][data-tool="picker"]')).toHaveText('1 session · 12m');
-        await expect(one.locator('[data-metric="session"][data-tool="total"]')).toHaveCount(0);
+        // Every card shows all three tools; the ones this browser never used are greyed.
+        await expect(one.locator('[data-metric="dex"]')).toHaveAttribute('data-empty', 'true');
+        await expect(one.locator('[data-metric="league"]')).toHaveAttribute('data-empty', 'true');
+        await expect(one.locator('[data-metric="picker"]')).not.toHaveAttribute('data-empty', 'true');
+        await expect(one.locator('[data-metric="session"][data-tool="total"]')).toHaveText('1 session · 12m');
       }
       await testInfo.attach('three-tool-card.json', { body: JSON.stringify({ progress, time, total }), contentType: 'application/json' });
       await testInfo.attach('three-tool-card.png', { body: await three.screenshot(), contentType: 'image/png' });
