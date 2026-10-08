@@ -5,7 +5,7 @@ import { JOURNAL_MAX_PER_DAY, JOURNAL_TTL_S, parsePage } from './_events.js';
 import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
 import { parseCapturedAt } from './_sessionize.js';
 import { parseNotmeFlag } from './_exportStats.js';
-import { FAVORITE_CLIENTS_KEY, FAVORITE_VERSION_KEY, FAVORITE_SESSION_GAP_MS, parseFavoriteSnapshot, parseFavoriteRecord, mergeFavoriteRecord, type FavoriteBeaconKind, type FavoriteExportKind } from './_favoriteRecord.js';
+import { FAVORITE_CLIENTS_KEY, FAVORITE_VERSION_KEY, favoriteSessionAt, parseFavoriteSnapshot, parseFavoriteRecord, mergeFavoriteRecord, type FavoriteBeaconKind, type FavoriteExportKind } from './_favoriteRecord.js';
 const burstLimiter = new Ratelimit({redis,limiter:Ratelimit.slidingWindow(500,'10 m'),analytics:false,prefix:'rl:burst'});
 const clientLimiter = new Ratelimit({redis,limiter:Ratelimit.slidingWindow(SUBMIT_CLIENT_DAILY_CAP,'1 d'),analytics:false,prefix:'rl:client'});
 /** Commit record, dedupe, milestone counters, and journal atomically. One billed command. */
@@ -36,12 +36,13 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     const b=(req.body??{}) as Record<string,unknown>;
     if(typeof b.cid!=='string'||b.cid.length<8||b.cid.length>64)return res.status(400).json({error:'invalid cid'});
     if(typeof b.id!=='string'||! /^[\w-]{8,80}$/.test(b.id))return res.status(400).json({error:'invalid id'});
-    if(!['progress','completion','export'].includes(String(b.kind)))return res.status(400).json({error:'invalid kind'});
+    if(!['progress','completion','export','export-shown'].includes(String(b.kind)))return res.status(400).json({error:'invalid kind'});
     const snapshot=parseFavoriteSnapshot(b.snapshot);
     if(!snapshot)return res.status(400).json({error:'invalid snapshot'});
     if(b.kind==='completion'&&snapshot.filled!==257)return res.status(400).json({error:'invalid completion'});
     const exportKind=b.kind==='export'&&(b.exportKind==='full'||b.exportKind==='simplified')?b.exportKind:undefined;
     if(b.kind==='export'&&!exportKind)return res.status(400).json({error:'invalid export kind'});
+    const stats=exportKind==='full'&&b.stats===true;
     if(parseNotmeFlag(b.notme)||isReadOnlyDeployment(req))return res.status(200).json({ok:true});
     const received=Date.now();const now=parseCapturedAt(b.ts,received);
     if(now===null)return res.status(400).json({error:'invalid captured time'});
@@ -54,12 +55,15 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     for(let attempt=0;attempt<6;attempt++){
       const [raw,version]=await Promise.all([redis.hget(FAVORITE_CLIENTS_KEY,b.cid),redis.hget(FAVORITE_VERSION_KEY,b.cid)]);
       const existing=parseFavoriteRecord(raw);
-      const sessionKnown=existing?.sessionLog.some(session=>now>=session.ts-FAVORITE_SESSION_GAP_MS&&now<=session.endTs+FAVORITE_SESSION_GAP_MS);
-      const events:string[]=sessionKnown?[]:['favorites-open'];
+      const session=existing?favoriteSessionAt(existing.sessionLog,now):undefined;
+      const events:string[]=session?[]:['favorites-open'];
       for(const [threshold,event] of [[1,'favorites-first-pick'],[65,'favorites-quarter'],[129,'favorites-half'],[257,'favorites-complete']] as const){
         if(snapshot.filled>=threshold&&(existing?.maxFilled??0)<threshold)events.push(event);
       }
+      // The dialog-open event is once per visit; every export still counts.
+      if(b.kind==='export-shown'&&!session?.events.includes('favorites-export-shown'))events.push('favorites-export-shown');
       if(exportKind)events.push(`favorites-export-${exportKind}`);
+      if(stats)events.push('favorites-export-stats');
       const rec=mergeFavoriteRecord(existing,{cid:b.cid,id:b.id,now,kind:b.kind as FavoriteBeaconKind,snapshot,exportKind:exportKind as FavoriteExportKind|undefined,events,
         ...geo,...ua,lang:getLang(req),locale:parseLocale(b.locale),switched:parseLocale(b.switched),referrer:parseReferrerHost(b.ref)});
       const entries=events.map(ev=>({t:now,cid:b.cid,tool:'favorites',ev,...(parsePage(b.page)?{page:parsePage(b.page)}:{})}));
