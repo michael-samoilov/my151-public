@@ -6,7 +6,7 @@
  * drop-offs sit under them. Incomplete buckets that exported grow a
  * branch into the existing export node. They do not grow a "not
  * exported" peel. Full league peels non-exporters to Kept private,
- * same as Completed on the dex funnel.
+ * same as Completed on the dex funnel and Not exported on the Picker.
  */
 import {
   LEAGUE_EXPORT_ENDS,
@@ -59,6 +59,14 @@ function addLink(links: FunnelLink[], link: FunnelLink) {
   links.push(link);
 }
 
+/** One export end a fan item flows into. Every item lists the same ends
+ *  in the same order, so the end column keeps that order. */
+interface FanEnd {
+  name: string;
+  label: FunnelLabelSide;
+  value: number;
+}
+
 interface FanItem {
   name: string;
   value: number;
@@ -67,7 +75,7 @@ interface FanItem {
   exportName?: string;
   leftoverName?: string;
   leftoverRole?: FunnelRole;
-  exports?: LeagueExportCounts;
+  ends?: FanEnd[];
 }
 
 const LEAGUE_EXPORT_NODE: Record<LeagueExportEnd, { name: string; label: FunnelLabelSide }> = {
@@ -75,6 +83,10 @@ const LEAGUE_EXPORT_NODE: Record<LeagueExportEnd, { name: string; label: FunnelL
   both: { name: 'Both exported', label: 'right' },
   card: { name: 'Gym export', label: 'right' },
 };
+
+function leagueEnds(exports: LeagueExportCounts): FanEnd[] {
+  return LEAGUE_EXPORT_ENDS.map((end) => ({ ...LEAGUE_EXPORT_NODE[end], value: exports[end] }));
+}
 
 function addFan(
   nodes: FunnelNode[],
@@ -104,8 +116,8 @@ function addFan(
       });
     }
     if (item.leftoverName) {
-      const leagueExports = LEAGUE_EXPORT_ENDS.reduce((sum, end) => sum + (item.exports?.[end] ?? 0), 0);
-      const left = item.value - (item.exported ?? 0) - leagueExports;
+      const endExports = (item.ends ?? []).reduce((sum, end) => sum + end.value, 0);
+      const left = item.value - (item.exported ?? 0) - endExports;
       if (left > 0) {
         addNode(nodes, seen, {
           name: item.leftoverName,
@@ -121,13 +133,13 @@ function addFan(
       }
     }
   }
-  for (const end of LEAGUE_EXPORT_ENDS) {
-    const { name, label } = LEAGUE_EXPORT_NODE[end];
+  const endOrder = [...new Set(present.flatMap((item) => (item.ends ?? []).map((end) => end.name)))];
+  for (const name of endOrder) {
     for (const item of present) {
-      const value = item.exports?.[end] ?? 0;
-      if (value <= 0) continue;
-      addNode(nodes, seen, { name, role: 'success', label });
-      addLink(links, { source: item.name, target: name, value, role: 'success' });
+      const end = item.ends?.find((e) => e.name === name);
+      if (!end || end.value <= 0) continue;
+      addNode(nodes, seen, { name, role: 'success', label: end.label });
+      addLink(links, { source: item.name, target: name, value: end.value, role: 'success' });
     }
   }
 }
@@ -164,7 +176,7 @@ function gymFan(buckets: LeagueGymBucket[]): FanItem[] {
     name: b.label,
     value: b.count,
     role: b.label === 'Full league' ? 'success' : 'sink',
-    exports: b.exports,
+    ends: leagueEnds(b.exports),
     leftoverName: b.label === 'Full league' ? 'Kept private' : undefined,
     leftoverRole: 'priv',
   }));
@@ -176,13 +188,13 @@ export function dexFunnelSankey(f: DexUsageFunnel): FunnelSankey {
   const seen = new Set<string>();
 
   addNode(nodes, seen, { name: 'Saw intro', role: 'neutral', label: 'left' });
-  addNode(nodes, seen, { name: 'Built', role: 'neutral', label: 'top' });
-  addLink(links, { source: 'Saw intro', target: 'Built', value: f.built, role: 'neutral' });
+  addNode(nodes, seen, { name: 'Placed a Pokémon', role: 'neutral', label: 'top' });
+  addLink(links, { source: 'Saw intro', target: 'Placed a Pokémon', value: f.built, role: 'neutral' });
   if (f.bounced > 0) {
     addNode(nodes, seen, { name: 'Bounced', role: 'sink', label: 'bottom' });
     addLink(links, { source: 'Saw intro', target: 'Bounced', value: f.bounced, role: 'sink' });
   }
-  addFan(nodes, links, seen, 'Built', sizeFan(f.completed, f.exported, f.keptPrivate, f.buckets));
+  addFan(nodes, links, seen, 'Placed a Pokémon', sizeFan(f.completed, f.exported, f.keptPrivate, f.buckets));
 
   const bucketBits = f.buckets.map((b) => `${b.count} at ${b.label}`).join(', ');
   const incompleteExported = f.buckets.reduce((s, b) => s + b.exported, 0);
@@ -191,7 +203,7 @@ export function dexFunnelSankey(f: DexUsageFunnel): FunnelSankey {
   return orderSankeyForLayout(
     nodes,
     links,
-    `Dex usage funnel: ${f.opened} saw intro, ${f.built} built, ${f.bounced} bounced; of ${f.built} built, ${f.completed} completed and ${bucketBits}; of ${f.completed} completed, ${f.exported} exported and ${f.keptPrivate} kept private${extra}.`,
+    `Dex usage funnel: ${f.opened} saw intro, ${f.built} placed a Pokémon, ${f.bounced} bounced; of ${f.built} placed, ${f.completed} completed and ${bucketBits}; of ${f.completed} completed, ${f.exported} exported and ${f.keptPrivate} kept private${extra}.`,
   );
 }
 
@@ -239,38 +251,58 @@ export function leagueFunnelSankey(f: LeagueUsageFunnel): FunnelSankey {
   );
 }
 
+type FavoriteBucket = FavoriteUsageFunnel['buckets'][number];
+
+/** Picker export ends, in column order under Not exported. */
+const FAVORITE_EXPORT_NODE = [
+  { key: 'full', name: 'Full grid' },
+  { key: 'simplified', name: 'Simplified' },
+  { key: 'both', name: 'Both exported' },
+] as const;
+
+function favoriteEnds(b: FavoriteBucket): FanEnd[] {
+  return FAVORITE_EXPORT_NODE.map(({ key, name }) => ({ name, label: 'right', value: b.exports[key] }));
+}
+
 /** One browser follows one maximum-progress bucket and one export outcome.
- *  Export outcomes describe the record lifetime, not events in the range. */
+ *  Export outcomes describe the record lifetime, not events in the range.
+ *  Same shape as the dex funnel: Bounced ends at the first hop, cell
+ *  buckets end beside Completed unless they exported, and Completed peels
+ *  its non-exporters straight across into Not exported. */
 export function favoriteFunnelSankey(f: FavoriteUsageFunnel): FunnelSankey {
-  const nodes: FunnelNode[] = [{ name: 'Opened', role: 'neutral', label: 'left' }];
+  const nodes: FunnelNode[] = [];
   const links: FunnelLink[] = [];
-  const seen = new Set(['Opened']);
-  const outcomes = [
-    { key: 'full', name: 'Full grid', role: 'success' },
-    { key: 'both', name: 'Both views', role: 'success' },
-    { key: 'simplified', name: 'Simplified', role: 'success' },
-    { key: 'notExported', name: 'Not exported', role: 'priv' },
-  ] as const;
-  for (const outcome of outcomes) {
-    const present = f.buckets.some(bucket => (outcome.key === 'notExported' ? bucket.notExported : bucket.exports[outcome.key]) > 0);
-    if (present) addNode(nodes, seen, { name: outcome.name, role: outcome.role, label: 'right' });
+  const seen = new Set<string>();
+  const notStarted = f.buckets.find((b) => b.label === 'Not started');
+  const placed = f.buckets.filter((b) => b !== notStarted);
+  const placedCount = placed.reduce((sum, b) => sum + b.count, 0);
+  const bounced = notStarted?.count ?? 0;
+
+  addNode(nodes, seen, { name: 'Opened', role: 'neutral', label: 'left' });
+  if (placedCount > 0) {
+    addNode(nodes, seen, { name: 'Placed a Pokémon', role: 'neutral', label: 'top' });
+    addLink(links, { source: 'Opened', target: 'Placed a Pokémon', value: placedCount, role: 'neutral' });
   }
-  for (const bucket of [...f.buckets].reverse()) {
-    if (bucket.count <= 0) continue;
-    const role = bucket.label === 'Completed' ? 'success' : 'neutral';
-    addNode(nodes, seen, { name: bucket.label, role, label: 'right' });
-    addLink(links, { source: 'Opened', target: bucket.label, value: bucket.count, role });
-    for (const outcome of outcomes) {
-      const value = outcome.key === 'notExported' ? bucket.notExported : bucket.exports[outcome.key];
-      if (value <= 0) continue;
-      addNode(nodes, seen, { name: outcome.name, role: outcome.role, label: 'right' });
-      addLink(links, { source: bucket.label, target: outcome.name, value, role: outcome.role });
-    }
-  }
-  const progress = f.buckets.filter(b => b.count > 0).map(b => `${b.count} at ${b.label}`).join(', ');
-  const count = (key: 'full' | 'simplified' | 'both' | 'notExported') => f.buckets.reduce((sum, b) => sum + (key === 'notExported' ? b.notExported : b.exports[key]), 0);
+  if (bounced > 0) addNode(nodes, seen, { name: 'Bounced', role: 'sink', label: 'bottom' });
+  addFan(nodes, links, seen, 'Placed a Pokémon', [...placed].reverse().map((b): FanItem => {
+    const completed = b.label === 'Completed';
+    return {
+      name: b.label,
+      value: b.count,
+      role: completed ? 'success' : 'sink',
+      ends: favoriteEnds(b),
+      leftoverName: completed ? 'Not exported' : undefined,
+      leftoverRole: 'priv',
+    };
+  }));
+  // An empty-grid export is possible, so Bounced keeps a branch to its end.
+  if (notStarted) addFan(nodes, links, seen, 'Opened', [{ name: 'Bounced', value: bounced, role: 'sink', ends: favoriteEnds(notStarted) }]);
+
+  const completed = placed.find((b) => b.label === 'Completed');
+  const progress = placed.filter((b) => b.count > 0 && b !== completed).map((b) => `${b.count} at ${b.label}`).join(', ');
+  const count = (key: 'full' | 'simplified' | 'both') => f.buckets.reduce((sum, b) => sum + b.exports[key], 0);
   return orderSankeyForLayout(nodes, links,
-    `Favorite Pokémon usage funnel: ${f.opened} opened; maximum filled cells (picks and pointers, 257 total): ${progress || 'none'}; lifetime exports: ${count('full')} full grid only, ${count('simplified')} simplified only, ${count('both')} both views, ${count('notExported')} not exported.`);
+    `Favorite Pokémon usage funnel: ${f.opened} opened, ${placedCount} placed a Pokémon, ${bounced} bounced; of ${placedCount} placed, by maximum filled cells of 257: ${completed?.count ?? 0} completed${progress ? `, ${progress}` : ''}; lifetime exports: ${count('full')} full grid only, ${count('simplified')} simplified only, ${count('both')} both exported; of ${completed?.count ?? 0} completed, ${completed?.notExported ?? 0} not exported.`);
 }
 
 /** Distance along the trunk from the start node. Used to assert buckets
@@ -281,7 +313,8 @@ export function nodeDepth(name: string, links: FunnelLink[]): number {
   return 1 + Math.max(...incoming.map((l) => nodeDepth(l.source, links)));
 }
 
-/** Vertical order inside a Sankey column. Kept private sits above
+/** Vertical order inside a Sankey column. Kept private (Not exported on
+ *  the Picker) sits above
  *  success so its last-hop ribbon stays on top and does not cross the
  *  bucket stack. Then success, through, other private, drop-offs.
  *  Outgoing export links do not promote a size bucket into the through
@@ -295,7 +328,7 @@ const ROLE_STACK: Record<FunnelRole, number> = {
 };
 
 function stackRank(name: string, role: FunnelRole | undefined): number {
-  if (name === 'Kept private') return -1;
+  if (name === 'Kept private' || name === 'Not exported') return -1;
   if (!role) return 99;
   return ROLE_STACK[role];
 }
