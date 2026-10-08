@@ -2,6 +2,7 @@ import { defineConfig, type Plugin, type PreviewServer, type ViteDevServer } fro
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import { prerenderHub } from './scripts/prerender-hub'
 
 /** Keep saved preview links on the canonical picker route in dev and preview. */
 function pickerRouteRedirect(): Plugin {
@@ -23,7 +24,7 @@ function pickerRouteRedirect(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [pickerRouteRedirect(), react(), tailwindcss()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss(), prerenderHub()],
   define: {
     __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
     // Vercel deployment environment ('production' | 'preview' | ''), used to
