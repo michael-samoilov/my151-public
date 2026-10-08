@@ -6,7 +6,6 @@ import {
   leagueExported,
   matchesArchiveFilter,
   matchesToolFilter,
-  mergedSessionStats,
   uniqueFacetValues,
   matchesFacetFilters,
   facetValue,
@@ -60,14 +59,6 @@ describe('dexPokemonCount', () => {
     expect(dexPokemonCount([25, 26])).toBe(2);
     expect(dexPokemonCount([])).toBe(0);
     expect(dexPokemonCount(undefined)).toBe(0);
-  });
-});
-
-describe('mergedSessionStats', () => {
-  it('adds dex and league sessions and time', () => {
-    expect(
-      mergedSessionStats({ sessions: 1, sessionMs: [] }, { sessions: 2, sessionMs: [60_000, 120_000] }),
-    ).toEqual({ sessions: 3, totalMs: 180_000 });
   });
 });
 

@@ -74,7 +74,7 @@ async function chooseStatus(page: Page, label: 'Active' | 'Archived') {
 test('a Picker row archives by its browser id, then restores', async ({ page }, testInfo) => {
   const posts = await stubPickerStore(page);
   const row = page.locator('[data-favorite-user="e2e-pick-a"]');
-  await expect(row.locator('[data-metric="picker"]')).toHaveText('4/257 Cells');
+  await expect(row.locator('[data-metric="picker"]')).toHaveText('4/257 Favs');
   await row.getByRole('button', { name: 'Archive user' }).click();
   await expect(row).toHaveCount(0);
   await chooseStatus(page, 'Archived');

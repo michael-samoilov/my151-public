@@ -1,5 +1,7 @@
 import { bareCid } from '../../../api/_archive';
 import { FAVORITE_TOTAL_CELLS } from '../../../api/_favoriteRecord';
+import { CARD_COUNT } from '../../../api/_leagueRecord';
+import { DEX_TOTAL } from '@/lib/milestones';
 import iso31662En from './iso3166-2-en.json';
 
 export { bareCid };
@@ -50,8 +52,6 @@ export type PreviewPlatform = {
   locale?: string;
   switched?: string;
 };
-
-export type SessionSlice = { sessions?: number; sessionMs?: number[] };
 
 export function toolKind(hasDex: boolean, hasLeague: boolean): ToolKind | null {
   if (hasDex && hasLeague) return 'both';
@@ -192,25 +192,6 @@ export function previewLanguage(
   return { kind: 'served', tag };
 }
 
-export function sessionTotalMs(sessionMs?: number[]): number {
-  return (sessionMs ?? []).reduce((a, b) => a + b, 0);
-}
-
-export function mergedSessionStats(...parts: Array<SessionSlice | undefined>): {
-  sessions: number;
-  totalMs: number;
-} {
-  let sessions = 0;
-  let totalMs = 0;
-  for (const p of parts) {
-    if (!p) continue;
-    const ms = p.sessionMs ?? [];
-    totalMs += sessionTotalMs(ms);
-    sessions += p.sessions ?? ms.length;
-  }
-  return { sessions, totalMs };
-}
-
 /** Minutes for a preview chip. Under 45s is 0m, so a card always shows time. */
 export function fmtChipDuration(ms: number): string {
   if (ms < 45_000) return '0m';
@@ -220,10 +201,14 @@ export function fmtChipDuration(ms: number): string {
   return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
 }
 
-export const PREVIEW_DEX_NOUN = 'Dex';
 export const PREVIEW_SESSION_UNIT = { one: 'session', many: 'sessions' } as const;
-export const PREVIEW_LEAGUE_NOUN = 'Gyms';
-export const PREVIEW_PICKER_NOUN = 'Cells';
+
+/** Each tool's progress chip on a preview card: "12/151 Dex". */
+export const PREVIEW_PROGRESS = {
+  dex: { of: DEX_TOTAL, noun: 'Dex' },
+  league: { of: CARD_COUNT, noun: 'Gyms' },
+  picker: { of: FAVORITE_TOTAL_CELLS, noun: 'Favs' },
+} as const;
 
 export const PREVIEW_FIT = {
   sessions: 99,
@@ -235,18 +220,6 @@ export const PREVIEW_FIT = {
 
 export function dexPokemonCount(ids: number[] | undefined): number {
   return ids?.length ?? 0;
-}
-
-export function dexChipLabel(count: number): string {
-  return `${count} ${PREVIEW_DEX_NOUN}`;
-}
-
-export function leagueChipLabel(count: number, of: number): string {
-  return `${count}/${of} ${PREVIEW_LEAGUE_NOUN}`;
-}
-
-export function pickerChipLabel(filled: number): string {
-  return `${filled}/${FAVORITE_TOTAL_CELLS} ${PREVIEW_PICKER_NOUN}`;
 }
 
 export function sessionChipParts(
