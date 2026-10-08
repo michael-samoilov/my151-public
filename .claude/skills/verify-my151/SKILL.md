@@ -147,6 +147,34 @@ the browser from `[data-section-id="meadow"] [data-add-slot]`, clicks a
 standard suite, `verify.ts` runs six League Builder suites, listed in
 `features/league-builder.md`.
 
+### Visual diff (diff mode)
+
+The checks above only catch what they assert. The visual diff catches the rest:
+after the surfaces, diff mode renders a fixed list of screens (`SCREENS` in
+`harness/lib/visual.ts`: the hub, the builder's intro, tabs, export and Tools
+menu, the league's home, card and menu, and the picker, empty and seeded) at
+390 px (2x, touch) and 1280 px, on the base and on the change, with motion
+reduced and animations stopped. It renders the base twice, so a region that
+differs between two identical renders is marked unstable, not changed. It
+compares the PNGs on a canvas in Chromium; no snapshot is stored.
+
+It writes `visual.json` (every changed region with its box and the text or
+alt text under it) and `visual.png` (each changed screen whole, before and
+after, with a box on every region, plus close-ups) to the evidence folder,
+and prints one line per region. It does not set the verdict, because an
+intended change always changes pixels. It is the gate for "Decided by
+Michael" in `CLAUDE.md`: match every changed region to the change's "must
+change" list. A region you cannot explain is a regression until proven
+otherwise.
+
+```
+# Visual diff only, about 5 minutes: skips the engine surfaces.
+node_modules/.bin/tsx .claude/skills/verify-my151/harness/verify.ts diff --base origin/claude/pokedex-region-builder-AviYF --visual-only
+```
+
+`--no-visual` skips it. When a change reaches a state the list does not
+cover, add a screen to `SCREENS` in the same change.
+
 **Prove the verifier itself.** `harness/discriminate.ts` is a mutation test: it
 injects a known regression (async throw, wide element, clipped chip, broken persist)
 into a worktree, builds, runs the Blink suite, and asserts the matching check

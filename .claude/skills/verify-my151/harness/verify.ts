@@ -1,9 +1,10 @@
 // Cross-engine verification CLI.
 //   absolute            invariants must hold on the working-tree build.
-//   diff --base <ref>   build both, drive identical flows, name before/after regressions.
+//   diff --base <ref>   build both, drive identical flows, name before/after regressions,
+//                       then compare fixed screens pixel by pixel (lib/visual.ts).
 // Usage (from repo root):
 //   npx tsx .claude/skills/verify-my151/harness/verify.ts [absolute|diff] [--base <ref>]
-//     [--surfaces a,b] [--no-build]
+//     [--surfaces a,b] [--no-build] [--no-visual | --visual-only]
 import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, type EngineName } from './lib/engines.ts';
@@ -25,6 +26,7 @@ import {
 import { probeEngines } from './doctor.ts';
 import { buildIn, startPreview, addWorktree, REPO_ROOT, type Preview, type Worktree } from './lib/servers.ts';
 import { Evidence, rollup, type SurfaceResult, type RunReport, type Check } from './lib/evidence.ts';
+import { runVisualDiff, type VisualReport } from './lib/visual.ts';
 
 interface SurfaceDef { surface: string; engine: EngineName; persona: PersonaName | null; }
 const SURFACES: SurfaceDef[] = [
@@ -48,6 +50,8 @@ function parseArgs(argv: string[]) {
     surfaces: get('--surfaces')?.split(','),
     noBuild: argv.includes('--no-build'),
     video: argv.includes('--video'),
+    noVisual: argv.includes('--no-visual'),
+    visualOnly: argv.includes('--visual-only'),
   };
 }
 
@@ -118,7 +122,7 @@ async function main() {
       console.log(`base build served at ${basePreview.url}`);
     }
 
-    for (const def of wanted) {
+    for (const def of args.visualOnly ? [] : wanted) {
       if (!upEngines.has(def.engine)) {
         surfaces.push({ surface: def.surface, engine: def.engine, persona: def.persona, available: false, checks: [], screenshots: [], error: 'engine unavailable in this sandbox' });
         console.log(`  ${def.surface.padEnd(18)} SKIP (engine down)`);
@@ -154,8 +158,23 @@ async function main() {
       }
     }
 
-    const verdict = rollup(surfaces, regressions);
-    const report: RunReport = { mode: args.mode, base: args.base, startedAt: runId, surfaces, regressions, verdict };
+    // The visual diff does not set the verdict: an intended change always changes
+    // pixels. It lists every changed region for the agent to match against the
+    // change's "must change" list (CLAUDE.md, "Decided by Michael").
+    let visual: VisualReport | undefined;
+    if (args.mode === 'diff' && basePreview && !args.noVisual) {
+      console.log('visual diff: rendering fixed screens on both builds...');
+      visual = await runVisualDiff(basePreview.url, afterPreview.url, ev.dir);
+      console.log(`visual: ${visual.changed} of ${visual.screens.length} screens changed, ${visual.regions} regions, ${visual.unstable} unstable, ${visual.errors} errors`);
+      for (const sc of visual.screens) {
+        if (sc.error) console.log(`  ${sc.screen}-${sc.viewport}  ERROR ${sc.error.slice(0, 100)}`);
+        for (const r of sc.regions) console.log(`  ${`${sc.screen}-${sc.viewport}`.padEnd(26)} ${r.unstable ? 'unstable ' : ''}[${r.x},${r.y} ${r.w}x${r.h}] ${r.text}`);
+      }
+      console.log(`visual sheet: ${ev.dir}/visual.png`);
+    }
+
+    const verdict = args.visualOnly ? 'PASS' : rollup(surfaces, regressions);
+    const report: RunReport = { mode: args.mode, base: args.base, startedAt: runId, surfaces, regressions, verdict, visual };
     const file = ev.writeReport(report);
     console.log(`\nverdict: ${verdict}`);
     if (regressions.length) console.log(`regressions:\n  ${regressions.join('\n  ')}`);

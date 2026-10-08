@@ -168,7 +168,7 @@ const CHROMIUM_LAYOUTS = [
   ['chrome-win', 'chrome.exe'],
 ];
 
-function resolveChromium(): string | undefined {
+export function resolveChromium(): string | undefined {
   if (process.env.PLAYWRIGHT_CHROMIUM_PATH) return process.env.PLAYWRIGHT_CHROMIUM_PATH;
   for (const bin of ['/usr/bin/google-chrome-stable', '/usr/bin/google-chrome', '/usr/bin/chromium']) {
     if (fs.existsSync(bin)) return bin;
