@@ -71,6 +71,8 @@ Every work-branch push runs the work-branch checks. A production merge adds the 
 | Full | Saved-data shape or migration, a store, an API or analytics write, build or deploy config, a dependency upgrade, or a launch. | `bash scripts/ci-local.sh` once, on the merged result. A change that reaches the browser bundle adds `/verify-my151` diff on all engines. A server-only change does not: the harness serves a build whose API calls fail, so it cannot observe the change. | 40 min |
 | Admin | Every changed file is admin-only: the command below prints nothing. This covers the admin page and its read-only API code. Michael set this tier on 2026-10-08. | `npm run lint`, `npm test`, `node scripts/check-test-rules.mjs`, the proof test, and `flock /tmp/my151-browser.lock npx playwright test e2e/admin- --project=desktop --project=mobile --project=narrow`, which builds first. A visual change adds 390 and 1280 px before-and-after shots on live data. | 3 min |
 
+Admin work speed (Michael, 2026-10-08): a small admin-only change takes 10 minutes or less from request to production. The Admin tier checks and plain before-and-after shots on live data are the whole evidence. Do not add render-audit loops, side-by-side composites, alternative layouts, or assessments of other surfaces unless Michael asks for them. The coordinator makes a small admin change itself instead of starting a worker, and gives a worker only admin tasks that take more than about 30 minutes.
+
 The Admin tier check. Any printed file is outside the admin surface, so the change takes another tier:
 
 ```bash
