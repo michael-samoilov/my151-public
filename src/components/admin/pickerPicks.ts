@@ -2,7 +2,7 @@
 import { labelOf } from '@/favorites/components/spriteLabel';
 import { getPickerMon, type PickerMon } from '@/favorites/model/catalog';
 import { parseCellKey, type GenAxisId, type TypeAxisId } from '@/favorites/model/cells';
-import { eligibleFor } from '@/favorites/model/eligibility';
+import { eligibleFor, kindFor } from '@/favorites/model/eligibility';
 import type { FavoritePicks } from '../../../api/_favoriteAggregate';
 
 export type PickCell = { type: TypeAxisId; gen: GenAxisId };
@@ -18,11 +18,12 @@ export function pickerFace(id: number): { sprite: string; alt: string; name: str
 
 /**
  * A cell's Pokémon, most picked first. Equal counts keep the Picker's own
- * order. A pointer cell has no fixed pool, so it lists what charts hold there.
+ * order. A pick cell lists every Pokémon it allows, picked or not. A pointer
+ * cell offers each chart its own picks, so it lists only what charts hold.
  */
 export function rankCell({ type, gen }: PickCell, rows: [number, number][]): Ranked[] {
   const counts = new Map(rows);
-  const pool = eligibleFor(type, gen);
+  const pool = kindFor(type, gen) === 'pick' ? eligibleFor(type, gen) : [];
   const inPool = new Set(pool.map((mon) => mon.id));
   const others = rows
     .map(([id]) => id)
