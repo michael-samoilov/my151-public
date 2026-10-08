@@ -47,7 +47,9 @@ import { pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
 import { PRODUCTION, build, chromiumPath, compare, holdBrowserLock, median, selfSignedTls, serve } from './lab-server.mjs';
 
-const LIGHTHOUSE_VERSION = '12.8.2';
+// The version PageSpeed Insights ran on October 8, 2026. Match it when Google
+// moves: `psi.mjs` prints the version Google uses.
+const LIGHTHOUSE_VERSION = '13.5.0';
 
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
@@ -106,7 +108,8 @@ function digest(lhr) {
   const categoryOf = {};
   for (const [id, category] of Object.entries(lhr.categories)) for (const ref of category.auditRefs) categoryOf[ref.id] ??= id;
   const scored = (a) => a.score !== null && ['binary', 'numeric', 'metricSavings'].includes(a.scoreDisplayMode);
-  const lcpNode = audits['largest-contentful-paint-element']?.details?.items?.[0]?.items?.[0]?.node;
+  // Lighthouse 13 reports the LCP element in the LCP breakdown insight.
+  const lcpNode = audits['lcp-breakdown-insight']?.details?.items?.find((item) => item.type === 'node');
   const observed = audits.metrics?.details?.items?.[0] ?? {};
   return {
     scores: Object.fromEntries(CATEGORIES.map((c) => [c, Math.round((lhr.categories[c]?.score ?? 0) * 100)])),
@@ -140,11 +143,18 @@ async function snapshot(browser, url, profile) {
   const { text, images } = await page.evaluate(() => ({
     text: document.body.innerText,
     images: [...document.images]
-      .filter((img) => img.getBoundingClientRect().width > 0 && img.complete && img.naturalWidth > 0)
-      .map((img) => ({
-        name: img.alt || img.currentSrc.split('/').pop(),
-        sharpness: img.naturalWidth / (img.getBoundingClientRect().width * devicePixelRatio),
-      })),
+      .filter((img) => img.offsetWidth > 0 && img.complete && img.naturalWidth > 0)
+      .map((img) => {
+        // For a `srcset` image, naturalWidth is the width `sizes` declares,
+        // whichever copy loaded. The file's own pixel width is in the
+        // descriptor of the copy that loaded.
+        const [, descriptor = ''] = img.srcset.split(',').map((c) => c.trim().split(/\s+/))
+          .find(([url]) => new URL(url, location.href).href === img.currentSrc) ?? [];
+        const filePixels = descriptor.endsWith('w') ? parseFloat(descriptor)
+          : descriptor.endsWith('x') ? img.naturalWidth * parseFloat(descriptor) : img.naturalWidth;
+        // offsetWidth is the layout width, before rotation or scale.
+        return { name: img.alt || img.currentSrc.split('/').pop(), sharpness: filePixels / (img.offsetWidth * devicePixelRatio) };
+      }),
   }));
   await context.close();
   return { png, text, images };

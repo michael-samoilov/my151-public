@@ -1,5 +1,5 @@
 import {aggregate as aggregateRecords} from '../../../../api/_aggregate';
-import {favoriteSummary,favoriteUsageFunnel,favoriteUser} from '../../../../api/_favoriteAggregate';
+import {favoritePicks,favoriteSummary,favoriteUsageFunnel,favoriteUser} from '../../../../api/_favoriteAggregate';
 import {mergeFavoriteRecord,parseFavoriteSnapshot,type FavoriteRecord} from '../../../../api/_favoriteRecord';
 import favoriteCells from '../../../../api/_favoriteCells.json';
 // Demo fixture for the admin dashboard, reached at `/?admin&demo`.
@@ -818,7 +818,8 @@ const pickerRecords:FavoriteRecord[] = [0,24,80,150,220,257].map((depth,i)=>{
   const cid=`demo-picker-${i+1}`;
   let r=mergeFavoriteRecord(null,{cid,id:`open-${i}`,now:pickerNow-86400000,kind:'progress',snapshot:initial,events:['favorites-open'],country:i%2?'GB':'US',device:i%2?'desktop':'mobile',os:i%2?'Windows':'iOS',browser:i%2?'Chrome':'Safari',tz:'America/New_York',locale:'en',lang:'en-US'});
   r=mergeFavoriteRecord(r,{cid,id:`pick-${i}`,now:pickerNow,kind:'progress',snapshot:selected,events:[]});
-  if(i>1)r=mergeFavoriteRecord(r,{cid,id:`full-${i}`,now:pickerNow+60000,kind:'export',exportKind:i===3?'simplified':'full',snapshot:selected,events:[i===3?'favorites-export-simplified':'favorites-export-full']});
+  if(i>0)r=mergeFavoriteRecord(r,{cid,id:`shown-${i}`,now:pickerNow+30000,kind:'export-shown',snapshot:selected,events:['favorites-export-shown']});
+  if(i>1)r=mergeFavoriteRecord(r,{cid,id:`full-${i}`,now:pickerNow+60000,kind:'export',exportKind:i===3?'simplified':'full',snapshot:selected,events:[i===3?'favorites-export-simplified':'favorites-export-full',...(i===4?['favorites-export-stats']:[])]});
   if(i===5)r=mergeFavoriteRecord(r,{cid,id:`simple-${i}`,now:pickerNow+120000,kind:'export',exportKind:'simplified',snapshot:selected,events:['favorites-export-simplified']});
   return r;
 });
@@ -826,6 +827,7 @@ sampleResponse.favoriteUsers=pickerRecords.map(r=>favoriteUser(r,false));
 sampleResponse.favoriteByCid=Object.fromEntries(sampleResponse.favoriteUsers.map(r=>[r.cid,r]));
 sampleResponse.totalFavoriteUsers=pickerRecords.length;
 sampleResponse.favorite=favoriteSummary(pickerRecords);
+sampleResponse.favoritePicks=favoritePicks(pickerRecords);
 sampleResponse.favoriteFunnel=favoriteUsageFunnel(pickerRecords);
 sampleResponse.byTool!.favorites=aggregateRecords(pickerRecords,pickerNow+120000);
 sampleResponse.byTool!.all!.users+=pickerRecords.length;
