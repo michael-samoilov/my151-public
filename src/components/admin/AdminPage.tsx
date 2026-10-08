@@ -50,6 +50,7 @@ import {
   langName,
   leagueChipLabel,
   leagueExported,
+  pickerChipLabel,
   matchesArchiveFilter,
   matchesFacetFilters,
   matchesToolFilter,
@@ -1251,7 +1252,7 @@ function MetricChip({
   label?: string;
   exported?: boolean;
   empty?: boolean;
-  metric: 'session' | 'dex' | 'league';
+  metric: 'session' | 'dex' | 'league' | 'picker';
   className?: string;
   children?: ReactNode;
 }) {
@@ -1291,7 +1292,9 @@ function SessionMetricChip({
   );
 }
 
-function PreviewMetricScale({ children }: { children: ReactNode }) {
+/** Scales the metric chips of every row so the widest possible row fits a
+ *  phone. The Picker rows show one tool chip; Dex and League rows show two. */
+function PreviewMetricScale({ picker = false, children }: { picker?: boolean; children: ReactNode }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const zoom = useHostZoom(hostRef, innerRef);
@@ -1306,8 +1309,14 @@ function PreviewMetricScale({ children }: { children: ReactNode }) {
         <div ref={hostRef} className="min-w-0 overflow-x-clip">
           <div ref={innerRef} className="flex w-max flex-nowrap items-center gap-1">
             <SessionMetricChip sessions={PREVIEW_FIT.sessions} totalMs={PREVIEW_FIT.totalMs} />
-            <MetricChip metric="dex" label={dexChipLabel(PREVIEW_FIT.dex)} exported />
-            <MetricChip metric="league" label={leagueChipLabel(PREVIEW_FIT.league, CARD_COUNT)} exported />
+            {picker ? (
+              <MetricChip metric="picker" label={pickerChipLabel(PREVIEW_FIT.picker)} exported />
+            ) : (
+              <>
+                <MetricChip metric="dex" label={dexChipLabel(PREVIEW_FIT.dex)} exported />
+                <MetricChip metric="league" label={leagueChipLabel(PREVIEW_FIT.league, CARD_COUNT)} exported />
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1405,8 +1414,9 @@ function PreviewStatusMenus({
 }: {
   archiveFilter: ArchiveFilter;
   setArchiveFilter: (v: ArchiveFilter) => void;
-  toolFilter: ToolFilter;
-  setToolFilter: (v: ToolFilter) => void;
+  /** Leave out for a list whose rows have no Dex and League pair to filter. */
+  toolFilter?: ToolFilter;
+  setToolFilter?: (v: ToolFilter) => void;
 }) {
   return (
     <>
@@ -1418,16 +1428,18 @@ function PreviewStatusMenus({
         onChange={setArchiveFilter}
         ariaLabel="Archive filter"
       />
-      <PreviewFilterMenu
-        name="Tools"
-        className="md:col-start-9 md:col-span-2 md:row-start-1 md:justify-self-start"
-        value={toolFilter}
-        anyKey="any"
-        clearable
-        options={TOOL_FILTER_OPTIONS}
-        onChange={setToolFilter}
-        ariaLabel="Tool filter"
-      />
+      {toolFilter && setToolFilter && (
+        <PreviewFilterMenu
+          name="Tools"
+          className="md:col-start-9 md:col-span-2 md:row-start-1 md:justify-self-start"
+          value={toolFilter}
+          anyKey="any"
+          clearable
+          options={TOOL_FILTER_OPTIONS}
+          onChange={setToolFilter}
+          ariaLabel="Tool filter"
+        />
+      )}
     </>
   );
 }
@@ -1454,6 +1466,7 @@ function UserPreviewCard({
   rec,
   dex,
   league,
+  picker,
   archived,
   onOpen,
   onArchive,
@@ -1461,6 +1474,8 @@ function UserPreviewCard({
   rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
   dex?: { pokemon: number; exported: boolean; sessions?: number; sessionMs?: number[] };
   league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+  /** A Picker row: its cells chip takes the place of the Dex and League chips. */
+  picker?: { filled: number; exported: boolean };
   archived: boolean;
   onOpen: () => void;
   onArchive: (next: boolean) => void;
@@ -1477,6 +1492,7 @@ function UserPreviewCard({
       role="link"
       tabIndex={0}
       data-user-preview
+      data-favorite-user={picker ? rec.cid : undefined}
       aria-label={`Open user ${middleId(rec.cid)}`}
       className={cn(
         'flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -1566,20 +1582,32 @@ function UserPreviewCard({
             totalMs={totalMs}
             className="md:col-start-8 md:row-start-1 md:justify-self-stretch"
           />
-          <MetricChip
-            metric="dex"
-            empty={!dex}
-            className="md:col-start-9 md:row-start-1 md:justify-self-stretch"
-            label={dexChipLabel(dex?.pokemon ?? 0)}
-            exported={dex?.exported}
-          />
-          <MetricChip
-            metric="league"
-            empty={!league}
-            className="md:col-start-10 md:row-start-1 md:justify-self-stretch"
-            label={leagueChipLabel(league?.cards ?? 0, CARD_COUNT)}
-            exported={league?.exported}
-          />
+          {picker ? (
+            <MetricChip
+              metric="picker"
+              empty={picker.filled === 0}
+              className="md:col-start-9 md:row-start-1 md:justify-self-stretch"
+              label={pickerChipLabel(picker.filled)}
+              exported={picker.exported}
+            />
+          ) : (
+            <>
+              <MetricChip
+                metric="dex"
+                empty={!dex}
+                className="md:col-start-9 md:row-start-1 md:justify-self-stretch"
+                label={dexChipLabel(dex?.pokemon ?? 0)}
+                exported={dex?.exported}
+              />
+              <MetricChip
+                metric="league"
+                empty={!league}
+                className="md:col-start-10 md:row-start-1 md:justify-self-stretch"
+                label={leagueChipLabel(league?.cards ?? 0, CARD_COUNT)}
+                exported={league?.exported}
+              />
+            </>
+          )}
         </FitNowrap>
       </div>
     </div>
@@ -2354,22 +2382,9 @@ export function AdminPage() {
               />
             )}
 
-            {tool === 'favorites' && <Panel title="Newest browsers" sub={['picker','newest first']}>
-              <div className="flex flex-col gap-2">
-                <Seg ariaLabel="Archive status" options={ARCHIVE_FILTER_OPTIONS} value={archiveFilter} onChange={setArchiveFilter}/>
-                {(data.favoriteUsers ?? []).filter(rec=>matchesArchiveFilter(archiveOverride[bareCid(rec.cid)] ?? rec.archived ?? false,archiveFilter) && ((data.rangeStart ?? null)===null || rec.lastTs > data.rangeStart!)).map(rec=><button key={rec.cid} type="button" data-favorite-user={rec.cid} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2 text-left text-xs" onClick={()=>openDetail({kind:'favorites',cid:rec.cid})}>
-                  <span className="font-semibold">{middleId(rec.cid)}</span>
-                  <span>{rec.latest.filled} / 257 cells · {rec.latest.uniqueIds.length} Pokémon</span>
-                  <span>{rec.sessions} sessions · {rec.exportsFull+rec.exportsSimplified} exports</span>
-                  <span className="text-muted-foreground">{relativeTime(rec.lastTs)}</span>
-                </button>)}
-                {!data.favoriteUsers?.length && <p className="text-sm text-muted-foreground">No picker users yet.</p>}
-                {(data.totalFavoriteUsers ?? 0) > (data.favoriteUsers?.length ?? 0) && <Button variant="ghost" size="sm" disabled={loading} onClick={()=>void loadMore((data.favoriteUsers?.length ?? 0)+PAGE_SIZE)}>Load more</Button>}
-              </div>
-            </Panel>}
-
-            {(tool === 'dex' || tool === 'league') && <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
+            {(tool === 'dex' || tool === 'league' || tool === 'favorites') && <Panel title="Newest browsers" sub={[showDex ? 'dex' : tool === 'favorites' ? 'picker' : 'league', 'newest first']}>
               {(() => {
+                const showPicker = tool === 'favorites';
                 const archivedOf = (cid: string, flag?: boolean) =>
                   archiveOverride[bareCid(cid)] ?? flag ?? false;
                 type Row = {
@@ -2377,13 +2392,22 @@ export function AdminPage() {
                   rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
                   dex?: { pokemon: number; exported: boolean; sessions?: number; sessionMs?: number[] };
                   league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+                  picker?: { filled: number; exported: boolean };
                   archived: boolean;
                   open: Detail;
                 };
                 // Newest first, so the browsers active in the range lead the
                 // list. It opens on them; Load more continues past the range.
-                const loaded: { lastTs: number }[] = showDex ? data.records : (data.leagueUsers ?? []);
-                const total = showDex ? (data.totalDexRecords ?? data.totalUsers) : (data.totalLeagueUsers ?? loaded.length);
+                const loaded: { lastTs: number }[] = showDex
+                  ? data.records
+                  : showPicker
+                    ? (data.favoriteUsers ?? [])
+                    : (data.leagueUsers ?? []);
+                const total = showDex
+                  ? (data.totalDexRecords ?? data.totalUsers)
+                  : showPicker
+                    ? (data.totalFavoriteUsers ?? loaded.length)
+                    : (data.totalLeagueUsers ?? loaded.length);
                 const since = data.rangeStart ?? null;
                 const inRange = since === null ? loaded.length : loaded.filter((r) => r.lastTs > since).length;
                 const shown = Math.min(loaded.length, listShown ?? inRange);
@@ -2411,6 +2435,18 @@ export function AdminPage() {
                         : undefined,
                       archived,
                       open: { kind: 'dex', cid: rec.cid },
+                    });
+                  }
+                } else if (showPicker) {
+                  for (const rec of (data.favoriteUsers ?? []).slice(0, shown)) {
+                    const archived = archivedOf(rec.cid, rec.archived);
+                    if (!matchesArchiveFilter(archived, archiveFilter)) continue;
+                    listed.push({
+                      cid: rec.cid,
+                      rec,
+                      picker: { filled: rec.latest.filled, exported: rec.exportsFull + rec.exportsSimplified > 0 },
+                      archived,
+                      open: { kind: 'favorites', cid: rec.cid },
                     });
                   }
                 } else {
@@ -2448,7 +2484,7 @@ export function AdminPage() {
                   <>
                     {emptyList && !loading && (
                       <p className="text-sm text-muted-foreground">
-                        {showDex ? 'No users yet.' : 'No league users yet.'}
+                        {showDex ? 'No users yet.' : showPicker ? 'No picker users yet.' : 'No league users yet.'}
                       </p>
                     )}
                     {shown > 0 && rows.length === 0 && !loading && (
@@ -2462,21 +2498,25 @@ export function AdminPage() {
                         <PreviewStatusMenus
                           archiveFilter={archiveFilter}
                           setArchiveFilter={setArchiveFilter}
-                          toolFilter={toolFilter}
-                          setToolFilter={setToolFilter}
+                          toolFilter={showPicker ? undefined : toolFilter}
+                          setToolFilter={showPicker ? undefined : setToolFilter}
                         />
                         <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-1 md:row-start-1 md:flex">When</div>
                         <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-2 md:row-start-1 md:flex">Ago</div>
                         <PreviewFacetMenus listed={listed} facets={facetFilters} setFacets={setFacetFilters} />
                         <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-8 md:row-start-1 md:flex">Sessions</div>
+                        {showPicker && (
+                          <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-9 md:row-start-1 md:flex">Cells</div>
+                        )}
                       </div>
-                      <PreviewMetricScale>
+                      <PreviewMetricScale picker={showPicker}>
                         {rows.map((row) => (
                           <UserPreviewCard
                             key={row.cid}
                             rec={row.rec}
                             dex={row.dex}
                             league={row.league}
+                            picker={row.picker}
                             archived={row.archived}
                             onArchive={(next) => void setArchived(row.cid, next)}
                             onOpen={() => openDetail(row.open)}
