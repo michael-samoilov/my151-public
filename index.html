@@ -7,6 +7,16 @@
     <title>my151 | Pokémon Tools: Pokédex, Gym Leaders &amp; Favorites</title>
     <meta name="description" content="Free Pokémon fan tools: build a custom regional Pokédex, create a full league of custom gym leader teams, or pick favorites by type and generation. Export PNGs." />
     <link rel="canonical" href="https://my151.app/" />
+    <!-- The hub's largest paint on a phone is the first card's front screenshot.
+         Without this the browser finds it only after the JavaScript renders the
+         hub. Phones only: on a desktop the largest paint is the heading, and the
+         image would only slow the JavaScript. `imagesrcset` and `imagesizes`
+         must match the shot() call in HomePage.tsx, or the browser downloads the
+         image twice. -->
+    <link rel="preload" as="image" fetchpriority="high" media="(max-width: 1023px)"
+      href="/src/assets/home/tool-dex.webp"
+      imagesrcset="/src/assets/home/tool-dex-400.webp 400w, /src/assets/home/tool-dex.webp 800w"
+      imagesizes="(min-width: 1024px) calc(11.87vw - 0.602rem), (min-width: 640px) calc(33.197vw - 0.65rem), calc(34.163vw - 0.325rem)" />
 
     <!-- Search-console ownership proofs. Both are plain ownership tokens, not
          trackers, and must stay in the HTML served at "/" for the properties to
@@ -95,9 +105,8 @@
       .p151-boot h1 { margin: 0; font-size: 18px; font-weight: 600; color: #0a0a0a; letter-spacing: -0.01em; }
       .p151-boot p { margin: 0; max-width: 38ch; font-size: 14px; line-height: 1.5; color: #525252; }
       /* Was #a3a3a3, which predated this block rendering on a light background and
-       * gave "Loading…" only ~2.3:1 contrast. #6e6e6e is a shade darker than the
-       * app's --color-muted-foreground (#737373) because that value measures
-       * 4.43:1 on #f7f7f8 — just under AA for 13px text. */
+       * gave "Loading…" only ~2.3:1 contrast. #6e6e6e is the app's
+       * --color-muted-foreground: 4.76:1 on #f7f7f8, AA for 13px text. */
       .p151-boot span { font-size: 13px; color: #6e6e6e; letter-spacing: 0.02em; }
       /* Desktop is a peer of mobile, not mobile-with-patches (see CLAUDE.md): the
        * spinner, headline, body and hint scale together at --breakpoint-md instead

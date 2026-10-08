@@ -99,9 +99,8 @@
       .p151-boot h1 { margin: 0; font-size: 18px; font-weight: 600; color: #0a0a0a; letter-spacing: -0.01em; }
       .p151-boot p { margin: 0; max-width: 38ch; font-size: 14px; line-height: 1.5; color: #525252; }
       /* Was #a3a3a3, which predated this block rendering on a light background and
-       * gave "Loading…" only ~2.3:1 contrast. #6e6e6e is a shade darker than the
-       * app's --color-muted-foreground (#737373) because that value measures
-       * 4.43:1 on #f7f7f8 — just under AA for 13px text. */
+       * gave "Loading…" only ~2.3:1 contrast. #6e6e6e is the app's
+       * --color-muted-foreground: 4.76:1 on #f7f7f8, AA for 13px text. */
       .p151-boot span { font-size: 13px; color: #6e6e6e; letter-spacing: 0.02em; }
       /* Desktop is a peer of mobile, not mobile-with-patches (see CLAUDE.md): the
        * spinner, headline, body and hint scale together at --breakpoint-md instead

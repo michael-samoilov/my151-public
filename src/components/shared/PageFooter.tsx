@@ -14,7 +14,7 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
     // full footer used to reserve. The FAQ stays for SEO, collapsed and tight.
     return (
       <div className="flex flex-col items-center">
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-4 py-1.5 text-center text-[0.5625rem] text-muted-foreground/70">
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-4 py-1.5 text-center text-[0.5625rem] text-muted-foreground">
           <span>v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures / TPC</span>
           <span aria-hidden className="text-muted-foreground/40">·</span>
           <button
@@ -40,10 +40,10 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
         <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
         <circle cx="12" cy="12" r="1.5" fill="currentColor" />
       </svg>
-      <span className="text-[0.5625rem] text-muted-foreground/70 text-center">
+      <span className="text-[0.5625rem] text-muted-foreground text-center">
         v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures / TPC
       </span>
-      <span className="text-[0.5rem] text-muted-foreground/50">
+      <span className="text-[0.5rem] text-muted-foreground">
         {t('footer.disclaimer')}
       </span>
       {/* The secondary path to the report form. The floating button is the one
@@ -51,7 +51,7 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
       <button
         type="button"
         onClick={(e) => openFeedback('bug', e.currentTarget)}
-        className="mt-1 text-[0.5625rem] text-muted-foreground/70 underline underline-offset-2 hover:text-foreground cursor-pointer"
+        className="mt-1 text-[0.5625rem] text-muted-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
       >
         {t('footer.report')}
       </button>
