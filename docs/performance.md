@@ -50,6 +50,11 @@ The tools:
   PageSpeed Insights, with its mobile and desktop presets. It installs a pinned
   Lighthouse into the user cache on first use. `--url https://my151.app` runs it
   on a deployed site, with `?notme` so the runs stay out of the analytics.
+- `node scripts/performance/psi.mjs` runs Google's PageSpeed Insights on the
+  live site (or `--url` a preview) and prints the scores, the lab metrics, the
+  real-user field data for the origin, and the findings. It needs
+  `PAGESPEED_API_KEY` in the environment settings. Google may run a newer
+  Lighthouse than `lighthouse.mjs`, so its numbers are the reference.
 - `node scripts/performance/lab.mjs` loads each page in a throttled browser and
   measures LCP, blocking time, and INP for each tap step. Lighthouse loads pages
   without tapping them, so this is the only lab measure of INP.
