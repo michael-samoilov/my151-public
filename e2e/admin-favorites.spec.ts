@@ -12,18 +12,21 @@ test.describe('Picker admin @viewport',()=>{
     const desktop=page.viewportSize()!.width>=1024;
     await expect(page.getByRole('table',{name:`Favorite Pokémon ${desktop?'landscape':'portrait'} full grid`})).toBeVisible();
     await expect(detail.getByRole('heading')).toHaveCount(0);
-    await expect(page.getByTestId('session-playhead-count')).toHaveCount(0);
+    await expect(page.getByTestId('session-playhead-count')).toHaveText('257');
+    await expect(page.getByTestId('admin-rail-chip')).toHaveText([/^2\ssessions\s*2\sdays$/,/^\d+m\s*time spent$/]);
+    await expect(page.getByTestId('session-milestone')).toHaveCount(1);
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveText('full grid · simplified · export popup');
     const grid=page.getByTestId('admin-favorite-snapshot');
     const images=grid.locator('[data-favorite-sprite]');
     await expect(images).toHaveCount(257);
     const slider=page.getByRole('slider',{name:'Scrub sessions'});
     await slider.focus();await slider.press('Home');
-    await expect(slider).toHaveAttribute('aria-valuetext',/0 of 257 cells/);
+    await expect(slider).toHaveAttribute('aria-valuetext',/: 0 of 257$/);
     await expect(images).toHaveCount(0);
     await slider.press('End');
     await expect(images).toHaveCount(257);
     await expect(page.getByRole('group',{name:"This browser's tools"}).getByRole('button',{name:'Picker',exact:true}).last()).toBeEnabled();
-    await expect(slider).toHaveAttribute('aria-valuetext',/257 of 257 cells/);
+    await expect(slider).toHaveAttribute('aria-valuetext',/: 257 of 257$/);
     await expect(grid.getByRole('columnheader')).toHaveCount(desktop?23:13);
     await expect(grid.getByRole('rowheader')).toHaveCount(desktop?12:22);
     await expect(grid.getByRole('row')).toHaveCount(desktop?13:23);
@@ -73,6 +76,20 @@ test('resizing across the desktop breakpoint preserves every selected coordinate
   }
   await testInfo.attach('picker-admin-breakpoint.json',{body:JSON.stringify(measurements),contentType:'application/json'});
   await testInfo.attach('picker-admin-breakpoint.png',{body:await page.screenshot(),contentType:'image/png'});
+});
+
+test('the milestone row tells an export popup without export from a detailed-stats export',async({page},testInfo)=>{
+  await page.goto('/?admin&demo');
+  await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
+  const labels:Record<string,string|null>={};
+  for(const [cid,label,diamonds] of [['demo-picker-2','export popup',0],['demo-picker-5','full grid · detailed stats · export popup',1]] as const){
+    await page.locator(`[data-favorite-user="${cid}"]`).click();
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveText(label);
+    await expect(page.getByTestId('session-milestone')).toHaveCount(diamonds);
+    labels[cid]=await page.getByTestId('session-playhead-milestone').textContent();
+    await page.getByRole('button',{name:'‹ Back'}).click();
+  }
+  await testInfo.attach('picker-milestone-labels.json',{body:JSON.stringify(labels),contentType:'application/json'});
 });
 
 async function gridMeasurement(page:import('@playwright/test').Page){

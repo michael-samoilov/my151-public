@@ -93,6 +93,10 @@ export const FUNNEL_EVENTS = [
   'favorites-complete',
   'favorites-export-full',
   'favorites-export-simplified',
+  // The Picker export dialog opened, once per visit; and a Full grid export
+  // that included the detailed stats, beside its favorites-export-full.
+  'favorites-export-shown',
+  'favorites-export-stats',
   // The gym leader maker.
   'league-open',
   'league-first-seat',

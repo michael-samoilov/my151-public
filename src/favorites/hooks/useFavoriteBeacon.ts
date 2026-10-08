@@ -11,13 +11,17 @@ import { createFavoriteBeaconDelivery } from './favoriteBeaconDelivery';
 import { useFavoritesStore } from '../store/useFavoritesStore';
 import { buildFavoritesSnapshot, type FavoritesSnapshot } from '../export/snapshot';
 const delivery = createFavoriteBeaconDelivery(() => !DEMO_MODE && !PREVIEW_DEPLOY && !isOptedOut());
-function post(snapshot: FavoritesSnapshot, exportKind?: FavoriteExportKind, capturedAt = Date.now()) {
+/** A one-off report. Delivery never folds it into an unchanged progress board. */
+type FavoriteReport = {kind:'export-shown'} | {kind:'export';exportKind:FavoriteExportKind;stats:boolean};
+function post(snapshot: FavoritesSnapshot, report?: FavoriteReport, capturedAt = Date.now()) {
   if (DEMO_MODE || PREVIEW_DEPLOY || isOptedOut()) return;
   const fills = Object.fromEntries(snapshot.cells.filter(cell => cell.mon).map(cell => [cell.key,cell.mon!.id]));
   const content = JSON.stringify(fills);
+  const exported = report?.kind==='export' ? report : undefined;
   delivery.send({cid:getClientId(),tool:'favorites',page:currentPage(),
-    kind:exportKind?'export':snapshot.completion.filled===snapshot.completion.total?'completion':'progress',exportKind,
-    snapshot:{v:1,fills},ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined},content,!!exportKind);
+    kind:report?.kind ?? (snapshot.completion.filled===snapshot.completion.total?'completion':'progress'),
+    exportKind:exported?.exportKind,stats:exported?.stats||undefined,
+    snapshot:{v:1,fills},ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined},content,!!report);
 }
 /** Report one validated board after a pause, with a bounded wait during continuous edits. */
 export function useFavoriteBeacon() {
@@ -35,5 +39,7 @@ export function useFavoriteBeacon() {
     return()=>{document.removeEventListener('visibilitychange',hidden);window.removeEventListener('pagehide',flush);flush();};
   },[debouncer]);
 }
+/** Called when the export dialog opens, with the board it shows. */
+export function sendFavoriteExportShownBeacon(fills:Readonly<Record<string,number>>) { post(buildFavoritesSnapshot(fills),{kind:'export-shown'}); }
 /** Called only after share/download succeeds, using the board displayed in that export. */
-export function sendFavoriteExportBeacon(snapshot:FavoritesSnapshot, mode:FavoriteExportKind) { post(snapshot,mode); }
+export function sendFavoriteExportBeacon(snapshot:FavoritesSnapshot, mode:FavoriteExportKind, stats:boolean) { post(snapshot,{kind:'export',exportKind:mode,stats}); }

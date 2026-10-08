@@ -53,7 +53,28 @@ export const FUNNEL_LABEL: Record<string, string> = {
   'league-nudge-league-shown': '8 gyms',
   'league-nudge-league-cta': '8 gyms go',
   'league-nudge-league-dismiss': '8 gyms skip',
+  'favorites-first-pick': 'first pick',
+  'favorites-quarter': '65',
+  'favorites-half': '129',
+  'favorites-complete': '257',
+  'favorites-export-shown': 'export popup',
 };
+
+/** Picker export events. A visit lists each export kind once, so its diamond
+ *  carries one label per kind. */
+const FAVORITE_EXPORT_LABEL: Record<string, string> = {
+  'favorites-export-full': 'full grid',
+  'favorites-export-stats': 'detailed stats',
+  'favorites-export-simplified': 'simplified',
+};
+
+export function favoriteExportMarks(sittings: readonly { t: number; ev?: readonly string[] }[]): ChartMilestone[] {
+  return sittings.flatMap((s) =>
+    (s.ev ?? []).flatMap((ev) =>
+      FAVORITE_EXPORT_LABEL[ev] ? [{ t: s.t, label: FAVORITE_EXPORT_LABEL[ev], tone: 'export' as const }] : [],
+    ),
+  );
+}
 
 /** Event names stored on one league sitting, for the timeline funnel marks. */
 export function leagueSittingEv(events: readonly string[] | undefined): string[] | undefined {
