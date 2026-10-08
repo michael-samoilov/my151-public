@@ -2509,7 +2509,9 @@ export function AdminPage() {
                           <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-9 md:row-start-1 md:flex">Cells</div>
                         )}
                       </div>
-                      <PreviewMetricScale picker={showPicker}>
+                      {/* A new key remounts the fit, so a switch between the
+                          Picker rows and the Dex or League rows measures again. */}
+                      <PreviewMetricScale key={showPicker ? 'picker' : 'dex-league'} picker={showPicker}>
                         {rows.map((row) => (
                           <UserPreviewCard
                             key={row.cid}
