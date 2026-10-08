@@ -283,16 +283,14 @@ holdBrowserLock();
         }
         console.log(`| ${where} | ${cells.join(' | ')} | ${lcpCell.slice(0, 80)} |`);
 
-        // 2. Audits that passed on the base in most runs and fail now.
+        // 2. Audits that passed in every base run and fail in every candidate
+        // run. A timing audit such as "Max Potential First Input Delay" can
+        // pass or fail by chance, so a split result is noise, not a change.
         if (base) {
-          const failingInMost = (digests) => {
-            const counts = {};
-            for (const d of digests) for (const id of Object.keys(d.failing)) counts[id] = (counts[id] ?? 0) + 1;
-            return new Set(Object.keys(counts).filter((id) => counts[id] > digests.length / 2));
-          };
-          const before = failingInMost(base);
-          for (const id of failingInMost(candidate)) {
-            if (before.has(id)) continue;
+          const failingIn = (digests) => digests.flatMap((d) => Object.keys(d.failing));
+          const everBefore = new Set(failingIn(base));
+          for (const id of new Set(failingIn(candidate))) {
+            if (everBefore.has(id) || !candidate.every((d) => d.failing[id])) continue;
             const a = candidate.find((d) => d.failing[id]).failing[id];
             fail(where, `${a.category} audit "${a.title}" passed before and fails now ${a.display}`.trim());
           }
