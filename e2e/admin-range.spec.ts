@@ -105,6 +105,12 @@ test.describe('admin date range', () => {
       return {
         ribbon: box('[aria-label="Date range"]'),
         nav: box('nav[aria-label="Admin section"]'),
+        bar: box('[data-admin-bar]'),
+        navButtons: (() => {
+          const b = [...document.querySelectorAll<HTMLElement>('nav[aria-label="Admin section"] button')];
+          return { left: b[0].getBoundingClientRect().left, right: b[b.length - 1].getBoundingClientRect().right };
+        })(),
+        innerWidth: window.innerWidth,
         header: box('header'),
         viewport: window.innerHeight,
         clippedChips: chips.filter((b) => b.scrollWidth > b.clientWidth).length,
@@ -116,7 +122,13 @@ test.describe('admin date range', () => {
     expect(boxes.clippedChips).toBe(0);
     expect(boxes.pageOverflow).toBeLessThanOrEqual(0);
     const width = page.viewportSize()!.width;
-    if (width < 1024) expect(Math.abs(boxes.nav.bottom - boxes.viewport)).toBeLessThanOrEqual(1);
+    if (width < 1024) {
+      // The bar touches the screen bottom; padding keeps its buttons clear of rounded phone corners.
+      expect(Math.abs(boxes.bar.bottom - boxes.viewport)).toBeLessThanOrEqual(1);
+      expect(boxes.viewport - boxes.nav.bottom).toBeGreaterThanOrEqual(7);
+      expect(boxes.navButtons.left).toBeGreaterThanOrEqual(12);
+      expect(boxes.innerWidth - boxes.navButtons.right).toBeGreaterThanOrEqual(12);
+    }
     else expect(Math.abs(boxes.ribbon.top - boxes.header.bottom)).toBeLessThanOrEqual(1);
   });
 

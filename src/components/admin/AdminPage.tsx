@@ -1520,7 +1520,7 @@ function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
       ref={barRef}
       data-admin-bar
       className={cn(
-        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 backdrop-blur md:sticky md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
+        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
         wide ? 'md:w-full' : 'md:max-w-5xl',
       )}
     >

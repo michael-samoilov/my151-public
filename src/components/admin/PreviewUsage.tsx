@@ -1,8 +1,8 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FitNowrap, PreviewChipZoomProvider } from '@/components/admin/FitNowrap';
-import { PreviewChipZoomReport } from '@/components/admin/previewChipZoom';
+import { PreviewChipZoomProvider } from '@/components/admin/FitNowrap';
+import { PREVIEW_CHIP_MD, usePreviewChipZoom } from '@/components/admin/previewChipZoom';
 import { browserTotal, type ToolCell, type UsageTool } from '@/components/admin/browserUsage';
 import { PREVIEW_PROGRESS, sessionChipParts } from '@/components/admin/userPreview';
 
@@ -118,34 +118,69 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: { sessions: num
   );
 }
 
-/** The usage block of one Newest browsers card. */
+/** The usage block of one Newest browsers card. On a phone its four columns
+ *  always split the card width equally, and the list-wide zoom sizes the text. */
 export function BrowserUsage({ cells }: { cells: ToolCell[] }) {
   const total = browserTotal(cells.filter((c) => c.used).map((c) => c.usage));
+  const zoom = usePreviewChipZoom();
   return (
-    <div className="min-w-0 md:contents">
-      <FitNowrap contentsOnMd lockZoom innerClassName="grid min-w-full grid-cols-4 items-stretch">
+    <div data-usage-host className="min-w-0 md:contents">
+      <div className="grid w-full grid-cols-4 items-stretch gap-1 md:contents" style={{ zoom }}>
         <UsageGrid cells={cells} total={total} />
-      </FitNowrap>
+      </div>
     </div>
   );
 }
 
-/** Gives every card one chip size on a phone: the largest that fits the
- *  widest card in the list. A card reports its own fit (see FitNowrap). */
+const WORST_USAGE = { sessions: 999, totalMs: 999 * 3_600_000 + 59 * 60_000, spans: [] };
+/** The widest card the list can hold: triple digits in every column. */
+const WORST: ToolCell[] = (['dex', 'league', 'picker'] as const).map((tool) => ({
+  tool,
+  used: true,
+  count: 999,
+  exported: true,
+  usage: WORST_USAGE,
+}));
+
+/**
+ * Gives every card one text size on a phone, whatever its numbers: the
+ * largest that fits a hidden worst-case card (`WORST`) into a card's width.
+ * Each card's columns fill its width, so no card is wider than another.
+ */
 export function PreviewUsageScale({ children }: { children: ReactNode }) {
-  const fits = useRef(new Map<string, number>());
+  const probeRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
-  const report = useCallback((id: string, fit: number | null) => {
-    if (fit === null) fits.current.delete(id);
-    else fits.current.set(id, fit);
-    let min = 1;
-    for (const f of fits.current.values()) min = Math.min(min, f);
-    setZoom((z) => (Math.abs(z - min) < 0.005 ? z : min));
-  }, []);
+  useLayoutEffect(() => {
+    const probe = probeRef.current;
+    if (!probe) return;
+    const mq = window.matchMedia(PREVIEW_CHIP_MD);
+    const measure = () => {
+      const host = document.querySelector<HTMLElement>('[data-usage-host]');
+      const need = probe.scrollWidth;
+      const avail = host?.clientWidth ?? 0;
+      // Two spare pixels absorb scrollWidth rounding.
+      const next = mq.matches || need <= 0 || avail <= 0 ? 1 : Math.min(1, avail / (need + 2));
+      setZoom((z) => (Math.abs(z - next) < 0.005 ? z : next));
+    };
+    measure();
+    void document.fonts.ready.then(measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(probe);
+    const host = document.querySelector<HTMLElement>('[data-usage-host]');
+    if (host) ro.observe(host);
+    mq.addEventListener('change', measure);
+    return () => {
+      ro.disconnect();
+      mq.removeEventListener('change', measure);
+    };
+  });
   return (
-    <PreviewChipZoomReport.Provider value={report}>
+    <>
+      <div ref={probeRef} aria-hidden className="pointer-events-none invisible fixed left-0 top-0 -z-10 grid w-max grid-cols-4 gap-1">
+        <UsageGrid cells={WORST} total={WORST_USAGE} />
+      </div>
       <div hidden data-preview-chip-zoom={zoom} />
       <PreviewChipZoomProvider zoom={zoom}>{children}</PreviewChipZoomProvider>
-    </PreviewChipZoomReport.Provider>
+    </>
   );
 }

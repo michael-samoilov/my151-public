@@ -91,6 +91,9 @@ const googleRows = {
     { key: 'https://my151.app/', clicks: 200, impressions: 940, ctr: 200 / 940, position: 5.9 },
     { key: 'https://my151.app/custom-gym-leader', clicks: 31, impressions: 148, ctr: 31 / 148, position: 8.2 },
     { key: 'https://my151.app/pokedex-builder', clicks: 3, impressions: 56, ctr: 3 / 56, position: 10.8 },
+    { key: 'https://my151.app/favorite-pokemon-picker', clicks: 4, impressions: 40, ctr: 4 / 40, position: 9.1 },
+    // An old path that redirects to the Picker.
+    { key: 'https://my151.app/favorite-pokemon-by-type', clicks: 1, impressions: 12, ctr: 1 / 12, position: 14.5 },
   ],
   queries: [
     { key: 'pokedex maker', clicks: 73, impressions: 320, ctr: 73 / 320, position: 5.4 },
@@ -103,6 +106,8 @@ const googleRows = {
     { page: 'https://my151.app/', query: 'pokedex maker', clicks: 73, impressions: 320, ctr: 73 / 320, position: 5.4 },
     { page: 'https://my151.app/pokedex-builder', query: 'pokedex builder', clicks: 29, impressions: 129, ctr: 29 / 129, position: 5.8 },
     { page: 'https://my151.app/custom-gym-leader', query: 'gym leader maker', clicks: 6, impressions: 18, ctr: 6 / 18, position: 7.2 },
+    { page: 'https://my151.app/favorite-pokemon-picker', query: 'favorite pokemon picker', clicks: 3, impressions: 22, ctr: 3 / 22, position: 8.4 },
+    { page: 'https://my151.app/favorite-pokemon-by-type', query: 'favorite pokemon picker', clicks: 1, impressions: 6, ctr: 1 / 6, position: 13.0 },
   ],
 };
 

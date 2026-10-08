@@ -28,6 +28,13 @@ test.describe('admin search performance', () => {
     await expect(panel.getByTestId('search-page-home')).toContainText('Homepage');
     await expect(panel.getByTestId('search-page-pokedex-builder')).toContainText('pokedex builder');
     await expect(panel.getByTestId('search-page-custom-gym-leader')).toContainText('gym leader maker');
+    // The old by-type path redirects to the Picker, so its rows join the Picker's group.
+    const picker = panel.getByTestId('search-page-favorite-pokemon-picker');
+    await expect(picker).toContainText('Favorite Pokémon Picker');
+    await expect(picker).toContainText('favorite pokemon picker');
+    // The long path gives way, so the name shows in full at every width.
+    expect(await picker.getByRole('heading').evaluate((h) => h.scrollWidth <= h.clientWidth)).toBe(true);
+    await expect(panel.getByTestId('search-page-favorite-pokemon-by-type')).toHaveCount(0);
 
     await panel.getByRole('group', { name: 'Search provider' }).getByRole('button', { name: 'Bing' }).click();
     await expect(panel.getByText('make a pokedex')).toBeVisible();
