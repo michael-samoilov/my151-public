@@ -6,9 +6,9 @@
 # `SHOT_SRCSETS` in src/components/pokedex/IntroCard.tsx. Run it again after
 # re-exporting an original. It needs ffmpeg built with libwebp.
 #
-# The hub copies are exactly half size. A box filter (`area`) makes the same
-# half-size image as Chrome's mipmap of the original, so a phone draws the copy
-# closer to the original than Lanczos does. The intro scales are not halves;
+# The hub's 400px copies are exactly half size. A box filter (`area`) makes the
+# same half-size image as Chrome's mipmap of the original, so a phone draws the
+# copy closer to the original than Lanczos does. The 300px copies use it too. The intro scales are not halves;
 # each keeps its original's exact aspect ratio, so a card's width cannot shift.
 # Quality 86 is the default. The detailed 151 pair uses 82 to stay within
 # the existing Pokédex image budget after its native frame became wider.
@@ -22,6 +22,10 @@ resize() { # <original> <width> <height, or -1 to keep the aspect ratio> <filter
 
 for shot in tool-dex tool-dex-b tool-league tool-league-b; do
   resize "src/assets/home/$shot.webp" 400 -1 area
+done
+# The 300px copies serve 1x desktops and 2x phones.
+for shot in tool-dex tool-dex-b tool-league tool-league-b tool-favorites tool-favorites-b; do
+  resize "src/assets/home/$shot.webp" 300 -1 area
 done
 resize src/assets/intro/shot-45.webp 234 372 lanczos
 resize src/assets/intro/shot-95-outlines.webp 261 465 lanczos

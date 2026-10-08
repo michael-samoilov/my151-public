@@ -2,7 +2,7 @@ import { useECharts, cssVar, tooltipStyle, type EChartsOption, echarts } from '.
 import { nodeDepth, type FunnelLabelSide, type FunnelLink, type FunnelNode, type FunnelRole } from '@/lib/usageFunnels';
 import { sankeyGeometry, sankeyHeightCss } from '@/lib/sankeyGeometry';
 import { compactFunnelLabelSide } from '@/lib/sankeyLabels';
-import { columnLefts, gapNeeds, type LabelBox } from '@/lib/sankeyColumns';
+import { columnLefts, columnNeeds, fitColumns, type LabelBox, type MeasureText } from '@/lib/sankeyColumns';
 
 export type SankeyNode = FunnelNode;
 export type SankeyLink = FunnelLink;
@@ -21,54 +21,59 @@ const LABEL_DISTANCE = 5;
 /** The last column's gap, which holds its count chip in the label instead. */
 const CHIP_LABEL_DISTANCE = 3;
 
-/** Width each compact label wraps at, by side. */
-const COMPACT_WRAP: Record<ReturnType<typeof compactFunnelLabelSide>, number> = {
-  top: 48,
-  bottom: 72,
-  left: 56,
-  right: 80,
+/** Width each compact label wraps at, by side, in multiples of the type
+ *  size: 9px type wraps a top label at 48px. Type that steps down keeps
+ *  the same line breaks. */
+const COMPACT_WRAP_EM: Record<ReturnType<typeof compactFunnelLabelSide>, number> = {
+  top: 48 / 9,
+  bottom: 72 / 9,
+  left: 56 / 9,
+  right: 80 / 9,
 };
 
-function compactTopLabel() {
+function compactTopLabel(fontSize: number, formatter: string) {
   return {
     position: 'top' as const,
     align: 'left' as const,
     verticalAlign: 'bottom' as const,
     distance: 4,
-    width: COMPACT_WRAP.top,
+    width: COMPACT_WRAP_EM.top * fontSize,
     overflow: 'break' as const,
-    lineHeight: 12,
-    formatter: '{b}',
+    lineHeight: fontSize + 3,
+    formatter,
   };
 }
 
-function compactLabel(side: ReturnType<typeof compactFunnelLabelSide>) {
-  if (side === 'top') return compactTopLabel();
+/** A phone funnel label. `lines` breaks the name at a fixed word gap. Lines
+ *  are 3px taller than the type: 12px for 9px type. */
+function compactLabel(side: ReturnType<typeof compactFunnelLabelSide>, fontSize: number, lines?: string[]) {
+  const formatter = lines ? lines.join('\n') : '{b}';
+  if (side === 'top') return compactTopLabel(fontSize, formatter);
   if (side === 'bottom') {
     return {
       position: 'bottom' as const,
-      width: COMPACT_WRAP.bottom,
+      width: COMPACT_WRAP_EM.bottom * fontSize,
       overflow: 'break' as const,
-      lineHeight: 12,
-      formatter: '{b}',
+      lineHeight: fontSize + 3,
+      formatter,
     };
   }
   if (side === 'left') {
     return {
       position: 'left' as const,
-      width: COMPACT_WRAP.left,
+      width: COMPACT_WRAP_EM.left * fontSize,
       overflow: 'break' as const,
-      lineHeight: 12,
-      formatter: '{b}',
+      lineHeight: fontSize + 3,
+      formatter,
     };
   }
   return {
     position: 'right' as const,
     align: 'left' as const,
-    width: COMPACT_WRAP.right,
+    width: COMPACT_WRAP_EM.right * fontSize,
     overflow: 'break' as const,
-    lineHeight: 12,
-    formatter: '{b}',
+    lineHeight: fontSize + 3,
+    formatter,
   };
 }
 
@@ -95,10 +100,11 @@ function nodeLabel(
   links: SankeyLink[],
   roleColor: (role?: FunnelRole) => string,
   fontSize: number,
+  lines?: string[],
 ) {
   if (chipInLabel(n, compact, kind, nodes, links)) {
     return {
-      ...compactLabel('right'),
+      ...compactLabel('right', fontSize),
       distance: CHIP_LABEL_DISTANCE,
       formatter: (p: { name: string; value?: number }) => `{chip|${Math.round(p.value ?? 0)}} ${p.name}`,
       rich: {
@@ -123,7 +129,7 @@ function nodeLabel(
     };
   }
   if (!compact) return { position: n.label, formatter: '{b}' };
-  return compactLabel(compactFunnelLabelSide(n, nodes, links));
+  return compactLabel(compactFunnelLabelSide(n, nodes, links), fontSize, lines);
 }
 
 type SankeyLayoutSeries = {
@@ -185,34 +191,58 @@ function labelMeasure(fontSize: number): (text: string) => number {
   };
 }
 
-/** Each node's `localX`: its column's left edge as a share of the plot
- *  width, spaced so no column's labels run into the next column. Null when
- *  the plot is too narrow for that, and echarts spaces the columns evenly. */
-function columnShares(
+/** Smallest type a phone funnel steps down to, in px. */
+const COMPACT_MIN_FONT_SIZE = 7;
+
+/**
+ * Where each column sits and how its labels are drawn. Each node's `localX`
+ * is its column's left edge as a share of the plot width, spaced so no
+ * column's labels run into the next column. On a phone, the right pad holds
+ * the last column's labels. When the columns do not fit, headers break onto
+ * two lines first, and the type steps down in half-pixel steps only when
+ * that is not enough. Null shares when even the smallest type does not fit,
+ * and echarts spaces the columns evenly.
+ */
+function funnelLayout(
   nodes: SankeyNode[],
   links: SankeyLink[],
   width: number,
-  g: ReturnType<typeof sankeyGeometry>,
-): Map<string, number> | null {
-  const measure = labelMeasure(g.fontSize);
-  const chip = (n: SankeyNode) => {
+  base: ReturnType<typeof sankeyGeometry>,
+): { g: ReturnType<typeof sankeyGeometry>; shares: Map<string, number> | null; lines: Map<string, string[]> } {
+  const box = (n: SankeyNode, measure: MeasureText, fontSize: number): LabelBox => {
     const inflow = links.filter((l) => l.target === n.name).reduce((s, l) => s + l.value, 0);
     const outflow = links.filter((l) => l.source === n.name).reduce((s, l) => s + l.value, 0);
-    // paintCountChips pads the count by 2px on each side.
-    return measure(String(Math.round(Math.max(inflow, outflow)))) + 4;
-  };
-  const box = (n: SankeyNode): LabelBox => {
-    if (!g.compact) return { side: n.label, wrap: Number.POSITIVE_INFINITY, distance: LABEL_DISTANCE, chip: chip(n) };
+    // countChip pads the count by 2px on each side.
+    const chip = measure(String(Math.round(Math.max(inflow, outflow)))) + 4;
+    if (!base.compact) return { side: n.label, wrap: Number.POSITIVE_INFINITY, distance: LABEL_DISTANCE, chip };
     if (chipInLabel(n, true, 'funnel', nodes, links)) {
-      return { side: 'right', wrap: COMPACT_WRAP.right, distance: CHIP_LABEL_DISTANCE, chip: 0 };
+      return {
+        side: 'right',
+        wrap: COMPACT_WRAP_EM.right * fontSize,
+        distance: CHIP_LABEL_DISTANCE,
+        chip: 0,
+        lead: chip + measure(' '),
+      };
     }
     const side = compactFunnelLabelSide(n, nodes, links);
-    return { side, wrap: COMPACT_WRAP[side], distance: LABEL_DISTANCE, chip: chip(n) };
+    return { side, wrap: COMPACT_WRAP_EM[side] * fontSize, distance: LABEL_DISTANCE, chip };
   };
-  const plot = width - g.left - g.right;
-  const lefts = columnLefts(gapNeeds(nodes, links, box, measure, g.nodeWidth), plot, g.nodeWidth);
-  if (!lefts) return null;
-  return new Map(nodes.map((n) => [n.name, lefts[nodeDepth(n.name, links)] / plot]));
+  const sharesOf = (lefts: number[], plot: number) =>
+    new Map(nodes.map((n) => [n.name, lefts[nodeDepth(n.name, links)] / plot]));
+
+  if (!base.compact) {
+    const measure = labelMeasure(base.fontSize);
+    const plot = width - base.left - base.right;
+    const needs = columnNeeds(nodes, links, (n) => box(n, measure, base.fontSize), measure, base.nodeWidth);
+    const lefts = columnLefts(needs.gaps, plot, base.nodeWidth);
+    return { g: base, shares: lefts && sharesOf(lefts, plot), lines: new Map() };
+  }
+  const fontSizes: number[] = [];
+  for (let size = base.fontSize; size >= COMPACT_MIN_FONT_SIZE; size -= 0.5) fontSizes.push(size);
+  const fit = fitColumns(nodes, links, box, labelMeasure, { width, left: base.left, nodeWidth: base.nodeWidth, fontSizes });
+  if (!fit) return { g: base, shares: null, lines: new Map() };
+  const g = { ...base, fontSize: fit.fontSize, right: fit.right };
+  return { g, shares: sharesOf(fit.lefts, width - g.left - g.right), lines: fit.lines };
 }
 
 /**
@@ -244,8 +274,10 @@ export function FlowSankey({
       const priv = cssVar(el, '--color-priv', '#3f5b8a');
       const roleColor = (role?: FunnelRole) =>
         role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
-      const g = sankeyGeometry(el.clientWidth || 360, kind);
-      const shares = kind === 'funnel' ? columnShares(nodes, links, el.clientWidth || 360, g) : null;
+      const width = el.clientWidth || 360;
+      const base = sankeyGeometry(width, kind);
+      const { g, shares, lines } =
+        kind === 'funnel' ? funnelLayout(nodes, links, width, base) : { g: base, shares: null, lines: new Map<string, string[]>() };
       const chips = nodes.filter((n) => !chipInLabel(n, g.compact, kind, nodes, links));
 
       return {
@@ -285,7 +317,7 @@ export function FlowSankey({
               name: n.name,
               localX: shares?.get(n.name),
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
-              label: nodeLabel(n, g.compact, kind, nodes, links, roleColor, g.fontSize),
+              label: nodeLabel(n, g.compact, kind, nodes, links, roleColor, g.fontSize, lines.get(n.name)),
             })),
             links: links.map((l) => ({
               source: l.source,

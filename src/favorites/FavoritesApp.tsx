@@ -15,7 +15,7 @@ import { prewarmPickerSprites } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
-import { useFavoriteBeacon } from './hooks/useFavoriteBeacon';
+import { sendFavoriteExportShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
 import { FavoritesHeader, type FavoritesView } from './components/FavoritesHeader';
@@ -147,7 +147,7 @@ function FavoritesContent({ sel, setSel }: {
             if (view === 'analytics') setAnalyticsMounted(true);
             setCurrentView(view);
           }}
-          onExport={() => { setSel(null); setExportOpen(true); }} />
+          onExport={() => { setSel(null); setExportOpen(true); sendFavoriteExportShownBeacon(fills); }} />
         {/* The grid frame fills the screen below both headers. The grid
             scrolls inside it, and the footer stays below the fold. On
             desktop the frame runs to the screen edge, as the grid did when

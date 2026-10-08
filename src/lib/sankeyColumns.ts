@@ -1,12 +1,16 @@
 import { nodeDepth, type FunnelLabelSide, type FunnelLink, type FunnelNode } from './usageFunnels';
 
 /** Where a node's name sits, the width echarts wraps it at, its gap from
- *  the bar, and the width of the count chip centered on its bar. */
+ *  the bar, and the width of the count chip on its bar. `lead` is the width
+ *  the label draws before the name: the count and a space when the count
+ *  sits in the label. `lines` holds a name that breaks at a fixed word gap. */
 export interface LabelBox {
   side: FunnelLabelSide;
   wrap: number;
   distance: number;
   chip: number;
+  lead?: number;
+  lines?: string[];
 }
 
 export type MeasureText = (text: string) => number;
@@ -34,47 +38,90 @@ export function wrappedWidth(text: string, wrap: number, measure: MeasureText): 
   return Math.max(widest, measure(line));
 }
 
+/** The two lines that break `text` at the word gap with the narrowest
+ *  widest line. Null for a single word. */
+export function twoLines(text: string, measure: MeasureText): string[] | null {
+  const words = text.split(' ');
+  let best: string[] | null = null;
+  let bestWidth = Number.POSITIVE_INFINITY;
+  for (let i = 1; i < words.length; i++) {
+    const lines = [words.slice(0, i).join(' '), words.slice(i).join(' ')];
+    const width = Math.max(...lines.map(measure));
+    if (width < bestWidth) {
+      best = lines;
+      bestWidth = width;
+    }
+  }
+  return best;
+}
+
 /**
- * The gap each column's labels need before the next column's bars, in px.
- * A right label runs across the gap. A top label starts at its bar and runs
- * right toward the next header. A bottom label is centered on its bar, so
- * it reaches half its width toward each neighbor's bar and count chip.
+ * How far a node's bar, count chip, and side or bottom label reach, in px
+ * from its column's left edge. A right label's chip ends at the bar's right
+ * edge, a left label's chip centers on that edge, and any other chip
+ * centers on the bar. A top label sits above the plot, so it is not here.
  */
-export function gapNeeds(
+function bodyReach(b: LabelBox, w: number, nodeWidth: number): { lo: number; hi: number } {
+  const mid = nodeWidth / 2;
+  const chipLo = b.side === 'right' ? nodeWidth - b.chip : b.side === 'left' ? nodeWidth - b.chip / 2 : mid - b.chip / 2;
+  const chipHi = b.side === 'right' ? nodeWidth : b.side === 'left' ? nodeWidth + b.chip / 2 : mid + b.chip / 2;
+  let lo = Math.min(0, chipLo);
+  let hi = Math.max(nodeWidth, chipHi);
+  if (b.side === 'right') hi = Math.max(hi, nodeWidth + b.distance + (b.lead ?? 0) + w);
+  if (b.side === 'left') lo = Math.min(lo, -b.distance - w);
+  if (b.side === 'bottom') {
+    lo = Math.min(lo, mid - w / 2);
+    hi = Math.max(hi, mid + w / 2);
+  }
+  return { lo, hi };
+}
+
+export interface ColumnNeeds {
+  /** The gap each column needs before the next column's bars, in px. */
+  gaps: number[];
+  /** The room the last column's labels need right of its bars, in px. */
+  right: number;
+}
+
+/**
+ * The room each column's labels need, in px.
+ *
+ * Inside the plot, everything a column draws (bars, chips, side labels,
+ * bottom labels) must end before the first thing the next column draws.
+ * Above the plot, a top label starts at its bar's center and runs right
+ * toward the next column's header. The last column's labels set the room
+ * kept right of the plot.
+ */
+export function columnNeeds(
   nodes: FunnelNode[],
   links: FunnelLink[],
   box: (n: FunnelNode) => LabelBox,
   measure: MeasureText,
   nodeWidth: number,
-): number[] {
+): ColumnNeeds {
   const depth = new Map(nodes.map((n) => [n.name, nodeDepth(n.name, links)]));
   const columns = Math.max(0, ...depth.values()) + 1;
-  const needs = new Array<number>(Math.max(0, columns - 1)).fill(0);
-  const bottomHalf = new Array<number>(columns).fill(0);
-  const chipHalf = new Array<number>(columns).fill(nodeWidth / 2);
-  for (const n of nodes) {
-    const d = depth.get(n.name) ?? 0;
-    chipHalf[d] = Math.max(chipHalf[d], box(n).chip / 2);
-  }
+  const lo = new Array<number>(columns).fill(0);
+  const hi = new Array<number>(columns).fill(nodeWidth);
+  const header = new Array<number>(columns).fill(0);
   for (const n of nodes) {
     const d = depth.get(n.name) ?? 0;
     const b = box(n);
-    const w = wrappedWidth(n.name, b.wrap, measure);
-    if (b.side === 'right' && d < columns - 1) needs[d] = Math.max(needs[d], b.distance + w + LABEL_MARGIN);
-    if (b.side === 'left' && d > 0) needs[d - 1] = Math.max(needs[d - 1], b.distance + w + LABEL_MARGIN);
-    if (b.side === 'top' && d < columns - 1) needs[d] = Math.max(needs[d], w - nodeWidth + HEADER_MARGIN);
-    if (b.side === 'bottom') {
-      bottomHalf[d] = Math.max(bottomHalf[d], w / 2);
-      if (d > 0) needs[d - 1] = Math.max(needs[d - 1], w / 2 + chipHalf[d - 1] - nodeWidth + LABEL_MARGIN);
-      if (d < columns - 1) needs[d] = Math.max(needs[d], w / 2 + chipHalf[d + 1] - nodeWidth + LABEL_MARGIN);
-    }
+    const w = b.lines ? Math.max(...b.lines.map(measure)) : wrappedWidth(n.name, b.wrap, measure);
+    if (b.side === 'top') header[d] = Math.max(header[d], w);
+    const reach = bodyReach(b, w, nodeWidth);
+    lo[d] = Math.min(lo[d], reach.lo);
+    hi[d] = Math.max(hi[d], reach.hi);
   }
+  const gaps: number[] = [];
   for (let d = 0; d < columns - 1; d++) {
-    if (bottomHalf[d] > 0 && bottomHalf[d + 1] > 0) {
-      needs[d] = Math.max(needs[d], bottomHalf[d] + bottomHalf[d + 1] - nodeWidth + LABEL_MARGIN);
-    }
+    const body = hi[d] - lo[d + 1] - nodeWidth + LABEL_MARGIN;
+    const head = header[d] > 0 ? header[d] - nodeWidth + HEADER_MARGIN : 0;
+    gaps.push(Math.max(0, body, head));
   }
-  return needs;
+  const last = columns - 1;
+  const right = Math.max(hi[last] - nodeWidth, header[last] - nodeWidth / 2) + LABEL_MARGIN;
+  return { gaps, right };
 }
 
 /**
@@ -100,4 +147,58 @@ export function columnLefts(needs: number[], plotWidth: number, nodeWidth: numbe
   const lefts = [0];
   needs.forEach((n, i) => lefts.push(lefts[i] + nodeWidth + (fixed.has(i) ? n : even)));
   return lefts;
+}
+
+export interface ColumnFit {
+  fontSize: number;
+  /** Room right of the plot, in px. */
+  right: number;
+  /** Each column's left edge, in px from the plot's left edge. */
+  lefts: number[];
+  /** Headers that break onto two lines at a fixed word gap. */
+  lines: Map<string, string[]>;
+}
+
+/**
+ * Phone funnel layout: the largest type size in `fontSizes` at which every
+ * column gets the gap its labels need inside `width`, with the last
+ * column's labels right of the plot. At each size, headers break onto two
+ * lines first, the one that frees the most room first, and only while that
+ * frees room. Null when even the smallest size does not fit.
+ */
+export function fitColumns(
+  nodes: FunnelNode[],
+  links: FunnelLink[],
+  box: (n: FunnelNode, measure: MeasureText, fontSize: number) => LabelBox,
+  measureAt: (fontSize: number) => MeasureText,
+  { width, left, nodeWidth, fontSizes }: { width: number; left: number; nodeWidth: number; fontSizes: number[] },
+): ColumnFit | null {
+  for (const fontSize of fontSizes) {
+    const measure = measureAt(fontSize);
+    const lines = new Map<string, string[]>();
+    const boxed = (n: FunnelNode): LabelBox => {
+      const split = lines.get(n.name);
+      return split ? { ...box(n, measure, fontSize), lines: split } : box(n, measure, fontSize);
+    };
+    const total = (needs: ColumnNeeds) =>
+      left + (needs.gaps.length + 1) * nodeWidth + needs.gaps.reduce((s, g) => s + g, 0) + needs.right;
+    let needs = columnNeeds(nodes, links, boxed, measure, nodeWidth);
+    while (total(needs) > width) {
+      let best: { name: string; split: string[]; needs: ColumnNeeds } | null = null;
+      for (const n of nodes) {
+        const split = boxed(n).side === 'top' && !lines.has(n.name) ? twoLines(n.name, measure) : null;
+        if (!split) continue;
+        lines.set(n.name, split);
+        const tried = columnNeeds(nodes, links, boxed, measure, nodeWidth);
+        lines.delete(n.name);
+        if (total(tried) < total(best?.needs ?? needs)) best = { name: n.name, split, needs: tried };
+      }
+      if (!best) break;
+      lines.set(best.name, best.split);
+      needs = best.needs;
+    }
+    const lefts = columnLefts(needs.gaps, width - left - needs.right, nodeWidth);
+    if (lefts) return { fontSize, right: needs.right, lefts, lines };
+  }
+  return null;
 }

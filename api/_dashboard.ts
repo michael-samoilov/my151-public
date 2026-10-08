@@ -1,5 +1,5 @@
 import {parseFavoriteRecord, type FavoriteRecord} from './_favoriteRecord.js';
-import {favoriteSummary, favoriteUsageFunnel, favoriteUser, type FavoriteUser} from './_favoriteAggregate.js';
+import {favoritePicks, favoriteSummary, favoriteUsageFunnel, favoriteUser, type FavoriteUser} from './_favoriteAggregate.js';
 // The admin dashboard payload, computed from the raw Redis reads in
 // api/submissions.ts. It reads no Redis and no request, and it takes the
 // clock as an argument.
@@ -738,6 +738,8 @@ export function buildDashboard(
     leagueFunnel,
     favoriteFunnel:favoriteUsageFunnel(favoriteNew),
     favorite:favoriteSummary(favoriteIn),
+    // Per-cell pick counts of the charts active in the range, from the records already read.
+    favoritePicks:favoritePicks(favoriteIn),
     favoriteUsers,
     favoriteByCid,
     totalFavoriteUsers:allFavoriteRecords.length,
