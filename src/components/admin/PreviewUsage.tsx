@@ -10,8 +10,8 @@ import { PREVIEW_PROGRESS, sessionChipParts } from '@/components/admin/userPrevi
 const CHIP =
   'inline-flex shrink-0 flex-col items-center justify-center whitespace-nowrap rounded-xl border border-border bg-card px-1 py-0.5 text-xs leading-tight tabular-nums md:px-2';
 
-/** Progress over the tool's noun: "12/151" over "Dex". The count is red
- *  once it reaches the total, and a red camera follows an exported tool. */
+/** Progress over the tool's noun: "12/151" over "Dex". The count, not the
+ *  total, is red once it reaches the total; a red camera follows an exported tool. */
 function ProgressChip({ cell, className }: { cell: ToolCell; className?: string }) {
   const { of, noun } = PREVIEW_PROGRESS[cell.tool];
   return (
@@ -20,7 +20,9 @@ function ProgressChip({ cell, className }: { cell: ToolCell; className?: string 
       data-empty={cell.used ? undefined : 'true'}
       className={cn(CHIP, !cell.used && 'opacity-40', className)}
     >
-      <span className={cn('font-bold', cell.count >= of ? 'text-red-600' : 'text-foreground')}>{`${cell.count}/${of}`}</span>{' '}
+      <span className="font-bold text-foreground">
+        <span className={cn(cell.count >= of && 'text-red-600')}>{cell.count}</span>/{of}
+      </span>{' '}
       <span className="inline-flex items-center gap-0.5 font-medium text-muted-foreground">
         {noun}
         {cell.exported ? <Camera className="h-3 w-3 shrink-0 text-red-600" aria-label="exported" /> : null}
