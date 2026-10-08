@@ -4,7 +4,10 @@
  *
  *   node scripts/performance/psi.mjs                          # hub, 1 run each
  *   node scripts/performance/psi.mjs --page hub,dex --runs 3
- *   node scripts/performance/psi.mjs --url https://<preview>.vercel.app
+ *   node scripts/performance/psi.mjs --url https://<public deployment>
+ *
+ * Google cannot load a Vercel preview, because previews need a Vercel login.
+ * Use `lighthouse.mjs` to measure a change before it ships.
  *
  * It needs PAGESPEED_API_KEY in the environment: a key restricted to the
  * PageSpeed Insights API, the one Google key Michael approved (October 8).

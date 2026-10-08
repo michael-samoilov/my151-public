@@ -42,7 +42,9 @@ something, and some findings conflict with decisions recorded below.
    change goes to Michael first, with before and after.
 5. Once a month, read the field data: Vercel Speed Insights, or the Core Web
    Vitals report in Search Console. Field data takes up to 28 days to show a
-   change.
+   change. Search Console's report is the same Chrome field data that
+   `psi.mjs` prints for the origin, grouped by URL. It names no elements, so
+   the causes come from the Lighthouse findings in step 1.
 
 The tools:
 
@@ -51,10 +53,17 @@ The tools:
   Lighthouse into the user cache on first use. `--url https://my151.app` runs it
   on a deployed site, with `?notme` so the runs stay out of the analytics.
 - `node scripts/performance/psi.mjs` runs Google's PageSpeed Insights on the
-  live site (or `--url` a preview) and prints the scores, the lab metrics, the
-  real-user field data for the origin, and the findings. It needs
-  `PAGESPEED_API_KEY` in the environment settings. Google may run a newer
-  Lighthouse than `lighthouse.mjs`, so its numbers are the reference.
+  live site and prints the scores, the lab metrics, the real-user field data
+  for the origin, and the findings. It needs `PAGESPEED_API_KEY` in the
+  environment settings. Google may run a newer Lighthouse than
+  `lighthouse.mjs`, so its numbers are the reference. Google cannot load a
+  Vercel preview: previews need a Vercel login. Measure a change before it
+  ships with `lighthouse.mjs`, which runs the same Lighthouse version and
+  throttling here. Google's runs vary: one desktop run of the dex measured
+  238 ms of blocking time and the next 0 ms, with four times the script time
+  on the slower machine. Run 3 or more and read the median. Google answers a
+  repeated request from its cache for a short time, so the script waits for a
+  fresh run each time.
 - `node scripts/performance/lab.mjs` loads each page in a throttled browser and
   measures LCP, blocking time, and INP for each tap step. Lighthouse loads pages
   without tapping them, so this is the only lab measure of INP.
