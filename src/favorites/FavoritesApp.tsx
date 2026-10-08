@@ -105,14 +105,17 @@ function FavoritesContent({ sel, setSel }: {
   }, [showIcons]);
 
   // Picker sprites in the order a visitor needs them (model/spritePreload.ts).
-  // A touch screen fetches the cells as they come into view. A pointer that
-  // hovers gives each cell a head start of its own instead (FavoritesGrid).
+  // Nearly every visitor opens Normal / Gen I, the top-left cell, first, so
+  // its sprites go first everywhere. A touch screen then fetches the cells as
+  // they come into view. A pointer that hovers gives each cell a head start of
+  // its own instead (FavoritesGrid).
   useEffect(() => {
-    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     let alive = true;
     let observer: IntersectionObserver | null = null;
     whenIdle(() => {
       if (!alive) return;
+      prefetchCellSoon('normal', 1);
+      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
       const seen = new IntersectionObserver((entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;

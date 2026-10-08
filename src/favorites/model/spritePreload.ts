@@ -7,7 +7,8 @@ import { eligibleFor } from './eligibility';
  * visitor is likely to need them, so a first visit does not start with all
  * 1,388 (1.5 MiB):
  *
- * 1. On a touch screen, the sprites of the cells in view (`prefetchCellSoon`).
+ * 1. Normal / Gen I, the cell nearly every visitor opens first, then on a
+ *    touch screen the cells in view (`prefetchCellSoon`).
  * 2. A cell that a pointer rests on, a finger presses, or the keyboard
  *    focuses jumps the queue (`prefetchCell`).
  * 3. After the first selector opens, every other sprite (`prefetchEverySprite`).
