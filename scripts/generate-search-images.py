@@ -3,12 +3,12 @@
 
 Google picks the image beside a search result itself. Its image guide asks for
 an image with no text or logo, so each page names a crop of its own export in
-the page's JSON-LD. Each crop is 600x600 native pixels, scaled 2x with nearest
-neighbour so the sprites stay sharp.
+the page's JSON-LD. The captures are search-only variants: the Dex grid without
+section outlines, the Picker chart with icon-only axes, and the Brock card with
+every word blanked. Each square crop is scaled 2x with nearest neighbour so the
+sprites stay sharp. Keep each page's JSON-LD width and height at the printed size.
 
-Also writes public/og-sources/dex-grid.webp, the Dex sheet of the hub share image.
-
-  flock /tmp/my151-browser.lock node scripts/capture-tool-art.mjs league favorites dex-plain
+  flock /tmp/my151-browser.lock node scripts/capture-tool-art.mjs dex-plain favorites trainer-textless
   python3 scripts/generate-search-images.py --source-dir docs/evidence/tool-art-rebake/local
 """
 from pathlib import Path
@@ -23,12 +23,14 @@ args = parser.parse_args()
 source = root / args.source_dir
 out = root / args.out_dir
 
-SIZE = 600
-# (capture, left, top): a grid area of each export with no headings or labels.
+# (capture, left, top, size) in native pixels.
 CROPS = {
-    'dex': ('dex-plain', 24, 78),
-    'favorites': ('picker-full-horizontal', 277, 238),
-    'trainer-card': ('trainer-brock', 276, 383),
+    # Ten full rows of ten, below the header bar.
+    'dex': ('dex-plain', 32, 84, 966),
+    # The icon header and Gen I-IV of the Normal to Grass columns.
+    'favorites': ('picker-full-icons', 146, 106, 620),
+    # From the theme box down to the last Gym Leader row.
+    'trainer-card': ('trainer-textless', 0, 84, 888),
 }
 PAGES = {
     'hub': 'dex',
@@ -39,8 +41,8 @@ PAGES = {
 
 
 def crop(name):
-    capture, left, top = CROPS[name]
-    return Image.open(source / f'{capture}.png').convert('RGB').crop((left, top, left + SIZE, top + SIZE))
+    capture, left, top, size = CROPS[name]
+    return Image.open(source / f'{capture}.png').convert('RGB').crop((left, top, left + size, top + size))
 
 
 def save(image, name):
@@ -52,10 +54,5 @@ def save(image, name):
 out.mkdir(parents=True, exist_ok=True)
 crops = {name: crop(name) for name in CROPS}
 for page, name in PAGES.items():
-    save(crops[name].resize((SIZE * 2, SIZE * 2), Image.Resampling.NEAREST), page)
-
-grid = Image.open(source / 'dex-plain.png').convert('RGBA')
-sheet = grid.resize((800, round(grid.height * 800 / grid.width)), Image.Resampling.LANCZOS)
-destination = root / 'public/og-sources/dex-grid.webp'
-sheet.save(destination, 'WEBP', quality=86, method=6)
-print(f'Wrote {destination} {sheet.size[0]}x{sheet.size[1]} {destination.stat().st_size} bytes')
+    image = crops[name]
+    save(image.resize((image.width * 2, image.height * 2), Image.Resampling.NEAREST), page)
