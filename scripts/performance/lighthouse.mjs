@@ -47,7 +47,9 @@ import { pathToFileURL } from 'node:url';
 import { chromium } from '@playwright/test';
 import { PRODUCTION, build, chromiumPath, compare, holdBrowserLock, median, selfSignedTls, serve } from './lab-server.mjs';
 
-const LIGHTHOUSE_VERSION = '12.8.2';
+// The version PageSpeed Insights ran on October 8, 2026. Match it when Google
+// moves: `psi.mjs` prints the version Google uses.
+const LIGHTHOUSE_VERSION = '13.5.0';
 
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
@@ -106,7 +108,8 @@ function digest(lhr) {
   const categoryOf = {};
   for (const [id, category] of Object.entries(lhr.categories)) for (const ref of category.auditRefs) categoryOf[ref.id] ??= id;
   const scored = (a) => a.score !== null && ['binary', 'numeric', 'metricSavings'].includes(a.scoreDisplayMode);
-  const lcpNode = audits['largest-contentful-paint-element']?.details?.items?.[0]?.items?.[0]?.node;
+  // Lighthouse 13 reports the LCP element in the LCP breakdown insight.
+  const lcpNode = audits['lcp-breakdown-insight']?.details?.items?.find((item) => item.type === 'node');
   const observed = audits.metrics?.details?.items?.[0] ?? {};
   return {
     scores: Object.fromEntries(CATEGORIES.map((c) => [c, Math.round((lhr.categories[c]?.score ?? 0) * 100)])),
