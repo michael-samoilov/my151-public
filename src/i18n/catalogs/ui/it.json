@@ -32,6 +32,8 @@
   "favorites.export.simplified": "Riepilogo",
   "favorites.export.title": "Esporta",
   "favorites.generation": "Generazione {gen}",
+  "favorites.nudge.complete.body": "Tocca l’icona di download per salvare la tua tabella come immagine e condividerla.",
+  "favorites.nudge.complete.title": "Griglia completata",
   "favorites.packing.back": "Scegli un altro Pokémon",
   "favorites.packing.heading": "Questo Pokémon è già in questa generazione. Scegli come riorganizzare la riga.",
   "favorites.scrollMore": "Scorri per vedere altro",

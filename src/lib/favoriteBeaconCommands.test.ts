@@ -44,8 +44,8 @@ async function send(extra: Record<string, unknown>, stored: FavoriteRecord | nul
 const BILL = ['evalsha', 'evalsha', 'hget', 'hget', 'eval'];
 
 describe('favorites beacon Redis bill', () => {
-  it('records the export dialog and a detailed-stats export in the same five commands as a progress beacon', async () => {
-    for (const extra of [{}, { kind: 'export-shown' }, { kind: 'export', exportKind: 'full', stats: true }]) {
+  it('records the completion popup, the export dialog and a detailed-stats export in the same five commands as a progress beacon', async () => {
+    for (const extra of [{}, { kind: 'nudge-shown' }, { kind: 'export-shown' }, { kind: 'export', exportKind: 'full', stats: true }]) {
       const sent = await send(extra);
       expect(sent.status).toBe(200);
       expect(sent.bill).toEqual(BILL);
@@ -62,6 +62,17 @@ describe('favorites beacon Redis bill', () => {
     const again = await send({ kind: 'export-shown' }, stored);
     expect(again.events).toEqual([]);
     expect(again.bill).toEqual(BILL);
+  });
+
+  it('journals the completion popup once per visit, apart from the export dialog', async () => {
+    const first = await send({ kind: 'nudge-shown' });
+    expect(first.events).toEqual(['favorites-open', 'favorites-first-pick', 'favorites-nudge-complete-shown']);
+    const stored = mergeFavoriteRecord(null, {
+      cid: 'browser-0001', id: 'request-stored', now: NOW - 60_000, kind: 'nudge-shown',
+      snapshot: parseFavoriteSnapshot(snapshot)!, events: ['favorites-open', 'favorites-first-pick', 'favorites-nudge-complete-shown'],
+    });
+    expect((await send({ kind: 'nudge-shown' }, stored)).events).toEqual([]);
+    expect((await send({ kind: 'export-shown' }, stored)).events).toEqual(['favorites-export-shown']);
   });
 
   it('marks detailed stats only on a Full grid export', async () => {

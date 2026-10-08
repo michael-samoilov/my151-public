@@ -6,8 +6,9 @@ export const FAVORITE_VERSION_KEY = 'favorites:clients:ver';
 export const FAVORITE_TOTAL_CELLS = 257;
 export const FAVORITE_SESSION_GAP_MS = 30 * 60_000;
 export type FavoriteExportKind = 'full' | 'simplified';
-/** `export-shown` reports that the export dialog opened. It counts no export. */
-export type FavoriteBeaconKind = 'progress' | 'completion' | 'export' | 'export-shown';
+/** `export-shown` reports that the export dialog opened, and `nudge-shown` that the
+ *  completion popup pointing at Export appeared. Neither counts an export. */
+export type FavoriteBeaconKind = 'progress' | 'completion' | 'export' | 'export-shown' | 'nudge-shown';
 export interface FavoriteSnapshot {
   v: 1;
   fills: Record<string, number>;
