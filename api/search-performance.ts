@@ -4,7 +4,6 @@ import type { SearchPerformanceSnapshot, SearchSnapshotPart } from '../src/lib/s
 import { buildDailySearchSnapshot, buildHourlySearchSnapshot } from './_searchPerformance.js';
 import { firstQueryValue, redis, requireAdmin } from './_shared.js';
 
-// The v1 key stays untouched, so a rolled-back deploy still finds its own snapshot.
 const DAILY_KEY = 'admin:search-performance:v2:daily';
 const HOURLY_KEY = 'admin:search-performance:v2:hourly';
 

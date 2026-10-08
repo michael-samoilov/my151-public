@@ -108,11 +108,11 @@ describe('formatShare', () => {
 
 describe('language modules', () => {
   const buckets: WhoBucket[] = [
-    { country: 'FR', lang: 'fr', locale: 'fr', switched: 'en', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 1, n7d: 1 },
-    { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1, n7d: 0 },
-    { country: 'US', lang: 'pt-BR', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 4, n7d: 4 },
-    { country: 'GB', lang: 'nl', locale: 'en', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 2, n7d: 0 },
-    { country: 'DE', lang: 'de', locale: 'de', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 3, n7d: 3 },
+    { country: 'FR', lang: 'fr', locale: 'fr', switched: 'en', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 1 },
+    { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
+    { country: 'US', lang: 'pt-BR', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 4 },
+    { country: 'GB', lang: 'nl', locale: 'en', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 2 },
+    { country: 'DE', lang: 'de', locale: 'de', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 3 },
   ];
 
   it('drops a pin that matches negotiation', () => {
@@ -139,12 +139,12 @@ describe('language modules', () => {
     expect(spelledLanguage('iw')).toBe('Hebrew');
     expect(spelledLanguage('tl')).toBe(spelledLanguage('fil'));
     const hebrew: WhoBucket[] = [
-      { country: 'IL', lang: 'he', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 2, n7d: 2 },
-      { country: 'IL', lang: 'he-IL', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 3, n7d: 3 },
-      { country: 'IL', lang: 'iw', locale: 'en', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 1, n7d: 0 },
-      { country: 'PH', lang: 'fil', locale: 'en', switched: '', device: 'Mobile', os: 'Android', browser: 'Chrome', n: 1, n7d: 1 },
-      { country: 'PH', lang: 'tl', locale: 'en', switched: '', device: 'Mobile', os: 'Android', browser: 'Chrome', n: 1, n7d: 1 },
-      { country: 'IL', lang: 'he', locale: 'en', switched: 'fr', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 4, n7d: 4 },
+      { country: 'IL', lang: 'he', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 2 },
+      { country: 'IL', lang: 'he-IL', locale: 'en', switched: '', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 3 },
+      { country: 'IL', lang: 'iw', locale: 'en', switched: '', device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 1 },
+      { country: 'PH', lang: 'fil', locale: 'en', switched: '', device: 'Mobile', os: 'Android', browser: 'Chrome', n: 1 },
+      { country: 'PH', lang: 'tl', locale: 'en', switched: '', device: 'Mobile', os: 'Android', browser: 'Chrome', n: 1 },
+      { country: 'IL', lang: 'he', locale: 'en', switched: 'fr', device: 'Mobile', os: 'iOS', browser: 'Safari', n: 4 },
     ];
     expect(unshippedTags(hebrew, null)).toEqual([
       { key: 'he', n: 6 },

@@ -121,15 +121,10 @@ describe('hourlyActive', () => {
 
 describe('retention', () => {
   it('counts a record spanning two days as returning', () => {
-    expect(retention([dex(), league()], T0 + 2 * DAY_MS)).toEqual({
+    expect(retention([dex(), league()])).toEqual({
       returning: 1,
-      activeLast7: 2,
       newUsers: 1,
     });
-  });
-
-  it('drops a record out of activeLast7 after seven days', () => {
-    expect(retention([league()], T0 + 9 * DAY_MS).activeLast7).toBe(0);
   });
 });
 
@@ -310,11 +305,10 @@ describe('aggregate', () => {
       sessionLog: [{ ts: T0 - 20 * DAY_MS }],
     });
     const agg = aggregate([pinned, match, stale], T0);
-    expect(agg.countries7d).toBe(2);
     expect(agg.whoBuckets).toEqual([
-      { country: 'FR', lang: 'fr', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1, n7d: 1 },
-      { country: 'GB', lang: 'en-GB', locale: 'en', switched: '', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1, n7d: 0 },
-      { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1, n7d: 1 },
+      { country: 'FR', lang: 'fr', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
+      { country: 'GB', lang: 'en-GB', locale: 'en', switched: '', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
+      { country: 'US', lang: 'en-US', locale: 'en', switched: 'en', device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
     ]);
   });
 });

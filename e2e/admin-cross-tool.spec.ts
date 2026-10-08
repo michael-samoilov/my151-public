@@ -65,7 +65,7 @@ test.describe('cross-tool diagram @viewport', () => {
     await page.route('**/api/submissions?**', (route) =>
       route.fulfill({
         status: 200,
-        json: { totalUsers: 0, offset: 0, limit: 50, funnel: { users: 0, completed: 0, exported: 0 }, retention: { returning: 0, activeLast7: 0, newUsers: 0 }, timeSurvival: [], timeStats: stats, depthSurvival: [], depthStats: stats, countries: {}, devices: {}, os: {}, popularFinal: [], mostDropped: [], popularBySection: {}, droppedBySection: {}, picksBySectionAll: {}, records: [], crossTool: { catalog, kpis: [], eras } },
+        json: { totalUsers: 0, offset: 0, limit: 50, funnel: { users: 0, completed: 0, exported: 0 }, retention: { returning: 0, newUsers: 0 }, timeSurvival: [], timeStats: stats, depthSurvival: [], depthStats: stats, countries: {}, devices: {}, os: {}, popularFinal: [], mostDropped: [], popularBySection: {}, droppedBySection: {}, picksBySectionAll: {}, records: [], crossTool: { catalog, kpis: [], eras } },
       }),
     );
     await page.goto('/?admin');
@@ -137,7 +137,7 @@ test.describe('cross-tool launch chips @viewport', () => {
       asked.push(new URL(route.request().url()).searchParams.get('range') ?? '');
       return route.fulfill({
         status: 200,
-        json: { totalUsers: 0, offset: 0, limit: 50, funnel: { users: 0, completed: 0, exported: 0 }, retention: { returning: 0, activeLast7: 0, newUsers: 0 }, timeSurvival: [], timeStats: stats, depthSurvival: [], depthStats: stats, countries: {}, devices: {}, os: {}, popularFinal: [], mostDropped: [], popularBySection: {}, droppedBySection: {}, picksBySectionAll: {}, records: [], crossTool: { catalog, kpis: [kpi(156, 333)], eras }, crossToolSince },
+        json: { totalUsers: 0, offset: 0, limit: 50, funnel: { users: 0, completed: 0, exported: 0 }, retention: { returning: 0, newUsers: 0 }, timeSurvival: [], timeStats: stats, depthSurvival: [], depthStats: stats, countries: {}, devices: {}, os: {}, popularFinal: [], mostDropped: [], popularBySection: {}, droppedBySection: {}, picksBySectionAll: {}, records: [], crossTool: { catalog, kpis: [kpi(156, 333)], eras }, crossToolSince },
       });
     });
     await page.goto('/?admin');

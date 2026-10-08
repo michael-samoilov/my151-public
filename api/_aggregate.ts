@@ -274,19 +274,13 @@ export function hourlyActive(records: SessionRecord[], now: number): HourlyActiv
   return out;
 }
 
-/** Returning (active across two calendar days or more), active in the last 7
- *  days, and the remainder as new. */
-export function retention(
-  records: SessionRecord[],
-  now: number,
-): { returning: number; activeLast7: number; newUsers: number } {
+/** Returning (active across two calendar days or more) and the remainder as new. */
+export function retention(records: SessionRecord[]): { returning: number; newUsers: number } {
   let returning = 0;
-  let activeLast7 = 0;
   for (const r of records) {
     if (r.lastTs - r.firstTs >= DAY_MS) returning += 1;
-    if (now - r.lastTs <= 7 * DAY_MS) activeLast7 += 1;
   }
-  return { returning, activeLast7, newUsers: records.length - returning };
+  return { returning, newUsers: records.length - returning };
 }
 
 /**
@@ -389,8 +383,6 @@ export interface WhoBucket {
   os: string;
   browser: string;
   n: number;
-  /** Browsers in this bucket with a session in the 7-day window. */
-  n7d: number;
 }
 
 /** Everything the dashboard shows for one tool's records. */
@@ -398,7 +390,7 @@ export interface Aggregates {
   users: number;
   activity: DailyActivityPoint[];
   hourly: HourlyActivityPoint[];
-  retention: { returning: number; activeLast7: number; newUsers: number };
+  retention: { returning: number; newUsers: number };
   timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
   countries: Record<string, number>;
   languages: Record<string, number>;
@@ -409,8 +401,6 @@ export interface Aggregates {
   joints: PlatformJoint[];
   /** Country × browser language × served locale × picker pin. */
   whoBuckets: WhoBucket[];
-  /** Distinct countries with a session in the 168 hours ending at the latest session. */
-  countries7d: number;
   heatmaps: Record<HeatmapClock, number[][]>;
 }
 
@@ -427,7 +417,7 @@ export function aggregate(
     users: inRange.length,
     activity: dailyActive(records, now),
     hourly: hourlyActive(records, now),
-    retention: retention(inRange, now),
+    retention: retention(inRange),
     timeCurves: sessionCurves(inRange),
     countries: tallies(inRange, 'country'),
     languages: tallies(inRange, 'lang'),
@@ -437,28 +427,12 @@ export function aggregate(
     browsers: tallies(inRange, 'browser'),
     joints: tallyJoints(inRange),
     whoBuckets: tallyWhoBuckets(inRange),
-    countries7d: distinctCountries7d(inRange),
     heatmaps: heatmaps(inRange, start),
   };
 }
 
-const WINDOW_7D_MS = 7 * DAY_MS;
-
 /** Group records so Who can split language, pins, and platform by country. */
-function sevenDayBounds(records: SessionRecord[]): { start: number; end: number } {
-  let end = 0;
-  for (const r of records) {
-    for (const ts of activeTimestamps(r)) if (ts > end) end = ts;
-  }
-  return { start: end - WINDOW_7D_MS, end };
-}
-
-function inSevenDayWindow(record: SessionRecord, start: number, end: number): boolean {
-  return end > 0 && activeTimestamps(record).some((ts) => ts > start && ts <= end);
-}
-
 export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
-  const { start, end } = sevenDayBounds(records);
   const map = new Map<string, WhoBucket>();
   for (const r of records) {
     const country = (r.country ?? '').toUpperCase();
@@ -468,34 +442,14 @@ export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
     const device = r.device || 'Unknown';
     const os = r.os || 'Unknown';
     const browser = r.browser || 'Unknown';
-    const recent = inSevenDayWindow(r, start, end);
     const k = `${country}\t${lang}\t${locale}\t${switched}\t${device}\t${os}\t${browser}`;
     const cur = map.get(k);
-    if (cur) {
-      cur.n += 1;
-      if (recent) cur.n7d += 1;
-    } else {
-      map.set(k, { country, lang, locale, switched, device, os, browser, n: 1, n7d: recent ? 1 : 0 });
-    }
+    if (cur) cur.n += 1;
+    else map.set(k, { country, lang, locale, switched, device, os, browser, n: 1 });
   }
   return [...map.values()].sort(
     (a, b) => b.n - a.n || a.country.localeCompare(b.country) || a.lang.localeCompare(b.lang),
   );
-}
-
-/**
- * Distinct countries among browsers with a session in the 168 hours that end
- * at the latest session in this set. The window follows the data, not `now`.
- */
-export function distinctCountries7d(records: SessionRecord[]): number {
-  const { start, end } = sevenDayBounds(records);
-  if (end <= 0) return 0;
-  const seen = new Set<string>();
-  for (const r of records) {
-    if (!r.country || !inSevenDayWindow(r, start, end)) continue;
-    seen.add(r.country.toUpperCase());
-  }
-  return seen.size;
 }
 
 export interface PlatformJoint {
@@ -629,18 +583,10 @@ export const LEAGUE_EXPORT_ENDS = ['league', 'both', 'card'] as const;
 export type LeagueExportEnd = (typeof LEAGUE_EXPORT_ENDS)[number];
 export type LeagueExportCounts = Record<LeagueExportEnd, number>;
 
-/** Export counts in the shape the production frontend read before
- *  `exports`: `exportedLeague` includes `both`. Delete once no open admin
- *  tab predates `exports`. */
-interface LegacyLeagueExportSplit {
-  exportedLeague: number;
-  exportedCard: number;
-}
-
 /** League gym-completion bucket. `exports` counts the people in this bucket
  *  under one export end each. Incomplete buckets keep non-exporters in the
  *  bucket. Full league peels them to Kept private. */
-export interface LeagueGymBucket extends LegacyLeagueExportSplit {
+export interface LeagueGymBucket {
   label: string;
   count: number;
   exports: LeagueExportCounts;
@@ -660,7 +606,7 @@ export interface DexUsageFunnel {
 /** Gym leader maker usage funnel: open → placed a Pokémon → one gym full →
  *  in-line gym-completion buckets → export. Full league also peels
  *  non-exporters to Kept private. */
-export interface LeagueUsageFunnel extends LegacyLeagueExportSplit {
+export interface LeagueUsageFunnel {
   opened: number;
   placed: number;
   bounced: number;
@@ -742,13 +688,13 @@ function leagueExportEnd(r: LeagueFunnelRow): LeagueExportEnd | null {
   return r.exportsCard > 0 ? 'card' : null;
 }
 
-function leagueExports(rows: LeagueFunnelRow[]): { exports: LeagueExportCounts } & LegacyLeagueExportSplit {
+function leagueExports(rows: LeagueFunnelRow[]): LeagueExportCounts {
   const exports: LeagueExportCounts = { league: 0, both: 0, card: 0 };
   for (const r of rows) {
     const end = leagueExportEnd(r);
     if (end) exports[end] += 1;
   }
-  return { exports, exportedLeague: exports.league + exports.both, exportedCard: exports.card };
+  return exports;
 }
 
 /**
@@ -808,7 +754,7 @@ export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): 
   const cardNotFinished = Math.max(0, placed - oneGymFull);
   const gymBuckets = LEAGUE_GYM_BUCKETS.map((t) => {
     const inBucket = gymRows.filter((r) => inTier(r.fullGyms, t));
-    return { label: t.label, count: inBucket.length, ...leagueExports(inBucket) };
+    return { label: t.label, count: inBucket.length, exports: leagueExports(inBucket) };
   }).filter((b) => b.count > 0);
   const fullLeagueRows = gymRows.filter((r) => r.fullGyms >= CARD_COUNT);
   const fullLeague = fullLeagueRows.length;
@@ -821,7 +767,7 @@ export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): 
     cardNotFinished,
     gymBuckets,
     fullLeague,
-    ...leagueExports(gymRows),
+    exports: leagueExports(gymRows),
     keptPrivate,
   };
 }
