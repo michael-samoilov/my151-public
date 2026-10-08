@@ -1663,7 +1663,12 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
 // ---------- main ----------
 
 /** What the detail pane shows: one browser's dex or league, or the picks page. */
-type Detail = { kind: 'dex' | 'league' | 'favorites'; cid: string } | { kind: 'picks'; tool: 'dex' | 'league' | 'favorites' };
+/** `country` comes from a feedback report. It finds a Dex record that
+ *  api/submit.ts stored under `<cid>::<country>` for a second person on the
+ *  same browser. */
+type Detail =
+  | { kind: 'dex' | 'league' | 'favorites'; cid: string; country?: string }
+  | { kind: 'picks'; tool: 'dex' | 'league' | 'favorites' };
 
 export function AdminPage() {
   // `demo` shows the bundled fixtures even on a browser with a saved token,
@@ -1702,7 +1707,7 @@ export function AdminPage() {
   // sender, loads on its own when its page opens.
   const userCid = detail && detail.kind !== 'picks' ? detail.cid : null;
   const unloaded = data && userCid && !hasRecord(resolveUser(data, userCid)) ? userCid.split('::')[0] : null;
-  const fetchedUser = useBrowserRecords(token, unloaded);
+  const fetchedUser = useBrowserRecords(token, unloaded, detail && detail.kind !== 'picks' ? detail.country : undefined);
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
   const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
@@ -2090,7 +2095,7 @@ export function AdminPage() {
             <RangeSlotContext.Provider value={rangeSlot}>
               <UserDetailPage
                 tool={tools.includes(detail.kind) ? detail.kind : tools[0]}
-                onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
+                onTool={(k) => setDetail({ ...detail, kind: k })}
                 dex={dex}
                 league={league}
                 favorite={favorite}
@@ -2116,7 +2121,7 @@ export function AdminPage() {
             <FeedbackCard
               token={token}
               toolsOf={toolsOf}
-              onOpen={(kind, cid) => openDetail({ kind, cid })}
+              onOpen={(kind, cid, country) => openDetail({ kind, cid, country })}
               cidFilter={feedbackCid}
               onClearCid={() => setFeedbackCid(null)}
             />

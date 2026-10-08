@@ -3,7 +3,9 @@ import { recordRedisCommands } from '@/lib/recordRedisCommands';
 import type { BrowserRecords } from './browserRecords';
 
 // `/api/submissions?cid=` loads one browser for the admin page. Upstash bills
-// per command, so the test pins the bill: one HGET per store, 4 in all.
+// per command, so the test pins the bill: one read per store, 4 in all.
+// api/submit.ts keys a second person on a shared browser `<cid>::<country>`;
+// the report's country must find that Dex record in the same one read.
 
 vi.hoisted(() => {
   process.env.UPSTASH_REDIS_REST_URL = 'https://redis.test';
@@ -16,7 +18,13 @@ const dex = {
   everIds: [1], latestIds: [1], completed: false, exported: false,
 };
 
-async function call(cid: string, reply: (cmd: string[]) => unknown) {
+/** Answers an HMGET of `clients` from `stored`, field by field. */
+function clients(stored: Record<string, unknown>) {
+  return (cmd: string[]) =>
+    cmd[0] === 'hmget' && cmd[1] === 'clients' ? cmd.slice(2).map((f) => (f in stored ? JSON.stringify(stored[f]) : null)) : null;
+}
+
+async function call(query: Record<string, string>, reply: (cmd: string[]) => unknown) {
   vi.doMock('../../../api/_shared.js', async (original) => ({
     ...(await original<typeof import('../../../api/_shared.js')>()),
     requireAdmin: async () => true,
@@ -32,7 +40,7 @@ async function call(cid: string, reply: (cmd: string[]) => unknown) {
       return res;
     },
   };
-  await handler({ method: 'GET', query: { cid }, headers: {} } as never, res as never);
+  await handler({ method: 'GET', query, headers: {} } as never, res as never);
   return { body, commands: commands.map((c) => c.join(' ')) };
 }
 
@@ -43,17 +51,32 @@ describe('submissions for one browser', () => {
   });
 
   it('reads one field from each store and nothing else', async () => {
-    const { body, commands } = await call('old', (cmd) =>
-      cmd[0] === 'hget' && cmd[1] === 'clients' ? JSON.stringify(dex) : null,
-    );
+    const { body, commands } = await call({ cid: 'old' }, clients({ old: dex }));
     expect(commands.sort()).toEqual([
-      'hget clients old',
       'hget export-survey-skips old',
       'hget favorites:clients old',
       'hget league:clients old',
+      'hmget clients old',
     ]);
     expect(body.dex?.cid).toBe('old');
     expect(body.league).toBeNull();
     expect(body.favorite).toBeNull();
+  });
+
+  it("finds the report country's Dex record in the same read", async () => {
+    const eg = { ...dex, cid: 'old::EG', country: 'EG' };
+    const { body, commands } = await call({ cid: 'old', country: 'EG' }, clients({ 'old::EG': eg }));
+    expect(commands.sort()).toEqual([
+      'hget export-survey-skips old',
+      'hget favorites:clients old',
+      'hget league:clients old',
+      'hmget clients old::EG old',
+    ]);
+    expect(body.dex?.cid).toBe('old::EG');
+  });
+
+  it('falls back to the plain record when the country has none', async () => {
+    const { body } = await call({ cid: 'old', country: 'EG' }, clients({ old: dex }));
+    expect(body.dex?.cid).toBe('old');
   });
 });

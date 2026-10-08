@@ -185,7 +185,7 @@ export function FeedbackCard({
   /** The tools the loaded dashboard holds a record of for this browser, or
    *  null when it does not hold the browser. */
   toolsOf?: (cid: string) => FeedbackTool[] | null;
-  onOpen?: (tool: FeedbackTool, cid: string) => void;
+  onOpen?: (tool: FeedbackTool, cid: string, country?: string) => void;
   /** Show only this browser's reports. */
   cidFilter?: string | null;
   onClearCid?: () => void;
@@ -309,7 +309,7 @@ export function FeedbackCard({
                 onToggle={() => toggle(item.id)}
                 openTool={tool}
                 toolKnown={tools != null}
-                onOpen={() => tool && cid && onOpen?.(tool, cid)}
+                onOpen={() => tool && cid && onOpen?.(tool, cid, item.country)}
               />
             );
           })}

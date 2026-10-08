@@ -20,11 +20,12 @@ export type BrowserLoad =
 /** One request per browser per page load: reopening a page reuses it. */
 const cache = new Map<string, Promise<BrowserRecords>>();
 
-function loadBrowser(token: string, cid: string): Promise<BrowserRecords> {
-  const key = `${token}\n${cid}`;
+function loadBrowser(token: string, cid: string, country?: string): Promise<BrowserRecords> {
+  const qs = new URLSearchParams(country ? { cid, country } : { cid });
+  const key = `${token}\n${qs}`;
   let p = cache.get(key);
   if (!p) {
-    p = fetch(`/api/submissions?cid=${encodeURIComponent(cid)}`, {
+    p = fetch(`/api/submissions?${qs}`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then(async (res) => {
       if (!res.ok) throw new Error(`Request failed (${res.status}).`);
@@ -36,20 +37,22 @@ function loadBrowser(token: string, cid: string): Promise<BrowserRecords> {
   return p;
 }
 
-/** Fetches `cid`'s records when it is set; idle when it is null. */
-export function useBrowserRecords(token: string | null, cid: string | null): BrowserLoad {
-  const [got, setGot] = useState<{ cid: string; load: BrowserLoad } | null>(null);
+/** Fetches `cid`'s records when it is set; idle when it is null. `country`,
+ *  from a feedback report, also finds a Dex record keyed `<cid>::<country>`. */
+export function useBrowserRecords(token: string | null, cid: string | null, country?: string): BrowserLoad {
+  const [got, setGot] = useState<{ key: string; load: BrowserLoad } | null>(null);
+  const key = `${cid}\n${country ?? ''}`;
   useEffect(() => {
     if (!token || !cid) return;
     let alive = true;
-    loadBrowser(token, cid).then(
-      (records) => alive && setGot({ cid, load: { status: 'ready', records } }),
-      () => alive && setGot({ cid, load: { status: 'error' } }),
+    loadBrowser(token, cid, country).then(
+      (records) => alive && setGot({ key, load: { status: 'ready', records } }),
+      () => alive && setGot({ key, load: { status: 'error' } }),
     );
     return () => {
       alive = false;
     };
-  }, [token, cid]);
+  }, [token, cid, country, key]);
   if (!token || !cid) return { status: 'idle' };
-  return got?.cid === cid ? got.load : { status: 'loading' };
+  return got?.key === key ? got.load : { status: 'loading' };
 }
