@@ -178,7 +178,7 @@ function useTools(placed: number): Tool[] {
       progress: placed > 0 ? { count: placed, total: 151, label: t('home.dex.saved', { progress: PROGRESS_TOKEN }) } : undefined,
       shots: [shot(dexFront300, dexFront400, dexFront), shot(dexBack300, dexBack400, dexBack)],
       alts: [
-        'A custom regional Pokédex in progress on the Pokédex builder Build page',
+        'Custom Pokédex Maker: a custom regional Pokédex in progress on the Build page',
         'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
       ],
     },
@@ -190,7 +190,7 @@ function useTools(placed: number): Tool[] {
       progress: league > 0 ? { count: league, total: SLOT_COUNT, label: t('home.league.saved', { progress: PROGRESS_TOKEN }) } : undefined,
       shots: [shot(leagueBack300, leagueBack400, leagueBack), shot(leagueFront300, leagueFront400, leagueFront)],
       alts: [
-        'A whole league exported from the gym leader maker: eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
+        'Gym Leader Maker: a whole league exported with eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
         'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
       ],
     },
@@ -255,12 +255,7 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       style={style}
       data-card-panel
       aria-label={tool.shots ? undefined : tool.title}
-      // fetch keepalive lets the beacon outlive the navigation this starts.
-      onClick={() =>
-        sendEventBeacon(
-          tool.key === 'dex' ? 'hub-cta-dex' : tool.key === 'league' ? 'hub-cta-league' : 'hub-cta-favorites',
-        )
-      }
+      onClick={() => sendCardBeacon(tool.key)}
     >
       {body}
       {tool.shots && <span className="hub-pocket-edge" aria-hidden data-card-pocket />}
@@ -336,10 +331,18 @@ function WideBody({ tool }: { tool: Tool }) {
 }
 
 /** Ink on the page, under the panel. */
+// fetch keepalive lets the beacon outlive the navigation a card link starts.
+function sendCardBeacon(key: string) {
+  sendEventBeacon(key === 'dex' ? 'hub-cta-dex' : key === 'league' ? 'hub-cta-league' : 'hub-cta-favorites');
+}
+
 function Caption({ tool }: { tool: Tool }) {
-  // The tool cards are the page's h2 list: one heading per tool, which is
-  // also the anchor text of the link to it. The call to action is not a tool,
-  // so it is styled the same and is not a heading.
+  // The tool cards are the page's h2 list: one heading per tool. The heading
+  // holds a link to the tool, so its words are anchor text, and the panel link
+  // above carries the same name through its artwork's alt text. The link
+  // inherits the heading's colour and adds no underline, so the card looks the
+  // same. The call to action is not a tool, so it is styled the same and is
+  // not a heading.
   const Title = tool.href ? 'h2' : 'p';
   return (
     <div style={{ padding: `var(--caption-top, ${U(5.6)}) ${U(1.7)} 0` }} data-card-caption>
@@ -348,7 +351,13 @@ function Caption({ tool }: { tool: Tool }) {
         className="m-0 font-bold tracking-tight"
         style={{ fontSize: TITLE, lineHeight: 1.25 }}
       >
-        {tool.title}
+        {tool.href ? (
+          <a href={tool.href} className="text-inherit no-underline" onClick={() => sendCardBeacon(tool.key)}>
+            {tool.title}
+          </a>
+        ) : (
+          tool.title
+        )}
       </Title>
       <p
         className={`m-0 text-muted-foreground ${tool.key === HAMMER_TITLE ? 'whitespace-pre-line' : 'text-pretty'}`}

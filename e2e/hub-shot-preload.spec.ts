@@ -28,7 +28,7 @@ for (const device of DEVICES) {
       if (name.startsWith('tool-dex') && !name.startsWith('tool-dex-b')) fetched.push(name);
     });
     await page.goto('/?notme');
-    const shot = page.getByRole('img', { name: /^A custom regional Pokédex in progress/ });
+    const shot = page.getByRole('img', { name: /^Custom Pokédex Maker: a custom regional Pokédex in progress/ });
     await expect(shot).toHaveJSProperty('complete', true);
     const shown = await shot.evaluate((img: HTMLImageElement) => img.currentSrc.split('/').pop() ?? '');
     // Which request fetched it: the preload in the HTML ('link') or the image itself.
