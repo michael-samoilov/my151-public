@@ -108,6 +108,7 @@ a new animation) goes to Michael first, with before and after.
 | Load the hub's page code with its entry script, not a dynamic import (October 8) | Lab phone first paint 600 → 804 ms (+34%), and the hub was not usable sooner (2110 → 2076 ms, within noise). |
 | `fetchpriority="high"` on the hub's largest screenshot (October 8) | No effect, LCP 3484 → 3500 ms: Chrome already raises every image in the viewport to high priority. |
 | Load the feedback form on idle or first open (October 8) | First-load text only 2.7 KiB smaller on the hub, about 1 KiB on dex and league: the form's dependencies are needed at startup anyway. |
+| Delay or drop the favorites page's sprite prefetch (October 8) | It downloads all 1,388 picker sprites (1.5 MiB) from 0.35 s after the page mounts. Lab phone, cold cache: no measurable change in blocking time or tap response. Without it, a sheet opened 8 s after landing fills over 0.5 s on a slow phone (0.25 s on Wi-Fi); with it, the sheet is complete in the first frame. Sprites are cached for a year, so a visitor pays once. |
 | A `sizes` that follows the widest hub shot (October 8) | Accurate, but a 3x iPhone then loaded the 800px originals (722 KiB, not 270 KiB). Browsers pick the smallest copy that covers `sizes` times the pixel ratio. |
 
 Lighthouse findings left open on purpose:
@@ -115,6 +116,7 @@ Lighthouse findings left open on purpose:
 | Finding | Why it stays |
 |---|---|
 | "Image elements do not have explicit width and height" on the hub screenshots | Each screenshot's shadow would show as an empty frame while the image loads. CLS is already 0. |
+| PageSpeed's robots.txt and llms.txt checks fail on the favorites page only ("Failed to fetch"), so its SEO score reads 92 | Google's runs only; no local tool reproduces it. The sprite prefetch (1,474 requests on the first load) is the likely cause, not a proven one. Googlebot reads robots.txt on its own, so search is not affected. Serving Google's run without the prefetch would serve a test a different page, which this repo forbids. |
 | "Improve image delivery": compression of the hub's back shots | These are UI screenshots with small text and sprites at quality 86. A lower quality saves about 20–30 KiB and risks visible artifacts. |
 | "Background and foreground colors do not have a sufficient contrast ratio" on the type filter chips in the Pokémon browser | White text on the official type colors: 13 of the 18 are under 4.5:1. They are the games' own badge colors, and Michael keeps them (October 8). |
 
