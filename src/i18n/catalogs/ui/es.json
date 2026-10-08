@@ -32,6 +32,8 @@
   "favorites.export.simplified": "Resumen",
   "favorites.export.title": "Exportar",
   "favorites.generation": "Generación {gen}",
+  "favorites.nudge.complete.body": "Toca el icono de descarga para guardar tu tabla como imagen y compartirla.",
+  "favorites.nudge.complete.title": "Cuadrícula terminada",
   "favorites.packing.back": "Elegir otro Pokémon",
   "favorites.packing.heading": "Este Pokémon ya está en esta generación. Elige cómo reorganizar la fila.",
   "favorites.scrollMore": "Desplázate para ver más",

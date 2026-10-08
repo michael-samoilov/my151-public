@@ -36,7 +36,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     const b=(req.body??{}) as Record<string,unknown>;
     if(typeof b.cid!=='string'||b.cid.length<8||b.cid.length>64)return res.status(400).json({error:'invalid cid'});
     if(typeof b.id!=='string'||! /^[\w-]{8,80}$/.test(b.id))return res.status(400).json({error:'invalid id'});
-    if(!['progress','completion','export','export-shown'].includes(String(b.kind)))return res.status(400).json({error:'invalid kind'});
+    if(!['progress','completion','export','export-shown','nudge-shown'].includes(String(b.kind)))return res.status(400).json({error:'invalid kind'});
     const snapshot=parseFavoriteSnapshot(b.snapshot);
     if(!snapshot)return res.status(400).json({error:'invalid snapshot'});
     if(b.kind==='completion'&&snapshot.filled!==257)return res.status(400).json({error:'invalid completion'});
@@ -60,7 +60,8 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
       for(const [threshold,event] of [[1,'favorites-first-pick'],[65,'favorites-quarter'],[129,'favorites-half'],[257,'favorites-complete']] as const){
         if(snapshot.filled>=threshold&&(existing?.maxFilled??0)<threshold)events.push(event);
       }
-      // The dialog-open event is once per visit; every export still counts.
+      // The popup and dialog-open events are once per visit; every export still counts.
+      if(b.kind==='nudge-shown'&&!session?.events.includes('favorites-nudge-complete-shown'))events.push('favorites-nudge-complete-shown');
       if(b.kind==='export-shown'&&!session?.events.includes('favorites-export-shown'))events.push('favorites-export-shown');
       if(exportKind)events.push(`favorites-export-${exportKind}`);
       if(stats)events.push('favorites-export-stats');
