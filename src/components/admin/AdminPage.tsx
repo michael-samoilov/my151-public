@@ -330,8 +330,6 @@ export interface ApiResponse {
     named: number;
     typed: number;
     fullLeague: number;
-    exportedCard: number;
-    exportedLeague: number;
     returning: number;
     activeLast7: number;
     activity: { day: number; dau: number }[];

@@ -436,8 +436,6 @@ export function buildDashboard(
     named: leagueIn.filter((r) => r.latest.named > 0).length,
     typed: leagueIn.filter((r) => r.latest.typed > 0).length,
     fullLeague: leagueIn.filter((r) => r.maxCards >= CARD_COUNT).length,
-    exportedCard: leagueIn.filter((r) => r.exportsCard > 0).length,
-    exportedLeague: leagueIn.filter((r) => r.exportsLeague > 0).length,
     returning: leagueIn.filter((r) => r.sessions > 1).length,
     activeLast7: leagueIn.filter((r) => now - r.lastTs <= 7 * 24 * 60 * 60 * 1000).length,
     activity: Object.entries(leagueDaily)

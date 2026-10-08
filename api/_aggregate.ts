@@ -629,18 +629,10 @@ export const LEAGUE_EXPORT_ENDS = ['league', 'both', 'card'] as const;
 export type LeagueExportEnd = (typeof LEAGUE_EXPORT_ENDS)[number];
 export type LeagueExportCounts = Record<LeagueExportEnd, number>;
 
-/** Export counts in the shape the production frontend read before
- *  `exports`: `exportedLeague` includes `both`. Delete once no open admin
- *  tab predates `exports`. */
-interface LegacyLeagueExportSplit {
-  exportedLeague: number;
-  exportedCard: number;
-}
-
 /** League gym-completion bucket. `exports` counts the people in this bucket
  *  under one export end each. Incomplete buckets keep non-exporters in the
  *  bucket. Full league peels them to Kept private. */
-export interface LeagueGymBucket extends LegacyLeagueExportSplit {
+export interface LeagueGymBucket {
   label: string;
   count: number;
   exports: LeagueExportCounts;
@@ -660,7 +652,7 @@ export interface DexUsageFunnel {
 /** Gym leader maker usage funnel: open → placed a Pokémon → one gym full →
  *  in-line gym-completion buckets → export. Full league also peels
  *  non-exporters to Kept private. */
-export interface LeagueUsageFunnel extends LegacyLeagueExportSplit {
+export interface LeagueUsageFunnel {
   opened: number;
   placed: number;
   bounced: number;
@@ -742,13 +734,13 @@ function leagueExportEnd(r: LeagueFunnelRow): LeagueExportEnd | null {
   return r.exportsCard > 0 ? 'card' : null;
 }
 
-function leagueExports(rows: LeagueFunnelRow[]): { exports: LeagueExportCounts } & LegacyLeagueExportSplit {
+function leagueExports(rows: LeagueFunnelRow[]): LeagueExportCounts {
   const exports: LeagueExportCounts = { league: 0, both: 0, card: 0 };
   for (const r of rows) {
     const end = leagueExportEnd(r);
     if (end) exports[end] += 1;
   }
-  return { exports, exportedLeague: exports.league + exports.both, exportedCard: exports.card };
+  return exports;
 }
 
 /**
@@ -808,7 +800,7 @@ export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): 
   const cardNotFinished = Math.max(0, placed - oneGymFull);
   const gymBuckets = LEAGUE_GYM_BUCKETS.map((t) => {
     const inBucket = gymRows.filter((r) => inTier(r.fullGyms, t));
-    return { label: t.label, count: inBucket.length, ...leagueExports(inBucket) };
+    return { label: t.label, count: inBucket.length, exports: leagueExports(inBucket) };
   }).filter((b) => b.count > 0);
   const fullLeagueRows = gymRows.filter((r) => r.fullGyms >= CARD_COUNT);
   const fullLeague = fullLeagueRows.length;
@@ -821,7 +813,7 @@ export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): 
     cardNotFinished,
     gymBuckets,
     fullLeague,
-    ...leagueExports(gymRows),
+    exports: leagueExports(gymRows),
     keptPrivate,
   };
 }
