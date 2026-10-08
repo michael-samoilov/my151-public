@@ -18,6 +18,9 @@
  * before it ships; use this script to read what PageSpeed Insights shows.
  */
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { median } from './lab-server.mjs';
 
 const args = process.argv.slice(2);
@@ -30,7 +33,7 @@ const RUNS = Number(flag('runs', 1));
 const PAGES = { hub: '/', dex: '/pokedex-builder', league: '/custom-gym-leader', favorites: '/favorite-pokemon-picker' };
 const PAGE_NAMES = flag('page', 'hub').split(',');
 const STRATEGIES = flag('profile', 'mobile,desktop').split(',');
-const CATEGORIES = ['performance', 'accessibility', 'best-practices', 'seo'];
+const CATEGORIES = ['performance', 'accessibility', 'best-practices', 'seo', 'agentic-browsing'];
 const LAB = {
   FCP: 'first-contentful-paint',
   LCP: 'largest-contentful-paint',
@@ -55,7 +58,7 @@ if (!key) {
 
 function runPsi(url, strategy) {
   const query = new URLSearchParams({ url, strategy });
-  for (const c of CATEGORIES) query.append('category', c.toUpperCase().replace('-', '_'));
+  for (const c of CATEGORIES) query.append('category', c.toUpperCase().replaceAll('-', '_'));
   const config = [
     `url = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${query}"`,
     `header = "X-Goog-Api-Key: ${key}"`,
@@ -71,6 +74,8 @@ function runPsi(url, strategy) {
 
 const show = (name, v) => (name === 'CLS' ? v.toFixed(3) : `${Math.round(v)}`);
 
+const saveDir = fs.mkdtempSync(path.join(tmpdir(), 'my151-psi-'));
+
 for (const pageName of PAGE_NAMES) {
   const url = `${ORIGIN}${PAGES[pageName]}?notme`;
   for (const strategy of STRATEGIES) {
@@ -78,6 +83,7 @@ for (const pageName of PAGE_NAMES) {
     for (let i = 1; i <= RUNS; i++) {
       process.stdout.write(`\r${strategy} ${pageName}: run ${i} of ${RUNS}   `);
       runs.push(runPsi(url, strategy));
+      fs.writeFileSync(path.join(saveDir, `${strategy}-${pageName}-${i}.json`), JSON.stringify(runs.at(-1)));
     }
     process.stdout.write('\n');
     const lhrs = runs.map((r) => r.lighthouseResult);
@@ -103,3 +109,4 @@ for (const pageName of PAGE_NAMES) {
     }
   }
 }
+console.log(`\nRaw reports: ${saveDir}`);

@@ -7,13 +7,17 @@ export function FavoritesCompletionCounter({ fills, label }: {
 }) {
   const { filled, total } = useMemo(() => buildFavoritesSnapshot(fills).completion, [fills]);
   return (
+    // `aria-label` on a plain span is not read by every screen reader, so the
+    // spoken phrase is hidden text and the visible "12/257" is hidden from them.
     <span
       data-testid="favorites-completion"
-      aria-label={label(filled, total)}
       className="shrink-0 whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums"
     >
-      <span className="font-extrabold text-primary">{filled}</span>
-      <span className="text-foreground">/{total}</span>
+      <span aria-hidden="true">
+        <span className="font-extrabold text-primary">{filled}</span>
+        <span className="text-foreground">/{total}</span>
+      </span>
+      <span className="sr-only">{label(filled, total)}</span>
     </span>
   );
 }

@@ -141,6 +141,9 @@ function FavoritesContent({ sel, setSel }: {
     <>
       <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
         <GlobalHeader />
+        {/* One `<main>` for both tabs. A `<main>` that is also a tab panel
+            loses its landmark role, so the panels are plain elements. */}
+        <main className="flex shrink-0 flex-col">
         <FavoritesHeader fills={fills} currentView={currentView} exportOpen={exportOpen}
           onViewChange={(view) => {
             setSel(null);
@@ -156,7 +159,7 @@ function FavoritesContent({ sel, setSel }: {
           hidden={currentView !== 'picker'} className={currentView === 'picker' ? 'flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col' : 'hidden'}>
           <FavoritesTypeRepairNotice fills={fills} onReview={open} />
           <div className="flex min-h-0 flex-1">
-            <main className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
+            <div className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
               <FavoritesGrid
                 fills={fills}
                 resolve={getPickerMon}
@@ -165,15 +168,16 @@ function FavoritesContent({ sel, setSel }: {
                 desktop={desktop}
                 pane={desktop ? picker : null}
               />
-            </main>
+            </div>
             {SORT_DEBUG_ENABLED ? <SortDebugPanel desktop={desktop} order={sortOrder} onChange={setSortOrder} /> : null}
           </div>
         </div>
-        <main id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"
+        <div id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"
           hidden={currentView !== 'analytics'} className={currentView === 'analytics' ? 'h-[calc(100dvh-2*2.75rem)] shrink-0 min-h-0' : 'hidden'}>
           {analyticsMounted && <Suspense fallback={<div role="status" aria-label={t('nav.analytics')} className="m-4 h-32 animate-pulse rounded-lg bg-muted" />}>
             <FavoritesAnalyticsDashboard fills={fills} active={currentView === 'analytics'} />
           </Suspense>}
+        </div>
         </main>
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />

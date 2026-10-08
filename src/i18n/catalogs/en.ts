@@ -68,11 +68,15 @@ export const enUi = {
   'browser.chip.gen': 'Gen',
   'browser.chip.mechanics': 'Mechanics',
   'browser.chip.places': 'Places',
+  // The spoken name of the X on a filter chip, read after the chip's own name.
+  'browser.chip.remove': 'Remove filter',
   'browser.chip.shape': 'Shape',
   'browser.chip.stages': 'Stages',
   'browser.chip.type': 'Type',
   'browser.myFavorites': 'My favorites',
   'browser.clear': 'Clear',
+  // The spoken name of the icon-only X that closes the desktop pane.
+  'browser.close': 'Close',
   'browser.closeAsk.addAction': 'Add',
   'browser.closeAsk.add_one': 'Add {count} Pokémon to {section}?',
   'browser.closeAsk.add_other': 'Add {count} Pokémon to {section}?',
