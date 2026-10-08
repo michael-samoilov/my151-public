@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { buildDashboard, type DashboardSource } from '../api/_dashboard';
+import { buildBrowser, buildDashboard, type DashboardSource } from '../api/_dashboard';
 
 /**
  * Feedback reports link to the browser that sent them, and back.
@@ -8,7 +8,12 @@ import { buildDashboard, type DashboardSource } from '../api/_dashboard';
  *   from the hub, both sent during its sessions.
  * - e2e-fb-dex: Dex only. One report from the Picker, so its link falls back
  *   to Dex.
- * - e2e-fb-gone: no tool record, so its report has no link.
+ * - e2e-fb-old: Dex only, behind 48 newer fillers, so it is the 51st Dex
+ *   browser and not on the loaded page of 50. Its page loads it on demand.
+ * - e2e-fb-eg: a second person on a shared browser. api/submit.ts stored its
+ *   only Dex record as `e2e-fb-eg::EG`, also past the loaded page. Its report
+ *   carries the country EG.
+ * - e2e-fb-gone: no tool record anywhere.
  */
 
 const MIN = 60_000;
@@ -46,6 +51,11 @@ async function stub(page: Page) {
     clients: {
       'e2e-fb-both': JSON.stringify(dexRecord('e2e-fb-both', visits)),
       'e2e-fb-dex': JSON.stringify(dexRecord('e2e-fb-dex', [at(5, 25)])),
+      ...Object.fromEntries(
+        Array.from({ length: 48 }, (_, i) => [`e2e-fill-${i}`, JSON.stringify(dexRecord(`e2e-fill-${i}`, [at(100 + i, 110 + i)]))]),
+      ),
+      'e2e-fb-old': JSON.stringify(dexRecord('e2e-fb-old', [at(-600, -590), at(-300, -280)])),
+      'e2e-fb-eg::EG': JSON.stringify({ ...dexRecord('e2e-fb-eg::EG', [at(-900, -880)]), country: 'EG' }),
     },
     archived: [],
     funnel: {},
@@ -53,19 +63,28 @@ async function stub(page: Page) {
     leagueClients: { 'e2e-fb-both': JSON.stringify(leagueRecord('e2e-fb-both', visits)) },
     exportSurveySkips: null,
   };
-  const report = (id: string, cid: string, route: string, ts: number) => ({
-    id, ts, category: 'bug', message: `report ${id}`, cid, context: { route, locale: 'en' },
+  const report = (id: string, cid: string, route: string, ts: number, country?: string) => ({
+    id, ts, category: 'bug', message: `report ${id}`, cid, ...(country ? { country } : {}), context: { route, locale: 'en' },
   });
   const items = [
     report('r-gone', 'e2e-fb-gone', 'league', t0 + 50 * 60 * MIN),
     report('r-card', 'e2e-fb-both', 'league-card', t0 + (24 * 60 + 15) * MIN),
     report('r-dex', 'e2e-fb-dex', '/favorite-pokemon-picker', t0 + 20 * MIN),
     report('r-home', 'e2e-fb-both', 'home', t0 + 10 * MIN),
+    report('r-old', 'e2e-fb-old', 'league', t0 - 285 * MIN),
+    report('r-eg', 'e2e-fb-eg', 'builder', t0 - 890 * MIN, 'EG'),
   ];
   let feedbackCalls = 0;
-  await page.route('**/api/submissions?**', (route) =>
-    route.fulfill({ json: buildDashboard(source, { offset: 0, limit: 50, range: 'all' }, now) }),
-  );
+  await page.route('**/api/submissions?**', (route) => {
+    const qs = new URL(route.request().url()).searchParams;
+    const cid = qs.get('cid');
+    if (!cid) return route.fulfill({ json: buildDashboard(source, { offset: 0, limit: 50, range: 'all' }, now) });
+    // As api/submissions.ts reads it: the report country's record first.
+    const country = qs.get('country');
+    const dex = (country && source.clients?.[`${cid}::${country}`]) ?? source.clients?.[cid] ?? null;
+    const league = source.leagueClients?.[cid] ?? null;
+    return route.fulfill({ json: buildBrowser(cid, { dex, league, favorite: null, exportSurveySkips: null }) });
+  });
   await page.route('**/api/feedback-list**', (route) => {
     feedbackCalls++;
     return route.fulfill({ json: { items, total: items.length, offset: 0, limit: 200, last7: { bug: 4 }, last30: { bug: 4 } } });
@@ -89,7 +108,6 @@ test.describe('admin feedback links', () => {
     await nav(page).getByRole('button', { name: 'Feedback', exact: true }).click();
 
     await expect(report(page, 'r-gone')).toBeVisible();
-    await expect(report(page, 'r-gone').getByTestId('feedback-open-browser')).toHaveCount(0);
     await expect(report(page, 'r-dex').getByTestId('feedback-open-browser')).toHaveAttribute('data-tool', 'dex');
     await expect(report(page, 'r-home').getByTestId('feedback-open-browser')).toHaveAttribute('data-tool', 'dex');
 
@@ -136,5 +154,31 @@ test.describe('admin feedback links', () => {
     await filter.click();
     await expect(filter).toHaveCount(0);
     await expect(report(page, 'r-gone')).toBeVisible();
+  });
+
+  test('a sender outside the newest 50 opens, and loads on demand', async ({ page }) => {
+    await stub(page);
+    await nav(page).getByRole('button', { name: 'Feedback', exact: true }).click();
+
+    const old = report(page, 'r-old').getByTestId('feedback-open-browser');
+    await expect(old).toHaveText('Open browser');
+    await old.click();
+    // The report came from League, which this browser never used: Dex opens.
+    await expect(tools(page).getByRole('button', { name: 'Dex', pressed: true })).toBeVisible();
+    await expect(page.getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('1');
+    await expect(page.getByTestId('session-feedback-mark')).toHaveCount(1);
+
+    await page.getByRole('button', { name: '‹ Back' }).click();
+    await report(page, 'r-gone').getByTestId('feedback-open-browser').click();
+    await expect(page.getByTestId('admin-user-status')).toContainText('No tool records for this browser.');
+  });
+
+  test('a sender stored under its country suffix opens its Dex page', async ({ page }) => {
+    await stub(page);
+    await nav(page).getByRole('button', { name: 'Feedback', exact: true }).click();
+    await report(page, 'r-eg').getByTestId('feedback-open-browser').click();
+    await expect(tools(page).getByRole('button', { name: 'Dex', pressed: true })).toBeVisible();
+    await expect(page.getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('1');
+    await expect(page.getByTestId('session-feedback-mark')).toHaveCount(1);
   });
 });
