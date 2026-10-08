@@ -256,8 +256,8 @@ type FavoriteBucket = FavoriteUsageFunnel['buckets'][number];
 /** Picker export ends, in column order under Not exported. */
 const FAVORITE_EXPORT_NODE = [
   { key: 'full', name: 'Full grid' },
-  { key: 'simplified', name: 'Simplified' },
   { key: 'both', name: 'Both exported' },
+  { key: 'simplified', name: 'Simplified' },
 ] as const;
 
 function favoriteEnds(b: FavoriteBucket): FanEnd[] {
