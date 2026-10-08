@@ -22,6 +22,13 @@ const PAGE_LABELS: Record<string, string> = {
   '/': 'Homepage',
   '/pokedex-builder': 'Pokédex builder',
   '/custom-gym-leader': 'Gym leader maker',
+  '/favorite-pokemon-picker': 'Favorite Pokémon Picker',
+};
+
+/** Old paths that `vercel.json` redirects, so their rows count toward the page they now open. */
+const PAGE_REDIRECTS: Record<string, string> = {
+  '/favorite-pokemon-by-type': '/favorite-pokemon-picker',
+  '/favorite-pokemon-by-type.html': '/favorite-pokemon-picker',
 };
 
 export interface SearchPeriodDelta {
@@ -112,7 +119,8 @@ function deltaOf(current: SearchMetric, previous: SearchMetric): SearchPeriodDel
 function pagePath(value: string): string | null {
   try {
     const url = new URL(value, 'https://my151.app');
-    return url.pathname.length > 1 ? url.pathname.replace(/\/$/, '') : '/';
+    const path = url.pathname.length > 1 ? url.pathname.replace(/\/$/, '') : '/';
+    return PAGE_REDIRECTS[path] ?? path;
   } catch {
     return null;
   }
@@ -141,19 +149,16 @@ function engineView(
   return { current: current ?? null, previous: previous ?? null, direction };
 }
 
+/** A query that reached a page under an old path and its new one counts once. */
 function pageQueries(provider: SearchProviderKey, rows: SearchPageQueryRow[], path: string): SearchPageQueryView[] {
-  return rows
-    .filter((row) => pagePath(row.page) === path)
+  const byQuery = new Map<string, SearchMetric[]>();
+  for (const row of rows) {
+    if (pagePath(row.page) === path) byQuery.set(row.query, [...(byQuery.get(row.query) ?? []), row]);
+  }
+  return [...byQuery.entries()]
+    .map(([query, metrics]) => ({ provider, query, ...sumSearchMetrics(metrics) }))
     .sort((a, b) => b.impressions - a.impressions || b.clicks - a.clicks)
-    .slice(0, 5)
-    .map((row) => ({
-      provider,
-      query: row.query,
-      clicks: row.clicks,
-      impressions: row.impressions,
-      ctr: row.ctr,
-      position: row.position,
-    }));
+    .slice(0, 5);
 }
 
 function buildPages(details: Record<SearchProviderKey, SearchRangeDetail | undefined>): SearchPagePerformance[] {

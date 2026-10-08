@@ -318,8 +318,9 @@ function PageRow({ page }: { page: SearchPagePerformance }) {
       className="border-t border-border py-3 first:border-t-0 first:pt-0"
     >
       <div className="mb-1 flex min-w-0 items-baseline justify-between gap-3">
-        <h3 className="truncate text-sm font-bold">{page.label}</h3>
-        <span className="shrink-0 font-mono text-[0.65rem] text-muted-foreground">{page.path}</span>
+        {/* The name keeps its width; a long path such as the Picker's gives way first. */}
+        <h3 className="max-w-full shrink-0 truncate text-sm font-bold">{page.label}</h3>
+        <span className="min-w-0 truncate font-mono text-[0.65rem] text-muted-foreground" title={page.path}>{page.path}</span>
       </div>
       <EngineRow provider="Google" engine={page.engines.google} />
       <EngineRow provider="Bing" engine={page.engines.bing} />
