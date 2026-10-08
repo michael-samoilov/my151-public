@@ -110,7 +110,7 @@ describe('favoriteFunnelSankey', () => {
     expect(targetsFrom(s, 'Bounced')).toEqual([]);
     expect(targetsFrom(s, 'Placed a Pokémon')).toEqual(['Completed', '193–256 cells', '1–64 cells']);
     expect(targetsFrom(s, 'Completed')[0]).toBe('Not exported');
-    expect(s.nodes.filter(n => ['Not exported', 'Full grid', 'Simplified', 'Both exported'].includes(n.name)).map(n => n.name)).toEqual(['Not exported', 'Full grid', 'Simplified', 'Both exported']);
+    expect(s.nodes.filter(n => ['Not exported', 'Full grid', 'Simplified', 'Both exported'].includes(n.name)).map(n => n.name)).toEqual(['Not exported', 'Full grid', 'Both exported', 'Simplified']);
     expect(s.ariaLabel).toContain('maximum filled cells');
   });
 });
