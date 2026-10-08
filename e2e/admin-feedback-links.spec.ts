@@ -117,11 +117,12 @@ test.describe('admin feedback links', () => {
     expect(calls()).toBe(1);
   });
 
-  test('the who-row chip opens the Feedback tab on that browser', async ({ page }) => {
+  // The chip sits in the who row on desktop and ends the tool row on a phone.
+  test('the who-row chip opens the Feedback tab on that browser', { tag: '@viewport' }, async ({ page }) => {
     await stub(page);
     await nav(page).getByRole('button', { name: 'Dex', exact: true }).click();
     await page.getByRole('link', { name: /Open user e2…both/ }).click();
-    const chip = page.getByTestId('admin-feedback-chip');
+    const chip = page.getByTestId('admin-feedback-chip').locator('visible=true');
     await expect(chip).toHaveText('2');
     await chip.click();
 

@@ -871,6 +871,18 @@ function DetailHeader({
   reports?: number;
   onFeedback?: () => void;
 }) {
+  const feedbackChip = reports > 0 && (
+    <button
+      type="button"
+      onClick={onFeedback}
+      data-testid="admin-feedback-chip"
+      aria-label={`${reports} feedback ${reports === 1 ? 'report' : 'reports'} from this browser`}
+      className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
+    >
+      <MessageSquare className="h-[13px] w-[13px] shrink-0" />
+      <span className="text-xs font-medium tabular-nums">{reports}</span>
+    </button>
+  );
   return (
     <div className="flex flex-col gap-1">
     <div className="flex flex-nowrap items-center gap-x-2 overflow-hidden">
@@ -906,23 +918,14 @@ function DetailHeader({
             </InfoChip>
           )}
           <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
-          {reports > 0 && (
-            <button
-              type="button"
-              onClick={onFeedback}
-              data-testid="admin-feedback-chip"
-              aria-label={`${reports} feedback ${reports === 1 ? 'report' : 'reports'} from this browser`}
-              className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
-            >
-              <MessageSquare className="h-[13px] w-[13px] shrink-0" />
-              <span className="text-xs font-medium tabular-nums">{reports}</span>
-            </button>
-          )}
+          {feedbackChip && <span className="hidden md:inline-flex">{feedbackChip}</span>}
         </div>
       </TooltipScope>
     </div>
-    <div className="md:hidden">
+    {/* A phone's who row is full, so the feedback chip ends the tool row. */}
+    <div className="flex items-center justify-between gap-2 md:hidden">
       <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} hasFavorites={hasFavorites} />
+      {feedbackChip}
     </div>
     </div>
   );
