@@ -32,6 +32,8 @@
   "favorites.export.simplified": "まとめ",
   "favorites.export.title": "書き出し",
   "favorites.generation": "第{gen}世代",
+  "favorites.nudge.complete.body": "ダウンロードアイコンをタップすると、表を画像として保存して共有できます。",
+  "favorites.nudge.complete.title": "表が完成しました",
   "favorites.packing.back": "ほかのポケモンを選ぶ",
   "favorites.packing.heading": "このポケモンはすでにこの世代にいます。行の並べ替え方を選んでください。",
   "favorites.scrollMore": "スクロールで続きを見る",

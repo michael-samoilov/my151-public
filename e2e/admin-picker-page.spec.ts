@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
+import cellData from '../api/_favoriteCells.json' with { type: 'json' };
 import { mergeFavoriteRecord, parseFavoriteSnapshot } from '../api/_favoriteRecord';
 
 const MIN = 60_000;
@@ -74,7 +75,7 @@ async function chooseStatus(page: Page, label: 'Active' | 'Archived') {
 test('a Picker row archives by its browser id, then restores', async ({ page }, testInfo) => {
   const posts = await stubPickerStore(page);
   const row = page.locator('[data-favorite-user="e2e-pick-a"]');
-  await expect(row.locator('[data-metric="picker"]')).toHaveText('4/257 Cells');
+  await expect(row.locator('[data-metric="picker"]')).toHaveText('4/257 Favs');
   await row.getByRole('button', { name: 'Archive user' }).click();
   await expect(row).toHaveCount(0);
   await chooseStatus(page, 'Archived');
@@ -91,18 +92,22 @@ test('a Picker row archives by its browser id, then restores', async ({ page }, 
   await testInfo.attach('picker-archived-row.png', { body: archivedShot, contentType: 'image/png' });
 });
 
+/** The Pokémon a pick cell allows, as the server validates them. */
+const allowed = (key: string) => [...new Set((cellData as Record<string, { ids?: number[] }>)[key].ids)].sort((a, b) => a - b);
+
 /** Where the grid sits in its frame, and the selector's order and counts. */
 async function measure(page: Page, selector: Locator) {
   const grid = await page.getByTestId('favorites-grid').boundingBox();
   const frame = await page.getByTestId('favorites-grid-scroll').boundingBox();
+  const fits = await page.getByTestId('favorites-grid-scroll').evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
   const tiles = await selector.locator('[data-testid^="favorites-pick-"]').evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-testid')!.slice('favorites-pick-'.length))));
   const counts = await selector.locator('[data-pick-count]').evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-pick-count'))));
   const bars = await selector.locator('[data-pick-bar]').evaluateAll((els) => els.map((e) => (e as HTMLElement).style.width));
-  return { grid, frame, tiles, counts, bars, viewport: page.viewportSize() };
+  return { grid, frame, fits, tiles, counts, bars, viewport: page.viewportSize() };
 }
 
 test.describe('Picker Most picked @viewport', () => {
-  test('the wide grid shows each cell top pick, and a cell opens its count-ranked selector', async ({ page }, testInfo) => {
+  test('the wide grid shows each cell top pick, and each cell kind opens its count-ranked selector', async ({ page }, testInfo) => {
     await stubPickerStore(page);
     const preview = page.locator('section').filter({ has: page.getByRole('heading', { name: 'What people pick' }) });
     await expect(preview).toContainText('of 4 charts');
@@ -117,17 +122,48 @@ test.describe('Picker Most picked @viewport', () => {
     const selector = page.getByTestId('favorites-picker');
     await expect(page.getByTestId('admin-pick-summary')).toHaveText('4 of 4 charts');
     const m = await measure(page, selector);
+    // A pick cell lists every Pokémon it allows; the unpicked ones show 0.
+    expect([...m.tiles].sort((a, b) => a - b)).toEqual(allowed('fire|1'));
     expect(m.tiles.slice(0, 2)).toEqual([6, 4]);
     expect(m.counts.slice(0, 2)).toEqual([3, 1]);
-    expect(m.counts).toEqual([...m.counts].sort((a, b) => b - a));
+    expect(m.counts.slice(2).every((n) => n === 0)).toBe(true);
+    await expect(selector.locator('[data-unpicked]')).toHaveCount(m.tiles.length - 2);
     expect(parseFloat(m.bars[0])).toBe(100);
     expect(parseFloat(m.bars[1])).toBeCloseTo(100 / 3, 1);
     await expect(selector.getByTestId('favorites-type-icon')).toHaveCount(0);
     // The grid fits the frame's height. A desktop grid fits its width too.
     expect(m.grid!.y + m.grid!.height).toBeLessThanOrEqual(m.frame!.y + m.frame!.height + 1);
-    if (m.viewport!.width >= 1024) expect(m.grid!.width).toBeLessThanOrEqual(m.frame!.width + 1);
+    if (m.viewport!.width >= 1024) expect(m.fits).toBe(true);
+    // A grid that fits is centered; one that scrolls sideways starts at the frame's left edge.
+    const leftGap = m.grid!.x - m.frame!.x;
+    if (m.fits) expect(Math.abs(leftGap - (m.frame!.x + m.frame!.width - m.grid!.x - m.grid!.width))).toBeLessThanOrEqual(1);
+    else expect(Math.abs(leftGap)).toBeLessThanOrEqual(0.5);
     await testInfo.attach('picker-most-picked.json', { body: JSON.stringify(m), contentType: 'application/json' });
     await testInfo.attach('picker-most-picked.png', { body: await page.screenshot(), contentType: 'image/png' });
+
+    // A pointer cell offers each chart its own picks, so it lists only what charts hold.
+    await page.keyboard.press('Escape');
+    await expect(selector).toHaveCount(0);
+    await page.getByTestId('favorites-cell-favorite-1').click();
+    await expect(page.getByTestId('admin-pick-summary')).toHaveText('1 of 4 charts');
+    const pointer = await measure(page, selector);
+    expect(pointer.tiles).toEqual([6]);
+    expect(pointer.counts).toEqual([1]);
+    await testInfo.attach('picker-most-picked-pointer.png', { body: await page.screenshot(), contentType: 'image/png' });
+
+    // A ctrl+wheel zoom from the centered grid keeps the cell under the pointer.
+    if (!m.fits) return;
+    await page.keyboard.press('Escape');
+    await expect(selector).toHaveCount(0);
+    const box = (await page.getByTestId('favorites-cell-psychic-5').boundingBox())!;
+    const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+    await page.mouse.move(x, y);
+    await page.keyboard.down('Control');
+    for (let i = 0; i < 3; i++) await page.mouse.wheel(0, -50);
+    await page.keyboard.up('Control');
+    await expect(page.getByTestId('favorites-grid-scroll')).toHaveAttribute('data-zoom', '2.5');
+    const under = await page.evaluate(([px, py]) => document.elementFromPoint(px, py)?.closest('[data-testid^="favorites-cell-"]')?.getAttribute('data-testid'), [x, y]);
+    expect(under).toBe('favorites-cell-psychic-5');
   });
 });
 

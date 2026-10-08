@@ -107,8 +107,10 @@ export function FavoritesGrid({
   desktop: boolean;
   /** The desktop selector pane. It scrolls with the grid, under the headers. */
   pane?: ReactNode;
-  /** Desktop only: shrink cells below their native size until the whole
-   *  unzoomed grid fits the frame. The admin overview uses it. */
+  /** On desktop, shrink cells below their native size until the whole
+   *  unzoomed grid fits the frame. At any width, center the grid while it
+   *  fits; a grid that scrolls sideways stays left-aligned. The admin
+   *  overview uses it. */
   fitFrame?: boolean;
 }) {
   useNamesVersion();
@@ -177,7 +179,8 @@ function ZoomFrame({
         data-zoom="1"
       >
         <div
-          className="relative grid"
+          // Auto margins center a grid that fits and resolve to 0 for one that overflows.
+          className={fitFrame ? 'relative mx-auto grid' : 'relative grid'}
           style={{
             width: `calc(var(--head) + var(--cell) * ${COLS - 1})`,
             height: `calc(var(--head-row, var(--head)) + var(--cell) * ${ROWS - 1})`,
@@ -268,10 +271,17 @@ function useZoomFrame(
       el.style.setProperty('--head-row', `${headRow}px`);
       el.dataset.zoom = String(Math.round(zoom * 1000) / 1000);
     };
+    /** How far a centered grid sits right of the scroll origin. Measured from
+     *  layout: Chrome reports this grid's auto margin as 0px. */
+    const gridLeft = () => {
+      const grid = fitFrame ? el.firstElementChild : null;
+      if (!grid) return 0;
+      return grid.getBoundingClientRect().left - el.getBoundingClientRect().left - el.clientLeft + el.scrollLeft;
+    };
     /** The body point under a frame-local point. */
     const bodyAt = (x: number, y: number): BodyPoint => {
       const { cell, head, headRow } = tracks();
-      return { u: (el.scrollLeft + x - head) / cell, v: (el.scrollTop + y - headRow) / cell };
+      return { u: (el.scrollLeft + x - gridLeft() - head) / cell, v: (el.scrollTop + y - headRow) / cell };
     };
     const paint = (show: boolean) => {
       const map = mapRef.current;
@@ -322,7 +332,7 @@ function useZoomFrame(
       zoom = target.zoom;
       writeTracks();
       const { cell, head, headRow } = tracks();
-      el.scrollLeft = u * cell + head - target.x;
+      el.scrollLeft = u * cell + head + gridLeft() - target.x;
       el.scrollTop = v * cell + headRow - target.y;
       target = null;
       paint(true);

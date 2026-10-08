@@ -1,6 +1,10 @@
-import { createContext, useContext, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { createContext, useContext } from 'react';
 
 export const PreviewChipZoom = createContext(1);
+
+/** Each locked row reports the zoom that fits it, or null when it leaves.
+ *  The list zooms every locked row to the smallest report. */
+export const PreviewChipZoomReport = createContext<((id: string, fit: number | null) => void) | null>(null);
 
 export function usePreviewChipZoom(): number {
   return useContext(PreviewChipZoom);
@@ -29,32 +33,6 @@ export function applyPreviewZoom(
   if (Math.abs(zoomRef.current - next) < 0.005) return;
   zoomRef.current = next;
   setZoom(next);
-}
-
-export function useHostZoom(hostRef: RefObject<HTMLElement | null>, innerRef: RefObject<HTMLElement | null>): number {
-  const zoomRef = useRef(1);
-  const [zoom, setZoom] = useState(1);
-
-  useLayoutEffect(() => {
-    const host = hostRef.current;
-    const inner = innerRef.current;
-    if (!host || !inner) return;
-    const measure = () => applyPreviewZoom(host, inner, zoomRef, setZoom);
-    measure();
-    void document.fonts.ready.then(measure);
-    const later = window.setTimeout(measure, 250);
-    const ro = new ResizeObserver(measure);
-    ro.observe(host);
-    const mq = window.matchMedia(MD);
-    mq.addEventListener('change', measure);
-    return () => {
-      window.clearTimeout(later);
-      ro.disconnect();
-      mq.removeEventListener('change', measure);
-    };
-  }, [hostRef, innerRef]);
-
-  return zoom;
 }
 
 export const PREVIEW_CHIP_MD = MD;

@@ -43,27 +43,19 @@ import type { SearchPerformanceView } from '@/lib/searchPerformanceView';
 import {
   ARCHIVE_FILTER_OPTIONS,
   bareCid,
-  dexChipLabel,
-  dexPokemonCount,
   FACET_KEYS,
   FACET_LABEL,
   FACET_UNKNOWN,
   facetLabel,
   formatWhen,
   langName,
-  leagueChipLabel,
-  leagueExported,
-  pickerChipLabel,
   matchesArchiveFilter,
   matchesFacetFilters,
   matchesToolFilter,
-  mergedSessionStats,
   previewLanguage,
-  PREVIEW_FIT,
   sameBaseLang,
   geoChipLabel,
   uiLanguage,
-  sessionChipParts,
   TOOL_FILTER_OPTIONS,
   toolKind,
   uniqueFacetValues,
@@ -73,9 +65,10 @@ import {
   type ToolFilter,
 } from '@/components/admin/userPreview';
 import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
-import { FitNowrap, PreviewChipZoomProvider } from '@/components/admin/FitNowrap';
-import { useHostZoom } from '@/components/admin/previewChipZoom';
-import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
+import { FitNowrap } from '@/components/admin/FitNowrap';
+import { BrowserUsage, PreviewUsageScale } from '@/components/admin/PreviewUsage';
+import { toolCells, type ToolCell } from '@/components/admin/browserUsage';
+import { Archive, ArchiveRestore, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
 import type { ExportSurveySkip } from '../../../api/_events';
 import type { LeaguePicks } from '../../../api/_leaguePicks';
@@ -1217,99 +1210,16 @@ function UserDetailPage({
   );
 }
 
-function MetricChip({
-  label,
-  exported,
-  metric,
-  empty,
-  className,
-  children,
-}: {
-  label?: string;
-  exported?: boolean;
-  empty?: boolean;
-  metric: 'session' | 'dex' | 'league' | 'picker';
-  className?: string;
-  children?: ReactNode;
-}) {
-  return (
-    <span
-      data-metric={metric}
-      data-empty={empty ? 'true' : undefined}
-      className={cn(
-        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-1 text-xs font-medium tabular-nums md:justify-center md:px-2',
-        empty && 'opacity-40',
-        className,
-      )}
-    >
-      {children ?? label}
-      {exported && !empty ? <Camera className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="exported" /> : null}
-    </span>
-  );
-}
-
-function SessionMetricChip({
-  sessions,
-  totalMs,
-  className,
-}: {
-  sessions: number;
-  totalMs: number;
-  className?: string;
-}) {
-  const parts = sessionChipParts(sessions, totalMs);
-  return (
-    <MetricChip metric="session" className={className}>
-      <span className="font-bold text-foreground tabular-nums">{parts.count}</span>
-      <span className="font-medium tabular-nums text-muted-foreground">
-        {parts.unit} · {parts.duration}
-      </span>
-    </MetricChip>
-  );
-}
-
-/** Scales the metric chips of every row so the widest possible row fits a
- *  phone. The Picker rows show one tool chip; Dex and League rows show two. */
-function PreviewMetricScale({ picker = false, children }: { picker?: boolean; children: ReactNode }) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const zoom = useHostZoom(hostRef, innerRef);
-  return (
-    <>
-      <div
-        aria-hidden
-        data-preview-chip-zoom={zoom}
-        className="pointer-events-none invisible absolute inset-x-0 px-2.5 md:hidden"
-        style={{ height: 0, overflow: 'hidden' }}
-      >
-        <div ref={hostRef} className="min-w-0 overflow-x-clip">
-          <div ref={innerRef} className="flex w-max flex-nowrap items-center gap-1">
-            <SessionMetricChip sessions={PREVIEW_FIT.sessions} totalMs={PREVIEW_FIT.totalMs} />
-            {picker ? (
-              <MetricChip metric="picker" label={pickerChipLabel(PREVIEW_FIT.picker)} exported />
-            ) : (
-              <>
-                <MetricChip metric="dex" label={dexChipLabel(PREVIEW_FIT.dex)} exported />
-                <MetricChip metric="league" label={leagueChipLabel(PREVIEW_FIT.league, CARD_COUNT)} exported />
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-      <PreviewChipZoomProvider zoom={zoom}>{children}</PreviewChipZoomProvider>
-    </>
-  );
-}
-
+/** When over Ago, five who columns, Dex, Gyms, Favs, Total, then the archive button. */
 const PREVIEW_TABLE =
   'relative flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_auto_auto_auto_1fr] md:gap-x-2 md:gap-y-2';
 
 const FACET_COL: Record<FacetKey, string> = {
-  country: 'md:col-start-3',
-  device: 'md:col-start-4',
-  os: 'md:col-start-5',
-  browser: 'md:col-start-6',
-  language: 'md:col-start-7',
+  country: 'md:col-start-2',
+  device: 'md:col-start-3',
+  os: 'md:col-start-4',
+  browser: 'md:col-start-5',
+  language: 'md:col-start-6',
 };
 
 const FACET_ANY = '__any__';
@@ -1398,7 +1308,7 @@ function PreviewStatusMenus({
     <>
       <PreviewFilterMenu
         name="Status"
-        className="md:col-start-11 md:row-start-1 md:justify-self-end"
+        className="md:col-start-10 md:col-span-2 md:row-start-1 md:justify-self-end"
         value={archiveFilter}
         options={ARCHIVE_FILTER_OPTIONS}
         onChange={setArchiveFilter}
@@ -1407,7 +1317,7 @@ function PreviewStatusMenus({
       {toolFilter && setToolFilter && (
         <PreviewFilterMenu
           name="Tools"
-          className="md:col-start-9 md:col-span-2 md:row-start-1 md:justify-self-start"
+          className="md:col-start-7 md:col-span-3 md:row-start-1 md:justify-self-start"
           value={toolFilter}
           anyKey="any"
           clearable
@@ -1432,7 +1342,7 @@ function PreviewPlatformSlot({
   children: ReactNode;
 }) {
   return (
-    <span className={cn('inline-flex', colClass, 'md:row-start-1 md:justify-self-stretch', empty && 'opacity-40')}>
+    <span className={cn('inline-flex', colClass, 'md:row-span-2 md:row-start-1 md:justify-self-stretch', empty && 'opacity-40')}>
       <InfoChip fillMd label={label}>{children}</InfoChip>
     </span>
   );
@@ -1440,27 +1350,21 @@ function PreviewPlatformSlot({
 
 function UserPreviewCard({
   rec,
-  dex,
-  league,
-  picker,
+  cells,
+  pickerRow,
   archived,
   onOpen,
   onArchive,
 }: {
-  rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
-  dex?: { pokemon: number; exported: boolean; sessions?: number; sessionMs?: number[] };
-  league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
-  /** A Picker row: its cells chip takes the place of the Dex and League chips. */
-  picker?: { filled: number; exported: boolean };
+  rec: HeaderRec & { lastTs: number; tz?: string };
+  /** Every tool this browser used, whichever list the card is on. */
+  cells: ToolCell[];
+  /** A row of the Picker list. */
+  pickerRow?: boolean;
   archived: boolean;
   onOpen: () => void;
   onArchive: (next: boolean) => void;
 }) {
-  const { sessions, totalMs } = mergedSessionStats(
-    { sessions: rec.sessions, sessionMs: rec.sessionMs },
-    dex?.sessions != null || dex?.sessionMs ? dex : undefined,
-    league?.sessions != null || league?.sessionMs ? league : undefined,
-  );
   const langPreview = previewLanguage(rec.lang, rec.locale, rec.switched);
 
   return (
@@ -1468,11 +1372,11 @@ function UserPreviewCard({
       role="link"
       tabIndex={0}
       data-user-preview
-      data-favorite-user={picker ? rec.cid : undefined}
+      data-favorite-user={pickerRow ? rec.cid : undefined}
       aria-label={`Open user ${middleId(rec.cid)}`}
       className={cn(
         'flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'md:col-span-full md:grid md:grid-cols-subgrid md:grid-rows-1 md:items-center md:gap-x-2 md:py-1.5',
+        'md:col-span-full md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:gap-y-1 md:py-1.5',
         archived && 'opacity-70',
       )}
       onClick={onOpen}
@@ -1486,15 +1390,15 @@ function UserPreviewCard({
     >
       <div className="flex min-w-0 items-center gap-1 md:contents">
         <FitNowrap contentsOnMd className="min-w-0 flex-1">
-          <span className="whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1">
+          <span className="whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1 md:self-end">
             {formatWhen(rec.lastTs, rec.tz)}
           </span>
-          <span className="whitespace-nowrap text-sm text-muted-foreground md:col-start-2 md:row-start-1">
+          <span className="whitespace-nowrap text-sm text-muted-foreground md:col-start-1 md:row-start-2 md:self-start">
             {relativeTime(rec.lastTs)}
           </span>
         </FitNowrap>
         <div
-          className="shrink-0 md:col-start-11 md:row-start-1 md:justify-self-end"
+          className="shrink-0 md:col-start-11 md:row-span-2 md:row-start-1 md:justify-self-end"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
@@ -1540,7 +1444,7 @@ function UserPreviewCard({
           >
             <BrowserIcon value={rec.browser} />
           </PreviewPlatformSlot>
-          <span className={cn(FACET_COL.language, 'inline-flex md:row-start-1 md:justify-self-stretch', !langPreview && 'opacity-40')}>
+          <span className={cn(FACET_COL.language, 'inline-flex md:row-span-2 md:row-start-1 md:justify-self-stretch', !langPreview && 'opacity-40')}>
             {langPreview ? (
               <PreviewLanguageChip fillMd lang={rec.lang} locale={rec.locale} switched={rec.switched} />
             ) : (
@@ -1551,41 +1455,7 @@ function UserPreviewCard({
           </span>
         </FitNowrap>
       </div>
-      <div className="min-w-0 md:contents">
-        <FitNowrap contentsOnMd lockZoom>
-          <SessionMetricChip
-            sessions={sessions}
-            totalMs={totalMs}
-            className="md:col-start-8 md:row-start-1 md:justify-self-stretch"
-          />
-          {picker ? (
-            <MetricChip
-              metric="picker"
-              empty={picker.filled === 0}
-              className="md:col-start-9 md:row-start-1 md:justify-self-stretch"
-              label={pickerChipLabel(picker.filled)}
-              exported={picker.exported}
-            />
-          ) : (
-            <>
-              <MetricChip
-                metric="dex"
-                empty={!dex}
-                className="md:col-start-9 md:row-start-1 md:justify-self-stretch"
-                label={dexChipLabel(dex?.pokemon ?? 0)}
-                exported={dex?.exported}
-              />
-              <MetricChip
-                metric="league"
-                empty={!league}
-                className="md:col-start-10 md:row-start-1 md:justify-self-stretch"
-                label={leagueChipLabel(league?.cards ?? 0, CARD_COUNT)}
-                exported={league?.exported}
-              />
-            </>
-          )}
-        </FitNowrap>
-      </div>
+      <BrowserUsage cells={cells} />
     </div>
   );
 }
@@ -2386,13 +2256,20 @@ export function AdminPage() {
                   archiveOverride[bareCid(cid)] ?? flag ?? false;
                 type Row = {
                   cid: string;
-                  rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
-                  dex?: { pokemon: number; exported: boolean; sessions?: number; sessionMs?: number[] };
-                  league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
-                  picker?: { filled: number; exported: boolean };
+                  rec: HeaderRec & { lastTs: number; tz?: string };
+                  cells: ToolCell[];
                   archived: boolean;
                   open: Detail;
                 };
+                // Every card shows all three tools of its browser, looked up
+                // by bare browser id, whichever list it is on.
+                const sameBrowser = (cid: string) => (r: { cid: string }) => bareCid(r.cid) === bareCid(cid);
+                const dexOf = (cid: string) =>
+                  data.dexByCid?.[cid] ?? data.dexByCid?.[bareCid(cid)] ?? data.records.find(sameBrowser(cid));
+                const leagueOf = (cid: string) =>
+                  data.leagueByCid?.[cid] ?? data.leagueByCid?.[bareCid(cid)] ?? data.leagueUsers?.find(sameBrowser(cid));
+                const pickerOf = (cid: string) =>
+                  data.favoriteByCid?.[bareCid(cid)] ?? data.favoriteUsers?.find(sameBrowser(cid));
                 // Newest first, so the browsers active in the range lead the
                 // list. It opens on them; Load more continues past the range.
                 const loaded: { lastTs: number }[] = showDex
@@ -2411,8 +2288,7 @@ export function AdminPage() {
                 const listed: Row[] = [];
                 if (showDex) {
                   for (const rec of data.records.slice(0, shown)) {
-                    const league =
-                      data.leagueByCid?.[rec.cid] ?? data.leagueByCid?.[bareCid(rec.cid)];
+                    const league = leagueOf(rec.cid);
                     const kind = toolKind(true, !!league);
                     if (!kind) continue;
                     const archived = archivedOf(rec.cid, rec.archived);
@@ -2421,15 +2297,7 @@ export function AdminPage() {
                     listed.push({
                       cid: rec.cid,
                       rec,
-                      dex: { pokemon: dexPokemonCount(rec.latestIds), exported: rec.exported },
-                      league: league
-                        ? {
-                            cards: league.maxCards,
-                            exported: leagueExported(league.exportsCard, league.exportsLeague),
-                            sessions: league.sessions,
-                            sessionMs: league.sessionMs,
-                          }
-                        : undefined,
+                      cells: toolCells({ dex: rec, league, picker: pickerOf(rec.cid) }),
                       archived,
                       open: { kind: 'dex', cid: rec.cid },
                     });
@@ -2441,14 +2309,14 @@ export function AdminPage() {
                     listed.push({
                       cid: rec.cid,
                       rec,
-                      picker: { filled: rec.latest.filled, exported: rec.exportsFull + rec.exportsSimplified > 0 },
+                      cells: toolCells({ dex: dexOf(rec.cid), league: leagueOf(rec.cid), picker: rec }),
                       archived,
                       open: { kind: 'favorites', cid: rec.cid },
                     });
                   }
                 } else {
                   for (const rec of (data.leagueUsers ?? []).slice(0, shown)) {
-                    const dex = data.records.find((r) => r.cid === rec.cid || r.cid.split('::')[0] === rec.cid);
+                    const dex = dexOf(rec.cid);
                     const hasDex = !!dex || rec.hasDex;
                     const kind = toolKind(hasDex, true);
                     if (!kind) continue;
@@ -2458,18 +2326,7 @@ export function AdminPage() {
                     listed.push({
                       cid: rec.cid,
                       rec,
-                      dex: dex
-                        ? {
-                            pokemon: dexPokemonCount(dex.latestIds),
-                            exported: dex.exported,
-                            sessions: dex.sessions,
-                            sessionMs: dex.sessionMs,
-                          }
-                        : undefined,
-                      league: {
-                        cards: rec.maxCards,
-                        exported: leagueExported(rec.exportsCard, rec.exportsLeague),
-                      },
+                      cells: toolCells({ dex, league: rec, picker: pickerOf(rec.cid) }),
                       archived,
                       open: { kind: 'league', cid: rec.cid },
                     });
@@ -2499,29 +2356,21 @@ export function AdminPage() {
                           setToolFilter={showPicker ? undefined : setToolFilter}
                         />
                         <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-1 md:row-start-1 md:flex">When</div>
-                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-2 md:row-start-1 md:flex">Ago</div>
                         <PreviewFacetMenus listed={listed} facets={facetFilters} setFacets={setFacetFilters} />
-                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-8 md:row-start-1 md:flex">Sessions</div>
-                        {showPicker && (
-                          <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-9 md:row-start-1 md:flex">Cells</div>
-                        )}
                       </div>
-                      {/* A new key remounts the fit, so a switch between the
-                          Picker rows and the Dex or League rows measures again. */}
-                      <PreviewMetricScale key={showPicker ? 'picker' : 'dex-league'} picker={showPicker}>
+                      <PreviewUsageScale>
                         {rows.map((row) => (
                           <UserPreviewCard
                             key={row.cid}
                             rec={row.rec}
-                            dex={row.dex}
-                            league={row.league}
-                            picker={row.picker}
+                            cells={row.cells}
+                            pickerRow={showPicker}
                             archived={row.archived}
                             onArchive={(next) => void setArchived(row.cid, next)}
                             onOpen={() => openDetail(row.open)}
                           />
                         ))}
-                      </PreviewMetricScale>
+                      </PreviewUsageScale>
                     </div>
                     {shown < total && (
                       <Button
