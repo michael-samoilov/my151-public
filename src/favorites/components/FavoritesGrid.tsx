@@ -19,6 +19,7 @@ import {
   type TypeAxisId,
 } from '../model/cells';
 import { kindFor } from '../model/eligibility';
+import { prefetchCell } from '../model/spritePreload';
 import type { PickerMon } from '../model/catalog';
 import { gridSpriteSizePercent } from '../model/gridSpriteSize';
 import { minimapViewportX } from '../model/minimap';
@@ -683,6 +684,7 @@ function BodyCell({
   desktop: boolean;
 }) {
   const kind = kindFor(type, gen);
+  const dwell = useRef(0);
   const id = fills[cellKey(type, gen)];
   const mon = id == null ? undefined : resolve(id);
   const isSel = selected?.type === type && selected?.gen === gen;
@@ -696,11 +698,21 @@ function BodyCell({
       type="button"
       disabled={locked}
       onClick={(event) => onSelect(type, gen, event.detail === 0)}
+      // The selector's sprites start loading before the click lands. A mouse
+      // crossing the grid passes many cells, so it must rest on one first.
+      onPointerEnter={locked ? undefined : (event) => {
+        if (event.pointerType === 'mouse') dwell.current = window.setTimeout(() => prefetchCell(type, gen), 80);
+        else prefetchCell(type, gen);
+      }}
+      onPointerLeave={() => window.clearTimeout(dwell.current)}
+      onPointerDown={locked ? undefined : () => prefetchCell(type, gen)}
+      onFocus={locked ? undefined : () => prefetchCell(type, gen)}
       aria-label={`${coordinateLabel(type, gen)}${mon ? ` · ${labelOf(mon)}` : ''}`}
       aria-expanded={locked ? undefined : isSel}
       aria-controls={isSel ? 'favorites-selector' : undefined}
       aria-haspopup={locked ? undefined : 'dialog'}
       data-testid={`favorites-cell-${type}-${gen}`}
+      data-cell={locked ? undefined : cellKey(type, gen)}
       data-kind={kind}
       data-row-banded={banded}
       className={cn(
