@@ -41,6 +41,7 @@ Decisions for Michael:
 - Show every alternative of a live product, layout, or design decision as a picture: screenshots, a mockup, or a rendered comparison, side by side, with the same input. A text-only list of options is not a decision request.
 - Under each alternative, state the facts that differ, and give your recommendation.
 - For a decision with no visual side, such as closing a PR, give the context, the alternatives, their consequences, and your recommendation.
+- Name each open decision by what it decides, in plain words, every time you mention it. Never use a code such as "D6" or "D1 to D5" in a message to Michael. Say where its context is: pictures in this chat, or a GitHub link to the file section that explains it.
 
 ## Style guide
 
@@ -68,6 +69,13 @@ Every work-branch push runs the work-branch checks. A production merge adds the 
 | Small | One tool and a few files. No saved data, store, API, analytics write, i18n catalog, build config, dependency, or component that another tool also uses. | The work-branch checks, the repo guards (`check-viewport-tags`, `check-test-rules`, `check-sprite-revisions`, `check-speed-test-detection`, `check-bundle-budget`), the proof test, and the specs for the changed area. A visual change adds `/verify-my151` diff with `--surfaces blink`. | 6 min |
 | Standard | Shared code, or a change that more than one tool shows. | `bash scripts/ci-local.sh` once, on the merged result. A visual change adds `/verify-my151` diff with `--surfaces blink,blink-ios-safari`. | 20 min |
 | Full | Saved-data shape or migration, a store, an API or analytics write, build or deploy config, a dependency upgrade, or a launch. | `bash scripts/ci-local.sh` once, on the merged result. A change that reaches the browser bundle adds `/verify-my151` diff on all engines. A server-only change does not: the harness serves a build whose API calls fail, so it cannot observe the change. | 40 min |
+| Admin | Every changed file is admin-only: the command below prints nothing. This covers the admin page and its read-only API code. Michael set this tier on 2026-10-08. | `npm run lint`, `npm test`, `node scripts/check-test-rules.mjs`, the proof test, and `flock /tmp/my151-browser.lock npx playwright test e2e/admin- --project=desktop --project=mobile --project=narrow`, which builds first. A visual change adds 390 and 1280 px before-and-after shots on live data. | 3 min |
+
+The Admin tier check. Any printed file is outside the admin surface, so the change takes another tier:
+
+```bash
+git diff --name-only origin/claude/pokedex-region-builder-AviYF...HEAD | grep -v -E '^(src/components/admin/|e2e/admin-|docs/)|\.md$|^src/lib/(usageFunnels|sankey[A-Za-z]*|whoOrigin|searchPerformance[A-Za-z]*|crossTool[A-Za-z]*|dashboardRange)\.|^api/(_dashboard|_crossTool|_range|_searchPerformance|_archive|_favoriteAggregate|submissions|search-performance|feedback-list|journal|archive-entry)\.ts$'
+```
 
 When unsure, take the higher tier. A batch takes the tier of its riskiest change. A change that touches only Markdown files runs no tier.
 
