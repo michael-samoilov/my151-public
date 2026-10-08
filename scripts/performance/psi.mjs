@@ -4,7 +4,10 @@
  *
  *   node scripts/performance/psi.mjs                          # hub, 1 run each
  *   node scripts/performance/psi.mjs --page hub,dex --runs 3
- *   node scripts/performance/psi.mjs --url https://<preview>.vercel.app
+ *   node scripts/performance/psi.mjs --url https://<public deployment>
+ *
+ * Google cannot load a Vercel preview, because previews need a Vercel login.
+ * Use `lighthouse.mjs` to measure a change before it ships.
  *
  * It needs PAGESPEED_API_KEY in the environment: a key restricted to the
  * PageSpeed Insights API, the one Google key Michael approved (October 8).
@@ -18,6 +21,9 @@
  * before it ships; use this script to read what PageSpeed Insights shows.
  */
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { median } from './lab-server.mjs';
 
 const args = process.argv.slice(2);
@@ -30,7 +36,7 @@ const RUNS = Number(flag('runs', 1));
 const PAGES = { hub: '/', dex: '/pokedex-builder', league: '/custom-gym-leader', favorites: '/favorite-pokemon-picker' };
 const PAGE_NAMES = flag('page', 'hub').split(',');
 const STRATEGIES = flag('profile', 'mobile,desktop').split(',');
-const CATEGORIES = ['performance', 'accessibility', 'best-practices', 'seo'];
+const CATEGORIES = ['performance', 'accessibility', 'best-practices', 'seo', 'agentic-browsing'];
 const LAB = {
   FCP: 'first-contentful-paint',
   LCP: 'largest-contentful-paint',
@@ -55,7 +61,7 @@ if (!key) {
 
 function runPsi(url, strategy) {
   const query = new URLSearchParams({ url, strategy });
-  for (const c of CATEGORIES) query.append('category', c.toUpperCase().replace('-', '_'));
+  for (const c of CATEGORIES) query.append('category', c.toUpperCase().replaceAll('-', '_'));
   const config = [
     `url = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${query}"`,
     `header = "X-Goog-Api-Key: ${key}"`,
@@ -71,13 +77,25 @@ function runPsi(url, strategy) {
 
 const show = (name, v) => (name === 'CLS' ? v.toFixed(3) : `${Math.round(v)}`);
 
+const saveDir = fs.mkdtempSync(path.join(tmpdir(), 'my151-psi-'));
+
 for (const pageName of PAGE_NAMES) {
   const url = `${ORIGIN}${PAGES[pageName]}?notme`;
   for (const strategy of STRATEGIES) {
     const runs = [];
     for (let i = 1; i <= RUNS; i++) {
       process.stdout.write(`\r${strategy} ${pageName}: run ${i} of ${RUNS}   `);
-      runs.push(runPsi(url, strategy));
+      // PageSpeed Insights answers a repeat of a recent request from its cache,
+      // with the same fetchTime. A cached copy is not a new run, so wait for a
+      // fresh one.
+      let json = runPsi(url, strategy);
+      for (let wait = 1; runs.some((r) => r.lighthouseResult.fetchTime === json.lighthouseResult.fetchTime); wait++) {
+        if (wait > 6) throw new Error(`PageSpeed Insights kept returning a cached run for ${strategy} ${pageName}`);
+        await new Promise((resolve) => setTimeout(resolve, 20_000));
+        json = runPsi(url, strategy);
+      }
+      runs.push(json);
+      fs.writeFileSync(path.join(saveDir, `${strategy}-${pageName}-${i}.json`), JSON.stringify(json));
     }
     process.stdout.write('\n');
     const lhrs = runs.map((r) => r.lighthouseResult);
@@ -103,3 +121,4 @@ for (const pageName of PAGE_NAMES) {
     }
   }
 }
+console.log(`\nRaw reports: ${saveDir}`);

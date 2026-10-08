@@ -14,7 +14,7 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
     // full footer used to reserve. The FAQ stays for SEO, collapsed and tight.
     return (
       <div className="flex flex-col items-center">
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-4 py-1.5 text-center text-[0.5625rem] text-muted-foreground">
+        <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-4 py-1.5 text-center text-[0.5625rem] text-muted-foreground">
           <span>v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures / TPC</span>
           <span aria-hidden className="text-muted-foreground/40">·</span>
           <button
@@ -24,7 +24,7 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
           >
             {t('footer.report')}
           </button>
-        </div>
+        </footer>
         {faq && <Faq page={faq} compact />}
       </div>
     );
@@ -32,7 +32,10 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
   return (
     <div className="mt-4 flex flex-col items-center gap-1">
       <div className="w-[85%] border-t" />
-      <div className="py-3 flex flex-col items-center gap-1">
+      {/* A `<footer>` outside `<main>` is the page's footer landmark, so a
+          screen reader can jump to the legal line and the report link. Inside
+          `<main>` it is plain text. The FAQ stays out: it is content. */}
+      <footer className="py-3 flex flex-col items-center gap-1">
       <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/40">
         <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
         <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
@@ -55,7 +58,7 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
       >
         {t('footer.report')}
       </button>
-      </div>
+      </footer>
       {faq && <Faq page={faq} />}
     </div>
   );

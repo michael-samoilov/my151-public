@@ -190,16 +190,18 @@ holdBrowserLock();
   try {
     const tls = selfSignedTls(work);
 
+    const cases = Object.entries(CASES).filter(([name]) => !CASE_NAMES || CASE_NAMES.includes(name));
+    // The saved-dex fixture needs `?tune`, which a production build ignores.
+    const needsFixture = cases.some(([, spec]) => spec.fullDex);
     const builds = [['candidate', build(work, 'candidate', null)]];
     if (BASE) builds.unshift(['base', build(work, 'base', BASE)]);
     const targets = [];
     for (const [label, dist] of builds) {
       const { server, origin } = await serve(dist, tls);
       servers.push(server);
-      targets.push({ label, origin, fixture: await fullDexFixture(browser, origin) });
+      targets.push({ label, origin, fixture: needsFixture ? await fullDexFixture(browser, origin) : null });
     }
 
-    const cases = Object.entries(CASES).filter(([name]) => !CASE_NAMES || CASE_NAMES.includes(name));
     const samples = {};
     for (const profileName of PROFILE_NAMES) {
       for (let run = 1; run <= RUNS; run++) {

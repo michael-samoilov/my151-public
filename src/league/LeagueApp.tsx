@@ -255,7 +255,7 @@ export function LeagueApp() {
 
         {/* ------- mobile: two panes on one track, the camera pans ------- */}
         {!isDesktop && (
-        <div className="min-h-0 flex-1 overflow-hidden md:hidden">
+        <main className="min-h-0 flex-1 overflow-hidden md:hidden">
           <div
             className="p151-pane-track flex h-full w-[200%]"
             style={{ transform: `translate3d(${openCard === null ? '0' : '-50%'}, 0, 0)` }}
@@ -297,12 +297,12 @@ export function LeagueApp() {
               <PageFooter />
             </div>
           </div>
-        </div>
+        </main>
         )}
 
         {/* ---------------- desktop: league | card | picker ---------------- */}
         {isDesktop && (
-        <div className="hidden min-h-0 flex-1 flex-col overflow-y-auto md:flex">
+        <main className="hidden min-h-0 flex-1 flex-col overflow-y-auto md:flex">
           <div className="relative flex h-full min-h-0 shrink-0">
             {/* The sankey ribbon linking the open gym's row to its card, in the
                 gutter between the two panes. Mounted only with a card open. */}
@@ -373,7 +373,7 @@ export function LeagueApp() {
           <div className="shrink-0 border-t bg-background">
             <PageFooter faq="league" compact />
           </div>
-        </div>
+        </main>
         )}
 
         {/* Mobile selection sheet (BottomSheet is md:hidden by design). */}

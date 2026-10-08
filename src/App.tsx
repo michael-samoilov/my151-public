@@ -261,6 +261,10 @@ function App() {
         <Header ref={headerRef} currentView={currentView} onViewChange={handleViewChange} toolbarRef={setToolbarEl} />
 
         <ToolbarSlotContext.Provider value={{ el: toolbarEl, view: currentView }}>
+        {/* The page's main landmark, so a screen reader or an agent can jump
+            past the header. It takes the header's leftover height, as each
+            view did on its own. */}
+        <main className="flex min-h-0 flex-1 flex-col">
         {/* Builder — always mounted to avoid remount cost on tab switch */}
         <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' ? 'hidden' : 'p151-view-enter')}>
           <div className={cn(
@@ -315,6 +319,7 @@ function App() {
             </div>
           )}
         </div>
+        </main>
         </ToolbarSlotContext.Provider>
       </div>
 
