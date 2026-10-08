@@ -1,5 +1,5 @@
 import {aggregate as aggregateRecords} from '../../../../api/_aggregate';
-import {favoriteSummary,favoriteUsageFunnel,favoriteUser} from '../../../../api/_favoriteAggregate';
+import {favoritePicks,favoriteSummary,favoriteUsageFunnel,favoriteUser} from '../../../../api/_favoriteAggregate';
 import {mergeFavoriteRecord,parseFavoriteSnapshot,type FavoriteRecord} from '../../../../api/_favoriteRecord';
 import favoriteCells from '../../../../api/_favoriteCells.json';
 // Demo fixture for the admin dashboard, reached at `/?admin&demo`.
@@ -826,6 +826,7 @@ sampleResponse.favoriteUsers=pickerRecords.map(r=>favoriteUser(r,false));
 sampleResponse.favoriteByCid=Object.fromEntries(sampleResponse.favoriteUsers.map(r=>[r.cid,r]));
 sampleResponse.totalFavoriteUsers=pickerRecords.length;
 sampleResponse.favorite=favoriteSummary(pickerRecords);
+sampleResponse.favoritePicks=favoritePicks(pickerRecords);
 sampleResponse.favoriteFunnel=favoriteUsageFunnel(pickerRecords);
 sampleResponse.byTool!.favorites=aggregateRecords(pickerRecords,pickerNow+120000);
 sampleResponse.byTool!.all!.users+=pickerRecords.length;

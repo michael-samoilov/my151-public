@@ -6,7 +6,7 @@ import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { useNamesVersion } from '@/i18n';
-import { useId, useLayoutEffect, useRef, useState } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
 import { labelOf } from './spriteLabel';
@@ -36,6 +36,8 @@ export function PrettySpriteGrid({
   onClear,
   clearLabel,
   fitToHeight = true,
+  caption,
+  captionPx = 0,
 }: {
   mons: readonly PickerMon[];
   maxCols: number;
@@ -54,6 +56,9 @@ export function PrettySpriteGrid({
   onClear?: () => void;
   clearLabel?: string;
   fitToHeight?: boolean;
+  /** Drawn under each sprite, in a band `captionPx` tall. The admin uses it. */
+  caption?: (mon: PickerMon) => ReactNode;
+  captionPx?: number;
 }) {
   useNamesVersion();
   const viewportPx = useLayoutViewportCssPx();
@@ -89,7 +94,7 @@ export function PrettySpriteGrid({
         container = container.parentElement;
       }
       const room = bottom - grid.getBoundingClientRect().top - 20;
-      setFitPx(fitPickerSpriteCssPx(baseSpritePx, fitRows, room, ROW_GAP_PX));
+      setFitPx(fitPickerSpriteCssPx(baseSpritePx, fitRows, room - fitRows * captionPx, ROW_GAP_PX));
     };
     resize();
     const observer = new ResizeObserver(resize);
@@ -99,7 +104,7 @@ export function PrettySpriteGrid({
       observer.disconnect();
       window.visualViewport?.removeEventListener('resize', resize);
     };
-  }, [baseSpritePx, fitRows, fitToHeight]);
+  }, [baseSpritePx, fitRows, fitToHeight, captionPx]);
   return (
     <div
       ref={gridRef}
@@ -133,6 +138,8 @@ export function PrettySpriteGrid({
                 onPick={onPick}
                 onClear={onClear}
                 clearLabel={clearLabel}
+                caption={caption?.(mon)}
+                captionPx={captionPx}
               />
             ))}
           </div>
@@ -154,6 +161,8 @@ function PickCell({
   onPick,
   onClear,
   clearLabel,
+  caption,
+  captionPx,
 }: {
   mon: PickerMon;
   spritePx: number;
@@ -167,6 +176,8 @@ function PickCell({
   onPick: (mon: PickerMon) => void;
   onClear?: () => void;
   clearLabel?: string;
+  caption?: ReactNode;
+  captionPx: number;
 }) {
   const originsId = useId();
   const clearing = selected && Boolean(onClear);
@@ -277,9 +288,10 @@ function PickCell({
     </button>
   );
   return <div data-selector-tile data-testid={`favorites-origin-tile-${mon.id}`} className="relative flex shrink-0 flex-col items-center"
-    style={{ width: spritePx, height: spritePx }}>
+    style={{ width: spritePx, height: spritePx + captionPx }}>
     {hasOrigins && showIcons ? <CoordinatePills origins={coordinates ?? []} spritePx={spritePx} inset={inset} markPx={mark}
       pointer={pointer} current={originContext} id={originsId} /> : hasOrigins ? <span id={originsId} className="sr-only">{coordinates?.map(origin => coordinateLabel(origin.type, origin.gen)).join('; ')}</span> : null}
     <NameTooltip mon={mon}>{tile}</NameTooltip>
+    {caption ? <div className="w-full shrink-0" style={{ height: captionPx }}>{caption}</div> : null}
   </div>;
 }

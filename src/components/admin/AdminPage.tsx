@@ -1,10 +1,12 @@
 import {FavoriteDetailBody} from './FavoriteDetailBody';
-import type {FavoriteUser,FavoriteUsageFunnel} from '../../../api/_favoriteAggregate';
+import type {FavoritePicks,FavoriteUser,FavoriteUsageFunnel} from '../../../api/_favoriteAggregate';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { isOptedOut, setOptedOut, storedClientId } from '@/lib/clientId';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { LeaguePicksPage, PicksDetailPage } from '@/components/admin/PicksDetailPage';
+import { PickerPicksPage } from '@/components/admin/PickerPicksPage';
+import { pickerFace } from '@/components/admin/pickerPicks';
 import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
@@ -404,6 +406,7 @@ export interface ApiResponse {
   favoriteFunnel?:FavoriteUsageFunnel;
   favorite?: {users:number;started:number;completed:number;exporters:number;exportsFull:number;exportsSimplified:number;depth:SurvivalCurve;unique:SurvivalCurve};
   favoriteUsers?:FavoriteUser[];
+  favoritePicks?:FavoritePicks;
   favoriteByCid?:Record<string,FavoriteUser>;
   totalFavoriteUsers?:number;
   /** Dex cohort breakdowns (built / incomplete / completed). No "bounced" —
@@ -610,24 +613,32 @@ function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
   );
 }
 
-/** Grid of small sprites with the pick-count beneath — ~9-10 per row. */
-function PopularGrid({ rows }: { rows: [string, number][] }) {
+type PopularFace = { sprite: string; alt: string; name: string };
+
+function dexFace(id: number): PopularFace | undefined {
+  const p = getPokemonById(id);
+  return p ? { sprite: p.sprite, alt: p.name, name: displayName(p.name) } : undefined;
+}
+
+/** Grid of small sprites with the pick-count beneath — ~9-10 per row. `face`
+ *  finds a sprite by id; the Picker's ids include its own forms. */
+function PopularGrid({ rows, face = dexFace }: { rows: [string, number][]; face?: (id: number) => PopularFace | undefined }) {
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
   return (
     <div className="grid grid-cols-9 gap-1">
       {rows.map(([id, n]) => {
-        const p = getPokemonById(Number(id));
+        const p = face(Number(id));
         return (
           <div
             key={id}
             className="flex flex-col items-center"
-            title={p ? `#${id} ${displayName(p.name)}: ${n}` : `#${id}: ${n}`}
+            title={p ? `#${id} ${p.name}: ${n}` : `#${id}: ${n}`}
           >
             <div className="w-full aspect-square flex items-center justify-center">
               {p ? (
                 <img
                   src={p.sprite}
-                  alt={p.name}
+                  alt={p.alt}
                   width={36}
                   height={36}
                   loading="lazy"
@@ -1621,11 +1632,13 @@ function WhatPeoplePick({
   mostBySection,
   n,
   unit,
+  face,
   onOpen,
 }: {
   mostBySection: Record<string, [string, number][]>;
   n: number;
   unit: string;
+  face?: (id: number) => PopularFace | undefined;
   onOpen: () => void;
 }) {
   const top = useMemo<[string, number][]>(() => {
@@ -1643,7 +1656,7 @@ function WhatPeoplePick({
         </Button>
       }
     >
-      {top.length > 0 ? <PopularGrid rows={top} /> : <p className="text-sm text-muted-foreground">No picks yet.</p>}
+      {top.length > 0 ? <PopularGrid rows={top} face={face} /> : <p className="text-sm text-muted-foreground">No picks yet.</p>}
     </Panel>
   );
 }
@@ -1740,7 +1753,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
 // ---------- main ----------
 
 /** What the detail pane shows: one browser's dex or league, or the picks page. */
-type Detail = { kind: 'dex' | 'league' | 'favorites'; cid: string } | { kind: 'picks'; tool: 'dex' | 'league' };
+type Detail = { kind: 'dex' | 'league' | 'favorites'; cid: string } | { kind: 'picks'; tool: 'dex' | 'league' | 'favorites' };
 
 export function AdminPage() {
   // `demo` shows the bundled fixtures even on a browser with a saved token,
@@ -1806,6 +1819,7 @@ export function AdminPage() {
   }, [detail, dashScrollY]);
   const openDexPicks = useCallback(() => openDetail({ kind: 'picks', tool: 'dex' }), [openDetail]);
   const openLeaguePicks = useCallback(() => openDetail({ kind: 'picks', tool: 'league' }), [openDetail]);
+  const openPickerPicks = useCallback(() => openDetail({ kind: 'picks', tool: 'favorites' }), [openDetail]);
 
   // A quiet load shows no progress and clears an error only on success, so a
   // background refresh leaves the page as it is until new data arrives.
@@ -2064,14 +2078,18 @@ export function AdminPage() {
     }
   };
   const lockUser = detail?.kind === 'dex' || detail?.kind === 'league' || detail?.kind === 'favorites';
+  // The Picker's Most picked grid fills the screen like a user page, and
+  // keeps the range ribbon like the other picks pages.
+  const pickerPicks = detail?.kind === 'picks' && detail.tool === 'favorites';
+  const lockHeight = lockUser || pickerPicks;
 
   return (
     <div
-      className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}
+      className={cn('flex flex-col bg-background', lockHeight ? 'h-dvh overflow-hidden' : 'min-h-dvh')}
       style={{ '--admin-header-h': `${pageHeaderH}px` } as CSSProperties}
     >
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
-        <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockUser ? 'max-w-none' : 'max-w-5xl')}>
+        <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockHeight ? 'max-w-none' : 'max-w-5xl')}>
           <h1 className="whitespace-nowrap text-sm font-bold">
 
             <span className="text-primary">my151</span> · Analytics
@@ -2098,8 +2116,8 @@ export function AdminPage() {
       <main
         className={cn(
           'mx-auto flex w-full min-w-0 flex-1 flex-col px-4',
-          lockUser ? 'max-w-none' : 'max-w-5xl',
-          lockUser
+          lockHeight ? 'max-w-none' : 'max-w-5xl',
+          lockHeight
             ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-bar-h,8rem)] md:pb-8'
             : 'gap-4 pb-[calc(var(--admin-bar-h,8rem)+1.5rem)] pt-4 md:pb-8',
         )}
@@ -2108,9 +2126,14 @@ export function AdminPage() {
 
         {/* A clicked preview opens a full detail page; Back returns here. */}
         {detail && data && (
-          <div className={cn((detail.kind === 'league' || detail.kind === 'dex' || detail.kind === 'favorites') && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
+          <div className={cn(lockHeight && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
           {(() => {
           if (detail.kind === 'picks') {
+            if (detail.tool === 'favorites') {
+              return data.favoritePicks ? (
+                <PickerPicksPage picks={data.favoritePicks} onBack={() => setDetail(null)} />
+              ) : null;
+            }
             if (detail.tool === 'league') {
               return data.league?.picks ? (
                 <LeaguePicksPage picks={data.league.picks} n={data.league.users} onBack={() => setDetail(null)} />
@@ -2379,6 +2402,15 @@ export function AdminPage() {
                 n={data.league.users}
                 unit="leagues"
                 onOpen={openLeaguePicks}
+              />
+            )}
+            {tool === 'favorites' && data.favoritePicks && (
+              <WhatPeoplePick
+                mostBySection={{ charts: data.favoritePicks.top.map(([id, n]) => [String(id), n]) }}
+                n={data.favoritePicks.charts}
+                unit="charts"
+                face={pickerFace}
+                onOpen={openPickerPicks}
               />
             )}
 

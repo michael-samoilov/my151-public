@@ -314,23 +314,33 @@ function SectionBlock({
   );
 }
 
-function PicksPage({
+export function PicksPage({
   n,
   unit,
   onBack,
   controls,
+  fill = false,
   children,
 }: {
   n: number;
   unit: string;
   onBack: () => void;
   controls?: ReactNode;
+  /** Fill a page that does not scroll. The header then stays in the flow. */
+  fill?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-3">
+    <div className={cn('flex min-w-0 flex-col', fill ? 'min-h-0 flex-1 gap-2' : 'gap-3')}>
       {/* Under the header; on desktop also under the admin bar. */}
-      <div className="sticky top-[var(--admin-header-h,0px)] z-[95] -mx-4 border-b border-border bg-background px-4 py-2 md:top-[calc(var(--admin-header-h,0px)+var(--admin-bar-h,0px))]">
+      <div
+        className={cn(
+          'border-b border-border bg-background py-2',
+          fill
+            ? 'shrink-0'
+            : 'sticky top-[var(--admin-header-h,0px)] z-[95] -mx-4 px-4 md:top-[calc(var(--admin-header-h,0px)+var(--admin-bar-h,0px))]',
+        )}
+      >
         <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"

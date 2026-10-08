@@ -34,6 +34,38 @@ export function favoriteSummary(records: FavoriteRecord[]) {
     unique:buildDepthCurve(records.map(r=>r.latest.uniqueIds.length)),
   };
 }
+/** Most charts first, then the lowest Pokémon id, so equal counts keep one order. */
+const byCharts = (a:[number,number], b:[number,number]) => b[1]-a[1] || a[0]-b[0];
+/** How the Picker charts given fill each cell now. */
+export interface FavoritePicks {
+  /** Charts with at least one filled cell. */
+  charts: number;
+  /** Per cell key, each Pokémon a chart holds there and how many charts hold it. Never a count of 0. */
+  cells: Record<string,[number,number][]>;
+  /** The nine Pokémon the most charts hold in any cell, each chart counted once. */
+  top: [number,number][];
+}
+/** Counts each record's latest snapshot only. No storage reads. */
+export function favoritePicks(records: FavoriteRecord[]): FavoritePicks {
+  const cells = new Map<string,Map<number,number>>();
+  const charts = new Map<number,number>();
+  let filled = 0;
+  for (const r of records) {
+    const fills = Object.entries(r.latest.fills);
+    if (fills.length > 0) filled++;
+    for (const [key,id] of fills) {
+      let cell = cells.get(key);
+      if (!cell) cells.set(key,cell = new Map());
+      cell.set(id,(cell.get(id) ?? 0)+1);
+    }
+    for (const id of new Set(fills.map(([,id])=>id))) charts.set(id,(charts.get(id) ?? 0)+1);
+  }
+  return {
+    charts:filled,
+    cells:Object.fromEntries([...cells].map(([key,cell])=>[key,[...cell].sort(byCharts)])),
+    top:[...charts].sort(byCharts).slice(0,9),
+  };
+}
 export type FavoriteUser = Omit<FavoriteRecord,'seenIds'> & {archived?:boolean};
 export function favoriteUser(r:FavoriteRecord, archived:boolean):FavoriteUser {
   const {seenIds: _seenIds,...user} = r;
