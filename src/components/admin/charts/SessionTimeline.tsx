@@ -271,6 +271,17 @@ export function SessionTimeline({
             </g>
           );
         })}
+        {plots.map((plot, i) => {
+          if (!plot.feedback) return null;
+          // Left of an export diamond; the funnel dot sits to its right.
+          const bx = x(points[i].t) - (plot.diamond ? FUNNEL_OFFSET_PX : 0);
+          return (
+            <g key={`fb-${i}`} data-testid="session-feedback-mark">
+              <title>{plot.feedback.title}</title>
+              <rect x={(bx - 2.4).toFixed(1)} y={railY - 2.4} width={4.8} height={4.8} rx={0.8} transform={`rotate(45 ${bx.toFixed(1)} ${railY})`} fill={milestoneFill('feedback')} />
+            </g>
+          );
+        })}
         <text
           data-testid="session-playhead-milestone"
           y={railY - 4}

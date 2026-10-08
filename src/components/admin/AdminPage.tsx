@@ -27,7 +27,8 @@ import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
-import { exportSurveySkipMarks, leagueSittingEv, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
+import { exportSurveySkipMarks, feedbackMarks, leagueSittingEv, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
+import { useFeedbackList, type FeedbackItem, type FeedbackTool } from '@/components/admin/feedbackList';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { SessionsChip, TimeChip } from '@/components/admin/SessionRailChips';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
@@ -68,7 +69,7 @@ import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
 import { FitNowrap } from '@/components/admin/FitNowrap';
 import { BrowserUsage, PreviewUsageScale } from '@/components/admin/PreviewUsage';
 import { toolCells, type ToolCell } from '@/components/admin/browserUsage';
-import { Archive, ArchiveRestore, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
+import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
 import type { ExportSurveySkip } from '../../../api/_events';
 import type { LeaguePicks } from '../../../api/_leaguePicks';
@@ -856,6 +857,8 @@ function DetailHeader({
   hasDex,
   hasLeague,
   hasFavorites=false,
+  reports = 0,
+  onFeedback,
 }: {
   rec: HeaderRec;
   onBack: () => void;
@@ -864,6 +867,9 @@ function DetailHeader({
   hasDex: boolean;
   hasLeague: boolean;
   hasFavorites?:boolean;
+  /** Feedback reports this browser sent. */
+  reports?: number;
+  onFeedback?: () => void;
 }) {
   return (
     <div className="flex flex-col gap-1">
@@ -900,6 +906,18 @@ function DetailHeader({
             </InfoChip>
           )}
           <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+          {reports > 0 && (
+            <button
+              type="button"
+              onClick={onFeedback}
+              data-testid="admin-feedback-chip"
+              aria-label={`${reports} feedback ${reports === 1 ? 'report' : 'reports'} from this browser`}
+              className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
+            >
+              <MessageSquare className="h-[13px] w-[13px] shrink-0" />
+              <span className="text-xs font-medium tabular-nums">{reports}</span>
+            </button>
+          )}
         </div>
       </TooltipScope>
     </div>
@@ -949,7 +967,7 @@ function seatsBeyond(a: Map<number, number>, b: Map<number, number>): number {
 }
 
 /** Dex user body: session timeline + the build at the scrubbed moment. */
-function DexDetailBody({ rec }: { rec: ClientRecord }) {
+function DexDetailBody({ rec, reports }: { rec: ClientRecord; reports: FeedbackItem[] }) {
   const { log, ms } = useMemo(
     () => tidySessions(rec.sessionLog ?? [], rec.sessionMs, (s) => s.ids),
     [rec.sessionLog, rec.sessionMs],
@@ -1012,6 +1030,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
       : [];
   milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT, 'dex'));
+  milestones.push(...feedbackMarks(reports, clampT));
 
   const snapshot = (
     <div ref={presenceRef}>
@@ -1068,7 +1087,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
 
 /** The league timeline + board, reused as a page and as the dex page's league
  *  section. */
-function LeagueDetailBody({ league }: { league: LeagueUser }) {
+function LeagueDetailBody({ league, reports }: { league: LeagueUser; reports: FeedbackItem[] }) {
   const { log, ms } = useMemo(
     () =>
       tidySessions(
@@ -1126,6 +1145,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
     milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
   }
   milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT, 'league'));
+  milestones.push(...feedbackMarks(reports, clampT));
 
   const snapshots = useMemo(() => {
     if (log.length === 0) {
@@ -1180,6 +1200,21 @@ function headerFrom(dex?: ClientRecord, league?: LeagueUser, favorite?:FavoriteU
   };
 }
 
+/** One browser's records in the loaded dashboard, matched by its bare id. */
+function resolveUser(data: ApiResponse, cid: string) {
+  const bare = cid.split('::')[0];
+  const dex =
+    data.records.find((r) => r.cid === cid || r.cid.split('::')[0] === bare) ??
+    data.dexByCid?.[cid] ??
+    data.dexByCid?.[bare];
+  const league =
+    data.leagueByCid?.[cid] ??
+    data.leagueByCid?.[bare] ??
+    data.leagueUsers?.find((r) => r.cid === cid || r.cid === bare);
+  const favorite = data.favoriteByCid?.[bare] ?? data.favoriteUsers?.find((r) => r.cid === bare);
+  return { bare, dex, league, favorite };
+}
+
 /** One browser: header, tool toggle, then that tool's timeline. */
 function UserDetailPage({
   tool,
@@ -1188,6 +1223,8 @@ function UserDetailPage({
   league,
   favorite,
   onBack,
+  reports,
+  onFeedback,
 }: {
   tool: 'dex' | 'league' | 'favorites';
   onTool: (k: 'dex' | 'league' | 'favorites') => void;
@@ -1195,17 +1232,19 @@ function UserDetailPage({
   league?: LeagueUser;
   favorite?:FavoriteUser;
   onBack: () => void;
+  reports: FeedbackItem[];
+  onFeedback: () => void;
 }) {
   const rec = headerFrom(dex, league, favorite);
   if (!rec) return null;
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
       <div className="shrink-0">
-        <DetailHeader rec={rec} onBack={onBack} tool={tool} onTool={onTool} hasDex={!!dex} hasLeague={!!league} hasFavorites={!!favorite} />
+        <DetailHeader rec={rec} onBack={onBack} tool={tool} onTool={onTool} hasDex={!!dex} hasLeague={!!league} hasFavorites={!!favorite} reports={reports.length} onFeedback={onFeedback} />
       </div>
-      {tool === 'dex' && dex && <DexDetailBody rec={dex} />}
-      {tool === 'league' && league && <LeagueDetailBody league={league} />}
-      {tool === 'favorites' && favorite && <FavoriteDetailBody user={favorite} />}
+      {tool === 'dex' && dex && <DexDetailBody rec={dex} reports={reports} />}
+      {tool === 'league' && league && <LeagueDetailBody league={league} reports={reports} />}
+      {tool === 'favorites' && favorite && <FavoriteDetailBody user={favorite} reports={reports} />}
     </div>
   );
 }
@@ -1614,11 +1653,15 @@ export function AdminPage() {
   // active in the range.
   const [listShown, setListShown] = useState<number | null>(null);
   const [page, setPage] = useState<'analytics' | 'search' | 'feedback'>('analytics');
+  // The Feedback tab shows only this browser's reports while set.
+  const [feedbackCid, setFeedbackCid] = useState<string | null>(null);
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
   const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
   const [detail, setDetail] = useState<Detail | null>(null);
+  // A user page fetches the shared feedback list once for its chip and chart.
+  const feedbackItems = useFeedbackList(token, detail != null && detail.kind !== 'picks').data?.items ?? [];
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
   const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
@@ -1904,6 +1947,7 @@ export function AdminPage() {
     }
     if (k === 'feedback') {
       setPage('feedback');
+      setFeedbackCid(null);
     } else if (k === 'search') {
       setPage('search');
       if (token) void loadSearch(token, { refresh: true });
@@ -1913,6 +1957,11 @@ export function AdminPage() {
     }
   };
   const lockUser = detail?.kind === 'dex' || detail?.kind === 'league' || detail?.kind === 'favorites';
+  const toolsOf = (cid: string): FeedbackTool[] => {
+    if (!data) return [];
+    const u = resolveUser(data, cid);
+    return (['dex', 'league', 'favorites'] as const).filter((k) => (k === 'dex' ? u.dex : k === 'league' ? u.league : u.favorite));
+  };
   // The Picker's Most picked grid fills the screen like a user page, and
   // keeps the range ribbon like the other picks pages.
   const pickerPicks = detail?.kind === 'picks' && detail.tool === 'favorites';
@@ -1979,15 +2028,7 @@ export function AdminPage() {
               <PicksDetailPage picksBySectionAll={data.picksBySectionAll} n={nDex} onBack={() => setDetail(null)} />
             );
           }
-          const bare = detail.cid.split('::')[0];
-          const dex =
-            data.records.find((r) => r.cid === detail.cid || r.cid.split('::')[0] === bare) ??
-            data.dexByCid?.[detail.cid] ??
-            data.dexByCid?.[bare];
-          const league =
-            data.leagueByCid?.[detail.cid] ??
-            data.leagueByCid?.[bare] ??
-            data.leagueUsers?.find((r) => r.cid === detail.cid || r.cid === bare);
+          const { bare, dex, league, favorite } = resolveUser(data, detail.cid);
           return (
             <RangeSlotContext.Provider value={rangeSlot}>
               <UserDetailPage
@@ -1995,7 +2036,14 @@ export function AdminPage() {
                 onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
                 dex={dex}
                 league={league}
-                favorite={data.favoriteByCid?.[bare] ?? data.favoriteUsers?.find(r=>r.cid===bare)}
+                favorite={favorite}
+                reports={feedbackItems.filter((r) => r.cid === bare)}
+                onFeedback={() => {
+                  setDashScrollY(0);
+                  setDetail(null);
+                  setPage('feedback');
+                  setFeedbackCid(bare);
+                }}
                 onBack={() => setDetail(null)}
               />
             </RangeSlotContext.Provider>
@@ -2007,7 +2055,15 @@ export function AdminPage() {
         {!detail && <ThisBrowserRow />}
 
         {!detail && page === 'feedback' &&
-          (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
+          (token ? (
+            <FeedbackCard
+              token={token}
+              toolsOf={toolsOf}
+              onOpen={(kind, cid) => openDetail({ kind, cid })}
+              cidFilter={feedbackCid}
+              onClearCid={() => setFeedbackCid(null)}
+            />
+          ) : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
 
         {!detail && page === 'search' && (
           <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} range={range} />
