@@ -697,8 +697,9 @@ export function buildDashboard(
 
   // The dex record for each browser on this page of league users, so the
   // user page can toggle tools without a second fetch. Only this page's
-  // cids, so the payload does not carry the whole dex store twice.
-  const dexByCidAll = new Map(records.map((r) => [r.cid.split('::')[0], r]));
+  // cids, so the payload does not carry the whole dex store twice. Archived
+  // browsers too: the Archived list shows their cards with every tool.
+  const dexByCidAll = new Map(allRecords.map((r) => [r.cid.split('::')[0], r]));
   const dexByCid: Record<string, ClientRecord> = {};
   for (const u of leagueUsers) {
     const dr = dexByCidAll.get(u.cid);
