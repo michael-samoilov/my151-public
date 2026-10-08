@@ -74,7 +74,7 @@ Every work-branch push runs the work-branch checks. A production merge adds the 
 The Admin tier check. Any printed file is outside the admin surface, so the change takes another tier:
 
 ```bash
-git diff --name-only origin/claude/pokedex-region-builder-AviYF...HEAD | grep -v -E '^(src/components/admin/|e2e/admin-|docs/)|\.md$|^src/lib/(usageFunnels|sankey[A-Za-z]*|whoOrigin|searchPerformance[A-Za-z]*|crossTool[A-Za-z]*|dashboardRange)\.|^api/(_dashboard|_crossTool|_range|_searchPerformance|_archive|_favoriteAggregate|submissions|search-performance|feedback-list|journal|archive-entry)\.ts$'
+git diff --name-only origin/claude/pokedex-region-builder-AviYF...HEAD | grep -v -E '^(src/components/admin/|e2e/admin-|docs/)|\.md$|^src/lib/(usageFunnels|sankey[A-Za-z]*|whoOrigin|searchPerformance[A-Za-z]*|crossTool[A-Za-z]*|dashboardRange|aggregate|platformStacks)\.|^api/(_dashboard|_crossTool|_range|_searchPerformance|_archive|_aggregate|_favoriteAggregate|submissions|search-performance|feedback-list|journal|archive-entry)\.ts$'
 ```
 
 When unsure, take the higher tier. A batch takes the tier of its riskiest change. A change that touches only Markdown files runs no tier.
