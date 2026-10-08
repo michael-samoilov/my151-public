@@ -122,7 +122,7 @@ const TOOL_TABS: { key: ToolSlice; label: string }[] = [
 function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
   const slice = data.byTool?.[tool];
   if (slice) return slice;
-  if(tool === 'favorites') return {users:0,activity:[],retention:{returning:0,activeLast7:0,newUsers:0},timeCurves:{longest:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},first:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},all:{survival:[],stats:{p50:0,p75:0,p90:0},n:0}},countries:{},languages:{},locales:{},devices:{},os:{},browsers:{}};
+  if(tool === 'favorites') return {users:0,activity:[],retention:{returning:0,newUsers:0},timeCurves:{longest:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},first:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},all:{survival:[],stats:{p50:0,p75:0,p90:0},n:0}},countries:{},languages:{},locales:{},devices:{},os:{},browsers:{}};
   return {
     users: data.totalUsers,
     activity: data.activity ?? [],
@@ -213,7 +213,7 @@ export interface ClientRecord {
 export interface Aggregates {
   users: number;
   activity: { day: number; dau: number; rolling7: number; label24h?: number | null; label168h?: number | null }[];
-  retention: { returning: number; activeLast7: number; newUsers: number };
+  retention: { returning: number; newUsers: number };
   timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
   countries: Record<string, number>;
   languages: Record<string, number>;
@@ -331,7 +331,6 @@ export interface ApiResponse {
     typed: number;
     fullLeague: number;
     returning: number;
-    activeLast7: number;
     activity: { day: number; dau: number }[];
     /** Aces and seated Pokémon by card type, counted in leagues. Absent on an older deploy. */
     picks?: LeaguePicks;
@@ -364,7 +363,7 @@ export interface ApiResponse {
     showStats: number;
     sorts: Record<string, number>;
   };
-  retention: { returning: number; activeLast7: number; newUsers: number };
+  retention: { returning: number; newUsers: number };
   multiSession?: number;
   timeSurvival: { t: number; s: number }[];
   timeStats: { p50: number; p75: number; p90: number };

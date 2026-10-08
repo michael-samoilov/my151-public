@@ -437,7 +437,6 @@ export function buildDashboard(
     typed: leagueIn.filter((r) => r.latest.typed > 0).length,
     fullLeague: leagueIn.filter((r) => r.maxCards >= CARD_COUNT).length,
     returning: leagueIn.filter((r) => r.sessions > 1).length,
-    activeLast7: leagueIn.filter((r) => now - r.lastTs <= 7 * 24 * 60 * 60 * 1000).length,
     activity: Object.entries(leagueDaily)
       .map(([day, set]) => ({ day: Number(day), dau: set.size }))
       .sort((a, b) => a.day - b.day),

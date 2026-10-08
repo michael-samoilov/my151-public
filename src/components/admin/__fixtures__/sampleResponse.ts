@@ -165,8 +165,8 @@ function aggregate(kind: 'all' | 'dex' | 'league'): Aggregates {
     activity: ACTIVITY,
     retention:
       kind === 'league'
-        ? { returning: 2, activeLast7: 3, newUsers: 5 }
-        : { returning: 63, activeLast7: 52, newUsers: 388 },
+        ? { returning: 2, newUsers: 5 }
+        : { returning: 63, newUsers: 388 },
     timeCurves: { longest: timeCurve, first: timeCurve, all: timeCurve },
     countries:
       kind === 'league'
@@ -652,7 +652,6 @@ export const sampleResponse: ApiResponse = {
     typed: 5,
     fullLeague: 1,
     returning: 3,
-    activeLast7: 3,
     activity: ACTIVITY.slice(-30).map((a) => ({ day: a.day, dau: Math.max(0, Math.round(a.dau / 12)) })),
     picks: leaguePicks(leagueUsers),
     recent: leagueUsers.map((u) => ({
@@ -685,7 +684,7 @@ export const sampleResponse: ApiResponse = {
     showStats: 6,
     sorts: { dex: 8, type: 5, name: 4 },
   },
-  retention: { returning: 63, activeLast7: 52, newUsers: 388 },
+  retention: { returning: 63, newUsers: 388 },
   multiSession: 210,
   timeSurvival: byTool.dex.timeCurves.longest.survival,
   timeStats: byTool.dex.timeCurves.longest.stats,
