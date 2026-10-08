@@ -1,14 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
-import { Panel, Kpi } from '@/components/admin/ui';
+import { Panel } from '@/components/admin/ui';
 import { ToolEuler } from '@/components/admin/charts/ToolEuler';
 import { cn } from '@/lib/utils';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
-
-function fmtPct(pct: number | null): string {
-  return pct === null ? '–' : `${pct}%`;
-}
 
 /** The launch day in the viewer's time zone: `7 Sep`. */
 function launchDay(ts: number): string {
@@ -64,14 +60,7 @@ export function CrossToolCard({ data, since }: { data: CrossToolSnapshot; since?
           })}
         </div>
       )}
-      <div className="flex flex-wrap gap-x-6 gap-y-3">
-        {snap.kpis.map((k) => (
-          <div key={k.key} title={k.hint}>
-            <Kpi value={fmtPct(k.pct)} label={k.label} denom={`${k.n} / ${k.of}`} />
-          </div>
-        ))}
-      </div>
-      <div data-testid="cross-tool-venns" className="mt-3">
+      <div data-testid="cross-tool-venns">
         <ToolEuler regions={regions} catalog={data.catalog} />
       </div>
     </Panel>
