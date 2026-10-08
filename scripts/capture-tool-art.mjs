@@ -64,15 +64,6 @@ try{
  await p.locator('[data-league-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'league-story');
  if(has('league')){await p.goto(`${base}/custom-gym-leader?notme`);await p.locator('[data-testid="league-slot-0"]').click();await p.locator('[data-league-export="card"]').first().click();await p.locator('[data-league-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'trainer-brock');}await ctx.close();
  }
- if(has('trainer-textless')){
- // The search image wants a template look: the Brock card with every canvas word blanked.
- // Diamonds, stars, icons and sprites are paths and images, so they stay.
- const ctx=await browser.newContext({viewport:{width:1280,height:900}});
- const seed=readFileSync('docs/future-tools/home-page/league-fixture.json','utf8');
- await ctx.addInitScript(seed=>{localStorage.setItem('league-builder',seed);localStorage.setItem('my151-opt-out','1');for(const C of [CanvasRenderingContext2D,OffscreenCanvasRenderingContext2D])C.prototype.fillText=C.prototype.strokeText=()=>{}},seed);
- const p=await ctx.newPage();await p.goto(`${base}/custom-gym-leader?notme`);
- await p.locator('[data-testid="league-slot-0"]').click();await p.locator('[data-league-export="card"]').first().click();await p.locator('[data-league-export-confirm]:not([disabled])').waitFor({timeout:90000});await blob(p,'trainer-textless');await ctx.close();
- }
  if(has('favorites')){
  const p=await browser.newPage({viewport:{width:1280,height:900}});
  await p.goto(`${base}/docs/favorite-picker-work/export/portrait/index.html`);await p.waitForFunction(()=>window.ready,{timeout:90000});await audit(p,'picker-portrait-comparison');

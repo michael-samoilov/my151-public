@@ -4,11 +4,11 @@
 Google picks the image beside a search result itself. Its image guide asks for
 an image with no text or logo, so each page names a crop of its own export in
 the page's JSON-LD. The captures are search-only variants: the Dex grid without
-section outlines, the Picker chart with icon-only axes, and the Brock card with
-every word blanked. Each square crop is scaled 2x with nearest neighbour so the
+section outlines and the Picker chart with icon-only axes. The Brock card keeps its
+own small labels. Each square crop is scaled 2x with nearest neighbour so the
 sprites stay sharp. Keep each page's JSON-LD width and height at the printed size.
 
-  flock /tmp/my151-browser.lock node scripts/capture-tool-art.mjs dex-plain favorites trainer-textless
+  flock /tmp/my151-browser.lock node scripts/capture-tool-art.mjs league favorites dex-plain
   python3 scripts/generate-search-images.py --source-dir docs/evidence/tool-art-rebake/local
 """
 from pathlib import Path
@@ -30,7 +30,7 @@ CROPS = {
     # The gen discs, the icon header, and Gen I-V of the Normal to Grass columns.
     'favorites': ('picker-full-icons', 26, 106, 740),
     # The whole card width, from the top of the header band.
-    'trainer-card': ('trainer-textless', 0, 0, 888),
+    'trainer-card': ('trainer-brock', 0, 0, 888),
 }
 PAGES = {
     'hub': 'dex',
