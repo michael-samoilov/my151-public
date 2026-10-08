@@ -98,6 +98,7 @@ export function FavoritesGrid({
   onSelect,
   desktop,
   pane,
+  fitFrame = false,
 }: {
   fills: Record<string, number>;
   resolve: (id: number) => PickerMon | undefined;
@@ -106,10 +107,13 @@ export function FavoritesGrid({
   desktop: boolean;
   /** The desktop selector pane. It scrolls with the grid, under the headers. */
   pane?: ReactNode;
+  /** Desktop only: shrink cells below their native size until the whole
+   *  unzoomed grid fits the frame. The admin overview uses it. */
+  fitFrame?: boolean;
 }) {
   useNamesVersion();
   return (
-    <ZoomFrame desktop={desktop} fills={fills} pane={pane}>
+    <ZoomFrame desktop={desktop} fitFrame={fitFrame} fills={fills} pane={pane}>
       <Corner />
       {TYPE_AXIS.map((id) => (
         <HeaderCell key={`h-${String(id)}`} id={id} />
@@ -137,11 +141,13 @@ export function FavoritesGrid({
 function ZoomFrame({
   children,
   desktop,
+  fitFrame,
   fills,
   pane,
 }: {
   children: ReactNode;
   desktop: boolean;
+  fitFrame: boolean;
   fills: Record<string, number>;
   pane?: ReactNode;
 }) {
@@ -155,7 +161,7 @@ function ZoomFrame({
     try { return sessionStorage.getItem('favorites-scroll-cue-seen') !== '1'; }
     catch { return true; }
   });
-  useZoomFrame({ frameRef, ref, mapRef, windowRef, cueRef }, desktop, () => {
+  useZoomFrame({ frameRef, ref, mapRef, windowRef, cueRef }, desktop, fitFrame, () => {
     setShowScrollCue(false);
     try { sessionStorage.setItem('favorites-scroll-cue-seen', '1'); }
     catch { /* Storage can be unavailable in private browsing. */ }
@@ -212,6 +218,7 @@ function useZoomFrame(
     cueRef: RefObject<HTMLDivElement | null>;
   },
   desktop: boolean,
+  fitFrame: boolean,
   onFirstScroll: () => void,
 ) {
   const { frameRef, ref, mapRef, windowRef, cueRef } = refs;
@@ -224,7 +231,11 @@ function useZoomFrame(
     if (!el) return;
     const range = desktop ? ZOOM_RANGE.desktop : ZOOM_RANGE.mobile;
     const clampZoom = (value: number) => Math.max(range.min, Math.min(range.max, value));
-    const baseCell = () => desktop ? DESKTOP_CELL_PX : el.clientHeight / ROWS;
+    // A fitted grid floors its cell, so it never adds the scrollbar that
+    // would shrink the frame it was fitted to.
+    const baseCell = () => !desktop ? el.clientHeight / ROWS
+      : fitFrame ? Math.min(DESKTOP_CELL_PX, Math.floor(Math.min(el.clientHeight / ROWS, el.clientWidth / COLS)))
+        : DESKTOP_CELL_PX;
     const box = minimapBox(desktop);
     let base = baseCell();
     let zoom = clampZoom(zoomRef.current);
@@ -530,7 +541,7 @@ function useZoomFrame(
       window.clearTimeout(fadeTimer);
       window.clearTimeout(hoverTimer);
     };
-  }, [frameRef, ref, mapRef, windowRef, cueRef, desktop]);
+  }, [frameRef, ref, mapRef, windowRef, cueRef, desktop, fitFrame]);
 }
 
 function GenRow({

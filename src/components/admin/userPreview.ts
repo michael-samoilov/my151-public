@@ -1,4 +1,5 @@
 import { bareCid } from '../../../api/_archive';
+import { FAVORITE_TOTAL_CELLS } from '../../../api/_favoriteRecord';
 import iso31662En from './iso3166-2-en.json';
 
 export { bareCid };
@@ -222,12 +223,14 @@ export function fmtChipDuration(ms: number): string {
 export const PREVIEW_DEX_NOUN = 'Dex';
 export const PREVIEW_SESSION_UNIT = { one: 'session', many: 'sessions' } as const;
 export const PREVIEW_LEAGUE_NOUN = 'Gyms';
+export const PREVIEW_PICKER_NOUN = 'Cells';
 
 export const PREVIEW_FIT = {
   sessions: 99,
   totalMs: 5999 * 60_000,
   dex: 999,
   league: 14,
+  picker: FAVORITE_TOTAL_CELLS,
 } as const;
 
 export function dexPokemonCount(ids: number[] | undefined): number {
@@ -240,6 +243,10 @@ export function dexChipLabel(count: number): string {
 
 export function leagueChipLabel(count: number, of: number): string {
   return `${count}/${of} ${PREVIEW_LEAGUE_NOUN}`;
+}
+
+export function pickerChipLabel(filled: number): string {
+  return `${filled}/${FAVORITE_TOTAL_CELLS} ${PREVIEW_PICKER_NOUN}`;
 }
 
 export function sessionChipParts(
