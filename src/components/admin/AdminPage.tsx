@@ -29,6 +29,7 @@ import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/S
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
 import { exportSurveySkipMarks, feedbackMarks, leagueSittingEv, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
 import { useFeedbackList, type FeedbackItem, type FeedbackTool } from '@/components/admin/feedbackList';
+import { useBrowserRecords } from '@/components/admin/browserRecords';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { SessionsChip, TimeChip } from '@/components/admin/SessionRailChips';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
@@ -1218,6 +1219,38 @@ function resolveUser(data: ApiResponse, cid: string) {
   return { bare, dex, league, favorite };
 }
 
+interface UserRecords {
+  dex?: ClientRecord;
+  league?: LeagueUser;
+  favorite?: FavoriteUser;
+}
+
+function hasRecord(u: UserRecords): boolean {
+  return !!(u.dex || u.league || u.favorite);
+}
+
+/** The tools a browser has records of, in the toggle's order. */
+function userTools(u: UserRecords): FeedbackTool[] {
+  return (['dex', 'league', 'favorites'] as const).filter((k) => (k === 'dex' ? u.dex : k === 'league' ? u.league : u.favorite));
+}
+
+/** A user page with no records to show yet, or none at all. */
+function UserStatus({ cid, onBack, children }: { cid: string; onBack: () => void; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2" data-testid="admin-user-status">
+      <div className="flex items-center gap-x-2">
+        <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+          ‹ Back
+        </button>
+        <span className="shrink-0 text-sm font-bold tabular-nums" title={cid}>
+          {middleId(cid)}
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">{children}</p>
+    </div>
+  );
+}
+
 /** One browser: header, tool toggle, then that tool's timeline. */
 function UserDetailPage({
   tool,
@@ -1665,6 +1698,11 @@ export function AdminPage() {
   const [detail, setDetail] = useState<Detail | null>(null);
   // A user page fetches the shared feedback list once for its chip and chart.
   const feedbackItems = useFeedbackList(token, detail != null && detail.kind !== 'picks').data?.items ?? [];
+  // A browser that is not on a loaded page, such as an older feedback
+  // sender, loads on its own when its page opens.
+  const userCid = detail && detail.kind !== 'picks' ? detail.cid : null;
+  const unloaded = data && userCid && !hasRecord(resolveUser(data, userCid)) ? userCid.split('::')[0] : null;
+  const fetchedUser = useBrowserRecords(token, unloaded);
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
   const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
@@ -1960,10 +1998,11 @@ export function AdminPage() {
     }
   };
   const lockUser = detail?.kind === 'dex' || detail?.kind === 'league' || detail?.kind === 'favorites';
-  const toolsOf = (cid: string): FeedbackTool[] => {
-    if (!data) return [];
-    const u = resolveUser(data, cid);
-    return (['dex', 'league', 'favorites'] as const).filter((k) => (k === 'dex' ? u.dex : k === 'league' ? u.league : u.favorite));
+  // Null when the loaded pages do not hold the browser; its page then loads it.
+  const toolsOf = (cid: string): FeedbackTool[] | null => {
+    if (!data) return null;
+    const tools = userTools(resolveUser(data, cid));
+    return tools.length ? tools : null;
   };
   // The Picker's Most picked grid fills the screen like a user page, and
   // keeps the range ribbon like the other picks pages.
@@ -2031,11 +2070,26 @@ export function AdminPage() {
               <PicksDetailPage picksBySectionAll={data.picksBySectionAll} n={nDex} onBack={() => setDetail(null)} />
             );
           }
-          const { bare, dex, league, favorite } = resolveUser(data, detail.cid);
+          const loaded = resolveUser(data, detail.cid);
+          const bare = loaded.bare;
+          let user: UserRecords = loaded;
+          if (!hasRecord(loaded)) {
+            if (fetchedUser.status !== 'ready') {
+              const failed = fetchedUser.status === 'error';
+              return <UserStatus cid={bare} onBack={() => setDetail(null)}>{failed ? 'This browser could not load.' : 'Loading this browser…'}</UserStatus>;
+            }
+            const r = fetchedUser.records;
+            user = { dex: r.dex ?? undefined, league: r.league ?? undefined, favorite: r.favorite ?? undefined };
+            if (!hasRecord(user)) {
+              return <UserStatus cid={bare} onBack={() => setDetail(null)}>No tool records for this browser.</UserStatus>;
+            }
+          }
+          const { dex, league, favorite } = user;
+          const tools = userTools(user);
           return (
             <RangeSlotContext.Provider value={rangeSlot}>
               <UserDetailPage
-                tool={detail.kind}
+                tool={tools.includes(detail.kind) ? detail.kind : tools[0]}
                 onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
                 dex={dex}
                 league={league}

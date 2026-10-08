@@ -9,6 +9,7 @@ import {
 import {
   openToolFor,
   requestFeedbackList,
+  routeTool,
   useFeedbackList,
   type FeedbackItem,
   type FeedbackTool,
@@ -79,12 +80,15 @@ function Row({
   seen,
   onToggle,
   openTool,
+  toolKnown,
   onOpen,
 }: {
   item: FeedbackItem;
   seen: boolean;
   onToggle: () => void;
   openTool: FeedbackTool | null;
+  /** False when the browser's tools load only after the link opens it. */
+  toolKnown: boolean;
   onOpen: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -154,7 +158,7 @@ function Row({
             className="ml-auto inline-flex items-center gap-1 text-primary underline cursor-pointer"
           >
             <ExternalLink className="h-3 w-3" aria-hidden />
-            Open browser · {TOOL_LABEL[openTool]}
+            Open browser{toolKnown ? ` · ${TOOL_LABEL[openTool]}` : ''}
           </button>
         )}
       </div>
@@ -178,8 +182,9 @@ export function FeedbackCard({
   onClearCid,
 }: {
   token: string;
-  /** The tools the loaded dashboard holds a record of for this browser. */
-  toolsOf?: (cid: string) => FeedbackTool[];
+  /** The tools the loaded dashboard holds a record of for this browser, or
+   *  null when it does not hold the browser. */
+  toolsOf?: (cid: string) => FeedbackTool[] | null;
   onOpen?: (tool: FeedbackTool, cid: string) => void;
   /** Show only this browser's reports. */
   cidFilter?: string | null;
@@ -291,7 +296,11 @@ export function FeedbackCard({
         <ul className="flex flex-col gap-1.5 max-h-[28rem] overflow-y-auto">
           {shown.map((item) => {
             const cid = item.cid;
-            const tool = cid && toolsOf && onOpen ? openToolFor(item.context?.route, toolsOf(cid)) : null;
+            // Every sender with a browser id gets a link. A browser the loaded
+            // pages do not hold opens on its report's tool and loads there.
+            const tools = cid && toolsOf ? toolsOf(cid) : null;
+            const route = item.context?.route;
+            const tool = !cid || !onOpen ? null : tools ? openToolFor(route, tools) : (routeTool(route) ?? 'dex');
             return (
               <Row
                 key={item.id}
@@ -299,6 +308,7 @@ export function FeedbackCard({
                 seen={seen.has(item.id)}
                 onToggle={() => toggle(item.id)}
                 openTool={tool}
+                toolKnown={tools != null}
                 onOpen={() => tool && cid && onOpen?.(tool, cid)}
               />
             );
