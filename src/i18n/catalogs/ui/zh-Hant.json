@@ -32,6 +32,8 @@
   "favorites.export.simplified": "摘要",
   "favorites.export.title": "匯出",
   "favorites.generation": "第{gen}世代",
+  "favorites.nudge.complete.body": "點按下載圖示，即可將圖表儲存為圖片並分享。",
+  "favorites.nudge.complete.title": "表格已完成",
   "favorites.packing.back": "選擇其他寶可夢",
   "favorites.packing.heading": "這隻寶可夢已在這個世代中。請選擇如何調整這一列。",
   "favorites.scrollMore": "捲動查看更多",

@@ -12,7 +12,7 @@ import { useFavoritesStore } from '../store/useFavoritesStore';
 import { buildFavoritesSnapshot, type FavoritesSnapshot } from '../export/snapshot';
 const delivery = createFavoriteBeaconDelivery(() => !DEMO_MODE && !PREVIEW_DEPLOY && !isOptedOut());
 /** A one-off report. Delivery never folds it into an unchanged progress board. */
-type FavoriteReport = {kind:'export-shown'} | {kind:'export';exportKind:FavoriteExportKind;stats:boolean};
+type FavoriteReport = {kind:'export-shown'|'nudge-shown'} | {kind:'export';exportKind:FavoriteExportKind;stats:boolean};
 function post(snapshot: FavoritesSnapshot, report?: FavoriteReport, capturedAt = Date.now()) {
   if (DEMO_MODE || PREVIEW_DEPLOY || isOptedOut()) return;
   const fills = Object.fromEntries(snapshot.cells.filter(cell => cell.mon).map(cell => [cell.key,cell.mon!.id]));
@@ -39,6 +39,8 @@ export function useFavoriteBeacon() {
     return()=>{document.removeEventListener('visibilitychange',hidden);window.removeEventListener('pagehide',flush);flush();};
   },[debouncer]);
 }
+/** Called when the completion popup appears, with the completed board. */
+export function sendFavoriteNudgeShownBeacon() { post(buildFavoritesSnapshot(useFavoritesStore.getState().fills),{kind:'nudge-shown'}); }
 /** Called when the export dialog opens, with the board it shows. */
 export function sendFavoriteExportShownBeacon(fills:Readonly<Record<string,number>>) { post(buildFavoritesSnapshot(fills),{kind:'export-shown'}); }
 /** Called only after share/download succeeds, using the board displayed in that export. */

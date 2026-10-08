@@ -57,7 +57,8 @@ export const FUNNEL_LABEL: Record<string, string> = {
   'favorites-quarter': '65',
   'favorites-half': '129',
   'favorites-complete': '257',
-  'favorites-export-shown': 'export popup',
+  'favorites-nudge-complete-shown': 'export nudge',
+  'favorites-export-shown': 'export opened',
 };
 
 /** Picker export events. A visit lists each export kind once, so its diamond
