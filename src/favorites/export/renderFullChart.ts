@@ -59,8 +59,12 @@ function axisBadge(ctx: CanvasRenderingContext2D, axis: ExtraTypeAxis, x: number
   ctx.restore();
 }
 
-/** Paint a validated snapshot; empty and incomplete charts are valid exports. */
-export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob> {
+/**
+ * Paint a validated snapshot; empty and incomplete charts are valid exports.
+ * `axisBadges: false` leaves the axis icons without their label badges. Only
+ * the search-image capture uses it; the export UI always draws the badges.
+ */
+export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges = true } = {}): Promise<Blob> {
   await document.fonts.ready;
   const urls = new Set<string>([
     ...snapshot.cells.flatMap(cell => cell.mon ? [cell.mon.sprite] : []),
@@ -81,6 +85,7 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
     const x = gridX + (index + 1) * cell;
     const mark = images.get(isTypeName(axis) ? typeIconPath(axis) : EXTRA_ICONS[axis])!;
     ctx.drawImage(mark, x + 17, gridY + 3, 86, 86);
+    if (!axisBadges) return;
     if (isTypeName(axis)) drawTypeBadge(ctx, axis, images.get(typeGlyphPath(axis))!, x + 6, badgeY, badgeW / 5);
     else axisBadge(ctx, axis, x + 6, badgeY, badgeW);
   });
@@ -89,7 +94,7 @@ export async function renderFullChart(snapshot: FavoritesSnapshot): Promise<Blob
     if (isGenNumber(gen)) ctx.drawImage(images.get(ROMAN_URIS[gen])!, gridX + 17, y + 17, 86, 86);
     else {
       ctx.drawImage(images.get(EXTRA_ICONS[gen])!, gridX + 17, y + 3, 86, 86);
-      axisBadge(ctx, gen, gridX + 6, y + cell * 0.76, badgeW);
+      if (axisBadges) axisBadge(ctx, gen, gridX + 6, y + cell * 0.76, badgeW);
     }
   });
   snapshot.cells.forEach((entry, index) => {
