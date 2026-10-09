@@ -41,12 +41,27 @@ export function exportSurveySkipMarks(
   }));
 }
 
-/** One mark per feedback report this browser sent, at the time it was sent. */
+/** api/_shared.ts SESSION_GAP_MS: activity this close to a session belongs to it. */
+const SESSION_SLACK_MS = 30 * 60_000;
+
+export interface SessionSpan {
+  start: number;
+  end: number;
+}
+
+/**
+ * One mark per feedback report this browser sent during one of this tool's
+ * sessions, at the time it was sent. A report sent while the browser was in
+ * another tool, or in none, gets no mark on this chart; the nearest session
+ * of this tool can be days away.
+ */
 export function feedbackMarks(
   reports: readonly { ts: number; category: string }[],
+  sessions: readonly SessionSpan[],
   clampT: (t: number) => number,
 ): ChartMilestone[] {
-  return reports.map((r) => ({
+  const during = (t: number) => sessions.some((s) => t >= s.start - SESSION_SLACK_MS && t <= s.end + SESSION_SLACK_MS);
+  return reports.filter((r) => during(r.ts)).map((r) => ({
     t: clampT(r.ts),
     label: 'feedback',
     tone: 'feedback',

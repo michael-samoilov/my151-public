@@ -30,8 +30,9 @@ export function favoriteSummary(records: FavoriteRecord[]) {
     exporters:records.filter(r=>r.exportsFull+r.exportsSimplified>0).length,
     exportsFull:records.reduce((n,r)=>n+r.exportsFull,0),
     exportsSimplified:records.reduce((n,r)=>n+r.exportsSimplified,0),
-    depth:buildDepthCurve(records.map(r=>r.maxFilled)),
-    unique:buildDepthCurve(records.map(r=>r.latest.uniqueIds.length)),
+    // Builders only, as in the Dex and League depth charts: a visitor who placed nothing bounced.
+    depth:buildDepthCurve(records.filter(r=>r.maxFilled>0).map(r=>r.maxFilled)),
+    unique:buildDepthCurve(records.filter(r=>r.maxFilled>0).map(r=>r.latest.uniqueIds.length)),
   };
 }
 /** Most charts first, then the lowest Pokémon id, so equal counts keep one order. */
