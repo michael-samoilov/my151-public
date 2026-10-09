@@ -51,7 +51,7 @@ export function FavoriteDetailBody({user,reports=[]}:{user:FavoriteUser;reports?
   const single=points.length<=1;
   const clampT=(t:number)=>Math.max(points[0].t,Math.min(points[points.length-1].t,t));
   return <SessionTimeline points={points} index={current} onIndex={setIndex} countUnit={`of ${FAVORITE_TOTAL_CELLS}`} peakLabel={`${user.maxFilled} peak cells`}
-    milestones={[...favoriteExportMarks(points),...feedbackMarks(reports,clampT)]} tz={user.tz}
+    milestones={[...favoriteExportMarks(points),...feedbackMarks(reports,sessions.map(s=>({start:s.ts,end:s.endTs})),clampT)]} tz={user.tz}
     leftChip={<SessionsChip sessions={user.sessions} days={days} full={single}/>}
     rightChip={<TimeChip ms={totalMs} full={single}/>}>{board}</SessionTimeline>;
 }
