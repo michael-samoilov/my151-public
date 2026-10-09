@@ -125,9 +125,9 @@ test.describe('admin date range', () => {
     expect(boxes.pageOverflow).toBeLessThanOrEqual(0);
     const width = page.viewportSize()!.width;
     if (width < 1024) {
-      // The bar touches the screen bottom; padding keeps its buttons clear of rounded phone corners.
+      // The bar touches the screen bottom; about 1rem of padding keeps its buttons clear of rounded phone corners.
       expect(Math.abs(boxes.bar.bottom - boxes.viewport)).toBeLessThanOrEqual(1);
-      expect(boxes.viewport - boxes.nav.bottom).toBeGreaterThanOrEqual(7);
+      expect(boxes.viewport - boxes.nav.bottom).toBeGreaterThanOrEqual(13);
       expect(boxes.navButtons.left).toBeGreaterThanOrEqual(12);
       expect(boxes.innerWidth - boxes.navButtons.right).toBeGreaterThanOrEqual(12);
     }

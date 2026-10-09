@@ -140,14 +140,15 @@ export function InfoChip({
   }, [open]);
 
   return (
-    <span className={cn('relative inline-flex shrink-0', fillMd && 'md:w-full')} data-tooltip-chip>
+    <span className={cn('relative inline-flex shrink-0', fillMd && 'md:h-full md:w-full')} data-tooltip-chip>
       <button
         ref={btnRef}
         type="button"
         data-tooltip-chip
         className={cn(
           'flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground outline-none hover:text-foreground focus:outline-none focus-visible:outline-none focus-visible:ring-0 [-webkit-tap-highlight-color:transparent]',
-          fillMd && 'md:w-full md:justify-center',
+          // On desktop the chip fills its table cell, as tall as the tool chips beside it.
+          fillMd && 'md:h-full md:w-full md:justify-center md:rounded-xl',
         )}
         aria-label={label}
         onClick={toggle}

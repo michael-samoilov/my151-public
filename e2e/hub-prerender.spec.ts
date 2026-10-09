@@ -126,8 +126,13 @@ for (const [name, device] of [['phone', PHONE], ['desktop', DESKTOP]] as const) 
     expect(seen.shiftTotal).toBe(0);
     expect(seen.errors).toEqual([]);
     expect(seen.shot).toHaveLength(1);
-    // No saved work, so no saved-work line and no space held for one.
-    expect(seen.progress.filter((p) => p.shown)).toEqual([]);
+    // No saved work: every line shows 0, so a first visitor sees what each
+    // tool counts and that this browser keeps it.
+    expect(seen.progress).toEqual([
+      { tool: 'dex', shown: true, text: '0/151 entries saved in this browser' },
+      { tool: 'league', shown: true, text: '0/14 trainers saved in this browser' },
+      { tool: 'favorites', shown: true, text: '0/257 picks saved in this browser' },
+    ]);
   });
 
   test(`a returning English visitor with saved work on a ${name} keeps the prerendered hub, and the saved lines arrive in place`, async ({ browser, baseURL }, testInfo) => {
@@ -144,6 +149,39 @@ for (const [name, device] of [['phone', PHONE], ['desktop', DESKTOP]] as const) 
     ]);
   });
 }
+
+// The prerendered lines show 0 until the app reads the saved counts. The head
+// script marks the tools with saved work, so a returning visitor never sees 0
+// for work they saved. No app script loads here, so this is the page before
+// the app runs.
+test('before the app runs, a tool with saved work holds its count back and the others show 0', async ({ browser, baseURL }, testInfo) => {
+  const context = await browser.newContext({ baseURL, ...PHONE, locale: 'en-US', serviceWorkers: 'block' });
+  await context.clock.setFixedTime(new Date(AFTER_NOTICE));
+  await context.route('**/assets/*.js', (route) => route.abort());
+  await context.addInitScript((entries) => {
+    for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, value);
+  }, { ...NO_LEAGUE, 'personal-151-pokedex-v3': SAVED['personal-151-pokedex-v3'] });
+  const page = await context.newPage();
+  await page.goto('/');
+  await expect(page.locator('#root h1')).toBeVisible();
+  const lines = await page.evaluate(() => [...document.querySelectorAll('[data-card-progress]')].map((p) => {
+    const count = p.querySelector('[data-progress-count]')!;
+    return {
+      tool: p.getAttribute('data-card-progress'),
+      text: getComputedStyle(count).visibility === 'hidden' ? '' : count.textContent,
+      height: Math.round(p.getBoundingClientRect().height),
+    };
+  }));
+  await testInfo.attach('before-app.json', { body: JSON.stringify(lines, null, 1), contentType: 'application/json' });
+  await context.close();
+  expect(lines.map(({ tool, text }) => ({ tool, text }))).toEqual([
+    { tool: 'dex', text: '' },
+    { tool: 'league', text: '0/14 trainers saved in this browser' },
+    { tool: 'favorites', text: '0/257 picks saved in this browser' },
+  ]);
+  // The held line keeps its height, so the count arrives without a shift.
+  for (const line of lines) expect(line.height).toBeGreaterThan(0);
+});
 
 for (const [name, options, settings] of [
   ['in another language', { ...PHONE, locale: 'ja-JP' }, { seed: NO_LEAGUE }],

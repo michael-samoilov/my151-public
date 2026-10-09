@@ -24,7 +24,9 @@ function pickerRouteRedirect(): Plugin {
   return { name: 'picker-route-redirect', configureServer: install, configurePreviewServer: install };
 }
 
-const BUILD_TIMESTAMP = new Date().toISOString()
+// SOURCE_DATE_EPOCH (seconds) pins the stamp, so two builds of different
+// trees show the same build time. The verify-my151 visual diff sets it.
+const BUILD_TIMESTAMP = (process.env.SOURCE_DATE_EPOCH ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000) : new Date()).toISOString()
 
 /**
  * Puts the build time in every page's HTML for src/lib/buildVersion.ts. In the

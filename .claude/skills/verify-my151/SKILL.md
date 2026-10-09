@@ -156,8 +156,11 @@ menu, the league's home, card and menu, and the picker: empty, seeded, a selecto
 390 px (2x, touch) and 1280 px, on the base and on the change, with motion
 reduced and animations stopped. It renders each build twice, so a region that
 differs between two renders of the same build is marked unstable, not changed.
-It pins the footer's build stamp, which is the build minute, to one value. It
-compares the PNGs on a canvas in Chromium; no snapshot is stored.
+The footer shows a build stamp, so the harness builds every tree with one
+`SOURCE_DATE_EPOCH`, which `vite.config.ts` stamps in place of the build time.
+A base ref older than that support, or a `--no-build` tree, still stamps its
+build minute, so the diff also rewrites the stamp on both builds as a fallback.
+It compares the PNGs on a canvas in Chromium; no snapshot is stored.
 
 It writes `visual.json` (every changed region with its box and the text or
 alt text under it) and `visual.png` (each changed screen whole, before and

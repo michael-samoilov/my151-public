@@ -70,6 +70,8 @@ async function stub(page: Page) {
     report('r-gone', 'e2e-fb-gone', 'league', t0 + 50 * 60 * MIN),
     report('r-card', 'e2e-fb-both', 'league-card', t0 + (24 * 60 + 15) * MIN),
     report('r-dex', 'e2e-fb-dex', '/favorite-pokemon-picker', t0 + 20 * MIN),
+    // Between e2e-fb-old's two Dex sessions, over two hours from each: no session holds it.
+    report('r-far', 'e2e-fb-old', 'builder', t0 - 450 * MIN),
     report('r-home', 'e2e-fb-both', 'home', t0 + 10 * MIN),
     report('r-old', 'e2e-fb-old', 'league', t0 - 285 * MIN),
     report('r-eg', 'e2e-fb-eg', 'builder', t0 - 890 * MIN, 'EG'),
@@ -184,7 +186,8 @@ test.describe('admin feedback links', () => {
     await old.click();
     // The report came from League, which this browser never used: Dex opens.
     await expect(tools(page).getByRole('button', { name: 'Dex', pressed: true })).toBeVisible();
-    await expect(page.getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('1');
+    await expect(page.getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('2');
+    // r-old falls inside the second session; r-far, between the two, belongs to neither.
     await expect(page.getByTestId('session-feedback-mark')).toHaveCount(1);
 
     await page.getByRole('button', { name: '‹ Back' }).click();

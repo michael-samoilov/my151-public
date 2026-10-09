@@ -1024,7 +1024,7 @@ function DexDetailBody({ rec, reports }: { rec: ClientRecord; reports: FeedbackI
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
       : [];
   milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT, 'dex'));
-  milestones.push(...feedbackMarks(reports, clampT));
+  milestones.push(...feedbackMarks(reports, log.map((e, k) => ({ start: e.ts - (ms[k] ?? 0), end: e.ts })), clampT));
 
   const snapshot = (
     <div ref={presenceRef}>
@@ -1139,7 +1139,7 @@ function LeagueDetailBody({ league, reports }: { league: LeagueUser; reports: Fe
     milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
   }
   milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT, 'league'));
-  milestones.push(...feedbackMarks(reports, clampT));
+  milestones.push(...feedbackMarks(reports, log.map((e, k) => ({ start: e.ts - (ms[k] ?? 0), end: e.ts })), clampT));
 
   const snapshots = useMemo(() => {
     if (log.length === 0) {
@@ -1407,7 +1407,7 @@ function PreviewPlatformSlot({
   children: ReactNode;
 }) {
   return (
-    <span className={cn('inline-flex', colClass, 'md:row-span-2 md:row-start-1 md:justify-self-stretch', empty && 'opacity-40')}>
+    <span className={cn('inline-flex', colClass, 'md:row-span-2 md:row-start-1 md:self-stretch md:justify-self-stretch', empty && 'opacity-40')}>
       <InfoChip fillMd label={label}>{children}</InfoChip>
     </span>
   );
@@ -1427,7 +1427,7 @@ function FeedbackChip({ reports, onFeedback }: { reports: number; onFeedback?: (
       aria-label={`${reports} feedback ${reports === 1 ? 'report' : 'reports'} from this browser`}
       className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
     >
-      <MessageSquare className="h-[13px] w-[13px] shrink-0" />
+      <MessageSquare className="h-[13px] w-[13px] shrink-0 text-red-600" />
       <span className="text-xs font-medium tabular-nums">{reports}</span>
     </button>
   );
@@ -1539,7 +1539,7 @@ function UserPreviewCard({
           >
             <BrowserIcon value={rec.browser} />
           </PreviewPlatformSlot>
-          <span className={cn(FACET_COL.language, 'inline-flex md:row-span-2 md:row-start-1 md:justify-self-stretch', !langPreview && 'opacity-40')}>
+          <span className={cn(FACET_COL.language, 'inline-flex md:row-span-2 md:row-start-1 md:self-stretch md:justify-self-stretch', !langPreview && 'opacity-40')}>
             {langPreview ? (
               <PreviewLanguageChip fillMd lang={rec.lang} locale={rec.locale} switched={rec.switched} />
             ) : (
@@ -1599,8 +1599,8 @@ function WhatPeoplePick({
 export type AdminNavKey = ToolSlice | 'search' | 'feedback';
 
 /** The admin's one bar: fixed to the bottom on a phone, stuck under the
- *  header on desktop. Its height is `--admin-bar-h`. `wide` spans the page,
- *  so a full-width sticky block under it leaves no gap beside it. */
+ *  header on desktop, where it spans the window. Its height is `--admin-bar-h`.
+ *  `wide` lets its contents span the page too. */
 function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
   const barRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -1620,11 +1620,11 @@ function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
       ref={barRef}
       data-admin-bar
       className={cn(
-        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
-        wide ? 'md:w-full' : 'md:max-w-5xl',
+        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:w-full md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
       )}
     >
-      {children}
+      {/* Full width on desktop, so nothing scrolls into view beside it. The contents shrink to fit and centre, so the date pills start at the nav's left edge. */}
+      <div className={cn(!wide && 'md:mx-auto md:w-fit md:max-w-5xl')}>{children}</div>
     </div>
   );
 }

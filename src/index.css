@@ -615,14 +615,13 @@ img {
   --hf: calc(var(--hover-lift) * -1);
 }
 
-/* A hub card's saved-work line (Caption in HomePage.tsx) shows only with a
- * count. The head script of the prerendered hub (scripts/prerender-hub.ts)
- * marks the tools with saved work in this browser, so their lines hold their
- * space from the first paint, before the counts arrive. */
-[data-card-progress][data-empty] { display: none; }
-html.p151-saved-dex [data-card-progress='dex'],
-html.p151-saved-league [data-card-progress='league'],
-html.p151-saved-favorites [data-card-progress='favorites'] { display: grid; }
+/* A hub card's saved-work line (Caption in HomePage.tsx) always shows, with 0
+ * for a tool not used in this browser. The head script of the prerendered hub
+ * (scripts/prerender-hub.ts) marks the tools with saved work, so their counts
+ * stay hidden until the app reads them, instead of showing 0 first. */
+html.p151-saved-dex [data-card-progress='dex'][data-empty] [data-progress-count],
+html.p151-saved-league [data-card-progress='league'][data-empty] [data-progress-count],
+html.p151-saved-favorites [data-card-progress='favorites'][data-empty] [data-progress-count] { visibility: hidden; }
 
 /* Short phones keep complete captions visible while the artwork stays fixed. */
 @media (max-width: 639px) and (max-height: 760px) {
