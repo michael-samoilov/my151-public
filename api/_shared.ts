@@ -280,7 +280,7 @@ function tokenEqual(provided: string, expected: string): boolean {
 // to hammer reads or destructive resets/deletes unbounded.
 const adminLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(60, '1 m'),
+  limiter: Ratelimit.fixedWindow(60, '1 m'),
   analytics: false,
   prefix: 'rl:admin',
 });
