@@ -86,12 +86,21 @@ export interface ScreenResult {
 }
 export interface VisualReport { screens: ScreenResult[]; changed: number; regions: number; unstable: number; errors: number }
 
-/** Wait until fonts, images and two frames have settled. */
+/**
+ * Wait until fonts, the images on screen and two frames have settled. Lazy
+ * images below the fold never load, so the wait covers only images inside the
+ * viewport, and gives up after 5 s.
+ */
 async function settle(page: Page): Promise<void> {
-  await page.waitForLoadState('networkidle').catch(() => undefined);
+  await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
   await page.evaluate(async () => {
     await document.fonts.ready;
-    await Promise.all([...document.images].filter((i) => !i.complete).map((i) => new Promise((r) => { i.onload = i.onerror = r; })));
+    const onScreen = [...document.images].filter((i) => {
+      const r = i.getBoundingClientRect();
+      return !i.complete && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+    });
+    const loaded = Promise.all(onScreen.map((i) => new Promise((r) => { i.addEventListener('load', r, { once: true }); i.addEventListener('error', r, { once: true }); })));
+    await Promise.race([loaded, new Promise((r) => setTimeout(r, 5000))]);
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   });
   await page.waitForTimeout(500);
@@ -181,9 +190,11 @@ export async function runVisualDiff(baseUrl: string, afterUrl: string, dir: stri
     for (const screen of SCREENS) for (const vp of VIEWPORTS) {
       const name = `${screen.id}-${vp.name}`;
       try {
-        const after = await render(browser, afterUrl, screen, vp);
-        const baseA = await render(browser, baseUrl, screen, vp);
-        const baseB = await render(browser, baseUrl, screen, vp);
+        // One stuck screen must not stall the run: give each render 90 s.
+        const cap = <T,>(p: Promise<T>) => Promise.race([p, new Promise<never>((_, no) => setTimeout(() => no(new Error('render took longer than 90 s')), 90_000))]);
+        const after = await cap(render(browser, afterUrl, screen, vp));
+        const baseA = await cap(render(browser, baseUrl, screen, vp));
+        const baseB = await cap(render(browser, baseUrl, screen, vp));
         await baseA.page.context().close(); await baseB.page.context().close();
         fs.writeFileSync(path.join(out, `${name}--before.png`), baseA.png);
         fs.writeFileSync(path.join(out, `${name}--after.png`), after.png);
