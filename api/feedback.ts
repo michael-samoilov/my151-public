@@ -38,13 +38,13 @@ const GLOBAL_HOURLY_CAP = 200;
 
 const ipLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(5, '10 m'),
+  limiter: Ratelimit.fixedWindow(5, '10 m'),
   analytics: false,
   prefix: 'rl:fbip',
 });
 const clientLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(10, '1 d'),
+  limiter: Ratelimit.fixedWindow(10, '1 d'),
   analytics: false,
   prefix: 'rl:fbclient',
 });

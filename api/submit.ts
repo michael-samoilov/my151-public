@@ -38,9 +38,14 @@ function isDexId(id: unknown): id is number {
 const DEX_ID_COUNT = Object.keys(EVOLUTION_CHAIN_BY_ID).length;
 
 // Rate limiters: per-IP, analytics disabled to avoid doubling Upstash command count.
+// Every limiter in api/ uses a fixed window: Upstash bills each command inside
+// the limiter's script, and a fixed window runs 2 (EVALSHA, INCRBY) where a
+// sliding window runs 4 (EVALSHA, two GETs, INCRBY). A fixed window never
+// blocks a request that a sliding one would allow; it only lets a burst that
+// straddles a window boundary reach up to twice the limit.
 const burstLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(500, '10 m'),
+  limiter: Ratelimit.fixedWindow(500, '10 m'),
   analytics: false,
   prefix: 'rl:burst',
 });
@@ -51,7 +56,7 @@ const burstLimiter = new Ratelimit({
 // half an hour; a unit test now pins cadence × cap so they can't drift apart.)
 const clientLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(SUBMIT_CLIENT_DAILY_CAP, '1 d'),
+  limiter: Ratelimit.fixedWindow(SUBMIT_CLIENT_DAILY_CAP, '1 d'),
   analytics: false,
   prefix: 'rl:client',
 });
