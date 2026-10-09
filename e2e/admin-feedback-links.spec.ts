@@ -168,8 +168,9 @@ test.describe('admin feedback links', () => {
     await expect(quiet.getByTestId('admin-feedback-chip')).toHaveCount(0);
     const dexOnly = await scrollToRow(page, 'Open user e2…-dex');
     await expect(dexOnly.getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('1');
-    await card.scrollIntoViewIfNeeded();
-    await chip.click();
+    // The first card left the rendered rows on the way down.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await (await scrollToRow(page, 'Open user e2…both')).getByTestId('admin-feedback-chip').locator('visible=true').click();
 
     await expect(nav(page).getByRole('button', { name: 'Feedback', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByTestId('feedback-browser-filter')).toContainText('e2…both');
