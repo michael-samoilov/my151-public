@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { t } from '@/i18n';
+import { t, tn } from '@/i18n';
 import { type DrillDownSegment } from '@/store/usePokedexStore';
 import { getPokemonByIds, getEvolutionLine, withoutSpecials } from '@/hooks/usePokemonData';
 
@@ -304,7 +304,7 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                         {colTotal > 0 && (
                           <>
                             <div className="text-center text-xs text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center tabular-nums" style={{ height: 26 * mekkoScale }}>
-                              <span>{colTotal} {colIdx === 0 && 'Pokémon '}</span>
+                              <span>{colIdx === 0 ? tn('stage.columnTotal', colTotal) : colTotal}</span>
                             </div>
                             <div className="relative" style={{
                               borderRadius: 3,
@@ -468,7 +468,7 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                     >
                       <span className="text-muted-foreground font-bold" style={isLegendActive ? { textDecoration: 'underline', textDecorationColor: STAGE_COLORS[seg.stage - 1] } : undefined}>
                         <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>{t('stage.label', { stage: seg.stage })}</span>
-                        {isFirstLegend(seg.stage) && <><br />Pokémon</>}
+                        {isFirstLegend(seg.stage) && <><br />{t('stage.legendUnit')}</>}
                         <br />
                         {stageTotals[seg.stage]}
                       </span>
