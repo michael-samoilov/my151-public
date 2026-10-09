@@ -146,7 +146,7 @@ test.describe('two-bar chrome', { tag: '@viewport' }, () => {
     await page.waitForSelector('[data-testid="tool-title"]');
 
     // Default state: the tool's name, no selections yet.
-    await expect(page.getByTestId('tool-title')).toContainText('Custom Pokédex Builder');
+    await expect(page.getByTestId('tool-title')).toContainText('Custom Pokédex Maker');
     await expectNoOverlap(page);
 
     // Seed a dex past the analytics unlock, reload into the count state.

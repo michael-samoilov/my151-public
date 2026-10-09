@@ -15,13 +15,17 @@ and a legendary on the boss row.
 - An empty cell opens the Pokémon browser to seat a line. A filled cell opens
   it to replace that seat's line. A filled boss-row cell opens the legendary
   picker instead.
+- The boss row keeps its legendaries in `legends[]`, at most one per seat. A
+  legendary dropped on a seat that holds one swaps the two.
 - The ace and partner slots open one-Pokémon pickers with standalone tiles.
+  When the card has room, a pick also seats the tapped Pokémon's whole line.
 - A cell dragged up or down moves an evolution boundary. A press and hold lifts
   the column to reorder it. The moving stage wears a wash of its primary type.
 - Mega and Gigantamax buttons on rows 9-11, the bottom three. A press sets its
   row and every row below it that shows the same form on that seat. Kyogre's
   and Groudon's Mega button shows their orb (`/powerups/primal-kyogre.png`,
-  `primal-groudon.png`) and is labelled "Primal Reversion".
+  `primal-groudon.png`) and is labelled "Primal Reversion". The Gigantamax
+  button's `aria-label` is "Dynamax".
 - Desktop (1024px and wider) opens on the league pane alone. Opening a gym
   splits the width in halves with the card, and the picker makes thirds.
   Content widths follow the pane. One compact page footer sits below the fold.
@@ -38,12 +42,15 @@ shows a `[data-filter-chip="my-dex"]` chip, and its tiles are
 
 ## Driving it with the harness
 
-`verify.ts` runs six league suites after `standard`:
+After `standard`, `verify.ts` runs `dex-export` and `foil-workshop`, then eight
+league suites, then `favorites`. The league suites:
 
 - `league`: checks the served shell's title, h1, and canonical link
   structurally, then boot, layout, the 44px `[data-testid="league-tool-bar"]`,
   render audits, and a desktop Blink drive (gym type, one line) read back from
   the store.
+- `league-export-foil`: the league and trainer card export previews share the
+  dex foil (see `league-export.md`).
 - `league-change`: on every engine, seeds a blank league, then checks the tab
   set, the ace picker's rows, powerup presses (`state.cards[9].powerups`), a
   replace, a synthetic-touch flick and its `[data-stage-tint]` wash, TM search,
@@ -51,6 +58,8 @@ shows a `[data-filter-chip="my-dex"]` chip, and its tiles are
 - `league-hover`: a column wash on desktop hover, and none left behind on touch.
 - `league-home`: slot moves on the home (fill, displace, playlist order).
 - `gym-card-export`: the card export preview, and ace, TM, and badge fit.
+- `league-export-team`: the league export starts at the team that the summary
+  tab shows (see `league-export.md`).
 - `league-funnel`: the export nudges (`[data-testid="league-nudge"]`). Its
   `data-league-nudge` is `card` for a full trainer card, `league` for eight
   gym leaders with a card still empty, and `complete` for every card filled.
@@ -58,8 +67,10 @@ shows a `[data-filter-chip="my-dex"]` chip, and its tiles are
   is `beside` where the pane has room right of the summary (a desktop) and
   `below` elsewhere, where the popup joins the page flow and the fit shrinks
   the summary to make room. The league Export button carries
-  `data-nudge-pulse` while one shows. It also loads a full v3 save that saw the eight-gym popup and checks the
-  store: version 4, `complete` celebrated, and no popup.
+  `data-nudge-pulse` while one shows. It also loads a full v3 save that saw
+  the eight-gym popup and checks the store: version 4 or later, `complete`
+  celebrated, and no popup. The store persists at version 6
+  (`LEAGUE_PERSIST_VERSION` in `src/league/store/seedLeague.ts`).
 
 The oracle is the store: `state.cards[i].lines[j].branch` and `.boundaries`,
 and `.powerups[row]`.
