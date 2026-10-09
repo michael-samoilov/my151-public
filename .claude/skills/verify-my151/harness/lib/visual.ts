@@ -3,9 +3,9 @@
 // covers still shows up. Nothing is stored as a baseline: both builds render in
 // the same run, in the same browser, so the comparison needs no snapshot files.
 //
-// Each screen renders three times: the base twice and the change once. A region
-// that differs between the two base renders is noise (a timer, a lazy image),
-// and it is reported as unstable instead of as a change. Every other changed
+// Each screen renders four times: each build twice. A region that differs
+// between two renders of the same build is noise (a timer, a lazy image), and
+// it is reported as unstable instead of as a change. Every other changed
 // region is listed with the text under it, for the agent to match against the
 // change's "must change" list. A region that matches nothing blocks the merge.
 import fs from 'node:fs';
@@ -117,6 +117,7 @@ async function render(browser: Browser, url: string, screen: Screen, vp: Viewpor
   await page.goto(url + screen.path, { waitUntil: 'load' });
   await settle(page);
   if (screen.act) { await screen.act(page); await settle(page); }
+  await page.evaluate(PIN_BUILD_STAMP);
   const png = await page.screenshot({ fullPage: true, animations: 'disabled', caret: 'hide' });
   return { page, png };
 }
@@ -168,6 +169,13 @@ async function diffBoxes(page: Page, a: Buffer, b: Buffer): Promise<Array<{ x: n
 // that helper does not exist, so every page gets a no-op stand-in.
 const NAME_SHIM = 'globalThis.__name = globalThis.__name || ((f) => f);';
 
+// The footer's build stamp is the build minute (PageFooter.tsx), so two builds
+// made a minute apart differ there and shift what follows it. Pin it on both.
+const PIN_BUILD_STAMP = `(() => {
+  const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let t = walk.nextNode(); t; t = walk.nextNode()) if (/\\bv \\d{10}\\b/.test(t.textContent)) t.textContent = t.textContent.replace(/\\bv \\d{10}\\b/g, 'v 0000000000');
+})()`;
+
 const overlaps = (r: { x: number; y: number; w: number; h: number }, s: { x: number; y: number; w: number; h: number }) =>
   r.x < s.x + s.w && s.x < r.x + r.w && r.y < s.y + s.h && s.y < r.y + r.h;
 
@@ -199,13 +207,16 @@ export async function runVisualDiff(baseUrl: string, afterUrl: string, dir: stri
       try {
         // One stuck screen must not stall the run: give each render 90 s.
         const cap = <T,>(p: Promise<T>) => Promise.race([p, new Promise<never>((_, no) => setTimeout(() => no(new Error('render took longer than 90 s')), 90_000))]);
+        // Two renders of each build: a region that differs between two renders
+        // of the same build is noise, whichever build it flickers on.
         const after = await cap(render(browser, afterUrl, screen, vp));
+        const afterB = await cap(render(browser, afterUrl, screen, vp));
         const baseA = await cap(render(browser, baseUrl, screen, vp));
         const baseB = await cap(render(browser, baseUrl, screen, vp));
-        await baseA.page.context().close(); await baseB.page.context().close();
+        await afterB.page.context().close(); await baseA.page.context().close(); await baseB.page.context().close();
         fs.writeFileSync(path.join(out, `${name}--before.png`), baseA.png);
         fs.writeFileSync(path.join(out, `${name}--after.png`), after.png);
-        const noise = await diffBoxes(scratch, baseA.png, baseB.png);
+        const noise = [...await diffBoxes(scratch, baseA.png, baseB.png), ...await diffBoxes(scratch, after.png, afterB.png)];
         const changes = await diffBoxes(scratch, baseA.png, after.png);
         const regions: Region[] = [];
         for (const c of changes) regions.push({ ...c, unstable: noise.some((n) => overlaps(c, n)), text: await textAt(after.page, c, vp.scale) });

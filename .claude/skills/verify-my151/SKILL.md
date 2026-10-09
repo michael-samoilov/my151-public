@@ -154,8 +154,9 @@ after the surfaces, diff mode renders a fixed list of screens (`SCREENS` in
 `harness/lib/visual.ts`: the hub, the builder's intro, tabs, export and Tools
 menu, the league's home, card and menu, and the picker, empty and seeded) at
 390 px (2x, touch) and 1280 px, on the base and on the change, with motion
-reduced and animations stopped. It renders the base twice, so a region that
-differs between two identical renders is marked unstable, not changed. It
+reduced and animations stopped. It renders each build twice, so a region that
+differs between two renders of the same build is marked unstable, not changed.
+It pins the footer's build stamp, which is the build minute, to one value. It
 compares the PNGs on a canvas in Chromium; no snapshot is stored.
 
 It writes `visual.json` (every changed region with its box and the text or
