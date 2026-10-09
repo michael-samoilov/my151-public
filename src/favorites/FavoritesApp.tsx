@@ -106,16 +106,19 @@ function FavoritesContent({ sel, setSel }: {
 
   // Picker sprites in the order a visitor needs them (model/spritePreload.ts).
   // Nearly every visitor opens Normal / Gen I, the top-left cell, first, so
-  // its sprites go first everywhere. A touch screen then fetches the cells as
-  // they come into view. A pointer that hovers gives each cell a head start of
-  // its own instead (FavoritesGrid).
+  // its sprites go first everywhere. The phone layout then fetches the cells
+  // as they come into view. The desktop layout shows nearly every cell at
+  // once, so there "in view" would mean all 1,388 sprites; a cell that is
+  // hovered, pressed, or focused gets a head start of its own instead
+  // (FavoritesGrid). The switch is the layout, not the pointer: a touch
+  // screen at desktop width shows the whole grid too.
   useEffect(() => {
     let alive = true;
     let observer: IntersectionObserver | null = null;
     whenIdle(() => {
       if (!alive) return;
       prefetchCellSoon('normal', 1);
-      if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+      if (window.matchMedia('(min-width: 1024px)').matches) return;
       const seen = new IntersectionObserver((entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
