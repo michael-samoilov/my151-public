@@ -44,6 +44,8 @@ async function stubDashboard(page: Page): Promise<string[]> {
   const asked: string[] = [];
   await page.route('**/api/submissions?**', (route) => {
     const url = new URL(route.request().url());
+    // The Suite tab's Database card reads Upstash stats once; not a dashboard ask.
+    if (url.searchParams.get('usage') === '1') return route.fulfill({ json: { status: 'not_configured' } });
     const range = url.searchParams.get('range') ?? 'all';
     asked.push(range);
     const now = Date.now();
