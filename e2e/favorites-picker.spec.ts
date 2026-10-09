@@ -414,7 +414,8 @@ test.describe('favorite Pokémon picker', () => {
 
   test('hub card opens the picker', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a[href="/favorite-pokemon-picker"]').click();
+    // The red card panel is what people click; the card title and the Tools menu also link here.
+    await page.locator('a[data-card-panel][href="/favorite-pokemon-picker"]').click();
     await expect(page).toHaveURL(/\/favorite-pokemon-picker/);
     await expect(page.getByTestId('favorites-grid')).toBeVisible();
   });

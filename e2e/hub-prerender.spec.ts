@@ -32,9 +32,9 @@ test('the hub HTML holds the whole page without JavaScript', async ({ browser, b
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Make a custom Pokédex/);
   for (const href of ['/pokedex-builder', '/custom-gym-leader', '/favorite-pokemon-picker']) {
-    await expect(page.locator(`#root a[href="${href}"]`).first()).toBeVisible();
+    await expect(page.locator(`#root a[data-card-panel][href="${href}"]`)).toBeVisible();
   }
-  await expect(page.getByRole('img', { name: /^A custom regional Pokédex in progress/ })).toBeVisible();
+  await expect(page.getByRole('img', { name: /^Custom Pokédex Maker: a custom regional Pokédex in progress/ })).toBeVisible();
   await expect(page.locator('.p151-boot')).toBeHidden();
   await context.close();
 });
@@ -94,7 +94,7 @@ async function visit(
   });
   await page.goto('/?notme');
   await expect(page.locator('.p151-boot')).toHaveCount(0);
-  await expect(page.getByRole('img', { name: /^A custom regional Pokédex in progress/ })).toHaveJSProperty('complete', true);
+  await expect(page.getByRole('img', { name: /^Custom Pokédex Maker: a custom regional Pokédex in progress/ })).toHaveJSProperty('complete', true);
   await expect(page.locator('[data-card-progress]:not([data-empty])')).toHaveCount(lines);
   await page.waitForTimeout(500);
   const seen = await page.evaluate(() => {

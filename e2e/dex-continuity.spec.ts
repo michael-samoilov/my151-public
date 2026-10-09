@@ -30,7 +30,7 @@ test.describe('dex continuity across the move', () => {
     await page.goto('/');
     await expect(page.locator('[data-card-panel]')).toHaveCount(4);
     // The dex card offers the way back, with the saved count.
-    await expect(page.locator('h2', { hasText: 'Pokédex Builder' }).locator('..')).toContainText('9/151');
+    await expect(page.locator('h2', { hasText: 'Pokédex Maker' }).locator('..')).toContainText('9/151');
     await expect(page.getByTestId('favorites-launch-notice')).toContainText('Favorite Pokémon Picker');
     // The hub only reads the store. The key is what it was, byte for byte.
     await page.waitForTimeout(500);
