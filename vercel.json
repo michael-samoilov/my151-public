@@ -40,6 +40,41 @@
       "source": "/favorite-pokemon-by-type.html",
       "destination": "/favorite-pokemon-picker",
       "permanent": true
+    },
+    {
+      "source": "/gym-leader-maker",
+      "destination": "/custom-gym-leader",
+      "permanent": true
+    },
+    {
+      "source": "/gym-leader",
+      "destination": "/custom-gym-leader",
+      "permanent": true
+    },
+    {
+      "source": "/league-maker",
+      "destination": "/custom-gym-leader",
+      "permanent": true
+    },
+    {
+      "source": "/trainer-card-maker",
+      "destination": "/custom-gym-leader",
+      "permanent": true
+    },
+    {
+      "source": "/pokedex-maker",
+      "destination": "/pokedex-builder",
+      "permanent": true
+    },
+    {
+      "source": "/custom-pokedex",
+      "destination": "/pokedex-builder",
+      "permanent": true
+    },
+    {
+      "source": "/favorite-pokemon",
+      "destination": "/favorite-pokemon-picker",
+      "permanent": true
     }
   ]
 }
