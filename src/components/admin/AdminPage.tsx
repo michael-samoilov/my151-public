@@ -69,6 +69,7 @@ import {
 import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
 import { FitNowrap } from '@/components/admin/FitNowrap';
 import { BrowserUsage, PreviewUsageScale } from '@/components/admin/PreviewUsage';
+import { UsageCard } from '@/components/admin/UsageCard';
 import { toolCells, type ToolCell } from '@/components/admin/browserUsage';
 import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
@@ -2366,6 +2367,8 @@ export function AdminPage() {
                 onOpen={openPickerPicks}
               />
             )}
+
+            {tool === 'all' && token && !demo && <UsageCard token={token} />}
 
             {(tool === 'dex' || tool === 'league' || tool === 'favorites') && <Panel title="Newest browsers" sub={[showDex ? 'dex' : tool === 'favorites' ? 'picker' : 'league', 'newest first']}>
               {(() => {
