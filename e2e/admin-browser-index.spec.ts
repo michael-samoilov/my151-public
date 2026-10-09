@@ -109,6 +109,42 @@ test.describe('Newest browsers index @viewport', () => {
     await testInfo.attach('rendered-rows.json', { body: JSON.stringify({ browsers: N + 1, atTop, atBottom }), contentType: 'application/json' });
     await testInfo.attach('oldest-row.png', { body: await last.screenshot(), contentType: 'image/png' });
   });
+
+  test('the header stays on screen over the scrolling rows, each cell over its column', async ({ page }, testInfo) => {
+    await stub(page);
+    await openTab(page, 'Dex');
+    await scrollTo(page, cidAt(600));
+    const stuck = await page.evaluate(() => {
+      const hdr = document.querySelector<HTMLElement>('[data-preview-header]')!;
+      // The header reads both heights through inheritance.
+      const root = getComputedStyle(hdr);
+      const px = (name: string) => parseFloat(root.getPropertyValue(name)) || 0;
+      const desktop = innerWidth >= 1024;
+      const box = hdr.getBoundingClientRect();
+      // Rows scroll under the header, so its middle shows the header, not a row,
+      // and so does the panel padding beside it, where a row's shadow would show.
+      const mid = box.top + box.height / 2;
+      const hits = [box.left + box.width / 2, box.left - 8, box.right + 8].map((x) => document.elementFromPoint(x, mid));
+      const row = [...document.querySelectorAll<HTMLElement>('[data-user-preview]')].find((r) => r.getBoundingClientRect().top >= box.bottom)!;
+      const edges = (el: Element | undefined) => (el ? [Math.round(el.getBoundingClientRect().left), Math.round(el.getBoundingClientRect().right)] : null);
+      // The exact class, so md:col-start-1 does not also match md:col-start-10.
+      const inCol = (scope: Element, c: string) => [...scope.querySelectorAll('*')].find((e) => e.classList.contains(c));
+      const cols = ['md:col-start-1', 'md:col-start-2', 'md:col-start-3', 'md:col-start-4', 'md:col-start-5', 'md:col-start-6'];
+      return {
+        top: box.top,
+        line: px('--admin-header-h') + (desktop ? px('--admin-bar-h') : 0),
+        onTop: hits.map((h) => !!h?.closest('[data-preview-header]')),
+        desktop,
+        header: desktop ? cols.map((c) => edges(inCol(hdr, c))) : [],
+        row: desktop ? cols.map((c) => edges(inCol(row, c))) : [],
+      };
+    });
+    expect(Math.abs(stuck.top - stuck.line), JSON.stringify(stuck)).toBeLessThanOrEqual(1);
+    expect(stuck.onTop).toEqual([true, true, true]);
+    expect(stuck.header).toEqual(stuck.row);
+    await testInfo.attach('sticky-header.json', { body: JSON.stringify(stuck), contentType: 'application/json' });
+    await testInfo.attach('sticky-header.png', { body: await page.screenshot(), contentType: 'image/png' });
+  });
 });
 
 test('desktop table columns hold still while rows of other widths scroll in', async ({ page }, testInfo) => {
