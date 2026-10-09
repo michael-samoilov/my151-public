@@ -159,6 +159,10 @@ test.describe('Newest browsers cards @viewport', () => {
     });
     expect(bar.left).toBeLessThanOrEqual(0.5);
     expect(Math.abs(bar.width - bar.page)).toBeLessThanOrEqual(1);
+    // The date pills stay over the nav, not at the window's left edge.
+    const firstPill = await box(page.getByRole('group', { name: 'Date range' }).getByRole('button').first());
+    const firstTab = await box(page.getByRole('navigation', { name: 'Admin section' }).getByRole('button').first());
+    expect(Math.abs(firstPill.x - firstTab.x)).toBeLessThanOrEqual(24);
   });
 
   test('an archived browser keeps its Dex chip on the Picker list', async ({ page }, testInfo) => {

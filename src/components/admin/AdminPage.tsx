@@ -1623,8 +1623,8 @@ function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
         'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:w-full md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
       )}
     >
-      {/* Full width on desktop, so nothing scrolls into view beside it; its contents stay centred like the header's. */}
-      <div className={cn(!wide && 'md:mx-auto md:max-w-5xl')}>{children}</div>
+      {/* Full width on desktop, so nothing scrolls into view beside it. The contents shrink to fit and centre, so the date pills start at the nav's left edge. */}
+      <div className={cn(!wide && 'md:mx-auto md:w-fit md:max-w-5xl')}>{children}</div>
     </div>
   );
 }
