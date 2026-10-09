@@ -62,6 +62,7 @@ const START_AFTER_FIRST_PAINT: Record<string, string> = {
 function startAppAfterFirstPaint(): Plugin {
   const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>/
   const preload = /\s*<link rel="modulepreload" crossorigin href="([^"]+)">/g
+  const charset = /<meta charset="UTF-8" \/>/
   return {
     name: 'start-app-after-first-paint',
     apply: 'build',
@@ -70,13 +71,20 @@ function startAppAfterFirstPaint(): Plugin {
       handler(html, { path }) {
         const src = entry.exec(html)?.[1]
         const savedKey = START_AFTER_FIRST_PAINT[path]
-        if (!src || !savedKey) return html
-        const deps = [...html.matchAll(preload)].map((m) => m[1])
-        const start = `(function(){var go=function(){${JSON.stringify(deps)}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)});var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)};var saved=null;try{saved=localStorage.getItem(${JSON.stringify(savedKey)})}catch(e){}if(saved||document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
+        if (!src || !savedKey || !charset.test(html)) return html
+        const files = JSON.stringify([src, ...[...html.matchAll(preload)].map((m) => m[1])])
+        const saved = `var saved=null;try{saved=localStorage.getItem(${JSON.stringify(savedKey)})}catch(e){}`
+        const preloadAll = `${files}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)})`
+        const run = `var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)`
+        // Before the stylesheet, so a visitor with saved work fetches the code
+        // as early as the HTML's own links did.
+        const early = `(function(){${saved}if(saved)${preloadAll}})()`
+        const late = `(function(){${saved}if(saved){${run};return}var go=function(){${preloadAll};${run}};if(document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
         return html
           .replace(entry, '')
           .replace(preload, '')
-          .replace('</body>', `<script>${start}</script>\n  </body>`)
+          .replace(charset, (tag) => `${tag}\n    <script>${early}</script>`)
+          .replace('</body>', `<script>${late}</script>\n  </body>`)
       },
     },
   }
