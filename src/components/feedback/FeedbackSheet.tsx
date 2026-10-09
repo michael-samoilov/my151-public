@@ -51,10 +51,11 @@ import type { NoArgKey } from '@/i18n';
 // then `t(key)` rightly demands arguments none of these have.
 //
 // `scale` evens out the four icons: their square box, the area inside their
-// outline and their ink come out about the same.
+// outline and their ink come out about the same. The bug is set larger by eye
+// than its measured 91%.
 type ChipIcon = ComponentType<{ className?: string; style?: CSSProperties; strokeWidth?: number }>;
 const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: ChipIcon; scale: number }[] = [
-  { id: 'bug', key: 'feedback.category.bug', Icon: BugIcon, scale: 0.91 },
+  { id: 'bug', key: 'feedback.category.bug', Icon: BugIcon, scale: 1.12 },
   { id: 'translation', key: 'feedback.category.translation', Icon: Languages, scale: 1.03 },
   { id: 'idea', key: 'feedback.category.idea', Icon: Lightbulb, scale: 1.1 },
   { id: 'other', key: 'feedback.category.other', Icon: MessageCircle, scale: 0.94 },
