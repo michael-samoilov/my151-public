@@ -4,8 +4,8 @@ import { useEffect, useSyncExternalStore } from 'react';
  * The admin feedback list, fetched once per page load and shared by the
  * Feedback tab, the detail header's report chip, and the session chart.
  *
- * One `/api/feedback-list` call costs about 39 Redis commands (LRANGE, LLEN,
- * and 37 daily HGETALLs for the 7- and 30-day counts), so the views share one
+ * One `/api/feedback-list` call costs LRANGE and LLEN, plus 30 daily HGETALLs
+ * once the first page no longer reaches back 30 days. The views share one
  * response. Only the Feedback tab's Refresh button fetches again.
  */
 
