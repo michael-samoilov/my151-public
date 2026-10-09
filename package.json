@@ -14,6 +14,7 @@
     "indexnow": "NODE_USE_ENV_PROXY=1 node scripts/indexnow.mjs",
     "search:connect-google": "node scripts/connect-google-search-console.mjs",
     "build": "npm run i18n:verify && tsc -b && vite build",
+    "build:vercel": "npm run build && tsx scripts/keep-previous-assets.ts dist",
     "lint": "eslint . --suppressions-location eslint-suppressions.json",
     "preview": "vite preview",
     "doctor": "npx react-doctor@latest",
