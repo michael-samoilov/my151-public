@@ -51,6 +51,15 @@ const DEX = {
 
 const click = (selector: string) => async (page: Page) => { await page.locator(selector).first().click(); };
 const openTools = async (page: Page) => { await page.locator('button[aria-expanded]').filter({ hasText: /tools/i }).first().click(); };
+/** Open a picker cell and wait until every sprite in its selector has its pixels. */
+const openPickerCell = (cell: string) => async (page: Page) => {
+  await page.getByTestId(`favorites-cell-${cell}`).click();
+  const sprites = page.locator('#favorites-selector [data-testid^="favorites-pick-"] img[alt]:not([alt=""])');
+  await sprites.first().waitFor({ timeout: 30_000 });
+  await page.waitForFunction((selector) => [...document.querySelectorAll(selector)]
+    .every((img) => (img as HTMLImageElement).complete && (img as HTMLImageElement).naturalWidth > 1),
+  '#favorites-selector [data-testid^="favorites-pick-"] img[alt]:not([alt=""])', { timeout: 30_000 });
+};
 
 /** The fixed screen set. Add a screen when a change touches a state this list does not reach. */
 export const SCREENS: Screen[] = [
@@ -76,6 +85,16 @@ export const SCREENS: Screen[] = [
   { id: 'league-tools-menu', path: '/custom-gym-leader', seed: LEAGUE, act: openTools },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
+  { id: 'favorites-selector', path: '/favorite-pokemon-picker', act: openPickerCell('water-1') },
+  { id: 'favorites-selector-filled', path: '/favorite-pokemon-picker', seed: FAVORITES, act: openPickerCell('fire-5') },
+  {
+    id: 'favorites-export', path: '/favorite-pokemon-picker', seed: FAVORITES,
+    act: async (page) => {
+      await click('[data-testid="favorites-export-open"]')(page);
+      await page.locator('[data-testid="favorites-export-save"]:not([disabled])').waitFor({ timeout: 60_000 });
+      await page.locator('[data-export-preview-layer] img[src^="blob:"]').first().waitFor({ timeout: 60_000 });
+    },
+  },
 ];
 
 export interface Region { x: number; y: number; w: number; h: number; pixels: number; unstable: boolean; text: string }
