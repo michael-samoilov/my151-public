@@ -2415,7 +2415,9 @@ export function AdminPage() {
                     <div className={PREVIEW_TABLE}>
                       <div
                         data-preview-header
-                        className="mb-2 flex flex-wrap items-center gap-1.5 md:col-span-full md:row-start-1 md:mb-0 md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:px-2.5 md:border-b md:border-border md:pb-1.5"
+                        // Sticks under the page header on a phone, and under the date-and-tab bar on desktop.
+                        // Its ::before covers the panel's padding, where the rows' shadows would show beside it.
+                        className="sticky top-[var(--admin-header-h,0px)] z-10 -mt-2 flex flex-wrap items-center gap-1.5 border-b border-border bg-card py-2 before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-card md:top-[calc(var(--admin-header-h,0px)+var(--admin-bar-h,0px))] md:col-span-full md:row-start-1 md:-mt-1.5 md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:px-2.5 md:pb-1.5 md:pt-1.5"
                       >
                         <PreviewStatusMenus
                           archiveFilter={archiveFilter}
