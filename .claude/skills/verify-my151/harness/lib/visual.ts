@@ -171,9 +171,17 @@ const NAME_SHIM = 'globalThis.__name = globalThis.__name || ((f) => f);';
 
 // The footer's build stamp is the build minute (PageFooter.tsx), so two builds
 // made a minute apart differ there and shift what follows it. Pin it on both.
+// React renders "v " and the digits as two text nodes, so match the digits
+// node after a node that ends in "v ".
 const PIN_BUILD_STAMP = `(() => {
   const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-  for (let t = walk.nextNode(); t; t = walk.nextNode()) if (/\\bv \\d{10}\\b/.test(t.textContent)) t.textContent = t.textContent.replace(/\\bv \\d{10}\\b/g, 'v 0000000000');
+  let prev = '';
+  for (let t = walk.nextNode(); t; t = walk.nextNode()) {
+    const text = t.textContent;
+    const pinned = /^\\d{10}$/.test(text.trim()) && /v\\s*$/.test(prev) ? '0000000000' : text.replace(/\\bv \\d{10}\\b/g, 'v 0000000000');
+    if (pinned !== text) t.textContent = pinned;
+    prev = pinned;
+  }
 })()`;
 
 const overlaps = (r: { x: number; y: number; w: number; h: number }, s: { x: number; y: number; w: number; h: number }) =>
