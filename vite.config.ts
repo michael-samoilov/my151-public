@@ -40,8 +40,59 @@ function buildTimestampMeta(): Plugin {
   }
 }
 
+/**
+ * On the picker and Pokédex pages, starts the app code and its downloads one
+ * frame after the first paint, so on a slow phone the HTML and stylesheet have
+ * the connection to themselves. Measured on a throttled phone (October 9):
+ * the picker's header shows at 0.5 s, not 1.5 s, and the Pokédex's loading
+ * screen at 1.0 s, not 1.5 s, while each tool appears at the same time as
+ * before. Google's phone score for the picker went from 84 to 99.
+ *
+ * A visitor with saved work on the page starts the code at once, as before:
+ * with a full Pokédex, starting later made the builder appear about 0.2 s
+ * later. Not on the league page: its code is the largest, and starting it
+ * later made the builder appear about 0.3 s later. Not on the hub, which is
+ * prerendered and gained nothing. A hidden tab, which draws no frames, starts
+ * at once.
+ */
+const START_AFTER_FIRST_PAINT: Record<string, string> = {
+  '/favorite-pokemon-picker.html': 'favorite-picker',
+  '/pokedex-builder.html': 'personal-151-pokedex-v3',
+}
+
+function startAppAfterFirstPaint(): Plugin {
+  const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>/
+  const preload = /\s*<link rel="modulepreload" crossorigin href="([^"]+)">/g
+  const charset = /<meta charset="UTF-8" \/>/
+  return {
+    name: 'start-app-after-first-paint',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, { path }) {
+        const src = entry.exec(html)?.[1]
+        const savedKey = START_AFTER_FIRST_PAINT[path]
+        if (!src || !savedKey || !charset.test(html)) return html
+        const files = JSON.stringify([src, ...[...html.matchAll(preload)].map((m) => m[1])])
+        const saved = `var saved=null;try{saved=localStorage.getItem(${JSON.stringify(savedKey)})}catch(e){}`
+        const preloadAll = `${files}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)})`
+        const run = `var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)`
+        // Before the stylesheet, so a visitor with saved work fetches the code
+        // as early as the HTML's own links did.
+        const early = `(function(){${saved}if(saved)${preloadAll}})()`
+        const late = `(function(){${saved}if(saved){${run};return}var go=function(){${preloadAll};${run}};if(document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
+        return html
+          .replace(entry, '')
+          .replace(preload, '')
+          .replace(charset, (tag) => `${tag}\n    <script>${early}</script>`)
+          .replace('</body>', `<script>${late}</script>\n  </body>`)
+      },
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), prerenderHub(), pickerSpritePacks()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), prerenderHub(), pickerSpritePacks()],
   define: {
     // Only the hub prerender's server build keeps this constant; the browser
     // reads the meta tag above.

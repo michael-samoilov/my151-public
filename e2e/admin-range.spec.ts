@@ -35,7 +35,6 @@ function source(now: number): DashboardSource {
     funnel: { 'intro-shown': '5' },
     funnelWindow: null,
     leagueClients: {},
-    exportSurveySkips: null,
   };
 }
 
@@ -49,11 +48,7 @@ async function stubDashboard(page: Page): Promise<string[]> {
     const range = url.searchParams.get('range') ?? 'all';
     asked.push(range);
     const now = Date.now();
-    const body = buildDashboard(
-      source(now),
-      { offset: 0, limit: Number(url.searchParams.get('limit') ?? 50), range: isDashboardRange(range) ? range : 'all' },
-      now,
-    );
+    const body = buildDashboard(source(now), { range: isDashboardRange(range) ? range : 'all' }, now);
     return route.fulfill({ json: body });
   });
   await page.route('**/api/search-performance**', (route) => route.fulfill({ status: 503, json: { error: 'off' } }));

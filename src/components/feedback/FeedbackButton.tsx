@@ -1,5 +1,6 @@
 import { useT } from '@/i18n';
-import { Bug } from 'lucide-react';
+import { BugIcon } from '@/components/shared/AppIcons';
+import { pathScale } from '@/lib/pathScale';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
 
 /**
@@ -32,7 +33,9 @@ export function FeedbackButton() {
       data-feedback-open
       className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
     >
-      <Bug className="w-4 h-4" />
+      {/* 105%, with the globe beside it at 104%: their box, outline area and
+          ink come out about even. */}
+      <BugIcon className="w-4 h-4" {...pathScale(1.05)} />
     </button>
   );
 }

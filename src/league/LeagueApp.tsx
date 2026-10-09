@@ -1,4 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { reloadIfStale } from '@/lib/staleDeploy';
+import { whenIdle } from '@/lib/whenIdle';
 import { Pencil, PanelRightClose } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
@@ -26,10 +28,12 @@ import { CardActions, CardIdentity, CardPage } from './components/CardPage';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
-import { LeagueExportOverlay } from './components/LeagueExportOverlay';
 import { LeagueFunnelNudge } from './components/LeagueFunnelNudge';
 import { usePencilRoom } from './components/usePencilRoom';
 import { confirmOnEnter } from './components/confirmOnEnter';
+
+const importExportOverlay = () => reloadIfStale(import('./components/LeagueExportOverlay'));
+const LeagueExportOverlay = lazy(() => importExportOverlay().then((m) => ({ default: m.LeagueExportOverlay })));
 
 /**
  * The league builder's shell. Mobile: league home ⇄ full-screen card, with
@@ -178,6 +182,12 @@ export function LeagueApp() {
   useJsErrorCounter();
   useEffect(() => {
     sendEventBeacon('league-open', { once: true });
+  }, []);
+  // The export screen loads on its own, so its code and stylesheet stay out of
+  // the first load (about 42 KiB); it is fetched once the builder is idle, so
+  // the first Export opens as fast as before.
+  useEffect(() => {
+    whenIdle(() => { void importExportOverlay().catch(() => {}); });
   }, []);
   const openCard = useLeagueUi((s) => s.openCard);
   const shownCard = useLeagueUi((s) => s.openCard ?? s.lastCard);
@@ -406,7 +416,7 @@ export function LeagueApp() {
             and goes `inert` when the other is showing, so a sheet mounted in
             one would be clipped, or unreachable, half the time. */}
         <FeedbackHost route={openCard === null ? 'league' : 'league-card'} />
-        {exportOpen && <LeagueExportOverlay />}
+        {exportOpen && <Suspense fallback={null}><LeagueExportOverlay /></Suspense>}
         <LeagueFunnelNudge />
       </div>
     </TooltipProvider>

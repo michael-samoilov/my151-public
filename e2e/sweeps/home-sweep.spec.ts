@@ -278,6 +278,18 @@ test.describe('home page responsive sweep', () => {
           });
         }
 
+        // 15. Each screenshot's shadow fits inside the layer that clips it. The
+        // shadow (`0 9px 21px -5px`) reaches 16px past its sheet. When that
+        // layer ended at the panel's right edge, a phone's front sheet sat a
+        // few pixels from it, and its shadow stopped on a straight line.
+        document.querySelectorAll('.hub-stage').forEach((stage, i) => {
+          const clip = R(stage.children[0]);
+          stage.querySelectorAll('[data-shot]').forEach((shot, k) => {
+            const room = clip.right - R(shot).right;
+            if (room < 16) fail.push(`card ${i} shot ${k} shadow cut ${(16 - room).toFixed(1)}px short`);
+          });
+        });
+
         return fail;
       }, CARDS);
 

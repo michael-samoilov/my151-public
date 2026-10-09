@@ -46,9 +46,8 @@ async function stubPickerStore(page: Page) {
       funnelWindow: null,
       leagueClients: { [league.cid]: JSON.stringify(league) },
       favoriteClients: Object.fromEntries(charts.map((r) => [r.cid, JSON.stringify(r)])),
-      exportSurveySkips: null,
     };
-    return route.fulfill({ json: buildDashboard(source, { offset: 0, limit: 50, range: 'all' }, now) });
+    return route.fulfill({ json: buildDashboard(source, { range: 'all' }, now) });
   });
   await page.route('**/api/archive-entry', (route) => {
     const body = route.request().postDataJSON() as { cid: string; archived: boolean };

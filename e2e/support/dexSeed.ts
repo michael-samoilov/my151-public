@@ -17,6 +17,9 @@ export const TUNE_URL = '/pokedex-builder?tune';
  * Milestones are pre-marked celebrated so no popup covers the page.
  */
 export async function seedDex(page: Page): Promise<void> {
+  // The page starts its code after the first paint (vite.config.ts), so
+  // `load` can fire before the store exists.
+  await page.waitForFunction(() => '__pokedexStore' in window);
   await page.evaluate(() => {
     // The seed can land before React mounts, and a dex present at mount is
     // what summons the one-time gym leader callout on Tools. This is a

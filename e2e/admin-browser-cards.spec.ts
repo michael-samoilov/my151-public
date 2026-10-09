@@ -66,9 +66,8 @@ async function stub(page: Page) {
         'e2e-one': JSON.stringify(pickerRecord('e2e-one', [at(t1, 100, 112)])),
         'e2e-arch': JSON.stringify(pickerRecord('e2e-arch', [at(t1, 305, 320)])),
       },
-      exportSurveySkips: null,
     };
-    return route.fulfill({ json: buildDashboard(source, { offset: 0, limit: 50, range: 'all' }, now) });
+    return route.fulfill({ json: buildDashboard(source, { range: 'all' }, now) });
   });
   await page.route('**/api/search-performance**', (route) => route.fulfill({ status: 503, json: { error: 'off' } }));
   await page.addInitScript(() => {
@@ -136,6 +135,20 @@ test.describe('Newest browsers cards @viewport', () => {
       await testInfo.attach('three-tool-card.png', { body: await three.screenshot(), contentType: 'image/png' });
     });
   }
+
+  test('on a phone the chip zoom fits the widest possible card into a real card', async ({ page }) => {
+    test.skip(page.viewportSize()!.width >= 1024, 'phone layout');
+    await stub(page);
+    await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Dex', exact: true }).click();
+    await expect(card(page, 'e2e-three')).toBeVisible();
+    const fit = await page.evaluate(() => ({
+      zoom: Number(document.querySelector('[data-preview-chip-zoom]')!.getAttribute('data-preview-chip-zoom')),
+      need: document.querySelector<HTMLElement>('[data-usage-probe]')!.scrollWidth,
+      avail: document.querySelector<HTMLElement>('[data-user-preview] [data-usage-host]')!.clientWidth,
+    }));
+    expect(fit.avail).toBeGreaterThan(0);
+    expect(fit.zoom, JSON.stringify(fit)).toBeCloseTo(Math.min(1, fit.avail / (fit.need + 2)), 2);
+  });
 
   test('on desktop the who chips are as tall as the tool chips, and the bar spans the window', async ({ page }) => {
     test.skip(page.viewportSize()!.width < 1024, 'desktop layout');

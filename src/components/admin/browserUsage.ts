@@ -1,161 +1,81 @@
-import { FAVORITE_SESSION_GAP_MS } from '../../../api/_favoriteRecord';
-import { LEAGUE_SESSION_GAP_MS } from '../../../api/_leagueRecord';
-import { alignSessionMs } from '../../../api/_sessionize';
-import { dexPokemonCount, leagueExported } from './userPreview';
-
-/** One session on the clock, in ms since the epoch. */
-export type Span = { start: number; end: number };
-
-/** One tool's sessions, as its preview chip counts them. */
-export type ToolUsage = {
-  /** Every session the tool counted, logged or not. */
-  sessions: number;
-  /** The summed durations the record keeps (its newest 50 sessions). */
-  totalMs: number;
-  /** The logged sessions. Older ones fell out of the log, or predate it. */
-  spans: Span[];
-};
-
-/**
- * Two sessions this close are one visit. Each tool joins a beacon to a
- * session within its own gap, and the Dex gap (`SESSION_GAP_MS` in
- * api/_shared.ts, which the client cannot import) equals both of these. The
- * widest gap means the total never splits a session a tool joined.
- */
-export const BROWSER_SESSION_GAP_MS = Math.max(LEAGUE_SESSION_GAP_MS, FAVORITE_SESSION_GAP_MS);
-
-const sumMs = (ms: readonly number[] | undefined) =>
-  (ms ?? []).reduce((a, b) => a + (Number.isFinite(b) && b > 0 ? b : 0), 0);
-
-/** Dex and League: each log entry stamps its session's end, and `sessionMs`
- *  pairs with the log from the newest end. */
-export function endStampedUsage(rec: {
-  sessions?: number;
-  sessionMs?: number[];
-  sessionLog?: { ts: number }[];
-}): ToolUsage {
-  const log = rec.sessionLog ?? [];
-  const ms = alignSessionMs(log.length, rec.sessionMs ?? []);
-  const spans: Span[] = [];
-  log.forEach((entry, i) => {
-    if (!Number.isFinite(entry.ts)) return;
-    const dur = Number.isFinite(ms[i]) && ms[i] > 0 ? ms[i] : 0;
-    spans.push({ start: entry.ts - dur, end: entry.ts });
-  });
-  return { sessions: rec.sessions ?? rec.sessionMs?.length ?? 0, totalMs: sumMs(rec.sessionMs), spans };
-}
-
-/** Picker: each log entry stores its session's start and end. */
-export function spanUsage(rec: {
-  sessions?: number;
-  sessionMs?: number[];
-  sessionLog?: { ts: number; endTs: number }[];
-}): ToolUsage {
-  const spans = (rec.sessionLog ?? [])
-    .filter((s) => Number.isFinite(s.ts) && Number.isFinite(s.endTs) && s.endTs >= s.ts)
-    .map((s) => ({ start: s.ts, end: s.endTs }));
-  return { sessions: rec.sessions ?? spans.length, totalMs: sumMs(rec.sessionMs), spans };
-}
-
-/**
- * The browser as a whole: every logged session of every tool on one timeline.
- *
- * - Sessions: sessions that overlap, or start within the gap of the visit
- *   before ending, are one visit.
- * - Time: the union of the sessions, so a minute in two tools counts once and
- *   the idle gap between two tools counts not at all.
- * - Unlogged sessions (older than a record's newest 50, or from before the
- *   Dex log existed) have no clock time. All of them precede that tool's
- *   logged ones, so each counts as a visit of its own, with its kept duration.
- * - The result never drops below the busiest tool. A visit in one tool can
- *   bridge two sessions that another tool split, and a record's own sessions
- *   can overlap, so the merge alone could undercount.
- *
- * It never exceeds the sum of the tools either: merging only removes sessions
- * and overlap.
- */
-export function browserTotal(tools: readonly ToolUsage[]): { sessions: number; totalMs: number } {
-  const spans = tools.flatMap((t) => t.spans).sort((a, b) => a.start - b.start || a.end - b.end);
-  let visits = 0;
-  let unionMs = 0;
-  let visitEnd = -Infinity;
-  let runStart = 0;
-  let runEnd = -Infinity;
-  for (const s of spans) {
-    if (s.start > visitEnd + BROWSER_SESSION_GAP_MS) visits += 1;
-    visitEnd = Math.max(visitEnd, s.end);
-    if (s.start > runEnd) {
-      if (runEnd > -Infinity) unionMs += runEnd - runStart;
-      runStart = s.start;
-      runEnd = s.end;
-    } else {
-      runEnd = Math.max(runEnd, s.end);
-    }
-  }
-  if (runEnd > -Infinity) unionMs += runEnd - runStart;
-
-  let sessions = visits;
-  let totalMs = unionMs;
-  let busiest = 0;
-  let longest = 0;
-  for (const t of tools) {
-    const loggedMs = t.spans.reduce((a, s) => a + (s.end - s.start), 0);
-    sessions += Math.max(0, t.sessions - t.spans.length);
-    totalMs += Math.max(0, t.totalMs - loggedMs);
-    busiest = Math.max(busiest, t.sessions);
-    longest = Math.max(longest, t.totalMs);
-  }
-  return { sessions: Math.max(sessions, busiest), totalMs: Math.max(totalMs, longest) };
-}
+import type { BrowserRow, ToolStat } from '../../../api/_dashboard';
+import { fmtChipDuration, formatWhen } from './userPreview';
 
 export type UsageTool = 'dex' | 'league' | 'picker';
 
 /** One tool on a card: its progress, and its sessions and time. `used` is
  *  false when the browser never opened the tool; the card still shows it. */
-export type ToolCell = { tool: UsageTool; used: boolean; count: number; exported: boolean; usage: ToolUsage };
+export type ToolCell = { tool: UsageTool; used: boolean; count: number; exported: boolean; sessions: number; totalMs: number };
 
-const UNUSED: ToolUsage = { sessions: 0, totalMs: 0, spans: [] };
+const TOOLS: readonly UsageTool[] = ['dex', 'league', 'picker'];
 
-type SessionRecord = { sessions?: number; sessionMs?: number[] };
+/** All three tools of one row, in card order: Dex, League, Picker. */
+export function toolCells(row: BrowserRow): ToolCell[] {
+  return TOOLS.map((tool) => {
+    const stat = row[tool];
+    return stat
+      ? { tool, used: true, count: stat.count, exported: !!stat.exported, sessions: stat.sessions, totalMs: stat.totalMs }
+      : { tool, used: false, count: 0, exported: false, sessions: 0, totalMs: 0 };
+  });
+}
 
-/** All three tools of one browser, in card order: Dex, League, Picker. */
-export function toolCells(t: {
-  dex?: SessionRecord & { latestIds?: number[]; exported?: boolean; sessionLog?: { ts: number }[] };
-  league?: SessionRecord & { maxCards: number; exportsCard: number; exportsLeague: number; sessionLog?: { ts: number }[] };
-  picker?: SessionRecord & {
-    latest: { filled: number };
-    exportsFull: number;
-    exportsSimplified: number;
-    sessionLog?: { ts: number; endTs: number }[];
+function longest<T>(items: readonly T[], length: (item: T) => number): T {
+  return items.reduce((a, b) => (length(b) > length(a) ? b : a));
+}
+
+/** Digits read as one width each; a camera icon takes about two. */
+const progressLength = (s: ToolStat) => String(s.count).length + (s.exported ? 2 : 0);
+
+function widestStat(stats: readonly ToolStat[]): ToolStat {
+  if (stats.length === 0) return { count: 0, sessions: 0, totalMs: 0 };
+  const progress = longest(stats, progressLength);
+  return {
+    count: progress.count,
+    ...(progress.exported ? { exported: true as const } : {}),
+    sessions: Math.max(...stats.map((s) => s.sessions)),
+    totalMs: longest(stats, (s) => fmtChipDuration(s.totalMs).length).totalMs,
   };
-}): ToolCell[] {
-  const cells: ToolCell[] = [];
-  if (t.dex) {
-    cells.push({ tool: 'dex', used: true, count: dexPokemonCount(t.dex.latestIds), exported: !!t.dex.exported, usage: endStampedUsage(t.dex) });
-  } else {
-    cells.push({ tool: 'dex', used: false, count: 0, exported: false, usage: UNUSED });
+}
+
+/** A row's "When" text with every digit as 0. The digits are tabular, so
+ *  texts of one shape are one width. Cached per row object, which lives as
+ *  long as its dashboard load, so each date formats once. */
+const shapes = new WeakMap<BrowserRow, string>();
+function whenShape(row: BrowserRow): string {
+  let shape = shapes.get(row);
+  if (shape === undefined) {
+    shape = formatWhen(row.lastTs, row.tz).replace(/\d/g, '0');
+    shapes.set(row, shape);
   }
-  if (t.league) {
-    cells.push({
-      tool: 'league',
-      used: true,
-      count: t.league.maxCards,
-      exported: leagueExported(t.league.exportsCard, t.league.exportsLeague),
-      usage: endStampedUsage(t.league),
-    });
-  } else {
-    cells.push({ tool: 'league', used: false, count: 0, exported: false, usage: UNUSED });
-  }
-  if (t.picker) {
-    cells.push({
-      tool: 'picker',
-      used: true,
-      count: t.picker.latest.filled,
-      exported: t.picker.exportsFull + t.picker.exportsSimplified > 0,
-      usage: spanUsage(t.picker),
-    });
-  } else {
-    cells.push({ tool: 'picker', used: false, count: 0, exported: false, usage: UNUSED });
-  }
-  return cells;
+  return shape;
+}
+
+/** Every distinct "When" shape of `rows`: a hidden copy of each holds the
+ *  When column at the width of the widest. Month names, AM and PM, and zone
+ *  names differ in width, so the longest text is not always the widest. */
+export function whenShapes(rows: readonly BrowserRow[]): string[] {
+  return [...new Set(rows.map(whenShape))];
+}
+
+/**
+ * A row as wide as the widest of `rows` in each usage column. The list
+ * renders only the rows near the viewport, so the table's auto columns would
+ * resize as rows scroll in; a hidden copy of this row holds them at the width
+ * every row needs. Each line of a column takes its own widest value. The
+ * When column takes its width from `whenShapes`.
+ */
+export function widestRow(rows: readonly BrowserRow[]): BrowserRow | null {
+  if (rows.length === 0) return null;
+  const stats = (tool: UsageTool) => rows.flatMap((r) => r[tool] ?? []);
+  const totals = rows.map((r) => r.total);
+  return {
+    ...rows[0],
+    dex: widestStat(stats('dex')),
+    league: widestStat(stats('league')),
+    picker: widestStat(stats('picker')),
+    total: {
+      sessions: Math.max(...totals.map((t) => t.sessions)),
+      totalMs: longest(totals, (t) => fmtChipDuration(t.totalMs).length).totalMs,
+    },
+  };
 }

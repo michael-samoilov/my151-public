@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bug, Check, Languages, Lightbulb, MessageCircle, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from 'react';
+import { Check, Languages, Lightbulb, MessageCircle, X } from 'lucide-react';
+import { BugIcon } from '@/components/shared/AppIcons';
+import { pathScale } from '@/lib/pathScale';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
 import { Button } from '@/components/ui/button';
@@ -47,11 +49,15 @@ import type { NoArgKey } from '@/i18n';
 // `NoArgKey` rather than `MessageKey`: a plain `MessageKey` annotation widens
 // each entry to the whole key union, including keys that take placeholders, and
 // then `t(key)` rightly demands arguments none of these have.
-const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: typeof Bug }[] = [
-  { id: 'bug', key: 'feedback.category.bug', Icon: Bug },
-  { id: 'translation', key: 'feedback.category.translation', Icon: Languages },
-  { id: 'idea', key: 'feedback.category.idea', Icon: Lightbulb },
-  { id: 'other', key: 'feedback.category.other', Icon: MessageCircle },
+//
+// `scale` evens out the four icons: their square box, the area inside their
+// outline and their ink come out about the same.
+type ChipIcon = ComponentType<{ className?: string; style?: CSSProperties; strokeWidth?: number }>;
+const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: ChipIcon; scale: number }[] = [
+  { id: 'bug', key: 'feedback.category.bug', Icon: BugIcon, scale: 0.91 },
+  { id: 'translation', key: 'feedback.category.translation', Icon: Languages, scale: 1.03 },
+  { id: 'idea', key: 'feedback.category.idea', Icon: Lightbulb, scale: 1.1 },
+  { id: 'other', key: 'feedback.category.other', Icon: MessageCircle, scale: 0.94 },
 ];
 
 const MIN_MESSAGE = 4;
@@ -182,7 +188,7 @@ function FeedbackForm({
       }}
     >
       <div className="flex flex-wrap gap-1.5">
-        {CATEGORIES.map(({ id, key, Icon }) => (
+        {CATEGORIES.map(({ id, key, Icon, scale }) => (
           <button
             key={id}
             type="button"
@@ -200,7 +206,7 @@ function FeedbackForm({
                 : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
             }`}
           >
-            <Icon className="w-3.5 h-3.5" />
+            <Icon className="w-3.5 h-3.5" {...pathScale(scale)} />
             {t(key)}
           </button>
         ))}
