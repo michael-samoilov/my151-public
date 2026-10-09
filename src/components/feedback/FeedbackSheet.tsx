@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bug, Check, Languages, Lightbulb, MessageCircle, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
+import { Check, Languages, Lightbulb, MessageCircle, X } from 'lucide-react';
+import { BugIcon } from '@/components/shared/AppIcons';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
 import { Button } from '@/components/ui/button';
@@ -47,8 +48,8 @@ import type { NoArgKey } from '@/i18n';
 // `NoArgKey` rather than `MessageKey`: a plain `MessageKey` annotation widens
 // each entry to the whole key union, including keys that take placeholders, and
 // then `t(key)` rightly demands arguments none of these have.
-const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: typeof Bug }[] = [
-  { id: 'bug', key: 'feedback.category.bug', Icon: Bug },
+const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: ComponentType<{ className?: string }> }[] = [
+  { id: 'bug', key: 'feedback.category.bug', Icon: BugIcon },
   { id: 'translation', key: 'feedback.category.translation', Icon: Languages },
   { id: 'idea', key: 'feedback.category.idea', Icon: Lightbulb },
   { id: 'other', key: 'feedback.category.other', Icon: MessageCircle },
