@@ -1,6 +1,9 @@
 import {aggregate as aggregateRecords} from '../../../../api/_aggregate';
 import {favoritePicks,favoriteSummary,favoriteUsageFunnel,favoriteUser} from '../../../../api/_favoriteAggregate';
 import {mergeFavoriteRecord,parseFavoriteSnapshot,type FavoriteRecord} from '../../../../api/_favoriteRecord';
+import { bareCid } from '../../../../api/_archive';
+import { browserIndex } from '../../../../api/_dashboard';
+import type { BrowserRecords } from '../browserRecords';
 import favoriteCells from '../../../../api/_favoriteCells.json';
 // Demo fixture for the admin dashboard, reached at `/?admin&demo`.
 //
@@ -593,8 +596,6 @@ const referrerFlow = [
 
 export const sampleResponse: ApiResponse = {
   totalUsers: 388,
-  offset: 0,
-  limit: records.length,
   funnel: { users: 646, completed: 65, exported: 17 },
   funnelEvents: {
     intro_shown: 646,
@@ -790,14 +791,6 @@ export const sampleResponse: ApiResponse = {
       5,
     ),
   },
-  leagueByCid: Object.fromEntries(leagueUsers.filter((u) => u.hasDex).map((u) => [u.cid, u])),
-  dexByCid: Object.fromEntries(
-    records.filter((r) => leagueUsers.some((u) => u.cid === r.cid)).map((r) => [r.cid, r]),
-  ),
-  leagueUsers,
-  totalLeagueUsers: 6,
-  totalDexRecords: records.length,
-  records,
 };
 
 // Picker demo records are fabricated from valid coordinate eligibility, not production data.
@@ -824,9 +817,20 @@ const pickerRecords:FavoriteRecord[] = [0,24,80,150,220,257].map((depth,i)=>{
   if(i===5)r=mergeFavoriteRecord(r,{cid,id:`simple-${i}`,now:pickerNow+120000,kind:'export',exportKind:'simplified',snapshot:selected,events:['favorites-export-simplified']});
   return r;
 });
-sampleResponse.favoriteUsers=pickerRecords.map(r=>favoriteUser(r,false));
-sampleResponse.favoriteByCid=Object.fromEntries(sampleResponse.favoriteUsers.map(r=>[r.cid,r]));
-sampleResponse.totalFavoriteUsers=pickerRecords.length;
+const favoriteUsers = pickerRecords.map((r) => favoriteUser(r, false));
+// The Newest browsers lists, built the way the server builds them.
+sampleResponse.browsers = browserIndex(records, leagueUsers, favoriteUsers, new Set(records.filter((r) => r.archived).map((r) => bareCid(r.cid))));
+
+/** One demo browser's full records, as `/api/submissions?cid=` answers. */
+export function sampleBrowser(cid: string, country?: string): BrowserRecords {
+  const dex = records.find((r) => r.cid === `${cid}::${country}`) ?? records.find((r) => r.cid === cid);
+  return {
+    cid,
+    dex: dex ?? null,
+    league: leagueUsers.find((u) => u.cid === cid) ?? null,
+    favorite: favoriteUsers.find((u) => u.cid === cid) ?? null,
+  };
+}
 sampleResponse.favorite=favoriteSummary(pickerRecords);
 sampleResponse.favoritePicks=favoritePicks(pickerRecords);
 sampleResponse.favoriteFunnel=favoriteUsageFunnel(pickerRecords);

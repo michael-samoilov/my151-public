@@ -8,7 +8,7 @@ import { buildDashboard, type DashboardSource } from '../api/_dashboard';
  */
 
 const SOURCE: DashboardSource = {
-  clients: {}, archived: [], funnel: {}, funnelWindow: null, leagueClients: {}, exportSurveySkips: null,
+  clients: {}, archived: [], funnel: {}, funnelWindow: null, leagueClients: {},
 };
 
 const point = (x: string, y: number) => ({ x, y });
@@ -33,7 +33,7 @@ async function stub(page: Page, usage: unknown) {
   await page.route('**/api/submissions?**', (route) => {
     const qs = new URL(route.request().url()).searchParams;
     if (qs.get('usage') === '1') return route.fulfill({ json: usage });
-    return route.fulfill({ json: buildDashboard(SOURCE, { offset: 0, limit: 50, range: 'all' }, Date.now()) });
+    return route.fulfill({ json: buildDashboard(SOURCE, { range: 'all' }, Date.now()) });
   });
   await page.route('**/api/feedback-list**', (route) => route.fulfill({ json: { items: [], total: 0, offset: 0, limit: 200 } }));
   await page.route('**/api/search-performance**', (route) => {

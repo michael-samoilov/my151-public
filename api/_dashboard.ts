@@ -1,5 +1,5 @@
 import {parseFavoriteRecord, type FavoriteRecord} from './_favoriteRecord.js';
-import {favoritePicks, favoriteSummary, favoriteUsageFunnel, favoriteUser, type FavoriteUser} from './_favoriteAggregate.js';
+import {favoritePicks, favoriteSummary, favoriteUsageFunnel, favoriteUser} from './_favoriteAggregate.js';
 // The admin dashboard payload, computed from the raw Redis reads in
 // api/submissions.ts. It reads no Redis and no request, and it takes the
 // clock as an argument.
@@ -19,14 +19,17 @@ import {
 import {
   DAY_MS,
   aggregate,
+  browserTotal,
   buildDepthCurve,
   dayStart,
   depthByDevice,
+  endStampedUsage,
   lastPointLabelCounts,
   mergeByCid,
   quantile,
   referrerFlow,
   sessionSeconds,
+  spanUsage,
   tallyCohort,
   dexUsageFunnel,
   leagueUsageFunnel,
@@ -35,6 +38,7 @@ import {
   type Cohort,
   type DexFunnelRow,
   type SessionRecord,
+  type ToolUsage,
 } from './_aggregate.js';
 import { asArchivedSet, bareCid, isArchived, withoutArchived } from './_archive.js';
 import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot } from './_crossTool.js';
@@ -320,7 +324,6 @@ export interface DashboardSource {
   funnelWindow: Record<string, unknown> | null;
   leagueClients: Record<string, unknown> | null;
   favoriteClients?: Record<string, unknown> | null;
-  exportSurveySkips: Record<string, unknown> | null;
 }
 
 /** A counter hash as numbers, skipping any field that is not one. */
@@ -333,25 +336,140 @@ function counts(hash: Record<string, unknown> | null): Record<string, number> {
   return out;
 }
 
+/** One tool of a browser, as its Newest browsers row shows it. */
+export interface ToolStat {
+  /** Progress: Pokémon in the Dex, Gyms with a line, or filled Picker cells. */
+  count: number;
+  /** Present once the tool exported. */
+  exported?: true;
+  /** Every session the tool counted, and their summed time. */
+  sessions: number;
+  totalMs: number;
+}
+
 /**
- * The `/api/submissions` payload. `offset` and `limit` page the user lists.
+ * One record on a Newest browsers list: what its row shows and filters on.
+ * The who fields and the time are the list record's own; the tools are every
+ * tool of its browser. A tool the browser never used is absent.
+ */
+export interface BrowserRow {
+  cid: string;
+  lastTs: number;
+  tz?: string;
+  country?: string;
+  region?: string;
+  device?: string;
+  os?: string;
+  browser?: string;
+  lang?: string;
+  locale?: string;
+  switched?: string;
+  archived: boolean;
+  dex?: ToolStat;
+  league?: ToolStat;
+  picker?: ToolStat;
+  /** The browser as a whole: sessions merged across tools, time counted once. */
+  total: { sessions: number; totalMs: number };
+}
+
+/** Every record of each tool, newest-active first. */
+export interface BrowserIndex {
+  dex: BrowserRow[];
+  league: BrowserRow[];
+  picker: BrowserRow[];
+}
+
+/** What a row reads from each tool's record. A stored record and the shaped
+ *  user the admin page holds both satisfy these. */
+type Sessions = { sessions?: number; sessionMs?: number[] };
+type DexTool = Sessions & { latestIds?: number[]; exported?: boolean; sessionLog?: { ts: number }[] };
+type LeagueTool = Sessions & { maxCards: number; exportsCard: number; exportsLeague: number; sessionLog?: { ts: number }[] };
+type PickerTool = Sessions & {
+  latest: { filled: number };
+  exportsFull: number;
+  exportsSimplified: number;
+  sessionLog?: { ts: number; endTs: number }[];
+};
+
+function toolStat(count: number, exported: boolean, usage: ToolUsage): ToolStat {
+  return { count, ...(exported ? { exported: true as const } : {}), sessions: usage.sessions, totalMs: usage.totalMs };
+}
+
+/** One list record's row, with the tools of its browser. */
+export function browserRow(
+  rec: SessionRecord,
+  tools: { dex?: DexTool; league?: LeagueTool; picker?: PickerTool },
+  archived: boolean,
+): BrowserRow {
+  const { dex, league, picker } = tools;
+  const dexUsage = dex && endStampedUsage(dex);
+  const leagueUsage = league && endStampedUsage(league);
+  const pickerUsage = picker && spanUsage(picker);
+  return {
+    cid: rec.cid,
+    lastTs: rec.lastTs,
+    tz: rec.tz,
+    country: rec.country,
+    region: rec.region,
+    device: rec.device,
+    os: rec.os,
+    browser: rec.browser,
+    lang: rec.lang,
+    locale: rec.locale,
+    switched: rec.switched,
+    archived,
+    dex: dex && dexUsage && toolStat(dex.latestIds?.length ?? 0, !!dex.exported, dexUsage),
+    league: league && leagueUsage && toolStat(league.maxCards, league.exportsCard + league.exportsLeague > 0, leagueUsage),
+    picker: picker && pickerUsage && toolStat(picker.latest.filled, picker.exportsFull + picker.exportsSimplified > 0, pickerUsage),
+    total: browserTotal([dexUsage, leagueUsage, pickerUsage].filter((u): u is ToolUsage => !!u)),
+  };
+}
+
+/**
+ * The Newest browsers lists: every record of each tool, archived ones
+ * flagged. A country-split Dex record (`<cid>::<country>`) is a row of its
+ * own; the League and Picker rows of its browser read the browser's own Dex
+ * record, or its newest split when it has none.
+ */
+export function browserIndex(
+  dex: (SessionRecord & DexTool)[],
+  league: (SessionRecord & LeagueTool)[],
+  picker: (SessionRecord & PickerTool)[],
+  archived: Set<string>,
+): BrowserIndex {
+  const newest = <T extends { lastTs: number }>(list: T[]) => [...list].sort((a, b) => b.lastTs - a.lastTs);
+  const dexRows = newest(dex);
+  const dexOf = new Map<string, SessionRecord & DexTool>();
+  for (const r of dexRows) if (r.cid === bareCid(r.cid) || !dexOf.has(bareCid(r.cid))) dexOf.set(bareCid(r.cid), r);
+  const leagueOf = new Map(league.map((r) => [bareCid(r.cid), r]));
+  const pickerOf = new Map(picker.map((r) => [bareCid(r.cid), r]));
+  const row = (rec: SessionRecord, own: { dex?: DexTool; league?: LeagueTool; picker?: PickerTool }) => {
+    const cid = bareCid(rec.cid);
+    const tools = { dex: dexOf.get(cid), league: leagueOf.get(cid), picker: pickerOf.get(cid), ...own };
+    return browserRow(rec, tools, isArchived(rec.cid, archived));
+  };
+  return {
+    dex: dexRows.map((r) => row(r, { dex: r })),
+    league: newest(league).map((r) => row(r, { league: r })),
+    picker: newest(picker).map((r) => row(r, { picker: r })),
+  };
+}
+
+/**
+ * The `/api/submissions` payload.
  *
  * `range` picks the browsers each card counts. Most cards count the browsers
  * active in the range. Cross-tool cards keep both tools' records of those
  * browsers. The funnels and the referrer flow count the browsers first seen
  * in the range, and the funnels open on the window's day counters. The
- * activity series and the paged user lists keep every browser.
+ * activity series and the browser index keep every browser.
  */
-export function buildDashboard(
-  source: DashboardSource,
-  { offset, limit, range }: { offset: number; limit: number; range: DashboardRange },
-  now: number,
-) {
+export function buildDashboard(source: DashboardSource, { range }: { range: DashboardRange }, now: number) {
   const allRecords: ClientRecord[] = Object.values(source.clients ?? {})
     .map(parseRecord)
     .filter((r): r is ClientRecord => r !== null);
   const archivedSet = asArchivedSet(source.archived);
-  // Aggregates skip archived browsers. The paged lists still carry them,
+  // Aggregates skip archived browsers. The browser index still carries them,
   // flagged, so the admin can open or un-archive a card.
   const records = withoutArchived(allRecords, archivedSet);
 
@@ -363,7 +481,6 @@ export function buildDashboard(
   // The gym leader maker's records, in their own hash. A person who used
   // both tools is one cid present in both, so overlap is a set
   // intersection at read time — retroactive by construction.
-  const skipMap = parseExportSurveySkipMap(source.exportSurveySkips);
   const allLeagueRecords: LeagueRecord[] = Object.values(source.leagueClients ?? {})
     .map(parseLeagueRecord)
     .filter((r): r is LeagueRecord => r !== null);
@@ -458,10 +575,6 @@ export function buildDashboard(
         hasDex: dexFirstTs.has(r.cid),
       })),
   };
-
-  // Newest-active first. Sort the full list so archived cards keep their
-  // place when the admin filters them back in.
-  allRecords.sort((a, b) => b.lastTs - a.lastTs);
 
   // Depth (evolution-line) drop-off, four bases:
   //  total   = peak lines ever reached (overall breadth) — the default view.
@@ -646,7 +759,6 @@ export function buildDashboard(
   };
 
   const totalUsers = records.length;
-  const totalDexRecords = allRecords.length;
   const dexFunnelRows: DexFunnelRow[] = dexNew.map((r) => ({
     cid: r.cid,
     peakMon: Math.max(0, ...monEndsOf(r)),
@@ -664,58 +776,9 @@ export function buildDashboard(
     })),
     funnelEventCount(cohortEvents, 'league-open'),
   );
-  const page = allRecords.slice(offset, offset + limit).map((r) => ({
-    ...stampExportSurveySkips(r, skipMap),
-    archived: isArchived(r.cid, archivedSet),
-  }));
-
-  // The league record for each browser on this page of dex users, so the
-  // per-user card can show that person's other tool. Only the page's cids,
-  // so the payload does not carry the whole league store twice.
-  const leagueByCidAll = new Map(allLeagueRecords.map((r) => [r.cid, r]));
-  const leagueByCid: Record<string, LeagueUser> = {};
-  for (const r of page) {
-    const lr = leagueByCidAll.get(r.cid.split('::')[0]);
-    if (lr) {
-      leagueByCid[r.cid] = {
-        ...stampExportSurveySkips(leagueUser(lr, r.firstTs), skipMap),
-        archived: isArchived(r.cid, archivedSet),
-      };
-    }
-  }
-
-  // The league's own user list, newest-active first and paged like the dex
-  // one. A browser that only ever used the gym leader maker has no dex
-  // record, so this is the only place it appears as a person.
-  const leagueUsers = [...allLeagueRecords]
-    .sort((a, b) => b.lastTs - a.lastTs)
-    .slice(offset, offset + limit)
-    .map((r) => ({
-      ...stampExportSurveySkips(leagueUser(r, dexFirstTs.get(r.cid)), skipMap),
-      archived: isArchived(r.cid, archivedSet),
-    }));
-
-  // The dex record for each browser on this page of league users, so the
-  // user page can toggle tools without a second fetch. Only this page's
-  // cids, so the payload does not carry the whole dex store twice. Archived
-  // browsers too: the Archived list shows their cards with every tool.
-  const dexByCidAll = new Map(allRecords.map((r) => [r.cid.split('::')[0], r]));
-  const dexByCid: Record<string, ClientRecord> = {};
-  for (const u of leagueUsers) {
-    const dr = dexByCidAll.get(u.cid);
-    if (dr) dexByCid[u.cid] = stampExportSurveySkips(dr, skipMap);
-  }
-
-  const favoriteUsers = [...allFavoriteRecords].sort((a,b)=>b.lastTs-a.lastTs).slice(offset,offset+limit).map(r=>favoriteUser(r,isArchived(r.cid,archivedSet)));
-  const favoriteByCid: Record<string,FavoriteUser> = {};
-  const loadedCids = new Set([...page,...leagueUsers,...favoriteUsers].map(r=>bareCid(r.cid)));
-  for (const r of allFavoriteRecords) if (loadedCids.has(bareCid(r.cid))) favoriteByCid[bareCid(r.cid)] = favoriteUser(r,isArchived(r.cid,archivedSet));
-  for (const r of favoriteUsers) {
-    const dr = dexByCidAll.get(bareCid(r.cid));
-    if (dr) dexByCid[r.cid] = stampExportSurveySkips(dr,skipMap);
-    const lr = leagueByCidAll.get(bareCid(r.cid));
-    if (lr) leagueByCid[r.cid] = {...stampExportSurveySkips(leagueUser(lr,dr?.firstTs),skipMap),archived:isArchived(lr.cid,archivedSet)};
-  }
+  // Every browser of each tool, for the Newest browsers lists. Built from the
+  // records already read, so it costs no Redis command.
+  const browsers = browserIndex(allRecords, allLeagueRecords, allFavoriteRecords, archivedSet);
 
   // Self-scaling qualification thresholds: median per-Pokemon count per list.
   const popularMin = tailThreshold(picksFinal);
@@ -730,9 +793,6 @@ export function buildDashboard(
     range,
     rangeStart: start,
     totalUsers,
-    totalDexRecords,
-    offset,
-    limit,
     funnel: { users: dexIn.length, completed, exported },
     funnelEvents,
     dexFunnel,
@@ -741,9 +801,6 @@ export function buildDashboard(
     favorite:favoriteSummary(favoriteIn),
     // Per-cell pick counts of the charts active in the range, from the records already read.
     favoritePicks:favoritePicks(favoriteIn),
-    favoriteUsers,
-    favoriteByCid,
-    totalFavoriteUsers:allFavoriteRecords.length,
     tools,
     crossTool,
     crossToolSince,
@@ -775,10 +832,6 @@ export function buildDashboard(
     depthByDevice: depthByDeviceCurves,
     referrerFlow: referrerRows,
     leagueCurves,
-    leagueByCid,
-    dexByCid,
-    leagueUsers,
-    totalLeagueUsers: allLeagueRecords.length,
     // Full ranked lists; the admin UI previews the top N and expands the rest.
     // Qualification threshold = the median per-Pokemon count for that list, so
     // it self-scales with the data. No cap, so evo lines aren't cut off.
@@ -790,7 +843,7 @@ export function buildDashboard(
     popularBySection: rankBySectionSelf(picksBySection),
     droppedBySection: rankBySection(droppedBySection, droppedMin),
     picksBySectionAll: rankBySection(picksBySection, 1),
-    records: page,
+    browsers,
   };
 }
 

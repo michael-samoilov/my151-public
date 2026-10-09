@@ -9,8 +9,8 @@ import { DASHBOARD_RANGES, funnelDayKeys, type DashboardRange } from '../../api/
 //    record counted twice.
 // 2. A range that covers every browser still changes a card: a legacy record
 //    with no session log dropped, or the archive applied twice.
-// 3. The range leaks into what must keep every browser: the user lists and
-//    their Load more totals, or the activity series behind the chart.
+// 3. The range leaks into what must keep every browser: the browser index
+//    behind the Newest browsers lists, or the activity series behind the chart.
 // 4. A funnel opens on fewer browsers than it built, so bounced goes negative.
 // 5. A funnel reads the wrong counters: a day outside the window, or day
 //    counters past their 120-day lifetime instead of the all-time hash.
@@ -94,11 +94,9 @@ const source: DashboardSource = {
   funnel: { 'intro-shown': '12', 'league-open': '5' },
   funnelWindow: null,
   leagueClients: byCid([league('both-0001', [ago(2 * DAY_MS)]), league('lg-only01', [ago(8 * DAY_MS)])]),
-  exportSurveySkips: null,
 };
 
-const page = { offset: 0, limit: 50 };
-const dash = (range: DashboardRange) => buildDashboard(source, { ...page, range }, NOW);
+const dash = (range: DashboardRange) => buildDashboard(source, { range }, NOW);
 
 describe('dashboard date range', () => {
   it('counts the same browsers in Suite as the Active users label', () => {
@@ -115,11 +113,11 @@ describe('dashboard date range', () => {
     expect(wide).toEqual(all);
   });
 
-  it('keeps every browser in the user lists and the activity series', () => {
+  it('keeps every browser in the browser index and the activity series', () => {
     const all = dash('all');
     const day = dash('24h');
     expect(day.byTool.all.users).toBeLessThan(all.byTool.all.users);
-    for (const k of ['records', 'leagueUsers', 'totalDexRecords', 'totalLeagueUsers', 'activity', 'lastPointLabels'] as const) {
+    for (const k of ['browsers', 'activity', 'lastPointLabels'] as const) {
       expect(day[k], k).toEqual(all[k]);
     }
     for (const tool of ['dex', 'league', 'all'] as const) {
@@ -147,7 +145,7 @@ function withWindow(range: DashboardRange): DashboardSource {
   }
   return { ...source, funnelWindow: sums };
 }
-const funnels = (range: DashboardRange) => buildDashboard(withWindow(range), { ...page, range }, NOW);
+const funnels = (range: DashboardRange) => buildDashboard(withWindow(range), { range }, NOW);
 
 describe('dashboard funnels by date range', () => {
   it('opens at least as many browsers as it built, at every range', () => {
