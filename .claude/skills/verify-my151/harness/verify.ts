@@ -4,7 +4,7 @@
 //                       then compare fixed screens pixel by pixel (lib/visual.ts).
 // Usage (from repo root):
 //   npx tsx .claude/skills/verify-my151/harness/verify.ts [absolute|diff] [--base <ref>]
-//     [--surfaces a,b] [--no-build] [--no-visual | --visual-only]
+//     [--surfaces a,b] [--no-build] [--no-visual | --visual-only] [--screens id,id]
 import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, type EngineName } from './lib/engines.ts';
@@ -52,6 +52,7 @@ function parseArgs(argv: string[]) {
     video: argv.includes('--video'),
     noVisual: argv.includes('--no-visual'),
     visualOnly: argv.includes('--visual-only'),
+    screens: get('--screens')?.split(','),
   };
 }
 
@@ -164,7 +165,7 @@ async function main() {
     let visual: VisualReport | undefined;
     if (args.mode === 'diff' && basePreview && !args.noVisual) {
       console.log('visual diff: rendering fixed screens on both builds...');
-      visual = await runVisualDiff(basePreview.url, afterPreview.url, ev.dir);
+      visual = await runVisualDiff(basePreview.url, afterPreview.url, ev.dir, args.screens);
       console.log(`visual: ${visual.changed} of ${visual.screens.length} screens changed, ${visual.regions} regions, ${visual.unstable} unstable, ${visual.errors} errors`);
       for (const sc of visual.screens) {
         if (sc.error) console.log(`  ${sc.screen}-${sc.viewport}  ERROR ${sc.error.slice(0, 100)}`);
@@ -173,7 +174,10 @@ async function main() {
       console.log(`visual sheet: ${ev.dir}/visual.png`);
     }
 
-    const verdict = args.visualOnly ? 'PASS' : rollup(surfaces, regressions);
+    // A screen that could not be compared is unverified, never a quiet pass.
+    const rolled = args.visualOnly ? 'PASS' : rollup(surfaces, regressions);
+    const verdict = rolled === 'PASS' && visual?.errors ? 'INCONCLUSIVE' : rolled;
+    if (visual?.errors) console.log(`visual: ${visual.errors} screen(s) could not be compared; verdict is INCONCLUSIVE`);
     const report: RunReport = { mode: args.mode, base: args.base, startedAt: runId, surfaces, regressions, verdict, visual };
     const file = ev.writeReport(report);
     console.log(`\nverdict: ${verdict}`);

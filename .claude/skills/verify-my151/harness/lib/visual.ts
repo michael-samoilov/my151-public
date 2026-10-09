@@ -111,6 +111,7 @@ async function render(browser: Browser, url: string, screen: Screen, vp: Viewpor
     viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.scale,
     isMobile: vp.mobile, hasTouch: vp.mobile, reducedMotion: 'reduce', serviceWorkers: 'block',
   });
+  await ctx.addInitScript(NAME_SHIM);
   if (screen.seed) await ctx.addInitScript((seed) => { for (const [k, v] of Object.entries(seed)) localStorage.setItem(k, v); }, screen.seed);
   const page = await ctx.newPage();
   await page.goto(url + screen.path, { waitUntil: 'load' });
@@ -162,6 +163,11 @@ async function diffBoxes(page: Page, a: Buffer, b: Buffer): Promise<Array<{ x: n
   }, [a.toString('base64'), b.toString('base64')] as const);
 }
 
+// tsx compiles this file with esbuild, which wraps named functions in a
+// `__name()` helper. Callbacks passed to page.evaluate run in the page, where
+// that helper does not exist, so every page gets a no-op stand-in.
+const NAME_SHIM = 'globalThis.__name = globalThis.__name || ((f) => f);';
+
 const overlaps = (r: { x: number; y: number; w: number; h: number }, s: { x: number; y: number; w: number; h: number }) =>
   r.x < s.x + s.w && s.x < r.x + r.w && r.y < s.y + s.h && s.y < r.y + r.h;
 
@@ -180,14 +186,15 @@ async function textAt(page: Page, box: { x: number; y: number; w: number; h: num
   }, [box.x / scale, box.y / scale, box.w / scale, box.h / scale] as const);
 }
 
-export async function runVisualDiff(baseUrl: string, afterUrl: string, dir: string): Promise<VisualReport> {
+export async function runVisualDiff(baseUrl: string, afterUrl: string, dir: string, only?: string[]): Promise<VisualReport> {
   const out = path.join(dir, 'visual'); fs.mkdirSync(out, { recursive: true });
   const executablePath = resolveChromium();
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'], ...(executablePath ? { executablePath } : {}) });
   const screens: ScreenResult[] = [];
   try {
     const scratch = await (await browser.newContext()).newPage();
-    for (const screen of SCREENS) for (const vp of VIEWPORTS) {
+    await scratch.evaluate(NAME_SHIM);
+    for (const screen of SCREENS.filter((sc) => !only || only.includes(sc.id))) for (const vp of VIEWPORTS) {
       const name = `${screen.id}-${vp.name}`;
       try {
         // One stuck screen must not stall the run: give each render 90 s.
@@ -251,6 +258,7 @@ async function writeSheet(page: Page, report: VisualReport, shots: string, file:
     <h1>Visual diff: ${report.changed} of ${report.screens.length} screens changed, ${report.regions} regions${report.unstable ? `, ${report.unstable} unstable` : ''}</h1>
     <div class="note">Red: changed. Dashed orange: also differs between two renders of the base, so it is noise.</div>
     ${rows}<div class="note"><b>No change:</b> ${quiet || 'none'}</div>${errors ? `<div class="note"><b>Errors:</b><br>${errors}</div>` : ''}`);
+  await page.evaluate(NAME_SHIM);
   await page.evaluate(() => Promise.all([...document.images].map((i) => i.decode().catch(() => undefined))));
   await page.screenshot({ path: file, fullPage: true });
 }
