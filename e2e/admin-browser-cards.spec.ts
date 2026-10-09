@@ -136,6 +136,20 @@ test.describe('Newest browsers cards @viewport', () => {
     });
   }
 
+  test('on a phone the chip zoom fits the widest possible card into a real card', async ({ page }) => {
+    test.skip(page.viewportSize()!.width >= 1024, 'phone layout');
+    await stub(page);
+    await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Dex', exact: true }).click();
+    await expect(card(page, 'e2e-three')).toBeVisible();
+    const fit = await page.evaluate(() => ({
+      zoom: Number(document.querySelector('[data-preview-chip-zoom]')!.getAttribute('data-preview-chip-zoom')),
+      need: document.querySelector<HTMLElement>('[data-usage-probe]')!.scrollWidth,
+      avail: document.querySelector<HTMLElement>('[data-user-preview] [data-usage-host]')!.clientWidth,
+    }));
+    expect(fit.avail).toBeGreaterThan(0);
+    expect(fit.zoom, JSON.stringify(fit)).toBeCloseTo(Math.min(1, fit.avail / (fit.need + 2)), 2);
+  });
+
   test('on desktop the who chips are as tall as the tool chips, and the bar spans the window', async ({ page }) => {
     test.skip(page.viewportSize()!.width < 1024, 'desktop layout');
     await stub(page);

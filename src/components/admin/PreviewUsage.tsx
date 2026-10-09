@@ -154,8 +154,10 @@ export function PreviewUsageScale({ children }: { children: ReactNode }) {
     const probe = probeRef.current;
     if (!probe) return;
     const mq = window.matchMedia(PREVIEW_CHIP_MD);
+    // A real card's host: the hidden desktop sizer row has one too, 0 px wide on a phone.
+    const HOST = '[data-user-preview] [data-usage-host]';
     const measure = () => {
-      const host = document.querySelector<HTMLElement>('[data-usage-host]');
+      const host = document.querySelector<HTMLElement>(HOST);
       const need = probe.scrollWidth;
       const avail = host?.clientWidth ?? 0;
       // Two spare pixels absorb scrollWidth rounding.
@@ -166,7 +168,7 @@ export function PreviewUsageScale({ children }: { children: ReactNode }) {
     void document.fonts.ready.then(measure);
     const ro = new ResizeObserver(measure);
     ro.observe(probe);
-    const host = document.querySelector<HTMLElement>('[data-usage-host]');
+    const host = document.querySelector<HTMLElement>(HOST);
     if (host) ro.observe(host);
     // The list renders only the rows near the viewport, so the observed card
     // can scroll away; a resize still reaches the cards that remain.
@@ -180,7 +182,7 @@ export function PreviewUsageScale({ children }: { children: ReactNode }) {
   });
   return (
     <>
-      <div ref={probeRef} aria-hidden className="pointer-events-none invisible fixed left-0 top-0 -z-10 grid w-max grid-cols-4 gap-1">
+      <div ref={probeRef} aria-hidden data-usage-probe className="pointer-events-none invisible fixed left-0 top-0 -z-10 grid w-max grid-cols-4 gap-1">
         <UsageGrid cells={WORST} total={WORST_USAGE} />
       </div>
       <div hidden data-preview-chip-zoom={zoom} />
