@@ -70,15 +70,17 @@ const MINIMAP_HOVER = '1';
 const MINIMAP_HOVER_MS = 200;
 // Shared idle delay after the last scroll, zoom, or drag.
 const MINIMAP_LINGER_MS = 1200;
-// The minimap rests just left of the bottom-right cell, over the locked
-// Favorite × Gimmick and Favorite × Legendary cells, so a grid scrolled to
-// its corner keeps that cell clear. Sprites in the last row and column can
-// reach a few pixels past the grid, so a filled grid scrolls that much
-// further; the gaps absorb it. The desktop gap also keeps the cell's center
-// clear at every zoom, and the smaller phone gap keeps more of
-// Favorite × Starter clear.
-const MINIMAP_GAP = { desktop: 12, mobile: 4 };
-const MINIMAP_BOTTOM = 4;
+// The minimap rests on the bottom edge, over the locked Favorite × Gimmick
+// and Favorite × Legendary cells next to the bottom-right cell. Its right
+// offset leaves the most of every pickable cell clear when the grid is
+// scrolled to its corner: the lowest worst-case coverage over every zoom, on
+// an empty or a filled grid. `scripts/favorite-minimap-spot.ts` measures that
+// spot and checks this rule against it. The offset comes from the unzoomed
+// cell, so the minimap holds still through scrolls and pinches.
+const MINIMAP_PAD = 3;
+function minimapRight(base: number, mapWidth: number): number {
+  return Math.max(0, Math.round(2.57 * base - 0.67 * (mapWidth + 2 * MINIMAP_PAD)));
+}
 
 /** A length inside a 0.5px-bordered track of size `track`, as a fraction of
  *  it. A container unit would give the same size, but 300 size containers
@@ -301,11 +303,9 @@ function useZoomFrame(
       if (!map || !view) return;
       map.style.display = overflows ? '' : 'none';
       if (!overflows) return;
-      // Clear of classic scrollbars. The spot comes from the unzoomed cell,
-      // so it holds still through scrolls and pinches.
-      const gap = desktop ? MINIMAP_GAP.desktop : MINIMAP_GAP.mobile;
-      map.style.right = `${el.offsetWidth - el.clientWidth - el.clientLeft + Math.ceil(base) + gap}px`;
-      map.style.bottom = `${el.offsetHeight - el.clientHeight - el.clientTop + MINIMAP_BOTTOM}px`;
+      // Clear of classic scrollbars.
+      map.style.right = `${el.offsetWidth - el.clientWidth - el.clientLeft + minimapRight(base, box.width)}px`;
+      map.style.bottom = `${el.offsetHeight - el.clientHeight - el.clientTop}px`;
       // The sticky headers cover the first track on each axis, so the
       // visible body starts at the scroll offset and is one header short.
       const { cell, head, headRow } = tracks();
@@ -807,8 +807,8 @@ function ChartMinimap({
       ref={mapRef}
       data-testid="favorites-minimap"
       aria-hidden
-      className="pointer-events-none absolute bottom-2 right-2 z-10 touch-none select-none rounded-sm bg-background/85 p-[3px] shadow-sm transition-opacity duration-200"
-      style={{ opacity: 0 }}
+      className="pointer-events-none absolute bottom-2 right-2 z-10 touch-none select-none rounded-sm bg-background/85 shadow-sm transition-opacity duration-200"
+      style={{ opacity: 0, padding: MINIMAP_PAD }}
     >
       <div className="relative" style={box}>
         <div
