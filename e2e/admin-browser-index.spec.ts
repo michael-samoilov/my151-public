@@ -15,7 +15,8 @@ const MAX_ROWS = 70;
 
 const cidAt = (i: number) => `idx-${String(i).padStart(4, '0')}`;
 const leagueOnly = (i: number) => `lg-only-${String(i).padStart(4, '0')}`;
-const label = (cid: string) => `Open user ${cid.slice(0, 2)}…${cid.slice(-4)}`;
+/** The row's accessible name: an id over 8 characters shows its first 2 and last 4. */
+const label = (cid: string) => `Open user ${cid.length <= 8 ? cid : `${cid.slice(0, 2)}…${cid.slice(-4)}`}`;
 
 /** Newest first. The oldest 5 are the only New Zealand browsers, and the
  *  oldest 100 carry the widest values: big counts, long times, a long zone. */
@@ -134,6 +135,11 @@ test('desktop table columns hold still while rows of other widths scroll in', as
       const x = (sel: string) => Math.round(row.querySelector<HTMLElement>(sel)!.getBoundingClientRect().left * 10) / 10;
       return {
         when: x('span'),
+        country: x('[class*="md:col-start-2"]'),
+        device: x('[class*="md:col-start-3"]'),
+        os: x('[class*="md:col-start-4"]'),
+        browser: x('[class*="md:col-start-5"]'),
+        language: x('[class*="md:col-start-6"]'),
         dex: x('[data-metric="dex"]'),
         league: x('[data-metric="league"]'),
         picker: x('[data-metric="picker"]'),

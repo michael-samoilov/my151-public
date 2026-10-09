@@ -37,31 +37,39 @@ function widestStat(stats: readonly ToolStat[]): ToolStat {
   };
 }
 
-/** The "When" text's length per row. A row object lives as long as its
- *  dashboard load, so each date formats once. */
-const whenLengths = new WeakMap<BrowserRow, number>();
-function whenLength(row: BrowserRow): number {
-  let n = whenLengths.get(row);
-  if (n === undefined) {
-    n = formatWhen(row.lastTs, row.tz).length;
-    whenLengths.set(row, n);
+/** A row's "When" text with every digit as 0. The digits are tabular, so
+ *  texts of one shape are one width. Cached per row object, which lives as
+ *  long as its dashboard load, so each date formats once. */
+const shapes = new WeakMap<BrowserRow, string>();
+function whenShape(row: BrowserRow): string {
+  let shape = shapes.get(row);
+  if (shape === undefined) {
+    shape = formatWhen(row.lastTs, row.tz).replace(/\d/g, '0');
+    shapes.set(row, shape);
   }
-  return n;
+  return shape;
+}
+
+/** Every distinct "When" shape of `rows`: a hidden copy of each holds the
+ *  When column at the width of the widest. Month names, AM and PM, and zone
+ *  names differ in width, so the longest text is not always the widest. */
+export function whenShapes(rows: readonly BrowserRow[]): string[] {
+  return [...new Set(rows.map(whenShape))];
 }
 
 /**
- * A row as wide as the widest of `rows` in each desktop column. The list
+ * A row as wide as the widest of `rows` in each usage column. The list
  * renders only the rows near the viewport, so the table's auto columns would
  * resize as rows scroll in; a hidden copy of this row holds them at the width
- * every row needs. Each line of a column takes its own widest value.
+ * every row needs. Each line of a column takes its own widest value. The
+ * When column takes its width from `whenShapes`.
  */
 export function widestRow(rows: readonly BrowserRow[]): BrowserRow | null {
   if (rows.length === 0) return null;
-  const when = longest(rows, whenLength);
   const stats = (tool: UsageTool) => rows.flatMap((r) => r[tool] ?? []);
   const totals = rows.map((r) => r.total);
   return {
-    ...when,
+    ...rows[0],
     dex: widestStat(stats('dex')),
     league: widestStat(stats('league')),
     picker: widestStat(stats('picker')),

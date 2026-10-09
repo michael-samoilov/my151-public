@@ -70,7 +70,7 @@ import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
 import { FitNowrap } from '@/components/admin/FitNowrap';
 import { BrowserUsage, PreviewUsageScale } from '@/components/admin/PreviewUsage';
 import { UsageCard } from '@/components/admin/UsageCard';
-import { toolCells, widestRow, type ToolCell } from '@/components/admin/browserUsage';
+import { toolCells, whenShapes, widestRow, type ToolCell } from '@/components/admin/browserUsage';
 import { VirtualRows } from '@/components/admin/VirtualRows';
 import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
@@ -1396,6 +1396,24 @@ function PreviewPlatformSlot({
   );
 }
 
+/** The text of a card's When cell. */
+const WHEN_TEXT = 'whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1';
+
+/** Invisible desktop copies of every When shape in the list, in the table's
+ *  first column, so it is as wide as the widest. Shares the header's grid
+ *  row, so it adds no height. */
+function WhenSizer({ texts }: { texts: string[] }) {
+  return (
+    <div inert aria-hidden className="invisible max-md:hidden md:col-span-full md:row-start-1 md:grid md:h-0 md:grid-cols-subgrid md:overflow-hidden md:px-2.5">
+      {texts.map((text) => (
+        <span key={text} className={WHEN_TEXT}>
+          {text}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function UserPreviewCard({
   rec,
   cells,
@@ -1449,9 +1467,7 @@ function UserPreviewCard({
     >
       <div className="flex min-w-0 items-center gap-1 md:contents">
         <FitNowrap contentsOnMd className="min-w-0 flex-1">
-          <span className="whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1 md:self-end">
-            {formatWhen(rec.lastTs, rec.tz)}
-          </span>
+          <span className={cn(WHEN_TEXT, 'md:self-end')}>{formatWhen(rec.lastTs, rec.tz)}</span>
           <span className="whitespace-nowrap text-sm text-muted-foreground md:col-start-1 md:row-start-2 md:self-start">
             {relativeTime(rec.lastTs)}
           </span>
@@ -2381,6 +2397,7 @@ export function AdminPage() {
                       </div>
                       <PreviewUsageScale>
                         {sizer && <UserPreviewCard sizer rec={sizer} cells={toolCells(sizer)} total={sizer.total} archived={false} />}
+                        {sizer && <WhenSizer texts={whenShapes(rows)} />}
                         <VirtualRows
                           items={rows}
                           keyOf={(row) => `${listKey}:${row.cid}`}
