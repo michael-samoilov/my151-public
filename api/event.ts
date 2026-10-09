@@ -42,7 +42,7 @@ const DAILY_TTL_S = 120 * 24 * 60 * 60; // keep ~4 months of daily buckets
 
 const burstLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(500, '10 m'),
+  limiter: Ratelimit.fixedWindow(500, '10 m'),
   analytics: false,
   prefix: 'rl:evburst',
 });
@@ -51,7 +51,7 @@ const burstLimiter = new Ratelimit({
 // budget is for. 200 is well past a real day and well short of a script.
 const clientLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(200, '1 d'),
+  limiter: Ratelimit.fixedWindow(200, '1 d'),
   analytics: false,
   prefix: 'rl:evclient',
 });

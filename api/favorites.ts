@@ -6,8 +6,8 @@ import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, p
 import { parseCapturedAt } from './_sessionize.js';
 import { parseNotmeFlag } from './_exportStats.js';
 import { FAVORITE_CLIENTS_KEY, FAVORITE_VERSION_KEY, favoriteSessionAt, parseFavoriteSnapshot, parseFavoriteRecord, mergeFavoriteRecord, type FavoriteBeaconKind, type FavoriteExportKind } from './_favoriteRecord.js';
-const burstLimiter = new Ratelimit({redis,limiter:Ratelimit.slidingWindow(500,'10 m'),analytics:false,prefix:'rl:burst'});
-const clientLimiter = new Ratelimit({redis,limiter:Ratelimit.slidingWindow(SUBMIT_CLIENT_DAILY_CAP,'1 d'),analytics:false,prefix:'rl:client'});
+const burstLimiter = new Ratelimit({redis,limiter:Ratelimit.fixedWindow(500,'10 m'),analytics:false,prefix:'rl:burst'});
+const clientLimiter = new Ratelimit({redis,limiter:Ratelimit.fixedWindow(SUBMIT_CLIENT_DAILY_CAP,'1 d'),analytics:false,prefix:'rl:client'});
 /** Commit record, dedupe, milestone counters, and journal atomically. One billed command. */
 const CAS = `
 if redis.call('EXISTS', KEYS[3]) == 1 then return 2 end

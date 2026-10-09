@@ -25,7 +25,7 @@ import { parseNotmeFlag, parsePokemonIds, recordToolExport } from './_exportStat
 
 const burstLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(500, '10 m'),
+  limiter: Ratelimit.fixedWindow(500, '10 m'),
   analytics: false,
   prefix: 'rl:burst',
 });
@@ -33,7 +33,7 @@ const burstLimiter = new Ratelimit({
 // the two tools' budgets are independent. See api/_limits.ts.
 const clientLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(SUBMIT_CLIENT_DAILY_CAP, '1 d'),
+  limiter: Ratelimit.fixedWindow(SUBMIT_CLIENT_DAILY_CAP, '1 d'),
   analytics: false,
   prefix: 'rl:client',
 });
