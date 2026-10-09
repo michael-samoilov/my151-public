@@ -17,23 +17,11 @@ import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { markLeaguePromoSeen } from '@/lib/launchFlags';
 import dexBack from '@/assets/home/tool-dex-b.webp';
-import dexBack300 from '@/assets/home/tool-dex-b-300.webp';
-import dexBack400 from '@/assets/home/tool-dex-b-400.webp';
 import dexFront from '@/assets/home/tool-dex.webp';
-import dexFront300 from '@/assets/home/tool-dex-300.webp';
-import dexFront400 from '@/assets/home/tool-dex-400.webp';
 import leagueBack from '@/assets/home/tool-league-b.webp';
-import leagueBack300 from '@/assets/home/tool-league-b-300.webp';
-import leagueBack400 from '@/assets/home/tool-league-b-400.webp';
 import leagueFront from '@/assets/home/tool-league.webp';
-import leagueFront300 from '@/assets/home/tool-league-300.webp';
-import leagueFront400 from '@/assets/home/tool-league-400.webp';
 import favoritesBack from '@/assets/home/tool-favorites-b.webp';
-import favoritesBack300 from '@/assets/home/tool-favorites-b-300.webp';
-import favoritesBack400 from '@/assets/home/tool-favorites-b-400.webp';
 import favoritesFront from '@/assets/home/tool-favorites.webp';
-import favoritesFront300 from '@/assets/home/tool-favorites-300.webp';
-import favoritesFront400 from '@/assets/home/tool-favorites-400.webp';
 
 /**
  * The router page: one card per tool, plus a call to action.
@@ -86,23 +74,12 @@ const POP_TOP = 56;
 const POP_LEFT = 9.6;
 
 /**
- * The CSS width a shot renders at in each band of the hub's layout, measured
- * from the current layout: 128px on a 390px phone, 140px at 1280. That is the
- * narrowest shot; the widest is about 10% wider on a phone and 20% on a
- * desktop. Browsers load the smallest copy that covers `sizes` times the pixel
- * ratio, so a wider `sizes` would send a 3x phone the 800px original. With
- * this one, a 1x desktop or a 2x phone loads the 300px copy, a 2.6x to 3x
- * phone or a 2x laptop the 400px copy, and a landscape phone or tablet the
- * 800px original. `scripts/resize-shots.sh` writes the copies.
+ * Every device loads the 800px originals. A shot draws 128 to 201 CSS px wide,
+ * so a 2x or 3x screen draws each one at about half size, which stays sharp.
+ * Smaller copies saved bytes but no measured speed, and they drew at about
+ * their own size, which blurred them. They were removed on 9 October.
  */
-const SHOT_SIZES =
-  '(min-width: 1024px) calc(11.87vw - 0.602rem), (min-width: 640px) calc(33.197vw - 0.65rem), calc(34.163vw - 0.325rem)';
-const shot = (c300: string, c400: string, full: string, fetchPriority?: 'high') => ({
-  src: full,
-  srcSet: `${c300} 300w, ${c400} 400w, ${full} 800w`,
-  sizes: SHOT_SIZES,
-  fetchPriority,
-});
+const shot = (src: string, fetchPriority?: 'high') => ({ src, fetchPriority });
 
 interface Tool {
   key: string;
@@ -180,7 +157,7 @@ function useTools(placed: number): Tool[] {
       progress: { count: placed, total: 151, label: t('home.dex.saved', { progress: PROGRESS_TOKEN }) },
       // The page's largest paint on a phone. The hub's HTML is prerendered,
       // so the browser sees this priority before it requests anything.
-      shots: [shot(dexFront300, dexFront400, dexFront, 'high'), shot(dexBack300, dexBack400, dexBack)],
+      shots: [shot(dexFront, 'high'), shot(dexBack)],
       alts: [
         'Custom Pokédex Maker: a custom regional Pokédex in progress on the Build page',
         'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
@@ -192,7 +169,7 @@ function useTools(placed: number): Tool[] {
       title: t('home.league.title'),
       blurb: t('home.league.blurb'),
       progress: { count: league, total: SLOT_COUNT, label: t('home.league.saved', { progress: PROGRESS_TOKEN }) },
-      shots: [shot(leagueBack300, leagueBack400, leagueBack), shot(leagueFront300, leagueFront400, leagueFront)],
+      shots: [shot(leagueBack), shot(leagueFront)],
       alts: [
         'Gym Leader Maker: a whole league exported with eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
         'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
@@ -204,7 +181,7 @@ function useTools(placed: number): Tool[] {
       title: t('home.favorites.title'),
       blurb: t('home.favorites.blurb'),
       progress: { count: favorites.filled, total: favorites.total, label: t('home.favorites.saved', { progress: PROGRESS_TOKEN }) },
-      shots: [shot(favoritesBack300, favoritesBack400, favoritesBack), shot(favoritesFront300, favoritesFront400, favoritesFront)],
+      shots: [shot(favoritesBack), shot(favoritesFront)],
       alts: [t('home.favorites.fullGridAlt'), t('home.favorites.simplifiedAlt')],
     },
     { key: HAMMER_TITLE, title: t('home.next.title'), blurb: t('home.next.blurb') },
