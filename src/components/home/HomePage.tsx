@@ -381,13 +381,14 @@ function Caption({ tool }: { tool: Tool }) {
         {tool.blurb}
       </p>
       {tool.progress && (
-        // The saved-work line. It arrives after the page: the counts are read
-        // after the app adopts the prerendered HTML (zustand's hook gives
-        // React the dex store's initial state while it hydrates). So the page
-        // stays still, a visitor with saved work gets the line's box from the
-        // first paint (index.css, `p151-saved-*`). An invisible copy at the
-        // largest count gives the box the line's height before the count
-        // arrives.
+        // The saved-work line. It shows on every visit, with 0 before the
+        // tool is used, so a first visitor sees what the tool counts and that
+        // this browser keeps it. The counts are read after the app adopts the
+        // prerendered HTML (zustand's hook gives React the dex store's initial
+        // state while it hydrates), so a visitor with saved work would see 0
+        // first; index.css hides the count until it arrives (`p151-saved-*`).
+        // An invisible copy at the largest count gives the line its size
+        // before the count arrives.
         <p
           data-card-progress={tool.key}
           data-empty={tool.progress.count > 0 ? undefined : ''}
@@ -397,9 +398,7 @@ function Caption({ tool }: { tool: Tool }) {
           <span aria-hidden className="invisible [grid-area:1/1]">
             <ProgressText progress={{ ...tool.progress, count: tool.progress.total }} />
           </span>
-          {tool.progress.count > 0 && (
-            <span className="[grid-area:1/1]"><ProgressText progress={tool.progress} /></span>
-          )}
+          <span data-progress-count className="[grid-area:1/1]"><ProgressText progress={tool.progress} /></span>
         </p>
       )}
     </div>

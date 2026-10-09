@@ -12,9 +12,12 @@ The landing page at `/`. It links to each tool and asks what to build next.
 - Each tool card has two links to its tool: the panel link and the link in its
   `h2` title. The first artwork's alt text in each panel link starts with the
   tool name. The header's Tools menu holds a third, hidden link to each tool.
-- Saved work adds a `[data-card-progress]` line with the saved count under the
-  blurb, on each of the three tool cards. The blurb stays. The hub reads the
-  dex, league, and picker stores and never writes them.
+- Each of the three tool cards has a `[data-card-progress]` line under the
+  blurb with the saved count, such as "0/151 entries saved in this browser".
+  It shows 0 before the tool is used. For a tool with saved work, the
+  prerendered page hides the count until the app reads it, so it never shows 0
+  first. The hub reads the dex, league, and picker stores and never writes
+  them.
 - From October 6 to 13, 2026, a returning visitor sees a callout on the Tools
   menu (`[data-testid="favorites-launch-notice"]`, `role="status"`). It does not
   show when `p151-favorites-launch-seen` is set.
@@ -40,8 +43,9 @@ Manual drive (a Playwright script, local build):
 
 1. At 390px and at 1280px, open `/` and count four `[data-card-panel]`.
 2. Read each card link's `href`, and assert no horizontal overflow.
-3. Seed `personal-151-pokedex-v3` with a dex and reload.
-4. Expect `[data-card-progress]` on the dex card.
+3. Expect each `[data-card-progress]` line to read 0.
+4. Seed `personal-151-pokedex-v3` with a dex, reload, and expect the dex line
+   to show the count.
 
 ## Gotchas
 
