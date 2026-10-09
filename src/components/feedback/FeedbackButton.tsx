@@ -32,7 +32,9 @@ export function FeedbackButton() {
       data-feedback-open
       className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
     >
-      <BugIcon className="w-4 h-4" />
+      {/* 110%, without changing the button's box: at the same 16px the bug's
+          thin legs carry less ink than the globe beside it, so it read smaller. */}
+      <BugIcon className="w-4 h-4 scale-110" />
     </button>
   );
 }
