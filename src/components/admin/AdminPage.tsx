@@ -1379,7 +1379,7 @@ function PreviewPlatformSlot({
   children: ReactNode;
 }) {
   return (
-    <span className={cn('inline-flex', colClass, 'md:row-span-2 md:row-start-1 md:justify-self-stretch', empty && 'opacity-40')}>
+    <span className={cn('inline-flex', colClass, 'md:row-span-2 md:row-start-1 md:self-stretch md:justify-self-stretch', empty && 'opacity-40')}>
       <InfoChip fillMd label={label}>{children}</InfoChip>
     </span>
   );
@@ -1538,7 +1538,7 @@ function UserPreviewCard({
           >
             <BrowserIcon value={rec.browser} />
           </PreviewPlatformSlot>
-          <span className={cn(FACET_COL.language, 'inline-flex md:row-span-2 md:row-start-1 md:justify-self-stretch', !langPreview && 'opacity-40')}>
+          <span className={cn(FACET_COL.language, 'inline-flex md:row-span-2 md:row-start-1 md:self-stretch md:justify-self-stretch', !langPreview && 'opacity-40')}>
             {langPreview ? (
               <PreviewLanguageChip fillMd lang={rec.lang} locale={rec.locale} switched={rec.switched} />
             ) : (
@@ -1598,8 +1598,8 @@ function WhatPeoplePick({
 export type AdminNavKey = ToolSlice | 'search' | 'feedback';
 
 /** The admin's one bar: fixed to the bottom on a phone, stuck under the
- *  header on desktop. Its height is `--admin-bar-h`. `wide` spans the page,
- *  so a full-width sticky block under it leaves no gap beside it. */
+ *  header on desktop, where it spans the window. Its height is `--admin-bar-h`.
+ *  `wide` lets its contents span the page too. */
 function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
   const barRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -1619,11 +1619,11 @@ function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
       ref={barRef}
       data-admin-bar
       className={cn(
-        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
-        wide ? 'md:w-full' : 'md:max-w-5xl',
+        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:w-full md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
       )}
     >
-      {children}
+      {/* Full width on desktop, so nothing scrolls into view beside it; its contents stay centred like the header's. */}
+      <div className={cn(!wide && 'md:mx-auto md:max-w-5xl')}>{children}</div>
     </div>
   );
 }

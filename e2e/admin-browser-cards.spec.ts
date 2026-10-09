@@ -136,6 +136,30 @@ test.describe('Newest browsers cards @viewport', () => {
     });
   }
 
+  test('on desktop the who chips are as tall as the tool chips, and the bar spans the window', async ({ page }) => {
+    test.skip(page.viewportSize()!.width < 1024, 'desktop layout');
+    await stub(page);
+    await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Dex', exact: true }).click();
+    const three = card(page, 'e2e-three');
+    await expect(three).toBeVisible();
+    const box = async (l: Locator) => (await l.boundingBox())!;
+    const progress = await box(three.locator('[data-metric="dex"]'));
+    const time = await box(three.locator('[data-metric="session"][data-tool="dex"]'));
+    // Country, device, OS, browser, and language chips, in that order.
+    const who = await three.locator('button[data-tooltip-chip]').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON() as DOMRect));
+    expect(who).toHaveLength(5);
+    for (const w of who) {
+      expect(Math.abs(w.top - progress.y)).toBeLessThanOrEqual(2);
+      expect(Math.abs(w.bottom - (time.y + time.height))).toBeLessThanOrEqual(2);
+    }
+    const bar = await page.locator('[data-admin-bar]').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, width: r.width, page: document.documentElement.clientWidth };
+    });
+    expect(bar.left).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(bar.width - bar.page)).toBeLessThanOrEqual(1);
+  });
+
   test('an archived browser keeps its Dex chip on the Picker list', async ({ page }, testInfo) => {
     await stub(page);
     await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Picker', exact: true }).click();
