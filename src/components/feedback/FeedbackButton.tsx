@@ -1,5 +1,6 @@
 import { useT } from '@/i18n';
 import { BugIcon } from '@/components/shared/AppIcons';
+import { pathScale } from '@/lib/pathScale';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
 
 /**
@@ -32,9 +33,9 @@ export function FeedbackButton() {
       data-feedback-open
       className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
     >
-      {/* 110%, without changing the button's box: at the same 16px the bug's
-          thin legs carry less ink than the globe beside it, so it read smaller. */}
-      <BugIcon className="w-4 h-4 scale-110" />
+      {/* 105%, with the globe beside it at 104%: their box, outline area and
+          ink come out about even. */}
+      <BugIcon className="w-4 h-4" {...pathScale(1.05)} />
     </button>
   );
 }
