@@ -58,6 +58,7 @@ export const SCREENS: Screen[] = [
   { id: 'hub-progress', path: '/', seed: { ...DEX, ...LEAGUE, ...FAVORITES } },
   { id: 'builder-intro', path: '/pokedex-builder' },
   { id: 'builder-tools-menu', path: '/pokedex-builder', act: openTools },
+  { id: 'builder-feedback', path: '/pokedex-builder', act: click('[data-feedback-open]') },
   { id: 'builder-progress', path: '/pokedex-builder', seed: DEX },
   { id: 'builder-demo', path: '/pokedex-builder?demo=151' },
   { id: 'builder-analytics', path: '/pokedex-builder?demo=151', act: click('[data-nav="analytics"]') },
