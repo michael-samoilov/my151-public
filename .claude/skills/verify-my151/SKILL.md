@@ -39,8 +39,8 @@ iOS Chrome, Android) assert a platform identity and a mobile viewport, so they c
 prove platform-sniff code branches; they are Blink, so they never prove engine
 rendering. Three places read the UA: `src/lib/feedbackContext.ts` (telemetry),
 `src/league/main.tsx` (on iOS it caps the viewport's maximum scale), and
-`src/lib/exportImage.ts` (on Android an export downloads instead of opening
-the share sheet). The personas can prove those branches. The **real-engine
+`src/lib/shareOrDownload.ts` (only on iOS does an export open the share
+sheet; everywhere else it downloads). The personas can prove those branches. The **real-engine
 lanes** (WebKit, Gecko) prove rendering, layout, and scroll on the actual
 engine. Every proof asserts its persona/engine first (`READ_PERSONA` +
 `assertPersona`), so a run can never silently verify the wrong surface.

@@ -3,20 +3,22 @@ export function isShareAbort(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError';
 }
 
-/** Share via native share sheet (mobile gallery save) or fall back to file download. */
+/** Share via the iOS share sheet (one tap saves to Photos), or download the file everywhere else. */
 export async function shareOrDownload(blob: Blob, filename: string) {
   const file = new File([blob], filename, { type: blob.type });
 
-  // Skip the share sheet on Android: its system share sheet is an app picker
-  // with no obvious "Save to device" action, leaving users stuck (they end up
-  // emailing the file to themselves to download it). Going straight to the
-  // download path drops the file into /Downloads, which most Android galleries
-  // auto-scan. iOS keeps the share path because its share sheet has a one-tap
-  // "Save Image" that goes straight to Photos — strictly better than a
-  // browser-tab preview, which is what <a download> falls back to on iOS.
-  const isAndroid = /Android/i.test(navigator.userAgent);
+  // Only iPhone and iPad open the share sheet. Its one-tap "Save Image" goes
+  // straight to Photos, where <a download> would open a browser-tab preview.
+  // Everywhere else the file downloads. Desktop Chrome, Edge, and Safari also
+  // support sharing files, but their share menu offers apps instead of a save,
+  // so a desktop export belongs in the Downloads folder. Android's share sheet
+  // has no obvious "Save to device" either, and its Downloads folder is one
+  // the gallery scans. iPadOS reports a Mac user agent, so touch tells it apart.
+  const isIos =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  if (!isAndroid && navigator.canShare?.({ files: [file] })) {
+  if (isIos && navigator.canShare?.({ files: [file] })) {
     await navigator.share({ files: [file] });
     return;
   }

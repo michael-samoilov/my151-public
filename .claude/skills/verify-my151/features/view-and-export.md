@@ -92,9 +92,9 @@ catch the download, and abort `/api/submit`. Click `[data-dex-export]`, then
   (`keepalive`) that only demo mode holds back, not `?notme`. The survey that
   can follow posts to `/api/feedback`, and previews share the production
   database.
-- The share sheet runs only off Android and only when
-  `navigator.canShare({files})` is true. Android always downloads through
-  `<a download>` (`src/lib/exportImage.ts`).
+- The share sheet runs only on iPhone and iPad, and only when
+  `navigator.canShare({files})` is true. Every other platform, desktop
+  included, downloads through `<a download>` (`src/lib/shareOrDownload.ts`).
 - Section outlines draw only with the build-order sort.
 - On a phone the View settings sheet stages changes until its apply button.
   Desktop applies them live.

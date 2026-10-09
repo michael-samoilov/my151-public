@@ -88,6 +88,7 @@ test.describe('full favorite chart export', () => {
 
   test('a cancelled native share keeps the preview and saved picks', async ({ page }, testInfo) => {
     await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15', configurable: true });
       Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true });
       Object.defineProperty(navigator, 'share', { value: () => Promise.reject(new DOMException('Cancelled', 'AbortError')), configurable: true });
     });
