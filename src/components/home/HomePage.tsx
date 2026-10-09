@@ -656,8 +656,10 @@ export function HomePage() {
               than the viewport. */}
           {/* `overflow-x-clip` cuts the screenshot shadows' clip boxes, which
               reach past the right-hand card, at the screen edge, so the page
-              never scrolls sideways. The shadows themselves end inside it. */}
-          <main className="hub-home flex flex-1 flex-col overflow-x-clip px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
+              never scrolls sideways. The shadows themselves end inside it.
+              Safari before 16 has no `clip` and gets `hidden`, which makes
+              `main` a scroll container; nothing in it overflows vertically. */}
+          <main className="hub-home flex flex-1 flex-col overflow-x-clip not-supports-[overflow:clip]:overflow-x-hidden px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
             <div className="hub-spacer min-h-6 flex-1" />
             <section className="md:grid md:grid-cols-4 md:items-baseline md:gap-x-6">
               <h1
