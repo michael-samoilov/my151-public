@@ -102,7 +102,7 @@ for (const form of ALTERNATE_PICKER_FORMS) {
     types: form.types,
     generation: form.generation ?? owner.generation,
     sprite: pokemonSpriteUrl(form.id),
-    source: form.id === 10228 ? 'powerup' : 'dex',
+    source: form.source ?? 'dex',
     ownerId: owner.id,
   });
 }

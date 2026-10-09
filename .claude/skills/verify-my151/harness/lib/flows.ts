@@ -91,6 +91,34 @@ async function settle(s: Session, limit = 5000): Promise<void> {
   }
 }
 
+/**
+ * Waits until an element's box and scroll height hold still twice. A sheet
+ * slides in with the same element count, so `settle` returns mid-slide, and
+ * WebKit's software paint made `favorites:tall-selector-fits` read the gimmick
+ * sheet before it reached its place in two runs out of three.
+ */
+async function settleBox(s: Session, selector: string, limit = 5000): Promise<void> {
+  let last = '';
+  let steady = 0;
+  const started = Date.now();
+  while (Date.now() - started < limit) {
+    await new Promise((r) => setTimeout(r, 150));
+    const box = await s.evalJson<string>(`
+      const el = document.querySelector(${JSON.stringify(selector)});
+      if (!el) return '';
+      const r = el.getBoundingClientRect();
+      const body = el.querySelector('.overflow-y-auto');
+      return [r.top, r.height, body ? body.scrollHeight : 0, body ? body.clientHeight : 0].map(Math.round).join();
+    `);
+    if (box && box === last) {
+      if (++steady >= 2) return;
+    } else {
+      steady = 0;
+      last = box;
+    }
+  }
+}
+
 async function waitForApp(s: Session, tries = 40): Promise<boolean> {
   for (let i = 0; i < tries; i++) {
     const mounted = await s.evalJson<boolean>(`const r=document.getElementById('root'); return !!r && r.children.length>0;`).catch(() => false);
@@ -1923,6 +1951,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     await closePicker();
     await clickCell(s, '[data-testid="favorites-cell-gimmick-8"]');
     const gimmickOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    if (gimmickOpen) await settleBox(s, '[role="dialog"]');
     const tall = gimmickOpen ? await s.evalJson<{
       mobile: boolean; rows: number; inside: boolean; noScroll: boolean; same: boolean;
     }>(`

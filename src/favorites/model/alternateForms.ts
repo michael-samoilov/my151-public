@@ -9,6 +9,9 @@ export interface AlternatePickerForm {
   generation?: GenNumber;
   /** Source filename in Pokémon Showdown's Gen 5-style sprite directory. */
   spriteSlug?: string;
+  /** A battle form, such as a cosmetic variant of a Mega that the League
+   *  builder collapses into one Mega. It belongs in the gimmick cells. */
+  source?: 'powerup';
 }
 
 const unownLetters: AlternatePickerForm[] = Array.from('BCDEFGHIJKLMNOPQRSTUVWXYZ', (letter, index) => ({
@@ -132,6 +135,9 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11005, ownerId: 925, name: 'maushold-family-of-three', types: ['normal'] },
   { id: 11006, ownerId: 978, name: 'tatsugiri-droopy', types: ['dragon', 'water'] },
   { id: 11007, ownerId: 978, name: 'tatsugiri-stretchy', types: ['dragon', 'water'] },
+  { id: 10318, ownerId: 801, name: 'magearna-original-mega', types: ['steel', 'fairy'], generation: 7, source: 'powerup' },
+  { id: 10323, ownerId: 978, name: 'tatsugiri-droopy-mega', types: ['dragon', 'water'], source: 'powerup' },
+  { id: 10324, ownerId: 978, name: 'tatsugiri-stretchy-mega', types: ['dragon', 'water'], source: 'powerup' },
   { id: 11008, ownerId: 585, name: 'deerling-summer', types: ['normal', 'grass'] },
   { id: 11009, ownerId: 585, name: 'deerling-autumn', types: ['normal', 'grass'] },
   { id: 11010, ownerId: 585, name: 'deerling-winter', types: ['normal', 'grass'] },
