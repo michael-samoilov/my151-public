@@ -47,11 +47,17 @@ function buildTimestampMeta(): Plugin {
  * screen at 1.0 s, not 1.5 s, while each tool appears at the same time as
  * before. Google's phone score for the picker went from 84 to 99.
  *
- * Not on the league page: its code is the largest, and starting it later made
- * the builder appear about 0.3 s later. Not on the hub, which is prerendered
- * and gained nothing. A hidden tab, which draws no frames, starts at once.
+ * A visitor with saved work on the page starts the code at once, as before:
+ * with a full Pokédex, starting later made the builder appear about 0.2 s
+ * later. Not on the league page: its code is the largest, and starting it
+ * later made the builder appear about 0.3 s later. Not on the hub, which is
+ * prerendered and gained nothing. A hidden tab, which draws no frames, starts
+ * at once.
  */
-const START_AFTER_FIRST_PAINT = ['/favorite-pokemon-picker.html', '/pokedex-builder.html']
+const START_AFTER_FIRST_PAINT: Record<string, string> = {
+  '/favorite-pokemon-picker.html': 'favorite-picker',
+  '/pokedex-builder.html': 'personal-151-pokedex-v3',
+}
 
 function startAppAfterFirstPaint(): Plugin {
   const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>/
@@ -63,9 +69,10 @@ function startAppAfterFirstPaint(): Plugin {
       order: 'post',
       handler(html, { path }) {
         const src = entry.exec(html)?.[1]
-        if (!src || !START_AFTER_FIRST_PAINT.includes(path)) return html
+        const savedKey = START_AFTER_FIRST_PAINT[path]
+        if (!src || !savedKey) return html
         const deps = [...html.matchAll(preload)].map((m) => m[1])
-        const start = `(function(){var go=function(){${JSON.stringify(deps)}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)});var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)};if(document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
+        const start = `(function(){var go=function(){${JSON.stringify(deps)}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)});var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)};var saved=null;try{saved=localStorage.getItem(${JSON.stringify(savedKey)})}catch(e){}if(saved||document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
         return html
           .replace(entry, '')
           .replace(preload, '')
