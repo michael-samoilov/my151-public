@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { buildBrowser, buildDashboard, type DashboardSource } from '../api/_dashboard';
+import { scrollToRow } from './admin-virtual-list';
 
 /**
  * The Newest browsers lists over the full browser index: every browser is
@@ -90,20 +91,7 @@ async function openTab(page: Page, tab: 'Dex' | 'League') {
 
 const rendered = (page: Page) => page.locator('[data-user-preview]').count();
 
-/** Scrolls the page down until `cid`'s row renders, then brings it on screen.
- *  Each step moves less than the rows rendered past the viewport's edge. */
-async function scrollTo(page: Page, cid: string) {
-  const row = page.getByRole('link', { name: label(cid), exact: true });
-  for (let i = 0; i < 400 && (await row.count()) === 0; i++) {
-    await page.evaluate(() => {
-      window.scrollBy(0, window.innerHeight + 600);
-      return new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
-    });
-  }
-  await row.scrollIntoViewIfNeeded();
-  await expect(row).toBeInViewport();
-  return row;
-}
+const scrollTo = (page: Page, cid: string) => scrollToRow(page, label(cid));
 
 test.describe('Newest browsers index @viewport', () => {
   test('reaches the oldest of 1,200 browsers by scrolling, holding only the rows near the viewport', async ({ page }, testInfo) => {

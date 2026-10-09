@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { buildBrowser, buildDashboard, type DashboardSource } from '../api/_dashboard';
+import { scrollToRow } from './admin-virtual-list';
 
 /**
  * Feedback reports link to the browser that sent them, and back.
@@ -9,9 +10,9 @@ import { buildBrowser, buildDashboard, type DashboardSource } from '../api/_dash
  * - e2e-fb-dex: Dex only. One report from the Picker, so its link falls back
  *   to Dex.
  * - e2e-fb-old: Dex only, behind 48 newer fillers, so it is the 51st Dex
- *   browser and not on the loaded page of 50. Its page loads it on demand.
+ *   browser, far down the list. Its page loads it by id, as every page does.
  * - e2e-fb-eg: a second person on a shared browser. api/submit.ts stored its
- *   only Dex record as `e2e-fb-eg::EG`, also past the loaded page. Its report
+ *   only Dex record as `e2e-fb-eg::EG`, also far down the list. Its report
  *   carries the country EG.
  * - e2e-fb-gone: no tool record anywhere.
  */
@@ -162,10 +163,12 @@ test.describe('admin feedback links', () => {
     const card = page.getByRole('link', { name: /Open user e2…both/ });
     const chip = card.getByTestId('admin-feedback-chip').locator('visible=true');
     await expect(chip).toHaveText('2');
-    await expect(page.getByRole('link', { name: 'Open user e2…-dex', exact: true }).getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('1');
-    const quiet = page.getByRole('link', { name: 'Open user e2…ll-0', exact: true });
-    await expect(quiet).toBeVisible();
+    // The list renders the rows near the viewport; these two are the 49th and 50th.
+    const quiet = await scrollToRow(page, 'Open user e2…ll-0');
     await expect(quiet.getByTestId('admin-feedback-chip')).toHaveCount(0);
+    const dexOnly = await scrollToRow(page, 'Open user e2…-dex');
+    await expect(dexOnly.getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('1');
+    await card.scrollIntoViewIfNeeded();
     await chip.click();
 
     await expect(nav(page).getByRole('button', { name: 'Feedback', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -174,12 +177,13 @@ test.describe('admin feedback links', () => {
     await expect(report(page, 'r-dex')).toHaveCount(0);
   });
 
-  test('a sender outside the newest 50 opens, and loads on demand', async ({ page }) => {
+  test('a sender far down the list opens on its only tool, and loads by id', async ({ page }) => {
     await stub(page);
     await nav(page).getByRole('button', { name: 'Feedback', exact: true }).click();
 
+    // The browser index holds every browser, so the link knows it used only Dex.
     const old = report(page, 'r-old').getByTestId('feedback-open-browser');
-    await expect(old).toHaveText('Open browser');
+    await expect(old).toHaveText('Open browser · Dex');
     await old.click();
     // The report came from League, which this browser never used: Dex opens.
     await expect(tools(page).getByRole('button', { name: 'Dex', pressed: true })).toBeVisible();
