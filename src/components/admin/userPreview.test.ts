@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  dexPokemonCount,
   formatWhen,
   fmtChipDuration,
-  leagueExported,
   matchesArchiveFilter,
   matchesToolFilter,
   uniqueFacetValues,
@@ -35,14 +33,6 @@ describe('formatWhen', () => {
   });
 });
 
-describe('leagueExported', () => {
-  it('is true when either export kind happened', () => {
-    expect(leagueExported(1, 0)).toBe(true);
-    expect(leagueExported(0, 2)).toBe(true);
-    expect(leagueExported(0, 0)).toBe(false);
-  });
-});
-
 describe('fmtChipDuration', () => {
   it('reports 0m under 45 seconds', () => {
     expect(fmtChipDuration(0)).toBe('0m');
@@ -51,14 +41,6 @@ describe('fmtChipDuration', () => {
 
   it('fits double-digit hours and minutes', () => {
     expect(fmtChipDuration(5999 * 60 * 1000)).toBe('99h 59m');
-  });
-});
-
-describe('dexPokemonCount', () => {
-  it('counts Pokémon in the latest dex, not evolution lines', () => {
-    expect(dexPokemonCount([25, 26])).toBe(2);
-    expect(dexPokemonCount([])).toBe(0);
-    expect(dexPokemonCount(undefined)).toBe(0);
   });
 });
 

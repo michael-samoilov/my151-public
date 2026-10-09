@@ -89,9 +89,8 @@ const source: DashboardSource = {
   funnel: {},
   funnelWindow: null,
   leagueClients: json(leagueRows),
-  exportSurveySkips: null,
 };
-const dash = (range: DashboardRange) => buildDashboard(source, { offset: 0, limit: 50, range }, NOW);
+const dash = (range: DashboardRange) => buildDashboard(source, { range }, NOW);
 const regionsOf = (snap: { eras: { regions: Record<string, number> }[] }) => {
   const sum: Record<string, number> = {};
   for (const e of snap.eras) for (const [k, n] of Object.entries(e.regions)) sum[k] = (sum[k] ?? 0) + n;
@@ -174,7 +173,6 @@ describe('submissions Redis bill', () => {
     expect(Object.keys(all.body.crossToolSince ?? {})).toEqual(['league', 'favorites']);
     expect(all.commands).toEqual([
       'hgetall clients',
-      'hgetall export-survey-skips',
       'hgetall favorites:clients',
       'hgetall funnel',
       'hgetall league:clients',
@@ -184,7 +182,6 @@ describe('submissions Redis bill', () => {
     expect(week.commands).toEqual([
       'eval <script>',
       'hgetall clients',
-      'hgetall export-survey-skips',
       'hgetall favorites:clients',
       'hgetall funnel',
       'hgetall league:clients',

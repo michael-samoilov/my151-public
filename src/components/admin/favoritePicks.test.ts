@@ -56,9 +56,8 @@ const source: DashboardSource = {
   funnelWindow: null,
   leagueClients: {},
   favoriteClients: json(pickers),
-  exportSurveySkips: null,
 };
-const dash = (range: DashboardRange) => buildDashboard(source, { offset: 0, limit: 50, range }, NOW);
+const dash = (range: DashboardRange) => buildDashboard(source, { range }, NOW);
 
 describe('favoritePicks', () => {
   it('counts each cell from the latest snapshot of the charts active in the range (1, 2, 3)', () => {
@@ -73,8 +72,8 @@ describe('favoritePicks', () => {
 
   it('keeps an archived Picker browser listed and flagged, and out of the counts (3)', () => {
     const d = dash('all');
-    expect(d.favoriteUsers.find((u) => u.cid === 'pick-gone')?.archived).toBe(true);
-    expect(d.favoriteUsers.find((u) => u.cid === 'pick-a')?.archived).toBe(false);
+    expect(d.browsers.picker.find((u) => u.cid === 'pick-gone')?.archived).toBe(true);
+    expect(d.browsers.picker.find((u) => u.cid === 'pick-a')?.archived).toBe(false);
     expect(d.favoritePicks.cells['fire|1'].some(([id]) => id === 136)).toBe(false);
   });
 
@@ -99,7 +98,7 @@ describe('submissions Redis bill with the pick counts', () => {
     vi.doUnmock('../../../api/_shared.js');
   });
 
-  it('reads the same keys as before (7)', async () => {
+  it('adds no Redis command for the counts (7)', async () => {
     vi.doMock('../../../api/_shared.js', async (original) => ({
       ...(await original<typeof import('../../../api/_shared.js')>()),
       requireAdmin: async () => true,
@@ -123,7 +122,6 @@ describe('submissions Redis bill with the pick counts', () => {
     expect(body.favoritePicks?.charts).toBe(5);
     expect(commands.map((c) => `${c[0].toLowerCase()} ${c[1]}`).sort()).toEqual([
       'hgetall clients',
-      'hgetall export-survey-skips',
       'hgetall favorites:clients',
       'hgetall funnel',
       'hgetall league:clients',
