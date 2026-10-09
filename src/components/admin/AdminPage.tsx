@@ -873,18 +873,7 @@ function DetailHeader({
   reports?: number;
   onFeedback?: () => void;
 }) {
-  const feedbackChip = reports > 0 && (
-    <button
-      type="button"
-      onClick={onFeedback}
-      data-testid="admin-feedback-chip"
-      aria-label={`${reports} feedback ${reports === 1 ? 'report' : 'reports'} from this browser`}
-      className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
-    >
-      <MessageSquare className="h-[13px] w-[13px] shrink-0" />
-      <span className="text-xs font-medium tabular-nums">{reports}</span>
-    </button>
-  );
+  const feedbackChip = reports > 0 && <FeedbackChip reports={reports} onFeedback={onFeedback} />;
   return (
     <div className="flex flex-col gap-1">
     <div className="flex flex-nowrap items-center gap-x-2 overflow-hidden">
@@ -1424,13 +1413,35 @@ function PreviewPlatformSlot({
   );
 }
 
+/** Speech bubble with the number of feedback reports a browser sent; opens the Feedback tab on them. */
+function FeedbackChip({ reports, onFeedback }: { reports: number; onFeedback?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onFeedback?.();
+      }}
+      onKeyDown={(e) => e.stopPropagation()}
+      data-testid="admin-feedback-chip"
+      aria-label={`${reports} feedback ${reports === 1 ? 'report' : 'reports'} from this browser`}
+      className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
+    >
+      <MessageSquare className="h-[13px] w-[13px] shrink-0" />
+      <span className="text-xs font-medium tabular-nums">{reports}</span>
+    </button>
+  );
+}
+
 function UserPreviewCard({
   rec,
   cells,
   pickerRow,
   archived,
+  reports = 0,
   onOpen,
   onArchive,
+  onFeedback,
 }: {
   rec: HeaderRec & { lastTs: number; tz?: string };
   /** Every tool this browser used, whichever list the card is on. */
@@ -1438,8 +1449,11 @@ function UserPreviewCard({
   /** A row of the Picker list. */
   pickerRow?: boolean;
   archived: boolean;
+  /** Feedback reports this browser sent. */
+  reports?: number;
   onOpen: () => void;
   onArchive: (next: boolean) => void;
+  onFeedback?: () => void;
 }) {
   const langPreview = previewLanguage(rec.lang, rec.locale, rec.switched);
 
@@ -1474,10 +1488,15 @@ function UserPreviewCard({
           </span>
         </FitNowrap>
         <div
-          className="shrink-0 md:col-start-11 md:row-span-2 md:row-start-1 md:justify-self-end"
+          className="flex shrink-0 items-center gap-1 md:col-start-11 md:row-span-2 md:row-start-1 md:justify-self-end"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
+          {reports > 0 && (
+            <span className="hidden md:inline-flex">
+              <FeedbackChip reports={reports} onFeedback={onFeedback} />
+            </span>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -1529,6 +1548,11 @@ function UserPreviewCard({
               </InfoChip>
             )}
           </span>
+          {reports > 0 && (
+            <span className="inline-flex md:hidden">
+              <FeedbackChip reports={reports} onFeedback={onFeedback} />
+            </span>
+          )}
         </FitNowrap>
       </div>
       <BrowserUsage cells={cells} />
@@ -1702,8 +1726,15 @@ export function AdminPage() {
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
   const [detail, setDetail] = useState<Detail | null>(null);
+  // The browser lists show a feedback chip, so they share the one feedback-list fetch with the user page.
+  const browserList = page === 'analytics' && (tool === 'dex' || tool === 'league' || tool === 'favorites');
+  const feedbackItems = useFeedbackList(token, browserList || (detail != null && detail.kind !== 'picks')).data?.items;
+  const reportsByCid = useMemo(() => {
+    const n = new Map<string, number>();
+    for (const r of feedbackItems ?? []) if (typeof r.cid === 'string') n.set(r.cid, (n.get(r.cid) ?? 0) + 1);
+    return n;
+  }, [feedbackItems]);
   // A user page fetches the shared feedback list once for its chip and chart.
-  const feedbackItems = useFeedbackList(token, detail != null && detail.kind !== 'picks').data?.items ?? [];
   // A browser that is not on a loaded page, such as an older feedback
   // sender, loads on its own when its page opens.
   const userCid = detail && detail.kind !== 'picks' ? detail.cid : null;
@@ -2101,7 +2132,7 @@ export function AdminPage() {
                 dex={dex}
                 league={league}
                 favorite={favorite}
-                reports={feedbackItems.filter((r) => r.cid === bare)}
+                reports={(feedbackItems ?? []).filter((r) => r.cid === bare)}
                 onFeedback={() => {
                   setDashScrollY(0);
                   setDetail(null);
@@ -2488,8 +2519,14 @@ export function AdminPage() {
                             cells={row.cells}
                             pickerRow={showPicker}
                             archived={row.archived}
+                            reports={reportsByCid.get(bareCid(row.cid)) ?? 0}
                             onArchive={(next) => void setArchived(row.cid, next)}
                             onOpen={() => openDetail(row.open)}
+                            onFeedback={() => {
+                              setDashScrollY(0);
+                              setPage('feedback');
+                              setFeedbackCid(bareCid(row.cid));
+                            }}
                           />
                         ))}
                       </PreviewUsageScale>
