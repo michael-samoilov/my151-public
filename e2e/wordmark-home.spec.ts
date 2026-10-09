@@ -20,7 +20,7 @@ test.describe('wordmark links home', () => {
     await expect(link).toHaveAttribute('href', HOME_HREF);
     // The wordmark is not the heading: the tool bar's eyebrow is the one h1.
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('h1')).toHaveText('Custom Pokédex Builder');
+    await expect(page.locator('h1')).toHaveText('Custom Pokédex Maker');
     await expect(link).toContainText('my151');
     // The screen-reader tagline rides along, so the link is not named "my151.app"
     // alone — that says nothing about where it goes.

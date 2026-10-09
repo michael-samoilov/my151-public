@@ -6,23 +6,27 @@ the context the report sends.
 ## Sub-features
 
 - Open it with the header button (`[data-feedback-open]`). The hub's "next
-  tool" card opens it on the Idea category.
+  tool" card opens it on the Idea category. The page footer's link and the
+  crash screen's report button also open it.
 - Four category chips (`form button[aria-pressed]`): bug, translation, idea,
   and other. A chip sends an enum key, never its label.
 - A message field (`#feedback-message`) of 4 to 1,000 characters. Send stays
   unavailable below the minimum.
-- A "what gets sent" disclosure lists the context: page, locale, viewport, UA,
-  placed count, and active filters.
+- A "what gets sent" disclosure lists the context as labeled lines, such as
+  `page:`, `language:`, `browser languages:`, `version:`, `screen:`, and
+  `browser:`. More lines give the placed count, the search and filter state,
+  and on the picker its completion.
 - A honeypot field (`input[name="website"]`), off-screen and hidden from
   assistive tech.
 
 ## How to get to it (user POV)
 
-Tap the feedback button in the header of the hub, the dex, or the league. On a
-phone the form is a bottom sheet (`[data-overlay] [role="dialog"]`). On desktop
-(1024px and wider) it is a card (`role="dialog"`) anchored to the button, with
-a close button, `[data-feedback-close]`. Escape or a click outside also closes
-it.
+Tap the feedback button in the header of the hub, the dex, the league, or the
+favorite picker. On a phone the form is a bottom sheet
+(`[data-overlay] [role="dialog"]`). On desktop (1024px and wider) it is a card
+(`role="dialog"`) anchored to the button, with a close button,
+`[data-feedback-close]`. The hub card opens the desktop card unanchored, in
+the bottom corner. Escape or a click outside also closes it.
 
 ## Driving it with the harness
 
@@ -39,8 +43,9 @@ Manual drive (a Playwright script, local build only):
 
 ## Gotchas
 
-- Never submit the form on a deployed site. A send writes to the production
-  feedback list, and preview deployments share the production database.
+- Never submit the form on a deployed site. On my151.app a send writes to the
+  production feedback list. A Vercel preview on another host answers 200 and
+  stores nothing (`isReadOnlyDeployment` in `api/_shared.ts`).
 - Demo mode does not gate a send. `?notme` only drops the client id, and the
   report still sends.
 - The server rejects a send less than 2 seconds after the form opened

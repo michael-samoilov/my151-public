@@ -148,8 +148,11 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
       ) : (
         button
       )}
-      {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 min-w-[170px] rounded-lg border bg-popover py-1 shadow-lg">
+      {/* Always in the DOM, hidden while closed: crawlers follow these links
+          between the tools, which a menu that mounts on open would hide.
+          z-[120] matches the language picker, the header's other dropdown, so
+          the open menu sits above page controls such as the intro's close button. */}
+      <div hidden={!open} className="absolute right-0 top-full z-[120] mt-1 min-w-[170px] rounded-lg border bg-popover py-1 shadow-lg">
           {TOOLS.map((tool) => (
             <a
               key={tool.id}
@@ -162,8 +165,7 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
               {t(tool.label)}
             </a>
           ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

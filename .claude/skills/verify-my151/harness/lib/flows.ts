@@ -91,6 +91,34 @@ async function settle(s: Session, limit = 5000): Promise<void> {
   }
 }
 
+/**
+ * Waits until an element's box and scroll height hold still twice. A sheet
+ * slides in with the same element count, so `settle` returns mid-slide, and
+ * WebKit's software paint made `favorites:tall-selector-fits` read the gimmick
+ * sheet before it reached its place in two runs out of three.
+ */
+async function settleBox(s: Session, selector: string, limit = 5000): Promise<void> {
+  let last = '';
+  let steady = 0;
+  const started = Date.now();
+  while (Date.now() - started < limit) {
+    await new Promise((r) => setTimeout(r, 150));
+    const box = await s.evalJson<string>(`
+      const el = document.querySelector(${JSON.stringify(selector)});
+      if (!el) return '';
+      const r = el.getBoundingClientRect();
+      const body = el.querySelector('.overflow-y-auto');
+      return [r.top, r.height, body ? body.scrollHeight : 0, body ? body.clientHeight : 0].map(Math.round).join();
+    `);
+    if (box && box === last) {
+      if (++steady >= 2) return;
+    } else {
+      steady = 0;
+      last = box;
+    }
+  }
+}
+
 async function waitForApp(s: Session, tries = 40): Promise<boolean> {
   for (let i = 0; i < tries; i++) {
     const mounted = await s.evalJson<boolean>(`const r=document.getElementById('root'); return !!r && r.children.length>0;`).catch(() => false);
@@ -241,7 +269,9 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
 
   // Boot on a clean origin.
   await s.navigate(ctx.base + DEX_PATH);
-  await s.evalJson(`try{localStorage.setItem('p151-league-promo-seen','1');localStorage.setItem('p151-moved-notice-seen','1');}catch{} return true;`);
+  // The moved-notice key makes the session a returning visitor, which shows the
+  // picker launch callout over the header from Oct 6 to 13 2026; mark it seen too.
+  await s.evalJson(`try{localStorage.setItem('p151-league-promo-seen','1');localStorage.setItem('p151-moved-notice-seen','1');localStorage.setItem('p151-favorites-launch-seen','1');}catch{} return true;`);
   await s.navigate(ctx.base + DEX_PATH);
   const booted = await waitForApp(s);
   checks.push(ok('boot:react-mounted', booted));
@@ -285,8 +315,10 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
        const navBox=list?list.getBoundingClientRect():null;
        const navLeft=navBox?navBox.left:Math.min(...navs.map(b=>b.getBoundingClientRect().left));
        const navRight=navBox?navBox.right:Math.max(...navs.map(b=>b.getBoundingClientRect().right));
-       const inner=title.firstElementChild;
-       const titleRight=inner?inner.getBoundingClientRect().right:title.getBoundingClientRect().left;
+       // The h1 box stretches to its grid cell, so measure the rendered text.
+       const walk=document.createTreeWalker(title,NodeFilter.SHOW_TEXT);const textRights=[];
+       for(let t=walk.nextNode();t;t=walk.nextNode()){if(!t.textContent.trim())continue;const r=document.createRange();r.selectNodeContents(t);for(const b of r.getClientRects())if(b.width>1)textRights.push(b.right);}
+       const titleRight=textRights.length?Math.max(...textRights):title.getBoundingClientRect().left;
        const kids=[...actions.children].map(k=>k.getBoundingClientRect().left);
        const actionsLeft=kids.length?Math.min(...kids):actions.getBoundingClientRect().right;
        const ok=titleRight<=navLeft+0.5&&navRight<=actionsLeft+0.5;
@@ -326,8 +358,10 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
        const navBox=list?list.getBoundingClientRect():null;
        const navLeft=navBox?navBox.left:Math.min(...navs.map(b=>b.getBoundingClientRect().left));
        const navRight=navBox?navBox.right:Math.max(...navs.map(b=>b.getBoundingClientRect().right));
-       const inner=title.firstElementChild;
-       const titleRight=inner?inner.getBoundingClientRect().right:title.getBoundingClientRect().left;
+       // The h1 box stretches to its grid cell, so measure the rendered text.
+       const walk=document.createTreeWalker(title,NodeFilter.SHOW_TEXT);const textRights=[];
+       for(let t=walk.nextNode();t;t=walk.nextNode()){if(!t.textContent.trim())continue;const r=document.createRange();r.selectNodeContents(t);for(const b of r.getClientRects())if(b.width>1)textRights.push(b.right);}
+       const titleRight=textRights.length?Math.max(...textRights):title.getBoundingClientRect().left;
        const kids=[...actions.children].map(k=>k.getBoundingClientRect().left);
        const actionsLeft=kids.length?Math.min(...kids):actions.getBoundingClientRect().right;
        const ok=titleRight<=navLeft+0.5&&navRight<=actionsLeft+0.5;
@@ -570,7 +604,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     `return {
       preview: !!document.querySelector('[data-export-preview-layer]'),
       confirm: !!document.querySelector('[data-dex-export-confirm]'),
-      surveyHost: !!document.querySelector('[data-export-survey-host]'),
+      surveyHost: !!document.querySelector('[data-export-survey], [data-export-survey-intro]'),
       shell: !!document.querySelector('[data-export-shell], [data-export-chrome]'),
       outlines: !!document.querySelector('[data-export-outlines]'),
     };`,
@@ -1700,7 +1734,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
 
   await s.navigate(ctx.base + '/');
   await waitForApp(s);
-  const hub = await waitFor(s, `a[href="${FAV_PATH}"]`);
+  const hub = await waitFor(s, `a[data-card-panel][href="${FAV_PATH}"]`);
   checks.push(ok('favorites:hub-card', hub));
   await s.screenshot(ctx.shot('favorites-hub'));
 
@@ -1917,6 +1951,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     await closePicker();
     await clickCell(s, '[data-testid="favorites-cell-gimmick-8"]');
     const gimmickOpen = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
+    if (gimmickOpen) await settleBox(s, '[role="dialog"]');
     const tall = gimmickOpen ? await s.evalJson<{
       mobile: boolean; rows: number; inside: boolean; noScroll: boolean; same: boolean;
     }>(`

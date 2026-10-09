@@ -153,6 +153,20 @@ Ship without asking when the change is:
 - Admin dashboard (`/?admin`) copy, counts, or small layout, when you already have a measured before/after or a test that failed then passed.
 - Internal refactors, types, and dead-code removal with no user-noticeable behavior.
 - A public-UI bugfix that restores the intended behavior and changes no design, when `/verify-my151` proves it on the surfaces its tier requires. Report it with that evidence.
+- A public-UI change whose outcome Michael already decided, under the gate in "Decided by Michael".
+
+### Decided by Michael
+
+Michael set this rule on 2026-10-08. Merge public UI without asking when Michael already decided the outcome: he gave the exact copy, picked an option from pictures, or described the fix. All of these must hold:
+
+1. A proof check fails on the old build and passes on the new build.
+2. The `/verify-my151` diff for the tier has 0 regressions.
+3. The visual diff shows changes only in the regions the change intends. The `/verify-my151` diff writes it as `visual.json` and `visual.png` in its evidence folder.
+4. The tier's checks pass.
+
+Before you code, write two short lists in your notes: what must change, and what must not change. The proof check tests the first list. The visual diff tests the second. Every changed region in the visual diff must belong to the first list; explain each one in the work report.
+
+Report the merge with before-and-after pictures, so Michael can ask for a revert. Ask first only for open choices: no option picked, a new feature, or a visual diff with a change you cannot explain.
 
 Admin is not public product UI. A verified admin Dex-chip count ships. A verified admin layout tweak ships.
 
@@ -160,7 +174,7 @@ Admin is not public product UI. A verified admin Dex-chip count ships. A verifie
 
 Ask in the current conversation before you merge when any of these apply:
 
-1. **Public product UI that needs Michael's judgment.** A new feature, a new or changed look, or a choice between visual options in the pokedex builder, league builder, or export that end users see. A bugfix that `/verify-my151` proves is not this. Admin `/?admin` copy, counts, or small verified layout is not this.
+1. **Public product UI that needs Michael's judgment.** A new feature, a new look that Michael did not specify, or a choice between visual options that he has not picked, in the pokedex builder, league builder, or export that end users see. A bugfix that `/verify-my151` proves is not this. A change whose outcome Michael already decided, and that passes the gate in "Decided by Michael", is not this. Admin `/?admin` copy, counts, or small verified layout is not this.
 2. **Data destruction or irreversible writes.** Deletes, schema drops, token or credential changes, anything a revert does not undo.
 3. **Large or ambiguous product changes.** Unclear scope, or a change big enough that Michael should see it first.
 
