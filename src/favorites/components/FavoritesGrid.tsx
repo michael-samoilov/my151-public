@@ -19,7 +19,7 @@ import {
   type TypeAxisId,
 } from '../model/cells';
 import { kindFor } from '../model/eligibility';
-import { prefetchCell } from '../model/spritePreload';
+import { prefetchCell, usePickerSprite } from '../model/spritePreload';
 import type { PickerMon } from '../model/catalog';
 import { gridSpriteSizePercent } from '../model/gridSpriteSize';
 import { minimapViewportX } from '../model/minimap';
@@ -824,6 +824,7 @@ function ChartMinimap({
 function Filled({ mon, desktop }: { mon: PickerMon; desktop: boolean }) {
   const pokemon = { types: mon.types } as Pokemon;
   const size = gridSpriteSizePercent(mon.sprite);
+  const src = usePickerSprite(mon.sprite, true);
   // The ball behind the sprite skips layout off screen during a zoom. The
   // sprite stays outside it, because skipping clips overflow.
   return (
@@ -832,7 +833,7 @@ function Filled({ mon, desktop }: { mon: PickerMon; desktop: boolean }) {
         <PokeballBg pokemon={pokemon} />
       </span>
       <img
-        src={mon.sprite}
+        src={src}
         alt={labelOf(mon)}
         className="absolute left-1/2 top-1/2 z-10 h-auto max-w-none -translate-x-1/2 -translate-y-1/2"
         style={{ imageRendering: 'pixelated', width: desktop ? 'var(--cell)' : trackPart('--cell', size / 100) }}

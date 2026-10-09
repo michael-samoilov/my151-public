@@ -4,6 +4,7 @@ import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSpri
 import { typeIconPath } from '@/data/type-ids';
 import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
+import { usePickerSprite } from '../model/spritePreload';
 import type { PickerMon } from '../model/catalog';
 import { useNamesVersion } from '@/i18n';
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -188,6 +189,7 @@ function PickCell({
   const { roundedSide, roundedRadius } = originShapeGeometry(mark);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   const hasOrigins = coordinates !== undefined;
+  const src = usePickerSprite(mon.sprite);
   const tile = (
     <button
       type="button"
@@ -200,7 +202,7 @@ function PickCell({
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
       <img
-        src={mon.sprite}
+        src={src}
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}

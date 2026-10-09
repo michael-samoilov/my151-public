@@ -1,11 +1,13 @@
+import { useEffect, useSyncExternalStore } from 'react';
 import { allPickerMons } from './catalog';
-import type { GenAxisId, TypeAxisId } from './cells';
+import { cellKey, type GenAxisId, type TypeAxisId } from './cells';
 import { eligibleFor } from './eligibility';
+import { bulkGroups, cellPackName, cellSprites, FIRST_CELL, type PackManifest } from './spritePacks';
 
 /**
  * Picker sprites, fetched before the selector needs them, in the order a
  * visitor is likely to need them, so a first visit does not start with all
- * 1,388 (1.5 MiB):
+ * 1,391 (1.5 MiB):
  *
  * 1. Normal / Gen I, the cell nearly every visitor opens first, then on a
  *    touch screen the cells in view (`prefetchCellSoon`).
@@ -13,8 +15,25 @@ import { eligibleFor } from './eligibility';
  *    focuses jumps the queue (`prefetchCell`).
  * 3. After the first selector opens, every other sprite (`prefetchEverySprite`).
  *
- * The decoded images stay referenced here, so the selector draws them at once.
+ * The build delivers the sprites in packs (spritePacks.ts), about 15 requests
+ * instead of about 1,100:
+ *
+ * - Bulk packs serve steps 1 and 3: Normal / Gen I, then one per generation.
+ * - Step 2 needs one cell. A returning visitor's browser has the bulk packs
+ *   cached, so they come from there. Otherwise the cell's own pack comes: one
+ *   request for the bytes that single files would bring. While the visitor
+ *   looks at a selector that is still loading, the bulk packs stop and start
+ *   again later.
+ * - Where a pack fails, its sprites load as single files, as before packs.
+ *   `vite dev` builds no packs, so it always loads single files.
+ *
+ * Components draw a sprite through `usePickerSprite`, and canvases through
+ * `pickerSpriteSrc`. The decoded images stay referenced here, so the selector
+ * draws them at once.
  */
+declare const __PICKER_SPRITE_PACKS__: PackManifest | null;
+
+// Decoded images, keyed by the URL an <img> uses: a sprite file or a pack's object URL.
 const decoded = new Map<string, HTMLImageElement>();
 const loading = new Set<string>();
 let queue: string[] = [];
@@ -51,17 +70,283 @@ function enqueue(urls: string[], first: boolean) {
 
 const spritesOf = (type: TypeAxisId, gen: GenAxisId) => eligibleFor(type, gen).map((mon) => mon.sprite);
 
+// ---- Packs
+
+interface BulkPack {
+  url: string;
+  sprites: string[];
+  state: 'idle' | 'queued' | 'loading' | 'done' | 'failed';
+  /** Queue position, kept when a stopped pack goes back in line. */
+  ticket: number;
+}
+
+interface PackSet {
+  bulk: BulkPack[];
+  bulkOf: Map<string, BulkPack>;
+  cells: string;
+}
+
+let packSet: PackSet | null | undefined;
+
+/** The packs, or null where the build made none or they do not match this catalog. */
+function packs(): PackSet | null {
+  if (packSet !== undefined) return packSet;
+  packSet = null;
+  // Undefined outside Vite, such as in a Node script.
+  const manifest = typeof __PICKER_SPRITE_PACKS__ === 'undefined' ? null : __PICKER_SPRITE_PACKS__;
+  if (!manifest || typeof fetch === 'undefined' || typeof URL.createObjectURL !== 'function') return null;
+  const groups = bulkGroups();
+  const used = groups.map(() => 0);
+  const bulk: BulkPack[] = manifest.packs.map(({ url, group, count }) => {
+    const sprites = (groups[group] ?? []).slice(used[group], used[group] + count);
+    used[group] = (used[group] ?? 0) + count;
+    return { url, sprites, state: 'idle', ticket: 0 };
+  });
+  if (groups.some((group, i) => used[i] !== group.length) || bulk.some((pack, i) => pack.sprites.length !== manifest.packs[i].count)) {
+    console.warn('Picker sprite packs do not match the catalog, so the sprites load as single files.');
+    return null;
+  }
+  const bulkOf = new Map<string, BulkPack>();
+  for (const pack of bulk) for (const sprite of pack.sprites) bulkOf.set(sprite, pack);
+  packSet = { bulk, bulkOf, cells: manifest.cells };
+  return packSet;
+}
+
+const objectUrls = new Map<string, string>();
+const blobs = new Map<string, Blob>();
+/** Sprites an <img> already asked for as a file. They stay files, so no image changes its source. */
+const asFiles = new Set<string>();
+/** Sprites a cell's fetch is about to bring. An <img> waits for them, as it would for a file. */
+const waiting = new Map<string, number>();
+const listeners = new Set<() => void>();
+const changed = () => listeners.forEach((listener) => listener());
+
+/** Object URLs for a pack's sprites. They are never revoked: an <img> may still show one. */
+function unpack(sprites: string[], buffer: ArrayBuffer): void {
+  const view = new DataView(buffer);
+  const count = buffer.byteLength >= 4 ? view.getUint32(0, true) : -1;
+  let offset = 4 + 4 * count;
+  if (count !== sprites.length || offset > buffer.byteLength) throw new Error('The sprite pack does not match the catalog.');
+  let end = offset;
+  for (let i = 0; i < count; i++) end += view.getUint32(4 + 4 * i, true);
+  if (end !== buffer.byteLength) throw new Error('The sprite pack does not match the catalog.');
+  sprites.forEach((sprite, i) => {
+    const length = view.getUint32(4 + 4 * i, true);
+    if (!objectUrls.has(sprite)) {
+      const blob = new Blob([new Uint8Array(buffer, offset, length)], { type: 'image/png' });
+      blobs.set(sprite, blob);
+      objectUrls.set(sprite, URL.createObjectURL(blob));
+    }
+    offset += length;
+  });
+  changed();
+}
+
+const fetching = new Map<string, { done: Promise<void>; abort: AbortController; urgent: boolean }>();
+
+/** One fetch per pack URL. An urgent fetch is never stopped for the bulk packs. */
+function fetchPack(url: string, sprites: string[], urgent: boolean): Promise<void> {
+  const running = fetching.get(url);
+  if (running) {
+    running.urgent ||= urgent;
+    return running.done;
+  }
+  const abort = new AbortController();
+  const done = fetch(url, { signal: abort.signal, priority: urgent ? 'high' : 'low' })
+    .then((response) => {
+      if (!response.ok) throw new Error(`${response.status} ${url}`);
+      return response.arrayBuffer();
+    })
+    .then((buffer) => unpack(sprites, buffer))
+    .finally(() => fetching.delete(url));
+  fetching.set(url, { done, abort, urgent });
+  return done;
+}
+
+/** A bulk pack from the browser's cache, never the network. A returning visitor has them. */
+async function fromCache(pack: BulkPack): Promise<void> {
+  if (pack.state !== 'idle' && pack.state !== 'queued') return;
+  try {
+    const response = await fetch(pack.url, { cache: 'only-if-cached', mode: 'same-origin' });
+    if (!response.ok) return;
+    unpack(pack.sprites, await response.arrayBuffer());
+    pack.state = 'done';
+  } catch {
+    // Not cached.
+  }
+}
+
+const MAX_BULK = 2;
+let bulkQueue: BulkPack[] = [];
+let bulkLoading = 0;
+let tickets = 0;
+/** Cells on their way to a visitor who is about to look at them. Bulk packs wait. */
+let cellsLoading = 0;
+const cellsFetching = new Set<string>();
+
+function queueBulk(pack: BulkPack) {
+  pack.state = 'queued';
+  pack.ticket ||= ++tickets;
+  bulkQueue = [...bulkQueue, pack].sort((a, b) => a.ticket - b.ticket);
+}
+
+function pumpBulk() {
+  while (cellsLoading === 0 && bulkLoading < MAX_BULK && bulkQueue.length > 0) {
+    const pack = bulkQueue.shift()!;
+    if (pack.state !== 'queued') continue;
+    pack.state = 'loading';
+    bulkLoading++;
+    fetchPack(pack.url, pack.sprites, false).then(() => {
+      pack.state = 'done';
+      enqueue(pack.sprites.map((sprite) => objectUrls.get(sprite) ?? sprite), false);
+    }, (error: unknown) => {
+      if (pack.state !== 'loading') return;
+      if (error instanceof DOMException && error.name === 'AbortError') queueBulk(pack);
+      else {
+        pack.state = 'failed';
+        enqueue(pack.sprites.filter((sprite) => !objectUrls.has(sprite)), false);
+      }
+    }).finally(() => {
+      bulkLoading--;
+      pumpBulk();
+    });
+  }
+}
+
+function hold(sprites: string[], change: 1 | -1) {
+  for (const sprite of sprites) {
+    const count = (waiting.get(sprite) ?? 0) + change;
+    if (count > 0) waiting.set(sprite, count);
+    else waiting.delete(sprite);
+  }
+  changed();
+}
+
+async function fetchCell(set: PackSet, type: TypeAxisId, gen: GenAxisId, missing: string[]): Promise<void> {
+  await Promise.all([...new Set(missing.map((sprite) => set.bulkOf.get(sprite)!))].map(fromCache));
+  if (missing.every((sprite) => objectUrls.has(sprite))) return;
+  const first = type === FIRST_CELL.type && gen === FIRST_CELL.gen;
+  try {
+    if (first) {
+      // The first cell's pack is bulk pack 0: one fetch serves both.
+      await fetchPack(set.bulk[0].url, set.bulk[0].sprites, true);
+      set.bulk[0].state = 'done';
+    } else {
+      await fetchPack(`${set.cells}${cellPackName(type, gen)}`, cellSprites(type, gen), true);
+    }
+  } catch {
+    // The sprites still missing load as single files, as before packs.
+  }
+}
+
 /** The cell the visitor is about to open: its sprites go first. */
 export function prefetchCell(type: TypeAxisId, gen: GenAxisId): void {
-  enqueue(spritesOf(type, gen), true);
+  const sprites = spritesOf(type, gen);
+  const set = packs();
+  if (!set) {
+    enqueue(sprites, true);
+    return;
+  }
+  const missing = sprites.filter((sprite) => set.bulkOf.has(sprite) && !objectUrls.has(sprite) && !asFiles.has(sprite));
+  const here = sprites.filter((sprite) => !missing.includes(sprite));
+  enqueue(here.map((sprite) => (asFiles.has(sprite) ? sprite : objectUrls.get(sprite) ?? sprite)), true);
+  const key = cellKey(type, gen);
+  if (missing.length === 0 || cellsFetching.has(key)) return;
+  cellsFetching.add(key);
+  cellsLoading++;
+  hold(missing, 1);
+  void fetchCell(set, type, gen, missing).finally(() => {
+    cellsFetching.delete(key);
+    cellsLoading--;
+    hold(missing, -1);
+    enqueue(missing.map((sprite) => objectUrls.get(sprite) ?? sprite), true);
+    pumpBulk();
+  });
+}
+
+/** A selector opens. While its sprites are on the way, the bulk packs stop, and start again after. */
+export function openCell(type: TypeAxisId, gen: GenAxisId): void {
+  prefetchCell(type, gen);
+  if (!spritesOf(type, gen).some((sprite) => waiting.has(sprite))) return;
+  for (const running of fetching.values()) if (!running.urgent) running.abort.abort();
 }
 
 /** A cell in view: its sprites join the end of the queue. */
 export function prefetchCellSoon(type: TypeAxisId, gen: GenAxisId): void {
-  enqueue(spritesOf(type, gen), false);
+  const set = packs();
+  if (!set) {
+    enqueue(spritesOf(type, gen), false);
+    return;
+  }
+  for (const sprite of spritesOf(type, gen)) {
+    const pack = set.bulkOf.get(sprite);
+    if (pack?.state === 'idle' && !objectUrls.has(sprite)) queueBulk(pack);
+  }
+  pumpBulk();
 }
 
 /** Every picker sprite, behind whatever is already queued. */
 export function prefetchEverySprite(): void {
-  enqueue(allPickerMons().map((mon) => mon.sprite), false);
+  const set = packs();
+  if (!set) {
+    enqueue(allPickerMons().map((mon) => mon.sprite), false);
+    return;
+  }
+  for (const pack of set.bulk) if (pack.state === 'idle') queueBulk(pack);
+  pumpBulk();
+}
+
+// ---- Drawing
+
+/** A transparent pixel: an <img> waiting for its cell's pack shows nothing, as one loading a file does. */
+const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+function source(sprite: string, wait: boolean): string {
+  if (asFiles.has(sprite) || !packs()?.bulkOf.has(sprite)) return sprite;
+  const objectUrl = objectUrls.get(sprite);
+  if (objectUrl) return objectUrl;
+  if (wait && waiting.has(sprite)) return BLANK;
+  asFiles.add(sprite);
+  return sprite;
+}
+
+/** The URL a canvas draws a picker sprite from: the pack's copy when it is here, else the file. */
+export function pickerSpriteSrc(sprite: string): string {
+  return source(sprite, false);
+}
+
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
+/**
+ * The URL for a picker sprite's <img>: the pack's copy once it is here, a
+ * blank while the visitor's cell is on its way, else the file, as before
+ * packs. With `keep`, the copy is also stored where the service worker
+ * (public/sw.js) serves files from, so the grid's picks draw on the next
+ * visit, before any pack arrives, without a request.
+ */
+export function usePickerSprite(sprite: string, keep = false): string {
+  const src = useSyncExternalStore(subscribe, () => source(sprite, true), () => sprite);
+  useEffect(() => {
+    if (keep && src !== sprite && src !== BLANK) keepForNextVisit(sprite);
+  }, [keep, sprite, src]);
+  return src;
+}
+
+/** The cache public/sw.js answers sprite requests from. */
+const SERVICE_WORKER_CACHE = 'p151-sprites-v2';
+const kept = new Set<string>();
+
+function keepForNextVisit(sprite: string) {
+  const blob = blobs.get(sprite);
+  if (!blob || kept.has(sprite) || typeof caches === 'undefined' || !('serviceWorker' in navigator)) return;
+  kept.add(sprite);
+  const url = new URL(sprite, location.href).href;
+  caches.open(SERVICE_WORKER_CACHE)
+    .then((cache) => cache.put(url, new Response(blob, { headers: { 'Content-Type': 'image/png' } })))
+    .catch(() => {});
 }
