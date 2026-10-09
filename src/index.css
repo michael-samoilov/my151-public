@@ -319,6 +319,17 @@ img {
   pointer-events: none;
 }
 
+/* An image shows nothing until it loads. Otherwise Firefox writes an image's
+ * alt text, such as a Pokémon's name, in its place while it downloads, and
+ * every browser does when it fails, so names flash where sprites will be.
+ * Screen readers still read the alt text. Inside the base layer, a text color
+ * utility on an image still wins. */
+@layer base {
+  img {
+    color: transparent;
+  }
+}
+
 /* Every drag surface, marked by the one thing they all share.
  *
  * A long press on a draggable is the gesture that picks it up. On iOS it is
