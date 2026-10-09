@@ -22,11 +22,8 @@ import {
 } from '@/lib/sectionOutlines';
 import { X } from 'lucide-react';
 import shot45 from '@/assets/intro/shot-45.webp';
-import shot45At234 from '@/assets/intro/shot-45-234.webp';
 import shot95 from '@/assets/intro/shot-95-outlines.webp';
-import shot95At261 from '@/assets/intro/shot-95-outlines-261.webp';
 import shot151 from '@/assets/intro/shot-151-stats.webp';
-import shot151At444 from '@/assets/intro/shot-151-stats-444.webp';
 
 /**
  * First-visit intro card — the top of the Build page for a brand-new visitor.
@@ -113,14 +110,9 @@ const STAGE_STYLES: [StageStyle, StageStyle, StageStyle] = [
 
 const SHOT_SRCS = [shot45, shot95, shot151] as const;
 
-/** Parallel to SHOT_SRCS. A 3x phone needs 57% to 76% of each original's
- *  pixels, so each face offers a copy sized for that ahead of the original.
- *  `scripts/resize-shots.sh` writes the copies. */
-const SHOT_SRCSETS = [
-  `${shot45At234} 234w, ${shot45} 390w`,
-  `${shot95At261} 261w, ${shot95} 348w`,
-  `${shot151At444} 444w, ${shot151} 555w`,
-] as const;
+/** Every device loads these originals. Smaller copies drew at about their own
+ *  size on a 3x phone and looked soft, for 42 KiB saved; they were removed on
+ *  9 October. */
 
 /** Intrinsic pixel sizes of SHOT_SRCS, in the same order. The staircase sizes
  *  each card by height and leaves width to `w-auto`, so without these the
@@ -128,8 +120,7 @@ const SHOT_SRCSETS = [
  *  to ~2px wide — the hero renders as three slivers, then snaps to its real
  *  332px. Width/height attributes give the ratio up front, so the cards hold
  *  their final size from first paint. Keep in sync with the files in
- *  src/assets/intro/ if they are ever re-exported, and rerun
- *  `scripts/resize-shots.sh`. */
+ *  src/assets/intro/ if they are ever re-exported. */
 const SHOT_DIMS = [
   { width: 390, height: 620 },
   { width: 348, height: 620 },
@@ -301,16 +292,6 @@ const STAIR = [
   { height: '9.9rem', lift: '0rem', rotate: '1.5deg', z: 'z-30', overlap: '0', float: 'intro-float-b' },
 ] as const;
 
-// Each face's CSS width, for `sizes`: its height times its aspect ratio. The
-// root font-size is 16px up to 428px wide and grows to 20px (layoutFontSize.ts);
-// past 428px this takes the 20px width, which only ever errs toward the larger
-// candidate.
-const SHOT_SIZES = STAIR.map((s, i) => {
-  const width = (rootPx: number) =>
-    Math.ceil((parseFloat(s.height) * rootPx * SHOT_DIMS[i].width) / SHOT_DIMS[i].height);
-  return `(min-width: 429px) ${width(20)}px, ${width(16)}px`;
-});
-
 function ShowcaseStaircase() {
   const planeRef = useRef<HTMLDivElement>(null);
   const stages = useMemo(() => computeShowcaseStages(), []);
@@ -354,8 +335,6 @@ function ShowcaseStaircase() {
               {FACE === 'shots' ? (
                 <img
                   src={SHOT_SRCS[i]}
-                  srcSet={SHOT_SRCSETS[i]}
-                  sizes={SHOT_SIZES[i]}
                   alt={SHOT_ALTS[i]}
                   width={SHOT_DIMS[i].width}
                   height={SHOT_DIMS[i].height}
