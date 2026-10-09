@@ -13,8 +13,9 @@
  * - A head script that runs before the first paint. It sets the root font
  *   size with the formula in src/lib/layoutFontSize.ts, so nothing shifts when
  *   that module runs. It adds `p151-saved-<tool>` to <html> for each tool with
- *   saved work in this browser, which holds that card's "saved in this
- *   browser" line open until the app fills it in (src/index.css). It adds
+ *   saved work in this browser, which hides the count on that card's "saved
+ *   in this browser" line until the app reads it, so it never shows 0 first
+ *   (src/index.css). It adds
  *   `p151-wait` when the visitor will not get this exact page: another
  *   language, `?admin`, `?demo`, or a returning visitor while the Tools menu's
  *   favorites notice runs. Those visitors see the spinner until the app

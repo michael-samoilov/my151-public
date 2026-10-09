@@ -169,8 +169,10 @@ async function diffBoxes(page: Page, a: Buffer, b: Buffer): Promise<Array<{ x: n
 // that helper does not exist, so every page gets a no-op stand-in.
 const NAME_SHIM = 'globalThis.__name = globalThis.__name || ((f) => f);';
 
-// The footer's build stamp is the build minute (PageFooter.tsx), so two builds
-// made a minute apart differ there and shift what follows it. Pin it on both.
+// The footer's build stamp is the build minute (PageFooter.tsx). buildIn gives
+// both builds one SOURCE_DATE_EPOCH, but a base ref older than vite.config.ts's
+// SOURCE_DATE_EPOCH support, or a --no-build tree, still stamps its own build
+// minute. This pin is the fallback for those: it rewrites the stamp on both.
 // React renders "v " and the digits as two text nodes, so match the digits
 // node after a node that ends in "v ".
 const PIN_BUILD_STAMP = `(() => {

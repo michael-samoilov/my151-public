@@ -1013,7 +1013,7 @@ function DexDetailBody({ rec, reports }: { rec: ClientRecord; reports: FeedbackI
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
       : [];
   milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT, 'dex'));
-  milestones.push(...feedbackMarks(reports, clampT));
+  milestones.push(...feedbackMarks(reports, log.map((e, k) => ({ start: e.ts - (ms[k] ?? 0), end: e.ts })), clampT));
 
   const snapshot = (
     <div ref={presenceRef}>
@@ -1128,7 +1128,7 @@ function LeagueDetailBody({ league, reports }: { league: LeagueUser; reports: Fe
     milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
   }
   milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT, 'league'));
-  milestones.push(...feedbackMarks(reports, clampT));
+  milestones.push(...feedbackMarks(reports, log.map((e, k) => ({ start: e.ts - (ms[k] ?? 0), end: e.ts })), clampT));
 
   const snapshots = useMemo(() => {
     if (log.length === 0) {
@@ -1417,7 +1417,7 @@ function FeedbackChip({ reports, onFeedback }: { reports: number; onFeedback?: (
       aria-label={`${reports} feedback ${reports === 1 ? 'report' : 'reports'} from this browser`}
       className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
     >
-      <MessageSquare className="h-[13px] w-[13px] shrink-0" />
+      <MessageSquare className="h-[13px] w-[13px] shrink-0 text-red-600" />
       <span className="text-xs font-medium tabular-nums">{reports}</span>
     </button>
   );
@@ -1619,7 +1619,7 @@ function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
       ref={barRef}
       data-admin-bar
       className={cn(
-        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
+        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
         wide ? 'md:w-full' : 'md:max-w-5xl',
       )}
     >
