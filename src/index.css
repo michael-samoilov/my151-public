@@ -161,12 +161,39 @@ html {
  * 2.4% at 800 (measured in Chrome); the ascent and descent are Inter's
  * (0.96875 and 0.2422 em) divided by the same factor. A system without these
  * fonts, such as Android, falls through to system-ui as before. */
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial'), local('ArialMT'), local('Helvetica'), local('Liberation Sans');
+  font-weight: 100 549;
+  size-adjust: 105.5%;
+  ascent-override: 91.82%;
+  descent-override: 22.96%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Helvetica-Bold'), local('Liberation Sans Bold');
+  font-weight: 550 749;
+  size-adjust: 101%;
+  ascent-override: 95.92%;
+  descent-override: 23.98%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Helvetica-Bold'), local('Liberation Sans Bold');
+  font-weight: 750 1000;
+  size-adjust: 102.4%;
+  ascent-override: 94.6%;
+  descent-override: 23.65%;
+  line-gap-override: 0%;
+}
 
 body {
   margin: 0;
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter Variable', 'Inter Fallback', system-ui, -apple-system, sans-serif;
 
   /* Crisper glyph edges on macOS/iOS — Inter is designed for antialiased
    * rendering, and the default subpixel smoothing makes it look heavier. */
