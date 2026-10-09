@@ -47,12 +47,6 @@
              font-family: system-ui, -apple-system, sans-serif; }
       html { font-size: clamp(16px, 13px + 0.7vw, 20px); }
       .fv-shell { display: flex; flex-direction: column; min-height: 100dvh; }
-      .fv-header { display: flex; align-items: center; justify-content: space-between;
-                   height: 2.75rem; box-sizing: border-box;
-                   padding: 0 0.75rem; border-bottom: 1px solid #e5e5e5; background: #ffffff; }
-      .fv-wordmark { font-size: 1.5rem; line-height: 2rem; font-weight: 800; letter-spacing: -0.025em;
-                     color: #0a0a0a; text-decoration: none; white-space: nowrap; }
-      .fv-wordmark b { color: #dc2626; font-weight: inherit; }
       .fv-bar { display: flex; align-items: center; height: 2.75rem; box-sizing: border-box;
                 padding: 0 0.75rem; border-bottom: 1px solid #e5e5e5; background: #ffffff; }
       .fv-bar h1 { margin: 0; font-size: 0.6875rem; line-height: 1; font-weight: 600; color: #6e6e6e; white-space: nowrap; }
@@ -65,8 +59,11 @@
   <body>
     <div id="root">
       <div class="fv-shell">
-        <header class="fv-header">
-          <a class="fv-wordmark" href="/"><b>my151</b>.app</a>
+        <!-- The app's own header markup and classes (FavoritesApp.tsx,
+             GlobalHeader), so the wordmark paints once, in place: a header that
+             differs by a pixel makes the app's repaint the page's largest paint. -->
+        <header class="flex h-11 items-center justify-between border-b bg-card px-3 sm:px-6">
+          <a href="/" class="text-2xl font-extrabold tracking-tight"><span class="text-primary">my151</span><span class="text-foreground">.app</span></a>
         </header>
         <div class="fv-bar">
           <h1>Favorite Pokémon Picker</h1>
