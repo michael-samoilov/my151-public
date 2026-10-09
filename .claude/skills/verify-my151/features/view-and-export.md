@@ -11,9 +11,10 @@ display options, exportable as a PNG.
   outlines, and group-special-at-end. Detailed stats are export-only.
 - A detailed-stats column in the export, available from 100 placed.
 - Export opens a preview overlay first: a live settings pane (sort, outlines,
-  stats) beside a 3D preview card, then save. The foil has no controls in the
-  pane; it always uses the defaults below. Export settings do not write the
-  View store.
+  group special at end, stats) beside a 3D preview card, then save. The
+  group-special toggle is `[data-export-group-special]`. The foil has no
+  controls in the pane; it always uses the defaults below. Export settings do
+  not write the View store.
 - Save produces `my151.png` through the share sheet or a download. The PNG has
   rounded transparent corners (radius 4% of the short edge), and the red frame
   follows the curve. The sprites paint at 1× (96 px) and the frame is 12 px,
@@ -45,14 +46,15 @@ display options, exportable as a PNG.
 
 Tap the view tab (`[data-nav="view"]`). The settings control carries
 `aria-label="View settings"` (hard-coded English). The export control is
-`[data-dex-export]`, the next button. It is unavailable while an export runs
-and when the dex is empty. It opens the overlay; `[data-dex-export-confirm]`
-saves.
+`[data-dex-export]`, the next button. It is unavailable only when the dex is
+empty. It opens the overlay, and `[data-dex-export-confirm]` saves. The confirm
+button is unavailable while an export runs.
 
 ## Driving it with the harness
 
-The standard suite covers the view tab: it activates (computed background), the
-header lanes hold, and the render audit is clean.
+The standard suite covers the view tab: it activates (`aria-selected`, with the
+computed background as a fallback), the header lanes hold, and the render audit
+is clean.
 
 `runDexExportSuite` clicks `[data-dex-export]` and asserts
 `[data-export-preview-layer]` and `[data-dex-export-confirm]` before any
@@ -74,6 +76,27 @@ download. After the preview paints, it checks:
 - `dex-export:survey-sprite-scale`: the survey sprite is an integer multiple of
   the native size.
 
+It also runs these checks:
+
+- `dex-export:card-in-view` and `card-fill`: the card stays inside the preview
+  layer and the viewport, and covers at least 70% of the layer.
+- `dex-export:outlines-row`: the pane has `[data-export-outlines]`.
+- `dex-export:tilt-magnitude`: the hover tilt peaks above 2 degrees and at
+  most 10.2 degrees.
+- `dex-export:dynamic-shadow`: the shadow moves to the pointer's side, and only
+  the lift layer paints it.
+- `dex-export:tilt-corner-margin`: the tilted card keeps 16 px or more from the
+  layer and viewport edges.
+- `dex-export:tilt-on-painted`: a pointer on the painted card, outside its rest
+  box, tilts it.
+- `dex-export:shine`, `rainbow-foil`, and `shine-clip`: the foil and holo
+  layers show. After a hover, the holo stays `color-dodge` and ink-masked. The
+  card clips every foil layer.
+
+Before the survey check, the suite stubs `navigator.canShare` to return
+`false` and presses `[data-dex-export-confirm]`. On the local preview builds
+that the harness uses, `/api/submit` has no handler, so nothing is recorded.
+
 `runFoilWorkshopSuite` opens `/foil-workshop` and asserts the keeper
 controls (Shine, Rainbow, Point light, Iridescence, Max tilt, Glare, Shadow),
 no blend, mask, sparkle, or parallax controls,
@@ -88,13 +111,14 @@ catch the download, and abort `/api/submit`. Click `[data-dex-export]`, then
 
 ## Gotchas
 
-- Never press save on a deployed site. Save posts a report to `/api/submit`
-  (`keepalive`) that only demo mode holds back, not `?notme`. The survey that
-  can follow posts to `/api/feedback`, and previews share the production
-  database.
+- Never press save on my151.app. Save posts a report to `/api/submit`
+  (`keepalive`), and the survey that can follow posts to `/api/feedback`. On a
+  Vercel preview host, both routes answer 200 and store nothing
+  (`isReadOnlyDeployment` in `api/_shared.ts`); local `vite preview` has no
+  API at all.
 - The share sheet runs only off Android and only when
   `navigator.canShare({files})` is true. Android always downloads through
-  `<a download>` (`src/lib/exportImage.ts`).
+  `<a download>` (`src/lib/shareOrDownload.ts`).
 - Section outlines draw only with the build-order sort.
 - On a phone the View settings sheet stages changes until its apply button.
   Desktop applies them live.

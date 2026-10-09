@@ -9,15 +9,17 @@ locales.
   `it` (`src/i18n/config.ts`).
 - The menu lists each locale by its own name, in a `span[lang]`.
 - A pick loads the catalog first, then saves `state.locale` in
-  `personal-151-pokedex-v3`. Every page on the origin reads that value.
+  `personal-151-pokedex-v3`. Every page on the origin reads that value. Demo
+  mode saves it under the demo key instead (`POKEDEX_STORAGE_KEY` in
+  `src/lib/demoMode.ts`).
 - At start-up, `?lang=` beats the saved choice, which beats
   `navigator.languages`.
 
 ## How to get to it (user POV)
 
 Tap the globe (`button[aria-haspopup="menu"]`) in the header of the hub, the
-dex, or the league. Pick a row (`[role="menuitemradio"]`). The current locale's
-row has `aria-checked="true"`.
+dex, the league, or the favorite picker. Pick a row (`[role="menuitemradio"]`).
+The current locale's row has `aria-checked="true"`.
 
 ## Driving it with the harness
 
@@ -38,14 +40,20 @@ Manual drive (a Playwright script, local build):
 
 - `?lang=<id>` needs an exact locale id (`zh-Hans`, not `zh`), and the app does
   not save it. It applies to that page load only.
-- The hub, the dex, and the league each set `<html lang>` from the locale
-  (`useDocumentLocale` in `HomePage.tsx`, `App.tsx`, and `LeagueApp.tsx`). The
-  admin page (`/?admin`) is English-only, so it keeps the `lang="en"` of
-  `index.html`.
-- Few strings are translated: game terms (types, egg groups, colors, regions),
-  Pokémon names, and the four feedback chips (`src/i18n/catalogs/ui/`). Other
-  keys, including the hub's `home.*` copy, fall back to English. Assert a
-  switch on those strings or on the store.
+- The hub, the dex, the league, and the favorite picker each set `<html lang>`
+  from the locale (`useDocumentLocale` in `HomePage.tsx`, `App.tsx`,
+  `LeagueApp.tsx`, and `FavoritesApp.tsx`). The admin page (`/?admin`) is
+  English-only, so it keeps the `lang="en"` of `index.html`.
+- Game terms (types, egg groups, colors, regions) and Pokémon names are
+  sourced from the games. Each locale overlay in `src/i18n/catalogs/ui/` adds
+  about 132 translated keys, 15 of them `home.*`. They cover the feedback
+  chips, trainer card headings, the picker, and most hub copy. Other keys fall
+  back to English. Assert a switch on translated strings or on the store.
+- While the menu is open, both chip grids are in the DOM: the desktop dropdown
+  and the portaled phone sheet. Filter `[role="menuitemradio"]` to the visible
+  rows.
+- The globe's accessible name is translated. Match
+  `button[aria-haspopup="menu"]`, not its name.
 - Pseudo-locales through `?lang=` exist only where `PREVIEW_FEATURES` is on: a
   Vercel preview or the dev server.
 - A seed without `locale` follows the engine's language, which differs across

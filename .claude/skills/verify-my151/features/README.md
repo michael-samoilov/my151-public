@@ -10,8 +10,9 @@ my151.app is a multi-page app. The hub is at `/`, the pokedex builder with its
 view and analytics tabs at `/pokedex-builder`, and the Pokémon League Builder at
 `/custom-gym-leader`. Feedback and the language picker sit in the header of
 every page. The admin dashboard is at `/?admin`. The favorite Pokémon picker is at
-`/favorite-pokemon-by-type`. Grow this list with the app and keep it honest with
-`/maintain-verification-skill`.
+`/favorite-pokemon-picker`, and the old `/favorite-pokemon-by-type` path
+answers with a 308 redirect to it. Grow this list with the app and keep it
+honest with `/maintain-verification-skill`.
 
 | Feature | File | Owner (source) |
 | --- | --- | --- |
@@ -40,8 +41,10 @@ every page. The admin dashboard is at `/?admin`. The favorite Pokémon picker is
 - Browser: `[data-testid="type-filter"]`, `[data-result-count]`,
   `[data-filter-chip]`, `[data-testid="verify-evo-card"]`, and
   `[data-testid="browser-close"]`.
-- Bottom sheet: `[data-overlay]` around a `role="dialog"`, below 1024px only.
-  Desktop shapes differ by feature.
+- Bottom sheet: `[data-overlay]` around a `role="dialog"`. Below 1024px it is
+  the visible shape. At 1024px and wider, some sheets stay in the DOM, hidden
+  by CSS, so `[role="dialog"]` alone does not mean a phone. Desktop shapes
+  differ by feature.
 - State oracle: localStorage `personal-151-pokedex-v3`, a zustand-persist blob
   `{state:{sections:{groupId:number[]},locale,…},version:10}`. `sections` is
   the source of truth for a build. `locale` holds the language picker's choice.
@@ -53,3 +56,7 @@ every page. The admin dashboard is at `/?admin`. The favorite Pokémon picker is
 The three dex tabs are React state, not URL-addressable, so navigate by clicking
 `[data-nav]`, never by deep link. Most `aria-label`s are i18n-templated. Do not
 select on their text.
+
+The header's Tools menu keeps its three tool links in the DOM with `hidden`
+while it is closed. A bare `a[href="/pokedex-builder"]` can match that hidden
+link. Scope a tool-link selector to `main` or `[data-card-panel]`.
