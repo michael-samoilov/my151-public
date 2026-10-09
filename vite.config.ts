@@ -46,12 +46,13 @@ function buildTimestampMeta(): Plugin {
  * hub's prerender, each tool's shell) stayed off screen while the code ran,
  * and in Google's phone runs Chrome then held that first frame for about 2 s:
  * the page had loaded at 0.4 s and showed nothing until 2.3 s, and Speed Index
- * read 4.1 s, not 1.8 s. The code still downloads at once (`modulepreload`);
- * only its start waits for the frame. A hidden tab, which draws no frames,
- * starts the code at once.
+ * read 4.1 s, not 1.8 s. Its downloads wait for the frame too, so on a slow
+ * phone the HTML and stylesheet have the connection to themselves. A hidden
+ * tab, which draws no frames, starts the code at once.
  */
 function startAppAfterFirstPaint(): Plugin {
   const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>/
+  const preload = /\s*<link rel="modulepreload" crossorigin href="([^"]+)">/g
   return {
     name: 'start-app-after-first-paint',
     apply: 'build',
@@ -60,9 +61,11 @@ function startAppAfterFirstPaint(): Plugin {
       handler(html) {
         const src = entry.exec(html)?.[1]
         if (!src) return html
-        const start = `(function(){var go=function(){var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)};if(document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
+        const deps = [...html.matchAll(preload)].map((m) => m[1])
+        const start = `(function(){var go=function(){${JSON.stringify(deps)}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)});var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)};if(document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
         return html
-          .replace(entry, `<link rel="modulepreload" crossorigin href="${src}">`)
+          .replace(entry, '')
+          .replace(preload, '')
           .replace('</body>', `<script>${start}</script>\n  </body>`)
       },
     },
