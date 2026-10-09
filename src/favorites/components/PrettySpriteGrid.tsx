@@ -4,12 +4,12 @@ import { SPRITE_NATIVE, useLayoutViewportCssPx } from '@/lib/usePixelPerfectSpri
 import { typeIconPath } from '@/data/type-ids';
 import { fitPickerSpriteCssPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
-import { usePickerSprite } from '../model/spritePreload';
 import type { PickerMon } from '../model/catalog';
 import { useNamesVersion } from '@/i18n';
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
+import { PickerSprite } from './PickerSprite';
 import { labelOf } from './spriteLabel';
 import { ExtraSymbol } from './ExtraSymbol';
 import { axisBackground, coordinateLabel } from './coordinatePresentation';
@@ -189,7 +189,6 @@ function PickCell({
   const { roundedSide, roundedRadius } = originShapeGeometry(mark);
   const inset = Math.max(5, Math.round(spritePx * 0.05));
   const hasOrigins = coordinates !== undefined;
-  const src = usePickerSprite(mon.sprite);
   const tile = (
     <button
       type="button"
@@ -201,8 +200,8 @@ function PickCell({
       className="group/pick relative flex shrink-0 flex-col cursor-pointer items-center justify-start rounded-md bg-transparent p-0 hover:bg-foreground/5"
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
-      <img
-        src={src}
+      <PickerSprite
+        sprite={mon.sprite}
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}
