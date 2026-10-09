@@ -5,17 +5,17 @@ import { decode, type Raster } from './png-rgba';
  * Convert each Gen IX type symbol into a line icon in the app's lucide style:
  * a 24-unit grid, a 2-unit stroke, round caps and joins, and no fill.
  *
- * One rule decides where the strokes go. A stroke runs along each edge between
- * the white symbol and the coloured field. Where two edges run side by side,
- * facing each other, closer than MERGE units, two strokes would print as one
- * blot, so they become a single stroke along the middle: a thin gap or a thin
- * white part turns into one line. Edges that only meet at a point, like the
- * two sides of a sharp tip, are not side by side, so tips stay sharp outlines.
+ * The strokes go between the white shapes, like the lead between pieces of
+ * stained glass. Each white shape becomes an empty cell. One stroke runs down
+ * the middle of every gap between two neighbouring shapes, and one stroke runs
+ * around the outside of everything, GAP units out. Formally: the borders of
+ * each shape's zone of influence (the points nearer to it than to any other
+ * shape), inside the band within GAP of the symbol, plus that band's outline.
+ * A hole too narrow to hold its own outline gets one line down its middle.
  *
- * Steps: upscale the 60 px icon 10x, trace the symbol's outlines (marching
- * squares), resample them evenly, pair up facing edges, replace each pair with
- * its midline, drop the round end of each merged part (the stroke's round cap
- * draws it), and fit cubic Béziers.
+ * Steps: upscale the 60 px icon 10x, split the symbol into its white shapes,
+ * measure each pixel's distance to every shape, trace the band outline and the
+ * zone borders (marching squares), join their ends, and fit cubic Béziers.
  *
  * The output is deterministic and committed. Re-run: npx tsx scripts/build-type-icons.ts
  */
@@ -31,36 +31,18 @@ const UP = 10;
 /** Centre lines fit 2..22, so the 2-unit stroke fits inside 1..23. */
 const GRID = 24;
 const PAD = 2;
-/** Units. Two 2-unit strokes need 1 unit of clear space to read as two lines. */
-const MERGE = 3;
-/** Units between resampled outline points. */
+/** Units. How far the outer stroke sits outside the shapes: about half a typical gap. Override with TYPE_ICON_GAP. */
+const GAP = Number(process.env.TYPE_ICON_GAP ?? 1.3);
+/** Units. An enclosed pocket of open space between just two shapes, smaller than this, is part of their gap. */
+const POCKET = 4;
+/** Units. A white shape smaller than this across is a speck, not a shape. */
+const SPECK = 0.6;
+/** Units between resampled line points. */
 const STEP = 0.1;
-/** Degrees. Facing edges must be this close to anti-parallel to merge. */
-const FACING_DEG = 30;
-/** Units of outline either side of a point that cannot be its partner (keeps tips apart). */
-const SELF_GAP = 2;
-/** Units. Shorter merged runs are noise. */
-const RUN_MIN = 0.8;
-/** A merged run continues while its edges stay within MERGE x HOLD, so edges near the limit do not flicker. */
-const HOLD = 1.2;
-/** Units. A shorter break between two merged runs on the same pair of edges is closed. */
-const GAP_FILL = 1;
-/** Outline points (±) averaged to remove the source's pixel steps, about 1 unit in all. */
+/** Line points (±) averaged to remove the source's pixel steps, about 1 unit in all. */
 const SMOOTH = 5;
-/** Outline points. A midline continues across a jump this small in its partner edge. */
-const PARTNER_JUMP = 20;
-/** Units. Line ends this close are joined at one point. */
-const SNAP = 0.8;
-/** An edge joining a midline is trimmed back this many times its sideways step, so it meets the midline as a Y. */
-const TAPER = 2;
-/** Units. A loose piece of edge shorter than this is dropped. */
-const SPECK = 0.8;
-/** Units. A part (or hole) whose outline fits in a box this size is drawn as one dot. */
-const DOT = 3.2;
-/** Units. A part narrower than DOT and shorter than this is drawn as one dash along its length. */
-const DASH = 6;
-/** Units. A branch this short with one free end is a stub left by merging, not a feature. */
-const STUB = 1;
+/** Units. A line end this close to another line joins it there. */
+const SNAP = 0.7;
 /** Units. The fitted curve stays this close to the traced line. */
 const FIT_TOL = 0.18;
 /** Degrees. A sharper turn is kept as a corner instead of being smoothed. */
@@ -73,7 +55,6 @@ const mul = (a: Pt, s: number): Pt => [a[0] * s, a[1] * s];
 const dot = (a: Pt, b: Pt) => a[0] * b[0] + a[1] * b[1];
 const dist = (a: Pt, b: Pt) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const unit = (a: Pt): Pt => { const l = Math.hypot(a[0], a[1]) || 1; return [a[0] / l, a[1] / l]; };
-const mid = (a: Pt, b: Pt): Pt => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
 const len = (pts: Pt[]) => pts.slice(1).reduce((s, p, i) => s + dist(p, pts[i]), 0);
 
 /** How white each source pixel is, 0 (field colour) to 1 (symbol white). */
@@ -120,275 +101,162 @@ function upscale(src: Float64Array, w: number, h: number): Float64Array {
   return out;
 }
 
+/** Felzenszwalb's 1-D squared distance transform of `f` (length n), in place. */
+function edt1d(f: Float64Array, n: number, v: Int32Array, z: Float64Array, d: Float64Array) {
+  let k = 0;
+  v[0] = 0; z[0] = -Infinity; z[1] = Infinity;
+  for (let q = 1; q < n; q++) {
+    let s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+    while (s <= z[k]) {
+      k--;
+      s = (f[q] + q * q - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+    }
+    k++; v[k] = q; z[k] = s; z[k + 1] = Infinity;
+  }
+  k = 0;
+  for (let q = 0; q < n; q++) {
+    while (z[k + 1] < q) k++;
+    d[q] = (q - v[k]) * (q - v[k]) + f[v[k]];
+  }
+  f.set(d.subarray(0, n));
+}
+
+/** Euclidean distance (px) from every pixel to the nearest pixel where `seed` is set. */
+function distance(seed: Uint8Array, W: number, H: number): Float64Array {
+  const n = Math.max(W, H), out = new Float64Array(W * H);
+  for (let i = 0; i < out.length; i++) out[i] = seed[i] ? 0 : 1e20;
+  const f = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1), d = new Float64Array(n);
+  for (let x = 0; x < W; x++) {
+    for (let y = 0; y < H; y++) f[y] = out[y * W + x];
+    edt1d(f, H, v, z, d);
+    for (let y = 0; y < H; y++) out[y * W + x] = f[y];
+  }
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) f[x] = out[y * W + x];
+    edt1d(f, W, v, z, d);
+    for (let x = 0; x < W; x++) out[y * W + x] = Math.sqrt(f[x]);
+  }
+  return out;
+}
+
+/** 4-connected regions of `mask`: a label per pixel (0 = none) and each region's pixels. */
+function regions(mask: Uint8Array, W: number, H: number): { label: Int32Array; parts: number[][] } {
+  const label = new Int32Array(W * H), parts: number[][] = [[]];
+  for (let i = 0; i < mask.length; i++) {
+    if (!mask[i] || label[i]) continue;
+    const id = parts.length, part: number[] = [i];
+    label[i] = id;
+    for (let k = 0; k < part.length; k++) {
+      const j = part[k], x = j % W, y = (j / W) | 0;
+      for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
+        const q = ny * W + nx;
+        if (nx >= 0 && ny >= 0 && nx < W && ny < H && mask[q] && !label[q]) { label[q] = id; part.push(q); }
+      }
+    }
+    parts.push(part);
+  }
+  return { label, parts };
+}
+
+interface Line { pts: Pt[]; closed: boolean }
+
 /**
- * Closed outlines of the region `v > 0.5`, by marching squares on pixel centres.
- * Every outline is oriented with white on its left, so the two sides of a thin
- * part, or of a thin gap, run in opposite directions.
+ * Level lines of `f` at 0, by marching squares on pixel centres, in the cells
+ * where `use(x, y)` holds. A line stops where it leaves those cells, so it can
+ * be open. Returned in pixel coordinates.
  */
-function outlines(v: Float64Array, W: number, H: number): Pt[][] {
-  const at = (x: number, y: number) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : v[y * W + x]);
-  const iso = 0.5;
-  // Edge ids: 0 top, 1 right, 2 bottom, 3 left of the cell whose top-left pixel is (x, y).
+function contours(f: (x: number, y: number) => number, W: number, H: number, use: (x: number, y: number) => boolean): Line[] {
   const point = (x: number, y: number, e: number): Pt => {
     const [ax, ay, bx, by] = [[x, y, x + 1, y], [x + 1, y, x + 1, y + 1], [x, y + 1, x + 1, y + 1], [x, y, x, y + 1]][e];
-    const va = at(ax, ay), vb = at(bx, by), t = (iso - va) / (vb - va);
+    const va = f(ax, ay), vb = f(bx, by), t = va / (va - vb);
     return [ax + (bx - ax) * t, ay + (by - ay) * t];
   };
+  // A crossing on a pixel edge has one key, shared by the two cells on either side.
   const key = (x: number, y: number, e: number) => (e === 0 ? `h${x},${y}` : e === 2 ? `h${x},${y + 1}` : e === 1 ? `v${x + 1},${y}` : `v${x},${y}`);
-  const corner = [[0, 0], [1, 0], [1, 1], [0, 1]]; // TL TR BR BL
-  const testCorner: Record<string, number> = { '03': 0, '01': 1, '12': 2, '23': 3, '02': 0, '13': 0 };
-  const next = new Map<string, { to: string; p: Pt }>();
-  for (let y = -1; y < H; y++) for (let x = -1; x < W; x++) {
-    const c = corner.map(([dx, dy]) => at(x + dx, y + dy) > iso);
+  const corner = [[0, 0], [1, 0], [1, 1], [0, 1]]; // TL TR BR BL; edge e runs from corner e to corner e + 1
+  const next = new Map<string, string>(), at = new Map<string, Pt>(), incoming = new Set<string>();
+  for (let y = 0; y < H - 1; y++) for (let x = 0; x < W - 1; x++) {
+    if (!use(x, y)) continue;
+    const c = corner.map(([dx, dy]) => f(x + dx, y + dy) > 0);
     const crossed = [0, 1, 2, 3].filter((e) => c[e] !== c[(e + 1) % 4]);
     if (!crossed.length) continue;
     let pairs: [number, number][];
     if (crossed.length === 2) pairs = [[crossed[0], crossed[1]]];
     else {
-      const centre = (at(x, y) + at(x + 1, y) + at(x + 1, y + 1) + at(x, y + 1)) / 4 > iso;
-      // Saddle: a white centre joins the two white corners, cutting off the dark ones.
-      const cutTL = c[0] !== centre;
-      pairs = cutTL ? [[3, 0], [1, 2]] : [[0, 1], [2, 3]];
+      // Saddle: the centre's side decides which corners join.
+      const centre = f(x, y) + f(x + 1, y) + f(x + 1, y + 1) + f(x, y + 1) > 0;
+      pairs = c[0] !== centre ? [[3, 0], [1, 2]] : [[0, 1], [2, 3]];
     }
     for (const [e1, e2] of pairs) {
-      const k = testCorner[[e1, e2].sort().join('')];
-      const p = point(x, y, e1), q = point(x, y, e2), tc: Pt = [x + corner[k][0], y + corner[k][1]];
-      const cross = (q[0] - p[0]) * (tc[1] - p[1]) - (q[1] - p[1]) * (tc[0] - p[0]);
-      // In screen coordinates a negative cross product puts the corner on the left.
-      const forward = c[k] ? cross < 0 : cross > 0;
-      const [from, to] = forward ? [e1, e2] : [e2, e1];
-      next.set(key(x, y, from), { to: key(x, y, to), p: point(x, y, from) });
+      // Walk from the edge where the field turns positive (going clockwise) to the edge where it turns
+      // negative, so the positive side is always on the left. Decided from the corner signs alone: a
+      // line through a pixel centre gives a zero-length segment, which has no direction of its own.
+      const entry = (e: number) => !c[e] && c[(e + 1) % 4];
+      const [from, to] = entry(e1) ? [e1, e2] : [e2, e1];
+      const a = key(x, y, from), b = key(x, y, to);
+      next.set(a, b); incoming.add(b);
+      at.set(a, point(x, y, from)); at.set(b, point(x, y, to));
     }
   }
-  const loops: Pt[][] = [];
-  const done = new Set<string>();
-  for (const start of [...next.keys()].sort()) {
-    if (done.has(start)) continue;
-    const loop: Pt[] = [];
-    for (let k = start; !done.has(k);) {
-      done.add(k);
-      const step = next.get(k);
-      if (!step) break;
-      loop.push(step.p);
-      k = step.to;
-    }
-    if (loop.length > 8) loops.push(loop);
-  }
-  return loops;
+  const lines: Line[] = [], done = new Set<string>();
+  const walk = (start: string) => {
+    const pts: Pt[] = [];
+    let k: string | undefined = start;
+    while (k && !done.has(k)) { done.add(k); pts.push(at.get(k)!); k = next.get(k); }
+    return { pts, closed: k === start };
+  };
+  for (const start of [...next.keys()].filter((k) => !incoming.has(k)).sort()) lines.push(walk(start));
+  for (const start of [...next.keys()].sort()) if (!done.has(start)) lines.push(walk(start));
+  return lines.filter((l) => l.pts.length > 2);
 }
 
-/** Evenly spaced points along a closed outline. */
-function resample(loop: Pt[], step: number): Pt[] {
-  const out: Pt[] = [loop[0]];
+/** Evenly spaced points along a line. */
+function resample({ pts, closed }: Line, step: number): Line {
+  const src = closed ? [...pts, pts[0]] : pts, out: Pt[] = [src[0]];
   let carry = 0;
-  for (let i = 0; i < loop.length; i++) {
-    const a = loop[i], b = loop[(i + 1) % loop.length], l = dist(a, b);
+  for (let i = 0; i + 1 < src.length; i++) {
+    const a = src[i], b = src[i + 1], l = dist(a, b);
     let t = step - carry;
     while (t <= l) { out.push(add(a, mul(sub(b, a), t / l))); t += step; }
     carry = l - (t - step);
   }
-  if (out.length > 1 && dist(out[0], out[out.length - 1]) < step / 2) out.pop();
-  return out;
+  if (closed && out.length > 1 && dist(out[0], out[out.length - 1]) < step / 2) out.pop();
+  if (!closed && dist(out[out.length - 1], src[src.length - 1]) > 1e-9) out.push(src[src.length - 1]);
+  return { pts: out, closed };
 }
 
-interface Sample { c: number; i: number; p: Pt; t: Pt }
-interface Pair { c: number; j: number; d: number }
-
-/** For every outline point, the nearest facing point on another edge within MERGE x HOLD, if any. */
-function pairUp(loops: Pt[][]): (Pair | null)[][] {
-  const byLoop: Sample[][] = loops.map((pts, c) => pts.map((p, i) => {
-    const n = pts.length;
-    return { c, i, p, t: unit(sub(pts[(i + 3) % n], pts[(i - 3 + n) % n])) };
-  }));
-  const samples = byLoop.flat();
-  const reach = MERGE * HOLD;
-  const cell = (p: Pt) => `${Math.floor(p[0] / reach)},${Math.floor(p[1] / reach)}`;
-  const grid = new Map<string, Sample[]>();
-  for (const s of samples) grid.set(cell(s.p), [...(grid.get(cell(s.p)) ?? []), s]);
-  const facing = -Math.cos((FACING_DEG * Math.PI) / 180);
-  const selfGap = Math.round(SELF_GAP / STEP);
-  return loops.map((pts, c) => pts.map((p, i) => {
-    const me = byLoop[c][i];
-    const [gx, gy] = cell(p).split(',').map(Number);
-    let best: Pair | null = null, bestD = reach;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      for (const q of grid.get(`${gx + dx},${gy + dy}`) ?? []) {
-        if (q.c === c) {
-          const n = pts.length, k = Math.abs(q.i - i);
-          if (Math.min(k, n - k) < selfGap) continue;
-        }
-        const d = dist(p, q.p);
-        if (d >= bestD || dot(me.t, q.t) > facing) continue;
-        // The partner must lie across the edge, not along it.
-        if (Math.abs(dot(unit(sub(q.p, p)), me.t)) > 0.5) continue;
-        best = { c: q.c, j: q.i, d }; bestD = d;
-      }
-    }
-    return best;
-  }));
-}
-
-/** Runs of consecutive indices on a closed outline where `on(i)` holds. */
-function runs(n: number, on: (i: number) => boolean): { start: number; end: number }[] {
-  if (Array.from({ length: n }, (_, i) => on(i)).every(Boolean)) return [{ start: 0, end: n - 1 }];
-  let s0 = 0;
-  while (on(s0)) s0++;
-  const out: { start: number; end: number }[] = [];
-  for (let k = 0; k < n; k++) {
-    const i = (s0 + k) % n;
-    if (!on(i)) continue;
-    if (out.length && (out[out.length - 1].end + 1) % n === i) out[out.length - 1].end = i;
-    else out.push({ start: i, end: i });
+/** A narrow hole's middle line: the midpoint of each slice across its long axis. */
+function spine(pixels: number[], W: number, step: number): Pt[] {
+  const pts: Pt[] = pixels.map((i) => [i % W, (i / W) | 0]);
+  const c = mul(pts.reduce((a, p) => add(a, p), [0, 0] as Pt), 1 / pts.length);
+  let xx = 0, xy = 0, yy = 0;
+  for (const p of pts) { const d = sub(p, c); xx += d[0] * d[0]; xy += d[0] * d[1]; yy += d[1] * d[1]; }
+  const ang = Math.atan2(2 * xy, xx - yy) / 2, axis: Pt = [Math.cos(ang), Math.sin(ang)], across: Pt = [-axis[1], axis[0]];
+  const along = pts.map((p) => dot(sub(p, c), axis)), side = pts.map((p) => dot(sub(p, c), across));
+  const lo = Math.min(...along), hi = Math.max(...along), out: Pt[] = [];
+  for (let t = lo + step / 2; t < hi; t += step) {
+    let mn = Infinity, mx = -Infinity;
+    along.forEach((a, k) => { if (Math.abs(a - t) <= step / 2) { mn = Math.min(mn, side[k]); mx = Math.max(mx, side[k]); } });
+    if (mn <= mx) out.push(add(c, add(mul(axis, t), mul(across, (mn + mx) / 2))));
   }
   return out;
 }
 
-/** A stroke: `mid` marks a midline that replaced two facing edges. */
-interface Line { pts: Pt[]; closed: boolean; mid: boolean }
-
-/** Replace facing edge pairs by their midlines and keep the remaining edges, joined to those midlines. */
-function strokes(loops: Pt[][], pairs: (Pair | null)[][]): Line[] {
-  const runMin = Math.round(RUN_MIN / STEP), gapFill = Math.round(GAP_FILL / STEP);
-  for (const pr of pairs) {
-    const n = pr.length;
-    // Merge where the edges are within MERGE, then let each merged run continue while they stay within MERGE x HOLD.
-    const on = pr.map((q) => !!q && q.d < MERGE);
-    for (let grew = true; grew;) {
-      grew = false;
-      for (let i = 0; i < n; i++) {
-        if (on[i] || !pr[i]) continue;
-        if (on[(i + 1) % n] || on[(i - 1 + n) % n]) { on[i] = true; grew = true; }
+/** Move each open line's ends onto the nearest point of another line within SNAP, so joints meet exactly. */
+function join(lines: Line[]): Line[] {
+  for (const l of lines) {
+    if (l.closed) continue;
+    for (const end of [0, 1] as const) {
+      const i = end ? l.pts.length - 1 : 0, p = l.pts[i];
+      let best: Pt | null = null, bestD = SNAP;
+      for (const m of lines) {
+        if (m === l) continue;
+        for (const q of m.pts) { const d = dist(p, q); if (d < bestD) { best = q; bestD = d; } }
       }
-    }
-    // Close short breaks between runs that merge with the same outline.
-    for (const r of runs(n, (i) => !on[i])) {
-      const count = (r.end - r.start + n) % n + 1;
-      const a = pr[(r.start - 1 + n) % n], b = pr[(r.end + 1) % n];
-      if (count >= gapFill || count === n || !a || !b || a.c !== b.c) continue;
-      for (let k = 0; k < count; k++) {
-        const i = (r.start + k) % n, m = loops[a.c].length;
-        const j = Math.round(a.j + ((b.j - a.j + (Math.abs(b.j - a.j) > m / 2 ? (b.j > a.j ? -m : m) : 0)) * (k + 1)) / (count + 1));
-        pr[i] = pr[i] && pr[i]!.c === a.c ? pr[i] : { c: a.c, j: ((j % m) + m) % m, d: MERGE };
-        on[i] = true;
-      }
-    }
-    for (let i = 0; i < n; i++) if (!on[i]) pr[i] = null;
-    // Drop merged runs too short to be a feature.
-    for (const r of runs(n, (i) => !!pr[i])) {
-      const count = (r.end - r.start + n) % n + 1;
-      if (count < runMin) for (let k = 0; k < count; k++) pr[(r.start + k) % n] = null;
+      if (best) l.pts[i] = best;
     }
   }
-  const midpoint = (c: number, i: number): Pt => {
-    const q = pairs[c][i]!;
-    return mid(loops[c][i], loops[q.c][q.j]);
-  };
-  const lines: Line[] = [];
-  loops.forEach((pts, c) => {
-    const n = pts.length, pr = pairs[c];
-    // Midlines, drawn once: from the side with the smaller (outline, index).
-    const emit = (i: number) => !!pr[i] && (c < pr[i]!.c || (c === pr[i]!.c && i < pr[i]!.j));
-    for (const r of runs(n, emit)) {
-      const count = (r.end - r.start + n) % n + 1;
-      const closed = count === n && pr.every((q) => q && q.c === pr[0]!.c);
-      let seg: Pt[] = [];
-      for (let k = 0; k < count; k++) {
-        const i = (r.start + k) % n;
-        const prev = seg.length ? pr[(i - 1 + n) % n] : null;
-        // A jump in the partner index means a different facing edge: start a new midline.
-        if (prev && (prev.c !== pr[i]!.c || Math.min(Math.abs(prev.j - pr[i]!.j), loops[prev.c].length - Math.abs(prev.j - pr[i]!.j)) > PARTNER_JUMP)) {
-          if (seg.length > 1) lines.push({ pts: seg, closed: false, mid: true });
-          seg = [];
-        }
-        seg.push(midpoint(c, i));
-      }
-      if (seg.length > 1) lines.push({ pts: seg, closed, mid: true });
-    }
-    // Edges that face nothing stay as outline, ending on the neighbouring midline.
-    const free = runs(n, (i) => !pr[i]);
-    if (free.length === 1 && free[0].start === 0 && free[0].end === n - 1) {
-      lines.push({ pts: pts.slice(), closed: true, mid: false });
-      return;
-    }
-    for (const r of free) {
-      const count = (r.end - r.start + n) % n + 1;
-      const seg = Array.from({ length: count }, (_, k) => pts[(r.start + k) % n]);
-      const before = (r.start - 1 + n) % n, after = (r.end + 1) % n;
-      const a = pr[before] ? midpoint(c, before) : null, b = pr[after] ? midpoint(c, after) : null;
-      // The round end of a merged part: both sides return to the same midline end. The stroke cap draws it.
-      if (a && b && dist(a, b) < MERGE / 2 && len(seg) < (Math.PI * MERGE) / 2) {
-        lines.push({ pts: [a, b], closed: false, mid: true, cap: farthest(seg, mid(a, b)) } as Line & { cap: Pt });
-        continue;
-      }
-      // Trim the edge back so it joins the midline as a Y, not a notch.
-      let lo = 0, hi = seg.length - 1;
-      if (a) for (let walked = 0, step = TAPER * dist(seg[0], a); lo < hi - 1 && walked < step; lo++) walked += dist(seg[lo], seg[lo + 1]);
-      if (b) for (let walked = 0, step = TAPER * dist(seg[seg.length - 1], b); hi > lo + 1 && walked < step; hi--) walked += dist(seg[hi], seg[hi - 1]);
-      lines.push({ pts: [...(a ? [a] : []), ...seg.slice(lo, hi + 1), ...(b ? [b] : [])], closed: false, mid: false });
-    }
-  });
   return lines;
-}
-
-function farthest(pts: Pt[], from: Pt): Pt {
-  return pts.reduce((best, p) => (dist(p, from) > dist(best, from) ? p : best), pts[0]);
-}
-
-/** Join cap markers to their midlines, and snap line ends that nearly meet. */
-function assemble(lines: (Line & { cap?: Pt })[]): Line[] {
-  const real = lines.filter((l) => !l.cap);
-  for (const capped of lines.filter((l) => l.cap)) {
-    const at = mid(capped.pts[0], capped.pts[1]);
-    let best: { l: Line; end: 0 | 1 } | null = null, bestD = 0.5;
-    for (const l of real) {
-      if (l.closed) continue;
-      for (const end of [0, 1] as const) {
-        const d = dist(l.pts[end ? l.pts.length - 1 : 0], at);
-        if (d < bestD) { best = { l, end }; bestD = d; }
-      }
-    }
-    if (!best) continue;
-    // Pull the end out to the part's tip, less the stroke's round cap.
-    const end = best.l.pts[best.end ? best.l.pts.length - 1 : 0];
-    const out = sub(capped.cap!, end), reach = Math.hypot(...out) - 1;
-    if (reach > 0) {
-      const tip = add(end, mul(unit(out), reach));
-      if (best.end) best.l.pts.push(tip); else best.l.pts.unshift(tip);
-    }
-  }
-  // Snap ends that land within SNAP of each other to one point.
-  const ends: { l: Line; k: number }[] = real.filter((l) => !l.closed).flatMap((l) => [{ l, k: 0 }, { l, k: l.pts.length - 1 }]);
-  for (let a = 0; a < ends.length; a++) {
-    const group = ends.filter((e) => dist(e.l.pts[e.k], ends[a].l.pts[ends[a].k]) < SNAP);
-    if (group.length < 2) continue;
-    const c: Pt = mul(group.reduce((s, e) => add(s, e.l.pts[e.k]), [0, 0] as Pt), 1 / group.length);
-    for (const e of group) e.l.pts[e.k] = c;
-  }
-  // Join two lines that meet end to end with nothing else at the joint, so no cap dot shows there.
-  let live = real.slice();
-  for (let joined = true; joined;) {
-    joined = false;
-    const open = live.filter((l) => !l.closed && l.pts.length > 1);
-    const at = (l: Line, k: 0 | 1) => l.pts[k ? l.pts.length - 1 : 0];
-    outer: for (const l of open) for (const k of [0, 1] as const) {
-      const here = at(l, k);
-      const others = open.flatMap((m) => ([0, 1] as const).filter((j) => (m !== l || j !== k) && dist(at(m, j), here) < 1e-6).map((j) => ({ m, j })));
-      if (others.length !== 1) continue;
-      const { m, j } = others[0];
-      if (m === l) { live = live.map((x) => (x === l ? { ...l, pts: l.pts.slice(0, -1), closed: true } : x)); joined = true; break outer; }
-      const a = k ? l.pts : l.pts.slice().reverse();
-      const b = j ? m.pts.slice().reverse() : m.pts;
-      live = [...live.filter((x) => x !== l && x !== m), { pts: [...a, ...b.slice(1)], closed: false, mid: l.mid || m.mid }];
-      joined = true;
-      break outer;
-    }
-  }
-  // A short loose piece of edge is a speck left by thresholding. Midlines stay: a small part, like a pupil, is a feature.
-  const touches = (l: Line) => live.some((m) => m !== l && !m.closed && [m.pts[0], m.pts[m.pts.length - 1]].some((e) => [l.pts[0], l.pts[l.pts.length - 1]].some((f) => dist(e, f) < 1e-6)));
-  const kept = live.filter((l) => l.closed || l.mid || len(l.pts) >= SPECK || touches(l));
-  // Drop short branches that hang off a joint with a free far end.
-  const shared = (p: Pt, self: Line) => kept.some((m) => m !== self && !m.closed && (dist(m.pts[0], p) < 1e-6 || dist(m.pts[m.pts.length - 1], p) < 1e-6));
-  return kept.filter((l) => l.closed || len(l.pts) >= STUB || shared(l.pts[0], l) === shared(l.pts[l.pts.length - 1], l));
 }
 
 /** Indices where the line turns sharper than CORNER_DEG over a window of `k` points. */
@@ -523,46 +391,83 @@ function pathData(line: Line): string {
   return closed ? `${d}Z` : d;
 }
 
-interface IconReport { id: number; name: string; unitsPerPx: number; origin: Pt; strokes: number; merged: number; segments: number }
+
+interface IconReport { id: number; name: string; unitsPerPx: number; origin: Pt; shapes: number; strokes: number; segments: number }
 
 function convert(id: number): { svg: string; report: IconReport } {
   const src = decode(readFileSync(`${SRC_DIR}/${id}.png`));
   const W = src.width * UP, H = src.height * UP;
   const v = upscale(whiteness(src), src.width, src.height);
+  const white = new Uint8Array(W * H);
+  for (let i = 0; i < white.length; i++) white[i] = v[i] > 0.5 ? 1 : 0;
+
+  // Scale so the outer stroke, GAP outside the symbol, fits the grid.
   let minX = W, minY = H, maxX = -1, maxY = -1;
-  for (let i = 0; i < v.length; i++) {
-    if (v[i] <= 0.5) continue;
+  for (let i = 0; i < white.length; i++) {
+    if (!white[i]) continue;
     const x = i % W, y = (i / W) | 0;
     minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
   }
-  const s = (GRID - 2 * PAD) / Math.max(maxX - minX + 1, maxY - minY + 1);
+  const s = (GRID - 2 * PAD - 2 * GAP) / Math.max(maxX - minX + 1, maxY - minY + 1);
   const origin: Pt = [(minX + maxX + 1) / 2, (minY + maxY + 1) / 2];
   const toUnits = ([x, y]: Pt): Pt => [GRID / 2 + (x + 0.5 - origin[0]) * s, GRID / 2 + (y + 0.5 - origin[1]) * s];
+  const gap = GAP / s, speck = (SPECK / s) ** 2;
 
-  const all = outlines(v, W, H).map((l) => resample(l.map(toUnits), STEP)).filter((l) => len(l) > 0.5);
-  // Parts too small to outline with a 2-unit stroke become a dot, or a dash if they are long and narrow,
-  // the way lucide draws eyes and specks. Measured along the part's own axes.
-  const small: Line[] = [];
-  const loops = all.filter((l) => {
-    const c = mul(l.reduce((a, p) => add(a, p), [0, 0] as Pt), 1 / l.length);
-    let xx = 0, xy = 0, yy = 0;
-    for (const p of l) { const d = sub(p, c); xx += d[0] * d[0]; xy += d[0] * d[1]; yy += d[1] * d[1]; }
-    const angle = Math.atan2(2 * xy, xx - yy) / 2, axis: Pt = [Math.cos(angle), Math.sin(angle)], across: Pt = [-axis[1], axis[0]];
-    const extent = (u: Pt) => Math.max(...l.map((p) => dot(sub(p, c), u))) - Math.min(...l.map((p) => dot(sub(p, c), u)));
-    const long = extent(axis), wide = extent(across);
-    if (Math.max(long, wide) < DOT) { small.push({ pts: [c, c], closed: false, mid: true }); return false; }
-    if (long < DASH && wide < DOT) {
-      const half = Math.max(0, long / 2 - 1); // the round caps add 1 unit at each end
-      small.push({ pts: [sub(c, mul(axis, half)), add(c, mul(axis, half))], closed: false, mid: true });
-      return false;
-    }
-    return true;
+  // The white shapes, and every pixel's distance to each of them.
+  const { parts } = regions(white, W, H);
+  const shapes = parts.slice(1).filter((p) => p.length >= speck);
+  const near = shapes.map((p) => {
+    const seed = new Uint8Array(W * H);
+    for (const i of p) seed[i] = 1;
+    return distance(seed, W, H);
   });
-  const pairs = pairUp(loops);
-  const lines = [...assemble(strokes(loops, pairs)), ...small];
-  const merged = pairs.flat().filter(Boolean).length;
+  const nearest = new Int32Array(W * H), dmin = new Float64Array(W * H).fill(Infinity);
+  near.forEach((d, k) => { for (let i = 0; i < d.length; i++) if (d[i] < dmin[i]) { dmin[i] = d[i]; nearest[i] = k; } });
+  const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H;
+  // The band: everything within GAP of a shape. A small enclosed pocket outside it that touches only two
+  // shapes is a wider stretch of the gap between them, so their line runs straight through it. A pocket
+  // where three or more shapes meet stays open space with its own outline.
+  const inBand = new Uint8Array(W * H);
+  for (let i = 0; i < inBand.length; i++) inBand[i] = dmin[i] < gap ? 1 : 0;
+  const { parts: pockets } = regions(inBand.map((b) => 1 - b), W, H);
+  for (const pocket of pockets.slice(1)) {
+    if (pocket.some((i) => i % W === 0 || i % W === W - 1 || i < W || i >= W * (H - 1))) continue;
+    const xs = pocket.map((i) => i % W), ys = pocket.map((i) => (i / W) | 0);
+    const size = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * s;
+    if (size < POCKET && new Set(pocket.map((i) => nearest[i])).size === 2) for (const i of pocket) inBand[i] = 2;
+  }
+  const band = (x: number, y: number) => (!inside(x, y) ? -gap : inBand[y * W + x] === 2 ? gap / 2 : gap - dmin[y * W + x]);
+
+  // 1. The outline of the band: the outer stroke, and the edge of any open space inside.
+  const lines: Line[] = contours(band, W, H, () => true);
+  // 2. Zone borders: between each pair of neighbouring shapes, where both are inside the band.
+  const pairs = new Set<string>();
+  for (let y = 0; y < H - 1; y++) for (let x = 0; x < W - 1; x++) {
+    const i = y * W + x;
+    for (const j of [i + 1, i + W]) {
+      if (nearest[i] !== nearest[j] && inBand[i] && inBand[j]) pairs.add([nearest[i], nearest[j]].sort((a, b) => a - b).join(','));
+    }
+  }
+  for (const pair of [...pairs].sort()) {
+    const [a, b] = pair.split(',').map(Number);
+    const cell = (x: number, y: number) => [[x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]].every(([cx, cy]) => {
+      const i = cy * W + cx;
+      return inBand[i] > 0 && (nearest[i] === a || nearest[i] === b);
+    });
+    lines.push(...contours((x, y) => near[b][y * W + x] - near[a][y * W + x], W, H, cell));
+  }
+  // 3. Holes too narrow for the band to leave an outline inside: one line down the middle.
+  const { parts: dark } = regions(white.map((w) => 1 - w), W, H);
+  for (const hole of dark.slice(1)) {
+    if (hole.some((i) => i % W === 0 || i % W === W - 1 || i < W || i >= W * (H - 1))) continue; // the outside, not a hole
+    if (hole.length < speck || hole.some((i) => dmin[i] > gap)) continue;
+    const mid = spine(hole, W, 2);
+    if (mid.length) lines.push({ pts: mid, closed: false });
+  }
+
+  const unitLines = join(lines.map((l) => resample({ pts: l.pts.map(toUnits), closed: l.closed }, STEP)).filter((l) => len(l.pts) > 0.3));
   let segments = 0;
-  const paths = lines
+  const paths = unitLines
     .map((l) => {
       const d = pathData(l);
       segments += (d.match(/C/g) ?? []).length;
@@ -576,7 +481,7 @@ function convert(id: number): { svg: string; report: IconReport } {
     '</svg>',
     '',
   ].join('\n');
-  return { svg, report: { id, name: NAMES[id - 1], unitsPerPx: s, origin, strokes: paths.length, merged, segments } };
+  return { svg, report: { id, name: NAMES[id - 1], unitsPerPx: s, origin, shapes: shapes.length, strokes: paths.length, segments } };
 }
 
 function main() {
@@ -587,10 +492,10 @@ function main() {
     writeFileSync(`${OUT_DIR}/${String(id).padStart(2, '0')}-${report.name}.svg`, svg);
     reports.push(report);
   }
-  writeFileSync(`${OUT_DIR}/report.json`, `${JSON.stringify({ up: UP, merge: MERGE, facingDeg: FACING_DEG, fitTol: FIT_TOL, icons: reports }, null, 2)}\n`);
+  writeFileSync(`${OUT_DIR}/report.json`, `${JSON.stringify({ up: UP, gap: GAP, fitTol: FIT_TOL, icons: reports }, null, 2)}\n`);
   console.log(`${OUT_DIR}/: 18 icons`);
   for (const r of reports) {
-    console.log(`  ${String(r.id).padStart(2)} ${r.name.padEnd(9)} strokes ${String(r.strokes).padStart(2)}  merged points ${String(r.merged).padStart(4)}  curve segments ${String(r.segments).padStart(3)}`);
+    console.log(`  ${String(r.id).padStart(2)} ${r.name.padEnd(9)} shapes ${String(r.shapes).padStart(2)}  strokes ${String(r.strokes).padStart(2)}  curve segments ${String(r.segments).padStart(3)}`);
   }
 }
 
