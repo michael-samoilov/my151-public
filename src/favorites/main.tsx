@@ -5,6 +5,7 @@ import '@fontsource-variable/inter/index.css'
 import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
 import { installOptOut, isOptedOut } from '../lib/clientId'
+import { installStaleDeployReload } from '../lib/staleDeploy'
 import { whenIdle } from '../lib/whenIdle'
 import './pickerNames'
 import { initLocale } from '../i18n/bootstrap'
@@ -23,6 +24,7 @@ document.head.prepend(preload);
 
 installLayoutFontSize();
 installOptOut();
+installStaleDeployReload();
 
 if (!isOptedOut()) {
   whenIdle(() => {

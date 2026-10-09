@@ -8,11 +8,13 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
+import { whenIdle } from '@/lib/whenIdle';
+import { reloadIfStale } from '@/lib/staleDeploy';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useDocumentLocale, useT } from '@/i18n';
-import { cellKey, type GenAxisId, type TypeAxisId } from './model/cells';
+import { cellKey, parseCellKey, type GenAxisId, type TypeAxisId } from './model/cells';
 import { getPickerMon } from './model/catalog';
-import { prewarmPickerSprites } from './model/spritePreload';
+import { prefetchCellSoon, prefetchEverySprite } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
@@ -28,8 +30,8 @@ import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
-const FavoritesAnalyticsDashboard = lazy(() => import('./components/FavoritesAnalyticsDashboard'));
-const FavoritesExportOverlay = lazy(() => import('./components/FavoritesExportOverlay'));
+const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./components/FavoritesAnalyticsDashboard')));
+const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/FavoritesExportOverlay')));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId; keyboard?: boolean };
 
@@ -103,10 +105,38 @@ function FavoritesContent({ sel, setSel }: {
     catch { /* Storage can be unavailable in private browsing. */ }
   }, [showIcons]);
 
+  // Picker sprites in the order a visitor needs them (model/spritePreload.ts).
+  // Nearly every visitor opens Normal / Gen I, the top-left cell, first, so
+  // its sprites go first everywhere. The phone layout then fetches the cells
+  // as they come into view. The desktop layout shows nearly every cell at
+  // once, so there "in view" would mean all 1,388 sprites; a cell that is
+  // hovered, pressed, or focused gets a head start of its own instead
+  // (FavoritesGrid). The switch is the layout, not the pointer: a touch
+  // screen at desktop width shows the whole grid too.
   useEffect(() => {
-    const timer = window.setTimeout(prewarmPickerSprites, 350);
-    return () => window.clearTimeout(timer);
+    let alive = true;
+    let observer: IntersectionObserver | null = null;
+    whenIdle(() => {
+      if (!alive) return;
+      prefetchCellSoon('normal', 1);
+      if (window.matchMedia('(min-width: 1024px)').matches) return;
+      const seen = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          seen.unobserve(entry.target);
+          const cell = parseCellKey((entry.target as HTMLElement).dataset.cell ?? '');
+          if (cell) prefetchCellSoon(cell.type, cell.gen);
+        }
+      });
+      document.querySelectorAll('[data-cell]').forEach((el) => seen.observe(el));
+      observer = seen;
+    });
+    return () => { alive = false; observer?.disconnect(); };
   }, []);
+  // Once a selector has opened, the visitor is picking: fetch the rest.
+  useEffect(() => {
+    if (sel) whenIdle(prefetchEverySprite);
+  }, [sel]);
 
   function open(type: TypeAxisId, gen: GenAxisId, keyboard = false) {
     const kind = kindFor(type, gen);

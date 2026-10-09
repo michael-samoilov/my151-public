@@ -155,11 +155,45 @@ html {
   border-radius: 999px;
 }
 
+/* Arial or Helvetica, sized to Inter, for the moment before Inter loads. Text
+ * then keeps its line breaks when Inter arrives, so nothing shifts. Inter is
+ * 5.5% wider than Arial at 400, 1% wider than Arial Bold at 600 to 700, and
+ * 2.4% at 800 (measured in Chrome); the ascent and descent are Inter's
+ * (0.96875 and 0.2422 em) divided by the same factor. A system without these
+ * fonts, such as Android, falls through to system-ui as before. */
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial'), local('ArialMT'), local('Helvetica'), local('Liberation Sans');
+  font-weight: 100 549;
+  size-adjust: 105.5%;
+  ascent-override: 91.82%;
+  descent-override: 22.96%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Helvetica-Bold'), local('Liberation Sans Bold');
+  font-weight: 550 749;
+  size-adjust: 101%;
+  ascent-override: 95.92%;
+  descent-override: 23.98%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'), local('Helvetica-Bold'), local('Liberation Sans Bold');
+  font-weight: 750 1000;
+  size-adjust: 102.4%;
+  ascent-override: 94.6%;
+  descent-override: 23.65%;
+  line-gap-override: 0%;
+}
+
 body {
   margin: 0;
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter Variable', 'Inter Fallback', system-ui, -apple-system, sans-serif;
 
   /* Crisper glyph edges on macOS/iOS — Inter is designed for antialiased
    * rendering, and the default subpixel smoothing makes it look heavier. */
@@ -580,6 +614,15 @@ img {
 [data-artwork][data-float='1'] [data-shot='1'] {
   --hf: calc(var(--hover-lift) * -1);
 }
+
+/* A hub card's saved-work line (Caption in HomePage.tsx) shows only with a
+ * count. The head script of the prerendered hub (scripts/prerender-hub.ts)
+ * marks the tools with saved work in this browser, so their lines hold their
+ * space from the first paint, before the counts arrive. */
+[data-card-progress][data-empty] { display: none; }
+html.p151-saved-dex [data-card-progress='dex'],
+html.p151-saved-league [data-card-progress='league'],
+html.p151-saved-favorites [data-card-progress='favorites'] { display: grid; }
 
 /* Short phones keep complete captions visible while the artwork stays fixed. */
 @media (max-width: 639px) and (max-height: 760px) {

@@ -97,10 +97,11 @@ const POP_LEFT = 9.6;
  */
 const SHOT_SIZES =
   '(min-width: 1024px) calc(11.87vw - 0.602rem), (min-width: 640px) calc(33.197vw - 0.65rem), calc(34.163vw - 0.325rem)';
-const shot = (c300: string, c400: string, full: string) => ({
+const shot = (c300: string, c400: string, full: string, fetchPriority?: 'high') => ({
   src: full,
   srcSet: `${c300} 300w, ${c400} 400w, ${full} 800w`,
   sizes: SHOT_SIZES,
+  fetchPriority,
 });
 
 interface Tool {
@@ -109,6 +110,7 @@ interface Tool {
   href?: string;
   title: string;
   blurb: string;
+  /** Saved work for this tool in this browser. `count` is 0 when there is none. */
   progress?: { count: number; total: number; label: string };
   shots?: [ReturnType<typeof shot>, ReturnType<typeof shot>];
   /** One description per shot, back then front. The shots are content, not
@@ -175,8 +177,10 @@ function useTools(placed: number): Tool[] {
       href: '/pokedex-builder',
       title: t('home.dex.title'),
       blurb: t('home.dex.blurb'),
-      progress: placed > 0 ? { count: placed, total: 151, label: t('home.dex.saved', { progress: PROGRESS_TOKEN }) } : undefined,
-      shots: [shot(dexFront300, dexFront400, dexFront), shot(dexBack300, dexBack400, dexBack)],
+      progress: { count: placed, total: 151, label: t('home.dex.saved', { progress: PROGRESS_TOKEN }) },
+      // The page's largest paint on a phone. The hub's HTML is prerendered,
+      // so the browser sees this priority before it requests anything.
+      shots: [shot(dexFront300, dexFront400, dexFront, 'high'), shot(dexBack300, dexBack400, dexBack)],
       alts: [
         'Custom Pokédex Maker: a custom regional Pokédex in progress on the Build page',
         'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
@@ -187,7 +191,7 @@ function useTools(placed: number): Tool[] {
       href: '/custom-gym-leader',
       title: t('home.league.title'),
       blurb: t('home.league.blurb'),
-      progress: league > 0 ? { count: league, total: SLOT_COUNT, label: t('home.league.saved', { progress: PROGRESS_TOKEN }) } : undefined,
+      progress: { count: league, total: SLOT_COUNT, label: t('home.league.saved', { progress: PROGRESS_TOKEN }) },
       shots: [shot(leagueBack300, leagueBack400, leagueBack), shot(leagueFront300, leagueFront400, leagueFront)],
       alts: [
         'Gym Leader Maker: a whole league exported with eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
@@ -199,7 +203,7 @@ function useTools(placed: number): Tool[] {
       href: '/favorite-pokemon-picker',
       title: t('home.favorites.title'),
       blurb: t('home.favorites.blurb'),
-      progress: favorites.filled > 0 ? { count: favorites.filled, total: favorites.total, label: t('home.favorites.saved', { progress: PROGRESS_TOKEN }) } : undefined,
+      progress: { count: favorites.filled, total: favorites.total, label: t('home.favorites.saved', { progress: PROGRESS_TOKEN }) },
       shots: [shot(favoritesBack300, favoritesBack400, favoritesBack), shot(favoritesFront300, favoritesFront400, favoritesFront)],
       alts: [t('home.favorites.fullGridAlt'), t('home.favorites.simplifiedAlt')],
     },
@@ -330,6 +334,17 @@ function WideBody({ tool }: { tool: Tool }) {
   );
 }
 
+function ProgressText({ progress }: { progress: NonNullable<Tool['progress']> }) {
+  const [before, after] = progress.label.split(PROGRESS_TOKEN);
+  return (
+    <>
+      {before}
+      <strong className="font-bold tabular-nums whitespace-nowrap"><span className="text-primary">{progress.count}</span><span className="text-foreground">/{progress.total}</span></strong>
+      {after}
+    </>
+  );
+}
+
 /** Ink on the page, under the panel. */
 // fetch keepalive lets the beacon outlive the navigation a card link starts.
 function sendCardBeacon(key: string) {
@@ -365,11 +380,28 @@ function Caption({ tool }: { tool: Tool }) {
       >
         {tool.blurb}
       </p>
-      {tool.progress && <p data-card-progress className="m-0 text-muted-foreground" style={{ fontSize: BLURB, lineHeight: 'var(--caption-leading, 1.4)' }}>
-        {tool.progress.label.split(PROGRESS_TOKEN)[0]}
-        <strong className="font-bold tabular-nums whitespace-nowrap"><span className="text-primary">{tool.progress.count}</span><span className="text-foreground">/{tool.progress.total}</span></strong>
-        {tool.progress.label.split(PROGRESS_TOKEN)[1]}
-      </p>}
+      {tool.progress && (
+        // The saved-work line. It arrives after the page: the counts are read
+        // after the app adopts the prerendered HTML (zustand's hook gives
+        // React the dex store's initial state while it hydrates). So the page
+        // stays still, a visitor with saved work gets the line's box from the
+        // first paint (index.css, `p151-saved-*`). An invisible copy at the
+        // largest count gives the box the line's height before the count
+        // arrives.
+        <p
+          data-card-progress={tool.key}
+          data-empty={tool.progress.count > 0 ? undefined : ''}
+          className="m-0 grid text-muted-foreground"
+          style={{ fontSize: BLURB, lineHeight: 'var(--caption-leading, 1.4)' }}
+        >
+          <span aria-hidden className="invisible [grid-area:1/1]">
+            <ProgressText progress={{ ...tool.progress, count: tool.progress.total }} />
+          </span>
+          {tool.progress.count > 0 && (
+            <span className="[grid-area:1/1]"><ProgressText progress={tool.progress} /></span>
+          )}
+        </p>
+      )}
     </div>
   );
 }

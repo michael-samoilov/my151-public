@@ -15,26 +15,56 @@ const FEEDBACK_KEY = 'feedback';
 const COUNT_PREFIX = 'feedback:count';
 const MAX_PAGE = 200;
 
-function dayKeys(days: number): string[] {
+/** The UTC dates of the last `days` days, newest first: api/feedback.ts counts each report under its date. */
+function dayStamps(days: number, now: number): string[] {
   const out: string[] = [];
-  for (let i = 0; i < days; i++) {
-    out.push(`${COUNT_PREFIX}:${new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10)}`);
-  }
+  for (let i = 0; i < days; i++) out.push(new Date(now - i * 86_400_000).toISOString().slice(0, 10));
   return out;
 }
 
-/** Per-category totals over the last `days`, summed across the daily hashes. */
-async function counts(days: number): Promise<Record<string, number>> {
-  const hashes = await Promise.all(
-    dayKeys(days).map((k) => redis.hgetall<Record<string, string | number>>(k)),
-  );
-  const total: Record<string, number> = {};
-  for (const h of hashes) {
-    for (const [category, n] of Object.entries(h ?? {})) {
-      total[category] = (total[category] ?? 0) + Number(n);
-    }
+type Counts = { last7: Record<string, number>; last30: Record<string, number> };
+type Item = Record<string, unknown>;
+
+/**
+ * Per-category totals for the last 7 and 30 UTC days, counted from the rows
+ * themselves. That works when the first page reaches past the 30-day window,
+ * or holds the whole list; otherwise this returns null and the daily hashes
+ * answer. Nothing deletes reports below the 5,000 cap, so the two agree.
+ */
+export function countsFromRows(items: Item[], total: number, offset: number, now: number): Counts | null {
+  const stamps = dayStamps(30, now);
+  const stampOf = (it: Item) => (typeof it.ts === 'number' && it.ts > 0 ? new Date(it.ts).toISOString().slice(0, 10) : '');
+  const reachesPast = items.some((it) => {
+    const day = stampOf(it);
+    return day !== '' && day < stamps[29];
+  });
+  if (offset !== 0 || (items.length < total && !reachesPast)) return null;
+  const last7: Record<string, number> = {};
+  const last30: Record<string, number> = {};
+  for (const it of items) {
+    const at = stamps.indexOf(stampOf(it));
+    if (at < 0) continue;
+    const category = String(it.category);
+    last30[category] = (last30[category] ?? 0) + 1;
+    if (at < 7) last7[category] = (last7[category] ?? 0) + 1;
   }
-  return total;
+  return { last7, last30 };
+}
+
+/** The same totals summed from the 30 daily hashes, one HGETALL each. */
+async function countsFromHashes(now: number): Promise<Counts> {
+  const hashes = await Promise.all(
+    dayStamps(30, now).map((d) => redis.hgetall<Record<string, string | number>>(`${COUNT_PREFIX}:${d}`)),
+  );
+  const last7: Record<string, number> = {};
+  const last30: Record<string, number> = {};
+  hashes.forEach((h, i) => {
+    for (const [category, n] of Object.entries(h ?? {})) {
+      last30[category] = (last30[category] ?? 0) + Number(n);
+      if (i < 7) last7[category] = (last7[category] ?? 0) + Number(n);
+    }
+  });
+  return { last7, last30 };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -43,11 +73,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const offset = Math.max(0, Number(firstQueryValue(req.query.offset)) || 0);
     const limit = Math.min(MAX_PAGE, Math.max(1, Number(firstQueryValue(req.query.limit)) || 50));
 
-    const [rows, total, last7, last30] = await Promise.all([
+    const [rows, total] = await Promise.all([
       redis.lrange<string | Record<string, unknown>>(FEEDBACK_KEY, offset, offset + limit - 1),
       redis.llen(FEEDBACK_KEY),
-      counts(7),
-      counts(30),
     ]);
 
     // The SDK parses JSON strings back into objects when it can, so entries
@@ -61,6 +89,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     });
 
+    const now = Date.now();
+    const { last7, last30 } = countsFromRows(items, total, offset, now) ?? (await countsFromHashes(now));
     return res.status(200).json({ items, total, offset, limit, last7, last30 });
   } catch (err) {
     console.error('Feedback list error:', err);

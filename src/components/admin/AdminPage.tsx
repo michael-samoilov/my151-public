@@ -69,6 +69,7 @@ import {
 import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
 import { FitNowrap } from '@/components/admin/FitNowrap';
 import { BrowserUsage, PreviewUsageScale } from '@/components/admin/PreviewUsage';
+import { UsageCard } from '@/components/admin/UsageCard';
 import { toolCells, type ToolCell } from '@/components/admin/browserUsage';
 import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
@@ -1766,7 +1767,8 @@ export function AdminPage() {
     async (
       tok: string,
       asked: DashboardRange,
-      { limit = PAGE_SIZE, refreshSearch = false, quiet = false } = {},
+      // Only the Search tab shows Search data, so a load elsewhere skips its read.
+      { limit = PAGE_SIZE, refreshSearch = false, quiet = false, search = false } = {},
     ) => {
       const seq = ++latestLoad;
       if (!quiet) {
@@ -1783,7 +1785,7 @@ export function AdminPage() {
         setAuthed(true);
         setToken(tok);
         setError(null);
-        void loadSearch(tok, { refresh: refreshSearch, quiet });
+        if (search) void loadSearch(tok, { refresh: refreshSearch, quiet });
         try {
           localStorage.setItem(TOKEN_KEY, tok);
         } catch {
@@ -1853,14 +1855,14 @@ export function AdminPage() {
       if (!token) return;
       const hit = rangeCache.get(next);
       if (!hit) {
-        void load(token, next);
+        void load(token, next, { search: page === 'search' });
         return;
       }
       setData(hit.data);
       setLoadedAt(hit.at);
-      if (Date.now() - hit.at >= STALE_ON_RETURN_MS) void load(token, next, { limit: hit.data.limit, quiet: true });
+      if (Date.now() - hit.at >= STALE_ON_RETURN_MS) void load(token, next, { limit: hit.data.limit, quiet: true, search: page === 'search' });
     },
-    [token, load],
+    [token, load, page],
   );
 
   // Keep an open dashboard current: refetch on return to the tab (including an
@@ -1873,7 +1875,7 @@ export function AdminPage() {
     const refresh = (minAgeMs: number) => {
       if (running || Date.now() - loadedAt < minAgeMs) return;
       running = true;
-      void load(token, range, { limit: loadedLimit, quiet: true }).finally(() => {
+      void load(token, range, { limit: loadedLimit, quiet: true, search: page === 'search' }).finally(() => {
         running = false;
       });
     };
@@ -1893,7 +1895,7 @@ export function AdminPage() {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('pageshow', onPageShow);
     };
-  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit, range]);
+  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit, range, page]);
 
   const setArchived = useCallback(
     async (cid: string, next: boolean) => {
@@ -2026,7 +2028,7 @@ export function AdminPage() {
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, range, { refreshSearch: true })} disabled={loading || searchLoading}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, range, { refreshSearch: true, search: page === 'search' })} disabled={loading || searchLoading}>
               {loading || searchLoading ? 'Refreshing…' : 'Refresh'}
             </Button>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
@@ -2366,6 +2368,8 @@ export function AdminPage() {
                 onOpen={openPickerPicks}
               />
             )}
+
+            {tool === 'all' && token && !demo && <UsageCard token={token} />}
 
             {(tool === 'dex' || tool === 'league' || tool === 'favorites') && <Panel title="Newest browsers" sub={[showDex ? 'dex' : tool === 'favorites' ? 'picker' : 'league', 'newest first']}>
               {(() => {
