@@ -11,9 +11,10 @@
         300,
         300
       ],
+      "symmetric": true,
       "shapes": 1,
       "strokes": 2,
-      "segments": 13
+      "segments": 26
     },
     {
       "id": 2,
@@ -23,9 +24,10 @@
         300,
         299
       ],
+      "symmetric": false,
       "shapes": 6,
-      "strokes": 11,
-      "segments": 27
+      "strokes": 9,
+      "segments": 24
     },
     {
       "id": 3,
@@ -35,6 +37,7 @@
         324,
         298.5
       ],
+      "symmetric": false,
       "shapes": 1,
       "strokes": 1,
       "segments": 10
@@ -47,8 +50,9 @@
         300,
         300
       ],
+      "symmetric": false,
       "shapes": 3,
-      "strokes": 3,
+      "strokes": 2,
       "segments": 13
     },
     {
@@ -59,9 +63,10 @@
         300,
         299
       ],
+      "symmetric": false,
       "shapes": 5,
-      "strokes": 5,
-      "segments": 20
+      "strokes": 6,
+      "segments": 23
     },
     {
       "id": 6,
@@ -71,6 +76,7 @@
         300,
         300.5
       ],
+      "symmetric": false,
       "shapes": 1,
       "strokes": 1,
       "segments": 13
@@ -83,9 +89,10 @@
         300,
         298.5
       ],
+      "symmetric": true,
       "shapes": 5,
-      "strokes": 11,
-      "segments": 23
+      "strokes": 7,
+      "segments": 16
     },
     {
       "id": 8,
@@ -95,9 +102,10 @@
         300,
         300
       ],
+      "symmetric": true,
       "shapes": 1,
       "strokes": 3,
-      "segments": 8
+      "segments": 16
     },
     {
       "id": 9,
@@ -107,9 +115,10 @@
         301,
         297.5
       ],
+      "symmetric": false,
       "shapes": 3,
-      "strokes": 5,
-      "segments": 17
+      "strokes": 6,
+      "segments": 24
     },
     {
       "id": 10,
@@ -119,6 +128,7 @@
         300,
         300
       ],
+      "symmetric": false,
       "shapes": 1,
       "strokes": 1,
       "segments": 13
@@ -131,9 +141,10 @@
         300,
         300.5
       ],
+      "symmetric": true,
       "shapes": 1,
       "strokes": 2,
-      "segments": 10
+      "segments": 16
     },
     {
       "id": 12,
@@ -143,9 +154,10 @@
         300.5,
         303.5
       ],
+      "symmetric": false,
       "shapes": 3,
       "strokes": 3,
-      "segments": 18
+      "segments": 17
     },
     {
       "id": 13,
@@ -155,6 +167,7 @@
         300,
         298.5
       ],
+      "symmetric": false,
       "shapes": 1,
       "strokes": 1,
       "segments": 10
@@ -167,9 +180,10 @@
         300,
         300
       ],
+      "symmetric": true,
       "shapes": 1,
       "strokes": 2,
-      "segments": 18
+      "segments": 26
     },
     {
       "id": 15,
@@ -179,6 +193,7 @@
         300,
         300
       ],
+      "symmetric": false,
       "shapes": 1,
       "strokes": 2,
       "segments": 25
@@ -191,9 +206,10 @@
         300,
         301
       ],
+      "symmetric": true,
       "shapes": 3,
-      "strokes": 5,
-      "segments": 24
+      "strokes": 4,
+      "segments": 18
     },
     {
       "id": 17,
@@ -203,9 +219,10 @@
         300,
         326.5
       ],
+      "symmetric": true,
       "shapes": 2,
-      "strokes": 2,
-      "segments": 10
+      "strokes": 3,
+      "segments": 14
     },
     {
       "id": 18,
@@ -215,9 +232,10 @@
         300,
         321
       ],
+      "symmetric": true,
       "shapes": 1,
-      "strokes": 2,
-      "segments": 14
+      "strokes": 1,
+      "segments": 16
     }
   ]
 }
