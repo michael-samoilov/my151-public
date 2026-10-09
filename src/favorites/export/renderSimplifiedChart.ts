@@ -36,7 +36,7 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
   ]);
   const images = new Map(await Promise.all([...urls].map(async url => [url, await image(pickerSpriteSrc(url))] as const)));
   const L = SIMPLIFIED_CHART_LAYOUT;
-  const { canvas, ctx } = createFavoritesCanvas(L.width, L.height);
+  const { canvas, ctx } = createFavoritesCanvas(L.width, L.height, t('favorites.export.summaryTitle'));
   const byKey = new Map(snapshot.summary.map(cell => [cell.key, cell]));
   function tile(entry: FavoritesExportCell, cx: number, top: number, fill: string | BadgeStops,
     width = L.tileWidth, height = L.tileHeight, size = EXPORT_SPRITE_PX, split = false, special = false, fixedBadgeHeight?: number) {

@@ -42,7 +42,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     if(b.kind==='completion'&&snapshot.filled!==257)return res.status(400).json({error:'invalid completion'});
     const exportKind=b.kind==='export'&&(b.exportKind==='full'||b.exportKind==='simplified')?b.exportKind:undefined;
     if(b.kind==='export'&&!exportKind)return res.status(400).json({error:'invalid export kind'});
-    const stats=exportKind==='full'&&b.stats===true;
+    const stats=exportKind!==undefined&&b.stats===true;
     if(parseNotmeFlag(b.notme)||isReadOnlyDeployment(req))return res.status(200).json({ok:true});
     const received=Date.now();const now=parseCapturedAt(b.ts,received);
     if(now===null)return res.status(400).json({error:'invalid captured time'});

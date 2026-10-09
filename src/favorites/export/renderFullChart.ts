@@ -75,7 +75,7 @@ export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges 
   ]);
   const images = new Map(await Promise.all([...urls].map(async url => [url, await image(pickerSpriteSrc(url))] as const)));
   const { width, height, gridX, gridY } = FULL_CHART_LAYOUT;
-  const { canvas, ctx } = createFavoritesCanvas(width, height);
+  const { canvas, ctx } = createFavoritesCanvas(width, height, t('favorites.export.chartTitle'));
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
 

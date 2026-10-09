@@ -23,6 +23,8 @@
   "favorites.empty.title": "Aún no hay nada que elegir",
   "favorites.empty.unavailable": "No hay Pokémon disponibles para esta casilla.",
   "favorites.export.chartTitle": "Pokémon favoritos por tipo y generación",
+  "favorites.export.summaryTitle": "Pokémon favoritos por tipo y generación",
+  "favorites.export.summaryStatsTitle": "Estadísticas detalladas (cuadrícula completa tipo/gen.)",
   "favorites.export.close": "Cerrar exportación",
   "favorites.export.error": "No se pudo crear la imagen. Vuelve a intentarlo.",
   "favorites.export.fullGrid": "Cuadrícula completa",

@@ -15,7 +15,7 @@ import type { GenAxisId, TypeAxisId } from '../model/cells';
 
 type ExportMode = 'full' | 'simplified';
 const MODES: ExportMode[] = ['full', 'simplified'];
-const VARIANTS = ['full', 'full-stats', 'simplified'] as const;
+const VARIANTS = ['full', 'full-stats', 'simplified', 'simplified-stats'] as const;
 
 export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
   fills: Readonly<Record<string, number>>;
@@ -32,7 +32,7 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
   const [errorKeys, setErrorKeys] = useState<Record<string, true>>({});
   const [saving, setSaving] = useState(false);
   const contentKey = `${locale}-${attempt}-${snapshot.cells.map(cell => `${cell.key}:${cell.mon?.id ?? ''}`).join(',')}`;
-  const variant = mode === 'full' && showDetailedStats ? 'full-stats' : mode;
+  const variant = showDetailedStats ? `${mode}-stats` as const : mode;
   const key = `${variant}-${contentKey}`;
   const error = !!errorKeys[key];
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -40,9 +40,9 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
     const jobKey = `${exportVariant}-${contentKey}`;
     return { key: jobKey, render: async () => {
       try {
-        if (exportVariant === 'full-stats') {
-          const { renderFullChartWithStats } = await import('../export/renderFullChartWithStats');
-          return await renderFullChartWithStats(snapshot);
+        if (exportVariant === 'full-stats' || exportVariant === 'simplified-stats') {
+          const { renderChartWithStats } = await import('../export/renderChartWithStats');
+          return await renderChartWithStats(snapshot, exportVariant === 'full-stats' ? 'full' : 'simplified');
         }
         return await (exportVariant === 'full' ? renderFullChart(snapshot) : renderSimplifiedChart(snapshot));
       } catch (err) {
@@ -92,7 +92,7 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
       const blob = await (await fetch(url)).blob();
       try { await shareOrDownload(blob, 'my151-favorites.png'); }
       catch (err) { if (isShareAbort(err)) return; throw err; }
-      sendFavoriteExportBeacon(snapshot, mode, variant === 'full-stats');
+      sendFavoriteExportBeacon(snapshot, mode, showDetailedStats);
       onClose();
     } catch { setErrorKeys(previous => ({ ...previous, [key]: true })); }
     finally { setSaving(false); }
@@ -122,7 +122,7 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
             </button>;
           })}
         </div>
-        {mode === 'full' && <label
+        <label
           className={`relative flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 ${
             showDetailedStats ? 'bg-primary/10' : 'hover:bg-muted'
           } ${saving ? 'cursor-default opacity-50' : ''}`}>
@@ -138,7 +138,7 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
           <span className={`text-sm leading-tight ${showDetailedStats ? 'font-medium text-primary' : 'text-foreground'}`}>
             {t('viewSettings.showStats')}
           </span>
-        </label>}
+        </label>
         {error && <div role="alert" className="space-y-2">
           <p className="text-sm text-destructive">{t('favorites.export.error')}</p>
           <Button variant="outline" onClick={() => { setErrorKeys({}); setAttempt(value => value + 1); }}>{t('favorites.export.retry')}</Button>

@@ -23,6 +23,8 @@
   "favorites.empty.title": "まだ選べるポケモンがいません",
   "favorites.empty.unavailable": "このマスで選べるポケモンはいません。",
   "favorites.export.chartTitle": "タイプ・世代別のお気に入りポケモン",
+  "favorites.export.summaryTitle": "タイプ・世代別のお気に入りポケモン",
+  "favorites.export.summaryStatsTitle": "詳しい統計（タイプ・世代の全体の表での選択）",
   "favorites.export.close": "書き出しを閉じる",
   "favorites.export.error": "画像を作成できませんでした。もう一度お試しください。",
   "favorites.export.fullGrid": "全体の表",

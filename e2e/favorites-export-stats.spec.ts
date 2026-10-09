@@ -26,16 +26,16 @@ async function seed(page: Page) {
   })));
 }
 
-test('Full stats switches retain plain bytes and download the selected preview', async ({ page }, testInfo) => {
+test('Stats switches in both layouts retain plain bytes and download the selected preview', async ({ page }, testInfo) => {
   await seed(page);
   const exportKinds: unknown[] = [];
   const statsChunks: string[] = [];
   page.on('request', request => {
-    if (/\/assets\/renderFullChartWithStats-[^/]+\.js/.test(request.url())) statsChunks.push(request.url());
+    if (/\/assets\/renderChartWithStats-[^/]+\.js/.test(request.url())) statsChunks.push(request.url());
   });
   await page.route('**/api/favorites', async route => {
     const body = route.request().postDataJSON();
-    if (body.kind === 'export') exportKinds.push(body.exportKind);
+    if (body.kind === 'export') exportKinds.push({ kind: body.exportKind, stats: body.stats });
     await route.fulfill({ json: { ok: true } });
   });
   await page.goto('/favorite-pokemon-picker?lang=en');
@@ -52,10 +52,12 @@ test('Full stats switches retain plain bytes and download the selected preview',
   expect(detailed.width).toBeGreaterThan(plain.width);
   expect(detailed.height).toBe(plain.height);
   expect(detailed.sha256).not.toBe(plain.sha256);
+  // The summary keeps the stats switch and draws the same panel beside it.
   await page.locator('[data-favorites-export-mode="simplified"]').click();
-  await expect(stats(page)).toHaveCount(0);
-  const simplified = await imageEvidence(page);
-  const simplifiedUrl = await preview(page).getAttribute('src');
+  await expect(stats(page)).toBeChecked();
+  const simplifiedDetailed = await imageEvidence(page);
+  const simplifiedDetailedUrl = await preview(page).getAttribute('src');
+  expect(statsChunks).toHaveLength(1);
   await page.locator('[data-favorites-export-mode="full"]').click();
   await expect(stats(page)).toBeChecked();
   expect(await imageEvidence(page)).toEqual(detailed);
@@ -64,8 +66,14 @@ test('Full stats switches retain plain bytes and download the selected preview',
   expect(await imageEvidence(page)).toEqual(plain);
   expect(await preview(page).getAttribute('src')).toBe(plainUrl);
   await page.locator('[data-favorites-export-mode="simplified"]').click();
-  expect(await imageEvidence(page)).toEqual(simplified);
-  expect(await preview(page).getAttribute('src')).toBe(simplifiedUrl);
+  const simplified = await imageEvidence(page);
+  const simplifiedUrl = await preview(page).getAttribute('src');
+  expect(simplifiedDetailed.width).toBeGreaterThan(simplified.width);
+  expect(simplifiedDetailed.height).toBe(simplified.height);
+  await stats(page).check();
+  expect(await imageEvidence(page)).toEqual(simplifiedDetailed);
+  expect(await preview(page).getAttribute('src')).toBe(simplifiedDetailedUrl);
+  await stats(page).uncheck();
   await page.locator('[data-favorites-export-mode="full"]').click();
   await stats(page).check();
   await imageEvidence(page);
@@ -75,13 +83,13 @@ test('Full stats switches retain plain bytes and download the selected preview',
   expect(await download.failure()).toBeNull();
   const bytes = await readFile((await download.path())!);
   expect(createHash('sha256').update(bytes).digest('hex')).toBe(detailed.sha256);
-  await expect.poll(() => exportKinds).toEqual(['full']);
+  await expect.poll(() => exportKinds).toEqual([{ kind: 'full', stats: true }]);
   await expect(page.locator('[data-export-preview-layer]')).toHaveCount(0);
   expect(await page.evaluate(async urls => Promise.all(urls.map(async url => {
     try { await fetch(url!); return false; } catch { return true; }
-  })), [plainUrl, detailedUrl, simplifiedUrl])).toEqual([true, true, true]);
+  })), [plainUrl, detailedUrl, simplifiedUrl, simplifiedDetailedUrl])).toEqual([true, true, true, true]);
   expect(await page.evaluate(() => localStorage.getItem('favorite-picker'))).toBe(before);
-  await testInfo.attach('selected-preview-bytes', { body: JSON.stringify({ plain, detailed, simplified, exportKinds }, null, 2), contentType: 'application/json' });
+  await testInfo.attach('selected-preview-bytes', { body: JSON.stringify({ plain, detailed, simplified, simplifiedDetailed, exportKinds }, null, 2), contentType: 'application/json' });
 });
 
 test('stats checkbox fits and supports keyboard focus in each viewport @viewport', async ({ page }, testInfo) => {

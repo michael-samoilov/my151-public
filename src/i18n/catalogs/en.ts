@@ -215,6 +215,8 @@ export const enUi = {
   'favorites.analytics.empty': 'Choose Pokémon in selectors with multiple options to see your preferences.',
   'favorites.title': 'Favorite Pokémon Picker by Type and Generation',
   'favorites.export.chartTitle': 'Favorite Pokémon by Type by Generation',
+  'favorites.export.summaryTitle': 'Favorite Pokémon by Type and Generation',
+  'favorites.export.summaryStatsTitle': 'Detailed Stats (Full Type/Gen Grid Selections)',
   'favorites.export.fullGrid': 'Full grid',
   'favorites.export.simplified': 'Summary',
   'favorites.export.close': "Close export",

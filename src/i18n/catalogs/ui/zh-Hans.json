@@ -23,6 +23,8 @@
   "favorites.empty.title": "还没有可选的宝可梦",
   "favorites.empty.unavailable": "没有可用于此格的宝可梦。",
   "favorites.export.chartTitle": "按属性和世代分类的最爱宝可梦",
+  "favorites.export.summaryTitle": "按属性和世代分类的最爱宝可梦",
+  "favorites.export.summaryStatsTitle": "详细统计（完整属性/世代表格中的选择）",
   "favorites.export.close": "关闭导出",
   "favorites.export.error": "无法生成图片。请重试。",
   "favorites.export.fullGrid": "完整表格",
