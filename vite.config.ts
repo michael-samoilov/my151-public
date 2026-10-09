@@ -23,10 +23,26 @@ function pickerRouteRedirect(): Plugin {
   return { name: 'picker-route-redirect', configureServer: install, configurePreviewServer: install };
 }
 
+const BUILD_TIMESTAMP = new Date().toISOString()
+
+/**
+ * Puts the build time in every page's HTML for src/lib/buildVersion.ts. In the
+ * JavaScript it changed most chunk names on every deploy, and each renamed
+ * chunk is one an open tab can no longer load (scripts/keep-previous-assets.ts).
+ */
+function buildTimestampMeta(): Plugin {
+  return {
+    name: 'build-timestamp-meta',
+    transformIndexHtml: () => [{ tag: 'meta', attrs: { name: 'p151-build', content: BUILD_TIMESTAMP }, injectTo: 'head' }],
+  }
+}
+
 export default defineConfig({
-  plugins: [pickerRouteRedirect(), react(), tailwindcss(), prerenderHub()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), prerenderHub()],
   define: {
-    __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
+    // Only the hub prerender's server build keeps this constant; the browser
+    // reads the meta tag above.
+    __BUILD_TIMESTAMP__: JSON.stringify(BUILD_TIMESTAMP),
     // Vercel deployment environment ('production' | 'preview' | ''), used to
     // gate the demo-seed mode to preview builds only. See src/lib/demoMode.ts.
     __DEPLOY_ENV__: JSON.stringify(process.env.VERCEL_ENV ?? ''),
