@@ -2,8 +2,7 @@ import { getLocale } from '@/i18n';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
-
-declare const __BUILD_TIMESTAMP__: string;
+import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
 
 /**
  * What a report carries besides the words the person typed.
@@ -86,7 +85,7 @@ export function collectFeedbackContext(route: string, toolContext?: FeedbackTool
     // Truncated: the full list is long on some devices and the first few are
     // what actually drove detection.
     languages: [...(navigator.languages ?? [])].slice(0, 5),
-    version: __BUILD_TIMESTAMP__,
+    version: BUILD_TIMESTAMP,
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     dpr: Math.round((window.devicePixelRatio || 1) * 100) / 100,
     ua: (navigator.userAgent || '').slice(0, 200),
