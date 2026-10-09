@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
+import { whenIdle } from '@/lib/whenIdle';
 import { allPickerMons } from './catalog';
 import { cellKey, type GenAxisId, type TypeAxisId } from './cells';
 import { eligibleFor } from './eligibility';
@@ -29,7 +30,9 @@ import { bulkGroups, cellPackName, cellSprites, FIRST_CELL, type PackManifest } 
  *
  * Components draw a sprite through `usePickerSprite`, and canvases through
  * `pickerSpriteSrc`. The decoded images stay referenced here, so the selector
- * draws them at once.
+ * draws them at once. A bulk pack brings about 150 sprites in one moment, so
+ * their object URLs and decoding wait for idle time: done at once, they held
+ * a 4x-throttled phone's main thread for over a second.
  */
 declare const __PICKER_SPRITE_PACKS__: PackManifest | null;
 
@@ -112,8 +115,28 @@ function packs(): PackSet | null {
   return packSet;
 }
 
+/** Each sprite's PNG bytes, a view into the pack that brought them. */
+const packed = new Map<string, Uint8Array<ArrayBuffer>>();
 const objectUrls = new Map<string, string>();
 const blobs = new Map<string, Blob>();
+const ready = (sprite: string) => packed.has(sprite);
+
+/**
+ * A sprite's object URL, made when something first draws or decodes it. It is
+ * never revoked: an <img> may still show it.
+ */
+function objectUrl(sprite: string): string | undefined {
+  let url = objectUrls.get(sprite);
+  if (url) return url;
+  const bytes = packed.get(sprite);
+  if (!bytes) return undefined;
+  const blob = new Blob([bytes], { type: 'image/png' });
+  blobs.set(sprite, blob);
+  url = URL.createObjectURL(blob);
+  objectUrls.set(sprite, url);
+  return url;
+}
+
 /** Sprites an <img> already asked for as a file. They stay files, so no image changes its source. */
 const asFiles = new Set<string>();
 /** Sprites a cell's fetch is about to bring. An <img> waits for them, as it would for a file. */
@@ -121,7 +144,7 @@ const waiting = new Map<string, number>();
 const listeners = new Set<() => void>();
 const changed = () => listeners.forEach((listener) => listener());
 
-/** Object URLs for a pack's sprites. They are never revoked: an <img> may still show one. */
+/** Each sprite's bytes in a pack, after a check that the pack matches the catalog. */
 function unpack(sprites: string[], buffer: ArrayBuffer): void {
   const view = new DataView(buffer);
   const count = buffer.byteLength >= 4 ? view.getUint32(0, true) : -1;
@@ -132,11 +155,7 @@ function unpack(sprites: string[], buffer: ArrayBuffer): void {
   if (end !== buffer.byteLength) throw new Error('The sprite pack does not match the catalog.');
   sprites.forEach((sprite, i) => {
     const length = view.getUint32(4 + 4 * i, true);
-    if (!objectUrls.has(sprite)) {
-      const blob = new Blob([new Uint8Array(buffer, offset, length)], { type: 'image/png' });
-      blobs.set(sprite, blob);
-      objectUrls.set(sprite, URL.createObjectURL(blob));
-    }
+    if (!packed.has(sprite)) packed.set(sprite, new Uint8Array(buffer, offset, length));
     offset += length;
   });
   changed();
@@ -203,6 +222,24 @@ async function fromCache(pack: BulkPack): Promise<void> {
   }
 }
 
+/** A bulk pack's sprites decode a few at a time while the page is idle, so a press never waits behind them. */
+let idleDecodes: string[] = [];
+let idleScheduled = false;
+
+function decodeWhenIdle(sprites: string[]) {
+  idleDecodes = [...idleDecodes, ...sprites];
+  if (idleScheduled) return;
+  idleScheduled = true;
+  const step = () => {
+    const batch = idleDecodes.slice(0, MAX_LOADING);
+    idleDecodes = idleDecodes.slice(MAX_LOADING);
+    enqueue(batch.filter((sprite) => !asFiles.has(sprite)).map((sprite) => objectUrl(sprite) ?? sprite), false);
+    if (idleDecodes.length > 0) whenIdle(step);
+    else idleScheduled = false;
+  };
+  whenIdle(step);
+}
+
 const MAX_BULK = 2;
 let bulkQueue: BulkPack[] = [];
 let bulkLoading = 0;
@@ -226,13 +263,13 @@ function pumpBulk() {
     fetchPack(pack.url, pack.sprites, false).then(() => {
       pack.state = 'done';
       rememberLoaded(pack);
-      enqueue(pack.sprites.map((sprite) => objectUrls.get(sprite) ?? sprite), false);
+      decodeWhenIdle(pack.sprites);
     }, (error: unknown) => {
       if (pack.state !== 'loading') return;
       if (error instanceof DOMException && error.name === 'AbortError') queueBulk(pack);
       else {
         pack.state = 'failed';
-        enqueue(pack.sprites.filter((sprite) => !objectUrls.has(sprite)), false);
+        enqueue(pack.sprites.filter((sprite) => !ready(sprite)), false);
       }
     }).finally(() => {
       bulkLoading--;
@@ -252,7 +289,7 @@ function hold(sprites: string[], change: 1 | -1) {
 
 async function fetchCell(set: PackSet, type: TypeAxisId, gen: GenAxisId, missing: string[]): Promise<void> {
   await Promise.all([...new Set(missing.map((sprite) => set.bulkOf.get(sprite)!))].map(fromCache));
-  if (missing.every((sprite) => objectUrls.has(sprite))) return;
+  if (missing.every(ready)) return;
   const first = type === FIRST_CELL.type && gen === FIRST_CELL.gen;
   try {
     if (first) {
@@ -276,9 +313,9 @@ export function prefetchCell(type: TypeAxisId, gen: GenAxisId): void {
     enqueue(sprites, true);
     return;
   }
-  const missing = sprites.filter((sprite) => set.bulkOf.has(sprite) && !objectUrls.has(sprite) && !asFiles.has(sprite));
+  const missing = sprites.filter((sprite) => set.bulkOf.has(sprite) && !ready(sprite) && !asFiles.has(sprite));
   const here = sprites.filter((sprite) => !missing.includes(sprite));
-  enqueue(here.map((sprite) => (asFiles.has(sprite) ? sprite : objectUrls.get(sprite) ?? sprite)), true);
+  enqueue(here.map((sprite) => (asFiles.has(sprite) ? sprite : objectUrl(sprite) ?? sprite)), true);
   const key = cellKey(type, gen);
   if (missing.length === 0 || cellsFetching.has(key)) return;
   cellsFetching.add(key);
@@ -288,7 +325,7 @@ export function prefetchCell(type: TypeAxisId, gen: GenAxisId): void {
     cellsFetching.delete(key);
     cellsLoading--;
     hold(missing, -1);
-    enqueue(missing.map((sprite) => objectUrls.get(sprite) ?? sprite), true);
+    enqueue(missing.map((sprite) => objectUrl(sprite) ?? sprite), true);
     pumpBulk();
   });
 }
@@ -309,7 +346,7 @@ export function prefetchCellSoon(type: TypeAxisId, gen: GenAxisId): void {
   }
   for (const sprite of spritesOf(type, gen)) {
     const pack = set.bulkOf.get(sprite);
-    if (pack?.state === 'idle' && !objectUrls.has(sprite)) queueBulk(pack);
+    if (pack?.state === 'idle' && !ready(sprite)) queueBulk(pack);
   }
   pumpBulk();
 }
@@ -332,8 +369,8 @@ const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAA
 
 function source(sprite: string, wait: boolean): string {
   if (asFiles.has(sprite) || !packs()?.bulkOf.has(sprite)) return sprite;
-  const objectUrl = objectUrls.get(sprite);
-  if (objectUrl) return objectUrl;
+  const url = objectUrl(sprite);
+  if (url) return url;
   if (wait && waiting.has(sprite)) return BLANK;
   asFiles.add(sprite);
   return sprite;
@@ -371,6 +408,7 @@ const SERVICE_WORKER_CACHE = 'p151-sprites-v2';
 const kept = new Set<string>();
 
 function keepForNextVisit(sprite: string) {
+  objectUrl(sprite);
   const blob = blobs.get(sprite);
   if (!blob || kept.has(sprite) || typeof caches === 'undefined' || !('serviceWorker' in navigator)) return;
   kept.add(sprite);
