@@ -35,6 +35,8 @@ const PAD = 2;
 const GAP = Number(process.env.TYPE_ICON_GAP ?? 1.3);
 /** Units. An enclosed pocket of open space between just two shapes, smaller than this, is part of their gap. */
 const POCKET = 4;
+/** Units. A pocket smaller than this is just the point where several gaps meet, whatever touches it. */
+const SPOT = 1.5;
 /** Units. A white shape smaller than this across is a speck, not a shape. */
 const SPECK = 0.6;
 /** Units between resampled line points. */
@@ -47,6 +49,21 @@ const SNAP = 0.7;
 const FIT_TOL = 0.18;
 /** Degrees. A sharper turn is kept as a corner instead of being smoothed. */
 const CORNER_DEG = 50;
+/** Units. A loose branch shorter than this, hanging off a joint, is tracing noise. */
+const LEAF = 0.8;
+/** Units. A link this short between two joints collapses them into one joint. */
+const COLLAPSE = 2;
+/** Degrees. Two strokes that meet at a joint and turn less than this carry on as one stroke. */
+const CONTINUE_DEG = 45;
+/** Degrees. The same, for mirror-image strokes meeting on the centre line of a symmetric icon. */
+const CONTINUE_AXIS_DEG = 70;
+/** A stretch that strays from its chord by less than this share of its length (at most STRAIGHT_MAX units) is drawn straight. */
+const STRAIGHT = 0.045;
+const STRAIGHT_MAX = 0.7;
+/** Units. Shorter stretches stay as traced: a short piece of any gentle curve looks straight. */
+const STRAIGHT_MIN = 5;
+/** A glyph that overlaps its own mirror image this much is drawn exactly symmetric. */
+const SYMMETRIC = 0.98;
 
 type Pt = [number, number];
 const sub = (a: Pt, b: Pt): Pt => [a[0] - b[0], a[1] - b[1]];
@@ -158,7 +175,8 @@ function regions(mask: Uint8Array, W: number, H: number): { label: Int32Array; p
   return { label, parts };
 }
 
-interface Line { pts: Pt[]; closed: boolean }
+/** A traced line; `cuts` are indices where fitting must break it (the ends of straight runs). */
+interface Line { pts: Pt[]; closed: boolean; cuts?: number[] }
 
 /**
  * Level lines of `f` at 0, by marching squares on pixel centres, in the cells
@@ -365,11 +383,9 @@ const num = (v: number) => {
   return s === '-0' ? '0' : s;
 };
 
-/** One <path> d: split at corners, smoothed, fitted. */
-function pathData(line: Line): string {
-  const { pts, closed } = line;
-  if (len(pts) < 0.3) return `M${num(pts[0][0])} ${num(pts[0][1])}h.01`;
-  const cuts = corners(pts, 6, closed);
+/** Cubic pieces for a line: split at corners, smoothed, fitted. `t0` and `t1` force the end tangents. */
+function curve({ pts, closed, cuts: hard }: Line, t0?: Pt, t1?: Pt): Bez[] {
+  const cuts = [...new Set([...corners(pts, 6, closed), ...(hard ?? [])])].sort((a, b) => a - b);
   let pieces: Pt[][];
   if (closed && cuts.length) {
     const rot = [...pts.slice(cuts[0]), ...pts.slice(0, cuts[0] + 1)];
@@ -381,25 +397,374 @@ function pathData(line: Line): string {
     const bounds = [0, ...cuts, pts.length - 1];
     pieces = bounds.slice(1).map((end, j) => pts.slice(bounds[j], end + 1));
   }
-  let d = '';
-  pieces.filter((p) => p.length > 1 && len(p) > 0.01).forEach((raw, k) => {
+  pieces = pieces.filter((p) => p.length > 1 && len(p) > 0.01);
+  return pieces.flatMap((raw, k) => {
+    if (raw.length === 2) return [segment(raw[0], raw[1])];
     const p = smooth(raw, SMOOTH);
-    const bez = fit(p, endTangent(p, false), endTangent(p, true), FIT_TOL);
-    if (k === 0) d += `M${num(bez[0][0][0])} ${num(bez[0][0][1])}`;
-    for (const b of bez) d += `C${num(b[1][0])} ${num(b[1][1])} ${num(b[2][0])} ${num(b[2][1])} ${num(b[3][0])} ${num(b[3][1])}`;
+    const a = k === 0 && t0 ? t0 : endTangent(p, false), b = k === pieces.length - 1 && t1 ? t1 : endTangent(p, true);
+    return fit(p, a, b, FIT_TOL);
   });
-  return closed ? `${d}Z` : d;
 }
 
+const mirrorPt = ([x, y]: Pt): Pt => [GRID - x, y];
+const reverseBez = (bez: Bez[]): Bez[] => bez.slice().reverse().map((b) => [b[3], b[2], b[1], b[0]] as Bez);
 
-interface IconReport { id: number; name: string; unitsPerPx: number; origin: Pt; shapes: number; strokes: number; segments: number }
+function pathData(bez: Bez[], closed: boolean): string {
+  if (!bez.length) return '';
+  let d = `M${num(bez[0][0][0])} ${num(bez[0][0][1])}`;
+  for (const b of bez) {
+    const straight = dist(b[1], add(b[0], mul(sub(b[3], b[0]), 1 / 3))) < 1e-6 && dist(b[2], add(b[0], mul(sub(b[3], b[0]), 2 / 3))) < 1e-6;
+    d += straight ? `L${num(b[3][0])} ${num(b[3][1])}` : `C${num(b[1][0])} ${num(b[1][1])} ${num(b[2][0])} ${num(b[2][1])} ${num(b[3][0])} ${num(b[3][1])}`;
+  }
+  return closed ? `${d}Z` : d;
+}
+const segment = (a: Pt, b: Pt): Bez => [a, add(a, mul(sub(b, a), 1 / 3)), add(a, mul(sub(b, a), 2 / 3)), b];
+
+// --- Clean-up: treat the strokes as a graph of joints, and regularise it ---
+
+const keyOf = (p: Pt) => `${p[0].toFixed(5)},${p[1].toFixed(5)}`;
+
+/** Split every line at the joints other lines end on, so each piece runs joint to joint. */
+function pieces(lines: Line[]): Line[] {
+  const joints = new Set<string>();
+  for (const l of lines) if (!l.closed) { joints.add(keyOf(l.pts[0])); joints.add(keyOf(l.pts[l.pts.length - 1])); }
+  const out: Line[] = [];
+  for (const l of lines) {
+    const n = l.pts.length;
+    const cuts = l.pts.map((p, i) => (joints.has(keyOf(p)) && (l.closed || (i > 0 && i < n - 1)) ? i : -1)).filter((i) => i >= 0);
+    if (!cuts.length) { out.push(l); continue; }
+    if (l.closed) {
+      for (let k = 0; k < cuts.length; k++) {
+        const a = cuts[k], b = cuts[(k + 1) % cuts.length];
+        out.push({ pts: b > a ? l.pts.slice(a, b + 1) : [...l.pts.slice(a), ...l.pts.slice(0, b + 1)], closed: false });
+      }
+    } else {
+      const bounds = [0, ...cuts, n - 1];
+      for (let k = 0; k + 1 < bounds.length; k++) out.push({ pts: l.pts.slice(bounds[k], bounds[k + 1] + 1), closed: false });
+    }
+  }
+  return out.filter((l) => l.pts.length > 1);
+}
+
+interface End { l: Line; first: boolean }
+/** Direction a stroke leaves a joint, read about one unit along it. */
+function leaving(e: End): Pt {
+  const pts = e.first ? e.l.pts : e.l.pts.slice().reverse();
+  let k = 1;
+  while (k < pts.length - 1 && dist(pts[k], pts[0]) < 1) k++;
+  return unit(sub(pts[k], pts[0]));
+}
+function jointsOf(lines: Line[]): Map<string, End[]> {
+  const m = new Map<string, End[]>();
+  for (const l of lines) if (!l.closed) for (const first of [true, false]) {
+    const k = keyOf(first ? l.pts[0] : l.pts[l.pts.length - 1]);
+    m.set(k, [...(m.get(k) ?? []), { l, first }]);
+  }
+  return m;
+}
+const turn = (a: End, b: End) => (Math.acos(Math.max(-1, Math.min(1, -dot(leaving(a), leaving(b))))) * 180) / Math.PI;
+/**
+ * The pair of strokes at a joint that carry on into each other, if exactly one pair clearly does. On the
+ * centre line of a symmetric icon only a stroke and its mirror image may carry on into each other.
+ */
+function continuing(ends: End[], onAxis = false): [End, End] | null {
+  const pairs: { a: End; b: End; t: number }[] = [];
+  for (let i = 0; i < ends.length; i++) for (let j = i + 1; j < ends.length; j++) {
+    if (ends[i].l === ends[j].l && ends.length > 2) continue;
+    if (onAxis) {
+      const u = leaving(ends[i]), v = leaving(ends[j]);
+      if (Math.abs(u[0] + v[0]) > 0.15 || Math.abs(u[1] - v[1]) > 0.15) continue;
+    }
+    pairs.push({ a: ends[i], b: ends[j], t: turn(ends[i], ends[j]) });
+  }
+  pairs.sort((p, q) => p.t - q.t);
+  if (!pairs.length || pairs[0].t > (onAxis ? CONTINUE_AXIS_DEG : CONTINUE_DEG)) return null;
+  const rival = pairs.slice(1).find((p) => [p.a, p.b].some((e) => e === pairs[0].a || e === pairs[0].b));
+  if (rival && rival.t - pairs[0].t < 5) return null; // two equally good ways on: leave the joint alone
+  return [pairs[0].a, pairs[0].b];
+}
+
+/** Move a stroke's end to `to`, dropping the points it passes on the way so no kink is left. */
+function moveEnd(e: End, to: Pt) {
+  const pts = e.first ? e.l.pts : e.l.pts.reverse();
+  const from = pts[0], reach = dist(from, to);
+  while (pts.length > 2 && dist(pts[1], from) < reach) pts.splice(1, 1);
+  pts[0] = to;
+  if (!e.first) e.l.pts.reverse();
+}
+
+/**
+ * Make the traced lines exactly mirror-symmetric: keep the parts left of the centre line, cut where they
+ * cross it, and add their mirror images. Lines along the centre line are snapped onto it.
+ */
+function symmetrize(lines: Line[]): Line[] {
+  const C = GRID / 2, out: Line[] = [];
+  for (const l of lines) {
+    if (l.pts.every((p) => Math.abs(p[0] - C) < 0.05)) { out.push({ pts: l.pts.map((p) => [C, p[1]] as Pt), closed: l.closed }); continue; }
+    const src = l.closed ? [...l.pts, l.pts[0]] : l.pts;
+    // Start a closed line on its right side, so no left run is split at the seam.
+    let pts = src;
+    if (l.closed) {
+      const r = src.findIndex((p) => p[0] > C);
+      if (r < 0) { out.push(l, { pts: l.pts.map(mirrorPt), closed: true }); continue; }
+      const body = src.slice(0, -1);
+      pts = [...body.slice(r), ...body.slice(0, r + 1)];
+    }
+    let run: Pt[] = [];
+    const flush = () => { if (run.length > 1) out.push({ pts: run, closed: false }, { pts: run.map(mirrorPt), closed: false }); run = []; };
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i], q = pts[i - 1];
+      if (q && (q[0] - C) * (p[0] - C) < 0) {
+        const x: Pt = [C, q[1] + ((p[1] - q[1]) * (C - q[0])) / (p[0] - q[0])];
+        if (p[0] < C) run = [x]; else { run.push(x); flush(); }
+      }
+      if (p[0] <= C) run.push(p[0] === C ? [C, p[1]] : p);
+    }
+    flush();
+  }
+  // Ends that meet on the centre line become one joint: snap them onto it, and group those within SNAP.
+  for (const l of out) for (const p of l.pts) if (Math.abs(p[0] - C) < 1e-3) p[0] = C;
+  const axisEnds = out.flatMap((l) => (l.closed ? [] : [l.pts[0], l.pts[l.pts.length - 1]])).filter((p) => p[0] === C).sort((a, b) => a[1] - b[1]);
+  for (let i = 0; i < axisEnds.length;) {
+    let j = i;
+    while (j + 1 < axisEnds.length && axisEnds[j + 1][1] - axisEnds[j][1] < SNAP) j++;
+    const y = axisEnds.slice(i, j + 1).reduce((a, p) => a + p[1], 0) / (j - i + 1);
+    for (let k = i; k <= j; k++) axisEnds[k][1] = y;
+    i = j + 1;
+  }
+  return out;
+}
+
+function cleanUp(input: Line[], symmetric: boolean): Line[] {
+  const onAxis = (k: string) => symmetric && Math.abs(Number(k.split(',')[0]) - GRID / 2) < 0.05;
+  let lines = pieces(input);
+  // 1. Loose short branches off a joint are noise.
+  for (let changed = true; changed;) {
+    changed = false;
+    const j = jointsOf(lines);
+    const drop = lines.find((l) => !l.closed && len(l.pts) < LEAF && [j.get(keyOf(l.pts[0]))!.length, j.get(keyOf(l.pts[l.pts.length - 1]))!.length].sort().join() === '1,3');
+    if (drop) { lines = lines.filter((l) => l !== drop); changed = true; }
+  }
+  // 2. A very short link between two joints collapses them. The merged joint goes to the end where two
+  //    strokes carry on into each other, so that line stays smooth; otherwise to the link's middle.
+  for (let changed = true; changed;) {
+    changed = false;
+    const j = jointsOf(lines);
+    const link = lines
+      .filter((l) => !l.closed && len(l.pts) < COLLAPSE && j.get(keyOf(l.pts[0]))!.length >= 3 && j.get(keyOf(l.pts[l.pts.length - 1]))!.length >= 3)
+      .sort((p, q) => len(p.pts) - len(q.pts))[0];
+    if (!link) break;
+    const ka = keyOf(link.pts[0]), kb = keyOf(link.pts[link.pts.length - 1]);
+    const others = (k: string) => j.get(k)!.filter((e) => e.l !== link);
+    const smoothA = continuing(others(ka), onAxis(ka)), smoothB = continuing(others(kb), onAxis(kb));
+    // Where both ends have strokes carrying on through them, keep the longer of those lines smooth.
+    const reach = (p: [End, End] | null) => (p ? len(p[0].l.pts) + len(p[1].l.pts) : 0);
+    const target: Pt = reach(smoothA) > reach(smoothB) ? link.pts[0] : reach(smoothB) > reach(smoothA) ? link.pts[link.pts.length - 1] : link.pts[Math.floor(link.pts.length / 2)];
+    lines = lines.filter((l) => l !== link);
+    for (const e of [...others(ka), ...others(kb)]) moveEnd(e, target);
+    changed = true;
+  }
+  // 3. Strokes that carry on through a joint become one stroke. Two ends that meet on the middle of another
+  //    stroke are branches of it, so they only join if they also carry on into each other.
+  for (let changed = true; changed;) {
+    changed = false;
+    const through = new Set<string>();
+    for (const l of lines) (l.closed ? l.pts : l.pts.slice(1, -1)).forEach((p) => through.add(keyOf(p)));
+    for (const [k, ends] of jointsOf(lines)) {
+      const pair = ends.length === 2 && !through.has(k) ? (ends as [End, End]) : continuing(ends, onAxis(k));
+      if (!pair) continue;
+      const [a, b] = pair;
+      if (a.l === b.l) { a.l.closed = true; a.l.pts.pop(); changed = true; break; }
+      const pa = a.first ? a.l.pts.slice().reverse() : a.l.pts, pb = b.first ? b.l.pts : b.l.pts.slice().reverse();
+      lines = [...lines.filter((l) => l !== a.l && l !== b.l), { pts: [...pa, ...pb.slice(1)], closed: false }];
+      changed = true;
+      break;
+    }
+  }
+  // 4. Straight stretches. Walk each stroke and take the longest runs that stay near their chord; each becomes
+  //    an exact straight line, and strokes ending on it move onto that line. The rest stays curved.
+  for (const l of lines) {
+    if (l.closed || len(l.pts) < STRAIGHT_MIN) continue;
+    const pts = l.pts, n = pts.length;
+    const straight = (i: number, j: number) => {
+      const a = pts[i], u = unit(sub(pts[j], a));
+      let dev = 0;
+      for (let k = i + 1; k < j; k++) dev = Math.max(dev, Math.abs((pts[k][0] - a[0]) * u[1] - (pts[k][1] - a[1]) * u[0]));
+      return dev <= Math.min(STRAIGHT_MAX, STRAIGHT * dist(a, pts[j]));
+    };
+    // In a symmetric icon, a stroke carries on across the centre line as one curve: no straight stretch may
+    // stop there mid-stroke, or the two halves would meet in a point.
+    const midAxis = (k: number) => symmetric && k > 0 && k < n - 1 && Math.abs(pts[k][0] - GRID / 2) < 0.3;
+    const runs: [number, number][] = [];
+    for (let i = 0; i < n - 1;) {
+      let best = -1;
+      for (let j = n - 1; j > i; j--) if (dist(pts[i], pts[j]) >= STRAIGHT_MIN && !midAxis(i) && !midAxis(j) && straight(i, j)) { best = j; break; }
+      if (best < 0) { i++; continue; }
+      runs.push([i, best]);
+      i = best;
+    }
+    if (!runs.length) continue;
+    const j = jointsOf(lines);
+    const out: Pt[] = [], cuts: number[] = [];
+    let at = 0;
+    for (const [i, k] of runs) {
+      out.push(...pts.slice(at, i));
+      const a = pts[i], b = pts[k], u = unit(sub(b, a));
+      for (const p of pts.slice(i + 1, k)) for (const e of j.get(keyOf(p)) ?? []) if (e.l !== l) moveEnd(e, add(a, mul(u, dot(sub(p, a), u))));
+      cuts.push(out.length);
+      out.push(a);
+      cuts.push(out.length);
+      out.push(b);
+      at = k + 1;
+    }
+    out.push(...pts.slice(at));
+    l.pts = out;
+    l.cuts = [...new Set(cuts)].filter((c) => c > 0 && c < out.length - 1);
+  }
+  // 5. In a symmetric icon, a stroke crosses the centre line level. Near the crossing, replace it with the
+  //    parabola that meets it 1.5 units out on each side with the same slope, and move strokes ending there.
+  if (symmetric) {
+    const C = GRID / 2;
+    for (const l of lines) {
+      const pts = l.pts, n = pts.length;
+      const m = pts.findIndex((p, k) => p[0] === C && (l.closed || (k > 0 && k < n - 1)));
+      if (m < 0 || l.cuts?.length) continue;
+      let k = m;
+      for (let walked = 0; walked < 1.5;) { const prev = (k - 1 + n) % n; if (!l.closed && prev > k) break; walked += dist(pts[k], pts[prev]); k = prev; if (k === m) break; }
+      const q = pts[k], before = pts[(k - 1 + n) % n];
+      const dx = q[0] - C;
+      if (Math.abs(dx) < 0.5 || q[0] === before[0]) continue;
+      const slope = (q[1] - before[1]) / (q[0] - before[0]);
+      if (Math.abs(slope) > Math.tan((60 * Math.PI) / 180)) continue; // a steep crossing keeps its point
+      const kk = slope / (2 * dx), top = q[1] - kk * dx * dx;
+      const old = pts[m], j = jointsOf(lines).get(keyOf(old)) ?? [];
+      for (let t = k; t !== (2 * m - k + n) % n; t = (t + 1) % n) {
+        const x = pts[t][0];
+        if (Math.abs(x - C) <= Math.abs(dx)) pts[t] = [x, top + kk * (x - C) * (x - C)];
+      }
+      for (const e of j) if (e.l !== l) moveEnd(e, pts[m]);
+    }
+  }
+
+  return lines;
+}
+
+interface Drawn { bez: Bez[]; closed: boolean }
+
+/** Bézier path data for every line, mirrored exactly about the centre line when `symmetric`. */
+function draw(lines: Line[], symmetric: boolean): Drawn[] {
+  const fitted = (l: Line, t0?: Pt, t1?: Pt): Bez[] =>
+    len(l.pts) < 0.3 ? [segment(l.pts[0], add(l.pts[0], [0.01, 0]))] : l.pts.length === 2 && !l.closed ? [segment(l.pts[0], l.pts[1])] : curve(l, t0, t1);
+  if (!symmetric) return lines.map((l) => ({ bez: fitted(l), closed: l.closed }));
+  const C = GRID / 2;
+  const near = (p: Pt, l: Line) => Math.min(...densify(l).map((q) => dist(p, q)));
+  const mirrorOf = (l: Line, m: Line) => { const pts = densify(l).map(mirrorPt); return pts.reduce((s, p) => s + near(p, m), 0) / pts.length; };
+  const out: Drawn[] = [], done = new Set<Line>();
+  for (const l of lines) {
+    if (done.has(l)) continue;
+    done.add(l);
+    const xs = l.pts.map((p) => p[0]);
+    if (Math.max(...xs) < C + 0.05 || Math.min(...xs) > C - 0.05) {
+      // Wholly on one side: draw the left one of the pair, and its mirror for the right.
+      const twin = lines.find((m) => !done.has(m) && mirrorOf(l, m) < 0.4);
+      if (twin) done.add(twin);
+      const left = Math.max(...xs) <= C + 0.05 ? l : twin;
+      if (!left) { out.push({ bez: fitted(l), closed: l.closed }); continue; }
+      const bez = fitted(left);
+      out.push({ bez, closed: left.closed }, { bez: bez.map((b) => b.map(mirrorPt) as Bez), closed: left.closed });
+      continue;
+    }
+    // Crosses the centre line: keep the left half and mirror it, meeting square to the line if it crosses smoothly.
+    out.push({ bez: mirrorHalf(l, fitted), closed: false });
+  }
+  return out;
+}
+
+/** Points at least every STEP along a line (straight lines have only their ends). */
+function densify(l: Line): Pt[] {
+  const out: Pt[] = [l.pts[0]];
+  const src = l.closed ? [...l.pts, l.pts[0]] : l.pts;
+  for (let i = 1; i < src.length; i++) {
+    const a = src[i - 1], b = src[i], n = Math.max(1, Math.ceil(dist(a, b) / STEP));
+    for (let k = 1; k <= n; k++) out.push(add(a, mul(sub(b, a), k / n)));
+  }
+  return out;
+}
+
+/** A line that crosses the centre line, rebuilt from its left half and that half's mirror image. */
+function mirrorHalf(l: Line, fitted: (l: Line, t0?: Pt, t1?: Pt) => Bez[]): Bez[] {
+  const C = GRID / 2, pts = l.pts, n = pts.length, hard = l.cuts ?? [];
+  const cross: { i: number; p: Pt }[] = [];
+  for (let i = 0; i < (l.closed ? n : n - 1); i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    if ((a[0] - C) * (b[0] - C) <= 0 && a[0] !== b[0]) cross.push({ i, p: add(a, mul(sub(b, a), (C - a[0]) / (b[0] - a[0]))) });
+  }
+  // A symmetric line that crosses the centre line at a shallow angle, measured over its last 1.5 units,
+  // crosses it level: one smooth curve, no point in the middle.
+  const level = (half: Pt[]) => {
+    const end = half[half.length - 1];
+    let k = half.length - 2;
+    while (k > 0 && dist(half[k], end) < 1.5) k--;
+    const d = unit(sub(end, half[k]));
+    return Math.abs(d[1]) < Math.sin((60 * Math.PI) / 180);
+  };
+  const mirrored = (bez: Bez[]) => [...bez, ...reverseBez(bez.map((b) => b.map(mirrorPt) as Bez))];
+  if (!l.closed && cross.length >= 1) {
+    const c = cross[0], startLeft = pts[0][0] < C;
+    const idx = startLeft ? pts.slice(0, c.i + 1).map((_, k) => k) : pts.slice(c.i + 1).map((_, k) => c.i + 1 + k).reverse();
+    const half = [...idx.map((k) => pts[k]), c.p];
+    // Keep straight runs: a cut stays a cut, and the crossing ends a straight run if it lay inside one.
+    const cuts = idx.map((k, at) => (hard.includes(k) ? at : -1)).filter((at) => at > 0);
+    const inRun = hard.includes(c.i) && hard.includes(c.i + 1);
+    if (inRun) cuts.push(half.length - 2);
+    const piece: Line = { pts: half, closed: false, cuts: [...new Set(cuts)].filter((at) => at > 0 && at < half.length - 1) };
+    return mirrored(fitted(piece, undefined, !inRun && level(half) ? [-1, 0] : undefined));
+  }
+  if (l.closed && cross.length >= 2) {
+    // From the top crossing, round the left side, to the bottom crossing.
+    const [c1, c2] = cross[0].p[1] < cross[1].p[1] ? [cross[0], cross[1]] : [cross[1], cross[0]];
+    const walk = (dir: 1 | -1) => {
+      const out: Pt[] = [c1.p];
+      for (let i = dir === 1 ? (c1.i + 1) % n : c1.i, guard = 0; guard <= n; i = (i + dir + n) % n, guard++) {
+        out.push(pts[i]);
+        if (i === (dir === 1 ? c2.i : (c2.i + 1) % n)) break;
+      }
+      out.push(c2.p);
+      return out;
+    };
+    const a = walk(1), b = walk(-1);
+    const left = Math.min(...a.map((p) => p[0])) < Math.min(...b.map((p) => p[0])) ? a : b;
+    const t0 = level(left.slice().reverse()) ? ([-1, 0] as Pt) : undefined;
+    const t1 = level(left) ? ([1, 0] as Pt) : undefined;
+    return mirrored(fitted({ pts: left, closed: false }, t0 && left[1][0] < C ? t0 : t0 ? [1, 0] : undefined, t1));
+  }
+  return fitted(l);
+}
+
+interface IconReport { id: number; name: string; unitsPerPx: number; origin: Pt; symmetric: boolean; shapes: number; strokes: number; segments: number }
 
 function convert(id: number): { svg: string; report: IconReport } {
   const src = decode(readFileSync(`${SRC_DIR}/${id}.png`));
   const W = src.width * UP, H = src.height * UP;
   const v = upscale(whiteness(src), src.width, src.height);
-  const white = new Uint8Array(W * H);
+  let white = new Uint8Array(W * H);
   for (let i = 0; i < white.length; i++) white[i] = v[i] > 0.5 ? 1 : 0;
+  // A glyph that matches its mirror image is drawn exactly symmetric: average it with that image first.
+  let lo = W, hi = -1;
+  for (let i = 0; i < white.length; i++) if (white[i]) { lo = Math.min(lo, i % W); hi = Math.max(hi, i % W); }
+  const flip = (i: number) => (((i / W) | 0) * W) + (lo + hi - (i % W));
+  let both = 0, either = 0;
+  for (let i = 0; i < white.length; i++) {
+    const x = i % W, m = lo + hi - x, f = m >= 0 && m < W && white[flip(i)];
+    if (white[i] && f) both++;
+    if (white[i] || f) either++;
+  }
+  const symmetric = both / either >= SYMMETRIC;
+  if (symmetric) {
+    for (let i = 0; i < v.length; i++) { const x = i % W, m = lo + hi - x; if (m >= 0 && m < W && m > x) { const a = (v[i] + v[flip(i)]) / 2; v[i] = a; v[flip(i)] = a; } }
+    white = new Uint8Array(W * H);
+    for (let i = 0; i < white.length; i++) white[i] = v[i] > 0.5 ? 1 : 0;
+  }
 
   // Scale so the outer stroke, GAP outside the symbol, fits the grid.
   let minX = W, minY = H, maxX = -1, maxY = -1;
@@ -426,7 +791,8 @@ function convert(id: number): { svg: string; report: IconReport } {
   const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H;
   // The band: everything within GAP of a shape. A small enclosed pocket outside it that touches only two
   // shapes is a wider stretch of the gap between them, so their line runs straight through it. A pocket
-  // where three or more shapes meet stays open space with its own outline.
+  // where three or more shapes meet stays open space with its own outline, unless it is only a speck
+  // where their gaps meet.
   const inBand = new Uint8Array(W * H);
   for (let i = 0; i < inBand.length; i++) inBand[i] = dmin[i] < gap ? 1 : 0;
   const { parts: pockets } = regions(inBand.map((b) => 1 - b), W, H);
@@ -434,7 +800,8 @@ function convert(id: number): { svg: string; report: IconReport } {
     if (pocket.some((i) => i % W === 0 || i % W === W - 1 || i < W || i >= W * (H - 1))) continue;
     const xs = pocket.map((i) => i % W), ys = pocket.map((i) => (i / W) | 0);
     const size = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) * s;
-    if (size < POCKET && new Set(pocket.map((i) => nearest[i])).size === 2) for (const i of pocket) inBand[i] = 2;
+    const touching = new Set(pocket.map((i) => nearest[i])).size;
+    if (size < SPOT || (size < POCKET && touching === 2)) for (const i of pocket) inBand[i] = 2;
   }
   const band = (x: number, y: number) => (!inside(x, y) ? -gap : inBand[y * W + x] === 2 ? gap / 2 : gap - dmin[y * W + x]);
 
@@ -465,15 +832,17 @@ function convert(id: number): { svg: string; report: IconReport } {
     if (mid.length) lines.push({ pts: mid, closed: false });
   }
 
-  const unitLines = join(lines.map((l) => resample({ pts: l.pts.map(toUnits), closed: l.closed }, STEP)).filter((l) => len(l.pts) > 0.3));
+  const traced = join(lines.map((l) => resample({ pts: l.pts.map(toUnits), closed: l.closed }, STEP)).filter((l) => len(l.pts) > 0.3));
+  const unitLines = cleanUp(symmetric ? symmetrize(traced) : traced, symmetric);
   let segments = 0;
-  const paths = unitLines
-    .map((l) => {
-      const d = pathData(l);
-      segments += (d.match(/C/g) ?? []).length;
-      return { d, key: Math.min(...l.pts.map((p) => Math.round(p[1] * 10) * 1000 + p[0])) };
+  const paths = draw(unitLines, symmetric)
+    .map(({ bez, closed }) => {
+      const d = pathData(bez, closed);
+      segments += bez.length;
+      return { d, key: Math.min(...bez.map((b) => Math.round(b[0][1] * 10) * 1000 + b[0][0])) };
     })
-    .sort((p, q) => p.key - q.key)
+    .filter((p) => p.d)
+    .sort((p, q) => p.key - q.key || (p.d < q.d ? -1 : 1))
     .map((p) => `  <path d="${p.d}"/>`);
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">`,
@@ -481,7 +850,7 @@ function convert(id: number): { svg: string; report: IconReport } {
     '</svg>',
     '',
   ].join('\n');
-  return { svg, report: { id, name: NAMES[id - 1], unitsPerPx: s, origin, shapes: shapes.length, strokes: paths.length, segments } };
+  return { svg, report: { id, name: NAMES[id - 1], unitsPerPx: s, origin, symmetric, shapes: shapes.length, strokes: paths.length, segments } };
 }
 
 function main() {
