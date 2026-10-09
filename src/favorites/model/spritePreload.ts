@@ -142,6 +142,31 @@ function unpack(sprites: string[], buffer: ArrayBuffer): void {
   changed();
 }
 
+/**
+ * Bulk packs this browser loaded on an earlier visit, so likely still cached.
+ * Only these are looked up in the cache: a lookup that misses prints a
+ * network error in the console.
+ */
+const LOADED_KEY = 'personal-151-favorites-packs-v1';
+let loadedBefore: Set<string> | null = null;
+
+function loadedPacks(): Set<string> {
+  if (loadedBefore) return loadedBefore;
+  try { loadedBefore = new Set(JSON.parse(localStorage.getItem(LOADED_KEY) ?? '[]') as string[]); }
+  catch { loadedBefore = new Set(); }
+  return loadedBefore;
+}
+
+function rememberLoaded(pack: BulkPack) {
+  const loaded = loadedPacks();
+  if (loaded.has(pack.url)) return;
+  loaded.add(pack.url);
+  // Only the current packs: a renamed pack is gone for good.
+  const current = new Set(packs()?.bulk.map((p) => p.url));
+  try { localStorage.setItem(LOADED_KEY, JSON.stringify([...loaded].filter((url) => current.has(url)))); }
+  catch { /* Storage can be unavailable in private browsing. */ }
+}
+
 const fetching = new Map<string, { done: Promise<void>; abort: AbortController; urgent: boolean }>();
 
 /** One fetch per pack URL. An urgent fetch is never stopped for the bulk packs. */
@@ -165,7 +190,9 @@ function fetchPack(url: string, sprites: string[], urgent: boolean): Promise<voi
 
 /** A bulk pack from the browser's cache, never the network. A returning visitor has them. */
 async function fromCache(pack: BulkPack): Promise<void> {
-  if (pack.state !== 'idle' && pack.state !== 'queued') return;
+  // A pack already loading is left alone: the browser makes a cache read of
+  // a response still arriving wait for all of it.
+  if ((pack.state !== 'idle' && pack.state !== 'queued') || !loadedPacks().has(pack.url)) return;
   try {
     const response = await fetch(pack.url, { cache: 'only-if-cached', mode: 'same-origin' });
     if (!response.ok) return;
@@ -198,6 +225,7 @@ function pumpBulk() {
     bulkLoading++;
     fetchPack(pack.url, pack.sprites, false).then(() => {
       pack.state = 'done';
+      rememberLoaded(pack);
       enqueue(pack.sprites.map((sprite) => objectUrls.get(sprite) ?? sprite), false);
     }, (error: unknown) => {
       if (pack.state !== 'loading') return;
@@ -231,6 +259,7 @@ async function fetchCell(set: PackSet, type: TypeAxisId, gen: GenAxisId, missing
       // The first cell's pack is bulk pack 0: one fetch serves both.
       await fetchPack(set.bulk[0].url, set.bulk[0].sprites, true);
       set.bulk[0].state = 'done';
+      rememberLoaded(set.bulk[0]);
     } else {
       await fetchPack(`${set.cells}${cellPackName(type, gen)}`, cellSprites(type, gen), true);
     }
