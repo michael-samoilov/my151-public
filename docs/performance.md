@@ -56,10 +56,12 @@ The tools:
   live site and prints the scores, the lab metrics, the real-user field data
   for the origin, and the findings. It needs `PAGESPEED_API_KEY` in the
   environment settings. Google may run a newer Lighthouse than
-  `lighthouse.mjs`, so its numbers are the reference. Google cannot load a
-  Vercel preview: previews need a Vercel login. Measure a change before it
-  ships with `lighthouse.mjs`, which runs the same Lighthouse version and
-  throttling here. Google's runs vary: one desktop run of the dex measured
+  `lighthouse.mjs`, so its numbers are the reference. A Vercel preview needs a
+  Vercel login, so Google can load one only through a share link (the Vercel
+  connection's `get_access_to_vercel_url` makes one that lasts 23 hours; keep
+  it out of commits). The link adds a redirect, so compare two previews with
+  each other, never a preview with the live site. `lighthouse.mjs` runs the
+  same Lighthouse version and throttling here without a deploy. Google's runs vary: one desktop run of the dex measured
   238 ms of blocking time and the next 0 ms, with four times the script time
   on the slower machine. Run 3 or more and read the median. Google answers a
   repeated request from its cache for a short time, so the script waits for a
@@ -109,12 +111,15 @@ a new animation) goes to Michael first, with before and after.
 | `fetchpriority="high"` on the hub's largest screenshot (October 8) | No effect, LCP 3484 → 3500 ms: Chrome already raises every image in the viewport to high priority. |
 | Load the feedback form on idle or first open (October 8) | First-load text only 2.7 KiB smaller on the hub, about 1 KiB on dex and league: the form's dependencies are needed at startup anyway. |
 | Drop the favorites page's sprite prefetch (October 8) | Without it, a selector opened 8 s after landing fills over 0.5 s on a slow phone. Shipped instead: the sprites load in the order a visitor needs them (`src/favorites/model/spritePreload.ts`). Normal / Gen I goes first, then a touch screen loads the cells in view. A hovered, pressed, or focused cell jumps the queue, and the rest follow the first selector. A desktop visitor who leaves downloads 18 KiB of sprites, not 1.5 MiB. Selectors open as fast as before, except a late click on a slow desktop link, which fills over 0.5 s. |
+| Start the page code after the first paint on the league page and the hub (October 9) | League: the builder appeared 0.3 to 0.5 s later on a throttled phone, because its code is the largest. Hub: Google's score did not change. Shipped instead on the picker and the Pokédex, for first visits only (`startAppAfterFirstPaint` in `vite.config.ts`): Google's phone score for the picker 84 to 99, the picker's header at 0.5 s instead of 1.5 s, the Pokédex's loading screen at 1.0 s instead of 1.5 s, and each tool at the same time as before. A visitor with saved work starts at once, because with a full Pokédex the builder otherwise appeared 0.2 s later. |
+| Drop the "Inter Fallback" font faces, to stop Google's late first frame (October 9) | The late first frame stayed: 2 of 5 hub runs without the faces, 0 of 5 with them. |
 | A `sizes` that follows the widest hub shot (October 8) | Accurate, but a 3x iPhone then loaded the 800px originals (722 KiB, not 270 KiB). Browsers pick the smallest copy that covers `sizes` times the pixel ratio. |
 
 Lighthouse findings left open on purpose:
 
 | Finding | Why it stays |
 |---|---|
+| Google's phone runs sometimes draw the first frame about 2 s after the page has loaded, on the hub and the Pokédex (October 9) | It lifts Speed Index from about 1.8 s to 4.1 s in those runs. The page has loaded by 0.4 s and the main thread is idle by 0.5 s; in a local trace of the live hub the renderer painted at 1.5 s and the browser showed the frame at 2.4 s. `example.com` never shows it. It is not the page code's timing, the fallback font faces, or the viewport tag; it reproduces only against the live site, not on a local server. Real visitors are not affected: the origin's field FCP is 693 ms at p75. |
 | "Image elements do not have explicit width and height" on the hub screenshots | Each screenshot's shadow would show as an empty frame while the image loads. CLS is already 0. |
 | PageSpeed's robots.txt and llms.txt checks fail on the favorites page only ("Failed to fetch"), so its SEO score reads 92 | Google's runs only; no local tool reproduces it. The sprite prefetch (1,474 requests on the first load before October 8) is the likely cause, not a proven one. Googlebot reads robots.txt on its own, so search is not affected. Serving Google's run without the prefetch would serve a test a different page, which this repo forbids. |
 | "Improve image delivery": compression of the hub's back shots | These are UI screenshots with small text and sprites at quality 86. A lower quality saves about 20–30 KiB and risks visible artifacts. |
