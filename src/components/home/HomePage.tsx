@@ -494,6 +494,10 @@ function Artwork({ tool }: { tool: Tool }) {
         data-audit-clip="intended"
         style={{
           ...box,
+          // Past the panel's right edge by the shadow's reach (21px blur, -5px
+          // spread, so 16px), plus margin: on a phone the front sheet sits a few
+          // pixels from that edge, and its shadow ended on a straight line there.
+          right: `calc(100cqw - var(--card-width, 100cqw) - 24px)`,
           maskImage: `linear-gradient(to top, transparent 0, #000 ${BLEED})`,
           WebkitMaskImage: `linear-gradient(to top, transparent 0, #000 ${BLEED})`,
         }}
@@ -650,7 +654,10 @@ export function HomePage() {
               between the hero and the grid, and below the grid all match.
               `min-h-6` is the floor they collapse to when the content is taller
               than the viewport. */}
-          <main className="hub-home flex flex-1 flex-col px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
+          {/* `overflow-x-clip` cuts the screenshot shadows' clip boxes, which
+              reach past the right-hand card, at the screen edge, so the page
+              never scrolls sideways. The shadows themselves end inside it. */}
+          <main className="hub-home flex flex-1 flex-col overflow-x-clip px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
             <div className="hub-spacer min-h-6 flex-1" />
             <section className="md:grid md:grid-cols-4 md:items-baseline md:gap-x-6">
               <h1
