@@ -1,8 +1,8 @@
 import { useT } from '@/i18n';
 import { Faq, type FaqPage } from '@/components/shared/Faq';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
-declare const __BUILD_TIMESTAMP__: string;
-const BUILD_VERSION = __BUILD_TIMESTAMP__.replace(/[-:T]/g, '').slice(2, 12);
+import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
+const BUILD_VERSION = BUILD_TIMESTAMP.replace(/[-:T]/g, '').slice(2, 12);
 const YEAR = new Date().getFullYear();
 
 /** `faq` names the page whose "About this tool" block sits under the footer. */

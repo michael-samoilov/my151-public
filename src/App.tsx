@@ -7,6 +7,7 @@ import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { reloadIfStale } from '@/lib/staleDeploy';
+import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
 
 // Route chunks stay lazy so boot ships small, and are prefetched when the
 // main thread first goes idle (see the effect in App) so a tab switch pays
@@ -53,8 +54,7 @@ import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { whenIdle } from '@/lib/whenIdle';
 
-declare const __BUILD_TIMESTAMP__: string;
-console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
+console.log(`[P151] build: ${BUILD_TIMESTAMP}`);
 
 function MobileSheet({ sectionName, topGap, onClose, isDesktop }: { sectionName: string | null; topGap: number; onClose: () => void; isDesktop: boolean }) {
   // The sheet is `md:hidden`, so a browser mounted in it at desktop width is a
