@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 const mocks=vi.hoisted(()=>({hget:vi.fn(),eval:vi.fn(),hincrby:vi.fn(),limit:vi.fn(),readOnly:vi.fn()}));
-vi.mock('@upstash/ratelimit',()=>({Ratelimit:class{static slidingWindow(){return{};}limit=mocks.limit;}}));
+vi.mock('@upstash/ratelimit',()=>({Ratelimit:class{static fixedWindow(){return{};}limit=mocks.limit;}}));
 vi.mock('../../api/_shared',()=>({redis:{hget:mocks.hget,eval:mocks.eval,hincrby:mocks.hincrby},MAX_CLIENTS:50_000,
  getClientIp:()=> 'ip',getGeo:()=>({country:'US'}),getClient:()=>({device:'Mobile',os:'iOS',browser:'Safari'}),getLang:()=> 'en',
  isReadOnlyDeployment:mocks.readOnly,parseLocale:(v:unknown)=>v,parseReferrerHost:()=>undefined}));

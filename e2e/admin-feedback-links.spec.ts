@@ -156,6 +156,25 @@ test.describe('admin feedback links', () => {
     await expect(report(page, 'r-gone')).toBeVisible();
   });
 
+  // On a phone the chip ends the card's chip row; on desktop it sits beside the archive button.
+  test('a browser card in the list shows the chip and opens the Feedback tab on that browser', { tag: '@viewport' }, async ({ page }) => {
+    await stub(page);
+    await nav(page).getByRole('button', { name: 'Dex', exact: true }).click();
+    const card = page.getByRole('link', { name: /Open user e2…both/ });
+    const chip = card.getByTestId('admin-feedback-chip').locator('visible=true');
+    await expect(chip).toHaveText('2');
+    await expect(page.getByRole('link', { name: 'Open user e2…-dex', exact: true }).getByTestId('admin-feedback-chip').locator('visible=true')).toHaveText('1');
+    const quiet = page.getByRole('link', { name: 'Open user e2…ll-0', exact: true });
+    await expect(quiet).toBeVisible();
+    await expect(quiet.getByTestId('admin-feedback-chip')).toHaveCount(0);
+    await chip.click();
+
+    await expect(nav(page).getByRole('button', { name: 'Feedback', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('feedback-browser-filter')).toContainText('e2…both');
+    await expect(report(page, 'r-card')).toBeVisible();
+    await expect(report(page, 'r-dex')).toHaveCount(0);
+  });
+
   test('a sender outside the newest 50 opens, and loads on demand', async ({ page }) => {
     await stub(page);
     await nav(page).getByRole('button', { name: 'Feedback', exact: true }).click();
