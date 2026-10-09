@@ -16,6 +16,8 @@ import { ALTERNATE_PICKER_FORMS } from '../../src/favorites/model/alternateForms
 
 const OUT_DIR = 'src/i18n/names';
 const PICKER_OUT_DIR = 'src/i18n/picker-names';
+/** Picker-only Mega variants: [variant, the plain Mega, the matching cosmetic form]. */
+const MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 10322, 11007]] as const;
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
 /** How a name was arrived at. Anything but `official` is flagged in the UI. */
@@ -314,6 +316,18 @@ async function main(): Promise<void> {
       const complete = rapidDescriptor.includes(styleDescriptor);
       catalog.forms['picker:10227'] = complete ? rapidDescriptor : `${rapidDescriptor} — ${styleDescriptor}`;
       catalog.formSource['picker:10227'] = complete ? 'official' : 'official-composed';
+    }
+    // A cosmetic variant of a Mega has an official name in only some
+    // languages, and Japanese reuses the plain Mega's name for it. Compose
+    // "<Mega> — <variant>" from both official names where the language has no
+    // distinct name of its own.
+    for (const [variantId, megaId, formId] of MEGA_VARIANTS) {
+      const mega = catalog.forms[megaId];
+      const variant = catalog.forms[formId];
+      const own = catalog.forms[variantId];
+      if (!mega || !variant || (own && own !== mega)) continue;
+      catalog.forms[variantId] = `${mega} — ${variant}`;
+      catalog.formSource[variantId] = 'official-composed';
     }
 
     const affix = catalog.species.map((name, i) =>
