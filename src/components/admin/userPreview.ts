@@ -218,10 +218,6 @@ export const PREVIEW_FIT = {
   picker: FAVORITE_TOTAL_CELLS,
 } as const;
 
-export function dexPokemonCount(ids: number[] | undefined): number {
-  return ids?.length ?? 0;
-}
-
 export function sessionChipParts(
   sessions: number,
   totalMs: number,
@@ -273,8 +269,4 @@ export function fmtDuration(ms: number): string {
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
   return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
-}
-
-export function leagueExported(exportsCard: number, exportsLeague: number): boolean {
-  return exportsCard > 0 || exportsLeague > 0;
 }

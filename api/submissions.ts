@@ -82,8 +82,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json(await upstashUsage());
     }
 
-    // One browser, for a feedback sender who is not on a loaded page: one
-    // read per store plus its export-survey skips, 4 commands in all.
+    // One browser's full records, for its detail page: one read per store
+    // plus its export-survey skips, 4 commands in all.
     const cid = firstQueryValue(req.query.cid as string | string[] | undefined);
     if (cid) {
       if (cid.length > 64) return res.status(400).json({ error: 'Invalid cid' });
@@ -103,22 +103,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json(buildBrowser(cid, { dex, league, favorite, exportSurveySkips }));
     }
 
-    const rawLimit = parseInt(firstQueryValue(req.query.limit as string | string[] | undefined), 10);
-    const rawOffset = parseInt(firstQueryValue(req.query.offset as string | string[] | undefined), 10);
-    const limit = Math.min(Math.max(Number.isNaN(rawLimit) ? 50 : rawLimit, 1), 500);
-    const offset = Math.max(Number.isNaN(rawOffset) ? 0 : rawOffset, 0);
     const range = firstQueryValue(req.query.range as string | string[] | undefined) || 'all';
     if (!isDashboardRange(range)) return res.status(400).json({ error: 'Invalid range' });
 
     const now = Date.now();
     const dayKeys = funnelDayKeys(range, now);
-    const [clients, archived, funnel, funnelDays, leagueClients, exportSurveySkips, favoriteClients] = await Promise.all([
+    const [clients, archived, funnel, funnelDays, leagueClients, favoriteClients] = await Promise.all([
       redis.hgetall(CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
       redis.smembers(ARCHIVED_KEY),
       redis.hgetall('funnel') as Promise<Record<string, unknown> | null>,
       dayKeys ? redis.eval(SUM_HASHES, dayKeys, []) : null,
       redis.hgetall(LEAGUE_CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
-      redis.hgetall(EXPORT_SURVEY_SKIPS_KEY) as Promise<Record<string, unknown> | null>,
       redis.hgetall(FAVORITE_CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
     ]);
     const body = buildDashboard(
@@ -129,9 +124,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         funnelWindow: dayKeys ? pairsToHash(funnelDays) : null,
         leagueClients,
         favoriteClients,
-        exportSurveySkips,
       },
-      { offset, limit, range },
+      { range },
       now,
     );
 

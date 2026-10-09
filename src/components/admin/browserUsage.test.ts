@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { SESSION_GAP_MS } from '../../../api/_shared';
 import { LEAGUE_SESSION_GAP_MS } from '../../../api/_leagueRecord';
 import { FAVORITE_SESSION_GAP_MS } from '../../../api/_favoriteRecord';
-import { browserTotal, endStampedUsage, spanUsage, type ToolUsage } from './browserUsage';
+import { browserTotal, endStampedUsage, spanUsage, type ToolUsage } from '../../../api/_aggregate';
 
 const MIN = 60_000;
 const T = Date.UTC(2026, 9, 1, 12);

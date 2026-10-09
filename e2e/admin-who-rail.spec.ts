@@ -38,7 +38,6 @@ function source(now: number): DashboardSource {
     funnel: {},
     funnelWindow: null,
     leagueClients: {},
-    exportSurveySkips: null,
   };
 }
 
@@ -46,7 +45,7 @@ test.describe('admin Who Other rail', { tag: '@viewport' }, () => {
   test('wraps the folded flags of 96 countries inside the card, top row longest', async ({ page }, testInfo) => {
     await page.route('**/api/submissions?**', (route) => {
       const now = Date.now();
-      return route.fulfill({ json: buildDashboard(source(now), { offset: 0, limit: 50, range: 'all' }, now) });
+      return route.fulfill({ json: buildDashboard(source(now), { range: 'all' }, now) });
     });
     await page.route('**/api/search-performance**', (route) => route.fulfill({ status: 503, json: { error: 'off' } }));
     await page.addInitScript(() => localStorage.setItem('p151-admin-token', 'e2e'));

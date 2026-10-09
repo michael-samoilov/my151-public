@@ -61,7 +61,6 @@ async function stub(page: Page) {
     funnel: {},
     funnelWindow: null,
     leagueClients: { 'e2e-fb-both': JSON.stringify(leagueRecord('e2e-fb-both', visits)) },
-    exportSurveySkips: null,
   };
   const report = (id: string, cid: string, route: string, ts: number, country?: string) => ({
     id, ts, category: 'bug', message: `report ${id}`, cid, ...(country ? { country } : {}), context: { route, locale: 'en' },
@@ -78,7 +77,7 @@ async function stub(page: Page) {
   await page.route('**/api/submissions?**', (route) => {
     const qs = new URL(route.request().url()).searchParams;
     const cid = qs.get('cid');
-    if (!cid) return route.fulfill({ json: buildDashboard(source, { offset: 0, limit: 50, range: 'all' }, now) });
+    if (!cid) return route.fulfill({ json: buildDashboard(source, { range: 'all' }, now) });
     // As api/submissions.ts reads it: the report country's record first.
     const country = qs.get('country');
     const dex = (country && source.clients?.[`${cid}::${country}`]) ?? source.clients?.[cid] ?? null;

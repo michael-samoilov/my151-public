@@ -66,9 +66,8 @@ async function stub(page: Page) {
         'e2e-one': JSON.stringify(pickerRecord('e2e-one', [at(t1, 100, 112)])),
         'e2e-arch': JSON.stringify(pickerRecord('e2e-arch', [at(t1, 305, 320)])),
       },
-      exportSurveySkips: null,
     };
-    return route.fulfill({ json: buildDashboard(source, { offset: 0, limit: 50, range: 'all' }, now) });
+    return route.fulfill({ json: buildDashboard(source, { range: 'all' }, now) });
   });
   await page.route('**/api/search-performance**', (route) => route.fulfill({ status: 503, json: { error: 'off' } }));
   await page.addInitScript(() => {

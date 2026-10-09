@@ -3,7 +3,7 @@ import { Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PreviewChipZoomProvider } from '@/components/admin/FitNowrap';
 import { PREVIEW_CHIP_MD, usePreviewChipZoom } from '@/components/admin/previewChipZoom';
-import { browserTotal, type ToolCell, type UsageTool } from '@/components/admin/browserUsage';
+import type { ToolCell, UsageTool } from '@/components/admin/browserUsage';
 import { PREVIEW_PROGRESS, sessionChipParts } from '@/components/admin/userPreview';
 
 /** One half of a column: two lines of text. On a phone the column's merged
@@ -91,8 +91,8 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: { sessions: num
           <Divider />
           <TimeHalf
             tool={c.tool}
-            sessions={c.usage.sessions}
-            totalMs={c.usage.totalMs}
+            sessions={c.sessions}
+            totalMs={c.totalMs}
             className={cn('md:row-start-2 md:self-stretch md:justify-self-stretch', DESKTOP_COL[c.tool], !c.used && 'md:opacity-40')}
           />
         </span>
@@ -119,9 +119,9 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: { sessions: num
 }
 
 /** The usage block of one Newest browsers card. On a phone its four columns
- *  always split the card width equally, and the list-wide zoom sizes the text. */
-export function BrowserUsage({ cells }: { cells: ToolCell[] }) {
-  const total = browserTotal(cells.filter((c) => c.used).map((c) => c.usage));
+ *  always split the card width equally, and the list-wide zoom sizes the text.
+ *  `total` is the browser as a whole, merged on the server. */
+export function BrowserUsage({ cells, total }: { cells: ToolCell[]; total: { sessions: number; totalMs: number } }) {
   const zoom = usePreviewChipZoom();
   return (
     <div data-usage-host className="min-w-0 md:contents">
@@ -132,14 +132,14 @@ export function BrowserUsage({ cells }: { cells: ToolCell[] }) {
   );
 }
 
-const WORST_USAGE = { sessions: 999, totalMs: 999 * 3_600_000 + 59 * 60_000, spans: [] };
+const WORST_USAGE = { sessions: 999, totalMs: 999 * 3_600_000 + 59 * 60_000 };
 /** The widest card the list can hold: triple digits in every column. */
 const WORST: ToolCell[] = (['dex', 'league', 'picker'] as const).map((tool) => ({
   tool,
   used: true,
   count: 999,
   exported: true,
-  usage: WORST_USAGE,
+  ...WORST_USAGE,
 }));
 
 /**
@@ -168,9 +168,13 @@ export function PreviewUsageScale({ children }: { children: ReactNode }) {
     ro.observe(probe);
     const host = document.querySelector<HTMLElement>('[data-usage-host]');
     if (host) ro.observe(host);
+    // The list renders only the rows near the viewport, so the observed card
+    // can scroll away; a resize still reaches the cards that remain.
+    window.addEventListener('resize', measure);
     mq.addEventListener('change', measure);
     return () => {
       ro.disconnect();
+      window.removeEventListener('resize', measure);
       mq.removeEventListener('change', measure);
     };
   });
