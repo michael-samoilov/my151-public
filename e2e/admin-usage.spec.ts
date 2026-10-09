@@ -29,19 +29,24 @@ const STATS = {
 };
 
 async function stub(page: Page, usage: unknown) {
+  const searchReads: string[] = [];
   await page.route('**/api/submissions?**', (route) => {
     const qs = new URL(route.request().url()).searchParams;
     if (qs.get('usage') === '1') return route.fulfill({ json: usage });
     return route.fulfill({ json: buildDashboard(SOURCE, { offset: 0, limit: 50, range: 'all' }, Date.now()) });
   });
   await page.route('**/api/feedback-list**', (route) => route.fulfill({ json: { items: [], total: 0, offset: 0, limit: 200 } }));
-  await page.route('**/api/search-performance**', (route) => route.fulfill({ status: 503, json: { error: 'off' } }));
+  await page.route('**/api/search-performance**', (route) => {
+    searchReads.push(route.request().url());
+    return route.fulfill({ status: 503, json: { error: 'off' } });
+  });
   await page.addInitScript(() => {
     localStorage.setItem('p151-admin-token', 'e2e');
     localStorage.setItem('p151-admin-range', 'all');
   });
   await page.goto('/?admin');
   await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Suite', exact: true }).click();
+  return searchReads;
 }
 
 test.describe('admin database usage', () => {
@@ -65,6 +70,20 @@ test.describe('admin database usage', () => {
     await expect(tracks).toHaveCount(3);
     const widths = await tracks.evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().width)));
     expect(new Set(widths).size, widths.join(', ')).toBe(1);
+  });
+
+  // Each read costs the admin rate-limit check plus an MGET, so only the Search tab pays it.
+  test('Search data loads on the Search tab, not with every dashboard load', async ({ page }) => {
+    const searchReads = await stub(page, { status: 'not_configured' });
+    await expect(page.getByText('Not connected')).toBeVisible();
+    await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '7d' }).click();
+    await expect(page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '7d' })).toHaveAttribute('aria-pressed', 'true');
+    expect(searchReads).toHaveLength(0);
+    await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Search', exact: true }).click();
+    await expect.poll(() => searchReads.length).toBe(1);
+    // A range change on the Search tab still reloads it.
+    await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '28d' }).click();
+    await expect.poll(() => searchReads.length).toBe(2);
   });
 
   test('a missing key says the card is not connected', async ({ page }) => {
