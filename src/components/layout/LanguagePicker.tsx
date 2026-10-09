@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Globe, Loader2 } from 'lucide-react';
+import { pathScale } from '@/lib/pathScale';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { pressedOutside } from '@/lib/outsidePress';
 import { usePokedexStore } from '@/store/usePokedexStore';
@@ -131,7 +132,8 @@ export function LanguagePicker() {
             someone opening the menu is most likely trying to leave. Dropping it
             also takes a variable-width string out of the header's tightest
             row. */}
-        <Globe className="w-4 h-4" />
+        {/* 104%: balanced with the report bug beside it (see FeedbackButton). */}
+        <Globe className="w-4 h-4" {...pathScale(1.04)} />
       </button>
 
       {/* Desktop: anchored dropdown. */}

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { FAVORITES_NOTICE_END, isReturningVisitor, isFavoritesNoticeWindow, isFavoritesNoticeSeen, markFavoritesNoticeSeen, markVisited } from '@/lib/launchFlags';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 import { GymIcon, PokedexIcon, RibbonIcon } from '@/components/shared/AppIcons';
+import { pathScale } from '@/lib/pathScale';
 
 /**
  * The global header's tool switcher. A dropdown rather than spelled-out
@@ -12,10 +13,12 @@ import { GymIcon, PokedexIcon, RibbonIcon } from '@/components/shared/AppIcons';
  * entry, so the links are real navigations, not view state.
  */
 
+// `scale` balances the icons: their square box, the area inside their outline
+// and their ink come out about even.
 const TOOLS = [
-  { id: 'dex', href: '/pokedex-builder', label: 'tools.dex', Icon: PokedexIcon },
-  { id: 'league', href: '/custom-gym-leader', label: 'tools.league', Icon: GymIcon },
-  { id: 'favorites', href: '/favorite-pokemon-picker', label: 'tools.favorites', Icon: RibbonIcon },
+  { id: 'dex', href: '/pokedex-builder', label: 'tools.dex', Icon: PokedexIcon, scale: 1 },
+  { id: 'league', href: '/custom-gym-leader', label: 'tools.league', Icon: GymIcon, scale: 1.08 },
+  { id: 'favorites', href: '/favorite-pokemon-picker', label: 'tools.favorites', Icon: RibbonIcon, scale: 1.03 },
 ] as const;
 
 export type ToolId = (typeof TOOLS)[number]['id'];
@@ -163,9 +166,7 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
                 tool.id === current ? 'font-semibold text-foreground' : 'text-muted-foreground',
               )}
             >
-              {/* The Gym emblem's thin point leaves it lighter than the squares
-                  beside it, so it draws at 108% in the same 16px box. */}
-              <tool.Icon className={cn('w-4 h-4 shrink-0', tool.id === 'league' && 'scale-108')} />
+              <tool.Icon className="w-4 h-4 shrink-0" {...pathScale(tool.scale)} />
               {t(tool.label)}
             </a>
           ))}
