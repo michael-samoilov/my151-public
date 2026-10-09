@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Table2, X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { FAVORITES_NOTICE_END, isReturningVisitor, isFavoritesNoticeWindow, isFavoritesNoticeSeen, markFavoritesNoticeSeen, markVisited } from '@/lib/launchFlags';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
-import { GymIcon, PokedexIcon } from '@/components/shared/AppIcons';
+import { GymIcon, PokedexIcon, RibbonIcon } from '@/components/shared/AppIcons';
 
 /**
  * The global header's tool switcher. A dropdown rather than spelled-out
@@ -15,7 +15,7 @@ import { GymIcon, PokedexIcon } from '@/components/shared/AppIcons';
 const TOOLS = [
   { id: 'dex', href: '/pokedex-builder', label: 'tools.dex', Icon: PokedexIcon },
   { id: 'league', href: '/custom-gym-leader', label: 'tools.league', Icon: GymIcon },
-  { id: 'favorites', href: '/favorite-pokemon-picker', label: 'tools.favorites', Icon: Table2 },
+  { id: 'favorites', href: '/favorite-pokemon-picker', label: 'tools.favorites', Icon: RibbonIcon },
 ] as const;
 
 export type ToolId = (typeof TOOLS)[number]['id'];
@@ -163,7 +163,9 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
                 tool.id === current ? 'font-semibold text-foreground' : 'text-muted-foreground',
               )}
             >
-              <tool.Icon className="w-4 h-4 shrink-0" />
+              {/* The Gym emblem's thin point leaves it lighter than the squares
+                  beside it, so it draws at 108% in the same 16px box. */}
+              <tool.Icon className={cn('w-4 h-4 shrink-0', tool.id === 'league' && 'scale-108')} />
               {t(tool.label)}
             </a>
           ))}

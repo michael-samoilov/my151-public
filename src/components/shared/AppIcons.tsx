@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 
 /**
  * Icons drawn for this app, in lucide's idiom: a 24-unit box, a 2-unit stroke,
- * round caps and joins, outline only. Lucide has no Pokédex, no Gym emblem and
- * no Bug-type glyph. The sources and the rejected drafts are in
- * `docs/design/tools-menu-icons/`.
+ * round caps and joins, outline only. Lucide has no Pokédex, no Gym emblem, no
+ * Bug-type glyph and no Pokémon ribbon. The sources and the rejected drafts are
+ * in `docs/design/tools-menu-icons/`.
  */
 function Icon({ className, children }: { className?: string; children: ReactNode }) {
   return (
@@ -68,6 +68,23 @@ export function BugIcon({ className }: { className?: string }) {
       <path d="M3 5A4 4 0 0 0 4.87 8.38" />
       <path d="M2 13L3.7 13" />
       <path d="M3 21A4 4 0 0 1 4.88 17.6" />
+    </Icon>
+  );
+}
+
+/**
+ * A ribbon with a Poké Ball as its pin, after the games' ribbons: two tails
+ * with swallowtail cuts hang from behind the ball.
+ */
+export function RibbonIcon({ className }: { className?: string }) {
+  return (
+    <Icon className={className}>
+      <path d="M7.44 13.97L5.2 22L7.48 20L9.76 22L11.53 15.68" />
+      <path d="M16.56 13.97L18.8 22L16.52 20L14.24 22L12.47 15.68" />
+      <circle cx="12" cy="8.85" r="6.85" />
+      <path d="M5.15 8.85H9.7" />
+      <path d="M14.3 8.85H18.85" />
+      <circle cx="12" cy="8.85" r="2.3" />
     </Icon>
   );
 }
