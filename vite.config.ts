@@ -26,7 +26,11 @@ function pickerRouteRedirect(): Plugin {
 export default defineConfig({
   plugins: [pickerRouteRedirect(), react(), tailwindcss(), prerenderHub()],
   define: {
-    __BUILD_TIMESTAMP__: JSON.stringify(new Date().toISOString()),
+    // SOURCE_DATE_EPOCH (seconds) pins the stamp, so two builds of different
+    // trees paint the same footer. The verify-my151 visual diff sets it.
+    __BUILD_TIMESTAMP__: JSON.stringify(
+      (process.env.SOURCE_DATE_EPOCH ? new Date(Number(process.env.SOURCE_DATE_EPOCH) * 1000) : new Date()).toISOString(),
+    ),
     // Vercel deployment environment ('production' | 'preview' | ''), used to
     // gate the demo-seed mode to preview builds only. See src/lib/demoMode.ts.
     __DEPLOY_ENV__: JSON.stringify(process.env.VERCEL_ENV ?? ''),

@@ -21,9 +21,13 @@ function npmCommand(args: string[]): { cmd: string; args: string[] } {
   return { cmd: 'npm', args };
 }
 
+// One build stamp for every build in this run (vite.config.ts reads it), so the
+// base and the change paint the same footer and the visual diff sees no change there.
+const BUILD_EPOCH = process.env.SOURCE_DATE_EPOCH ?? String(Math.floor(Date.now() / 1000));
+
 function run(cmd: string, args: string[], cwd: string, timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
-    const p = spawn(cmd, args, { cwd, stdio: ['ignore', 'inherit', 'inherit'] });
+    const p = spawn(cmd, args, { cwd, stdio: ['ignore', 'inherit', 'inherit'], env: { ...process.env, SOURCE_DATE_EPOCH: BUILD_EPOCH } });
     const timer = setTimeout(() => { p.kill('SIGKILL'); reject(new Error(`${cmd} ${args.join(' ')} timed out`)); }, timeoutMs);
     p.on('exit', (code) => { clearTimeout(timer); code === 0 ? resolve() : reject(new Error(`${cmd} ${args.join(' ')} exited ${code}`)); });
   });
