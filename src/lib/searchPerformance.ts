@@ -11,11 +11,6 @@ export interface SearchMetric {
   position: number | null;
 }
 
-export interface SearchDailyPoint extends SearchMetric {
-  /** UTC date in YYYY-MM-DD form. */
-  date: string;
-}
-
 export interface SearchDimensionRow extends SearchMetric {
   key: string;
 }

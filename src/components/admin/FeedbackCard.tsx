@@ -1,17 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ExternalLink, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { routeCounts } from '@/lib/feedbackRoutes';
 import {
   EXPORT_SURVEY_TOOL_LABEL,
   isExportSurveyTool,
 } from '@/lib/exportSurvey';
+import {
+  openToolFor,
+  requestFeedbackList,
+  routeTool,
+  useFeedbackList,
+  type FeedbackItem,
+  type FeedbackTool,
+} from './feedbackList';
 
 /**
  * The feedback inbox.
  *
  * Its own file rather than another section of AdminPage.tsx, which is already
- * ~1800 lines — and unlike the rest of that page it fetches its own endpoint,
- * so it has no reason to share the dashboard's load cycle.
+ * ~1800 lines. It reads the shared list in feedbackList.ts, which the detail
+ * page reuses, so the page fetches the endpoint once.
  *
  * Read/unread lives in this browser's localStorage, not in Redis. There is
  * exactly one admin; a server-side flag would be a second source of truth that
@@ -27,32 +36,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   data: 'Data',
   other: 'Other',
 };
-
-interface FeedbackItem {
-  id: string;
-  ts: number;
-  category: string;
-  message: string;
-  cid?: string;
-  ipHash?: string;
-  country?: string;
-  context?: Record<string, unknown>;
-}
-
-interface FeedbackResponse {
-  items: FeedbackItem[];
-  total: number;
-  last7: Record<string, number>;
-  last30: Record<string, number>;
-}
-
-async function fetchFeedback(token: string): Promise<FeedbackResponse> {
-  const res = await fetch('/api/feedback-list?limit=50', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error(`Request failed (${res.status}).`);
-  return (await res.json()) as FeedbackResponse;
-}
 
 function loadSeen(): Set<string> {
   try {
@@ -90,7 +73,24 @@ function asIssue(item: FeedbackItem): string {
   return lines.join('\n');
 }
 
-function Row({ item, seen, onToggle }: { item: FeedbackItem; seen: boolean; onToggle: () => void }) {
+const TOOL_LABEL: Record<FeedbackTool, string> = { dex: 'Dex', league: 'League', favorites: 'Picker' };
+
+function Row({
+  item,
+  seen,
+  onToggle,
+  openTool,
+  toolKnown,
+  onOpen,
+}: {
+  item: FeedbackItem;
+  seen: boolean;
+  onToggle: () => void;
+  openTool: FeedbackTool | null;
+  /** False when the browser's tools load only after the link opens it. */
+  toolKnown: boolean;
+  onOpen: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const ctx = item.context ?? {};
@@ -149,6 +149,18 @@ function Row({ item, seen, onToggle }: { item: FeedbackItem; seen: boolean; onTo
         >
           {copied ? 'copied' : 'copy as issue'}
         </button>
+        {openTool && (
+          <button
+            type="button"
+            onClick={onOpen}
+            data-testid="feedback-open-browser"
+            data-tool={openTool}
+            className="ml-auto inline-flex items-center gap-1 text-primary underline cursor-pointer"
+          >
+            <ExternalLink className="h-3 w-3" aria-hidden />
+            Open browser{toolKnown ? ` · ${TOOL_LABEL[openTool]}` : ''}
+          </button>
+        )}
       </div>
 
       {expanded && (
@@ -162,36 +174,26 @@ function Row({ item, seen, onToggle }: { item: FeedbackItem; seen: boolean; onTo
   );
 }
 
-export function FeedbackCard({ token }: { token: string }) {
-  const [data, setData] = useState<FeedbackResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+export function FeedbackCard({
+  token,
+  toolsOf,
+  onOpen,
+  cidFilter = null,
+  onClearCid,
+}: {
+  token: string;
+  /** The tools the loaded dashboard holds a record of for this browser, or
+   *  null when it does not hold the browser. */
+  toolsOf?: (cid: string) => FeedbackTool[] | null;
+  onOpen?: (tool: FeedbackTool, cid: string, country?: string) => void;
+  /** Show only this browser's reports. */
+  cidFilter?: string | null;
+  onClearCid?: () => void;
+}) {
+  const { data, error, loading: fetching } = useFeedbackList(token, true);
+  const loading = fetching || (!data && !error);
   const [category, setCategory] = useState<string>('all');
   const [seen, setSeen] = useState<Set<string>>(() => loadSeen());
-
-  // Refresh bumps this rather than calling a loader directly, so every fetch
-  // goes through the one effect and every state write lands in a promise
-  // callback — an effect that writes state synchronously is a cascading render.
-  const [nonce, setNonce] = useState(0);
-
-  useEffect(() => {
-    let alive = true;
-    void fetchFeedback(token)
-      .then((d) => {
-        if (!alive) return;
-        setData(d);
-        setError(null);
-      })
-      .catch((e: Error) => {
-        if (alive) setError(e.message);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [token, nonce]);
 
   const toggle = (id: string) => {
     setSeen((prev) => {
@@ -204,7 +206,8 @@ export function FeedbackCard({ token }: { token: string }) {
   };
 
   const items = useMemo(() => data?.items ?? [], [data]);
-  const shown = category === 'all' ? items : items.filter((i) => i.category === category);
+  const ofBrowser = cidFilter ? items.filter((i) => i.cid === cidFilter) : items;
+  const shown = category === 'all' ? ofBrowser : ofBrowser.filter((i) => i.category === category);
   const unread = items.filter((i) => !seen.has(i.id)).length;
   // Which surface reports come from. Folded out of the page already fetched:
   // the endpoint keeps per-day counts by category, not by route.
@@ -220,12 +223,29 @@ export function FeedbackCard({ token }: { token: string }) {
         <span className="text-xs text-muted-foreground">
           {data ? `${data.total} total` : ''}
         </span>
-        <Button variant="ghost" size="sm" className="ml-auto" onClick={() => { setLoading(true); setNonce((n) => n + 1); }} disabled={loading}>
+        <Button variant="ghost" size="sm" className="ml-auto" onClick={() => requestFeedbackList(token, true)} disabled={loading}>
           {loading ? 'Loading…' : 'Refresh'}
         </Button>
       </div>
 
       {error && <p className="text-xs text-destructive mb-2">{error}</p>}
+
+      {cidFilter && (
+        <div className="mb-2 flex items-center gap-1 text-xs">
+          <span className="text-muted-foreground">Browser</span>
+          <button
+            type="button"
+            onClick={onClearCid}
+            data-testid="feedback-browser-filter"
+            aria-label="Show all browsers"
+            className="inline-flex items-center gap-1 rounded-full border border-primary bg-primary/5 px-2 py-0.5 font-semibold tabular-nums text-primary cursor-pointer"
+          >
+            {cidFilter.length <= 8 ? cidFilter : `${cidFilter.slice(0, 2)}…${cidFilter.slice(-4)}`}
+            <span className="opacity-70">{ofBrowser.length}</span>
+            <X className="h-3 w-3" aria-hidden />
+          </button>
+        </div>
+      )}
 
       {data && (
         <div className="flex gap-1 flex-wrap mb-2">
@@ -274,9 +294,25 @@ export function FeedbackCard({ token }: { token: string }) {
         <p className="text-xs text-muted-foreground">{loading ? 'Loading…' : 'Nothing yet.'}</p>
       ) : (
         <ul className="flex flex-col gap-1.5 max-h-[28rem] overflow-y-auto">
-          {shown.map((item) => (
-            <Row key={item.id} item={item} seen={seen.has(item.id)} onToggle={() => toggle(item.id)} />
-          ))}
+          {shown.map((item) => {
+            const cid = item.cid;
+            // Every sender with a browser id gets a link. A browser the loaded
+            // pages do not hold opens on its report's tool and loads there.
+            const tools = cid && toolsOf ? toolsOf(cid) : null;
+            const route = item.context?.route;
+            const tool = !cid || !onOpen ? null : tools ? openToolFor(route, tools) : (routeTool(route) ?? 'dex');
+            return (
+              <Row
+                key={item.id}
+                item={item}
+                seen={seen.has(item.id)}
+                onToggle={() => toggle(item.id)}
+                openTool={tool}
+                toolKnown={tools != null}
+                onOpen={() => tool && cid && onOpen?.(tool, cid, item.country)}
+              />
+            );
+          })}
         </ul>
       )}
     </div>

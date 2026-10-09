@@ -1,6 +1,6 @@
 import type { ExportSurveySkip } from '../../../../api/_events';
 
-export type MilestoneTone = 'export' | 'muted' | 'skip';
+export type MilestoneTone = 'export' | 'muted' | 'skip' | 'feedback';
 
 export interface ChartMilestone {
   t: number;
@@ -12,6 +12,7 @@ export interface ChartMilestone {
 export function milestoneFill(tone?: MilestoneTone): string {
   if (tone === 'muted') return 'var(--color-muted-foreground)';
   if (tone === 'skip') return 'var(--color-primary)';
+  if (tone === 'feedback') return 'var(--color-off)';
   return 'var(--color-success)';
 }
 
@@ -40,6 +41,19 @@ export function exportSurveySkipMarks(
   }));
 }
 
+/** One mark per feedback report this browser sent, at the time it was sent. */
+export function feedbackMarks(
+  reports: readonly { ts: number; category: string }[],
+  clampT: (t: number) => number,
+): ChartMilestone[] {
+  return reports.map((r) => ({
+    t: clampT(r.ts),
+    label: 'feedback',
+    tone: 'feedback',
+    title: `feedback · ${r.category}`,
+  }));
+}
+
 export const FUNNEL_LABEL: Record<string, string> = {
   'intro-shown': 'intro',
   'intro-cta': 'start',
@@ -53,7 +67,29 @@ export const FUNNEL_LABEL: Record<string, string> = {
   'league-nudge-league-shown': '8 gyms',
   'league-nudge-league-cta': '8 gyms go',
   'league-nudge-league-dismiss': '8 gyms skip',
+  'favorites-first-pick': 'first pick',
+  'favorites-quarter': '65',
+  'favorites-half': '129',
+  'favorites-complete': '257',
+  'favorites-nudge-complete-shown': 'export nudge',
+  'favorites-export-shown': 'export opened',
 };
+
+/** Picker export events. A visit lists each export kind once, so its diamond
+ *  carries one label per kind. */
+const FAVORITE_EXPORT_LABEL: Record<string, string> = {
+  'favorites-export-full': 'full grid',
+  'favorites-export-stats': 'detailed stats',
+  'favorites-export-simplified': 'simplified',
+};
+
+export function favoriteExportMarks(sittings: readonly { t: number; ev?: readonly string[] }[]): ChartMilestone[] {
+  return sittings.flatMap((s) =>
+    (s.ev ?? []).flatMap((ev) =>
+      FAVORITE_EXPORT_LABEL[ev] ? [{ t: s.t, label: FAVORITE_EXPORT_LABEL[ev], tone: 'export' as const }] : [],
+    ),
+  );
+}
 
 /** Event names stored on one league sitting, for the timeline funnel marks. */
 export function leagueSittingEv(events: readonly string[] | undefined): string[] | undefined {
@@ -65,6 +101,8 @@ export const FUNNEL_OFFSET_PX = 8;
 
 export interface SittingPlot {
   diamond?: { tone: 'export' | 'skip'; title?: string };
+  /** Feedback reports sent nearest this sitting, as one mark. */
+  feedback?: { title: string };
   funnel: boolean;
   label: string;
 }
@@ -96,11 +134,14 @@ export function plotSittings(
   const skipTitles: string[][] = Array.from({ length: n }, () => []);
   const hasExport = Array<boolean>(n).fill(false);
   const hasSkip = Array<boolean>(n).fill(false);
+  const feedbackTitles: string[][] = Array.from({ length: n }, () => []);
 
   for (const m of milestones) {
     if (n === 0 || m.tone === 'muted') continue;
     const i = nearestSitting(m.t, sittings);
-    if (m.tone === 'skip') {
+    if (m.tone === 'feedback') {
+      feedbackTitles[i].push(m.title ?? m.label);
+    } else if (m.tone === 'skip') {
       hasSkip[i] = true;
       pushUnique(skipLabels[i], m.label);
       if (m.title) pushUnique(skipTitles[i], m.title);
@@ -113,16 +154,20 @@ export function plotSittings(
   return sittings.map((s, i) => {
     const funnelLabels: string[] = [];
     for (const ev of s.ev ?? []) pushUnique(funnelLabels, FUNNEL_LABEL[ev] ?? '');
-    const label = [...exportLabels[i], ...skipLabels[i], ...funnelLabels].join(' · ');
+    const sent = feedbackTitles[i];
+    const fbLabel = sent.length > 1 ? `${sent.length} feedback` : sent.length ? 'feedback' : '';
+    const label = [...exportLabels[i], ...skipLabels[i], fbLabel, ...funnelLabels].filter(Boolean).join(' · ');
     const funnel = (s.ev ?? []).some((ev) => FUNNEL_LABEL[ev]);
+    const feedback = sent.length ? { feedback: { title: sent.join('\n') } } : {};
     if (hasExport[i] && hasSkip[i]) {
       return {
         funnel,
         label,
         diamond: { tone: 'skip', title: skipTitles[i].join(' · ') || undefined },
+        ...feedback,
       };
     }
-    if (hasExport[i]) return { funnel, label, diamond: { tone: 'export' } };
-    return { funnel, label };
+    if (hasExport[i]) return { funnel, label, diamond: { tone: 'export' }, ...feedback };
+    return { funnel, label, ...feedback };
   });
 }

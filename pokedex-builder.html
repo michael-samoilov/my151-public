@@ -4,9 +4,42 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- On a first visit the page's largest paint is the intro card's 151
+         screenshot, which the browser would find only after the JavaScript
+         renders the card. A returning visitor never sees the card, so a plain
+         preload cost them (docs/performance.md, "Tried and left out"). This
+         link is inert (`media="not all"`) and only carries the built file
+         names; the script copies it into a live preload when the card will
+         show: an empty dex, the intro not seen, no `?demo`. `imagesrcset` and
+         `imagesizes` must match SHOT_SRCSETS[2] and SHOT_SIZES[2] in
+         src/components/pokedex/IntroCard.tsx, or the image downloads twice. -->
+    <link id="p151-intro-shot" rel="preload" as="image" fetchpriority="high" media="not all"
+      href="/src/assets/intro/shot-151-stats.webp"
+      imagesrcset="/src/assets/intro/shot-151-stats-444.webp 444w, /src/assets/intro/shot-151-stats.webp 555w"
+      imagesizes="(min-width: 429px) 169px, 135px" />
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem('p151-intro-seen') === '1' || new URLSearchParams(location.search).has('demo')) return;
+          var saved = JSON.parse(localStorage.getItem('personal-151-pokedex-v3') || 'null');
+          var sections = saved && saved.state && saved.state.sections;
+          for (var key in sections) if (Array.isArray(sections[key]) && sections[key].length) return;
+        } catch (e) { /* Blocked storage: treat it as a first visit. */ }
+        var inert = document.getElementById('p151-intro-shot');
+        var link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.fetchPriority = 'high';
+        link.href = inert.href;
+        link.imageSrcset = inert.getAttribute('imagesrcset');
+        link.imageSizes = inert.getAttribute('imagesizes');
+        document.head.appendChild(link);
+      })();
+    </script>
     <title>Custom Regional Pokédex Builder | my151</title>
     <meta name="description" content="Custom Pokédex builder: fill a region template of Pokédex archetypes, compare type distribution vs. the National Dex, and export a PNG." />
     <link rel="canonical" href="https://my151.app/pokedex-builder" />
+    <meta name="robots" content="max-image-preview:large" />
 
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_US" />
@@ -32,6 +65,8 @@
         "name": "Custom Pokédex Builder",
         "alternateName": "my151 Pokédex builder",
         "url": "https://my151.app/pokedex-builder",
+        "mainEntityOfPage": "https://my151.app/pokedex-builder",
+        "image": { "@type": "ImageObject", "url": "https://my151.app/search/pokedex-builder.jpg", "width": 1932, "height": 1932 },
         "description": "Custom Pokédex builder: fill a region template of Pokédex archetypes, compare type distribution vs. the National Dex, and export a PNG.",
         "applicationCategory": "GameApplication",
         "operatingSystem": "Any",
@@ -99,9 +134,8 @@
       .p151-boot h1 { margin: 0; font-size: 18px; font-weight: 600; color: #0a0a0a; letter-spacing: -0.01em; }
       .p151-boot p { margin: 0; max-width: 38ch; font-size: 14px; line-height: 1.5; color: #525252; }
       /* Was #a3a3a3, which predated this block rendering on a light background and
-       * gave "Loading…" only ~2.3:1 contrast. #6e6e6e is a shade darker than the
-       * app's --color-muted-foreground (#737373) because that value measures
-       * 4.43:1 on #f7f7f8 — just under AA for 13px text. */
+       * gave "Loading…" only ~2.3:1 contrast. #6e6e6e is the app's
+       * --color-muted-foreground: 4.76:1 on #f7f7f8, AA for 13px text. */
       .p151-boot span { font-size: 13px; color: #6e6e6e; letter-spacing: 0.02em; }
       /* Desktop is a peer of mobile, not mobile-with-patches (see CLAUDE.md): the
        * spinner, headline, body and hint scale together at --breakpoint-md instead

@@ -1,5 +1,5 @@
 import {aggregate as aggregateRecords} from '../../../../api/_aggregate';
-import {favoriteSummary,favoriteUsageFunnel,favoriteUser} from '../../../../api/_favoriteAggregate';
+import {favoritePicks,favoriteSummary,favoriteUsageFunnel,favoriteUser} from '../../../../api/_favoriteAggregate';
 import {mergeFavoriteRecord,parseFavoriteSnapshot,type FavoriteRecord} from '../../../../api/_favoriteRecord';
 import favoriteCells from '../../../../api/_favoriteCells.json';
 // Demo fixture for the admin dashboard, reached at `/?admin&demo`.
@@ -165,8 +165,8 @@ function aggregate(kind: 'all' | 'dex' | 'league'): Aggregates {
     activity: ACTIVITY,
     retention:
       kind === 'league'
-        ? { returning: 2, activeLast7: 3, newUsers: 5 }
-        : { returning: 63, activeLast7: 52, newUsers: 388 },
+        ? { returning: 2, newUsers: 5 }
+        : { returning: 63, newUsers: 388 },
     timeCurves: { longest: timeCurve, first: timeCurve, all: timeCurve },
     countries:
       kind === 'league'
@@ -626,15 +626,13 @@ export const sampleResponse: ApiResponse = {
     oneGymFull: 5,
     cardNotFinished: 1,
     gymBuckets: [
-      { label: '1–4 gyms', count: 1, exports: { league: 0, both: 0, card: 0 }, exportedLeague: 0, exportedCard: 0 },
-      { label: '5–8 gyms', count: 1, exports: { league: 0, both: 0, card: 1 }, exportedLeague: 0, exportedCard: 1 },
-      { label: '9–12 gyms', count: 1, exports: { league: 0, both: 0, card: 0 }, exportedLeague: 0, exportedCard: 0 },
-      { label: 'Full league', count: 2, exports: { league: 0, both: 1, card: 0 }, exportedLeague: 1, exportedCard: 0 },
+      { label: '1–4 gyms', count: 1, exports: { league: 0, both: 0, card: 0 } },
+      { label: '5–8 gyms', count: 1, exports: { league: 0, both: 0, card: 1 } },
+      { label: '9–12 gyms', count: 1, exports: { league: 0, both: 0, card: 0 } },
+      { label: 'Full league', count: 2, exports: { league: 0, both: 1, card: 0 } },
     ],
     fullLeague: 2,
     exports: { league: 0, both: 1, card: 1 },
-    exportedLeague: 1,
-    exportedCard: 1,
     keptPrivate: 1,
   },
   tools: {
@@ -653,10 +651,7 @@ export const sampleResponse: ApiResponse = {
     named: 4,
     typed: 5,
     fullLeague: 1,
-    exportedCard: 3,
-    exportedLeague: 1,
     returning: 3,
-    activeLast7: 3,
     activity: ACTIVITY.slice(-30).map((a) => ({ day: a.day, dau: Math.max(0, Math.round(a.dau / 12)) })),
     picks: leaguePicks(leagueUsers),
     recent: leagueUsers.map((u) => ({
@@ -689,7 +684,7 @@ export const sampleResponse: ApiResponse = {
     showStats: 6,
     sorts: { dex: 8, type: 5, name: 4 },
   },
-  retention: { returning: 63, activeLast7: 52, newUsers: 388 },
+  retention: { returning: 63, newUsers: 388 },
   multiSession: 210,
   timeSurvival: byTool.dex.timeCurves.longest.survival,
   timeStats: byTool.dex.timeCurves.longest.stats,
@@ -823,7 +818,9 @@ const pickerRecords:FavoriteRecord[] = [0,24,80,150,220,257].map((depth,i)=>{
   const cid=`demo-picker-${i+1}`;
   let r=mergeFavoriteRecord(null,{cid,id:`open-${i}`,now:pickerNow-86400000,kind:'progress',snapshot:initial,events:['favorites-open'],country:i%2?'GB':'US',device:i%2?'desktop':'mobile',os:i%2?'Windows':'iOS',browser:i%2?'Chrome':'Safari',tz:'America/New_York',locale:'en',lang:'en-US'});
   r=mergeFavoriteRecord(r,{cid,id:`pick-${i}`,now:pickerNow,kind:'progress',snapshot:selected,events:[]});
-  if(i>1)r=mergeFavoriteRecord(r,{cid,id:`full-${i}`,now:pickerNow+60000,kind:'export',exportKind:i===3?'simplified':'full',snapshot:selected,events:[i===3?'favorites-export-simplified':'favorites-export-full']});
+  if(i===5)r=mergeFavoriteRecord(r,{cid,id:`nudge-${i}`,now:pickerNow+15000,kind:'nudge-shown',snapshot:selected,events:['favorites-nudge-complete-shown']});
+  if(i>0)r=mergeFavoriteRecord(r,{cid,id:`shown-${i}`,now:pickerNow+30000,kind:'export-shown',snapshot:selected,events:['favorites-export-shown']});
+  if(i>1)r=mergeFavoriteRecord(r,{cid,id:`full-${i}`,now:pickerNow+60000,kind:'export',exportKind:i===3?'simplified':'full',snapshot:selected,events:[i===3?'favorites-export-simplified':'favorites-export-full',...(i===4?['favorites-export-stats']:[])]});
   if(i===5)r=mergeFavoriteRecord(r,{cid,id:`simple-${i}`,now:pickerNow+120000,kind:'export',exportKind:'simplified',snapshot:selected,events:['favorites-export-simplified']});
   return r;
 });
@@ -831,6 +828,7 @@ sampleResponse.favoriteUsers=pickerRecords.map(r=>favoriteUser(r,false));
 sampleResponse.favoriteByCid=Object.fromEntries(sampleResponse.favoriteUsers.map(r=>[r.cid,r]));
 sampleResponse.totalFavoriteUsers=pickerRecords.length;
 sampleResponse.favorite=favoriteSummary(pickerRecords);
+sampleResponse.favoritePicks=favoritePicks(pickerRecords);
 sampleResponse.favoriteFunnel=favoriteUsageFunnel(pickerRecords);
 sampleResponse.byTool!.favorites=aggregateRecords(pickerRecords,pickerNow+120000);
 sampleResponse.byTool!.all!.users+=pickerRecords.length;

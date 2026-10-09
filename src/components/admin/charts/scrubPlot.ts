@@ -32,3 +32,10 @@ export function categoryIndexAtX(x: number, rect: PlotRect, lastIndex: number): 
   const i = Math.round(t * lastIndex);
   return Math.min(Math.max(i, 0), lastIndex);
 }
+
+/** Plot x of category `index`, the inverse of `categoryIndexAtX`. A lone
+ *  category sits mid-plot, where echarts draws it. */
+export function categoryX(index: number, rect: PlotRect, lastIndex: number): number {
+  if (lastIndex <= 0) return rect.x + rect.width / 2;
+  return rect.x + (index / lastIndex) * rect.width;
+}

@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { BarChart3, Download, Table2 } from 'lucide-react';
 import { useT } from '@/i18n';
@@ -5,12 +6,14 @@ import { FavoritesCompletionCounter } from './FavoritesCompletionCounter';
 
 export type FavoritesView = 'picker' | 'analytics';
 
-export function FavoritesHeader({ fills, currentView, onViewChange, exportOpen, onExport }: {
+export function FavoritesHeader({ fills, currentView, onViewChange, exportOpen, onExport, exportRef }: {
   fills: Readonly<Record<string, number>>;
   currentView: FavoritesView;
   onViewChange: (view: FavoritesView) => void;
   exportOpen: boolean;
   onExport: () => void;
+  /** The Export button, which the completion popup points at. */
+  exportRef?: Ref<HTMLButtonElement>;
 }) {
   const t = useT();
   const tabs = [
@@ -46,7 +49,7 @@ export function FavoritesHeader({ fills, currentView, onViewChange, exportOpen, 
         </button>;
       })}
     </div>
-    <HeaderActionButton type="button" data-testid="favorites-export-open" aria-label={t('favorites.export.title')}
+    <HeaderActionButton ref={exportRef} type="button" data-testid="favorites-export-open" aria-label={t('favorites.export.title')}
       aria-expanded={exportOpen} onClick={onExport}
       className="text-primary hover:bg-primary hover:text-primary-foreground">
       <Download className="h-4 w-4" aria-hidden />

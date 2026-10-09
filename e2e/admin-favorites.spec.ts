@@ -6,24 +6,27 @@ test.describe('Picker admin @viewport',()=>{
     await expect(page.getByRole('heading',{name:/^Picker activity/})).toBeVisible();
     const funnel=page.getByRole('img',{name:/Favorite Pokémon usage funnel/});
     await expect(funnel).toBeVisible();
-    await expect(funnel).toHaveAttribute('aria-label',/Completed/);
+    await expect(funnel).toHaveAttribute('aria-label',/placed a Pokémon.*completed/);
     await page.locator('[data-favorite-user="demo-picker-6"]').click();
     const detail=page.getByTestId('admin-favorite-detail');
     const desktop=page.viewportSize()!.width>=1024;
     await expect(page.getByRole('table',{name:`Favorite Pokémon ${desktop?'landscape':'portrait'} full grid`})).toBeVisible();
     await expect(detail.getByRole('heading')).toHaveCount(0);
-    await expect(page.getByTestId('session-playhead-count')).toHaveCount(0);
+    await expect(page.getByTestId('session-playhead-count')).toHaveText('257');
+    await expect(page.getByTestId('admin-rail-chip')).toHaveText([/^2\ssessions\s*2\sdays$/,/^\d+m\s*time spent$/]);
+    await expect(page.getByTestId('session-milestone')).toHaveCount(1);
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveText('full grid · simplified · export nudge · export opened');
     const grid=page.getByTestId('admin-favorite-snapshot');
     const images=grid.locator('[data-favorite-sprite]');
     await expect(images).toHaveCount(257);
     const slider=page.getByRole('slider',{name:'Scrub sessions'});
     await slider.focus();await slider.press('Home');
-    await expect(slider).toHaveAttribute('aria-valuetext',/0 of 257 cells/);
+    await expect(slider).toHaveAttribute('aria-valuetext',/: 0 of 257$/);
     await expect(images).toHaveCount(0);
     await slider.press('End');
     await expect(images).toHaveCount(257);
     await expect(page.getByRole('group',{name:"This browser's tools"}).getByRole('button',{name:'Picker',exact:true}).last()).toBeEnabled();
-    await expect(slider).toHaveAttribute('aria-valuetext',/257 of 257 cells/);
+    await expect(slider).toHaveAttribute('aria-valuetext',/: 257 of 257$/);
     await expect(grid.getByRole('columnheader')).toHaveCount(desktop?23:13);
     await expect(grid.getByRole('rowheader')).toHaveCount(desktop?12:22);
     await expect(grid.getByRole('row')).toHaveCount(desktop?13:23);
@@ -75,6 +78,20 @@ test('resizing across the desktop breakpoint preserves every selected coordinate
   await testInfo.attach('picker-admin-breakpoint.png',{body:await page.screenshot(),contentType:'image/png'});
 });
 
+test('the milestone row tells the completion popup and an opened export dialog from an export',async({page},testInfo)=>{
+  await page.goto('/?admin&demo');
+  await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Picker',exact:true}).click();
+  const labels:Record<string,string|null>={};
+  for(const [cid,label,diamonds] of [['demo-picker-2','export opened',0],['demo-picker-5','full grid · detailed stats · export opened',1],['demo-picker-6','full grid · simplified · export nudge · export opened',1]] as const){
+    await page.locator(`[data-favorite-user="${cid}"]`).click();
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveText(label);
+    await expect(page.getByTestId('session-milestone')).toHaveCount(diamonds);
+    labels[cid]=await page.getByTestId('session-playhead-milestone').textContent();
+    await page.getByRole('button',{name:'‹ Back'}).click();
+  }
+  await testInfo.attach('picker-milestone-labels.json',{body:JSON.stringify(labels),contentType:'application/json'});
+});
+
 async function gridMeasurement(page:import('@playwright/test').Page){
   return page.evaluate(()=>{
     const grid=document.querySelector('[data-testid="admin-favorite-snapshot"]')!;
@@ -92,12 +109,12 @@ test('a three-tool overlap keeps all seven exclusive region counts visible',asyn
   const catalog=[{id:'dex',label:'Dex builder',short:'Dex',launchedAt:0},{id:'league',label:'Gym leader maker',short:'League',launchedAt:1},{id:'favorites',label:'Favorite Pokémon Picker',short:'Picker',launchedAt:null}];
   const regions={dex:1,league:1,favorites:1,'dex+league':1,'dex+favorites':1,'favorites+league':1,'dex+favorites+league':1};
   const empty={survival:[],stats:{p50:0,p75:0,p90:0},n:0};
-  await page.route('**/api/submissions?**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({totalUsers:0,offset:0,limit:50,funnel:{users:0,completed:0,exported:0},retention:{returning:0,activeLast7:0,newUsers:0},timeSurvival:[],timeStats:empty.stats,depthSurvival:[],depthStats:empty.stats,countries:{},devices:{},os:{},popularFinal:[],mostDropped:[],popularBySection:{},droppedBySection:{},picksBySectionAll:{},records:[],crossTool:{catalog,kpis:[],eras:[{key:'synthetic',label:'Demo overlap',shortLabel:'Demo overlap',since:1,until:null,browsers:7,regions}]}})}));
+  await page.route('**/api/submissions?**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({totalUsers:0,offset:0,limit:50,funnel:{users:0,completed:0,exported:0},retention:{returning:0,newUsers:0},timeSurvival:[],timeStats:empty.stats,depthSurvival:[],depthStats:empty.stats,countries:{},devices:{},os:{},popularFinal:[],mostDropped:[],popularBySection:{},droppedBySection:{},picksBySectionAll:{},records:[],crossTool:{catalog,kpis:[],eras:[{key:'synthetic',label:'Demo overlap',shortLabel:'Demo overlap',since:1,until:null,browsers:7,regions}]}})}));
   await page.goto('/?admin');
   const chart=page.locator('[data-testid="cross-tool-venns"] svg');
-  await expect(chart.locator('g text')).toHaveCount(7);
-  await expect(chart.locator('g text title',{hasText:'Dex + Picker 1'})).toHaveCount(1);
-  await expect(chart.locator('g text title',{hasText:'Dex + Picker + League 1'})).toHaveCount(1);
+  await expect(chart.getByTestId('cross-tool-region-label')).toHaveCount(7);
+  await expect(chart.locator('rect[data-region] title',{hasText:'Dex + Picker 1'})).toHaveCount(1);
+  await expect(chart.locator('rect[data-region] title',{hasText:'Dex + League + Picker 1'})).toHaveCount(1);
   await testInfo.attach('seven-regions.svg',{body:await chart.evaluate(el=>el.outerHTML),contentType:'image/svg+xml'});
 });
 

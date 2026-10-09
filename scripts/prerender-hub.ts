@@ -1,0 +1,141 @@
+/**
+ * Prerenders the hub (`/`) into dist/index.html after the client build.
+ *
+ * Without it the hub's HTML holds only a spinner, and the page appears after
+ * about 250 KiB of JavaScript. With it, the hub paints as soon as the HTML and
+ * the stylesheet arrive, and the client hydrates the same markup.
+ *
+ * The plugin builds `src/home/prerender.ts` for Node with the client build's
+ * aliases and defines, so asset URLs and the footer's build version match the
+ * client. It then writes three things into dist/index.html:
+ *
+ * - The markup, in `#root`, marked `data-prerendered`.
+ * - A head script that runs before the first paint. It sets the root font
+ *   size with the formula in src/lib/layoutFontSize.ts, so nothing shifts when
+ *   that module runs. It adds `p151-saved-<tool>` to <html> for each tool with
+ *   saved work in this browser, which holds that card's "saved in this
+ *   browser" line open until the app fills it in (src/index.css). It adds
+ *   `p151-wait` when the visitor will not get this exact page: another
+ *   language, `?admin`, `?demo`, or a returning visitor while the Tools menu's
+ *   favorites notice runs. Those visitors see the spinner until the app
+ *   renders, as before.
+ * - A preload for the Inter font. The fallback in src/index.css keeps the
+ *   layout when Inter arrives; the preload makes it arrive with the first
+ *   paint more often, and Lighthouse counts the font in the first paint.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import react from '@vitejs/plugin-react';
+import { build, type Plugin, type ResolvedConfig } from 'vite';
+
+const ENTRY = 'src/home/prerender.ts';
+// Saved Pokédex key; its `state.locale` is the language the visitor chose.
+const STORE_KEY = 'personal-151-pokedex-v3';
+
+/** What the server entry exports for the head script. */
+interface BootInputs {
+  LOCALES: readonly string[];
+  SLOT_COUNT: number;
+  FAVORITES_NOTICE_START: number;
+  FAVORITES_NOTICE_END: number;
+  FAVORITES_NOTICE_SEEN_KEY: string;
+  RETURNING_KEYS: readonly string[];
+}
+
+/**
+ * The head script. Its language choice mirrors `resolveLocale` in
+ * src/i18n/detect.ts. Its saved-work tests mirror the hub's counts in
+ * HomePage.tsx, and its notice test mirrors the Tools menu's launch notice.
+ */
+function bootScript(input: BootInputs): string {
+  const j = JSON.stringify;
+  return `(function(){
+var d=document.documentElement,v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;
+d.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px';
+function G(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function S(k){try{var s=JSON.parse(G(k)||'null');return s&&s.state||null}catch(e){return null}}
+function some(o,f){for(var k in o)if(f(o[k]))return true;return false}
+var L=${j(input.LOCALES)},q=new URLSearchParams(location.search),loc=q.get('lang'),dex=S(${j(STORE_KEY)}),lg=S('league-builder'),fv=S('favorite-picker');
+function m(t){t=String(t).toLowerCase();var p=t.split('-')[0],i;if(p==='zh')return'zh';
+for(i=0;i<L.length;i++)if(L[i].toLowerCase()===t)return L[i];
+for(i=0;i<L.length;i++)if(L[i].toLowerCase().split('-')[0]===p)return L[i];return null}
+if(L.indexOf(loc)<0)loc=null;
+if(!loc)loc=dex&&dex.locale||null;
+if(!loc){var n=navigator.languages||[navigator.language];for(var i=0;i<n.length&&!loc;i++)loc=m(n[i])}
+var saved={dex:!!dex&&some(dex.sections,function(x){return Array.isArray(x)&&x.length>0}),
+league:!!lg&&Array.isArray(lg.cards)&&some(lg.cards.slice(0,${input.SLOT_COUNT}),function(c){return!!c&&Array.isArray(c.lines)&&c.lines.length>0}),
+favorites:!!fv&&some(fv.fills,function(x){return typeof x==='number'})},any=false;
+for(var t in saved)if(saved[t]){any=true;d.classList.add('p151-saved-'+t)}
+var now=Date.now(),notice=now>=${input.FAVORITES_NOTICE_START}&&now<${input.FAVORITES_NOTICE_END}&&G(${j(input.FAVORITES_NOTICE_SEEN_KEY)})!=='1'&&(any||${j(input.RETURNING_KEYS)}.some(function(k){return G(k)!==null}));
+if((loc||'en')!=='en'||notice||q.has('admin')||q.has('demo'))d.classList.add('p151-wait')})();`;
+}
+
+export function prerenderHub(): Plugin {
+  let config: ResolvedConfig;
+  return {
+    name: 'prerender-hub',
+    apply: 'build',
+    configResolved(resolved) {
+      config = resolved;
+    },
+    async closeBundle() {
+      if (config.build.ssr) return;
+      const outDir = path.resolve(config.root, config.build.outDir);
+      const htmlFile = path.join(outDir, 'index.html');
+      if (!fs.existsSync(htmlFile)) return;
+      // Inside the project, so the server bundle resolves react from node_modules.
+      const ssrDir = path.join(config.root, 'node_modules/.cache/my151-prerender', path.basename(outDir));
+      try {
+        await build({
+          configFile: false,
+          root: config.root,
+          mode: config.mode,
+          logLevel: 'warn',
+          plugins: [react()],
+          resolve: { alias: config.resolve.alias },
+          define: config.define,
+          build: {
+            ssr: path.join(config.root, ENTRY),
+            outDir: ssrDir,
+            emptyOutDir: true,
+            copyPublicDir: false,
+            minify: false,
+            rollupOptions: { output: { entryFileNames: 'prerender.mjs' } },
+          },
+        });
+        const entry = pathToFileURL(path.join(ssrDir, 'prerender.mjs')).href;
+        const { renderHub, ...inputs } = (await import(`${entry}?t=${Date.now()}`)) as BootInputs & {
+          renderHub: () => string;
+        };
+        const markup = renderHub();
+        const font = fs.readdirSync(path.join(outDir, 'assets')).find((f) => /^inter-latin-wght-normal-.*\.woff2$/.test(f));
+        if (!font) throw new Error('prerender-hub: the Inter font file is missing from the build');
+        let html = fs.readFileSync(htmlFile, 'utf8');
+        const root = '<div id="root"></div>';
+        if (!html.includes(root)) throw new Error(`prerender-hub: index.html has no empty ${root}`);
+        // The marker after the markup ends the hub. A browser with the
+        // stylesheet already cached would paint the hub while its HTML is still
+        // arriving, and the hub centres its content, so the rest would move what
+        // was painted. `blocking="render"` holds the first paint until the
+        // marker is parsed (Chromium); the `:has()` rule hides the hub until
+        // then in other browsers.
+        html = html.replace(root, () => `<div id="root" data-prerendered>${markup}</div><span id="p151-end" hidden></span>`);
+        const head = [
+          `<link rel="preload" as="font" type="font/woff2" crossorigin href="${config.base}assets/${font}">`,
+          '<link rel="expect" href="#p151-end" blocking="render">',
+          '<style>html .p151-boot{display:none}html.p151-wait .p151-boot{display:flex}html.p151-wait #root{display:none}</style>',
+          '<style>html:not(:has(#p151-end)) #root{visibility:hidden}</style>',
+          `<script>${bootScript(inputs)}</script>`,
+        ].join('\n    ');
+        // Before any stylesheet: an inline script after one waits for it.
+        const viewport = /<meta name="viewport"[^>]*>/;
+        if (!viewport.test(html)) throw new Error('prerender-hub: index.html has no viewport meta tag');
+        html = html.replace(viewport, (tag) => `${tag}\n    ${head}`);
+        fs.writeFileSync(htmlFile, html);
+      } finally {
+        fs.rmSync(ssrDir, { recursive: true, force: true });
+      }
+    },
+  };
+}

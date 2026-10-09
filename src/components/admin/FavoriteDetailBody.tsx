@@ -13,23 +13,47 @@ import {EmptyBall,ExtraMark,RomanDisc,TypeIcon} from '@/favorites/components/mar
 import {AxisBadge} from '@/favorites/components/WordBadge';
 import {FAVORITE_ORNAMENTS} from '@/favorites/export/laurelPaint';
 import {SessionTimeline,type TimelinePoint} from './charts/SessionTimeline';
+import {favoriteExportMarks,feedbackMarks} from './charts/sessionMilestones';
+import type {FeedbackItem} from './feedbackList';
+import {distinctCalendarDays} from './charts/sessionTimelineMath';
+import {SessionsChip,TimeChip} from './SessionRailChips';
 
-/** Snapshot preview is read-only. A swapped cell counts as one addition and one removal. */
-export function FavoriteDetailBody({user}:{user:FavoriteUser}) {
-  const sessions = useMemo(()=>[...user.sessionLog].sort((a,b)=>a.ts-b.ts),[user.sessionLog]);
+/** Snapshot preview is read-only. A swapped cell counts as one addition and one removal.
+ *  A point sits at its visit's last report, as Dex and League sittings do. */
+export function FavoriteDetailBody({user,reports=[]}:{user:FavoriteUser;reports?:FeedbackItem[]}) {
+  const sessions = useMemo(()=>[...user.sessionLog].sort((a,b)=>a.endTs-b.endTs),[user.sessionLog]);
   const [index,setIndex] = useState(Math.max(0,sessions.length-1));
+  // SessionTimeline holds its snapshot until release. Like the Dex and League
+  // boards, follow the slider's input events so the grid tracks the drag.
+  useLayoutEffect(()=>{
+    const fromSlider=()=>{
+      const el=document.querySelector('input[aria-label="Scrub sessions"]');
+      if(!(el instanceof HTMLInputElement))return;
+      const i=Number(el.value);
+      if(Number.isInteger(i)&&i>=0&&i<sessions.length)setIndex(i);
+    };
+    document.addEventListener('input',fromSlider,true);
+    return ()=>document.removeEventListener('input',fromSlider,true);
+  },[sessions.length]);
   const current = Math.min(index,Math.max(0,sessions.length-1));
   const snapshot = sessions[current]?.snapshot ?? user.latest;
-  const points:TimelinePoint[] = sessions.map((s,i)=>{
+  const points = useMemo(()=>sessions.map((s,i):TimelinePoint=>{
     const previous = sessions[i-1]?.snapshot.fills ?? {};
     let added=0,removed=0;
     for (const [key,id] of Object.entries(s.snapshot.fills)) if(previous[key]!==id) added++;
     for (const [key,id] of Object.entries(previous)) if(s.snapshot.fills[key]!==id) removed++;
-    return {t:s.ts,count:s.snapshot.filled,net:s.snapshot.filled,added,removed,dur:(s.endTs-s.ts)/1000,ev:s.events};
-  });
+    return {t:s.endTs,count:s.snapshot.filled,net:s.snapshot.filled,added,removed,dur:(s.endTs-s.ts)/1000,ev:s.events};
+  }),[sessions]);
   const board=<FavoriteSnapshotGrid snapshot={snapshot}/>;
   if(!points.length)return board;
-  return <SessionTimeline points={points} index={current} onIndex={setIndex} countUnit={`of ${FAVORITE_TOTAL_CELLS} cells`} peakLabel={`${user.maxFilled} peak cells`} tz={user.tz} showReadout={false}>{board}</SessionTimeline>;
+  const totalMs=sessions.reduce((ms,s)=>ms+s.endTs-s.ts,0);
+  const days=Math.max(1,distinctCalendarDays(points.map(p=>p.t),user.tz));
+  const single=points.length<=1;
+  const clampT=(t:number)=>Math.max(points[0].t,Math.min(points[points.length-1].t,t));
+  return <SessionTimeline points={points} index={current} onIndex={setIndex} countUnit={`of ${FAVORITE_TOTAL_CELLS}`} peakLabel={`${user.maxFilled} peak cells`}
+    milestones={[...favoriteExportMarks(points),...feedbackMarks(reports,clampT)]} tz={user.tz}
+    leftChip={<SessionsChip sessions={user.sessions} days={days} full={single}/>}
+    rightChip={<TimeChip ms={totalMs} full={single}/>}>{board}</SessionTimeline>;
 }
 
 /** All tracks share one size, fitted to the measured remaining space. */

@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { FollowUpHint } from '@/components/milestone/FollowUpHint';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -7,15 +8,18 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
+import { whenIdle } from '@/lib/whenIdle';
+import { reloadIfStale } from '@/lib/staleDeploy';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useDocumentLocale, useT } from '@/i18n';
-import { cellKey, type GenAxisId, type TypeAxisId } from './model/cells';
+import { cellKey, parseCellKey, type GenAxisId, type TypeAxisId } from './model/cells';
 import { getPickerMon } from './model/catalog';
-import { prewarmPickerSprites } from './model/spritePreload';
+import { prefetchCellSoon, prefetchEverySprite } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
-import { useFavoriteBeacon } from './hooks/useFavoriteBeacon';
+import { sendFavoriteExportShownBeacon, sendFavoriteNudgeShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
+import { useCompletionNudge } from './hooks/useCompletionNudge';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
 import { FavoritesHeader, type FavoritesView } from './components/FavoritesHeader';
@@ -26,8 +30,8 @@ import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
-const FavoritesAnalyticsDashboard = lazy(() => import('./components/FavoritesAnalyticsDashboard'));
-const FavoritesExportOverlay = lazy(() => import('./components/FavoritesExportOverlay'));
+const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./components/FavoritesAnalyticsDashboard')));
+const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/FavoritesExportOverlay')));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId; keyboard?: boolean };
 
@@ -86,6 +90,8 @@ function FavoritesContent({ sel, setSel }: {
   const [exportOpen, setExportOpen] = useState(false);
   const [currentView, setCurrentView] = useState<FavoritesView>('picker');
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
+  const exportRef = useRef<HTMLButtonElement>(null);
+  const completionNudge = useCompletionNudge();
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
@@ -99,10 +105,38 @@ function FavoritesContent({ sel, setSel }: {
     catch { /* Storage can be unavailable in private browsing. */ }
   }, [showIcons]);
 
+  // Picker sprites in the order a visitor needs them (model/spritePreload.ts).
+  // Nearly every visitor opens Normal / Gen I, the top-left cell, first, so
+  // its sprites go first everywhere. The phone layout then fetches the cells
+  // as they come into view. The desktop layout shows nearly every cell at
+  // once, so there "in view" would mean all 1,388 sprites; a cell that is
+  // hovered, pressed, or focused gets a head start of its own instead
+  // (FavoritesGrid). The switch is the layout, not the pointer: a touch
+  // screen at desktop width shows the whole grid too.
   useEffect(() => {
-    const timer = window.setTimeout(prewarmPickerSprites, 350);
-    return () => window.clearTimeout(timer);
+    let alive = true;
+    let observer: IntersectionObserver | null = null;
+    whenIdle(() => {
+      if (!alive) return;
+      prefetchCellSoon('normal', 1);
+      if (window.matchMedia('(min-width: 1024px)').matches) return;
+      const seen = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          seen.unobserve(entry.target);
+          const cell = parseCellKey((entry.target as HTMLElement).dataset.cell ?? '');
+          if (cell) prefetchCellSoon(cell.type, cell.gen);
+        }
+      });
+      document.querySelectorAll('[data-cell]').forEach((el) => seen.observe(el));
+      observer = seen;
+    });
+    return () => { alive = false; observer?.disconnect(); };
   }, []);
+  // Once a selector has opened, the visitor is picking: fetch the rest.
+  useEffect(() => {
+    if (sel) whenIdle(prefetchEverySprite);
+  }, [sel]);
 
   function open(type: TypeAxisId, gen: GenAxisId, keyboard = false) {
     const kind = kindFor(type, gen);
@@ -141,13 +175,16 @@ function FavoritesContent({ sel, setSel }: {
     <>
       <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
         <GlobalHeader />
-        <FavoritesHeader fills={fills} currentView={currentView} exportOpen={exportOpen}
+        {/* One `<main>` for both tabs. A `<main>` that is also a tab panel
+            loses its landmark role, so the panels are plain elements. */}
+        <main className="flex shrink-0 flex-col">
+        <FavoritesHeader fills={fills} currentView={currentView} exportOpen={exportOpen} exportRef={exportRef}
           onViewChange={(view) => {
             setSel(null);
             if (view === 'analytics') setAnalyticsMounted(true);
             setCurrentView(view);
           }}
-          onExport={() => { setSel(null); setExportOpen(true); }} />
+          onExport={() => { setSel(null); setExportOpen(true); sendFavoriteExportShownBeacon(fills); }} />
         {/* The grid frame fills the screen below both headers. The grid
             scrolls inside it, and the footer stays below the fold. On
             desktop the frame runs to the screen edge, as the grid did when
@@ -156,7 +193,7 @@ function FavoritesContent({ sel, setSel }: {
           hidden={currentView !== 'picker'} className={currentView === 'picker' ? 'flex h-[calc(100dvh-2*2.75rem)] shrink-0 flex-col' : 'hidden'}>
           <FavoritesTypeRepairNotice fills={fills} onReview={open} />
           <div className="flex min-h-0 flex-1">
-            <main className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
+            <div className={desktop ? 'h-full min-h-0 min-w-0 flex-1 px-2 pt-2' : 'h-full min-h-0 min-w-0 flex-1 p-1'}>
               <FavoritesGrid
                 fills={fills}
                 resolve={getPickerMon}
@@ -165,19 +202,30 @@ function FavoritesContent({ sel, setSel }: {
                 desktop={desktop}
                 pane={desktop ? picker : null}
               />
-            </main>
+            </div>
             {SORT_DEBUG_ENABLED ? <SortDebugPanel desktop={desktop} order={sortOrder} onChange={setSortOrder} /> : null}
           </div>
         </div>
-        <main id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"
+        <div id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"
           hidden={currentView !== 'analytics'} className={currentView === 'analytics' ? 'h-[calc(100dvh-2*2.75rem)] shrink-0 min-h-0' : 'hidden'}>
           {analyticsMounted && <Suspense fallback={<div role="status" aria-label={t('nav.analytics')} className="m-4 h-32 animate-pulse rounded-lg bg-muted" />}>
             <FavoritesAnalyticsDashboard fills={fills} active={currentView === 'analytics'} />
           </Suspense>}
+        </div>
         </main>
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
+      {/* The Dex builder's follow-up popup, pointing at Export once the grid is first complete. */}
+      <FollowUpHint
+        armed={completionNudge.armed}
+        dismiss={completionNudge.dismiss}
+        fulfilled={exportOpen}
+        anchorRef={exportRef}
+        title={t('favorites.nudge.complete.title')}
+        body={t('favorites.nudge.complete.body')}
+        onShown={sendFavoriteNudgeShownBeacon}
+      />
       {exportOpen && <Suspense fallback={null}>
         <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)}
           onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />

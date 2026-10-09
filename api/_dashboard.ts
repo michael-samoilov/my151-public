@@ -1,5 +1,5 @@
 import {parseFavoriteRecord, type FavoriteRecord} from './_favoriteRecord.js';
-import {favoriteSummary, favoriteUsageFunnel, favoriteUser, type FavoriteUser} from './_favoriteAggregate.js';
+import {favoritePicks, favoriteSummary, favoriteUsageFunnel, favoriteUser, type FavoriteUser} from './_favoriteAggregate.js';
 // The admin dashboard payload, computed from the raw Redis reads in
 // api/submissions.ts. It reads no Redis and no request, and it takes the
 // clock as an argument.
@@ -37,7 +37,7 @@ import {
   type SessionRecord,
 } from './_aggregate.js';
 import { asArchivedSet, bareCid, isArchived, withoutArchived } from './_archive.js';
-import { buildCrossTool } from './_crossTool.js';
+import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot } from './_crossTool.js';
 import { leaguePicks } from './_leaguePicks.js';
 import { activeSince, firstSeenSince, rangeStart, type DashboardRange } from './_range.js';
 /** Distinct evolution lines represented by a set of ids (unknown ids count as
@@ -380,10 +380,18 @@ export function buildDashboard(
   const leagueIn = within(leagueRecords, active);
   const favoriteIn = within(favoriteRecords, active);
   const favoriteNew = within(favoriteRecords, (r) => firstSeenSince(r, start));
-  const crossCids = new Set([...dexIn, ...leagueIn, ...favoriteIn].map((r) => bareCid(r.cid)));
-  const crossDex = within(records, (r) => crossCids.has(bareCid(r.cid)));
-  const crossLeague = within(leagueRecords, (r) => crossCids.has(r.cid));
-  const crossFavorite = within(favoriteRecords, (r) => crossCids.has(bareCid(r.cid)));
+  // Cross-tool cards: every record, of any tool, of the browsers active after `from`.
+  const crossWindow = (from: number | null) => {
+    const keep = <T>(list: T[], test: (r: T) => boolean): T[] => (from === null ? list : list.filter(test));
+    const on = (r: SessionRecord) => activeSince(r, from);
+    const cids = new Set([...keep(records, on), ...keep(leagueRecords, on), ...keep(favoriteRecords, on)].map((r) => bareCid(r.cid)));
+    return {
+      dex: keep(records, (r) => cids.has(bareCid(r.cid))),
+      league: keep(leagueRecords, (r) => cids.has(r.cid)),
+      favorite: keep(favoriteRecords, (r) => cids.has(bareCid(r.cid))),
+    };
+  };
+  const { dex: crossDex, league: crossLeague, favorite: crossFavorite } = crossWindow(start);
   const dexNew = within(records, (r) => firstSeenSince(r, start));
   const leagueNew = within(leagueRecords, (r) => firstSeenSince(r, start));
 
@@ -406,6 +414,13 @@ export function buildDashboard(
   const dexFirstTs = firstTsByCid(records);
   const journeys = crossToolJourneys(firstTsByCid(crossDex), firstTsByCid(crossLeague));
   const crossTool = buildCrossTool(crossDex, crossLeague, undefined, crossFavorite);
+  // The same snapshot per later tool, with the window opening no earlier than
+  // its launch. Built from the records already read: no Redis command.
+  const crossToolSince: Record<string, CrossToolSnapshot> = {};
+  for (const { id, start: from } of sinceLaunchStarts(TOOL_CATALOG, start)) {
+    const w = crossWindow(from);
+    crossToolSince[id] = buildCrossTool(w.dex, w.league, undefined, w.favorite);
+  }
 
   // The league funnel, from the records: opened is a record at all (the
   // first beacon needs a seated line), then named, then exported.
@@ -421,10 +436,7 @@ export function buildDashboard(
     named: leagueIn.filter((r) => r.latest.named > 0).length,
     typed: leagueIn.filter((r) => r.latest.typed > 0).length,
     fullLeague: leagueIn.filter((r) => r.maxCards >= CARD_COUNT).length,
-    exportedCard: leagueIn.filter((r) => r.exportsCard > 0).length,
-    exportedLeague: leagueIn.filter((r) => r.exportsLeague > 0).length,
     returning: leagueIn.filter((r) => r.sessions > 1).length,
-    activeLast7: leagueIn.filter((r) => now - r.lastTs <= 7 * 24 * 60 * 60 * 1000).length,
     activity: Object.entries(leagueDaily)
       .map(([day, set]) => ({ day: Number(day), dau: set.size }))
       .sort((a, b) => a.day - b.day),
@@ -685,8 +697,9 @@ export function buildDashboard(
 
   // The dex record for each browser on this page of league users, so the
   // user page can toggle tools without a second fetch. Only this page's
-  // cids, so the payload does not carry the whole dex store twice.
-  const dexByCidAll = new Map(records.map((r) => [r.cid.split('::')[0], r]));
+  // cids, so the payload does not carry the whole dex store twice. Archived
+  // browsers too: the Archived list shows their cards with every tool.
+  const dexByCidAll = new Map(allRecords.map((r) => [r.cid.split('::')[0], r]));
   const dexByCid: Record<string, ClientRecord> = {};
   for (const u of leagueUsers) {
     const dr = dexByCidAll.get(u.cid);
@@ -726,11 +739,14 @@ export function buildDashboard(
     leagueFunnel,
     favoriteFunnel:favoriteUsageFunnel(favoriteNew),
     favorite:favoriteSummary(favoriteIn),
+    // Per-cell pick counts of the charts active in the range, from the records already read.
+    favoritePicks:favoritePicks(favoriteIn),
     favoriteUsers,
     favoriteByCid,
     totalFavoriteUsers:allFavoriteRecords.length,
     tools,
     crossTool,
+    crossToolSince,
     league,
     cohort,
     activity,
@@ -775,5 +791,33 @@ export function buildDashboard(
     droppedBySection: rankBySection(droppedBySection, droppedMin),
     picksBySectionAll: rankBySection(picksBySection, 1),
     records: page,
+  };
+}
+
+/** The stored values one browser has in each store, from one HGET apiece. */
+export interface BrowserSource {
+  dex: unknown;
+  league: unknown;
+  favorite: unknown;
+  exportSurveySkips: unknown;
+}
+
+/**
+ * One browser's Dex, League, and Picker records, shaped as the dashboard
+ * shapes them, so the admin can open a browser that is not on a loaded page.
+ * A store the browser never used is null.
+ */
+export function buildBrowser(cid: string, source: BrowserSource) {
+  const skipMap = parseExportSurveySkipMap(
+    source.exportSurveySkips == null ? null : { [cid]: source.exportSurveySkips },
+  );
+  const dex = source.dex == null ? null : parseRecord(source.dex);
+  const league = source.league == null ? null : parseLeagueRecord(source.league);
+  const favorite = source.favorite == null ? null : parseFavoriteRecord(source.favorite);
+  return {
+    cid,
+    dex: dex ? stampExportSurveySkips(dex, skipMap) : null,
+    league: league ? stampExportSurveySkips(leagueUser(league, dex?.firstTs), skipMap) : null,
+    favorite: favorite ? favoriteUser(favorite, false) : null,
   };
 }

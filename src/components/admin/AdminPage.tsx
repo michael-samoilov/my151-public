@@ -1,10 +1,12 @@
 import {FavoriteDetailBody} from './FavoriteDetailBody';
-import type {FavoriteUser,FavoriteUsageFunnel} from '../../../api/_favoriteAggregate';
+import type {FavoritePicks,FavoriteUser,FavoriteUsageFunnel} from '../../../api/_favoriteAggregate';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { isOptedOut, setOptedOut, storedClientId } from '@/lib/clientId';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { LeaguePicksPage, PicksDetailPage } from '@/components/admin/PicksDetailPage';
+import { PickerPicksPage } from '@/components/admin/PickerPicksPage';
+import { pickerFace } from '@/components/admin/pickerPicks';
 import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
@@ -25,8 +27,11 @@ import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
-import { exportSurveySkipMarks, leagueSittingEv, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
+import { exportSurveySkipMarks, feedbackMarks, leagueSittingEv, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
+import { useFeedbackList, type FeedbackItem, type FeedbackTool } from '@/components/admin/feedbackList';
+import { useBrowserRecords } from '@/components/admin/browserRecords';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
+import { SessionsChip, TimeChip } from '@/components/admin/SessionRailChips';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { sessionCards } from '@/components/admin/leaguePlayhead';
@@ -40,26 +45,19 @@ import type { SearchPerformanceView } from '@/lib/searchPerformanceView';
 import {
   ARCHIVE_FILTER_OPTIONS,
   bareCid,
-  dexChipLabel,
-  dexPokemonCount,
   FACET_KEYS,
   FACET_LABEL,
   FACET_UNKNOWN,
   facetLabel,
   formatWhen,
   langName,
-  leagueChipLabel,
-  leagueExported,
   matchesArchiveFilter,
   matchesFacetFilters,
   matchesToolFilter,
-  mergedSessionStats,
   previewLanguage,
-  PREVIEW_FIT,
   sameBaseLang,
   geoChipLabel,
   uiLanguage,
-  sessionChipParts,
   TOOL_FILTER_OPTIONS,
   toolKind,
   uniqueFacetValues,
@@ -69,9 +67,11 @@ import {
   type ToolFilter,
 } from '@/components/admin/userPreview';
 import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
-import { FitNowrap, PreviewChipZoomProvider } from '@/components/admin/FitNowrap';
-import { useHostZoom } from '@/components/admin/previewChipZoom';
-import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
+import { FitNowrap } from '@/components/admin/FitNowrap';
+import { BrowserUsage, PreviewUsageScale } from '@/components/admin/PreviewUsage';
+import { UsageCard } from '@/components/admin/UsageCard';
+import { toolCells, type ToolCell } from '@/components/admin/browserUsage';
+import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
 import type { ExportSurveySkip } from '../../../api/_events';
 import type { LeaguePicks } from '../../../api/_leaguePicks';
@@ -122,7 +122,7 @@ const TOOL_TABS: { key: ToolSlice; label: string }[] = [
 function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
   const slice = data.byTool?.[tool];
   if (slice) return slice;
-  if(tool === 'favorites') return {users:0,activity:[],retention:{returning:0,activeLast7:0,newUsers:0},timeCurves:{longest:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},first:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},all:{survival:[],stats:{p50:0,p75:0,p90:0},n:0}},countries:{},languages:{},locales:{},devices:{},os:{},browsers:{}};
+  if(tool === 'favorites') return {users:0,activity:[],retention:{returning:0,newUsers:0},timeCurves:{longest:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},first:{survival:[],stats:{p50:0,p75:0,p90:0},n:0},all:{survival:[],stats:{p50:0,p75:0,p90:0},n:0}},countries:{},languages:{},locales:{},devices:{},os:{},browsers:{}};
   return {
     users: data.totalUsers,
     activity: data.activity ?? [],
@@ -213,7 +213,7 @@ export interface ClientRecord {
 export interface Aggregates {
   users: number;
   activity: { day: number; dau: number; rolling7: number; label24h?: number | null; label168h?: number | null }[];
-  retention: { returning: number; activeLast7: number; newUsers: number };
+  retention: { returning: number; newUsers: number };
   timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
   countries: Record<string, number>;
   languages: Record<string, number>;
@@ -330,10 +330,7 @@ export interface ApiResponse {
     named: number;
     typed: number;
     fullLeague: number;
-    exportedCard: number;
-    exportedLeague: number;
     returning: number;
-    activeLast7: number;
     activity: { day: number; dau: number }[];
     /** Aces and seated Pokémon by card type, counted in leagues. Absent on an older deploy. */
     picks?: LeaguePicks;
@@ -366,7 +363,7 @@ export interface ApiResponse {
     showStats: number;
     sorts: Record<string, number>;
   };
-  retention: { returning: number; activeLast7: number; newUsers: number };
+  retention: { returning: number; newUsers: number };
   multiSession?: number;
   timeSurvival: { t: number; s: number }[];
   timeStats: { p50: number; p75: number; p90: number };
@@ -406,6 +403,7 @@ export interface ApiResponse {
   favoriteFunnel?:FavoriteUsageFunnel;
   favorite?: {users:number;started:number;completed:number;exporters:number;exportsFull:number;exportsSimplified:number;depth:SurvivalCurve;unique:SurvivalCurve};
   favoriteUsers?:FavoriteUser[];
+  favoritePicks?:FavoritePicks;
   favoriteByCid?:Record<string,FavoriteUser>;
   totalFavoriteUsers?:number;
   /** Dex cohort breakdowns (built / incomplete / completed). No "bounced" —
@@ -428,6 +426,8 @@ export interface ApiResponse {
   referrerFlow?: { host: string; total: number; dex: number; league: number; favorites?:number }[];
   /** Opportunity conversion, companion share, league⊂dex, and arrival-era overlap. */
   crossTool?: CrossToolSnapshot;
+  /** `crossTool` again, per later tool, with the window opening no earlier than its launch. */
+  crossToolSince?: Record<string, CrossToolSnapshot>;
   /** Cross-tool order and weekly crossover, for browsers in both stores. */
   journeys?: {
     both: number;
@@ -610,24 +610,32 @@ function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
   );
 }
 
-/** Grid of small sprites with the pick-count beneath — ~9-10 per row. */
-function PopularGrid({ rows }: { rows: [string, number][] }) {
+type PopularFace = { sprite: string; alt: string; name: string };
+
+function dexFace(id: number): PopularFace | undefined {
+  const p = getPokemonById(id);
+  return p ? { sprite: p.sprite, alt: p.name, name: displayName(p.name) } : undefined;
+}
+
+/** Grid of small sprites with the pick-count beneath — ~9-10 per row. `face`
+ *  finds a sprite by id; the Picker's ids include its own forms. */
+function PopularGrid({ rows, face = dexFace }: { rows: [string, number][]; face?: (id: number) => PopularFace | undefined }) {
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
   return (
     <div className="grid grid-cols-9 gap-1">
       {rows.map(([id, n]) => {
-        const p = getPokemonById(Number(id));
+        const p = face(Number(id));
         return (
           <div
             key={id}
             className="flex flex-col items-center"
-            title={p ? `#${id} ${displayName(p.name)}: ${n}` : `#${id}: ${n}`}
+            title={p ? `#${id} ${p.name}: ${n}` : `#${id}: ${n}`}
           >
             <div className="w-full aspect-square flex items-center justify-center">
               {p ? (
                 <img
                   src={p.sprite}
-                  alt={p.name}
+                  alt={p.alt}
                   width={36}
                   height={36}
                   loading="lazy"
@@ -851,6 +859,8 @@ function DetailHeader({
   hasDex,
   hasLeague,
   hasFavorites=false,
+  reports = 0,
+  onFeedback,
 }: {
   rec: HeaderRec;
   onBack: () => void;
@@ -859,7 +869,22 @@ function DetailHeader({
   hasDex: boolean;
   hasLeague: boolean;
   hasFavorites?:boolean;
+  /** Feedback reports this browser sent. */
+  reports?: number;
+  onFeedback?: () => void;
 }) {
+  const feedbackChip = reports > 0 && (
+    <button
+      type="button"
+      onClick={onFeedback}
+      data-testid="admin-feedback-chip"
+      aria-label={`${reports} feedback ${reports === 1 ? 'report' : 'reports'} from this browser`}
+      className="flex h-7 shrink-0 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
+    >
+      <MessageSquare className="h-[13px] w-[13px] shrink-0" />
+      <span className="text-xs font-medium tabular-nums">{reports}</span>
+    </button>
+  );
   return (
     <div className="flex flex-col gap-1">
     <div className="flex flex-nowrap items-center gap-x-2 overflow-hidden">
@@ -895,50 +920,17 @@ function DetailHeader({
             </InfoChip>
           )}
           <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+          {feedbackChip && <span className="hidden md:inline-flex">{feedbackChip}</span>}
         </div>
       </TooltipScope>
     </div>
-    <div className="md:hidden">
+    {/* A phone's who row is full, so the feedback chip ends the tool row. */}
+    <div className="flex items-center justify-between gap-2 md:hidden">
       <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} hasFavorites={hasFavorites} />
+      {feedbackChip}
     </div>
     </div>
   );
-}
-
-/** Two compact, fixed-width stat chips that flank the scrubber rail (or, for a
- *  single-session browser, split the width where the scrubber would be). Both
- *  share one two-row layout with fixed row heights, so the top values and the
- *  bottom captions line up across the pair. */
-function RailStat({ top, bottom, width, full }: { top: React.ReactNode; bottom: React.ReactNode; width: string; full?: boolean }) {
-  return (
-    <div
-      data-testid="admin-rail-chip"
-      className={`flex h-9 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums ${full ? 'flex-1' : width}`}
-    >
-      <div className="flex h-[16px] items-center leading-none whitespace-nowrap">{top}</div>
-      <div className="flex h-[11px] items-center whitespace-nowrap text-[0.6rem] leading-none text-muted-foreground">{bottom}</div>
-    </div>
-  );
-}
-function SessionsChip({ sessions, days, full }: { sessions: number; days: number; full?: boolean }) {
-  return (
-    <RailStat
-      width="w-[82px] md:w-[8.5rem]"
-      full={full}
-      top={
-        <>
-          <span className="text-sm font-bold leading-none">{sessions}</span>&nbsp;<span className="text-[0.6rem] leading-none text-muted-foreground">{sessions === 1 ? 'session' : 'sessions'}</span>
-        </>
-      }
-      bottom={days === 1 ? '1 day' : `${days} days`}
-    />
-  );
-}
-function TimeChip({ ms, full }: { ms: number; full?: boolean }) {
-  const mins = Math.round(ms / 60000);
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return <RailStat width="w-[82px] md:w-[8.5rem]" full={full} top={<span className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
 }
 
 function tidySessions<T extends { ts: number }>(
@@ -980,7 +972,7 @@ function seatsBeyond(a: Map<number, number>, b: Map<number, number>): number {
 }
 
 /** Dex user body: session timeline + the build at the scrubbed moment. */
-function DexDetailBody({ rec }: { rec: ClientRecord }) {
+function DexDetailBody({ rec, reports }: { rec: ClientRecord; reports: FeedbackItem[] }) {
   const { log, ms } = useMemo(
     () => tidySessions(rec.sessionLog ?? [], rec.sessionMs, (s) => s.ids),
     [rec.sessionLog, rec.sessionMs],
@@ -1043,6 +1035,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
       : [];
   milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT, 'dex'));
+  milestones.push(...feedbackMarks(reports, clampT));
 
   const snapshot = (
     <div ref={presenceRef}>
@@ -1099,7 +1092,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
 
 /** The league timeline + board, reused as a page and as the dex page's league
  *  section. */
-function LeagueDetailBody({ league }: { league: LeagueUser }) {
+function LeagueDetailBody({ league, reports }: { league: LeagueUser; reports: FeedbackItem[] }) {
   const { log, ms } = useMemo(
     () =>
       tidySessions(
@@ -1157,6 +1150,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
     milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
   }
   milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT, 'league'));
+  milestones.push(...feedbackMarks(reports, clampT));
 
   const snapshots = useMemo(() => {
     if (log.length === 0) {
@@ -1211,6 +1205,53 @@ function headerFrom(dex?: ClientRecord, league?: LeagueUser, favorite?:FavoriteU
   };
 }
 
+/** One browser's records in the loaded dashboard, matched by its bare id. */
+function resolveUser(data: ApiResponse, cid: string) {
+  const bare = cid.split('::')[0];
+  const dex =
+    data.records.find((r) => r.cid === cid || r.cid.split('::')[0] === bare) ??
+    data.dexByCid?.[cid] ??
+    data.dexByCid?.[bare];
+  const league =
+    data.leagueByCid?.[cid] ??
+    data.leagueByCid?.[bare] ??
+    data.leagueUsers?.find((r) => r.cid === cid || r.cid === bare);
+  const favorite = data.favoriteByCid?.[bare] ?? data.favoriteUsers?.find((r) => r.cid === bare);
+  return { bare, dex, league, favorite };
+}
+
+interface UserRecords {
+  dex?: ClientRecord;
+  league?: LeagueUser;
+  favorite?: FavoriteUser;
+}
+
+function hasRecord(u: UserRecords): boolean {
+  return !!(u.dex || u.league || u.favorite);
+}
+
+/** The tools a browser has records of, in the toggle's order. */
+function userTools(u: UserRecords): FeedbackTool[] {
+  return (['dex', 'league', 'favorites'] as const).filter((k) => (k === 'dex' ? u.dex : k === 'league' ? u.league : u.favorite));
+}
+
+/** A user page with no records to show yet, or none at all. */
+function UserStatus({ cid, onBack, children }: { cid: string; onBack: () => void; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2" data-testid="admin-user-status">
+      <div className="flex items-center gap-x-2">
+        <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+          ‹ Back
+        </button>
+        <span className="shrink-0 text-sm font-bold tabular-nums" title={cid}>
+          {middleId(cid)}
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">{children}</p>
+    </div>
+  );
+}
+
 /** One browser: header, tool toggle, then that tool's timeline. */
 function UserDetailPage({
   tool,
@@ -1219,6 +1260,8 @@ function UserDetailPage({
   league,
   favorite,
   onBack,
+  reports,
+  onFeedback,
 }: {
   tool: 'dex' | 'league' | 'favorites';
   onTool: (k: 'dex' | 'league' | 'favorites') => void;
@@ -1226,106 +1269,33 @@ function UserDetailPage({
   league?: LeagueUser;
   favorite?:FavoriteUser;
   onBack: () => void;
+  reports: FeedbackItem[];
+  onFeedback: () => void;
 }) {
   const rec = headerFrom(dex, league, favorite);
   if (!rec) return null;
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
       <div className="shrink-0">
-        <DetailHeader rec={rec} onBack={onBack} tool={tool} onTool={onTool} hasDex={!!dex} hasLeague={!!league} hasFavorites={!!favorite} />
+        <DetailHeader rec={rec} onBack={onBack} tool={tool} onTool={onTool} hasDex={!!dex} hasLeague={!!league} hasFavorites={!!favorite} reports={reports.length} onFeedback={onFeedback} />
       </div>
-      {tool === 'dex' && dex && <DexDetailBody rec={dex} />}
-      {tool === 'league' && league && <LeagueDetailBody league={league} />}
-      {tool === 'favorites' && favorite && <FavoriteDetailBody user={favorite} />}
+      {tool === 'dex' && dex && <DexDetailBody rec={dex} reports={reports} />}
+      {tool === 'league' && league && <LeagueDetailBody league={league} reports={reports} />}
+      {tool === 'favorites' && favorite && <FavoriteDetailBody user={favorite} reports={reports} />}
     </div>
   );
 }
 
-function MetricChip({
-  label,
-  exported,
-  metric,
-  empty,
-  className,
-  children,
-}: {
-  label?: string;
-  exported?: boolean;
-  empty?: boolean;
-  metric: 'session' | 'dex' | 'league';
-  className?: string;
-  children?: ReactNode;
-}) {
-  return (
-    <span
-      data-metric={metric}
-      data-empty={empty ? 'true' : undefined}
-      className={cn(
-        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-1 text-xs font-medium tabular-nums md:justify-center md:px-2',
-        empty && 'opacity-40',
-        className,
-      )}
-    >
-      {children ?? label}
-      {exported && !empty ? <Camera className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="exported" /> : null}
-    </span>
-  );
-}
-
-function SessionMetricChip({
-  sessions,
-  totalMs,
-  className,
-}: {
-  sessions: number;
-  totalMs: number;
-  className?: string;
-}) {
-  const parts = sessionChipParts(sessions, totalMs);
-  return (
-    <MetricChip metric="session" className={className}>
-      <span className="font-bold text-foreground tabular-nums">{parts.count}</span>
-      <span className="font-medium tabular-nums text-muted-foreground">
-        {parts.unit} · {parts.duration}
-      </span>
-    </MetricChip>
-  );
-}
-
-function PreviewMetricScale({ children }: { children: ReactNode }) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const zoom = useHostZoom(hostRef, innerRef);
-  return (
-    <>
-      <div
-        aria-hidden
-        data-preview-chip-zoom={zoom}
-        className="pointer-events-none invisible absolute inset-x-0 px-2.5 md:hidden"
-        style={{ height: 0, overflow: 'hidden' }}
-      >
-        <div ref={hostRef} className="min-w-0 overflow-x-clip">
-          <div ref={innerRef} className="flex w-max flex-nowrap items-center gap-1">
-            <SessionMetricChip sessions={PREVIEW_FIT.sessions} totalMs={PREVIEW_FIT.totalMs} />
-            <MetricChip metric="dex" label={dexChipLabel(PREVIEW_FIT.dex)} exported />
-            <MetricChip metric="league" label={leagueChipLabel(PREVIEW_FIT.league, CARD_COUNT)} exported />
-          </div>
-        </div>
-      </div>
-      <PreviewChipZoomProvider zoom={zoom}>{children}</PreviewChipZoomProvider>
-    </>
-  );
-}
-
+/** When over Ago, five who columns, Dex, Gyms, Favs, Total, then the archive button. */
 const PREVIEW_TABLE =
   'relative flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_auto_auto_auto_1fr] md:gap-x-2 md:gap-y-2';
 
 const FACET_COL: Record<FacetKey, string> = {
-  country: 'md:col-start-3',
-  device: 'md:col-start-4',
-  os: 'md:col-start-5',
-  browser: 'md:col-start-6',
-  language: 'md:col-start-7',
+  country: 'md:col-start-2',
+  device: 'md:col-start-3',
+  os: 'md:col-start-4',
+  browser: 'md:col-start-5',
+  language: 'md:col-start-6',
 };
 
 const FACET_ANY = '__any__';
@@ -1406,29 +1376,32 @@ function PreviewStatusMenus({
 }: {
   archiveFilter: ArchiveFilter;
   setArchiveFilter: (v: ArchiveFilter) => void;
-  toolFilter: ToolFilter;
-  setToolFilter: (v: ToolFilter) => void;
+  /** Leave out for a list whose rows have no Dex and League pair to filter. */
+  toolFilter?: ToolFilter;
+  setToolFilter?: (v: ToolFilter) => void;
 }) {
   return (
     <>
       <PreviewFilterMenu
         name="Status"
-        className="md:col-start-11 md:row-start-1 md:justify-self-end"
+        className="md:col-start-10 md:col-span-2 md:row-start-1 md:justify-self-end"
         value={archiveFilter}
         options={ARCHIVE_FILTER_OPTIONS}
         onChange={setArchiveFilter}
         ariaLabel="Archive filter"
       />
-      <PreviewFilterMenu
-        name="Tools"
-        className="md:col-start-9 md:col-span-2 md:row-start-1 md:justify-self-start"
-        value={toolFilter}
-        anyKey="any"
-        clearable
-        options={TOOL_FILTER_OPTIONS}
-        onChange={setToolFilter}
-        ariaLabel="Tool filter"
-      />
+      {toolFilter && setToolFilter && (
+        <PreviewFilterMenu
+          name="Tools"
+          className="md:col-start-7 md:col-span-3 md:row-start-1 md:justify-self-start"
+          value={toolFilter}
+          anyKey="any"
+          clearable
+          options={TOOL_FILTER_OPTIONS}
+          onChange={setToolFilter}
+          ariaLabel="Tool filter"
+        />
+      )}
     </>
   );
 }
@@ -1445,7 +1418,7 @@ function PreviewPlatformSlot({
   children: ReactNode;
 }) {
   return (
-    <span className={cn('inline-flex', colClass, 'md:row-start-1 md:justify-self-stretch', empty && 'opacity-40')}>
+    <span className={cn('inline-flex', colClass, 'md:row-span-2 md:row-start-1 md:justify-self-stretch', empty && 'opacity-40')}>
       <InfoChip fillMd label={label}>{children}</InfoChip>
     </span>
   );
@@ -1453,24 +1426,21 @@ function PreviewPlatformSlot({
 
 function UserPreviewCard({
   rec,
-  dex,
-  league,
+  cells,
+  pickerRow,
   archived,
   onOpen,
   onArchive,
 }: {
-  rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
-  dex?: { pokemon: number; exported: boolean; sessions?: number; sessionMs?: number[] };
-  league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+  rec: HeaderRec & { lastTs: number; tz?: string };
+  /** Every tool this browser used, whichever list the card is on. */
+  cells: ToolCell[];
+  /** A row of the Picker list. */
+  pickerRow?: boolean;
   archived: boolean;
   onOpen: () => void;
   onArchive: (next: boolean) => void;
 }) {
-  const { sessions, totalMs } = mergedSessionStats(
-    { sessions: rec.sessions, sessionMs: rec.sessionMs },
-    dex?.sessions != null || dex?.sessionMs ? dex : undefined,
-    league?.sessions != null || league?.sessionMs ? league : undefined,
-  );
   const langPreview = previewLanguage(rec.lang, rec.locale, rec.switched);
 
   return (
@@ -1478,10 +1448,11 @@ function UserPreviewCard({
       role="link"
       tabIndex={0}
       data-user-preview
+      data-favorite-user={pickerRow ? rec.cid : undefined}
       aria-label={`Open user ${middleId(rec.cid)}`}
       className={cn(
         'flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'md:col-span-full md:grid md:grid-cols-subgrid md:grid-rows-1 md:items-center md:gap-x-2 md:py-1.5',
+        'md:col-span-full md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:gap-y-1 md:py-1.5',
         archived && 'opacity-70',
       )}
       onClick={onOpen}
@@ -1495,15 +1466,15 @@ function UserPreviewCard({
     >
       <div className="flex min-w-0 items-center gap-1 md:contents">
         <FitNowrap contentsOnMd className="min-w-0 flex-1">
-          <span className="whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1">
+          <span className="whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1 md:self-end">
             {formatWhen(rec.lastTs, rec.tz)}
           </span>
-          <span className="whitespace-nowrap text-sm text-muted-foreground md:col-start-2 md:row-start-1">
+          <span className="whitespace-nowrap text-sm text-muted-foreground md:col-start-1 md:row-start-2 md:self-start">
             {relativeTime(rec.lastTs)}
           </span>
         </FitNowrap>
         <div
-          className="shrink-0 md:col-start-11 md:row-start-1 md:justify-self-end"
+          className="shrink-0 md:col-start-11 md:row-span-2 md:row-start-1 md:justify-self-end"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
@@ -1549,7 +1520,7 @@ function UserPreviewCard({
           >
             <BrowserIcon value={rec.browser} />
           </PreviewPlatformSlot>
-          <span className={cn(FACET_COL.language, 'inline-flex md:row-start-1 md:justify-self-stretch', !langPreview && 'opacity-40')}>
+          <span className={cn(FACET_COL.language, 'inline-flex md:row-span-2 md:row-start-1 md:justify-self-stretch', !langPreview && 'opacity-40')}>
             {langPreview ? (
               <PreviewLanguageChip fillMd lang={rec.lang} locale={rec.locale} switched={rec.switched} />
             ) : (
@@ -1560,29 +1531,7 @@ function UserPreviewCard({
           </span>
         </FitNowrap>
       </div>
-      <div className="min-w-0 md:contents">
-        <FitNowrap contentsOnMd lockZoom>
-          <SessionMetricChip
-            sessions={sessions}
-            totalMs={totalMs}
-            className="md:col-start-8 md:row-start-1 md:justify-self-stretch"
-          />
-          <MetricChip
-            metric="dex"
-            empty={!dex}
-            className="md:col-start-9 md:row-start-1 md:justify-self-stretch"
-            label={dexChipLabel(dex?.pokemon ?? 0)}
-            exported={dex?.exported}
-          />
-          <MetricChip
-            metric="league"
-            empty={!league}
-            className="md:col-start-10 md:row-start-1 md:justify-self-stretch"
-            label={leagueChipLabel(league?.cards ?? 0, CARD_COUNT)}
-            exported={league?.exported}
-          />
-        </FitNowrap>
-      </div>
+      <BrowserUsage cells={cells} />
     </div>
   );
 }
@@ -1594,11 +1543,13 @@ function WhatPeoplePick({
   mostBySection,
   n,
   unit,
+  face,
   onOpen,
 }: {
   mostBySection: Record<string, [string, number][]>;
   n: number;
   unit: string;
+  face?: (id: number) => PopularFace | undefined;
   onOpen: () => void;
 }) {
   const top = useMemo<[string, number][]>(() => {
@@ -1616,7 +1567,7 @@ function WhatPeoplePick({
         </Button>
       }
     >
-      {top.length > 0 ? <PopularGrid rows={top} /> : <p className="text-sm text-muted-foreground">No picks yet.</p>}
+      {top.length > 0 ? <PopularGrid rows={top} face={face} /> : <p className="text-sm text-muted-foreground">No picks yet.</p>}
     </Panel>
   );
 }
@@ -1645,7 +1596,7 @@ function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
       ref={barRef}
       data-admin-bar
       className={cn(
-        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 backdrop-blur md:sticky md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
+        'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:mx-auto md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
         wide ? 'md:w-full' : 'md:max-w-5xl',
       )}
     >
@@ -1687,7 +1638,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     <nav
       ref={navRef}
       aria-label="Admin section"
-      className="flex justify-around gap-1 px-2 py-2 md:justify-center md:px-4"
+      className="flex justify-around gap-0.5 py-2 md:justify-center md:gap-1 md:px-4"
     >
       {items.map((it) => {
         const on = it.key === value;
@@ -1698,7 +1649,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
             aria-pressed={on}
             onClick={() => onChange(it.key)}
             className={cn(
-              'min-w-0 flex-1 rounded-lg px-1.5 py-1.5 text-xs font-semibold transition-colors md:flex-none md:px-3 md:text-sm',
+              'flex-auto whitespace-nowrap rounded-lg px-1 py-1.5 text-xs font-semibold transition-colors md:flex-none md:px-3 md:text-sm',
               on ? 'bg-foreground text-card' : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -1713,7 +1664,12 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
 // ---------- main ----------
 
 /** What the detail pane shows: one browser's dex or league, or the picks page. */
-type Detail = { kind: 'dex' | 'league' | 'favorites'; cid: string } | { kind: 'picks'; tool: 'dex' | 'league' };
+/** `country` comes from a feedback report. It finds a Dex record that
+ *  api/submit.ts stored under `<cid>::<country>` for a second person on the
+ *  same browser. */
+type Detail =
+  | { kind: 'dex' | 'league' | 'favorites'; cid: string; country?: string }
+  | { kind: 'picks'; tool: 'dex' | 'league' | 'favorites' };
 
 export function AdminPage() {
   // `demo` shows the bundled fixtures even on a browser with a saved token,
@@ -1739,11 +1695,20 @@ export function AdminPage() {
   // active in the range.
   const [listShown, setListShown] = useState<number | null>(null);
   const [page, setPage] = useState<'analytics' | 'search' | 'feedback'>('analytics');
+  // The Feedback tab shows only this browser's reports while set.
+  const [feedbackCid, setFeedbackCid] = useState<string | null>(null);
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
   const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
   const [detail, setDetail] = useState<Detail | null>(null);
+  // A user page fetches the shared feedback list once for its chip and chart.
+  const feedbackItems = useFeedbackList(token, detail != null && detail.kind !== 'picks').data?.items ?? [];
+  // A browser that is not on a loaded page, such as an older feedback
+  // sender, loads on its own when its page opens.
+  const userCid = detail && detail.kind !== 'picks' ? detail.cid : null;
+  const unloaded = data && userCid && !hasRecord(resolveUser(data, userCid)) ? userCid.split('::')[0] : null;
+  const fetchedUser = useBrowserRecords(token, unloaded, detail && detail.kind !== 'picks' ? detail.country : undefined);
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
   const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
@@ -1779,6 +1744,7 @@ export function AdminPage() {
   }, [detail, dashScrollY]);
   const openDexPicks = useCallback(() => openDetail({ kind: 'picks', tool: 'dex' }), [openDetail]);
   const openLeaguePicks = useCallback(() => openDetail({ kind: 'picks', tool: 'league' }), [openDetail]);
+  const openPickerPicks = useCallback(() => openDetail({ kind: 'picks', tool: 'favorites' }), [openDetail]);
 
   // A quiet load shows no progress and clears an error only on success, so a
   // background refresh leaves the page as it is until new data arrives.
@@ -1801,7 +1767,8 @@ export function AdminPage() {
     async (
       tok: string,
       asked: DashboardRange,
-      { limit = PAGE_SIZE, refreshSearch = false, quiet = false } = {},
+      // Only the Search tab shows Search data, so a load elsewhere skips its read.
+      { limit = PAGE_SIZE, refreshSearch = false, quiet = false, search = false } = {},
     ) => {
       const seq = ++latestLoad;
       if (!quiet) {
@@ -1818,7 +1785,7 @@ export function AdminPage() {
         setAuthed(true);
         setToken(tok);
         setError(null);
-        void loadSearch(tok, { refresh: refreshSearch, quiet });
+        if (search) void loadSearch(tok, { refresh: refreshSearch, quiet });
         try {
           localStorage.setItem(TOKEN_KEY, tok);
         } catch {
@@ -1888,14 +1855,14 @@ export function AdminPage() {
       if (!token) return;
       const hit = rangeCache.get(next);
       if (!hit) {
-        void load(token, next);
+        void load(token, next, { search: page === 'search' });
         return;
       }
       setData(hit.data);
       setLoadedAt(hit.at);
-      if (Date.now() - hit.at >= STALE_ON_RETURN_MS) void load(token, next, { limit: hit.data.limit, quiet: true });
+      if (Date.now() - hit.at >= STALE_ON_RETURN_MS) void load(token, next, { limit: hit.data.limit, quiet: true, search: page === 'search' });
     },
-    [token, load],
+    [token, load, page],
   );
 
   // Keep an open dashboard current: refetch on return to the tab (including an
@@ -1908,7 +1875,7 @@ export function AdminPage() {
     const refresh = (minAgeMs: number) => {
       if (running || Date.now() - loadedAt < minAgeMs) return;
       running = true;
-      void load(token, range, { limit: loadedLimit, quiet: true }).finally(() => {
+      void load(token, range, { limit: loadedLimit, quiet: true, search: page === 'search' }).finally(() => {
         running = false;
       });
     };
@@ -1928,7 +1895,7 @@ export function AdminPage() {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('pageshow', onPageShow);
     };
-  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit, range]);
+  }, [authed, token, loading, loadingMore, load, loadedAt, loadedLimit, range, page]);
 
   const setArchived = useCallback(
     async (cid: string, next: boolean) => {
@@ -2028,6 +1995,7 @@ export function AdminPage() {
     }
     if (k === 'feedback') {
       setPage('feedback');
+      setFeedbackCid(null);
     } else if (k === 'search') {
       setPage('search');
       if (token) void loadSearch(token, { refresh: true });
@@ -2037,20 +2005,30 @@ export function AdminPage() {
     }
   };
   const lockUser = detail?.kind === 'dex' || detail?.kind === 'league' || detail?.kind === 'favorites';
+  // Null when the loaded pages do not hold the browser; its page then loads it.
+  const toolsOf = (cid: string): FeedbackTool[] | null => {
+    if (!data) return null;
+    const tools = userTools(resolveUser(data, cid));
+    return tools.length ? tools : null;
+  };
+  // The Picker's Most picked grid fills the screen like a user page, and
+  // keeps the range ribbon like the other picks pages.
+  const pickerPicks = detail?.kind === 'picks' && detail.tool === 'favorites';
+  const lockHeight = lockUser || pickerPicks;
 
   return (
     <div
-      className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}
+      className={cn('flex flex-col bg-background', lockHeight ? 'h-dvh overflow-hidden' : 'min-h-dvh')}
       style={{ '--admin-header-h': `${pageHeaderH}px` } as CSSProperties}
     >
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
-        <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockUser ? 'max-w-none' : 'max-w-5xl')}>
+        <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockHeight ? 'max-w-none' : 'max-w-5xl')}>
           <h1 className="whitespace-nowrap text-sm font-bold">
 
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, range, { refreshSearch: true })} disabled={loading || searchLoading}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token, range, { refreshSearch: true, search: page === 'search' })} disabled={loading || searchLoading}>
               {loading || searchLoading ? 'Refreshing…' : 'Refresh'}
             </Button>
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
@@ -2071,8 +2049,8 @@ export function AdminPage() {
       <main
         className={cn(
           'mx-auto flex w-full min-w-0 flex-1 flex-col px-4',
-          lockUser ? 'max-w-none' : 'max-w-5xl',
-          lockUser
+          lockHeight ? 'max-w-none' : 'max-w-5xl',
+          lockHeight
             ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-bar-h,8rem)] md:pb-8'
             : 'gap-4 pb-[calc(var(--admin-bar-h,8rem)+1.5rem)] pt-4 md:pb-8',
         )}
@@ -2081,9 +2059,14 @@ export function AdminPage() {
 
         {/* A clicked preview opens a full detail page; Back returns here. */}
         {detail && data && (
-          <div className={cn((detail.kind === 'league' || detail.kind === 'dex' || detail.kind === 'favorites') && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
+          <div className={cn(lockHeight && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
           {(() => {
           if (detail.kind === 'picks') {
+            if (detail.tool === 'favorites') {
+              return data.favoritePicks ? (
+                <PickerPicksPage picks={data.favoritePicks} onBack={() => setDetail(null)} />
+              ) : null;
+            }
             if (detail.tool === 'league') {
               return data.league?.picks ? (
                 <LeaguePicksPage picks={data.league.picks} n={data.league.users} onBack={() => setDetail(null)} />
@@ -2094,23 +2077,37 @@ export function AdminPage() {
               <PicksDetailPage picksBySectionAll={data.picksBySectionAll} n={nDex} onBack={() => setDetail(null)} />
             );
           }
-          const bare = detail.cid.split('::')[0];
-          const dex =
-            data.records.find((r) => r.cid === detail.cid || r.cid.split('::')[0] === bare) ??
-            data.dexByCid?.[detail.cid] ??
-            data.dexByCid?.[bare];
-          const league =
-            data.leagueByCid?.[detail.cid] ??
-            data.leagueByCid?.[bare] ??
-            data.leagueUsers?.find((r) => r.cid === detail.cid || r.cid === bare);
+          const loaded = resolveUser(data, detail.cid);
+          const bare = loaded.bare;
+          let user: UserRecords = loaded;
+          if (!hasRecord(loaded)) {
+            if (fetchedUser.status !== 'ready') {
+              const failed = fetchedUser.status === 'error';
+              return <UserStatus cid={bare} onBack={() => setDetail(null)}>{failed ? 'This browser could not load.' : 'Loading this browser…'}</UserStatus>;
+            }
+            const r = fetchedUser.records;
+            user = { dex: r.dex ?? undefined, league: r.league ?? undefined, favorite: r.favorite ?? undefined };
+            if (!hasRecord(user)) {
+              return <UserStatus cid={bare} onBack={() => setDetail(null)}>No tool records for this browser.</UserStatus>;
+            }
+          }
+          const { dex, league, favorite } = user;
+          const tools = userTools(user);
           return (
             <RangeSlotContext.Provider value={rangeSlot}>
               <UserDetailPage
-                tool={detail.kind}
-                onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
+                tool={tools.includes(detail.kind) ? detail.kind : tools[0]}
+                onTool={(k) => setDetail({ ...detail, kind: k })}
                 dex={dex}
                 league={league}
-                favorite={data.favoriteByCid?.[bare] ?? data.favoriteUsers?.find(r=>r.cid===bare)}
+                favorite={favorite}
+                reports={feedbackItems.filter((r) => r.cid === bare)}
+                onFeedback={() => {
+                  setDashScrollY(0);
+                  setDetail(null);
+                  setPage('feedback');
+                  setFeedbackCid(bare);
+                }}
                 onBack={() => setDetail(null)}
               />
             </RangeSlotContext.Provider>
@@ -2122,7 +2119,15 @@ export function AdminPage() {
         {!detail && <ThisBrowserRow />}
 
         {!detail && page === 'feedback' &&
-          (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
+          (token ? (
+            <FeedbackCard
+              token={token}
+              toolsOf={toolsOf}
+              onOpen={(kind, cid, country) => openDetail({ kind, cid, country })}
+              cidFilter={feedbackCid}
+              onClearCid={() => setFeedbackCid(null)}
+            />
+          ) : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
 
         {!detail && page === 'search' && (
           <SearchPerformancePanel snapshot={searchPerformance} loading={searchLoading} error={searchError} range={range} />
@@ -2226,7 +2231,7 @@ export function AdminPage() {
               </div>
             </Panel>}
 
-            {tool === 'all' && data.crossTool && <CrossToolCard data={data.crossTool} />}
+            {tool === 'all' && data.crossTool && <CrossToolCard data={data.crossTool} since={data.crossToolSince} />}
 
             {showFlows && (
               <Panel
@@ -2354,45 +2359,58 @@ export function AdminPage() {
                 onOpen={openLeaguePicks}
               />
             )}
+            {tool === 'favorites' && data.favoritePicks && (
+              <WhatPeoplePick
+                mostBySection={{ charts: data.favoritePicks.top.map(([id, n]) => [String(id), n]) }}
+                n={data.favoritePicks.charts}
+                unit="charts"
+                face={pickerFace}
+                onOpen={openPickerPicks}
+              />
+            )}
 
-            {tool === 'favorites' && <Panel title="Newest browsers" sub={['picker','newest first']}>
-              <div className="flex flex-col gap-2">
-                <Seg ariaLabel="Archive status" options={ARCHIVE_FILTER_OPTIONS} value={archiveFilter} onChange={setArchiveFilter}/>
-                {(data.favoriteUsers ?? []).filter(rec=>matchesArchiveFilter(archiveOverride[bareCid(rec.cid)] ?? rec.archived ?? false,archiveFilter) && ((data.rangeStart ?? null)===null || rec.lastTs > data.rangeStart!)).map(rec=><button key={rec.cid} type="button" data-favorite-user={rec.cid} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2 text-left text-xs" onClick={()=>openDetail({kind:'favorites',cid:rec.cid})}>
-                  <span className="font-semibold">{middleId(rec.cid)}</span>
-                  <span>{rec.latest.filled} / 257 cells · {rec.latest.uniqueIds.length} Pokémon</span>
-                  <span>{rec.sessions} sessions · {rec.exportsFull+rec.exportsSimplified} exports</span>
-                  <span className="text-muted-foreground">{relativeTime(rec.lastTs)}</span>
-                </button>)}
-                {!data.favoriteUsers?.length && <p className="text-sm text-muted-foreground">No picker users yet.</p>}
-                {(data.totalFavoriteUsers ?? 0) > (data.favoriteUsers?.length ?? 0) && <Button variant="ghost" size="sm" disabled={loading} onClick={()=>void loadMore((data.favoriteUsers?.length ?? 0)+PAGE_SIZE)}>Load more</Button>}
-              </div>
-            </Panel>}
+            {tool === 'all' && token && !demo && <UsageCard token={token} />}
 
-            {(tool === 'dex' || tool === 'league') && <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
+            {(tool === 'dex' || tool === 'league' || tool === 'favorites') && <Panel title="Newest browsers" sub={[showDex ? 'dex' : tool === 'favorites' ? 'picker' : 'league', 'newest first']}>
               {(() => {
+                const showPicker = tool === 'favorites';
                 const archivedOf = (cid: string, flag?: boolean) =>
                   archiveOverride[bareCid(cid)] ?? flag ?? false;
                 type Row = {
                   cid: string;
-                  rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
-                  dex?: { pokemon: number; exported: boolean; sessions?: number; sessionMs?: number[] };
-                  league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+                  rec: HeaderRec & { lastTs: number; tz?: string };
+                  cells: ToolCell[];
                   archived: boolean;
                   open: Detail;
                 };
+                // Every card shows all three tools of its browser, looked up
+                // by bare browser id, whichever list it is on.
+                const sameBrowser = (cid: string) => (r: { cid: string }) => bareCid(r.cid) === bareCid(cid);
+                const dexOf = (cid: string) =>
+                  data.dexByCid?.[cid] ?? data.dexByCid?.[bareCid(cid)] ?? data.records.find(sameBrowser(cid));
+                const leagueOf = (cid: string) =>
+                  data.leagueByCid?.[cid] ?? data.leagueByCid?.[bareCid(cid)] ?? data.leagueUsers?.find(sameBrowser(cid));
+                const pickerOf = (cid: string) =>
+                  data.favoriteByCid?.[bareCid(cid)] ?? data.favoriteUsers?.find(sameBrowser(cid));
                 // Newest first, so the browsers active in the range lead the
                 // list. It opens on them; Load more continues past the range.
-                const loaded: { lastTs: number }[] = showDex ? data.records : (data.leagueUsers ?? []);
-                const total = showDex ? (data.totalDexRecords ?? data.totalUsers) : (data.totalLeagueUsers ?? loaded.length);
+                const loaded: { lastTs: number }[] = showDex
+                  ? data.records
+                  : showPicker
+                    ? (data.favoriteUsers ?? [])
+                    : (data.leagueUsers ?? []);
+                const total = showDex
+                  ? (data.totalDexRecords ?? data.totalUsers)
+                  : showPicker
+                    ? (data.totalFavoriteUsers ?? loaded.length)
+                    : (data.totalLeagueUsers ?? loaded.length);
                 const since = data.rangeStart ?? null;
                 const inRange = since === null ? loaded.length : loaded.filter((r) => r.lastTs > since).length;
                 const shown = Math.min(loaded.length, listShown ?? inRange);
                 const listed: Row[] = [];
                 if (showDex) {
                   for (const rec of data.records.slice(0, shown)) {
-                    const league =
-                      data.leagueByCid?.[rec.cid] ?? data.leagueByCid?.[bareCid(rec.cid)];
+                    const league = leagueOf(rec.cid);
                     const kind = toolKind(true, !!league);
                     if (!kind) continue;
                     const archived = archivedOf(rec.cid, rec.archived);
@@ -2401,22 +2419,26 @@ export function AdminPage() {
                     listed.push({
                       cid: rec.cid,
                       rec,
-                      dex: { pokemon: dexPokemonCount(rec.latestIds), exported: rec.exported },
-                      league: league
-                        ? {
-                            cards: league.maxCards,
-                            exported: leagueExported(league.exportsCard, league.exportsLeague),
-                            sessions: league.sessions,
-                            sessionMs: league.sessionMs,
-                          }
-                        : undefined,
+                      cells: toolCells({ dex: rec, league, picker: pickerOf(rec.cid) }),
                       archived,
                       open: { kind: 'dex', cid: rec.cid },
                     });
                   }
+                } else if (showPicker) {
+                  for (const rec of (data.favoriteUsers ?? []).slice(0, shown)) {
+                    const archived = archivedOf(rec.cid, rec.archived);
+                    if (!matchesArchiveFilter(archived, archiveFilter)) continue;
+                    listed.push({
+                      cid: rec.cid,
+                      rec,
+                      cells: toolCells({ dex: dexOf(rec.cid), league: leagueOf(rec.cid), picker: rec }),
+                      archived,
+                      open: { kind: 'favorites', cid: rec.cid },
+                    });
+                  }
                 } else {
                   for (const rec of (data.leagueUsers ?? []).slice(0, shown)) {
-                    const dex = data.records.find((r) => r.cid === rec.cid || r.cid.split('::')[0] === rec.cid);
+                    const dex = dexOf(rec.cid);
                     const hasDex = !!dex || rec.hasDex;
                     const kind = toolKind(hasDex, true);
                     if (!kind) continue;
@@ -2426,18 +2448,7 @@ export function AdminPage() {
                     listed.push({
                       cid: rec.cid,
                       rec,
-                      dex: dex
-                        ? {
-                            pokemon: dexPokemonCount(dex.latestIds),
-                            exported: dex.exported,
-                            sessions: dex.sessions,
-                            sessionMs: dex.sessionMs,
-                          }
-                        : undefined,
-                      league: {
-                        cards: rec.maxCards,
-                        exported: leagueExported(rec.exportsCard, rec.exportsLeague),
-                      },
+                      cells: toolCells({ dex, league: rec, picker: pickerOf(rec.cid) }),
                       archived,
                       open: { kind: 'league', cid: rec.cid },
                     });
@@ -2449,7 +2460,7 @@ export function AdminPage() {
                   <>
                     {emptyList && !loading && (
                       <p className="text-sm text-muted-foreground">
-                        {showDex ? 'No users yet.' : 'No league users yet.'}
+                        {showDex ? 'No users yet.' : showPicker ? 'No picker users yet.' : 'No league users yet.'}
                       </p>
                     )}
                     {shown > 0 && rows.length === 0 && !loading && (
@@ -2463,27 +2474,25 @@ export function AdminPage() {
                         <PreviewStatusMenus
                           archiveFilter={archiveFilter}
                           setArchiveFilter={setArchiveFilter}
-                          toolFilter={toolFilter}
-                          setToolFilter={setToolFilter}
+                          toolFilter={showPicker ? undefined : toolFilter}
+                          setToolFilter={showPicker ? undefined : setToolFilter}
                         />
                         <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-1 md:row-start-1 md:flex">When</div>
-                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-2 md:row-start-1 md:flex">Ago</div>
                         <PreviewFacetMenus listed={listed} facets={facetFilters} setFacets={setFacetFilters} />
-                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-8 md:row-start-1 md:flex">Sessions</div>
                       </div>
-                      <PreviewMetricScale>
+                      <PreviewUsageScale>
                         {rows.map((row) => (
                           <UserPreviewCard
                             key={row.cid}
                             rec={row.rec}
-                            dex={row.dex}
-                            league={row.league}
+                            cells={row.cells}
+                            pickerRow={showPicker}
                             archived={row.archived}
                             onArchive={(next) => void setArchived(row.cid, next)}
                             onOpen={() => openDetail(row.open)}
                           />
                         ))}
-                      </PreviewMetricScale>
+                      </PreviewUsageScale>
                     </div>
                     {shown < total && (
                       <Button

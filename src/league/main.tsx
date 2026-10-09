@@ -5,6 +5,7 @@ import '@fontsource-variable/inter/index.css'
 import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
 import { installOptOut, isOptedOut } from '../lib/clientId'
+import { installStaleDeployReload } from '../lib/staleDeploy'
 import { whenIdle } from '../lib/whenIdle'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
@@ -39,6 +40,7 @@ if (isIos) {
 installLayoutFontSize();
 // `?notme` marks this browser as the owner's, out of analytics.
 installOptOut();
+installStaleDeployReload();
 
 // Vercel's own page-view counting obeys the same opt-out as our beacons. It is
 // a separate system with a separate dashboard, so leaving it ungated meant

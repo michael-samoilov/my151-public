@@ -6,7 +6,9 @@ export const FAVORITE_VERSION_KEY = 'favorites:clients:ver';
 export const FAVORITE_TOTAL_CELLS = 257;
 export const FAVORITE_SESSION_GAP_MS = 30 * 60_000;
 export type FavoriteExportKind = 'full' | 'simplified';
-export type FavoriteBeaconKind = 'progress' | 'completion' | 'export';
+/** `export-shown` reports that the export dialog opened, and `nudge-shown` that the
+ *  completion popup pointing at Export appeared. Neither counts an export. */
+export type FavoriteBeaconKind = 'progress' | 'completion' | 'export' | 'export-shown' | 'nudge-shown';
 export interface FavoriteSnapshot {
   v: 1;
   fills: Record<string, number>;
@@ -114,6 +116,10 @@ export function parseFavoriteRecord(raw: unknown): FavoriteRecord | null {
     maxSessionMs:Math.max(nonnegative(r.maxSessionMs)?r.maxSessionMs:0,...sessionMs),curSessionStart:sessionLog.at(-1)?.ts??r.lastTs,
     seenIds:r.seenIds.filter((id):id is string=>typeof id==='string'&&/^[\w-]{8,80}$/.test(id)).slice(-256)};
 }
+/** The visit a beacon captured at `now` joins, or undefined when it starts a new one. */
+export function favoriteSessionAt<T extends FavoriteSessionEntry>(log: T[], now: number): T | undefined {
+  return [...log].reverse().find(s => now >= s.ts - FAVORITE_SESSION_GAP_MS && now <= s.endTs + FAVORITE_SESSION_GAP_MS);
+}
 export function mergeFavoriteRecord(existing: FavoriteRecord | null, input: FavoriteBeaconInput): FavoriteRecord {
   if (existing?.seenIds.includes(input.id)) return existing;
   const { now, snapshot } = input;
@@ -125,7 +131,7 @@ export function mergeFavoriteRecord(existing: FavoriteRecord | null, input: Favo
   rec.seenIds = [...rec.seenIds,input.id].slice(-256);
   rec.submits++;
   const log = rec.sessionLog;
-  let session = [...log].reverse().find(s => now >= s.ts - FAVORITE_SESSION_GAP_MS && now <= s.endTs + FAVORITE_SESSION_GAP_MS);
+  let session = favoriteSessionAt(log, now);
   if (!session) {
     session = {id:input.id,ts:now,endTs:now,snapshot,events:[]};
     log.push(session);log.sort((a,b)=>a.ts-b.ts);rec.sessions++;

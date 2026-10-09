@@ -19,6 +19,7 @@ import {
   type TypeAxisId,
 } from '../model/cells';
 import { kindFor } from '../model/eligibility';
+import { prefetchCell } from '../model/spritePreload';
 import type { PickerMon } from '../model/catalog';
 import { gridSpriteSizePercent } from '../model/gridSpriteSize';
 import { minimapViewportX } from '../model/minimap';
@@ -98,6 +99,7 @@ export function FavoritesGrid({
   onSelect,
   desktop,
   pane,
+  fitFrame = false,
 }: {
   fills: Record<string, number>;
   resolve: (id: number) => PickerMon | undefined;
@@ -106,10 +108,15 @@ export function FavoritesGrid({
   desktop: boolean;
   /** The desktop selector pane. It scrolls with the grid, under the headers. */
   pane?: ReactNode;
+  /** On desktop, shrink cells below their native size until the whole
+   *  unzoomed grid fits the frame. At any width, center the grid while it
+   *  fits; a grid that scrolls sideways stays left-aligned. The admin
+   *  overview uses it. */
+  fitFrame?: boolean;
 }) {
   useNamesVersion();
   return (
-    <ZoomFrame desktop={desktop} fills={fills} pane={pane}>
+    <ZoomFrame desktop={desktop} fitFrame={fitFrame} fills={fills} pane={pane}>
       <Corner />
       {TYPE_AXIS.map((id) => (
         <HeaderCell key={`h-${String(id)}`} id={id} />
@@ -137,11 +144,13 @@ export function FavoritesGrid({
 function ZoomFrame({
   children,
   desktop,
+  fitFrame,
   fills,
   pane,
 }: {
   children: ReactNode;
   desktop: boolean;
+  fitFrame: boolean;
   fills: Record<string, number>;
   pane?: ReactNode;
 }) {
@@ -155,7 +164,7 @@ function ZoomFrame({
     try { return sessionStorage.getItem('favorites-scroll-cue-seen') !== '1'; }
     catch { return true; }
   });
-  useZoomFrame({ frameRef, ref, mapRef, windowRef, cueRef }, desktop, () => {
+  useZoomFrame({ frameRef, ref, mapRef, windowRef, cueRef }, desktop, fitFrame, () => {
     setShowScrollCue(false);
     try { sessionStorage.setItem('favorites-scroll-cue-seen', '1'); }
     catch { /* Storage can be unavailable in private browsing. */ }
@@ -171,7 +180,8 @@ function ZoomFrame({
         data-zoom="1"
       >
         <div
-          className="relative grid"
+          // Auto margins center a grid that fits and resolve to 0 for one that overflows.
+          className={fitFrame ? 'relative mx-auto grid' : 'relative grid'}
           style={{
             width: `calc(var(--head) + var(--cell) * ${COLS - 1})`,
             height: `calc(var(--head-row, var(--head)) + var(--cell) * ${ROWS - 1})`,
@@ -212,6 +222,7 @@ function useZoomFrame(
     cueRef: RefObject<HTMLDivElement | null>;
   },
   desktop: boolean,
+  fitFrame: boolean,
   onFirstScroll: () => void,
 ) {
   const { frameRef, ref, mapRef, windowRef, cueRef } = refs;
@@ -224,7 +235,11 @@ function useZoomFrame(
     if (!el) return;
     const range = desktop ? ZOOM_RANGE.desktop : ZOOM_RANGE.mobile;
     const clampZoom = (value: number) => Math.max(range.min, Math.min(range.max, value));
-    const baseCell = () => desktop ? DESKTOP_CELL_PX : el.clientHeight / ROWS;
+    // A fitted grid floors its cell, so it never adds the scrollbar that
+    // would shrink the frame it was fitted to.
+    const baseCell = () => !desktop ? el.clientHeight / ROWS
+      : fitFrame ? Math.min(DESKTOP_CELL_PX, Math.floor(Math.min(el.clientHeight / ROWS, el.clientWidth / COLS)))
+        : DESKTOP_CELL_PX;
     const box = minimapBox(desktop);
     let base = baseCell();
     let zoom = clampZoom(zoomRef.current);
@@ -257,10 +272,17 @@ function useZoomFrame(
       el.style.setProperty('--head-row', `${headRow}px`);
       el.dataset.zoom = String(Math.round(zoom * 1000) / 1000);
     };
+    /** How far a centered grid sits right of the scroll origin. Measured from
+     *  layout: Chrome reports this grid's auto margin as 0px. */
+    const gridLeft = () => {
+      const grid = fitFrame ? el.firstElementChild : null;
+      if (!grid) return 0;
+      return grid.getBoundingClientRect().left - el.getBoundingClientRect().left - el.clientLeft + el.scrollLeft;
+    };
     /** The body point under a frame-local point. */
     const bodyAt = (x: number, y: number): BodyPoint => {
       const { cell, head, headRow } = tracks();
-      return { u: (el.scrollLeft + x - head) / cell, v: (el.scrollTop + y - headRow) / cell };
+      return { u: (el.scrollLeft + x - gridLeft() - head) / cell, v: (el.scrollTop + y - headRow) / cell };
     };
     const paint = (show: boolean) => {
       const map = mapRef.current;
@@ -311,7 +333,7 @@ function useZoomFrame(
       zoom = target.zoom;
       writeTracks();
       const { cell, head, headRow } = tracks();
-      el.scrollLeft = u * cell + head - target.x;
+      el.scrollLeft = u * cell + head + gridLeft() - target.x;
       el.scrollTop = v * cell + headRow - target.y;
       target = null;
       paint(true);
@@ -530,7 +552,7 @@ function useZoomFrame(
       window.clearTimeout(fadeTimer);
       window.clearTimeout(hoverTimer);
     };
-  }, [frameRef, ref, mapRef, windowRef, cueRef, desktop]);
+  }, [frameRef, ref, mapRef, windowRef, cueRef, desktop, fitFrame]);
 }
 
 function GenRow({
@@ -662,6 +684,7 @@ function BodyCell({
   desktop: boolean;
 }) {
   const kind = kindFor(type, gen);
+  const dwell = useRef(0);
   const id = fills[cellKey(type, gen)];
   const mon = id == null ? undefined : resolve(id);
   const isSel = selected?.type === type && selected?.gen === gen;
@@ -675,11 +698,21 @@ function BodyCell({
       type="button"
       disabled={locked}
       onClick={(event) => onSelect(type, gen, event.detail === 0)}
+      // The selector's sprites start loading before the click lands. A mouse
+      // crossing the grid passes many cells, so it must rest on one first.
+      onPointerEnter={locked ? undefined : (event) => {
+        if (event.pointerType === 'mouse') dwell.current = window.setTimeout(() => prefetchCell(type, gen), 80);
+        else prefetchCell(type, gen);
+      }}
+      onPointerLeave={() => window.clearTimeout(dwell.current)}
+      onPointerDown={locked ? undefined : () => prefetchCell(type, gen)}
+      onFocus={locked ? undefined : () => prefetchCell(type, gen)}
       aria-label={`${coordinateLabel(type, gen)}${mon ? ` · ${labelOf(mon)}` : ''}`}
       aria-expanded={locked ? undefined : isSel}
       aria-controls={isSel ? 'favorites-selector' : undefined}
       aria-haspopup={locked ? undefined : 'dialog'}
       data-testid={`favorites-cell-${type}-${gen}`}
+      data-cell={locked ? undefined : cellKey(type, gen)}
       data-kind={kind}
       data-row-banded={banded}
       className={cn(

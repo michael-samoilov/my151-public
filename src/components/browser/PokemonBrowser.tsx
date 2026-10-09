@@ -968,8 +968,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             data-testid="browser-close"
             onClick={handleDesktopClose}
             className="text-muted-foreground hover:text-foreground cursor-pointer p-1"
+            aria-label={t('browser.close')}
           >
-            <X size={16} />
+            <X size={16} aria-hidden />
           </button>
         </div>
       )}
@@ -1626,6 +1627,7 @@ function FilterChip({
 }: {
   label: React.ReactNode; onDismiss: () => void; onClick: () => void; className?: string; style?: React.CSSProperties;
 }) {
+  const t = useT();
   return (
     <span
       className={cn(
@@ -1635,8 +1637,8 @@ function FilterChip({
       style={style}
     >
       <button type="button" onClick={onClick} className="cursor-pointer">{label}</button>
-      <button type="button" onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="hover:opacity-70 cursor-pointer">
-        <X size={10} />
+      <button type="button" onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="hover:opacity-70 cursor-pointer" aria-label={t('browser.chip.remove')}>
+        <X size={10} aria-hidden />
       </button>
     </span>
   );

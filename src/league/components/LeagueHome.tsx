@@ -21,7 +21,7 @@ import {
 } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
 import { useDragSensors } from '@/lib/dragSensors';
-import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
+import { BOSS_ROW, SLOT_COUNT, slotKind, slotLabel, slotRow } from '../model/constants';
 import { deriveRow, leagueSlotIsEmpty, moveLeagueSlots } from '../model/engine';
 import { cardShades } from '../theme';
 import { fitStyle, useFitScale } from '../useFitScale';
@@ -263,6 +263,8 @@ function SlotRow({ position, card, held, canDrag }: {
         ref={setDragRef}
         {...dragProps}
         data-testid={`league-slot-${position}`}
+        // An empty row shows only its glyph, so it needs a name for screen readers.
+        aria-label={card.lines.length > 0 ? undefined : slotLabel(position)}
         onClick={() => openCardPage(position)}
         className="block w-full cursor-pointer"
         style={{ touchAction: 'pan-y pinch-zoom' }}

@@ -32,6 +32,8 @@
   "favorites.export.simplified": "Übersicht",
   "favorites.export.title": "Exportieren",
   "favorites.generation": "Generation {gen}",
+  "favorites.nudge.complete.body": "Tippe auf das Download-Symbol, um deine Tabelle als Bild zu speichern und zu teilen.",
+  "favorites.nudge.complete.title": "Raster vollständig",
   "favorites.packing.back": "Ein anderes Pokémon wählen",
   "favorites.packing.heading": "Dieses Pokémon steht bereits in dieser Generation. Wähle, wie die Zeile neu geordnet wird.",
   "favorites.scrollMore": "Scrollen für mehr",

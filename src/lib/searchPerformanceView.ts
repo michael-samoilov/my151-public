@@ -4,7 +4,6 @@ import {
   bucketStarts,
   mapSearchRanges,
   sumSearchMetrics,
-  type SearchDailyPoint,
   type SearchDateRange,
   type SearchDimensionRow,
   type SearchGranularity,
@@ -19,17 +18,18 @@ import {
   type SearchSeriesPoint,
 } from './searchPerformance.js';
 
-const DAY_MS = 86_400_000;
 const PAGE_LABELS: Record<string, string> = {
   '/': 'Homepage',
   '/pokedex-builder': 'Pokédex builder',
   '/custom-gym-leader': 'Gym leader maker',
+  '/favorite-pokemon-picker': 'Favorite Pokémon Picker',
 };
 
-export interface SearchWindowSummary {
-  range: SearchDateRange;
-  metric: SearchMetric;
-}
+/** Old paths that `vercel.json` redirects, so their rows count toward the page they now open. */
+const PAGE_REDIRECTS: Record<string, string> = {
+  '/favorite-pokemon-by-type': '/favorite-pokemon-picker',
+  '/favorite-pokemon-by-type.html': '/favorite-pokemon-picker',
+};
 
 export interface SearchPeriodDelta {
   clicks: number;
@@ -38,24 +38,6 @@ export interface SearchPeriodDelta {
   impressionsPct: number | null;
   ctrPoints: number;
   position: number | null;
-}
-
-export interface SearchPeriodComparison {
-  days: number;
-  available: boolean;
-  current: SearchWindowSummary;
-  previous: SearchWindowSummary;
-  delta: SearchPeriodDelta;
-}
-
-export interface SearchProviderView {
-  provider: SearchProviderKey;
-  status: SearchProviderStatus;
-  fetchedAt?: string;
-  dataThrough?: string;
-  daily: SearchDailyPoint[];
-  comparison: SearchPeriodComparison;
-  topQueries: SearchDimensionRow[];
 }
 
 export interface SearchPageEngineView {
@@ -111,31 +93,11 @@ export interface SearchRangeView {
 
 export interface SearchPerformanceView {
   generatedAt: string;
-  /** `periodDays`, `providers`, and `pages` are the 28d range for frontends deployed before `byRange`. */
-  periodDays: 28;
-  providers: Record<SearchProviderKey, SearchProviderView>;
-  pages: SearchPagePerformance[];
   byRange: Record<SearchRangeKey, SearchRangeView>;
-}
-
-function dateAt(ms: number): string {
-  return new Date(ms).toISOString().slice(0, 10);
-}
-
-function parsedDate(value: string): number | null {
-  const parsed = Date.parse(`${value}T00:00:00Z`);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function within(start: string, window: SearchDateRange): boolean {
   return start >= window.start && start <= window.end;
-}
-
-function metricForRange(rows: SearchDailyPoint[], start: number, end: number): SearchMetric {
-  return sumSearchMetrics(rows.filter((row) => {
-    const date = parsedDate(row.date);
-    return date != null && date >= start && date <= end;
-  }));
 }
 
 function percentDelta(current: number, previous: number, minimum: number): number | null {
@@ -154,54 +116,11 @@ function deltaOf(current: SearchMetric, previous: SearchMetric): SearchPeriodDel
   };
 }
 
-export function compareSearchPeriods(daily: SearchDailyPoint[], days = 28): SearchPeriodComparison {
-  const dates = daily
-    .map((row) => parsedDate(row.date))
-    .filter((date): date is number => date != null)
-    .sort((a, b) => a - b);
-  const latest = dates[dates.length - 1] ?? 0;
-  if (!latest) {
-    return {
-      days,
-      available: false,
-      current: { range: { start: '', end: '' }, metric: { ...EMPTY_SEARCH_METRIC } },
-      previous: { range: { start: '', end: '' }, metric: { ...EMPTY_SEARCH_METRIC } },
-      delta: {
-        clicks: 0,
-        clicksPct: null,
-        impressions: 0,
-        impressionsPct: null,
-        ctrPoints: 0,
-        position: null,
-      },
-    };
-  }
-  const currentStart = latest - (days - 1) * DAY_MS;
-  const previousEnd = currentStart - DAY_MS;
-  const previousStart = previousEnd - (days - 1) * DAY_MS;
-  const currentMetric = metricForRange(daily, currentStart, latest);
-  const previousMetric = metricForRange(daily, previousStart, previousEnd);
-  const available = (dates[0] ?? Infinity) <= previousStart;
-  const delta = deltaOf(currentMetric, previousMetric);
-  return {
-    days,
-    available,
-    current: {
-      range: { start: dateAt(currentStart), end: dateAt(latest) },
-      metric: currentMetric,
-    },
-    previous: {
-      range: { start: dateAt(previousStart), end: dateAt(previousEnd) },
-      metric: previousMetric,
-    },
-    delta: available ? delta : { ...delta, clicksPct: null, impressionsPct: null },
-  };
-}
-
 function pagePath(value: string): string | null {
   try {
     const url = new URL(value, 'https://my151.app');
-    return url.pathname.length > 1 ? url.pathname.replace(/\/$/, '') : '/';
+    const path = url.pathname.length > 1 ? url.pathname.replace(/\/$/, '') : '/';
+    return PAGE_REDIRECTS[path] ?? path;
   } catch {
     return null;
   }
@@ -230,19 +149,16 @@ function engineView(
   return { current: current ?? null, previous: previous ?? null, direction };
 }
 
+/** A query that reached a page under an old path and its new one counts once. */
 function pageQueries(provider: SearchProviderKey, rows: SearchPageQueryRow[], path: string): SearchPageQueryView[] {
-  return rows
-    .filter((row) => pagePath(row.page) === path)
+  const byQuery = new Map<string, SearchMetric[]>();
+  for (const row of rows) {
+    if (pagePath(row.page) === path) byQuery.set(row.query, [...(byQuery.get(row.query) ?? []), row]);
+  }
+  return [...byQuery.entries()]
+    .map(([query, metrics]) => ({ provider, query, ...sumSearchMetrics(metrics) }))
     .sort((a, b) => b.impressions - a.impressions || b.clicks - a.clicks)
-    .slice(0, 5)
-    .map((row) => ({
-      provider,
-      query: row.query,
-      clicks: row.clicks,
-      impressions: row.impressions,
-      ctr: row.ctr,
-      position: row.position,
-    }));
+    .slice(0, 5);
 }
 
 function buildPages(details: Record<SearchProviderKey, SearchRangeDetail | undefined>): SearchPagePerformance[] {
@@ -341,30 +257,9 @@ function rangeView(snapshot: SearchPerformanceSnapshot, range: SearchRangeKey): 
   };
 }
 
-function legacyProviderView(source: SearchProviderSnapshot, range28: SearchProviderRangeView): SearchProviderView {
-  const daily = source.series.map(({ start, ...metric }) => ({ date: start, ...metric }));
-  return {
-    provider: source.provider,
-    status: source.status,
-    fetchedAt: source.fetchedAt,
-    dataThrough: source.dataThrough,
-    daily,
-    comparison: compareSearchPeriods(daily, 28),
-    topQueries: range28.topQueries,
-  };
-}
-
 export function buildSearchPerformanceView(snapshot: SearchPerformanceSnapshot): SearchPerformanceView {
-  const byRange = mapSearchRanges((range) => rangeView(snapshot, range));
-  const range28 = byRange['28d'];
   return {
     generatedAt: snapshot.daily.generatedAt,
-    periodDays: 28,
-    providers: {
-      google: legacyProviderView(snapshot.daily.providers.google, range28.providers.google),
-      bing: legacyProviderView(snapshot.daily.providers.bing, range28.providers.bing),
-    },
-    pages: range28.pages,
-    byRange,
+    byRange: mapSearchRanges((range) => rangeView(snapshot, range)),
   };
 }

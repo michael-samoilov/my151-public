@@ -6,19 +6,20 @@ import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 
 import { usePokedexStore } from '@/store/usePokedexStore';
+import { reloadIfStale } from '@/lib/staleDeploy';
 
 // Route chunks stay lazy so boot ships small, and are prefetched when the
 // main thread first goes idle (see the effect in App) so a tab switch pays
 // only for rendering. `lazy` and the prefetch share one thunk each: the
 // module registry dedupes, so whichever runs first does the work and the
 // other reuses it.
-const importAnalyticsDashboard = () => import('@/components/analytics/AnalyticsDashboard');
-const importViewPage = () => import('@/components/view/ViewPage');
+const importAnalyticsDashboard = () => reloadIfStale(import('@/components/analytics/AnalyticsDashboard'));
+const importViewPage = () => reloadIfStale(import('@/components/view/ViewPage'));
 
 const AnalyticsDashboard = lazy(() =>
   importAnalyticsDashboard().then((m) => ({ default: m.AnalyticsDashboard })),
 );
-const importDrillDown = () => import('@/components/analytics/DrillDownSheet');
+const importDrillDown = () => reloadIfStale(import('@/components/analytics/DrillDownSheet'));
 const DrillDownSheet = lazy(() => importDrillDown().then(module => ({ default: module.DrillDownSheet })));
 const DrillDownPanel = lazy(() => importDrillDown().then(module => ({ default: module.DrillDownPanel })));
 const ViewPage = lazy(() =>
@@ -261,6 +262,10 @@ function App() {
         <Header ref={headerRef} currentView={currentView} onViewChange={handleViewChange} toolbarRef={setToolbarEl} />
 
         <ToolbarSlotContext.Provider value={{ el: toolbarEl, view: currentView }}>
+        {/* The page's main landmark, so a screen reader or an agent can jump
+            past the header. It takes the header's leftover height, as each
+            view did on its own. */}
+        <main className="flex min-h-0 flex-1 flex-col">
         {/* Builder — always mounted to avoid remount cost on tab switch */}
         <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' ? 'hidden' : 'p151-view-enter')}>
           <div className={cn(
@@ -315,6 +320,7 @@ function App() {
             </div>
           )}
         </div>
+        </main>
         </ToolbarSlotContext.Provider>
       </div>
 

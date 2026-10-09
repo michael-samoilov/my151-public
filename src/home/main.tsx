@@ -1,10 +1,12 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { StrictMode, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import interLatinUrl from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url'
 import '@fontsource-variable/inter/index.css'
 import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
 import { installOptOut, isOptedOut } from '../lib/clientId'
+import { installStaleDeployReload } from '../lib/staleDeploy'
 import { whenIdle } from '../lib/whenIdle'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
@@ -23,6 +25,7 @@ document.head.prepend(preload);
 installLayoutFontSize();
 // `?notme` marks this browser as the owner's, out of analytics.
 installOptOut();
+installStaleDeployReload();
 
 // Vercel's own page-view counting obeys the same opt-out as our beacons. It is
 // a separate system with a separate dashboard, so leaving it ungated meant
@@ -44,12 +47,24 @@ if ('serviceWorker' in navigator) {
 
 const rootEl = document.getElementById('root')!;
 
+// The build writes the English hub into #root (scripts/prerender-hub.ts). Its
+// head script adds `p151-wait` for a visitor who will not get that page, such
+// as one in another language; for them #root stays hidden behind the spinner.
+const waiting = document.documentElement.classList.contains('p151-wait');
+
+/** Renders into #root from scratch, then swaps the spinner for it in one frame. */
+function mount(app: ReactNode) {
+  flushSync(() => createRoot(rootEl).render(app));
+  document.documentElement.classList.remove('p151-wait');
+  document.querySelector('.p151-boot')?.remove();
+}
+
 // Admin-only submissions view, reached at `/?admin`. It lives on the root
 // entry because that is the URL the owner has always used. Code-split so the
 // hub bundle never pulls it in.
 if (new URLSearchParams(window.location.search).has('admin')) {
   void import('../components/admin/AdminPage').then(({ AdminPage }) => {
-    createRoot(rootEl).render(
+    mount(
       <StrictMode>
         <AdminPage />
       </StrictMode>,
@@ -64,10 +79,16 @@ if (new URLSearchParams(window.location.search).has('admin')) {
       navigatorLanguages: navigator.languages,
     }),
   ]).then(([{ HomePage }]) => {
-    createRoot(rootEl).render(
+    const app = (
       <StrictMode>
         <HomePage />
-      </StrictMode>,
+      </StrictMode>
     );
+    if (rootEl.hasAttribute('data-prerendered') && !waiting) {
+      hydrateRoot(rootEl, app);
+      document.querySelector('.p151-boot')?.remove();
+    } else {
+      mount(app);
+    }
   });
 }

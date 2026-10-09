@@ -35,23 +35,19 @@
  * Wrap other browser runs in `flock "${TMPDIR:-/tmp}/my151-browser.lock"` so
  * they wait for this one, and it for them.
  */
-import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import http2 from 'node:http2';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import zlib from 'node:zlib';
 import { chromium } from '@playwright/test';
+import { PRODUCTION, build, chromiumPath, compare, holdBrowserLock, median, selfSignedTls, serve } from './lab-server.mjs';
 
-const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i === -1 ? fallback : args[i + 1];
 };
 const RUNS = Number(flag('runs', 5));
-const BASE = args.includes('--no-base') ? null : flag('base', 'origin/claude/pokedex-region-builder-AviYF');
+const BASE = args.includes('--no-base') ? null : flag('base', PRODUCTION);
 const PROFILE_NAMES = flag('profile', 'mobile,desktop').split(',');
 const CASE_NAMES = flag('case', null)?.split(',');
 
@@ -129,63 +125,6 @@ function observe(readySelector) {
   new MutationObserver(check).observe(document, { childList: true, subtree: true });
 }
 
-function build(work, label, ref) {
-  const out = path.join(work, `${label}-dist`);
-  let cwd = root;
-  if (ref) {
-    cwd = path.join(work, `${label}-src`);
-    execFileSync('git', ['worktree', 'add', '--detach', cwd, ref], { cwd: root, stdio: 'ignore' });
-    fs.symlinkSync(path.join(root, 'node_modules'), path.join(cwd, 'node_modules'));
-  }
-  console.log(`Building ${label}${ref ? ` (${ref})` : ' (working tree)'}`);
-  try {
-    execFileSync('npx', ['vite', 'build', '--outDir', out, '--emptyOutDir', '--logLevel', 'error'], { cwd, stdio: 'inherit' });
-  } finally {
-    if (ref) execFileSync('git', ['worktree', 'remove', '--force', cwd], { cwd: root, stdio: 'ignore' });
-  }
-  return out;
-}
-
-const TYPES = {
-  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json',
-  '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.woff2': 'font/woff2', '.txt': 'text/plain',
-};
-
-function serve(dist, tls) {
-  const brotli = new Map();
-  const server = http2.createSecureServer({ ...tls, allowHTTP1: true }, (req, res) => {
-    const url = new URL(req.url, 'https://lab');
-    if (url.pathname.startsWith('/api/')) {
-      res.writeHead(200, { 'content-type': 'application/json' });
-      return res.end('{}');
-    }
-    let file = path.join(dist, decodeURIComponent(url.pathname));
-    if (url.pathname.endsWith('/')) file = path.join(file, 'index.html');
-    else if (!fs.existsSync(file) && fs.existsSync(`${file}.html`)) file = `${file}.html`;
-    if (!file.startsWith(dist) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
-      res.writeHead(404);
-      return res.end();
-    }
-    const type = TYPES[path.extname(file)] ?? 'application/octet-stream';
-    const immutable = /^\/(assets|sprites)\//.test(url.pathname);
-    const headers = { 'content-type': type, 'cache-control': immutable ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate' };
-    let body = fs.readFileSync(file);
-    if (/text|javascript|json|svg/.test(type) && /\bbr\b/.test(req.headers['accept-encoding'] ?? '')) {
-      if (!brotli.has(file)) brotli.set(file, zlib.brotliCompressSync(body, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }));
-      body = brotli.get(file);
-      headers['content-encoding'] = 'br';
-    }
-    res.writeHead(200, headers);
-    res.end(body);
-  });
-  return new Promise((resolve) => server.listen(0, () => resolve({ server, origin: `https://localhost:${server.address().port}` })));
-}
-
-function chromiumPath() {
-  if (process.env.PLAYWRIGHT_CHROMIUM_PATH) return process.env.PLAYWRIGHT_CHROMIUM_PATH;
-  return ['/usr/bin/google-chrome-stable', '/usr/bin/google-chrome', '/usr/bin/chromium'].find((bin) => fs.existsSync(bin));
-}
-
 /** The saved Pokédex a returning visitor with all 151 placed would have. */
 async function fullDexFixture(browser, origin) {
   const context = await browser.newContext({ ignoreHTTPSErrors: true, serviceWorkers: 'block' });
@@ -242,44 +181,27 @@ async function measure(browser, origin, profile, spec, fixture) {
   return result;
 }
 
-const median = (values) => {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor((sorted.length - 1) / 2)];
-};
-
-// One browser run at a time on this machine, lab or Playwright alike: another
-// run steals CPU and skews every timing. Re-run this script under `flock` on
-// the shared lock file when the tool exists (it does not on macOS).
-const LOCK = path.join(tmpdir(), 'my151-browser.lock');
-if (!process.env.MY151_BROWSER_LOCK && spawnSync('flock', ['--version']).status === 0) {
-  console.log(`Waiting for ${LOCK} if another browser run holds it.`);
-  const run = spawnSync('flock', [LOCK, process.execPath, ...process.argv.slice(1)], {
-    stdio: 'inherit',
-    env: { ...process.env, MY151_BROWSER_LOCK: '1' },
-  });
-  process.exit(run.status ?? 1);
-}
+holdBrowserLock();
 
 {
   const work = fs.mkdtempSync(path.join(tmpdir(), 'my151-lab-'));
   const servers = [];
   const browser = await chromium.launch({ executablePath: chromiumPath(), args: ['--allow-insecure-localhost'] });
   try {
-    const keyFile = path.join(work, 'key.pem');
-    const certFile = path.join(work, 'cert.pem');
-    execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', keyFile, '-out', certFile, '-days', '1', '-subj', '/CN=localhost'], { stdio: 'ignore' });
-    const tls = { key: fs.readFileSync(keyFile), cert: fs.readFileSync(certFile) };
+    const tls = selfSignedTls(work);
 
+    const cases = Object.entries(CASES).filter(([name]) => !CASE_NAMES || CASE_NAMES.includes(name));
+    // The saved-dex fixture needs `?tune`, which a production build ignores.
+    const needsFixture = cases.some(([, spec]) => spec.fullDex);
     const builds = [['candidate', build(work, 'candidate', null)]];
     if (BASE) builds.unshift(['base', build(work, 'base', BASE)]);
     const targets = [];
     for (const [label, dist] of builds) {
       const { server, origin } = await serve(dist, tls);
       servers.push(server);
-      targets.push({ label, origin, fixture: await fullDexFixture(browser, origin) });
+      targets.push({ label, origin, fixture: needsFixture ? await fullDexFixture(browser, origin) : null });
     }
 
-    const cases = Object.entries(CASES).filter(([name]) => !CASE_NAMES || CASE_NAMES.includes(name));
     const samples = {};
     for (const profileName of PROFILE_NAMES) {
       for (let run = 1; run <= RUNS; run++) {
@@ -306,13 +228,9 @@ if (!process.env.MY151_BROWSER_LOCK && spawnSync('flock', ['--version']).status 
       const show = (v) => (metric === 'cls' ? v.toFixed(3) : String(Math.round(v)));
       let cell = show(cand);
       if (byTarget.base) {
-        const base = byTarget.base;
-        const mid = median(base);
-        const delta = mid ? (cand - mid) / mid : 0;
-        const runs = byTarget.candidate;
-        const separated = Math.min(...runs) > Math.max(...base) || Math.max(...runs) < Math.min(...base);
-        const mark = separated && Math.abs(delta) > 0.05 ? (delta < 0 ? ' better' : ' **WORSE**') : '';
-        cell = `${show(mid)} → ${show(cand)}${mid ? ` (${delta >= 0 ? '+' : ''}${Math.round(delta * 100)}%)` : ''}${mark}`;
+        const { base, delta, verdict } = compare(byTarget.base, byTarget.candidate);
+        const mark = { better: ' better', worse: ' **WORSE**', same: '' }[verdict];
+        cell = `${show(base)} → ${show(cand)}${base ? ` (${delta >= 0 ? '+' : ''}${Math.round(delta * 100)}%)` : ''}${mark}`;
       }
       const row = `${profileName} ${caseName}`;
       if (!table.has(row)) table.set(row, {});
