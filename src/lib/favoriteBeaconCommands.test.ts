@@ -75,9 +75,10 @@ describe('favorites beacon Redis bill', () => {
     expect((await send({ kind: 'export-shown' }, stored)).events).toEqual(['favorites-export-shown']);
   });
 
-  it('marks detailed stats only on a Full grid export', async () => {
+  it('marks detailed stats on an export of either layout that has them', async () => {
     expect((await send({ kind: 'export', exportKind: 'full', stats: true })).events).toContain('favorites-export-stats');
     expect((await send({ kind: 'export', exportKind: 'full' })).events).not.toContain('favorites-export-stats');
-    expect((await send({ kind: 'export', exportKind: 'simplified', stats: true })).events).not.toContain('favorites-export-stats');
+    expect((await send({ kind: 'export', exportKind: 'simplified', stats: true })).events).toContain('favorites-export-stats');
+    expect((await send({ kind: 'export', exportKind: 'simplified' })).events).not.toContain('favorites-export-stats');
   });
 });
