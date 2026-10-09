@@ -40,16 +40,19 @@ function buildTimestampMeta(): Plugin {
 }
 
 /**
- * Runs each page's app code one frame after the first paint, not before it.
+ * On the picker and Pokédex pages, starts the app code and its downloads one
+ * frame after the first paint, so on a slow phone the HTML and stylesheet have
+ * the connection to themselves. Measured on a throttled phone (October 9):
+ * the picker's header shows at 0.5 s, not 1.5 s, and the Pokédex's loading
+ * screen at 1.0 s, not 1.5 s, while each tool appears at the same time as
+ * before. Google's phone score for the picker went from 84 to 99.
  *
- * When the code ran before Chrome's first frame, the page's own markup (the
- * hub's prerender, each tool's shell) stayed off screen while the code ran,
- * and in Google's phone runs Chrome then held that first frame for about 2 s:
- * the page had loaded at 0.4 s and showed nothing until 2.3 s, and Speed Index
- * read 4.1 s, not 1.8 s. Its downloads wait for the frame too, so on a slow
- * phone the HTML and stylesheet have the connection to themselves. A hidden
- * tab, which draws no frames, starts the code at once.
+ * Not on the league page: its code is the largest, and starting it later made
+ * the builder appear about 0.3 s later. Not on the hub, which is prerendered
+ * and gained nothing. A hidden tab, which draws no frames, starts at once.
  */
+const START_AFTER_FIRST_PAINT = ['/favorite-pokemon-picker.html', '/pokedex-builder.html']
+
 function startAppAfterFirstPaint(): Plugin {
   const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>/
   const preload = /\s*<link rel="modulepreload" crossorigin href="([^"]+)">/g
@@ -58,9 +61,9 @@ function startAppAfterFirstPaint(): Plugin {
     apply: 'build',
     transformIndexHtml: {
       order: 'post',
-      handler(html) {
+      handler(html, { path }) {
         const src = entry.exec(html)?.[1]
-        if (!src) return html
+        if (!src || !START_AFTER_FIRST_PAINT.includes(path)) return html
         const deps = [...html.matchAll(preload)].map((m) => m[1])
         const start = `(function(){var go=function(){${JSON.stringify(deps)}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)});var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)};if(document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
         return html
