@@ -6,24 +6,24 @@
  * which replaced the page with "This part stopped working" (October 9, 2026:
  * twice in one 30-minute Picker session, on a day with several deploys).
  *
- * Reload instead, but only when the server's copy of this page loads another
- * entry script, which proves a newer deploy. Saved work lives in
- * localStorage, so the reload keeps it. When the check fails (offline) or
- * finds the same entry (a real bug), the error goes on as before.
+ * Reload instead, but only when the server's copy of this page carries another
+ * build time (`<meta name="p151-build">`), which proves a newer deploy. Saved
+ * work lives in localStorage, so the reload keeps it. When the check fails
+ * (offline) or finds the same build (a real bug), the error goes on as before.
  */
 
-const ENTRY = /<script type="module"[^>]*\ssrc="([^"]+)"/;
+const BUILD = /<meta name="p151-build" content="([^"]+)"/;
 const RELOADED_AT = 'p151-stale-deploy-reload';
 let check: Promise<boolean> | null = null;
 
 async function newerDeployIsLive(): Promise<boolean> {
-  const current = document.querySelector<HTMLScriptElement>('script[type="module"][src]')?.src;
+  const current = document.querySelector('meta[name="p151-build"]')?.getAttribute('content');
   if (!current) return false;
   try {
     const response = await fetch(window.location.href, { cache: 'no-store' });
     if (!response.ok) return false;
-    const next = ENTRY.exec(await response.text())?.[1];
-    return next !== undefined && new URL(next, window.location.href).href !== current;
+    const next = BUILD.exec(await response.text())?.[1];
+    return next !== undefined && next !== current;
   } catch {
     return false;
   }

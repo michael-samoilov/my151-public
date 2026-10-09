@@ -3,7 +3,7 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 // A deploy removes the previous deploy's hashed chunks, so a tab opened before
 // it gets a 404 for the next lazy chunk it loads (src/lib/staleDeploy.ts).
 // These tests stage that on one build: the Export chunk answers 404, and the
-// page's own HTML, fetched again, names another entry script (a deploy) or
+// page's own HTML, fetched again, carries another build time (a deploy) or
 // the same one (no deploy, so a reload would not help).
 
 test.use({ serviceWorkers: 'block' });
@@ -26,7 +26,7 @@ async function openStaleTab(page: Page, deployed: boolean) {
     if (route.request().resourceType() !== 'fetch') return route.continue();
     const response = await route.fetch();
     const html = await response.text();
-    await route.fulfill({ response, body: deployed ? html.replace(/(<script type="module"[^>]*src="[^"]+)\.js"/, '$1-next.js"') : html });
+    await route.fulfill({ response, body: deployed ? html.replace(/(<meta name="p151-build" content=")[^"]+/, '$1next') : html });
   });
 }
 

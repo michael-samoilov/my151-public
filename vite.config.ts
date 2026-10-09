@@ -39,8 +39,38 @@ function buildTimestampMeta(): Plugin {
   }
 }
 
+/**
+ * Runs each page's app code one frame after the first paint, not before it.
+ *
+ * When the code ran before Chrome's first frame, the page's own markup (the
+ * hub's prerender, each tool's shell) stayed off screen while the code ran,
+ * and in Google's phone runs Chrome then held that first frame for about 2 s:
+ * the page had loaded at 0.4 s and showed nothing until 2.3 s, and Speed Index
+ * read 4.1 s, not 1.8 s. The code still downloads at once (`modulepreload`);
+ * only its start waits for the frame. A hidden tab, which draws no frames,
+ * starts the code at once.
+ */
+function startAppAfterFirstPaint(): Plugin {
+  const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>/
+  return {
+    name: 'start-app-after-first-paint',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html) {
+        const src = entry.exec(html)?.[1]
+        if (!src) return html
+        const start = `(function(){var go=function(){var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)};if(document.visibilityState!=='visible')go();else requestAnimationFrame(function(){setTimeout(go)})})()`
+        return html
+          .replace(entry, `<link rel="modulepreload" crossorigin href="${src}">`)
+          .replace('</body>', `<script>${start}</script>\n  </body>`)
+      },
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), prerenderHub()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), prerenderHub()],
   define: {
     // Only the hub prerender's server build keeps this constant; the browser
     // reads the meta tag above.
