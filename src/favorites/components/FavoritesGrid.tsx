@@ -120,9 +120,9 @@ export function FavoritesGrid({
   /** The desktop selector pane. It scrolls with the grid, under the headers. */
   pane?: ReactNode;
   /** On desktop, shrink cells below their native size until the whole
-   *  unzoomed grid fits the frame. At any width, center the grid while it
-   *  fits; a grid that scrolls sideways stays left-aligned. The admin
-   *  overview uses it. */
+   *  unzoomed grid fits the frame, and center the grid at any width. Without
+   *  it, only a desktop grid centers. A centered grid that scrolls sideways
+   *  still starts at the left edge. The admin overview uses it. */
   fitFrame?: boolean;
 }) {
   useNamesVersion();
@@ -185,14 +185,17 @@ function ZoomFrame({
     <div ref={frameRef} className="relative h-full min-h-0 w-full">
       <div
         ref={ref}
-        className="isolate h-full w-full overflow-auto overscroll-contain bg-background"
+        // A sideways swipe stops at the grid's edge, so a trackpad cannot
+        // swipe the page back. Vertical scroll past the grid's top or bottom
+        // moves the page, so the footer stays reachable.
+        className="isolate h-full w-full overflow-auto overscroll-x-contain bg-background"
         style={{ touchAction: 'pan-x pan-y', scrollPaddingTop: 'var(--head-row, var(--head))', scrollPaddingLeft: 'var(--head)' }}
         data-testid="favorites-grid-scroll"
         data-zoom="1"
       >
         <div
           // Auto margins center a grid that fits and resolve to 0 for one that overflows.
-          className={fitFrame ? 'relative mx-auto grid' : 'relative grid'}
+          className={desktop || fitFrame ? 'relative mx-auto grid' : 'relative grid'}
           style={{
             width: `calc(var(--head) + var(--cell) * ${COLS - 1})`,
             height: `calc(var(--head-row, var(--head)) + var(--cell) * ${ROWS - 1})`,
@@ -286,7 +289,7 @@ function useZoomFrame(
     /** How far a centered grid sits right of the scroll origin. Measured from
      *  layout: Chrome reports this grid's auto margin as 0px. */
     const gridLeft = () => {
-      const grid = fitFrame ? el.firstElementChild : null;
+      const grid = desktop || fitFrame ? el.firstElementChild : null;
       if (!grid) return 0;
       return grid.getBoundingClientRect().left - el.getBoundingClientRect().left - el.clientLeft + el.scrollLeft;
     };
@@ -732,7 +735,9 @@ function BodyCell({
         // cell. Filled cells cannot, because skipping clips their sprites.
         !mon && !locked && '[content-visibility:auto]',
         locked
-          ? 'cursor-default bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]'
+          // A browser sends no click from a disabled button, so a locked cell
+          // lets clicks through to the grid, where they close an open selector.
+          ? 'pointer-events-none bg-[repeating-linear-gradient(-45deg,#f4f4f5,#f4f4f5_3px,#ececee_3px,#ececee_6px)]'
           : mon ? 'cursor-pointer bg-transparent' : 'cursor-pointer bg-card',
         !locked && kind === 'pointer' && (mon ? 'bg-amber-50/50' : 'bg-amber-50'),
         // A mouse hover greys the cell. The grey layers over the cell's own
