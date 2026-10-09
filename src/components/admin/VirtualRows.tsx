@@ -81,24 +81,25 @@ export function VirtualRows<T>({
   );
   const [step, viewport] = view.split(':').map(Number);
 
+  const keys = useMemo(() => items.map(keyOf), [items, keyOf]);
   const offsets = useMemo(() => {
     void measured;
     let sum = 0;
     let n = 0;
-    for (const item of items) {
-      const h = heights.get(keyOf(item));
+    for (const key of keys) {
+      const h = heights.get(key);
       if (h !== undefined) {
         sum += h;
         n += 1;
       }
     }
     const guess = n > 0 ? sum / n : FALLBACK_ROW_PX;
-    const out = new Float64Array(items.length + 1);
-    items.forEach((item, i) => {
-      out[i + 1] = out[i] + (heights.get(keyOf(item)) ?? guess) + gap;
+    const out = new Float64Array(keys.length + 1);
+    keys.forEach((key, i) => {
+      out[i + 1] = out[i] + (heights.get(key) ?? guess) + gap;
     });
     return out;
-  }, [items, keyOf, gap, measured]);
+  }, [keys, gap, measured]);
 
   const count = items.length;
   const total = count > 0 ? offsets[count] - gap : 0;
@@ -160,7 +161,7 @@ export function VirtualRows<T>({
       const el = wrapper.children[i];
       if (!el) break;
       now.add(el);
-      keyOfEl.current.set(el, keyOf(items[start + i]));
+      keyOfEl.current.set(el, keys[start + i]);
       if (!observed.current.has(el)) ro.observe(el);
     }
     for (const el of observed.current) if (!now.has(el)) ro.unobserve(el);
@@ -169,8 +170,8 @@ export function VirtualRows<T>({
 
   return (
     <div ref={ref} className={className} style={{ paddingTop: padTop, paddingBottom: padBottom }}>
-      {items.slice(start, end).map((item) => (
-        <Row key={keyOf(item)} item={item} render={render} />
+      {items.slice(start, end).map((item, i) => (
+        <Row key={keys[start + i]} item={item} render={render} />
       ))}
     </div>
   );
