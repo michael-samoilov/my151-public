@@ -105,6 +105,7 @@ a new animation) goes to Michael first, with before and after.
 | Keep the Pokémon data off the hub (`claude/perf-hub-data`) | Hub phone LCP −12%, but 13 files, a manual chunk group, an async feedback context, and a slower first language pick. |
 | Render the builder's first frame in a transition | Blocking time −58%, but the grid can appear later. |
 | Show result rows after the phone sheet | Rows arrive 31 ms later than before. |
+| Smaller copies of the hub screenshots (300 and 400 px) | Removed on 9 October. Screens drew them at about their own size, which looked soft. They saved about 450 KiB of images on phones but no measured LCP or score. Every device loads the 800 px originals. |
 | Preload the Pokédex intro image for everyone | First paint got slower for returning visitors, who never see the card. Shipped instead (October 8): `pokedex-builder.html` preloads it only when the card will show. Lab phone, first visit: the image appears 1.0 s sooner (3.8 to 2.8 s). |
 | `dir="ltr"` on the hub and league HTML | No measurable effect. |
 | Load the hub's page code with its entry script, not a dynamic import (October 8) | Lab phone first paint 600 → 804 ms (+34%), and the hub was not usable sooner (2110 → 2076 ms, within noise). |
