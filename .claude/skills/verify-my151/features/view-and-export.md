@@ -111,14 +111,15 @@ catch the download, and abort `/api/submit`. Click `[data-dex-export]`, then
 
 ## Gotchas
 
-- Never press save on my151.app. Save posts a report to `/api/submit`
-  (`keepalive`), and the survey that can follow posts to `/api/feedback`. On a
-  Vercel preview host, both routes answer 200 and store nothing
-  (`isReadOnlyDeployment` in `api/_shared.ts`); local `vite preview` has no
-  API at all.
-- The share sheet runs only off Android and only when
-  `navigator.canShare({files})` is true. Android always downloads through
-  `<a download>` (`src/lib/shareOrDownload.ts`).
+- Never press save on a deployed site. Save posts a report to `/api/submit`
+  (`keepalive`), and the survey that can follow posts to `/api/feedback`.
+  Previews share the production database. On a Vercel preview host, both
+  routes answer 200 and store nothing (`isReadOnlyDeployment` in
+  `api/_shared.ts`), and `?notme` holds back the report on any host. Local
+  `vite preview` has no API at all.
+- The share sheet runs only on iPhone and iPad, and only when
+  `navigator.canShare({files})` is true. Every other platform, desktop
+  included, downloads through `<a download>` (`src/lib/shareOrDownload.ts`).
 - Section outlines draw only with the build-order sort.
 - On a phone the View settings sheet stages changes until its apply button.
   Desktop applies them live.

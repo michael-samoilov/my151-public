@@ -151,6 +151,7 @@ test('stats retry isolates failures from both plain modes and sends no failed ex
 test('cancelled stats share keeps selected preview and records no export', async ({ page }, testInfo) => {
   const exports: unknown[] = [];
   await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15', configurable: true });
     Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true });
     Object.defineProperty(navigator, 'share', { value: () => Promise.reject(new DOMException('Cancelled', 'AbortError')), configurable: true });
   });
@@ -188,6 +189,7 @@ test('failed stats share records only the later successful retry', async ({ page
   const exportKinds: unknown[] = [];
   await page.addInitScript(() => {
     let attempts = 0;
+    Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15', configurable: true });
     Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true });
     Object.defineProperty(navigator, 'share', { value: () => ++attempts === 1
       ? Promise.reject(new TypeError('Share unavailable')) : Promise.resolve(), configurable: true });
