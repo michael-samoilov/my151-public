@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { Panel, Kpi } from '@/components/admin/ui';
 
 type Point = { x: string; y: number };
@@ -21,14 +21,19 @@ const gb = (bytes = 0) => `${(bytes / 1e9).toFixed(2)} GB`;
 /** Bar plus number, scaled to the largest value in its list. */
 function Row({ label, value, max, text }: { label: string; value: number; max: number; text: string }) {
   return (
-    <div className="grid grid-cols-[5.5rem_1fr_auto] items-center gap-2 text-xs tabular-nums">
+    <>
       <span className="truncate font-medium text-muted-foreground">{label}</span>
       <span className="h-2 rounded-full bg-muted">
         <span className="block h-2 rounded-full bg-foreground/70" style={{ width: `${max > 0 ? (value / max) * 100 : 0}%` }} />
       </span>
-      <span className="font-semibold">{text}</span>
-    </div>
+      <span className="text-right font-semibold">{text}</span>
+    </>
   );
+}
+
+/** A list title. Both lists share one grid, so every bar track has one length. */
+function Title({ children }: { children: ReactNode }) {
+  return <div className="col-span-3 mt-2 text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground first:mt-0">{children}</div>;
 }
 
 /**
@@ -65,6 +70,9 @@ export function UsageCard({ token }: { token: string }) {
     bytes: s.bandwidths?.[i]?.y ?? 0,
     usd: s.dailybilling?.[i]?.y ?? 0,
   }));
+  // Upstash fills in a day's total after the day ends, so today reads 0
+  // until then; today's commands so far are in the list below.
+  if (days.at(-1)?.commands === 0) days.pop();
   const maxDay = Math.max(0, ...days.map((d) => d.commands));
   const today = (s.command_counts ?? [])
     .map((c) => ({ name: c.metric_identifier, n: c.data_points.at(-1)?.y ?? 0 }))
@@ -79,20 +87,23 @@ export function UsageCard({ token }: { token: string }) {
         <Kpi value={gb(s.total_monthly_bandwidth)} label="Bandwidth" />
         <Kpi value={`${((s.current_storage ?? 0) / 1e6).toFixed(1)} MB`} label="Storage" />
       </div>
-      <div className="mt-4 flex flex-col gap-1.5" data-testid="usage-days">
-        <div className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">Commands per day (UTC)</div>
-        {days.map((d) => (
-          <Row key={d.label} label={d.label} value={d.commands} max={maxDay} text={`${fmt.format(d.commands)} · ${gb(d.bytes)} · $${d.usd.toFixed(2)}`} />
-        ))}
-      </div>
-      {today.length > 0 && (
-        <div className="mt-4 flex flex-col gap-1.5" data-testid="usage-commands">
-          <div className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground">Today by command (UTC)</div>
+      <div className="mt-4 grid grid-cols-[5.5rem_1fr_auto] items-center gap-x-2 gap-y-1.5 text-xs tabular-nums">
+        <Title>Commands per day (UTC)</Title>
+        <div className="contents" data-testid="usage-days">
+          {days.map((d) => (
+            <Fragment key={d.label}>
+              <Row label={d.label} value={d.commands} max={maxDay} text={fmt.format(d.commands)} />
+              <span className="col-span-2 col-start-2 -mt-1 text-[0.65rem] text-muted-foreground">{`${gb(d.bytes)} · $${d.usd.toFixed(2)}`}</span>
+            </Fragment>
+          ))}
+        </div>
+        {today.length > 0 && <Title>Today by command (UTC)</Title>}
+        <div className="contents" data-testid="usage-commands">
           {today.map((c) => (
             <Row key={c.name} label={c.name} value={c.n} max={maxCmd} text={fmt.format(c.n)} />
           ))}
         </div>
-      )}
+      </div>
     </Panel>
   );
 }
