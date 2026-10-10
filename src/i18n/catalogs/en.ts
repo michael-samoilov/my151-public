@@ -132,9 +132,18 @@ export const enUi = {
   'browser.tooMany.hint': 'Add another character, or search by Pokédex number.',
   'browser.tooMany.title': '{count} matches — too many to show.',
   'builder.addToSection': 'Add a Pokémon to {section}',
+  // The phone's selection sheet: its title reads "Adding to: Forest", with the
+  // section name in its own colour, and its close control is named after it.
+  'builder.addingTo': 'Adding to: ',
+  'builder.addingToLabel': 'Adding to {section}',
+  'builder.browse': 'Browse Pokémon',
+  // The build page's settings menu: one action, which asks once to confirm.
+  'builder.clearAll': 'Clear All',
+  'builder.clearConfirm': 'Are you sure?',
   // The red X on a builder tile. One press can remove the whole evolution
   // line.
   'builder.remove': 'Remove {name}',
+  'builder.settings': 'Settings',
   'chart.header.evolution': 'STAGE',
   'chart.header.color': 'COLOR',
   'chart.header.count': 'COUNT',
@@ -378,7 +387,13 @@ export const enUi = {
   'home.next.title': 'What should we build next?',
   'intro.body': 'Hand-pick your favorites from all {total} Pokémon into a Pokédex that’s entirely yours.',
   'intro.cta': 'Choose your starters',
+  'intro.dismiss': 'Dismiss intro',
   'intro.headline': 'Build your own {count}',
+  // Alt text for the intro card's three screenshots. Each names one search
+  // phrase the image really shows; see SHOT_ALTS in IntroCard.tsx.
+  'intro.shot.complete': 'A generated Pokédex image: a finished 151 dex beside its type-distribution, generation-origin and base-stat charts.',
+  'intro.shot.partial': 'A custom Pokédex in progress — 45 of the 151 slots filled, the rest still empty.',
+  'intro.shot.sections': 'A Pokémon region template at 95 of 151, its slots grouped into labelled areas such as Starters, Forest and Ocean.',
   'tools.title': 'Tools',
   'tools.dex': 'Pokédex Maker',
   'tools.league': 'Gym Leader Maker',
@@ -438,6 +453,12 @@ export const enUi = {
   'poster.separator': ' · ',
   'promo.league.dismiss': 'Dismiss',
   'promo.league.tip': 'New under Tools: Custom Gym Leader & Trainer Card Maker.',
+  // Section outline labels shorten in two rungs as the outline narrows: the
+  // section name, then sectionShort, then sectionTiny (src/lib/sectionOutlines.ts).
+  // The tiny form must fit an outline one cell wide. A rung equal to the one
+  // before it is skipped, so where English has no shorter word its tiny form
+  // repeats its shortest one, and the other languages still get a rung of their
+  // own.
   'sectionShort.cave-pokemon': 'Cave',
   'sectionShort.early-bird': 'Early Bird',
   'sectionShort.early-bug': 'Early Bug',
@@ -450,12 +471,34 @@ export const enUi = {
   'sectionShort.pikachu-clone': 'Pikaclone',
   'sectionShort.rivalry-pair': 'Rivalry',
   'sectionShort.ruins': 'Temple',
+  'sectionTiny.beach': 'Beach',
+  'sectionTiny.cave-pokemon': 'Cave',
+  'sectionTiny.desert': 'Desert',
+  'sectionTiny.dojo': 'Dojo',
   'sectionTiny.early-bird': 'Bird',
+  'sectionTiny.early-bug': 'Early Bug',
+  'sectionTiny.early-normal': 'Domestic',
   'sectionTiny.early-rodent': 'Mammal',
+  'sectionTiny.evil-team': 'Evil Team',
+  'sectionTiny.fishing-pokemon': 'Fishing',
+  'sectionTiny.forest': 'Forest',
+  'sectionTiny.fossil': 'Fossil',
+  'sectionTiny.haunted': 'Haunted',
   'sectionTiny.industrial': 'Indust.',
+  'sectionTiny.legendary': 'Legendary',
+  'sectionTiny.meadow': 'Meadow',
+  'sectionTiny.mimic': 'Mimic',
+  'sectionTiny.mythical': 'Mythical',
+  'sectionTiny.ocean': 'Ocean',
   'sectionTiny.other': 'Other',
   'sectionTiny.pikachu-clone': 'Pika',
   'sectionTiny.pseudo-legendary': 'Pseudo',
+  'sectionTiny.rivalry-pair': 'Rivalry',
+  'sectionTiny.ruins': 'Temple',
+  'sectionTiny.starter': 'Starters',
+  'sectionTiny.swamp': 'Swamp',
+  'sectionTiny.tundra': 'Tundra',
+  'sectionTiny.volcanic': 'Volcanic',
   'sort.build-order': 'Build Order',
   'sort.build-order.desc': 'Mirrors your build page exactly - the order and sections you set up there.',
   'sort.custom': 'Custom',
