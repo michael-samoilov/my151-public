@@ -254,6 +254,7 @@
   "drilldown.tier.gain_other": "+{count}（有利）",
   "drilldown.tier.loss_other": "−{count}（不利）",
   "drilldown.typeTitle": "{type}タイプ",
+  "stage.columnLines_other": "{count}系統",
   "stage.columnTotal_other": "{count}匹",
   "stage.desc": "進化系統の長さでポケモンを分けています。各バーは、そのグループ内の進化段階の内訳です。",
   "stage.empty": "進化データはまだありません",

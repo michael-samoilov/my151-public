@@ -254,6 +254,7 @@
   "drilldown.tier.gain_other": "+{count}（优势）",
   "drilldown.tier.loss_other": "−{count}（劣势）",
   "drilldown.typeTitle": "{type}属性",
+  "stage.columnLines_other": "{count}条进化链",
   "stage.columnTotal_other": "{count}只",
   "stage.desc": "按进化链长度对宝可梦分组。每个条形显示该组内各进化阶段的构成。",
   "stage.empty": "暂无进化数据",

@@ -269,6 +269,8 @@
   "drilldown.tier.loss_one": "−{count} duplicación de la ventaja",
   "drilldown.tier.loss_other": "−{count} duplicaciones de la ventaja",
   "drilldown.typeTitle": "Tipo {type}",
+  "stage.columnLines_one": "{count} línea",
+  "stage.columnLines_other": "{count} líneas",
   "stage.columnTotal_one": "{count} Pokémon",
   "stage.columnTotal_other": "{count} Pokémon",
   "stage.desc": "Pokémon agrupados según la longitud de su línea evolutiva. Cada barra muestra el reparto por fases dentro del grupo.",

@@ -269,6 +269,8 @@
   "drilldown.tier.loss_one": "−{count} Verdopplung des Vorteils",
   "drilldown.tier.loss_other": "−{count} Verdopplungen des Vorteils",
   "drilldown.typeTitle": "Typ {type}",
+  "stage.columnLines_one": "{count} Linie",
+  "stage.columnLines_other": "{count} Linien",
   "stage.columnTotal_one": "{count} Pokémon",
   "stage.columnTotal_other": "{count} Pokémon",
   "stage.desc": "Pokémon nach Länge der Entwicklungslinie gruppiert. Jeder Balken zeigt, wie sich die Gruppe auf die Stufen verteilt.",

@@ -254,6 +254,7 @@
   "drilldown.tier.gain_other": "+{count}（優勢）",
   "drilldown.tier.loss_other": "−{count}（劣勢）",
   "drilldown.typeTitle": "{type}屬性",
+  "stage.columnLines_other": "{count}條進化鏈",
   "stage.columnTotal_other": "{count}隻",
   "stage.desc": "依進化鏈長度將寶可夢分組。每個長條顯示該組內各進化階段的組成。",
   "stage.empty": "目前沒有進化資料",

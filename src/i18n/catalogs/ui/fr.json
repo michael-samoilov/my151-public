@@ -269,6 +269,8 @@
   "drilldown.tier.loss_one": "−{count} doublement de l’avantage",
   "drilldown.tier.loss_other": "−{count} doublements de l’avantage",
   "drilldown.typeTitle": "Type {type}",
+  "stage.columnLines_one": "{count} lignée",
+  "stage.columnLines_other": "{count} lignées",
   "stage.columnTotal_one": "{count} Pokémon",
   "stage.columnTotal_other": "{count} Pokémon",
   "stage.desc": "Pokémon regroupés selon la longueur de leur lignée d’évolution. Chaque barre montre la répartition par stade dans ce groupe.",

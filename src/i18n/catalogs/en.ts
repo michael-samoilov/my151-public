@@ -421,6 +421,10 @@ export const enUi = {
   'sort.regional.desc': 'Places each evolution line roughly as deep into your grid as its earliest member appeared in its home dex',
   'sort.type': 'Type',
   'sort.type.desc': 'Groups by each line\'s primary type, then by national dex number within each type.',
+  // The first column's line count, under its name. The other columns show
+  // the bare number.
+  'stage.columnLines_one': '{count} line',
+  'stage.columnLines_other': '{count} lines',
   'stage.columnTotal_one': '{count} Pokémon',
   'stage.columnTotal_other': '{count} Pokémon',
   'stage.desc': 'Pokémon grouped by evolution line length. Each bar shows the stage breakdown within that group.',

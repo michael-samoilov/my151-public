@@ -254,6 +254,7 @@
   "drilldown.tier.gain_other": "+{count} (유리)",
   "drilldown.tier.loss_other": "−{count} (불리)",
   "drilldown.typeTitle": "{type} 타입",
+  "stage.columnLines_other": "{count}개 계열",
   "stage.columnTotal_other": "{count}마리",
   "stage.desc": "진화 계열의 길이별로 포켓몬을 묶었습니다. 각 막대는 그룹 안의 진화 단계 구성을 보여 줍니다.",
   "stage.empty": "아직 진화 데이터가 없습니다",

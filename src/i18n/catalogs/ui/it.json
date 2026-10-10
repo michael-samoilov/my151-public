@@ -269,6 +269,8 @@
   "drilldown.tier.loss_one": "−{count} raddoppio del vantaggio",
   "drilldown.tier.loss_other": "−{count} raddoppi del vantaggio",
   "drilldown.typeTitle": "Tipo {type}",
+  "stage.columnLines_one": "{count} linea",
+  "stage.columnLines_other": "{count} linee",
   "stage.columnTotal_one": "{count} Pokémon",
   "stage.columnTotal_other": "{count} Pokémon",
   "stage.desc": "Pokémon raggruppati per lunghezza della linea evolutiva. Ogni barra mostra la ripartizione per stadio nel gruppo.",

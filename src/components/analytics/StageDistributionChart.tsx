@@ -424,7 +424,7 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                       >
                         <span className="whitespace-nowrap" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{names[col.lineLength - 1]}</span>
                         <br />
-                        {col.chainCount}{idx === 0 && ' lines'}
+                        {idx === 0 ? tn('stage.columnLines', col.chainCount) : col.chainCount}
                       </div>
                     );
                   })}
