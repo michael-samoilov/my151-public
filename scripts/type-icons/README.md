@@ -6,15 +6,32 @@ Bug preserves Partywhale's right half and mirrors it onto the left. Water and Ps
 
 The shared generated registry is `src/data/type-icons.ts`. Existing consumers use `typeIconPath` for padded coloured squares and `typeGlyphPath` for transparent white glyphs. The same glyph URLs serve CSS masks and canvas exports. No runtime PNG thresholding remains.
 
-Run from the repository root with installed dependencies and a Playwright Chromium executable:
+Install the pinned Python geometry tools as described in `BUILD.md`. Run from the
+repository root with installed app dependencies and a Playwright Chromium executable:
 
 ```bash
-flock /tmp/my151-browser.lock node scripts/build-selected-type-icons.mjs
+TYPE_ICON_PYTHON=/tmp/my151-type-icons-env/bin/python \
+  flock /tmp/my151-browser.lock node scripts/build-selected-type-icons.mjs
 ```
 
-Set `PLAYWRIGHT_CHROMIUM_PATH` if Chromium is installed outside Playwright's default directory. The generator uses Python's standard XML parser, then measures SVG path bounds in Chromium. It commits explicit glyph dimensions, containment, symmetry, and content-hashed filenames. Changed filenames avoid stale service-worker and immutable sprite caches.
+Set `PLAYWRIGHT_CHROMIUM_PATH` if Chromium is installed outside Playwright's default directory. The generator converts source paint into filled compound paths at build time, then measures the original SVG bounds in Chromium. It commits explicit glyph dimensions, containment, symmetry, and content-hashed filenames. Changed filenames avoid stale service-worker and immutable sprite caches. Keep previous files so open tabs retain their asset URLs.
 
-The square icon retains the app palette and contains a 40 × 40 glyph box inside a 60 × 60 square. Its 10 px inset prevents tall glyphs from escaping. Transparent glyphs preserve their tight aspect ratio for existing badge and outline sizing.
+Generated artwork contains no internal masks, clip paths, or nested SVGs.
+The 15 unmirrored types retain their original white paths and circles. Vector
+Boolean operations turn colored cutouts into holes and unite the three mirrored
+types. This removes mask rasterization and independently antialiased center edges.
+
+`game-calibration.json` records measurements and hashes of the original 60 × 60
+Scarlet/Violet icons in `public/sprites/types/small`. Each selected SVG gets one
+uniform scale that matches its game symbol's maximum extent. The game symbol's
+optical center determines placement. Bug, Water, and Psychic retain the common
+vertical symmetry axis. Selected shapes keep their original aspect ratios.
+
+Every transparent glyph uses the same 44 × 44 frame, corresponding to game
+coordinates 8-52. Its padding carries relative game sizes into existing badges,
+CSS masks, and exports. The colored square embeds this frame at 8,8 inside the
+original 60 × 60 square and retains the app palette. This includes Grass's
+41-unit extent without clipping. The generator rejects artwork outside the frame.
 
 ## Asset licenses
 
