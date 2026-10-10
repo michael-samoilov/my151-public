@@ -64,6 +64,7 @@ import {
   wrapTracked,
 } from './paint';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
+import { drawGenderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
 
 export { CARD_FILENAME, HOME_FILENAME } from './exportOptions';
 
@@ -360,13 +361,9 @@ function headRun(text: string, colour: string, face: HeadFace): CaptionRun {
   return { text, px: face.px, track: face.track, colour };
 }
 
-function captionMarkWidth(ctx: CanvasRenderingContext2D, mark: string | undefined, px: number): number {
+function captionMarkWidth(mark: string | undefined, px: number): number {
   if (!mark) return 0;
-  ctx.save();
-  ctx.font = font(px * 0.8, 600);
-  const width = ctx.measureText(mark).width + px * 0.15;
-  ctx.restore();
-  return width;
+  return genderSymbolWidth(mark, px * 0.8) + px * 0.15;
 }
 
 /**
@@ -378,11 +375,11 @@ function nameRun(ctx: CanvasRenderingContext2D, pokemonId: number | null, room: 
   const trackAt = (px: number) => (L.NAME_TRACK / L.NAME_PX) * px;
   let px = L.NAME_PX;
   ctx.font = font(px, 800);
-  while (px > L.CAPTION_NAME_MIN_PX && trackedWidth(ctx, text, trackAt(px)) + captionMarkWidth(ctx, mark, px) > room) {
+  while (px > L.CAPTION_NAME_MIN_PX && trackedWidth(ctx, text, trackAt(px)) + captionMarkWidth(mark, px) > room) {
     px = Math.max(L.CAPTION_NAME_MIN_PX, px - 0.5);
     ctx.font = font(px, 800);
   }
-  return { text: ellipsizeTracked(ctx, text, room - captionMarkWidth(ctx, mark, px), trackAt(px)), mark,
+  return { text: ellipsizeTracked(ctx, text, room - captionMarkWidth(mark, px), trackAt(px)), mark,
     px, track: trackAt(px), colour: FG };
 }
 
@@ -400,7 +397,7 @@ function layoutCaption(
 ): CaptionLine[] {
   return runs.map((run, i) => {
     ctx.font = font(run.px, 800);
-    const w = trackedWidth(ctx, run.text, run.track) + captionMarkWidth(ctx, run.mark, run.px);
+    const w = trackedWidth(ctx, run.text, run.track) + captionMarkWidth(run.mark, run.px);
     const x = align === 'center' ? anchor - w / 2 : anchor - w;
     // Tracking follows the last letter too, as in CSS, but it is not ink.
     const ink = Math.max(0, w - run.track);
@@ -427,9 +424,8 @@ function fillCaption(ctx: CanvasRenderingContext2D, lines: CaptionLine[]): void 
     if (line.mark) {
       const markX = line.x + trackedWidth(ctx, line.text, line.track) + line.px * 0.15;
       ctx.save();
-      ctx.font = font(line.px * 0.8, 600);
       ctx.globalAlpha *= 0.7;
-      ctx.fillText(line.mark, markX, baseline - line.px * 0.35);
+      drawGenderSymbol(ctx, line.mark, markX, baseline, line.px * 0.8);
       ctx.restore();
     }
   }
