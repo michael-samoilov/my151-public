@@ -6,7 +6,7 @@ import { useToolbarSlot } from '@/components/layout/toolbarSlot';
 import { Settings, Download } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
-import type { Pokemon, TypeName } from '@/types/pokemon';
+import type { Pokemon } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
@@ -18,7 +18,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
 import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
-import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
+import { getTypeMask } from '@/lib/typeSymbol';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import {
   type SectionRun,
@@ -169,25 +169,6 @@ function useFontsReady(): boolean {
     return () => { alive = false; };
   }, [ready]);
   return ready;
-}
-
-/** Generate (once) the alpha masks for the given type symbols and re-render when
- *  they're ready. Returns the set of types whose mask is now available. */
-function useTypeMasks(types: TypeName[]): Set<TypeName> {
-  const [, force] = useState(0);
-  const keyStr = types.slice().sort().join(',');
-  useEffect(() => {
-    if (types.length === 0) return;
-    let alive = true;
-    const missing = types.filter((t) => !getTypeMask(t));
-    if (missing.length === 0) return;
-    Promise.all(missing.map((t) => ensureTypeMask(t).catch(() => null))).then(() => {
-      if (alive) force((n) => n + 1);
-    });
-    return () => { alive = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyStr]);
-  return new Set(types.filter((t) => getTypeMask(t)));
 }
 
 // ---------- Draggable tile ----------
@@ -342,13 +323,6 @@ export function SectionOverlays({
   const fontSize = tileSize * 0.26;
   const strokeW = outlineStrokeW(tileSize, OUTLINE_STROKE_FRAC);
   const dotTail = 6 * strokeW;
-  // Generate the type-symbol masks the visible spandrels need; until a mask is
-  // ready that spandrel falls back to the 4-point star.
-  const spandrelTypes = useMemo(
-    () => [...new Set(spandrels.map((s) => s.type).filter((t): t is TypeName => t !== null))],
-    [spandrels],
-  );
-  const readyTypes = useTypeMasks(spandrelTypes);
   // Re-measure labels once the real font is loaded (canvas metrics depend on it).
   const fontsReady = useFontsReady();
 
@@ -426,17 +400,15 @@ export function SectionOverlays({
             )),
           );
         })}
-        {/* Spandrels: a type symbol where its mask is ready, else a 4-point star.
-            Both use the section's stroke colour at the outline-border opacity. */}
         {spandrels.map((sp) =>
-          sp.type && readyTypes.has(sp.type) ? null : (
+          sp.type ? null : (
             <path key={sp.key} d={starPath(sp.cx, sp.cy, sp.r)} fill={sp.color} fillOpacity={0.2} stroke="none" />
           ),
         )}
       </svg>
       {spandrels.map((sp) => {
-        if (!sp.type || !readyTypes.has(sp.type)) return null;
-        const mask = getTypeMask(sp.type)!;
+        if (!sp.type) return null;
+        const mask = getTypeMask(sp.type);
         // Cropped mask fills its box, so match the star's bounding box (2·r).
         const size = sp.r * 2;
         return (
