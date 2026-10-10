@@ -197,7 +197,9 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         }
       }}
       className={cn(
-        'flex items-center text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground',
+        // One line: a CJK head such as 威力 would otherwise break between
+        // its two characters in the narrow numeric columns.
+        'flex items-center whitespace-nowrap text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground',
         right && 'justify-end',
       )}
     >

@@ -103,7 +103,9 @@ function GestureList() {
           </span>
           <div className="min-w-0">
             <h3 className="text-sm font-semibold leading-snug">{t(title)}</h3>
-            <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground text-pretty">{body()}</p>
+            {/* `auto-phrase` breaks Japanese between phrases rather than
+                inside them; other languages ignore it. */}
+            <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground text-pretty [word-break:auto-phrase]">{body()}</p>
           </div>
         </li>
       ))}
