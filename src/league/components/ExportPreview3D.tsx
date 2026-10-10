@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n';
 import {
   clampHypot,
   clampTiltToBox,
@@ -122,6 +123,7 @@ export function ExportPreview3D({
   maskContext?: HoverTiltMaskContext;
   darkCard?: boolean;
 }) {
+  const t = useT();
   const stageRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -872,7 +874,7 @@ export function ExportPreview3D({
           aria-busy={busy}
           data-export-preview
         >
-          {busy ? 'Rendering preview…' : 'Preview unavailable'}
+          {t(busy ? 'export.preview.rendering' : 'export.preview.unavailable')}
         </div>
       )}
     </div>

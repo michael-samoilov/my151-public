@@ -1,5 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 
 /**
@@ -14,6 +15,7 @@ export function ExportSettingsScroll({
   children: ReactNode;
   className?: string;
 }) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [fade, setFade] = useState(0);
 
@@ -54,7 +56,7 @@ export function ExportSettingsScroll({
         <button
           type="button"
           data-export-scroll-more
-          aria-label="More settings below"
+          aria-label={t('export.moreSettings')}
           className="absolute bottom-1.5 left-1/2 z-10 -translate-x-1/2 cursor-pointer rounded-full bg-background/90 p-1 text-muted-foreground shadow-sm ring-1 ring-border transition-opacity duration-300 ease-out hover:text-foreground"
           style={{ opacity: fade }}
           onClick={() => {

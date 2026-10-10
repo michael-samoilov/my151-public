@@ -1,10 +1,16 @@
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { MAX_LABEL_STRETCH } from '@/lib/sectionOutlines';
-import { t } from '@/i18n';
+import { localeUppercase, t } from '@/i18n';
 import { butterflyColumns } from './butterflyLayout';
 const MUTED = '#737373';
 const CHART_TEXT = 10;
 function font(weight: number, size: number) { return `${weight} ${size}px 'Inter Variable', system-ui, sans-serif`; }
+
+/** Width of `text` as `spacedText` draws it, before any squeeze to fit. */
+function spacedWidth(ctx: CanvasRenderingContext2D, text: string, spacing: number): number {
+  const glyphs = [...text];
+  return glyphs.reduce((sum, c) => sum + ctx.measureText(c).width, 0) + spacing * Math.max(0, glyphs.length - 1);
+}
 
 /** Draw text with manual letter-spacing (ctx.letterSpacing isn't reliable on
  *  older iOS). `align` controls anchoring around `x`. */
@@ -64,7 +70,14 @@ export function drawExportButterfly(
   heightScale: number,
   labelHeader: string,
   draw: boolean,
-  options: { contentWidth?: number; iconColAspect?: number; alignBaselines?: boolean; fixedIndexDomain?: number } = {},
+  options: {
+    contentWidth?: number;
+    iconColAspect?: number;
+    alignBaselines?: boolean;
+    fixedIndexDomain?: number;
+    /** How far the index headers may run past the content box, into the card's padding. */
+    headerBleed?: number;
+  } = {},
 ): number {
   const n = rows.length;
   const iconSize = 14;
@@ -139,7 +152,8 @@ export function drawExportButterfly(
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(600, CHART_TEXT);
   spacedText(ctx, labelHeader, iconStart + iconColW / 2, headerBaseline, 0.05 * CHART_TEXT, 'middle');
-  spacedText(ctx, t('chart.header.count'), countSectionStart, headerBaseline, 0.05 * CHART_TEXT, 'start');
+  const countHeader = t('chart.header.count');
+  spacedText(ctx, countHeader, countSectionStart, headerBaseline, 0.05 * CHART_TEXT, 'start');
   // Deviation two-line headers, bottom line on headerBaseline.
   // CJK glyphs can exceed the Latin line box. Keep both header lines separate
   // without moving the lower baseline or the chart rows.
@@ -149,8 +163,11 @@ export function drawExportButterfly(
     const metrics = ctx.measureText(text);
     return metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + 1;
   })) : 1.1 * CHART_TEXT;
-  const underHeaderWidth = fitIndexHeaders ? zeroX - 5 : undefined;
-  const overHeaderWidth = fitIndexHeaders ? chart2Width - zeroX - 5 : undefined;
+  // A long translation squeezes rather than run into the count header on the
+  // left or off the card on the right.
+  const countHeaderEnd = countSectionStart + spacedWidth(ctx, countHeader, 0.05 * CHART_TEXT) + 4;
+  const underHeaderWidth = fitIndexHeaders ? zeroX - 5 : devSectionStart + zeroX - 5 - countHeaderEnd;
+  const overHeaderWidth = chart2Width - zeroX - 5 + (fitIndexHeaders ? 0 : options.headerBleed ?? 0);
   spacedText(ctx, t('chart.header.underIndexed1'), devSectionStart + zeroX - 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'end', underHeaderWidth);
   spacedText(ctx, t('chart.header.underIndexed2'), devSectionStart + zeroX - 5, headerBaseline, 0.05 * CHART_TEXT, 'end', underHeaderWidth);
   spacedText(ctx, t('chart.header.overIndexed1'), devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'start', overHeaderWidth);
@@ -251,7 +268,7 @@ export function drawExportStatsTitle(ctx: CanvasRenderingContext2D, text: string
   ctx.fillStyle = '#0a0a0a';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  const up = text.toUpperCase();
+  const up = localeUppercase(text);
   ctx.font = font(900, 14);
   const tw = ctx.measureText(up).width;
   const sx = tw > 0 ? Math.min(MAX_LABEL_STRETCH, width / tw) : 1;

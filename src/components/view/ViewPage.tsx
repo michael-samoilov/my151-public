@@ -3,6 +3,7 @@ import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } fr
 import { useDragSensors } from '@/lib/dragSensors';
 import { createPortal } from 'react-dom';
 import { useToolbarSlot } from '@/components/layout/toolbarSlot';
+import { useT } from '@/i18n';
 import { Settings, Download } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
@@ -486,6 +487,7 @@ export function ViewPage() {
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
   const toolbarSlot = useToolbarSlot('view');
+  const t = useT();
   const totalSlots = Math.max(count, 151);
 
   // Build-section outlines overlay: shown when the user enables it, in build order.
@@ -1100,13 +1102,13 @@ export function ViewPage() {
               ref={settingsBtnRef}
               onClick={() => setSettingsOpen(true)}
               className="text-muted-foreground hover:text-foreground hover:bg-muted"
-              aria-label="View settings"
+              aria-label={t('view.settings')}
             >
               <Settings className="w-4 h-4" />
               {hasCustom && (
                 <span
                   className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary"
-                  aria-label="Custom order active"
+                  aria-label={t('view.customOrderActive')}
                 />
               )}
             </HeaderActionButton>
@@ -1115,7 +1117,7 @@ export function ViewPage() {
               onClick={openExport}
               disabled={count === 0}
               data-dex-export
-              aria-label="Export"
+              aria-label={t('export.title')}
               className="text-primary hover:bg-primary hover:text-primary-foreground disabled:hover:bg-card disabled:hover:text-primary"
             >
               <Download className="w-4 h-4" />
@@ -1368,16 +1370,16 @@ export function ViewPage() {
         dismiss={dismissStatsHint}
         fulfilled={exportOpen}
         anchorRef={exportBtnRef}
-        title="Stats live in Export"
-        body="Tap download and turn on “Show detailed stats” to add type, generation, and base-stat charts to your image."
+        title={t('view.hint.stats.title')}
+        body={t('view.hint.stats.body')}
       />
       <FollowUpHint
         armed={exportHintArmed}
         dismiss={dismissExportHint}
         fulfilled={exportOpen}
         anchorRef={exportBtnRef}
-        title="Export is right here"
-        body="Tap the download icon to save your dex as an image and share it."
+        title={t('view.hint.export.title')}
+        body={t('view.hint.export.body')}
       />
     </div>
   );
@@ -1386,8 +1388,9 @@ export function ViewPage() {
 // ---------- Mobile bottom sheet for settings ----------
 
 function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
+  const t = useT();
   return (
-    <BottomSheet onClose={onClose} closeLabel="Close settings" title="View Settings">
+    <BottomSheet onClose={onClose} closeLabel={t('viewSettings.close')} title={t('viewSettings.title')}>
       <ViewSettingsPane onClose={onClose} mobileSheet />
     </BottomSheet>
   );

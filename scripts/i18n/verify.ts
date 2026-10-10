@@ -326,6 +326,16 @@ const SAME_AS_ENGLISH_OK = new Set([
   'fr:term.shape.squiggle', // Serpent is the French noun as well.
   'fr:favorites.stats.final', // Final is the French masculine evolution-role adjective.
   'es:favorites.stats.final', // Final is also the Spanish evolution-role adjective.
+  'fr:sort.type', // Type is the French noun too.
+  // The poster's clause separator is a spaced middle dot in every locale.
+  'de:poster.separator',
+  'es:poster.separator',
+  'fr:poster.separator',
+  'it:poster.separator',
+  'ja:poster.separator',
+  'ko:poster.separator',
+  'zh-Hans:poster.separator',
+  'zh-Hant:poster.separator',
   'fr:feedback.category.bug', // French tech writing uses "Bug".
   'es:feedback.context.error', // "error" is the Spanish word too.
   'it:feedback.context.browser', // Italian says "browser".

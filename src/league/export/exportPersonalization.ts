@@ -1,4 +1,5 @@
 import { getPokemonById } from '@/hooks/usePokemonData';
+import { getLocale, t, type MessageKey } from '@/i18n';
 import type { GymCard } from '../store/useLeagueStore';
 import { legendsOf } from '../store/useLeagueStore';
 
@@ -12,11 +13,24 @@ export interface ExportHighlight {
   firstPokemonId: number | null;
 }
 
-export const EXPORT_TOOL_LABEL: Record<ExportTool, string> = {
-  pokedex: 'Pokedex',
-  league: 'Pokemon League',
-  card: 'Gym Leader Card',
-};
+const BUCKET_LINE = {
+  pokedex: 'exportSurvey.early.bucket.pokedex',
+  league: 'exportSurvey.early.bucket.league',
+  card: 'exportSurvey.early.bucket.card',
+} as const satisfies Record<ExportTool, MessageKey>;
+
+const MILESTONE_LINE = {
+  pokedex: 'exportSurvey.early.milestone.pokedex',
+  league: 'exportSurvey.early.milestone.league',
+  card: 'exportSurvey.early.milestone.card',
+} as const satisfies Record<ExportTool, MessageKey>;
+
+/** Whole sentences per tool, with `{name}` where the Pokémon goes. */
+export const FIRST_POKEMON_LINE = {
+  pokedex: 'exportSurvey.firstPokemon.pokedex',
+  league: 'exportSurvey.firstPokemon.league',
+  card: 'exportSurvey.firstPokemon.card',
+} as const satisfies Record<ExportTool, MessageKey>;
 
 /** First-N buckets for "you're among the first n users". */
 export const EARLY_EXPORT_BUCKETS = [10, 50, 100, 151, 251, 500, 1000] as const;
@@ -34,34 +48,32 @@ export const GEN_EXPORT_MILESTONES: { n: number; gen: number }[] = [
   { n: 1025, gen: 9 },
 ];
 
-export function ordinalSuffix(n: number): string {
-  const v = n % 100;
-  if (v >= 11 && v <= 13) return `${n}th`;
-  switch (n % 10) {
-    case 1:
-      return `${n}st`;
-    case 2:
-      return `${n}nd`;
-    case 3:
-      return `${n}rd`;
-    default:
-      return `${n}th`;
-  }
+/**
+ * An ordinal in the active locale: 151st, 151., 151人目. The locale's ordinal
+ * rule picks the pattern. Export milestones start at 151, where every
+ * non-English locale's rule says `other`, so those catalogs carry only
+ * `exportSurvey.ordinal_other`.
+ */
+export function ordinalNumber(n: number): string {
+  const rule = new Intl.PluralRules(getLocale(), { type: 'ordinal' }).select(n);
+  const key = rule === 'one' || rule === 'two' || rule === 'few'
+    ? (`exportSurvey.ordinal_${rule}` as const)
+    : 'exportSurvey.ordinal_other';
+  return t(key, { count: n });
 }
 
 export function earlyExportLine(ordinal: number, tool: ExportTool): string | null {
-  const label = EXPORT_TOOL_LABEL[tool];
   const milestone = GEN_EXPORT_MILESTONES.find((m) => m.n === ordinal);
   if (milestone) {
-    return `You're the ${ordinalSuffix(ordinal)} person to export a ${label}. Coincidentally, that's the size of the national dex after Generation ${milestone.gen}. Lucky you!`;
+    return t(MILESTONE_LINE[tool], { ordinal: ordinalNumber(ordinal), gen: milestone.gen });
   }
   const bucket = EARLY_EXPORT_BUCKETS.find((n) => ordinal <= n);
   if (!bucket) return null;
-  return `You're among the first ${bucket} users to export a ${label}.`;
+  return t(BUCKET_LINE[tool], { count: bucket });
 }
 
 export function firstPokemonLine(pokemonName: string, tool: ExportTool): string {
-  return `You're also the first person to have ${pokemonName} in an exported ${EXPORT_TOOL_LABEL[tool]}.`;
+  return t(FIRST_POKEMON_LINE[tool], { name: pokemonName });
 }
 
 /**

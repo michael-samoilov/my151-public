@@ -5,6 +5,7 @@ import { isOptedOut } from '@/lib/clientId';
 import { PREVIEW_DEPLOY } from '@/lib/demoMode';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import { useT } from '@/i18n';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { computeViewSort } from '@/hooks/useViewSort';
 import { DEFAULT_STATS_HEIGHTS, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
@@ -36,6 +37,7 @@ function seedDraft(): DexExportDraft {
 }
 
 export function DexExportOverlay({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const sections = usePokedexStore((s) => s.sections);
   const [draft, setDraft] = useState<DexExportDraft>(seedDraft);
   const [recipe] = useState<FoilRecipe>(() => cloneFoilRecipe(DEFAULT_FOIL_RECIPE));
@@ -156,7 +158,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       surveyTool="pokedex"
       overlayMarker="data-dex-export-overlay"
-      previewAlt="Pokedex export preview"
+      previewAlt={t('export.preview.dex')}
       frames={{ activeKey, urls, busy: busy || exportBusy }}
       maskContext={maskContext}
       recipe={recipe}

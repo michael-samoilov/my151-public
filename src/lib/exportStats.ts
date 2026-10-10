@@ -34,6 +34,8 @@ export const CARD_PADX = 20; // px-5
 const CARD_PADY = 12; // py-3
 const CARD_RADIUS = 8; // rounded-lg
 const CONTENT_W = STATS_NAT_W - CARD_PADX * 2;
+/** The index headers may use the card's padding, short of its edge. */
+const BUTTERFLY_OPTIONS = { alignBaselines: true, headerBleed: CARD_PADX - 4 };
 
 const MUTED = '#737373';
 const CARD_BG = '#ffffff';
@@ -237,14 +239,14 @@ function renderPanel(
     {
       title: t('stats.type.title'),
       subtitle: '',
-      chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, 'TYPE', dr, { alignBaselines: true }),
-      drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, 'TYPE', true, { alignBaselines: true }),
+      chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, t('chart.header.type'), dr, BUTTERFLY_OPTIONS),
+      drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, t('chart.header.type'), true, BUTTERFLY_OPTIONS),
     },
     {
       title: t('stats.gen.title'),
       subtitle: '',
-      chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, 'GEN', dr, { alignBaselines: true }),
-      drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, 'GEN', true, { alignBaselines: true }),
+      chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, t('chart.header.gen'), dr, BUTTERFLY_OPTIONS),
+      drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, t('chart.header.gen'), true, BUTTERFLY_OPTIONS),
     },
     {
       title: t('stats.bst.title'),
