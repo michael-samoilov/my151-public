@@ -673,6 +673,10 @@ function drawTmSlot(
   // As few lines as fit the body: one line whenever the whole name fits,
   // as the live card wraps it.
   const lines = wrapTracked(ctx, name, bodyW, nameTrack);
+  // A word wider than the body on its own (German ELEKTRIFIZIERUNG) shrinks
+  // to fit, as the live card shrinks it; the line box keeps its height.
+  const widest = Math.max(...lines.map((line) => trackedWidth(ctx, line, nameTrack)));
+  const nameScale = widest > bodyW ? bodyW / widest : 1;
   const body = L.tmMoveBody(cy, lines.length);
 
   ctx.beginPath();
@@ -710,6 +714,7 @@ function drawTmSlot(
   }
 
   ctx.fillStyle = moveShades.band;
+  if (nameScale < 1) ctx.font = font(L.NAME_PX * nameScale, 800);
   // The cap height on every engine. WebKit's `emHeightAscent` is the font
   // ascent (15px here, against a 12px cap), so it dropped the name 3px in the
   // iPhone PNG. Blink has no `emHeightAscent` and always took the cap height.
@@ -720,8 +725,8 @@ function drawTmSlot(
       ctx,
       line,
       bodyX,
-      L.cssLineAlphabetic(body.nameTop + i * L.NAME_LINE, L.NAME_LINE, L.NAME_PX, ascent),
-      nameTrack,
+      L.cssLineAlphabetic(body.nameTop + i * L.NAME_LINE, L.NAME_LINE, L.NAME_PX * nameScale, ascent),
+      nameTrack * nameScale,
     );
   });
   ctx.restore();
