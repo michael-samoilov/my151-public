@@ -20,6 +20,8 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { en } from '../../src/i18n/catalogs/en';
 import { LOCALES, type Locale } from '../../src/i18n/config';
+import { tierOf } from '../../src/i18n/tiers';
+import type { MessageKey } from '../../src/i18n/types';
 import {
   GAME_TERMS_PATH, MOVE_NAMES_PATH, type GameTermsFixture, type MoveNamesFixture,
 } from './extract-game-terms';
@@ -116,6 +118,9 @@ function sourcedGameText(): void {
     const catalog = termCatalogs.get(locale) ?? {};
     for (const term of gameTerms.terms) {
       if (term.key.startsWith('form.')) continue;
+      if (locale === 'de' && tierOf(term.key as MessageKey) !== 'official') {
+        fail('game-text', 'sourced from the games but not in the official tier (src/i18n/tiers.ts)', undefined, term.key);
+      }
       const want = term.text[locale];
       const got = catalog[term.key];
       if (want !== got) {
