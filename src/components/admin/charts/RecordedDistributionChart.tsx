@@ -39,6 +39,7 @@ export function RecordedDistributionChart({values, minutes, series}: {values: nu
     const ink = cssVar(el,'--color-foreground','#0a0a0a');
     const faint = cssVar(el,'--color-muted-foreground','#737373');
     const grid = cssVar(el,'--color-muted','#f5f5f5');
+    const card = cssVar(el,'--color-card','#fff');
     const candidates = minutes ? [0,1,2,5,10,15,30,60,120,240,480,720,1440,2880,10080]
       : [0,1,2,5,10,20,50,100,200,500,1000];
     // End on a readable boundary; 1,368 minutes fits on an axis ending at 24h.
@@ -66,7 +67,7 @@ export function RecordedDistributionChart({values, minutes, series}: {values: nu
       yAxis:{type:'value',min:0,max:100,interval:25,axisLabel:{color:faint,fontSize:9,formatter:'{value}%'},splitLine:{show:false}},
       series:[
         ...(curves ? curves.filter(s=>s.sorted.length).map(s=>({name:s.name,type:'line' as const,data:[...s.points,[xMax,0]],smooth:false,symbol:'none',lineStyle:{color:s.color,width:2}})) : [{type:'line' as const,data:[...points,[xMax,0]],smooth:false,symbol:'none',lineStyle:{color:ink,width:2},areaStyle:{color:ink,opacity:0.04}}]),
-        quartileGuideSeries((curves ? [] : quartiles).map(({q,value})=>({percentile:q,value,axisValue:Math.log1p(value)})),0,xMax,faint,display),
+        quartileGuideSeries((curves ? [] : quartiles).map(({q,value})=>({percentile:q,value,axisValue:Math.log1p(value)})),0,xMax,faint,display,card),
         {type:'custom',silent:true,clip:false,data:ticks.map(v=>[Math.log1p(v),0,v]),
           renderItem:(_params: unknown,api:CustomSeriesRenderItemAPI)=>{
             const v=Number(api.value(2));
