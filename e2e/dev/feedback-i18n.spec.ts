@@ -97,7 +97,7 @@ test.describe('feedback chips', () => {
     await page.locator('[data-feedback-open]').first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    // The submit button has no Japanese entry yet, so it must read in English.
+    // Whatever the layering resolves to, the submit button must not be blank.
     const submit = dialog.locator('button[type="submit"]');
     await expect(submit).toBeVisible();
     await expect(submit).not.toHaveText('');
