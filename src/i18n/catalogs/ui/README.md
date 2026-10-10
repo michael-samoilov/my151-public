@@ -11,7 +11,8 @@ is ~460 strings; this is a handful of them. A locale that has no entry for a key
 falls back to English, which is the intended intermediate state rather than a
 gap — `loadCatalog` layers English, then the sourced terms, then these.
 
-The translated keys cover the report categories, trainer-card headings and
+The translated keys cover the whole bug report flow (the form, its "What gets
+sent" panel, the crash screen, and the hub card that opens it), trainer-card headings and
 slot labels, picker interface, favorite home card and FAQ, the compact homepage intro, favorites filter,
 and the shared controls visible on the picker. Other app copy still falls
 back to English.
@@ -61,6 +62,18 @@ the screen — not a clumsy phrase. That needs a speaker, which is what the
 - **French** keeps `Bug`, which is what French tech writing uses.
 - **German** uses `Fehler` rather than `Bug`, and `Sonstiges` for Other, which
   is the conventional German list terminator.
+
+### The bug report flow
+
+The "What gets sent" panel shows each line as one key, label and value
+together (`feedback.context.*`), so each locale picks its own colon and its own
+words for yes, no and none. Only the label is translated. The values are the
+raw data the report sends: route, locale codes, filter ids, version and user
+agent. The Japanese and Chinese lines take a full-width colon, the French
+lines a space before it, and German capitalizes its nouns. Spanish `error` and
+Italian `browser` are the same word as English and are listed in
+`SAME_AS_ENGLISH_OK`. The favorites line counts its two parts with plural
+keys, so English now says `1 pick`, not `1 picks`.
 
 ### The trainer card's headings
 

@@ -152,7 +152,8 @@ standard suite, `verify.ts` runs six League Builder suites, listed in
 The checks above only catch what they assert. The visual diff catches the rest:
 after the surfaces, diff mode renders a fixed list of screens (`SCREENS` in
 `harness/lib/visual.ts`: the hub, the builder's intro, tabs, export, Tools
-menu and feedback form, the league's home, card and menu, and the picker, empty and seeded) at
+menu and feedback form, the league's home, card and menu, and the picker:
+empty, seeded, a selector open on each, and its export) at
 390 px (2x, touch) and 1280 px, on the base and on the change, with motion
 reduced and animations stopped. It renders each build twice, so a region that
 differs between two renders of the same build is marked unstable, not changed.

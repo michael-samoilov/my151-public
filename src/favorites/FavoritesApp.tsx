@@ -14,7 +14,7 @@ import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useDocumentLocale, useT } from '@/i18n';
 import { cellKey, parseCellKey, type GenAxisId, type TypeAxisId } from './model/cells';
 import { getPickerMon } from './model/catalog';
-import { prefetchCellSoon, prefetchEverySprite } from './model/spritePreload';
+import { openCell, prefetchCellSoon, prefetchEverySprite } from './model/spritePreload';
 import { kindFor } from './model/eligibility';
 import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
@@ -141,6 +141,7 @@ function FavoritesContent({ sel, setSel }: {
   function open(type: TypeAxisId, gen: GenAxisId, keyboard = false) {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
+    openCell(type, gen);
     setCurrentView('picker');
     setSel(desktop && sel?.type === type && sel.gen === gen ? null : { type, gen, keyboard });
   }
