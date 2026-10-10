@@ -239,10 +239,11 @@
   opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.72 + 0.08 * var(--pointer-from-center)));
 }
 
-/* A rainbow holofoil: tight sunpillar bands recolor the ink as the card
-   tilts. hue keeps each ink's lightness, so paper stays white and nothing
-   washes out. Positions stay inside 0-100%, so the tile always covers the
-   card. */
+/* A rainbow holofoil: tight sunpillar bands tint the ink as the card tilts.
+   soft-light leaves white paper and black ink as they are, and the light
+   sunpillars mostly lighten the colors between. A hue blend turned red
+   ink maroon and yellow ink orange, and dulled every color. Positions
+   stay inside 0-100%, so the tile always covers the card. */
 .export-foil-holo-rainbow {
   z-index: 3;
   background-image: repeating-linear-gradient(
@@ -257,7 +258,7 @@
   );
   background-size: 400% 400%;
   background-position: var(--background-x) var(--background-y);
-  mix-blend-mode: hue;
+  mix-blend-mode: soft-light;
   opacity: calc(var(--foil-opacity) * var(--foil-holoRainbow));
 }
 
@@ -376,7 +377,8 @@
     hsl(calc(120 + var(--pointer-from-left) * 360), 88%, 58%),
     hsl(calc(240 + var(--pointer-from-left) * 360), 88%, 58%)
   );
-  mix-blend-mode: hue;
+  /* soft-light, like the rainbow, so the shift never darkens the ink. */
+  mix-blend-mode: soft-light;
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
 }
@@ -462,18 +464,18 @@
   --gradient-x: var(--pointer-x);
   --gradient-y: var(--pointer-y);
   /* Size pulls the light stops in toward the pointer, then fades them to a
-     clear neutral stop before the dark far stop. At 1 this is close to
-     hover-tilt's glare, whose light already crossed mid-gray near 56%.
-     Smaller keeps the light in a hotspot, so its overlay washes a smaller
-     patch of the card. */
+     clear neutral stop. At 1 this is close to hover-tilt's glare, whose light
+     already crossed mid-gray near 56%. Smaller keeps the light in a hotspot,
+     so its overlay washes a smaller patch of the card. hover-tilt also ends
+     on a dark stop, which overlay turns into darker ink across most of the
+     card while white paper stays white. The glare here only adds light. */
   --hover-tilt-default-gradient: radial-gradient(
     farthest-corner circle at var(--gradient-x) var(--gradient-y),
     hsla(var(--hover-tilt-glare-hue), 40%, 95%, calc(var(--hover-tilt-glare-intensity) * 0.66))
       calc(8% * var(--hover-tilt-glare-size)),
     hsla(var(--hover-tilt-glare-hue), 30%, 88%, calc(var(--hover-tilt-glare-intensity) * 0.5))
       calc(28% * var(--hover-tilt-glare-size)),
-    hsla(var(--hover-tilt-glare-hue), 10%, 50%, 0) calc(56% * var(--hover-tilt-glare-size)),
-    hsla(var(--hover-tilt-glare-hue), 10%, 5%, calc(var(--hover-tilt-glare-intensity) * 0.25)) 90%
+    hsla(var(--hover-tilt-glare-hue), 10%, 50%, 0) calc(56% * var(--hover-tilt-glare-size))
   );
   isolation: auto;
   transform-style: flat;
