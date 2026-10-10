@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Panel } from '@/components/admin/ui';
 import { useECharts, cssVar, type EChartsOption } from './useECharts';
-import { impliedActivityGrowth } from '../../../../api/_aggregate';
+import { impliedActivityGrowth, type ImpliedActivityGrowth } from '../../../../api/_aggregate';
 import { rangeStart, type DashboardRange } from '../../../../api/_range';
 import {
   chartDailyValues,
@@ -56,12 +56,17 @@ function measureWindowLabelPx(kind: '30d' | '7d' | '24h', count: number, numSize
   return n + 2 + ctx.measureText(kind).width;
 }
 
-function gridRightPx(counts: { hours24: number; days7: number | null; days30: number | null }, numSize: number): number {
+function gridRightPx(counts: { hours24: number; days7: number | null; days30: number | null }, numSize: number, growthLabels: string[] = []): number {
   const w24 = measureWindowLabelPx('24h', counts.hours24, numSize);
   const w7 = counts.days7 == null ? 0 : measureWindowLabelPx('7d', counts.days7, numSize);
   const w30 = counts.days30 == null ? 0 : measureWindowLabelPx('30d', counts.days30, numSize);
-  return Math.ceil(LABEL_INSET + Math.max(w24, w7, w30) + LABEL_TAIL);
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (ctx) ctx.font = `400 ${growthFontSize(numSize)}px ${LABEL_FACE}`;
+  const growthWidth = Math.max(0, ...growthLabels.map(label => ctx?.measureText(label).width ?? 0));
+  return Math.ceil(LABEL_INSET + Math.max(w24, w7, w30, growthWidth) + LABEL_TAIL);
 }
+
+const growthFontSize = (numSize: number) => numSize < 16 ? 9 : 10;
 
 function countLabel(
   kind: '24h' | '7d' | '30d',
@@ -71,9 +76,10 @@ function countLabel(
   y: number,
   numSize: number,
   lowerBound = false,
+  growth?: string,
 ) {
   const sub = subSize(numSize);
-  return {
+  const countText = {
     type: 'text' as const,
     x,
     y,
@@ -98,6 +104,11 @@ function countLabel(
       },
     },
   };
+  return growth ? { type: 'group' as const, children: [countText, {
+    type: 'text' as const, x, y: y + numSize / 2 + 4,
+    style: { text: growth, fill: color, fontSize: growthFontSize(numSize), fontFamily: LABEL_FACE,
+      textAlign: 'left' as const, textVerticalAlign: 'top' as const },
+  }] } : countText;
 }
 
 function LegendSwatch({ color }: { color: string }) {
@@ -109,12 +120,16 @@ function TrendChart({
   historyOriginDay,
   nowMs,
   shown,
+  growth,
 }: {
   series: DailyPoint[];
   historyOriginDay: number;
   nowMs: number;
   shown: Record<'daily' | 'weekly' | 'monthly', boolean>;
+  growth: ImpliedActivityGrowth;
 }) {
+  const weeklyGrowth = growth.weeklyPercent === null ? undefined : `${growthPercent(growth.weeklyPercent)} WoW`;
+  const monthlyGrowth = growth.monthlyPercent === null ? undefined : `${growthPercent(growth.monthlyPercent)} MoM`;
   const days = series.map((p) => p.day);
   const daily = chartDailyValues(series);
   const weekly = chartWeeklyValues(series, historyOriginDay);
@@ -145,7 +160,7 @@ function TrendChart({
       const gridLine = { color: grid, width: 1 };
       const axisFont = el.clientWidth < 600 ? 8 : 9;
       const numSize = el.clientWidth < 600 ? 14 : 16;
-      const right = gridRightPx(counts, numSize);
+      const right = gridRightPx(counts, numSize, [shown.weekly ? weeklyGrowth : undefined, shown.monthly ? monthlyGrowth : undefined].filter((text): text is string => text !== undefined));
 
       return {
         animation: false,
@@ -291,23 +306,24 @@ function TrendChart({
               const last = daily.length - 1;
               const x = api.coord([last, 0])[0] + LABEL_INSET;
               const gutterLabels = [
-                ...(shown.daily ? [{ kind: '24h' as const, count: counts.hours24, color: faint, value: daily[last], lowerBound: false }] : []),
-                ...(shown.weekly && counts.days7 != null ? [{ kind: '7d' as const, count: counts.days7, color: red, value: weekly[last] ?? counts.days7, lowerBound: false }] : []),
-                ...(shown.monthly && counts.days30 != null ? [{ kind: '30d' as const, count: counts.days30, color: monthlyColor, value: monthly[last] ?? counts.days30, lowerBound: series[last].label720h == null }] : []),
+                ...(shown.daily ? [{ kind: '24h' as const, count: counts.hours24, color: faint, value: daily[last], lowerBound: false, growth: undefined }] : []),
+                ...(shown.weekly && counts.days7 != null ? [{ kind: '7d' as const, count: counts.days7, color: red, value: weekly[last] ?? counts.days7, lowerBound: false, growth: weeklyGrowth }] : []),
+                ...(shown.monthly && counts.days30 != null ? [{ kind: '30d' as const, count: counts.days30, color: monthlyColor, value: monthly[last] ?? counts.days30, lowerBound: series[last].label720h == null, growth: monthlyGrowth }] : []),
               ].map(label => ({ ...label, y: api.coord([last, label.value])[1] })).sort((a, b) => a.y - b.y);
               for (let i = 1; i < gutterLabels.length; i++) {
-                gutterLabels[i].y = Math.max(gutterLabels[i].y, gutterLabels[i - 1].y + numSize + 4);
+                gutterLabels[i].y = Math.max(gutterLabels[i].y, gutterLabels[i - 1].y + numSize + 4 + (gutterLabels[i - 1].growth ? growthFontSize(numSize) + 4 : 0));
               }
-              const overflow = Math.max(0, (gutterLabels.at(-1)?.y ?? 0) - api.coord([last, 0])[1] + numSize / 2);
+              const bottom = gutterLabels.at(-1);
+              const overflow = Math.max(0, (bottom?.y ?? 0) - api.coord([last, 0])[1] + numSize / 2 + (bottom?.growth ? growthFontSize(numSize) + 4 : 0));
               for (const label of gutterLabels) label.y -= overflow;
-              const children = gutterLabels.map(label => countLabel(label.kind, label.count, label.color, x, label.y, numSize, label.lowerBound));
+              const children = gutterLabels.map(label => countLabel(label.kind, label.count, label.color, x, label.y, numSize, label.lowerBound, label.growth));
               return { type: 'group', children };
             },
           },
         ],
       };
     },
-    [series, nowMs, historyOriginDay, shown],
+    [series, nowMs, historyOriginDay, shown, growth],
     { scrub: { count: labels.length, label: scrubLabel } },
   );
 
@@ -322,7 +338,7 @@ function TrendChart({
       ref={ref}
       className="h-[180px] w-full overflow-visible md:h-[220px]"
       role="img"
-      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with${shown.weekly ? ' trailing 7-day unique active users' : ''}${shown.monthly ? ' trailing 30-day recorded unique active users' : ''}. Last 24 hours ${counts.hours24}${shown.weekly && counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}${shown.monthly && counts.days30 != null ? `, last 30 days ${counts.days30}` : ''}.`}
+      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}${shown.weekly && counts.days7 != null && weeklyGrowth ? `, 7d label implied growth ${weeklyGrowth}` : ''}${shown.monthly && counts.days30 != null && monthlyGrowth ? `, 30d label implied growth ${monthlyGrowth}` : ''}, with${shown.weekly ? ' trailing 7-day unique active users' : ''}${shown.monthly ? ' trailing 30-day recorded unique active users' : ''}. Last 24 hours ${counts.hours24}${shown.weekly && counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}${shown.monthly && counts.days30 != null ? `, last 30 days ${counts.days30}` : ''}.`}
     />
   );
 }
@@ -555,10 +571,10 @@ export function ActiveUsersPanel({
       ) : range === '7d' ? (
         <DailyWeekdayChart series={daily7} counts={counts} nowMs={nowMs} />
       ) : (
-        <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} shown={shown} />
+        <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} shown={shown} growth={growth} />
       )}
       <div className="mt-2 space-y-1 text-[0.65rem] text-muted-foreground">
-        <p className="tabular-nums" aria-label="Implied growth over selected range">
+        <p className={`tabular-nums ${range !== '24h' && range !== '7d' ? 'sr-only' : ''}`} aria-label="Implied growth over selected range">
           Implied WoW {growthPercent(growth.weeklyPercent)} · MoM {growthPercent(growth.monthlyPercent)}
         </p>
         <p>{growth.weeklyPercent === null ? 'Need at least two complete days with a measurable trend.'
