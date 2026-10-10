@@ -11,7 +11,7 @@ export function quartileGuideSeries(quartiles: ChartQuartile[], xMin: number, xM
   const ctx = document.createElement('canvas').getContext('2d');
   if (ctx) ctx.font = '9px sans-serif';
   return {
-    type: 'custom' as const, silent: true, clip: false,
+    type: 'custom' as const, silent: true, clip: false, z: 5,
     data: quartiles.map(({percentile,value,axisValue}) => [axisValue ?? value,(1-percentile)*100,percentile,value]),
     renderItem: (_params: unknown, api: CustomSeriesRenderItemAPI) => {
       const pos = api.coord([api.value(0),api.value(1)]);
