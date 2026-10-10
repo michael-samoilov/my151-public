@@ -27,8 +27,9 @@ unites both halves. The resulting path has no clipping boundary or overlapping
 center edge. The output contains no mask, clip path, or SVG reference.
 
 Skia retains lines and Bézier curves during Boolean operations. Its coordinates
-use 32-bit floats. Poison's circles convert from rational quadratic curves to
-quadratic Béziers with a 0.001-unit tolerance before the operations.
+use 32-bit floats. Poison's circles use eight cubic Bézier arcs, with less than
+0.001 source-unit error at the selected source sizes. This avoids a conic control
+point defect in the pinned Python wrapper.
 There is no raster tracing or polygon flattening.
 
 The helper fails on unsupported source primitives or paint effects. Update the

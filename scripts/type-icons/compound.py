@@ -68,19 +68,21 @@ def primitive(element):
     if tag == 'path':
         parse_path(element.get('d', ''), result.getPen(allow_open_paths=False))
     elif tag == 'circle':
-        # Convert rational circle segments before Boolean winding correction,
-        # which the Python pathops wrapper supports only for polynomial curves.
+        # Eight cubic arcs approximate the source circle without conicTo:
+        # pathops 0.9.1 writes the endpoint y into each conic control point.
         cx, cy, r = (float(element.get(attr, '0')) for attr in ('cx', 'cy', 'r'))
         if r <= 0:
             raise ValueError('Circle radius must be positive')
-        k = math.sqrt(0.5)
+        step = math.pi / 4
+        k = 4 * math.tan(step / 4) / 3
         result.moveTo(cx + r, cy)
-        result.conicTo(cx + r, cy + r, cx, cy + r, k)
-        result.conicTo(cx - r, cy + r, cx - r, cy, k)
-        result.conicTo(cx - r, cy - r, cx, cy - r, k)
-        result.conicTo(cx + r, cy - r, cx + r, cy, k)
+        for segment in range(8):
+            a, b = segment * step, (segment + 1) * step
+            x0, y0 = cx + r * math.cos(a), cy + r * math.sin(a)
+            x1, y1 = cx + r * math.cos(b), cy + r * math.sin(b)
+            result.cubicTo(x0 - k * r * math.sin(a), y0 + k * r * math.cos(a),
+                           x1 + k * r * math.sin(b), y1 - k * r * math.cos(b), x1, y1)
         result.close()
-        result.convertConicsToQuads(0.001)
     else:
         raise ValueError(f'Unsupported glyph primitive: {tag}')
     return result
