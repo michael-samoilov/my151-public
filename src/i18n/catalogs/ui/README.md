@@ -140,3 +140,8 @@ Generation, French Type, Spanish Color, and Pokémon, are listed in
   Effektivität, efficacité, eficacia, efficacia, 相性, 상성, 相克, and 相剋.
 - The **AND / OR** chip names the mode in words in Japanese, Korean, and
   Chinese (すべて / いずれか), where the Latin capitals would read as English.
+- The **chart column headers** stay within about nine letters per line, the
+  room English OVER- / INDEXED → takes. Longer words ran past the chart at
+  390 px, so the Latin locales say above / below average (überm / unterm
+  Schnitt, sopra / sotto la media) or more / less frequent (plus / moins
+  fréquent).

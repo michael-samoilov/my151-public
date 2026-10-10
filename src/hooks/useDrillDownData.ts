@@ -344,7 +344,7 @@ function computeRegionalDrillDown(
     if (groups.length > 0) {
       sections.push({
         sectionId: `gen-${anchorGenForNewOnly}`,
-        sectionName: `Generation ${anchorGenForNewOnly}`,
+        sectionName: t('drilldown.generationTitle', { gen: anchorGenForNewOnly }),
         sectionColor: genColors[(anchorGenForNewOnly - 1) % genColors.length],
         groups,
       });
@@ -357,7 +357,7 @@ function computeRegionalDrillDown(
       groups.sort((a, b) => a.members[0].id - b.members[0].id);
       sections.push({
         sectionId: `gen-${gen}`,
-        sectionName: `Generation ${gen}`,
+        sectionName: t('drilldown.generationTitle', { gen }),
         sectionColor: genColors[(gen - 1) % genColors.length],
         groups,
       });

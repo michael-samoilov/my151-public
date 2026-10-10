@@ -68,9 +68,6 @@ export const enUi = {
   'analytics.typeView.distribution': 'Type distribution',
   'analytics.typeView.matchups': 'Type matchups',
   'browser.addingTo': 'Adding to: ',
-  // The spoken name of the phone sheet, and its title when no section is set.
-  'browser.addingToLabel': 'Adding to {section}',
-  'browser.browse': 'Browse Pokémon',
   'browser.chip.archetypes': 'Archetypes',
   'browser.chip.classification': 'Classification',
   'browser.chip.color': 'Color',

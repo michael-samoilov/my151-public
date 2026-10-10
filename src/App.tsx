@@ -48,7 +48,7 @@ import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebratio
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
-import { sectionName as sectionLabel, useDocumentLocale, useT } from '@/i18n';
+import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -65,21 +65,20 @@ function MobileSheet({ sectionName, topGap, onClose, isDesktop }: { sectionName:
   // Escape handler is what closes the desktop pane.
   const [browserMounted, setBrowserMounted] = useState(!isDesktop);
   if (!isDesktop && !browserMounted) setBrowserMounted(true);
-  const t = useT();
   return (
     <BottomSheet
       onClose={onClose}
       size="full"
       topGap={topGap}
-      closeLabel={sectionName ? t('browser.addingToLabel', { section: sectionName }) : t('browser.browse')}
+      closeLabel={sectionName ? `Adding to ${sectionName}` : 'Browse Pokémon'}
       title={
         sectionName !== null ? (
           <>
-            <span className="text-foreground">{t('browser.addingTo')}</span>
+            <span className="text-foreground">Adding to: </span>
             <span className="text-primary">{sectionName}</span>
           </>
         ) : (
-          <span className="text-muted-foreground">{t('browser.browse')}</span>
+          <span className="text-muted-foreground">Browse Pokémon</span>
         )
       }
     >
