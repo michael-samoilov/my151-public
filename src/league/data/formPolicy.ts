@@ -9,6 +9,7 @@ const FUSION_FORM_IDS = new Set([10022, 10023, 10155, 10156, 10193, 10194]);
 
 export const isLeagueAlternateForm = (form: AlternatePickerForm): boolean =>
   form.source !== 'powerup' && form.id !== 10191
+  && form.ownerId !== 201
   && !TEMPORARY_FORM_IDS.has(form.id) && !FUSION_FORM_IDS.has(form.id);
 
 export const STANDALONE_FORM_IDS = new Set([

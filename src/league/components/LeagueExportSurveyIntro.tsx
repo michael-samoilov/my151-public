@@ -42,7 +42,7 @@ export function LeagueExportSurveyIntro({
   const pokemon =
     highlight?.firstPokemonId != null ? getPokemonById(highlight.firstPokemonId) : undefined;
   const pokeName = pokemon
-    ? pokemonLabel(pokemon.id, pokemonDisplayName(pokemon.id) ?? pokemon.name).full
+    ? pokemonLabel(pokemon.id, pokemonDisplayName(pokemon.name)).full
     : null;
   const primary = pokemon?.types[0];
   const nameColor = primary ? cardShades(primary).band : undefined;

@@ -354,6 +354,8 @@ export interface PokemonDataSource {
   includeEvolutionItemForms?: boolean;
   archetypeMemberId?(id: number): number;
   favoritePickerId?(id: number): number | undefined;
+  compareBrowserOrder?(a: number, b: number): number;
+  standaloneGroupId?(id: number): number;
 }
 
 export interface UseFilteredPokemonOptions {
@@ -562,7 +564,8 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
       }
     }
 
-    result.sort((a, b) => a.members[0].id - b.members[0].id);
+    const compare = options.dataSource?.compareBrowserOrder ?? ((a: number, b: number) => a - b);
+    result.sort((a, b) => compare(a.members[0].id, b.members[0].id));
 
     // Post-filter by evo line size
     if (options.evoLineSize && options.evoLineSize.length > 0) {

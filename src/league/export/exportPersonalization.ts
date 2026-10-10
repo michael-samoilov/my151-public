@@ -1,7 +1,6 @@
-import { getPokemonById } from '@/league/data/catalog';
 import { getLocale, t, type MessageKey } from '@/i18n';
 import type { GymCard } from '../store/useLeagueStore';
-import { legendsOf } from '../store/useLeagueStore';
+import { legendsOf } from '../model/cardPicks';
 
 const EXPORT_COUNT_KEY = 'league-builder-export-count';
 
@@ -163,8 +162,6 @@ export function incrementLeagueExportCount(): number {
   return next;
 }
 
-export function pokemonDisplayName(id: number): string | null {
-  const n = getPokemonById(id)?.name;
-  if (!n) return null;
-  return n.replace(/\S+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
+export function pokemonDisplayName(name: string): string {
+  return name.replace(/\S+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
 }

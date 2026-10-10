@@ -40,7 +40,7 @@
       "html": "custom-gym-leader.html",
       "startup": [
         "src/i18n/names/en.json",
-        "src/i18n/picker-names/en.json"
+        "src/league/data/names/en.json"
       ],
       "text": {
         "baseline": 249440,

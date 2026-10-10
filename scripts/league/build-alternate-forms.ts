@@ -15,12 +15,27 @@ const records = ALTERNATE_PICKER_FORMS.filter(isLeagueAlternateForm).map(form =>
   ...(formMetadata[form.id] ? { metadata: formMetadata[form.id] } : {}),
 }));
 const output = `${JSON.stringify(records, null, 2)}\n`;
+const namesRoot = fileURLToPath(new URL('../../src/i18n/picker-names/', import.meta.url));
+const scopedRoot = fileURLToPath(new URL('../../src/league/data/names/', import.meta.url));
+const formIds = new Set(records.map(form => String(form.id)));
+const files = [[destination, output]];
+for (const filename of fs.readdirSync(namesRoot).filter(name => name.endsWith('.json'))) {
+  const catalog: Record<string, Record<string, unknown>> = JSON.parse(fs.readFileSync(`${namesRoot}/${filename}`, 'utf8'));
+  for (const form of records) {
+    if (catalog.species[form.id] !== form.ownerId) throw new Error(`League species mismatch: ${filename}, ${form.id}`);
+  }
+  const scoped = Object.fromEntries(['forms', 'formSource'].map(key => [
+    key, Object.fromEntries(Object.entries(catalog[key]).filter(([id]) => formIds.has(id))),
+  ]));
+  files.push([`${scopedRoot}/${filename}`, `${JSON.stringify(scoped, null, 2)}\n`]);
+}
 if (process.argv.includes('--check')) {
-  if (fs.readFileSync(destination, 'utf8') !== output) {
+  if (files.some(([path, content]) => !fs.existsSync(path) || fs.readFileSync(path, 'utf8') !== content)) {
     throw new Error('League forms are stale. Run npm run league:forms.');
   }
   console.log(`League forms match the picker: ${records.length} identities.`);
 } else {
-  fs.writeFileSync(destination, output);
+  fs.mkdirSync(scopedRoot, { recursive: true });
+  for (const [path, content] of files) fs.writeFileSync(path, content);
   console.log(`Wrote ${records.length} League form identities.`);
 }

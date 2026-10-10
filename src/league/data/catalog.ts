@@ -78,6 +78,23 @@ export const getAllPokemon = (): Pokemon[] => pokemon;
 export const getEvolutionLine = (id: number): Pokemon[] => getAllEvolutionLines(id)[0] ?? [];
 export const leagueFormOwnerId = (id: number): number => owners.get(id) ?? id;
 
+const species = pokemon.filter(mon => mon.id <= 1025);
+const orderOwners = new Map(owners);
+for (const mon of pokemon) {
+  if (mon.id <= 1025 || orderOwners.has(mon.id)) continue;
+  const owner = species.find(base => mon.name.startsWith(`${base.name}-`));
+  if (owner) orderOwners.set(mon.id, owner.id);
+}
+
+function speciesId(id: number): number {
+  while (orderOwners.has(id)) id = orderOwners.get(id)!;
+  return id;
+}
+
+const formOrder = (id: number): number => id === speciesId(id) ? 0 : id === 10085 ? 10079 : id;
+const compareBrowserOrder = (a: number, b: number): number =>
+  speciesId(a) - speciesId(b) || formOrder(a) - formOrder(b);
+
 export function leagueFavoritePickerId(id: number): number | undefined {
   const remapped = ({
     10179: 10178, 10180: 10179, 10191: 10227,
@@ -101,4 +118,6 @@ export const leaguePokemonDataSource: PokemonDataSource = {
   includeEvolutionItemForms: true,
   archetypeMemberId: leagueFormOwnerId,
   favoritePickerId: leagueFavoritePickerId,
+  compareBrowserOrder,
+  standaloneGroupId: id => STANDALONE_FORM_IDS.has(id) ? -id : byId.get(id)!.evolutionChainId,
 };

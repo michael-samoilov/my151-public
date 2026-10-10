@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup, type PokemonDataSource } from '@/hooks/usePokemonData';
-import { mergeBranchesByChain } from './chainMerge';
+import { mergeEvolutionBranches } from './chainMerge';
 import { useBrowserStore, useFavoriteBrowserStore } from './browserStore';
 import { readFavoritePickerIds } from './favoritePickerBridge';
 import { ARCHETYPES } from '@/data/archetypes';
@@ -616,6 +616,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   // component. Hoisting it also gives EvoLineGrid stable `groups` prop
   // identities, so its internal memo holds across unrelated re-renders.
   const subgroupModels = useMemo(() => {
+    const compareBrowserOrder = deferredOptions.dataSource?.compareBrowserOrder ?? ((a: number, b: number) => a - b);
     const source = isSearching ? searchSubgroups : effectiveSubgroups;
     const dualCols = !isSearching ? gridCategoryDef?.dualColumns : undefined;
     const models: {
@@ -628,12 +629,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       spriteOverrides?: Record<number, string>;
     }[] = [];
 
-    // Standalone tiles draw one card per chain, and the generation (or build
-    // section) headings are cut from the *members*, so a chain that spans
-    // several of them is drawn under each: Eevee appeared under Generation 1,
-    // 2, 4 and 6. The first heading that claims a chain keeps it, which is
-    // the earliest generation holding a member the filters matched.
-    const claimedChains = standaloneTiles ? new Set<number>() : null;
+    const claimedGroupIds = standaloneTiles ? new Set<number>() : null;
 
     for (const sub of source) {
       const subIdSet = new Set(sub.pokemonIds);
@@ -672,9 +668,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       if (matching.length === 0) continue;
       // A standalone tile picks one Pokémon, so a Pokémon may only appear
       // once — not once per branch, and not once per heading.
-      if (claimedChains) {
-        matching = mergeBranchesByChain(matching).filter((g) => !claimedChains.has(g.chainId));
-        for (const group of matching) claimedChains.add(group.chainId);
+      if (claimedGroupIds) {
+        matching = mergeEvolutionBranches(matching, deferredOptions.dataSource?.standaloneGroupId).filter((g) => !claimedGroupIds.has(g.chainId));
+        for (const group of matching) claimedGroupIds.add(group.chainId);
         if (matching.length === 0) continue;
       }
 
@@ -696,22 +692,22 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
           let id = Infinity;
           for (const m of g.members) {
             if (m.generation < gen) gen = m.generation;
-            if (m.id < id) id = m.id;
+            if (id === Infinity || compareBrowserOrder(m.id, id) < 0) id = m.id;
           }
           key.set(g, [gen, id]);
         }
-        matching.sort((a, b) => key.get(a)![0] - key.get(b)![0] || key.get(a)![1] - key.get(b)![1]);
+        matching.sort((a, b) => key.get(a)![0] - key.get(b)![0] || compareBrowserOrder(key.get(a)![1], key.get(b)![1]));
       } else {
         // Default view: sort by lowest matching member's dex number.
         const minId = new Map<EvolutionGroup, number>();
         for (const g of matching) {
           let min = Infinity;
           for (const m of g.members) {
-            if (matchesMember(subIdSet, m.id) && m.id < min) min = m.id;
+            if (matchesMember(subIdSet, m.id) && (min === Infinity || compareBrowserOrder(m.id, min) < 0)) min = m.id;
           }
           minId.set(g, min);
         }
-        matching.sort((a, b) => minId.get(a)! - minId.get(b)!);
+        matching.sort((a, b) => compareBrowserOrder(minId.get(a)!, minId.get(b)!));
       }
 
       const mapGroup = (group: EvolutionGroup): SubgroupGridGroup => ({
