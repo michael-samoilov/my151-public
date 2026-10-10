@@ -119,9 +119,41 @@ function slotX(colFrom: number, colTo: number) {
   };
 }
 
-/** A band: its label in the card's capitals, and the rule note after it. */
+/** The smallest share of its size a band's note gives up before it is cut. */
+const NOTE_MIN_SCALE = 0.7;
+
+/**
+ * A band: its label in the card's capitals, and the rule note after it.
+ *
+ * The note is one line in a fixed band, so where the room runs short (a 320px
+ * phone, or a language that says it in more words) it takes a smaller face
+ * rather than lose its last words to the band's edge. Where it fits, it keeps
+ * the label's size and no style is set.
+ */
 function Band({ label, note }: { label: NoArgKey; note?: NoArgKey }) {
   const t = useT();
+  const noteRef = useRef<HTMLSpanElement>(null);
+  const noteText = note ? t(note) : '';
+  useLayoutEffect(() => {
+    const el = noteRef.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.fontSize = '';
+      const room = el.clientWidth;
+      const natural = el.scrollWidth;
+      if (natural <= room + 0.5) return;
+      const size = parseFloat(getComputedStyle(el).fontSize);
+      el.style.fontSize = `${size * Math.max(NOTE_MIN_SCALE, room / natural)}px`;
+    };
+    const observer = new ResizeObserver(fit);
+    observer.observe(el.parentElement!);
+    document.fonts.addEventListener('loadingdone', fit);
+    fit();
+    return () => {
+      observer.disconnect();
+      document.fonts.removeEventListener('loadingdone', fit);
+    };
+  }, [noteText]);
   return (
     <div
       className="mx-[0.1875rem] flex items-center gap-[0.3125rem] rounded-[0.3125rem] px-2 text-white"
@@ -130,7 +162,7 @@ function Band({ label, note }: { label: NoArgKey; note?: NoArgKey }) {
       <b className="whitespace-nowrap text-[0.5625rem] font-extrabold tracking-[0.07em]">{localeUppercase(t(label))}</b>
       {/* Same size and leading as the label, so the two sit on one baseline
           inside the centred band. */}
-      {note && <span className="overflow-hidden whitespace-nowrap text-[0.5625rem] opacity-85">{t(note)}</span>}
+      {note && <span ref={noteRef} className="overflow-hidden whitespace-nowrap text-[0.5625rem] opacity-85">{noteText}</span>}
     </div>
   );
 }
