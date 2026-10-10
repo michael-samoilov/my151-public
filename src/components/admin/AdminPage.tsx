@@ -2298,7 +2298,7 @@ export function AdminPage() {
                     )}
                     {showFavoriteFunnel && favoriteSankey && <div>
                       {tool === 'all' && <div className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Favorite Pokémon Picker</div>}
-                      <FlowSankey labelHalo nodes={favoriteSankey.nodes} links={favoriteSankey.links} ariaLabel={favoriteSankey.ariaLabel}/>
+                      <FlowSankey nodes={favoriteSankey.nodes} links={favoriteSankey.links} ariaLabel={favoriteSankey.ariaLabel}/>
                     </div>}
                   </div>
                 )}

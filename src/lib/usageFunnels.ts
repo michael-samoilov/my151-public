@@ -28,6 +28,7 @@ export interface FunnelNode {
   name: string;
   role: FunnelRole;
   label: FunnelLabelSide;
+  percentage?: { value: number | null; basis: string };
 }
 
 export interface FunnelLink {
@@ -41,6 +42,32 @@ export interface FunnelSankey {
   nodes: FunnelNode[];
   links: FunnelLink[];
   ariaLabel: string;
+}
+
+function percentage(nodes: FunnelNode[], name: string, numerator: number, denominator: number, basis: string) {
+  const node = nodes.find((n) => n.name === name);
+  if (node) node.percentage = { value: denominator > 0 ? numerator / denominator * 100 : null, basis };
+}
+
+function percentageDescription(nodes: FunnelNode[]): string {
+  return nodes.filter((n) => n.percentage).map((n) =>
+    `${n.name}: ${n.percentage!.value === null ? 'unavailable' : `${Number(n.percentage!.value.toFixed(1))}%`} of ${n.percentage!.basis}`,
+  ).join('; ');
+}
+
+/** Export buckets converge before splitting into mutually exclusive varieties. */
+function convergeExports(nodes: FunnelNode[], links: FunnelLink[], names: string[]) {
+  const branches = links.filter((l) => names.includes(l.target));
+  if (!branches.length) return;
+  const totals = names.map((name) => ({ name, value: branches.filter((l) => l.target === name).reduce((sum, l) => sum + l.value, 0) }));
+  links.splice(0, links.length, ...links.filter((l) => !names.includes(l.target)));
+  nodes.push({ name: 'Exported', role: 'success', label: 'right' });
+  for (const branch of branches) addLink(links, { ...branch, target: 'Exported' });
+  const exported = totals.reduce((sum, end) => sum + end.value, 0);
+  for (const end of totals) {
+    addLink(links, { source: 'Exported', target: end.name, value: end.value, role: 'success' });
+    percentage(nodes, end.name, end.value, exported, 'exported browsers');
+  }
 }
 
 function addNode(nodes: FunnelNode[], seen: Set<string>, node: FunnelNode) {
@@ -196,6 +223,9 @@ export function dexFunnelSankey(f: DexUsageFunnel): FunnelSankey {
   }
   addFan(nodes, links, seen, 'Placed a Pokémon', sizeFan(f.completed, f.exported, f.keptPrivate, f.buckets));
 
+  percentage(nodes, 'Bounced', f.bounced, f.opened, 'entrants');
+  percentage(nodes, 'Completed', f.completed, f.built, 'non-bouncers');
+  percentage(nodes, 'Exported', f.exported + f.buckets.reduce((sum, b) => sum + b.exported, 0), f.built, 'non-bouncers');
   const bucketBits = f.buckets.map((b) => `${b.count} at ${b.label}`).join(', ');
   const incompleteExported = f.buckets.reduce((s, b) => s + b.exported, 0);
   const extra =
@@ -203,7 +233,7 @@ export function dexFunnelSankey(f: DexUsageFunnel): FunnelSankey {
   return orderSankeyForLayout(
     nodes,
     links,
-    `Dex usage funnel: ${f.opened} saw intro, ${f.built} placed a Pokémon, ${f.bounced} bounced; of ${f.built} placed, ${f.completed} completed and ${bucketBits}; of ${f.completed} completed, ${f.exported} exported and ${f.keptPrivate} kept private${extra}.`,
+    `Dex usage funnel: ${f.opened} saw intro, ${f.built} placed a Pokémon, ${f.bounced} bounced; of ${f.built} placed, ${f.completed} completed and ${bucketBits}; of ${f.completed} completed, ${f.exported} exported and ${f.keptPrivate} kept private${extra}. ${percentageDescription(nodes)}.`,
   );
 }
 
@@ -221,15 +251,7 @@ export function leagueFunnelSankey(f: LeagueUsageFunnel): FunnelSankey {
     addNode(nodes, seen, { name: 'Bounced', role: 'sink', label: 'bottom' });
     addLink(links, { source: 'Opened', target: 'Bounced', value: f.bounced, role: 'sink' });
   }
-  if (f.oneGymFull > 0) {
-    addNode(nodes, seen, { name: 'One gym full', role: 'neutral', label: 'top' });
-    addLink(links, {
-      source: 'Placed a Pokémon',
-      target: 'One gym full',
-      value: f.oneGymFull,
-      role: 'neutral',
-    });
-  }
+  addFan(nodes, links, seen, 'Placed a Pokémon', gymFan(f.gymBuckets));
   if (f.cardNotFinished > 0) {
     addNode(nodes, seen, { name: 'Card not finished', role: 'sink', label: 'bottom' });
     addLink(links, {
@@ -239,15 +261,16 @@ export function leagueFunnelSankey(f: LeagueUsageFunnel): FunnelSankey {
       role: 'sink',
     });
   }
-  if (f.oneGymFull > 0) {
-    addFan(nodes, links, seen, 'One gym full', gymFan(f.gymBuckets));
-  }
+  convergeExports(nodes, links, LEAGUE_EXPORT_ENDS.map((end) => LEAGUE_EXPORT_NODE[end].name));
+  percentage(nodes, 'Bounced', f.bounced, f.opened, 'entrants');
+  percentage(nodes, 'Full league', f.fullLeague, f.placed, 'non-bouncers');
+  percentage(nodes, 'Exported', Object.values(f.exports).reduce((sum, count) => sum + count, 0), f.placed, 'non-bouncers');
 
   const gymBits = f.gymBuckets.map((b) => `${b.count} at ${b.label}`).join(', ');
   return orderSankeyForLayout(
     nodes,
     links,
-    `League usage funnel: ${f.opened} opened, ${f.placed} placed a Pokémon, ${f.bounced} bounced; of ${f.placed} placed, ${f.oneGymFull} filled a gym and ${f.cardNotFinished} did not finish a card; gyms: ${gymBits}; ${f.exports.league} league export, ${f.exports.card} gym export, ${f.exports.both} both exported; of ${f.fullLeague} full league, ${f.keptPrivate} kept private.`,
+    `League usage funnel: ${f.opened} opened, ${f.placed} placed a Pokémon, ${f.bounced} bounced; of ${f.placed} placed, ${f.cardNotFinished} did not finish a card; gyms: ${gymBits}; ${f.exports.league} league export, ${f.exports.card} gym export, ${f.exports.both} both exported; of ${f.fullLeague} full league, ${f.keptPrivate} kept private. ${percentageDescription(nodes)}.`,
   );
 }
 
@@ -298,11 +321,16 @@ export function favoriteFunnelSankey(f: FavoriteUsageFunnel): FunnelSankey {
   // An empty-grid export is possible, so Bounced keeps a branch to its end.
   if (notStarted) addFan(nodes, links, seen, 'Opened', [{ name: 'Bounced', value: bounced, role: 'sink', ends: favoriteEnds(notStarted) }]);
 
+  convergeExports(nodes, links, FAVORITE_EXPORT_NODE.map((end) => end.name));
+  percentage(nodes, 'Bounced', bounced, f.opened, 'entrants');
+  percentage(nodes, 'Completed', placed.find((b) => b.label === 'Completed')?.count ?? 0, placedCount, 'non-bouncers');
+  const placedExports = placed.reduce((sum, b) => sum + Object.values(b.exports).reduce((total, count) => total + count, 0), 0);
+  percentage(nodes, 'Exported', placedExports, placedCount, 'non-bouncers (non-bouncer exporters only; total Exported also includes empty-grid exporters)');
   const completed = placed.find((b) => b.label === 'Completed');
   const progress = placed.filter((b) => b.count > 0 && b !== completed).map((b) => `${b.count} at ${b.label}`).join(', ');
   const count = (key: 'full' | 'simplified' | 'both') => f.buckets.reduce((sum, b) => sum + b.exports[key], 0);
   return orderSankeyForLayout(nodes, links,
-    `Favorite Pokémon usage funnel: ${f.opened} opened, ${placedCount} placed a Pokémon, ${bounced} bounced; of ${placedCount} placed, by maximum filled cells of 257: ${completed?.count ?? 0} completed${progress ? `, ${progress}` : ''}; lifetime exports: ${count('full')} full grid only, ${count('simplified')} simplified only, ${count('both')} both exported; of ${completed?.count ?? 0} completed, ${completed?.notExported ?? 0} not exported.`);
+    `Favorite Pokémon usage funnel: ${f.opened} opened, ${placedCount} placed a Pokémon, ${bounced} bounced; of ${placedCount} placed, by maximum filled cells of 257: ${completed?.count ?? 0} completed${progress ? `, ${progress}` : ''}; lifetime exports: ${count('full')} full grid only, ${count('simplified')} simplified only, ${count('both')} both exported; of ${completed?.count ?? 0} completed, ${completed?.notExported ?? 0} not exported. ${percentageDescription(nodes)}.`);
 }
 
 /** Distance along the trunk from the start node. Used to assert buckets

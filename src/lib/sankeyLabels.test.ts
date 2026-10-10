@@ -51,7 +51,7 @@ describe('compactFunnelLabelSide', () => {
 
   it('keeps isolated drop-offs on the bottom and column titles on top', () => {
     expect(side(league, 'Bounced')).toBe('bottom');
-    expect(side(league, 'Card not finished')).toBe('bottom');
+    expect(side(league, 'Card not finished')).toBe('right');
     expect(side(league, 'Full league')).toBe('top');
     expect(side(league, 'Opened')).toBe('top');
     expect(side(league, 'Kept private')).toBe('right');
