@@ -335,7 +335,8 @@ const SAME_AS_ENGLISH_OK = new Set([
   'fr:league.type.word', // Type is the French noun too.
   'de:league.badge.placeholder', // "Name" is the German noun too.
   'de:league.view.story', // German games and players say "Story".
-  'fr:league.tm.col.category', // "Cat." abbreviates Catégorie and Categoria.
+  'fr:league.tm.col.category', // "Cat." abbreviates Catégorie, Categoría and Categoria.
+  'es:league.tm.col.category',
   'it:league.tm.col.category',
   'es:league.tm.col.pp', // PP is the games' own abbreviation in every language but German.
   'fr:league.tm.col.pp',
