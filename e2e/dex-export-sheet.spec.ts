@@ -640,7 +640,7 @@ test.describe('desktop dex export preview', () => {
     expect(Math.hypot(a.x - b.x, a.y - b.y), JSON.stringify({ a, b, visual })).toBeGreaterThan(2);
     // The lift carries perspective() in its own transform, so no element
     // holds a 3D rendering context (iOS drew one-frame twists with one).
-    expect(a.liftPerspective.startsWith('600'), a.liftPerspective).toBe(true);
+    expect(parseFloat(a.liftPerspective), a.liftPerspective).toBeGreaterThan(0);
     expect(a.stagePerspective, a.stagePerspective).toBe('none');
     expect(a.hitPerspective === 'none' || a.hitPerspective === '0px', a.hitPerspective).toBe(true);
     expect(b.transformStyle, b.transformStyle).toBe('flat');

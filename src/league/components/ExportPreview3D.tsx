@@ -4,10 +4,9 @@ import {
   clampHypot,
   clampTiltToBox,
   fitCardInPreviewBox,
-  PREVIEW_PERSPECTIVE_PX,
+  previewPerspectivePx,
   PREVIEW_REST_PAD,
   PREVIEW_SHADOW_PAD_PX,
-  tiltPadForScaledCard,
 } from '@/components/export/exportPreviewFit';
 import {
   applySpringOpts,
@@ -173,13 +172,6 @@ export function ExportPreview3D({
     // flat card already shows it at its floor.
     const open = openEase(openMsRef.current);
     const liveScale = 1 + (tiltNowEarly.scaleFactor - 1) * activation * open;
-    const tiltPad = tiltPadForScaledCard({
-      stageWidth: stageSize.w,
-      stageHeight: stageSize.h,
-      cardWidth: cardW,
-      cardHeight: cardH,
-      liveScale,
-    });
     if (stageSize.w > 0 && cardW > 0 && cardH > 0) {
       const clamped = clampTiltToBox({
         tiltX: rotateX,
@@ -188,7 +180,9 @@ export function ExportPreview3D({
         cardHeight: cardH * liveScale,
         boxWidth: stageSize.w,
         boxHeight: stageSize.h,
-        pad: tiltPad,
+        // The fit already holds the widest tilt this far inside, so this
+        // only catches a stage that resized before the card refit.
+        pad: PREVIEW_REST_PAD,
       });
       rotateX = clamped.x;
       rotateY = clamped.y;
@@ -786,6 +780,10 @@ export function ExportPreview3D({
   const pop = Math.max(1, tilt?.scaleFactor ?? 1);
   const maxW = cardMax.w > 0 ? `${Math.round(cardMax.w * pop)}px` : '100%';
   const maxH = cardMax.h > 0 ? `${Math.round(cardMax.h * pop)}px` : '100%';
+  // The lift is laid out at its popped size, so the camera scales with that.
+  // Until the first measure, the stylesheet's default stands in.
+  const perspectivePx =
+    cardMax.w > 0 ? Math.round(previewPerspectivePx(cardMax.w * pop, cardMax.h * pop)) : null;
 
   return (
     <div
@@ -802,7 +800,7 @@ export function ExportPreview3D({
           style={
             {
               padding: PREVIEW_SHADOW_PAD_PX,
-              '--export-perspective': `${PREVIEW_PERSPECTIVE_PX}px`,
+              ...(perspectivePx ? { '--export-perspective': `${perspectivePx}px` } : {}),
               '--export-lift-scale': 1 / pop,
               '--export-lift-rest': 1 / pop,
             } as React.CSSProperties
@@ -813,7 +811,7 @@ export function ExportPreview3D({
           data-export-tilt-hit
           data-export-shadow
           data-shadow-pad={String(PREVIEW_SHADOW_PAD_PX)}
-          data-tilt-perspective={String(PREVIEW_PERSPECTIVE_PX)}
+          data-tilt-perspective={perspectivePx ? String(perspectivePx) : undefined}
           data-hover-tilt="1"
           data-hover-tilt-shadow="1"
           data-tilt-active="0"

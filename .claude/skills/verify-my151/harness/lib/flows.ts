@@ -634,7 +634,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const idleDelta = Math.hypot(idleB.x - idleA.x, idleB.y - idleA.y);
   const visualDelta = visualTiltDelta(idleA, idleB);
   // The lift projects itself: perspective() is inside its own transform.
-  const perspectiveOn = idleA.perspective.startsWith('600') && idleB.liftTransform.startsWith('matrix3d');
+  const perspectiveOn = parseFloat(idleA.perspective) > 0 && idleB.liftTransform.startsWith('matrix3d');
   const idleMoved =
     idleA.orbit === 'idle' &&
     idleB.orbit === 'idle' &&
