@@ -17,7 +17,7 @@ import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
  * the word is — the poster is a picture of the app, and a badge that is subtly
  * different in the PNG reads as a bug nobody can name.
  *
- * `glyph` is the white symbol from `/sprites/types/glyph/`, already decoded by
+ * `glyph` is the shared transparent SVG symbol, already decoded by
  * the caller. Canvas never triggers image or font loading of its own, so this
  * draws whatever the caller has resolved; a missing glyph degrades to the
  * coloured pill with its word, which is still readable.
