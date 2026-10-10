@@ -55,9 +55,6 @@
     }
   },
   "src/components/view/ViewPage.tsx": {
-    "react-hooks/preserve-manual-memoization": {
-      "count": 1
-    },
     "react-hooks/refs": {
       "count": 4
     },
