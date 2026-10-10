@@ -112,6 +112,16 @@ describe('retained calendar activity', () => {
     expect(activityGrowth([fresh], now, 30)).toMatchObject({ status: 'available', current: 1, previous: 0 });
   });
 
+  it('accepts allowed future client clock skew only within the same recorded UTC day', () => {
+    const fresh = record('new', midnight - DAY_MS, [midnight - DAY_MS]);
+    const shifted = (skew: number) => ({ ...fresh, firstTs: fresh.firstTs + skew, lastTs: fresh.firstTs + skew,
+      sessionLog: [{ ts: fresh.firstTs + skew }] });
+    expect(activityGrowth([shifted(60_000)], now, 30)).toMatchObject({ status: 'available', current: 1, previous: 0 });
+    expect(activityGrowth([shifted(6 * 60_000)], now, 30)).toMatchObject({ status: 'unavailable' });
+    expect(activityGrowth([{ ...shifted(60_000), activityCoverageFrom: fresh.firstTs - 1 }], now, 30))
+      .toMatchObject({ status: 'unavailable' });
+  });
+
   it('rejects invalid coverage dates and coverage that starts after the first observed calendar day', () => {
     const fresh = record('new', midnight - 2 * DAY_MS, [midnight - 2 * DAY_MS, midnight - DAY_MS]);
     for (const activityCoverageFrom of [NaN, -1, now + DAY_MS, midnight - DAY_MS]) {
