@@ -1,3 +1,5 @@
+import { t } from '@/i18n';
+
 /** Color stops for each generation's diagonal gradient (135deg) */
 export const GEN_STOPS: Record<number, { offset: string; color: string }[]> = {
   1: [{ offset: '50%', color: '#DC0A2D' }, { offset: '50%', color: '#3B4CCA' }],
@@ -45,7 +47,7 @@ export function GenBadge({ gen, className }: { gen: number; className?: string }
     <img
       src={GEN_BADGE_URIS[gen] ?? FALLBACK_URI}
       className={className}
-      alt={`Gen ${gen}`}
+      alt={t('browser.genChip', { gen })}
       draggable={false}
     />
   );

@@ -117,3 +117,26 @@ records German `Starter-Pokémon`, shortened to `Starter` on the badge.
 
 `docs/favorite-picker-localization/verification.md` records the temporary proof
 and the nine-locale render measurements at 320, 390, and 1280 pixels.
+
+### The Pokémon browser, drill-downs, and analytics
+
+`browser.*`, `drilldown.*`, `analytics.*`, `stage.*`, `chart.*`, and
+`advisor.*` have translations in all eight overlays. `drilldown.titleWithDex`
+stays in the English base because its value holds only placeholders and a
+dash. Values that are the same word in that language, such as German
+Generation, French Type, Spanish Color, and Pokémon, are listed in
+`SAME_AS_ENGLISH_OK`.
+
+- **National Pokédex** is the games' own name, not a translation. X and Y
+  (`xy.common.74.32`) give 全国図鑑, 전국도감, Pokédex National, Nationaler
+  Pokédex, Pokédex Nacional, and Pokédex Nazionale. Sword and Shield
+  (`swsh.btlspot.msg_ui_btlspot_competition_overview_25`) give 全国图鉴 and
+  全國圖鑑. The short chip says Nationaldex in German, as German players do.
+- **Levels** use each game's abbreviation: Lv. in German, Italian, Japanese,
+  Korean, and Chinese, N. in French, and Nv. in Spanish.
+- **Starter** and **Legendary** follow the favorite picker: 最初の相棒,
+  첫 파트너, 最初伙伴, 最初夥伴, départ, inicial, and iniziale.
+- **Type matchups** follow each language's word for type effectiveness:
+  Effektivität, efficacité, eficacia, efficacia, 相性, 상성, 相克, and 相剋.
+- The **AND / OR** chip names the mode in words in Japanese, Korean, and
+  Chinese (すべて / いずれか), where the Latin capitals would read as English.

@@ -329,6 +329,29 @@ const SAME_AS_ENGLISH_OK = new Set([
   'fr:feedback.category.bug', // French tech writing uses "Bug".
   'es:feedback.context.error', // "error" is the Spanish word too.
   'it:feedback.context.browser', // Italian says "browser".
+  // The Pokémon browser, drill-downs and analytics.
+  'de:browser.sheet.generation', // "Generation" is the German noun.
+  'de:browser.subgroupGeneration',
+  'de:drilldown.generationTitle',
+  'fr:browser.chip.type', // Type is the French noun.
+  'fr:browser.sheet.type',
+  'fr:analytics.dex.nationalShort', // National is the French adjective.
+  'fr:chart.header.score', // French uses "score" for a points total.
+  'es:browser.chip.color', // "Color" is the Spanish noun.
+  'es:browser.sheet.color',
+  // "Pokémon" is the word in all four Latin-script languages.
+  'de:stage.columnTotal_one',
+  'de:stage.columnTotal_other',
+  'de:stage.legendUnit',
+  'fr:stage.columnTotal_one',
+  'fr:stage.columnTotal_other',
+  'fr:stage.legendUnit',
+  'es:stage.columnTotal_one',
+  'es:stage.columnTotal_other',
+  'es:stage.legendUnit',
+  'it:stage.columnTotal_one',
+  'it:stage.columnTotal_other',
+  'it:stage.legendUnit',
 ]);
 
 /**
