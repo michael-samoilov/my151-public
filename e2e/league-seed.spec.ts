@@ -84,7 +84,7 @@ test.describe('seeded league', () => {
     expect(await alt(1), 'Onix from the top row').toBe('onix');
     expect(await alt(11), 'and still Onix at the bottom — Steelix is pushed off').toBe('onix');
     await expect(
-      page.locator('[aria-label="Reset onix\'s evolution rows"]'),
+      page.locator('[aria-label="Reset Onix\'s evolution rows"]'),
       'an edited line offers its reset',
     ).toHaveCount(1);
   });

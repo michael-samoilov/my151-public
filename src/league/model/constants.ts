@@ -51,11 +51,3 @@ export function slotRow(slotIndex: number): number {
   if (kind === 'champion') return CHAMPION_ROW;
   return BOSS_ROW;
 }
-
-export function slotLabel(slotIndex: number): string {
-  const kind = slotKind(slotIndex);
-  if (kind === 'gym') return `Gym ${slotIndex + 1}`;
-  if (kind === 'elite') return `Elite Four ${slotIndex - 7}`;
-  if (kind === 'champion') return 'Champion';
-  return 'Endgame Boss';
-}

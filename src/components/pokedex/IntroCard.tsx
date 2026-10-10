@@ -143,12 +143,9 @@ const SHOT_DIMS = [
  *  "Generated image" is accurate: shot-151 is itself an export produced by
  *  generateExportImage, and carries the "made with my151.app" footer. Prefer
  *  "generate your Pokédex image" over a bare "generator" — the app has no
- *  randomiser, so the bare term invites visitors expecting one. */
-const SHOT_ALTS = [
-  'A custom Pokédex in progress — 45 of the 151 slots filled, the rest still empty.',
-  'A Pokémon region template at 95 of 151, its slots grouped into labelled areas such as Starters, Forest and Ocean.',
-  'A generated Pokédex image: a finished 151 dex beside its type-distribution, generation-origin and base-stat charts.',
-] as const;
+ *  randomiser, so the bare term invites visitors expecting one. The words are
+ *  catalog keys, so each language describes the images in its own terms. */
+const SHOT_ALTS = ['intro.shot.partial', 'intro.shot.sections', 'intro.shot.complete'] as const;
 
 // ---------- dots face ----------
 
@@ -335,7 +332,7 @@ function ShowcaseStaircase() {
               {FACE === 'shots' ? (
                 <img
                   src={SHOT_SRCS[i]}
-                  alt={SHOT_ALTS[i]}
+                  alt={t(SHOT_ALTS[i])}
                   width={SHOT_DIMS[i].width}
                   height={SHOT_DIMS[i].height}
                   // The card is the first thing a new visitor sees, so these
@@ -568,7 +565,7 @@ export function IntroCard({
         <div className="relative rounded-xl border bg-card mb-2 overflow-hidden">
           <button
             type="button"
-            aria-label="Dismiss intro"
+            aria-label={t('intro.dismiss')}
             onClick={dismiss}
             className="absolute right-1 top-1 z-40 p-2.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
           >

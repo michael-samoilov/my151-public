@@ -3,11 +3,12 @@ import { ChevronDown, Search, X } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Input } from '@/components/ui/input';
 import { TypeBadge } from '@/components/shared/TypeBadge';
-import { typeLabel } from '@/i18n';
+import { raw, typeLabel, useT, useTn } from '@/i18n';
+import { splitTemplate } from '@/lib/richTemplate';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { cn } from '@/lib/utils';
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
-import { slotLabel } from '../model/constants';
+import { slotLabel } from '../slotLabel';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { movesForPicker } from '../filterMoves';
 import {
@@ -132,6 +133,8 @@ function OptionChip({ label, active, colour, onClick }: {
 }
 
 function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => void }) {
+  const t = useT();
+  const tn = useTn();
   const setTm = useLeagueStore((s) => s.setTm);
   const cardType = useLeagueStore((s) => s.cards[cardIndex]?.type ?? null);
 
@@ -147,10 +150,10 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
 
-  const toggleType = (t: TypeName) =>
+  const toggleType = (type: TypeName) =>
     setTypeFilter((cur) => {
       const list = cur ?? [];
-      const next = list.includes(t) ? list.filter((x) => x !== t) : [...list, t];
+      const next = list.includes(type) ? list.filter((x) => x !== type) : [...list, type];
       return next.length > 0 ? next : null;
     });
   const toggleCategory = (c: Move['category']) =>
@@ -194,7 +197,9 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         }
       }}
       className={cn(
-        'flex items-center text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground',
+        // One line: a CJK head such as 威力 would otherwise break between
+        // its two characters in the narrow numeric columns.
+        'flex items-center whitespace-nowrap text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground',
         right && 'justify-end',
       )}
     >
@@ -220,11 +225,11 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
             data-testid="tm-search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search moves"
+            placeholder={t('league.tm.search')}
             className="pl-9"
           />
         </div>
-        <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">{results.length} found</span>
+        <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">{tn('league.tm.found', results.length)}</span>
       </div>
 
       {/* Filter chip row — the selection pane's idiom. `shrink-0` is
@@ -240,20 +245,20 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
             means any of them. */}
         {typeFilter && typeFilter.length > 0 ? (
           <>
-            {typeFilter.map((t) => (
+            {typeFilter.map((type) => (
               <FilterChip
-                key={t}
-                label={typeLabel(t)}
-                onDismiss={() => toggleType(t)}
+                key={type}
+                label={typeLabel(type)}
+                onDismiss={() => toggleType(type)}
                 onClick={() => toggleSheet('type')}
                 className="text-white"
-                style={{ backgroundColor: TYPE_COLORS[t] }}
-                testId={`tm-chip-type-${t}`}
-              />
+                style={{ backgroundColor: TYPE_COLORS[type] }}
+                testId={`tm-chip-type-${type}`}
+                />
             ))}
           </>
         ) : (
-          <EntryChip testId="tm-filter-type" label="Type" onClick={() => toggleSheet('type')} active={openSheet === 'type'} />
+          <EntryChip testId="tm-filter-type" label={t('league.type.word')} onClick={() => toggleSheet('type')} active={openSheet === 'type'} />
         )}
 
         {categories.length > 0 ? (
@@ -270,7 +275,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         ) : (
           <EntryChip
             testId="tm-filter-category"
-            label="Category"
+            label={t('league.tm.category')}
             onClick={() => toggleSheet('category')}
             active={openSheet === 'category'}
           />
@@ -290,7 +295,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         ) : (
           <EntryChip
             testId="tm-filter-contest"
-            label="Contest"
+            label={t('league.tm.contest')}
             onClick={() => toggleSheet('contest')}
             active={openSheet === 'contest'}
           />
@@ -302,7 +307,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
             onClick={clearFilters}
             className="shrink-0 cursor-pointer text-[0.625rem] text-muted-foreground underline hover:text-foreground"
           >
-            Clear
+            {t('league.tm.clear')}
           </button>
         )}
       </div>
@@ -313,11 +318,14 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         <div className="border-b bg-muted/30 px-3 py-2">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-semibold">
-              {openSheet === 'type' ? 'Type' : openSheet === 'category' ? 'Move category' : 'Contest condition'}
+              {openSheet === 'type'
+                ? t('league.type.word')
+                : openSheet === 'category' ? t('league.tm.categoryTitle') : t('league.tm.contestTitle')}
             </span>
             <button
               type="button"
               onClick={() => setOpenSheet(null)}
+              aria-label={t('league.close')}
               className="cursor-pointer text-muted-foreground hover:text-foreground"
             >
               <X size={16} />
@@ -373,12 +381,12 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
       )}
 
       <div className="grid items-center border-b px-3 pb-1" style={grid}>
-        <span className="text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground">Type</span>
-        <span className="text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground">Cat.</span>
-        {header('name', 'Move')}
-        {header('power', 'Att.', true)}
-        {header('accuracy', 'Acc.', true)}
-        {header('pp', 'PP', true)}
+        <span className="text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground">{t('league.type.word')}</span>
+        <span className="text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground">{t('league.tm.col.category')}</span>
+        {header('name', t('league.tm.col.move'))}
+        {header('power', t('league.tm.col.power'), true)}
+        {header('accuracy', t('league.tm.col.accuracy'), true)}
+        {header('pp', t('league.tm.col.pp'), true)}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3">
         {results.map((m) => (
@@ -401,7 +409,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
             <span className="text-right text-[0.65625rem] tabular-nums">{m.pp}</span>
           </button>
         ))}
-        {results.length === 0 && <div className="py-10 text-center text-sm text-muted-foreground">No moves match.</div>}
+        {results.length === 0 && <div className="py-10 text-center text-sm text-muted-foreground">{t('league.tm.empty')}</div>}
       </div>
     </div>
   );
@@ -411,6 +419,10 @@ export function MovePicker({ cardIndex }: { cardIndex: number }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
   const isDesktop = useIsDesktop();
   const close = () => setMovePickerOpen(false);
+  const t = useT();
+  const slot = slotLabel(cardIndex);
+  // One sentence with the slot in red, wherever the language puts it.
+  const title = splitTemplate(raw('league.tm.title'));
 
   if (!isDesktop) {
     return (
@@ -418,11 +430,16 @@ export function MovePicker({ cardIndex }: { cardIndex: number }) {
         onClose={close}
         size="full"
         topGap={49}
-        closeLabel={`TM for ${slotLabel(cardIndex)}`}
+        closeLabel={t('league.tm.titlePlain', { slot })}
         title={
           <>
-            <span className="text-foreground">TM for: </span>
-            <span className="text-primary">{slotLabel(cardIndex)}</span>
+            {title.map((part, i) =>
+              part.kind === 'slot' ? (
+                <span key={i} className="text-primary">{slot}</span>
+              ) : (
+                <span key={i} className="text-foreground">{part.text}</span>
+              ),
+            )}
           </>
         }
       >
@@ -437,11 +454,14 @@ export function MovePicker({ cardIndex }: { cardIndex: number }) {
       <div className="relative flex max-h-[80vh] w-[26rem] flex-col rounded-2xl bg-background shadow-2xl">
         <div className="flex flex-col items-center py-3">
           <span className="text-sm font-semibold">
-            TM for: <span className="text-primary">{slotLabel(cardIndex)}</span>
+            {title.map((part, i) =>
+              part.kind === 'slot' ? <span key={i} className="text-primary">{slot}</span> : part.text,
+            )}
           </span>
           <button
             type="button"
             onClick={close}
+            aria-label={t('league.close')}
             className="absolute right-3 top-3 cursor-pointer text-muted-foreground hover:text-foreground"
           >
             <X size={16} />

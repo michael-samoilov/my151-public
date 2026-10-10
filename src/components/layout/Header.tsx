@@ -130,7 +130,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
           </a>
         </p>
 
-        <div className="flex flex-shrink-0 items-center gap-1">
+        <div className="flex flex-shrink-0 items-center gap-0 min-[360px]:gap-1">
           {/* Always present, in every environment. The app negotiates a locale
               from `navigator.languages` at startup, so a visitor can be switched
               out of English without ever asking — and a switcher that only

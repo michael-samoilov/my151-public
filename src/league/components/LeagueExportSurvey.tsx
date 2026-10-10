@@ -4,6 +4,7 @@ import { Search, Send, UserRound } from 'lucide-react';
 import { SiBluesky, SiDiscord, SiReddit, SiTumblr, SiX } from 'react-icons/si';
 import { Button } from '@/components/ui/button';
 import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
+import { useT, type NoArgKey } from '@/i18n';
 import { sendFeedback, collectFeedbackContext } from '@/lib/feedbackContext';
 import {
   exportSurveyFeedbackRoute,
@@ -22,18 +23,27 @@ function FourChanMark({ className }: { className?: string }) {
   );
 }
 
-const HEARD: { id: string; label: string; Icon: IconType | typeof Search | typeof Send | typeof UserRound }[] =
-  [
-    { id: 'search', label: 'Search engine', Icon: Search },
-    { id: 'friend', label: 'Friend', Icon: UserRound },
-    { id: 'discord', label: 'Discord', Icon: SiDiscord },
-    { id: 'reddit', label: 'Reddit', Icon: SiReddit },
-    { id: 'x', label: 'X / Twitter', Icon: SiX },
-    { id: '4chan', label: '4chan', Icon: FourChanMark },
-    { id: 'bluesky', label: 'Bluesky', Icon: SiBluesky },
-    { id: 'tumblr', label: 'Tumblr', Icon: SiTumblr },
-    { id: 'other', label: 'Other', Icon: Send },
-  ];
+/**
+ * `label` is the English the report sends, so the answers read the same in
+ * every language. `key` is the shown label; a brand name has none and shows
+ * as is.
+ */
+const HEARD: {
+  id: string;
+  label: string;
+  key?: NoArgKey;
+  Icon: IconType | typeof Search | typeof Send | typeof UserRound;
+}[] = [
+  { id: 'search', label: 'Search engine', key: 'exportSurvey.heard.search', Icon: Search },
+  { id: 'friend', label: 'Friend', key: 'exportSurvey.heard.friend', Icon: UserRound },
+  { id: 'discord', label: 'Discord', Icon: SiDiscord },
+  { id: 'reddit', label: 'Reddit', Icon: SiReddit },
+  { id: 'x', label: 'X / Twitter', Icon: SiX },
+  { id: '4chan', label: '4chan', Icon: FourChanMark },
+  { id: 'bluesky', label: 'Bluesky', Icon: SiBluesky },
+  { id: 'tumblr', label: 'Tumblr', Icon: SiTumblr },
+  { id: 'other', label: 'Other', key: 'exportSurvey.heard.other', Icon: Send },
+];
 
 function chipClass(on: boolean) {
   return on
@@ -50,6 +60,7 @@ export function LeagueExportSurvey({
   openedAt: number;
   onDone: () => void;
 }) {
+  const t = useT();
   const [heard, setHeard] = useState<Set<string>>(() => new Set());
   const [heardOther, setHeardOther] = useState('');
   const [ideas, setIdeas] = useState('');
@@ -139,7 +150,7 @@ export function LeagueExportSurvey({
   if (sent) {
     return (
       <p className="px-4 py-6 text-center text-sm text-muted-foreground" data-export-survey-sent>
-        Thanks — your note helps.
+        {t('exportSurvey.thanks')}
       </p>
     );
   }
@@ -150,8 +161,8 @@ export function LeagueExportSurvey({
       data-export-survey
     >
       <fieldset className="space-y-2 border-0 p-0">
-        <legend className="text-sm font-semibold">How did you hear about my151?</legend>
-        <p className="text-xs text-muted-foreground">Select all that apply.</p>
+        <legend className="text-sm font-semibold">{t('exportSurvey.heard.title')}</legend>
+        <p className="text-xs text-muted-foreground">{t('exportSurvey.heard.hint')}</p>
         <div className="flex w-full items-stretch gap-1 scroll-mt-3 scroll-mb-24" data-export-other-row ref={otherRowRef}>
           <button
             type="button"
@@ -161,7 +172,7 @@ export function LeagueExportSurvey({
             data-export-other
           >
             <Send className="size-4 shrink-0" aria-hidden />
-            Other
+            {t('exportSurvey.heard.other')}
           </button>
           <input
             ref={otherInputRef}
@@ -175,14 +186,14 @@ export function LeagueExportSurvey({
               otherRowRef.current?.scrollIntoView({ block: 'center', inline: 'nearest' });
             }}
             onPointerDown={selectOther}
-            placeholder="Where?"
-            aria-label="How you heard about the site"
+            placeholder={t('exportSurvey.heard.where')}
+            aria-label={t('exportSurvey.heard.whereLabel')}
             data-export-other-input
             className="min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           />
         </div>
         <div className="grid grid-cols-2 gap-1">
-          {HEARD.filter((h) => h.id !== 'other').map(({ id, label, Icon }) => {
+          {HEARD.filter((h) => h.id !== 'other').map(({ id, label, key, Icon }) => {
             const on = heard.has(id);
             return (
               <button
@@ -194,7 +205,7 @@ export function LeagueExportSurvey({
                 <span className="flex h-5 w-5 items-center justify-center">
                   <Icon className="size-4 shrink-0" aria-hidden />
                 </span>
-                <span className="truncate">{label}</span>
+                <span className="truncate">{key ? t(key) : label}</span>
               </button>
             );
           })}
@@ -202,24 +213,24 @@ export function LeagueExportSurvey({
       </fieldset>
 
       <label className="block space-y-1.5">
-        <span className="text-sm font-semibold">Ideas, features, bugs, or anything I should know</span>
-        <span className="block text-xs text-muted-foreground">(I read everything that comes in!)</span>
+        <span className="text-sm font-semibold">{t('exportSurvey.ideas.label')}</span>
+        <span className="block text-xs text-muted-foreground">{t('feedback.message.readEverything')}</span>
         <textarea
           value={ideas}
           onChange={(e) => setIdeas(e.target.value)}
           rows={3}
-          placeholder="Optional"
+          placeholder={t('exportSurvey.ideas.placeholder')}
           className="flex w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-base md:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         />
       </label>
 
       <p className="text-sm leading-relaxed text-muted-foreground">
-        If you know someone who would enjoy this tool, please share it with them ^_^
+        {t('exportSurvey.share')}
       </p>
 
       <div className="mt-auto flex flex-col gap-2 pt-2">
         <Button type="button" disabled={sending} onClick={() => void submit()}>
-          {sending ? 'Sending…' : 'Send feedback'}
+          {t(sending ? 'feedback.sending' : 'exportSurvey.send')}
         </Button>
       </div>
     </div>

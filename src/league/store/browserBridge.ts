@@ -4,6 +4,7 @@ import type { BrowserStoreState } from '@/components/browser/browserStore';
 import { getAllPokemon, getEvolutionLine, branchEndingAt } from '../data/catalog';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { CATEGORIES } from '@/data/categories';
+import { t } from '@/i18n';
 import { placedIds } from '../model/engine';
 import { BOSS_ROW, ROW_COUNT, TEAM_SIZES } from '../model/constants';
 import { useLeagueStore } from './useLeagueStore';
@@ -190,9 +191,9 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // a chip whose only effect is an empty result is a dead end. A full
         // card does get one, locked — see `scopeLocked` above.
         scopeFilterIds: scoped && lines.length > 0 ? placed : undefined,
-        scopeFilterLabel: scoped && lines.length > 0 ? 'Current Team' : undefined,
+        scopeFilterLabel: scoped && lines.length > 0 ? t('league.scope.team') : undefined,
         scopeFilterLocked: scopeLocked,
-        scopeFilterLockedHint: scopeLocked ? 'Choose a pokemon from your team' : undefined,
+        scopeFilterLockedHint: scopeLocked ? t('league.scope.locked') : undefined,
         // The branches themselves, so the scoped view can draw the lines the
         // user seated rather than the chains they belong to.
         scopeFilterLines: scoped ? lines.map((l) => l.branch) : undefined,

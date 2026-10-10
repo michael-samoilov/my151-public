@@ -1769,6 +1769,17 @@ export function AdminPage() {
   // Open a detail page from the dashboard, remembering the scroll position so
   // Back returns the reader to exactly where they were, not the top.
   const [dashScrollY, setDashScrollY] = useState(0);
+  const tabScrollY = useRef<Partial<Record<AdminNavKey, number>>>({});
+  const dashboardTab: AdminNavKey = page === 'analytics' ? tool : page;
+  const previousTab = useRef(dashboardTab);
+  useLayoutEffect(() => {
+    if (previousTab.current !== dashboardTab && !detail) {
+      // Restore after the new tab's measured cards settle, as detail Back does.
+      queueMicrotask(() => window.scrollTo(0, tabScrollY.current[dashboardTab] ?? 0));
+    }
+    previousTab.current = dashboardTab;
+  }, [dashboardTab, detail]);
+
   const openDetail = useCallback((d: Detail) => {
     setDashScrollY(window.scrollY);
     setDetail(d);
@@ -2019,7 +2030,9 @@ export function AdminPage() {
 
   const navKey: AdminNavKey = page === 'feedback' ? 'feedback' : page === 'search' ? 'search' : tool;
   const onNav = (k: AdminNavKey) => {
+    if (!detail && k !== navKey) tabScrollY.current[navKey] = window.scrollY;
     if (detail) {
+      tabScrollY.current[k] = 0;
       // A nav press opens the tab at its top; Back is the way to the old place.
       setDashScrollY(0);
       setDetail(null);
@@ -2304,7 +2317,7 @@ export function AdminPage() {
                     )}
                     {showFavoriteFunnel && favoriteSankey && <div>
                       {tool === 'all' && <div className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Favorite Pokémon Picker</div>}
-                      <FlowSankey labelHalo nodes={favoriteSankey.nodes} links={favoriteSankey.links} ariaLabel={favoriteSankey.ariaLabel}/>
+                      <FlowSankey nodes={favoriteSankey.nodes} links={favoriteSankey.links} ariaLabel={favoriteSankey.ariaLabel}/>
                     </div>}
                   </div>
                 )}

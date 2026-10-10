@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useT } from '@/i18n';
 
 /**
  * A small arrow-popup that floats in pointing at a specific on-page control —
@@ -36,6 +37,7 @@ export function FollowUpHint({
    *  stable function, or it runs again on every render. */
   onShown?: () => void;
 }) {
+  const t = useT();
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
 
   useEffect(() => {
@@ -96,7 +98,7 @@ export function FollowUpHint({
         />
         <button
           type="button"
-          aria-label="Dismiss"
+          aria-label={t('common.dismiss')}
           onClick={dismiss}
           className="absolute right-1.5 top-1.5 p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
         >

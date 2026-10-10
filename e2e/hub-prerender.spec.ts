@@ -94,7 +94,9 @@ async function visit(
   });
   await page.goto('/?notme');
   await expect(page.locator('.p151-boot')).toHaveCount(0);
-  await expect(page.getByRole('img', { name: /^Custom Pokédex Maker: a custom regional Pokédex in progress/ })).toHaveJSProperty('complete', true);
+  // The dex card's front shot. Its alt text is translated, so it is found by
+  // its file and by having alt text at all (the shadow and hit copies have none).
+  await expect(page.locator('img[alt]:not([alt=""])[src*="/tool-dex-"]:not([src*="/tool-dex-b-"])')).toHaveJSProperty('complete', true);
   await expect(page.locator('[data-card-progress]:not([data-empty])')).toHaveCount(lines);
   await page.waitForTimeout(500);
   const seen = await page.evaluate(() => {

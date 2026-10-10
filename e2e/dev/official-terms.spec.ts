@@ -42,12 +42,13 @@ test.describe('official terminology', () => {
   test('ja: egg groups and colours are localised in the browser', async ({ page }) => {
     await page.goto('/pokedex-builder?tune&lang=ja');
     await seedDex(page);
-    await page.getByRole('button', { name: /^Add a Pokémon to / }).first().click();
+    // Stable handles: the button's name and the chip's label are translated.
+    await page.locator('[data-add-slot]:visible').first().click();
 
     // Scoped to the open sheet: the desktop browser panel is in the DOM too.
     const sheet = page.getByRole('dialog');
     await expect(sheet).toBeVisible();
-    const eggGroup = sheet.getByText('Egg Group', { exact: true }).first();
+    const eggGroup = sheet.locator('[data-filter-chip="eggGroup"]').first();
     await eggGroup.scrollIntoViewIfNeeded();
     await eggGroup.click();
     // りくじょう is the Field group. ground -> Field is exactly the mapping that

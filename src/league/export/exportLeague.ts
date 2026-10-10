@@ -22,7 +22,7 @@ import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { drawExportCredit as drawCredit } from '@/lib/exportCredit';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
-import { localeUppercase, pokemonLabel } from '@/i18n';
+import { localeUppercase, pokemonLabel, t } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
 import { legendsOf, powerupsAt } from '../store/useLeagueStore';
 import { deriveRow, signatureMember } from '../model/engine';
@@ -598,7 +598,13 @@ function drawMarkColumn(
     drawGlyph(mark.glyph, cx - mark.glyph / 2, mark.top);
     ctx.fillStyle = colour;
     ctx.textBaseline = 'middle';
-    fillTrackedCentered(ctx, word, cx, mark.labelCy, L.MARK_TRACK);
+    // A word wider than the column and its two pads, as MEDAGLIA or わざマシン
+    // are, takes a smaller face rather than reach the slot's edge.
+    const track = L.labelTrack(L.MARK_TRACK);
+    const room = L.MARK_COL + 2 * L.MARK_PAD;
+    const wide = trackedWidth(ctx, word, track);
+    if (wide > room) ctx.font = font((L.MARK_LABEL_PX * room) / wide, 800);
+    fillTrackedCentered(ctx, word, cx, mark.labelCy, wide > room ? (track * room) / wide : track);
   }
   ctx.restore();
 }
@@ -646,14 +652,14 @@ function drawTmSlot(
   const bodyW = width - (bodyX - x) - L.MARK_PAD;
 
   if (!move) {
-    drawMarkColumn(ctx, 'TM', shades.hint, markCx, cy, (size, gx, gy) =>
+    drawMarkColumn(ctx, L.markWord('league.tm.mark'), shades.hint, markCx, cy, (size, gx, gy) =>
       drawTmDisc(ctx, shades.dash, size, gx, gy),
     );
     return;
   }
 
   const moveShades = cardShades(move.type as TypeName);
-  drawMarkColumn(ctx, 'TM', moveShades.band, markCx, cy, (size, gx, gy) =>
+  drawMarkColumn(ctx, L.markWord('league.tm.mark'), moveShades.band, markCx, cy, (size, gx, gy) =>
     drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], size, gx, gy),
   );
 
@@ -736,7 +742,7 @@ function drawBadgeSlot(
   const bodyX = x + L.MARK_PAD + L.MARK_COL + L.MARK_PAD;
   const bodyW = width - (bodyX - x) - 4 * L.K;
 
-  drawMarkColumn(ctx, name ? '' : 'BADGE', name ? shades.band : shades.hint, markCx, cy, (size, gx, gy) =>
+  drawMarkColumn(ctx, name ? '' : L.markWord('league.badge.mark'), name ? shades.band : shades.hint, markCx, cy, (size, gx, gy) =>
     drawHexagon(ctx, name ? shades.type : shades.dash, !!name, size, gx, gy),
   );
 
@@ -748,26 +754,35 @@ function drawBadgeSlot(
   ctx.textBaseline = 'middle';
   let next = name;
   let lines = wrapLines(ctx, L.badgeExportPhrase(next), bodyW, 3, false);
-  while (next && !badgeLinesKeepSuffix(lines, bodyW, ctx)) {
+  while (next && !badgeLinesKeepSuffix(lines, bodyW, ctx, L.badgeExportPhrase(next))) {
     next = next.slice(0, -1).replace(/[\s\u00a0]+$/u, '');
     lines = wrapLines(ctx, L.badgeExportPhrase(next), bodyW, 3, false);
   }
   const lineH = L.NAME_LINE;
   const top = cy - (lines.length * lineH) / 2;
   lines.forEach((line, i) => {
-    fillTracked(ctx, line, bodyX, top + (i + 0.5) * lineH, L.NAME_TRACK);
+    fillTracked(ctx, line, bodyX, top + (i + 0.5) * lineH, L.labelTrack(L.NAME_TRACK));
   });
   ctx.restore();
 }
 
+/**
+ * Whether the wrapped phrase kept the whole badge word: the last line ends in
+ * it where it follows the name, and no word was dropped where it leads.
+ */
 function badgeLinesKeepSuffix(
   lines: string[],
   maxW: number,
   ctx: CanvasRenderingContext2D,
+  phrase: string,
 ): boolean {
   if (lines.length === 0) return false;
   const last = lines[lines.length - 1] ?? '';
-  return last.endsWith('BADGE') && ctx.measureText(last).width <= maxW + 0.5;
+  const suffix = L.badgeExportSuffix();
+  const whole = suffix
+    ? last.endsWith(suffix)
+    : lines.join(' ').split(/\s+/).join(' ') === phrase.trim().split(/\s+/).join(' ');
+  return whole && ctx.measureText(last).width <= maxW + 0.5;
 }
 
 function drawBand(
@@ -791,15 +806,19 @@ function drawBand(
   ctx.textBaseline = 'middle';
   const size = 9 * L.K;
   ctx.font = font(size, 800);
-  const track = 0.07 * size;
+  const track = L.labelTrack(0.07 * size);
   const cy = y + L.BAND / 2;
   let tx = x + L.BAND_R;
   fillTracked(ctx, label, tx, cy, track);
   if (note) {
     tx += trackedWidth(ctx, label, track) + 5 * L.K;
+    const room = x + w - L.BAND_R - tx;
     ctx.font = font(size, 400);
+    // A longer rule takes a smaller face before it is cut short.
+    const natural = ctx.measureText(note).width;
+    if (natural > room) ctx.font = font(Math.max(size * 0.8, (size * room) / natural), 400);
     ctx.globalAlpha = 0.85;
-    ctx.fillText(ellipsize(ctx, note, x + w - L.BAND_R - tx), tx, cy);
+    ctx.fillText(ellipsize(ctx, note, room), tx, cy);
   }
   ctx.restore();
 }
@@ -830,7 +849,7 @@ function drawGlyphCell(
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const block = size + 3 * L.K + 8 * L.K;
-    ctx.fillText('No badges', cx, cy - block / 2 + size / 2);
+    ctx.fillText(t('league.glyph.noBadges'), cx, cy - block / 2 + size / 2);
     drawDiamonds(ctx, 1, 8 * L.K, cx, cy + block / 2 - 4 * L.K, gap);
   } else if (row <= 8) {
     drawDiamonds(ctx, row, 7 * L.K, cx, cy, gap);
@@ -884,12 +903,20 @@ function drawGymCard(
   const titleBase = L.BAR_H / 2 + capHeight(ctx) / 2;
   ctx.fillStyle = '#ffffff';
   let x = fx + L.BAR_TEXT_X;
-  fillTracked(ctx, L.CARD_TITLE, x, titleBase, L.TITLE_TRACK);
-  x += trackedWidth(ctx, L.CARD_TITLE, L.TITLE_TRACK) + L.TITLE_GAP;
+  const titleTrack = L.labelTrack(L.TITLE_TRACK);
+  const title = L.cardTitle();
+  fillTracked(ctx, title, x, titleBase, titleTrack);
+  x += trackedWidth(ctx, title, titleTrack) + L.TITLE_GAP;
   if (type) {
+    const specialist = L.specialistRuns();
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.fillText(L.TITLE_SEP, x, titleBase);
     x += ctx.measureText(L.TITLE_SEP).width + L.TITLE_GAP;
+    if (specialist.before) {
+      ctx.fillStyle = '#ffffff';
+      fillTracked(ctx, specialist.before, x, titleBase, titleTrack);
+      x += trackedWidth(ctx, specialist.before, titleTrack) + L.TITLE_WORD_GAP;
+    }
     const badgeTop = (L.BAR_H - L.TITLE_BADGE_H) / 2;
     // The ring: two pixels of white outside the pill, following its radius.
     const r = TYPE_BADGE.radius * (L.TITLE_BADGE_H / TYPE_BADGE_H);
@@ -907,7 +934,7 @@ function drawGymCard(
     drawTypeBadge(ctx, type, images.get(typeGlyphPath(type)) ?? null, x, badgeTop, L.TITLE_BADGE_H);
     x += L.TITLE_BADGE_W + L.TITLE_WORD_GAP;
     ctx.fillStyle = '#ffffff';
-    fillTracked(ctx, L.SPECIALIST, x, titleBase, L.TITLE_TRACK);
+    if (specialist.after) fillTracked(ctx, specialist.after, x, titleBase, titleTrack);
   }
   ctx.restore();
 
@@ -916,11 +943,12 @@ function drawGymCard(
   ctx.save();
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(L.THEME_LABEL_PX, 800);
-  const labelTrack = 0.1 * L.THEME_LABEL_PX;
+  const labelTrack = L.labelTrack(0.1 * L.THEME_LABEL_PX);
+  const themeLabel = localeUppercase(t('league.export.theme'));
   ctx.fillStyle = shades.band;
   const labelX = ox + L.RAIL;
-  fillTracked(ctx, 'THEME', labelX, fieldTop + L.FIELD_H / 2 + capHeight(ctx) / 2, labelTrack);
-  const fieldX = labelX + trackedWidth(ctx, 'THEME', labelTrack) + L.LABEL_GAP;
+  fillTracked(ctx, themeLabel, labelX, fieldTop + L.FIELD_H / 2 + capHeight(ctx) / 2, labelTrack);
+  const fieldX = labelX + trackedWidth(ctx, themeLabel, labelTrack) + L.LABEL_GAP;
   ctx.fillStyle = '#ffffff';
   roundRect(ctx, fieldX, fieldTop, right - fieldX, L.FIELD_H, L.FIELD_R);
   ctx.fill();
@@ -928,7 +956,7 @@ function drawGymCard(
   ctx.fillStyle = card.theme ? FG : shades.hint;
   const room = right - fieldX - 2 * L.FIELD_PADX;
   ctx.fillText(
-    ellipsize(ctx, card.theme || 'No theme yet', room),
+    ellipsize(ctx, card.theme || t('league.export.noTheme'), room),
     fieldX + L.FIELD_PADX,
     fieldTop + L.FIELD_H / 2 + capHeight(ctx) / 2,
   );
@@ -937,12 +965,12 @@ function drawGymCard(
   const gridY = L.gridTop();
 
   // --- the rows, drawn first so the slots sit over the top-left corner ---
-  drawBand(ctx, shades, 'GYM LEADER TEAM', null, ox, gridY);
+  drawBand(ctx, shades, localeUppercase(t('league.band.team')), null, ox, gridY);
   for (let row = 1; row <= L.ROW_COUNT; row++) {
     const banner = L.BAND_BEFORE[row];
     // `rowTop` counts the band plus the 2px above it, so the band's own top
     // is one band-height back from the row, not one band and the gap.
-    if (banner) drawBand(ctx, shades, banner[0], banner[1], ox, gridY + L.rowTop(row) - L.BAND);
+    if (banner) drawBand(ctx, shades, localeUppercase(t(banner[0])), t(banner[1]), ox, gridY + L.rowTop(row) - L.BAND);
     const y = gridY + L.rowTop(row);
     if (row !== 1 && !banner) {
       ctx.save();
@@ -988,7 +1016,7 @@ function drawGymCard(
   drawTmSlot(ctx, card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId), shades, images, ox, gridY);
   drawBadgeSlot(ctx, card.badgeName, shades, ox, gridY);
 
-  drawCredit(ctx, fx + L.CARD_W / 2, gridY + L.gridHeight() + L.FOOT / 2, L.CREDIT_PX, L.CARD_CREDIT_PREFIX);
+  drawCredit(ctx, fx + L.CARD_W / 2, gridY + L.gridHeight() + L.FOOT / 2, L.CREDIT_PX, L.cardCreditPrefix());
 }
 
 // ---------- the league home ----------
@@ -1061,16 +1089,20 @@ function homeDetailLines(
   const typeR = L.homeTypeMarkRadius(L.HOME_DETAIL_TYPE);
   const markInset = L.HOME_DETAIL_ICON + L.HOME_DETAIL_GAP;
 
-  const markWidth = (text: string): number => {
+  const markWidth = (text: string, track = L.HOME_MARK_TRACK): number => {
     ctx.save();
     ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
-    const w = trackedWidth(ctx, text, L.HOME_MARK_TRACK);
+    const w = trackedWidth(ctx, text, track);
     ctx.restore();
     return w;
   };
+  // The words the app sets in the locale's face go untracked in CJK; a move's
+  // name is English data and keeps the tracking.
+  const wordTrack = L.labelTrack(L.HOME_MARK_TRACK);
+  const themeLabel = localeUppercase(t('league.export.theme'));
 
   if (themeText) {
-    const labelW = markWidth('THEME');
+    const labelW = markWidth(themeLabel, wordTrack);
     ctx.save();
     ctx.font = font(L.HOME_THEME_TEXT_PX, 700);
     const textW = ctx.measureText(themeText).width;
@@ -1082,7 +1114,7 @@ function homeDetailLines(
         ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
         ctx.fillStyle = shades.band;
         ctx.textBaseline = 'middle';
-        fillTracked(ctx, 'THEME', bodyX, midY, L.HOME_MARK_TRACK);
+        fillTracked(ctx, themeLabel, bodyX, midY, wordTrack);
         const valueX = bodyX + labelW + THEME_VALUE_GAP;
         const valueW = Math.max(8, right - valueX);
         const themePx = fitFontSize(
@@ -1157,9 +1189,9 @@ function homeDetailLines(
   }
 
   if (badgeName) {
-    const badgeText = `${badgeName} Badge`.toUpperCase();
+    const badgeText = L.badgeExportPhrase(badgeName);
     lines.push({
-      need: 2 * DETAIL_PAD + markInset + markWidth(badgeText),
+      need: 2 * DETAIL_PAD + markInset + markWidth(badgeText, wordTrack),
       paint: (bodyX, right, midY) => {
         drawHexagon(ctx, shades.type, true, L.HOME_DETAIL_ICON, bodyX, midY - L.HOME_DETAIL_ICON / 2);
         const textX = bodyX + markInset;
@@ -1170,10 +1202,10 @@ function homeDetailLines(
         ctx.textBaseline = 'middle';
         fillTracked(
           ctx,
-          ellipsizeTracked(ctx, badgeText, textW, L.HOME_MARK_TRACK),
+          ellipsizeTracked(ctx, badgeText, textW, wordTrack),
           textX,
           midY,
-          L.HOME_MARK_TRACK,
+          wordTrack,
         );
         ctx.restore();
       },
@@ -1241,7 +1273,7 @@ function paintSectionPill(
   ctx.fill();
   if (label) {
     const size = 9 * L.K2;
-    const track = 0.07 * size;
+    const track = L.labelTrack(0.07 * size);
     ctx.fillStyle = '#ffffff';
     ctx.font = font(size, 800);
     ctx.textBaseline = 'middle';
@@ -1334,7 +1366,7 @@ function drawHomeRow(
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     const vacancyRight = L.homeVacancyAnchorX(x, geom, sideBySide);
-    ctx.fillText(L.VACANCY[kind], vacancyRight - 6 * L.K2, y + L.ROW2 / 2);
+    ctx.fillText(t(L.VACANCY[kind]), vacancyRight - 6 * L.K2, y + L.ROW2 / 2);
     ctx.restore();
     return;
   }
@@ -1394,7 +1426,7 @@ function drawLeagueHome(
     if (section) {
       if (index !== 0) y += 2;
       // Every band splits over the two team blocks; only the first names them.
-      for (const pill of L.homeSectionPills(ox, geom, section, bothTeamColumns, index === 0)) {
+      for (const pill of L.homeSectionPills(ox, geom, localeUppercase(t(section)), bothTeamColumns, index === 0)) {
         paintSectionPill(ctx, pill.x, y, pill.w, pill.label, pill.align);
       }
       y += L.BAND2;
@@ -1403,7 +1435,7 @@ function drawLeagueHome(
     y += L.ROW2;
   }
 
-  drawCredit(ctx, geom.homeW / 2, y + L.FOOT / 2, L.CREDIT_PX, L.HOME_CREDIT_PREFIX);
+  drawCredit(ctx, geom.homeW / 2, y + L.FOOT / 2, L.CREDIT_PX, L.homeCreditPrefix());
 }
 
 // ---------- assembling a PNG ----------

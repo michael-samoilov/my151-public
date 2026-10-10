@@ -317,6 +317,24 @@ function cjkSafety(): void {
  * makes the check meaningful for every other key.
  */
 const SAME_AS_ENGLISH_OK = new Set([
+  // The Pokédex builder's sections. Dojo and Tundra are the same loanwords in
+  // these languages; Pika, Pseudo and Fossil are the same one-cell outline
+  // forms. Upgrade and Protector are the item names the games use.
+  'de:section.dojo', 'de:archetype.dojo', 'de:sectionTiny.dojo',
+  'es:section.dojo', 'es:archetype.dojo', 'es:sectionTiny.dojo',
+  'fr:section.dojo', 'fr:archetype.dojo', 'fr:sectionTiny.dojo',
+  'it:section.dojo', 'it:archetype.dojo', 'it:sectionTiny.dojo',
+  'de:section.tundra', 'de:archetype.tundra', 'de:sectionTiny.tundra',
+  'es:section.tundra', 'es:archetype.tundra', 'es:sectionTiny.tundra',
+  'it:section.tundra', 'it:archetype.tundra', 'it:sectionTiny.tundra',
+  'de:sectionTiny.pikachu-clone', 'es:sectionTiny.pikachu-clone',
+  'fr:sectionTiny.pikachu-clone', 'it:sectionTiny.pikachu-clone',
+  'de:sectionTiny.pseudo-legendary', 'es:sectionTiny.pseudo-legendary',
+  'fr:sectionTiny.pseudo-legendary', 'it:sectionTiny.pseudo-legendary',
+  'de:sectionTiny.fossil',
+  'de:archetype.evolution-item.sub.9', // Upgrade
+  'it:archetype.evolution-item.sub.9', // Upgrade
+  'es:archetype.evolution-item.sub.19', // Protector
   'es:chart.header.color', // "Color" is also the Spanish color header.
   'es:feedback.category.idea', // "Idea" is the Spanish word too.
   'it:feedback.category.idea', // And the Italian one.
@@ -326,9 +344,61 @@ const SAME_AS_ENGLISH_OK = new Set([
   'fr:term.shape.squiggle', // Serpent is the French noun as well.
   'fr:favorites.stats.final', // Final is the French masculine evolution-role adjective.
   'es:favorites.stats.final', // Final is also the Spanish evolution-role adjective.
+  'fr:sort.type', // Type is the French noun too.
+  // The poster's clause separator is a spaced middle dot in every locale.
+  'de:poster.separator',
+  'es:poster.separator',
+  'fr:poster.separator',
+  'it:poster.separator',
+  'ja:poster.separator',
+  'ko:poster.separator',
+  'zh-Hans:poster.separator',
+  'zh-Hant:poster.separator',
+  // League builder. The game terms follow docs/i18n/sources/league-interface-terms.json.
+  'de:league.tm.mark', // The German games label TMs "TM".
+  'de:league.powerup.dynamax', // Dynamax is the German, French and Italian game term.
+  'fr:league.powerup.dynamax',
+  'it:league.powerup.dynamax',
+  'fr:league.badge.mark', // The French games say "Badge".
+  'fr:league.type.word', // Type is the French noun too.
+  'de:league.badge.placeholder', // "Name" is the German noun too.
+  'de:league.view.story', // German games and players say "Story".
+  'fr:league.tm.col.category', // "Cat." abbreviates Catégorie, Categoría and Categoria.
+  'es:league.tm.col.category',
+  'it:league.tm.col.category',
+  'es:league.tm.col.pp', // PP is the games' own abbreviation in every language but German.
+  'fr:league.tm.col.pp',
+  'it:league.tm.col.pp',
+  'ja:league.tm.col.pp',
+  'ko:league.tm.col.pp',
+  'zh-Hans:league.tm.col.pp',
+  'zh-Hant:league.tm.col.pp',
   'fr:feedback.category.bug', // French tech writing uses "Bug".
   'es:feedback.context.error', // "error" is the Spanish word too.
   'it:feedback.context.browser', // Italian says "browser".
+  // The Pokémon browser, drill-downs and analytics.
+  'de:browser.sheet.generation', // "Generation" is the German noun.
+  'de:browser.subgroupGeneration',
+  'de:drilldown.generationTitle',
+  'fr:browser.chip.type', // Type is the French noun.
+  'fr:browser.sheet.type',
+  'fr:analytics.dex.nationalShort', // National is the French adjective.
+  'fr:chart.header.score', // French uses "score" for a points total.
+  'es:browser.chip.color', // "Color" is the Spanish noun.
+  'es:browser.sheet.color',
+  // "Pokémon" is the word in all four Latin-script languages.
+  'de:stage.columnTotal_one',
+  'de:stage.columnTotal_other',
+  'de:stage.legendUnit',
+  'fr:stage.columnTotal_one',
+  'fr:stage.columnTotal_other',
+  'fr:stage.legendUnit',
+  'es:stage.columnTotal_one',
+  'es:stage.columnTotal_other',
+  'es:stage.legendUnit',
+  'it:stage.columnTotal_one',
+  'it:stage.columnTotal_other',
+  'it:stage.legendUnit',
 ]);
 
 /**
@@ -431,6 +501,28 @@ function lengthBudgets(): void {
 
 //#endregion
 
+//#region Duplicate keys
+
+/**
+ * A locale file that lists a key twice still parses: `JSON.parse` keeps the
+ * last value and drops the first without a word. Two branches that each
+ * translate the same key merge into exactly that, so the gate reads the raw
+ * text. The files are flat objects with one key per line.
+ */
+function duplicateKeys(): void {
+  for (const dir of [UI_DIR, TERMS_DIR]) {
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+      const seen = new Set<string>();
+      for (const match of readFileSync(join(dir, file), 'utf8').matchAll(/^\s*"([^"]+)"\s*:/gm)) {
+        if (seen.has(match[1])) fail('duplicate keys', `${dir}/${file} lists this key more than once`, undefined, match[1]);
+        seen.add(match[1]);
+      }
+    }
+  }
+}
+
+//#endregion
+
 function main(): void {
   const gates: [string, () => void][] = [
     ['official game text', gameTextParity],
@@ -440,6 +532,7 @@ function main(): void {
     ['CJK safety', cjkSafety],
     ['translated UI strings', translatedUi],
     ['length budgets', lengthBudgets],
+    ['duplicate keys', duplicateKeys],
   ];
 
   for (const [name, gate] of gates) {

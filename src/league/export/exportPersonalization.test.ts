@@ -3,7 +3,7 @@ import {
   earlyExportLine,
   exportBeaconPlan,
   firstPokemonLine,
-  ordinalSuffix,
+  ordinalNumber,
 } from './exportPersonalization';
 
 describe('export personalization', () => {
@@ -23,8 +23,8 @@ describe('export personalization', () => {
     expect(firstPokemonLine('Pikachu', 'league')).toBe(
       "You're also the first person to have Pikachu in an exported Pokemon League.",
     );
-    expect(ordinalSuffix(12)).toBe('12th');
-    expect(ordinalSuffix(23)).toBe('23rd');
+    expect(ordinalNumber(12)).toBe('12th');
+    expect(ordinalNumber(23)).toBe('23rd');
   });
 
   it('keeps demo exports local and silent on progress', () => {

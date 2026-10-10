@@ -7,7 +7,7 @@ import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { countTypes, buildTypeRows } from '@/components/analytics/typeDistribution';
 import { ButterflyChart } from '@/components/analytics/ButterflyChart';
 import { rowKey, type ButterflyRow } from '@/components/analytics/butterflyRow';
-import { t } from '@/i18n';
+import { t, useT } from '@/i18n';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { generationChartIcon } from '@/components/shared/attributeBadgeSvg';
 import type { GenNumber } from '@/favorites/model/cells';
@@ -170,20 +170,22 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
   // even when the type chart's identifier is a wide name badge.
   const iconColAspect = typeBadges ? TYPE_BADGE_ASPECT : 1;
 
+  // The hook's `t` changes with the language, so the labels follow a switch.
+  const tr = useT();
   const genRows = useMemo<ButterflyRow[]>(
     () =>
       analytics.generationDeviation.map((d, i) => {
         const gen = d.generation;
         return {
           key: String(gen),
-          label: `Gen ${gen}`,
+          label: tr('browser.genChip', { gen }),
           count: d.count,
           deviation: d.deviation,
           color: GEN_COLORS[i % GEN_COLORS.length],
           icon: generationChartIcon(gen as GenNumber),
         };
       }),
-    [analytics.generationDeviation],
+    [analytics.generationDeviation, tr],
   );
 
   const bstHist = useMemo(
