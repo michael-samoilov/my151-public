@@ -1,3 +1,5 @@
+import type {RecordedUsage} from '../../../api/_dashboard';
+import {RecordedUsagePanel} from './RecordedUsagePanel';
 import {FavoriteDetailBody} from './FavoriteDetailBody';
 import type {FavoritePicks,FavoriteUser,FavoriteUsageFunnel} from '../../../api/_favoriteAggregate';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
@@ -299,6 +301,7 @@ export interface LeagueSummary {
 }
 
 export interface ApiResponse {
+  recordedUsage?: RecordedUsage;
   /** The date range the aggregates count, and where its window opens (null for all). */
   range?: DashboardRange;
   rangeStart?: number | null;
@@ -2328,6 +2331,10 @@ export function AdminPage() {
                 />
               </Panel>
             )}
+
+            {data.recordedUsage && <Panel title="Recorded time and sessions" sub={["non-bounced browsers"]}>
+              <RecordedUsagePanel data={data.recordedUsage[tool]} />
+            </Panel>}
 
             <Panel
               title="Who"
