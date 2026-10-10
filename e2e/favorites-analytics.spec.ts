@@ -130,7 +130,7 @@ test('switching tabs retains grid scroll and exporting from Analytics preserves 
   expect(full).toEqual({ width: 2832, height: 1724 });
   await page.locator('[data-favorites-export-mode="simplified"]').click();
   await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
-  await expect(page.getByTestId('favorites-export-stats')).toHaveCount(0);
+  await expect(page.getByTestId('favorites-export-stats')).not.toBeChecked();
   const simple = await preview.evaluate(el => ({ width: (el as HTMLImageElement).naturalWidth, height: (el as HTMLImageElement).naturalHeight }));
   expect(simple.width).toBeLessThan(full.width);
   await page.keyboard.press('Escape');

@@ -23,6 +23,8 @@
   "favorites.empty.title": "Rien à choisir pour le moment",
   "favorites.empty.unavailable": "Aucun Pokémon n’est disponible pour cette case.",
   "favorites.export.chartTitle": "Pokémon préférés par type et génération",
+  "favorites.export.summaryTitle": "Pokémon préférés par type et génération",
+  "favorites.export.summaryStatsTitle": "Statistiques détaillées (grille complète type/gén.)",
   "favorites.export.close": "Fermer l’exportation",
   "favorites.export.error": "Impossible de créer l’image. Veuillez réessayer.",
   "favorites.export.fullGrid": "Grille complète",

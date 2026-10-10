@@ -9,6 +9,7 @@ import { useNamesVersion } from '@/i18n';
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { RomanDisc, TypeIcon } from './marks';
 import { NameTooltip } from './NameTooltip';
+import { PickerSprite } from './PickerSprite';
 import { labelOf } from './spriteLabel';
 import { ExtraSymbol } from './ExtraSymbol';
 import { axisBackground, coordinateLabel } from './coordinatePresentation';
@@ -199,8 +200,8 @@ function PickCell({
       className="group/pick relative flex shrink-0 flex-col cursor-pointer items-center justify-start rounded-md bg-transparent p-0 hover:bg-foreground/5"
       style={{ width: spritePx, height: spritePx, scrollMargin: 4 }}
     >
-      <img
-        src={mon.sprite}
+      <PickerSprite
+        sprite={mon.sprite}
         alt={labelOf(mon)}
         width={spritePx}
         height={spritePx}

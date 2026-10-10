@@ -391,11 +391,13 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-gimmick-8').click();
     const grid = page.getByTestId('favorites-pretty-grid');
     await expect(grid).toBeVisible();
-    const images = grid.locator('button img[src^="/sprites/pokemon/"]');
+    // Sprites have alt text; type marks do not. A sprite may draw from a pack's
+    // object URL, and shows a 1 px blank while its pack is on the way.
+    const images = grid.locator('button img[alt]:not([alt=""])');
     expect(await images.count()).toBeGreaterThan(50);
     await expect.poll(async () => images.evaluateAll((nodes) => nodes.every((node) => {
       const image = node as HTMLImageElement;
-      return image.complete && image.naturalWidth > 0;
+      return image.complete && image.naturalWidth > 1;
     })), { timeout: 10_000 }).toBe(true);
     const blank = await images.evaluateAll((nodes) => nodes.flatMap((node) => {
       const image = node as HTMLImageElement;

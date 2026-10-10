@@ -34,7 +34,9 @@ test('desktop grid keeps native sprites, aligned rows, and a larger minimap', as
   expect((await grid.boundingBox())!.width).toBeCloseTo(widthBefore, 0);
   await page.getByTestId('favorites-pick-644').click();
   const sprite = page.getByTestId('favorites-cell-electric-5').locator('img[data-grid-sprite-size]');
-  await expect(sprite).toHaveAttribute('src', '/sprites/pokemon/644.png');
+  // The sprite may draw from a pack's object URL (src/favorites/model/spritePreload.ts).
+  await expect(sprite).toHaveAttribute('alt', 'Zekrom');
+  await expect.poll(() => sprite.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBe(96);
   expect((await sprite.boundingBox())!.width).toBeCloseTo(96, 0);
   expect((await sprite.boundingBox())!.height).toBeCloseTo(96, 0);
   await page.screenshot({ path: testInfo.outputPath('desktop-grid-native-sprite.png') });

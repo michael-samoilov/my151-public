@@ -4,6 +4,7 @@ import { typeIconPath } from '@/data/type-ids';
 import { cn } from '@/lib/utils';
 import { ArrowRight, Trash2 } from 'lucide-react';
 import { chainSlotKey, type ChainSlot } from '../model/packing';
+import { usePickerSprite } from '../model/spritePreload';
 
 export function PackingChain({
   slots,
@@ -39,6 +40,7 @@ export function PackingChain({
 
 function PackSlot({ slot }: { slot: ChainSlot }) {
   const trash = slot.to === null;
+  const src = usePickerSprite(slot.mon.sprite);
   return (
     <span
       className="relative inline-flex h-12 w-12 shrink-0 items-center justify-center"
@@ -79,7 +81,7 @@ function PackSlot({ slot }: { slot: ChainSlot }) {
         />
       ) : null}
       <img
-        src={slot.mon.sprite}
+        src={src}
         alt={labelOf(slot.mon)}
         data-testid="favorites-pack-sprite"
         className={cn('relative z-0 h-11 w-11', trash && 'opacity-35')}

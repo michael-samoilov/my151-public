@@ -23,6 +23,8 @@
   "favorites.empty.title": "還沒有可選的寶可夢",
   "favorites.empty.unavailable": "沒有可用於此格的寶可夢。",
   "favorites.export.chartTitle": "依屬性和世代分類的最愛寶可夢",
+  "favorites.export.summaryTitle": "依屬性和世代分類的最愛寶可夢",
+  "favorites.export.summaryStatsTitle": "詳細統計（完整屬性/世代表格中的選擇）",
   "favorites.export.close": "關閉匯出",
   "favorites.export.error": "無法產生圖片。請重試。",
   "favorites.export.fullGrid": "完整表格",

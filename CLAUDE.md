@@ -117,7 +117,7 @@ The other checks, which `scripts/ci-local.sh` also runs:
 | `node scripts/check-bundle-budget.mjs` | Fails when the first-load download of the hub, the Pokédex builder, or the league builder grows more than 5% over its baseline in `scripts/performance/budgets.json`. Text is measured with Brotli, images as emitted, every `srcset` size included. It builds its own copy with a Vite manifest, so `dist/` does not change. After a change that shrinks a page, or an increase that was agreed on, run it with `--rebase` and commit the new baselines. |
 | `npm run test:e2e` | Playwright. Required for UI changes. Auto-starts isolated preview and development servers on ports derived from the worktree path. Use `PLAYWRIGHT_PREVIEW_PORT` and `PLAYWRIGHT_DEV_PORT` to override them. Projects: `mobile`, `desktop`, `narrow` (320px). `desktop` runs every test; `mobile` and `narrow` run only `@viewport` tests. Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
 
-Against a Vercel preview, skip the local web servers:
+Against a Vercel preview, skip the local web servers. A preview builds only on request (see "Vercel builds"):
 
 ```bash
 PLAYWRIGHT_BASE_URL=https://<preview>.vercel.app bash scripts/ci-local.sh
@@ -129,7 +129,17 @@ Speed changes: prove a change meant to make the app faster with `node scripts/pe
 
 One browser run at a time on a machine: `lab.mjs` takes the lock itself. Wrap other browser commands in `flock "${TMPDIR:-/tmp}/my151-browser.lock" <command>`, so a Playwright run never overlaps a lab run.
 
-Vercel preview Ready/Error is the independent compile check. Visual review is whole-screen mobile (~390px) and desktop (~1280px) screenshots, with before/after when the view already existed. Use live admin data, not demo fixtures.
+The local `npm run build` is the compile check. Visual review is whole-screen mobile (~390px) and desktop (~1280px) screenshots, with before/after when the view already existed. Use live admin data, not demo fixtures.
+
+### Vercel builds
+
+Builds are most of the Vercel bill. Michael set these rules on 2026-10-09.
+
+- `scripts/vercel-ignore-build.sh` is Vercel's Ignored Build Step (`ignoreCommand` in `vercel.json`). On production, it skips a push that changes only docs, tests, or agent tooling. On every other branch, it skips the build unless the branch name starts with `preview/` or the commit message contains `[preview]`. When it is unsure, it builds.
+- Ask for a preview only when someone needs a live URL: response headers, redirects, the `api/` functions, or a link that Michael asked for. Pictures in the chat are the review.
+- Never push an experiment to production to measure it. Measure with `lighthouse.mjs` and `lab.mjs` locally, then merge the result.
+- Batch production merges. Each code merge is a full build of about 66 seconds.
+- When the site build starts to read a file under a path that the script skips, remove that path from the script's skip list.
 
 ## Deployment
 
@@ -139,7 +149,7 @@ Do not wait for Michael to ship low-risk, already-verified work. Merge it to `cl
 The approval rule keeps an untested change that **end users** see out of the live app.
 Judge the change by what it does, not only by which folder the files sit in.
 
-Before every production push, run the checks of the change's production tier in Build Verification. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the compile and deploy signal.
+Before every production push, run the checks of the change's production tier in Build Verification. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the deploy signal. A build that Vercel marks Canceled by the Ignored Build Step is a skip, not a failure.
 
 After every production push, check out the work branch again. A merge leaves you on production, so the next commit would land there. Run `git rev-parse --abbrev-ref HEAD` before any later commit.
 
@@ -178,12 +188,12 @@ Ask in the current conversation before you merge when any of these apply:
 2. **Data destruction or irreversible writes.** Deletes, schema drops, token or credential changes, anything a revert does not undo.
 3. **Large or ambiguous product changes.** Unclear scope, or a change big enough that Michael should see it first.
 
-When you are unsure, ask. A preview branch costs nothing.
+When you are unsure, ask. A work-branch push costs nothing: it builds no preview.
 
 Work an ask-first change like this:
 
-1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a preview deployment. Verify there.
-2. Report the preview. For a visual change, show the review in the chat thread itself: before-and-after screenshots or a video, on mobile (about 390px) and desktop (about 1280px), for the same input. When you offer options, show the after state of each option. Michael reviews on a phone and does not open file paths or previews for this.
+1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Verify with `/verify-my151`. Vercel builds no preview unless you ask for one (see "Vercel builds").
+2. Report the change. For a visual change, show the review in the chat thread itself: before-and-after screenshots or a video, on mobile (about 390px) and desktop (about 1280px), for the same input. When you offer options, show the after state of each option. Michael reviews on a phone and does not open file paths or previews for this.
 3. Do not merge to production until Michael says to ship it.
 4. After he says to ship it, merge into and push `claude/pokedex-region-builder-AviYF`.
 5. Check out the work branch again immediately after that push.
@@ -194,7 +204,7 @@ Work an ask-first change like this:
 
 Development happens through Cloud Agents, often from the mobile Cursor app. Two consequences follow.
 
-- **Do not verify on localhost.** The mobile client cannot reach the agent's `localhost`, so a running dev server is not evidence a reviewer can see. Verify with the `verify-my151` harness (`.claude/skills/verify-my151`, three engines) and the branch's Vercel preview deployment. Capture screenshots or recordings as walkthrough artifacts.
+- **Do not verify on localhost.** The mobile client cannot reach the agent's `localhost`, so a running dev server is not evidence a reviewer can see. Verify with the `verify-my151` harness (`.claude/skills/verify-my151`, three engines). Build a Vercel preview only when a live URL is needed (see "Vercel builds"). Capture screenshots or recordings as walkthrough artifacts.
 - **The Cloud Agent environment arrives ready.** Its build bakes in dependencies and all three browser engines (Blink, WebKit, Gecko). `npm ci`, `npx playwright install chromium`, and the verify-my151 engine setup run at build time, so a booted agent can build, test, and drive browsers without setup. `npm run test:e2e` and the verify-my151 harness each start their own servers, so neither needs the `start` dev server.
 
 ## pstack

@@ -23,6 +23,8 @@
   "favorites.empty.title": "아직 고를 포켓몬이 없습니다",
   "favorites.empty.unavailable": "이 칸에서 고를 수 있는 포켓몬이 없습니다.",
   "favorites.export.chartTitle": "타입·세대별 좋아하는 포켓몬",
+  "favorites.export.summaryTitle": "타입·세대별 좋아하는 포켓몬",
+  "favorites.export.summaryStatsTitle": "상세 통계(타입·세대 전체 표의 선택)",
   "favorites.export.close": "내보내기 닫기",
   "favorites.export.error": "이미지를 만들 수 없습니다. 다시 시도해 주세요.",
   "favorites.export.fullGrid": "전체 표",

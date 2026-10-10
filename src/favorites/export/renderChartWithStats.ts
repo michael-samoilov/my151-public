@@ -1,4 +1,5 @@
 import { renderFullChart } from './renderFullChart';
+import { renderSimplifiedChart } from './renderSimplifiedChart';
 import { image } from './canvas';
 import { composeStatsExport } from '@/lib/exportStatsFrame';
 import { pickerConditionalStats, type PickerConditionalStats } from '../stats/pickerConditionalStats';
@@ -59,12 +60,18 @@ export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerCo
 
  ctx.restore();
 }
-/** Full-grid only: pointer choices are omitted from stats; ordinary rendering remains byte-identical. */
-export async function renderFullChartWithStats(snapshot:FavoritesSnapshot):Promise<Blob>{
+/**
+ * Either export layout with the stats panel beside it. The stats always come
+ * from the full grid's type and generation cells; pointer choices are omitted.
+ * The summary shows other cells, so its panel title says where the stats come
+ * from. Ordinary rendering remains byte-identical.
+ */
+export async function renderChartWithStats(snapshot:FavoritesSnapshot,layout:'full'|'simplified'):Promise<Blob>{
  const stats=pickerConditionalStats(snapshot);
  const urls=[...stats.dimensions.type.rows.map(row=>typeGlyphPath(row.key as TypeName)),...stats.dimensions.shape.rows.map(row=>`/shapes/${row.key}.png`)];
  const images=new Map(await Promise.all(urls.map(async url=>[url,await image(url)] as const)));
- const base=await renderFullChart(snapshot);
+ const base=await(layout==='full'?renderFullChart(snapshot):renderSimplifiedChart(snapshot));
  const measure = document.createElement('canvas').getContext('2d')!;
- return composeStatsExport(base,pickerStatsPanelSize(measure, stats),t('export.detailedStatsTitle'),ctx=>drawPickerStatsPanel(ctx,stats,images),{prefix:t('tools.favorites')});
+ const title=t(layout==='full'?'export.detailedStatsTitle':'favorites.export.summaryStatsTitle');
+ return composeStatsExport(base,pickerStatsPanelSize(measure, stats),title,ctx=>drawPickerStatsPanel(ctx,stats,images),{prefix:t('tools.favorites')});
 }

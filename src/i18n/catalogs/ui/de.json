@@ -23,6 +23,8 @@
   "favorites.empty.title": "Noch keine Auswahl möglich",
   "favorites.empty.unavailable": "Für diese Zelle sind keine Pokémon verfügbar.",
   "favorites.export.chartTitle": "Lieblings-Pokémon nach Typ und Generation",
+  "favorites.export.summaryTitle": "Lieblings-Pokémon nach Typ und Generation",
+  "favorites.export.summaryStatsTitle": "Detaillierte Statistiken (ganzes Typ/Gen-Raster)",
   "favorites.export.close": "Export schließen",
   "favorites.export.error": "Das Bild konnte nicht erstellt werden. Bitte versuche es erneut.",
   "favorites.export.fullGrid": "Ganzes Raster",

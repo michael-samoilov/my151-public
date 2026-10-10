@@ -97,6 +97,15 @@ const CASES = {
       },
     },
   },
+  picker: {
+    path: '/favorite-pokemon-picker',
+    ready: '[data-testid="favorites-cell-normal-1"]',
+    steps: {
+      open: async (page) => {
+        await page.getByTestId('favorites-cell-normal-1').click();
+      },
+    },
+  },
   league: {
     path: '/custom-gym-leader',
     ready: '[data-testid="league-slot-0"]',

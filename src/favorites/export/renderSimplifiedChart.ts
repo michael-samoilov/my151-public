@@ -8,6 +8,7 @@ import { AXIS_FILL, GEN_FILL, type BadgeStops } from '../components/badgeStyle';
 import { ROMAN_URIS } from '../components/romanDiscAssets';
 import { GEN_NUMBERS, TYPES18, cellKey } from '../model/cells';
 import { badgePaint, drawWordBadge } from './badgePaint';
+import { pickerSpriteSrc } from '../model/spritePreload';
 import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCanvas, image } from './canvas';
 import { drawFavoriteLaurels, drawFavoriteCrown, FAVORITE_ORNAMENTS } from './laurelPaint';
 import type { FavoritesExportCell, FavoritesSnapshot } from './snapshot';
@@ -33,9 +34,9 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     ...GEN_NUMBERS.map(gen => ROMAN_URIS[gen]),
     FAVORITE_ORNAMENTS.leaf, FAVORITE_ORNAMENTS.crown,
   ]);
-  const images = new Map(await Promise.all([...urls].map(async url => [url, await image(url)] as const)));
+  const images = new Map(await Promise.all([...urls].map(async url => [url, await image(pickerSpriteSrc(url))] as const)));
   const L = SIMPLIFIED_CHART_LAYOUT;
-  const { canvas, ctx } = createFavoritesCanvas(L.width, L.height);
+  const { canvas, ctx } = createFavoritesCanvas(L.width, L.height, t('favorites.export.summaryTitle'));
   const byKey = new Map(snapshot.summary.map(cell => [cell.key, cell]));
   function tile(entry: FavoritesExportCell, cx: number, top: number, fill: string | BadgeStops,
     width = L.tileWidth, height = L.tileHeight, size = EXPORT_SPRITE_PX, split = false, special = false, fixedBadgeHeight?: number) {
