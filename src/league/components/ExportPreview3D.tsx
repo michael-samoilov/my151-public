@@ -7,6 +7,7 @@ import {
   previewPerspectivePx,
   PREVIEW_REST_PAD,
   PREVIEW_SHADOW_PAD_PX,
+  type PreviewCamera,
 } from '@/components/export/exportPreviewFit';
 import {
   applySpringOpts,
@@ -109,6 +110,7 @@ export function ExportPreview3D({
   tilt = DEFAULT_HOVER_TILT_RECIPE,
   maskContext = DEFAULT_MASK_CONTEXT,
   darkCard = false,
+  camera = previewPerspectivePx,
 }: {
   src: string | null;
   alt: string;
@@ -120,6 +122,8 @@ export function ExportPreview3D({
   tilt?: HoverTiltRecipe;
   maskContext?: HoverTiltMaskContext;
   darkCard?: boolean;
+  /** Camera distance for a card size. The workshop compares others. */
+  camera?: PreviewCamera;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
@@ -146,6 +150,7 @@ export function ExportPreview3D({
   const springARef = useRef<HoverTiltSpring>(createSpring(0));
   const recipeRef = useRef(recipe);
   const tiltRef = useRef(tilt);
+  const cameraRef = useRef(camera);
   const measureRef = useRef<() => void>(() => {});
   const stageSizeRef = useRef({ w: 0, h: 0 });
   const cardMaxRef = useRef({ w: 0, h: 0 });
@@ -183,6 +188,7 @@ export function ExportPreview3D({
         // The fit already holds the widest tilt this far inside, so this
         // only catches a stage that resized before the card refit.
         pad: PREVIEW_REST_PAD,
+        camera: cameraRef.current,
       });
       rotateX = clamped.x;
       rotateY = clamped.y;
@@ -404,6 +410,7 @@ export function ExportPreview3D({
         aspect,
         tiltDeg: Math.max(recipeRef.current.idleTilt, recipeRef.current.maxTilt),
         pad: PREVIEW_REST_PAD,
+        camera: cameraRef.current,
       });
       const pop = Math.max(1, tiltRef.current?.scaleFactor ?? 1);
       const restW = size.width / pop;
@@ -548,6 +555,7 @@ export function ExportPreview3D({
   useLayoutEffect(() => {
     recipeRef.current = recipe;
     tiltRef.current = tilt;
+    cameraRef.current = camera;
     const el = cardRef.current;
     if (!el) return;
     const vars = foilRecipeCssVars(recipe);
@@ -581,12 +589,12 @@ export function ExportPreview3D({
     return () => {
       cancelled = true;
     };
-  }, [activeSrc, idleAt, maskContext, paint, recipe, tilt]);
+  }, [activeSrc, camera, idleAt, maskContext, paint, recipe, tilt]);
 
-  // The fit reserves room for the tilt, so a new extent refits the card.
+  // The fit reserves room for the tilt, so a new extent or camera refits the card.
   useLayoutEffect(() => {
     measureRef.current();
-  }, [recipe.idleTilt, recipe.maxTilt]);
+  }, [camera, recipe.idleTilt, recipe.maxTilt]);
 
   useLayoutEffect(() => {
     const el = cardRef.current;
@@ -783,7 +791,7 @@ export function ExportPreview3D({
   // The lift is laid out at its popped size, so the camera scales with that.
   // Until the first measure, the stylesheet's default stands in.
   const perspectivePx =
-    cardMax.w > 0 ? Math.round(previewPerspectivePx(cardMax.w * pop, cardMax.h * pop)) : null;
+    cardMax.w > 0 ? Math.round(camera(cardMax.w * pop, cardMax.h * pop)) : null;
 
   return (
     <div

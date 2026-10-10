@@ -242,8 +242,9 @@
 /* A rainbow holofoil: tight sunpillar bands tint the ink as the card tilts.
    soft-light leaves white paper and black ink as they are, and the light
    sunpillars mostly lighten the colors between. A hue blend turned red
-   ink maroon and yellow ink orange, and dulled every color. Positions
-   stay inside 0-100%, so the tile always covers the card. */
+   ink maroon and yellow ink orange, and dulled every color. The workshop
+   sets --foil-rainbow-blend on an ancestor to compare it. Positions stay
+   inside 0-100%, so the tile always covers the card. */
 .export-foil-holo-rainbow {
   z-index: 3;
   background-image: repeating-linear-gradient(
@@ -258,7 +259,7 @@
   );
   background-size: 400% 400%;
   background-position: var(--background-x) var(--background-y);
-  mix-blend-mode: soft-light;
+  mix-blend-mode: var(--foil-rainbow-blend, soft-light);
   opacity: calc(var(--foil-opacity) * var(--foil-holoRainbow));
 }
 
@@ -378,7 +379,7 @@
     hsl(calc(240 + var(--pointer-from-left) * 360), 88%, 58%)
   );
   /* soft-light, like the rainbow, so the shift never darkens the ink. */
-  mix-blend-mode: soft-light;
+  mix-blend-mode: var(--foil-rainbow-blend, soft-light);
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
 }
@@ -468,14 +469,23 @@
      already crossed mid-gray near 56%. Smaller keeps the light in a hotspot,
      so its overlay washes a smaller patch of the card. hover-tilt also ends
      on a dark stop, which overlay turns into darker ink across most of the
-     card while white paper stays white. The glare here only adds light. */
+     card while white paper stays white. The export keeps that stop clear, so
+     the glare only adds light; the workshop's --foil-glare-dark brings it
+     back (1 is hover-tilt's) for comparison. */
   --hover-tilt-default-gradient: radial-gradient(
     farthest-corner circle at var(--gradient-x) var(--gradient-y),
     hsla(var(--hover-tilt-glare-hue), 40%, 95%, calc(var(--hover-tilt-glare-intensity) * 0.66))
       calc(8% * var(--hover-tilt-glare-size)),
     hsla(var(--hover-tilt-glare-hue), 30%, 88%, calc(var(--hover-tilt-glare-intensity) * 0.5))
       calc(28% * var(--hover-tilt-glare-size)),
-    hsla(var(--hover-tilt-glare-hue), 10%, 50%, 0) calc(56% * var(--hover-tilt-glare-size))
+    hsla(var(--hover-tilt-glare-hue), 10%, 50%, 0) calc(56% * var(--hover-tilt-glare-size)),
+    hsla(
+        var(--hover-tilt-glare-hue),
+        10%,
+        5%,
+        calc(var(--hover-tilt-glare-intensity) * 0.25 * var(--foil-glare-dark, 0))
+      )
+      90%
   );
   isolation: auto;
   transform-style: flat;

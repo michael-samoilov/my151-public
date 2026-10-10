@@ -9,10 +9,11 @@
  */
 export const PREVIEW_PERSPECTIVE_RATIO = 1.75;
 
-/** Camera distance in px for a card of this size. */
-export function previewPerspectivePx(width: number, height: number): number {
-  return PREVIEW_PERSPECTIVE_RATIO * Math.max(1, width, height);
-}
+/** Camera distance in px for a card of this size. The workshop swaps in others. */
+export type PreviewCamera = (width: number, height: number) => number;
+
+export const previewPerspectivePx: PreviewCamera = (width, height) =>
+  PREVIEW_PERSPECTIVE_RATIO * Math.max(1, width, height);
 export const PREVIEW_REST_PAD = 8;
 /** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;
@@ -43,7 +44,7 @@ function rad(deg: number): number {
 /**
  * Screen-space AABB of a plane after CSS `rotateY() rotateX()` (rotateX first)
  * under a perspective camera sitting `perspectivePx` in front of the card,
- * by default `previewPerspectivePx` of the card's own size.
+ * by default `camera` (`previewPerspectivePx`) of the card's own size.
  * Origin is the card centre. No translateZ — the rotator does not lift.
  */
 export function projectedCardAabb(opts: {
@@ -52,10 +53,11 @@ export function projectedCardAabb(opts: {
   tiltXDeg: number;
   tiltYDeg: number;
   perspectivePx?: number;
+  camera?: PreviewCamera;
 }): ProjectedCardAabb {
   const width = Math.max(0, opts.width);
   const height = Math.max(0, opts.height);
-  const perspectivePx = opts.perspectivePx ?? previewPerspectivePx(width, height);
+  const perspectivePx = opts.perspectivePx ?? (opts.camera ?? previewPerspectivePx)(width, height);
   const ax = rad(opts.tiltXDeg);
   const ay = rad(opts.tiltYDeg);
   const cosX = Math.cos(ax);
@@ -132,6 +134,7 @@ export function fitScaleForTilt(opts: {
   tiltXDeg: number;
   tiltYDeg: number;
   pad?: number;
+  camera?: PreviewCamera;
 }): number {
   const pad = opts.pad ?? 0;
   if (opts.cardWidth <= 0 || opts.cardHeight <= 0) return 1;
@@ -142,6 +145,7 @@ export function fitScaleForTilt(opts: {
         height: opts.cardHeight * scale,
         tiltXDeg: opts.tiltXDeg,
         tiltYDeg: opts.tiltYDeg,
+        camera: opts.camera,
       }),
       opts.boxWidth,
       opts.boxHeight,
@@ -200,6 +204,7 @@ export function fitCardInPreviewBox(opts: {
   aspect: number;
   tiltDeg: number;
   pad?: number;
+  camera?: PreviewCamera;
 }): { width: number; height: number } {
   const pad = opts.pad ?? PREVIEW_REST_PAD;
   const contained = containUnrotatedSize({ ...opts, pad });
@@ -211,6 +216,7 @@ export function fitCardInPreviewBox(opts: {
     tiltXDeg: opts.tiltDeg,
     tiltYDeg: opts.tiltDeg,
     pad,
+    camera: opts.camera,
   });
   return { width: contained.width * scale, height: contained.height * scale };
 }
@@ -257,6 +263,7 @@ export function clampTiltToBox(opts: {
   boxWidth: number;
   boxHeight: number;
   pad?: number;
+  camera?: PreviewCamera;
 }): { x: number; y: number } {
   const { tiltX, tiltY } = opts;
   const pad = opts.pad ?? 0;
@@ -267,6 +274,7 @@ export function clampTiltToBox(opts: {
         height: opts.cardHeight,
         tiltXDeg: x,
         tiltYDeg: y,
+        camera: opts.camera,
       }),
       opts.boxWidth,
       opts.boxHeight,

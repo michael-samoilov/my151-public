@@ -2569,7 +2569,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     `const has=(sel)=>!!document.querySelector(sel);
      const extras=[...document.querySelectorAll('[data-foil-slider],[data-hover-tilt-mask],[data-workshop-dark-card-toggle]')]
        .map((el)=>el.getAttribute('data-foil-slider')||el.getAttribute('data-hover-tilt-mask')||el.getAttribute('data-workshop-dark-card-toggle')||el.tagName)
-       .filter((id)=>!['holographic','holoRainbow','pointLight','iridescence','maxTilt','glareIntensity','glareSize','shadowBlur'].includes(id));
+       .filter((id)=>!['holographic','holoRainbow','pointLight','iridescence','maxTilt','cameraRatio','glareIntensity','glareSize','glareDark','shadowBlur'].includes(id));
      return {
         holo: has('[data-foil-slider="holographic"]') && has('[data-foil-slider="holoRainbow"]') && has('[data-foil-slider="maxTilt"]'),
         glare: has('[data-foil-slider="glareIntensity"]'),
