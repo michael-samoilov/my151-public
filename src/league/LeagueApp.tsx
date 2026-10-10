@@ -234,7 +234,7 @@ export function LeagueApp() {
     : browserPurpose === 'signature' ? t('league.target.ace')
     : browserPurpose === 'partner' ? t('league.target.partner')
     : slotLabel(openCard ?? 0);
-  const replacingName = replacing ? pokemonLabel(replacing.id, replacing.name).name : '';
+  const replacingName = replacing ? pokemonLabel(replacing.id, replacing.name).full : '';
   // One sentence with the subject in red, so each language puts the subject
   // where its own word order wants it.
   const sheetHeading = replacing

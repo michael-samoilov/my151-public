@@ -16,7 +16,8 @@ export function PokemonName({ label, className, truncate = true }: {
       <span className="tile-name-skeleton block h-[0.68em] w-full rounded-full bg-current" />
     </span> : <>
       <span className={truncate ? 'truncate' : undefined}>{label.name}</span>
-      {label.mark && <span aria-hidden className="flex-shrink-0 text-[0.8em] font-semibold opacity-70 tabular-nums">{label.mark}</span>}
+      {label.mark && <span aria-hidden className={cn('flex-shrink-0 text-[0.8em] font-semibold opacity-70 tabular-nums',
+        /[♂♀]/u.test(label.mark) && 'self-start -translate-y-[0.2em]')}>{label.mark}</span>}
     </>}
   </span>;
 }
