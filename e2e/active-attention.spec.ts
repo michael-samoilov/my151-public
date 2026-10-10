@@ -19,6 +19,8 @@ async function boot(page:Page,tool:typeof tools[number],optedOut=false) {
  await page.clock.install({time:t0-1000});await page.clock.pauseAt(t0);
  await page.goto(`${tool.path}${optedOut?'?notme':''}`);await expect(page.locator('main').first()).toBeVisible();
  await page.bringToFront();
+ // Initial store progress proves React's collector effects mounted before the baseline activity.
+ if(!optedOut)await expect.poll(async()=>{await page.clock.runFor(5000);return posts.length;}).toBeGreaterThan(0);
  await page.keyboard.press('ArrowRight');
  return posts;
 }
@@ -55,7 +57,7 @@ for(const tool of tools) {
  test(`${tool.name}: hidden and blurred time is excluded; non-build activity and pagehide flush are retained`,async({page},info)=>{
    const posts=await boot(page,tool);
    await page.clock.runFor(minute);await page.keyboard.press('ArrowRight');await page.clock.runFor(5000);
-   await expect.poll(()=>posts.at(-1)?.attention).toBeDefined();
+   await expect.poll(()=>measured(posts).total).toBe(minute);
    await foreground(page,false,false);await page.clock.runFor(20*minute);await page.keyboard.press('ArrowRight');
    await foreground(page,true,false);await page.clock.runFor(minute);await page.keyboard.press('ArrowRight');
    await foreground(page,true,true);await page.keyboard.press('ArrowRight');
@@ -79,7 +81,10 @@ for(const tool of tools) {
    await page.clock.runFor(minute);await page.keyboard.press('ArrowRight');await page.clock.runFor(5000);
    await expect.poll(()=>posts.at(-1)?.attention).toBeDefined();
    const old=measured(posts).segments[0].id;
-   await page.reload();await expect(page.locator('main').first()).toBeVisible();await page.keyboard.press('ArrowRight');
+   const beforeReload=posts.length;
+   await page.reload();await expect(page.locator('main').first()).toBeVisible();
+   await expect.poll(async()=>{await page.clock.runFor(5000);return posts.length;}).toBeGreaterThan(beforeReload);
+   await page.keyboard.press('ArrowRight');
    await page.clock.runFor(minute);await page.keyboard.press('ArrowRight');await page.clock.runFor(5000);
    await expect.poll(()=>measured(posts).segments[0]?.id).not.toBe(old);await expect.poll(()=>measured(posts).total).toBe(minute);
    await info.attach('foreground-reload',{body:JSON.stringify({tool:tool.name,newSegment:true,pageActiveMs:measured(posts).total}),contentType:'application/json'});
