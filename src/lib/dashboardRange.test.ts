@@ -107,10 +107,17 @@ describe('dashboard date range', () => {
     expect(dash('7d').byTool.all.users).toBe(4);
   });
 
-  it('changes no card when the range covers every browser', () => {
-    const { range: _a, rangeStart: _b, ...wide } = dash('365d');
-    const { range: _c, rangeStart: _d, ...all } = dash('all');
+  it('preserves card totals when the range covers every browser, with weekly range padding', () => {
+    const { range: _a, rangeStart: _b, recordedUsage: wideUsage, ...wide } = dash('365d');
+    const { range: _c, rangeStart: _d, recordedUsage: allUsage, ...all } = dash('all');
     expect(wide).toEqual(all);
+    for (const tool of ['all','dex','league','favorites'] as const) {
+      const {weekly: wideWeeks,...wideSlice}=wideUsage[tool];
+      const {weekly: allWeeks,...allSlice}=allUsage[tool];
+      expect(wideSlice).toEqual(allSlice);
+      expect(wideWeeks?.reduce((sum,w)=>sum+w.totalMs,0)).toBe(wideSlice.time.total);
+      expect(allWeeks?.reduce((sum,w)=>sum+w.totalMs,0)).toBe(allSlice.time.total);
+    }
   });
 
   it('keeps every browser in the browser index and the activity series', () => {

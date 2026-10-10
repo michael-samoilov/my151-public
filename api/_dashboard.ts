@@ -466,7 +466,11 @@ export interface RecordedDistribution {
   median: number | null;
   values: number[];
 }
+export interface RecordedWeek {
+  week: number; start: number; end: number; partial: boolean; totalMs: number;
+}
 export interface RecordedUsageSlice {
+  weekly?: RecordedWeek[];
   browsers: number;
   missingTime: number;
   missingSessions: number;
@@ -522,6 +526,9 @@ export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', reado
   };
   const slice = (key: keyof typeof groups): RecordedUsageSlice => {
     const time: number[] = [], sessions: number[] = [];
+    const weeklyTotals = new Map<number, number>();
+    let earliest = Infinity;
+    const weekMs = 7 * 24 * 60 * 60_000;
     for (const raw of groups[key].values()) {
       const unique = [...new Map(raw.map(s => [`${s.start}:${s.end}:${s.timed}`, s])).values()].sort((a,b) => a.start-b.start || a.end-b.end);
       if (unique.length) {
@@ -536,13 +543,30 @@ export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', reado
       if (timed.length) {
         let total = 0, end = -Infinity;
         for (const s of timed) {
-          total += Math.max(0, s.end - Math.max(s.start, end));
+          earliest = Math.min(earliest, s.start);
+          let from = Math.max(s.start, end);
+          total += Math.max(0, s.end - from);
+          // Account only the uncovered suffix: Suite overlaps are unioned per browser.
+          while (from < s.end) {
+            const week = weekStart(from);
+            const until = Math.min(s.end, week + weekMs);
+            weeklyTotals.set(week, (weeklyTotals.get(week) ?? 0) + until - from);
+            from = until;
+          }
           end = Math.max(end, s.end);
         }
         time.push(total);
       }
     }
-    return {browsers: groups[key].size, missingTime: groups[key].size-time.length, missingSessions: groups[key].size-sessions.length,
+    const weekly: RecordedWeek[] = [];
+    const from = start ?? earliest;
+    if (time.length && Number.isFinite(from)) {
+      for (let week = weekStart(from); week < now; week += weekMs) {
+        const begin = Math.max(week, from), end = Math.min(week + weekMs, now);
+        weekly.push({week, start: begin, end, partial: begin > week || end < week + weekMs, totalMs: weeklyTotals.get(week) ?? 0});
+      }
+    }
+    return {weekly, browsers: groups[key].size, missingTime: groups[key].size-time.length, missingSessions: groups[key].size-sessions.length,
       incompleteHistory: incomplete[key].size, time: distribution(time), sessions: distribution(sessions)};
   };
   return {all: slice('all'), dex: slice('dex'), league: slice('league'), favorites: slice('favorites')};
