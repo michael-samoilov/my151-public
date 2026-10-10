@@ -264,8 +264,9 @@ function retainedCalendarCoverage(records: SessionRecord[], now: number, start: 
       if (!Number.isFinite(source.firstTs) || !Number.isFinite(source.lastTs)
         || source.firstTs < 0 || source.lastTs < source.firstTs) return undefined;
       const from = source.from ?? NaN;
+      const sameDaySkew = source.firstTs - from <= 5 * 60_000 && dayStart(from) === dayStart(source.firstTs);
       const covered = source.hasDays && Number.isFinite(from)
-        && from >= source.firstTs && from <= now;
+        && from >= 0 && from <= now && (from >= source.firstTs || sameDaySkew);
       observedCoverage ||= covered;
       if (source.lastTs < start) continue;
       if (!covered || dayStart(from) > Math.max(dayStart(source.firstTs), start)) return undefined;
