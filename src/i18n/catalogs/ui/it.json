@@ -127,7 +127,7 @@
   "league.export.specialist": "Specialista del tipo {type}",
   "league.export.storyTeams": "Squadre della storia",
   "league.export.theme": "Tema",
-  "league.glyph.noBadges": "Nessuna medaglia",
+  "league.glyph.noBadges": "0 medaglie",
   "league.help.evolve.body": "Trascina un Pokémon su o giù nella sua colonna per cambiare la palestra in cui si evolve. {undo}",
   "league.help.evolve.title": "Cambia quando si evolve",
   "league.help.evolve.undo": "Annulla con il {disc} blu.",
