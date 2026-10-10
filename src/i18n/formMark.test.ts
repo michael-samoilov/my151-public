@@ -76,15 +76,11 @@ describe('form marker', () => {
    * Tauros is the one species whose forms a region marker cannot separate: all
    * three Paldean breeds are Paldean, so all three are correctly `P`.
    *
-   * The breed — Combat, Blaze, Aqua — is what distinguishes them, and it is not
-   * available to abbreviate. `pokemon_form_names` gives the same "Paldean Form"
-   * for all three in every language but English, and Scarlet/Violet's own text
-   * mentions the breeds only inside Pokédex prose ("This kind of Tauros, known
-   * as the Combat Breed, is distinguished by…"), never as a standalone label.
-   *
-   * They are still told apart on the tile, by the thing that actually differs:
-   * their types. Combat is Fighting, Blaze is Fighting/Fire, Aqua is
-   * Fighting/Water, and the type badges sit directly under the name.
+   * The breed — Combat, Blaze, Aqua — is what distinguishes them, and a
+   * one-grapheme marker cannot carry it. The tile names the breed instead,
+   * from Pokémon Champions' form names ("Paldea-Form (Gefechtvariante)"; see
+   * `pokemonLabel` in names.ts), and the type badges under the name differ
+   * too: Combat is Fighting, Blaze is Fighting/Fire, Aqua is Fighting/Water.
    *
    * Listed explicitly so this stays a decision. Any *other* collision is a bug.
    */

@@ -10,6 +10,7 @@ import { whenIdle } from '../lib/whenIdle'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
 import { LeagueApp } from './LeagueApp'
+import { activeMoveNames } from './moveNames'
 
 // Same boot as the dex builder (src/main.tsx): preload the Latin subset,
 // install the JS-driven root font-size, defer analytics, register the
@@ -66,10 +67,14 @@ void initLocale({
   search: window.location.search,
   stored: usePokedexStore.getState().locale,
   navigatorLanguages: navigator.languages,
-}).finally(() => {
-  createRoot(rootEl).render(
-    <StrictMode>
-      <LeagueApp />
-    </StrictMode>,
-  )
 })
+  // The move names start loading with the locale; wait a moment for them so a
+  // card's TM does not paint in English first, but never hold the page for it.
+  .then(() => Promise.race([activeMoveNames(), new Promise((resolve) => setTimeout(resolve, 800))]))
+  .finally(() => {
+    createRoot(rootEl).render(
+      <StrictMode>
+        <LeagueApp />
+      </StrictMode>,
+    )
+  })

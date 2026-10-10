@@ -34,6 +34,7 @@ import {
   stageAt,
 } from '../model/engine';
 import { getMoveById } from '../moves';
+import { moveName, useMoveNames } from '../moveNames';
 import { cardShades } from '../theme';
 import { CategoryChip } from './CategoryChip';
 import { legendAt, legendsOf, powerupsAt, seatAfterMove, useLeagueStore } from '../store/useLeagueStore';
@@ -1609,12 +1610,14 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
   const setTm = useLeagueStore((s) => s.setTm);
   const move = view.card.tmMoveId !== null ? getMoveById(view.card.tmMoveId) : undefined;
+  useMoveNames();
+  const name = move ? moveName(move) : '';
   const nameRef = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
     const el = nameRef.current;
     if (!el) return;
     el.style.fontSize = '';
-    if (!move || /\s/.test(move.name.trim())) return;
+    if (!move || /\s/.test(name.trim())) return;
     const fit = () => {
       el.style.fontSize = '';
       const style = getComputedStyle(el);
@@ -1634,7 +1637,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       observer.disconnect();
       document.fonts.removeEventListener('loadingdone', fit);
     };
-  }, [move]);
+  }, [move, name]);
   const pos = {
     ...slotX(1, 2),
     top: `${rowTop(5) + INSET_Y}rem`,
@@ -1708,16 +1711,15 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
               Keep the nominal line box (0.53125rem × 1.4) while its glyphs shrink. */}
           <span
             ref={nameRef}
-            lang="en"
             data-tm-name=""
             className={cn(
               'min-w-0 w-full max-w-full text-left',
               NAME_CLASS,
-              /\s/.test(move.name.trim()) ? 'whitespace-normal break-normal' : 'whitespace-nowrap',
+              /\s/.test(name.trim()) ? 'whitespace-normal break-normal' : 'whitespace-nowrap',
             )}
             style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band, lineHeight: '0.74375rem' }}
           >
-            {move.name}
+            {name}
           </span>
         </span>
       ) : (

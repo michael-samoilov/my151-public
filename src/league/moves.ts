@@ -1,4 +1,5 @@
 import movesData from '@/data/moves.json';
+import type { MessageKey } from '@/i18n';
 import type { TypeName } from '@/types/pokemon';
 
 /** One row of src/data/moves.json (built by scripts/league/fetch-moves.ts). */
@@ -40,3 +41,18 @@ export const CONTEST_COLORS: Record<ContestType, string> = {
 };
 
 export const CONTEST_TYPES: ContestType[] = ['beautiful', 'clever', 'cool', 'cute', 'tough'];
+
+/** The games' words for the categories and conditions (catalogs/terms). */
+export const CATEGORY_LABEL = {
+  physical: 'league.category.physical',
+  special: 'league.category.special',
+  status: 'league.category.status',
+} as const satisfies Record<Move['category'], MessageKey>;
+
+export const CONTEST_LABEL = {
+  beautiful: 'league.contest.beautiful',
+  clever: 'league.contest.clever',
+  cool: 'league.contest.cool',
+  cute: 'league.contest.cute',
+  tough: 'league.contest.tough',
+} as const satisfies Record<ContestType, MessageKey>;

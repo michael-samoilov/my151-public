@@ -3,7 +3,7 @@ import { ChevronDown, Search, X } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Input } from '@/components/ui/input';
 import { TypeBadge } from '@/components/shared/TypeBadge';
-import { raw, typeLabel, useT, useTn } from '@/i18n';
+import { raw, typeLabel, useLocale, useT, useTn } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { cn } from '@/lib/utils';
@@ -13,11 +13,14 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { movesForPicker } from '../filterMoves';
 import {
   CATEGORY_COLORS,
+  CATEGORY_LABEL,
   CONTEST_COLORS,
+  CONTEST_LABEL,
   CONTEST_TYPES,
   type ContestType,
   type Move,
 } from '../moves';
+import { useMoveNames } from '../moveNames';
 import { CategoryChip } from './CategoryChip';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
@@ -36,8 +39,6 @@ type SortKey = 'name' | 'pp' | 'power' | 'accuracy';
 type FilterSheet = 'type' | 'category' | 'contest' | null;
 
 const CATEGORIES: Move['category'][] = ['physical', 'special', 'status'];
-
-const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 function SortCaret({ dir }: { dir: 'asc' | 'desc' | null }) {
   return (
@@ -135,6 +136,9 @@ function OptionChip({ label, active, colour, onClick }: {
 function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => void }) {
   const t = useT();
   const tn = useTn();
+  const locale = useLocale();
+  const names = useMoveNames();
+  const nameOf = (m: Move) => names?.[m.id] ?? m.name;
   const setTm = useLeagueStore((s) => s.setTm);
   const cardType = useLeagueStore((s) => s.cards[cardIndex]?.type ?? null);
 
@@ -177,14 +181,18 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
     });
     const dir = sortDir === 'asc' ? 1 : -1;
     const num = (v: number | null) => (v === null ? 101 : v); // always-hits above 100%
+    // By the name on screen, in the language's own order.
+    const collator = new Intl.Collator(locale);
+    const label = (m: Move) => names?.[m.id] ?? m.name;
+    const byName = (a: Move, b: Move) => collator.compare(label(a), label(b));
     filtered.sort((a, b) => {
-      if (sortKey === 'name') return dir * a.name.localeCompare(b.name);
-      if (sortKey === 'pp') return dir * (a.pp - b.pp) || a.name.localeCompare(b.name);
-      if (sortKey === 'power') return dir * ((a.power ?? -1) - (b.power ?? -1)) || a.name.localeCompare(b.name);
-      return dir * (num(a.accuracy) - num(b.accuracy)) || a.name.localeCompare(b.name);
+      if (sortKey === 'name') return dir * byName(a, b);
+      if (sortKey === 'pp') return dir * (a.pp - b.pp) || byName(a, b);
+      if (sortKey === 'power') return dir * ((a.power ?? -1) - (b.power ?? -1)) || byName(a, b);
+      return dir * (num(a.accuracy) - num(b.accuracy)) || byName(a, b);
     });
     return filtered;
-  }, [search, typeFilter, categories, contests, sortKey, sortDir]);
+  }, [search, typeFilter, categories, contests, sortKey, sortDir, locale, names]);
 
   const header = (key: SortKey, label: string, right = false) => (
     <button
@@ -265,7 +273,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           categories.map((c) => (
             <FilterChip
               key={c}
-              label={cap(c)}
+              label={t(CATEGORY_LABEL[c])}
               onDismiss={() => toggleCategory(c)}
               onClick={() => toggleSheet('category')}
               className="text-white"
@@ -285,7 +293,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           contests.map((c) => (
             <FilterChip
               key={c}
-              label={cap(c)}
+              label={t(CONTEST_LABEL[c])}
               onDismiss={() => toggleContest(c)}
               onClick={() => toggleSheet('contest')}
               className="text-white"
@@ -356,7 +364,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
               {CATEGORIES.map((c) => (
                 <OptionChip
                   key={c}
-                  label={cap(c)}
+                  label={t(CATEGORY_LABEL[c])}
                   active={categories.includes(c)}
                   colour={CATEGORY_COLORS[c]}
                   onClick={() => toggleCategory(c)}
@@ -369,7 +377,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
               {CONTEST_TYPES.map((c) => (
                 <OptionChip
                   key={c}
-                  label={cap(c)}
+                  label={t(CONTEST_LABEL[c])}
                   active={contests.includes(c)}
                   colour={CONTEST_COLORS[c]}
                   onClick={() => toggleContest(c)}
@@ -403,7 +411,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           >
             <TypeBadge type={m.type} className="w-[4.375rem]" />
             <CategoryChip category={m.category} />
-            <span className="truncate text-[0.8125rem] font-medium">{m.name}</span>
+            <span className="truncate text-[0.8125rem] font-medium">{nameOf(m)}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.power ?? '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.accuracy !== null ? `${m.accuracy}%` : '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.pp}</span>

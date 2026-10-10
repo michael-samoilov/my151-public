@@ -30,6 +30,7 @@ import { formAt, type PowerupForm } from '../model/powerups';
 import { SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { cardShades, type CardShades } from '../theme';
 import { getMoveById, CATEGORY_COLORS, type Move } from '../moves';
+import { activeMoveNames, moveName } from '../moveNames';
 import { RING_OF_SPRITE } from '../slotLayout';
 import { fitHeadings } from '../showcaseLayout';
 import { headingInline, headingLines, headingTracks, type SlotHeading } from '../slotHeadings';
@@ -664,12 +665,14 @@ function drawTmSlot(
   );
 
   const badgeH = L.tmBadgeH();
-  const name = L.moveExportName(move.name);
+  const name = L.moveExportName(moveName(move));
+  // Untracked in Japanese, Korean and Chinese, as the live card sets it.
+  const nameTrack = L.labelTrack(L.NAME_TRACK);
   ctx.save();
   ctx.font = font(L.NAME_PX, 800);
   // As few lines as fit the body: one line whenever the whole name fits,
   // as the live card wraps it.
-  const lines = wrapTracked(ctx, name, bodyW, L.NAME_TRACK);
+  const lines = wrapTracked(ctx, name, bodyW, nameTrack);
   const body = L.tmMoveBody(cy, lines.length);
 
   ctx.beginPath();
@@ -718,7 +721,7 @@ function drawTmSlot(
       line,
       bodyX,
       L.cssLineAlphabetic(body.nameTop + i * L.NAME_LINE, L.NAME_LINE, L.NAME_PX, ascent),
-      L.NAME_TRACK,
+      nameTrack,
     );
   });
   ctx.restore();
@@ -1096,8 +1099,8 @@ function homeDetailLines(
     ctx.restore();
     return w;
   };
-  // The words the app sets in the locale's face go untracked in CJK; a move's
-  // name is English data and keeps the tracking.
+  // The words the app sets in the locale's face, a move's name among them,
+  // go untracked in CJK.
   const wordTrack = L.labelTrack(L.HOME_MARK_TRACK);
   const themeLabel = localeUppercase(t('league.export.theme'));
 
@@ -1135,10 +1138,10 @@ function homeDetailLines(
 
   if (move) {
     const moveShades = cardShades(move.type as TypeName);
-    const moveUpper = move.name.toUpperCase();
+    const moveUpper = L.moveExportName(moveName(move));
     const trailing = L.HOME_DETAIL_GAP + L.HOME_DETAIL_TYPE + L.HOME_DETAIL_GAP + L.HOME_DETAIL_CHIP_W;
     lines.push({
-      need: 2 * DETAIL_PAD + markInset + markWidth(moveUpper) + trailing,
+      need: 2 * DETAIL_PAD + markInset + markWidth(moveUpper, wordTrack) + trailing,
       paint: (bodyX, right, midY) => {
         const markX = bodyX + markInset;
         const iconY = midY - L.HOME_DETAIL_ICON / 2;
@@ -1148,9 +1151,9 @@ function homeDetailLines(
         ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
         ctx.fillStyle = moveShades.band;
         ctx.textBaseline = 'middle';
-        const name = ellipsizeTracked(ctx, moveUpper, nameW, L.HOME_MARK_TRACK);
-        fillTracked(ctx, name, markX, midY, L.HOME_MARK_TRACK);
-        const typeX = markX + trackedWidth(ctx, name, L.HOME_MARK_TRACK) + L.HOME_DETAIL_GAP;
+        const name = ellipsizeTracked(ctx, moveUpper, nameW, wordTrack);
+        fillTracked(ctx, name, markX, midY, wordTrack);
+        const typeX = markX + trackedWidth(ctx, name, wordTrack) + L.HOME_DETAIL_GAP;
         ctx.restore();
         drawTypeMark(
           ctx,
@@ -1490,7 +1493,7 @@ async function render(
 
 /** One trainer's card as a PNG. */
 export async function exportGymCard(card: GymCard, teamOrder: CardTeamOrder = 'fixed'): Promise<Blob> {
-  const images = await loadAll(cardImageUrls(card));
+  const [images] = await Promise.all([loadAll(cardImageUrls(card)), activeMoveNames()]);
   return render(L.CARD_IMG_W, L.CARD_IMG_H, (ctx) => drawGymCard(ctx, card, images, teamOrder));
 }
 
@@ -1501,7 +1504,7 @@ export async function exportLeagueHome(
   view: LeagueView,
   layout: LeagueHomeExportLayout = DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
 ): Promise<Blob> {
-  const images = await loadAll(homeImageUrls(cards, view, layout));
+  const [images] = await Promise.all([loadAll(homeImageUrls(cards, view, layout)), activeMoveNames()]);
   // The details column fits its widest line, so measure before the canvas
   // takes its size.
   await fontsReady();

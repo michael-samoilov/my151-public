@@ -207,19 +207,16 @@ export function pokemonLabel(appId: number, slug: string, formKey: number | `pic
   const species = speciesName(appId);
   if (!catalog || !species) return { name: slug, mark: null, full: slug, pending: true };
   let mark: string | null = catalog.formMark[appId] ?? null;
-  let descriptor = catalog.forms[formKey];
-  // The sourced Pokédex text names all three breeds "Paldean Form" in
-  // several languages. Preserve their identities with readable English breed
-  // names until a localized breed source exists, rather than giving all three P.
-  const breed = ({ 10250: 'Combat Breed', 10251: 'Blaze Breed', 10252: 'Aqua Breed' } as Record<number, string>)[appId];
-  let breedQualifier: string | undefined;
-  if (breed) {
-    const ambiguous = !descriptor || [10250, 10251, 10252].some(id => id !== appId && catalog.forms[id] === descriptor);
-    if (ambiguous) descriptor = `${descriptor ?? ''} (${breed})`.trim();
-    breedQualifier = ambiguous ? breed : descriptor?.match(/\(([^)]+)\)$/u)?.[1];
-  }
+  const descriptor = catalog.forms[formKey];
+  // The three Paldean Tauros share one region mark, so the tile names the
+  // breed: the part of the game's form name after "Paldean Form" —
+  // "Paldea-Form (Gefechtvariante)", "パルデアのすがた・コンバットしゅ",
+  // "팔데아의 모습/컴뱃종" (Pokémon Champions' zkn_form_syn table).
+  const isBreed = appId === 10250 || appId === 10251 || appId === 10252;
+  const breed = isBreed ? descriptor?.match(/[(（]([^()（）]+)[)）]$|[・/]([^・/]+)$/u) : null;
+  const breedQualifier = breed?.[1] ?? breed?.[2];
   const full = fullPokemonName(species, descriptor);
-  let name = breed ? breedQualifier ? `${species} (${breedQualifier})` : full
+  let name = isBreed ? breedQualifier ? `${species} (${breedQualifier})` : full
     : !mark && (appId > 1025 || formKey !== appId) ? full : species;
   // X/Y are part of the official name. Reserve the final glyph just like a
   // regional mark so an ellipsis never makes the two Mega forms identical.
