@@ -11,7 +11,9 @@
  * from these same constants.
  */
 
-import { localeUppercase } from '@/i18n';
+import { localeUppercase, raw, t, type NoArgKey } from '@/i18n';
+import { splitTemplate } from '@/lib/richTemplate';
+import { headingTracks } from '../slotHeadings';
 import { EXPORT_CORNER_RATIO, EXPORT_FRAME_PX } from '@/lib/exportPngShape';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import { soloSprite } from '../slotLayout';
@@ -43,8 +45,16 @@ export const FOOT = 36;
  * lands at about 6.4pt, the size the dex poster's credit lands at.
  */
 export const CREDIT_PX = 14;
-export const CARD_CREDIT_PREFIX = "/vp/'s Pro Trainer Card";
-export const HOME_CREDIT_PREFIX = 'Pokémon League Builder';
+export const cardCreditPrefix = (): string => t('league.export.cardCredit');
+export const homeCreditPrefix = (): string => t('league.export.homeCredit');
+
+/**
+ * A label's tracking in the active locale. Japanese, Korean and Chinese are
+ * set untracked, as the app's `:lang()` rule sets them on screen.
+ */
+export function labelTrack(track: number): number {
+  return headingTracks() ? track : 0;
+}
 
 // ---------- the gym card ----------
 
@@ -101,8 +111,19 @@ export const CARD_W = BOX_W;
  * rather than a title with a caption. A card with no type shows the title
  * alone. The row is a whole pixel tall so the grid under it starts on one.
  */
-export const CARD_TITLE = 'Pro Trainer Card';
-export const SPECIALIST = 'Type Specialist';
+export const cardTitle = (): string => t('league.card.title');
+/**
+ * "Type Specialist" either side of the type badge, in the locale's order:
+ * `before` is drawn ahead of the badge and `after` behind it, each trimmed.
+ */
+export function specialistRuns(): { before: string; after: string } {
+  const parts = splitTemplate(raw('league.export.specialist'));
+  const at = parts.findIndex((p) => p.kind === 'slot');
+  const text = (from: number, to: number) =>
+    parts.slice(from, to).map((p) => (p.kind === 'literal' ? p.text : '')).join('').trim();
+  if (at < 0) return { before: '', after: text(0, parts.length) };
+  return { before: text(0, at), after: text(at + 1, parts.length) };
+}
 export const TITLE_SEP = '·';
 export const TITLE_PX = 15 * K;
 export const TITLE_TRACK = -0.01 * TITLE_PX;
@@ -156,9 +177,25 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
  */
 export const FRAME = EXPORT_FRAME_PX;
 
-/** Badge phrase in the same caps as ACE POKÉMON. */
+/**
+ * The word under the TM disc or the badge hexagon. The export's column has
+ * room for it on one line, so a word the live card stacks in two is joined.
+ */
+export function markWord(key: 'league.tm.mark' | 'league.badge.mark'): string {
+  return localeUppercase(t(key)).split('\n').join(headingTracks() ? ' ' : '');
+}
+
+/** Badge phrase in the same caps as ACE POKÉMON, with the badge word where the locale puts it. */
 export function badgeExportPhrase(name: string): string {
-  return localeUppercase(`${name} Badge`);
+  return localeUppercase(t('league.badge.phrase', { name }));
+}
+
+/** The badge word that follows the name, if the locale sets it after: " BADGE" in English. */
+export function badgeExportSuffix(): string {
+  const parts = splitTemplate(raw('league.badge.phrase'));
+  const at = parts.findIndex((p) => p.kind === 'slot');
+  const after = parts.slice(at + 1).map((p) => (p.kind === 'literal' ? p.text : '')).join('');
+  return localeUppercase(after.trim());
 }
 
 /** Move name in the same caps as ACE POKÉMON. */
@@ -191,9 +228,9 @@ export const NAME_LINE = NAME_PX * 1.4;
 /** The glyph cell spans two columns on rows 1, 8 and 9. */
 export const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
 
-export const BAND_BEFORE: Record<number, [string, string]> = {
-  [ELITE_ROW]: ['ELITE FOUR & CHAMPION', 'Champion may have one Mega/Gigantamax'],
-  [BOSS_ROW]: ['ENDGAME BOSS TEAM', 'may also include one minor Legendary'],
+export const BAND_BEFORE: Record<number, [NoArgKey, NoArgKey]> = {
+  [ELITE_ROW]: ['league.band.elite', 'league.band.eliteNote'],
+  [BOSS_ROW]: ['league.band.boss', 'league.band.bossNote'],
 };
 
 /**
@@ -738,25 +775,25 @@ export function homeSectionPills(
       label: title,
       align: 'left',
     },
-    { x: teamBaseX, w: geom.blockWidth, label: nameTeams ? 'STORY TEAMS' : null, align: 'right' },
-    { x: rematchX, w: geom.blockWidth, label: nameTeams ? 'REMATCH TEAMS' : null, align: 'right' },
+    { x: teamBaseX, w: geom.blockWidth, label: nameTeams ? localeUppercase(t('league.export.storyTeams')) : null, align: 'right' },
+    { x: rematchX, w: geom.blockWidth, label: nameTeams ? localeUppercase(t('league.export.rematchTeams')) : null, align: 'right' },
   ];
 }
 
 /** The section band drawn before a slot index. */
-export const SECTION_BEFORE: Record<number, string> = {
-  0: 'GYM LEADERS',
-  8: 'ELITE FOUR',
-  12: 'CHAMPION',
-  13: 'ENDGAME BOSS',
+export const SECTION_BEFORE: Record<number, NoArgKey> = {
+  0: 'league.section.gyms',
+  8: 'league.section.elite',
+  12: 'league.section.champion',
+  13: 'league.section.boss',
 };
 
 /** What an empty row says, by slot kind. */
-export const VACANCY: Record<string, string> = {
-  gym: 'Gym leader vacancy',
-  elite: 'Elite Four vacancy',
-  champion: 'Champion vacancy',
-  boss: 'No endgame boss trainer',
+export const VACANCY: Record<string, NoArgKey> = {
+  gym: 'league.vacancy.gym',
+  elite: 'league.vacancy.elite',
+  champion: 'league.vacancy.champion',
+  boss: 'league.vacancy.boss',
 };
 
 // ---------- the pictures: one width, each as tall as its content ----------

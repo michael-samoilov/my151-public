@@ -3,13 +3,13 @@ import { createPortal } from 'react-dom';
 import { ChevronLeft, Pencil, Plus, X } from 'lucide-react';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
-import { localeUppercase, typeLabel, typeLabels } from '@/i18n';
+import { localeUppercase, typeLabel, typeLabels, useT } from '@/i18n';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
 import { TYPE_BADGE, TYPE_BADGE_H, typeBadgeGlyphBox } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit } from '@/lib/typeBadgeFit';
 import { cn } from '@/lib/utils';
-import { slotLabel } from '../model/constants';
+import { slotLabel } from '../slotLabel';
 import { useLeagueStore, type CardType } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
@@ -32,10 +32,6 @@ import { confirmOnEnter } from './confirmOnEnter';
  * the desktop pane renders the same component without it.
  */
 
-/** The page's own name, the way the league home names itself. */
-const CARD_NAME = 'Pro Trainer Card';
-const THEME_PLACEHOLDER = "What is this gym's theme?";
-
 /**
  * "No type" as a real option: the type badge pipeline's geometry, fit and
  * casing over the no-type grey, with the app's 4-point star spandrel where
@@ -45,7 +41,8 @@ const THEME_PLACEHOLDER = "What is this gym's theme?";
 const NO_TYPE_BADGE_WIDE_W = 621;
 
 function NoTypeBadge({ className }: { className?: string }) {
-  const label = 'NO TYPE';
+  const t = useT();
+  const label = localeUppercase(t('league.type.none'));
   const fit = typeBadgeFit(label, typeLabels().map(localeUppercase));
   const glyph = typeBadgeGlyphBox();
   const w = NO_TYPE_BADGE_WIDE_W;
@@ -55,7 +52,7 @@ function NoTypeBadge({ className }: { className?: string }) {
       viewBox={`0 0 ${w} ${TYPE_BADGE_H}`}
       className={cn('h-auto w-full', className)}
       role="img"
-      aria-label="No type"
+      aria-label={t('league.type.none')}
     >
       <rect width={w} height={TYPE_BADGE_H} rx={TYPE_BADGE.radius} fill="#9CA3AF" />
       <path
@@ -109,6 +106,7 @@ const TYPE_MARK_RADIUS = '0.4375rem';
 
 /** The square a card wears before a type is chosen. */
 function UnsetTypeMark() {
+  const t = useT();
   return (
     // A plus alone says "add something". The word says what — the same job
     // the TM disc and the badge hexagon give their own words, and the same
@@ -120,7 +118,7 @@ function UnsetTypeMark() {
       style={{ width: TYPE_MARK, height: TYPE_MARK, borderRadius: TYPE_MARK_RADIUS }}
     >
       <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
-      <span lang="en" className="text-[0.40625rem] font-extrabold leading-[1.1] tracking-[0.06em]">TYPE</span>
+      <span className="text-[0.40625rem] font-extrabold leading-[1.1] tracking-[0.06em]">{localeUppercase(t('league.type.word'))}</span>
     </span>
   );
 }
@@ -162,8 +160,9 @@ function TypeMark({ type }: { type: CardType }) {
 function TypePicker({ cardIndex }: { cardIndex: number }) {
   const setCardType = useLeagueStore((s) => s.setCardType);
   const setTypePickerOpen = useLeagueUi((s) => s.setTypePickerOpen);
-  const pick = (t: CardType) => {
-    setCardType(cardIndex, t);
+  const t = useT();
+  const pick = (type: CardType) => {
+    setCardType(cardIndex, type);
     setTypePickerOpen(false);
   };
   return (
@@ -171,27 +170,28 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
       <div className="absolute inset-0 bg-black/50" onClick={() => setTypePickerOpen(false)} />
       <div className="relative rounded-t-2xl bg-background p-4 shadow-2xl md:w-[24rem] md:rounded-2xl">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-sm font-semibold">Gym type</span>
+          <span className="text-sm font-semibold">{t('league.type.label')}</span>
           <button
             type="button"
             onClick={() => setTypePickerOpen(false)}
+            aria-label={t('league.close')}
             className="cursor-pointer text-muted-foreground hover:text-foreground"
           >
             <X size={16} />
           </button>
         </div>
         <div className="grid grid-cols-3 gap-1.5">
-          {TYPE_NAMES.map((t) => (
+          {TYPE_NAMES.map((type) => (
             <button
-              key={t}
+              key={type}
               type="button"
-              onClick={() => pick(t)}
+              onClick={() => pick(type)}
               // A static light-grey outline on hover, shown at once (no bloom,
               // no fade): a 3px ring that hugs the badge with no gap, the same
               // idiom the dex builder's type filter uses.
               className="cursor-pointer rounded-full hover:ring-[3px] hover:ring-foreground/25"
             >
-              <TypeBadge type={t} className="w-full" />
+              <TypeBadge type={type} className="w-full" />
             </button>
           ))}
           <button
@@ -222,11 +222,15 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
   const setCardTheme = useLeagueStore((s) => s.setCardTheme);
   const closeCardPage = useLeagueUi((s) => s.closeCardPage);
   const setTypePickerOpen = useLeagueUi((s) => s.setTypePickerOpen);
+  const t = useT();
   // The square carries no word, so the button says which type it is. "No
   // type" is a chosen answer, not the absence of one, so it says so.
-  const typeName = view.card.type === null
-    ? ''
-    : view.card.type === 'none' ? 'no type' : typeLabel(view.card.type);
+  const typeButtonLabel = view.card.type === null
+    ? t('league.type.label')
+    : view.card.type === 'none'
+      ? t('league.type.labelNone')
+      : t('league.type.labelNamed', { type: typeLabel(view.card.type) });
+  const themePlaceholder = t('league.card.themePlaceholder');
   const blockRef = useRef<HTMLDivElement>(null);
   const ghostRef = useRef<HTMLSpanElement>(null);
   const pencilRoom = usePencilRoom(blockRef, ghostRef, view.card.theme);
@@ -236,7 +240,7 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
         <button
           type="button"
           onClick={closeCardPage}
-          aria-label={`Back to the league (${slotLabel(cardIndex)})`}
+          aria-label={t('league.card.back', { slot: slotLabel(cardIndex) })}
           className="cursor-pointer text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft size={20} />
@@ -248,7 +252,7 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
       <button
         type="button"
         onClick={() => setTypePickerOpen(true)}
-        aria-label={`Gym type${typeName ? `: ${typeName}` : ''}`}
+        aria-label={typeButtonLabel}
         // A static light-grey outline on hover, matching the type picker's
         // badges — shown at once, hugging the square.
         className="shrink-0 cursor-pointer rounded-[0.4375rem] hover:ring-[3px] hover:ring-foreground/25"
@@ -259,7 +263,7 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
           above, small and quiet, and one editable line under it. */}
       <div ref={blockRef} className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
         <h2 className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-          {CARD_NAME}
+          {t('league.card.title')}
         </h2>
         {/* The field is sized to its own text by an invisible copy in the
             same grid cell, so the dashed line ends where the words do and
@@ -280,13 +284,13 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
                 view.card.theme ? 'font-bold' : 'font-normal',
               )}
             >
-              {view.card.theme || THEME_PLACEHOLDER}
+              {view.card.theme || themePlaceholder}
             </span>
             <input
               value={view.card.theme}
               onChange={(e) => setCardTheme(cardIndex, e.target.value)}
-              placeholder={THEME_PLACEHOLDER}
-              aria-label="Gym theme"
+              placeholder={themePlaceholder}
+              aria-label={t('league.card.themeLabel')}
               enterKeyHint="done"
               onKeyDown={confirmOnEnter}
               // The words are clipped at the field's own box, and a clip

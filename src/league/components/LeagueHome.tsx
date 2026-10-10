@@ -21,7 +21,9 @@ import {
 } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
 import { useDragSensors } from '@/lib/dragSensors';
-import { BOSS_ROW, SLOT_COUNT, slotKind, slotLabel, slotRow } from '../model/constants';
+import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
+import { slotLabel } from '../slotLabel';
+import { localeUppercase, typeLabel, useT, type NoArgKey } from '@/i18n';
 import { deriveRow, leagueSlotIsEmpty, moveLeagueSlots } from '../model/engine';
 import { cardShades } from '../theme';
 import { fitStyle, useFitScale } from '../useFitScale';
@@ -122,11 +124,11 @@ function canScrollRows(): boolean {
   return !(allVisible && firstDropEnd > top && lastDropStart < bottom);
 }
 
-const SECTION_BEFORE: Record<number, string> = {
-  0: 'GYM LEADERS',
-  8: 'ELITE FOUR',
-  12: 'CHAMPION',
-  13: 'ENDGAME BOSS',
+const SECTION_BEFORE: Record<number, NoArgKey> = {
+  0: 'league.section.gyms',
+  8: 'league.section.elite',
+  12: 'league.section.champion',
+  13: 'league.section.boss',
 };
 
 function SlotGlyph({ index, cell }: { index: number; cell: string }) {
@@ -161,6 +163,7 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
   const cells = deriveRow(card.lines, row, row === BOSS_ROW ? legendsOf(card) : []);
   const filled = card.lines.length > 0;
   const m = useContext(HomeMetricsContext);
+  const t = useT();
 
   return (
     <div
@@ -180,12 +183,12 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
         </span>
         <span className="flex items-center justify-center">
           {card.type === 'none' ? (
-            <svg viewBox="0 0 22 22" className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" aria-label="No type" role="img">
+            <svg viewBox="0 0 22 22" className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" aria-label={t('league.type.none')} role="img">
               <rect width="22" height="22" rx="5" fill="#9CA3AF" />
               <path d={starPath(11, 11, 7)} fill="#ffffff" />
             </svg>
           ) : card.type ? (
-            <img src={typeIconPath(card.type)} alt={card.type} className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" />
+            <img src={typeIconPath(card.type)} alt={typeLabel(card.type)} className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" />
           ) : (
             <span className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem] border-[1.4px] border-dashed border-border" />
           )}
@@ -314,6 +317,7 @@ export function LeagueHome() {
   const [preview, setPreview] = useState<{ from: number; to: number; cards: readonly GymCard[] } | null>(null);
   const cards = useLeagueStore((s) => s.cards);
   const blank = cards.every((c) => leagueSlotIsEmpty(c));
+  const t = useT();
 
   const displayCards = useMemo(() => {
     if (!preview) return cards;
@@ -390,7 +394,7 @@ export function LeagueHome() {
                     background: BAND_RED,
                   }}
                 >
-                  <b lang="en" className="text-[0.5625rem] font-extrabold tracking-[0.07em]">{SECTION_BEFORE[position]}</b>
+                  <b className="text-[0.5625rem] font-extrabold tracking-[0.07em]">{localeUppercase(t(SECTION_BEFORE[position]))}</b>
                 </div>
               )}
               <SlotRow
@@ -411,14 +415,14 @@ export function LeagueHome() {
             <div className="flex items-start gap-[0.3125rem]">
               <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
               <span className="min-w-0 truncate">
-                {blank ? 'Drag a row to reorder · tap a row to add a trainer' : 'Drag a row to reorder · tap a row to open its card'}
+                {blank ? t('league.home.hint.oneAdd') : t('league.home.hint.oneOpen')}
               </span>
             </div>
           ) : metrics.hints === 2 ? (
             <>
               <div className="flex items-start gap-[0.3125rem]">
                 <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
-                <span className="min-w-0 truncate">Drag a row to reorder the league</span>
+                <span className="min-w-0 truncate">{t('league.home.hint.reorder')}</span>
               </div>
               <div className="mt-[0.125rem] flex items-start gap-[0.3125rem]">
                 {blank ? (
@@ -427,7 +431,7 @@ export function LeagueHome() {
                   <ChevronRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
                 )}
                 <span className="min-w-0 truncate">
-                  {blank ? 'Tap a row to add a trainer' : 'Tap a row to open its trainer card'}
+                  {blank ? t('league.home.hint.add') : t('league.home.hint.open')}
                 </span>
               </div>
             </>
