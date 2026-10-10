@@ -8,6 +8,7 @@ import { isOptedOut } from '@/lib/clientId';
 import { PREVIEW_DEPLOY } from '@/lib/demoMode';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import { useT } from '@/i18n';
 import {
   CARD_FILENAME,
   HOME_FILENAME,
@@ -31,6 +32,7 @@ import { LeagueExportSurvey } from './LeagueExportSurvey';
 import { LeagueExportSurveyIntro } from './LeagueExportSurveyIntro';
 
 export function LeagueExportOverlay() {
+  const t = useT();
   const exportCardIndex = useLeagueUi((s) => s.exportCardIndex);
   const exportPhase = useLeagueUi((s) => s.exportPhase);
   const closeLeagueExport = useLeagueUi((s) => s.closeLeagueExport);
@@ -139,7 +141,7 @@ export function LeagueExportOverlay() {
       phase={exportPhase}
       onClose={closeLeagueExport}
       surveyTool={exportKind}
-      previewAlt={isLeague ? 'League export preview' : 'Trainer card export preview'}
+      previewAlt={t(isLeague ? 'leagueExport.preview.league' : 'leagueExport.preview.card')}
       frames={{ activeKey, urls, busy: busy || exportBusy }}
       bare={!isLeague}
       settings={

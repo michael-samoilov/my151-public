@@ -130,3 +130,26 @@ records German `Starter-Pokémon`, shortened to `Starter` on the badge.
 
 `docs/favorite-picker-localization/verification.md` records the temporary proof
 and the nine-locale render measurements at 320, 390, and 1280 pixels.
+
+### The export flows
+
+`export.*`, `exportSurvey.*`, `leagueExport.*`, `view.*`, `viewSettings.*`,
+`sort.*`, `stats.*`, and `poster.*` cover the View page, the Pokédex, league,
+trainer card, and favorites export panes, the survey after an export, and the
+text drawn into the exported Pokédex image.
+
+- **National Dex** uses each game's own name: Nationaler Pokédex, Pokédex
+  National, Pokédex Nacional, Pokédex Nazionale, 全国図鑑, 전국도감, 全国图鉴,
+  and 全國圖鑑. TM uses each game's abbreviation (TM, CT, MT, わざマシン,
+  기술머신, 招式学习器, 招式學習器), and Badge is Orden in German.
+- **Ordinals** in the survey ("the 151st person") come from
+  `exportSurvey.ordinal_*`, picked by the locale's ordinal plural rule. English
+  needs four forms. The other locales need only `_other`, because every export
+  milestone is 151 or more: 151., 151e, 151.ª, 151ª, 151人目, 151번째, 第151位.
+- **The survey's answers** stay in English in the report that is sent, so the
+  replies read the same in every language. Only the labels on screen are
+  translated. Brand names (Discord, Reddit, X / Twitter, 4chan, Bluesky,
+  Tumblr) are not.
+- **The poster separator** is a spaced middle dot in every locale, so each
+  locale's `poster.separator` is listed in `SAME_AS_ENGLISH_OK`. French
+  `sort.type` is listed for the same reason: Type is the French noun.

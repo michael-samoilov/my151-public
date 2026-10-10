@@ -1,12 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { getPokemonById } from '@/hooks/usePokemonData';
+import { pokemonLabel, raw, useNamesVersion, useT, type MessageKey } from '@/i18n';
+import { splitTemplate } from '@/lib/richTemplate';
 import type { ExportSurveyTool } from '@/lib/exportSurvey';
 import {
   useExportSurveySpriteScale,
   usePixelPerfectSprite,
 } from '@/lib/usePixelPerfectSprite';
 import {
-  EXPORT_TOOL_LABEL,
+  FIRST_POKEMON_LINE,
   earlyExportLine,
   pokemonDisplayName,
   type ExportHighlight,
@@ -14,15 +16,11 @@ import {
 import { cardShades } from '../theme';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
-function takeLine(tool: ExportSurveyTool): string {
-  if (tool === 'pokedex') {
-    return 'Would you take about a minute to share your perspective? As someone who completed a Pokedex, your take helps me improve the experience for the next person.';
-  }
-  if (tool === 'card') {
-    return 'Would you take about a minute to share your perspective? As someone who completed a gym leader card, your take helps me improve the experience for the next person.';
-  }
-  return 'Would you take about a minute to share your perspective? As someone who completed a full league, your take helps me improve the experience for the next person.';
-}
+const ASK_LINE = {
+  pokedex: 'exportSurvey.ask.pokedex',
+  league: 'exportSurvey.ask.league',
+  card: 'exportSurvey.ask.card',
+} as const satisfies Record<ExportSurveyTool, MessageKey>;
 
 export function LeagueExportSurveyIntro({
   tool,
@@ -35,12 +33,17 @@ export function LeagueExportSurveyIntro({
   onContinue: () => void;
   onSkip: () => void;
 }) {
+  const t = useT();
+  // Re-render when the name catalog lands after the locale does.
+  useNamesVersion();
   const spriteScale = useExportSurveySpriteScale();
   const spriteCssPx = usePixelPerfectSprite(spriteScale);
   const early = highlight ? earlyExportLine(highlight.ordinal, highlight.tool) : null;
   const pokemon =
     highlight?.firstPokemonId != null ? getPokemonById(highlight.firstPokemonId) : undefined;
-  const pokeName = pokemon ? pokemonDisplayName(pokemon.id) : null;
+  const pokeName = pokemon
+    ? pokemonLabel(pokemon.id, pokemonDisplayName(pokemon.id) ?? pokemon.name).full
+    : null;
   const primary = pokemon?.types[0];
   const nameColor = primary ? cardShades(primary).band : undefined;
   const sprite = pokemon?.sprite ?? (highlight?.firstPokemonId != null
@@ -53,15 +56,17 @@ export function LeagueExportSurveyIntro({
       data-export-survey-intro
     >
       <div className="space-y-2 text-sm leading-relaxed">
-        <p className="text-base font-bold text-primary">You&apos;re here early!</p>
+        <p className="text-base font-bold text-primary">{t('exportSurvey.early')}</p>
         {early && <p className="text-foreground">{early}</p>}
         {pokeName && highlight && (
           <p className="text-foreground">
-            You&apos;re also the first person to have{' '}
-            <strong className="font-bold" style={nameColor ? { color: nameColor } : undefined}>
-              {pokeName}
-            </strong>{' '}
-            in an exported {EXPORT_TOOL_LABEL[highlight.tool]}.
+            {splitTemplate(raw(FIRST_POKEMON_LINE[highlight.tool])).map((part, i) =>
+              part.kind === 'literal' ? part.text : (
+                <strong key={i} className="font-bold" style={nameColor ? { color: nameColor } : undefined}>
+                  {pokeName}
+                </strong>
+              ),
+            )}
           </p>
         )}
       </div>
@@ -87,18 +92,18 @@ export function LeagueExportSurveyIntro({
             }}
             draggable={false}
           />
-          <p className="text-sm leading-relaxed text-foreground">Hi {pokeName}!</p>
+          <p className="text-sm leading-relaxed text-foreground">{t('exportSurvey.hi', { name: pokeName })}</p>
         </div>
       )}
 
-      <p className="text-sm leading-relaxed text-foreground">{takeLine(tool)}</p>
+      <p className="text-sm leading-relaxed text-foreground">{t(ASK_LINE[tool])}</p>
 
       <div className="mt-auto flex flex-col gap-2 pt-2">
         <Button type="button" onClick={onContinue}>
-          Sure, I&apos;ll help
+          {t('exportSurvey.accept')}
         </Button>
         <Button type="button" variant="ghost" onClick={onSkip}>
-          Not now
+          {t('exportSurvey.skip')}
         </Button>
       </div>
     </div>
