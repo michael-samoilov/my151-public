@@ -43,6 +43,7 @@ test.describe('admin flows', () => {
       const chart = page.getByRole('img', { name: new RegExp(`${chartName} usage funnel`) });
       await expect(chart.locator('canvas')).toBeVisible();
       const label = await chart.getAttribute('aria-label') ?? '';
+      expect(label, 'usage percentages round to whole points').not.toMatch(/\d+\.\d+%/);
       expect(label).toMatch(/Bounced: [\d.]+% of entrants/);
       expect(label).toMatch(/Exported: [\d.]+% of non-bouncers/);
       expect(label).toMatch(/(?:Completed|Full league): [\d.]+% of non-bouncers/);

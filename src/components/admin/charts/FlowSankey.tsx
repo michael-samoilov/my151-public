@@ -93,7 +93,7 @@ function chipInLabel(
 }
 
 function rateLabel(node: SankeyNode): string {
-  return node.percentage ? node.percentage.value === null ? '—' : `${Number(node.percentage.value.toFixed(1))}%` : '';
+  return node.percentage ? node.percentage.value === null ? '—' : `${Math.round(node.percentage.value)}%` : '';
 }
 
 function nodeLabel(
@@ -238,7 +238,7 @@ function funnelLayout(
     const inflow = links.filter((l) => l.target === n.name).reduce((s, l) => s + l.value, 0);
     const outflow = links.filter((l) => l.source === n.name).reduce((s, l) => s + l.value, 0);
     // countChip pads the count by 2px on each side.
-    const chip = Math.max(measure(String(Math.round(Math.max(inflow, outflow)))) + 4, measure(rateLabel(n)));
+    const chip = measure(String(Math.round(Math.max(inflow, outflow)))) + 4;
     if (!base.compact) return { side: n.label, wrap: Number.POSITIVE_INFINITY, distance: LABEL_DISTANCE, chip };
     if (chipInLabel(n, true, 'funnel', nodes, links)) {
       return {
@@ -324,7 +324,7 @@ export function FlowSankey({
             right: g.right,
             top: g.top,
             bottom: g.bottom,
-            nodeGap: nodes.some((n) => n.percentage) ? Math.max(g.nodeGap, g.fontSize * 2 + 5) : g.nodeGap,
+            nodeGap: g.nodeGap,
             nodeWidth: g.nodeWidth,
             draggable: false,
             layoutIterations: 0,
