@@ -102,6 +102,19 @@ Sword/Shield text from `abcboy101/poke-corpus`.
   어깨 위 포켓몬, 肩上宝可梦, "on the shoulder" in French, Spanish and Italian,
   and the German coinage Schultermon, which mirrors the English one.
 
+### The hub, the FAQ, and the footer
+
+`faq.*`, `home.*`, `footer.*`, and `common.dismiss` have translations in all
+eight overlays. The FAQ answers are prose, so they use the same words as the
+tool names in `tools.*` and the official terms: Kanto, the Elite Four, the
+Champion, and Pokémon names come from `../terms/` and the name catalogs.
+
+The FAQ also names fan concepts that the games do not. These are described,
+not sourced: Japanese 600族 and Chinese 准神 and 準神 for pseudo-legendary,
+ピカチュウ枠 for Pikaclone, and 創作ポケモン, 창작 포켓몬, 自创宝可梦, and
+自創寶可夢 for fakemon. The Latin locales write 1025 without a thousands
+separator, so the number cannot break across two lines. Korean keeps 1,025.
+
 ### The favorite picker
 
 `favorites.*`, `home.favorites.*`, and `faq.favorites.*` have translations in

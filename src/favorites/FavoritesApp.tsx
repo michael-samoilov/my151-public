@@ -209,7 +209,7 @@ function FavoritesContent({ sel, setSel }: {
         </div>
         <div id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"
           hidden={currentView !== 'analytics'} className={currentView === 'analytics' ? 'h-[calc(100dvh-2*2.75rem)] shrink-0 min-h-0' : 'hidden'}>
-          {analyticsMounted && <Suspense fallback={<div role="status" aria-label={t('nav.analytics')} className="m-4 h-32 animate-pulse rounded-lg bg-muted" />}>
+          {analyticsMounted && <Suspense fallback={<div role="status" aria-label={t('favorites.nav.analytics')} className="m-4 h-32 animate-pulse rounded-lg bg-muted" />}>
             <FavoritesAnalyticsDashboard fills={fills} active={currentView === 'analytics'} />
           </Suspense>}
         </div>
