@@ -455,6 +455,95 @@ export function browserIndex(
   };
 }
 
+export interface RecordedDistribution {
+  n: number;
+  total: number;
+  average: number | null;
+  median: number | null;
+  values: number[];
+}
+export interface RecordedUsageSlice {
+  browsers: number;
+  missingTime: number;
+  missingSessions: number;
+  incompleteHistory: number;
+  time: RecordedDistribution;
+  sessions: RecordedDistribution;
+}
+export type RecordedUsage = Record<'all' | 'dex' | 'league' | 'favorites', RecordedUsageSlice>;
+type RecordedRow = {
+  cid: string; firstTs: number; lastTs: number; sessions?: number; sessionMs?: number[];
+  sessionLog?: {ts: number; endTs?: number; ids?: number[]}[];
+  latestIds?: number[]; everIds?: number[]; maxDepth?: number; maxSeats?: number; maxCards?: number; maxFilled?: number;
+};
+type RecordedSpan = {start: number; end: number; timed: boolean};
+
+/** Dated retained spans only. Neither lifetime counters nor first/last visits supply missing time. */
+export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', readonly RecordedRow[]>, start: number | null, now: number): RecordedUsage {
+  const groups = {all: new Map<string, RecordedSpan[]>(), dex: new Map<string, RecordedSpan[]>(), league: new Map<string, RecordedSpan[]>(), favorites: new Map<string, RecordedSpan[]>()};
+  const incomplete = {all: new Set<string>(), dex: new Set<string>(), league: new Set<string>(), favorites: new Set<string>()};
+  for (const tool of ['dex', 'league', 'favorites'] as const) {
+    const builders = new Set(rows[tool].filter(r => tool === 'dex'
+      ? (r.maxDepth ?? 0) > 0 || (r.everIds?.length ?? r.latestIds?.length ?? 0) > 0 || r.sessionLog?.some(s => (s.ids?.length ?? 0) > 0)
+      : tool === 'league' ? (r.maxSeats ?? 0) > 0 || (r.maxCards ?? 0) > 0 : (r.maxFilled ?? 0) > 0).map(r => bareCid(r.cid)));
+    for (const r of rows[tool]) {
+      const cid = bareCid(r.cid);
+      if (!builders.has(cid)) continue;
+      const log = r.sessionLog ?? [];
+      const durations = r.sessionMs ?? [];
+      const offset = durations.length - log.length;
+      const spans: RecordedSpan[] = [];
+      log.forEach((entry, index) => {
+        if (!Number.isFinite(entry.ts)) return;
+        const duration = durations[index + offset];
+        const timed = tool === 'favorites' ? Number.isFinite(entry.endTs) && entry.endTs! >= entry.ts
+          : Number.isFinite(duration) && duration >= 0;
+        const end = tool === 'favorites' && timed ? entry.endTs! : entry.ts;
+        const from = tool === 'favorites' || !timed ? entry.ts : end - duration;
+        if (from > now || end < (start ?? -Infinity) || (end === start)) return;
+        spans.push({start: Math.max(from, start ?? -Infinity), end: Math.min(end, now), timed});
+      });
+      if (spans.length === 0 && (r.firstTs > now || (start !== null && r.lastTs <= start))) continue;
+      for (const key of [tool, 'all'] as const) {
+        groups[key].set(cid, [...(groups[key].get(cid) ?? []), ...spans]);
+        if ((r.sessions ?? log.length) > log.length || log.length === 0 || (tool !== 'favorites' && durations.length !== log.length) || spans.some(s => !s.timed)) incomplete[key].add(cid);
+      }
+    }
+  }
+  const distribution = (values: number[]): RecordedDistribution => {
+    const sorted = [...values].sort((a,b) => a-b);
+    const total = sorted.reduce((a,b) => a+b,0);
+    return {n: sorted.length, total, average: sorted.length ? total / sorted.length : null,
+      median: sorted.length ? quantile(sorted, 0.5) : null, values: sorted};
+  };
+  const slice = (key: keyof typeof groups): RecordedUsageSlice => {
+    const time: number[] = [], sessions: number[] = [];
+    for (const raw of groups[key].values()) {
+      const unique = [...new Map(raw.map(s => [`${s.start}:${s.end}:${s.timed}`, s])).values()].sort((a,b) => a.start-b.start || a.end-b.end);
+      if (unique.length) {
+        let visits = 0, end = -Infinity;
+        for (const s of unique) {
+          if (s.start > end + 30 * 60_000) visits++;
+          end = Math.max(end, s.end);
+        }
+        sessions.push(visits);
+      }
+      const timed = unique.filter(s => s.timed);
+      if (timed.length) {
+        let total = 0, end = -Infinity;
+        for (const s of timed) {
+          total += Math.max(0, s.end - Math.max(s.start, end));
+          end = Math.max(end, s.end);
+        }
+        time.push(total);
+      }
+    }
+    return {browsers: groups[key].size, missingTime: groups[key].size-time.length, missingSessions: groups[key].size-sessions.length,
+      incompleteHistory: incomplete[key].size, time: distribution(time), sessions: distribution(sessions)};
+  };
+  return {all: slice('all'), dex: slice('dex'), league: slice('league'), favorites: slice('favorites')};
+}
+
 /**
  * The `/api/submissions` payload.
  *
@@ -792,6 +881,7 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   return {
     range,
     rangeStart: start,
+    recordedUsage: recordedUsage({dex: records, league: leagueRecords, favorites: favoriteRecords}, start, now),
     totalUsers,
     funnel: { users: dexIn.length, completed, exported },
     funnelEvents,
