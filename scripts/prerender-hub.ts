@@ -49,11 +49,21 @@ interface BootInputs {
  * src/i18n/detect.ts. Its saved-work tests mirror the hub's counts in
  * HomePage.tsx, and its notice test mirrors the Tools menu's launch notice.
  */
+/**
+ * The root font-size before the app mounts: the same layout-viewport width and
+ * formula as `src/lib/layoutFontSize.ts`. It runs right after the stylesheet
+ * link, so the browser holds it until that stylesheet has loaded. Reading
+ * `visualViewport.width` forces layout, and Firefox paints a page as soon as
+ * its layout starts: read before the stylesheet, it showed the hub unstyled
+ * for about 600 ms on every load.
+ */
+const FONT_SIZE_SCRIPT =
+  "(function(){var v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;document.documentElement.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px'})()";
+
 function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
   return `(function(){
-var d=document.documentElement,v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;
-d.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px';
+var d=document.documentElement;
 function G(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function S(k){try{var s=JSON.parse(G(k)||'null');return s&&s.state||null}catch(e){return null}}
 function some(o,f){for(var k in o)if(f(o[k]))return true;return false}
@@ -133,6 +143,11 @@ export function prerenderHub(): Plugin {
         const viewport = /<meta name="viewport"[^>]*>/;
         if (!viewport.test(html)) throw new Error('prerender-hub: index.html has no viewport meta tag');
         html = html.replace(viewport, (tag) => `${tag}\n    ${head}`);
+        const sheets = [...html.matchAll(/<link rel="stylesheet"[^>]*>/g)];
+        const lastSheet = sheets.at(-1);
+        if (!lastSheet || lastSheet.index === undefined) throw new Error('prerender-hub: index.html links no stylesheet');
+        const after = lastSheet.index + lastSheet[0].length;
+        html = `${html.slice(0, after)}\n    <script>${FONT_SIZE_SCRIPT}</script>${html.slice(after)}`;
         fs.writeFileSync(htmlFile, html);
       } finally {
         fs.rmSync(ssrDir, { recursive: true, force: true });

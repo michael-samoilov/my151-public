@@ -39,6 +39,20 @@ test('the hub HTML holds the whole page without JavaScript', async ({ browser, b
   await context.close();
 });
 
+// Firefox paints a page as soon as a script forces its layout, even with the
+// stylesheet still loading. `visualViewport.width` forces layout, so a read
+// before the stylesheet link showed the hub unstyled for about 600 ms on every
+// Firefox load. Every such read must come after the link, where the browser
+// holds the script until the stylesheet has loaded.
+test('the hub HTML reads no layout before its stylesheet', async ({ request }, testInfo) => {
+  const html = await (await request.get('/')).text();
+  const sheet = html.indexOf('<link rel="stylesheet"');
+  const reads = [...html.matchAll(/visualViewport|getBoundingClientRect|offsetWidth|clientWidth/g)].map((m) => m.index);
+  await testInfo.attach('head-order.json', { body: JSON.stringify({ sheet, reads }), contentType: 'application/json' });
+  expect(sheet).toBeGreaterThan(0);
+  for (const at of reads) expect(at).toBeGreaterThan(sheet);
+});
+
 /**
  * Loads the hub and reports what the visitor saw: whether #root showed before
  * the app ran, whether the app kept the prerendered heading, the layout shifts
