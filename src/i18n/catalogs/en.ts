@@ -423,6 +423,8 @@ export const enUi = {
   'league.tm.empty': 'No moves match.',
   'league.tm.found_one': '{count} found',
   'league.tm.found_other': '{count} found',
+  // The word under the TM disc. A newline stacks a long word in two lines on
+  // the live card (わざ / マシン); the export has the room and joins it.
   'league.tm.mark': 'TM',
   'league.tm.pick': 'Pick a move',
   'league.tm.remove': 'Remove TM',
