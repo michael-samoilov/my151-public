@@ -289,6 +289,10 @@ export const enUi = {
   'header.toolNameCore': 'Pokédex Maker',
   'header.toolNameQualifier': 'Custom',
   'home.dex.blurb': 'Make a dex from regional dex archetypes',
+  // Alt text for the screenshots on the hub's tool cards. They show what each
+  // tool makes, so they are content, not decoration.
+  'home.dex.buildAlt': 'Custom Pokédex Maker: a custom regional Pokédex in progress on the Build page',
+  'home.dex.exportAlt': 'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
   'home.dex.saved': '{progress} entries saved in this browser',
   'home.dex.title': 'Custom Pokédex Maker',
   'home.favorites.blurb': 'Pick favorites by type and generation',
@@ -301,10 +305,10 @@ export const enUi = {
   'home.h1': 'Make a custom Pokédex, Gym Leaders, and more',
   'home.intro': 'Build a custom regional Pokédex, create gym leader teams and trainer cards, or pick your favorite Pokémon by type and generation. Save and share your creations as PNGs.',
   'home.league.blurb': 'Gym leader teams, Elite Four, & Champion',
+  'home.league.cardAlt': 'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
+  'home.league.leagueAlt': 'Gym Leader Maker: a whole league exported with eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
   'home.league.saved': '{progress} trainers saved in this browser',
   'home.league.title': 'League & Gym Leader Maker',
-  'home.moved.dismiss': 'Dismiss',
-  'home.moved.tip': 'The Pokédex builder moved: find it under Tools. Your Pokédex ({count}/151) is saved in this browser.',
   'home.next.blurb': 'Tell us what you want to see,\nor share your feedback',
   'home.next.title': 'What should we build next?',
   'intro.body': 'Hand-pick your favorites from all {total} Pokémon into a Pokédex that’s entirely yours.',

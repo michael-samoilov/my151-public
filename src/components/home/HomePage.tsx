@@ -158,10 +158,7 @@ function useTools(placed: number): Tool[] {
       // The page's largest paint on a phone. The hub's HTML is prerendered,
       // so the browser sees this priority before it requests anything.
       shots: [shot(dexFront, 'high'), shot(dexBack)],
-      alts: [
-        'Custom Pokédex Maker: a custom regional Pokédex in progress on the Build page',
-        'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
-      ],
+      alts: [t('home.dex.buildAlt'), t('home.dex.exportAlt')],
     },
     {
       key: 'league',
@@ -170,10 +167,7 @@ function useTools(placed: number): Tool[] {
       blurb: t('home.league.blurb'),
       progress: { count: league, total: SLOT_COUNT, label: t('home.league.saved', { progress: PROGRESS_TOKEN }) },
       shots: [shot(leagueBack), shot(leagueFront)],
-      alts: [
-        'Gym Leader Maker: a whole league exported with eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
-        'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
-      ],
+      alts: [t('home.league.leagueAlt'), t('home.league.cardAlt')],
     },
     {
       key: 'favorites',
@@ -647,7 +641,9 @@ export function HomePage() {
                 // narrowest width the e2e projects cover; 22px spills to three.
                 // Desktop copy spans the same two-card halves as the grid.
                 // Keep the larger heading size at xl to preserve its line fit.
-                className="m-0 font-extrabold tracking-tight text-pretty text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:col-span-2"
+                // `auto-phrase` breaks Japanese between phrases, not inside
+                // ジムリーダー. Other languages break as before.
+                className="m-0 font-extrabold tracking-tight text-pretty [word-break:auto-phrase] text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:col-span-2"
                 style={{ lineHeight: 1.08 }}
               >
                 {t('home.h1')}
