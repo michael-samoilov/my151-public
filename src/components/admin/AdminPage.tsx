@@ -4,7 +4,6 @@ import {FavoriteDetailBody} from './FavoriteDetailBody';
 import type {FavoritePicks,FavoriteUser,FavoriteUsageFunnel} from '../../../api/_favoriteAggregate';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { isOptedOut, setOptedOut, storedClientId } from '@/lib/clientId';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { LeaguePicksPage, PicksDetailPage } from '@/components/admin/PicksDetailPage';
 import { PickerPicksPage } from '@/components/admin/PickerPicksPage';
@@ -303,6 +302,7 @@ export interface LeagueSummary {
 
 export interface ApiResponse {
   recordedUsage?: RecordedUsage;
+  attentionUsage?: RecordedUsage;
   /** The date range the aggregates count, and where its window opens (null for all). */
   range?: DashboardRange;
   rangeStart?: number | null;
@@ -705,35 +705,6 @@ interface HeaderRec {
 function middleId(cid: string): string {
   if (cid.length <= 8 || cid.includes('…')) return cid;
   return `${cid.slice(0, 2)}…${cid.slice(-4)}`;
-}
-
-/**
- * Whether the browser showing this dashboard reports analytics. One `?notme`
- * visit silences a browser for good, so the owner can lose their own sessions
- * without noticing. This row shows the state and flips it in place, without
- * clearing site data, which would delete saved selections.
- */
-function ThisBrowserRow() {
-  const [optedOut, setOptedOutState] = useState(isOptedOut);
-  const [cid] = useState(storedClientId);
-  const toggle = () => {
-    setOptedOut(!optedOut);
-    setOptedOutState(isOptedOut());
-  };
-  return (
-    <div data-testid="admin-this-browser" className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border bg-card px-3 py-1.5 text-xs">
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span aria-hidden className={cn('h-2 w-2 shrink-0 rounded-full', optedOut ? 'bg-amber-500' : 'bg-emerald-500')} />
-        <span>
-          This browser: <span className="font-semibold">{optedOut ? 'not counted' : 'counted'}</span>
-          {cid && <span className="text-muted-foreground"> · {middleId(cid)}</span>}
-        </span>
-      </span>
-      <Button variant="outline" size="sm" className="h-6 px-2 text-xs" onClick={toggle}>
-        {optedOut ? 'Count this browser' : 'Stop counting'}
-      </Button>
-    </div>
-  );
 }
 
 const KIND_WORD = { browser: 'Browser', served: 'Served', switched: 'Switched' } as const;
@@ -2152,7 +2123,6 @@ export function AdminPage() {
           </div>
         )}
 
-        {!detail && <ThisBrowserRow />}
 
         {!detail && page === 'feedback' &&
           (token ? (
@@ -2352,7 +2322,7 @@ export function AdminPage() {
             )}
 
             {data.recordedUsage && <Panel title="Recorded time and sessions" sub={["non-bounced browsers"]}>
-              <RecordedUsagePanel data={data.recordedUsage[tool]} />
+              <RecordedUsagePanel data={data.recordedUsage[tool]} tools={tool === 'all' ? data.recordedUsage : undefined} active={data.attentionUsage?.[tool]} activeTools={tool === 'all' ? data.attentionUsage : undefined} />
             </Panel>}
 
             <Panel

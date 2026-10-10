@@ -51,7 +51,7 @@ function percentage(nodes: FunnelNode[], name: string, numerator: number, denomi
 
 function percentageDescription(nodes: FunnelNode[]): string {
   return nodes.filter((n) => n.percentage).map((n) =>
-    `${n.name}: ${n.percentage!.value === null ? 'unavailable' : `${Number(n.percentage!.value.toFixed(1))}%`} of ${n.percentage!.basis}`,
+    `${n.name}: ${n.percentage!.value === null ? 'unavailable' : `${Math.round(n.percentage!.value)}%`} of ${n.percentage!.basis}`,
   ).join('; ');
 }
 

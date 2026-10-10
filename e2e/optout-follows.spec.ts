@@ -131,35 +131,6 @@ test.describe('the owner opt-out follows across pages', () => {
     expect(evidence.fills).toEqual({ 'fire|1': 4 });
   });
 
-  // The admin dashboard is where the owner looks for their own sessions, so it
-  // shows whether this browser is counted and flips the flag in place.
-  test('the admin dashboard shows this browser\'s flag and flips it', async ({ page }, testInfo) => {
-    const seen = await countBeacons(page);
-    await page.goto('/?notme');
-    await page.waitForTimeout(800);
-
-    await page.goto('/?admin&demo');
-    const row = page.getByTestId('admin-this-browser');
-    await expect(row).toContainText('This browser: not counted');
-    await row.getByRole('button', { name: 'Count this browser' }).click();
-    await expect(row).toContainText('This browser: counted');
-    seen.length = 0;
-    await visitEveryTool(page);
-    const counted = [...new Set(seen)].sort();
-
-    await page.goto('/?admin&demo');
-    await row.getByRole('button', { name: 'Stop counting' }).click();
-    await expect(row).toContainText('This browser: not counted');
-    seen.length = 0;
-    await visitEveryTool(page);
-    const evidence = { counted, afterStop: [...new Set(seen)].sort(), flag: await page.evaluate(() => localStorage.getItem('p151-opt-out')) };
-    await testInfo.attach('admin-toggle.json', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
-
-    expect(evidence.counted).toEqual(['event', 'favorites', 'league', 'submit']);
-    expect(evidence.afterStop).toEqual([]);
-    expect(evidence.flag).toBe('1');
-  });
-
   // There is no public page and nothing in the public UI: the flag is the
   // owner's switch, and a discoverable page would invite anyone to erase
   // themselves from the analytics.

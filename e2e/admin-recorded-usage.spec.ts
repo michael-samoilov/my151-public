@@ -20,6 +20,7 @@ test('recorded usage switches metrics and preserves separate tool samples @viewp
   });
   await page.goto('/?admin');
   const panel = page.locator('section').filter({has:page.getByRole('heading',{name:'Recorded time and sessions'})});
+  await panel.getByRole('button',{name:'Legacy spans',exact:true}).click();
   await expect(panel.getByText('22.83 recorded hours',{exact:true})).toBeVisible();
   await expect(panel.getByText('Average 342.5',{exact:true})).toBeVisible();
   await expect(panel.getByText('Median 2',{exact:true})).toBeVisible();

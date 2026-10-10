@@ -1,3 +1,4 @@
+import {ATTENTION_GAP_MS,type AttentionRecording} from './_attention.js';
 import type {RecordingFields} from './_sessionize.js';
 import {parseFavoriteRecord, type FavoriteRecord} from './_favoriteRecord.js';
 import {favoritePicks, favoriteSummary, favoriteUsageFunnel, favoriteUser} from './_favoriteAggregate.js';
@@ -480,6 +481,7 @@ export interface RecordedUsageSlice {
 }
 export type RecordedUsage = Record<'all' | 'dex' | 'league' | 'favorites', RecordedUsageSlice>;
 type RecordedRow = {
+  attention?: AttentionRecording;
   cid: string; firstTs: number; lastTs: number; sessions?: number; sessionMs?: number[];
   sessionLog?: {ts: number; endTs?: number; ids?: number[]}[];
   latestIds?: number[]; everIds?: number[]; maxDepth?: number; maxSeats?: number; maxCards?: number; maxFilled?: number;
@@ -487,7 +489,7 @@ type RecordedRow = {
 type RecordedSpan = {start: number; end: number; timed: boolean};
 
 /** Dated retained spans only. Neither lifetime counters nor first/last visits supply missing time. */
-export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', readonly RecordedRow[]>, start: number | null, now: number): RecordedUsage {
+export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', readonly RecordedRow[]>, start: number | null, now: number, source: 'legacy' | 'active' = 'legacy'): RecordedUsage {
   const groups = {all: new Map<string, RecordedSpan[]>(), dex: new Map<string, RecordedSpan[]>(), league: new Map<string, RecordedSpan[]>(), favorites: new Map<string, RecordedSpan[]>()};
   const incomplete = {all: new Set<string>(), dex: new Set<string>(), league: new Set<string>(), favorites: new Set<string>()};
   for (const tool of ['dex', 'league', 'favorites'] as const) {
@@ -501,7 +503,20 @@ export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', reado
       const durations = r.sessionMs ?? [];
       const offset = durations.length - log.length;
       const spans: RecordedSpan[] = [];
-      log.forEach((entry, index) => {
+      if(source==='active'){
+        if(!r.attention){
+          if(r.firstTs<=now&&(start===null||r.lastTs>start))for(const key of [tool,'all'] as const)groups[key].set(cid,groups[key].get(cid)??[]);
+          continue;
+        }
+        for(const entry of r.attention.segments){
+          if(entry.start>now||entry.end<(start??-Infinity)||entry.end===start)continue;
+          spans.push({start:Math.max(entry.start,start??-Infinity),end:Math.min(entry.end,now),timed:true});
+        }
+        if(!spans.length){
+          if(r.firstTs<=now&&(start===null||r.lastTs>start))for(const key of [tool,'all'] as const)groups[key].set(cid,groups[key].get(cid)??[]);
+          continue;
+        }
+      } else log.forEach((entry, index) => {
         if (!Number.isFinite(entry.ts)) return;
         const duration = durations[index + offset];
         const timed = tool === 'favorites' ? Number.isFinite(entry.endTs) && entry.endTs! >= entry.ts
@@ -514,7 +529,7 @@ export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', reado
       if (spans.length === 0 && (r.firstTs > now || (start !== null && r.lastTs <= start))) continue;
       for (const key of [tool, 'all'] as const) {
         groups[key].set(cid, [...(groups[key].get(cid) ?? []), ...spans]);
-        if ((r.sessions ?? log.length) > log.length || log.length === 0 || (tool !== 'favorites' && durations.length !== log.length) || spans.some(s => !s.timed)) incomplete[key].add(cid);
+        if(source==='active' ? r.attention?.retiredThrough!==undefined && (start===null||start<=r.attention.retiredThrough) : (r.sessions ?? log.length) > log.length || log.length === 0 || (tool !== 'favorites' && durations.length !== log.length) || spans.some(s => !s.timed)) incomplete[key].add(cid);
       }
     }
   }
@@ -534,7 +549,7 @@ export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', reado
       if (unique.length) {
         let visits = 0, end = -Infinity;
         for (const s of unique) {
-          if (s.start > end + 30 * 60_000) visits++;
+          if (source==='active' ? s.start-end>=ATTENTION_GAP_MS : s.start > end + 30 * 60_000) visits++;
           end = Math.max(end, s.end);
         }
         sessions.push(visits);
@@ -910,6 +925,7 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     range,
     rangeStart: start,
     recordedUsage: recordedUsage({dex: records, league: leagueRecords, favorites: favoriteRecords}, start, now),
+    attentionUsage: recordedUsage({dex: records, league: leagueRecords, favorites: favoriteRecords}, start, now, 'active'),
     totalUsers,
     funnel: { users: dexIn.length, completed, exported },
     funnelEvents,

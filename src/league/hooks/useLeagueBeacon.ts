@@ -1,3 +1,4 @@
+import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useState } from 'react';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
@@ -62,6 +63,7 @@ function postLeagueBeacon(
     ...(switched ? { switched } : {}),
     ref: externalReferrerHost() || undefined,
     ts: capturedAt,
+    attention: attentionPayload('league'),
     notme: isOptedOut() || undefined,
     events: events.length ? events : undefined,
   });
@@ -97,6 +99,12 @@ export function useLeagueBeacon() {
       void postLeagueBeacon('progress', summary, shape, undefined, undefined, capturedAt);
     });
   }, [name, cards, debouncer]);
+
+  useEffect(()=>subscribeAttention('league',()=>{
+    const {name,cards}=useLeagueStore.getState();
+    const summary=summarizeLeague(name,cards);
+    if(summary.seats)debouncer.schedule(()=>{void postLeagueBeacon('progress',summary,describeLeague(cards));});
+  }),[debouncer]);
 
   useEffect(() => {
     const flushIfHidden = () => {
