@@ -1,3 +1,4 @@
+import {parseAttentionRecording,type AttentionRecording} from './_attention.js';
 /**
  * Session targeting for out-of-order beacons.
  *
@@ -154,6 +155,7 @@ export interface RecordingCheckpoint {
   retiredThrough?: number;
 }
 export interface RecordingFields {
+  attention?: AttentionRecording;
   recording?: RecordingCheckpoint;
   activeDays?: number[];
   activityCoverageFrom?: number;
@@ -167,6 +169,8 @@ export function parseRecordingFields(raw: unknown): RecordingFields {
   if (!raw || typeof raw !== 'object') return {};
   const r = raw as Record<string, unknown>;
   const out: RecordingFields = {};
+  const attention=parseAttentionRecording(r.attention);
+  if(attention)out.attention=attention;
   const checkpoint = r.recording as Partial<RecordingCheckpoint> | undefined;
   if (checkpoint?.v === 1 && stamp(checkpoint.coverageFrom) && stamp(checkpoint.asOf)
     && stamp(checkpoint.checkpointFrom) && checkpoint.checkpointFrom >= checkpoint.coverageFrom && checkpoint.asOf >= checkpoint.checkpointFrom && typeof checkpoint.totalMs === 'number'
@@ -234,6 +238,7 @@ export function endStampedSpans(record: {sessionLog?: {ts:number}[];sessionMs?: 
 
 export function sanitizeRecordingFields<T extends RecordingFields>(record: T): T {
   const copy = {...record};
+  delete copy.attention;
   delete copy.recording;
   delete copy.activeDays;
   delete copy.activityCoverageFrom;

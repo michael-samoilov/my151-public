@@ -1,3 +1,4 @@
+import {mergeAttention,type AttentionPayload} from './_attention.js';
 /**
  * The gym leader maker's per-browser record, and the pure merge that builds
  * it from one beacon. Mirrors the dex builder's ClientRecord (see _shared.ts)
@@ -350,6 +351,7 @@ export function parseCards(v: unknown): LeagueCardShape[] | undefined {
 }
 
 export interface LeagueBeaconInput {
+  attention?: AttentionPayload;
   receivedAt?: number;
   cid: string;
   kind: LeagueBeaconKind;
@@ -409,6 +411,8 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
         exportsLeague: 0,
       };
 
+  const attention=mergeAttention(existing?.attention,b.attention,b.receivedAt ?? b.now);
+  if(attention)rec.attention=attention;
   rec.submits += 1;
   rec.maxCards = Math.max(rec.maxCards, b.summary.cards);
   rec.maxSeats = Math.max(rec.maxSeats, b.summary.seats);

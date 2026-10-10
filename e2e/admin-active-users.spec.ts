@@ -1,6 +1,20 @@
 import { expect, test } from '@playwright/test';
 import {buildDashboard} from '../api/_dashboard';
 
+function activityPayload() {
+    const now = Date.now(), day = 86_400_000;
+    const today = Math.floor(now / day) * day;
+    const clients = Object.fromEntries(Array.from({length:32}, (_,i) => {
+      const cid = `activity-e2e-${i}`;
+      const activeDays = Array.from({length:90}, (_,d) => today - (89-d)*day)
+        .filter((_,d) => i < 8 + Math.floor(d/4));
+      return [cid, JSON.stringify({cid, firstTs:today-89*day, lastTs:now, submits:2, sessions:1,
+        sessionMs:[60_000,60_000], sessionLog:[{ts:activeDays[0] ?? now,ids:[1]},{ts:now,ids:[1]}], activeDays, activityCoverageFrom:today-89*day,
+        maxDepth:1, everIds:[1], latestIds:[1], completed:false, exported:false})];
+    }));
+    return buildDashboard({clients,archived:[],funnel:{},funnelWindow:null,leagueClients:{}},{range:'all'},now);
+}
+
 function activeUsers(page: import('@playwright/test').Page) {
   return page.locator('section', { has: page.getByRole('heading', { name: 'Active users' }) });
 }
@@ -65,17 +79,7 @@ test.describe('admin active users range', () => {
   });
 
   test('monthly legend toggles and implied growth follows the selected recorded range @viewport', async ({ page }, testInfo) => {
-    const now = Date.now(), day = 86_400_000;
-    const today = Math.floor(now / day) * day;
-    const clients = Object.fromEntries(Array.from({length:32}, (_,i) => {
-      const cid = `activity-e2e-${i}`;
-      const activeDays = Array.from({length:90}, (_,d) => today - (89-d)*day)
-        .filter((_,d) => i < 8 + Math.floor(d/4));
-      return [cid, JSON.stringify({cid, firstTs:today-89*day, lastTs:now, submits:2, sessions:1,
-        sessionMs:[60_000,60_000], sessionLog:[{ts:activeDays[0] ?? now,ids:[1]},{ts:now,ids:[1]}], activeDays, activityCoverageFrom:today-89*day,
-        maxDepth:1, everIds:[1], latestIds:[1], completed:false, exported:false})];
-    }));
-    const payload = buildDashboard({clients,archived:[],funnel:{},funnelWindow:null,leagueClients:{}},{range:'all'},now);
+    const payload = activityPayload();
     await page.route('**/api/submissions?**', route => route.fulfill({json:payload}));
     await page.evaluate(() => localStorage.setItem('p151-admin-token','e2e'));
     await page.goto('/?admin');
@@ -110,6 +114,53 @@ test.describe('admin active users range', () => {
     await expect(panel.getByRole('img')).toBeVisible();
     await expect(panel.getByRole('img')).not.toHaveAttribute('aria-label', /trailing|label implied growth/);
     await testInfo.attach('all-series-hidden', { body: await panel.screenshot(), contentType: 'image/png' });
+  });
+
+  test('window labels stay on canvas after every toggle order @viewport', async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+      const original = CanvasRenderingContext2D.prototype.fillText;
+      const state = window as unknown as { paintedLabels: string[] };
+      state.paintedLabels = [];
+      CanvasRenderingContext2D.prototype.fillText = function(text, x, y, maxWidth) {
+        if (this.canvas.closest('[role="img"]')?.getAttribute('aria-label')?.startsWith('Daily active users')) {
+          const point = this.getTransform().transformPoint({x, y});
+          if (point.x >= 0 && point.x < this.canvas.width && point.y >= 0 && point.y < this.canvas.height) {
+            state.paintedLabels.push(text);
+          }
+        }
+        return maxWidth === undefined ? original.call(this, text, x, y) : original.call(this, text, x, y, maxWidth);
+      };
+    });
+    await page.route('**/api/submissions?**', route => route.fulfill({json:activityPayload()}));
+    await page.evaluate(() => localStorage.setItem('p151-admin-token','e2e'));
+    await page.goto('/?admin');
+    const panel = activeUsers(page);
+    const growth = await panel.getByLabel('Implied growth over selected range').textContent();
+    const expected = {
+      daily: ['24h'],
+      weekly: ['7d', `${growth!.match(/WoW ([^ ]+)/)![1]} WoW`],
+      monthly: ['30d', `${growth!.match(/MoM ([^ ]+)/)![1]} MoM`],
+    };
+    const names = ['daily', 'weekly', 'monthly'] as const;
+    const shown = new Set<string>(names);
+    const orders = [names, ['monthly','weekly','daily'], ['weekly','daily','monthly'],
+      ['daily','monthly','weekly'], ['monthly','daily','weekly'], ['weekly','monthly','daily']];
+    for (const order of orders) {
+      for (const name of [...order, ...order]) {
+        await page.evaluate(() => (window as unknown as {paintedLabels:string[]}).paintedLabels = []);
+        await panel.getByRole('button', {name, exact:true}).click();
+        if (shown.has(name)) shown.delete(name); else shown.add(name);
+        await expect.poll(() => page.evaluate(() => (window as unknown as {paintedLabels:string[]}).paintedLabels.length)).toBeGreaterThan(0);
+        for (const kind of names) {
+          for (const label of expected[kind]) {
+            const paints = () => page.evaluate(() => (window as unknown as {paintedLabels:string[]}).paintedLabels);
+            if (shown.has(kind)) await expect.poll(paints).toContain(label);
+            else expect(await paints()).not.toContain(label);
+          }
+        }
+      }
+    }
+    await testInfo.attach('restored-window-labels', {body:await panel.screenshot(), contentType:'image/png'});
   });
 
   test('7d plots one daily series with weekday axis labels and hides the weekly series', async ({ page }) => {

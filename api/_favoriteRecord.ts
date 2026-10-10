@@ -1,3 +1,4 @@
+import {mergeAttention,type AttentionPayload} from './_attention.js';
 import {checkpointRecording, retiredCapture, sanitizeRecordingFields, type RecordingFields} from './_sessionize.js';
 /** Versioned Picker snapshots and retry-safe per-browser history. No Redis reads. */
 import cellData from './_favoriteCells.json' with { type: 'json' };
@@ -56,6 +57,7 @@ export interface FavoriteRecord extends RecordingFields {
   firstReferrer?: string;
 }
 export interface FavoriteBeaconInput {
+  attention?: AttentionPayload;
   receivedAt?: number;
   cid: string;
   id: string;
@@ -131,6 +133,8 @@ export function mergeFavoriteRecord(existing: FavoriteRecord | null, input: Favo
     submits:0,sessions:0,curSessionStart:now,maxSessionMs:0,sessionMs:[],sessionLog:[],latest:snapshot,maxFilled:0,
     exportsFull:0,exportsSimplified:0,seenIds:[],
   };
+  const attention=mergeAttention(existing?.attention,input.attention,input.receivedAt ?? input.now);
+  if(attention)rec.attention=attention;
   rec.seenIds = [...rec.seenIds,input.id].slice(-256);
   rec.submits++;
   const log = rec.sessionLog;

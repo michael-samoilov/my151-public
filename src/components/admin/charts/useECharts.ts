@@ -56,14 +56,16 @@ export function cssVar(el: HTMLElement | null, name: string, fallback = ''): str
 }
 
 /**
- * The one scrub every admin line chart shares. The x positions are evenly
- * spaced across the plot: index 0 at its left edge, `count - 1` at its right.
+ * The one scrub every admin line chart shares. Category positions are evenly
+ * spaced; numeric charts can provide their actual axis coordinates.
  * A hover shows the readout; a press adds the vertical line. Both snap to the
  * nearest x position, so a drag steps from point to point and never sits
  * between two dates. Release or leave hides them.
  */
 export interface ChartScrub {
   count: number;
+  /** Sorted axis coordinates for unevenly spaced datapoints, such as logarithmic durations. */
+  xValues?: number[];
   /** HTML parts of the readout for one x position. The readout joins them
    *  with " · " and wraps only between parts when the chart is too narrow. */
   label: (index: number) => string[];
@@ -200,8 +202,14 @@ export function useECharts(
             height: Math.max(r.height - 2, 1),
           };
         const pinned = clampToRect(clientX - r.left, clientY - r.top, plot);
-        const index = categoryIndexAtX(pinned.x, plot, scrub.count - 1);
-        const x = categoryX(index, plot, scrub.count - 1);
+        let index = categoryIndexAtX(pinned.x, plot, scrub.count - 1);
+        let x = categoryX(index, plot, scrub.count - 1);
+        if (scrub.xValues?.length) {
+          const positions = scrub.xValues.map(value => Number(chart.convertToPixel({xAxisIndex:0}, value)));
+          index = positions.reduce((best, value, i) =>
+            Math.abs(value-pinned.x) < Math.abs(positions[best]-pinned.x) ? i : best, 0);
+          x = positions[index];
+        }
         readout.innerHTML = scrub
           .label(index)
           .map((part) => `<span style="white-space:nowrap">${part}</span>`)
