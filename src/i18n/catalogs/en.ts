@@ -50,10 +50,17 @@ export const enUi = {
   'analytics.dex.nationalShort': 'National',
   'analytics.dex.yours': 'Yours',
   'analytics.empty': 'Add Pokémon to your Pokédex to see analytics',
+  'analytics.emptyTitle': 'No Pokémon assigned yet',
   'analytics.evoLevel.heading': 'Evolution Level Distribution',
   'analytics.excludeSpecial': 'No Starters/Legendaries',
   'analytics.gen.heading': 'Generation Origin',
+  // A regional dex's toggle: only the Pokémon that dex's generation introduced.
+  'analytics.genOnly': 'Gen {gen} only',
   'analytics.noMatchup': 'No matchup data available.',
+  // Stands in for an average when there is nothing to average.
+  'analytics.notAvailable': 'N/A',
+  // The other side of the genOnly toggle: the dex's full list.
+  'analytics.regionalDex': 'Regional Dex',
   'analytics.shape.heading': 'Body Shape',
   'analytics.tip': 'Tip: Press chart bars to see which Pokémon are driving trends in your dex',
   'analytics.type.descMatchup': 'Avg # of type advantage 2x’s (offensive and defensive) vs. all regional Pokémon, & deviation from national dex.',
@@ -73,6 +80,8 @@ export const enUi = {
   'browser.chip.shape': 'Shape',
   'browser.chip.stages': 'Stages',
   'browser.chip.type': 'Type',
+  // Followed by the dex count, as in "My dex 37/151".
+  'browser.myDex': 'My dex',
   'browser.myFavorites': 'My favorites',
   'browser.clear': 'Clear',
   // The spoken name of the icon-only X that closes the desktop pane.
@@ -109,6 +118,10 @@ export const enUi = {
   'browser.modeHint.any': 'show any match',
   'browser.results_one': '{count} found',
   'browser.results_other': '{count} found',
+  // The team-scope chip's fallback name, when the host gives it none.
+  'browser.scope': 'Scope',
+  // The spoken name of the X that empties the search field.
+  'browser.search.clear': 'Clear search',
   'browser.search.placeholder': 'Search by name or number...',
   'browser.sheet.archetypes': 'Archetypes',
   'browser.sheet.classification': 'Classification',
@@ -228,6 +241,8 @@ export const enUi = {
   'leagueExport.teams': 'Teams',
   'dex.national': 'National Dex',
   'drilldown.bstTitle': 'BST {from}–{to}',
+  // The short label of a neighboring level range, beside the title.
+  'drilldown.evoLevelLabel': 'Lv {from}–{to}',
   'drilldown.evoLevelTitle': 'Evolves at Lv {from}–{to}',
   'drilldown.generationTitle': 'Generation {gen}',
   'drilldown.lineLength.1': 'Single',
@@ -236,11 +251,20 @@ export const enUi = {
   'drilldown.lineLengthTitle': '{length}-Stage Lines',
   'drilldown.matchupSubtitle': '{count} Pokémon with non-neutral matchups',
   'drilldown.matchupTitle': '{type} Matchup',
+  // The button that removes the lines marked in a drill-down.
+  'drilldown.remove_one': 'Remove {count} Pokemon',
+  'drilldown.remove_other': 'Remove {count} Pokemon',
   'drilldown.shapeTitle': '{shape} Shape',
   'drilldown.stageAllTitle': 'All Stage {stage} Pokémon',
   'drilldown.stageTitle': '{length}-Stage / Stage {stage}',
   'drilldown.subtitle_one': '{pokemon} Pokémon across {count} line',
   'drilldown.subtitle_other': '{pokemon} Pokémon across {count} lines',
+  // A type matchup drill-down's group headings. Each type advantage doubles
+  // the damage, so +2 means four times. The sign is part of the message.
+  'drilldown.tier.gain_one': '+{count} doubling of advantage',
+  'drilldown.tier.gain_other': '+{count} doublings of advantage',
+  'drilldown.tier.loss_one': '−{count} doubling of advantage',
+  'drilldown.tier.loss_other': '−{count} doublings of advantage',
   'drilldown.titleWithDex': '{title} — {dex}',
   'drilldown.typeTitle': '{type} Type',
   'error.body': 'Something in the page failed. Reloading usually fixes it — and a report tells us what broke.',
@@ -509,6 +533,10 @@ export const enUi = {
   'sort.regional.desc': 'Places each evolution line roughly as deep into your grid as its earliest member appeared in its home dex',
   'sort.type': 'Type',
   'sort.type.desc': 'Groups by each line\'s primary type, then by national dex number within each type.',
+  // The first column's line count, under its name. The other columns show
+  // the bare number.
+  'stage.columnLines_one': '{count} line',
+  'stage.columnLines_other': '{count} lines',
   'stage.columnTotal_one': '{count} Pokémon',
   'stage.columnTotal_other': '{count} Pokémon',
   'stage.desc': 'Pokémon grouped by evolution line length. Each bar shows the stage breakdown within that group.',

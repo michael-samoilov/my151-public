@@ -15,7 +15,7 @@ import { TYPE_NAMES, type Pokemon, type TypeName, type ShapeName, type ColorName
 import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { COLOR_ORDER, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER } from '@/data/classifications';
-import { archetypeName as archetypeLabel, categoryName as categoryLabel, colorLabel, eggGroupLabel, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
+import { archetypeName as archetypeLabel, archetypeSubgroupLabel, categoryColumnLabel, categoryName as categoryLabel, categorySubgroupLabel, colorLabel, eggGroupLabel, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Search, X, ChevronDown, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -468,12 +468,12 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     const inScope = [...ids].filter((id) => scopeFilterLines.some((line) => line.includes(id)));
     if (inScope.length === 0) return [];
     return [{
-      label: scopeFilterLabel ?? 'Scope',
+      label: scopeFilterLabel ?? t('browser.scope'),
       pokemonIds: inScope,
       order: 'evoLine',
       lines: scopeFilterLines,
     }];
-  }, [scopedToLines, scopeFilterLines, scopeFilterLabel]);
+  }, [scopedToLines, scopeFilterLines, scopeFilterLabel, t]);
 
   /**
    * The dex, in the order the user built it: one subgroup per build section,
@@ -494,8 +494,14 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
 
   // Subgroups: custom if archetype/category defines them, otherwise auto-generate by generation
   const effectiveSubgroups = useMemo((): BrowserSubgroup[] => {
-    if (gridArchetypeDef?.subgroups) return gridArchetypeDef.subgroups;
-    if (gridCategoryDef?.subgroups) return gridCategoryDef.subgroups;
+    // Labels come from the catalog by position; the data module's own
+    // `label` is the English source the catalog is generated from.
+    if (gridArchetypeDef?.subgroups) {
+      return gridArchetypeDef.subgroups.map((sub, i) => ({ ...sub, label: archetypeSubgroupLabel(gridArchetypeDef.id, i) }));
+    }
+    if (gridCategoryDef?.subgroups) {
+      return gridCategoryDef.subgroups.map((sub, i) => ({ ...sub, label: categorySubgroupLabel(gridCategoryDef.id, i) }));
+    }
 
     // For archetypes: group archetype pokemonIds by generation
     // For default/category views: group matched member IDs by generation
@@ -997,6 +1003,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               <button type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                aria-label={t('browser.search.clear')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1056,13 +1063,13 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             scopeFilter ? (
               scopeFilterLocked ? (
                 <LockedFilterChip
-                  label={scopeFilterLabel ?? 'Scope'}
+                  label={scopeFilterLabel ?? t('browser.scope')}
                   hint={scopeFilterLockedHint ?? ''}
                   className="bg-foreground text-background"
                 />
               ) : (
                 <FilterChip
-                  label={scopeFilterLabel ?? 'Scope'}
+                  label={scopeFilterLabel ?? t('browser.scope')}
                   onDismiss={() => setScopeFilter(false)}
                   onClick={() => setScopeFilter(false)}
                   className="bg-foreground text-background"
@@ -1074,7 +1081,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                 data-filter-chip="scope"
                 className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
               >
-                {scopeFilterLabel ?? 'Scope'}
+                {scopeFilterLabel ?? t('browser.scope')}
               </button>
             )
           )}
@@ -1286,8 +1293,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         <div className="border-b px-3 py-2 bg-muted/30 max-h-[40vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold">{sheetTitle(openSheet)}</span>
-            <button type="button" onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
-              <X size={16} />
+            <button type="button" onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label={t('browser.close')}>
+              <X size={16} aria-hidden />
             </button>
           </div>
           {filterContent}
@@ -1305,10 +1312,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             <div className="sticky top-0 z-30 bg-background border-b">
               <div className="grid grid-cols-2 gap-x-1">
                 <div className="w-full text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW3, marginInline: gridMaxW3 ? 'auto' : undefined }}>
-                  {gridCategoryDef.dualColumns.left.label}
+                  {categoryColumnLabel(gridCategoryDef.id, 'left')}
                 </div>
                 <div className="w-full text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW3, marginInline: gridMaxW3 ? 'auto' : undefined }}>
-                  {gridCategoryDef.dualColumns.right.label}
+                  {categoryColumnLabel(gridCategoryDef.id, 'right')}
                 </div>
               </div>
             </div>
@@ -1506,8 +1513,8 @@ function SheetOverlay({ onClose, openSheet, children, footer, onHeight }: {
           <span className="text-sm font-semibold">
             {sheetTitle(openSheet as Exclude<FilterSheet, null>)}
           </span>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer">
-            <X size={16} />
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label={t('browser.close')}>
+            <X size={16} aria-hidden />
           </button>
         </div>
 
@@ -1562,9 +1569,10 @@ function FavoriteLabel({ count }: { count: number }) {
  * the filled one. Same shape as the dex builder's own header counter.
  */
 function MyDexLabel({ count }: { count: number }) {
+  const t = useT();
   return (
     <span className="whitespace-nowrap">
-      My dex{' '}
+      {t('browser.myDex')}{' '}
       <span className="font-bold tabular-nums text-primary">{count}</span>
       <span className="tabular-nums">/{DEX_TOTAL}</span>
     </span>
