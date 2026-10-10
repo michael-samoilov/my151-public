@@ -190,10 +190,10 @@ function percentageLabelOffsets(el: HTMLDivElement, nodes: SankeyNode[], links: 
       offsets.set(exported.name, bottom + fontSize + 4 - (bar.y + bar.dy / 2));
       const last = Math.max(...nodes.map((n) => nodeDepth(n.name, links)));
       const privateNodes = nodes.filter((n) => n.role === 'priv' && nodeDepth(n.name, links) === last - 1);
-      const start = Math.max(...privateNodes.map((n) => {
+      const start = (privateNodes.length ? Math.max(...privateNodes.map((n) => {
         const layout = graph.getNodeById(n.name).getLayout();
         return layout.y + layout.dy / 2;
-      })) + fontSize + 4;
+      })) : bar.y) + fontSize + 4;
       const terminal = nodes.filter((n) => n.percentage && nodeDepth(n.name, links) === last).map((n) => {
         const layout = graph.getNodeById(n.name).getLayout();
         return { name: n.name, center: layout.y + layout.dy / 2 };
