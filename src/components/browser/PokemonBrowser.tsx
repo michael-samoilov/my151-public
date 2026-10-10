@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
-import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup } from '@/hooks/usePokemonData';
+import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup, type PokemonDataSource } from '@/hooks/usePokemonData';
 import { mergeBranchesByChain } from './chainMerge';
 import { useBrowserStore, useFavoriteBrowserStore } from './browserStore';
 import { ARCHETYPES } from '@/data/archetypes';
@@ -95,7 +95,8 @@ interface SubgroupGridGroup {
   matchedIds: Set<number>;
 }
 
-export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows = false }: {
+export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows = false, dataSource }: {
+  dataSource?: PokemonDataSource;
   /** 'stage' is the dex builder's flow (mobile taps stage, the FAB commits).
    *  'instant' is the league's: a tap places the line and closes the sheet. */
   pickMode?: 'stage' | 'instant';
@@ -403,6 +404,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds, favoritesFilter, favoriteIds]);
 
   const filterOptions = useMemo(() => ({
+    dataSource,
     search: searchInput,
     category: activeCategory,
     archetype: activeArchetype,
@@ -414,9 +416,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     eggGroups: eggGroupFilter,
     evoLineSize: evoLineSizeFilter,
     restrictToIds: restrictToIds,
-  }), [searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter, restrictToIds]);
+  }), [dataSource, searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter, restrictToIds]);
   const deferredOptions = useDeferredValue(filterOptions);
   const groups = useFilteredPokemonGrouped(deferredOptions);
+  const lookupPokemon = deferredOptions.dataSource?.getPokemonById ?? getPokemonById;
 
   const totalCount = useMemo(() => groups.reduce((sum, g) => sum + g.members.length, 0), [groups]);
 
@@ -513,7 +516,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
 
     const genMap = new Map<number, number[]>();
     for (const id of sourceIds) {
-      const p = getPokemonById(id);
+      const p = lookupPokemon(id);
       if (!p) continue;
       if (!genMap.has(p.generation)) genMap.set(p.generation, []);
       genMap.get(p.generation)!.push(id);
@@ -524,7 +527,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: ids }));
     // gridCategoryDef is read for its `.subgroups`; it's a stable .find() over
     // the static CATEGORIES array, so it only changes when the category does.
-  }, [gridArchetypeDef, gridCategoryDef, groups, scopeSubgroup, sectionSubgroups, t]);
+  }, [gridArchetypeDef, gridCategoryDef, groups, scopeSubgroup, sectionSubgroups, lookupPokemon, t]);
 
   const toggleEvoSize = (size: number) => {
     if (!evoLineSizeFilter) {
@@ -625,13 +628,17 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
 
     for (const sub of source) {
       const subIdSet = new Set(sub.pokemonIds);
+      const inheritedMemberId = !isSearching && !sub.lines && (gridArchetypeDef || gridCategoryDef?.subgroups || dualCols)
+        ? deferredOptions.dataSource?.archetypeMemberId
+        : undefined;
+      const matchesMember = (ids: Set<number>, id: number) => ids.has(id) || ids.has(inheritedMemberId?.(id) ?? id);
 
       if (sub.lines) {
         // One card per seated line, in whole-line order. Nothing is derived
         // from the chain here, so a split chain contributes only the branch
         // that was seated and no Pokémon appears twice.
         const drawn = sub.lines
-          .map((line) => line.map((id) => getPokemonById(id)).filter((p): p is Pokemon => !!p))
+          .map((line) => line.map((id) => lookupPokemon(id)).filter((p): p is Pokemon => !!p))
           .filter((members) => members.length > 0 && members.some((m) => subIdSet.has(m.id)))
           .map((members) => {
             let gen = Infinity;
@@ -652,7 +659,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         continue;
       }
 
-      let matching = groups.filter(g => g.members.some(m => subIdSet.has(m.id)));
+      let matching = groups.filter(g => g.members.some(m => matchesMember(subIdSet, m.id)));
       if (matching.length === 0) continue;
       // A standalone tile picks one Pokémon, so a Pokémon may only appear
       // once — not once per branch, and not once per heading.
@@ -666,7 +673,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         // Archetype view: preserve curated pokemonIds order.
         const orderIdx = new Map<EvolutionGroup, number>();
         for (const g of matching) {
-          orderIdx.set(g, sub.pokemonIds.findIndex(id => g.members.some(m => m.id === id)));
+          orderIdx.set(g, sub.pokemonIds.findIndex(id => g.members.some(m => m.id === id || inheritedMemberId?.(m.id) === id)));
         }
         matching.sort((a, b) => orderIdx.get(a)! - orderIdx.get(b)!);
       } else if (sub.order === 'evoLine') {
@@ -691,7 +698,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         for (const g of matching) {
           let min = Infinity;
           for (const m of g.members) {
-            if (subIdSet.has(m.id) && m.id < min) min = m.id;
+            if (matchesMember(subIdSet, m.id) && m.id < min) min = m.id;
           }
           minId.set(g, min);
         }
@@ -701,7 +708,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       const mapGroup = (group: EvolutionGroup): SubgroupGridGroup => ({
         key: `${sub.label}-${group.chainId}`,
         members: group.members,
-        matchedIds: new Set(group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)),
+        matchedIds: new Set(group.members.filter(m => matchesMember(subIdSet, m.id)).map(m => m.id)),
       });
 
       if (dualCols) {
@@ -710,8 +717,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         models.push({
           label: sub.label,
           dualCols,
-          leftGroups: matching.filter(g => g.members.some(m => leftIdSet.has(m.id))).map(mapGroup),
-          rightGroups: matching.filter(g => g.members.some(m => rightIdSet.has(m.id))).map(mapGroup),
+          leftGroups: matching.filter(g => g.members.some(m => matchesMember(leftIdSet, m.id))).map(mapGroup),
+          rightGroups: matching.filter(g => g.members.some(m => matchesMember(rightIdSet, m.id))).map(mapGroup),
         });
       } else {
         models.push({
@@ -723,7 +730,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       }
     }
     return models;
-  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides, standaloneTiles]);
+  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides, standaloneTiles, lookupPokemon, deferredOptions.dataSource]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   /**
    * The count beside the search box has to agree with what is drawn.

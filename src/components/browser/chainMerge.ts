@@ -17,9 +17,7 @@ import type { EvolutionGroup } from '@/hooks/usePokemonData';
 export function mergeBranchesByChain(groups: EvolutionGroup[]): EvolutionGroup[] {
   const byChain = new Map<number, EvolutionGroup>();
   for (const group of groups) {
-    // `chainId` is `evolutionChainId * 10000 + leafId`; the chain is the
-    // quotient.
-    const chain = Math.floor(group.chainId / 10000);
+    const chain = group.members[0].evolutionChainId;
     const merged = byChain.get(chain);
     if (!merged) {
       byChain.set(chain, {

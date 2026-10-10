@@ -347,7 +347,16 @@ function getAllEvolutionLines(pokemonId: number): Pokemon[][] {
   return suffixes.map(suffix => [...prefix, ...suffix]);
 }
 
-interface UseFilteredPokemonOptions {
+export interface PokemonDataSource {
+  readonly pokemon: readonly Pokemon[];
+  getPokemonById(id: number): Pokemon | undefined;
+  getAllEvolutionLines(id: number): Pokemon[][];
+  includeEvolutionItemForms?: boolean;
+  archetypeMemberId?(id: number): number;
+}
+
+export interface UseFilteredPokemonOptions {
+  dataSource?: PokemonDataSource;
   search?: string;
   category?: string | null;
   archetype?: string | null;
@@ -365,6 +374,7 @@ interface UseFilteredPokemonOptions {
 }
 
 function useFilteredPokemon({
+  dataSource,
   search = '',
   category = null,
   archetype = null,
@@ -405,7 +415,7 @@ function useFilteredPokemon({
     // Read so the dependency is real rather than decorative: the memo's output
     // depends on the name catalog, which this counter stands in for.
     void namesVersion;
-    let filtered = pokemonList;
+    let filtered = dataSource ? [...dataSource.pokemon] : pokemonList;
 
     // When searching by name/number, ignore all other filters — the user
     // knows what they want and filters would only get in the way.
@@ -432,7 +442,7 @@ function useFilteredPokemon({
         const archetypeDef = ARCHETYPES.find(a => a.id === archetype);
         if (archetypeDef) {
           const idSet = new Set(archetypeDef.pokemonIds);
-          filtered = filtered.filter(p => idSet.has(p.id));
+          filtered = filtered.filter(p => idSet.has(p.id) || idSet.has(dataSource?.archetypeMemberId?.(p.id) ?? p.id));
         }
       }
 
@@ -475,7 +485,7 @@ function useFilteredPokemon({
       }
     }
 
-    if (archetype !== 'evolution-item') {
+    if (archetype !== 'evolution-item' && !dataSource?.includeEvolutionItemForms) {
       filtered = filtered.filter(p => !EVOLUTION_ITEM_ONLY_IDS.has(p.id));
     }
 
@@ -489,7 +499,7 @@ function useFilteredPokemon({
 
     return filtered;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- excludeKey/restrictKey stand in for their Sets
-  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeKey, restrictKey, namesVersion]);
+  }, [dataSource, search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeKey, restrictKey, namesVersion]);
 }
 
 export interface EvolutionGroup {
@@ -517,10 +527,10 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
     const seenBranches = new Set<string>();
     const result: EvolutionGroup[] = [];
 
-    const hideFormAlts = options.archetype !== 'evolution-item';
+    const hideFormAlts = options.archetype !== 'evolution-item' && !options.dataSource?.includeEvolutionItemForms;
 
     for (const p of filtered) {
-      const lines = getAllEvolutionLines(p.id);
+      const lines = options.dataSource?.getAllEvolutionLines(p.id) ?? getAllEvolutionLines(p.id);
 
       for (const rawLine of lines) {
         const line = hideFormAlts ? rawLine.filter(m => !EVOLUTION_ITEM_ONLY_IDS.has(m.id)) : rawLine;
@@ -567,5 +577,5 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
 
     return result;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, evoLineSizeKey]);
+  }, [filtered, evoLineSizeKey, options.archetype, options.dataSource]);
 }
