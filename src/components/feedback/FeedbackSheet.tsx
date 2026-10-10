@@ -5,7 +5,7 @@ import { pathScale } from '@/lib/pathScale';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
 import { Button } from '@/components/ui/button';
-import { useT } from '@/i18n';
+import { useT, useTn } from '@/i18n';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { useAnchoredCard } from '@/hooks/useAnchoredCard';
 import type { FeedbackAnchor } from '@/components/feedback/feedbackChannel';
@@ -16,7 +16,7 @@ import {
   type FeedbackContext,
   type FeedbackToolContext,
 } from '@/lib/feedbackContext';
-import type { NoArgKey } from '@/i18n';
+import type { NoArgKey, TFn, TnFn } from '@/i18n';
 
 /**
  * The report form.
@@ -63,26 +63,49 @@ const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: ChipIcon; scale: 
 const MIN_MESSAGE = 4;
 const MAX_MESSAGE = 1000;
 
-/** The context, rendered as the plain lines the "what gets sent" panel shows. */
-function contextLines(context: FeedbackContext): string[] {
+/**
+ * The context, rendered as the plain lines the "what gets sent" panel shows.
+ *
+ * Only the labels are translated. The values are the raw data the report
+ * carries (route, locale codes, filter ids, user agent), so the panel shows
+ * what is sent rather than a translation of it.
+ */
+function contextLines(context: FeedbackContext, t: TFn, tn: TnFn): string[] {
   const lines = [
-    `page: ${context.route}`,
-    `language: ${context.locale}${context.localeAuto ? ' (auto-detected)' : ''}`,
-    `browser languages: ${context.languages.join(', ') || '—'}`,
-    `version: ${context.version}`,
-    `screen: ${context.viewport} @${context.dpr}x`,
-    `browser: ${context.ua}`,
-    `Pokémon placed: ${context.placed}`,
-    `search active: ${context.search ? 'yes' : 'no'}`,
-    `filters active: ${context.filters.join(', ') || 'none'}`,
+    t('feedback.context.page', { route: context.route }),
+    context.localeAuto
+      ? t('feedback.context.languageAuto', { locale: context.locale })
+      : t('feedback.context.language', { locale: context.locale }),
+    t('feedback.context.browserLanguages', { languages: context.languages.join(', ') || '—' }),
+    t('feedback.context.version', { version: context.version }),
+    t('feedback.context.screen', { viewport: context.viewport, dpr: context.dpr }),
+    t('feedback.context.browser', { ua: context.ua }),
+    t('feedback.context.placed', { count: context.placed }),
+    t(context.search ? 'feedback.context.searchOn' : 'feedback.context.searchOff'),
+    context.filters.length
+      ? t('feedback.context.filters', { filters: context.filters.join(', ') })
+      : t('feedback.context.filtersNone'),
   ];
   if (context.favorites) {
     const f = context.favorites;
-    lines.push(`favorites selected: ${f.filled}/${f.total} (${f.picksFilled} picks, ${f.pointersFilled} summaries)`);
-    lines.push(`picker cell: ${f.selection ? `${f.selection.type} · ${f.selection.gen}` : 'none'}`);
+    lines.push(
+      t('feedback.context.favorites', {
+        filled: f.filled,
+        total: f.total,
+        picks: tn('feedback.context.favoritePicks', f.picksFilled),
+        summaries: tn('feedback.context.favoriteSummaries', f.pointersFilled),
+      }),
+    );
+    lines.push(
+      f.selection
+        ? t('feedback.context.pickerCell', { type: f.selection.type, gen: f.selection.gen })
+        : t('feedback.context.pickerCellNone'),
+    );
   }
-  if (context.error) lines.push(`error: ${context.error.name}: ${context.error.message}`);
-  if (context.message) lines.push(`string: ${context.message.key}`);
+  if (context.error) {
+    lines.push(t('feedback.context.error', { error: `${context.error.name}: ${context.error.message}` }));
+  }
+  if (context.message) lines.push(t('feedback.context.string', { key: context.message.key }));
   return lines;
 }
 
@@ -108,6 +131,7 @@ function FeedbackForm({
   onDone: () => void;
 }) {
   const t = useT();
+  const tn = useTn();
   // Whether the sheet is currently sharing the screen with a keyboard. Drives
   // the compact spacing below — see the comment on the form's className.
   const tight = useSheetKeyboard();
@@ -296,8 +320,12 @@ function FeedbackForm({
 
       <details className="text-xs text-muted-foreground">
         <summary className="cursor-pointer select-none">{t('feedback.context.summary')}</summary>
-        <ul className="mt-1.5 pl-3 flex flex-col gap-0.5 font-mono text-[0.6875rem] break-all">
-          {contextLines(context).map((line) => (
+        {/* `wrap-anywhere`, not `break-all`: a line breaks at a space first, and
+            only a token too long for the line (a route, a URL) splits. With
+            `break-all`, words split anywhere: "Übersicht" ended one line with
+            "Übersic" and started the next with "ht". */}
+        <ul className="mt-1.5 pl-3 flex flex-col gap-0.5 font-mono text-[0.6875rem] wrap-anywhere">
+          {contextLines(context, t, tn).map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>
