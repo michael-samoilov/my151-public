@@ -61,3 +61,34 @@ describe('recorded usage coverage', () => {
   });
 
 });
+
+describe('weekly recorded hours', () => {
+  const monday = Date.UTC(2026,9,5);
+  const week = 7 * 24 * 60 * minute;
+  it('unions Suite overlaps and country duplicates before splitting clipped Monday weeks', () => {
+    const row = {...dex(),firstTs:monday-60*minute,lastTs:monday+30*minute,sessions:1,
+      sessionMs:[60*minute],sessionLog:[{ts:monday+30*minute}]};
+    const result = recordedUsage(rows([row,{...row,cid:'a::US'}],[{...row,maxSeats:1,
+      sessionMs:[40*minute],sessionLog:[{ts:monday+20*minute}]}]),monday-15*minute,monday+15*minute);
+    expect(result.all.weekly).toEqual([
+      {week:monday-week,start:monday-15*minute,end:monday,partial:true,totalMs:15*minute},
+      {week:monday,start:monday,end:monday+15*minute,partial:true,totalMs:15*minute},
+    ]);
+    expect(result.all.weekly?.reduce((sum,w)=>sum+w.totalMs,0)).toBe(result.all.time.total);
+  });
+  it('fills selected empty weeks, counts separate browsers, and excludes missing durations', () => {
+    const row = {...dex(),firstTs:monday,lastTs:monday+minute,sessions:1,sessionMs:[minute],sessionLog:[{ts:monday+minute}]};
+    const result = recordedUsage(rows([row,{...row,cid:'b'},{...row,cid:'missing',sessionMs:[]}]),monday,monday+3*week);
+    expect(result.dex.weekly?.map(w=>[w.totalMs,w.partial])).toEqual([[2*minute,false],[0,false],[0,false]]);
+    expect(result.dex.weekly?.reduce((sum,w)=>sum+w.totalMs,0)).toBe(result.dex.time.total);
+    expect(result.dex.missingTime).toBe(1);
+    expect(recordedUsage(rows([{...row,sessionMs:[]}]),monday,monday+week).dex.weekly).toEqual([]);
+  });
+  it('starts all-history at actual retained spans and preserves known zero durations', () => {
+    const row = {...dex(),firstTs:monday-100*week,lastTs:monday+minute,sessions:1,sessionMs:[0],sessionLog:[{ts:monday+minute}]};
+    const result = recordedUsage(rows([row]),null,monday+2*minute);
+    expect(result.dex.weekly).toEqual([{week:monday,start:monday+minute,end:monday+2*minute,partial:true,totalMs:0}]);
+    expect(result.league.weekly).toEqual([]);
+    expect(result.dex.time.n).toBe(1);
+  });
+});

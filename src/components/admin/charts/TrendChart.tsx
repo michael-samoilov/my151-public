@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Panel } from '@/components/admin/ui';
 import { useECharts, cssVar, type EChartsOption } from './useECharts';
-import { dayStart, type ActivityGrowth } from '../../../../api/_aggregate';
+import { impliedActivityGrowth } from '../../../../api/_aggregate';
 import { rangeStart, type DashboardRange } from '../../../../api/_range';
 import {
   chartDailyValues,
@@ -514,6 +514,7 @@ export function ActiveUsersPanel({
   const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);
   const daily7 = useMemo(() => sliceLastUtcDays(padded, nowMs, 7), [padded, nowMs]);
   const counts = windowCounts(padded);
+  const growth = useMemo(() => impliedActivityGrowth(series, rangeStart(range, nowMs), nowMs), [series, nowMs, range]);
   const faint = 'var(--color-muted-foreground)';
   const legend =
     range === '24h' ? (
@@ -556,29 +557,20 @@ export function ActiveUsersPanel({
       ) : (
         <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} shown={shown} />
       )}
-      {range !== '24h' && range !== '7d' && (
-        <div className="mt-2 space-y-1 text-[0.65rem] text-muted-foreground">
-          <p>Monthly: recorded activity (lower bounds).</p>
-          <GrowthCaption kind="Weekly" days={7} growth={padded.at(-1)?.weeklyGrowth} nowMs={nowMs} />
-          <GrowthCaption kind="Monthly" days={30} growth={padded.at(-1)?.monthlyGrowth} nowMs={nowMs} />
-        </div>
-      )}
+      <div className="mt-2 space-y-1 text-[0.65rem] text-muted-foreground">
+        <p className="tabular-nums" aria-label="Implied growth over selected range">
+          Implied WoW {growthPercent(growth.weeklyPercent)} · MoM {growthPercent(growth.monthlyPercent)}
+        </p>
+        <p>{growth.weeklyPercent === null ? 'Need at least two complete days with a measurable trend.'
+          : `Daily activity trend · ${growth.days} complete recorded days · ${new Date(growth.start!).toISOString().slice(0, 10)}–${new Date(growth.end! - 1).toISOString().slice(0, 10)} (UTC)`}</p>
+        {range !== '24h' && range !== '7d' && <p>Monthly activity: recorded lower bounds.</p>}
+      </div>
     </Panel>
   );
 }
 
-function GrowthCaption({ kind, days, growth, nowMs }: { kind: string; days: 7 | 30; growth?: ActivityGrowth; nowMs: number }) {
-  const end = growth?.end ?? dayStart(nowMs);
-  const start = growth?.start ?? end - days * 86_400_000;
-  const previousStart = growth?.previousStart ?? start - days * 86_400_000;
-  const date = (ts: number) => new Date(ts).toISOString().slice(0, 10);
-  const dates = `${date(start)}–${date(end)} vs ${date(previousStart)}–${date(start)} (UTC; end exclusive)`;
-  if (!growth || growth.status === 'unavailable') {
-    const reason = growth?.status === 'unavailable' && growth.reason === 'recording outage'
-      ? 'recording outage' : 'complete retained history is not verified';
-    return <p>{kind} growth unavailable: {reason}. {dates}.</p>;
-  }
-  const percent = growth.percent == null ? 'percentage unavailable (previous window zero)'
-    : `${growth.percent > 0 ? '+' : ''}${growth.percent.toFixed(1)}%`;
-  return <p>{kind} growth {percent}: {growth.current} vs {growth.previous} distinct browsers. {dates}.</p>;
+function growthPercent(value: number | null): string {
+  if (value === null) return '—';
+  const rounded = Math.round(value * 10) / 10 || 0;
+  return `${rounded > 0 ? '+' : ''}${rounded.toLocaleString(undefined, {maximumFractionDigits: 1})}%`;
 }
