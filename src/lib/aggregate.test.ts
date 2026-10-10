@@ -5,6 +5,7 @@ import {
   buildDepthCurve,
   dailyActive,
   activityGrowth,
+  impliedActivityGrowth,
   hourlyActive,
   depthByDevice,
   heatmaps,
@@ -645,5 +646,49 @@ describe('leagueUsageFunnel', () => {
     expect(f.placed).toBe(1);
     expect(f.opened).toBe(5);
     expect(f.bounced).toBe(4);
+  });
+});
+
+
+describe('implied activity trend over the selected range', () => {
+  const now = Date.UTC(2026, 9, 10, 12);
+  const today = Date.UTC(2026, 9, 10);
+  const rows = (counts: number[]) => counts.map((dau, i) => ({day: today - (counts.length - i) * DAY_MS, dau, rolling7: 0}));
+  it('recovers growth and decline from dated counts without requiring retained coverage', () => {
+    const up = impliedActivityGrowth(rows([2, 4, 8]), null, now);
+    expect(up.weeklyPercent).toBeCloseTo(12700, 5);
+    expect(up.monthlyPercent).toBeCloseTo(107374182300, 1);
+    expect(impliedActivityGrowth(rows([8, 4, 2]), null, now).weeklyPercent).toBeCloseTo(-99.21875, 5);
+  });
+  it('fits All to the full recorded range and changes when the selection excludes earlier days', () => {
+    const daily = rows([40, 20, 10, 2, 4, 8]);
+    expect(impliedActivityGrowth(daily, null, now).weeklyPercent).toBeLessThan(0);
+    const selected = impliedActivityGrowth(daily, daily[3].day, now);
+    expect(selected.days).toBe(3);
+    expect(selected.weeklyPercent).toBeCloseTo(12700, 5);
+  });
+  it('keeps zero-count days in the fit instead of changing a rising recorded trend into a decline', () => {
+    const result = impliedActivityGrowth(rows([0, 4, 2]), null, now);
+    expect(result.days).toBe(3);
+    expect(result.weeklyPercent).toBeGreaterThan(0);
+  });
+  it('excludes unfinished UTC days and the partially selected opening day', () => {
+    const daily = [...rows([10, 10, 10]), {day: today, dau: 1, rolling7: 0}];
+    const result = impliedActivityGrowth(daily, daily[0].day + 12 * 3600000, now);
+    expect(result.days).toBe(2);
+    expect(result.start).toBe(daily[1].day);
+    expect(result.end).toBe(today);
+    expect(result.weeklyPercent).toBeCloseTo(0, 5);
+  });
+  it('does not invent a finite trend for empty, one-day, all-zero or boundary-only observations', () => {
+    for (const counts of [[], [3], [0, 0, 0], [0, 0, 3], [3, 0, 0]]) {
+      expect(impliedActivityGrowth(rows(counts), null, now).weeklyPercent).toBeNull();
+    }
+  });
+  it('uses actual day spacing and leaves the input unchanged', () => {
+    const daily = rows([1, 2, 4]).filter((_, i) => i !== 1);
+    const copy = structuredClone(daily);
+    expect(impliedActivityGrowth(daily, null, now).weeklyPercent).toBeCloseTo(12700, 5);
+    expect(daily).toEqual(copy);
   });
 });

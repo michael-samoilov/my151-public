@@ -63,13 +63,19 @@ test.describe('admin active users range', () => {
     expect(hours).toBeLessThanOrEqual(24);
   });
 
-  test('monthly legend toggles the recorded series and missing coverage has no growth percentage @viewport', async ({ page }, testInfo) => {
+  test('monthly legend toggles and implied growth follows the selected recorded range @viewport', async ({ page }, testInfo) => {
     const panel = activeUsers(page);
     const monthly = panel.getByRole('button', { name: 'monthly', exact: true });
     await expect(monthly).toHaveAttribute('aria-pressed', 'true');
-    await expect(panel.getByText(/Weekly growth unavailable/)).toBeVisible();
-    await expect(panel.getByText(/Monthly growth unavailable/)).toBeVisible();
-    await expect(panel.getByText(/complete retained history/).first()).toBeVisible();
+    const growth = panel.getByLabel('Implied growth over selected range');
+    await expect(growth).toHaveText(/Implied WoW [+-]?[\d,.]+% · MoM [+-]?[\d,.]+%/);
+    await expect(panel.getByText(/complete retained history/)).toHaveCount(0);
+    const allGrowth = await growth.textContent();
+    await page.getByRole('group', {name: 'Date range'}).getByRole('button', {name: '28d', exact: true}).click();
+    await expect(growth).not.toHaveText(allGrowth!);
+    await expect(panel.getByText(/27 complete recorded days/)).toBeVisible();
+    await page.getByRole('group', {name: 'Date range'}).getByRole('button', {name: 'All', exact: true}).click();
+    await expect(growth).toHaveText(allGrowth!);
     await monthly.click();
     await expect(monthly).toHaveAttribute('aria-pressed', 'false');
     await expect(panel.getByRole('img')).not.toHaveAttribute('aria-label', /trailing 30-day/);

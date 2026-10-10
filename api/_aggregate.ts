@@ -230,6 +230,49 @@ export type DailyActivityPoint = {
   monthlyGrowth?: ActivityGrowth;
 };
 
+export interface ImpliedActivityGrowth {
+  days: number;
+  start: number | null;
+  end: number | null;
+  weeklyPercent: number | null;
+  monthlyPercent: number | null;
+}
+
+/** Fit an exponential count trend to recorded daily activity, including zero days. */
+export function impliedActivityGrowth(
+  series: Pick<DailyActivityPoint, 'day' | 'dau'>[], start: number | null, now: number,
+): ImpliedActivityGrowth {
+  const rows = series.filter(p => Number.isFinite(p.day) && Number.isFinite(p.dau) && p.dau >= 0
+    && p.day < dayStart(now) && (start === null || p.day >= start)).sort((a, b) => a.day - b.day);
+  const result: ImpliedActivityGrowth = { days: rows.length, start: rows[0]?.day ?? null,
+    end: rows.length ? rows.at(-1)!.day + DAY_MS : null, weeklyPercent: null, monthlyPercent: null };
+  if (rows.length < 2) return result;
+  const times = rows.map(p => (p.day - rows[0].day) / DAY_MS);
+  const total = rows.reduce((sum, p) => sum + p.dau, 0);
+  if (!total) return result;
+  const mean = rows.reduce((sum, p, i) => sum + times[i] * p.dau, 0) / total;
+  if (mean <= times[0] || mean >= times.at(-1)!) return result;
+  let lo = -40, hi = 40;
+  for (let i = 0; i < 64; i++) {
+    const slope = (lo + hi) / 2;
+    const anchor = slope >= 0 ? times.at(-1)! : times[0];
+    let weights = 0, weightedTime = 0;
+    for (const time of times) {
+      const weight = Math.exp(slope * (time - anchor));
+      weights += weight;
+      weightedTime += time * weight;
+    }
+    if (weightedTime / weights < mean) lo = slope;
+    else hi = slope;
+  }
+  const slope = (lo + hi) / 2;
+  const percent = (days: number) => {
+    const value = Math.expm1(slope * days) * 100;
+    return Number.isFinite(value) ? value : null;
+  };
+  return { ...result, weeklyPercent: percent(7), monthlyPercent: percent(30) };
+}
+
 export interface ActivityCoverage {
   precision?: 'utc-days' | 'timestamps';
   retainedFrom: number;
