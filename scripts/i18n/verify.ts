@@ -317,6 +317,24 @@ function cjkSafety(): void {
  * makes the check meaningful for every other key.
  */
 const SAME_AS_ENGLISH_OK = new Set([
+  // The Pokédex builder's sections. Dojo and Tundra are the same loanwords in
+  // these languages; Pika, Pseudo and Fossil are the same one-cell outline
+  // forms. Upgrade and Protector are the item names the games use.
+  'de:section.dojo', 'de:archetype.dojo', 'de:sectionTiny.dojo',
+  'es:section.dojo', 'es:archetype.dojo', 'es:sectionTiny.dojo',
+  'fr:section.dojo', 'fr:archetype.dojo', 'fr:sectionTiny.dojo',
+  'it:section.dojo', 'it:archetype.dojo', 'it:sectionTiny.dojo',
+  'de:section.tundra', 'de:archetype.tundra', 'de:sectionTiny.tundra',
+  'es:section.tundra', 'es:archetype.tundra', 'es:sectionTiny.tundra',
+  'it:section.tundra', 'it:archetype.tundra', 'it:sectionTiny.tundra',
+  'de:sectionTiny.pikachu-clone', 'es:sectionTiny.pikachu-clone',
+  'fr:sectionTiny.pikachu-clone', 'it:sectionTiny.pikachu-clone',
+  'de:sectionTiny.pseudo-legendary', 'es:sectionTiny.pseudo-legendary',
+  'fr:sectionTiny.pseudo-legendary', 'it:sectionTiny.pseudo-legendary',
+  'de:sectionTiny.fossil',
+  'de:archetype.evolution-item.sub.9', // Upgrade
+  'it:archetype.evolution-item.sub.9', // Upgrade
+  'es:archetype.evolution-item.sub.19', // Protector
   'es:chart.header.color', // "Color" is also the Spanish color header.
   'es:feedback.category.idea', // "Idea" is the Spanish word too.
   'it:feedback.category.idea', // And the Italian one.

@@ -384,7 +384,7 @@ function StarterContent({
       {!dragLineIds && (
         <button type="button"
           onClick={onAddClick}
-          aria-label="Add a Pokémon to Starters"
+          aria-label={t('builder.addToSection', { section: sectionName('starter') })}
           className={`${trailingPlusAspect(pokemonIds.length)} rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary`}
         >
           <Plus className="w-[27%] h-[27%]" />
@@ -681,23 +681,26 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
     <div ref={menuRef} className="relative">
       <HeaderActionButton type="button"
         onClick={() => { setOpen(!open); setConfirming(false); }}
-        aria-label="Settings"
+        aria-label={t('builder.settings')}
         className="text-muted-foreground hover:text-foreground hover:bg-muted"
       >
         <Settings className="w-4 h-4" />
       </HeaderActionButton>
+      {/* The menu is sized to its label, not to the gear button it hangs
+          from: an absolute box shrinks to its containing block, which is the
+          32px button, so a label past the 160px minimum used to wrap. */}
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
+        <div className="absolute right-0 top-full mt-1 w-max bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
           <button type="button"
             onClick={handleClearClick}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
+            className={`w-full flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap cursor-pointer transition-colors ${
               confirming
                 ? 'text-destructive bg-destructive/10 font-medium'
                 : 'text-destructive/80 hover:bg-muted'
             }`}
           >
             <Trash2 className="w-3.5 h-3.5" />
-            {confirming ? 'Are you sure?' : 'Clear All'}
+            {confirming ? t('builder.clearConfirm') : t('builder.clearAll')}
           </button>
         </div>
       )}

@@ -102,6 +102,37 @@ Sword/Shield text from `abcboy101/poke-corpus`.
   어깨 위 포켓몬, 肩上宝可梦, "on the shoulder" in French, Spanish and Italian,
   and the German coinage Schultermon, which mirrors the English one.
 
+### The Pokédex builder
+
+The build page is translated in all eight overlays: its header and nav, the
+intro card, the section headings, the selection sheet's title, the settings
+menu, the milestone nudges, and the analytics advisor. The build sections,
+archetypes and categories (`section.*`, `archetype.*`, `category.*`) are
+translated too, so the browser's filters can show them.
+
+- **Official terms** come from the games. Evolution items, Paradox, Mythical,
+  Ultra Beast, Grunt, Champion, Elite Four, Pokémon League, the island
+  challenge and the National Pokédex are pinned with their message ids in
+  `docs/i18n/sources/build-section-terms.json`. Regional forms come from
+  `pokemon-formnames.json`, and Gym Leader and Legendary from
+  `picker-interface-terms.json`. Region names come from the term catalogs,
+  except Spanish Unova: the term catalog says Unova, and the games say Teselia.
+- **Fan terms** use each fandom's own word: 600族 and 600족 for
+  pseudo-legendary, 准神 and 準神 in Chinese, 電鼠/电鼠 and 전기쥐 for
+  Pikaclones, and 序盤 (early game) for the regional bug, bird and mammal in
+  Japanese.
+- **Left in English**, because the games' names for them are not sourced here:
+  the game titles in the gift, prize and static encounter sub-labels, Legends:
+  Arceus, the villain team and character names, and "Sweet (Milcery)". Every
+  overlay omits the same keys.
+- **One cell.** Outline labels on the View page shorten from the section name
+  to `sectionShort` to `sectionTiny`, and the tiny form is what a one-cell
+  outline shows. Every section has a tiny key. Where English has no shorter
+  word, its tiny form repeats its shortest one, and the repeat is skipped, so
+  English renders as before. Each translated tiny form fits one cell at the
+  0.72 squash floor or at the English label's own scale, whichever is lower.
+  `e2e/dev/i18n-layout.spec.ts` checks every language.
+
 ### The favorite picker
 
 `favorites.*`, `home.favorites.*`, and `faq.favorites.*` have translations in
