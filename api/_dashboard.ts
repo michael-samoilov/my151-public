@@ -1,3 +1,4 @@
+import type {RecordingFields} from './_sessionize.js';
 import {parseFavoriteRecord, type FavoriteRecord} from './_favoriteRecord.js';
 import {favoritePicks, favoriteSummary, favoriteUsageFunnel, favoriteUser} from './_favoriteAggregate.js';
 // The admin dashboard payload, computed from the raw Redis reads in
@@ -151,7 +152,7 @@ function toolOrder(dexFirstTs: number, leagueFirstTs: number): ToolOrder {
  * tool they met first, and as a card of its own under the League slice, where
  * a browser that never touched the dex builder still has to be visible.
  */
-interface LeagueUser {
+interface LeagueUser extends RecordingFields {
   cid: string;
   firstTs: number;
   firstAt: string;
@@ -215,6 +216,9 @@ function leagueUser(r: LeagueRecord, dexFirstTs?: number): LeagueUser {
     exportedCardAt: r.exportedCardAt,
     exportedLeagueAt: r.exportedLeagueAt,
     sessionLog: r.sessionLog,
+    recording: r.recording,
+    activeDays: r.activeDays,
+    activityCoverageFrom: r.activityCoverageFrom,
     country: r.country,
     region: r.region,
     tz: r.tz,
@@ -453,6 +457,119 @@ export function browserIndex(
     league: newest(league).map((r) => row(r, { league: r })),
     picker: newest(picker).map((r) => row(r, { picker: r })),
   };
+}
+
+export interface RecordedDistribution {
+  n: number;
+  total: number;
+  average: number | null;
+  median: number | null;
+  values: number[];
+}
+export interface RecordedWeek {
+  week: number; start: number; end: number; partial: boolean; totalMs: number;
+}
+export interface RecordedUsageSlice {
+  weekly?: RecordedWeek[];
+  browsers: number;
+  missingTime: number;
+  missingSessions: number;
+  incompleteHistory: number;
+  time: RecordedDistribution;
+  sessions: RecordedDistribution;
+}
+export type RecordedUsage = Record<'all' | 'dex' | 'league' | 'favorites', RecordedUsageSlice>;
+type RecordedRow = {
+  cid: string; firstTs: number; lastTs: number; sessions?: number; sessionMs?: number[];
+  sessionLog?: {ts: number; endTs?: number; ids?: number[]}[];
+  latestIds?: number[]; everIds?: number[]; maxDepth?: number; maxSeats?: number; maxCards?: number; maxFilled?: number;
+};
+type RecordedSpan = {start: number; end: number; timed: boolean};
+
+/** Dated retained spans only. Neither lifetime counters nor first/last visits supply missing time. */
+export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', readonly RecordedRow[]>, start: number | null, now: number): RecordedUsage {
+  const groups = {all: new Map<string, RecordedSpan[]>(), dex: new Map<string, RecordedSpan[]>(), league: new Map<string, RecordedSpan[]>(), favorites: new Map<string, RecordedSpan[]>()};
+  const incomplete = {all: new Set<string>(), dex: new Set<string>(), league: new Set<string>(), favorites: new Set<string>()};
+  for (const tool of ['dex', 'league', 'favorites'] as const) {
+    const builders = new Set(rows[tool].filter(r => tool === 'dex'
+      ? (r.maxDepth ?? 0) > 0 || (r.everIds?.length ?? r.latestIds?.length ?? 0) > 0 || r.sessionLog?.some(s => (s.ids?.length ?? 0) > 0)
+      : tool === 'league' ? (r.maxSeats ?? 0) > 0 || (r.maxCards ?? 0) > 0 : (r.maxFilled ?? 0) > 0).map(r => bareCid(r.cid)));
+    for (const r of rows[tool]) {
+      const cid = bareCid(r.cid);
+      if (!builders.has(cid)) continue;
+      const log = r.sessionLog ?? [];
+      const durations = r.sessionMs ?? [];
+      const offset = durations.length - log.length;
+      const spans: RecordedSpan[] = [];
+      log.forEach((entry, index) => {
+        if (!Number.isFinite(entry.ts)) return;
+        const duration = durations[index + offset];
+        const timed = tool === 'favorites' ? Number.isFinite(entry.endTs) && entry.endTs! >= entry.ts
+          : Number.isFinite(duration) && duration >= 0;
+        const end = tool === 'favorites' && timed ? entry.endTs! : entry.ts;
+        const from = tool === 'favorites' || !timed ? entry.ts : end - duration;
+        if (from > now || end < (start ?? -Infinity) || (end === start)) return;
+        spans.push({start: Math.max(from, start ?? -Infinity), end: Math.min(end, now), timed});
+      });
+      if (spans.length === 0 && (r.firstTs > now || (start !== null && r.lastTs <= start))) continue;
+      for (const key of [tool, 'all'] as const) {
+        groups[key].set(cid, [...(groups[key].get(cid) ?? []), ...spans]);
+        if ((r.sessions ?? log.length) > log.length || log.length === 0 || (tool !== 'favorites' && durations.length !== log.length) || spans.some(s => !s.timed)) incomplete[key].add(cid);
+      }
+    }
+  }
+  const distribution = (values: number[]): RecordedDistribution => {
+    const sorted = [...values].sort((a,b) => a-b);
+    const total = sorted.reduce((a,b) => a+b,0);
+    return {n: sorted.length, total, average: sorted.length ? total / sorted.length : null,
+      median: sorted.length ? quantile(sorted, 0.5) : null, values: sorted};
+  };
+  const slice = (key: keyof typeof groups): RecordedUsageSlice => {
+    const time: number[] = [], sessions: number[] = [];
+    const weeklyTotals = new Map<number, number>();
+    let earliest = Infinity;
+    const weekMs = 7 * 24 * 60 * 60_000;
+    for (const raw of groups[key].values()) {
+      const unique = [...new Map(raw.map(s => [`${s.start}:${s.end}:${s.timed}`, s])).values()].sort((a,b) => a.start-b.start || a.end-b.end);
+      if (unique.length) {
+        let visits = 0, end = -Infinity;
+        for (const s of unique) {
+          if (s.start > end + 30 * 60_000) visits++;
+          end = Math.max(end, s.end);
+        }
+        sessions.push(visits);
+      }
+      const timed = unique.filter(s => s.timed);
+      if (timed.length) {
+        let total = 0, end = -Infinity;
+        for (const s of timed) {
+          earliest = Math.min(earliest, s.start);
+          let from = Math.max(s.start, end);
+          total += Math.max(0, s.end - from);
+          // Account only the uncovered suffix: Suite overlaps are unioned per browser.
+          while (from < s.end) {
+            const week = weekStart(from);
+            const until = Math.min(s.end, week + weekMs);
+            weeklyTotals.set(week, (weeklyTotals.get(week) ?? 0) + until - from);
+            from = until;
+          }
+          end = Math.max(end, s.end);
+        }
+        time.push(total);
+      }
+    }
+    const weekly: RecordedWeek[] = [];
+    const from = start ?? earliest;
+    if (time.length && Number.isFinite(from)) {
+      for (let week = weekStart(from); week < now; week += weekMs) {
+        const begin = Math.max(week, from), end = Math.min(week + weekMs, now);
+        weekly.push({week, start: begin, end, partial: begin > week || end < week + weekMs, totalMs: weeklyTotals.get(week) ?? 0});
+      }
+    }
+    return {weekly, browsers: groups[key].size, missingTime: groups[key].size-time.length, missingSessions: groups[key].size-sessions.length,
+      incompleteHistory: incomplete[key].size, time: distribution(time), sessions: distribution(sessions)};
+  };
+  return {all: slice('all'), dex: slice('dex'), league: slice('league'), favorites: slice('favorites')};
 }
 
 /**
@@ -792,6 +909,7 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   return {
     range,
     rangeStart: start,
+    recordedUsage: recordedUsage({dex: records, league: leagueRecords, favorites: favoriteRecords}, start, now),
     totalUsers,
     funnel: { users: dexIn.length, completed, exported },
     funnelEvents,

@@ -20,6 +20,7 @@ export const DAY_MS = 86_400_000;
 export const HOUR_MS = 3_600_000;
 const ROLLING_24H_MS = 24 * HOUR_MS;
 const ROLLING_7D_MS = 7 * DAY_MS;
+const ROLLING_30D_MS = 30 * DAY_MS;
 const HOURLY_WINDOW_DAYS = 7;
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -30,10 +31,20 @@ const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
  * and `LeagueRecord` (the gym leader maker) both satisfy it, each with its
  * own extra fields on top.
  */
+interface ActivitySourceCoverage {
+  firstTs: number;
+  lastTs: number;
+  from?: number;
+  hasDays: boolean;
+}
+
 export interface SessionRecord {
   cid: string;
   firstTs: number;
   lastTs: number;
+  activeDays?: number[];
+  activityCoverageFrom?: number;
+  activityCoverageSources?: ActivitySourceCoverage[];
   sessions?: number;
   sessionMs?: number[];
   /** One entry per session. Only `ts` is read here; each tool adds its own
@@ -169,16 +180,20 @@ export function activeTimestamps(r: SessionRecord): number[] {
 export function lastPointLabelCounts(
   records: SessionRecord[],
   now: number,
-): { label24h: number | null; label168h: number | null } {
+  coverage?: ActivityCoverage,
+): { label24h: number | null; label168h: number | null; label720h: number | null; recordedLabel720h: number | null } {
   const events: { ts: number; cid: string }[] = [];
   for (const r of records) {
-    for (const ts of activeTimestamps(r)) events.push({ ts, cid: r.cid });
+    for (const ts of activeTimestamps(r)) events.push({ ts, cid: r.cid.split('::')[0] });
   }
-  if (events.length === 0) return { label24h: null, label168h: null };
-  const firstTs = Math.min(...events.map((e) => e.ts));
+  if (events.length === 0) return { label24h: null, label168h: null, label720h: null, recordedLabel720h: null };
+  const firstTs = events.reduce((first, event) => Math.min(first, event.ts), Infinity);
   return {
     label24h: rollingUniqueAt(events, now, ROLLING_24H_MS, firstTs),
     label168h: rollingUniqueAt(events, now, ROLLING_7D_MS, firstTs),
+    label720h: coverage?.precision !== 'utc-days' && hasActivityCoverage(coverage, now - ROLLING_30D_MS, now)
+      ? rollingUniqueAt(events, now, ROLLING_30D_MS, now - ROLLING_30D_MS) : null,
+    recordedLabel720h: rollingUniqueAt(events, now, ROLLING_30D_MS, firstTs),
   };
 }
 
@@ -201,11 +216,163 @@ export type DailyActivityPoint = {
   day: number;
   dau: number;
   rolling7: number;
+  /** Distinct browsers over this UTC day and the prior 29 days, with verified retention. */
+  rolling30?: number | null;
+  /** Lower bound from the activity still recorded; missing sessions cannot be recovered. */
+  recordedRolling30?: number | null;
   /** Rolling 24h unique `cid` at `now` — set only on today's row when `now` is given. */
   label24h?: number | null;
   /** Rolling 168h unique `cid` at `now` — set only on today's row when `now` is given. */
   label168h?: number | null;
+  label720h?: number | null;
+  recordedLabel720h?: number | null;
+  weeklyGrowth?: ActivityGrowth;
+  monthlyGrowth?: ActivityGrowth;
 };
+
+export interface ImpliedActivityGrowth {
+  days: number;
+  start: number | null;
+  end: number | null;
+  weeklyPercent: number | null;
+  monthlyPercent: number | null;
+}
+
+/** Fit an exponential count trend to recorded daily activity, including zero days. */
+export function impliedActivityGrowth(
+  series: Pick<DailyActivityPoint, 'day' | 'dau'>[], start: number | null, now: number,
+): ImpliedActivityGrowth {
+  const rows = series.filter(p => Number.isFinite(p.day) && Number.isFinite(p.dau) && p.dau >= 0
+    && p.day < dayStart(now) && (start === null || p.day >= start)).sort((a, b) => a.day - b.day);
+  const result: ImpliedActivityGrowth = { days: rows.length, start: rows[0]?.day ?? null,
+    end: rows.length ? rows.at(-1)!.day + DAY_MS : null, weeklyPercent: null, monthlyPercent: null };
+  if (rows.length < 2) return result;
+  const times = rows.map(p => (p.day - rows[0].day) / DAY_MS);
+  const total = rows.reduce((sum, p) => sum + p.dau, 0);
+  if (!total) return result;
+  const mean = rows.reduce((sum, p, i) => sum + times[i] * p.dau, 0) / total;
+  if (mean <= times[0] || mean >= times.at(-1)!) return result;
+  let lo = -40, hi = 40;
+  for (let i = 0; i < 64; i++) {
+    const slope = (lo + hi) / 2;
+    const anchor = slope >= 0 ? times.at(-1)! : times[0];
+    let weights = 0, weightedTime = 0;
+    for (const time of times) {
+      const weight = Math.exp(slope * (time - anchor));
+      weights += weight;
+      weightedTime += time * weight;
+    }
+    if (weightedTime / weights < mean) lo = slope;
+    else hi = slope;
+  }
+  const slope = (lo + hi) / 2;
+  const percent = (days: number) => {
+    const value = Math.expm1(slope * days) * 100;
+    return Number.isFinite(value) ? value : null;
+  };
+  return { ...result, weeklyPercent: percent(7), monthlyPercent: percent(30) };
+}
+
+export interface ActivityCoverage {
+  precision?: 'utc-days' | 'timestamps';
+  retainedFrom: number;
+  completeThrough: number;
+  outages?: { start: number; end: number }[];
+}
+
+export type ActivityGrowth = {
+  start: number;
+  end: number;
+  previousStart: number;
+  previousEnd: number;
+} & (
+  | { status: 'available'; current: number; previous: number; percent: number | null }
+  | { status: 'unavailable'; reason: 'missing coverage' | 'incomplete history' | 'recording outage' }
+);
+
+function activitySources(r: SessionRecord): ActivitySourceCoverage[] {
+  return r.activityCoverageSources ?? [{
+    firstTs: r.firstTs, lastTs: r.lastTs, from: r.activityCoverageFrom,
+    hasDays: Array.isArray(r.activeDays) && r.activeDays.every(day => Number.isFinite(day) && day === dayStart(day)),
+  }];
+}
+
+function retainedCalendarCoverage(records: SessionRecord[], now: number, start: number): ActivityCoverage | undefined {
+  if (records.length === 0) return undefined;
+  const retainedFrom = dayStart(now) - 89 * DAY_MS;
+  if (start < retainedFrom) return undefined;
+  let observedCoverage = false;
+  for (const record of records) {
+    for (const source of activitySources(record)) {
+      if (!Number.isFinite(source.firstTs) || !Number.isFinite(source.lastTs)
+        || source.firstTs < 0 || source.lastTs < source.firstTs) return undefined;
+      const from = source.from ?? NaN;
+      const sameDaySkew = source.firstTs - from <= 5 * 60_000 && dayStart(from) === dayStart(source.firstTs);
+      const covered = source.hasDays && Number.isFinite(from)
+        && from >= 0 && from <= now && (from >= source.firstTs || sameDaySkew);
+      observedCoverage ||= covered;
+      if (source.lastTs < start) continue;
+      if (!covered || dayStart(from) > Math.max(dayStart(source.firstTs), start)) return undefined;
+    }
+  }
+  return observedCoverage ? { precision: 'utc-days', retainedFrom: start, completeThrough: now } : undefined;
+}
+
+function calendarDays(r: SessionRecord, now?: number): number[] {
+  const days = activeTimestamps(r).map(dayStart);
+  if (r.activityCoverageFrom == null || !Number.isFinite(r.activityCoverageFrom)) return days;
+  const opening = Math.max(dayStart(r.activityCoverageFrom), now == null ? -Infinity : dayStart(now) - 89 * DAY_MS);
+  const end = now == null ? Infinity : dayStart(now);
+  for (const day of r.activeDays ?? []) {
+    if (Number.isFinite(day) && day === dayStart(day) && day >= opening && day <= end) days.push(day);
+  }
+  return days;
+}
+
+function hasActivityCoverage(coverage: ActivityCoverage | undefined, start: number, end: number): boolean {
+  return coverage != null && Number.isFinite(coverage.retainedFrom) && Number.isFinite(coverage.completeThrough)
+    && coverage.retainedFrom <= start && coverage.completeThrough >= end
+    && start >= Date.UTC(2026, 8, 26)
+    && !coverage.outages?.some(outage => !Number.isFinite(outage.start) || !Number.isFinite(outage.end)
+      || outage.start < end && outage.end > start);
+}
+
+export function activityGrowth(
+  records: SessionRecord[],
+  now: number,
+  days: 7 | 30,
+  coverage?: ActivityCoverage,
+): ActivityGrowth {
+  const end = dayStart(now);
+  const start = end - days * DAY_MS;
+  const previousStart = start - days * DAY_MS;
+  const dates = { start, end, previousStart, previousEnd: start };
+  coverage ??= retainedCalendarCoverage(records, now, previousStart);
+  if (!coverage) return { ...dates, status: 'unavailable', reason: 'missing coverage' };
+  if (!Number.isFinite(coverage.retainedFrom) || !Number.isFinite(coverage.completeThrough)
+    || coverage.retainedFrom > previousStart || coverage.completeThrough < end) {
+    return { ...dates, status: 'unavailable', reason: 'incomplete history' };
+  }
+  // The quota outage before September 26 cannot be reconstructed from records.
+  if (previousStart < Date.UTC(2026, 8, 26)
+    || coverage.outages?.some(outage => !Number.isFinite(outage.start) || !Number.isFinite(outage.end)
+      || outage.start < end && outage.end > previousStart)) {
+    return { ...dates, status: 'unavailable', reason: 'recording outage' };
+  }
+  const current = new Set<string>();
+  const previous = new Set<string>();
+  for (const r of records) {
+    const cid = r.cid.split('::')[0];
+    for (const ts of calendarDays(r, now)) {
+      if (ts >= start && ts < end) current.add(cid);
+      else if (ts >= previousStart && ts < start) previous.add(cid);
+    }
+  }
+  return {
+    ...dates, status: 'available', current: current.size, previous: previous.size,
+    percent: previous.size === 0 ? null : (current.size - previous.size) / previous.size * 100,
+  };
+}
 
 /**
  * Dense daily active-users series with a trailing-7-day calendar rolling count.
@@ -215,21 +382,23 @@ export type DailyActivityPoint = {
  * today's row also carries `label24h` / `label168h`: unique browsers in
  * (now − 24h, now] and (now − 168h, now] for the chart's last point and gutter.
  */
-export function dailyActive(records: SessionRecord[], now?: number): DailyActivityPoint[] {
+export function dailyActive(records: SessionRecord[], now?: number, coverage?: ActivityCoverage): DailyActivityPoint[] {
   const sets: Record<number, Set<string>> = {};
   const events: { ts: number; cid: string }[] = [];
   for (const r of records) {
     for (const ts of activeTimestamps(r)) {
-      events.push({ ts, cid: r.cid });
-      const day = dayStart(ts);
-      (sets[day] ??= new Set()).add(r.cid);
+      const cid = r.cid.split('::')[0];
+      events.push({ ts, cid });
+    }
+    for (const day of calendarDays(r, now)) {
+      (sets[day] ??= new Set()).add(r.cid.split('::')[0]);
     }
   }
   const dayKeys = Object.keys(sets).map(Number);
   if (dayKeys.length === 0) return [];
-  const firstTs = events.length ? Math.min(...events.map((e) => e.ts)) : 0;
-  const firstDay = Math.min(...dayKeys);
-  const lastActivity = Math.max(...dayKeys);
+  const firstTs = events.length ? events.reduce((first, event) => Math.min(first, event.ts), Infinity) : 0;
+  const firstDay = dayKeys.reduce((first, day) => Math.min(first, day), Infinity);
+  const lastActivity = dayKeys.reduce((last, day) => Math.max(last, day), -Infinity);
   const todayStart = now != null ? dayStart(now) : null;
   const lastDay = todayStart != null ? Math.max(lastActivity, todayStart) : lastActivity;
   const out: DailyActivityPoint[] = [];
@@ -240,9 +409,27 @@ export function dailyActive(records: SessionRecord[], now?: number): DailyActivi
       if (s) for (const cid of s) roll.add(cid);
     }
     const row: DailyActivityPoint = { day, dau: sets[day]?.size ?? 0, rolling7: roll.size };
+    const calendarCoverage = coverage ?? (now == null ? undefined : retainedCalendarCoverage(records, now, day - 29 * DAY_MS));
+    const calendarComplete = hasActivityCoverage(calendarCoverage, day - 29 * DAY_MS, Math.min(day + DAY_MS, now ?? day + DAY_MS));
+    if (day >= firstDay + 29 * DAY_MS || calendarComplete) {
+      const monthly = new Set<string>();
+      for (let d = day - 29 * DAY_MS; d <= day; d += DAY_MS) {
+        for (const cid of sets[d] ?? []) monthly.add(cid);
+      }
+      row.recordedRolling30 = monthly.size;
+      row.rolling30 = calendarComplete ? monthly.size : null;
+    } else {
+      row.rolling30 = null;
+      row.recordedRolling30 = null;
+    }
     if (todayStart !== null && now != null && day === todayStart) {
       row.label24h = rollingUniqueAt(events, now, ROLLING_24H_MS, firstTs);
       row.label168h = rollingUniqueAt(events, now, ROLLING_7D_MS, firstTs);
+      row.label720h = coverage?.precision !== 'utc-days' && hasActivityCoverage(coverage, now - ROLLING_30D_MS, now)
+        ? rollingUniqueAt(events, now, ROLLING_30D_MS, now - ROLLING_30D_MS) : null;
+      row.recordedLabel720h = rollingUniqueAt(events, now, ROLLING_30D_MS, firstTs);
+      row.weeklyGrowth = activityGrowth(records, now, 7, coverage);
+      row.monthlyGrowth = activityGrowth(records, now, 30, coverage);
     }
     out.push(row);
   }
@@ -414,10 +601,11 @@ export function aggregate(
   now: number,
   inRange = records,
   start: number | null = null,
+  activityCoverage?: ActivityCoverage,
 ): Aggregates {
   return {
     users: inRange.length,
-    activity: dailyActive(records, now),
+    activity: dailyActive(records, now, activityCoverage),
     hourly: hourlyActive(records, now),
     retention: retention(inRange),
     timeCurves: sessionCurves(inRange),
@@ -811,6 +999,10 @@ export function mergeByCid(lists: SessionRecord[][]): SessionRecord[] {
         cid,
         firstTs: Math.min(prev.firstTs, r.firstTs),
         lastTs: Math.max(prev.lastTs, r.lastTs),
+        activeDays: [...new Set([...(prev.activeDays ?? []), ...(r.activeDays ?? [])])].sort((a, b) => a - b),
+        activityCoverageFrom: prev.activityCoverageFrom == null ? r.activityCoverageFrom
+          : r.activityCoverageFrom == null ? prev.activityCoverageFrom : Math.min(prev.activityCoverageFrom, r.activityCoverageFrom),
+        activityCoverageSources: [...activitySources(prev), ...activitySources(r)],
         sessions: (prev.sessions ?? 0) + (r.sessions ?? 0) || undefined,
         sessionMs: timed.map((t) => t.ms),
         sessionLog: timed.map((t) => ({ ts: t.ts })),

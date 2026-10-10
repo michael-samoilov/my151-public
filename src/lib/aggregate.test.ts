@@ -4,6 +4,8 @@ import {
   aggregate,
   buildDepthCurve,
   dailyActive,
+  activityGrowth,
+  impliedActivityGrowth,
   hourlyActive,
   depthByDevice,
   heatmaps,
@@ -20,6 +22,116 @@ import {
   type Referrable,
   type SessionRecord,
 } from '../../api/_aggregate';
+
+describe('activity growth coverage', () => {
+  const now = Date.UTC(2026, 10, 30, 12);
+  const midnight = Date.UTC(2026, 10, 30);
+  const coverage = { retainedFrom: midnight - 60 * DAY_MS, completeThrough: midnight };
+  const browser = (cid: string, times: number[]): SessionRecord => ({
+    cid, firstTs: times[0], lastTs: times.at(-1)!, sessionLog: times.map(ts => ({ ts })),
+  });
+  const records = [
+    browser('a::US', [midnight - 10 * DAY_MS, midnight - DAY_MS]),
+    browser('a::CA', [midnight - 2 * DAY_MS]),
+    browser('b', [midnight - DAY_MS, midnight]),
+    browser('today-only', [midnight + 1]),
+  ];
+
+  it('excludes today and deduplicates country splits in adjacent complete UTC weeks', () => {
+    expect(activityGrowth(records, now, 7, coverage)).toMatchObject({
+      status: 'available', start: midnight - 7 * DAY_MS, end: midnight,
+      previousStart: midnight - 14 * DAY_MS, previousEnd: midnight - 7 * DAY_MS,
+      current: 2, previous: 1, percent: 100,
+    });
+  });
+
+  it('does not invent a percentage when the previous complete window is empty', () => {
+    expect(activityGrowth([browser('b', [midnight - DAY_MS])], now, 30, coverage))
+      .toMatchObject({ status: 'available', current: 1, previous: 0, percent: null });
+  });
+
+  it('suppresses growth when retained history is unverified, short, or ends before midnight', () => {
+    expect(activityGrowth(records, now, 7)).toMatchObject({ status: 'unavailable', reason: 'missing coverage' });
+    expect(activityGrowth(records, now, 30, { ...coverage, retainedFrom: midnight - 59 * DAY_MS }))
+      .toMatchObject({ status: 'unavailable', reason: 'incomplete history' });
+    expect(activityGrowth(records, now, 7, { ...coverage, completeThrough: midnight - 1 }))
+      .toMatchObject({ status: 'unavailable', reason: 'incomplete history' });
+  });
+
+  it('suppresses windows that overlap a known or supplied recording outage', () => {
+    expect(activityGrowth(records, now, 7, { ...coverage, outages: [{ start: midnight - DAY_MS, end: midnight }] }))
+      .toMatchObject({ status: 'unavailable', reason: 'recording outage' });
+    const september = Date.UTC(2026, 8, 30);
+    expect(activityGrowth([], september, 7, { retainedFrom: september - 20 * DAY_MS, completeThrough: september }))
+      .toMatchObject({ status: 'unavailable', reason: 'recording outage' });
+  });
+});
+
+describe('retained calendar activity', () => {
+  const now = Date.UTC(2026, 11, 30, 12);
+  const midnight = Date.UTC(2026, 11, 30);
+  const record = (cid: string, from: number, days: number[]): SessionRecord => ({
+    cid, firstTs: from, lastTs: midnight - DAY_MS,
+    sessionLog: [{ ts: midnight - DAY_MS }],
+    activityCoverageFrom: from, activeDays: days,
+  });
+
+  it('uses retained UTC stamps for growth without fabricating exact rolling-hour labels', () => {
+    const r = record('a', midnight - 70 * DAY_MS, [midnight - 40 * DAY_MS, midnight - DAY_MS]);
+    const today = dailyActive([r], now).at(-1)!;
+    expect(today.monthlyGrowth).toMatchObject({ status: 'available', current: 1, previous: 1, percent: 0 });
+    expect(today.rolling30).toBe(1);
+    expect(today.label720h).toBeNull();
+  });
+
+  it('ignores expired legacy records but rejects a legacy browser active inside the compared windows', () => {
+    const fresh = record('new', midnight - DAY_MS, [midnight - DAY_MS]);
+    const stale = { cid: 'legacy', firstTs: midnight - 80 * DAY_MS, lastTs: midnight - 70 * DAY_MS };
+    expect(activityGrowth([fresh, stale], now, 30)).toMatchObject({ status: 'available', current: 1, previous: 0 });
+    expect(activityGrowth([fresh, { ...stale, lastTs: midnight - 40 * DAY_MS }], now, 30))
+      .toMatchObject({ status: 'unavailable' });
+  });
+
+  it('preserves per-tool coverage when Suite merges the same browser', () => {
+    const fresh = record('a', midnight - DAY_MS, [midnight - DAY_MS]);
+    const stale = { cid: 'a', firstTs: midnight - 80 * DAY_MS, lastTs: midnight - 70 * DAY_MS };
+    expect(activityGrowth(mergeByCid([[fresh], [stale]]), now, 30))
+      .toMatchObject({ status: 'available', current: 1, previous: 0 });
+    expect(activityGrowth(mergeByCid([[fresh], [{ ...stale, lastTs: midnight - 40 * DAY_MS }]]), now, 30))
+      .toMatchObject({ status: 'unavailable' });
+  });
+
+  it('does not infer empty-population or legacy-only zero growth without observed coverage', () => {
+    expect(activityGrowth([], now, 30)).toMatchObject({ status: 'unavailable' });
+    expect(activityGrowth([{ cid: 'old', firstTs: midnight - 80 * DAY_MS, lastTs: midnight - 70 * DAY_MS }], now, 30))
+      .toMatchObject({ status: 'unavailable' });
+  });
+
+  it('accepts a new browser observed milliseconds after its first timestamp on the same UTC day', () => {
+    const fresh = record('new', midnight - DAY_MS, [midnight - DAY_MS]);
+    fresh.activityCoverageFrom = fresh.firstTs + 250;
+    expect(activityGrowth([fresh], now, 30)).toMatchObject({ status: 'available', current: 1, previous: 0 });
+  });
+
+  it('accepts allowed future client clock skew only within the same recorded UTC day', () => {
+    const fresh = record('new', midnight - DAY_MS, [midnight - DAY_MS]);
+    const shifted = (skew: number) => ({ ...fresh, firstTs: fresh.firstTs + skew, lastTs: fresh.firstTs + skew,
+      sessionLog: [{ ts: fresh.firstTs + skew }] });
+    expect(activityGrowth([shifted(60_000)], now, 30)).toMatchObject({ status: 'available', current: 1, previous: 0 });
+    expect(activityGrowth([shifted(6 * 60_000)], now, 30)).toMatchObject({ status: 'unavailable' });
+    expect(activityGrowth([{ ...shifted(60_000), activityCoverageFrom: fresh.firstTs - 1 }], now, 30))
+      .toMatchObject({ status: 'unavailable' });
+  });
+
+  it('rejects invalid coverage dates and coverage that starts after the first observed calendar day', () => {
+    const fresh = record('new', midnight - 2 * DAY_MS, [midnight - 2 * DAY_MS, midnight - DAY_MS]);
+    for (const activityCoverageFrom of [NaN, -1, now + DAY_MS, midnight - DAY_MS]) {
+      expect(activityGrowth([{ ...fresh, activityCoverageFrom }], now, 30)).toMatchObject({ status: 'unavailable' });
+    }
+    expect(activityGrowth([{ ...fresh, firstTs: now, lastTs: midnight - DAY_MS }], now, 30))
+      .toMatchObject({ status: 'unavailable' });
+  });
+});
 
 // Two hand-built records, one per tool shape, so every assertion below is a
 // number a reader can recompute by hand.
@@ -534,5 +646,49 @@ describe('leagueUsageFunnel', () => {
     expect(f.placed).toBe(1);
     expect(f.opened).toBe(5);
     expect(f.bounced).toBe(4);
+  });
+});
+
+
+describe('implied activity trend over the selected range', () => {
+  const now = Date.UTC(2026, 9, 10, 12);
+  const today = Date.UTC(2026, 9, 10);
+  const rows = (counts: number[]) => counts.map((dau, i) => ({day: today - (counts.length - i) * DAY_MS, dau, rolling7: 0}));
+  it('recovers growth and decline from dated counts without requiring retained coverage', () => {
+    const up = impliedActivityGrowth(rows([2, 4, 8]), null, now);
+    expect(up.weeklyPercent).toBeCloseTo(12700, 5);
+    expect(up.monthlyPercent).toBeCloseTo(107374182300, 1);
+    expect(impliedActivityGrowth(rows([8, 4, 2]), null, now).weeklyPercent).toBeCloseTo(-99.21875, 5);
+  });
+  it('fits All to the full recorded range and changes when the selection excludes earlier days', () => {
+    const daily = rows([40, 20, 10, 2, 4, 8]);
+    expect(impliedActivityGrowth(daily, null, now).weeklyPercent).toBeLessThan(0);
+    const selected = impliedActivityGrowth(daily, daily[3].day, now);
+    expect(selected.days).toBe(3);
+    expect(selected.weeklyPercent).toBeCloseTo(12700, 5);
+  });
+  it('keeps zero-count days in the fit instead of changing a rising recorded trend into a decline', () => {
+    const result = impliedActivityGrowth(rows([0, 4, 2]), null, now);
+    expect(result.days).toBe(3);
+    expect(result.weeklyPercent).toBeGreaterThan(0);
+  });
+  it('excludes unfinished UTC days and the partially selected opening day', () => {
+    const daily = [...rows([10, 10, 10]), {day: today, dau: 1, rolling7: 0}];
+    const result = impliedActivityGrowth(daily, daily[0].day + 12 * 3600000, now);
+    expect(result.days).toBe(2);
+    expect(result.start).toBe(daily[1].day);
+    expect(result.end).toBe(today);
+    expect(result.weeklyPercent).toBeCloseTo(0, 5);
+  });
+  it('does not invent a finite trend for empty, one-day, all-zero or boundary-only observations', () => {
+    for (const counts of [[], [3], [0, 0, 0], [0, 0, 3], [3, 0, 0]]) {
+      expect(impliedActivityGrowth(rows(counts), null, now).weeklyPercent).toBeNull();
+    }
+  });
+  it('uses actual day spacing and leaves the input unchanged', () => {
+    const daily = rows([1, 2, 4]).filter((_, i) => i !== 1);
+    const copy = structuredClone(daily);
+    expect(impliedActivityGrowth(daily, null, now).weeklyPercent).toBeCloseTo(12700, 5);
+    expect(daily).toEqual(copy);
   });
 });

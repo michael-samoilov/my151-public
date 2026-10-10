@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import {buildDashboard} from '../api/_dashboard';
 
 function activeUsers(page: import('@playwright/test').Page) {
   return page.locator('section', { has: page.getByRole('heading', { name: 'Active users' }) });
@@ -61,6 +62,54 @@ test.describe('admin active users range', () => {
     const hours = Number(label?.match(/over (\d+) hours/)?.[1]);
     expect(hours).toBeGreaterThanOrEqual(23);
     expect(hours).toBeLessThanOrEqual(24);
+  });
+
+  test('monthly legend toggles and implied growth follows the selected recorded range @viewport', async ({ page }, testInfo) => {
+    const now = Date.now(), day = 86_400_000;
+    const today = Math.floor(now / day) * day;
+    const clients = Object.fromEntries(Array.from({length:32}, (_,i) => {
+      const cid = `activity-e2e-${i}`;
+      const activeDays = Array.from({length:90}, (_,d) => today - (89-d)*day)
+        .filter((_,d) => i < 8 + Math.floor(d/4));
+      return [cid, JSON.stringify({cid, firstTs:today-89*day, lastTs:now, submits:2, sessions:1,
+        sessionMs:[60_000,60_000], sessionLog:[{ts:activeDays[0] ?? now,ids:[1]},{ts:now,ids:[1]}], activeDays, activityCoverageFrom:today-89*day,
+        maxDepth:1, everIds:[1], latestIds:[1], completed:false, exported:false})];
+    }));
+    const payload = buildDashboard({clients,archived:[],funnel:{},funnelWindow:null,leagueClients:{}},{range:'all'},now);
+    await page.route('**/api/submissions?**', route => route.fulfill({json:payload}));
+    await page.evaluate(() => localStorage.setItem('p151-admin-token','e2e'));
+    await page.goto('/?admin');
+    const panel = activeUsers(page);
+    const monthly = panel.getByRole('button', { name: 'monthly', exact: true });
+    await expect(monthly).toHaveAttribute('aria-pressed', 'true');
+    const growth = panel.getByLabel('Implied growth over selected range');
+    await expect(growth).toHaveText(/Implied WoW [+-]?[\d,.]+% · MoM [+-]?[\d,.]+%/);
+    await expect(panel.getByText(/complete retained history/)).toHaveCount(0);
+    const chart = panel.getByRole('img');
+    await expect(chart).toHaveAttribute('aria-label', /7d label implied growth .*% WoW.*30d label implied growth .*% MoM/);
+    const allGrowth = await growth.textContent();
+    await page.getByRole('group', {name: 'Date range'}).getByRole('button', {name: '28d', exact: true}).click();
+    await expect(growth).not.toHaveText(allGrowth!);
+    await expect(panel.getByText(/27 complete recorded days/)).toBeVisible();
+    const selectedGrowth = await growth.textContent();
+    const weeklyRate = selectedGrowth!.match(/WoW ([^ ]+)/)![1];
+    const monthlyRate = selectedGrowth!.match(/MoM ([^ ]+)/)![1];
+    await expect(chart).toHaveAttribute('aria-label', new RegExp(`7d label implied growth ${weeklyRate.replace(/[+.%]/g, '\\$&')} WoW`));
+    await expect(chart).toHaveAttribute('aria-label', new RegExp(`30d label implied growth ${monthlyRate.replace(/[+.%]/g, '\\$&')} MoM`));
+    await page.getByRole('group', {name: 'Date range'}).getByRole('button', {name: 'All', exact: true}).click();
+    await expect(growth).toHaveText(allGrowth!);
+    await monthly.click();
+    await expect(monthly).toHaveAttribute('aria-pressed', 'false');
+    await expect(panel.getByRole('img')).not.toHaveAttribute('aria-label', /trailing 30-day|30d label implied growth/);
+    await monthly.click();
+    await expect(panel.getByRole('img')).toHaveAttribute('aria-label', /trailing 30-day/);
+    await testInfo.attach('monthly-toggle-and-coverage', { body: await panel.screenshot(), contentType: 'image/png' });
+    for (const name of ['daily', 'weekly', 'monthly']) {
+      await panel.getByRole('button', { name, exact: true }).click();
+    }
+    await expect(panel.getByRole('img')).toBeVisible();
+    await expect(panel.getByRole('img')).not.toHaveAttribute('aria-label', /trailing|label implied growth/);
+    await testInfo.attach('all-series-hidden', { body: await panel.screenshot(), contentType: 'image/png' });
   });
 
   test('7d plots one daily series with weekday axis labels and hides the weekly series', async ({ page }) => {
