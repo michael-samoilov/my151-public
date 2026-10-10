@@ -1779,6 +1779,9 @@ function makeBadgeSuffix(text: string): HTMLElement {
   suffix.dataset.badgeSuffix = '';
   suffix.setAttribute('contenteditable', 'false');
   suffix.textContent = text;
+  // A suffix with no space or hyphen to break at (Japanese バッジ, Korean 배지,
+  // Chinese 徽章) stays whole, so a wrap falls before it, not inside it.
+  if (!/[\s-]/.test(text)) suffix.style.whiteSpace = 'nowrap';
   return suffix;
 }
 
