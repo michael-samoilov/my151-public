@@ -7,6 +7,7 @@ import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup, type PokemonDataSource } from '@/hooks/usePokemonData';
 import { mergeBranchesByChain } from './chainMerge';
 import { useBrowserStore, useFavoriteBrowserStore } from './browserStore';
+import { readFavoritePickerIds } from './favoritePickerBridge';
 import { ARCHETYPES } from '@/data/archetypes';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { DEX_TOTAL } from '@/lib/milestones';
@@ -153,7 +154,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const activeSection = useBrowserStore((s) => s.activeSection);
   const addToSection = useBrowserStore((s) => s.addToSection);
   const favoritesFilter = useFavoriteBrowserStore((s) => s.favoritesFilter);
-  const favoriteIds = useFavoriteBrowserStore((s) => s.favoriteIds);
+  const storedFavoriteIds = useFavoriteBrowserStore((s) => s.favoriteIds);
+  const favoriteIds = useMemo(() => dataSource?.favoritePickerId
+    ? readFavoritePickerIds(dataSource.favoritePickerId) : storedFavoriteIds, [storedFavoriteIds, dataSource]);
   const setFavoritesFilter = useFavoriteBrowserStore((s) => s.setFavoritesFilter);
   const refreshFavorites = useFavoriteBrowserStore((s) => s.refreshFavorites);
   useLayoutEffect(() => { refreshFavorites(); }, [activeSection, refreshFavorites]);
@@ -217,9 +220,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const handleToggleStage = useCallback((memberIds: number[]) => {
     if ((isDesktop || pickMode === 'instant') && activeSection) {
       // Desktop (and the league's instant mode): add with no staging.
-      const newIds = memberIds.filter(id => !assignedIds.has(id));
-      if (newIds.length > 0) {
-        addToSection(activeSection, newIds);
+      const idsToAdd = pickMode === 'instant' ? memberIds : memberIds.filter(id => !assignedIds.has(id));
+      if (idsToAdd.length > 0) {
+        addToSection(activeSection, idsToAdd);
         // Scroll the build page to the target section
         if (isDesktop) window.dispatchEvent(new CustomEvent('scroll-to-section', { detail: activeSection }));
       }
@@ -706,7 +709,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       }
 
       const mapGroup = (group: EvolutionGroup): SubgroupGridGroup => ({
-        key: `${sub.label}-${group.chainId}`,
+        key: `${sub.label}-${group.members.map(member => member.id).join('-')}`,
         members: group.members,
         matchedIds: new Set(group.members.filter(m => matchesMember(subIdSet, m.id)).map(m => m.id)),
       });

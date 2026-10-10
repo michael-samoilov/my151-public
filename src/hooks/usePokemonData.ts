@@ -353,6 +353,7 @@ export interface PokemonDataSource {
   getAllEvolutionLines(id: number): Pokemon[][];
   includeEvolutionItemForms?: boolean;
   archetypeMemberId?(id: number): number;
+  favoritePickerId?(id: number): number | undefined;
 }
 
 export interface UseFilteredPokemonOptions {

@@ -3,7 +3,7 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 
 const PICKER_BROWSER_IDS: Readonly<Record<string, number>> = browserIds;
 
-export function favoritePickerIds(raw: string | null): Set<number> {
+export function favoritePickerIds(raw: string | null, resolveId?: (id: number) => number | undefined): Set<number> {
   const ids = new Set<number>();
   if (!raw) return ids;
   try {
@@ -15,8 +15,8 @@ export function favoritePickerIds(raw: string | null): Set<number> {
     if (!fills || typeof fills !== 'object' || Array.isArray(fills)) return ids;
     for (const value of Object.values(fills)) {
       if (typeof value !== 'number' || !Number.isSafeInteger(value)) continue;
-      const id = PICKER_BROWSER_IDS[value] ?? value;
-      if (getPokemonById(id)) ids.add(id);
+      const id = resolveId ? resolveId(value) : PICKER_BROWSER_IDS[value] ?? value;
+      if (id !== undefined && (resolveId || getPokemonById(id))) ids.add(id);
     }
   } catch {
     // A damaged save must not block the other builders.
@@ -24,9 +24,9 @@ export function favoritePickerIds(raw: string | null): Set<number> {
   return ids;
 }
 
-export function readFavoritePickerIds(): Set<number> {
+export function readFavoritePickerIds(resolveId?: (id: number) => number | undefined): Set<number> {
   try {
-    return favoritePickerIds(localStorage.getItem('favorite-picker'));
+    return favoritePickerIds(localStorage.getItem('favorite-picker'), resolveId);
   } catch {
     return new Set();
   }

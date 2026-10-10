@@ -27,6 +27,21 @@ export type PowerupForms = Record<number, Record<PowerupKind, PowerupForm[]>>;
 
 const FORMS = formsData as PowerupForms;
 
+const ALTERNATE_FORMS: PowerupForms = {
+  10061: FORMS[670],
+  10184: FORMS[849],
+  10147: { mega: [{ id: 10318, label: 'Mega Magearna (Original Color)' }], dynamax: [] },
+  11006: { mega: [{ id: 10323, label: 'Mega Tatsugiri (Droopy Form)' }], dynamax: [] },
+  11007: { mega: [{ id: 10324, label: 'Mega Tatsugiri (Stretchy Form)' }], dynamax: [] },
+  10227: { mega: [], dynamax: [{ id: 10227, label: 'Gigantamax Urshifu Rapid Strike' }] },
+  10254: FORMS[869],
+  10255: FORMS[869],
+  10256: FORMS[869],
+  10257: FORMS[869],
+  10258: FORMS[869],
+  10259: FORMS[869],
+};
+
 /**
  * Which seat holds the card's one powerup, and which form of it.
  *
@@ -62,7 +77,7 @@ export type CardPowerups = Partial<Record<number, Powerup[]>>;
 
 /** The forms a species can take under one powerup; empty when it has none. */
 export function formsFor(pokemonId: number, kind: PowerupKind): PowerupForm[] {
-  return FORMS[pokemonId]?.[kind] ?? [];
+  return (ALTERNATE_FORMS[pokemonId] ?? FORMS[pokemonId])?.[kind] ?? [];
 }
 
 /**
@@ -91,8 +106,7 @@ export function powerupSymbol(pokemonId: number, kind: PowerupKind): PowerupSymb
 
 /** True when a species has any form under either powerup. */
 export function hasAnyPowerup(pokemonId: number): boolean {
-  const entry = FORMS[pokemonId];
-  return !!entry && (entry.mega.length > 0 || entry.dynamax.length > 0);
+  return formsFor(pokemonId, 'mega').length > 0 || formsFor(pokemonId, 'dynamax').length > 0;
 }
 
 /**

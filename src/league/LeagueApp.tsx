@@ -14,7 +14,7 @@ import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useLeagueBeacon } from './hooks/useLeagueBeacon';
 import { useLeagueFunnelNudges } from './hooks/useLeagueFunnelNudges';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById, leaguePokemonDataSource } from '@/league/data/catalog';
 import { pokemonLabel, useDocumentLocale, useNamesVersion } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { slotLabel } from './model/constants';
@@ -254,7 +254,7 @@ export function LeagueApp() {
     <BrowserStoreContext.Provider value={useLeagueBrowserStore}>
       {/* The pane header on desktop says what the sheet title says on a
           phone: the slot being filled, not the card it is on. */}
-      <PokemonBrowser pickMode="instant" labelForSection={() => target} />
+      <PokemonBrowser pickMode="instant" labelForSection={() => target} dataSource={leaguePokemonDataSource} />
     </BrowserStoreContext.Provider>
   );
 

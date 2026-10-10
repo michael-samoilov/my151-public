@@ -1,4 +1,4 @@
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById } from '@/league/data/catalog';
 import type { GymCard } from '../store/useLeagueStore';
 import { legendsOf } from '../store/useLeagueStore';
 

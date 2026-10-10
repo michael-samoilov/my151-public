@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { useFavoriteBrowserStore } from '@/components/browser/browserStore';
 import type { BrowserStoreState } from '@/components/browser/browserStore';
-import { getAllPokemon, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
+import { getAllPokemon, getEvolutionLine, branchEndingAt } from '../data/catalog';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { CATEGORIES } from '@/data/categories';
 import { placedIds } from '../model/engine';
@@ -27,17 +27,6 @@ const LEGEND_ELIGIBLE: Set<number> = (() => {
       .map((p) => p.id),
   );
 })();
-
-/** Root→tapped path, walking `evolvesFrom` up from the tapped branch's leaf. */
-function branchEndingAt(finalId: number): number[] {
-  const branch: number[] = [];
-  let cur = getPokemonById(finalId);
-  while (cur) {
-    branch.unshift(cur.id);
-    cur = cur.evolvesFrom !== null ? getPokemonById(cur.evolvesFrom) : undefined;
-  }
-  return branch;
-}
 
 /**
  * The whole line through one Pokemon, root to leaf, along its first branch.
@@ -220,7 +209,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       if (ids.length === 0) return;
       const card = cardIndex();
       const purpose = ui().browserPurpose;
-      const branch = branchEndingAt(ids[ids.length - 1]);
+      const branch = branchEndingAt(ids[ids.length - 1], ids);
       if (purpose === 'legend') {
         league().setLegend(card, {
           pokemonId: branch[branch.length - 1],

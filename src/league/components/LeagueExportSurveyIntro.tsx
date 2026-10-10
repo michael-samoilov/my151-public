@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById } from '@/league/data/catalog';
 import type { ExportSurveyTool } from '@/lib/exportSurvey';
 import {
   useExportSurveySpriteScale,

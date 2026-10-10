@@ -8,6 +8,7 @@
     "cache-sprites": "bash scripts/cache-sprites.sh",
     "sprites:measure": "node scripts/build-favorite-sprite-ink.mjs",
     "build-type-glyphs": "tsx scripts/build-type-glyphs.ts",
+    "league:forms": "node --import tsx scripts/league/build-alternate-forms.ts",
     "league:powerups": "tsx --tsconfig tsconfig.node.json scripts/league/fetch-powerup-forms.ts",
     "shade-report": "tsx --tsconfig tsconfig.node.json scripts/shade-report.ts",
     "og-image": "node scripts/generate-og-image.mjs",
