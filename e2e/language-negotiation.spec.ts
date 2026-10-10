@@ -23,9 +23,9 @@ const BUG_JA = 'むし';
 const BUG_EN = 'BUG';
 
 async function openTypeFilter(page: import('@playwright/test').Page) {
-  // By attribute: in Japanese the button's accessible name is Japanese too.
+  // By attribute: in Japanese both buttons' accessible names are Japanese too.
   await page.locator('[data-add-slot]').first().click();
-  await page.getByRole('button', { name: 'Type', exact: true }).first().click();
+  await page.locator('[data-filter-chip="type"]').first().click();
   const grid = page.locator('[data-testid="type-filter"]');
   await expect(grid.locator('svg[role="img"]')).toHaveCount(18);
   return grid;
