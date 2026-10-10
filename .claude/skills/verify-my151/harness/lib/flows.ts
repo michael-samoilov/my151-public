@@ -634,7 +634,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const idleDelta = Math.hypot(idleB.x - idleA.x, idleB.y - idleA.y);
   const visualDelta = visualTiltDelta(idleA, idleB);
   // The lift projects itself: perspective() is inside its own transform.
-  const perspectiveOn = idleA.perspective.startsWith('600') && idleB.liftTransform.startsWith('matrix3d');
+  const perspectiveOn = parseFloat(idleA.perspective) > 0 && idleB.liftTransform.startsWith('matrix3d');
   const idleMoved =
     idleA.orbit === 'idle' &&
     idleB.orbit === 'idle' &&
@@ -2569,7 +2569,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     `const has=(sel)=>!!document.querySelector(sel);
      const extras=[...document.querySelectorAll('[data-foil-slider],[data-hover-tilt-mask],[data-workshop-dark-card-toggle]')]
        .map((el)=>el.getAttribute('data-foil-slider')||el.getAttribute('data-hover-tilt-mask')||el.getAttribute('data-workshop-dark-card-toggle')||el.tagName)
-       .filter((id)=>!['holographic','holoRainbow','pointLight','iridescence','maxTilt','glareIntensity','glareSize','shadowBlur'].includes(id));
+       .filter((id)=>!['holographic','holoRainbow','pointLight','iridescence','maxTilt','cameraRatio','glareIntensity','glareSize','glareDark','shadowBlur'].includes(id));
      return {
         holo: has('[data-foil-slider="holographic"]') && has('[data-foil-slider="holoRainbow"]') && has('[data-foil-slider="maxTilt"]'),
         glare: has('[data-foil-slider="glareIntensity"]'),

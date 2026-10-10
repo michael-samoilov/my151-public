@@ -27,15 +27,24 @@ display options, exportable as a PNG.
 - The holo layer is the poke-holo "V" shine: a sunpillar rainbow, diagonal
   bands, and faint noise, blended with `color-dodge` and masked to the ink.
   A second copy (`::after`, `soft-light`) moves its bands the opposite way.
-  The glare is fixed `overlay`. There is no blend selector.
+  The rainbow and the iridescence blend with `soft-light`, and the glare is
+  fixed `overlay` with no dark far stop. The export pane has no blend
+  selector.
+- The camera sits `PREVIEW_PERSPECTIVE_RATIO` (1.75) times the card's long
+  edge away (`src/components/export/exportPreviewFit.ts`), so a big desktop
+  card leans as little as a phone card.
 - `/foil-workshop` (off in production) drives the same `ExportPreview3D` card
   with Shine (the V shine), Rainbow, Point light, Iridescence, Max tilt, Glare
   (intensity and size), and Shadow controls. Max tilt sets the hover tilt, the
   auto-tilt, and the cap together. It restores only those dials from its saved
   recipe or link; everything else, the 1.15 pop included, is the in-app
-  default. Samples: Dex, Dex of all 151, Dex of 151 with stats, league,
-  league filled, league with story and rematch teams, trainer card, and a
-  test card of color swatches.
+  default. Compare buttons switch between the live site's look and the new
+  one with or without the rainbow. Three dials, kept in the link only, set
+  the camera distance (or the live site's fixed 600 px), the rainbow blend
+  (`soft-light` or the live site's `hue`), and the glare's dark edge.
+  Samples: Dex, Dex of all 151, Dex of 151 with stats, league, league
+  filled, league with story and rematch teams, trainer card, favorites
+  chart, and a test card of color swatches.
 - Defaults (Michael's workshop pick, September 27): shine 0.7, rainbow 0.2,
   point light 1, iridescence 0.1, max and auto tilt 10 degrees, tilt factor
   10/7, glare 1 at size 0.5, shadow blur 25, exit delay 420 ms, pop 1.15.
