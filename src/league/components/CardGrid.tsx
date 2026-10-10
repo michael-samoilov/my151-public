@@ -1577,8 +1577,13 @@ function useMarkBoxStyle(): React.CSSProperties {
   }, [t, fontsLoaded]);
 }
 
-/** The last space before a short final word does not break: "Pick a / move" never strands the noun. */
-const keepLastWord = (text: string) => text.replace(/ (\S+)$/u, '\u00a0$1');
+/**
+ * The last space does not break, so "Pick a / move" never strands the noun.
+ * A two-word phrase keeps its one break: German "Attacke w\u00e4hlen" would
+ * otherwise run past the slot's edge as one unbreakable word.
+ */
+const keepLastWord = (text: string) =>
+  (text.trim().match(/\s+/g) ?? []).length >= 2 ? text.replace(/ (\S+)$/u, '\u00a0$1') : text;
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const t = useT();

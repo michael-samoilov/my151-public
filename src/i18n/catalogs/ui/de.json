@@ -101,7 +101,7 @@
   "league.slot.partner.remove": "Partner entfernen",
   "league.badge.label": "Ordensname",
   "league.badge.mark": "Orden",
-  "league.badge.phrase": "{name}orden",
+  "league.badge.phrase": "{name}-Orden",
   "league.badge.placeholder": "Name",
   "league.badge.remove": "Ordensnamen entfernen",
   "league.band.boss": "Endgegner-Team",

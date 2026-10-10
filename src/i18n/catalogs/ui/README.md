@@ -117,7 +117,8 @@ export popups keep their `nudge.*` keys.
   Spanish and Italian words are feminine.
 - **The badge phrase** (`league.badge.phrase`) puts the badge word where each
   language puts it: after the name in English, Japanese, Korean and Chinese,
-  joined into one word in German (Donnerorden), and before the name in
+  hyphenated in German (Donner-Orden, since the name is the user's own and a
+  closed compound would break mid-word on the card), and before the name in
   French, Spanish and Italian.
 - **Endgame boss** is a fan term, so it is described: 裏ボス (the post-game
   boss), 최종 보스, 隐藏头目 and 隱藏頭目, Endgegner, boss final, jefe final
