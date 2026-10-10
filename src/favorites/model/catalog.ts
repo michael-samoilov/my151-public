@@ -64,6 +64,9 @@ const FIRST_BY_LINE = new Map<number, number>();
 const OGERPON_FORM_ORDER = new Map(
   [1017, 10273, 10274, 10275].map((id, index) => [id, index]),
 );
+const COSPLAY_PIKACHU_FORM_ORDER = new Map(
+  [10085, 10080, 10081, 10082, 10083, 10084].map((id, index) => [id, 10080 + index]),
+);
 
 for (const p of SPECIES) {
   const first = FIRST_BY_LINE.get(p.evolutionChainId);
@@ -204,7 +207,8 @@ export function comparePickerOrder(a: PickerMon, b: PickerMon): number {
   const floetteEternalLast = a.ownerId === 670 && b.ownerId === 670
     ? Number(a.id === 10061) - Number(b.id === 10061)
     : 0;
-  return firstA - firstB || stageA - stageB || a.ownerId - b.ownerId || ogerponOrder || floetteEternalLast || a.id - b.id;
+  const formOrder = (COSPLAY_PIKACHU_FORM_ORDER.get(a.id) ?? a.id) - (COSPLAY_PIKACHU_FORM_ORDER.get(b.id) ?? b.id);
+  return firstA - firstB || stageA - stageB || a.ownerId - b.ownerId || ogerponOrder || floetteEternalLast || formOrder;
 }
 
 const LEGENDARY_OWNER_IDS = new Set<number>();
