@@ -54,7 +54,9 @@ test.describe('admin flows', () => {
         ((canvas as HTMLCanvasElement & { flowText?: { text: string; visible: boolean }[] }).flowText ?? []).filter((p) => p.visible).map((p) => p.text).join('|'),
       )).toContain(percentage);
       const graph = await chart.evaluate((el) => {
-        type Chart = { getModel(): { getSeriesByIndex(index: number): { getGraph(): {
+        type Rect = { x: number; y: number; width: number; height: number; clone(): Rect; applyTransform(matrix: number[]): void };
+        type Glyph = { type: string; style?: { text?: string; fill?: string }; getBoundingRect(): Rect; getComputedTransform(): number[] | undefined };
+        type Chart = { getZr(): { storage: { getDisplayList(update: boolean): Glyph[] } }; getModel(): { getSeriesByIndex(index: number): { getGraph(): {
           nodes: { id: string; getLayout(): { y: number; value: number } }[];
           edges: { node1: { id: string }; node2: { id: string } }[];
         } } } };
@@ -70,6 +72,17 @@ test.describe('admin flows', () => {
           }
         }
         if (!instance) throw new Error('Rendered usage chart instance missing');
+        const glyphs = instance.getZr().storage.getDisplayList(true).filter((g) => g.type === 'tspan' && g.style?.fill !== 'transparent' && !!(g.style?.text ?? '').trim()).map((g) => {
+          const rect = g.getBoundingRect().clone(), transform = g.getComputedTransform();
+          if (transform) rect.applyTransform(transform);
+          return { text: g.style!.text!, rect };
+        });
+        for (const rate of glyphs.filter((g) => /^\d+%?$/.test(g.text))) for (const other of glyphs.filter((g) => g !== rate)) {
+          const a = rate.rect, b = other.rect;
+          if (Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 0.5 && Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 0.5) {
+            throw new Error(`Usage rate/count labels overlap: ${rate.text}/${other.text}`);
+          }
+        }
         const graph = instance.getModel().getSeriesByIndex(0).getGraph();
         return {
           nodes: graph.nodes.map((n) => ({ name: n.id, ...n.getLayout() })),
