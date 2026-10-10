@@ -140,7 +140,11 @@ def compound(candidate):
     pen = SVGPathPen(None, ntos=lambda n: format(n, '.9g'))
     result.draw(pen)
     d = pen.getCommands()
-    body = f'<path xmlns="http://www.w3.org/2000/svg" id="source-glyph" fill="#fff" fill-rule="nonzero" d="{d}"/>'
+    # Preserve authored curves and circles whenever no geometric edit is needed.
+    # Reversing contours can change WebKit's antialias coverage at small sizes.
+    body = candidate['body'] if not candidate['mirroredHalf'] and all(fill == '#fff' for fill, _ in paints) else (
+        f'<path xmlns="http://www.w3.org/2000/svg" id="source-glyph" fill="#fff" fill-rule="nonzero" d="{d}"/>'
+    )
     return {**candidate, 'sourceBody': candidate['body'], 'body': body, 'path': d, 'bounds': bounds(result), 'originalBounds': original}
 
 

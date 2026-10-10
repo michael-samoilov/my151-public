@@ -4,110 +4,110 @@ export const TYPE_ICONS = {
   "normal": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/normal-glyph.1239116d3beb.svg",
-    "icon": "/sprites/types/vector/normal-icon.8947fbdae2d3.svg"
+    "glyph": "/sprites/types/vector/normal-glyph.d2cbc8537229.svg",
+    "icon": "/sprites/types/vector/normal-icon.9dd993c4867c.svg"
   },
   "fighting": {
     "source": "partywhale",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/fighting-glyph.13c9a9a6ccb0.svg",
-    "icon": "/sprites/types/vector/fighting-icon.18f4e19bfbd0.svg"
+    "glyph": "/sprites/types/vector/fighting-glyph.95a73350ecb4.svg",
+    "icon": "/sprites/types/vector/fighting-icon.1829e05371e6.svg"
   },
   "flying": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/flying-glyph.e233576cb3ea.svg",
-    "icon": "/sprites/types/vector/flying-icon.ef2dfbd8f14d.svg"
+    "glyph": "/sprites/types/vector/flying-glyph.fc55d9787c1a.svg",
+    "icon": "/sprites/types/vector/flying-icon.0b158e8821c2.svg"
   },
   "poison": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/poison-glyph.e7bef0ce42bc.svg",
-    "icon": "/sprites/types/vector/poison-icon.8dbd655776fd.svg"
+    "glyph": "/sprites/types/vector/poison-glyph.210787c77aa1.svg",
+    "icon": "/sprites/types/vector/poison-icon.a05236cc5be2.svg"
   },
   "ground": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/ground-glyph.bcbb0babd141.svg",
-    "icon": "/sprites/types/vector/ground-icon.989d2089367f.svg"
+    "glyph": "/sprites/types/vector/ground-glyph.c8702ff03496.svg",
+    "icon": "/sprites/types/vector/ground-icon.ad57b84a8e48.svg"
   },
   "rock": {
     "source": "partywhale",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/rock-glyph.16dd8222f2b4.svg",
-    "icon": "/sprites/types/vector/rock-icon.08bcfcfc0d72.svg"
+    "glyph": "/sprites/types/vector/rock-glyph.06a3d652ef61.svg",
+    "icon": "/sprites/types/vector/rock-icon.7d4495ccf41e.svg"
   },
   "bug": {
     "source": "partywhale",
     "mirroredHalf": "right",
-    "glyph": "/sprites/types/vector/bug-glyph.a179c22ce849.svg",
-    "icon": "/sprites/types/vector/bug-icon.4d915961f3ae.svg"
+    "glyph": "/sprites/types/vector/bug-glyph.254bdfcde4b1.svg",
+    "icon": "/sprites/types/vector/bug-icon.523c17b32dee.svg"
   },
   "ghost": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/ghost-glyph.17a0a56c7ab5.svg",
-    "icon": "/sprites/types/vector/ghost-icon.e90b3bfbee0a.svg"
+    "glyph": "/sprites/types/vector/ghost-glyph.029151c94023.svg",
+    "icon": "/sprites/types/vector/ghost-icon.d019fdc796f3.svg"
   },
   "steel": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/steel-glyph.64c21dfdcb0c.svg",
-    "icon": "/sprites/types/vector/steel-icon.46a5bec0fe39.svg"
+    "glyph": "/sprites/types/vector/steel-glyph.102c85a078ec.svg",
+    "icon": "/sprites/types/vector/steel-icon.c4b935cba30e.svg"
   },
   "fire": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/fire-glyph.b1673fe662bf.svg",
-    "icon": "/sprites/types/vector/fire-icon.cc27bf7e7868.svg"
+    "glyph": "/sprites/types/vector/fire-glyph.7d97e29e501c.svg",
+    "icon": "/sprites/types/vector/fire-icon.d2fbd27c39c4.svg"
   },
   "water": {
     "source": "partywhale",
     "mirroredHalf": "right",
-    "glyph": "/sprites/types/vector/water-glyph.ffcc2126587f.svg",
-    "icon": "/sprites/types/vector/water-icon.72039d8d19a1.svg"
+    "glyph": "/sprites/types/vector/water-glyph.1e6ead0d5a74.svg",
+    "icon": "/sprites/types/vector/water-icon.91c4544a1a5b.svg"
   },
   "grass": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/grass-glyph.1519c795dd10.svg",
-    "icon": "/sprites/types/vector/grass-icon.4f3d7b2f2b1d.svg"
+    "glyph": "/sprites/types/vector/grass-glyph.81255c9e966a.svg",
+    "icon": "/sprites/types/vector/grass-icon.0b97e305319b.svg"
   },
   "electric": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/electric-glyph.7c6d03dc4f11.svg",
-    "icon": "/sprites/types/vector/electric-icon.37a55f17dfe1.svg"
+    "glyph": "/sprites/types/vector/electric-glyph.8df025787e6e.svg",
+    "icon": "/sprites/types/vector/electric-icon.45b5b15e6170.svg"
   },
   "psychic": {
     "source": "partywhale",
     "mirroredHalf": "right",
-    "glyph": "/sprites/types/vector/psychic-glyph.a80e2c5c8110.svg",
-    "icon": "/sprites/types/vector/psychic-icon.e0a7f1421130.svg"
+    "glyph": "/sprites/types/vector/psychic-glyph.c6bdf486f719.svg",
+    "icon": "/sprites/types/vector/psychic-icon.69c08e5f7f98.svg"
   },
   "ice": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/ice-glyph.d157849d7b73.svg",
-    "icon": "/sprites/types/vector/ice-icon.23cc0cb7a607.svg"
+    "glyph": "/sprites/types/vector/ice-glyph.6db594efdb1c.svg",
+    "icon": "/sprites/types/vector/ice-icon.6f26626de382.svg"
   },
   "dragon": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/dragon-glyph.a92d799f30d4.svg",
-    "icon": "/sprites/types/vector/dragon-icon.c2efaa843dde.svg"
+    "glyph": "/sprites/types/vector/dragon-glyph.f69c8fa82d85.svg",
+    "icon": "/sprites/types/vector/dragon-icon.ac8327cdf0db.svg"
   },
   "dark": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/dark-glyph.04207c247e36.svg",
-    "icon": "/sprites/types/vector/dark-icon.67622dd9ef3d.svg"
+    "glyph": "/sprites/types/vector/dark-glyph.6e804d32f533.svg",
+    "icon": "/sprites/types/vector/dark-icon.e8b4a8b5c2f7.svg"
   },
   "fairy": {
     "source": "elginive",
     "mirroredHalf": null,
-    "glyph": "/sprites/types/vector/fairy-glyph.f58906c9ac38.svg",
-    "icon": "/sprites/types/vector/fairy-icon.bfaaaafb2a23.svg"
+    "glyph": "/sprites/types/vector/fairy-glyph.0987a7fc9a5a.svg",
+    "icon": "/sprites/types/vector/fairy-icon.df06b601cede.svg"
   }
 } as const satisfies Record<TypeName, {
   source: 'partywhale' | 'elginive';
