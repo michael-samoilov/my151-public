@@ -33,6 +33,7 @@ test('Suite tools overlay preserves samples, ties, metric and range controls @vi
   });
   await page.goto('/?admin');
   const panel=page.locator('section').filter({has:page.getByRole('heading',{name:'Recorded time and sessions'})});
+  await panel.getByRole('button',{name:'Legacy spans',exact:true}).click();
   await expect(panel.getByRole('img',{name:/Recorded minutes retention: 3 browsers/})).toBeVisible();
   await panel.getByRole('button',{name:'Tools',exact:true}).click();
   const curve=panel.getByRole('img',{name:/Recorded minutes retention by tool/});

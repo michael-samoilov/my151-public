@@ -302,6 +302,7 @@ export interface LeagueSummary {
 
 export interface ApiResponse {
   recordedUsage?: RecordedUsage;
+  attentionUsage?: RecordedUsage;
   /** The date range the aggregates count, and where its window opens (null for all). */
   range?: DashboardRange;
   rangeStart?: number | null;
@@ -2346,7 +2347,7 @@ export function AdminPage() {
             )}
 
             {data.recordedUsage && <Panel title="Recorded time and sessions" sub={["non-bounced browsers"]}>
-              <RecordedUsagePanel data={data.recordedUsage[tool]} tools={tool === 'all' ? data.recordedUsage : undefined} />
+              <RecordedUsagePanel data={data.recordedUsage[tool]} tools={tool === 'all' ? data.recordedUsage : undefined} active={data.attentionUsage?.[tool]} activeTools={tool === 'all' ? data.attentionUsage : undefined} />
             </Panel>}
 
             <Panel
