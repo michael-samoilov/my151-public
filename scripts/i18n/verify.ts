@@ -459,6 +459,28 @@ function lengthBudgets(): void {
 
 //#endregion
 
+//#region Duplicate keys
+
+/**
+ * A locale file that lists a key twice still parses: `JSON.parse` keeps the
+ * last value and drops the first without a word. Two branches that each
+ * translate the same key merge into exactly that, so the gate reads the raw
+ * text. The files are flat objects with one key per line.
+ */
+function duplicateKeys(): void {
+  for (const dir of [UI_DIR, TERMS_DIR]) {
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+      const seen = new Set<string>();
+      for (const match of readFileSync(join(dir, file), 'utf8').matchAll(/^\s*"([^"]+)"\s*:/gm)) {
+        if (seen.has(match[1])) fail('duplicate keys', `${dir}/${file} lists this key more than once`, undefined, match[1]);
+        seen.add(match[1]);
+      }
+    }
+  }
+}
+
+//#endregion
+
 function main(): void {
   const gates: [string, () => void][] = [
     ['official game text', gameTextParity],
@@ -468,6 +490,7 @@ function main(): void {
     ['CJK safety', cjkSafety],
     ['translated UI strings', translatedUi],
     ['length budgets', lengthBudgets],
+    ['duplicate keys', duplicateKeys],
   ];
 
   for (const [name, gate] of gates) {
