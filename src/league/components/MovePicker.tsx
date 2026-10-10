@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Search, X } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Input } from '@/components/ui/input';
@@ -193,6 +193,30 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
     });
     return filtered;
   }, [search, typeFilter, categories, contests, sortKey, sortDir, locale, names]);
+
+  // A name wraps at its spaces onto a second line. A word wider than the
+  // column on its own (German Elektrifizierung, at 320 px) shrinks to fit,
+  // as the card's TM slot does, rather than being cut.
+  const listRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const fit = () => {
+      const spans = [...list.querySelectorAll<HTMLElement>('[data-tm-row-name]')];
+      for (const el of spans) el.style.fontSize = '';
+      const base = spans.length ? parseFloat(getComputedStyle(spans[0]).fontSize) : 0;
+      const over = spans.map((el) => [el, el.clientWidth / el.scrollWidth] as const);
+      for (const [el, ratio] of over) if (ratio < 0.995) el.style.fontSize = `${base * ratio}px`;
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(list);
+    document.fonts.addEventListener('loadingdone', fit);
+    return () => {
+      observer.disconnect();
+      document.fonts.removeEventListener('loadingdone', fit);
+    };
+  }, [results, names]);
 
   const header = (key: SortKey, label: string, right = false) => (
     <button
@@ -396,7 +420,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         {header('accuracy', t('league.tm.col.accuracy'), true)}
         {header('pp', t('league.tm.col.pp'), true)}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3">
+      <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3">
         {results.map((m) => (
           <button
             key={m.id}
@@ -411,7 +435,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           >
             <TypeBadge type={m.type} className="w-[4.375rem]" />
             <CategoryChip category={m.category} />
-            <span className="truncate text-[0.8125rem] font-medium">{nameOf(m)}</span>
+            <span data-tm-row-name="" className="line-clamp-2 text-[0.8125rem] font-medium">{nameOf(m)}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.power ?? '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.accuracy !== null ? `${m.accuracy}%` : '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.pp}</span>
