@@ -2315,7 +2315,7 @@ export function AdminPage() {
             )}
 
             {data.recordedUsage && <Panel title="Recorded time and sessions" sub={["non-bounced browsers"]}>
-              <RecordedUsagePanel data={data.recordedUsage[tool]} />
+              <RecordedUsagePanel data={data.recordedUsage[tool]} tools={tool === 'all' ? data.recordedUsage : undefined} />
             </Panel>}
 
             <Panel
