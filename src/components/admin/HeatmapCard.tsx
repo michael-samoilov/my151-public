@@ -83,9 +83,7 @@ export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, numbe
                   )}
                   style={{
                     backgroundColor:
-                      n > 0
-                        ? `color-mix(in srgb, var(--color-primary) ${Math.round(15 + (85 * n) / max)}%, var(--color-card))`
-                        : 'var(--color-muted)',
+                      `color-mix(in srgb, var(--color-primary) ${(100 * n) / max}%, var(--color-muted))`,
                   }}
                   onPointerEnter={(e) => e.pointerType === 'mouse' && setActive(slot)}
                   onPointerUp={(e) => e.pointerType !== 'mouse' && setActive(on ? null : slot)}
