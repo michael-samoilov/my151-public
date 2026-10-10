@@ -101,11 +101,19 @@ export function chartWeeklyValues(
   });
 }
 
+export function chartMonthlyValues(series: DailyPoint[]): (number | null)[] {
+  const last = series.length - 1;
+  return series.map((p, i) => {
+    if (i === last) return p.label720h ?? p.recordedLabel720h ?? null;
+    return p.rolling30 ?? p.recordedRolling30 ?? null;
+  });
+}
+
 /** Merge server rolling labels onto today's activity row (from `byTool.*.activity`). */
 export function applyActivityLabels(
   series: DailyPoint[],
   nowMs: number,
-  labels: { label24h?: number | null; label168h?: number | null },
+  labels: { label24h?: number | null; label168h?: number | null; label720h?: number | null; recordedLabel720h?: number | null },
 ): DailyPoint[] {
   if (series.length === 0 || !nowMs) return series;
   const today = dayStart(nowMs);
@@ -116,6 +124,8 @@ export function applyActivityLabels(
     ...out[idx],
     label24h: labels.label24h ?? out[idx].label24h,
     label168h: labels.label168h ?? out[idx].label168h,
+    label720h: labels.label720h ?? out[idx].label720h,
+    recordedLabel720h: labels.recordedLabel720h ?? out[idx].recordedLabel720h,
   };
   return out;
 }
