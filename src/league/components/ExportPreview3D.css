@@ -239,10 +239,11 @@
   opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.72 + 0.08 * var(--pointer-from-center)));
 }
 
-/* A rainbow holofoil: tight sunpillar bands recolor the ink as the card
-   tilts. hue keeps each ink's lightness, so paper stays white and nothing
-   washes out. Positions stay inside 0-100%, so the tile always covers the
-   card. */
+/* A rainbow holofoil: tight sunpillar bands tint the ink as the card tilts.
+   soft-light leaves white paper and black ink as they are, and the light
+   sunpillars mostly lighten the colors between. A hue blend turned red
+   ink maroon and yellow ink orange, and dulled every color. Positions
+   stay inside 0-100%, so the tile always covers the card. */
 .export-foil-holo-rainbow {
   z-index: 3;
   background-image: repeating-linear-gradient(
@@ -257,7 +258,7 @@
   );
   background-size: 400% 400%;
   background-position: var(--background-x) var(--background-y);
-  mix-blend-mode: hue;
+  mix-blend-mode: soft-light;
   opacity: calc(var(--foil-opacity) * var(--foil-holoRainbow));
 }
 
@@ -376,7 +377,8 @@
     hsl(calc(120 + var(--pointer-from-left) * 360), 88%, 58%),
     hsl(calc(240 + var(--pointer-from-left) * 360), 88%, 58%)
   );
-  mix-blend-mode: hue;
+  /* soft-light, like the rainbow, so the shift never darkens the ink. */
+  mix-blend-mode: soft-light;
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
 }
