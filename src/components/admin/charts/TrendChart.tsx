@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Panel } from '@/components/admin/ui';
 import { useECharts, cssVar, type EChartsOption } from './useECharts';
+import { dayStart, type ActivityGrowth } from '../../../../api/_aggregate';
 import { rangeStart, type DashboardRange } from '../../../../api/_range';
 import {
   chartDailyValues,
+  chartMonthlyValues,
   chartWeeklyValues,
   dailyWeekdayTicks,
   extendThroughToday,
@@ -45,28 +47,30 @@ function subSize(numSize: number): number {
   return Math.max(7, Math.round(numSize * 0.55));
 }
 
-function measureWindowLabelPx(kind: '7d' | '24h', count: number, numSize: number): number {
+function measureWindowLabelPx(kind: '30d' | '7d' | '24h', count: number, numSize: number): number {
   const ctx = document.createElement('canvas').getContext('2d');
   if (!ctx) return 56;
   ctx.font = `700 ${numSize}px ${LABEL_FACE}`;
-  const n = ctx.measureText(String(count)).width;
+  const n = ctx.measureText(`${kind === '30d' ? '≥' : ''}${count}`).width;
   ctx.font = `400 ${subSize(numSize)}px ${LABEL_FACE}`;
   return n + 2 + ctx.measureText(kind).width;
 }
 
-function gridRightPx(counts: { hours24: number; days7: number | null }, numSize: number): number {
+function gridRightPx(counts: { hours24: number; days7: number | null; days30: number | null }, numSize: number): number {
   const w24 = measureWindowLabelPx('24h', counts.hours24, numSize);
   const w7 = counts.days7 == null ? 0 : measureWindowLabelPx('7d', counts.days7, numSize);
-  return Math.ceil(LABEL_INSET + Math.max(w24, w7) + LABEL_TAIL);
+  const w30 = counts.days30 == null ? 0 : measureWindowLabelPx('30d', counts.days30, numSize);
+  return Math.ceil(LABEL_INSET + Math.max(w24, w7, w30) + LABEL_TAIL);
 }
 
 function countLabel(
-  kind: '24h' | '7d',
+  kind: '24h' | '7d' | '30d',
   count: number,
   color: string,
   x: number,
   y: number,
   numSize: number,
+  lowerBound = false,
 ) {
   const sub = subSize(numSize);
   return {
@@ -74,7 +78,7 @@ function countLabel(
     x,
     y,
     style: {
-      text: `{n|${count}}{k|${kind}}`,
+      text: `{n|${lowerBound ? '≥' : ''}${count}}{k|${kind}}`,
       fill: color,
       fontSize: numSize,
       fontWeight: 700,
@@ -104,24 +108,32 @@ function TrendChart({
   series,
   historyOriginDay,
   nowMs,
+  shown,
 }: {
   series: DailyPoint[];
   historyOriginDay: number;
   nowMs: number;
+  shown: Record<'daily' | 'weekly' | 'monthly', boolean>;
 }) {
   const days = series.map((p) => p.day);
   const daily = chartDailyValues(series);
   const weekly = chartWeeklyValues(series, historyOriginDay);
+  const monthly = chartMonthlyValues(series);
   const labels = days.map(fmtDay);
   const provisional = lastPointIsToday(series, nowMs);
-  const dailySplit = splitProvisional(daily, provisional);
-  const weeklySplit = splitProvisional(weekly, provisional);
+  const dailySplit = splitProvisional(daily.map(v => shown.daily ? v : null), provisional);
+  const weeklySplit = splitProvisional(weekly.map(v => shown.weekly ? v : null), provisional);
+  const monthlySplit = splitProvisional(monthly.map(v => shown.monthly ? v : null), provisional);
   const monthDividers = monthDividerIndices(days);
   const monthTicks = monthLabelTicks(days);
-  const counts = windowCounts(series);
+  const counts = { ...windowCounts(series), days30: series.at(-1)?.label720h ?? series.at(-1)?.recordedLabel720h ?? null };
   const scrubLabel = (i: number) => {
     const w = weekly[i];
-    return [labels[i], `<b>${daily[i]}</b> daily`, ...(w != null ? [`<b>${w}</b> weekly`] : [])];
+    const m = monthly[i];
+    const monthlyLowerBound = i === series.length - 1 ? series[i].label720h == null : series[i].rolling30 == null;
+    return [labels[i], ...(shown.daily ? [`<b>${daily[i]}</b> daily`] : []),
+      ...(shown.weekly && w != null ? [`<b>${w}</b> weekly`] : []),
+      ...(shown.monthly && m != null ? [`<b>${monthlyLowerBound ? '≥' : ''}${m}</b> monthly (recorded)`] : [])];
   };
 
   const ref = useECharts(
@@ -129,6 +141,7 @@ function TrendChart({
       const faint = cssVar(el, '--color-muted-foreground', '#737373');
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const red = cssVar(el, '--color-primary', '#dc2626');
+      const monthlyColor = cssVar(el, '--color-foreground', '#171717');
       const gridLine = { color: grid, width: 1 };
       const axisFont = el.clientWidth < 600 ? 8 : 9;
       const numSize = el.clientWidth < 600 ? 14 : 16;
@@ -249,6 +262,17 @@ function TrendChart({
             z: 3,
             zlevel: 1,
           },
+          ...(['complete', 'provisional'] as const).map(part => ({
+            name: part === 'complete' ? 'monthly' : 'monthly today',
+            type: 'line' as const,
+            data: monthlySplit[part],
+            lineStyle: { color: monthlyColor, width: 1.8, type: part === 'complete' ? 'solid' as const : 'dotted' as const },
+            itemStyle: { color: monthlyColor },
+            symbol: 'none',
+            connectNulls: false,
+            z: 3,
+            zlevel: 1,
+          })),
           {
             type: 'custom' as const,
             name: 'window counts',
@@ -266,22 +290,24 @@ function TrendChart({
             ) => {
               const last = daily.length - 1;
               const x = api.coord([last, 0])[0] + LABEL_INSET;
-              const children = [
-                countLabel('24h', counts.hours24, faint, x, api.coord([last, daily[last]])[1], numSize),
-              ];
-              if (counts.days7 != null) {
-                const weeklyY = weekly[last] ?? counts.days7;
-                children.push(
-                  countLabel('7d', counts.days7, red, x, api.coord([last, weeklyY])[1], numSize),
-                );
+              const gutterLabels = [
+                ...(shown.daily ? [{ kind: '24h' as const, count: counts.hours24, color: faint, value: daily[last], lowerBound: false }] : []),
+                ...(shown.weekly && counts.days7 != null ? [{ kind: '7d' as const, count: counts.days7, color: red, value: weekly[last] ?? counts.days7, lowerBound: false }] : []),
+                ...(shown.monthly && counts.days30 != null ? [{ kind: '30d' as const, count: counts.days30, color: monthlyColor, value: monthly[last] ?? counts.days30, lowerBound: series[last].label720h == null }] : []),
+              ].map(label => ({ ...label, y: api.coord([last, label.value])[1] })).sort((a, b) => a.y - b.y);
+              for (let i = 1; i < gutterLabels.length; i++) {
+                gutterLabels[i].y = Math.max(gutterLabels[i].y, gutterLabels[i - 1].y + numSize + 4);
               }
+              const overflow = Math.max(0, (gutterLabels.at(-1)?.y ?? 0) - api.coord([last, 0])[1] + numSize / 2);
+              for (const label of gutterLabels) label.y -= overflow;
+              const children = gutterLabels.map(label => countLabel(label.kind, label.count, label.color, x, label.y, numSize, label.lowerBound));
               return { type: 'group', children };
             },
           },
         ],
       };
     },
-    [series, nowMs, historyOriginDay],
+    [series, nowMs, historyOriginDay, shown],
     { scrub: { count: labels.length, label: scrubLabel } },
   );
 
@@ -296,7 +322,7 @@ function TrendChart({
       ref={ref}
       className="h-[180px] w-full overflow-visible md:h-[220px]"
       role="img"
-      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with trailing 7-day unique active users. Last 24 hours ${counts.hours24}${counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}.`}
+      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with${shown.weekly ? ' trailing 7-day unique active users' : ''}${shown.monthly ? ' trailing 30-day recorded unique active users' : ''}. Last 24 hours ${counts.hours24}${shown.weekly && counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}${shown.monthly && counts.days30 != null ? `, last 30 days ${counts.days30}` : ''}.`}
     />
   );
 }
@@ -482,6 +508,7 @@ export function ActiveUsersPanel({
   nowMs: number;
   range: DashboardRange;
 }) {
+  const [shown, setShown] = useState({ daily: true, weekly: true, monthly: true });
   const padded = useMemo(() => extendThroughToday(series, nowMs), [series, nowMs]);
   const visible = useMemo(() => sliceActivityRange(padded, rangeStart(range, nowMs)), [padded, nowMs, range]);
   const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);
@@ -501,14 +528,19 @@ export function ActiveUsersPanel({
       </span>
     ) : (
       <>
-        <span className="inline-flex items-center gap-1">
-          <LegendSwatch color={faint} />
-          daily
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <LegendSwatch color="var(--color-primary)" />
-          weekly
-        </span>
+        {(['daily', 'weekly', 'monthly'] as const).map(kind => (
+          <button
+            key={kind}
+            type="button"
+            aria-pressed={shown[kind]}
+            className="inline-flex min-h-6 cursor-pointer items-center gap-1"
+            style={{ opacity: shown[kind] ? 1 : 0.45 }}
+            onClick={() => setShown(previous => ({ ...previous, [kind]: !previous[kind] }))}
+          >
+            <LegendSwatch color={kind === 'daily' ? faint : kind === 'weekly' ? 'var(--color-primary)' : 'var(--color-foreground)'} />
+            {kind}
+          </button>
+        ))}
       </>
     );
   return (
@@ -522,8 +554,31 @@ export function ActiveUsersPanel({
       ) : range === '7d' ? (
         <DailyWeekdayChart series={daily7} counts={counts} nowMs={nowMs} />
       ) : (
-        <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} />
+        <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} shown={shown} />
+      )}
+      {range !== '24h' && range !== '7d' && (
+        <div className="mt-2 space-y-1 text-[0.65rem] text-muted-foreground">
+          <p>Monthly: recorded activity (lower bounds).</p>
+          <GrowthCaption kind="Weekly" days={7} growth={padded.at(-1)?.weeklyGrowth} nowMs={nowMs} />
+          <GrowthCaption kind="Monthly" days={30} growth={padded.at(-1)?.monthlyGrowth} nowMs={nowMs} />
+        </div>
       )}
     </Panel>
   );
+}
+
+function GrowthCaption({ kind, days, growth, nowMs }: { kind: string; days: 7 | 30; growth?: ActivityGrowth; nowMs: number }) {
+  const end = growth?.end ?? dayStart(nowMs);
+  const start = growth?.start ?? end - days * 86_400_000;
+  const previousStart = growth?.previousStart ?? start - days * 86_400_000;
+  const date = (ts: number) => new Date(ts).toISOString().slice(0, 10);
+  const dates = `${date(start)}–${date(end)} vs ${date(previousStart)}–${date(start)} (UTC; end exclusive)`;
+  if (!growth || growth.status === 'unavailable') {
+    const reason = growth?.status === 'unavailable' && growth.reason === 'recording outage'
+      ? 'recording outage' : 'complete retained history is not verified';
+    return <p>{kind} growth unavailable: {reason}. {dates}.</p>;
+  }
+  const percent = growth.percent == null ? 'percentage unavailable (previous window zero)'
+    : `${growth.percent > 0 ? '+' : ''}${growth.percent.toFixed(1)}%`;
+  return <p>{kind} growth {percent}: {growth.current} vs {growth.previous} distinct browsers. {dates}.</p>;
 }

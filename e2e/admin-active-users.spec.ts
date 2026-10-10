@@ -63,6 +63,27 @@ test.describe('admin active users range', () => {
     expect(hours).toBeLessThanOrEqual(24);
   });
 
+  test('monthly legend toggles the recorded series and missing coverage has no growth percentage @viewport', async ({ page }, testInfo) => {
+    const panel = activeUsers(page);
+    const monthly = panel.getByRole('button', { name: 'monthly', exact: true });
+    await expect(monthly).toHaveAttribute('aria-pressed', 'true');
+    await expect(panel.getByText(/Weekly growth unavailable/)).toBeVisible();
+    await expect(panel.getByText(/Monthly growth unavailable/)).toBeVisible();
+    await expect(panel.getByText(/complete retained history/).first()).toBeVisible();
+    await monthly.click();
+    await expect(monthly).toHaveAttribute('aria-pressed', 'false');
+    await expect(panel.getByRole('img')).not.toHaveAttribute('aria-label', /trailing 30-day/);
+    await monthly.click();
+    await expect(panel.getByRole('img')).toHaveAttribute('aria-label', /trailing 30-day/);
+    await testInfo.attach('monthly-toggle-and-coverage', { body: await panel.screenshot(), contentType: 'image/png' });
+    for (const name of ['daily', 'weekly', 'monthly']) {
+      await panel.getByRole('button', { name, exact: true }).click();
+    }
+    await expect(panel.getByRole('img')).toBeVisible();
+    await expect(panel.getByRole('img')).not.toHaveAttribute('aria-label', /trailing/);
+    await testInfo.attach('all-series-hidden', { body: await panel.screenshot(), contentType: 'image/png' });
+  });
+
   test('7d plots one daily series with weekday axis labels and hides the weekly series', async ({ page }) => {
     const panel = activeUsers(page);
     await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '7d' }).click();
