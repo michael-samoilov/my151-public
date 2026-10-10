@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from '@playwright/test';
+import { buildDashboard } from '../api/_dashboard';
 
 /**
  * Admin Flows Sankey, driven against `/?admin&demo` so it needs no token.
@@ -43,6 +44,7 @@ test.describe('admin flows', () => {
       const chart = page.getByRole('img', { name: new RegExp(`${chartName} usage funnel`) });
       await expect(chart.locator('canvas')).toBeVisible();
       const label = await chart.getAttribute('aria-label') ?? '';
+      expect(label, 'usage percentages round to whole points').not.toMatch(/\d+\.\d+%/);
       expect(label).toMatch(/Bounced: [\d.]+% of entrants/);
       expect(label).toMatch(/Exported: [\d.]+% of non-bouncers/);
       expect(label).toMatch(/(?:Completed|Full league): [\d.]+% of non-bouncers/);
@@ -53,7 +55,9 @@ test.describe('admin flows', () => {
         ((canvas as HTMLCanvasElement & { flowText?: { text: string; visible: boolean }[] }).flowText ?? []).filter((p) => p.visible).map((p) => p.text).join('|'),
       )).toContain(percentage);
       const graph = await chart.evaluate((el) => {
-        type Chart = { getModel(): { getSeriesByIndex(index: number): { getGraph(): {
+        type Rect = { x: number; y: number; width: number; height: number; clone(): Rect; applyTransform(matrix: number[]): void };
+        type Glyph = { type: string; style?: { text?: string; fill?: string }; getBoundingRect(): Rect; getComputedTransform(): number[] | undefined };
+        type Chart = { getZr(): { storage: { getDisplayList(update: boolean): Glyph[] } }; getModel(): { getSeriesByIndex(index: number): { getGraph(): {
           nodes: { id: string; getLayout(): { y: number; value: number } }[];
           edges: { node1: { id: string }; node2: { id: string } }[];
         } } } };
@@ -69,6 +73,17 @@ test.describe('admin flows', () => {
           }
         }
         if (!instance) throw new Error('Rendered usage chart instance missing');
+        const glyphs = instance.getZr().storage.getDisplayList(true).filter((g) => g.type === 'tspan' && g.style?.fill !== 'transparent' && !!(g.style?.text ?? '').trim()).map((g) => {
+          const rect = g.getBoundingRect().clone(), transform = g.getComputedTransform();
+          if (transform) rect.applyTransform(transform);
+          return { text: g.style!.text!, rect };
+        });
+        for (const rate of glyphs.filter((g) => /^\d+%?$/.test(g.text))) for (const other of glyphs.filter((g) => g !== rate)) {
+          const a = rate.rect, b = other.rect;
+          if (Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 0.5 && Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 0.5) {
+            throw new Error(`Usage rate/count labels overlap: ${rate.text}/${other.text}`);
+          }
+        }
         const graph = instance.getModel().getSeriesByIndex(0).getGraph();
         return {
           nodes: graph.nodes.map((n) => ({ name: n.id, ...n.getLayout() })),
@@ -94,6 +109,44 @@ test.describe('admin flows', () => {
       await info.attach(`${tab.toLowerCase()}-percentage-screen`, { body: await page.screenshot({ fullPage: true }), contentType: 'image/png' });
     }
     await info.attach('usage-percentage-populations', { body: JSON.stringify(measurements), contentType: 'application/json' });
+  });
+
+  test('crowded export labels remain finite when every completed browser exports', { tag: '@viewport' }, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 844 });
+    const fixture = buildDashboard({ clients: {}, archived: [], funnel: {}, funnelWindow: null, leagueClients: {} }, { range: 'all' }, Date.now());
+    fixture.leagueFunnel = {
+      opened: 120, placed: 100, bounced: 20, oneGymFull: 80, cardNotFinished: 20,
+      gymBuckets: ['1–4 gyms', '5–8 gyms', '9–12 gyms', 'Full league'].map((label) => ({
+        label, count: 20, exports: { league: 7, both: 7, card: 6 },
+      })),
+      fullLeague: 20, exports: { league: 28, both: 28, card: 24 }, keptPrivate: 0,
+    };
+    await page.route('**/api/submissions**', (route) => route.fulfill({ json: fixture }));
+    await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));
+    await page.goto('/?admin');
+    await page.getByRole('button', { name: 'League', exact: true }).click();
+    const funnel = page.getByRole('img', { name: /League usage funnel/ });
+    await expect(funnel.locator('canvas')).toBeVisible();
+    const annotations = await funnel.evaluate((el) => {
+      type Glyph = { type: string; style?: { text?: string }; getBoundingRect(): { x: number; y: number; width: number; height: number; clone(): ReturnType<Glyph['getBoundingRect']>; applyTransform(matrix: number[]): void }; getComputedTransform(): number[] | undefined };
+      type Chart = { getWidth(): number; getHeight(): number; getZr(): { storage: { getDisplayList(update: boolean): Glyph[] } } };
+      type Hook = { memoizedState: unknown; next: Hook | null };
+      type Fiber = { memoizedState: Hook | null; return: Fiber | null };
+      const key = Object.keys(el).find((k) => k.startsWith('__reactFiber$'))!;
+      let fiber = (el as unknown as Record<string, Fiber>)[key], instance: Chart | undefined;
+      for (let i = 0; fiber && i < 30 && !instance; i++, fiber = fiber.return!) for (let hook = fiber.memoizedState; hook && !instance; hook = hook.next) {
+        const current = (hook.memoizedState as { current?: Chart } | null)?.current;
+        if (current && typeof current.getZr === 'function') instance = current;
+      }
+      if (!instance) throw new Error('Rendered export chart missing');
+      return instance.getZr().storage.getDisplayList(true).filter((g) => g.type === 'tspan' && /League export|Gym export|Both exported/.test(g.style?.text ?? '')).map((g) => {
+        const r = g.getBoundingRect().clone(), matrix = g.getComputedTransform();
+        if (matrix) r.applyTransform(matrix);
+        return { text: g.style!.text!, finite: [r.x, r.y, r.width, r.height].every(Number.isFinite), inside: r.x >= 0 && r.y >= 0 && r.x + r.width <= instance!.getWidth() && r.y + r.height <= instance!.getHeight() };
+      });
+    });
+    expect(annotations).toHaveLength(3);
+    expect(annotations.every((a) => a.finite && a.inside), JSON.stringify(annotations)).toBe(true);
   });
 
   test('dex usage funnel peels incomplete builds by size', async ({ page }) => {
