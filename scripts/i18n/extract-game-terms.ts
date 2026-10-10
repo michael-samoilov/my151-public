@@ -1,0 +1,540 @@
+/**
+ * Extract move names, move categories, contest conditions, game titles,
+ * villain names, the Paldean Tauros breeds and the region names from the
+ * games' own text, and write them out as checked-in fixtures.
+ *
+ * Same source and the same deal as `fetch-game-text.ts`: `abcboy101/poke-corpus`
+ * at a pinned commit, one gzipped file per game per language, line-aligned
+ * against a `qid` file of message ids. Every string here is a line of a shipped
+ * game's text, recorded with its game, file and message id. Where a label
+ * joins several official strings (a game series, a team with its leaders), the
+ * fixture says so in `composed` and lists every part.
+ *
+ * The most recent game that has a string wins: Pokémon Champions, then
+ * Legends: Z-A, then Pokémon HOME, then Scarlet/Violet and older. A string
+ * a language lacks in every game stays English, and the fixture lists it.
+ *
+ * Manual and network-touching, like `i18n:game-text`; never part of the build.
+ * Downloads are cached in `docs/i18n/poke-corpus/` (not committed) and checked
+ * against the SHA-256 the fixtures record, so a re-run either reproduces the
+ * fixtures byte for byte or fails.
+ *
+ * Run: npm run i18n:game-terms
+ * Then: npm run i18n:terms && npm run i18n:names
+ */
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { gunzipSync } from 'node:zlib';
+import { LOCALES, type Locale } from '../../src/i18n/config';
+
+const COMMIT = 'd74a89ba69cbabc491b65c3e88af8722bb34a927';
+const BASE = `https://raw.githubusercontent.com/abcboy101/poke-corpus/${COMMIT}/corpus`;
+const CACHE = 'docs/i18n/poke-corpus/corpus';
+export const MOVE_NAMES_PATH = 'docs/i18n/sources/move-names.json';
+export const GAME_TERMS_PATH = 'docs/i18n/sources/game-terms.json';
+
+type Text = Partial<Record<Locale, string>>;
+
+/** One message: where it lives and what each language says. */
+export interface Sourced {
+  readonly game: string;
+  readonly file: string;
+  readonly qid: string;
+  readonly text: Text;
+}
+
+/** One catalog value, built from one message or composed from several. */
+export interface GameTerm {
+  /** A catalog key (`league.category.physical`), or `form.<appId>` for the names pipeline. */
+  readonly key: string;
+  readonly use: string;
+  /** The value per locale. A locale that is absent stays English. */
+  readonly text: Text;
+  /** How the parts were joined, when the value is not one message verbatim. */
+  readonly composed?: string;
+  /** Locales left English, and why. */
+  readonly english?: Partial<Record<Locale, string>>;
+  readonly from: readonly Sourced[];
+}
+
+export interface GameTermsFixture {
+  readonly source: SourceBlock;
+  readonly note: string;
+  readonly terms: readonly GameTerm[];
+  /** Pokémon HOME's box list, which the term pipeline checks region names against. */
+  readonly regions: Record<string, Sourced>;
+}
+
+export interface MoveNamesFixture {
+  readonly source: SourceBlock;
+  readonly note: string;
+  /** Move id -> the message it comes from and its name in every language. */
+  readonly moves: Record<string, { qid: string; text: Record<Locale, string> }>;
+}
+
+interface SourceBlock {
+  readonly repo: string;
+  readonly commit: string;
+  /** `<Game>/<file>` -> language -> SHA-256 of the gzipped file as fetched. */
+  readonly sha256: Record<string, Record<string, string>>;
+}
+
+/** The files read, newest game first. Masters has no Simplified Chinese. */
+const FILES = [
+  ['Champions', 'ms'],
+  ['LegendsZA', 'common'],
+  ['HOME', 'megaturtle_nx'],
+  ['HOME', 'megaturtle_sp'],
+  ['ScarletViolet', 'common'],
+  ['BrilliantDiamondShiningPearl', 'message'],
+  ['SwordShield', 'common'],
+  ['LetsGoPikachuLetsGoEevee', 'common'],
+  ['UltraSunUltraMoon', 'common'],
+  ['Bank', 'turtle'],
+  ['Masters', 'messages'],
+] as const;
+
+const pinned = (path: string): SourceBlock | undefined =>
+  existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as { source: SourceBlock }).source : undefined;
+
+const PINS = { ...pinned(GAME_TERMS_PATH)?.sha256, ...pinned(MOVE_NAMES_PATH)?.sha256 };
+const sha256: Record<string, Record<string, string>> = {};
+
+async function readGz(game: string, file: string, lang: string): Promise<string[] | undefined> {
+  const path = join(CACHE, game, `${lang}_${file}.txt.gz`);
+  if (!existsSync(path)) {
+    const res = await fetch(`${BASE}/${game}/${lang}_${file}.txt.gz`);
+    if (res.status === 404) return undefined;
+    if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, Buffer.from(await res.arrayBuffer()));
+  }
+  const bytes = readFileSync(path);
+  const hash = createHash('sha256').update(bytes).digest('hex');
+  const want = PINS[`${game}/${file}`]?.[lang];
+  if (want && want !== hash) throw new Error(`${path}: SHA-256 ${hash} differs from the pinned ${want}`);
+  (sha256[`${game}/${file}`] ??= {})[lang] = hash;
+  // CRLF dumps: a bare "\n" split would leave a carriage return on every value.
+  return gunzipSync(bytes).toString('utf8').split(/\r?\n/);
+}
+
+/** qid -> each language's text, for one file. */
+type Table = Map<string, Text>;
+const tables = new Map<string, Table>();
+
+async function load(): Promise<void> {
+  for (const [game, file] of FILES) {
+    const ids = await readGz(game, file, 'qid');
+    if (!ids) throw new Error(`${game}/${file}: no qid file`);
+    const table: Table = new Map(ids.map((id) => [id, {}]));
+    for (const locale of LOCALES) {
+      const lines = await readGz(game, file, locale);
+      if (!lines) continue;
+      if (lines.length !== ids.length) throw new Error(`${game}/${file} ${locale}: not line-aligned with qid`);
+      ids.forEach((id, i) => {
+        if (lines[i]) table.get(id)![locale] = lines[i];
+      });
+    }
+    tables.set(`${game}/${file}`, table);
+    console.log(`  read ${game}/${file}`);
+  }
+}
+
+/** A message, verbatim, with every language it has. Throws if it does not exist. */
+function message(game: string, file: string, qid: string): Sourced {
+  const text = tables.get(`${game}/${file}`)?.get(qid);
+  if (!text?.en) throw new Error(`${game}/${file}: no ${qid}`);
+  for (const [locale, value] of Object.entries(text)) {
+    // A control code means the game composes the label at runtime, so the
+    // line is not the literal a player reads.
+    if (/\[VAR |\[~ |\[Name:/.test(value)) throw new Error(`${qid} ${locale} is not a literal: ${value}`);
+  }
+  return { game, file, qid, text };
+}
+
+const complete = (text: Text) => LOCALES.every((l) => text[l] && !/^[-―—]+$/.test(text[l]!));
+
+//#region Move names
+
+function moveNames(): MoveNamesFixture['moves'] {
+  const moves = JSON.parse(readFileSync('src/data/moves.json', 'utf8')) as { id: number; name: string }[];
+  const out: MoveNamesFixture['moves'] = {};
+  const counts: Record<string, number> = {};
+  for (const move of [...moves].sort((a, b) => a.id - b.id)) {
+    const n = String(move.id).padStart(3, '0');
+    const candidates: [string, string, string][] = [
+      ['Champions', 'ms', `cmp.wazaname.WAZANAME_${n}`],
+      ['LegendsZA', 'common', `za.wazaname.WAZANAME_${n}`],
+      ['ScarletViolet', 'common', `sv.wazaname.WAZANAME_${n}`],
+    ];
+    const hit = candidates.find(([game, file, qid]) => {
+      const text = tables.get(`${game}/${file}`)?.get(qid);
+      return text && complete(text);
+    });
+    if (!hit) throw new Error(`move ${move.id} (${move.name}) has no complete name in any game`);
+    const { text } = message(...hit);
+    if (text.en !== move.name) {
+      throw new Error(`move ${move.id}: src/data/moves.json says ${JSON.stringify(move.name)}, ${hit[2]} says ${JSON.stringify(text.en)}`);
+    }
+    out[move.id] = { qid: hit[2], text: text as Record<Locale, string> };
+    counts[hit[0]] = (counts[hit[0]] ?? 0) + 1;
+  }
+  console.log(`  moves: ${Object.keys(out).length} (${Object.entries(counts).map(([g, c]) => `${g} ${c}`).join(', ')})`);
+  return out;
+}
+
+//#endregion
+//#region Game titles
+
+/** The series line every language opens a title with. */
+const BRAND: Record<Locale, RegExp> = {
+  en: /^Pokémon\s+/,
+  fr: /^Pokémon\s+/,
+  de: /^Pokémon\s+/,
+  es: /^Pokémon\s+/,
+  it: /^Pokémon\s+/,
+  ja: /^ポケットモンスター\s*(\\n)?/,
+  ko: /^포켓몬스터\s*/,
+  'zh-Hans': /^(精灵)?宝可梦\s+/,
+  'zh-Hant': /^(精靈)?寶可夢\s+/,
+};
+
+/** How a language joins game titles in the series lines: 赤・緑, 红／绿. */
+const TITLE_JOIN: Record<Locale, string> = {
+  en: '/', fr: '/', de: '/', es: '/', it: '/', ko: '・', ja: '・', 'zh-Hans': '／', 'zh-Hant': '／',
+};
+
+/**
+ * The titles of one series line, brand removed: "Pokémon Gold, Pokémon Silber
+ * und Pokémon Kristall" -> Gold, Silber, Kristall. The Latin lines repeat the
+ * brand before every title, so it marks where each one starts; the CJK lines
+ * name the brand once and separate the titles with ・ or ／.
+ */
+function seriesTitles(locale: Locale, line: string, count: number): string[] {
+  let titles: string[];
+  if (['en', 'fr', 'de', 'es', 'it'].includes(locale)) {
+    titles = line.replace(/\\n/g, ' ').split(/Pokémon\s+/).slice(1)
+      .map((t) => t.replace(/\s*(,|&|\band\b|\bund\b|\bet\b|\by\b|\be\b)\s*$/u, '').trim());
+  } else {
+    titles = line.replace(BRAND[locale], '').replace(/\\n/g, '').split(/[・／]/).map((t) => t.trim());
+  }
+  if (titles.length !== count || titles.some((t) => !t)) {
+    throw new Error(`${locale}: ${JSON.stringify(line)} did not split into ${count} titles: ${JSON.stringify(titles)}`);
+  }
+  return titles;
+}
+
+const SERIES: Record<string, [qid: string, count: number]> = {
+  RG: ['cmp.bgm_series.bgm_series_RG', 2],
+  GSC: ['cmp.bgm_series.bgm_series_GSC', 3],
+  RSE: ['cmp.bgm_series.bgm_series_RSE', 3],
+  DPPt: ['cmp.bgm_series.bgm_series_DPPt', 3],
+  HGSS: ['cmp.bgm_series.bgm_series_HGSS', 2],
+  BW: ['cmp.bgm_series.bgm_series_BW', 2],
+  XY: ['cmp.bgm_series.bgm_series_XY', 2],
+  SM: ['cmp.bgm_series.bgm_series_SM', 2],
+  SWSH: ['cmp.bgm_series.bgm_series_SWSH', 2],
+  SV: ['cmp.bgm_series.bgm_series_SV', 2],
+};
+
+/** A game title: an item of a Champions series line, or a title of its own. */
+type Title = { series: keyof typeof SERIES; item: number } | { game: string; file: string; qid: string; brand: boolean };
+
+const TITLES: Record<string, Title> = {
+  red: { series: 'RG', item: 0 },
+  blue: { series: 'RG', item: 1 },
+  gold: { series: 'GSC', item: 0 },
+  silver: { series: 'GSC', item: 1 },
+  crystal: { series: 'GSC', item: 2 },
+  ruby: { series: 'RSE', item: 0 },
+  sapphire: { series: 'RSE', item: 1 },
+  emerald: { series: 'RSE', item: 2 },
+  diamond: { series: 'DPPt', item: 0 },
+  pearl: { series: 'DPPt', item: 1 },
+  platinum: { series: 'DPPt', item: 2 },
+  heartgold: { series: 'HGSS', item: 0 },
+  soulsilver: { series: 'HGSS', item: 1 },
+  black: { series: 'BW', item: 0 },
+  white: { series: 'BW', item: 1 },
+  x: { series: 'XY', item: 0 },
+  y: { series: 'XY', item: 1 },
+  sun: { series: 'SM', item: 0 },
+  moon: { series: 'SM', item: 1 },
+  sword: { series: 'SWSH', item: 0 },
+  shield: { series: 'SWSH', item: 1 },
+  scarlet: { series: 'SV', item: 0 },
+  violet: { series: 'SV', item: 1 },
+  // Not in the Champions series list; Pokémon Bank names them for Poké Transporter.
+  black2: { game: 'Bank', file: 'turtle', qid: 'bank.24.6', brand: true },
+  white2: { game: 'Bank', file: 'turtle', qid: 'bank.24.7', brand: true },
+  ultrasun: { game: 'Bank', file: 'turtle', qid: 'bank.39.67', brand: true },
+  ultramoon: { game: 'Bank', file: 'turtle', qid: 'bank.39.68', brand: true },
+  // The brand is part of this title in every language ("Pokémon-Legenden: Arceus").
+  legendsArceus: { game: 'HOME', file: 'megaturtle_sp', qid: 'home.sp.sp_softwarename.sp_softwarename_047', brand: false },
+};
+
+const JAPANESE_SCRIPT = /[぀-ヿ]/;
+
+/** One title in one language, and the message it came from; undefined if the language has none. */
+function title(id: string, locale: Locale): { value: string; from: Sourced } | undefined {
+  const def = TITLES[id];
+  if ('series' in def) {
+    const [qid, count] = SERIES[def.series];
+    const from = message('Champions', 'ms', qid);
+    const line = from.text[locale];
+    return line ? { value: seriesTitles(locale, line, count)[def.item], from } : undefined;
+  }
+  const from = message(def.game, def.file, def.qid);
+  const line = from.text[locale];
+  if (!line) return undefined;
+  // Bank shows the Japanese title to its Chinese players for the games that
+  // never came out in Chinese. That is not a Chinese name for them.
+  if (locale.startsWith('zh') && JAPANESE_SCRIPT.test(line)) return undefined;
+  if (!def.brand) return { value: line, from };
+  if (!BRAND[locale].test(line)) throw new Error(`${def.qid} ${locale}: ${JSON.stringify(line)} does not open with the series name`);
+  return { value: line.replace(BRAND[locale], '').trim(), from };
+}
+
+/**
+ * The game-title sub-labels on the build page. English joins short titles
+ * with a slash; each language gets its own titles from the games.
+ *
+ * Some English labels name something the games have no word for in every
+ * language: Yellow (no Korean or Chinese release), Black 2 and White 2 (no
+ * Chinese release), the Totem and Titan Pokémon as a group. A localized label
+ * names only the titles the games give it; `english` lists what it leaves out.
+ */
+const SUBLABELS: Record<string, { titles: string[]; omits?: string }> = {
+  'archetype.gift-pokemon.sub.0': { titles: ['red', 'blue'], omits: 'Yellow: the Champions series list names Red and Blue (Red and Green in Japanese) only.' },
+  'archetype.gift-pokemon.sub.1': { titles: ['gold', 'silver'] },
+  'archetype.gift-pokemon.sub.2': { titles: ['ruby', 'sapphire', 'emerald'] },
+  'archetype.gift-pokemon.sub.3': { titles: ['diamond', 'pearl', 'platinum'] },
+  'archetype.gift-pokemon.sub.4': { titles: ['black', 'white'] },
+  'archetype.gift-pokemon.sub.5': { titles: ['x', 'y'] },
+  'archetype.gift-pokemon.sub.6': { titles: ['sun', 'moon'] },
+  'archetype.gift-pokemon.sub.7': { titles: ['sword', 'shield'] },
+  'archetype.reward-pokemon.sub.0': { titles: ['red', 'blue'], omits: 'Yellow, as above.' },
+  'archetype.reward-pokemon.sub.1': { titles: ['crystal', 'heartgold', 'soulsilver'] },
+  'archetype.reward-pokemon.sub.2': { titles: ['black2', 'white2'] },
+  'archetype.static-encounter.sub.0': { titles: ['red', 'blue'], omits: 'Yellow, as above.' },
+  'archetype.static-encounter.sub.1': { titles: ['gold', 'silver', 'crystal'] },
+  'archetype.static-encounter.sub.2': { titles: ['ruby', 'sapphire', 'emerald'] },
+  'archetype.static-encounter.sub.3': { titles: ['diamond', 'pearl', 'platinum'] },
+  'archetype.static-encounter.sub.4': { titles: ['black', 'white', 'black2', 'white2'] },
+  'archetype.static-encounter.sub.5': { titles: ['sun', 'moon', 'ultrasun', 'ultramoon'], omits: 'Totems: no game names the Totem Pokémon as a group.' },
+  'archetype.static-encounter.sub.6': { titles: ['legendsArceus'] },
+  'archetype.static-encounter.sub.7': { titles: ['scarlet', 'violet'], omits: 'Titans: no game names the Titan Pokémon as a group.' },
+  'archetype.cross-gen-evo.sub.5': { titles: ['legendsArceus'] },
+  'category.starter.sub.8': { titles: ['legendsArceus'] },
+};
+
+function gameTitleTerms(): GameTerm[] {
+  return Object.entries(SUBLABELS).map(([key, { titles, omits }]) => {
+    const text: Text = {};
+    const english: Partial<Record<Locale, string>> = {};
+    const from = new Map<string, Sourced>();
+    for (const locale of LOCALES) {
+      if (locale === 'en') continue;
+      const parts = titles.map((id) => title(id, locale));
+      parts.forEach((p) => p && from.set(p.from.qid, p.from));
+      const missing = titles.filter((_, i) => !parts[i]);
+      const found = parts.filter((p): p is NonNullable<typeof p> => !!p).map((p) => p.value);
+      // A label must still name its games: one that would lose all of them,
+      // or every title of a pair (Black 2 and White 2), stays English.
+      if (found.length === 0) {
+        english[locale] = `No ${locale} title for ${missing.join(', ')} in any game.`;
+        continue;
+      }
+      if (missing.length) english[locale] = `Names ${found.length} of ${titles.length} titles; no ${locale} title for ${missing.join(', ')}.`;
+      text[locale] = found.join(TITLE_JOIN[locale]);
+    }
+    return {
+      key,
+      use: 'A subgroup heading in the Pokédex builder’s Pokémon browser.',
+      text,
+      composed: `Game titles with the series name removed, joined with the separator the language’s own series lines use.${omits ? ` Leaves out ${omits}` : ''}`,
+      ...(Object.keys(english).length ? { english } : {}),
+      from: [...from.values()],
+    };
+  });
+}
+
+//#endregion
+//#region Villain teams and their leaders
+
+const PEOPLE: Record<string, [game: string, file: string, qid: string]> = {
+  rocket: ['LetsGoPikachuLetsGoEevee', 'common', 'lgpe.trtype.TRTYPE_ROCKETM'],
+  giovanni: ['LetsGoPikachuLetsGoEevee', 'common', 'lgpe.trname.trname_23'],
+  // Ultra Sun/Ultra Moon's trainer classes. Traditional Chinese writes them
+  // as a possessive (海洋隊的) because the class stands before a name in battle.
+  aqua: ['UltraSunUltraMoon', 'common', 'usum.common.111.198'],
+  magma: ['UltraSunUltraMoon', 'common', 'usum.common.111.200'],
+  archie: ['UltraSunUltraMoon', 'common', 'usum.common.63.34'],
+  maxie: ['UltraSunUltraMoon', 'common', 'usum.common.63.33'],
+  galactic: ['BrilliantDiamondShiningPearl', 'message', 'bdsp.dp_trainers_type.DP_Trainers_Type_TR_GINGAM_01'],
+  cyrus: ['BrilliantDiamondShiningPearl', 'message', 'bdsp.dp_trainers_name.DP_Trainers_Name_TR_GINGALBOSS_01'],
+  mars: ['BrilliantDiamondShiningPearl', 'message', 'bdsp.dp_trainers_name.DP_Trainers_Name_TR_GINGALEADER1_01'],
+  jupiter: ['BrilliantDiamondShiningPearl', 'message', 'bdsp.dp_trainers_name.DP_Trainers_Name_TR_GINGALEADER2_01'],
+  saturn: ['BrilliantDiamondShiningPearl', 'message', 'bdsp.dp_trainers_name.DP_Trainers_Name_TR_GINGALEADER3_01'],
+  plasma: ['UltraSunUltraMoon', 'common', 'usum.common.111.201'],
+  ghetsis: ['UltraSunUltraMoon', 'common', 'usum.common.63.36'],
+  // N is only in Pokémon Masters EX, which has no Simplified Chinese.
+  n: ['Masters', 'messages', 'masters.trainer_name.ch0089'],
+  colress: ['UltraSunUltraMoon', 'common', 'usum.common.63.43'],
+  flare: ['UltraSunUltraMoon', 'common', 'usum.common.111.202'],
+  lysandre: ['UltraSunUltraMoon', 'common', 'usum.common.63.37'],
+  skull: ['UltraSunUltraMoon', 'common', 'usum.common.111.28'],
+  guzma: ['UltraSunUltraMoon', 'common', 'usum.common.63.23'],
+  plumeria: ['UltraSunUltraMoon', 'common', 'usum.common.63.24'],
+  aether: ['UltraSunUltraMoon', 'common', 'usum.common.111.73'],
+  lusamine: ['UltraSunUltraMoon', 'common', 'usum.common.63.20'],
+  macroCosmos: ['SwordShield', 'common', 'swsh.pw_worklist.msg_ui_pw_worklist_00'],
+  rose: ['SwordShield', 'common', 'swsh.trname.ROSE_01'],
+  star: ['ScarletViolet', 'common', 'sv.trtype.MSG_TRTYPE_STAR_BOSS'],
+  mela: ['ScarletViolet', 'common', 'sv.trname.TRNAME_MEROKO'],
+  atticus: ['ScarletViolet', 'common', 'sv.trname.TRNAME_SYUUMEI'],
+  ortega: ['ScarletViolet', 'common', 'sv.trname.TRNAME_ORUTHIGA'],
+  eri: ['ScarletViolet', 'common', 'sv.trname.TRNAME_BIWA'],
+  giacomo: ['ScarletViolet', 'common', 'sv.trname.TRNAME_PIINYA'],
+  penny: ['ScarletViolet', 'common', 'sv.trname.TRNAME_BOTAN'],
+};
+
+/** "Team Aqua/Magma (Archie/Maxie)": teams, then their people in brackets. */
+const VILLAINS: Record<string, { teams: string[]; people: string[]; paired?: boolean }> = {
+  'archetype.evil-team.sub.1': { teams: ['rocket'], people: ['giovanni'] },
+  'archetype.evil-team.sub.2': { teams: ['aqua', 'magma'], people: ['archie', 'maxie'], paired: true },
+  'archetype.evil-team.sub.3': { teams: ['galactic'], people: ['cyrus', 'mars', 'jupiter', 'saturn'] },
+  'archetype.evil-team.sub.4': { teams: ['plasma'], people: ['ghetsis', 'n', 'colress'] },
+  'archetype.evil-team.sub.5': { teams: ['flare'], people: ['lysandre'] },
+  'archetype.evil-team.sub.6': { teams: ['skull'], people: ['guzma', 'plumeria'] },
+  'archetype.evil-team.sub.7': { teams: ['aether'], people: ['lusamine'] },
+  'archetype.evil-team.sub.8': { teams: ['macroCosmos'], people: ['rose'] },
+  'archetype.evil-team.sub.9': { teams: ['star'], people: ['mela', 'atticus', 'ortega', 'eri', 'giacomo', 'penny'] },
+};
+
+const CJK = (l: Locale) => l === 'ja' || l.startsWith('zh');
+
+function villainTerms(): GameTerm[] {
+  return Object.entries(VILLAINS).map(([key, { teams, people, paired }]) => {
+    const text: Text = {};
+    const english: Partial<Record<Locale, string>> = {};
+    const from = new Map<string, Sourced>();
+    for (const locale of LOCALES) {
+      if (locale === 'en') continue;
+      const pick = (id: string) => {
+        const source = message(...PEOPLE[id]);
+        from.set(source.qid, source);
+        return source.text[locale];
+      };
+      const teamNames = teams.map(pick);
+      const names = people.map(pick);
+      // N is the same letter in every script, and Masters has every other language.
+      const missing = people.filter((_, i) => !names[i]);
+      if (teamNames.some((t) => !t) || missing.some((id) => id !== 'n')) {
+        english[locale] = `No ${locale} text for ${[...teams, ...people].filter((id) => !pick(id)).join(', ')}.`;
+        continue;
+      }
+      if (missing.length) english[locale] = 'N has no Simplified Chinese source; the label writes N, as every other language does.';
+      const filled = names.map((n) => n ?? 'N');
+      const joinTeams = TITLE_JOIN[locale];
+      const joinPeople = paired ? TITLE_JOIN[locale] : CJK(locale) ? '、' : ', ';
+      const [open, close] = CJK(locale) ? ['（', '）'] : [' (', ')'];
+      text[locale] = `${teamNames.join(joinTeams)}${open}${filled.join(joinPeople)}${close}`;
+    }
+    return {
+      key,
+      use: 'A subgroup heading in the Pokédex builder’s Evil Team section.',
+      text,
+      composed: 'Team names, then their leaders in brackets, as the English label has them.',
+      ...(Object.keys(english).length ? { english } : {}),
+      from: [...from.values()],
+    };
+  });
+}
+
+//#endregion
+//#region Single-message terms
+
+function verbatim(key: string, use: string, game: string, file: string, qid: string): GameTerm {
+  const from = message(game, file, qid);
+  if (!complete(from.text)) throw new Error(`${qid}: missing a language`);
+  const text = Object.fromEntries(LOCALES.filter((l) => l !== 'en').map((l) => [l, from.text[l]!]));
+  return { key, use, text, from: [from] };
+}
+
+function singleTerms(): GameTerm[] {
+  const category = (id: string, n: string) =>
+    verbatim(`league.category.${id}`, 'Move category: the TM picker’s filter chips and the category icon’s name.', 'Champions', 'ms', `cmp.narrowdown.narrowdown_s_${n}`);
+  // Pokémon HOME's condition names, which the contests file a move under:
+  // Japanese かっこよさ, German Coolness, French Sang-froid.
+  const contest = (id: string, n: string) =>
+    verbatim(`league.contest.${id}`, 'Contest condition: the TM picker’s filter chips.', 'HOME', 'megaturtle_nx', `home.nx.status_system.nx_status_detailed_${n}`);
+  const breed = (appId: number, n: string) =>
+    verbatim(`form.${appId}`, 'The Paldean Tauros breed’s form name, in the Pokémon names catalog.', 'Champions', 'ms', `cmp.zkn_form_syn.ZKN_FORM_128_${n}`);
+  return [
+    category('physical', '14'), category('special', '15'), category('status', '16'),
+    contest('cool', '521'), contest('beautiful', '522'), contest('cute', '523'), contest('clever', '524'), contest('tough', '525'),
+    breed(10250, '001'), breed(10251, '002'), breed(10252, '003'),
+  ];
+}
+
+/** Sweet (Milcery): the games have no word for the Sweets as a group. */
+function milceryTerm(): GameTerm {
+  const from = message('Champions', 'ms', 'cmp.monsname_syn.MONSNAME_868');
+  return {
+    key: 'archetype.evolution-item.sub.28',
+    use: 'A subgroup heading in the Pokédex builder’s Evolution Item section.',
+    text: Object.fromEntries(LOCALES.filter((l) => l !== 'en').map((l) => [l, from.text[l]!])),
+    composed: 'Milcery’s name alone. The seven Sweets are separate items, and no game names them as a group.',
+    from: [from],
+  };
+}
+
+//#endregion
+
+function regions(): Record<string, Sourced> {
+  const ids = ['kanto', 'johto', 'hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'hisui', 'paldea'];
+  return Object.fromEntries(ids.map((id, i) =>
+    [id, message('HOME', 'megaturtle_nx', `home.nx.box_system.nx_box_list_pokedex_${String(i + 1).padStart(2, '0')}`)]));
+}
+
+/** One move per line: 845 of them pretty-printed would be 12,000 lines. */
+function writeMoves(fixture: MoveNamesFixture): void {
+  const rows = Object.entries(fixture.moves).map(([id, row]) => `    ${JSON.stringify(id)}: ${JSON.stringify(row)}`);
+  const head = JSON.stringify({ source: fixture.source, note: fixture.note }, null, 2).slice(0, -2);
+  writeFileSync(MOVE_NAMES_PATH, `${head},\n  "moves": {\n${rows.join(',\n')}\n  }\n}\n`);
+}
+
+async function main(): Promise<void> {
+  await load();
+  const source = (keys: string[]): SourceBlock => ({
+    repo: 'https://github.com/abcboy101/poke-corpus',
+    commit: COMMIT,
+    sha256: Object.fromEntries(keys.map((k) => [k, sha256[k]])),
+  });
+
+  writeMoves({
+    source: source(['Champions/ms', 'LegendsZA/common', 'ScarletViolet/common']),
+    note: 'Move names in the TM picker, on the trainer card and in the exported pictures. Each move takes the newest game that names it in all nine languages: Pokémon Champions, then Legends: Z-A, then Scarlet/Violet.',
+    moves: moveNames(),
+  });
+  console.log(`  wrote ${MOVE_NAMES_PATH}`);
+
+  const terms = [...singleTerms(), ...gameTitleTerms(), ...villainTerms(), milceryTerm()];
+  const used = new Set(terms.flatMap((t) => t.from.map((f) => `${f.game}/${f.file}`)));
+  used.add('HOME/megaturtle_nx');
+  const fixture: GameTermsFixture = {
+    source: source(FILES.map(([g, f]) => `${g}/${f}`).filter((k) => used.has(k))),
+    note: 'Sourced values for catalog keys (src/i18n/catalogs/terms) and Tauros form names (src/i18n/names). `npm run i18n:terms` and `npm run i18n:names` copy them in; `npm run i18n:verify` holds the catalogs to them.',
+    terms,
+    regions: regions(),
+  };
+  writeFileSync(GAME_TERMS_PATH, `${JSON.stringify(fixture, null, 2)}\n`);
+  console.log(`  wrote ${GAME_TERMS_PATH}: ${terms.length} terms`);
+  for (const t of terms) {
+    for (const [locale, why] of Object.entries(t.english ?? {})) console.log(`    ${t.key} ${locale}: ${why}`);
+  }
+}
+
+void main();
