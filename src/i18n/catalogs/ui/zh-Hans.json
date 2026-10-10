@@ -245,7 +245,7 @@
   "drilldown.lineLength.3": "三阶段",
   "drilldown.lineLengthTitle": "{length}进化链",
   "drilldown.matchupSubtitle": "效果并非一般的宝可梦：{count}只",
-  "drilldown.matchupTitle": "{type}属性相克",
+  "drilldown.matchupTitle": "对{type}属性",
   "drilldown.remove_other": "移除{count}只宝可梦",
   "drilldown.shapeTitle": "体形：{shape}",
   "drilldown.stageAllTitle": "所有第{stage}阶段宝可梦",

@@ -245,7 +245,7 @@
   "drilldown.lineLength.3": "3段階",
   "drilldown.lineLengthTitle": "{length}の系統",
   "drilldown.matchupSubtitle": "相性が等倍でないポケモン {count}匹",
-  "drilldown.matchupTitle": "{type}タイプとの相性",
+  "drilldown.matchupTitle": "対{type}",
   "drilldown.remove_other": "{count}匹を外す",
   "drilldown.shapeTitle": "体形：{shape}",
   "drilldown.stageAllTitle": "{stage}段階目のポケモンすべて",

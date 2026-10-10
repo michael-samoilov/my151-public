@@ -245,7 +245,7 @@
   "drilldown.lineLength.3": "三階段",
   "drilldown.lineLengthTitle": "{length}進化鏈",
   "drilldown.matchupSubtitle": "效果並非普通的寶可夢：{count}隻",
-  "drilldown.matchupTitle": "{type}屬性相剋",
+  "drilldown.matchupTitle": "對{type}屬性",
   "drilldown.remove_other": "移除{count}隻寶可夢",
   "drilldown.shapeTitle": "體形：{shape}",
   "drilldown.stageAllTitle": "所有第{stage}階段寶可夢",

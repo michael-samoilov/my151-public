@@ -245,7 +245,7 @@
   "drilldown.lineLength.3": "3단계",
   "drilldown.lineLengthTitle": "{length} 계열",
   "drilldown.matchupSubtitle": "상성이 보통이 아닌 포켓몬 {count}마리",
-  "drilldown.matchupTitle": "{type} 타입 상성",
+  "drilldown.matchupTitle": "{type} 상대",
   "drilldown.remove_other": "포켓몬 {count}마리 빼기",
   "drilldown.shapeTitle": "형태: {shape}",
   "drilldown.stageAllTitle": "{stage}단계 포켓몬 전체",

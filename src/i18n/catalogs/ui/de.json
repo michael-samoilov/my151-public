@@ -256,7 +256,7 @@
   "drilldown.lineLength.3": "Dreistufige",
   "drilldown.lineLengthTitle": "{length} Linien",
   "drilldown.matchupSubtitle": "{count} Pokémon mit nicht neutraler Effektivität",
-  "drilldown.matchupTitle": "Effektivität: {type}",
+  "drilldown.matchupTitle": "Gegen {type}",
   "drilldown.remove_one": "{count} Pokémon entfernen",
   "drilldown.remove_other": "{count} Pokémon entfernen",
   "drilldown.shapeTitle": "Form: {shape}",
