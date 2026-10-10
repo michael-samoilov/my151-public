@@ -80,6 +80,7 @@ function countLabel(
 ) {
   const sub = subSize(numSize);
   const countText = {
+    name: kind,
     type: 'text' as const,
     x,
     y,
@@ -104,7 +105,7 @@ function countLabel(
       },
     },
   };
-  return growth ? { type: 'group' as const, children: [countText, {
+  return growth ? { name: kind, type: 'group' as const, children: [countText, {
     type: 'text' as const, x, y: y + numSize / 2 + 4,
     style: { text: growth, fill: color, fontSize: growthFontSize(numSize), fontFamily: LABEL_FACE,
       textAlign: 'left' as const, textVerticalAlign: 'top' as const },
@@ -317,7 +318,8 @@ function TrendChart({
               const overflow = Math.max(0, (bottom?.y ?? 0) - api.coord([last, 0])[1] + numSize / 2 + (bottom?.growth ? growthFontSize(numSize) + 4 : 0));
               for (const label of gutterLabels) label.y -= overflow;
               const children = gutterLabels.map(label => countLabel(label.kind, label.count, label.color, x, label.y, numSize, label.lowerBound, label.growth));
-              return { type: 'group', children };
+              // Labels reorder as lines toggle; match windows by name to preserve their transforms.
+              return { type: 'group', $mergeChildren: 'byName', children };
             },
           },
         ],
