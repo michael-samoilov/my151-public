@@ -142,3 +142,100 @@ export function withoutDropRestorePhantoms<T>(
     return countAgreement(prevC, nextC) < 0.8;
   });
 }
+
+export interface RecordingCheckpoint {
+  v: 1;
+  /** Earliest retained baseline span. Older history can be missing. */
+  coverageFrom: number;
+  /** First upgraded server receipt, independent of client clock skew. */
+  checkpointFrom: number;
+  totalMs: number;
+  asOf: number;
+  retiredThrough?: number;
+}
+export interface RecordingFields {
+  recording?: RecordingCheckpoint;
+  activeDays?: number[];
+  activityCoverageFrom?: number;
+}
+type RecordingSpan = {start: number; end: number};
+const UTC_DAY_MS = 86_400_000;
+const stamp = (n: unknown): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 && n <= 8_640_000_000_000_000;
+const utcDay = (n: number) => Math.floor(n / UTC_DAY_MS) * UTC_DAY_MS;
+
+export function parseRecordingFields(raw: unknown): RecordingFields {
+  if (!raw || typeof raw !== 'object') return {};
+  const r = raw as Record<string, unknown>;
+  const out: RecordingFields = {};
+  const checkpoint = r.recording as Partial<RecordingCheckpoint> | undefined;
+  if (checkpoint?.v === 1 && stamp(checkpoint.coverageFrom) && stamp(checkpoint.asOf)
+    && stamp(checkpoint.checkpointFrom) && checkpoint.checkpointFrom >= checkpoint.coverageFrom && checkpoint.asOf >= checkpoint.checkpointFrom && typeof checkpoint.totalMs === 'number'
+    && Number.isSafeInteger(checkpoint.totalMs) && checkpoint.totalMs >= 0
+    && (checkpoint.retiredThrough === undefined || (stamp(checkpoint.retiredThrough) && checkpoint.retiredThrough <= checkpoint.asOf))) {
+    out.recording = {v:1,coverageFrom:checkpoint.coverageFrom,checkpointFrom:checkpoint.checkpointFrom,totalMs:checkpoint.totalMs,asOf:checkpoint.asOf,
+      ...(checkpoint.retiredThrough === undefined ? {} : {retiredThrough:checkpoint.retiredThrough})};
+  }
+  if (stamp(r.activityCoverageFrom) && Array.isArray(r.activeDays)) {
+    out.activityCoverageFrom = r.activityCoverageFrom;
+    out.activeDays = [...new Set(r.activeDays.filter((d): d is number => stamp(d) && d === utcDay(d)))].sort((a,b)=>a-b).slice(-90);
+  }
+  return out;
+}
+
+export function retiredCapture(record: RecordingFields, capturedAt: number, earliestRetainedStart = Infinity, gapMs = 30 * 60_000): boolean {
+  return record.recording?.retiredThrough !== undefined && capturedAt <= record.recording.retiredThrough + gapMs && capturedAt < earliestRetainedStart;
+}
+
+function recordedSpanMs(spans: readonly RecordingSpan[], from: number, until: number): number {
+  const clipped = spans.filter(s => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end >= s.start)
+    .map(s => ({start:Math.max(s.start,from),end:Math.min(s.end,until)}))
+    .filter(s => s.end > s.start).sort((a,b)=>a.start-b.start || a.end-b.end);
+  let total = 0, end = -Infinity;
+  for (const span of clipped) {
+    total += Math.max(0,span.end-Math.max(span.start,end));
+    end = Math.max(end,span.end);
+  }
+  return total;
+}
+
+/** Account before trimming; the retired boundary stops expired beacons from recounting old visits. */
+export function checkpointRecording(
+  previous: RecordingFields,
+  oldSpans: readonly RecordingSpan[],
+  newSpans: readonly RecordingSpan[],
+  capturedAt: number,
+  receivedAt: number,
+  retiredThrough?: number,
+): RecordingFields {
+  const coverageFrom = oldSpans.reduce((earliest,s) => Number.isFinite(s.start) && s.end >= s.start ? Math.max(0,Math.min(earliest,s.start)) : earliest,receivedAt);
+  const prior = previous.recording ?? {v:1 as const,coverageFrom,checkpointFrom:receivedAt,totalMs:recordedSpanMs(oldSpans,coverageFrom,receivedAt),asOf:receivedAt};
+  const asOf = Math.max(prior.asOf,receivedAt);
+  const from = Math.max(prior.coverageFrom,prior.retiredThrough ?? -Infinity);
+  const delta = recordedSpanMs(newSpans,from,asOf)-recordedSpanMs(oldSpans,from,prior.asOf);
+  const watermark = Math.max(prior.retiredThrough ?? -Infinity,retiredThrough === undefined ? -Infinity : Math.min(retiredThrough,asOf));
+  const recording: RecordingCheckpoint = {v:1,coverageFrom:prior.coverageFrom,checkpointFrom:prior.checkpointFrom,totalMs:prior.totalMs+Math.max(0,delta),asOf,
+    ...(watermark === -Infinity ? {} : {retiredThrough:watermark})};
+  const today = utcDay(asOf);
+  const earliest = today-89*UTC_DAY_MS;
+  const activeDays = [...new Set([...(previous.activeDays ?? []),utcDay(Math.min(capturedAt,receivedAt))])]
+    .filter(d => d >= earliest && d <= today).sort((a,b)=>a-b).slice(-90);
+  return {recording,activeDays,activityCoverageFrom:previous.activityCoverageFrom ?? receivedAt};
+}
+
+export function endStampedSpans(record: {sessionLog?: {ts:number}[];sessionMs?: number[]}): RecordingSpan[] {
+  const log = record.sessionLog ?? [];
+  const durations = record.sessionMs ?? [];
+  const n = Math.min(log.length,durations.length);
+  return log.slice(log.length-n).flatMap((s,i) => {
+    const ms = durations[durations.length-n+i];
+    return Number.isFinite(ms) && ms >= 0 ? [{start:s.ts-ms,end:s.ts}] : [];
+  });
+}
+
+export function sanitizeRecordingFields<T extends RecordingFields>(record: T): T {
+  const copy = {...record};
+  delete copy.recording;
+  delete copy.activeDays;
+  delete copy.activityCoverageFrom;
+  return Object.assign(copy,parseRecordingFields(record));
+}

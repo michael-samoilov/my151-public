@@ -127,6 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       summary,
       cards,
       now: captured ?? receivedAt,
+      receivedAt,
       capturedKnown: captured !== null,
       geo: getGeo(req),
       ua: getClient(req),
