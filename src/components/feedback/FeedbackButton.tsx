@@ -33,9 +33,9 @@ export function FeedbackButton() {
       data-feedback-open
       className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
     >
-      {/* 105%, with the globe beside it at 104%: their box, outline area and
-          ink come out about even. */}
-      <BugIcon className="w-4 h-4" {...pathScale(1.05)} />
+      {/* 116% beside the globe's 104%: by eye, a touch above where the box,
+          outline-area and ink measures even out (105%). */}
+      <BugIcon className="w-4 h-4" {...pathScale(1.16)} />
     </button>
   );
 }

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="556" height="621" viewBox="58.52519607543945 50.390342712402344 138.9496078491211 155.1650390625" overflow="hidden"><!-- Source: partywhale/pokemon-type-icons; selected and modified by my151.
+MIT License
+
+Copyright (c) 2022 James Watkins
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+--><defs><mask id="source-mask" maskUnits="userSpaceOnUse" x="58.64118576049805" y="50.390342712402344" width="138.8336181640625" height="155.1650390625" style="mask-type:luminance"><g xmlns="http://www.w3.org/2000/svg" id="source-glyph"><path d="M197.45,99.74c.29,5.25-2.01,9.75-4.39,14.13-5,9.21-4.92,18.19-.37,27.66,10.23,21.3,3.62,33.41-19.59,35.57-11.16,1.04-19.22,5.65-25.41,15.11-11.71,17.9-27.71,17.77-39.56-.25-5.98-9.09-13.76-13.73-24.55-14.79-24.07-2.36-30.54-13.99-20.14-35.92,4.32-9.12,4.22-17.7-.14-26.79-10.21-21.31-3.62-33.41,19.59-35.57,11.15-1.04,19.23-5.65,25.41-15.11,11.49-17.58,27.83-17.94,38.95-.54,7.09,11.09,16.73,15.07,29.13,16.03,13.9,1.08,21.17,8.75,21.06,20.48Z" fill="#fff" />
+  <path d="M174.57,154.66c-20.78,1.82-35.45,9.96-46.37,26.9-11.55-16.67-26-25.21-45.7-26.81,6.99-17.87,8.75-34.96-.85-53,19.9-2.33,34.97-10.36,46.4-26.96,11.3,16.3,25.74,24.84,45.44,26.44-6.94,17.88-8.77,34.96,1.08,53.42Z" fill="#000" />
+</g></mask><clipPath id="right-half"><rect x="128" y="50.390342712402344" width="69.47480392456055" height="155.1650390625"/></clipPath><g id="right-glyph" clip-path="url(#right-half)"><rect x="58.64118576049805" y="50.390342712402344" width="138.8336181640625" height="155.1650390625" fill="white" mask="url(#source-mask)"/></g></defs><use href="#right-glyph"/><use href="#right-glyph" transform="translate(256 0) scale(-1 1)"/></svg>

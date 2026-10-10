@@ -1,22 +1,12 @@
 import type { TypeName } from '@/types/pokemon';
+import { TYPE_ICONS } from '@/data/type-icons';
 
-const POKEAPI_TYPE_IDS: Record<TypeName, number> = {
-  normal: 1, fighting: 2, flying: 3, poison: 4, ground: 5, rock: 6,
-  bug: 7, ghost: 8, steel: 9, fire: 10, water: 11, grass: 12,
-  electric: 13, psychic: 14, ice: 15, dragon: 16, dark: 17, fairy: 18,
-};
-
-/** Small Gen IX icon sprites (60x60px, white symbol on a coloured square) */
+/** The selected type symbol in the app's padded, coloured square. */
 export function typeIconPath(type: TypeName): string {
-  return `/sprites/types/small/${POKEAPI_TYPE_IDS[type]}.png`;
+  return TYPE_ICONS[type].icon;
 }
 
-/**
- * The white symbol alone, cropped to its bounding box, generated from the small
- * icons by `scripts/build-type-glyphs.ts`. Sizes vary per type — draw it into a
- * square box with `preserveAspectRatio="xMidYMid meet"` (or the canvas
- * equivalent) rather than stretching it.
- */
+/** Transparent white vector glyph. Contain-fit it inside the caller's box. */
 export function typeGlyphPath(type: TypeName): string {
-  return `/sprites/types/glyph/${POKEAPI_TYPE_IDS[type]}.png`;
+  return TYPE_ICONS[type].glyph;
 }

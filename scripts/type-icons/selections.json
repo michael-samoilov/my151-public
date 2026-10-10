@@ -1,0 +1,20 @@
+{
+  "normal": { "source": "elginive", "mirroredHalf": null },
+  "fighting": { "source": "partywhale", "mirroredHalf": null },
+  "flying": { "source": "elginive", "mirroredHalf": null },
+  "poison": { "source": "elginive", "mirroredHalf": null },
+  "ground": { "source": "elginive", "mirroredHalf": null },
+  "rock": { "source": "partywhale", "mirroredHalf": null },
+  "bug": { "source": "partywhale", "mirroredHalf": "right" },
+  "ghost": { "source": "elginive", "mirroredHalf": null },
+  "steel": { "source": "elginive", "mirroredHalf": null },
+  "fire": { "source": "elginive", "mirroredHalf": null },
+  "water": { "source": "partywhale", "mirroredHalf": "right" },
+  "grass": { "source": "elginive", "mirroredHalf": null },
+  "electric": { "source": "elginive", "mirroredHalf": null },
+  "psychic": { "source": "partywhale", "mirroredHalf": "right" },
+  "ice": { "source": "elginive", "mirroredHalf": null },
+  "dragon": { "source": "elginive", "mirroredHalf": null },
+  "dark": { "source": "elginive", "mirroredHalf": null },
+  "fairy": { "source": "elginive", "mirroredHalf": null }
+}
