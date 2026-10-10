@@ -44,7 +44,7 @@
 - Dispatch with `codex cloud exec --env 6ab2ececdf948191bc57a7c781fc7b15 --branch <pushed-branch> <prompt>`.
 - Monitor with `codex cloud status`, inspect with `codex cloud diff`, then apply or integrate the verified result locally.
 - Treat desktop GitHub credentials as local-only. Do not assume the cloud worker can push, merge, or read private refs.
-- After integration, run the required final checks, push the branch, and use its Vercel preview for review.
+- After integration, run the required final checks and push the branch. Review with pictures in the chat. A work branch builds a Vercel preview only on request: see "Vercel builds" in `CLAUDE.md`.
 - Keep the worker ledger in the coordinator chat. The user must not need to open worker tasks to get status or results.
 
 ## 1. Verify before you show

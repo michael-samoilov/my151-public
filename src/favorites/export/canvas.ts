@@ -36,7 +36,7 @@ export function drawBall(ctx: CanvasRenderingContext2D, kind: BallKind, cx: numb
 }
 
 /** The frame and title bar use the trainer card's continuous red field. */
-export function createFavoritesCanvas(width: number, height: number) {
+export function createFavoritesCanvas(width: number, height: number, title: string) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -56,7 +56,7 @@ export function createFavoritesCanvas(width: number, height: number) {
   ctx.textBaseline = 'alphabetic';
   const metrics = ctx.measureText('H');
   const cap = metrics.actualBoundingBoxAscent || TITLE_PX * 0.72;
-  fillTracked(ctx, t('favorites.export.chartTitle'), FRAME + BAR_TEXT_X, BAR_H / 2 + cap / 2, TITLE_TRACK);
+  fillTracked(ctx, title, FRAME + BAR_TEXT_X, BAR_H / 2 + cap / 2, TITLE_TRACK);
   return { canvas, ctx };
 }
 

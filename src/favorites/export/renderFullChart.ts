@@ -16,6 +16,7 @@ import legendaryIcon from '../icons/legendary.svg?url';
 import starterIcon from '../icons/starter.svg?url';
 import { GEN_AXIS, TYPE_AXIS, isGenNumber, isTypeName, type ExtraTypeAxis } from '../model/cells';
 import type { FavoritesSnapshot } from './snapshot';
+import { pickerSpriteSrc } from '../model/spritePreload';
 import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCanvas, image } from './canvas';
 import { drawFavoriteCrown, FAVORITE_ORNAMENTS } from './laurelPaint';
 
@@ -72,9 +73,9 @@ export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges 
     ...GEN_AXIS.filter(isGenNumber).map(gen => ROMAN_URIS[gen]),
     FAVORITE_ORNAMENTS.crown,
   ]);
-  const images = new Map(await Promise.all([...urls].map(async url => [url, await image(url)] as const)));
+  const images = new Map(await Promise.all([...urls].map(async url => [url, await image(pickerSpriteSrc(url))] as const)));
   const { width, height, gridX, gridY } = FULL_CHART_LAYOUT;
-  const { canvas, ctx } = createFavoritesCanvas(width, height);
+  const { canvas, ctx } = createFavoritesCanvas(width, height, t('favorites.export.chartTitle'));
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';
 

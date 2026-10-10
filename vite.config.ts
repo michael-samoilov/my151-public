@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 import { prerenderHub } from './scripts/prerender-hub'
+import { pickerSpritePacks } from './scripts/picker-sprite-packs'
 
 /** Keep saved preview links on the canonical picker route in dev and preview. */
 function pickerRouteRedirect(): Plugin {
@@ -91,7 +92,7 @@ function startAppAfterFirstPaint(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), prerenderHub()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), prerenderHub(), pickerSpritePacks()],
   define: {
     // Only the hub prerender's server build keeps this constant; the browser
     // reads the meta tag above.
