@@ -10,13 +10,11 @@
          preload cost them (docs/performance.md, "Tried and left out"). This
          link is inert (`media="not all"`) and only carries the built file
          names; the script copies it into a live preload when the card will
-         show: an empty dex, the intro not seen, no `?demo`. `imagesrcset` and
-         `imagesizes` must match SHOT_SRCSETS[2] and SHOT_SIZES[2] in
-         src/components/pokedex/IntroCard.tsx, or the image downloads twice. -->
+         show: an empty dex, the intro not seen, no `?demo`. The card loads this
+         same file with no `srcset`; if it ever gains one, the preload must
+         list it too, or the image downloads twice. -->
     <link id="p151-intro-shot" rel="preload" as="image" fetchpriority="high" media="not all"
-      href="/src/assets/intro/shot-151-stats.webp"
-      imagesrcset="/src/assets/intro/shot-151-stats-444.webp 444w, /src/assets/intro/shot-151-stats.webp 555w"
-      imagesizes="(min-width: 429px) 169px, 135px" />
+      href="/src/assets/intro/shot-151-stats.webp" />
     <script>
       (function () {
         try {
@@ -31,8 +29,6 @@
         link.as = 'image';
         link.fetchPriority = 'high';
         link.href = inert.href;
-        link.imageSrcset = inert.getAttribute('imagesrcset');
-        link.imageSizes = inert.getAttribute('imagesizes');
         document.head.appendChild(link);
       })();
     </script>
