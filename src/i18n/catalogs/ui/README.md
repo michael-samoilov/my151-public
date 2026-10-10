@@ -102,6 +102,34 @@ Sword/Shield text from `abcboy101/poke-corpus`.
   어깨 위 포켓몬, 肩上宝可梦, "on the shoulder" in French, Spanish and Italian,
   and the German coinage Schultermon, which mirrors the English one.
 
+### The league and gym leader builder
+
+All of `league.*` is translated: the tool bar, the league summary, the
+trainer card and its bands, the (i) help, the hints under the card, the TM
+and type pickers, the export popups, and the words drawn in the exported
+pictures. The league's export popups moved from `nudge.*` to `league.nudge.*`
+with the rest.
+
+- **Game terms** follow the pinned text in
+  `docs/i18n/sources/league-interface-terms.json`: Gym Leader, Elite Four,
+  Champion, Mega Evolution, Gigantamax, Dynamax, Primal Reversion, TM, Badge,
+  Category, Power, Accuracy, PP and Type. Champion takes the Sword/Shield
+  form, because Scarlet/Violet's only Champion is a woman and its French,
+  Spanish and Italian words are feminine.
+- **The badge phrase** (`league.badge.phrase`) puts the badge word where each
+  language puts it: after the name in English, Japanese, Korean and Chinese,
+  joined into one word in German (Donnerorden), and before the name in
+  French, Spanish and Italian.
+- **Endgame boss** is a fan term, so it is described: 裏ボス (the post-game
+  boss), 최종 보스, 隐藏头目 and 隱藏頭目, Endgegner, boss final, jefe final
+  and boss finale. A minor Legendary is 準伝説, 준전설, 准传说 and 準傳說,
+  Sub-Legendäres, légendaire mineur, legendario menor and leggendario minore.
+- **Rows and columns** in Chinese follow the regional usage: a row is 行 and
+  a column 列 in Simplified, a row 列 and a column 欄 in Traditional.
+- **Not translated:** move names, move categories (Physical, Special, Status)
+  and contest conditions have no sourced text in all nine languages, so they
+  stay English.
+
 ### The favorite picker
 
 `favorites.*`, `home.favorites.*`, and `faq.favorites.*` have translations in

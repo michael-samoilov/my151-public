@@ -326,6 +326,24 @@ const SAME_AS_ENGLISH_OK = new Set([
   'fr:term.shape.squiggle', // Serpent is the French noun as well.
   'fr:favorites.stats.final', // Final is the French masculine evolution-role adjective.
   'es:favorites.stats.final', // Final is also the Spanish evolution-role adjective.
+  // League builder. The game terms follow docs/i18n/sources/league-interface-terms.json.
+  'de:league.tm.mark', // The German games label TMs "TM".
+  'de:league.powerup.dynamax', // Dynamax is the German, French and Italian game term.
+  'fr:league.powerup.dynamax',
+  'it:league.powerup.dynamax',
+  'fr:league.badge.mark', // The French games say "Badge".
+  'fr:league.type.word', // Type is the French noun too.
+  'de:league.badge.placeholder', // "Name" is the German noun too.
+  'de:league.view.story', // German games and players say "Story".
+  'fr:league.tm.col.category', // "Cat." abbreviates Catégorie and Categoria.
+  'it:league.tm.col.category',
+  'es:league.tm.col.pp', // PP is the games' own abbreviation in every language but German.
+  'fr:league.tm.col.pp',
+  'it:league.tm.col.pp',
+  'ja:league.tm.col.pp',
+  'ko:league.tm.col.pp',
+  'zh-Hans:league.tm.col.pp',
+  'zh-Hant:league.tm.col.pp',
   'fr:feedback.category.bug', // French tech writing uses "Bug".
   'es:feedback.context.error', // "error" is the Spanish word too.
   'it:feedback.context.browser', // Italian says "browser".

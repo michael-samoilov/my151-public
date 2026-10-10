@@ -6,6 +6,8 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/button';
 import { useAnchoredCard } from '@/hooks/useAnchoredCard';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { raw, useT, type NoArgKey } from '@/i18n';
+import { splitTemplate } from '@/lib/richTemplate';
 import { LaurelIcon } from './LaurelIcon';
 
 /**
@@ -21,8 +23,6 @@ import { LaurelIcon } from './LaurelIcon';
  * Mobile gets the app's bottom sheet and desktop a card anchored to the button,
  * the same split the feedback form uses.
  */
-
-const TITLE = 'How to edit this card';
 
 /**
  * The blue reset disc a moved line wears (`CardGrid`'s reset control, same
@@ -44,40 +44,56 @@ interface Gesture {
   id: 'evolve' | 'reorder' | 'legend';
   /** The same marks the hints under the card use, so the two read as one set. */
   Icon: ComponentType<{ className?: string }>;
-  title: string;
-  body: ReactNode;
+  title: NoArgKey;
+  body: () => ReactNode;
+}
+
+/**
+ * The undo sentence, with the disc where the words put it. `{undo}` is one
+ * run kept on one line, so a wrap never starts a line on the disc.
+ */
+function EvolveBody() {
+  return (
+    <>
+      {splitTemplate(raw('league.help.evolve.body')).map((part, i) =>
+        part.kind === 'literal' ? (
+          part.text
+        ) : (
+          <span key={i} className="whitespace-nowrap">
+            {splitTemplate(raw('league.help.evolve.undo')).map((run, j) =>
+              run.kind === 'literal' ? run.text : <ResetDisc key={j} />,
+            )}
+          </span>
+        ),
+      )}
+    </>
+  );
 }
 
 const GESTURES: Gesture[] = [
   {
     id: 'evolve',
     Icon: ArrowUpDown,
-    title: 'Change when it evolves',
-    body: (
-      <>
-        Drag a Pokémon up or down its column to change the gym where it evolves. Tap the{' '}
-        {/* Kept on one line with its words, so a wrap never starts a line on the disc. */}
-        <span className="whitespace-nowrap">
-          blue <ResetDisc /> to undo.
-        </span>
-      </>
-    ),
+    title: 'league.help.evolve.title',
+    body: () => <EvolveBody />,
   },
   {
     id: 'reorder',
     Icon: ArrowLeftRight,
-    title: 'Reorder your team',
-    body: 'Press and hold a Pokémon, then drag it left or right. Its whole column moves.',
+    title: 'league.help.reorder.title',
+    body: () => raw('league.help.reorder.body'),
   },
   {
     id: 'legend',
     Icon: LaurelIcon,
-    title: 'Add an Endgame legendary',
-    body: 'Tap a Pokémon in the Endgame Boss row to swap in a legendary. Only that row changes. Drag the legendary to another column to move it.',
+    title: 'league.help.legend.title',
+    body: () => raw('league.help.legend.body'),
   },
 ];
 
 function GestureList() {
+  // Subscribes the list to the locale; the bodies read the catalog directly.
+  const t = useT();
   return (
     <ul className="flex flex-col gap-3.5">
       {GESTURES.map(({ id, Icon, title, body }) => (
@@ -86,8 +102,8 @@ function GestureList() {
             <Icon className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold leading-snug">{title}</h3>
-            <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground text-pretty">{body}</p>
+            <h3 className="text-sm font-semibold leading-snug">{t(title)}</h3>
+            <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground text-pretty">{body()}</p>
           </div>
         </li>
       ))}
@@ -145,15 +161,17 @@ function CardHelpDialog({ anchor, onClose }: { anchor: HTMLElement; onClose: () 
   const cardRef = useAnchoredCard(anchor, isDesktop);
   const bodyRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const t = useT();
+  const title = t('league.help.title');
   useDialogFocus(isDesktop ? cardRef : bodyRef, onClose, isDesktop);
 
   if (!isDesktop) {
     return (
-      <BottomSheet onClose={onClose} title={TITLE} closeLabel={TITLE}>
+      <BottomSheet onClose={onClose} title={title} closeLabel={title}>
         <div ref={bodyRef} tabIndex={-1} className="px-4 pb-4 pt-3 outline-none">
           <GestureList />
           <Button type="button" onClick={onClose} className="mt-4 w-full">
-            Got it
+            {t('league.help.ok')}
           </Button>
         </div>
       </BottomSheet>
@@ -175,12 +193,12 @@ function CardHelpDialog({ anchor, onClose }: { anchor: HTMLElement; onClose: () 
       >
         <div className="flex items-start justify-between gap-2 px-4 pt-3">
           <h2 id={titleId} className="text-sm font-semibold">
-            {TITLE}
+            {title}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('league.close')}
             className="-me-1 -mt-0.5 cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <X className="h-4 w-4" />
@@ -203,6 +221,7 @@ export function CardHelpButton() {
   // The button that opened the popup, which is also the open flag: the desktop
   // card anchors to it, and focus goes back to it on close.
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const t = useT();
   const close = useCallback(() => {
     anchor?.focus({ preventScroll: true });
     setAnchor(null);
@@ -213,7 +232,7 @@ export function CardHelpButton() {
       <HeaderActionButton
         type="button"
         onClick={(e) => setAnchor(e.currentTarget)}
-        aria-label={TITLE}
+        aria-label={t('league.help.title')}
         aria-haspopup="dialog"
         aria-expanded={anchor !== null}
         data-league-help="card"

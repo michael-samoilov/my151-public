@@ -15,9 +15,10 @@ import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useLeagueBeacon } from './hooks/useLeagueBeacon';
 import { useLeagueFunnelNudges } from './hooks/useLeagueFunnelNudges';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { pokemonLabel, useDocumentLocale, useNamesVersion } from '@/i18n';
+import { pokemonLabel, raw, useDocumentLocale, useNamesVersion, useT } from '@/i18n';
+import { splitTemplate } from '@/lib/richTemplate';
 import { cn } from '@/lib/utils';
-import { slotLabel } from './model/constants';
+import { slotLabel } from './slotLabel';
 import { useLeagueBrowserStore } from './store/browserBridge';
 import { useLeagueStore } from './store/useLeagueStore';
 import { useLeagueUi } from './store/useLeagueUi';
@@ -58,29 +59,15 @@ function GlobalHeader() {
   );
 }
 
-/**
- * The tool bar's identity: the tool's name until the user names their
- * league, then the name. The name is the input itself — its placeholder
- * shows the tool name — and an sr-only h1 keeps the heading in the
- * hydrated DOM (the static shell carries the crawlable one).
- */
-const TOOL_NAME = 'Custom Gym Leader & Trainer Card Maker';
-// The name in three pieces, so the eyebrow can hide the least essential ones
-// from sight where the bar is narrow while the DOM keeps the whole phrase:
-// " Maker" goes below `sm`, " & Trainer Card" goes below 380px, and both go
-// in the narrow desktop pane (143px). Measured: the full name is 200px at
-// 11px, "Custom Gym Leader & Trainer Card" 180px, "Custom Gym Leader"
-// 100px. No ellipsis, no clipped glyphs.
-const TOOL_NAME_HEAD = 'Custom Gym Leader';
-const TOOL_NAME_MID = ' & Trainer Card';
-const TOOL_NAME_TAIL = ' Maker';
-/**
- * One string, whatever the width. A narrow desktop pane once swapped in a
- * two-word name, but Google crawls mobile-first and reads whichever string is
- * in the DOM, so the full name stays and `truncate` clips it; the title
+/*
+ * The tool's name comes in three pieces (`league.tool.*`), so the eyebrow can
+ * hide the least essential ones from sight where the bar is narrow while the
+ * DOM keeps the whole phrase: the tail goes below `sm`, the middle below
+ * 380px, and both go in the narrow desktop pane (143px). Measured in English:
+ * the full name is 200px at 11px, "Custom Gym Leader & Trainer Card" 180px,
+ * "Custom Gym Leader" 100px. No ellipsis, no clipped glyphs. The title
  * attribute keeps the whole name reachable.
  */
-const LEAGUE_NAME_PLACEHOLDER = 'Name your league';
 
 /**
  * The tool bar's identity, in two lines: the tool's name, and the league's.
@@ -97,15 +84,20 @@ function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }
   const blockRef = useRef<HTMLDivElement>(null);
   const ghostRef = useRef<HTMLSpanElement>(null);
   const pencilRoom = usePencilRoom(blockRef, ghostRef, name);
+  const t = useT();
+  const toolHead = t('league.tool.head');
+  const toolMid = t('league.tool.mid');
+  const toolTail = t('league.tool.tail');
+  const placeholder = t('league.name.placeholder');
   return (
     <div ref={blockRef} className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
       <Heading
         className="overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground"
-        title={TOOL_NAME}
+        title={toolHead + toolMid + toolTail}
       >
-        {TOOL_NAME_HEAD}
-        <span className={cn('inline-block whitespace-pre leading-none max-[380px]:sr-only', narrow && 'sr-only')}>{TOOL_NAME_MID}</span>
-        <span className={cn('inline-block whitespace-pre leading-none max-sm:sr-only', narrow && 'sr-only')}>{TOOL_NAME_TAIL}</span>
+        {toolHead}
+        <span className={cn('inline-block whitespace-pre leading-none max-[380px]:sr-only', narrow && 'sr-only')}>{toolMid}</span>
+        <span className={cn('inline-block whitespace-pre leading-none max-sm:sr-only', narrow && 'sr-only')}>{toolTail}</span>
       </Heading>
       {/* The field is sized to its own text by an invisible copy stacked in
           the same grid cell, so the pencil sits at the end of the words
@@ -123,13 +115,13 @@ function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }
               name ? 'font-bold' : 'font-normal',
             )}
           >
-            {name || LEAGUE_NAME_PLACEHOLDER}
+            {name || placeholder}
           </span>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={LEAGUE_NAME_PLACEHOLDER}
-            aria-label="League name"
+            placeholder={placeholder}
+            aria-label={t('league.name.label')}
             enterKeyHint="done"
             onKeyDown={confirmOnEnter}
             // Small on purpose; the league entry caps maximum-scale on iOS so
@@ -177,6 +169,7 @@ export function LeagueApp() {
   // store without subscribing to it.
   useNamesVersion();
   useDocumentLocale();
+  const t = useT();
   useLeagueBeacon();
   useLeagueFunnelNudges();
   useJsErrorCounter();
@@ -234,20 +227,23 @@ export function LeagueApp() {
    * pickers name the slot for the same reason.
    */
   const target =
-    browserPurpose === 'legend' ? 'Endgame Boss legendary'
-    : browserPurpose === 'signature' ? 'Ace Pokémon'
-    : browserPurpose === 'partner' ? 'Partner / Shouldermon'
+    browserPurpose === 'legend' ? t('league.target.legend')
+    : browserPurpose === 'signature' ? t('league.target.ace')
+    : browserPurpose === 'partner' ? t('league.target.partner')
     : slotLabel(openCard ?? 0);
+  const replacingName = replacing ? pokemonLabel(replacing.id, replacing.name).name : '';
+  // One sentence with the subject in red, so each language puts the subject
+  // where its own word order wants it.
   const sheetHeading = replacing
     ? {
-        lead: 'Replacing:',
-        subject: pokemonLabel(replacing.id, replacing.name).name,
-        plain: `Replacing ${pokemonLabel(replacing.id, replacing.name).name}`,
+        parts: splitTemplate(raw('league.sheet.replacing')),
+        subject: replacingName,
+        plain: t('league.sheet.replacingPlain', { name: replacingName }),
       }
     : {
-        lead: 'Adding to:',
+        parts: splitTemplate(raw('league.sheet.adding')),
         subject: target,
-        plain: `Adding to ${target}`,
+        plain: t('league.sheet.addingPlain', { target }),
       };
 
   const browser = (
@@ -350,7 +346,7 @@ export function LeagueApp() {
                   <button
                     type="button"
                     onClick={closeCardPage}
-                    aria-label="Collapse the trainer card"
+                    aria-label={t('league.card.collapse')}
                     className="shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
                   >
                     <PanelRightClose size={18} />
@@ -395,8 +391,13 @@ export function LeagueApp() {
             closeLabel={sheetHeading.plain}
             title={
               <>
-                <span className="text-foreground">{sheetHeading.lead} </span>
-                <span className="text-primary">{sheetHeading.subject}</span>
+                {sheetHeading.parts.map((part, i) =>
+                  part.kind === 'slot' ? (
+                    <span key={i} className="text-primary">{sheetHeading.subject}</span>
+                  ) : (
+                    <span key={i} className="text-foreground">{part.text}</span>
+                  ),
+                )}
               </>
             }
           >

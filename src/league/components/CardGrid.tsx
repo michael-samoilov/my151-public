@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DndContext,
@@ -14,7 +14,8 @@ import {
 } from '@dnd-kit/core';
 import { ArrowLeftRight, ArrowUpDown, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { pokemonLabel, useNamesVersion, useT } from '@/i18n';
+import { getLocale, localeUppercase, pokemonLabel, raw, t as translate, useNamesVersion, useT, type NoArgKey } from '@/i18n';
+import { splitTemplate, type TemplatePart } from '@/lib/richTemplate';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -51,7 +52,8 @@ import {
   paneFace, seamBetween, showcaseSquares, SHOWCASE_PAD_REM, type Box, type CardGridRem, type HeadFace,
   type HeadLine, type SeamEnds,
 } from '../showcaseLayout';
-import { headingInline, headingLines } from '../slotHeadings';
+import { headingInline, headingLines, headingTracks } from '../slotHeadings';
+import { FONT_STACK } from '../export/paint';
 import { tmBodyShiftRem } from '../export/layout';
 import { useSlotLab } from '../slotLab';
 import { SPRITE_RENDERING, SPRITE_RENDERING_VAR } from '../spriteScale';
@@ -94,9 +96,9 @@ const CELL_LIFT_REM = 0.25;
 
 /** Rows whose glyph cell is double width, reaching the card's left edge. */
 const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
-const BAND_BEFORE: Record<number, { label: string; note?: string }> = {
-  [ELITE_ROW]: { label: 'ELITE FOUR & CHAMPION', note: 'Champion may have one Mega/Gigantamax' },
-  [BOSS_ROW]: { label: 'ENDGAME BOSS TEAM', note: 'may also include one minor Legendary' },
+const BAND_BEFORE: Record<number, { label: NoArgKey; note?: NoArgKey }> = {
+  [ELITE_ROW]: { label: 'league.band.elite', note: 'league.band.eliteNote' },
+  [BOSS_ROW]: { label: 'league.band.boss', note: 'league.band.bossNote' },
 };
 
 function rowTop(row: number): number {
@@ -117,27 +119,29 @@ function slotX(colFrom: number, colTo: number) {
   };
 }
 
-function Band({ label, note }: { label: string; note?: string }) {
+/** A band: its label in the card's capitals, and the rule note after it. */
+function Band({ label, note }: { label: NoArgKey; note?: NoArgKey }) {
+  const t = useT();
   return (
     <div
-      lang="en"
       className="mx-[0.1875rem] flex items-center gap-[0.3125rem] rounded-[0.3125rem] px-2 text-white"
       style={{ height: `${BAND_H}rem`, background: 'var(--lg-band)' }}
     >
-      <b className="whitespace-nowrap text-[0.5625rem] font-extrabold tracking-[0.07em]">{label}</b>
+      <b className="whitespace-nowrap text-[0.5625rem] font-extrabold tracking-[0.07em]">{localeUppercase(t(label))}</b>
       {/* Same size and leading as the label, so the two sit on one baseline
           inside the centred band. */}
-      {note && <span className="overflow-hidden whitespace-nowrap text-[0.5625rem] opacity-85">{note}</span>}
+      {note && <span className="overflow-hidden whitespace-nowrap text-[0.5625rem] opacity-85">{t(note)}</span>}
     </div>
   );
 }
 
 function GlyphCell({ row, span, cell }: { row: number; span: number; cell: string }) {
+  const t = useT();
   let inner: React.ReactNode;
   if (row === 1) {
     inner = (
       <span className="flex flex-col items-center gap-[3px]">
-        <span lang="en" className={cn(CARD_LABEL_CLASS, 'text-white')}>No badges</span>
+        <span className={cn(CARD_LABEL_CLASS, 'text-white')}>{t('league.glyph.noBadges')}</span>
         <GymBadges n={1} size={8} />
       </span>
     );
@@ -375,6 +379,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
    */
   tint?: string;
 }) {
+  const t = useT();
   const id = `cell-${datum.row}-${datum.seat}`;
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id,
@@ -530,7 +535,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
       {onReset && pokemon && (
         <button
           type="button"
-          aria-label={`Reset ${pokemon.name}'s evolution rows`}
+          aria-label={t('league.cell.reset', { name: pokemonLabel(pokemon.id, pokemon.name).name })}
           onClick={(e) => {
             e.stopPropagation();
             onReset();
@@ -582,7 +587,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
       {onRemove && pokemon && (
         <button
           type="button"
-          aria-label={removeLabel ?? `Remove ${pokemon.name}'s line`}
+          aria-label={removeLabel ?? t('league.cell.remove', { name: pokemonLabel(pokemon.id, pokemon.name).name })}
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
@@ -734,10 +739,11 @@ function PowerupButton({ kind, symbol, active, onPress, side }: {
   /** Mega takes the cell's left corner, Dynamax its right. */
   side: 'left' | 'right';
 }) {
+  const t = useT();
   return (
     <button
       type="button"
-      aria-label={kind === 'dynamax' ? 'Dynamax' : symbol === 'mega' ? 'Mega Evolution' : 'Primal Reversion'}
+      aria-label={t(kind === 'dynamax' ? 'league.powerup.dynamax' : symbol === 'mega' ? 'league.powerup.mega' : 'league.powerup.primal')}
       aria-pressed={active}
       data-powerup={kind}
       data-active={active ? 'true' : 'false'}
@@ -1448,7 +1454,6 @@ const MARK_COL = 'min(2.75rem, 26cqw)';
  * placeholders take the same size, so the pair keeps one size of label.
  */
 const MARK_LABEL_ROOM = `(${MARK_COL} + ${MARK_PAD} + ${MARK_GAP} - 0.25rem)`;
-const MARK_LABEL_SIZE = `clamp(0.4rem, ${MARK_LABEL_ROOM} / 3.92, 0.53125rem)`;
 /**
  * The labels' tracking: the face's 0.08em wherever the size above fits.
  *
@@ -1457,19 +1462,95 @@ const MARK_LABEL_SIZE = `clamp(0.4rem, ${MARK_LABEL_ROOM} / 3.92, 0.53125rem)`;
  * instead, down to production's none: BADGE is 3.52em untracked, and its five
  * letters share what the room has left.
  */
-const MARK_LABEL_TRACK = `clamp(0rem, (${MARK_LABEL_ROOM} - 3.52 * var(--mark-label)) / 5, 0.08em)`;
 const MARK_LABEL_TYPE = 'text-[length:var(--mark-label)] font-extrabold tracking-[var(--mark-track)] leading-[1.4]';
 const MARK_LABEL_CLASS = `shrink-0 whitespace-nowrap ${MARK_LABEL_TYPE}`;
-/** What the TM box and the badge box share. */
-const MARK_BOX_STYLE = {
-  paddingLeft: MARK_PAD,
-  gap: MARK_GAP,
-  containerType: 'inline-size',
-  '--mark-label': MARK_LABEL_SIZE,
-  '--mark-track': MARK_LABEL_TRACK,
-} as React.CSSProperties;
+
+/**
+ * The wider of the two words under the glyphs, at the label face: its width
+ * untracked in em, and its letter count, which the tracking is paid per.
+ */
+interface MarkWord {
+  natural: number;
+  letters: number;
+  /** Japanese, Korean and Chinese set no tracking (`:lang()` in index.css). */
+  tracked: boolean;
+}
+/** English, measured once and pinned: BADGE is 3.52em untracked, five letters. */
+const EN_MARK_WORD: MarkWord = { natural: 3.52, letters: 5, tracked: true };
+const markWordCache = new Map<string, MarkWord>();
+
+/**
+ * Every other language measures its own two words, TM's and the badge's, since
+ * either can be the wider: MEDAGLIA under the hexagon, わざマシン under the disc.
+ */
+function markWord(fontsLoaded: boolean): MarkWord {
+  const locale = getLocale();
+  if (locale === 'en') return EN_MARK_WORD;
+  const key = `${locale}:${fontsLoaded}`;
+  const cached = markWordCache.get(key);
+  if (cached) return cached;
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return EN_MARK_WORD;
+  ctx.font = `800 100px ${FONT_STACK}`;
+  const tracked = headingTracks();
+  const words = [translate('league.tm.mark'), translate('league.badge.mark')].map(localeUppercase);
+  const measured = words.map((word) => ({ natural: ctx.measureText(word).width / 100, letters: [...word].length, tracked }));
+  const width = (w: MarkWord) => w.natural + (w.tracked ? 0.08 * w.letters : 0);
+  const widest = measured.reduce((a, b) => (width(b) > width(a) ? b : a));
+  markWordCache.set(key, widest);
+  return widest;
+}
+
+const round = (n: number) => String(Number(n.toFixed(3)));
+
+/**
+ * What the TM box and the badge box share.
+ *
+ * The label size is as large as fits: the room over the wider word's tracked
+ * width. Where even 0.4rem leaves the word wider than the room, the tracking
+ * gives way first, down to none. A word longer than BADGE may go below 0.4rem
+ * rather than spill onto the box's edge and the text beside it.
+ */
+function markBoxStyle(word: MarkWord): React.CSSProperties {
+  const em = word.natural + (word.tracked ? 0.08 * word.letters : 0);
+  const floor = word === EN_MARK_WORD ? '0.4rem' : `min(0.4rem, ${MARK_LABEL_ROOM} / ${round(word.natural)})`;
+  return {
+    paddingLeft: MARK_PAD,
+    gap: MARK_GAP,
+    containerType: 'inline-size',
+    '--mark-label': `clamp(${floor}, ${MARK_LABEL_ROOM} / ${round(em)}, 0.53125rem)`,
+    '--mark-track': word.tracked
+      ? `clamp(0rem, (${MARK_LABEL_ROOM} - ${round(word.natural)} * var(--mark-label)) / ${word.letters}, 0.08em)`
+      : '0rem',
+  } as React.CSSProperties;
+}
+
+/** `markBoxStyle` for the active locale, measured again once the fonts land. */
+function useMarkBoxStyle(): React.CSSProperties {
+  const t = useT();
+  const [fontsLoaded, setFontsLoaded] = useState(() => typeof document === 'undefined' || document.fonts?.status === 'loaded');
+  useEffect(() => {
+    if (fontsLoaded || !document.fonts) return;
+    let live = true;
+    void document.fonts.ready.then(() => {
+      if (live) setFontsLoaded(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, [fontsLoaded]);
+  return useMemo(() => {
+    void t;
+    return markBoxStyle(markWord(fontsLoaded));
+  }, [t, fontsLoaded]);
+}
+
+/** The last space before a short final word does not break: "Pick a / move" never strands the noun. */
+const keepLastWord = (text: string) => text.replace(/ (\S+)$/u, '\u00a0$1');
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
+  const t = useT();
+  const markStyle = useMarkBoxStyle();
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
   const setTm = useLeagueStore((s) => s.setTm);
   const move = view.card.tmMoveId !== null ? getMoveById(view.card.tmMoveId) : undefined;
@@ -1512,7 +1593,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       className="absolute z-[5] flex cursor-pointer items-center rounded-lg"
       style={{
         ...pos,
-        ...MARK_BOX_STYLE,
+        ...markStyle,
         background: move ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
@@ -1535,12 +1616,11 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             move; the hexagon and BADGE answer to the gym. So the word here
             reads the move's own band rather than the card's `--lg-band`. */}
         <span
-          lang="en"
           className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
           data-mark-label="tm"
           style={{ color: move ? cardShades(move.type).band : 'var(--lg-hint)', whiteSpace: 'nowrap' }}
         >
-          TM
+          {localeUppercase(t('league.tm.mark'))}
         </span>
       </span>
       {move ? (
@@ -1591,14 +1671,13 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         // column on a phone. The space before "move" does not break, so a
         // wrap reads "Pick / a move" rather than stranding the noun.
         <span
-          lang="en"
           className={cn('min-w-0 text-left normal-case', MARK_LABEL_TYPE)}
           style={{ color: 'var(--lg-hint)' }}
         >
-          Pick a{'\u00a0'}move
+          {keepLastWord(t('league.tm.pick'))}
         </span>
       )}
-      {move && <SlotRemove label="Remove TM" onRemove={() => setTm(cardIndex, null)} />}
+      {move && <SlotRemove label={t('league.tm.remove')} onRemove={() => setTm(cardIndex, null)} />}
     </button>
   );
 }
@@ -1620,31 +1699,47 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
  * ceiling behind it so a paste cannot put a novel in the store.
  */
 const BADGE_NAME_CEILING = 60;
-const BADGE_SUFFIX = ' Badge';
+
+/**
+ * The badge word on each side of the name, from `league.badge.phrase`.
+ *
+ * English sets " Badge" after the name, French "Badge " before it, and
+ * Japanese "バッジ" after it with no space. The word after the name rides in
+ * the field as its suffix; a word before the name sits ahead of the field.
+ */
+function badgeAffix(): { before: string; after: string } {
+  const parts = splitTemplate(raw('league.badge.phrase'));
+  const at = parts.findIndex((p) => p.kind === 'slot');
+  const text = (list: TemplatePart[]) => list.map((p) => (p.kind === 'literal' ? p.text : '')).join('');
+  if (at < 0) return { before: '', after: text(parts) };
+  return { before: text(parts.slice(0, at)), after: text(parts.slice(at + 1)) };
+}
 
 function badgeSuffixEl(field: HTMLElement): HTMLElement | null {
   return field.querySelector<HTMLElement>('[data-badge-suffix]');
 }
 
-function makeBadgeSuffix(): HTMLElement {
+function makeBadgeSuffix(text: string): HTMLElement {
   const suffix = document.createElement('span');
   suffix.dataset.badgeSuffix = '';
   suffix.setAttribute('contenteditable', 'false');
-  suffix.textContent = BADGE_SUFFIX;
+  suffix.textContent = text;
   return suffix;
 }
 
 function badgeNameFromField(field: HTMLElement): string {
   const suffix = badgeSuffixEl(field);
   const raw = field.textContent ?? '';
-  if (!suffix) return raw;
-  return raw.endsWith(BADGE_SUFFIX) ? raw.slice(0, -BADGE_SUFFIX.length) : raw;
+  const text = suffix?.textContent ?? '';
+  if (!suffix || !text) return raw;
+  return raw.endsWith(text) ? raw.slice(0, -text.length) : raw;
 }
 
-function writeBadgeField(field: HTMLElement, next: string) {
+function writeBadgeField(field: HTMLElement, next: string, suffix: string) {
   field.replaceChildren();
   if (next) {
-    field.append(document.createTextNode(next), makeBadgeSuffix());
+    field.append(document.createTextNode(next));
+    if (suffix) field.append(makeBadgeSuffix(suffix));
   }
 }
 
@@ -1659,23 +1754,26 @@ function badgeSuffixVisible(box: HTMLElement, field: HTMLElement): boolean {
   ));
 }
 
-function clampBadgeName(field: HTMLElement, box: HTMLElement, name: string): string {
+function clampBadgeName(field: HTMLElement, box: HTMLElement, name: string, suffix: string): string {
   let next = name;
-  writeBadgeField(field, next);
+  writeBadgeField(field, next, suffix);
   while (next && !badgeSuffixVisible(box, field)) {
     next = next.slice(0, -1);
-    writeBadgeField(field, next);
+    writeBadgeField(field, next, suffix);
   }
   const trimmed = next.replace(/[\s\u00a0]+$/u, '');
   if (trimmed !== next) {
-    writeBadgeField(field, trimmed);
+    writeBadgeField(field, trimmed, suffix);
     if (badgeSuffixVisible(box, field)) return trimmed;
-    writeBadgeField(field, next);
+    writeBadgeField(field, next, suffix);
   }
   return next;
 }
 
 function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
+  const t = useT();
+  const markStyle = useMarkBoxStyle();
+  const { before: badgePrefix, after: badgeSuffix } = badgeAffix();
   const setBadgeName = useLeagueStore((s) => s.setBadgeName);
   const fieldRef = useRef<HTMLSpanElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -1695,10 +1793,10 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     const el = fieldRef.current;
     const box = textRef.current;
     if (!el || !box || document.activeElement === el) return;
-    const clamped = clampBadgeName(el, box, name);
+    const clamped = clampBadgeName(el, box, name, badgeSuffix);
     accepted.current = clamped;
     if (clamped !== name) setBadgeName(cardIndex, clamped);
-  }, [name, cardIndex, setBadgeName]);
+  }, [name, cardIndex, setBadgeName, badgeSuffix, badgePrefix]);
 
   const putCaretAtEnd = () => {
     const el = fieldRef.current;
@@ -1722,11 +1820,11 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     const box = textRef.current;
     if (!el || !box) return;
     let next = badgeNameFromField(el);
-    if (next && !badgeSuffixEl(el)) {
-      el.appendChild(makeBadgeSuffix());
+    if (next && badgeSuffix && !badgeSuffixEl(el)) {
+      el.appendChild(makeBadgeSuffix(badgeSuffix));
       next = badgeNameFromField(el);
     }
-    if (!next && badgeSuffixEl(el)) writeBadgeField(el, '');
+    if (!next && badgeSuffixEl(el)) writeBadgeField(el, '', badgeSuffix);
     // Stored exactly as the field holds it. Normalizing here — collapsing
     // runs of space, say — makes the store and the DOM disagree on the very
     // next render, and the only way to reconcile that is to rewrite the
@@ -1737,7 +1835,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     // measures the phrase the reader will see, not just the name.
     const fits = next.length <= BADGE_NAME_CEILING && badgeSuffixVisible(box, el);
     if (!fits) {
-      writeBadgeField(el, accepted.current);
+      writeBadgeField(el, accepted.current, badgeSuffix);
       putCaretAtEnd();
       return;
     }
@@ -1758,7 +1856,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       className="absolute z-[5] flex cursor-text items-center rounded-lg"
       style={{
         ...pos,
-        ...MARK_BOX_STYLE,
+        ...markStyle,
         background: name ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
@@ -1808,12 +1906,11 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
           <span
-            lang="en"
             className={cn('-mt-[0.0625rem] transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
             data-mark-label="badge"
             style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0, whiteSpace: 'nowrap' }}
           >
-            BADGE
+            {localeUppercase(t('league.badge.mark'))}
           </span>
         </span>
       </span>
@@ -1832,13 +1929,15 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         )}
         style={{ maxHeight: `${3 * 0.53125 * 1.4}rem`, color: 'var(--lg-band)' }}
       >
+        {/* A badge word that goes before the name, as French and Spanish set
+            it, rides ahead of the field in the same text flow. */}
+        {name && badgePrefix && <span data-badge-prefix="">{badgePrefix}</span>}
         <span
           ref={fieldRef}
-          lang={name ? undefined : 'en'}
           contentEditable
           suppressContentEditableWarning
           role="textbox"
-          aria-label="Badge name"
+          aria-label={t('league.badge.label')}
           spellCheck={false}
           onInput={onInput}
           onFocus={putCaretAtEnd}
@@ -1846,17 +1945,17 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           // sibling: an empty inline span is zero-wide, which leaves nothing
           // to tap and nowhere obvious for the caret to sit.
           data-badge-field
-          data-placeholder="NAME"
+          data-placeholder={localeUppercase(t('league.badge.placeholder'))}
           className={cn('outline-none', !name && MARK_LABEL_CLASS)}
         />
       </div>
       {name && (
         <SlotRemove
-          label="Remove badge name"
+          label={t('league.badge.remove')}
           onRemove={() => {
             setBadgeName(cardIndex, '');
             const field = fieldRef.current;
-            if (field) writeBadgeField(field, '');
+            if (field) writeBadgeField(field, '', badgeSuffix);
           }}
         />
       )}
@@ -1873,6 +1972,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const removeLineAt = useLeagueStore((s) => s.removeLineAt);
   const cyclePowerupOnCard = useLeagueStore((s) => s.cyclePowerup);
   const { card, shades, rows } = view;
+  const t = useT();
 
   const sensors = useGridDragSensors();
 
@@ -2258,7 +2358,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         <AcePartnerSlot cardIndex={cardIndex} view={view} />
         <TmSlot cardIndex={cardIndex} view={view} />
         <BadgeSlot cardIndex={cardIndex} view={view} />
-        <Band label="GYM LEADER TEAM" />
+        <Band label="league.band.team" />
         {renderRows.map((cells, i) => {
           const row = i + 1;
           const size = TEAM_SIZES[row - 1];
@@ -2352,7 +2452,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                               ? () => removeLineAt(cardIndex, cell.seat)
                               : undefined
                       }
-                      removeLabel={cell.isLegend ? 'Remove the endgame boss legendary' : undefined}
+                      removeLabel={cell.isLegend ? t('league.cell.removeLegend') : undefined}
                       onReset={
                         !inHand && custom && line
                           ? () => setLineBoundaries(cardIndex, cell.seat, defaultBoundaries(line.branch))
@@ -2382,20 +2482,18 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         {card.lines.length === 0 && (
           <>
             <Plus className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-            <span>Tap an empty slot to add an evolution line</span>
+            <span>{t('league.hint.add')}</span>
           </>
         )}
         <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-        <span>Drag a pokemon up or down in its column to shift when it evolves</span>
+        <span>{t('league.hint.evolve')}</span>
         <ArrowLeftRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-        <span>Press and hold then drag a column of pokemon to reorder it</span>
+        <span>{t('league.hint.reorder')}</span>
         {card.lines.length > 0 && (
           <>
             <LaurelIcon className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" />
             <span>
-              {legendsOf(card).length > 0
-                ? 'Drag an Endgame Boss legendary onto another column to move it'
-                : 'Tap a pokemon in the Endgame Boss row to swap in a legendary'}
+              {legendsOf(card).length > 0 ? t('league.hint.legendMove') : t('league.hint.legendAdd')}
             </span>
           </>
         )}
