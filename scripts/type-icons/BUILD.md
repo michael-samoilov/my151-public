@@ -34,3 +34,24 @@ There is no raster tracing or polygon flattening.
 
 The helper fails on unsupported source primitives or paint effects. Update the
 source adapter deliberately if an upstream asset introduces them.
+
+## Preserve game proportions
+
+`game-calibration.json` pins the 18 original Gen IX Scarlet/Violet PNGs from
+PokeAPI by URL and SHA-256 digest. Their cached bytes match the upstream files.
+The measurements use each background color to recover white coverage, then
+measure the 50% coverage contour.
+
+The SVG generator scales each selected vector uniformly to the corresponding
+game symbol's maximum extent. It preserves the game symbol's bounds center.
+Bug, Water, and Psychic retain horizontal symmetry around game coordinate 30.
+
+All transparent glyphs share a 44-unit square frame, corresponding to game
+coordinates 8-52. The colored icon places that same content at `(8, 8)` inside
+the 60-unit square. This includes Grass's lower edge at game coordinate 51.
+It also preserves relative sizes in existing badge, CSS mask, and canvas slots.
+
+The generator checks the pinned source hashes and rejects artwork outside the
+shared frame. If an upstream reference changes, measure it again before
+updating the calibration. Changing each SVG to its tight bounds would erase
+the game proportions and optical placement.

@@ -1,0 +1,334 @@
+{
+  "schemaVersion": 1,
+  "provenance": {
+    "repository": "https://github.com/PokeAPI/sprites",
+    "generation": "generation-ix/scarlet-violet/small",
+    "localCacheScript": "scripts/cache-sprites.mjs",
+    "verification": "All eighteen local PNG files are byte-identical to the referenced upstream files. Individual SHA-256 digests pin the references."
+  },
+  "method": {
+    "coverage": "sourceAlpha * clamp((min(R,G,B) - min(backgroundRGB)) / (255 - min(backgroundRGB)), 0, 1)",
+    "threshold": 0.5,
+    "bounds": "Core pixel bounds use inclusive minimum and exclusive maximum coordinates.",
+    "scale": "Uniform scaling from selected vector maximum ink extent to the game maximum ink extent.",
+    "center": "Preserve the game ink bounds center. Bug, Water, and Psychic use x=30 to retain mirrored symmetry."
+  },
+  "iconFrame": {
+    "width": 60,
+    "height": 60
+  },
+  "glyphFrame": {
+    "x": 8,
+    "y": 8,
+    "width": 44,
+    "height": 44
+  },
+  "types": {
+    "normal": {
+      "typeId": 1,
+      "referencePath": "public/sprites/types/small/1.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/1.png",
+      "referenceSha256": "201e5b8c3d00b197938e9bb61438e74f5008a76507a3690988529f22a399ced1",
+      "bounds": {
+        "x": 10,
+        "y": 10,
+        "width": 40,
+        "height": 40
+      },
+      "targetMaxExtent": 40,
+      "center": {
+        "x": 30.0,
+        "y": 30.0
+      }
+    },
+    "fighting": {
+      "typeId": 2,
+      "referencePath": "public/sprites/types/small/2.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/2.png",
+      "referenceSha256": "2d28c8a1d64904cd4a5e234393094ce214a327c1a8e1d9e4bc409217df5fbdb5",
+      "bounds": {
+        "x": 14,
+        "y": 12,
+        "width": 32,
+        "height": 35
+      },
+      "targetMaxExtent": 35,
+      "center": {
+        "x": 30.0,
+        "y": 29.5
+      }
+    },
+    "flying": {
+      "typeId": 3,
+      "referencePath": "public/sprites/types/small/3.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/3.png",
+      "referenceSha256": "7860d8279906e45b1936e50bbb6b76a504fe19e666b1ba44daff28bbe60d2583",
+      "bounds": {
+        "x": 17,
+        "y": 13,
+        "width": 31,
+        "height": 34
+      },
+      "targetMaxExtent": 34,
+      "center": {
+        "x": 32.5,
+        "y": 30.0
+      }
+    },
+    "poison": {
+      "typeId": 4,
+      "referencePath": "public/sprites/types/small/4.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/4.png",
+      "referenceSha256": "758c04bb7a4b39ad7150ee4bb5b742d61e18b78ee2bc5fb0d9f184d85c38b3fe",
+      "bounds": {
+        "x": 10,
+        "y": 11,
+        "width": 40,
+        "height": 38
+      },
+      "targetMaxExtent": 40,
+      "center": {
+        "x": 30.0,
+        "y": 30.0
+      }
+    },
+    "ground": {
+      "typeId": 5,
+      "referencePath": "public/sprites/types/small/5.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/5.png",
+      "referenceSha256": "8b402298a27637722d20b5f5bf2c46811739022c1e15eac5101e4e197aed6401",
+      "bounds": {
+        "x": 13,
+        "y": 13,
+        "width": 34,
+        "height": 34
+      },
+      "targetMaxExtent": 34,
+      "center": {
+        "x": 30.0,
+        "y": 30.0
+      }
+    },
+    "rock": {
+      "typeId": 6,
+      "referencePath": "public/sprites/types/small/6.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/6.png",
+      "referenceSha256": "968ba5a79c7b19b3722e27b56e640c89bd48aa8dcdf52ad71616053ba6dc23e7",
+      "bounds": {
+        "x": 12,
+        "y": 12,
+        "width": 36,
+        "height": 36
+      },
+      "targetMaxExtent": 36,
+      "center": {
+        "x": 30.0,
+        "y": 30.0
+      }
+    },
+    "bug": {
+      "typeId": 7,
+      "referencePath": "public/sprites/types/small/7.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/7.png",
+      "referenceSha256": "d2e0c13e0f2a5e3f6516730ad7f7416840347c3546572fd964091ae99cac2e6f",
+      "bounds": {
+        "x": 13,
+        "y": 13,
+        "width": 34,
+        "height": 34
+      },
+      "targetMaxExtent": 34,
+      "center": {
+        "x": 30,
+        "y": 30.0
+      }
+    },
+    "ghost": {
+      "typeId": 8,
+      "referencePath": "public/sprites/types/small/8.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/8.png",
+      "referenceSha256": "fe1c71c13e707bbe250c487cdac184897718a0de6dbf7041a273a8eeee533fbb",
+      "bounds": {
+        "x": 10,
+        "y": 14,
+        "width": 40,
+        "height": 32
+      },
+      "targetMaxExtent": 40,
+      "center": {
+        "x": 30.0,
+        "y": 30.0
+      }
+    },
+    "steel": {
+      "typeId": 9,
+      "referencePath": "public/sprites/types/small/9.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/9.png",
+      "referenceSha256": "e3abd8808c74925db96bcb14930a9441bbaef7468be0bf92b7765a0063353a1e",
+      "bounds": {
+        "x": 13,
+        "y": 13,
+        "width": 34,
+        "height": 33
+      },
+      "targetMaxExtent": 34,
+      "center": {
+        "x": 30.0,
+        "y": 29.5
+      }
+    },
+    "fire": {
+      "typeId": 10,
+      "referencePath": "public/sprites/types/small/10.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/10.png",
+      "referenceSha256": "9856958805631302676110e687d29a1e2d974b33ea9ff8fcc8e200b1cfa770da",
+      "bounds": {
+        "x": 17,
+        "y": 12,
+        "width": 26,
+        "height": 36
+      },
+      "targetMaxExtent": 36,
+      "center": {
+        "x": 30.0,
+        "y": 30.0
+      }
+    },
+    "water": {
+      "typeId": 11,
+      "referencePath": "public/sprites/types/small/11.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/11.png",
+      "referenceSha256": "ffb98c212555575e83d56fa83e77dc49772e51d17cd1c85bc232c673faca6987",
+      "bounds": {
+        "x": 18,
+        "y": 10,
+        "width": 24,
+        "height": 40
+      },
+      "targetMaxExtent": 40,
+      "center": {
+        "x": 30,
+        "y": 30.0
+      }
+    },
+    "grass": {
+      "typeId": 12,
+      "referencePath": "public/sprites/types/small/12.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/12.png",
+      "referenceSha256": "815bbc7863567202e33a5698826554364afb898f67420e47c170c0fc2944a109",
+      "bounds": {
+        "x": 10,
+        "y": 10,
+        "width": 40,
+        "height": 41
+      },
+      "targetMaxExtent": 41,
+      "center": {
+        "x": 30.0,
+        "y": 30.5
+      }
+    },
+    "electric": {
+      "typeId": 13,
+      "referencePath": "public/sprites/types/small/13.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/13.png",
+      "referenceSha256": "0fef3ef85716ae092f794c77c16bc907e7efad8a2a8cc5b5a5f5175db5cf0c95",
+      "bounds": {
+        "x": 18,
+        "y": 11,
+        "width": 24,
+        "height": 38
+      },
+      "targetMaxExtent": 38,
+      "center": {
+        "x": 30.0,
+        "y": 30.0
+      }
+    },
+    "psychic": {
+      "typeId": 14,
+      "referencePath": "public/sprites/types/small/14.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/14.png",
+      "referenceSha256": "8151448da03de4c09603ea5b4fe2c52f0e2648af94e8f0570f16007d1dde5587",
+      "bounds": {
+        "x": 14,
+        "y": 13,
+        "width": 32,
+        "height": 34
+      },
+      "targetMaxExtent": 34,
+      "center": {
+        "x": 30,
+        "y": 30.0
+      }
+    },
+    "ice": {
+      "typeId": 15,
+      "referencePath": "public/sprites/types/small/15.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/15.png",
+      "referenceSha256": "59127775fdf83488aeeeee9388ac6112736e6d490493e1cf144ef815c9f6c372",
+      "bounds": {
+        "x": 14,
+        "y": 10,
+        "width": 32,
+        "height": 40
+      },
+      "targetMaxExtent": 40,
+      "center": {
+        "x": 30.0,
+        "y": 30.0
+      }
+    },
+    "dragon": {
+      "typeId": 16,
+      "referencePath": "public/sprites/types/small/16.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/16.png",
+      "referenceSha256": "af7f697602ff6250cce265220651222e08e8211cc38549ae8ae050b06f2e6bf8",
+      "bounds": {
+        "x": 11,
+        "y": 10,
+        "width": 38,
+        "height": 40
+      },
+      "targetMaxExtent": 40,
+      "center": {
+        "x": 30.0,
+        "y": 30.0
+      }
+    },
+    "dark": {
+      "typeId": 17,
+      "referencePath": "public/sprites/types/small/17.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/17.png",
+      "referenceSha256": "a1309de1544e307e9d466bdc8e08b14a3d47d362abf1f99616a75f1c3dafe001",
+      "bounds": {
+        "x": 13,
+        "y": 20,
+        "width": 34,
+        "height": 25
+      },
+      "targetMaxExtent": 34,
+      "center": {
+        "x": 30.0,
+        "y": 32.5
+      }
+    },
+    "fairy": {
+      "typeId": 18,
+      "referencePath": "public/sprites/types/small/18.png",
+      "referenceUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-ix/scarlet-violet/small/18.png",
+      "referenceSha256": "44b04797c47a387f0d297413e666b9b1f060441d647e029478b846e670b1176a",
+      "bounds": {
+        "x": 14,
+        "y": 16,
+        "width": 32,
+        "height": 32
+      },
+      "targetMaxExtent": 32,
+      "center": {
+        "x": 30.0,
+        "y": 32.0
+      }
+    }
+  }
+}
