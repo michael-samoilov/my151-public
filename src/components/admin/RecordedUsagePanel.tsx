@@ -23,13 +23,24 @@ function Coverage({data}: {data:RecordedUsageSlice}) {
   return <p className="text-xs text-muted-foreground">Retained dated history · {data.browsers} non-bounced browsers · {data.incompleteHistory} with incomplete history · {data.missingTime} without dated durations · {data.missingSessions} without dated sessions</p>;
 }
 
-export function RecordedUsagePanel({data, tools}: {data: RecordedUsageSlice; tools?: RecordedUsage}) {
+function emptyMeasured(data:RecordedUsageSlice):RecordedUsageSlice {
+  const empty={n:0,total:0,average:null,median:null,values:[]};
+  return {...data,time:empty,sessions:empty,weekly:[],missingTime:data.browsers,missingSessions:data.browsers,incompleteHistory:0};
+}
+
+export function RecordedUsagePanel({data:legacy, tools:legacyTools,active,activeTools}: {data: RecordedUsageSlice; tools?: RecordedUsage;active?:RecordedUsageSlice;activeTools?:RecordedUsage}) {
+  const [source,setSource]=useState<'active'|'legacy'>('active');
+  const data=source==='active'?(active??emptyMeasured(legacy)):legacy;
+  const tools=legacyTools?(source==='active'?(activeTools??{all:emptyMeasured(legacyTools.all),dex:emptyMeasured(legacyTools.dex),league:emptyMeasured(legacyTools.league),favorites:emptyMeasured(legacyTools.favorites)}):legacyTools):undefined;
   const [metric, setMetric] = useState<'time' | 'sessions'>('time');
   const [scope,setScope] = useState<'overall'|'tools'>('overall');
   const overlay = tools && scope==='tools';
   const series = overlay ? toolNames.map(({key,name},i)=>({name,color:colorOf(key,i),values:tools[key][metric].values})) : undefined;
   const weekSeries = overlay ? toolNames.map(({key,name},i)=>({name,color:colorOf(key,i),weeks:tools[key].weekly??[]})) : undefined;
   return <div className="space-y-3">
+    <Seg ariaLabel="Recorded source" options={[{key:'active',label:'Active'},{key:'legacy',label:'Legacy spans'}]} value={source} onChange={setSource} />
+    <p className="text-xs text-muted-foreground">{source==='active'?'Foreground interaction estimate · gaps of 5 minutes end sessions · terminal idle and background time excluded':'Legacy session-span estimates · 30-minute session gap · includes idle between snapshots'}</p>
+    {source==='active' && !data[metric].n && <p className="text-xs text-muted-foreground">Active time collection starts with new activity. No measured {metric==='time'?'time':'sessions'} recorded in the selected range.</p>}
     {tools && <Seg ariaLabel="Recorded scope" options={[{key:'overall',label:'Overall'},{key:'tools',label:'Tools'}]} value={scope} onChange={setScope} />}
     <div className="flex flex-wrap items-center justify-between gap-2">
       <span className="text-sm font-semibold tabular-nums">{overlay ? `Recorded ${metric === 'time' ? 'hours' : 'sessions'} by tool` : metric === 'time' ? `${(data.time.total / 3_600_000).toLocaleString(undefined, {maximumFractionDigits: 2})} recorded hours` : `${data.sessions.total.toLocaleString()} recorded sessions`}</span>
@@ -57,6 +68,6 @@ export function RecordedUsagePanel({data, tools}: {data: RecordedUsageSlice; too
       <WeeklyRecordedChart weeks={data.weekly} series={weekSeries} />
     </div>}
     {overlay ? <div className="space-y-1">{toolNames.map(({key,name})=><div key={key}><span className="text-xs font-semibold">{name}</span><Coverage data={tools[key]} /></div>)}</div> : <Coverage data={data} />}
-    <p className="text-xs text-muted-foreground">Session-span estimates · retained history · not complete lifetime totals or active attention</p>
+    <p className="text-xs text-muted-foreground">{source==='active'?'Recorded foreground intervals · retained history · activity intervals under 5 minutes are counted between interactions':'Session-span estimates · retained history · not complete lifetime totals or active attention'}</p>
   </div>;
 }

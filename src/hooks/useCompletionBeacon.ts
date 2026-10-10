@@ -1,3 +1,4 @@
+import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
@@ -116,6 +117,7 @@ function postBeacon(
     events: events && events.length ? events : undefined,
     ref: externalReferrerHost() || undefined,
     ts: capturedAt ?? Date.now(),
+    attention: attentionPayload('dex'),
     notme: isOptedOut() || undefined,
   });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
@@ -176,6 +178,12 @@ export function useCompletionBeacon() {
     }
   }, [sections, debouncer]);
 
+  useEffect(()=>subscribeAttention('dex',()=>{
+    const current=usePokedexStore.getState().sections;
+    const ids=Object.values(current).flat();
+    if(ids.length>=MIN_PROGRESS_IDS)debouncer.schedule(()=>postBeacon(ids,'progress',current,undefined,Date.now()));
+  }),[debouncer]);
+
   // Deliver the pending beacon at the moments a page can vanish. On iOS,
   // unload/beforeunload are unreliable or never fire; visibilitychange→hidden
   // plus pagehide is the supported pair, and fetch keepalive (already used by
@@ -230,6 +238,7 @@ export async function sendExportBeacon(
     locale: getLocale(),
     ref: externalReferrerHost() || undefined,
     ts: Date.now(),
+    attention: attentionPayload('dex'),
     notme: isOptedOut() || undefined,
   });
   try {

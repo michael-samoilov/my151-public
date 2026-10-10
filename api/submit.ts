@@ -1,3 +1,4 @@
+import {parseAttentionForIngest,mergeAttention} from './_attention.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
@@ -182,6 +183,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ref?: unknown;
       tool?: unknown;
       page?: unknown;
+      attention?: unknown;
       ts?: unknown;
       notme?: unknown;
     };
@@ -191,6 +193,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'invalid cid' });
     }
     const cid = body.cid;
+    const receivedAt=Date.now();
+    const attention=parseAttentionForIngest(body.attention,receivedAt);
+    if(attention===null)return res.status(400).json({error:'invalid attention'});
 
     if (typeof body.kind !== 'string' || !isBeaconKind(body.kind)) {
       return res.status(400).json({ error: 'invalid kind' });
@@ -256,7 +261,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    const receivedAt = Date.now();
+
     const captured = parseCapturedAt(body.ts, receivedAt);
     const now = captured ?? receivedAt;
     const capturedKnown = captured !== null;
@@ -292,6 +297,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         exported: false,
       };
 
+      const measured=mergeAttention(existing?.attention,attention,receivedAt);
+      if(measured)rec.attention=measured;
       rec.submits += 1;
       rec.maxDepth = Math.max(rec.maxDepth, depth);
       rec.country = geo.country;
