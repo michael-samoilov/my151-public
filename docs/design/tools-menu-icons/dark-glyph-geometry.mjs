@@ -18,7 +18,7 @@ const TIP = [1475.7, 1942];                // where the outer ellipse ends at th
 const TIP_OUT = [-0.742, -0.67];           // the outer ellipse's normal there
 
 /** Michael's header size, by eye, for `pathScale()`: beside the globe (104%) and bug (116%). Measured balance is 121%. */
-export const HEADER_SCALE = 1.125;
+export const HEADER_SCALE = 1.14;
 
 const f = (n) => String(+n.toFixed(2));
 const at = ([x, y]) => [12 + (x - AXIS) * S, 4.47 + (y - 1928.2) * S];
