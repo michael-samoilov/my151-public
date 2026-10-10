@@ -652,14 +652,14 @@ function drawTmSlot(
   const bodyW = width - (bodyX - x) - L.MARK_PAD;
 
   if (!move) {
-    drawMarkColumn(ctx, localeUppercase(t('league.tm.mark')), shades.hint, markCx, cy, (size, gx, gy) =>
+    drawMarkColumn(ctx, L.markWord('league.tm.mark'), shades.hint, markCx, cy, (size, gx, gy) =>
       drawTmDisc(ctx, shades.dash, size, gx, gy),
     );
     return;
   }
 
   const moveShades = cardShades(move.type as TypeName);
-  drawMarkColumn(ctx, localeUppercase(t('league.tm.mark')), moveShades.band, markCx, cy, (size, gx, gy) =>
+  drawMarkColumn(ctx, L.markWord('league.tm.mark'), moveShades.band, markCx, cy, (size, gx, gy) =>
     drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], size, gx, gy),
   );
 
@@ -742,7 +742,7 @@ function drawBadgeSlot(
   const bodyX = x + L.MARK_PAD + L.MARK_COL + L.MARK_PAD;
   const bodyW = width - (bodyX - x) - 4 * L.K;
 
-  drawMarkColumn(ctx, name ? '' : localeUppercase(t('league.badge.mark')), name ? shades.band : shades.hint, markCx, cy, (size, gx, gy) =>
+  drawMarkColumn(ctx, name ? '' : L.markWord('league.badge.mark'), name ? shades.band : shades.hint, markCx, cy, (size, gx, gy) =>
     drawHexagon(ctx, name ? shades.type : shades.dash, !!name, size, gx, gy),
   );
 

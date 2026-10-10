@@ -177,6 +177,14 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
  */
 export const FRAME = EXPORT_FRAME_PX;
 
+/**
+ * The word under the TM disc or the badge hexagon. The export's column has
+ * room for it on one line, so a word the live card stacks in two is joined.
+ */
+export function markWord(key: 'league.tm.mark' | 'league.badge.mark'): string {
+  return localeUppercase(t(key)).split('\n').join(headingTracks() ? ' ' : '');
+}
+
 /** Badge phrase in the same caps as ACE POKÉMON, with the badge word where the locale puts it. */
 export function badgeExportPhrase(name: string): string {
   return localeUppercase(t('league.badge.phrase', { name }));

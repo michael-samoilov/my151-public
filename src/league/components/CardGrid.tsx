@@ -1525,7 +1525,8 @@ function markWord(fontsLoaded: boolean): MarkWord {
   if (!ctx) return EN_MARK_WORD;
   ctx.font = `800 100px ${FONT_STACK}`;
   const tracked = headingTracks();
-  const words = [translate('league.tm.mark'), translate('league.badge.mark')].map(localeUppercase);
+  // A word the catalog breaks with a newline stands in two lines; the wider line counts.
+  const words = [translate('league.tm.mark'), translate('league.badge.mark')].flatMap((w) => localeUppercase(w).split('\n'));
   const measured = words.map((word) => ({ natural: ctx.measureText(word).width / 100, letters: [...word].length, tracked }));
   const width = (w: MarkWord) => w.natural + (w.tracked ? 0.08 * w.letters : 0);
   const widest = measured.reduce((a, b) => (width(b) > width(a) ? b : a));
@@ -1534,6 +1535,23 @@ function markWord(fontsLoaded: boolean): MarkWord {
 }
 
 const round = (n: number) => String(Number(n.toFixed(3)));
+
+/**
+ * A word under a glyph, in the lines its catalog value gives it. わざマシン
+ * and 招式学习器 stand in two lines, so the column sets them larger than one
+ * five-character line would allow; TM and BADGE stay one line of text.
+ */
+function MarkLines({ text }: { text: string }) {
+  const lines = text.split('\n');
+  if (lines.length === 1) return <>{text}</>;
+  return (
+    <>
+      {lines.map((line, i) => (
+        <span key={i} className="block text-center">{line}</span>
+      ))}
+    </>
+  );
+}
 
 /**
  * What the TM box and the badge box share.
@@ -1657,7 +1675,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           data-mark-label="tm"
           style={{ color: move ? cardShades(move.type).band : 'var(--lg-hint)', whiteSpace: 'nowrap' }}
         >
-          {localeUppercase(t('league.tm.mark'))}
+          <MarkLines text={localeUppercase(t('league.tm.mark'))} />
         </span>
       </span>
       {move ? (
@@ -1947,7 +1965,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             data-mark-label="badge"
             style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0, whiteSpace: 'nowrap' }}
           >
-            {localeUppercase(t('league.badge.mark'))}
+            <MarkLines text={localeUppercase(t('league.badge.mark'))} />
           </span>
         </span>
       </span>
