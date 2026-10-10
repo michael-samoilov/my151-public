@@ -12,7 +12,7 @@ function Distribution({metric, minutes}: {metric: RecordedDistribution; minutes:
       <span>Average {format(metric.average)}</span><span>Median {format(metric.median)}</span><span>{metric.n} browsers</span>
     </div>
     <RecordedDistributionChart values={metric.values} minutes={minutes} />
-    <p className="text-xs text-muted-foreground">Cumulative share of browsers · {minutes ? 'minutes' : 'sessions'} · compressed logarithmic axis</p>
+    <p className="text-xs text-muted-foreground">Browsers at or above each threshold · logarithmic {minutes ? 'time scale · m = minutes · h = hours' : 'session scale'}</p>
   </div>;
 }
 
