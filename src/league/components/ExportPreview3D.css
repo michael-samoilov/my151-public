@@ -462,18 +462,18 @@
   --gradient-x: var(--pointer-x);
   --gradient-y: var(--pointer-y);
   /* Size pulls the light stops in toward the pointer, then fades them to a
-     clear neutral stop before the dark far stop. At 1 this is close to
-     hover-tilt's glare, whose light already crossed mid-gray near 56%.
-     Smaller keeps the light in a hotspot, so its overlay washes a smaller
-     patch of the card. */
+     clear neutral stop. At 1 this is close to hover-tilt's glare, whose light
+     already crossed mid-gray near 56%. Smaller keeps the light in a hotspot,
+     so its overlay washes a smaller patch of the card. hover-tilt also ends
+     on a dark stop, which overlay turns into darker ink across most of the
+     card while white paper stays white. The glare here only adds light. */
   --hover-tilt-default-gradient: radial-gradient(
     farthest-corner circle at var(--gradient-x) var(--gradient-y),
     hsla(var(--hover-tilt-glare-hue), 40%, 95%, calc(var(--hover-tilt-glare-intensity) * 0.66))
       calc(8% * var(--hover-tilt-glare-size)),
     hsla(var(--hover-tilt-glare-hue), 30%, 88%, calc(var(--hover-tilt-glare-intensity) * 0.5))
       calc(28% * var(--hover-tilt-glare-size)),
-    hsla(var(--hover-tilt-glare-hue), 10%, 50%, 0) calc(56% * var(--hover-tilt-glare-size)),
-    hsla(var(--hover-tilt-glare-hue), 10%, 5%, calc(var(--hover-tilt-glare-intensity) * 0.25)) 90%
+    hsla(var(--hover-tilt-glare-hue), 10%, 50%, 0) calc(56% * var(--hover-tilt-glare-size))
   );
   isolation: auto;
   transform-style: flat;
