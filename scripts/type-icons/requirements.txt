@@ -1,0 +1,3 @@
+# Build-only geometry tools. Generated SVGs need no Python or browser package.
+fonttools==4.61.1
+skia-pathops==0.9.1
