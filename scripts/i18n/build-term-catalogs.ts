@@ -11,12 +11,36 @@
  * language 1 (ja-Hrkt) throughout, which is both what the games show and what
  * is fully populated.
  *
+ * On top of PokeAPI go the terms sourced from the games' own text in
+ * `docs/i18n/sources/game-terms.json` (`npm run i18n:game-terms`): move
+ * categories, contest conditions, and the build page's game-title, villain and
+ * Milcery sub-labels. The same run writes the move names from
+ * `move-names.json` to `src/i18n/moves/<locale>.json`, which the league
+ * builder loads on demand.
+ *
+ * Region names are checked against Pokémon HOME's box list. A language whose
+ * PokeAPI name differs from HOME's takes HOME's: PokeAPI has no Spanish
+ * regions, and the Spanish games call Unova Teselia.
+ *
  * Run: npm run i18n:terms
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import type { Locale } from '../../src/i18n/config';
+import {
+  GAME_TERMS_PATH, MOVE_NAMES_PATH, type GameTermsFixture, type MoveNamesFixture,
+} from './extract-game-terms';
 import { LANGUAGE_IDS, ensureCsvs, readCsv } from './pokeapi';
 
 const OUT_DIR = 'src/i18n/catalogs/terms';
+const MOVES_DIR = 'src/i18n/moves';
+
+/**
+ * The word HOME's box list adds after a region name ("Unova Region",
+ * イッシュ地方). A name that differs only by it is the same name.
+ */
+const REGION_SUFFIX: Partial<Record<Locale, string>> = {
+  en: ' Region', ja: '地方', ko: '지방', 'zh-Hans': '地区', 'zh-Hant': '地區',
+};
 
 /** App key suffix -> PokeAPI row id, for each term family. */
 const TYPES: Record<string, number> = {
@@ -55,7 +79,11 @@ async function main(): Promise<void> {
     { prefix: 'region', ids: REGIONS, rows: index(readCsv('region_names'), 'region_id') },
   ];
 
-  for (const [locale, langId] of Object.entries(LANGUAGE_IDS)) {
+  const gameTerms = JSON.parse(readFileSync(GAME_TERMS_PATH, 'utf8')) as GameTermsFixture;
+  const moveNames = JSON.parse(readFileSync(MOVE_NAMES_PATH, 'utf8')) as MoveNamesFixture;
+  mkdirSync(MOVES_DIR, { recursive: true });
+
+  for (const [locale, langId] of Object.entries(LANGUAGE_IDS) as [Locale, number][]) {
     const out: Record<string, string> = {};
     const missing: string[] = [];
     for (const { prefix, ids, rows } of sources) {
@@ -68,11 +96,38 @@ async function main(): Promise<void> {
         else missing.push(`${prefix}.${key}`);
       }
     }
+
+    const overrides: string[] = [];
+    for (const [id, home] of Object.entries(gameTerms.regions)) {
+      const key = `region.${id}`;
+      const ours = out[key];
+      const theirs = home.text[locale];
+      const suffix = REGION_SUFFIX[locale] ?? '';
+      if (!theirs || theirs === ours || theirs === `${ours}${suffix}`) continue;
+      if (suffix && theirs.endsWith(suffix)) {
+        throw new Error(`${locale} ${key}: PokeAPI says ${ours}, ${home.qid} says ${theirs}; decide which by hand`);
+      }
+      out[key] = theirs;
+      overrides.push(`${key} ${ours} -> ${theirs} (${home.qid})`);
+    }
+
+    let sourced = 0;
+    if (locale !== 'en') {
+      for (const term of gameTerms.terms) {
+        const value = term.text[locale];
+        if (term.key.startsWith('form.') || !value) continue;
+        out[term.key] = value;
+        sourced += 1;
+      }
+      const moves = Object.fromEntries(Object.entries(moveNames.moves).map(([id, row]) => [id, row.text[locale]]));
+      writeFileSync(`${MOVES_DIR}/${locale}.json`, `${JSON.stringify(moves)}\n`);
+    }
     const sorted = Object.fromEntries(Object.keys(out).sort().map((k) => [k, out[k]]));
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(sorted, null, 2)}\n`);
     console.log(
-      `  ${locale.padEnd(8)} ${String(Object.keys(out).length).padStart(3)} terms` +
-        (missing.length ? `   missing: ${missing.join(', ')}` : ''),
+      `  ${locale.padEnd(8)} ${String(Object.keys(out).length).padStart(3)} terms, ${sourced} from game text` +
+        (missing.length ? `   missing: ${missing.join(', ')}` : '') +
+        (overrides.length ? `   overrides: ${overrides.join('; ')}` : ''),
     );
   }
 }

@@ -24,7 +24,8 @@
  */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { LOCALES, type Locale } from '../../src/i18n/config';
 
@@ -98,7 +99,8 @@ const FILES = [
 const pinned = (path: string): SourceBlock | undefined =>
   existsSync(path) ? (JSON.parse(readFileSync(path, 'utf8')) as { source: SourceBlock }).source : undefined;
 
-const PINS = { ...pinned(GAME_TERMS_PATH)?.sha256, ...pinned(MOVE_NAMES_PATH)?.sha256 };
+const pins = () => ({ ...pinned(GAME_TERMS_PATH)?.sha256, ...pinned(MOVE_NAMES_PATH)?.sha256 });
+let PINS: Record<string, Record<string, string>> = {};
 const sha256: Record<string, Record<string, string>> = {};
 
 async function readGz(game: string, file: string, lang: string): Promise<string[] | undefined> {
@@ -507,6 +509,7 @@ function writeMoves(fixture: MoveNamesFixture): void {
 }
 
 async function main(): Promise<void> {
+  PINS = pins();
   await load();
   const source = (keys: string[]): SourceBlock => ({
     repo: 'https://github.com/abcboy101/poke-corpus',
@@ -537,4 +540,8 @@ async function main(): Promise<void> {
   }
 }
 
-void main();
+// The term and name generators and `verify.ts` import the paths and types from
+// here, so fetching must not be a side effect of loading the module.
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  void main();
+}
