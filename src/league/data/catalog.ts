@@ -92,8 +92,20 @@ function speciesId(id: number): number {
 }
 
 const formOrder = (id: number): number => id === speciesId(id) ? 0 : id === 10085 ? 10079 : id;
+
+// Forms of older species follow the native species in their generation section.
+// Keep their descendants there too, so a new species such as Obstagoon does
+// not pull its regional evolution line back into the native-species order.
+const laterFormLineIds = new Set(pokemon
+  .filter(mon => mon.generation > byId.get(speciesId(mon.id))!.generation)
+  .map(mon => mon.id));
+for (const id of laterFormLineIds) {
+  for (const child of children.get(id) ?? []) laterFormLineIds.add(child.id);
+}
+
 const compareBrowserOrder = (a: number, b: number): number =>
-  speciesId(a) - speciesId(b) || formOrder(a) - formOrder(b);
+  Number(laterFormLineIds.has(a)) - Number(laterFormLineIds.has(b))
+  || speciesId(a) - speciesId(b) || formOrder(a) - formOrder(b);
 
 export function leagueFavoritePickerId(id: number): number | undefined {
   const remapped = ({

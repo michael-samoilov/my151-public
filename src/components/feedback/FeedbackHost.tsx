@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
-import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { reloadIfStale } from '@/lib/staleDeploy';
 import {
   registerFeedbackOpener,
   takePendingCrash,
   type FeedbackAnchor,
 } from '@/components/feedback/feedbackChannel';
 import type { FeedbackCategory, FeedbackContext, FeedbackToolContext } from '@/lib/feedbackContext';
+
+const FeedbackSheet = lazy(() => reloadIfStale(import('./FeedbackSheet'))
+  .then(module => ({ default: module.FeedbackSheet })));
 
 /**
  * The single mount point for the report form.
@@ -54,13 +57,15 @@ export function FeedbackHost({ route, getToolContext }: {
 
   if (!open) return null;
   return (
-    <FeedbackSheet
-      route={route}
-      toolContext={toolContext}
-      initialCategory={category}
-      error={crash}
-      anchor={anchor}
-      onClose={() => setOpen(false)}
-    />
+    <Suspense fallback={null}>
+      <FeedbackSheet
+        route={route}
+        toolContext={toolContext}
+        initialCategory={category}
+        error={crash}
+        anchor={anchor}
+        onClose={() => setOpen(false)}
+      />
+    </Suspense>
   );
 }
