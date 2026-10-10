@@ -22,6 +22,7 @@ import { clampedN, type PlatformJoint } from '@/lib/platformStacks';
 import { filteredN, type WhoFilter } from '@/lib/whoOrigin';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById as getLeaguePokemonById } from '@/league/data/catalog';
 import { cn, displayName } from '@/lib/utils';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
@@ -609,6 +610,11 @@ function dexFace(id: number): PopularFace | undefined {
   return p ? { sprite: p.sprite, alt: p.name, name: displayName(p.name) } : undefined;
 }
 
+function leagueFace(id: number): PopularFace | undefined {
+  const p = getLeaguePokemonById(id);
+  return p ? { sprite: p.sprite, alt: p.name, name: displayName(p.name) } : undefined;
+}
+
 /** Grid of small sprites with the pick-count beneath — ~9-10 per row. `face`
  *  finds a sprite by id; the Picker's ids include its own forms. */
 function PopularGrid({ rows, face = dexFace }: { rows: [string, number][]; face?: (id: number) => PopularFace | undefined }) {
@@ -910,7 +916,7 @@ function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
 function leagueLinesByChain(cards: LeagueCard[]): Map<number, number> {
   const seats = new Map<number, number>();
   for (const { b } of cards.flatMap((c) => c.l)) {
-    const chain = getPokemonById(b[0])?.evolutionChainId ?? -b[0];
+    const chain = getLeaguePokemonById(b[0])?.evolutionChainId ?? -b[0];
     seats.set(chain, (seats.get(chain) ?? 0) + 1);
   }
   return seats;
@@ -2360,6 +2366,7 @@ export function AdminPage() {
                 mostBySection={data.league.picks.byType}
                 n={data.league.users}
                 unit="leagues"
+                face={leagueFace}
                 onOpen={openLeaguePicks}
               />
             )}

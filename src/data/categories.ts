@@ -85,7 +85,7 @@ export const CATEGORIES: PokemonCategory[] = [
     id: 'alolan-form',
     name: 'Alolan Form',
     color: '#f6ad55',
-    filter: (p) => p.name.includes('-alola'),
+    filter: (p) => /-alola(?!-cap)(?:-|$)/.test(p.name),
   },
   {
     id: 'ultra-beast',

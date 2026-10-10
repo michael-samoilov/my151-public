@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import { LEAGUE_PERSIST_VERSION, LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } from './seedLeague';
 import type { TypeName } from '@/types/pokemon';
 import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW, ROW_COUNT } from '../model/constants';
+import { legendsOf } from '../model/cardPicks';
+export { legendsOf } from '../model/cardPicks';
 import {
   allCardsFilled,
   parseCelebratedNudges,
@@ -178,17 +180,6 @@ export function emptyCard(): GymCard {
  * `powerups` map and one `powerup` instead, which applied to both rows — so
  * that is what it answers with, and the card keeps drawing what it drew.
  */
-/**
- * Every legendary on a card's endgame row.
- *
- * A card saved before the row could hold more than one carries a single
- * `legend`, which reads as a one-entry list — exactly what it meant.
- */
-export function legendsOf(card: GymCard): LegendPick[] {
-  if (card.legends) return card.legends;
-  return card.legend ? [card.legend] : [];
-}
-
 /** The legendary on one seat of the endgame row, or null. */
 export function legendAt(card: GymCard, seat: number): LegendPick | null {
   return legendsOf(card).find((l) => l.seat === seat) ?? null;

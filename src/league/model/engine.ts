@@ -1,4 +1,4 @@
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById } from '@/league/data/catalog';
 import {
   BOSS_ROW,
   CHAMPION_ROW,

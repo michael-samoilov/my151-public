@@ -46,6 +46,7 @@ import {
 } from '@/hooks/usePokemonData';
 import { TYPE_NAMES, type Pokemon, type TypeName } from '@/types/pokemon';
 import type { LeaguePickRows, LeaguePicks } from '../../../api/_leaguePicks';
+import { getPokemonById as getLeaguePokemonById } from '@/league/data/catalog';
 
 export const PICKS_COLS = 6;
 /** Desktop most|least row: six for most, three for least. */
@@ -465,7 +466,7 @@ export interface LeaguePicksSection {
 function countLines(rows: LeaguePickRows): RankedLine[] {
   const out: RankedLine[] = [];
   for (const [id, n] of rows) {
-    const p = getPokemonById(Number(id));
+    const p = getLeaguePokemonById(Number(id));
     if (!p) continue;
     out.push({ key: id, members: [memberOf(p, n, n)], picks: n, index: n, starterType: 'other' });
   }

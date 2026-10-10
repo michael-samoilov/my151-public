@@ -13,11 +13,12 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { ArrowLeftRight, ArrowUpDown, Plus } from 'lucide-react';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById } from '@/league/data/catalog';
 import { getLocale, localeUppercase, pokemonLabel, raw, t as translate, useNamesVersion, useT, type NoArgKey } from '@/i18n';
 import { splitTemplate, type TemplatePart } from '@/lib/richTemplate';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
+import { PokemonName } from '@/components/shared/PokemonName';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
@@ -865,6 +866,8 @@ function SlotHalf({
   onRemove: () => void;
 }) {
   const mirrored = half === 'partner';
+  const nameLabel = pokemon ? pokemonLabel(pokemon.id, pokemon.name) : null;
+  const genderMarked = Boolean(nameLabel?.mark && /[♂♀]/u.test(nameLabel.mark));
   const label = (
     <HeadRuns
       lines={heading.lines}
@@ -959,7 +962,7 @@ function SlotHalf({
   );
   // An empty half has no name line, so the partner's heading alone centres
   // on its ball.
-  const text = pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : null;
+  const text = nameLabel?.name ?? null;
   const clipped = fit.max > 0;
   const name = text !== null && (
     <span
@@ -975,11 +978,11 @@ function SlotHalf({
         lineHeight: `calc(var(--cap-size) * ${CAPTION_LEADING})`,
         letterSpacing: fit.tight ? 0 : undefined,
         maxWidth: clipped ? `${fit.max}px` : undefined,
-        overflow: clipped ? 'hidden' : undefined,
-        textOverflow: clipped ? 'ellipsis' : undefined,
+        overflow: clipped && !genderMarked ? 'hidden' : undefined,
+        textOverflow: clipped && !genderMarked ? 'ellipsis' : undefined,
       }}
     >
-      {text}
+      {genderMarked && nameLabel ? <PokemonName label={nameLabel} truncate={clipped} /> : text}
     </span>
   );
   // The name at the caption size, unshrunk and unclipped, for the fit to
@@ -990,7 +993,7 @@ function SlotHalf({
       aria-hidden="true"
       className={cn('pointer-events-none invisible absolute left-0 top-0 w-max whitespace-nowrap', CAPTION_NAME_CLASS)}
     >
-      {text}
+      {genderMarked && nameLabel ? <PokemonName label={nameLabel} truncate={false} /> : text}
     </span>
   );
   const caption = (
@@ -1017,7 +1020,7 @@ function SlotHalf({
       onPointerDown={lab ? onLabPointerDown : undefined}
       data-testid={testId}
       data-slot-half={half}
-      aria-label={text !== null ? heading.filled(text) : heading.choose}
+      aria-label={nameLabel ? heading.filled(nameLabel.full) : heading.choose}
       className={cn(
         'absolute z-[6] flex items-center',
         mirrored ? 'flex-row' : 'flex-col',

@@ -70,18 +70,25 @@ const brotli = (file) =>
  */
 function manifestChunk(key) {
   if (manifest[key]) return manifest[key];
-  if (!key.startsWith('src/i18n/names/')) return undefined;
-  const loaderKey = JSON.stringify(`./names/${key.slice('src/i18n/names/'.length)}`);
+  const catalog = /^src\/i18n\/(names|picker-names)\/(.+)$/.exec(key);
+  if (!catalog) return undefined;
+  const [, directory, filename] = catalog;
+  const loaderKeys = [
+    JSON.stringify(`./${directory}/${filename}`),
+    JSON.stringify(`../i18n/${directory}/${filename}`),
+  ];
   const destinations = new Set();
   for (const chunk of Object.values(manifest)) {
     if (extname(chunk.file) !== '.js') continue;
     const code = readFileSync(join(dist, chunk.file), 'utf8');
-    let at = code.indexOf(loaderKey);
-    while (at !== -1) {
-      const loader = code.slice(at + loaderKey.length, at + loaderKey.length + 200);
-      const match = loader.match(/^:\s*\(\)\s*=>[^;]{0,160}?import\((['"`])(\.\/[^'"`]+)\1\)/);
-      if (match) destinations.add(join(dirname(chunk.file), match[2]));
-      at = code.indexOf(loaderKey, at + loaderKey.length);
+    for (const loaderKey of loaderKeys) {
+      let at = code.indexOf(loaderKey);
+      while (at !== -1) {
+        const loader = code.slice(at + loaderKey.length, at + loaderKey.length + 200);
+        const match = loader.match(/^:\s*\(\)\s*=>[^;]{0,160}?import\((['"`])(\.\/[^'"`]+)\1\)/);
+        if (match) destinations.add(join(dirname(chunk.file), match[2]));
+        at = code.indexOf(loaderKey, at + loaderKey.length);
+      }
     }
   }
   if (destinations.size !== 1) return undefined;
