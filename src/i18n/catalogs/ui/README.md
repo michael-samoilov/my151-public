@@ -106,9 +106,8 @@ Sword/Shield text from `abcboy101/poke-corpus`.
 
 All of `league.*` is translated: the tool bar, the league summary, the
 trainer card and its bands, the (i) help, the hints under the card, the TM
-and type pickers, the export popups, and the words drawn in the exported
-pictures. The league's export popups moved from `nudge.*` to `league.nudge.*`
-with the rest.
+and type pickers, and the words drawn in the exported pictures. The league's
+export popups keep their `nudge.*` keys.
 
 - **Game terms** follow the pinned text in
   `docs/i18n/sources/league-interface-terms.json`: Gym Leader, Elite Four,

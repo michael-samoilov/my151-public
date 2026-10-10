@@ -50,7 +50,10 @@ function GlobalHeader() {
         <span className="text-primary">my151</span>
         <span className="text-foreground">.app</span>
       </a>
-      <div className="flex flex-shrink-0 items-center gap-1">
+      {/* No gap under 360px, as the hub sets it: a longer Tools label, such
+          as Spanish "Herramientas", otherwise pushes the menu past a 320px
+          screen and the page scrolls sideways. */}
+      <div className="flex flex-shrink-0 items-center gap-0 min-[360px]:gap-1">
         <LanguagePicker />
         <FeedbackButton />
         <ToolsMenu current="league" />

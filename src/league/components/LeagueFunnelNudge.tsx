@@ -27,19 +27,19 @@ interface NudgeCopy {
 
 const COPY: Record<LeagueNudgeId, NudgeCopy> = {
   card: {
-    titleKey: 'league.nudge.card.title',
-    bodyKey: 'league.nudge.card.body',
-    ctaKey: 'league.nudge.card.cta',
+    titleKey: 'nudge.card.title',
+    bodyKey: 'nudge.card.body',
+    ctaKey: 'nudge.card.cta',
   },
   league: {
-    titleKey: 'league.nudge.gyms.title',
-    bodyKey: 'league.nudge.gyms.body',
-    ctaKey: 'league.nudge.gyms.cta',
+    titleKey: 'nudge.gyms.title',
+    bodyKey: 'nudge.gyms.body',
+    ctaKey: 'nudge.gyms.cta',
   },
   complete: {
-    titleKey: 'league.nudge.complete.title',
-    bodyKey: 'league.nudge.complete.body',
-    ctaKey: 'league.nudge.gyms.cta',
+    titleKey: 'nudge.complete.title',
+    bodyKey: 'nudge.complete.body',
+    ctaKey: 'nudge.gyms.cta',
   },
 };
 
