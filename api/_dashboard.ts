@@ -1,3 +1,4 @@
+import type {RecordingFields} from './_sessionize.js';
 import {parseFavoriteRecord, type FavoriteRecord} from './_favoriteRecord.js';
 import {favoritePicks, favoriteSummary, favoriteUsageFunnel, favoriteUser} from './_favoriteAggregate.js';
 // The admin dashboard payload, computed from the raw Redis reads in
@@ -151,7 +152,7 @@ function toolOrder(dexFirstTs: number, leagueFirstTs: number): ToolOrder {
  * tool they met first, and as a card of its own under the League slice, where
  * a browser that never touched the dex builder still has to be visible.
  */
-interface LeagueUser {
+interface LeagueUser extends RecordingFields {
   cid: string;
   firstTs: number;
   firstAt: string;
@@ -215,6 +216,9 @@ function leagueUser(r: LeagueRecord, dexFirstTs?: number): LeagueUser {
     exportedCardAt: r.exportedCardAt,
     exportedLeagueAt: r.exportedLeagueAt,
     sessionLog: r.sessionLog,
+    recording: r.recording,
+    activeDays: r.activeDays,
+    activityCoverageFrom: r.activityCoverageFrom,
     country: r.country,
     region: r.region,
     tz: r.tz,

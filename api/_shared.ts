@@ -1,3 +1,4 @@
+import {sanitizeRecordingFields, type RecordingFields} from './_sessionize.js';
 // Shared helpers for the analytics API endpoints. The leading underscore keeps
 // Vercel from treating this file as its own serverless route.
 import type { VercelRequest, VercelResponse } from '@vercel/node';
@@ -39,7 +40,7 @@ export function isBeaconKind(s: string): s is BeaconKind {
 }
 
 /** A single anonymous user's profile, merged across all their submissions. */
-export interface ClientRecord {
+export interface ClientRecord extends RecordingFields {
   cid: string;
   firstTs: number;
   firstAt: string;
@@ -324,10 +325,11 @@ export function parseRecord(raw: unknown): ClientRecord | null {
   if (raw == null) return null;
   if (typeof raw === 'string') {
     try {
-      return JSON.parse(raw) as ClientRecord;
+      return parseRecord(JSON.parse(raw));
     } catch {
       return null;
     }
   }
-  return raw as ClientRecord;
+  if (typeof raw !== 'object' || Array.isArray(raw)) return null;
+  return sanitizeRecordingFields(raw as ClientRecord);
 }
