@@ -390,20 +390,26 @@ test.describe('the ace and partner slot', () => {
         const seamY = (x: number) => y1 + ((y2 - y1) * (x - x1)) / (x2 - x1);
         // Each line of text as drawn, clipped where its element clips it.
         const lines = (el: Element): Box[] => {
-          const cs = getComputedStyle(el);
-          const clip = cs.overflowX === 'hidden' ? el.getBoundingClientRect() : null;
           const out: Box[] = [];
           const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
           const range = document.createRange();
           for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-            if (!(n.textContent ?? '').trim()) continue;
+            if (!(n.textContent ?? '').trim() || n.parentElement?.closest('.sr-only')) continue;
             range.selectNodeContents(n);
             for (const r of range.getClientRects()) {
-              const left = clip ? Math.max(r.left, clip.left) : r.left;
-              const right = clip ? Math.min(r.right, clip.right) : r.right;
+              let left = r.left;
+              let right = r.right;
+              for (let ancestor = n.parentElement; ancestor && el.contains(ancestor); ancestor = ancestor.parentElement) {
+                if (!['hidden', 'clip'].includes(getComputedStyle(ancestor).overflowX)) continue;
+                const clip = ancestor.getBoundingClientRect();
+                left = Math.max(left, clip.left);
+                right = Math.min(right, clip.right);
+              }
               if (right - left > 0.5) out.push(rel(new DOMRect(left, r.top, right - left, r.height)));
             }
           }
+          // Form markers are visible SVGs; their aria-hidden wrapper does not hide their paint.
+          out.push(...[...el.querySelectorAll('svg')].map(svg => rel(svg.getBoundingClientRect())));
           return out;
         };
         const half = (h: string) => {
@@ -413,13 +419,32 @@ test.describe('the ace and partner slot', () => {
             art: rel(root.querySelector('[data-slot-art]')!.getBoundingClientRect()),
             runs: [...lines(root.querySelector('[data-slot-head]')!), ...lines(name)],
             namePx: parseFloat(getComputedStyle(name).fontSize),
-            // The text's drawn width against its box: an ellipsis can cut two
-            // letters for an overflow under the pixel that scrollWidth rounds.
+            // Range geometry includes clipped screen-reader text. Check each
+            // visible text node against its own truncating ancestors instead.
             clipped: (() => {
               const range = document.createRange();
-              range.selectNodeContents(name);
-              return range.getBoundingClientRect().width > name.getBoundingClientRect().width + 0.25;
+              const walker = document.createTreeWalker(name, NodeFilter.SHOW_TEXT);
+              for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+                if (!(n.textContent ?? '').trim() || n.parentElement?.closest('.sr-only')) continue;
+                range.selectNodeContents(n);
+                const ink = range.getBoundingClientRect();
+                for (let ancestor = n.parentElement; ancestor && name.contains(ancestor); ancestor = ancestor.parentElement) {
+                  if (ancestor !== name && !['hidden', 'clip'].includes(getComputedStyle(ancestor).overflowX)) continue;
+                  const box = ancestor.getBoundingClientRect();
+                  if (ink.left < box.left - 0.25 || ink.right > box.right + 0.25) return true;
+                }
+              }
+              const box = name.getBoundingClientRect();
+              return [...name.querySelectorAll('svg')].some(svg => {
+                const ink = svg.getBoundingClientRect();
+                return ink.left < box.left - 0.25 || ink.right > box.right + 0.25;
+              });
             })(),
+            hiddenRuns: [...name.querySelectorAll('.sr-only')].map(el => {
+              const range = document.createRange();
+              range.selectNodeContents(el);
+              return rel(range.getBoundingClientRect());
+            }),
           };
         };
         const ace = half('ace');
@@ -447,8 +472,8 @@ test.describe('the ace and partner slot', () => {
           heads: { ace: drawn('ace'), partner: drawn('partner') },
           pane: { W, H, zoom }, seam: [x1, y1, x2, y2], faults, crossings,
           rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
-          ace: { namePx: ace.namePx, clipped: ace.clipped },
-          partner: { namePx: partner.namePx, clipped: partner.clipped },
+          ace: { namePx: ace.namePx, clipped: ace.clipped, visibleRuns: ace.runs, hiddenRuns: ace.hiddenRuns },
+          partner: { namePx: partner.namePx, clipped: partner.clipped, visibleRuns: partner.runs, hiddenRuns: partner.hiddenRuns },
         };
       });
       await testInfo.attach('widest-names.json', { body: JSON.stringify(got, null, 2), contentType: 'application/json' });
