@@ -675,8 +675,17 @@ function drawTmSlot(
   const lines = wrapTracked(ctx, name, bodyW, nameTrack);
   // A word wider than the body on its own (German ELEKTRIFIZIERUNG) shrinks
   // to fit, as the live card shrinks it; the line box keeps its height.
-  const widest = Math.max(...lines.map((line) => trackedWidth(ctx, line, nameTrack)));
-  const nameScale = widest > bodyW ? bodyW / widest : 1;
+  const widestAt = (scale: number) => {
+    ctx.font = font(L.NAME_PX * scale, 800);
+    return Math.max(...lines.map((line) => trackedWidth(ctx, line, nameTrack * scale)));
+  };
+  let nameScale = 1;
+  if (widestAt(1) > bodyW) {
+    // Glyph widths do not scale exactly with the size, so step down to fit.
+    nameScale = bodyW / widestAt(1);
+    while (nameScale > 0.3 && widestAt(nameScale) > bodyW) nameScale -= 0.01;
+  }
+  ctx.font = font(L.NAME_PX, 800);
   const body = L.tmMoveBody(cy, lines.length);
 
   ctx.beginPath();
