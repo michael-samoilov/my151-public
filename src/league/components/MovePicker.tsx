@@ -435,7 +435,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           >
             <TypeBadge type={m.type} className="w-[4.375rem]" />
             <CategoryChip category={m.category} />
-            <span data-tm-row-name="" className="line-clamp-2 text-[0.8125rem] font-medium">{nameOf(m)}</span>
+            <span data-tm-row-name="" className="line-clamp-2 text-[0.8125rem] font-medium leading-[1.1]">{nameOf(m)}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.power ?? '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.accuracy !== null ? `${m.accuracy}%` : '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.pp}</span>

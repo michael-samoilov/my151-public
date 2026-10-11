@@ -1617,7 +1617,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     const el = nameRef.current;
     if (!el) return;
     el.style.fontSize = '';
-    if (!move || /\s/.test(name.trim())) return;
+    if (!move) return;
     const fit = () => {
       el.style.fontSize = '';
       const style = getComputedStyle(el);
@@ -1627,7 +1627,11 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       range.selectNodeContents(el);
       const cap = parseFloat(style.fontSize);
       const room = box.width - parseFloat(style.paddingRight) * zoom;
-      el.style.fontSize = `${cap * fitName(range.getBoundingClientRect().width, 0, room, cap, 0).scale}px`;
+      // The widest line: a one-word name whole, or the widest word of a name
+      // that wraps (German DONNERNDER of Donnernder Tritt, at 320 px).
+      const widest = Math.max(0, ...[...range.getClientRects()].map((r) => r.width));
+      const { scale } = fitName(widest, 0, room, cap, 0);
+      if (scale < 1) el.style.fontSize = `${cap * scale}px`;
     };
     const observer = new ResizeObserver(fit);
     observer.observe(el.parentElement!);
@@ -1707,7 +1711,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink overflow-visible" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
-          {/* Long names wrap at spaces; a single word shrinks to fit.
+          {/* Long names wrap at spaces; a word wider than the column shrinks to fit.
               Keep the nominal line box (0.53125rem × 1.4) while its glyphs shrink. */}
           <span
             ref={nameRef}
