@@ -1,4 +1,4 @@
-import type { NoArgKey } from '@/i18n/types';
+import type { NoArgKey } from '../../i18n/types';
 
 /**
  * The question and answer keys of each page's "About this tool" block.
@@ -6,7 +6,8 @@ import type { NoArgKey } from '@/i18n/types';
  * Two readers share this table: `Faq.tsx` renders the block in the app, and
  * `scripts/static-faq.ts` writes the same English copy into each tool page's
  * served HTML at build time, for crawlers that do not run JavaScript. It stays
- * free of React and of `@/` runtime imports so the Vite config can bundle it.
+ * free of React and of `@/` imports so the Vite config and the e2e project
+ * can both load it.
  * The keys are written out rather than built from the page name, so the
  * extraction catalog can place each one.
  */
