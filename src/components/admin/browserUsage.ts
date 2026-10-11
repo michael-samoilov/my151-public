@@ -1,22 +1,28 @@
-import type { BrowserRow, ToolStat } from '../../../api/_dashboard';
+import type { BrowserRow, BrowserTime, ToolStat } from '../../../api/_dashboard';
 import { fmtChipDuration, formatWhen } from './userPreview';
 
 export type UsageTool = 'dex' | 'league' | 'picker';
+export type UsageSource = 'active' | 'legacy';
+export type CardTime = BrowserTime & {missing?: boolean};
 
 /** One tool on a card: its progress, and its sessions and time. `used` is
  *  false when the browser never opened the tool; the card still shows it. */
-export type ToolCell = { tool: UsageTool; used: boolean; count: number; exported: boolean; sessions: number; totalMs: number };
+export type ToolCell = { tool: UsageTool; used: boolean; count: number; exported: boolean; sessions: number; totalMs: number; missing?: boolean; partial?: true };
 
 const TOOLS: readonly UsageTool[] = ['dex', 'league', 'picker'];
 
 /** All three tools of one row, in card order: Dex, League, Picker. */
-export function toolCells(row: BrowserRow): ToolCell[] {
+export function toolCells(row: BrowserRow, source: UsageSource = 'legacy'): ToolCell[] {
   return TOOLS.map((tool) => {
     const stat = row[tool];
     return stat
-      ? { tool, used: true, count: stat.count, exported: !!stat.exported, sessions: stat.sessions, totalMs: stat.totalMs }
+      ? { tool, used: true, count: stat.count, exported: !!stat.exported, ...(source === 'active' ? stat.active ?? {sessions: 0, totalMs: 0, missing: true} : {sessions: stat.sessions, totalMs: stat.totalMs}) }
       : { tool, used: false, count: 0, exported: false, sessions: 0, totalMs: 0 };
   });
+}
+
+export function totalTime(row: BrowserRow, source: UsageSource): CardTime {
+  return source === 'active' ? row.activeTotal ?? {sessions: 0, totalMs: 0, missing: true} : row.total;
 }
 
 function longest<T>(items: readonly T[], length: (item: T) => number): T {
@@ -34,7 +40,14 @@ function widestStat(stats: readonly ToolStat[]): ToolStat {
     ...(progress.exported ? { exported: true as const } : {}),
     sessions: Math.max(...stats.map((s) => s.sessions)),
     totalMs: longest(stats, (s) => fmtChipDuration(s.totalMs).length).totalMs,
+    ...(stats.some(s => s.active) ? {active: widestTime(stats.flatMap(s => s.active ?? []))} : {}),
   };
+}
+
+function widestTime(times: readonly BrowserTime[]): BrowserTime {
+  return {sessions: Math.max(...times.map(t => t.sessions)),
+    totalMs: longest(times, t => fmtChipDuration(t.totalMs).length).totalMs,
+    ...(times.some(t => t.partial) ? {partial: true as const} : {})};
 }
 
 /** A row's "When" text with every digit as 0. The digits are tabular, so
@@ -70,6 +83,7 @@ export function widestRow(rows: readonly BrowserRow[]): BrowserRow | null {
   const totals = rows.map((r) => r.total);
   return {
     ...rows[0],
+    activeTotal: rows.some(r => r.activeTotal) ? widestTime(rows.flatMap(r => r.activeTotal ?? [])) : undefined,
     dex: widestStat(stats('dex')),
     league: widestStat(stats('league')),
     picker: widestStat(stats('picker')),
