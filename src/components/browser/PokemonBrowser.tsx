@@ -629,7 +629,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       spriteOverrides?: Record<number, string>;
     }[] = [];
 
-    const claimedGroupIds = standaloneTiles ? new Set<number>() : null;
+    const claimedPokemonIds = standaloneTiles ? new Set<number>() : null;
 
     for (const sub of source) {
       const subIdSet = new Set(sub.pokemonIds);
@@ -668,9 +668,12 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       if (matching.length === 0) continue;
       // A standalone tile picks one Pokémon, so a Pokémon may only appear
       // once — not once per branch, and not once per heading.
-      if (claimedGroupIds) {
-        matching = mergeEvolutionBranches(matching, deferredOptions.dataSource?.standaloneGroupId).filter((g) => !claimedGroupIds.has(g.chainId));
-        for (const group of matching) claimedGroupIds.add(group.chainId);
+      if (claimedPokemonIds) {
+        matching = mergeEvolutionBranches(matching, deferredOptions.dataSource?.standaloneGroupId).flatMap((group) => {
+          const members = group.members.filter(member => matchesMember(subIdSet, member.id) && !claimedPokemonIds.has(member.id));
+          for (const member of members) claimedPokemonIds.add(member.id);
+          return members.length > 0 ? [{ ...group, members }] : [];
+        });
         if (matching.length === 0) continue;
       }
 
