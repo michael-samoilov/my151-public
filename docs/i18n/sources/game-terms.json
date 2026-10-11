@@ -1277,7 +1277,7 @@
       "key": "archetype.evil-team.sub.1",
       "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
       "text": {
-        "ja": "ロケットだん（サカキ）",
+        "ja": "ロケット団（サカキ）",
         "ko": "로켓단 (비주기)",
         "zh-Hans": "火箭队（坂木）",
         "zh-Hant": "火箭隊（阪木）",
@@ -1289,14 +1289,13 @@
       "composed": "Team names, then their leaders in brackets, as the English label has them.",
       "from": [
         {
-          "game": "LetsGoPikachuLetsGoEevee",
-          "file": "common",
-          "qid": "lgpe.trtype.TRTYPE_ROCKETM",
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.speaker_name.speaker_109",
           "text": {
             "en": "Team Rocket",
-            "ja": "ロケットだん",
+            "ja": "ロケット団",
             "ko": "로켓단",
-            "zh-Hans": "火箭队",
             "zh-Hant": "火箭隊",
             "fr": "Team Rocket",
             "de": "Team Rocket",
@@ -1319,6 +1318,22 @@
             "es": "Giovanni",
             "it": "Giovanni"
           }
+        },
+        {
+          "game": "LetsGoPikachuLetsGoEevee",
+          "file": "common",
+          "qid": "lgpe.trtype.TRTYPE_ROCKETM",
+          "text": {
+            "en": "Team Rocket",
+            "ja": "ロケットだん",
+            "ko": "로켓단",
+            "zh-Hans": "火箭队",
+            "zh-Hant": "火箭隊",
+            "fr": "Team Rocket",
+            "de": "Team Rocket",
+            "es": "Team Rocket",
+            "it": "Team Rocket"
+          }
         }
       ]
     },
@@ -1326,7 +1341,7 @@
       "key": "archetype.evil-team.sub.2",
       "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
       "text": {
-        "ja": "アクアだん・マグマだん（アオギリ・マツブサ）",
+        "ja": "アクア団・マグマ団（アオギリ・マツブサ）",
         "ko": "아쿠아단・마그마단 (아강・마적)",
         "zh-Hans": "海洋队／熔岩队（水梧桐／赤焰松）",
         "zh-Hant": "海洋隊／熔岩隊（水梧桐／赤焰松）",
@@ -1338,35 +1353,33 @@
       "composed": "Team names, then their leaders in brackets, as the English label has them.",
       "from": [
         {
-          "game": "UltraSunUltraMoon",
-          "file": "common",
-          "qid": "usum.common.111.198",
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280002000",
           "text": {
-            "en": "Team Aqua",
-            "ja": "アクアだん",
-            "ko": "아쿠아단",
-            "zh-Hans": "海洋队",
-            "zh-Hant": "海洋隊的",
-            "fr": "Team Aqua",
-            "de": "Team Aqua",
-            "es": "Equipo Aqua",
-            "it": "Team Idro"
+            "en": "#TeamAqua",
+            "ja": "#アクア団",
+            "ko": "#아쿠아단",
+            "zh-Hant": "#海洋隊",
+            "fr": "#TeamAqua",
+            "de": "#TeamAqua",
+            "es": "#EquipoAqua",
+            "it": "#TeamIdro"
           }
         },
         {
-          "game": "UltraSunUltraMoon",
-          "file": "common",
-          "qid": "usum.common.111.200",
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280001000",
           "text": {
-            "en": "Team Magma",
-            "ja": "マグマだん",
-            "ko": "마그마단",
-            "zh-Hans": "熔岩队",
-            "zh-Hant": "熔岩隊的",
-            "fr": "Team Magma",
-            "de": "Team Magma",
-            "es": "Equipo Magma",
-            "it": "Team Magma"
+            "en": "#TeamMagma",
+            "ja": "#マグマ団",
+            "ko": "#마그마단",
+            "zh-Hant": "#熔岩隊",
+            "fr": "#TeamMagma",
+            "de": "#TeamMagma",
+            "es": "#EquipoMagma",
+            "it": "#TeamMagma"
           }
         },
         {
@@ -1400,6 +1413,38 @@
             "es": "Magno",
             "it": "Max"
           }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.198",
+          "text": {
+            "en": "Team Aqua",
+            "ja": "アクアだん",
+            "ko": "아쿠아단",
+            "zh-Hans": "海洋队",
+            "zh-Hant": "海洋隊的",
+            "fr": "Team Aqua",
+            "de": "Team Aqua",
+            "es": "Equipo Aqua",
+            "it": "Team Idro"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.200",
+          "text": {
+            "en": "Team Magma",
+            "ja": "マグマだん",
+            "ko": "마그마단",
+            "zh-Hans": "熔岩队",
+            "zh-Hant": "熔岩隊的",
+            "fr": "Team Magma",
+            "de": "Team Magma",
+            "es": "Equipo Magma",
+            "it": "Team Magma"
+          }
         }
       ]
     },
@@ -1407,7 +1452,7 @@
       "key": "archetype.evil-team.sub.3",
       "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
       "text": {
-        "ja": "ギンガだん（アカギ、マーズ、ジュピター、サターン）",
+        "ja": "ギンガ団（アカギ、マーズ、ジュピター、サターン）",
         "ko": "갤럭시단 (태홍, 마스, 주피터, 새턴)",
         "zh-Hans": "银河队（赤日、伙星、岁星、镇星）",
         "zh-Hant": "銀河隊（赤日、夥星、歲星、鎮星）",
@@ -1419,19 +1464,18 @@
       "composed": "Team names, then their leaders in brackets, as the English label has them.",
       "from": [
         {
-          "game": "BrilliantDiamondShiningPearl",
-          "file": "message",
-          "qid": "bdsp.dp_trainers_type.DP_Trainers_Type_TR_GINGAM_01",
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280003000",
           "text": {
-            "en": "Team Galactic",
-            "ja": "ギンガだん",
-            "ko": "갤럭시단",
-            "zh-Hans": "银河队",
-            "zh-Hant": "銀河隊",
-            "fr": "Team Galaxie",
-            "de": "Team Galaktik",
-            "es": "Equipo Galaxia",
-            "it": "Team Galassia"
+            "en": "#TeamGalactic",
+            "ja": "#ギンガ団",
+            "ko": "#갤럭시단",
+            "zh-Hant": "#銀河隊",
+            "fr": "#TeamGalaxie",
+            "de": "#TeamGalaktik",
+            "es": "#EquipoGalaxia",
+            "it": "#TeamGalassia"
           }
         },
         {
@@ -1497,6 +1541,22 @@
             "es": "Saturno",
             "it": "Saturno"
           }
+        },
+        {
+          "game": "BrilliantDiamondShiningPearl",
+          "file": "message",
+          "qid": "bdsp.dp_trainers_type.DP_Trainers_Type_TR_GINGAM_01",
+          "text": {
+            "en": "Team Galactic",
+            "ja": "ギンガだん",
+            "ko": "갤럭시단",
+            "zh-Hans": "银河队",
+            "zh-Hant": "銀河隊",
+            "fr": "Team Galaxie",
+            "de": "Team Galaktik",
+            "es": "Equipo Galaxia",
+            "it": "Team Galassia"
+          }
         }
       ]
     },
@@ -1504,7 +1564,7 @@
       "key": "archetype.evil-team.sub.4",
       "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
       "text": {
-        "ja": "プラズマだん（ゲーチス、N、アクロマ）",
+        "ja": "プラズマ団（ゲーチス、N、アクロマ）",
         "ko": "플라스마단 (게치스, N, 아크로마)",
         "zh-Hans": "等离子队（魁奇思、N、阿克罗玛）",
         "zh-Hant": "等離子隊（魁奇思、Ｎ、阿克羅瑪）",
@@ -1519,19 +1579,18 @@
       },
       "from": [
         {
-          "game": "UltraSunUltraMoon",
-          "file": "common",
-          "qid": "usum.common.111.201",
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280004000",
           "text": {
-            "en": "Team Plasma",
-            "ja": "プラズマだん",
-            "ko": "플라스마단",
-            "zh-Hans": "等离子队",
-            "zh-Hant": "等離子隊的",
-            "fr": "Team Plasma",
-            "de": "Team Plasma",
-            "es": "Equipo Plasma",
-            "it": "Team Plasma"
+            "en": "#TeamPlasma",
+            "ja": "#プラズマ団",
+            "ko": "#플라스마단",
+            "zh-Hant": "#等離子隊",
+            "fr": "#TeamPlasma",
+            "de": "#TeamPlasma",
+            "es": "#EquipoPlasma",
+            "it": "#TeamPlasma"
           }
         },
         {
@@ -1580,6 +1639,22 @@
             "es": "Acromo",
             "it": "Acromio"
           }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.201",
+          "text": {
+            "en": "Team Plasma",
+            "ja": "プラズマだん",
+            "ko": "플라스마단",
+            "zh-Hans": "等离子队",
+            "zh-Hant": "等離子隊的",
+            "fr": "Team Plasma",
+            "de": "Team Plasma",
+            "es": "Equipo Plasma",
+            "it": "Team Plasma"
+          }
         }
       ]
     },
@@ -1587,7 +1662,7 @@
       "key": "archetype.evil-team.sub.5",
       "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
       "text": {
-        "ja": "フレアだん（フラダリ）",
+        "ja": "フレア団（フラダリ）",
         "ko": "플레어단 (플라드리)",
         "zh-Hans": "闪焰队（弗拉达利）",
         "zh-Hant": "閃焰隊（弗拉達利）",
@@ -1599,19 +1674,18 @@
       "composed": "Team names, then their leaders in brackets, as the English label has them.",
       "from": [
         {
-          "game": "UltraSunUltraMoon",
-          "file": "common",
-          "qid": "usum.common.111.202",
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280005000",
           "text": {
-            "en": "Team Flare",
-            "ja": "フレアだん",
-            "ko": "플레어단",
-            "zh-Hans": "闪焰队",
-            "zh-Hant": "閃焰隊的",
-            "fr": "Team Flare",
-            "de": "Team Flare",
-            "es": "Team Flare",
-            "it": "Team Flare"
+            "en": "#TeamFlare",
+            "ja": "#フレア団",
+            "ko": "#플레어단",
+            "zh-Hant": "#閃焰隊",
+            "fr": "#TeamFlare",
+            "de": "#TeamFlare",
+            "es": "#TeamFlare",
+            "it": "#TeamFlare"
           }
         },
         {
@@ -1629,6 +1703,22 @@
             "es": "Lysson",
             "it": "Elisio"
           }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.202",
+          "text": {
+            "en": "Team Flare",
+            "ja": "フレアだん",
+            "ko": "플레어단",
+            "zh-Hans": "闪焰队",
+            "zh-Hant": "閃焰隊的",
+            "fr": "Team Flare",
+            "de": "Team Flare",
+            "es": "Team Flare",
+            "it": "Team Flare"
+          }
         }
       ]
     },
@@ -1636,7 +1726,7 @@
       "key": "archetype.evil-team.sub.6",
       "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
       "text": {
-        "ja": "スカルだん（グズマ、プルメリ）",
+        "ja": "スカル団（グズマ、プルメリ）",
         "ko": "스컬단 (구즈마, 플루메리)",
         "zh-Hans": "骷髅队（古兹马、布尔美丽）",
         "zh-Hant": "骷髏隊（古茲馬、布爾美麗）",
@@ -1648,19 +1738,18 @@
       "composed": "Team names, then their leaders in brackets, as the English label has them.",
       "from": [
         {
-          "game": "UltraSunUltraMoon",
-          "file": "common",
-          "qid": "usum.common.111.28",
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280006000",
           "text": {
-            "en": "Team Skull",
-            "ja": "スカルだん",
-            "ko": "스컬단",
-            "zh-Hans": "骷髅队",
-            "zh-Hant": "骷髏隊的",
-            "fr": "Team Skull",
-            "de": "Team Skull",
-            "es": "Team Skull",
-            "it": "Team Skull"
+            "en": "#TeamSkull",
+            "ja": "#スカル団",
+            "ko": "#스컬단",
+            "zh-Hant": "#骷髏隊",
+            "fr": "#TeamSkull",
+            "de": "#TeamSkull",
+            "es": "#TeamSkull",
+            "it": "#TeamSkull"
           }
         },
         {
@@ -1694,6 +1783,22 @@
             "es": "Francine",
             "it": "Plumeria"
           }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.28",
+          "text": {
+            "en": "Team Skull",
+            "ja": "スカルだん",
+            "ko": "스컬단",
+            "zh-Hans": "骷髅队",
+            "zh-Hant": "骷髏隊的",
+            "fr": "Team Skull",
+            "de": "Team Skull",
+            "es": "Team Skull",
+            "it": "Team Skull"
+          }
         }
       ]
     },
@@ -1701,7 +1806,7 @@
       "key": "archetype.evil-team.sub.7",
       "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
       "text": {
-        "ja": "エーテルざいだん（ルザミーネ）",
+        "ja": "エーテル財団（ルザミーネ）",
         "ko": "에테르재단 (루자미네)",
         "zh-Hans": "以太基金会（露莎米奈）",
         "zh-Hant": "以太基金會（露莎米奈）",
@@ -1713,19 +1818,18 @@
       "composed": "Team names, then their leaders in brackets, as the English label has them.",
       "from": [
         {
-          "game": "UltraSunUltraMoon",
-          "file": "common",
-          "qid": "usum.common.111.73",
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280007000",
           "text": {
-            "en": "Aether Foundation",
-            "ja": "エーテルざいだん",
-            "ko": "에테르재단",
-            "zh-Hans": "以太基金会",
-            "zh-Hant": "以太基金會的",
-            "fr": "Fondation Æther",
-            "de": "Æther Foundation",
-            "es": "Fundación Æther",
-            "it": "Fondazione Æther"
+            "en": "#AetherFoundation",
+            "ja": "#エーテル財団",
+            "ko": "#에테르재단",
+            "zh-Hant": "#以太基金會",
+            "fr": "#FondationÆther",
+            "de": "#ÆtherFoundation",
+            "es": "#FundaciónÆther",
+            "it": "#FondazioneÆther"
           }
         },
         {
@@ -1742,6 +1846,22 @@
             "de": "Samantha",
             "es": "Samina",
             "it": "Samina"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.73",
+          "text": {
+            "en": "Aether Foundation",
+            "ja": "エーテルざいだん",
+            "ko": "에테르재단",
+            "zh-Hans": "以太基金会",
+            "zh-Hant": "以太基金會的",
+            "fr": "Fondation Æther",
+            "de": "Æther Foundation",
+            "es": "Fundación Æther",
+            "it": "Fondazione Æther"
           }
         }
       ]

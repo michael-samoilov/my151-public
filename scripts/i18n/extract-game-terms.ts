@@ -403,6 +403,21 @@ const PEOPLE: Record<string, [game: string, file: string, qid: string]> = {
   penny: ['ScarletViolet', 'common', 'sv.trname.TRNAME_BOTAN'],
 };
 
+// Japanese trainer classes before Scarlet/Violet spell the team in kana
+// (アクアだん), as children's-mode text does. Pokémon Masters EX writes every
+// team in kanji (#アクア団), like Scarlet/Violet's スター団. Its profile hashtags
+// name the teams; `villainTerms` drops the #.
+const JA_TEAMS: Record<string, [game: string, file: string, qid: string]> = {
+  rocket: ['Masters', 'messages', 'masters.speaker_name.speaker_109'],
+  magma: ['Masters', 'messages', 'masters.profile_hash_tag_name.280001000'],
+  aqua: ['Masters', 'messages', 'masters.profile_hash_tag_name.280002000'],
+  galactic: ['Masters', 'messages', 'masters.profile_hash_tag_name.280003000'],
+  plasma: ['Masters', 'messages', 'masters.profile_hash_tag_name.280004000'],
+  flare: ['Masters', 'messages', 'masters.profile_hash_tag_name.280005000'],
+  skull: ['Masters', 'messages', 'masters.profile_hash_tag_name.280006000'],
+  aether: ['Masters', 'messages', 'masters.profile_hash_tag_name.280007000'],
+};
+
 /** "Team Aqua/Magma (Archie/Maxie)": teams, then their people in brackets. */
 const VILLAINS: Record<string, { teams: string[]; people: string[]; paired?: boolean }> = {
   'archetype.evil-team.sub.1': { teams: ['rocket'], people: ['giovanni'] },
@@ -425,15 +440,16 @@ function villainTerms(): GameTerm[] {
     const from = new Map<string, Sourced>();
     for (const locale of LOCALES) {
       if (locale === 'en') continue;
-      const pick = (id: string) => {
-        const source = message(...PEOPLE[id]);
+      const pick = (id: string, sources = PEOPLE) => {
+        const source = message(...sources[id]);
         from.set(source.qid, source);
         return source.text[locale];
       };
       // The trainer class is the team name plus the possessive 的 ("Team
       // Aqua's", as in "Team Aqua's Grunt"). The label names the team itself.
-      const teamNames = teams.map((id) => pick(id)?.replace(/的$/, ''));
-      const names = people.map(pick);
+      const teamNames = teams.map((id) =>
+        locale === 'ja' && JA_TEAMS[id] ? pick(id, JA_TEAMS)?.replace(/^#/, '') : pick(id)?.replace(/的$/, ''));
+      const names = people.map((id) => pick(id));
       // N is the same letter in every script, and Masters has every other language.
       const missing = people.filter((_, i) => !names[i]);
       if (teamNames.some((t) => !t) || missing.some((id) => id !== 'n')) {

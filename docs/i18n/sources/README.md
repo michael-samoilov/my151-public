@@ -134,6 +134,11 @@ so those labels name only the titles the games give. Traditional Chinese
 writes the Ultra Sun/Ultra Moon team names as trainer classes with the
 possessive 的 (海洋隊的, "Team Aqua's", as in "Team Aqua's Grunt"), the only form
 those games use. The labels drop that trailing 的 to name the team (海洋隊).
+Japanese trainer classes before Scarlet/Violet spell the teams in kana
+(アクアだん), so the Japanese labels take the kanji team names (アクア団,
+エーテル財団) from Pokémon Masters EX: its profile hashtags
+(`profile_hash_tag_name.280001000` to `280007000`, with the # removed) and
+`speaker_name.speaker_109` for ロケット団. They match Scarlet/Violet's スター団.
 
 ```sh
 npm run i18n:game-terms   # re-extract (network on the first run)
