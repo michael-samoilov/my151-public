@@ -108,6 +108,11 @@ function nodeLabel(
   crowded = false,
 ) {
   if (chipInLabel(n, compact, kind, nodes, links) || (crowded && !!n.percentage && nodeDepth(n.name, links) === Math.max(...nodes.map((node) => nodeDepth(node.name, links))))) {
+    const value = Math.max(
+      links.filter((l) => l.source === n.name).reduce((sum, l) => sum + l.value, 0),
+      links.filter((l) => l.target === n.name).reduce((sum, l) => sum + l.value, 0),
+    );
+    const chipWidth = n.percentage ? Math.max(labelMeasure(fontSize)(String(Math.round(value))), labelMeasure(Math.max(7, fontSize - 1))(rateLabel(n))) : undefined;
     return {
       ...compactLabel('right', fontSize),
       distance: CHIP_LABEL_DISTANCE,
@@ -120,6 +125,7 @@ function nodeLabel(
           fontWeight: 600,
           padding: [0, 2],
           textBorderWidth: 0,
+          width: chipWidth,
         },
       },
     };
@@ -246,26 +252,33 @@ function countChip(
     },
   };
   if (!node.percentage) return inlineCount ? { type: 'group' as const, children: [] } : count;
+  const rateFont = Math.max(7, fontSize - 1);
+  const width = Math.max(labelMeasure(fontSize)(count.style.text), labelMeasure(rateFont)(rateLabel(node))) + 4;
+  const center = inlineCount ? count.x + width / 2 : count.x;
   return {
     type: 'group' as const,
     x: 0, y: 0,
     children: [...(leader ? [{
       type: 'line' as const,
-      shape: { x1: left + bar.dx / 2, y1: sankey.layoutInfo.y + bar.y + bar.dy, x2: count.x, y2: count.y - fontSize / 2 - 2 },
+      shape: { x1: left + bar.dx / 2, y1: sankey.layoutInfo.y + bar.y + bar.dy, x2: center, y2: count.y - fontSize / 2 - 2 },
       style: { stroke: roleColor(node.role), opacity: 0.25, lineWidth: 0.5 },
-    }] : []), count, {
+    }] : []), {
       type: 'text' as const,
-      x: inlineCount ? left + bar.dx + CHIP_LABEL_DISTANCE : side === 'right' ? left : count.x,
-      y: count.y + fontSize / 2 + 3,
+      x: center,
+      y: count.y - fontSize / 2,
       style: {
-        text: rateLabel(node),
+        text: `{count|${count.style.text}}\n{rate|${rateLabel(node)}}`,
         fill: count.style.fill,
         backgroundColor: roleColor(node.role),
         padding: [0, 2],
-        fontSize: Math.max(7, fontSize - 1),
-        fontWeight: 600,
-        align: inlineCount || side === 'right' ? 'left' as const : count.style.align,
+        width: width - 4,
+        align: 'center' as const,
         verticalAlign: 'top' as const,
+        fontWeight: 600,
+        rich: {
+          count: { fontSize, lineHeight: fontSize, align: 'center' as const },
+          rate: { fontSize: rateFont, lineHeight: rateFont, align: 'center' as const },
+        },
       },
     }],
   };

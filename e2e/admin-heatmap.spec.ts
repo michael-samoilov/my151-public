@@ -1,9 +1,9 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
- * The admin When card, in demo mode so CI needs no token. Wide screens put
- * hours across and narrow ones put hours down, and at every width each label
- * and total fits its box and a tapped cell's readout stays inside the card.
+ * The admin When card uses demo data so CI needs no token. Hours run across
+ * at every width. Every label and total fits its box, and tapped readouts
+ * stay inside the card.
  */
 function whenCard(page: Page) {
   return page.locator('section', { has: page.getByRole('heading', { name: /^When/ }) });
@@ -19,15 +19,14 @@ test.describe('admin When heatmap', { tag: '@viewport' }, () => {
     await expect(whenCard(page)).toBeVisible();
   });
 
-  test('lays out by width and fits every label', async ({ page }) => {
+  test('keeps hours horizontal and fits every label', async ({ page }, testInfo) => {
     const card = whenCard(page);
     const grid = shownGrid(card);
-    const wide = (page.viewportSize()?.width ?? 0) >= 1024;
-    await expect(grid).toHaveAttribute('data-layout', wide ? 'landscape' : 'portrait');
+    await expect(grid).toHaveAttribute('data-layout', 'landscape');
     await expect(grid.getByTestId('heatmap-cell')).toHaveCount(7 * 24);
 
     const overflowing = await grid.evaluate((el) =>
-      [...el.querySelectorAll<HTMLElement>('div')]
+      [...el.querySelectorAll<HTMLElement>('div, span')]
         .filter((d) => d.childElementCount === 0 && d.textContent)
         .filter((d) => {
           const range = document.createRange();
@@ -41,6 +40,7 @@ test.describe('admin When heatmap', { tag: '@viewport' }, () => {
     expect(overflowing, 'labels wider than their box').toEqual([]);
     const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(pageOverflow).toBe(0);
+    await testInfo.attach('heatmap-layout', { body: await card.screenshot(), contentType: 'image/png' });
   });
 
   test('switches clocks and reads out a tapped cell inside the card', async ({ page }, testInfo) => {
