@@ -195,22 +195,26 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
     return filtered;
   }, [search, typeFilter, categories, contests, sortKey, sortDir, locale, names]);
 
-  // A name wraps at its spaces onto a second line. A word wider than the
-  // column on its own (German Elektrifizierung, at 320 px) shrinks to fit,
-  // as the card's TM slot does, rather than being cut.
+  // A name that does not fit its line wraps at its spaces onto a second one;
+  // one that fits keeps the row's single line exactly as before. A word wider
+  // than the column on its own (German Elektrifizierung, at 320 px) shrinks
+  // to fit, as the card's TM slot does, rather than being cut.
   const listRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const list = listRef.current;
     if (!list) return;
     const fit = () => {
       const spans = [...list.querySelectorAll<HTMLElement>('[data-tm-row-name]')];
-      for (const el of spans) el.style.fontSize = '';
+      for (const el of spans) el.removeAttribute('style');
       const base = spans.length ? parseFloat(getComputedStyle(spans[0]).fontSize) : 0;
-      const scale = new Map(spans.map((el) => [el, Math.min(1, el.clientWidth / el.scrollWidth)]));
+      const long = spans.filter((el) => el.scrollWidth > el.clientWidth + 0.5);
+      for (const el of long) Object.assign(el.style, { whiteSpace: 'normal', lineHeight: '1.1' });
+      const scale = new Map(long.map((el) => [el, Math.min(1, el.clientWidth / el.scrollWidth)]));
       for (const [el, s] of scale) if (s < 0.995) el.style.fontSize = `${base * s}px`;
       // Two lines at most: Spanish Tormenta de Diamantes takes three at 320 px.
+      const lines = (el: HTMLElement) => el.scrollHeight / (parseFloat(el.style.fontSize || `${base}`) * 1.1);
       for (let round = 0; round < 8; round++) {
-        const tall = spans.filter((el) => el.scrollHeight > el.clientHeight + 1);
+        const tall = long.filter((el) => lines(el) > 2.2);
         if (!tall.length) break;
         for (const el of tall) {
           scale.set(el, scale.get(el)! * 0.92);
@@ -445,7 +449,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           >
             <TypeBadge type={m.type} className="w-[4.375rem]" />
             <CategoryChip category={m.category} />
-            <span data-tm-row-name="" className="line-clamp-2 text-[0.8125rem] font-medium leading-[1.1]">{keepLastWord(nameOf(m))}</span>
+            <span data-tm-row-name="" className="truncate text-[0.8125rem] font-medium">{keepLastWord(nameOf(m))}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.power ?? '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.accuracy !== null ? `${m.accuracy}%` : '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.pp}</span>
