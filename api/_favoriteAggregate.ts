@@ -179,7 +179,8 @@ export function fitFavoritePreference(input: FavoritePreferencePool[], lambda = 
   if(residual<=tolerance){converged=true;reason="gradient";break;}
   // Preconditioned conjugate gradients solve H*direction=-gradient.
   const d=new Float64Array(N),r=Float64Array.from(state.g,x=>-x);
-  let z=Float64Array.from(r,(x,i)=>x/state.diag[i]),p=Float64Array.from(z),rz=dot(r,z);
+  let z=Float64Array.from(r,(x,i)=>x/state.diag[i]),rz=dot(r,z);
+  const p=Float64Array.from(z);
   const initialNorm=Math.sqrt(dot(r,r));
   const relativeTolerance = Math.min(0.1, Math.sqrt(residual));
   for(let cg=0;cg<Math.min(N,50);cg++){
