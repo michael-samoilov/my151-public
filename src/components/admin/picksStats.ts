@@ -251,14 +251,6 @@ function sortMembers(ids: number[]): Pokemon[] {
   return mons;
 }
 
-/** How many rows `lines` occupy when members wrap mid-line. */
-export function rowsUsed(lines: { members: readonly unknown[] }[], cols = PICKS_COLS): number {
-  let n = 0;
-  for (const line of lines) n += line.members.length;
-  if (n === 0) return 0;
-  return Math.ceil(n / cols);
-}
-
 function countsFrom(rows: [string, number][]): Map<number, number> {
   const out = new Map<number, number>();
   for (const [id, n] of rows) {

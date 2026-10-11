@@ -1,6 +1,6 @@
 import type { ExportSurveySkip } from '../../../../api/_events';
 
-export type MilestoneTone = 'export' | 'muted' | 'skip' | 'feedback';
+export type MilestoneTone = 'export' | 'skip' | 'feedback';
 
 export interface ChartMilestone {
   t: number;
@@ -10,7 +10,6 @@ export interface ChartMilestone {
 }
 
 export function milestoneFill(tone?: MilestoneTone): string {
-  if (tone === 'muted') return 'var(--color-muted-foreground)';
   if (tone === 'skip') return 'var(--color-primary)';
   if (tone === 'feedback') return 'var(--color-off)';
   return 'var(--color-success)';
@@ -152,7 +151,7 @@ export function plotSittings(
   const feedbackTitles: string[][] = Array.from({ length: n }, () => []);
 
   for (const m of milestones) {
-    if (n === 0 || m.tone === 'muted') continue;
+    if (n === 0) continue;
     const i = nearestSitting(m.t, sittings);
     if (m.tone === 'feedback') {
       feedbackTitles[i].push(m.title ?? m.label);
