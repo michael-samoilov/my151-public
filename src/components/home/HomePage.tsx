@@ -22,6 +22,7 @@ import leagueBack from '@/assets/home/tool-league-b.webp';
 import leagueFront from '@/assets/home/tool-league.webp';
 import favoritesBack from '@/assets/home/tool-favorites-b.webp';
 import favoritesFront from '@/assets/home/tool-favorites.webp';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 /**
  * The router page: one card per tool, plus a call to action.
@@ -631,6 +632,7 @@ export function HomePage() {
               Safari before 16 has no `clip` and gets `hidden`, which makes
               `main` a scroll container; nothing in it overflows vertically. */}
           <main className="hub-home flex flex-1 flex-col overflow-x-clip not-supports-[overflow:clip]:overflow-x-hidden px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
+            <ErrorBoundary where="hub">
             <div className="hub-spacer min-h-6 flex-1" />
             <section className="md:grid md:grid-cols-4 md:items-baseline md:gap-x-6">
               <h1
@@ -686,6 +688,7 @@ export function HomePage() {
               ))}
             </div>
             <div className="hub-spacer min-h-6 flex-1" />
+            </ErrorBoundary>
           </main>
         </div>
 

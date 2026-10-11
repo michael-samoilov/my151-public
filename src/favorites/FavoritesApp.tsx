@@ -28,6 +28,7 @@ import { PickerSheet } from './components/PickerSheet';
 import { SortDebugPanel } from './components/SortDebugPanel';
 import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
+import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
 const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./components/FavoritesAnalyticsDashboard')));
@@ -209,7 +210,7 @@ function FavoritesContent({ sel, setSel }: {
         </div>
         <div id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"
           hidden={currentView !== 'analytics'} className={currentView === 'analytics' ? 'h-[calc(100dvh-2*2.75rem)] shrink-0 min-h-0' : 'hidden'}>
-          {analyticsMounted && <Suspense fallback={<div role="status" aria-label={t('favorites.nav.analytics')} className="m-4 h-32 animate-pulse rounded-lg bg-muted" />}>
+          {analyticsMounted && <Suspense fallback={<div role="status" aria-label={t('favorites.nav.analytics')} className="flex h-full items-center justify-center opacity-70"><PokeBallSpinner delayed className="h-12 w-12" /></div>}>
             <FavoritesAnalyticsDashboard fills={fills} active={currentView === 'analytics'} />
           </Suspense>}
         </div>
@@ -227,7 +228,7 @@ function FavoritesContent({ sel, setSel }: {
         body={t('favorites.nudge.complete.body')}
         onShown={sendFavoriteNudgeShownBeacon}
       />
-      {exportOpen && <Suspense fallback={null}>
+      {exportOpen && <Suspense fallback={<ScreenSpinner />}>
         <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)}
           onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />
       </Suspense>}

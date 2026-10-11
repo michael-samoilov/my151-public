@@ -263,6 +263,22 @@ body {
   .tile-name-skeleton { animation: none; }
 }
 
+/* A loading mark that waits 400 ms before it shows, so a wait that ends sooner
+ * shows nothing at all. The spinner's own turn keeps running underneath. */
+@keyframes load-reveal { to { opacity: 1; } }
+.load-delay {
+  opacity: 0;
+}
+.load-delay.animate-spin {
+  animation: load-reveal 160ms ease-out 400ms forwards, spin 1s linear infinite;
+}
+.load-delay:not(.animate-spin) {
+  animation: load-reveal 160ms ease-out 400ms forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .load-delay:not(.animate-spin), .load-delay.animate-spin { animation: load-reveal 1ms linear 400ms forwards; }
+}
+
 /* Elevated card surfaces — layered transparent shadow instead of a 1px border
  * (make-interfaces-feel-better #3). Used by the analytics chart cards and the
  * admin cards. The main layer's blur radius exceeds its y-offset, so the shadow
@@ -328,6 +344,12 @@ img {
   img {
     color: transparent;
   }
+}
+
+/* An image that failed to load shows nothing, not the browser's broken-image
+ * icon (src/lib/hideBrokenImages.ts marks it). */
+img[data-failed] {
+  visibility: hidden;
 }
 
 /* Every drag surface, marked by the one thing they all share.

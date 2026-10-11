@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { PokeBallSpinner } from '@/components/shared/PokeBallSpinner';
 import { useT } from '@/i18n';
 import {
   clampHypot,
@@ -159,7 +160,15 @@ export function ExportPreview3D({
   const [cardMax, setCardMax] = useState({ w: 0, h: 0 });
   const layerIds = activeFoilLayerIds(recipe);
   const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
-  const activeSrc = (frames ? frames.urls[frames.activeKey] : null) ?? src;
+  const liveSrc = (frames ? frames.urls[frames.activeKey] : null) ?? src;
+  // While a changed setting renders, keep the last picture on screen: a
+  // placeholder between two finished pictures flickers. The Save button shows
+  // the wait instead. A picture the cache has since released is not kept.
+  const [heldSrc, setHeldSrc] = useState(liveSrc);
+  if (liveSrc && liveSrc !== heldSrc) setHeldSrc(liveSrc);
+  const heldIsLive = heldSrc != null && (heldSrc === src || Object.values(frames?.urls ?? {}).includes(heldSrc));
+  const activeSrc = liveSrc ?? (heldIsLive ? heldSrc : null);
+  const shownKey = frames ? Object.keys(frames.urls).find((key) => frames.urls[key] === activeSrc) : undefined;
 
   const paint = useCallback((pose: HoverTiltPose) => {
     const el = cardRef.current;
@@ -857,7 +866,7 @@ export function ExportPreview3D({
               className="pointer-events-none block h-auto w-auto object-contain"
               style={{ maxHeight: maxH, maxWidth: maxW, width: 'auto', height: 'auto' }}
               draggable={false}
-              data-export-frame={frames?.activeKey}
+              data-export-frame={shownKey}
               data-export-frame-active="1"
               onLoad={() => {
                 measureRef.current();
@@ -875,13 +884,19 @@ export function ExportPreview3D({
           </div>
         </div>
       ) : (
-        <div
-          className="flex h-48 w-64 items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground md:h-64 md:w-80"
-          aria-busy={busy}
-          data-export-preview
-        >
-          {t(busy ? 'export.preview.rendering' : 'export.preview.unavailable')}
-        </div>
+        busy ? (
+          <div className="flex h-48 w-64 items-center justify-center opacity-70 md:h-64 md:w-80"
+            role="status" aria-label={t('export.preview.rendering')} data-export-preview>
+            <PokeBallSpinner delayed className="h-12 w-12" />
+          </div>
+        ) : (
+          <div
+            className="flex h-48 w-64 items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground md:h-64 md:w-80"
+            data-export-preview
+          >
+            {t('export.preview.unavailable')}
+          </div>
+        )
       )}
     </div>
   );

@@ -32,6 +32,8 @@ import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './componen
 import { LeagueFunnelNudge } from './components/LeagueFunnelNudge';
 import { usePencilRoom } from './components/usePencilRoom';
 import { confirmOnEnter } from './components/confirmOnEnter';
+import { ScreenSpinner } from '@/components/shared/PokeBallSpinner';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const importExportOverlay = () => reloadIfStale(import('./components/LeagueExportOverlay'));
 const LeagueExportOverlay = lazy(() => importExportOverlay().then((m) => ({ default: m.LeagueExportOverlay })));
@@ -265,6 +267,7 @@ export function LeagueApp() {
         {/* ------- mobile: two panes on one track, the camera pans ------- */}
         {!isDesktop && (
         <main className="min-h-0 flex-1 overflow-hidden md:hidden">
+        <ErrorBoundary where="league">
           <div
             className="p151-pane-track flex h-full w-[200%]"
             style={{ transform: `translate3d(${openCard === null ? '0' : '-50%'}, 0, 0)` }}
@@ -306,12 +309,14 @@ export function LeagueApp() {
               <PageFooter />
             </div>
           </div>
+        </ErrorBoundary>
         </main>
         )}
 
         {/* ---------------- desktop: league | card | picker ---------------- */}
         {isDesktop && (
         <main className="hidden min-h-0 flex-1 flex-col overflow-y-auto md:flex">
+        <ErrorBoundary where="league-desktop">
           <div className="relative flex h-full min-h-0 shrink-0">
             {/* The sankey ribbon linking the open gym's row to its card, in the
                 gutter between the two panes. Mounted only with a card open. */}
@@ -382,6 +387,7 @@ export function LeagueApp() {
           <div className="shrink-0 border-t bg-background">
             <PageFooter faq="league" compact />
           </div>
+        </ErrorBoundary>
         </main>
         )}
 
@@ -420,7 +426,7 @@ export function LeagueApp() {
             and goes `inert` when the other is showing, so a sheet mounted in
             one would be clipped, or unreachable, half the time. */}
         <FeedbackHost route={openCard === null ? 'league' : 'league-card'} />
-        {exportOpen && <Suspense fallback={null}><LeagueExportOverlay /></Suspense>}
+        {exportOpen && <ErrorBoundary where="league-export"><Suspense fallback={<ScreenSpinner />}><LeagueExportOverlay /></Suspense></ErrorBoundary>}
         <LeagueFunnelNudge />
       </div>
     </TooltipProvider>
