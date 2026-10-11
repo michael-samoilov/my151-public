@@ -253,7 +253,7 @@ export function ViewSettingsPane({
                         <span className={`text-sm ${effShowSections ? 'text-primary font-medium' : 'text-foreground'}`}>{t('viewSettings.showOutlines')}</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-                        Outlines groups of Pokémon matching your build-page sections.
+                        {t('viewSettings.outlinesHint')}
                       </p>
                     </button>
                   )}
@@ -283,8 +283,7 @@ export function ViewSettingsPane({
               <span className={`text-sm ${effGrouping ? 'text-primary font-medium' : 'text-foreground'}`}>{t('viewSettings.groupSpecial')}</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-              Sends fossils, extra starters, paradox, pseudo-legendaries, ultra beasts,
-              legendaries, and mythicals to the back of the grid. Does not affect Custom ordering.
+              {t('viewSettings.groupSpecialHint')}
             </p>
           </button>
         </div>

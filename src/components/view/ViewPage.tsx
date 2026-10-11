@@ -1,9 +1,10 @@
 import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { useDragSensors } from '@/lib/dragSensors';
+import { useDndAccessibility } from '@/lib/dndAccessibility';
 import { createPortal } from 'react-dom';
 import { useToolbarSlot } from '@/components/layout/toolbarSlot';
-import { useT } from '@/i18n';
+import { spriteAlt, useNamesVersion, useT } from '@/i18n';
 import { Settings, Download } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
@@ -189,12 +190,14 @@ function DraggableViewTile({
   showInsertBefore: boolean;
   showInsertAfter: boolean;
 }) {
+  const t = useT();
+  useNamesVersion();
   const {
     attributes,
     listeners,
     setNodeRef: setDragRef,
     isDragging,
-  } = useDraggable({ id: `view::${pokemon.id}` });
+  } = useDraggable({ id: `view::${pokemon.id}`, attributes: { roleDescription: t('dnd.roleDescription') } });
 
   const { setNodeRef: setDropRef } = useDroppable({ id: `view::${pokemon.id}` });
 
@@ -243,7 +246,7 @@ function DraggableViewTile({
       </span>
       <img
         src={pokemon.sprite}
-        alt={pokemon.name}
+        alt={spriteAlt(pokemon.name, pokemon.id)}
         className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
         loading="lazy"
@@ -278,12 +281,13 @@ export function EmptyPlaceholder({ tileSize, num }: { tileSize: number; num: num
 }
 
 export function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: number }) {
+  useNamesVersion();
   return (
     <div className="relative overflow-visible" style={{ width: tileSize, height: tileSize }}>
       <PokeballBg pokemon={pokemon} />
       <img
         src={pokemon.sprite}
-        alt={pokemon.name}
+        alt={spriteAlt(pokemon.name, pokemon.id)}
         className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
         loading="lazy"
@@ -488,6 +492,7 @@ export function ViewPage() {
   const count = sorted.length;
   const toolbarSlot = useToolbarSlot('view');
   const t = useT();
+  const dndAccessibility = useDndAccessibility();
   const totalSlots = Math.max(count, 151);
 
   // Build-section outlines overlay: shown when the user enables it, in build order.
@@ -1176,6 +1181,7 @@ export function ViewPage() {
 
             return (
               <DndContext
+                accessibility={dndAccessibility}
                 sensors={sensors}
                 collisionDetection={effectiveCursorCollision}
                 modifiers={[snapCenterToPointer]}

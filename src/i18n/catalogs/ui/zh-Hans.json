@@ -637,6 +637,8 @@
   "favorites.typeRepair.message": "形态属性修正影响了{count}个已保存的选择。它们仍保留在表格中，但不会包含在导出图片中。请检查对应单元格并重新选择。",
   "favorites.typeRepair.review": "检查",
   "viewSettings.showStats": "显示详细统计",
+  "viewSettings.groupSpecialHint": "将化石、额外的最初伙伴、悖谬宝可梦、准神、究极异兽、传说的宝可梦和幻之宝可梦移到网格末尾。不影响自定义排序。",
+  "viewSettings.outlinesHint": "按照制作页面的分区为宝可梦分组加上轮廓。",
   "stats.type.title": "属性分布",
   "stats.bst.title": "种族值总和",
   "favorites.stats.shape": "宝可梦体形",
@@ -810,5 +812,13 @@
   "faq.favorites.q4": "免费吗？需要应用或账号吗？",
   "faq.favorites.a4": "免费，在浏览器中使用，无需注册或下载。你的选择保存在此浏览器中。清除浏览器数据可能会删除这些选择，因此请导出PNG以保留你的表格。",
   "faq.favorites.q5": "可以在my151的其他工具中使用我的最爱吗？",
-  "faq.favorites.a5": "可以。宝可梦图鉴构建器和道馆馆主制作器可以按此浏览器中保存的最爱筛选宝可梦列表。"
+  "faq.favorites.a5": "可以。宝可梦图鉴构建器和道馆馆主制作器可以按此浏览器中保存的最爱筛选宝可梦列表。",
+  "dnd.cancelled": "已取消拖动。已放下可拖动的项目 {id}。",
+  "dnd.dropped": "已放下可拖动的项目 {id}。",
+  "dnd.droppedOver": "已将可拖动的项目 {id} 放到放置区域 {over}",
+  "dnd.instructions": "按空格键拿起可拖动的项目。拖动时，用方向键移动项目。再次按空格键将其放到新位置，或按 Esc 键取消。",
+  "dnd.movedOver": "可拖动的项目 {id} 已移到放置区域 {over} 上方。",
+  "dnd.notOver": "可拖动的项目 {id} 已不在放置区域上方。",
+  "dnd.pickedUp": "已拿起可拖动的项目 {id}。",
+  "dnd.roleDescription": "可拖动"
 }

@@ -41,7 +41,7 @@ export { tierOf, keysByTier, LAUNCH_TIERS } from './tiers';
 export type { Tier } from './tiers';
 
 export { useT, useTn, useLocale, useNamesVersion, useDocumentLocale } from './provider';
-export { speciesName, formLabel, formProvenance, speciesSearchText, pokemonLabel } from './names';
+export { speciesName, formLabel, formProvenance, speciesSearchText, pokemonLabel, spriteAlt } from './names';
 export type { PokemonLabel } from './names';
 export { normalizeSearch } from './searchNormalize';
 

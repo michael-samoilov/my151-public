@@ -643,6 +643,8 @@
   "favorites.typeRepair.message": "Los tipos corregidos afectan a {count} elecciones guardadas. Se conservan en la cuadrícula, pero no se exportan. Revisa sus casillas para sustituirlas.",
   "favorites.typeRepair.review": "Revisar",
   "viewSettings.showStats": "Mostrar estadísticas detalladas",
+  "viewSettings.groupSpecialHint": "Envía al final de la cuadrícula los fósiles, los iniciales extra, los Pokémon paradoja, los pseudolegendarios, los ultraentes, los legendarios y los singulares. No afecta al orden Personalizado.",
+  "viewSettings.outlinesHint": "Enmarca los grupos de Pokémon según las secciones de tu página Crear.",
   "stats.type.title": "Distribución de tipos",
   "stats.bst.title": "Total de estadísticas",
   "favorites.stats.shape": "Forma del Pokémon",
@@ -831,5 +833,13 @@
   "faq.favorites.q4": "¿Es gratis? ¿Necesito una aplicación o una cuenta?",
   "faq.favorites.a4": "Gratis, en el navegador, sin registro ni descarga. Tus elecciones se guardan en este navegador. Borrar los datos del navegador puede eliminarlas, así que exporta un PNG para conservar tu cuadro.",
   "faq.favorites.q5": "¿Puedo usar mis favoritos en las otras herramientas de my151?",
-  "faq.favorites.a5": "Sí. El creador de Pokédex y el de líderes de gimnasio pueden filtrar sus listas de Pokémon por tus favoritos guardados en este navegador."
+  "faq.favorites.a5": "Sí. El creador de Pokédex y el de líderes de gimnasio pueden filtrar sus listas de Pokémon por tus favoritos guardados en este navegador.",
+  "dnd.cancelled": "Se canceló el arrastre. Se soltó el elemento arrastrable {id}.",
+  "dnd.dropped": "Se soltó el elemento arrastrable {id}.",
+  "dnd.droppedOver": "Se soltó el elemento arrastrable {id} sobre el área {over}",
+  "dnd.instructions": "Para tomar un elemento arrastrable, pulsa la barra espaciadora. Mientras lo arrastras, muévelo con las teclas de flecha. Pulsa espacio de nuevo para soltarlo en su nueva posición, o Escape para cancelar.",
+  "dnd.movedOver": "El elemento arrastrable {id} se movió sobre el área {over}.",
+  "dnd.notOver": "El elemento arrastrable {id} ya no está sobre un área para soltar.",
+  "dnd.pickedUp": "Elemento arrastrable {id} tomado.",
+  "dnd.roleDescription": "arrastrable"
 }
