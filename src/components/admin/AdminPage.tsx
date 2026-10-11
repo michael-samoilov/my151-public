@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { LeaguePicksPage, PicksDetailPage } from '@/components/admin/PicksDetailPage';
 import { PickerPicksPage } from '@/components/admin/PickerPicksPage';
-import { pickerFace } from '@/components/admin/pickerPicks';
+import { formatPreferenceStrength, pickerFace, preferencePreview } from '@/components/admin/pickerPicks';
 import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
@@ -617,17 +617,22 @@ function leagueFace(id: number): PopularFace | undefined {
 
 /** Grid of small sprites with the pick-count beneath — ~9-10 per row. `face`
  *  finds a sprite by id; the Picker's ids include its own forms. */
-function PopularGrid({ rows, face = dexFace }: { rows: [string, number][]; face?: (id: number) => PopularFace | undefined }) {
+function PopularGrid({ rows, face = dexFace, formatValue = String }: {
+  rows: [string, number][];
+  face?: (id: number) => PopularFace | undefined;
+  formatValue?: (value: number) => string;
+}) {
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
   return (
     <div className="grid grid-cols-9 gap-1">
       {rows.map(([id, n]) => {
         const p = face(Number(id));
+        const label = formatValue(n);
         return (
           <div
             key={id}
             className="flex flex-col items-center"
-            title={p ? `#${id} ${p.name}: ${n}` : `#${id}: ${n}`}
+            title={p ? `#${id} ${p.name}: ${label}` : `#${id}: ${label}`}
           >
             <div className="w-full aspect-square flex items-center justify-center">
               {p ? (
@@ -644,7 +649,7 @@ function PopularGrid({ rows, face = dexFace }: { rows: [string, number][]; face?
                 <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
               )}
             </div>
-            <span className="text-[0.65rem] tabular-nums leading-none">{n}</span>
+            <span className="text-[0.65rem] tabular-nums leading-none">{label}</span>
           </div>
         );
       })}
@@ -1539,38 +1544,46 @@ function UserPreviewCard({
   );
 }
 
-/** Dashboard entry for picks: a one-row preview of the overall most-picked, with
- *  a button that opens the full per-section page. Kept short so it doesn't run
- *  the dashboard long with every section expanded. */
+/** One-row picks preview. Tools can supply fitted ranking rows and labels,
+ *  while count-based previews retain their existing aggregation. */
 function WhatPeoplePick({
   mostBySection,
+  rankedRows,
+  formatValue,
+  actionLabel = 'Most picked ›',
+  emptyLabel = 'No picks yet.',
   n,
   unit,
   face,
   onOpen,
 }: {
-  mostBySection: Record<string, [string, number][]>;
+  mostBySection?: Record<string, [string, number][]>;
+  rankedRows?: [string, number][];
+  formatValue?: (value: number) => string;
+  actionLabel?: string;
+  emptyLabel?: string;
   n: number;
   unit: string;
   face?: (id: number) => PopularFace | undefined;
   onOpen: () => void;
 }) {
   const top = useMemo<[string, number][]>(() => {
+    if (rankedRows !== undefined) return rankedRows.slice(0, 9);
     const totals: Record<string, number> = {};
-    for (const rows of Object.values(mostBySection)) for (const [id, c] of rows) totals[id] = (totals[id] ?? 0) + c;
+    for (const rows of Object.values(mostBySection ?? {})) for (const [id, c] of rows) totals[id] = (totals[id] ?? 0) + c;
     return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 9);
-  }, [mostBySection]);
+  }, [mostBySection, rankedRows]);
   return (
     <Panel
       title="What people pick"
       sub={[`of ${n} ${unit}`]}
       actions={
         <Button variant="ghost" size="sm" onClick={onOpen}>
-          Most picked ›
+          {actionLabel}
         </Button>
       }
     >
-      {top.length > 0 ? <PopularGrid rows={top} face={face} /> : <p className="text-sm text-muted-foreground">No picks yet.</p>}
+      {top.length > 0 ? <PopularGrid rows={top} face={face} formatValue={formatValue} /> : <p className="text-sm text-muted-foreground">{emptyLabel}</p>}
     </Panel>
   );
 }
@@ -2373,7 +2386,10 @@ export function AdminPage() {
             )}
             {tool === 'favorites' && data.favoritePicks && (
               <WhatPeoplePick
-                mostBySection={{ charts: data.favoritePicks.top.map(([id, n]) => [String(id), n]) }}
+                rankedRows={preferencePreview(data.favoritePicks.preference)}
+                formatValue={formatPreferenceStrength}
+                actionLabel="Preference strength ›"
+                emptyLabel={data.favoritePicks.charts > 0 ? 'Preference strength unavailable.' : 'No picks yet.'}
                 n={data.favoritePicks.charts}
                 unit="charts"
                 face={pickerFace}
