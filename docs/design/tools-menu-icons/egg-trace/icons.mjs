@@ -133,11 +133,12 @@ function chipOutline(egg, net) {
  *   chip    - break the crown (the stem goes with it)
  *   stroke  - stroke width in grid units (2, or 2 / pathScale)
  *   gap     - clear space required between parts that do not join, grid units
+ *   move    - { spotId: [dx, dy] }: moves a traced spot, in sprite pixels
  * Cracks are cut cleanly where they would come closer than the gap to a spot,
  * a triangle, or the outline (except where a run is meant to join the outline:
  * the stem's top and C's end).
  */
-export function buildIcon({ crack = CRACK_HAMMER, spots = [], tris = [], chip = false, stroke = 2, gap = 2 } = {}) {
+export function buildIcon({ crack = CRACK_HAMMER, spots = [], tris = [], chip = false, stroke = 2, gap = 2, move = {} } = {}) {
   const egg = ICON_EGG;
   const need = stroke + gap; // centre-line distance
   const parts = [];
@@ -167,7 +168,9 @@ export function buildIcon({ crack = CRACK_HAMMER, spots = [], tris = [], chip = 
   }
   const others = [];
   for (const id of spots) {
-    const a = spotArc(SPOTS[id], egg);
+    const [cx, cy, rx, ry] = SPOTS[id];
+    const [dx, dy] = move[id] ?? [0, 0];
+    const a = spotArc([cx + dx, cy + dy, rx, ry], egg);
     parts.push({ id: `spot-${id}`, d: a.d, pts: a.pts, spot: true, closed: a.closed });
     others.push(a.pts);
   }

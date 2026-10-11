@@ -4,6 +4,10 @@
 //            the stroke stays the hammer's on-screen width (2 / 1.35 units)
 import { CRACK_HAMMER, CRACK_LARGE } from './icons.mjs';
 
+// The large crack without the run to the outline (C), with A up to its down-left turn.
+const { C: _C, ...LARGE_NO_C } = CRACK_LARGE;
+const LEFT_TURN = { ...LARGE_NO_C, A: CRACK_LARGE.A.slice(0, 4) };
+
 export const LARGE = 1.35;
 const big = { stroke: 2 / LARGE, gap: 2 / LARGE };
 const ALL = ['s1', 's2', 's3', 's4'];
@@ -27,5 +31,9 @@ export const CANDIDATES = [
   { id: 'large-crack', name: 'Full in-game crack, larger', size: 'large', opts: { crack: CRACK_LARGE, ...big } },
   { id: 'large-spots', name: 'Full crack and spots, larger', size: 'large', opts: { crack: CRACK_LARGE, spots: SPOTS3, ...big } },
   { id: 'large-chip', name: 'Chipped crown, larger', size: 'large', opts: { crack: CRACK_LARGE, chip: true, ...big } },
+  // Michael's final egg: option 4 plus option 3's left run, as far as its
+  // down-left turn. The run ends where the left spot sat, so that spot moves
+  // 3.75 sprite px left and 2.75 down: the least move that keeps every gap.
+  { id: 'large-spots-turn', name: 'Crack, left turn and spots, larger', size: 'large', opts: { crack: LEFT_TURN, spots: SPOTS3, move: { s1: [-3.75, 2.75] }, ...big } },
   { id: 'large-togepi', name: 'Togepi egg, larger', size: 'large', opts: { crack: CRACK_LARGE, tris: togepi(5.6, 16.0, 7.8), ...big } },
 ];
