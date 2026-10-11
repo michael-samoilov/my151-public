@@ -1,7 +1,7 @@
 import {describe, expect, it, vi} from 'vitest';
 import cellData from '../../../api/_favoriteCells.json';
 import {favoritePicks, favoritePreference, fitFavoritePreference} from '../../../api/_favoriteAggregate';
-import type {FavoriteRecord} from '../../../api/_favoriteRecord';
+import {parseFavoriteSnapshot, type FavoriteRecord} from '../../../api/_favoriteRecord';
 
 const record = (fills: Record<string, number>): FavoriteRecord => ({
   latest: {v: 1, fills},
@@ -38,7 +38,13 @@ describe('favorite preference evidence', () => {
 
   it('uses valid current charts once and rejects invalid or orphan selections', () => {
     const current = record({'fire|1': 4, 'ghost|2': 6, 'favorite|2': 6});
-    current.sessionLog = [{snapshot: {v: 1, fills: {'fire|1': 6}}}] as FavoriteRecord['sessionLog'];
+    current.sessionLog = [{
+      id: 'historical-session',
+      ts: 1,
+      endTs: 2,
+      events: [],
+      snapshot: parseFavoriteSnapshot({v: 1, fills: {'fire|1': 6}})!,
+    }];
     const result = favoritePreference([current]);
     expect(result.entries).toHaveLength(1);
     expect(result.entries[0]).toMatchObject({id: 4, picks: 1, charts: 1, evidencePicks: 1});
