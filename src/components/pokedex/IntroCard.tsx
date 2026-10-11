@@ -7,6 +7,7 @@ import { DEX_TOTAL } from '@/lib/milestones';
 const SPECIES_TOTAL = 1025;
 import { Button } from '@/components/ui/button';
 import { TYPE_COLORS } from '@/data/type-colors';
+import { TYPE_ICONS } from '@/data/type-icons';
 import type { TypeName } from '@/types/pokemon';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
@@ -51,9 +52,9 @@ const FACES = new Set<string>(['dots', 'shots']);
 
 /** Starter-CTA button treatment under evaluation (the colored starter dots
  *  clash with the solid-red default; these are the contrast candidates). */
-type BtnVariant = 'solid' | 'outline' | 'gradient-border' | 'fade';
-const DEFAULT_BTN: BtnVariant = 'gradient-border';
-const BTNS = new Set<string>(['solid', 'outline', 'gradient-border', 'fade']);
+type BtnVariant = 'type-marks' | 'solid' | 'outline' | 'gradient-border' | 'fade';
+const DEFAULT_BTN: BtnVariant = 'type-marks';
+const BTNS = new Set<string>(['type-marks', 'solid', 'outline', 'gradient-border', 'fade']);
 
 /** Review overrides. `?intro[=face]` forces the card to show (Vercel previews
  *  auto-seed the demo dex, which would otherwise hide it) and picks the face;
@@ -366,8 +367,54 @@ function StarterDots() {
   );
 }
 
+/**
+ * The starters' type glyphs, sized so each carries the same ink. The glyph
+ * files share one 44-unit frame at in-game proportions (scripts/type-icons/
+ * BUILD.md), where Grass has 57% more ink than Fire. With no backing circle the
+ * eye compares ink, so each glyph is scaled by sqrt(mean ink / its own ink),
+ * from the files' measured ink: Grass 707, Fire 451, Water 515 square units.
+ */
+const STARTER_MARKS = [
+  { type: 'grass', scale: 0.876 },
+  { type: 'fire', scale: 1.097 },
+  { type: 'water', scale: 1.027 },
+] as const;
+
+function StarterMarks() {
+  return (
+    <span className="flex items-center justify-center gap-[0.45em]" aria-hidden="true">
+      {STARTER_MARKS.map(({ type, scale }) => {
+        const mask = `url(${TYPE_ICONS[type].glyph}) center / contain no-repeat`;
+        return (
+          <span key={type} className="flex size-[1.7em] items-center justify-center">
+            <span
+              className="block"
+              style={{ width: `${1.25 * scale}em`, height: `${1.25 * scale}em`, backgroundColor: TYPE_COLORS[type], mask, WebkitMask: mask }}
+            />
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 function StarterButton({ onClick }: { onClick: () => void }) {
   const label = t('intro.cta');
+
+  if (BTN === 'type-marks') {
+    // The starters' type marks in a row above the label, inside a plain
+    // theme-red border.
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-3.5 inline-flex flex-col items-center justify-center gap-1.5 rounded-md border-2 border-primary bg-card px-5 py-2.5 text-sm font-medium text-foreground transition-transform duration-150 ease-out hover:bg-primary/5 active:scale-[0.96] cursor-pointer"
+      >
+        <StarterMarks />
+        {label}
+      </button>
+    );
+  }
 
   if (BTN === 'outline') {
     // White surface, red border + red text: dots keep full saturation on white.
