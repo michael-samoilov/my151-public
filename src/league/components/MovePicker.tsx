@@ -20,6 +20,7 @@ import {
   type ContestType,
   type Move,
 } from '../moves';
+import { keepLastWord } from '../keepLastWord';
 import { useMoveNames } from '../moveNames';
 import { CategoryChip } from './CategoryChip';
 import { useLeagueStore } from '../store/useLeagueStore';
@@ -205,8 +206,17 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
       const spans = [...list.querySelectorAll<HTMLElement>('[data-tm-row-name]')];
       for (const el of spans) el.style.fontSize = '';
       const base = spans.length ? parseFloat(getComputedStyle(spans[0]).fontSize) : 0;
-      const over = spans.map((el) => [el, el.clientWidth / el.scrollWidth] as const);
-      for (const [el, ratio] of over) if (ratio < 0.995) el.style.fontSize = `${base * ratio}px`;
+      const scale = new Map(spans.map((el) => [el, Math.min(1, el.clientWidth / el.scrollWidth)]));
+      for (const [el, s] of scale) if (s < 0.995) el.style.fontSize = `${base * s}px`;
+      // Two lines at most: Spanish Tormenta de Diamantes takes three at 320 px.
+      for (let round = 0; round < 8; round++) {
+        const tall = spans.filter((el) => el.scrollHeight > el.clientHeight + 1);
+        if (!tall.length) break;
+        for (const el of tall) {
+          scale.set(el, scale.get(el)! * 0.92);
+          el.style.fontSize = `${base * scale.get(el)!}px`;
+        }
+      }
     };
     fit();
     const observer = new ResizeObserver(fit);
@@ -435,7 +445,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           >
             <TypeBadge type={m.type} className="w-[4.375rem]" />
             <CategoryChip category={m.category} />
-            <span data-tm-row-name="" className="line-clamp-2 text-[0.8125rem] font-medium leading-[1.1]">{nameOf(m)}</span>
+            <span data-tm-row-name="" className="line-clamp-2 text-[0.8125rem] font-medium leading-[1.1]">{keepLastWord(nameOf(m))}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.power ?? '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.accuracy !== null ? `${m.accuracy}%` : '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.pp}</span>

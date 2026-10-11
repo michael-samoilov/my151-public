@@ -34,6 +34,7 @@ import {
   stageAt,
 } from '../model/engine';
 import { getMoveById } from '../moves';
+import { keepLastWord } from '../keepLastWord';
 import { moveName, useMoveNames } from '../moveNames';
 import { cardShades } from '../theme';
 import { CategoryChip } from './CategoryChip';
@@ -1596,13 +1597,6 @@ function useMarkBoxStyle(): React.CSSProperties {
   }, [t, fontsLoaded]);
 }
 
-/**
- * The last space does not break, so "Pick a / move" never strands the noun.
- * A two-word phrase keeps its one break: German "Attacke w\u00e4hlen" would
- * otherwise run past the slot's edge as one unbreakable word.
- */
-const keepLastWord = (text: string) =>
-  (text.trim().match(/\s+/g) ?? []).length >= 2 ? text.replace(/ (\S+)$/u, '\u00a0$1') : text;
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const t = useT();
@@ -1630,8 +1624,14 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       // The widest line: a one-word name whole, or the widest word of a name
       // that wraps (German DONNERNDER of Donnernder Tritt, at 320 px).
       const widest = Math.max(0, ...[...range.getClientRects()].map((r) => r.width));
-      const { scale } = fitName(widest, 0, room, cap, 0);
+      let { scale } = fitName(widest, 0, room, cap, 0);
       if (scale < 1) el.style.fontSize = `${cap * scale}px`;
+      // Two lines at most: Spanish TORMENTA DE DIAMANTES takes three at 320 px.
+      const lines = () => new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+      for (let round = 0; round < 8 && lines() > 2; round++) {
+        scale *= 0.92;
+        el.style.fontSize = `${cap * scale}px`;
+      }
     };
     const observer = new ResizeObserver(fit);
     observer.observe(el.parentElement!);
@@ -1723,7 +1723,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             )}
             style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band, lineHeight: '0.74375rem' }}
           >
-            {name}
+            {keepLastWord(name)}
           </span>
         </span>
       ) : (
