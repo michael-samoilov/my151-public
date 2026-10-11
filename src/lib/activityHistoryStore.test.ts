@@ -17,7 +17,7 @@ describe('optional detail storage isolation',()=>{
   const db={eval:async(_script:string,keys:string[],args:(string|number)[])=>{calls.push({keys,args});return ['recorded','batch-0001'];},hgetall:async()=>null,hscan:async()=>[0,[]] as [number,string[]]};
   for(const tool of ['dex','league','favorites'] as const)expect(await appendMinuteActivity('browser-1',tool,raw,now,{db})).toMatchObject({status:'recorded',accepted:['batch-0001']});
   expect(new Set(calls.map(c=>c.keys[0])).size).toBe(1);
-  expect(calls.every(c=>Number(c.args[2])>=40)).toBe(true);
+  expect(calls.every(c=>Number(c.args[2])>=72)).toBe(true);
   expect(calls.every(c=>Number(c.args[7])===now/1000+400*86400)).toBe(true);
   expect(ACTIVITY_APPEND_SCRIPT).toContain('redis.call');
  });
@@ -42,9 +42,8 @@ describe('bounded history reads',()=>{
   const db={eval:async()=>[],hgetall:async()=>null,hscan:async()=>[0,pairs] as [number,unknown[]]};
   const result=await loadMinuteActivityHistory(now,now+1000,{db});
   expect(result).toMatchObject({truncated:true,cursorDay:'2026-10-11'});
-  expect(result.nextCursor).toBeTruthy();
-  const resumed=await loadMinuteActivityHistory(now,now+1000,{db,cursor:result.nextCursor});
-  expect(resumed.truncated).toBe(false);
+  expect(result).toMatchObject({blockedPage:true});
+  expect(result.nextCursor).toBeUndefined();
  });
 });
 
@@ -58,5 +57,21 @@ describe('budget guardrails',()=>{
   const db={eval:async()=>[],hgetall:async(key:string)=>key.endsWith('2026-10')?{paused:'1',units:'100',bytes:'0'}:null,hscan:async()=>[0,[]] as [number,unknown[]]};
   expect(await readMinuteActivityBudget(now,{db})).toMatchObject({status:'paused',pausedUntil:Date.UTC(2026,10,1)});
   expect(await readMinuteActivityBudget(Date.UTC(2026,10,1),{db})).toMatchObject({status:'collecting',usedUnits:0});
+ });
+});
+
+describe('history cursor boundaries',()=>{
+ it('resumes a whole page and never uses offsets in a page that can change',async()=>{
+  const pairs=(count:number)=>Array.from({length:count},()=>['field','invalid']).flat();
+  const db={eval:async()=>[],hgetall:async()=>null,hscan:async(_key:string,cursor:number)=>[cursor===0?17:0,pairs(cursor===0?1500:600)] as [number,unknown[]]};
+  const first=await loadMinuteActivityHistory(now,now+1000,{db});
+  expect(first.truncated).toBe(true);
+  expect(JSON.parse(Buffer.from(first.nextCursor!,'base64url').toString())).toEqual({day:'2026-10-11',cursor:17});
+  expect((await loadMinuteActivityHistory(now,now+1000,{db,cursor:first.nextCursor})).truncated).toBe(false);
+ });
+ it('rejects malformed calendar dates instead of silently returning empty history',async()=>{
+  const db={eval:async()=>[],hgetall:async()=>null,hscan:async()=>[0,[]] as [number,unknown[]]};
+  const cursor=Buffer.from(JSON.stringify({day:'2026-02-30',cursor:0})).toString('base64url');
+  await expect(loadMinuteActivityHistory(Date.UTC(2026,1,1),Date.UTC(2026,2,1),{db,cursor})).rejects.toThrow('Invalid history cursor');
  });
 });

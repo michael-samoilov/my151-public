@@ -52,7 +52,7 @@ export async function appendMinuteActivity(cid:string,tool:MinuteActivityTool,ra
  const payload=parseMinuteActivity(raw,receivedAt);
  if(!payload||!/^[-\w]{8,80}$/.test(cid))return {accepted:[],status:'invalid'};
  if(!payload.batches.length)return {accepted:[],status:'recorded'};
- const keys=[config.key],args:(string|number)[]=[config.limitUnits,config.limitBytes,32+8*payload.batches.length,0,Math.floor((config.retryAt+32*DAY)/1000)];
+ const keys=[config.key],args:(string|number)[]=[config.limitUnits,config.limitBytes,64+8*payload.batches.length,0,Math.floor((config.retryAt+32*DAY)/1000)];
  let bytes=0;
  for(const batch of payload.batches){
   // receivedAt is omitted from immutable facts: delivery retries have different reception timestamps.
@@ -73,20 +73,20 @@ export async function readMinuteActivityBudget(now:number,options:ActivityHistor
  const config=settings(now,options);
  const raw=await (await database(options)).hgetall(config.key);
  const num=(key:string)=>Math.max(0,Number(raw?.[key])||0);
- const usedUnits=num('units'),bytes=num('bytes'),paused=String(raw?.paused)==='1'||usedUnits+40>config.limitUnits||bytes>=config.limitBytes;
+ const usedUnits=num('units'),bytes=num('bytes'),paused=String(raw?.paused)==='1'||usedUnits+72>config.limitUnits||bytes>=config.limitBytes;
  return {month:config.month,status:!config.enabled?'disabled':paused?'paused':'collecting',usedUnits,limitUnits:config.limitUnits,bytes,limitBytes:config.limitBytes,acceptedBuckets:num('buckets'),...(paused||!config.enabled?{pausedUntil:config.retryAt}:{})};
 }
-/** Explicit history reads only. Maximum 31 days and 10,000 returned buckets; ordinary dashboards never call this. */
+/** Explicit history reads only. Return complete HSCAN pages; never resume at mutable page offsets. */
 export async function loadMinuteActivityHistory(from:number,to:number,options:ActivityHistoryOptions={}) {
  if(!Number.isSafeInteger(from)||!Number.isSafeInteger(to)||to<from||to-from>31*DAY)throw new RangeError('History range must be at most 31 days');
  const db=await database(options),batches:StoredMinuteActivityBatch[]=[];
- let bucketCount=0,truncated=false,cursorDay:string|undefined,nextCursor:string|undefined,scanned=0;
- let resume:{day:string;cursor:number;offset:number}|undefined;
+ let bucketCount=0,truncated=false,cursorDay:string|undefined,nextCursor:string|undefined,scanned=0,blockedPage=false;
+ let resume:{day:string;cursor:number}|undefined;
  if(options.cursor){
   if(options.cursor.length>256)throw new RangeError('Invalid history cursor');
   try {
    resume=JSON.parse(Buffer.from(options.cursor,'base64url').toString());
-   if(!resume||!/^\d{4}-\d{2}-\d{2}$/.test(resume.day)||!Number.isSafeInteger(resume.cursor)||resume.cursor<0||!Number.isSafeInteger(resume.offset)||resume.offset<0||Date.parse(resume.day)<Math.floor(from/DAY)*DAY||Date.parse(resume.day)>to)throw Error();
+   if(!resume||!/^\d{4}-\d{2}-\d{2}$/.test(resume.day)||!Number.isFinite(Date.parse(resume.day))||new Date(Date.parse(resume.day)).toISOString().slice(0,10)!==resume.day||!Number.isSafeInteger(resume.cursor)||resume.cursor<0||Date.parse(resume.day)<Math.floor(from/DAY)*DAY||Date.parse(resume.day)>to)throw Error();
   }catch{throw new RangeError('Invalid history cursor');}
  }
  const days=Math.floor(to/DAY)-Math.floor(from/DAY)+1;
@@ -94,12 +94,16 @@ export async function loadMinuteActivityHistory(from:number,to:number,options:Ac
  for(let n=0;n<days&&!truncated;n++){
   const day=new Date((Math.floor(from/DAY)+n)*DAY).toISOString().slice(0,10);
   if(resume&&day<resume.day)continue;
-  let cursor=resume?.day===day?resume.cursor:0,offset=resume?.day===day?resume.offset:0;
-  const stop=(inputCursor:number,index:number)=>{truncated=true;cursorDay=day;nextCursor=Buffer.from(JSON.stringify({day,cursor:inputCursor,offset:index})).toString('base64url');};
+  let cursor=resume?.day===day?resume.cursor:0;
+  const stop=(inputCursor:number,blocked=false)=>{truncated=true;cursorDay=day;blockedPage=blocked;if(!blocked)nextCursor=Buffer.from(JSON.stringify({day,cursor:inputCursor})).toString('base64url');};
   do {
    const inputCursor=cursor,page=await db.hscan(`${PREFIX}:day:${day}`,cursor,{count:100});cursor=Number(page[0]);
-   for(let i=offset+1;i<page[1].length;i+=2){
-    if(++scanned>2000){stop(inputCursor,i-1);break;}
+   const entries=page[1].length/2;
+   if(entries>2000){stop(inputCursor,true);break;}
+   if(scanned+entries>2000){stop(inputCursor);break;}
+   const pageBatches:StoredMinuteActivityBatch[]=[];
+   let pageBuckets=0;
+   for(let i=1;i<page[1].length;i+=2){
     let raw:unknown=page[1][i];try{if(typeof raw==='string')raw=JSON.parse(raw);}catch{continue;}
     if(!raw||typeof raw!=='object')continue;
     const b=raw as StoredMinuteActivityBatch;
@@ -107,11 +111,14 @@ export async function loadMinuteActivityHistory(from:number,to:number,options:Ac
     const parsed=parseMinuteActivity({v:1,batches:[b]},Date.parse(day)+DAY);
     if(!parsed)continue;
     const buckets=parsed.batches[0].buckets.filter(s=>s.last>=from&&s.first<=to).map(s=>({...s,first:Math.max(s.first,from),last:Math.min(s.last,to)}));
-    if(bucketCount+buckets.length>10000){stop(inputCursor,i-1);break;}
-    if(buckets.length){bucketCount+=buckets.length;batches.push({...parsed.batches[0],buckets,cid:b.cid,tool:b.tool});}
+    pageBuckets+=buckets.length;
+    if(pageBuckets>10000){stop(inputCursor,true);break;}
+    if(buckets.length)pageBatches.push({...parsed.batches[0],buckets,cid:b.cid,tool:b.tool});
    }
-   offset=0;
+   if(truncated)break;
+   if(bucketCount+pageBuckets>10000){stop(inputCursor);break;}
+   scanned+=entries;bucketCount+=pageBuckets;batches.push(...pageBatches);
   }while(cursor&&!truncated);
  }
- return {batches,coverage:{from,to,retentionDays:MINUTE_ACTIVITY_RETENTION_DAYS,incomplete:batches.some(b=>b.incomplete),bucketCount},truncated,...(cursorDay?{cursorDay,nextCursor}:{})};
+ return {batches,coverage:{from,to,retentionDays:MINUTE_ACTIVITY_RETENTION_DAYS,incomplete:batches.some(b=>b.incomplete),bucketCount,weakConsistency:true},truncated,...(cursorDay?{cursorDay,...(nextCursor?{nextCursor}:{}),...(blockedPage?{blockedPage:true}:{})}:{})};
 }
