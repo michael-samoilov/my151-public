@@ -14,8 +14,9 @@ function settings(now:number,options:ActivityHistoryOptions) {
  const positive=(raw:string|undefined,fallback:number)=>raw&&/^\d+$/.test(raw)&&Number.isSafeInteger(Number(raw))&&Number(raw)>0?Number(raw):fallback;
  return {enabled:env.MINUTE_ACTIVITY_ENABLED!=='0',month,key:`${PREFIX}:budget:${month}`,limitUnits:Math.min(2_000_000,positive(env.MINUTE_ACTIVITY_MONTHLY_UNITS,2_000_000)),limitBytes:Math.min(16*1024*1024,positive(env.MINUTE_ACTIVITY_MONTHLY_BYTES,16*1024*1024)),retryAt:Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)};
 }
-/** Reserve the complete request conservatively, including the outer EVAL and core ingestion allowance.
- * Every branch has fewer internal calls than its reservation. Retries consume units and byte allowance too.
+/** Reserve ordinary progress/history work conservatively, including the outer EVAL and core ingestion margin.
+ * Independent core work (large new-species imports, milestones, exports) is outside this feature estimate.
+ * Retries consume units and byte allowance too.
  * A request refused at exhaustion still costs its EVAL/read; normal clients must honor retryAt.
  */
 export const ACTIVITY_APPEND_SCRIPT=`
