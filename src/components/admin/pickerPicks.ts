@@ -52,3 +52,20 @@ export function topFills(cells: FavoritePicks['cells']): Record<string, number> 
   }
   return fills;
 }
+
+const compactStrength = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
+export function formatPreferenceStrength(score: number): string {
+  return `${score < 0.1 ? '<0.1' : score >= 1000 ? compactStrength.format(score) : score.toFixed(1)}×`;
+}
+
+/** Use the fitted score order; unavailable estimates never fall back to counts. */
+export function preferencePreview(preference: FavoritePicks['preference']): [string, number][] {
+  if (!preference?.converged || preference.choices <= 0) return [];
+  return preference.entries
+    .filter((entry) => entry.picks > 0 && entry.evidencePicks > 0 &&
+      entry.score != null && Number.isFinite(entry.score) && entry.score > 0)
+    .sort((a, b) => b.score! - a.score! || b.picks - a.picks || a.id - b.id)
+    .slice(0, 9)
+    .map((entry) => [String(entry.id), entry.score!]);
+}

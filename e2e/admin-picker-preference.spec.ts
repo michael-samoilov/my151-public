@@ -19,7 +19,7 @@ const preference: Preference = {
   converged: true, gradientResidual: 0, iterations: 8, regularization: 1,
 };
 
-async function openPicks(page: Page, model: Preference | null = preference) {
+async function openPicks(page: Page, model: Preference | null = preference, expectedPreviewIds = ['7', '6']) {
   const fills = [
     { 'fire|1': 6, 'water|1': 7, 'starter|1': 7 },
     { 'fire|1': 6 },
@@ -49,13 +49,23 @@ async function openPicks(page: Page, model: Preference | null = preference) {
   });
   await page.goto('/?admin');
   const preview = page.locator('section').filter({ has: page.getByRole('heading', { name: 'What people pick' }) });
-  await preview.getByRole('button', { name: 'Most picked ›' }).click();
+  if (model?.converged && model.choices > 0) {
+    await expect(preview.locator('img')).toHaveCount(expectedPreviewIds.length);
+    const previewIds = await preview.locator('img').evaluateAll((images) => images.map((image) => image.parentElement!.parentElement!.getAttribute('title')!.match(/^#(\d+)/)![1]));
+    expect(previewIds).toEqual(expectedPreviewIds);
+    await expect(preview).toContainText('2.0×');
+  } else {
+    await expect(preview.locator('img')).toHaveCount(0);
+    await expect(preview).toContainText('Preference strength unavailable.');
+  }
+  await preview.getByRole('button', { name: 'Preference strength ›' }).click();
 }
 
 test.describe('Picker preference strength @viewport', () => {
-  test('keeps the grid default, dismisses its selector, and ranks by strength with raw counts', async ({ page }, testInfo) => {
+  test('previews score order, opens the ranking, and keeps the grid selector available', async ({ page }, testInfo) => {
     await openPicks(page);
-    await expect(page.getByRole('button', { name: 'Grid', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Preference strength', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Grid', exact: true }).click();
     await expect(page.getByTestId('favorites-cell-fire-1')).toHaveAttribute('aria-label', /Charizard$/);
     await page.getByTestId('favorites-cell-fire-1').click();
     await expect(page.getByTestId('admin-pick-summary')).toHaveText('4 of 4 charts');
@@ -74,12 +84,12 @@ test.describe('Picker preference strength @viewport', () => {
     await expect(ranking.locator('[data-preference-id="6"]')).toHaveText('1.0×3 picks3 charts');
     await expect(ranking.locator('[data-preference-id="4"]')).toHaveText('—1 pick1 chart');
     await expect(ranking.getByTestId('favorites-type-icon')).toHaveCount(0);
-    await expect(page.getByText('It is not a pick percentage.')).toBeHidden();
+    await expect(page.getByText(/A Pokémon scoring n× is estimated/)).toBeHidden();
     await page.getByText('What does the number mean?', { exact: true }).click();
-    await expect(page.getByText('It is not a pick percentage.')).toBeVisible();
+    await expect(page.getByText(/A Pokémon scoring n× is estimated/)).toBeVisible();
     await expect(ranking).toContainText('67% versus 33%');
-    await expect(ranking).toContainText('current chart');
-    await expect(ranking).toContainText('not independent people');
+    await expect(ranking).toContainText('when both are offered in the same selector');
+    await expect(ranking.locator('details p')).toHaveCount(1);
     const fits = await ranking.getByTestId('favorites-pretty-grid').evaluate((grid) => {
       const host = grid.parentElement!;
       return grid.getBoundingClientRect().width <= host.clientWidth + 1;
@@ -102,7 +112,7 @@ test.describe('Picker preference strength @viewport', () => {
         })),
         ...[1, 2, 3, 8, 9].map((id) => ({ id, score: 0.5, picks: 1, charts: 1, component: 1, evidencePicks: 1 })),
       ],
-    });
+    }, ['7', '6', '1', '2', '3', '8', '9']);
     await page.getByRole('button', { name: 'Preference strength', exact: true }).click();
     const ranking = page.getByTestId('admin-picker-preference');
     await expect(ranking).toContainText('Comparisons between these groups depend on smoothing.');

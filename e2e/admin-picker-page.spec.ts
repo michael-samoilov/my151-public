@@ -110,7 +110,8 @@ test.describe('Picker Most picked @viewport', () => {
     await stubPickerStore(page);
     const preview = page.locator('section').filter({ has: page.getByRole('heading', { name: 'What people pick' }) });
     await expect(preview).toContainText('of 4 charts');
-    await preview.getByRole('button', { name: 'Most picked ›' }).click();
+    await preview.getByRole('button', { name: 'Preference strength ›' }).click();
+    await page.getByRole('button', { name: 'Grid', exact: true }).click();
     await expect(page.getByTestId('favorites-cell-fire-1')).toHaveAttribute('aria-label', /Charizard$/);
     await expect(page.getByTestId('favorites-cell-water-1')).toHaveAttribute('aria-label', /Blastoise$/);
     // The type axis runs across at every width, as in the app.

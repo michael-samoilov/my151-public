@@ -2,6 +2,7 @@
 import {buildDepthCurve} from './_aggregate.js';
 import {FAVORITE_TOTAL_CELLS, parseFavoriteSnapshot, type FavoriteRecord} from './_favoriteRecord.js';
 import cellData from './_favoriteCells.json' with {type: 'json'};
+import speciesData from './_favoriteSpecies.json' with {type: 'json'};
 export interface FavoriteUsageFunnel {
   opened: number;
   buckets: {label:string;count:number;exports:{full:number;simplified:number;both:number};notExported:number}[];
@@ -70,7 +71,8 @@ export function favoritePicks(records: FavoriteRecord[]): FavoritePicks {
     top:[...charts].sort(byCharts).slice(0,9),
   };
 }
-interface FavoritePreferenceEntry {
+export interface FavoritePreferenceEntry {
+  /** Official species ID; all eligible forms share this ranking entry. */
   id: number;
   score: number | null;
   picks: number;
@@ -110,9 +112,17 @@ interface PreferenceState {
 }
 const preferenceCells = cellData as Record<string, {kind: string; ids?: number[]; sources?: string[]}>;
 
+const preferenceSpecies = speciesData as Record<string, number>;
+/** Saved form IDs remain intact; only the population preference model groups them. */
+export function favoriteSpeciesId(id: number): number {
+  const species = preferenceSpecies[id];
+  if (species === undefined) throw new Error(`Missing Picker species identity: ${id}. Rebuild scripts/build-favorite-analytics-cells.ts.`);
+  return species;
+}
+
 const preferenceFixedPools = new Map<string, {ids: number[]; key: string; positions: Map<number, number>}>(Object.entries(preferenceCells).flatMap(([key, cell]) => {
-  if (cell.kind !== 'pick' || !cell.ids || cell.ids.length < 2) return [];
-  const ids = [...cell.ids].sort((a, b) => a - b);
+  if (cell.kind !== 'pick' || !cell.ids) return [];
+  const ids = [...new Set(cell.ids.map(favoriteSpeciesId))].sort((a, b) => a - b);
   return [[key, {ids, key: ids.join(','), positions: new Map(ids.map((id, i) => [id, i]))}] as const];
 }));
 const preferenceCache = new Map<string, FavoritePreference>();
@@ -225,7 +235,7 @@ export function favoritePreference(records: FavoriteRecord[]): FavoritePreferenc
   let choices = 0;
   let charts = 0;
   for (const {fills} of current) {
-    const chartIds = new Set(Object.values(fills));
+    const chartIds = new Set(Object.values(fills).map(favoriteSpeciesId));
     for (const id of chartIds) {
       let entry = counts.get(id);
       if (!entry) {
@@ -235,13 +245,14 @@ export function favoritePreference(records: FavoriteRecord[]): FavoritePreferenc
       entry.charts++;
     }
     let contributed = false;
-    for (const [key, id] of Object.entries(fills)) {
+    for (const [key, formId] of Object.entries(fills)) {
+      const id = favoriteSpeciesId(formId);
       const entry = counts.get(id)!;
       entry.picks++;
       const cell = preferenceCells[key];
       const fixed = preferenceFixedPools.get(key);
       const ids = fixed?.ids ?? [...new Set((cell.sources ?? [])
-        .map(source => fills[source]).filter((id): id is number => id !== undefined))].sort((a, b) => a - b);
+        .map(source => fills[source]).filter((id): id is number => id !== undefined).map(favoriteSpeciesId))].sort((a, b) => a - b);
       if (ids.length < 2) continue;
       const winner = fixed?.positions.get(id) ?? ids.indexOf(id);
       if (winner < 0) continue;

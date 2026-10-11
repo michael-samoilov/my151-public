@@ -17,7 +17,7 @@ import { prettyRows } from '@/favorites/model/prettyWrap';
 import type { FavoritePicks } from '../../../api/_favoriteAggregate';
 import { PicksPage } from './PicksDetailPage';
 import { Seg } from './ui';
-import { rankCell, topFills, type PickCell } from './pickerPicks';
+import { formatPreferenceStrength, rankCell, topFills, type PickCell } from './pickerPicks';
 
 /** The selector's columns, as in the app. */
 const MAX_COLS = 6;
@@ -147,7 +147,7 @@ const countLabel = (count: number, unit: string) => `${compactCount.format(count
 function PreferenceCaption({ entry, available }: { entry: PreferenceEntry; available: boolean }) {
   const score = available && entry.evidencePicks > 0 && entry.score != null && Number.isFinite(entry.score) && entry.score > 0
     ? entry.score : null;
-  const strength = score == null ? '—' : `${score < 0.1 ? '<0.1' : score >= 1000 ? compactCount.format(score) : score.toFixed(1)}×`;
+  const strength = score == null ? '—' : formatPreferenceStrength(score);
   const title = `${score == null ? 'Preference strength unavailable' : `${strength} preference strength`} · ${entry.picks} picks · ${entry.charts} charts`;
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 tabular-nums" data-preference-id={entry.id} title={title}>
@@ -204,20 +204,12 @@ function PreferenceRanking({ preference }: { preference: Preference | undefined 
             These choices form {preference.components} separate groups. Comparisons between these groups depend on smoothing.
           </p>
         )}
+        <p className="mt-2">Forms count together as one Pokémon.</p>
         <details className="mt-2">
           <summary className="cursor-pointer font-semibold text-foreground">What does the number mean?</summary>
-          <div className="mt-2 flex flex-col gap-2">
-            <p>Think of the scores as weights. A menu with scores of 2×, 1×, and 1× predicts about 50%, 25%, and 25% of the choices.</p>
-            <p>Add the scores of the Pokémon in a menu. Each Pokémon's predicted share is its score divided by that total.</p>
-            <p>With only two Pokémon scoring 2× and 1×, the model predicts two selections of the first for every one of the second: about 67% versus 33%.</p>
-            <p>1× sets the scale. The average score across all Pokémon offered in filled cells is 1×, including those never picked. If all were equally preferred, every score would be 1×.</p>
-            <p>The model learns these weights from filled cells: who was selected and which alternatives were passed over. It fits the whole set of choices, rather than dividing a Pokémon's picks by how often it appeared.</p>
-            <p>It is not a pick percentage.</p>
-            <p>Each chart contributes one current snapshot. Blank cells and cells with only one option provide no comparison evidence.</p>
-            <p>Favorite pointer options are reconstructed from the current chart. These are not historical menus from when a pick was made.</p>
-            <p>Repeated choices from the same browser are not independent people. This describes recorded choices, not the whole population.</p>
-            <p>Sparse estimates are pulled toward neutral strength. A dash means there is no usable strength estimate; raw picks and chart counts still appear.</p>
-          </div>
+          <p className="mt-2">
+            A Pokémon scoring n× is estimated to be chosen n times as often as an average-scoring Pokémon (1×) when both are offered in the same selector. With only a 2× Pokémon and a 1× Pokémon, that means about 67% versus 33%. The average includes Pokémon offered but never picked.
+          </p>
         </details>
       </div>
       <div ref={hostRef} className="min-w-0">
@@ -247,7 +239,7 @@ export function PickerPicksPage({ picks, onBack }: { picks: FavoritePicks; onBac
   const desktop = useIsDesktop();
   const fills = useMemo(() => topFills(picks.cells), [picks.cells]);
   const [selected, setSelected] = useState<PickCell | null>(null);
-  const [view, setView] = useState<'grid' | 'preference'>('grid');
+  const [view, setView] = useState<'grid' | 'preference'>('preference');
   const select = (type: TypeAxisId, gen: GenAxisId) => {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
