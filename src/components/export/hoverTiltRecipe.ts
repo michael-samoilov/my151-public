@@ -75,7 +75,10 @@ export const HOVER_TILT_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-tilt';
  */
 export const DEFAULT_TILT_FACTOR = 10 / 7;
 
-/** Michael's workshop pick, September 27, with the pop kept at 1.15. */
+/**
+ * Michael's workshop pick, September 27, with the pop kept at 1.15. The
+ * glare dropped from 1 to 0.6 on October 11: Michael found it too strong.
+ */
 export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   tiltFactor: DEFAULT_TILT_FACTOR,
   tiltFactorY: DEFAULT_TILT_FACTOR,
@@ -84,7 +87,7 @@ export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   exitDelay: 420,
   shadow: true,
   shadowBlur: 25,
-  glareIntensity: 1,
+  glareIntensity: 0.6,
   glareSize: 0.5,
   glareHue: 40,
   glareMask: 'none',
@@ -183,28 +186,4 @@ export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string
     '--hover-tilt-glare-mask-composite': recipe.glareMaskComposite,
     '--hover-tilt-glare-mask-composite-webkit': MASK_COMPOSITE_WEBKIT[recipe.glareMaskComposite],
   };
-}
-
-/**
- * hover-tilt `--hover-tilt-default-shadow` at one pose.
- * Offset follows `--shadow-x/y` = `nx*2-1` toward the raised edge.
- */
-export function hoverTiltBoxShadow(
-  recipe: HoverTiltRecipe,
-  pose?: { nx: number; ny: number; opacity: number },
-): string {
-  if (!recipe.shadow || recipe.shadowBlur <= 0) return 'none';
-  const blur = Math.round(recipe.shadowBlur);
-  const nx = pose?.nx ?? 0.5;
-  const ny = pose?.ny ?? 0.5;
-  const opacity = pose?.opacity ?? 0;
-  const sx = nx * 2 - 1;
-  const sy = ny * 2 - 1;
-  const o = opacity * 0.125;
-  const layer = (b: number) => {
-    const x = sx * b;
-    const y = (sy * b) / 2 + b / 4;
-    return `${x.toFixed(1)}px ${y.toFixed(1)}px ${(b / 2).toFixed(1)}px ${(-b * 0.25).toFixed(1)}px rgb(0 0 0 / ${o.toFixed(3)})`;
-  };
-  return `${layer(blur)}, ${layer(blur / 2)}`;
 }

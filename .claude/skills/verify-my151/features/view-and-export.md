@@ -32,22 +32,31 @@ display options, exportable as a PNG.
   selector.
 - The camera sits `PREVIEW_PERSPECTIVE_RATIO` (1.75) times the card's long
   edge away (`src/components/export/exportPreviewFit.ts`), so a big desktop
-  card leans as little as a phone card.
+  card leans as little as a phone card. The card's size still comes from a
+  fit for the fixed 600 px camera the preview had before October 10
+  (`previewSizeCamera`), so a desktop card stays that size.
+- The drop shadow is the PNG's own shape, blurred: two
+  `[data-export-shadow-layer]` elements in the lift, moved by transform. It
+  follows the concave kinks between joined panes, which a box-shadow left
+  as light wedges. The lift has no box-shadow.
 - `/foil-workshop` (off in production) drives the same `ExportPreview3D` card
   with Shine (the V shine), Rainbow, Point light, Iridescence, Max tilt, Glare
   (intensity and size), and Shadow controls. Max tilt sets the hover tilt, the
   auto-tilt, and the cap together. It restores only those dials from its saved
   recipe or link; everything else, the 1.15 pop included, is the in-app
-  default. Compare buttons switch between the live site's look and the new
-  one with or without the rainbow. Three dials, kept in the link only, set
-  the camera distance (or the live site's fixed 600 px), the rainbow blend
-  (`soft-light` or the live site's `hue`), and the glare's dark edge.
+  default. Compare buttons switch between the live site's look and the
+  proposal under review. Dials kept in the link only set the camera distance
+  (or a fixed 600 px), the rainbow blend (`soft-light` or `hue`), the glare's
+  dark edge, the card size (a multiple of the pre-October-10 size, or as big
+  as the tilt allows), and the shine engine (`paint` repaints the V shine's
+  backgrounds every frame; `move` slides its band layers with transforms).
   Samples: Dex, Dex of all 151, Dex of 151 with stats, league, league
   filled, league with story and rematch teams, trainer card, favorites
   chart, and a test card of color swatches.
 - Defaults (Michael's workshop pick, September 27): shine 0.7, rainbow 0.2,
   point light 1, iridescence 0.1, max and auto tilt 10 degrees, tilt factor
-  10/7, glare 1 at size 0.5, shadow blur 25, exit delay 420 ms, pop 1.15.
+  10/7, glare 0.6 at size 0.5 (1 until October 11), shadow blur 25, exit
+  delay 420 ms, pop 1.15.
 - A survey can follow a save. Its highlight sprite is integer-scaled at 1× or
   more.
 
@@ -93,7 +102,7 @@ It also runs these checks:
 - `dex-export:tilt-magnitude`: the hover tilt peaks above 2 degrees and at
   most 10.2 degrees.
 - `dex-export:dynamic-shadow`: the shadow moves to the pointer's side, and only
-  the lift layer paints it.
+  the lift's two shape-shadow layers paint it.
 - `dex-export:tilt-corner-margin`: the tilted card keeps 16 px or more from the
   layer and viewport edges.
 - `dex-export:tilt-on-painted`: a pointer on the painted card, outside its rest

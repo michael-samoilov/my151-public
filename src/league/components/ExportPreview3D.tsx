@@ -6,6 +6,7 @@ import {
   clampTiltToBox,
   fitCardInPreviewBox,
   previewPerspectivePx,
+  previewSizeCamera,
   PREVIEW_REST_PAD,
   PREVIEW_SHADOW_PAD_PX,
   type PreviewCamera,
@@ -97,6 +98,17 @@ function tiltAxes(tilt: HoverTiltRecipe | undefined, maxTilt: number): HoverTilt
   };
 }
 
+function HoloShineParts() {
+  return (
+    <>
+      <span className="export-foil-holo-part export-foil-holo-radial" />
+      <span className="export-foil-holo-part export-foil-holo-bands" />
+      <span className="export-foil-holo-part export-foil-holo-pillars" />
+      <span className="export-foil-holo-part export-foil-holo-grain" />
+    </>
+  );
+}
+
 /**
  * Live export preview. Pointer tracking, springs, rest, and CSS vars
  * copy hover-tilt (https://github.com/simeydotme/hover-tilt).
@@ -112,6 +124,8 @@ export function ExportPreview3D({
   maskContext = DEFAULT_MASK_CONTEXT,
   darkCard = false,
   camera = previewPerspectivePx,
+  size = 1,
+  shine = 'paint',
 }: {
   src: string | null;
   alt: string;
@@ -125,6 +139,18 @@ export function ExportPreview3D({
   darkCard?: boolean;
   /** Camera distance for a card size. The workshop compares others. */
   camera?: PreviewCamera;
+  /**
+   * A multiple of the card size `previewSizeCamera` gives, never past the
+   * room the tilt leaves. `room` fills that room, as on October 10.
+   */
+  size?: number | 'room';
+  /**
+   * `paint` moves the V shine's backgrounds, which repaints the shine on
+   * every frame. `move`, in the workshop only, slides its band layers with
+   * transforms: half the raster work in Chrome, but more layers to blend,
+   * so only a real GPU shows whether it is smoother.
+   */
+  shine?: 'move' | 'paint';
 }) {
   const t = useT();
   const stageRef = useRef<HTMLDivElement>(null);
@@ -153,6 +179,7 @@ export function ExportPreview3D({
   const recipeRef = useRef(recipe);
   const tiltRef = useRef(tilt);
   const cameraRef = useRef(camera);
+  const sizeRef = useRef(size);
   const measureRef = useRef<() => void>(() => {});
   const stageSizeRef = useRef({ w: 0, h: 0 });
   const cardMaxRef = useRef({ w: 0, h: 0 });
@@ -404,19 +431,24 @@ export function ExportPreview3D({
       const img = imgRef.current;
       const aspect = img && img.naturalWidth > 0 ? img.naturalWidth / img.naturalHeight : 1;
       // Room for the widest tilt a pointer or auto-tilt can reach. A card
-      // sized for less leans on clampTiltToBox, which jumps: the projected
+      // sized for more leans on clampTiltToBox, which jumps: the projected
       // card is tallest mid-tilt, so fitting is not monotonic in the angle.
-      const size = fitCardInPreviewBox({
-        boxWidth: r.width,
-        boxHeight: r.height,
-        aspect,
-        tiltDeg: Math.max(recipeRef.current.idleTilt, recipeRef.current.maxTilt),
-        pad: PREVIEW_REST_PAD,
-        camera: cameraRef.current,
-      });
+      const fitFor = (fitCamera: PreviewCamera) =>
+        fitCardInPreviewBox({
+          boxWidth: r.width,
+          boxHeight: r.height,
+          aspect,
+          tiltDeg: Math.max(recipeRef.current.idleTilt, recipeRef.current.maxTilt),
+          pad: PREVIEW_REST_PAD,
+          camera: fitCamera,
+        });
+      const room = fitFor(cameraRef.current);
+      const want = sizeRef.current;
+      const scale =
+        want === 'room' ? 1 : Math.min(1, (fitFor(previewSizeCamera).width * want) / Math.max(1, room.width));
       const pop = Math.max(1, tiltRef.current?.scaleFactor ?? 1);
-      const restW = size.width / pop;
-      const restH = size.height / pop;
+      const restW = (room.width * scale) / pop;
+      const restH = (room.height * scale) / pop;
       cardMaxRef.current = { w: restW, h: restH };
       setCardMax((prev) => {
         if (Math.abs(prev.w - restW) < 1 && Math.abs(prev.h - restH) < 1) return prev;
@@ -558,6 +590,7 @@ export function ExportPreview3D({
     recipeRef.current = recipe;
     tiltRef.current = tilt;
     cameraRef.current = camera;
+    sizeRef.current = size;
     const el = cardRef.current;
     if (!el) return;
     const vars = foilRecipeCssVars(recipe);
@@ -569,7 +602,8 @@ export function ExportPreview3D({
     for (const [key, value] of Object.entries(tiltVars)) {
       el.style.setProperty(key, value);
     }
-    el.style.setProperty('--export-shape-mask', foilMaskCss(activeSrc ?? ''));
+    // On the hit, so the card and its shape shadow both inherit the outline.
+    hitRef.current?.style.setProperty('--export-shape-mask', foilMaskCss(activeSrc ?? ''));
     el.style.setProperty('--foil-holo-blend', FOIL_HOLO_BLEND);
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
     el.dataset.hoverTilt = '1';
@@ -591,12 +625,12 @@ export function ExportPreview3D({
     return () => {
       cancelled = true;
     };
-  }, [activeSrc, camera, idleAt, maskContext, paint, recipe, tilt]);
+  }, [activeSrc, camera, idleAt, maskContext, paint, recipe, size, tilt]);
 
-  // The fit reserves room for the tilt, so a new extent or camera refits the card.
+  // The fit reserves room for the tilt, so a new extent, camera, or size refits the card.
   useLayoutEffect(() => {
     measureRef.current();
-  }, [camera, recipe.idleTilt, recipe.maxTilt]);
+  }, [camera, recipe.idleTilt, recipe.maxTilt, size]);
 
   useLayoutEffect(() => {
     const el = cardRef.current;
@@ -828,6 +862,8 @@ export function ExportPreview3D({
           data-pointer-box="rest"
         >
           <div className="export-foil-lift" data-export-foil-lift>
+          <div className="export-foil-shadow export-foil-shadow-far" aria-hidden data-export-shadow-layer="far" />
+          <div className="export-foil-shadow export-foil-shadow-near" aria-hidden data-export-shadow-layer="near" />
           <div
             ref={cardRef}
             className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden bg-transparent select-none"
@@ -869,7 +905,17 @@ export function ExportPreview3D({
                 className={cn('export-foil-layer', foilLayerClassName(id))}
                 aria-hidden
                 data-foil-layer={id}
-              />
+                data-holo-engine={id === 'holographic' ? shine : undefined}
+              >
+                {id === 'holographic' && shine === 'move' ? (
+                  <>
+                    <HoloShineParts />
+                    <span className="export-foil-holo-cross">
+                      <HoloShineParts />
+                    </span>
+                  </>
+                ) : null}
+              </div>
             ))}
           </div>
           </div>

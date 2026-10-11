@@ -167,40 +167,57 @@ function readStoredTilt(): HoverTiltRecipe {
 }
 
 /**
- * Dials for the October 9 proposals, read against the live site's look:
- * the camera distance, the rainbow and iridescence blend, and the glare's
- * dark edge. They live in the URL only, so a shared link shows the same.
+ * Dials for the export proposals, read against the live site's look: the
+ * camera distance, the rainbow and iridescence blend, the glare's dark edge
+ * (October 9), and the card size and shine engine (October 11). They live
+ * in the URL only, so a shared link shows the same.
  */
 type RainbowBlend = 'soft-light' | 'hue';
 
 type Proposal = {
-  /** Camera distance as a multiple of the card's long edge, or the live site's fixed 600 px. */
+  /** Camera distance as a multiple of the card's long edge, or a fixed 600 px. */
   camera: number | 'live';
   blend: RainbowBlend;
   /** 0 keeps the glare light only; 1 is hover-tilt's dark far stop. */
   glareDark: number;
+  /** A multiple of the pre-October-10 size, or `room`: as big as the tilt allows. */
+  size: number | 'room';
+  shine: 'move' | 'paint';
 };
 
 const LIVE_CAMERA_PX = 600;
 
-const NEW_PROPOSAL: Proposal = { camera: PREVIEW_PERSPECTIVE_RATIO, blend: 'soft-light', glareDark: 0 };
-const LIVE_PROPOSAL: Proposal = { camera: 'live', blend: 'hue', glareDark: 1 };
+const NEW_PROPOSAL: Proposal = {
+  camera: PREVIEW_PERSPECTIVE_RATIO,
+  blend: 'soft-light',
+  glareDark: 0,
+  size: 1,
+  shine: 'paint',
+};
+/** The live site since October 10. */
+const LIVE_PROPOSAL: Proposal = { ...NEW_PROPOSAL, size: 'room' };
+const NEW_GLARE = DEFAULT_HOVER_TILT_RECIPE.glareIntensity;
+const LIVE_GLARE = 1;
 
 function readProposal(): Proposal {
   const params = new URLSearchParams(window.location.search);
   const cam = params.get('cam');
   const ratio = Number(cam);
   const dark = Number(params.get('dark'));
+  const size = params.get('size');
   return {
     camera: cam === 'live' ? 'live' : cam && Number.isFinite(ratio) ? Math.min(4, Math.max(0.5, ratio)) : NEW_PROPOSAL.camera,
     blend: params.get('blend') === 'hue' ? 'hue' : 'soft-light',
     glareDark: params.has('dark') && Number.isFinite(dark) ? Math.min(1, Math.max(0, dark)) : NEW_PROPOSAL.glareDark,
+    size: size === 'room' ? 'room' : size && Number.isFinite(Number(size)) ? Math.min(1.3, Math.max(0.6, Number(size))) : NEW_PROPOSAL.size,
+    shine: params.get('shine') === 'move' ? 'move' : 'paint',
   };
 }
 
 function proposalSearch(p: Proposal): string {
   const cam = p.camera === 'live' ? 'live' : p.camera.toFixed(2);
-  return `cam=${cam}&blend=${p.blend}&dark=${p.glareDark.toFixed(2)}`;
+  const size = p.size === 'room' ? 'room' : p.size.toFixed(2);
+  return `cam=${cam}&blend=${p.blend}&dark=${p.glareDark.toFixed(2)}&size=${size}&shine=${p.shine}`;
 }
 
 function proposalCamera(camera: Proposal['camera']): PreviewCamera {
@@ -257,19 +274,14 @@ export function FoilWorkshopPage() {
     persistWorkshop(recipe, tilt, sample, proposal);
   }, [proposal, recipe, sample, tilt]);
 
-  /** Switch to a look in one tap: the three dials, plus the rainbow and iridescence switches. */
-  const applyLook = (next: Proposal, rainbowOn: boolean) => {
+  /** Switch to a look in one tap: the proposal dials and the glare strength. */
+  const applyLook = (next: Proposal, glareIntensity: number) => {
     setProposal(next);
-    setRecipe(withFoilLayer(withFoilLayer(recipe, 'holoRainbow', { on: rainbowOn }), 'iridescence', { on: rainbowOn }));
+    setTilt({ ...tilt, glareIntensity });
   };
-  const look =
-    proposal.camera === 'live' && proposal.blend === 'hue' && proposal.glareDark === 1 && rainbow.on
-      ? 'live'
-      : proposal.camera === NEW_PROPOSAL.camera && proposal.blend === 'soft-light' && proposal.glareDark === 0
-        ? rainbow.on
-          ? 'new-rainbow'
-          : 'new-plain'
-        : null;
+  const sameLook = (a: Proposal, glare: number) =>
+    JSON.stringify(a) === JSON.stringify(proposal) && Math.abs(tilt.glareIntensity - glare) < 0.005;
+  const look = sameLook(LIVE_PROPOSAL, LIVE_GLARE) ? 'live' : sameLook(NEW_PROPOSAL, NEW_GLARE) ? 'new' : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -353,6 +365,8 @@ export function FoilWorkshopPage() {
             tilt={tilt}
             maskContext={maskContext}
             camera={camera}
+            size={proposal.size}
+            shine={proposal.shine}
           />
         </div>
       </section>
@@ -404,20 +418,19 @@ export function FoilWorkshopPage() {
             <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
               Compare
             </legend>
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-2 gap-1">
               {(
                 [
-                  { id: 'live', label: 'Live site', next: LIVE_PROPOSAL, rainbowOn: true },
-                  { id: 'new-rainbow', label: 'New, rainbow', next: NEW_PROPOSAL, rainbowOn: true },
-                  { id: 'new-plain', label: 'New, no rainbow', next: NEW_PROPOSAL, rainbowOn: false },
+                  { id: 'live', label: 'Live site', next: LIVE_PROPOSAL, glare: LIVE_GLARE },
+                  { id: 'new', label: 'New', next: NEW_PROPOSAL, glare: NEW_GLARE },
                 ] as const
-              ).map(({ id, label, next, rainbowOn }) => (
+              ).map(({ id, label, next, glare }) => (
                 <button
                   key={id}
                   type="button"
                   data-workshop-look={id}
                   aria-pressed={look === id}
-                  onClick={() => applyLook(next, rainbowOn)}
+                  onClick={() => applyLook(next, glare)}
                   className={`rounded-md px-1 py-2 text-center text-[0.7rem] leading-tight ${
                     look === id ? 'bg-zinc-100 font-medium text-zinc-950' : 'bg-zinc-800 text-zinc-200'
                   }`}
@@ -427,8 +440,55 @@ export function FoilWorkshopPage() {
               ))}
             </div>
             <p className="mt-1 text-[0.65rem] leading-snug text-zinc-500">
-              New: the camera scales with the card, the rainbow blends with soft light, and the glare has no dark edge.
+              New: the card is its size from before October 10, and the glare is 0.6. Both show the new shadow,
+              which follows the card&apos;s shape. Try the shine engine switch on your own computer: only a real GPU
+              shows which one is smoother.
             </p>
+            <label className="mt-2 flex items-center gap-2 text-[0.7rem] text-zinc-300">
+              <input
+                type="checkbox"
+                checked={proposal.size === 'room'}
+                data-workshop-size-room
+                onChange={(e) => setProposal({ ...proposal, size: e.target.checked ? 'room' : 1 })}
+              />
+              Live site size (as big as the tilt allows)
+            </label>
+            {proposal.size !== 'room' && (
+              <Slider
+                label="Size (times the size before October 10)"
+                min={0.6}
+                max={1.3}
+                step={0.05}
+                value={proposal.size}
+                suffix="×"
+                testId="cardSize"
+                onChange={(size) => setProposal({ ...proposal, size })}
+              />
+            )}
+            <div className="mt-2 text-[0.7rem] text-zinc-400">
+              <span>Shine engine</span>
+              <div className="mt-1 grid grid-cols-2 gap-1">
+                {(
+                  [
+                    { id: 'paint', label: 'Repaints (live site)' },
+                    { id: 'move', label: 'Moves (try it)' },
+                  ] as const
+                ).map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    data-workshop-shine={id}
+                    aria-pressed={proposal.shine === id}
+                    onClick={() => setProposal({ ...proposal, shine: id })}
+                    className={`rounded-md px-1 py-1.5 text-center leading-tight ${
+                      proposal.shine === id ? 'bg-zinc-100 font-medium text-zinc-950' : 'bg-zinc-800 text-zinc-200'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </fieldset>
 
           <fieldset>
@@ -504,7 +564,7 @@ export function FoilWorkshopPage() {
                 {(
                   [
                     { id: 'soft-light', label: 'Soft light (new)' },
-                    { id: 'hue', label: 'Hue (live site)' },
+                    { id: 'hue', label: 'Hue (before October 10)' },
                   ] as const
                 ).map(({ id, label }) => (
                   <button
@@ -562,7 +622,7 @@ export function FoilWorkshopPage() {
                   setProposal({ ...proposal, camera: e.target.checked ? 'live' : NEW_PROPOSAL.camera })
                 }
               />
-              Live site camera (fixed {LIVE_CAMERA_PX} px)
+              Fixed {LIVE_CAMERA_PX} px camera (before October 10)
             </label>
             {proposal.camera !== 'live' && (
               <Slider
@@ -601,7 +661,7 @@ export function FoilWorkshopPage() {
               onChange={(glareSize) => setTilt({ ...tilt, glareSize })}
             />
             <Slider
-              label="Dark edge (live site 1)"
+              label="Dark edge (1 before October 10)"
               min={0}
               max={1}
               step={0.05}
