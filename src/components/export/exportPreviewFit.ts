@@ -14,6 +14,14 @@ export type PreviewCamera = (width: number, height: number) => number;
 
 export const previewPerspectivePx: PreviewCamera = (width, height) =>
   PREVIEW_PERSPECTIVE_RATIO * Math.max(1, width, height);
+
+/**
+ * The card's size comes from a fit for this fixed camera, the one the
+ * preview had before October 10. Its strong lean on a big card kept the
+ * desktop card at the size Michael wants; the look still uses
+ * `previewPerspectivePx`, whose milder lean then leaves the card spare room.
+ */
+export const previewSizeCamera: PreviewCamera = () => 600;
 export const PREVIEW_REST_PAD = 8;
 /** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;

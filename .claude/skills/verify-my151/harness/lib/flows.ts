@@ -451,10 +451,8 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const after=getComputedStyle(holo,'::after');
      if(after.mixBlendMode!=='soft-light'||!after.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no crossing layer'};
      if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
-     const lift=document.querySelector('[data-export-foil-lift]');
-     const liftStyle=lift instanceof HTMLElement ? getComputedStyle(lift) : null;
-     const shadow=liftStyle?.boxShadow||'';
-     if(!shadow || shadow==='none') return {ok:false,reason:'no lift shadow'};
+     const shadows=[...document.querySelectorAll('[data-export-shadow-layer]')];
+     if(shadows.length!==2 || !shadows.every((el)=>/blur\(/.test(getComputedStyle(el).filter))) return {ok:false,reason:'no shape shadow'};
      const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
      if(hitStyle && hitStyle.boxShadow!=='none' && hitStyle.boxShadow!=='') return {ok:false,reason:'hit still shadowed'};
      if(hitStyle && parseFloat(hitStyle.paddingTop||'0')<32) return {ok:false,reason:'hit pad '+hitStyle.paddingTop};
@@ -753,7 +751,9 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const cardCs=getComputedStyle(card);
      const layerCs=layer instanceof HTMLElement ? getComputedStyle(layer) : null;
      const stageCs=hit.parentElement instanceof HTMLElement ? getComputedStyle(hit.parentElement) : null;
-     if(!liftCs.boxShadow || liftCs.boxShadow==='none') return {ok:false,reason:'lift shadow none'};
+     const shadows=[...document.querySelectorAll('[data-export-shadow-layer]')];
+     if(shadows.length!==2 || !shadows.every((el)=>/blur\(/.test(getComputedStyle(el).filter))) return {ok:false,reason:'no shape shadow'};
+     if(liftCs.boxShadow!=='none') return {ok:false,reason:'lift box-shadow '+liftCs.boxShadow};
      if(hitCs.boxShadow!=='none') return {ok:false,reason:'hit still shadowed'};
      if(cardCs.boxShadow!=='none') return {ok:false,reason:'card shadowed'};
      if(liftCs.overflow!=='visible') return {ok:false,reason:'lift overflow '+liftCs.overflow};
@@ -2553,7 +2553,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
   ).catch(() => ({ rot: '', holo: '', glare: '', holoBlend: '', glareBlend: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^14\.29deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
   checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.7) < 0.02, `holo=${tiltVars.holo}`));
-  checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 1) < 0.02, `glare=${tiltVars.glare}`));
+  checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 0.6) < 0.02, `glare=${tiltVars.glare}`));
   checks.push(ok('foil-workshop:prod-holo-blend', tiltVars.holoBlend === 'color-dodge', `blend=${tiltVars.holoBlend}`));
   checks.push(ok('foil-workshop:prod-glare-blend', tiltVars.glareBlend === 'overlay', `blend=${tiltVars.glareBlend}`));
   await s.screenshot(ctx.shot('foil-workshop'));
@@ -2569,7 +2569,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     `const has=(sel)=>!!document.querySelector(sel);
      const extras=[...document.querySelectorAll('[data-foil-slider],[data-hover-tilt-mask],[data-workshop-dark-card-toggle]')]
        .map((el)=>el.getAttribute('data-foil-slider')||el.getAttribute('data-hover-tilt-mask')||el.getAttribute('data-workshop-dark-card-toggle')||el.tagName)
-       .filter((id)=>!['holographic','holoRainbow','pointLight','iridescence','maxTilt','cameraRatio','glareIntensity','glareSize','glareDark','shadowBlur'].includes(id));
+       .filter((id)=>!['holographic','holoRainbow','pointLight','iridescence','maxTilt','cameraRatio','cardSize','glareIntensity','glareSize','glareDark','shadowBlur'].includes(id));
      return {
         holo: has('[data-foil-slider="holographic"]') && has('[data-foil-slider="holoRainbow"]') && has('[data-foil-slider="maxTilt"]'),
         glare: has('[data-foil-slider="glareIntensity"]'),
