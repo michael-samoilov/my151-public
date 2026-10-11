@@ -35,7 +35,8 @@ export interface MinuteActivityAck {
 export interface StoredMinuteActivityBatch extends MinuteActivityBatch {
   cid: string;
   tool: MinuteActivityTool;
-  receivedAt: number;
+  /** Optional reception metadata; immutable stored facts need only capture timestamps. */
+  receivedAt?: number;
 }
 
 const DAY_MS = 86_400_000;

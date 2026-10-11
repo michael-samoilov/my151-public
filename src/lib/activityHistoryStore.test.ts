@@ -39,8 +39,24 @@ describe('bounded history reads',()=>{
  });
  it('marks pagination incomplete rather than returning an unlimited daily hash',async()=>{
   const pairs=Array.from({length:2001},()=>['field','invalid']).flat();
-  const db={eval:async()=>[],hgetall:async()=>null,hscan:async()=>[1,pairs] as [number,unknown[]]};
+  const db={eval:async()=>[],hgetall:async()=>null,hscan:async()=>[0,pairs] as [number,unknown[]]};
   const result=await loadMinuteActivityHistory(now,now+1000,{db});
   expect(result).toMatchObject({truncated:true,cursorDay:'2026-10-11'});
+  expect(result.nextCursor).toBeTruthy();
+  const resumed=await loadMinuteActivityHistory(now,now+1000,{db,cursor:result.nextCursor});
+  expect(resumed.truncated).toBe(false);
+ });
+});
+
+describe('budget guardrails',()=>{
+ it('cannot enlarge the designed allowance through environment overrides',async()=>{
+  const db={eval:async()=>[],hgetall:async()=>null,hscan:async()=>[0,[]] as [number,unknown[]]};
+  const budget=await readMinuteActivityBudget(now,{db,env:{MINUTE_ACTIVITY_MONTHLY_UNITS:'9000000',MINUTE_ACTIVITY_MONTHLY_BYTES:'999999999'}});
+  expect(budget).toMatchObject({limitUnits:2000000,limitBytes:16777216});
+ });
+ it('keeps a stopped month paused and starts a fresh allowance next month',async()=>{
+  const db={eval:async()=>[],hgetall:async(key:string)=>key.endsWith('2026-10')?{paused:'1',units:'100',bytes:'0'}:null,hscan:async()=>[0,[]] as [number,unknown[]]};
+  expect(await readMinuteActivityBudget(now,{db})).toMatchObject({status:'paused',pausedUntil:Date.UTC(2026,10,1)});
+  expect(await readMinuteActivityBudget(Date.UTC(2026,10,1),{db})).toMatchObject({status:'collecting',usedUnits:0});
  });
 });
