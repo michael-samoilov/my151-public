@@ -16,6 +16,7 @@ import { pickerRowInsetPx, pickerSpriteCssPx } from '@/favorites/model/pickerSpr
 import { prettyRows } from '@/favorites/model/prettyWrap';
 import type { FavoritePicks } from '../../../api/_favoriteAggregate';
 import { PicksPage } from './PicksDetailPage';
+import { Seg } from './ui';
 import { rankCell, topFills, type PickCell } from './pickerPicks';
 
 /** The selector's columns, as in the app. */
@@ -138,6 +139,107 @@ function PickSelector({
   );
 }
 
+type Preference = NonNullable<FavoritePicks['preference']>;
+type PreferenceEntry = Preference['entries'][number];
+const compactCount = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const countLabel = (count: number, unit: string) => `${compactCount.format(count)} ${unit}${count === 1 ? '' : 's'}`;
+
+function PreferenceCaption({ entry, available }: { entry: PreferenceEntry; available: boolean }) {
+  const score = available && entry.evidencePicks > 0 && entry.score != null && Number.isFinite(entry.score) && entry.score > 0
+    ? entry.score : null;
+  const strength = score == null ? '—' : `${score < 0.1 ? '<0.1' : score >= 1000 ? compactCount.format(score) : score.toFixed(1)}×`;
+  const title = `${score == null ? 'Preference strength unavailable' : `${strength} preference strength`} · ${entry.picks} picks · ${entry.charts} charts`;
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-0.5 tabular-nums" data-preference-id={entry.id} title={title}>
+      <span className="max-w-full whitespace-nowrap text-[0.625rem] font-semibold leading-none" data-preference-score={score ?? undefined}>{strength}</span>
+      <span className="max-w-full whitespace-nowrap text-[0.5rem] leading-none text-muted-foreground">{countLabel(entry.picks, 'pick')}</span>
+      <span className="max-w-full whitespace-nowrap text-[0.5rem] leading-none text-muted-foreground">{countLabel(entry.charts, 'chart')}</span>
+    </div>
+  );
+}
+
+function PreferenceRanking({ preference }: { preference: Preference | undefined }) {
+  const viewportPx = useLayoutViewportCssPx();
+  const spritePx = pickerSpriteCssPx(viewportPx);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(Math.max(1, viewportPx - 32));
+  useLayoutEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const measure = () => setWidth(host.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, []);
+  const available = Boolean(preference?.converged && preference.choices > 0);
+  const ranked = useMemo(() => {
+    const entries = (preference?.entries ?? []).filter((entry) => entry.picks > 0);
+    if (!available) entries.sort((a, b) => b.picks - a.picks || a.id - b.id);
+    return entries.flatMap((entry) => {
+      const mon = getPickerMon(entry.id);
+      return mon ? [{ entry, mon }] : [];
+    });
+  }, [preference, available]);
+  const entries = useMemo(() => new Map(ranked.map(({ entry }) => [entry.id, entry])), [ranked]);
+  const mons = useMemo(() => ranked.map(({ mon }) => mon), [ranked]);
+  // PrettySpriteGrid keeps the selector's six-column cap. Fit the actual
+  // page width without changing its viewport-sized sprites.
+  const maxCols = Math.max(1, Math.min(MAX_COLS, Math.floor(width / spritePx)));
+
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto pb-4" data-testid="admin-picker-preference">
+      <div className="mb-3 text-xs leading-snug text-muted-foreground">
+        {!preference ? (
+          <p>Preference strength is unavailable for this data.</p>
+        ) : !preference.converged ? (
+          <p>The estimate did not settle, so strength numbers are unavailable. Raw picks and chart counts remain below.</p>
+        ) : preference.choices === 0 ? (
+          <p>No filled cells offered a comparison. Raw picks and chart counts remain below.</p>
+        ) : (
+          <p>{preference.choices} comparison choices across {preference.charts} charts. Only Pokémon picked at least once appear below.</p>
+        )}
+        {preference && preference.components > 1 && (
+          <p className="mt-2 font-semibold text-foreground" role="note">
+            These choices form {preference.components} separate groups. Comparisons between these groups depend on smoothing.
+          </p>
+        )}
+        <details className="mt-2">
+          <summary className="cursor-pointer font-semibold text-foreground">What does the number mean?</summary>
+          <div className="mt-2 flex flex-col gap-2">
+            <p>Think of the scores as weights. A menu with scores of 2×, 1×, and 1× predicts about 50%, 25%, and 25% of the choices.</p>
+            <p>Add the scores of the Pokémon in a menu. Each Pokémon's predicted share is its score divided by that total.</p>
+            <p>With only two Pokémon scoring 2× and 1×, the model predicts two selections of the first for every one of the second: about 67% versus 33%.</p>
+            <p>1× sets the scale. The average score across all Pokémon offered in filled cells is 1×, including those never picked. If all were equally preferred, every score would be 1×.</p>
+            <p>The model learns these weights from filled cells: who was selected and which alternatives were passed over. It fits the whole set of choices, rather than dividing a Pokémon's picks by how often it appeared.</p>
+            <p>It is not a pick percentage.</p>
+            <p>Each chart contributes one current snapshot. Blank cells and cells with only one option provide no comparison evidence.</p>
+            <p>Favorite pointer options are reconstructed from the current chart. These are not historical menus from when a pick was made.</p>
+            <p>Repeated choices from the same browser are not independent people. This describes recorded choices, not the whole population.</p>
+            <p>Sparse estimates are pulled toward neutral strength. A dash means there is no usable strength estimate; raw picks and chart counts still appear.</p>
+          </div>
+        </details>
+      </div>
+      <div ref={hostRef} className="min-w-0">
+        {mons.length > 0 ? (
+          <PrettySpriteGrid
+            mons={mons}
+            maxCols={maxCols}
+            spritePx={spritePx}
+            onPick={() => {}}
+            showIcons={false}
+            fitToHeight={false}
+            caption={(mon) => <PreferenceCaption entry={entries.get(mon.id)!} available={available} />}
+            captionPx={36}
+          />
+        ) : preference ? (
+          <p className="text-xs text-muted-foreground">No picks yet.</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /** Picker's Most picked page: the app's wide grid, each cell showing its
  *  most-picked Pokémon across the charts active in the range. A cell opens
  *  the selector with every Pokémon's pick count. */
@@ -145,6 +247,7 @@ export function PickerPicksPage({ picks, onBack }: { picks: FavoritePicks; onBac
   const desktop = useIsDesktop();
   const fills = useMemo(() => topFills(picks.cells), [picks.cells]);
   const [selected, setSelected] = useState<PickCell | null>(null);
+  const [view, setView] = useState<'grid' | 'preference'>('grid');
   const select = (type: TypeAxisId, gen: GenAxisId) => {
     const kind = kindFor(type, gen);
     if (kind === 'disabled' || kind === 'null') return;
@@ -163,18 +266,35 @@ export function PickerPicksPage({ picks, onBack }: { picks: FavoritePicks; onBac
 
   return (
     <TooltipProvider>
-      <PicksPage n={picks.charts} unit="charts" onBack={onBack} fill>
-        <div className="min-h-0 flex-1" data-testid="admin-picker-picks">
-          <FavoritesGrid
-            fills={fills}
-            resolve={getPickerMon}
-            selected={selected}
-            onSelect={select}
-            desktop={desktop}
-            fitFrame
-            pane={desktop ? selector : null}
-          />
-        </div>
+      <PicksPage
+        n={picks.charts}
+        unit="charts"
+        onBack={onBack}
+        fill
+        controls={
+          <div className="mt-2">
+            <Seg
+              ariaLabel="Picker picks view"
+              options={[{ key: 'grid', label: 'Grid' }, { key: 'preference', label: 'Preference strength' }]}
+              value={view}
+              onChange={(next) => { setSelected(null); setView(next); }}
+            />
+          </div>
+        }
+      >
+        {view === 'preference' ? <PreferenceRanking preference={picks.preference} /> : (
+          <div className="min-h-0 flex-1" data-testid="admin-picker-picks">
+            <FavoritesGrid
+              fills={fills}
+              resolve={getPickerMon}
+              selected={selected}
+              onSelect={select}
+              desktop={desktop}
+              fitFrame
+              pane={desktop ? selector : null}
+            />
+          </div>
+        )}
       </PicksPage>
       {desktop ? null : selector}
     </TooltipProvider>

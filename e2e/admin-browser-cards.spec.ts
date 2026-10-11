@@ -50,18 +50,21 @@ async function stub(page: Page) {
     const t0 = now - 3 * 60 * MIN;
     const t1 = now - 3 * 24 * 60 * MIN;
     const at = (base: number, a: number, b: number) => ({ start: base + a * MIN, end: base + b * MIN });
+    const attention = (spans: Span[]) => ({v: 1, coverageFrom: t0, checkpointFrom: t0, asOf: now,
+      totalMs: spans.reduce((sum, s) => sum + s.end - s.start, 0),
+      segments: spans.map((s, i) => ({id: `card-active-${i}`, ...s}))});
     const source: DashboardSource = {
       clients: {
-        'e2e-three': JSON.stringify(dexRecord('e2e-three', [at(t0, 0, 40)], [1, 4, 7])),
+        'e2e-three': JSON.stringify({...dexRecord('e2e-three', [at(t0, 0, 40)], [1, 4, 7]), attention: attention([at(t0, 0, 2), at(t0, 7, 8)])}),
         'e2e-two': JSON.stringify(dexRecord('e2e-two', [at(t1, 0, 10)], [1, 4, 7])),
         'e2e-arch': JSON.stringify(dexRecord('e2e-arch', [at(t1, 300, 310)], [25])),
       },
       archived: ['e2e-arch'],
       funnel: {},
       funnelWindow: null,
-      leagueClients: { 'e2e-three': JSON.stringify(leagueRecord('e2e-three', [at(t0, 30, 50)])) },
+      leagueClients: { 'e2e-three': JSON.stringify({...leagueRecord('e2e-three', [at(t0, 30, 50)]), attention: attention([at(t0, 1, 3)])}) },
       favoriteClients: {
-        'e2e-three': JSON.stringify(pickerRecord('e2e-three', [at(t0, 60, 75)])),
+        'e2e-three': JSON.stringify({...pickerRecord('e2e-three', [at(t0, 60, 75)]), attention: attention([at(t0, 20, 20)])}),
         'e2e-two': JSON.stringify(pickerRecord('e2e-two', [at(t1, 5, 25), at(t1, 2 * 24 * 60, 2 * 24 * 60 + 8)])),
         'e2e-one': JSON.stringify(pickerRecord('e2e-one', [at(t1, 100, 112)])),
         'e2e-arch': JSON.stringify(pickerRecord('e2e-arch', [at(t1, 305, 320)])),
@@ -94,8 +97,17 @@ test.describe('Newest browsers cards @viewport', () => {
     test(`a ${tab} card shows every tool of its browser and the merged total`, async ({ page }, testInfo) => {
       await stub(page);
       await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: tab, exact: true }).click();
+      const panel = page.locator('section').filter({has: page.getByRole('heading', {name: /^Newest browsers/})});
       const three = card(page, 'e2e-three');
       await expect(three).toBeVisible();
+      await expect(panel.getByRole('button', {name: 'Active', exact: true})).toHaveAttribute('aria-pressed', 'true');
+      await expect(three.locator('[data-metric="session"]')).toHaveText([
+        '2 sessions · 3m', '1 session · 2m', '1 session · 0m', '2 sessions · 4m',
+      ]);
+      if (tab !== 'League') {
+        await expect(card(page, 'e2e-two').locator('[data-tool="total"]')).toHaveText('— · not recorded');
+      }
+      await panel.getByRole('button', {name: 'Legacy spans', exact: true}).click();
       const progress = await chips(three, '[data-metric="dex"], [data-metric="league"], [data-metric="picker"]');
       const time = await chips(three, '[data-metric="session"]:not([data-tool="total"])');
       const total = await chips(three, '[data-metric="session"][data-tool="total"]');
@@ -183,6 +195,7 @@ test.describe('Newest browsers cards @viewport', () => {
     await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Picker', exact: true }).click();
     await page.getByRole('button', { name: 'Archive filter' }).click();
     await page.getByRole('option', { name: 'Archived' }).click();
+    await page.locator('section').filter({has: page.getByRole('heading', {name: /^Newest browsers/})}).getByRole('button', {name: 'Legacy spans', exact: true}).click();
     const arch = card(page, 'e2e-arch');
     await expect(arch.locator('[data-metric="dex"]')).toHaveText('1/151 Dex');
     await expect(arch.locator('[data-metric="session"][data-tool="total"]')).toHaveText('1 session · 20m');

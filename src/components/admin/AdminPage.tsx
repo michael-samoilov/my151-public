@@ -22,6 +22,7 @@ import { clampedN, type PlatformJoint } from '@/lib/platformStacks';
 import { filteredN, type WhoFilter } from '@/lib/whoOrigin';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById as getLeaguePokemonById } from '@/league/data/catalog';
 import { cn, displayName } from '@/lib/utils';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
@@ -71,7 +72,7 @@ import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
 import { FitNowrap } from '@/components/admin/FitNowrap';
 import { BrowserUsage, PreviewUsageScale } from '@/components/admin/PreviewUsage';
 import { UsageCard } from '@/components/admin/UsageCard';
-import { toolCells, whenShapes, widestRow, type ToolCell } from '@/components/admin/browserUsage';
+import { toolCells, totalTime, whenShapes, widestRow, type CardTime, type UsageSource, type ToolCell } from '@/components/admin/browserUsage';
 import { VirtualRows } from '@/components/admin/VirtualRows';
 import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
@@ -609,6 +610,11 @@ function dexFace(id: number): PopularFace | undefined {
   return p ? { sprite: p.sprite, alt: p.name, name: displayName(p.name) } : undefined;
 }
 
+function leagueFace(id: number): PopularFace | undefined {
+  const p = getLeaguePokemonById(id);
+  return p ? { sprite: p.sprite, alt: p.name, name: displayName(p.name) } : undefined;
+}
+
 /** Grid of small sprites with the pick-count beneath — ~9-10 per row. `face`
  *  finds a sprite by id; the Picker's ids include its own forms. */
 function PopularGrid({ rows, face = dexFace }: { rows: [string, number][]; face?: (id: number) => PopularFace | undefined }) {
@@ -910,7 +916,7 @@ function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
 function leagueLinesByChain(cards: LeagueCard[]): Map<number, number> {
   const seats = new Map<number, number>();
   for (const { b } of cards.flatMap((c) => c.l)) {
-    const chain = getPokemonById(b[0])?.evolutionChainId ?? -b[0];
+    const chain = getLeaguePokemonById(b[0])?.evolutionChainId ?? -b[0];
     seats.set(chain, (seats.get(chain) ?? 0) + 1);
   }
   return seats;
@@ -1413,7 +1419,7 @@ function UserPreviewCard({
   /** Every tool this browser used, whichever list the card is on. */
   cells: ToolCell[];
   /** The browser as a whole: sessions merged across tools, time counted once. */
-  total: { sessions: number; totalMs: number };
+  total: CardTime;
   /** A row of the Picker list. */
   pickerRow?: boolean;
   archived: boolean;
@@ -1705,6 +1711,7 @@ export function AdminPage() {
     return n;
   }, [feedbackItems]);
   // A user page fetches the shared feedback list once for its chip and chart.
+  const [summarySource, setSummarySource] = useState<UsageSource>('active');
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
   const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
@@ -2360,6 +2367,7 @@ export function AdminPage() {
                 mostBySection={data.league.picks.byType}
                 n={data.league.users}
                 unit="leagues"
+                face={leagueFace}
                 onOpen={openLeaguePicks}
               />
             )}
@@ -2402,6 +2410,12 @@ export function AdminPage() {
                     {list.length > 0 && rows.length === 0 && !loading && (
                       <p className="text-sm text-muted-foreground">No users match these filters.</p>
                     )}
+                    <div className="mb-3 space-y-2">
+                      <Seg ariaLabel="Browser summary source" options={[{key: 'active', label: 'Active'}, {key: 'legacy', label: 'Legacy spans'}]} value={summarySource} onChange={setSummarySource} />
+                      <p className="text-xs text-muted-foreground">{summarySource === 'active'
+                        ? 'Retained foreground intervals · 5-minute session gap · — = not recorded · * = partial history'
+                        : 'Legacy session spans · 30-minute session gap · includes idle between snapshots · retained history'}</p>
+                    </div>
                     <div className={PREVIEW_TABLE}>
                       <div
                         data-preview-header
@@ -2423,8 +2437,8 @@ export function AdminPage() {
                           <UserPreviewCard
                             sizer
                             rec={sizer}
-                            cells={toolCells(sizer)}
-                            total={sizer.total}
+                            cells={toolCells(sizer, summarySource)}
+                            total={totalTime(sizer, summarySource)}
                             archived={false}
                             reports={Math.max(0, ...rows.map((row) => reportsByCid.get(bareCid(row.cid)) ?? 0))}
                           />
@@ -2440,8 +2454,8 @@ export function AdminPage() {
                             return (
                               <UserPreviewCard
                                 rec={row}
-                                cells={toolCells(row)}
-                                total={row.total}
+                                cells={toolCells(row, summarySource)}
+                                total={totalTime(row, summarySource)}
                                 pickerRow={showPicker}
                                 archived={archived}
                                 reports={reportsByCid.get(bareCid(row.cid)) ?? 0}

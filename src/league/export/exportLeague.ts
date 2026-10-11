@@ -17,7 +17,7 @@
 import type { TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath, typeGlyphPath } from '@/data/type-ids';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById } from '@/league/data/catalog';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { drawExportCredit as drawCredit } from '@/lib/exportCredit';
@@ -65,6 +65,7 @@ import {
   wrapTracked,
 } from './paint';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
+import { drawGenderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
 
 export { CARD_FILENAME, HOME_FILENAME } from './exportOptions';
 
@@ -330,16 +331,18 @@ function drawShowcaseArt(
   }
 }
 
-function speciesCaps(pokemonId: number): string {
+function speciesCaption(pokemonId: number): { text: string; mark?: string } {
   const pokemon = getPokemonById(pokemonId);
-  if (!pokemon) return '';
+  if (!pokemon) return { text: '' };
   const label = pokemonLabel(pokemon.id, pokemon.name);
-  return localeUppercase(label.pending ? pokemon.name : label.name);
+  return { text: localeUppercase(label.pending ? pokemon.name : label.name),
+    mark: label.mark && /[♂♀]/u.test(label.mark) ? label.mark : undefined };
 }
 
 /** One run of a signature caption: its text and its face. */
 interface CaptionRun {
   text: string;
+  mark?: string;
   px: number;
   track: number;
   colour: string;
@@ -359,20 +362,26 @@ function headRun(text: string, colour: string, face: HeadFace): CaptionRun {
   return { text, px: face.px, track: face.track, colour };
 }
 
+function captionMarkWidth(mark: string | undefined, px: number): number {
+  if (!mark) return 0;
+  return genderSymbolWidth(mark, px * 0.8) + px * 0.15;
+}
+
 /**
  * A species name in black at the name size. A name wider than `room` shrinks
  * to `CAPTION_NAME_MIN_PX`, and past that it takes an ellipsis.
  */
 function nameRun(ctx: CanvasRenderingContext2D, pokemonId: number | null, room: number): CaptionRun {
-  const text = pokemonId === null ? '' : speciesCaps(pokemonId);
+  const { text, mark } = pokemonId === null ? { text: '' } : speciesCaption(pokemonId);
   const trackAt = (px: number) => (L.NAME_TRACK / L.NAME_PX) * px;
   let px = L.NAME_PX;
   ctx.font = font(px, 800);
-  while (px > L.CAPTION_NAME_MIN_PX && trackedWidth(ctx, text, trackAt(px)) > room) {
+  while (px > L.CAPTION_NAME_MIN_PX && trackedWidth(ctx, text, trackAt(px)) + captionMarkWidth(mark, px) > room) {
     px = Math.max(L.CAPTION_NAME_MIN_PX, px - 0.5);
     ctx.font = font(px, 800);
   }
-  return { text: ellipsizeTracked(ctx, text, room, trackAt(px)), px, track: trackAt(px), colour: FG };
+  return { text: ellipsizeTracked(ctx, text, room - captionMarkWidth(mark, px), trackAt(px)), mark,
+    px, track: trackAt(px), colour: FG };
 }
 
 /**
@@ -389,7 +398,7 @@ function layoutCaption(
 ): CaptionLine[] {
   return runs.map((run, i) => {
     ctx.font = font(run.px, 800);
-    const w = trackedWidth(ctx, run.text, run.track);
+    const w = trackedWidth(ctx, run.text, run.track) + captionMarkWidth(run.mark, run.px);
     const x = align === 'center' ? anchor - w / 2 : anchor - w;
     // Tracking follows the last letter too, as in CSS, but it is not ink.
     const ink = Math.max(0, w - run.track);
@@ -411,7 +420,15 @@ function fillCaption(ctx: CanvasRenderingContext2D, lines: CaptionLine[]): void 
   for (const line of lines) {
     ctx.font = font(line.px, 800);
     ctx.fillStyle = line.colour;
-    fillTracked(ctx, line.text, line.x, line.cy + capHeight(ctx) / 2, line.track);
+    const baseline = line.cy + capHeight(ctx) / 2;
+    fillTracked(ctx, line.text, line.x, baseline, line.track);
+    if (line.mark) {
+      const markX = line.x + trackedWidth(ctx, line.text, line.track) + line.px * 0.15;
+      ctx.save();
+      ctx.globalAlpha *= 0.7;
+      drawGenderSymbol(ctx, line.mark, markX, baseline, line.px * 0.8);
+      ctx.restore();
+    }
   }
   ctx.restore();
 }
@@ -506,7 +523,14 @@ function drawShowcase(
       ctx.font = font(L.NAME_PX, 800);
       ctx.fillStyle = FG;
       ctx.textBaseline = 'middle';
-      fillTrackedCentered(ctx, speciesCaps(id), cx, spriteCy + sprite / 2 + L.NAME_LINE / 2, L.NAME_TRACK);
+      const caption = speciesCaption(id);
+      const nameCy = spriteCy + sprite / 2 + L.NAME_LINE / 2;
+      if (caption.mark) {
+        fillCaption(ctx, layoutCaption(ctx, [{ ...caption, px: L.NAME_PX, track: L.NAME_TRACK, colour: FG }],
+          'center', cx, nameCy - L.HEAD_LINE / 2));
+      } else {
+        fillTrackedCentered(ctx, caption.text, cx, nameCy, L.NAME_TRACK);
+      }
       ctx.restore();
     }
     ctx.restore();

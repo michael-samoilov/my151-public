@@ -2,6 +2,7 @@ import { getLocale, getVersion, subscribe } from './core';
 import { DEFAULT_LOCALE, type Locale } from './config';
 import altFormSpecies from './alt-form-species.json';
 import { normalizeSearch } from './searchNormalize';
+import { genderFormOf, GENDER_MARKS } from './genderForms';
 
 /**
  * Localized Pokémon names.
@@ -208,6 +209,16 @@ export function pokemonLabel(appId: number, slug: string, formKey: number | `pic
   if (!catalog || !species) return { name: slug, mark: null, full: slug, pending: true };
   let mark: string | null = catalog.formMark[appId] ?? null;
   const descriptor = catalog.forms[formKey];
+  const gender = genderFormOf(appId, slug);
+  if (gender) {
+    mark = GENDER_MARKS[gender];
+    const name = species.replace(/[♂♀]$/u, '');
+    if (appId === 29 || appId === 32) return { name, mark, full: `${name}${mark}`, pending: false };
+    const qualifier = catalog.forms[gender === 'male' ? 678 : 10025] ?? mark;
+    const formName = descriptor && descriptor !== qualifier && descriptor !== mark
+      ? fullPokemonName(name, descriptor) : name;
+    return { name: formName, mark, full: fullPokemonName(formName, qualifier), pending: false };
+  }
   // The three Paldean Tauros share one region mark, so the tile names the
   // breed: the part of the game's form name after "Paldean Form" —
   // "Paldea-Form (Gefechtvariante)", "パルデアのすがた・コンバットしゅ",

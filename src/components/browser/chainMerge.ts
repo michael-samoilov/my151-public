@@ -1,7 +1,6 @@
 import type { EvolutionGroup } from '@/hooks/usePokemonData';
 
 /**
- * One group per evolution chain, instead of one per branch.
  *
  * `useFilteredPokemonGrouped` emits a group for every root-to-leaf path, so a
  * split chain repeats every member above the split: Cosmog arrives twice,
@@ -14,16 +13,14 @@ import type { EvolutionGroup } from '@/hooks/usePokemonData';
  * they were first walked in, root to leaf, so a baby form still leads its
  * chain (dex order would put Pichu after Raichu).
  */
-export function mergeBranchesByChain(groups: EvolutionGroup[]): EvolutionGroup[] {
-  const byChain = new Map<number, EvolutionGroup>();
+export function mergeEvolutionBranches(groups: EvolutionGroup[], groupId?: (id: number) => number): EvolutionGroup[] {
+  const byGroup = new Map<number, EvolutionGroup>();
   for (const group of groups) {
-    // `chainId` is `evolutionChainId * 10000 + leafId`; the chain is the
-    // quotient.
-    const chain = Math.floor(group.chainId / 10000);
-    const merged = byChain.get(chain);
+    const groupKey = groupId?.(group.members[0].id) ?? group.members[0].evolutionChainId;
+    const merged = byGroup.get(groupKey);
     if (!merged) {
-      byChain.set(chain, {
-        chainId: chain,
+      byGroup.set(groupKey, {
+        chainId: groupKey,
         members: [...group.members],
         matchedIds: new Set(group.matchedIds),
       });
@@ -34,5 +31,5 @@ export function mergeBranchesByChain(groups: EvolutionGroup[]): EvolutionGroup[]
     }
     for (const id of group.matchedIds) merged.matchedIds.add(id);
   }
-  return [...byChain.values()];
+  return [...byGroup.values()];
 }

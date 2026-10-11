@@ -14,7 +14,7 @@ import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useLeagueBeacon } from './hooks/useLeagueBeacon';
 import { useLeagueFunnelNudges } from './hooks/useLeagueFunnelNudges';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById, leaguePokemonDataSource } from '@/league/data/catalog';
 import { pokemonLabel, raw, useDocumentLocale, useNamesVersion, useT } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
 import { cn } from '@/lib/utils';
@@ -234,7 +234,7 @@ export function LeagueApp() {
     : browserPurpose === 'signature' ? t('league.target.ace')
     : browserPurpose === 'partner' ? t('league.target.partner')
     : slotLabel(openCard ?? 0);
-  const replacingName = replacing ? pokemonLabel(replacing.id, replacing.name).name : '';
+  const replacingName = replacing ? pokemonLabel(replacing.id, replacing.name).full : '';
   // One sentence with the subject in red, so each language puts the subject
   // where its own word order wants it.
   const sheetHeading = replacing
@@ -253,7 +253,7 @@ export function LeagueApp() {
     <BrowserStoreContext.Provider value={useLeagueBrowserStore}>
       {/* The pane header on desktop says what the sheet title says on a
           phone: the slot being filled, not the card it is on. */}
-      <PokemonBrowser pickMode="instant" labelForSection={() => target} />
+      <PokemonBrowser pickMode="instant" labelForSection={() => target} dataSource={leaguePokemonDataSource} />
     </BrowserStoreContext.Provider>
   );
 
