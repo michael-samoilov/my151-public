@@ -4,6 +4,11 @@
       "count": 1
     }
   },
+  "src/components/admin/platformIcons.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
   "src/components/analytics/DrillDownSheet.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -19,11 +24,6 @@
       "count": 1
     }
   },
-  "src/components/admin/platformIcons.tsx": {
-    "react-refresh/only-export-components": {
-      "count": 1
-    }
-  },
   "src/components/shared/GenBadge.tsx": {
     "react-refresh/only-export-components": {
       "count": 2
@@ -35,11 +35,6 @@
     }
   },
   "src/components/shared/ShapeIcon.tsx": {
-    "react-refresh/only-export-components": {
-      "count": 2
-    }
-  },
-  "src/components/ui/badge.tsx": {
     "react-refresh/only-export-components": {
       "count": 1
     }
