@@ -452,7 +452,7 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      if(after.mixBlendMode!=='soft-light'||!after.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no crossing layer'};
      if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
      const shadows=[...document.querySelectorAll('[data-export-shadow-layer]')];
-     if(shadows.length!==2 || !shadows.every((el)=>/blur\(/.test(getComputedStyle(el).filter))) return {ok:false,reason:'no shape shadow'};
+     if(shadows.length!==2 || !shadows.every((el)=>getComputedStyle(el).filter.includes('blur('))) return {ok:false,reason:'no shape shadow'};
      const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
      if(hitStyle && hitStyle.boxShadow!=='none' && hitStyle.boxShadow!=='') return {ok:false,reason:'hit still shadowed'};
      if(hitStyle && parseFloat(hitStyle.paddingTop||'0')<32) return {ok:false,reason:'hit pad '+hitStyle.paddingTop};
@@ -752,7 +752,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const layerCs=layer instanceof HTMLElement ? getComputedStyle(layer) : null;
      const stageCs=hit.parentElement instanceof HTMLElement ? getComputedStyle(hit.parentElement) : null;
      const shadows=[...document.querySelectorAll('[data-export-shadow-layer]')];
-     if(shadows.length!==2 || !shadows.every((el)=>/blur\(/.test(getComputedStyle(el).filter))) return {ok:false,reason:'no shape shadow'};
+     if(shadows.length!==2 || !shadows.every((el)=>getComputedStyle(el).filter.includes('blur('))) return {ok:false,reason:'no shape shadow'};
      if(liftCs.boxShadow!=='none') return {ok:false,reason:'lift box-shadow '+liftCs.boxShadow};
      if(hitCs.boxShadow!=='none') return {ok:false,reason:'hit still shadowed'};
      if(cardCs.boxShadow!=='none') return {ok:false,reason:'card shadowed'};
