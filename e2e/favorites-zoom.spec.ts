@@ -284,7 +284,7 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
       await touch('touchMove', x0 + 2 * step, y0 + step);
       await nextFrame(page);
     }
-    await page.waitForTimeout(250);
+    await expect.poll(async () => (await state()).opacity, {timeout: 2000}).toBe(1);
     const held = await state();
     await lift();
     await nextFrame(page);
