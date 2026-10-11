@@ -50,6 +50,21 @@ async function stub(page: Page, usage: unknown) {
 }
 
 test.describe('admin database usage', () => {
+  for (const status of ['collecting', 'paused', 'disabled'] as const) {
+    test(`minute history shows its ${status} allowance separately from the actual bill`, {tag: '@viewport'}, async ({page}, testInfo) => {
+      await stub(page, {status: 'ready', stats: STATS, activity: {
+        status, usedUnits: 40000, limitUnits: 2000000, bytes: 1048576, limitBytes: 16777216,
+        acceptedBuckets: 3500, ...(status === 'collecting' ? {} : {pausedUntil: Date.UTC(2026, 10, 1)}),
+      }});
+      const card = page.getByTestId('activity-budget');
+      await expect(card).toContainText(`Minute history · ${status}`);
+      await expect(card).toContainText('3,500 recorded minute fragments');
+      await expect(card).toContainText('40,000 / 2,000,000 operation units');
+      await expect(card).toContainText('1.0 / 16 MB');
+      if (status !== 'collecting') await expect(card).toContainText('2026-11-01 UTC');
+      await testInfo.attach('minute-history-status', {body: await card.screenshot(), contentType: 'image/png'});
+    });
+  }
   test('the Suite tab shows the month, the days, and today by command', async ({ page }) => {
     await stub(page, { status: 'ready', stats: STATS });
     const card = page.locator('section').filter({ has: page.getByTestId('usage-days') }).last();
