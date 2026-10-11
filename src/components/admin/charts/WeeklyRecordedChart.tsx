@@ -29,6 +29,5 @@ export function WeeklyRecordedChart({weeks,series}: {weeks:RecordedWeek[];series
   if (!timeline.length) return <p className="text-xs text-muted-foreground">No dated durations recorded.</p>;
   return <div>
     <div ref={ref} className="h-[160px] w-full md:h-[180px]" role="img" aria-label={series ? `Weekly recorded hours by tool: ${series.map(s=>`${s.name} ${hours(s.weeks.reduce((sum,w)=>sum+w.totalMs,0))} hours`).join('; ')}; ${timeline.length} Monday UTC weeks.` : `Weekly recorded hours: ${timeline.length} Monday UTC weeks, ${timeline.filter(w=>w.partial).length} partial weeks; total ${hours(weeks.reduce((sum,w)=>sum+w.totalMs,0))} hours.`} />
-    <p className="text-xs text-muted-foreground">Monday weeks · UTC{timeline.some(w=>w.partial)?' · * Partial week':''}</p>
   </div>;
 }

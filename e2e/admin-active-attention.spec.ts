@@ -12,7 +12,7 @@ test('active time keeps historical spans separate and shares metric/tool control
  const panel=page.locator('section').filter({has:page.getByRole('heading',{name:'Recorded time and sessions'})});
  await expect(panel.getByRole('button',{name:'Active',exact:true})).toHaveAttribute('aria-pressed','true');
  await expect(panel.getByText('0.03 recorded hours',{exact:true})).toBeVisible();
- await expect(panel.getByText(/Foreground interaction estimate/)).toBeVisible();
+ await expect(panel.getByText('Idle gaps <5 min between interactions included in session length',{exact:true})).toBeVisible();
  await panel.getByRole('button',{name:'Tools',exact:true}).click();
  await expect(panel.getByRole('img',{name:/Recorded minutes retention by tool/})).toHaveAttribute('aria-label',/Dex 1 browsers.*League 0 browsers.*Picker 0 browsers/);
  await expect(panel.getByRole('img',{name:/Weekly recorded hours by tool/})).toHaveAttribute('aria-label',/Dex 0.03 hours; League 0 hours; Picker 0 hours/);
@@ -29,7 +29,7 @@ test('active time keeps historical spans separate and shares metric/tool control
  await expect(panel.getByText('1 recorded hours',{exact:true})).toBeVisible();
  await panel.getByRole('button',{name:'Active',exact:true}).click();
  await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'League',exact:true}).click();
- await expect(panel.getByText(/Active time collection starts with new activity/)).toBeVisible();
+ await expect(panel.getByText('No time recorded.',{exact:true})).toBeVisible();
  await info.attach('active-source-values',{body:JSON.stringify({activeMs:data.attentionUsage.all.time.total,activeSessions:data.attentionUsage.all.sessions.total,legacyMs:data.recordedUsage.all.time.total}),contentType:'application/json'});
  await info.attach('active-legacy-source',{body:await panel.screenshot(),contentType:'image/png'});
 });

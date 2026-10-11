@@ -579,9 +579,7 @@ export function ActiveUsersPanel({
         <p className={`tabular-nums ${range !== '24h' && range !== '7d' ? 'sr-only' : ''}`} aria-label="Implied growth over selected range">
           Implied WoW {growthPercent(growth.weeklyPercent)} · MoM {growthPercent(growth.monthlyPercent)}
         </p>
-        <p>{growth.weeklyPercent === null ? 'Need at least two complete days with a measurable trend.'
-          : `Daily activity trend · ${growth.days} complete recorded days · ${new Date(growth.start!).toISOString().slice(0, 10)}–${new Date(growth.end! - 1).toISOString().slice(0, 10)} (UTC)`}</p>
-        {range !== '24h' && range !== '7d' && <p>Monthly activity: recorded lower bounds.</p>}
+        <p>{growth.days} complete recorded days</p>
       </div>
     </Panel>
   );

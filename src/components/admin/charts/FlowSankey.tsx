@@ -112,20 +112,28 @@ function nodeLabel(
       links.filter((l) => l.source === n.name).reduce((sum, l) => sum + l.value, 0),
       links.filter((l) => l.target === n.name).reduce((sum, l) => sum + l.value, 0),
     );
-    const chipWidth = n.percentage ? Math.max(labelMeasure(fontSize)(String(Math.round(value))), labelMeasure(Math.max(7, fontSize - 1))(rateLabel(n))) : undefined;
+    if (n.percentage) {
+      const chipWidth = Math.max(labelMeasure(fontSize)(String(Math.round(value))), labelMeasure(Math.max(7, fontSize - 1))(rateLabel(n))) + 4;
+      const lead = chipWidth + labelMeasure(fontSize)(' ');
+      return {
+        ...compactLabel('right', fontSize),
+        distance: CHIP_LABEL_DISTANCE + lead,
+        width: COMPACT_WRAP_EM.right * fontSize - lead,
+        formatter: '{b}',
+      };
+    }
     return {
       ...compactLabel('right', fontSize),
       distance: CHIP_LABEL_DISTANCE,
       formatter: (p: { name: string; value?: number }) => `{chip|${Math.round(p.value ?? 0)}} ${p.name}`,
       rich: {
         chip: {
-          backgroundColor: n.percentage ? 'transparent' : roleColor(n.role),
-          color: n.percentage ? 'transparent' : n.role === 'sink' ? '#171717' : '#ffffff',
+          backgroundColor: roleColor(n.role),
+          color: n.role === 'sink' ? '#171717' : '#ffffff',
           fontSize,
           fontWeight: 600,
           padding: [0, 2],
           textBorderWidth: 0,
-          width: chipWidth,
         },
       },
     };
