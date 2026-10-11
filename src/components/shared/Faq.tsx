@@ -1,4 +1,7 @@
-import { useT, type NoArgKey } from '@/i18n';
+import { useT } from '@/i18n';
+import { FAQ_KEYS, type FaqPage } from './faqKeys';
+
+export type { FaqPage };
 
 /**
  * The "About this tool" block under a page's footer.
@@ -6,37 +9,9 @@ import { useT, type NoArgKey } from '@/i18n';
  * The questions are the page's h2 headings and the answers are paragraphs,
  * rendered by React and collapsed by default (docs/seo/PAGE-SEO-CONTRACT.md).
  * The copy is docs/seo/LAUNCH-COPY.md, owner-approved, through the catalog
- * like every other visible string. The keys are written out rather than
- * built from the page name, so the extraction catalog can place each one.
+ * like every other visible string. The tool pages also serve the English copy
+ * in their HTML before the app loads (`scripts/static-faq.ts`).
  */
-export type FaqPage = 'hub' | 'dex' | 'league' | 'favorites';
-
-const FAQ: Record<FaqPage, [NoArgKey, NoArgKey][]> = {
-  hub: [
-    ['faq.hub.q1', 'faq.hub.a1'],
-    ['faq.hub.q2', 'faq.hub.a2'],
-    ['faq.hub.q3', 'faq.hub.a3'],
-  ],
-  dex: [
-    ['faq.dex.q1', 'faq.dex.a1'],
-    ['faq.dex.q2', 'faq.dex.a2'],
-    ['faq.dex.q3', 'faq.dex.a3'],
-    ['faq.dex.q4', 'faq.dex.a4'],
-  ],
-  league: [
-    ['faq.league.q1', 'faq.league.a1'],
-    ['faq.league.q2', 'faq.league.a2'],
-    ['faq.league.q3', 'faq.league.a3'],
-  ],
-  favorites: [
-    ['faq.favorites.q1', 'faq.favorites.a1'],
-    ['faq.favorites.q2', 'faq.favorites.a2'],
-    ['faq.favorites.q3', 'faq.favorites.a3'],
-    ['faq.favorites.q4', 'faq.favorites.a4'],
-    ['faq.favorites.q5', 'faq.favorites.a5'],
-  ],
-};
-
 export function Faq({ page, compact = false }: { page: FaqPage; compact?: boolean }) {
   const t = useT();
   return (
@@ -45,7 +20,7 @@ export function Faq({ page, compact = false }: { page: FaqPage; compact?: boolea
         {t('faq.summary')}
       </summary>
       <div className="flex flex-col gap-4 pt-2">
-        {FAQ[page].map(([q, a]) => (
+        {FAQ_KEYS[page].map(([q, a]) => (
           <section key={q}>
             <h2 className="m-0 text-[0.8125rem] font-semibold text-foreground">{t(q)}</h2>
             <p className="m-0 mt-1 text-[0.75rem] leading-relaxed text-muted-foreground">{t(a)}</p>
