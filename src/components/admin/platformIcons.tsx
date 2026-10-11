@@ -6,6 +6,7 @@ import {
   FaWindows, FaApple, FaAndroid, FaLinux, FaUbuntu,
   FaChrome, FaFirefoxBrowser, FaSafari, FaEdge, FaOpera, FaGlobe,
 } from 'react-icons/fa6';
+import { Compass, MonitorSmartphone } from 'lucide-react';
 import * as Flags from 'country-flag-icons/string/3x2';
 
 const SZ = 15;
@@ -15,7 +16,8 @@ export function DeviceIcon({ value }: { value?: string }) {
   const v = (value ?? '').toLowerCase();
   if (v.includes('mobile') || v.includes('phone')) return <FaMobileScreenButton size={SZ} />;
   if (v.includes('tablet')) return <FaTabletScreenButton size={SZ} />;
-  return <FaDesktop size={SZ} />;
+  if (v.includes('desktop') || v.includes('computer')) return <FaDesktop size={SZ} />;
+  return <MonitorSmartphone size={SZ} />;
 }
 
 /** OS icon — the platform's own logo. */
@@ -26,7 +28,7 @@ export function OsIcon({ value }: { value?: string }) {
   if (v.includes('android')) return <FaAndroid size={SZ} />;
   if (v.includes('ubuntu')) return <FaUbuntu size={SZ} />;
   if (v.includes('linux')) return <FaLinux size={SZ} />;
-  return <FaGlobe size={SZ} />;
+  return <span className="text-[0.65rem] font-semibold leading-none">OS</span>;
 }
 
 /** Browser icon — the browser's own logo. */
@@ -37,7 +39,7 @@ export function BrowserIcon({ value }: { value?: string }) {
   if (v.includes('firefox')) return <FaFirefoxBrowser size={SZ} />;
   if (v.includes('opera')) return <FaOpera size={SZ} />;
   if (v.includes('chrome') || v.includes('chromium')) return <FaChrome size={SZ} />;
-  return <FaGlobe size={SZ} />;
+  return <Compass size={SZ} />;
 }
 
 /** Real flag icon (inline SVG, no network) for an ISO 3166-1 alpha-2 code. */

@@ -107,7 +107,7 @@ export function ToolEuler({ regions, catalog }: { regions: Record<string, number
               fontWeight={700}
               fill={INK}
               stroke={HALO}
-              strokeWidth={Math.max(3, Math.round(scene.font * 0.25))}
+              strokeWidth={Math.max(1.5, scene.font * 0.12)}
               strokeLinejoin="round"
               paintOrder="stroke"
               className="tabular-nums"
@@ -127,7 +127,7 @@ export function ToolEuler({ regions, catalog }: { regions: Record<string, number
               fontWeight={700}
               fill={colorOf(l.key, catalog.findIndex((t) => t.id === l.key))}
               stroke={HALO}
-              strokeWidth={Math.max(3, Math.round(scene.font * 0.25))}
+              strokeWidth={Math.max(1.5, scene.font * 0.12)}
               strokeLinejoin="round"
               paintOrder="stroke"
               className="tabular-nums"

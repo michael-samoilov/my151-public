@@ -22,11 +22,14 @@ test('recorded usage switches metrics and preserves separate tool samples @viewp
   const panel = page.locator('section').filter({has:page.getByRole('heading',{name:'Recorded time and sessions'})});
   await panel.getByRole('button',{name:'Legacy spans',exact:true}).click();
   await expect(panel.getByText('22.83 recorded hours',{exact:true})).toBeVisible();
-  await expect(panel.getByText('Average 342.5',{exact:true})).toBeVisible();
-  await expect(panel.getByText('Median 2',{exact:true})).toBeVisible();
+  await panel.getByText('Details',{exact:true}).click();
+  await expect(panel.getByText('Average 342.5 min',{exact:true})).toBeVisible();
+  await expect(panel.getByText('Median 2 min',{exact:true})).toBeVisible();
+  await panel.getByText('Details',{exact:true}).click();
   await expect(panel.getByRole('img',{name:/Recorded minutes retention: 4 browsers, 2 at zero, maximum 1,368 minutes\./,exact:true})).toBeVisible();
   const curve=panel.getByRole('img',{name:/Recorded minutes retention/});
-  await curve.scrollIntoViewIfNeeded();
+  // Keep the pointer target below the desktop's sticky date-and-tab bar.
+  await curve.evaluate(el => el.scrollIntoView({block:'center'}));
   const curveBox=await curve.boundingBox();
   await page.mouse.move(curveBox!.x+41,curveBox!.y+90);
   await expect(curve.getByText('100%',{exact:true})).toBeVisible();
@@ -35,8 +38,9 @@ test('recorded usage switches metrics and preserves separate tool samples @viewp
   const startY = await page.evaluate(() => window.scrollY);
   const zeroX = curveBox!.x+40;
   await page.mouse.move(zeroX+1,curveBox!.y+90);
-  await page.mouse.down();
   const line = curve.locator('[data-scrub-line]');
+  await expect(line).toBeVisible();
+  await page.mouse.down();
   await expect(line).toBeVisible();
   const snappedLeft = await line.evaluate(el => el.style.left);
   await page.mouse.move(zeroX+2,curveBox!.y+130);
@@ -48,6 +52,7 @@ test('recorded usage switches metrics and preserves separate tool samples @viewp
   await expect(curve.locator('[data-scrub-readout]')).toContainText('(1 of 4)');
   await testInfo.attach('snapped-recorded-retention',{body:await curve.screenshot(),contentType:'image/png'});
   await page.mouse.up();
+  await expect(line).toBeVisible();
   if (testInfo.project.use.hasTouch) {
     const cdp = await page.context().newCDPSession(page);
     const x = curveBox!.x+80, y = curveBox!.y+100;
@@ -56,15 +61,18 @@ test('recorded usage switches metrics and preserves separate tool samples @viewp
     await expect(curve.locator('[data-scrub-readout]')).toBeVisible();
     expect(await page.evaluate(() => window.scrollY)).toBe(startY);
     await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    await expect(curve.locator('[data-scrub-line]')).toBeHidden();
     await cdp.detach();
   }
 
   await expect(panel.getByRole('img',{name:/Weekly recorded hours: 7 Monday UTC weeks, 2 partial weeks; total 22.83 hours/})).toBeVisible();
   await panel.getByRole('button',{name:'Sessions',exact:true}).click();
+  await panel.locator('details').evaluate(el => { (el as HTMLDetailsElement).open = true; });
   await expect(panel.getByText('Average 1',{exact:true})).toBeVisible();
   await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'League',exact:true}).click();
-  await expect(panel.getByText('No dated sessions recorded.',{exact:true})).toBeVisible();
+  await expect(panel.getByText('No sessions recorded.',{exact:true})).toBeVisible();
   await page.getByRole('navigation',{name:'Admin section'}).getByRole('button',{name:'Dex',exact:true}).click();
+  await panel.locator('details').evaluate(el => { (el as HTMLDetailsElement).open = true; });
   await expect(panel.getByText('Average 1',{exact:true})).toBeVisible();
   await panel.getByRole('button',{name:'Time',exact:true}).click();
   await expect(panel.getByRole('img',{name:/Recorded minutes retention/}).locator('canvas')).toBeVisible();

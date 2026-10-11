@@ -6,6 +6,7 @@ import { LEAGUE_CLIENTS_KEY } from './_leagueRecord.js';
 import { ARCHIVED_KEY } from './_archive.js';
 import { buildBrowser, buildDashboard } from './_dashboard.js';
 import { funnelDayKeys, isDashboardRange } from './_range.js';
+import { readMinuteActivityBudget } from './_activityHistoryStore.js';
 
 // Sums every field across the window's day counters inside Redis, so the
 // window costs one billed command however many days it spans.
@@ -79,6 +80,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-store');
 
     if (firstQueryValue(req.query.usage as string | string[] | undefined) === '1') {
+      if (firstQueryValue(req.query.activity as string | string[] | undefined) === '1') {
+        const [usage, activity] = await Promise.all([
+          upstashUsage(), readMinuteActivityBudget(Date.now()).catch(() => ({status: 'error' as const})),
+        ]);
+        return res.status(200).json({...usage, activity});
+      }
       return res.status(200).json(await upstashUsage());
     }
 
