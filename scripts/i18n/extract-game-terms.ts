@@ -369,7 +369,8 @@ const PEOPLE: Record<string, [game: string, file: string, qid: string]> = {
   rocket: ['LetsGoPikachuLetsGoEevee', 'common', 'lgpe.trtype.TRTYPE_ROCKETM'],
   giovanni: ['LetsGoPikachuLetsGoEevee', 'common', 'lgpe.trname.trname_23'],
   // Ultra Sun/Ultra Moon's trainer classes. Traditional Chinese writes them
-  // as a possessive (海洋隊的) because the class stands before a name in battle.
+  // as a possessive (海洋隊的) because the class stands before a name in battle;
+  // `villainTerms` drops the trailing 的 to name the team (海洋隊).
   aqua: ['UltraSunUltraMoon', 'common', 'usum.common.111.198'],
   magma: ['UltraSunUltraMoon', 'common', 'usum.common.111.200'],
   archie: ['UltraSunUltraMoon', 'common', 'usum.common.63.34'],
@@ -429,7 +430,9 @@ function villainTerms(): GameTerm[] {
         from.set(source.qid, source);
         return source.text[locale];
       };
-      const teamNames = teams.map(pick);
+      // The trainer class is the team name plus the possessive 的 ("Team
+      // Aqua's", as in "Team Aqua's Grunt"). The label names the team itself.
+      const teamNames = teams.map((id) => pick(id)?.replace(/的$/, ''));
       const names = people.map(pick);
       // N is the same letter in every script, and Masters has every other language.
       const missing = people.filter((_, i) => !names[i]);

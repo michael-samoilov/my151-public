@@ -131,8 +131,9 @@ the games leave without a string is listed in `english`. Chinese has no Black 2
 or White 2, so the Chinese "Black 2/White 2" label stays English. No game
 names Yellow in Korean or Chinese, or the Totem and Titan Pokémon as a group,
 so those labels name only the titles the games give. Traditional Chinese
-writes the Ultra Sun/Ultra Moon team names as trainer classes (海洋隊的), the
-only form those games use.
+writes the Ultra Sun/Ultra Moon team names as trainer classes with the
+possessive 的 (海洋隊的, "Team Aqua's", as in "Team Aqua's Grunt"), the only form
+those games use. The labels drop that trailing 的 to name the team (海洋隊).
 
 ```sh
 npm run i18n:game-terms   # re-extract (network on the first run)
