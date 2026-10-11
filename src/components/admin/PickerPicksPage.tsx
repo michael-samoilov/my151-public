@@ -207,9 +207,11 @@ function PreferenceRanking({ preference }: { preference: Preference | undefined 
         <details className="mt-2">
           <summary className="cursor-pointer font-semibold text-foreground">What does the number mean?</summary>
           <div className="mt-2 flex flex-col gap-2">
-            <p>The number estimates preference strength after accounting for the options in each filled cell.</p>
-            <p>1× is the mean estimated strength among all observed alternatives, including Pokémon that were offered but never picked.</p>
-            <p>A Pokémon at 2× is about twice as likely to be chosen as one at 1× when offered together. With only those two options, that means about 67% versus 33%.</p>
+            <p>Think of the scores as weights. A menu with scores of 2×, 1×, and 1× predicts about 50%, 25%, and 25% of the choices.</p>
+            <p>Add the scores of the Pokémon in a menu. Each Pokémon's predicted share is its score divided by that total.</p>
+            <p>With only two Pokémon scoring 2× and 1×, the model predicts two selections of the first for every one of the second: about 67% versus 33%.</p>
+            <p>1× sets the scale. The average score across all Pokémon offered in filled cells is 1×, including those never picked. If all were equally preferred, every score would be 1×.</p>
+            <p>The model learns these weights from filled cells: who was selected and which alternatives were passed over. It fits the whole set of choices, rather than dividing a Pokémon's picks by how often it appeared.</p>
             <p>It is not a pick percentage.</p>
             <p>Each chart contributes one current snapshot. Blank cells and cells with only one option provide no comparison evidence.</p>
             <p>Favorite pointer options are reconstructed from the current chart. These are not historical menus from when a pick was made.</p>
