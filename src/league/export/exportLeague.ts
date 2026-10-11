@@ -677,7 +677,7 @@ function drawTmSlot(
   // to fit, as the live card shrinks it; the line box keeps its height.
   const widestAt = (scale: number) => {
     ctx.font = font(L.NAME_PX * scale, 800);
-    return Math.max(...lines.map((line) => trackedWidth(ctx, line, nameTrack * scale)));
+    return Math.max(...lines.map((line) => paintedWidth(ctx, line, nameTrack * scale)));
   };
   let nameScale = 1;
   if (widestAt(1) > bodyW) {
@@ -739,6 +739,22 @@ function drawTmSlot(
     );
   });
   ctx.restore();
+}
+
+/**
+ * How far `fillTracked` paints a run. Each glyph sits after the measured run
+ * before it, so a pair the font kerns tight (the TA of Italian
+ * ELETTROIMPENNATA) ends wider than the kerned run `trackedWidth` measures.
+ */
+function paintedWidth(ctx: CanvasRenderingContext2D, text: string, track: number): number {
+  if (track === 0) return ctx.measureText(text).width;
+  const chars = [...text];
+  let right = 0;
+  for (let i = 0; i < chars.length; i++) {
+    const at = ctx.measureText(chars.slice(0, i).join('')).width + track * i;
+    right = Math.max(right, at + ctx.measureText(chars[i]).width);
+  }
+  return Math.max(right, trackedWidth(ctx, text, track));
 }
 
 function drawBadgeSlot(
