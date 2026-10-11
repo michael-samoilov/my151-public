@@ -1,4 +1,4 @@
-import {ATTENTION_GAP_MS,type AttentionRecording} from './_attention.js';
+import {ATTENTION_GAP_MS,attentionSessionCount,type AttentionRecording} from './_attention.js';
 import type {RecordingFields} from './_sessionize.js';
 import {parseFavoriteRecord, type FavoriteRecord} from './_favoriteRecord.js';
 import {favoritePicks, favoriteSummary, favoriteUsageFunnel, favoriteUser} from './_favoriteAggregate.js';
@@ -341,6 +341,14 @@ function counts(hash: Record<string, unknown> | null): Record<string, number> {
   return out;
 }
 
+/** Time measured from retained history, rather than a complete lifetime total. */
+export interface BrowserTime {
+  sessions: number;
+  totalMs: number;
+  /** Some tool history is missing, or older foreground intervals were retired. */
+  partial?: true;
+}
+
 /** One tool of a browser, as its Newest browsers row shows it. */
 export interface ToolStat {
   /** Progress: Pokémon in the Dex, Gyms with a line, or filled Picker cells. */
@@ -350,6 +358,8 @@ export interface ToolStat {
   /** Every session the tool counted, and their summed time. */
   sessions: number;
   totalMs: number;
+  /** Absent when foreground attention has never been recorded. */
+  active?: BrowserTime;
 }
 
 /**
@@ -375,6 +385,7 @@ export interface BrowserRow {
   picker?: ToolStat;
   /** The browser as a whole: sessions merged across tools, time counted once. */
   total: { sessions: number; totalMs: number };
+  activeTotal?: BrowserTime;
 }
 
 /** Every record of each tool, newest-active first. */
@@ -386,7 +397,7 @@ export interface BrowserIndex {
 
 /** What a row reads from each tool's record. A stored record and the shaped
  *  user the admin page holds both satisfy these. */
-type Sessions = { sessions?: number; sessionMs?: number[] };
+type Sessions = { sessions?: number; sessionMs?: number[]; attention?: AttentionRecording };
 type DexTool = Sessions & { latestIds?: number[]; exported?: boolean; sessionLog?: { ts: number }[] };
 type LeagueTool = Sessions & { maxCards: number; exportsCard: number; exportsLeague: number; sessionLog?: { ts: number }[] };
 type PickerTool = Sessions & {
@@ -396,8 +407,25 @@ type PickerTool = Sessions & {
   sessionLog?: { ts: number; endTs: number }[];
 };
 
-function toolStat(count: number, exported: boolean, usage: ToolUsage): ToolStat {
-  return { count, ...(exported ? { exported: true as const } : {}), sessions: usage.sessions, totalMs: usage.totalMs };
+/** Use only dated retained intervals, so cross-tool time can be deduplicated exactly. */
+function foregroundTime(recordings: readonly (AttentionRecording | undefined)[]): BrowserTime | undefined {
+  const measured = recordings.filter((a): a is AttentionRecording => !!a);
+  if (!measured.length) return undefined;
+  const segments = measured.flatMap(a => a.segments.map(s => ({
+    start: Math.max(s.start, a.coverageFrom), end: Math.min(s.end, a.asOf),
+  })).filter(s => s.end >= s.start)).sort((a, b) => a.start - b.start || a.end - b.end);
+  let end = -Infinity, totalMs = 0;
+  for (const s of segments) {
+    totalMs += Math.max(0, s.end - Math.max(s.start, end));
+    end = Math.max(end, s.end);
+  }
+  const partial = measured.length < recordings.length || measured.some(a => a.retiredThrough !== undefined);
+  return {sessions: attentionSessionCount(segments), totalMs, ...(partial ? {partial: true as const} : {})};
+}
+
+function toolStat(count: number, exported: boolean, usage: ToolUsage, attention?: AttentionRecording): ToolStat {
+  const active = foregroundTime([attention]);
+  return { count, ...(exported ? { exported: true as const } : {}), sessions: usage.sessions, totalMs: usage.totalMs, ...(active ? {active} : {}) };
 }
 
 /** One list record's row, with the tools of its browser. */
@@ -410,6 +438,7 @@ export function browserRow(
   const dexUsage = dex && endStampedUsage(dex);
   const leagueUsage = league && endStampedUsage(league);
   const pickerUsage = picker && spanUsage(picker);
+  const activeTotal = foregroundTime([dex, league, picker].filter((t): t is DexTool | LeagueTool | PickerTool => !!t).map(t => t.attention));
   return {
     cid: rec.cid,
     lastTs: rec.lastTs,
@@ -423,10 +452,11 @@ export function browserRow(
     locale: rec.locale,
     switched: rec.switched,
     archived,
-    dex: dex && dexUsage && toolStat(dex.latestIds?.length ?? 0, !!dex.exported, dexUsage),
-    league: league && leagueUsage && toolStat(league.maxCards, league.exportsCard + league.exportsLeague > 0, leagueUsage),
-    picker: picker && pickerUsage && toolStat(picker.latest.filled, picker.exportsFull + picker.exportsSimplified > 0, pickerUsage),
+    dex: dex && dexUsage && toolStat(dex.latestIds?.length ?? 0, !!dex.exported, dexUsage, dex.attention),
+    league: league && leagueUsage && toolStat(league.maxCards, league.exportsCard + league.exportsLeague > 0, leagueUsage, league.attention),
+    picker: picker && pickerUsage && toolStat(picker.latest.filled, picker.exportsFull + picker.exportsSimplified > 0, pickerUsage, picker.attention),
     total: browserTotal([dexUsage, leagueUsage, pickerUsage].filter((u): u is ToolUsage => !!u)),
+    ...(activeTotal ? {activeTotal} : {}),
   };
 }
 
