@@ -358,7 +358,7 @@ export interface PokemonDataSource {
   standaloneGroupId?(id: number): number;
 }
 
-export interface UseFilteredPokemonOptions {
+interface UseFilteredPokemonOptions {
   dataSource?: PokemonDataSource;
   search?: string;
   category?: string | null;

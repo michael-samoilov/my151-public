@@ -1,10 +1,9 @@
-import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { SHAPE_NAMES, type ShapeName } from '@/types/pokemon';
 
 /** Size multiplier for the silhouette-in-circle icons (chart column + shape
  *  drilldown header/nav) — tuned to read well against the labels/sprites. */
-export const SHAPE_ICON_SCALE = 1.65;
+const SHAPE_ICON_SCALE = 1.65;
 
 /**
  * The official Pokémon HOME body-shape icons (the 14 silhouettes used by the
@@ -50,37 +49,3 @@ export function ShapeIconCircle({ shape, size = 20, className }: { shape: ShapeN
   );
 }
 
-/** Renderer for ButterflyChart's icon slot: the silhouette-in-circle badge as an
- *  SVG group — a bordered disc (background fill + border stroke) with the sprite
- *  centered inside, dark-mode-inverted like the HTML variant. Matches the
- *  ShapeIconCircle look used in the drilldown. */
-export function shapeChartIcon(shape: ShapeName) {
-  return function render(x: number, y: number, size: number, colWidth = size): ReactNode {
-    // Square icon, centred in a column that may be wider than it is.
-    x += (colWidth - size) / 2;
-    const cx = x + size / 2;
-    const cy = y + size / 2;
-    const pad = size * 0.16; // inner silhouette fills ~68% of the disc
-    return (
-      <g key={`shape-icon-${shape}`}>
-        <circle
-          cx={cx}
-          cy={cy}
-          r={size / 2 - 0.5}
-          fill="var(--color-background)"
-          stroke="var(--color-border)"
-          strokeWidth={1}
-        />
-        <image
-          href={shapeIconPath(shape)}
-          x={x + pad}
-          y={y + pad}
-          width={size - 2 * pad}
-          height={size - 2 * pad}
-          preserveAspectRatio="xMidYMid meet"
-          className="dark:invert"
-        />
-      </g>
-    );
-  };
-}

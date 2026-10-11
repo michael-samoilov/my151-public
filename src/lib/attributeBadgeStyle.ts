@@ -21,8 +21,8 @@ const SHAPE_TEXT_LEFT = 64;
 const SHAPE_TEXT_RIGHT = TYPE_BADGE_W - (TYPE_BADGE.glyphCenterX - TYPE_BADGE.glyph / 2);
 
 export type EvolutionRole = 'basic' | 'intermediate' | 'final' | 'standalone';
-export const EVOLUTION_ROLES: EvolutionRole[] = ['basic', 'intermediate', 'final', 'standalone'];
-export function evolutionLabel(role: EvolutionRole): string {
+const EVOLUTION_ROLES: EvolutionRole[] = ['basic', 'intermediate', 'final', 'standalone'];
+function evolutionLabel(role: EvolutionRole): string {
   return t(({ basic: 'favorites.stats.basic', intermediate: 'favorites.stats.middle', final: 'favorites.stats.final', standalone: 'favorites.stats.noEvo' } as const)[role]);
 }
 

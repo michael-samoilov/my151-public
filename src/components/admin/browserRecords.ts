@@ -11,7 +11,7 @@ export interface BrowserRecords {
   favorite: FavoriteUser | null;
 }
 
-export type BrowserLoad =
+type BrowserLoad =
   | { status: 'idle' }
   | { status: 'loading' }
   | { status: 'error' }

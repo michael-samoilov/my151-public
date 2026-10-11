@@ -30,7 +30,7 @@ export const LEAGUE_PERSIST_VERSION = 6;
  * cards, so `celebratedNudges` is filled in here — otherwise the export
  * popups would fire on a preview's first paint.
  */
-export function previewLeagueSeed() {
+function previewLeagueSeed() {
   const cards = kantoCards();
   return {
     state: {

@@ -12,8 +12,8 @@ const ISO_SUBDIVISION = /^[A-Z0-9]{1,3}$/;
 
 export type ArchiveFilter = 'active' | 'archived' | 'all';
 export type ToolFilter = 'any' | 'dex' | 'league' | 'both';
-export type ToolKind = 'dex' | 'league' | 'both';
-export type PreviewLangKind = 'served' | 'unsupported' | 'switched';
+type ToolKind = 'dex' | 'league' | 'both';
+type PreviewLangKind = 'served' | 'unsupported' | 'switched';
 
 export const FACET_KEYS = ['country', 'device', 'os', 'browser', 'language'] as const;
 export type FacetKey = (typeof FACET_KEYS)[number];
@@ -43,7 +43,7 @@ export const TOOL_FILTER_OPTIONS: { key: ToolFilter; label: string }[] = [
   { key: 'both', label: 'Dex + League' },
 ];
 
-export type PreviewPlatform = {
+type PreviewPlatform = {
   country?: string;
   device?: string;
   os?: string;
@@ -201,7 +201,7 @@ export function fmtChipDuration(ms: number): string {
   return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
 }
 
-export const PREVIEW_SESSION_UNIT = { one: 'session', many: 'sessions' } as const;
+const PREVIEW_SESSION_UNIT = { one: 'session', many: 'sessions' } as const;
 
 /** Each tool's progress chip on a preview card: "12/151 Dex". */
 export const PREVIEW_PROGRESS = {

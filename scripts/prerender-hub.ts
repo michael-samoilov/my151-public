@@ -45,8 +45,8 @@ interface BootInputs {
 }
 
 /**
- * The head script. Its language choice mirrors `resolveLocale` in
- * src/i18n/detect.ts. Its saved-work tests mirror the hub's counts in
+ * The head script. Its language choice mirrors `resolveActiveLocale` in
+ * src/i18n/bootstrap.ts. Its saved-work tests mirror the hub's counts in
  * HomePage.tsx, and its notice test mirrors the Tools menu's launch notice.
  */
 /**

@@ -41,7 +41,7 @@ export function parseCellKey(key: string): { type: TypeAxisId; gen: GenAxisId } 
   return { type, gen };
 }
 
-export type CellKind = 'pick' | 'pointer' | 'disabled' | 'null';
+type CellKind = 'pick' | 'pointer' | 'disabled' | 'null';
 
 export function isDisabledFavoriteIntersection(type: TypeAxisId, gen: GenAxisId): boolean {
   return (type === 'favorite' && (gen === 'legendary' || gen === 'gimmick'))
@@ -72,13 +72,6 @@ export const ROMAN: Record<GenNumber, string> = {
   7: 'VII',
   8: 'VIII',
   9: 'IX',
-};
-
-export const EXTRA_MARK: Record<ExtraTypeAxis, string> = {
-  starter: 'S',
-  gimmick: 'G',
-  legendary: 'L',
-  favorite: '★',
 };
 
 export const EXTRA_COLOR: Record<ExtraTypeAxis | ExtraGenAxis, string> = {

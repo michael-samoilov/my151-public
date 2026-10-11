@@ -25,10 +25,10 @@ export const WIDTH_EPS = 2;
  * steal ~15–17px of `clientWidth` when overflow toggles; the forced-avail
  * repro alternated by 6px. 20px covers both without hiding a real resize.
  */
-export const MEASURE_EPS = 20;
+const MEASURE_EPS = 20;
 
 /** Snap scale to thousandths so sub-pixel noise cannot flip the string. */
-export function quantizeScale(scale: number): number {
+function quantizeScale(scale: number): number {
   return Math.round(scale * 1000) / 1000;
 }
 
@@ -38,7 +38,7 @@ export function stabilizeMeasure(next: number, prev: number, eps = MEASURE_EPS):
   return next;
 }
 
-export interface SquashInput {
+interface SquashInput {
   mode: 'squash';
   natural: number;
   tailNatural: number;
@@ -49,7 +49,7 @@ export interface SquashInput {
   prevWidth: number;
 }
 
-export interface GrowInput {
+interface GrowInput {
   mode: 'grow';
   natural: number;
   avail: number;
@@ -67,7 +67,7 @@ export interface GrowInput {
  * its tightest layout at zoom 1. A grow block lays out at `baseWidth`; a
  * squash block has none and fills the room at any zoom.
  */
-export interface HoldInput {
+interface HoldInput {
   mode: 'hold';
   shortest: number;
   avail: number;
@@ -80,7 +80,7 @@ export interface HoldInput {
   prevWidth: number;
 }
 
-export type FitInput = SquashInput | GrowInput | HoldInput;
+type FitInput = SquashInput | GrowInput | HoldInput;
 
 /**
  * Next fit, or `null` when the previous fit already matches within the

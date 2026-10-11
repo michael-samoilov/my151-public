@@ -9,7 +9,7 @@ import {parseAttentionRecording,type AttentionRecording} from './_attention.js';
  * look ~85% filled, then drop to one line, then restore.
  */
 
-export type SessionTarget =
+type SessionTarget =
   | { kind: 'join'; index: number }
   | { kind: 'insert'; index: number };
 

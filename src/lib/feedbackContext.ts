@@ -99,7 +99,7 @@ export function collectFeedbackContext(route: string, toolContext?: FeedbackTool
 
 export type FeedbackCategory = 'bug' | 'translation' | 'idea' | 'data' | 'other';
 
-export interface FeedbackSubmission {
+interface FeedbackSubmission {
   category: FeedbackCategory;
   message: string;
   context: FeedbackContext;

@@ -56,7 +56,7 @@ function SuperimposedHistogramImpl({
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width ?? 0;
       // Ignore sub-0.5px jitter so observer echoes don't re-render the
-      // whole chart during an interaction (same guard as MilestoneBar).
+      // whole chart during an interaction.
       if (w > 0) setWidth((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
     });
     ro.observe(containerRef.current);

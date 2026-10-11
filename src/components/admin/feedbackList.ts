@@ -20,7 +20,7 @@ export interface FeedbackItem {
   context?: Record<string, unknown>;
 }
 
-export interface FeedbackResponse {
+interface FeedbackResponse {
   items: FeedbackItem[];
   total: number;
   last7: Record<string, number>;

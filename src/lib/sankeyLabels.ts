@@ -2,9 +2,9 @@ import { nodeDepth, type FunnelLabelSide, type FunnelLink, type FunnelNode } fro
 
 /** Peers in a column this tall include a middle bar. A name above or
  *  below that bar sits in nodeGap and lands on the next bar. */
-export const STACKED_COLUMN = 3;
+const STACKED_COLUMN = 3;
 
-export function columnPeers(name: string, nodes: FunnelNode[], links: FunnelLink[]): FunnelNode[] {
+function columnPeers(name: string, nodes: FunnelNode[], links: FunnelLink[]): FunnelNode[] {
   const depth = nodeDepth(name, links);
   return nodes.filter((n) => nodeDepth(n.name, links) === depth);
 }

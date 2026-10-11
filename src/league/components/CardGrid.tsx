@@ -2604,5 +2604,3 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   );
 }
 
-export const CARD_ROWS_HEIGHT_REM =
-  PAD_Y * 2 + BAND_H + ROW_COUNT * ROW_H + Object.keys(BAND_BEFORE).length * BAND_H;

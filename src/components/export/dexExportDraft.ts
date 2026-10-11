@@ -27,31 +27,3 @@ export function dexExportLiveJobs(draft: DexExportDraft): DexExportDraft[] {
   return [draft];
 }
 
-export function dexExportPermutations(base: DexExportDraft, statsEnabled: boolean): DexExportDraft[] {
-  const out: DexExportDraft[] = [];
-  for (const sort of DEX_EXPORT_SORTS) {
-    const groups = [base.groupSpecialAtEnd, !base.groupSpecialAtEnd];
-    const stats = statsEnabled ? [base.showStats, !base.showStats] : [false];
-    const outlines = sort === 'build-order' ? [true, false] : [false];
-    for (const groupSpecialAtEnd of groups) {
-      for (const showStats of stats) {
-        for (const showSections of outlines) {
-          out.push({
-            ...base,
-            sort,
-            groupSpecialAtEnd,
-            showStats,
-            showSections,
-          });
-        }
-      }
-    }
-  }
-  const seen = new Set<string>();
-  return out.filter((draft) => {
-    const key = dexExportFrameKey(draft);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}

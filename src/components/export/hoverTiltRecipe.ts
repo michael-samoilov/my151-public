@@ -17,10 +17,10 @@ export const HOVER_TILT_MASK_IDS = [
 
 export type HoverTiltMaskId = (typeof HOVER_TILT_MASK_IDS)[number];
 
-export const HOVER_TILT_MASK_MODES = ['alpha', 'luminance'] as const;
+const HOVER_TILT_MASK_MODES = ['alpha', 'luminance'] as const;
 export type HoverTiltMaskMode = (typeof HOVER_TILT_MASK_MODES)[number];
 
-export const HOVER_TILT_MASK_COMPOSITES = ['intersect', 'add', 'subtract'] as const;
+const HOVER_TILT_MASK_COMPOSITES = ['intersect', 'add', 'subtract'] as const;
 export type HoverTiltMaskComposite = (typeof HOVER_TILT_MASK_COMPOSITES)[number];
 
 export type HoverTiltRecipe = {
@@ -40,40 +40,13 @@ export type HoverTiltRecipe = {
   glareMaskComposite: HoverTiltMaskComposite;
 };
 
-export const HOVER_TILT_MASK_META = {
-  none: {
-    title: 'None',
-    blurb: 'Full-card glare. No texture clip.',
-  },
-  typeIcon: {
-    title: 'Primary type icon',
-    blurb: 'Each Pokémon\'s primary-type glyph, contain-fit on its own sprite at Poké Ball size.',
-  },
-  wordmark: {
-    title: 'my151.app wordmark',
-    blurb: 'Brand wordmark tiled across the export.',
-  },
-  pokeBall: {
-    title: 'Poké Ball tile',
-    blurb: 'Poké Ball silhouette tiled across the card.',
-  },
-  dexNumber: {
-    title: 'National Dex number',
-    blurb: 'Each Pokémon\'s national Dex number, centered on its sprite.',
-  },
-  dexBorder: {
-    title: 'Export frame',
-    blurb: 'Trainer-card frame stroke without a repeating texture.',
-  },
-} as const satisfies Record<HoverTiltMaskId, { title: string; blurb: string }>;
-
 export const HOVER_TILT_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-tilt';
 
 /**
  * Multiplier on the edge tilt. Above 1 the tilt reaches the max tilt cap
  * before the pointer reaches the edge: at 10/7 it caps 85% of the way out.
  */
-export const DEFAULT_TILT_FACTOR = 10 / 7;
+const DEFAULT_TILT_FACTOR = 10 / 7;
 
 /** Michael's workshop pick, September 27, with the pop kept at 1.15. */
 export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
@@ -92,15 +65,15 @@ export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   glareMaskComposite: 'intersect',
 };
 
-export function isHoverTiltMaskId(value: unknown): value is HoverTiltMaskId {
+function isHoverTiltMaskId(value: unknown): value is HoverTiltMaskId {
   return typeof value === 'string' && (HOVER_TILT_MASK_IDS as readonly string[]).includes(value);
 }
 
-export function isHoverTiltMaskMode(value: unknown): value is HoverTiltMaskMode {
+function isHoverTiltMaskMode(value: unknown): value is HoverTiltMaskMode {
   return typeof value === 'string' && (HOVER_TILT_MASK_MODES as readonly string[]).includes(value);
 }
 
-export function isHoverTiltMaskComposite(value: unknown): value is HoverTiltMaskComposite {
+function isHoverTiltMaskComposite(value: unknown): value is HoverTiltMaskComposite {
   return typeof value === 'string' && (HOVER_TILT_MASK_COMPOSITES as readonly string[]).includes(value);
 }
 
@@ -185,26 +158,3 @@ export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string
   };
 }
 
-/**
- * hover-tilt `--hover-tilt-default-shadow` at one pose.
- * Offset follows `--shadow-x/y` = `nx*2-1` toward the raised edge.
- */
-export function hoverTiltBoxShadow(
-  recipe: HoverTiltRecipe,
-  pose?: { nx: number; ny: number; opacity: number },
-): string {
-  if (!recipe.shadow || recipe.shadowBlur <= 0) return 'none';
-  const blur = Math.round(recipe.shadowBlur);
-  const nx = pose?.nx ?? 0.5;
-  const ny = pose?.ny ?? 0.5;
-  const opacity = pose?.opacity ?? 0;
-  const sx = nx * 2 - 1;
-  const sy = ny * 2 - 1;
-  const o = opacity * 0.125;
-  const layer = (b: number) => {
-    const x = sx * b;
-    const y = (sy * b) / 2 + b / 4;
-    return `${x.toFixed(1)}px ${y.toFixed(1)}px ${(b / 2).toFixed(1)}px ${(-b * 0.25).toFixed(1)}px rgb(0 0 0 / ${o.toFixed(3)})`;
-  };
-  return `${layer(blur)}, ${layer(blur / 2)}`;
-}

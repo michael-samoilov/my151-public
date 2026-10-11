@@ -9,25 +9,19 @@
  */
 import { redis } from './_shared.js';
 
-export type ExportTool = 'pokedex' | 'league' | 'card';
+type ExportTool = 'pokedex' | 'league' | 'card';
 
-export interface ExportHighlight {
+interface ExportHighlight {
   ordinal: number;
   tool: ExportTool;
   firstPokemonId: number | null;
 }
 
-export const EXPORT_COUNTS_KEY = 'export:counts';
-export const EXPORT_SEEN_KEY = 'export:seen-pokemon';
-export const DEX_EVER_FREQ_KEY = 'dex:ever-freq';
+const EXPORT_COUNTS_KEY = 'export:counts';
+const EXPORT_SEEN_KEY = 'export:seen-pokemon';
+const DEX_EVER_FREQ_KEY = 'dex:ever-freq';
 
-const TOOLS: ExportTool[] = ['pokedex', 'league', 'card'];
-
-export function isExportTool(s: unknown): s is ExportTool {
-  return typeof s === 'string' && (TOOLS as string[]).includes(s);
-}
-
-export function pickFirstExportPokemon(
+function pickFirstExportPokemon(
   exportIds: number[],
   alreadySeen: Iterable<number>,
   dexFreq: Record<number, number>,

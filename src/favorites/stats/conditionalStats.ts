@@ -1,8 +1,8 @@
 /** One equally weighted vote per valid occupied multi-option selector. Pointer votes never enter this API. */
-export interface ConditionalEntry { id:number; attributes:Readonly<Record<string,readonly string[]|undefined>> }
-export interface ConditionalPick { id:number; pool:readonly number[] }
-export interface ConditionalRow { key:string; count:number; expected:number; deviation:number|null }
-export interface ConditionalDimension { coveredChoices:number; excludedChoices:number; rows:ConditionalRow[] }
+interface ConditionalEntry { id:number; attributes:Readonly<Record<string,readonly string[]|undefined>> }
+interface ConditionalPick { id:number; pool:readonly number[] }
+interface ConditionalRow { key:string; count:number; expected:number; deviation:number|null }
+interface ConditionalDimension { coveredChoices:number; excludedChoices:number; rows:ConditionalRow[] }
 export function computeConditionalStats(entries:readonly ConditionalEntry[],picks:readonly ConditionalPick[],dimensions:readonly string[]) {
  const byId=new Map(entries.map(entry=>[entry.id,entry]));
  const valid=picks.flatMap(pick=>{const ids=[...new Set(pick.pool)];return ids.length>1&&ids.includes(pick.id)&&byId.has(pick.id)?[{id:pick.id,pool:ids}]:[];});

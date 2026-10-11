@@ -7,7 +7,7 @@ import { rowKey } from '@/components/analytics/butterflyRow';
 import type { TypeName } from '@/types/pokemon';
 
 /** Per-generation bar colours (mirrors the panel's palette). */
-export const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
+const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
 export interface StatsTypeDatum { type: TypeName; label: string; count: number; deviation: number; color: string }
 export interface StatsGenDatum { gen: number; count: number; deviation: number; color: string }

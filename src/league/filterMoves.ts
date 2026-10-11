@@ -3,7 +3,7 @@ import type { TypeName } from '@/types/pokemon';
 import { moveName } from './moveNames';
 import { MOVES, type ContestType, type Move } from './moves';
 
-export type MoveChips = {
+type MoveChips = {
   types: TypeName[] | null;
   categories: ReadonlyArray<Move['category']>;
   contests: ReadonlyArray<ContestType>;

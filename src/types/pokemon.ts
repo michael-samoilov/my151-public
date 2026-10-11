@@ -66,21 +66,6 @@ export interface Pokemon {
   eggGroups: EggGroupName[];
 }
 
-export interface DexSlot {
-  slotNumber: number;
-  sectionId: string;
-  suggestedArchetype: string | null;
-  pokemonId: number | null;
-}
-
-export interface DexSection {
-  id: string;
-  name: string;
-  startSlot: number;
-  endSlot: number;
-  description: string;
-}
-
 export interface Archetype {
   id: string;
   name: string;

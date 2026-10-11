@@ -23,7 +23,7 @@
 import { enData } from './en.data';
 
 /** Hand-authored UI copy. Data-module strings live in the generated en.data.ts. */
-export const enUi = {
+const enUi = {
   'advisor.allTypes': 'All 18 types covered',
   'advisor.categoryMissing': 'No {category} assigned yet',
   'advisor.categoryPresent': '{category} represented',

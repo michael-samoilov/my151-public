@@ -12,7 +12,7 @@ import {
 import { debutRank } from './debut';
 
 /** The selector a list is sorted for. Some keys apply to one cell only. */
-export type SortCell = { type: TypeAxisId; gen: GenAxisId };
+type SortCell = { type: TypeAxisId; gen: GenAxisId };
 
 type Compare = (a: PickerMon, b: PickerMon, cell: SortCell) => number;
 
@@ -111,7 +111,7 @@ export const SORT_KEYS = [
 ] as const satisfies readonly { id: string; label: string; description: string; compare: Compare }[];
 
 export type SortKeyId = (typeof SORT_KEYS)[number]['id'];
-export type SortKey = (typeof SORT_KEYS)[number];
+type SortKey = (typeof SORT_KEYS)[number];
 
 /** The final tie-break. It always applies, after every enabled key. */
 export const DEX_KEY = {

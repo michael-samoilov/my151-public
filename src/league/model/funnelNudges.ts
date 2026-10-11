@@ -14,15 +14,13 @@ import {
  * card still empty (`league`), and every card with a Pokémon (`complete`).
  */
 
-export type { LeagueNudgeAction };
-
 export type LeagueNudgeId = LeagueNudgeEventId | 'complete';
 
-export const GYM_LEADER_SLOTS = [...Array(SLOT_COUNT).keys()].filter(
+const GYM_LEADER_SLOTS = [...Array(SLOT_COUNT).keys()].filter(
   (i) => slotKind(i) === 'gym',
 ).length;
 
-export const CARD_LINE_CAP = TEAM_SIZES[BOSS_ROW - 1];
+const CARD_LINE_CAP = TEAM_SIZES[BOSS_ROW - 1];
 
 /**
  * `/api/event` accepts only the names in `FUNNEL_EVENTS` and answers 400 to
@@ -54,7 +52,7 @@ export function reachedNudges(
   return out;
 }
 
-export interface LeagueNudgeContext {
+interface LeagueNudgeContext {
   cards: readonly { lines: readonly unknown[] }[];
   celebrated: readonly LeagueNudgeId[];
   openCard: number | null;
@@ -87,7 +85,7 @@ export function isRosterNudge(id: LeagueNudgeId | null): id is 'league' | 'compl
   return id === 'league' || id === 'complete';
 }
 
-export function isLeagueNudgeId(v: unknown): v is LeagueNudgeId {
+function isLeagueNudgeId(v: unknown): v is LeagueNudgeId {
   return v === 'card' || v === 'league' || v === 'complete';
 }
 

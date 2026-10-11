@@ -1,6 +1,6 @@
 import type {CustomSeriesRenderItemAPI} from 'echarts';
 
-export interface ChartQuartile {
+interface ChartQuartile {
   percentile: number;
   value: number;
   axisValue?: number;

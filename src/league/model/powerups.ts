@@ -104,11 +104,6 @@ export function powerupSymbol(pokemonId: number, kind: PowerupKind): PowerupSymb
   return kind;
 }
 
-/** True when a species has any form under either powerup. */
-export function hasAnyPowerup(pokemonId: number): boolean {
-  return formsFor(pokemonId, 'mega').length > 0 || formsFor(pokemonId, 'dynamax').length > 0;
-}
-
 /**
  * The form a cell should draw, or null for the base Pokémon.
  *

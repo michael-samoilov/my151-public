@@ -50,16 +50,13 @@ import { getPokemonById as getLeaguePokemonById } from '@/league/data/catalog';
 
 export const PICKS_COLS = 6;
 /** Desktop most|least row: six for most, three for least. */
-export const PICKS_MOST_COLS = PICKS_COLS;
-export const PICKS_LEAST_DESKTOP_COLS = 3;
-/** Least column width in the combined most|least row (all viewports). */
-export const PICKS_LEAST_COLS = PICKS_LEAST_DESKTOP_COLS;
+const PICKS_MOST_COLS = PICKS_COLS;
+const PICKS_LEAST_DESKTOP_COLS = 3;
 export const PICKS_COMBINED_COLS = PICKS_MOST_COLS + PICKS_LEAST_DESKTOP_COLS;
 /** Legacy 12-col track count; off-section and the suite strip use 9. */
 export const PICKS_PAIR_COLS = 12;
 /** Off-section grid: 9 columns on phone and desktop, matching Most picked. */
-export const PICKS_OFF_COLS = PICKS_COMBINED_COLS;
-export const PICKS_OFF_DESKTOP_COLS = PICKS_OFF_COLS;
+const PICKS_OFF_COLS = PICKS_COMBINED_COLS;
 
 type GridCap = { maxRows: number; cols: number } | { maxLines: number };
 
@@ -69,7 +66,7 @@ export function picksGridCols(wide: boolean, _desktop: boolean): number {
 }
 
 /** In-section starter row width: one column per main-series generation in the Starter category. */
-export function starterGenerationCount(): number {
+function starterGenerationCount(): number {
   const cat = getCategoryById('starter');
   const groups = cat?.subgroups ?? [];
   let n = 0;
@@ -84,7 +81,7 @@ export function picksStarterCols(): number {
   return starterGenerationCount();
 }
 
-export type PicksSplitCap =
+type PicksSplitCap =
   | { kind: 'single'; cap: GridCap }
   | { kind: 'dual'; most: GridCap; least: GridCap };
 
@@ -195,7 +192,7 @@ export function starterTypeOf(id: number): StarterType {
   return 'other';
 }
 
-export function roundedIndex(index: number): number {
+function roundedIndex(index: number): number {
   if (!Number.isFinite(index) || index <= 0) return 0;
   if (index >= 10) return Math.round(index);
   return Math.round(index * 10) / 10;
@@ -305,7 +302,7 @@ function speciesExpected(universe: Map<string, number[]>, counts: Map<number, nu
  * First-stage starter faces use `S / L`.
  * Off-section species use the section's default universe as the 1× baseline.
  */
-export function indexGroups(
+function indexGroups(
   groups: Map<string, number[]>,
   counts: Map<number, number>,
   universe: Map<string, number[]>,
@@ -445,12 +442,12 @@ export function isStarterTypeName(t: string): t is TypeName {
 }
 
 /** Rows of faces each league picks section shows, at `PICKS_OFF_COLS` a row. */
-export const LEAGUE_PICKS_MAX_ROWS = 4;
+const LEAGUE_PICKS_MAX_ROWS = 4;
 
 /** The aces, or the cards of one chosen type. `none` is the "no type" choice. */
 export type LeaguePicksSectionId = 'ace' | TypeName | 'none';
 
-export interface LeaguePicksSection {
+interface LeaguePicksSection {
   id: LeaguePicksSectionId;
   lines: RankedLine[];
 }

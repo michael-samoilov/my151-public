@@ -62,7 +62,7 @@ export function cssVar(el: HTMLElement | null, name: string, fallback = ''): str
  * nearest x position, so a drag steps from point to point and never sits
  * between two dates. Release or leave hides them.
  */
-export interface ChartScrub {
+interface ChartScrub {
   count: number;
   /** Sorted axis coordinates for unevenly spaced datapoints, such as logarithmic durations. */
   xValues?: number[];

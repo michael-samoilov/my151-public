@@ -23,8 +23,6 @@ import type { Messages } from './types';
  * under PREVIEW_FEATURES, and are never offered in the picker.
  */
 
-export { PSEUDO_LOCALES, isPseudoLocale } from './pseudoLocale';
-export type { PseudoLocale } from './pseudoLocale';
 import type { PseudoLocale } from './pseudoLocale';
 
 const ACCENTS: Record<string, string> = {
@@ -64,7 +62,7 @@ function parts(template: string): { text: string; placeholder: boolean }[] {
   return out;
 }
 
-export function accentuate(template: string): string {
+function accentuate(template: string): string {
   const segments = parts(template);
   const body = segments
     .map((s) => (s.placeholder ? s.text : [...s.text].map((c) => ACCENTS[c] ?? c).join('')))
@@ -80,7 +78,7 @@ export function accentuate(template: string): string {
   return `[${body}${PAD.repeat(padding)}]`;
 }
 
-export function widen(template: string): string {
+function widen(template: string): string {
   return parts(template)
     .map((s) => {
       if (s.placeholder) return s.text;

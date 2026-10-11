@@ -8,7 +8,7 @@
  * control that has fully entered the viewport is a valid anchor.
  */
 
-export function visibleArea(
+function visibleArea(
   r: { left: number; right: number; top: number; bottom: number },
   vw: number,
   vh: number,
@@ -18,7 +18,7 @@ export function visibleArea(
   return w * h;
 }
 
-export function isOnScreenAnchor(
+function isOnScreenAnchor(
   r: { left: number; right: number; top: number; bottom: number },
   vw: number,
   vh: number,

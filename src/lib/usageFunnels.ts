@@ -38,7 +38,7 @@ export interface FunnelLink {
   role: FunnelRole;
 }
 
-export interface FunnelSankey {
+interface FunnelSankey {
   nodes: FunnelNode[];
   links: FunnelLink[];
   ariaLabel: string;
@@ -361,7 +361,7 @@ function stackRank(name: string, role: FunnelRole | undefined): number {
   return ROLE_STACK[role];
 }
 
-export function orderSankeyForLayout(nodes: FunnelNode[], links: FunnelLink[], ariaLabel: string): FunnelSankey {
+function orderSankeyForLayout(nodes: FunnelNode[], links: FunnelLink[], ariaLabel: string): FunnelSankey {
   const byName = new Map(nodes.map((n) => [n.name, n]));
   const rank = (name: string): number => stackRank(name, byName.get(name)?.role);
   const orderedNodes = [...nodes].sort(

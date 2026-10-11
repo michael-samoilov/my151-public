@@ -9,19 +9,19 @@
  * bottom row is third-only. Tools past the third are not drawn.
  */
 
-export interface Box {
+interface Box {
   x: number;
   y: number;
   w: number;
   h: number;
 }
 
-export interface Cell extends Box {
+interface Cell extends Box {
   /** Region key: sorted tool ids joined by `+`. */
   key: string;
 }
 
-export interface EulerTool {
+interface EulerTool {
   id: string;
   short: string;
 }
@@ -134,7 +134,7 @@ function layoutUnits(regions: Record<string, number>, ids: readonly string[], rh
   };
 }
 
-export function bboxOf(cells: readonly Box[]): Box {
+function bboxOf(cells: readonly Box[]): Box {
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
@@ -148,12 +148,12 @@ export function bboxOf(cells: readonly Box[]): Box {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
-export interface EulerLayout extends Units {
+interface EulerLayout extends Units {
   bbox: Box;
 }
 
 /** Pick the band's aspect so the whole drawing matches `box`, then fit it in. */
-export function eulerLayout(regions: Record<string, number>, ids: readonly string[], box: Box): EulerLayout | null {
+function eulerLayout(regions: Record<string, number>, ids: readonly string[], box: Box): EulerLayout | null {
   const probe = layoutUnits(regions, ids, 1);
   if (probe.cells.length === 0) return null;
   const target = box.w / box.h;
@@ -196,14 +196,14 @@ interface Edge {
   depth: number;
 }
 
-export interface Outline {
+interface Outline {
   /** The tool's area, for the translucent fill. */
   fill: string;
   /** The tool's edge, inset by its rank among tools that share that edge. */
   stroke: string;
 }
 
-export function outlines(cells: readonly Cell[], ids: readonly string[], strokeW: number): Record<string, Outline> {
+function outlines(cells: readonly Cell[], ids: readonly string[], strokeW: number): Record<string, Outline> {
   const xs = uniq(cells.flatMap((c) => [c.x, c.x + c.w]));
   const ys = uniq(cells.flatMap((c) => [c.y, c.y + c.h]));
   const nx = xs.length - 1;
@@ -316,7 +316,7 @@ interface TextBox {
   bottom: number;
 }
 
-export interface PlacedText {
+interface PlacedText {
   key: string;
   text: string;
   x: number;
@@ -324,12 +324,12 @@ export interface PlacedText {
   anchor: 'start' | 'middle' | 'end';
 }
 
-export interface Leader extends PlacedText {
+interface Leader extends PlacedText {
   from: { x: number; y: number };
   to: { x: number; y: number };
 }
 
-export interface EulerScene {
+interface EulerScene {
   width: number;
   height: number;
   font: number;

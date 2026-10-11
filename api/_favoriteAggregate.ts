@@ -70,7 +70,7 @@ export function favoritePicks(records: FavoriteRecord[]): FavoritePicks {
     top:[...charts].sort(byCharts).slice(0,9),
   };
 }
-export interface FavoritePreferenceEntry {
+interface FavoritePreferenceEntry {
   id: number;
   score: number | null;
   picks: number;
@@ -89,11 +89,11 @@ export interface FavoritePreference {
   iterations: number;
   regularization: 1;
 }
-export interface FavoritePreferencePool {
+interface FavoritePreferencePool {
   ids: number[];
   wins: number[];
 }
-export interface FavoritePreferenceFit {
+interface FavoritePreferenceFit {
   ids: number[];
   scores: number[];
   components: number[][];

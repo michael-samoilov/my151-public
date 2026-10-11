@@ -8,7 +8,7 @@ import type { LeagueNudgeId } from '../model/funnelNudges';
 
 export type BrowserPurpose = 'lines' | 'signature' | 'partner' | 'legend' | 'replace';
 
-export type LeagueExportPhase = 'settings' | 'surveyIntro' | 'survey';
+type LeagueExportPhase = 'settings' | 'surveyIntro' | 'survey';
 
 interface LeagueUiState {
   /** null = league home; a number = that card is open full-screen. */

@@ -8,7 +8,7 @@
  * Do not invent a parallel orbit. Write their CSS custom properties.
  */
 
-export type HoverTiltBox = {
+type HoverTiltBox = {
   left: number;
   top: number;
   width: number;
@@ -57,7 +57,7 @@ export const HOVER_TILT_EXIT_SPRING = {
 export const HOVER_TILT_EXIT_DELAY_MS = 200;
 
 /** Parked-cursor jitter below this keeps poke-holo idle on desktop. */
-export const POINTER_WAKE_PX = 12;
+const POINTER_WAKE_PX = 12;
 
 /** True when the pointer left the seed by at least `slop` px. */
 export function pointerMovedFrom(
@@ -79,7 +79,7 @@ export type HoverTiltSpring = {
   precision: number;
 };
 
-export function clamp(n: number, min: number, max: number): number {
+function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
@@ -131,7 +131,7 @@ export function springSettled(spring: HoverTiltSpring): boolean {
 }
 
 /** hover-tilt `readElementBox` + `pointerPositionFromEvent`. */
-export function pointerNormalized(clientX: number, clientY: number, box: HoverTiltBox): {
+function pointerNormalized(clientX: number, clientY: number, box: HoverTiltBox): {
   x: number;
   y: number;
 } {
@@ -141,12 +141,6 @@ export function pointerNormalized(clientX: number, clientY: number, box: HoverTi
     x: clamp((clientX - box.left) / width, 0, 1),
     y: clamp((clientY - box.top) / height, 0, 1),
   };
-}
-
-/** Pointer position as 0–100 percent of the given box. */
-export function pointerPercent(clientX: number, clientY: number, box: HoverTiltBox): { x: number; y: number } {
-  const n = pointerNormalized(clientX, clientY, box);
-  return { x: n.x * 100, y: n.y * 100 };
 }
 
 /**

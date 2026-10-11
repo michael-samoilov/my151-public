@@ -64,7 +64,7 @@ const fullBaseline = computeBaseline(allNational);
 const filteredNational = withoutSpecials(allNational, STARTER_IDS);
 const filteredBaseline = computeBaseline(filteredNational);
 
-export { fullBaseline, filteredBaseline, computeBaseline };
+export { fullBaseline, filteredBaseline };
 
 /** Analytics for a Dex's sections. Pure, so a page without the store can call it. */
 export function computeAnalytics(sections: Record<string, number[]>, excludeSpecial = false) {

@@ -64,7 +64,7 @@ export function predictLevel(bst: number, fit: LevelFit): number {
 }
 
 /** Keeps a prediction inside the range real evolution levels occupy. */
-export function clampLevel(level: number): number {
+function clampLevel(level: number): number {
   return Math.max(1, Math.min(70, Math.round(level)));
 }
 

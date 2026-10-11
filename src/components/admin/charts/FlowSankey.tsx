@@ -4,8 +4,8 @@ import { sankeyGeometry, sankeyHeightCss } from '@/lib/sankeyGeometry';
 import { compactFunnelLabelSide } from '@/lib/sankeyLabels';
 import { columnLefts, columnNeeds, fitColumns, type LabelBox, type MeasureText } from '@/lib/sankeyColumns';
 
-export type SankeyNode = FunnelNode;
-export type SankeyLink = FunnelLink;
+type SankeyNode = FunnelNode;
+type SankeyLink = FunnelLink;
 
 function fattestColumn(nodes: SankeyNode[], links: SankeyLink[]): number {
   const counts = new Map<number, number>();

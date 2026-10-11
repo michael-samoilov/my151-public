@@ -42,7 +42,6 @@
     "scripts/league/fetch-moves.ts",
     "scripts/level-model-report.ts",
     "scripts/measure-badge-art.ts",
-    "scripts/measure-icon-centroids.mjs",
     "scripts/sync-baby.mjs",
     "e2e/preview.config.ts"
   ],
@@ -52,5 +51,11 @@
     "scripts/**/*.{ts,mts,mjs,cjs,js}",
     "e2e/**/*.ts",
     "*.config.ts"
-  ]
+  ],
+  "ignoreDependencies": ["tailwindcss"],
+  "ignoreIssues": {
+    "api/_exportStats.ts": ["exports"],
+    "e2e/support/statsFrameEvidence.ts": ["exports"],
+    "src/components/admin/__fixtures__/*.ts": ["exports"]
+  }
 }

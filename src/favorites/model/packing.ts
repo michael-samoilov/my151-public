@@ -24,7 +24,7 @@ function otherTypes(mon: PickerMon, fromType: TypeName): TypeName[] {
   return mon.types.filter((t) => t !== fromType && (TYPES18 as readonly string[]).includes(t));
 }
 
-export function occupantType(map: TypeFills, id: number): TypeName | null {
+function occupantType(map: TypeFills, id: number): TypeName | null {
   for (const t of TYPES18) {
     if (map[t]?.id === id) return t;
   }
@@ -50,7 +50,7 @@ export function typeMapFromFills(
   return map;
 }
 
-export function placeIncoming(
+function placeIncoming(
   map: TypeFills,
   dest: TypeName,
   incoming: PickerMon,

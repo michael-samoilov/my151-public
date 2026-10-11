@@ -6,13 +6,12 @@
  * anything building a string in a plain function — use `t`/`tn` directly; they
  * read the same store.
  */
-export { LOCALES, LOCALE_META, DEFAULT_LOCALE, isLocale, htmlLang, direction } from './config';
+export { LOCALES, LOCALE_META, htmlLang } from './config';
 export type { Locale } from './config';
 
 export {
   getLocale,
   getVersion,
-  setCatalog,
   formatList,
   formatListToParts,
   formatNumber,
@@ -22,8 +21,6 @@ export {
   translatePlural as tn,
 } from './core';
 
-export { matchLocale, negotiateLocale, localeFromUrl, resolveLocale } from './detect';
-
 export { typeLabel, typeLabels, colorLabel, eggGroupLabel, shapeLabel } from './terms';
 
 export {
@@ -32,17 +29,12 @@ export {
   categorySubgroupLabel,
   categoryColumnLabel,
   archetypeName,
-  archetypeDescription,
   archetypeSubgroupLabel,
   regionName,
 } from './dataLabels';
 
-export { tierOf, keysByTier, LAUNCH_TIERS } from './tiers';
-export type { Tier } from './tiers';
-
 export { useT, useTn, useLocale, useNamesVersion, useDocumentLocale } from './provider';
-export { speciesName, formLabel, formProvenance, speciesSearchText, pokemonLabel } from './names';
-export type { PokemonLabel } from './names';
+export { speciesName, speciesSearchText, pokemonLabel } from './names';
 export { normalizeSearch } from './searchNormalize';
 
-export type { MessageKey, Messages, NoArgKey, TFn, TnFn, PluralBase } from './types';
+export type { MessageKey, NoArgKey, TFn, TnFn } from './types';

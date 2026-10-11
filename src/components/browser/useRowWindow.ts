@@ -19,7 +19,7 @@ const SEED_ROWS = 3;
  */
 const pitchCache = new Map<string, { pitch: number; gap: number }>();
 
-export interface RowWindow {
+interface RowWindow {
   start: number;
   end: number;
   /** Height of the filler standing in for rows before `start`, in px. */

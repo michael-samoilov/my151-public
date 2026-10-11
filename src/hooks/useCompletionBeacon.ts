@@ -41,7 +41,7 @@ function countEvoLines(ids: number[]): number {
 }
 
 /** View settings captured with an export beacon — what the shared image used. */
-export interface ExportSettings {
+interface ExportSettings {
   sort: string;
   outlines: boolean;
   groupSpecial: boolean;

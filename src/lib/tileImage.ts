@@ -1,18 +1,18 @@
 import { fluidSpriteCssPx, SPRITE_NATIVE } from './usePixelPerfectSprite';
 
 /** vw of the tile container. A 6-column phone row paints the image near this. */
-export const TILE_MOBILE_SPRITE_VW = 8.2;
+const TILE_MOBILE_SPRITE_VW = 8.2;
 
-export const TILE_DESKTOP_MIN = 40;
-export const TILE_DESKTOP_VW = 7;
-export const TILE_DESKTOP_MAX = 96;
-export const TILE_DESKTOP_BREAKPOINT = 1024;
+const TILE_DESKTOP_MIN = 40;
+const TILE_DESKTOP_VW = 7;
+const TILE_DESKTOP_MAX = 96;
+const TILE_DESKTOP_BREAKPOINT = 1024;
 
 /** Desktop tile hosts are half the window (`md:w-1/2`). */
-export const TILE_DESKTOP_PANE_DIVISOR = 2;
+const TILE_DESKTOP_PANE_DIVISOR = 2;
 
 /** Image scale on the 1× base. A 390px phone paints about 62 CSS px. */
-export const TILE_SPRITE_IMG_SCALE = 1.95;
+const TILE_SPRITE_IMG_SCALE = 1.95;
 
 /**
  * CSS px of the sprite image in a 6-column dex row at this layout width.

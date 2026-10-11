@@ -6,13 +6,13 @@ export type RgbaBitmap = {
   data: Uint8ClampedArray;
 };
 
-export type FoilMaps = {
+type FoilMaps = {
   sat: RgbaBitmap;
   edge: RgbaBitmap;
   gloss: RgbaBitmap;
 };
 
-export type FoilMaskUrls = {
+type FoilMaskUrls = {
   sat: string;
   edge: string;
   gloss: string;

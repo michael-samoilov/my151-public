@@ -76,7 +76,7 @@ function getAllEvolutionLines(id: number): Pokemon[][] {
 export const getPokemonById = (id: number): Pokemon | undefined => byId.get(id);
 export const getAllPokemon = (): Pokemon[] => pokemon;
 export const getEvolutionLine = (id: number): Pokemon[] => getAllEvolutionLines(id)[0] ?? [];
-export const leagueFormOwnerId = (id: number): number => owners.get(id) ?? id;
+const leagueFormOwnerId = (id: number): number => owners.get(id) ?? id;
 
 const species = pokemon.filter(mon => mon.id <= 1025);
 const orderOwners = new Map(owners);
@@ -107,7 +107,7 @@ const compareBrowserOrder = (a: number, b: number): number =>
   Number(laterFormLineIds.has(a)) - Number(laterFormLineIds.has(b))
   || speciesId(a) - speciesId(b) || formOrder(a) - formOrder(b);
 
-export function leagueFavoritePickerId(id: number): number | undefined {
+function leagueFavoritePickerId(id: number): number | undefined {
   const remapped = ({
     10179: 10178, 10180: 10179, 10191: 10227,
     10318: 10147, 10323: 11006, 10324: 11007,

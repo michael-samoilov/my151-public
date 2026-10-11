@@ -1,7 +1,7 @@
 import { inflateSync } from 'node:zlib';
 import type { Page } from '@playwright/test';
 
-export type RgbImage = { w: number; h: number; rgb: Uint8Array };
+type RgbImage = { w: number; h: number; rgb: Uint8Array };
 
 const MIN_CHANGED_INK_RATIO = 0.01;
 
@@ -16,7 +16,7 @@ function paeth(a: number, b: number, c: number): number {
 }
 
 /** Decode an 8-bit RGB or RGBA PNG. Playwright card screenshots use this form. */
-export function decodePng(buf: Buffer): RgbImage {
+function decodePng(buf: Buffer): RgbImage {
   if (buf[0] !== 0x89 || buf.toString('ascii', 1, 4) !== 'PNG') {
     throw new Error('not a png');
   }
@@ -80,7 +80,7 @@ export function decodePng(buf: Buffer): RgbImage {
 }
 
 /** Share of interior pixels the holographic layer changes. The red frame is excluded. */
-export function interiorChangeRatio(live: RgbImage, hidden: RgbImage): number {
+function interiorChangeRatio(live: RgbImage, hidden: RgbImage): number {
   const w = Math.min(live.w, hidden.w);
   const h = Math.min(live.h, hidden.h);
   const band = Math.max(2, Math.round(Math.min(w, h) * 0.08));

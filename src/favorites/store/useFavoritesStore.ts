@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { cellKey, isGenNumber, type GenAxisId, type TypeAxisId } from '../model/cells';
-import { getPickerMon, type PickerMon } from '../model/catalog';
+import { getPickerMon } from '../model/catalog';
 import {
   applyPathToTypeMap,
   applyTypeMapToFills,
@@ -10,7 +10,7 @@ import {
 } from '../model/packing';
 import { pointerPool, prunePointers } from '../model/pointers';
 
-export const FAVORITES_STORAGE_KEY = 'favorite-picker';
+const FAVORITES_STORAGE_KEY = 'favorite-picker';
 
 /** Retire the LGPE-only form IDs without leaving invisible saved picks behind. */
 export function migrateFavoriteFills(saved: Record<string, number>): Record<string, number> {
@@ -37,20 +37,11 @@ export function migrateFavoriteFills(saved: Record<string, number>): Record<stri
   return prunePointers(fills);
 }
 
-export interface FavoritesState {
+interface FavoritesState {
   fills: Record<string, number>;
   place: (type: TypeAxisId, gen: GenAxisId, id: number) => void;
   applyPack: (gen: number, path: PackMove[]) => void;
   clear: (type: TypeAxisId, gen: GenAxisId) => void;
-}
-
-export function placedMon(
-  fills: Record<string, number>,
-  type: TypeAxisId,
-  gen: GenAxisId,
-): PickerMon | undefined {
-  const id = fills[cellKey(type, gen)];
-  return id == null ? undefined : getPickerMon(id);
 }
 
 export const useFavoritesStore = create<FavoritesState>()(

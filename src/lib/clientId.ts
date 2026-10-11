@@ -42,7 +42,7 @@ export function installOptOut(search: string = window.location.search): void {
   }
 }
 
-export function setOptedOut(optedOut: boolean): void {
+function setOptedOut(optedOut: boolean): void {
   try {
     if (optedOut) localStorage.setItem(OPT_OUT_KEY, '1');
     else localStorage.removeItem(OPT_OUT_KEY);
@@ -130,12 +130,3 @@ export function getClientId(): string {
   return cid;
 }
 
-/** This browser's stored id, without minting one, so the admin dashboard can
- *  show it next to the opt-out state. */
-export function storedClientId(): string | null {
-  try {
-    return localStorage.getItem(CID_KEY);
-  } catch {
-    return null;
-  }
-}

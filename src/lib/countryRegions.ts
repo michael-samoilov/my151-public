@@ -23,7 +23,7 @@ export type Region = (typeof REGIONS)[number] | 'Unknown';
 
 /** The raw table. Exported so a test can check it for codes listed twice — the
  *  lookup below silently resolves those to whichever region is built last. */
-export const REGION_MEMBERS: Record<(typeof REGIONS)[number], string[]> = {
+const REGION_MEMBERS: Record<(typeof REGIONS)[number], string[]> = {
   'North America': ['US', 'CA', 'BM', 'GL', 'PM'],
   'Latin America': [
     'MX', 'BR', 'AR', 'CL', 'CO', 'PE', 'VE', 'EC', 'BO', 'PY', 'UY', 'GY', 'SR', 'GF',

@@ -35,7 +35,7 @@ export const K = 96 / 52;
  * The box is the league's natural width at 1× sprites. The trainer card's
  * columns are derived from it below.
  */
-export const BOX_W = 864;
+const BOX_W = 864;
 
 /** The credit strip under the content. */
 export const FOOT = 36;
@@ -127,7 +127,7 @@ export function specialistRuns(): { before: string; after: string } {
 export const TITLE_SEP = '·';
 export const TITLE_PX = 15 * K;
 export const TITLE_TRACK = -0.01 * TITLE_PX;
-export const TITLE_ROW_H = 34;
+const TITLE_ROW_H = 34;
 /** Either side of the break. */
 export const TITLE_GAP = 14;
 /** Between the badge and "Type Specialist". */
@@ -151,7 +151,7 @@ export const FIELD_PADX = 12;
 /** Between THEME and its field. */
 export const LABEL_GAP = 8;
 /** Under the theme field, above the first band. */
-export const HDR_GAP = 16;
+const HDR_GAP = 16;
 
 /**
  * The header bar: the band shade, edge to edge across the top of the picture
@@ -161,7 +161,7 @@ export const HDR_GAP = 16;
  * the bands and the leftmost glyph cells under it, and the badge wears a
  * white ring so the pill reads on the bar.
  */
-export const BAR_PADY = 20;
+const BAR_PADY = 20;
 export const BAR_H = TITLE_ROW_H + 2 * BAR_PADY;
 export const BAR_TEXT_X = PADX + RAIL;
 export const BAR_RING = 2;
@@ -206,7 +206,7 @@ export function moveExportName(name: string): string {
 /** The partner: one team sprite, at the team's own 1×. */
 export const PARTNER_SPRITE = 96;
 /** The ace: exactly twice the partner. */
-export const ACE_SPRITE = 2 * PARTNER_SPRITE;
+const ACE_SPRITE = 2 * PARTNER_SPRITE;
 
 /**
  * One ace or one partner, centered. Largest of 1×, 2×, 3× of 96 that still
@@ -218,7 +218,6 @@ export function soloExportSprite(w: number, h: number): number {
 
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */
 export const HEAD_PX = 8.5 * K;
-export const HEAD_TRACK = 0.08 * HEAD_PX;
 export const HEAD_LINE = HEAD_PX * 1.4;
 /** Species, TM, and badge names. Same rem as ACE POKÉMON / CardGrid NAME_CLASS. */
 export const NAME_PX = HEAD_PX;
@@ -245,11 +244,6 @@ export const MARK_LABEL_PX = 6.7 * K;
 export const MARK_TRACK = 0.06 * MARK_LABEL_PX;
 export const TM_BADGE_W = 2.75 * 16 * K;
 export const MARK_PAD = 7;
-/** Same rem as ACE POKÉMON. The live card does not shrink the move name. */
-export const MOVE_PX = HEAD_PX;
-export const MOVE_MIN_PX = HEAD_PX;
-/** Live card stacks the type badge and category above the move name. */
-export const TM_TYPE_ABOVE_NAME = true;
 /** CardGrid CategoryChip on the TM slot: `h-[0.6875rem] w-[0.9375rem]`. */
 export const TM_CHIP_W = 0.9375 * 16 * K;
 export const TM_CHIP_H = 0.6875 * 16 * K;
@@ -258,14 +252,14 @@ export const TM_TYPE_GAP = 3 * K;
 export const TM_STACK_GAP = 2 * K;
 
 /** Circle top inside the TM disc's 24-unit viewBox (r=9, stroke 2 at 12,12). */
-export const TM_DISC_PAD = 2 / 24;
+const TM_DISC_PAD = 2 / 24;
 
 /**
  * Inter ExtraBold Latin em-ascent. Uppercase ink sits on this baseline, so
  * the export TM gaps compare badge/disc tops to name/TM ink bottoms, not
  * the 1.4 line boxes.
  */
-export const LATIN_EM_ASCENT = 0.73;
+const LATIN_EM_ASCENT = 0.73;
 
 export function tmBadgeH(): number {
   return TM_BADGE_W / TYPE_BADGE_ASPECT;
@@ -504,7 +498,7 @@ function depthOf(x: number, y: number): number {
 }
 
 /** One side of the seam: its sprite square and its caption lines' halos. */
-export interface SeamSide {
+interface SeamSide {
   square: Box;
   lines: readonly Box[];
 }
@@ -557,7 +551,7 @@ export const K2 = 96 / 42;
 
 export const ROW2 = 44 * K2;
 export const BAND2 = 20 * K2;
-export const HPADY = 4 * K2;
+const HPADY = 4 * K2;
 export const HPADX = 8 * K2;
 /**
  * The glyph column is wider than the app's own 2.75rem: its cell is drawn at
@@ -591,10 +585,10 @@ export const HOME_RAIL = 3 * K2;
  * An unnamed league has no name line, so this is also the least whitespace
  * above its first band; `homeTopPad` adds what the frame's round corner needs.
  */
-export const HOME_GUTTER = HPADX + HOME_RAIL - HOME_R;
+const HOME_GUTTER = HPADX + HOME_RAIL - HOME_R;
 
 /** Fourteen rows, four bands with their gaps, and the credit. */
-export const HOME_BODY_H = 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT;
+const HOME_BODY_H = 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT;
 
 /**
  * The whitespace above the first thing the picture draws.
@@ -613,8 +607,8 @@ export function homeTopPad(named: boolean, homeW: number): number {
   return Math.max(HOME_GUTTER, Math.min(fromWidth, fromHeight));
 }
 
-export const HOME_W = BOX_W;
-export const HOME_INNER = HOME_W - 2 * HPADX;
+const HOME_W = BOX_W;
+const HOME_INNER = HOME_W - 2 * HPADX;
 /** Team seats per row — six wide, matching the largest team the template holds. */
 export const SEAT_COUNT = 6;
 /**
@@ -622,7 +616,7 @@ export const SEAT_COUNT = 6;
  * columns. Six seats share what the glyph and type columns leave; the old
  * seven-column grid left a dead column between the type mark and the team.
  */
-export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
+const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
 
 /**
  * Gym-detail column bounds. The column holds theme, TM, and badge on three
@@ -638,9 +632,9 @@ export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
  * theme 1.5 times the room that a fixed 220 * K2 column gave it: about 58
  * characters of mixed-case text instead of about 38.
  */
-export const HOME_DETAILS_MIN =
+const HOME_DETAILS_MIN =
   SEAT_COUNT * SEAT_COL - (GLYPH_COL + TYPE_COL + HOME_R - HOME_RAIL);
-export const HOME_DETAILS_MAX = 310 * K2;
+const HOME_DETAILS_MAX = 310 * K2;
 /**
  * Air between the details column, story teams, and rematch teams — and
  * between the spacers that sit on those blocks. One number, so the gaps
@@ -679,7 +673,6 @@ export const HOME_MARK_TRACK = 0.06 * HOME_MARK_LABEL_PX;
  * smallcaps height, instead of matching the old 11px move size.
  */
 export const HOME_THEME_TEXT_PX = 9.5 * K2;
-export const HOME_TM_BADGE_W = 2.2 * 16 * K2;
 
 export interface HomeExportGeometry {
   homeW: number;
@@ -741,7 +734,7 @@ export function homeVacancyAnchorX(
   return teamBaseX + geom.blockWidth;
 }
 
-export interface HomeSectionPill {
+interface HomeSectionPill {
   x: number;
   w: number;
   label: string | null;
