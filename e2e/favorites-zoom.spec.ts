@@ -293,12 +293,26 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
     // A press off the window centers the window under the finger.
     const mapBox = (await map.boundingBox())!;
     const press = { x: mapBox.x + mapBox.width * 0.25, y: mapBox.y + mapBox.height * 0.5 };
+    // Sample in the page one second after touchend. Driver round trips for
+    // geometry can otherwise consume the 200ms margin before the fade starts.
+    await page.evaluate(() => {
+      const probe = new Promise<{opacity: number; hit: string; elapsed: number}>((resolve) => {
+        window.addEventListener('touchend', () => {
+          const started = performance.now();
+          setTimeout(() => {
+            const map = document.querySelector<HTMLElement>('[data-testid="favorites-minimap"]')!;
+            resolve({opacity: Number(getComputedStyle(map).opacity), hit: getComputedStyle(map).pointerEvents, elapsed: performance.now() - started});
+          }, 1000);
+        }, {once: true});
+      });
+      (window as typeof window & {minimapLingerProbe: typeof probe}).minimapLingerProbe = probe;
+    });
     await touch('touchStart', press.x, press.y);
     await lift();
     await nextFrame(page);
     const centered = (await view.boundingBox())!;
-    await page.waitForTimeout(1000);
-    const lingering = await state();
+    const timed = await page.evaluate(() => (window as typeof window & {minimapLingerProbe: Promise<{opacity: number; hit: string; elapsed: number}>}).minimapLingerProbe);
+    const lingering = {...await state(), ...timed};
     await page.screenshot({ path: testInfo.outputPath('minimap-touch-drag.png') });
     await expect.poll(async () => (await state()).opacity, { timeout: 4_000 }).toBeLessThan(0.05);
     const faded = await state();
