@@ -49,6 +49,8 @@ export function setOptedOut(optedOut: boolean): void {
   } catch {
     // localStorage may be unavailable
   }
+  // Clear pending analytics in this tab immediately; storage events reach other tabs.
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event('p151-opt-out'));
 }
 
 export function isOptedOut(): boolean {

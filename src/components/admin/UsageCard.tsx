@@ -13,7 +13,8 @@ type Stats = {
   dailybilling?: Point[];
   command_counts?: { metric_identifier: string; data_points: Point[] }[];
 };
-type Usage = { status: 'ready'; stats: Stats } | { status: 'not_configured' } | { status: 'error'; http: number };
+type ActivityBudget = {status: 'collecting' | 'paused' | 'disabled'; usedUnits: number; limitUnits: number; bytes: number; limitBytes: number; acceptedBuckets: number; pausedUntil?: number} | {status: 'error'};
+type Usage = ({ status: 'ready'; stats: Stats } | { status: 'not_configured' } | { status: 'error'; http: number }) & {activity?: ActivityBudget};
 
 const fmt = new Intl.NumberFormat('en-US');
 const gb = (bytes = 0) => `${(bytes / 1e9).toFixed(2)} GB`;
@@ -36,17 +37,30 @@ function Title({ children }: { children: ReactNode }) {
   return <div className="col-span-3 mt-2 text-[0.7rem] font-semibold uppercase tracking-wide text-muted-foreground first:mt-0">{children}</div>;
 }
 
+function ActivityStatus({budget}: {budget?: ActivityBudget}) {
+  if (!budget) return null;
+  if (budget.status === 'error') return <p className="mt-4 text-xs text-muted-foreground">Minute history status unavailable</p>;
+  return <div className="mt-4 border-t pt-3 text-xs text-muted-foreground" data-testid="activity-budget">
+    <p className="font-semibold text-foreground">Minute history · {budget.status}</p>
+    <p className="mt-1">{fmt.format(budget.acceptedBuckets)} recorded minute fragments · retained for 400 days</p>
+    <p className="mt-1">Monthly allowance: {fmt.format(budget.usedUnits)} / {fmt.format(budget.limitUnits)} operation units · {(budget.bytes / 1048576).toFixed(1)} / {(budget.limitBytes / 1048576).toFixed(0)} MB</p>
+    <p className="mt-1">Conservative allowance including retries; separate from the actual bill and stored size. Supports session cutoffs of 1 minute or longer.</p>
+    {budget.status === 'disabled' && <p className="mt-1">Collection resumes when enabled.</p>}
+    {budget.status === 'paused' && budget.pausedUntil && <p className="mt-1">Collection resumes after {new Date(budget.pausedUntil).toISOString().slice(0, 10)} UTC.</p>}
+  </div>;
+}
+
 /**
  * Upstash's own numbers for the database: this month, the last days, and
  * today's commands by type (each type's counter resets at 00:00 UTC, so its
  * newest point is today so far). Read once per page load through the admin
- * API; costs no Redis command beyond the admin check.
+ * API; adds one Redis read for the optional minute-history allowance.
  */
 export function UsageCard({ token }: { token: string }) {
   const [usage, setUsage] = useState<Usage | null>(null);
   useEffect(() => {
     let live = true;
-    fetch('/api/submissions?usage=1', { headers: { Authorization: `Bearer ${token}` } })
+    fetch('/api/submissions?usage=1&activity=1', { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => (r.ok ? (r.json() as Promise<Usage>) : { status: 'error' as const, http: r.status }))
       .catch(() => ({ status: 'error' as const, http: 0 }))
       .then((u) => live && setUsage(u));
@@ -60,6 +74,7 @@ export function UsageCard({ token }: { token: string }) {
     return (
       <Panel title="Database" sub={['upstash']}>
         <p className="text-xs text-muted-foreground">{usage.status === 'not_configured' ? 'Not connected' : `Upstash error ${usage.http}`}</p>
+        <ActivityStatus budget={usage.activity} />
       </Panel>
     );
   }
@@ -104,6 +119,7 @@ export function UsageCard({ token }: { token: string }) {
           ))}
         </div>
       </div>
+      <ActivityStatus budget={usage.activity} />
     </Panel>
   );
 }

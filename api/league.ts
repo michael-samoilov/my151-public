@@ -1,4 +1,5 @@
 import {parseAttentionForIngest} from './_attention.js';
+import {appendMinuteActivity} from './_activityHistoryStore.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
@@ -67,6 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ref?: unknown;
       page?: unknown;
       attention?: unknown;
+      activity?: unknown;
       ts?: unknown;
       notme?: unknown;
       events?: unknown;
@@ -162,11 +164,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const rec = mergeLeagueRecord(existing, input);
       const ok = await redis.eval(CAS_LUA, [LEAGUE_CLIENTS_KEY, LEAGUE_VERSION_KEY], [cid, expectedVer, JSON.stringify(rec)]);
       if (ok === 1) {
+        const activityAck = await appendMinuteActivity(cid, 'league', body.activity, receivedAt);
         if (exportKind) {
           const highlight = await recordToolExport(exportKind === 'card' ? 'card' : 'league', pokemonIds);
-          return res.status(200).json({ ok: true, highlight });
+          return res.status(200).json({ ok: true, highlight, activityAck });
         }
-        return res.status(200).json({ ok: true });
+        return res.status(200).json({ ok: true, activityAck });
       }
       await new Promise((r) => setTimeout(r, 15 + attempt * 20));
     }

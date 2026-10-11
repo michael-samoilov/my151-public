@@ -1,4 +1,5 @@
 import {parseAttentionForIngest,mergeAttention} from './_attention.js';
+import {appendMinuteActivity} from './_activityHistoryStore.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
@@ -184,6 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tool?: unknown;
       page?: unknown;
       attention?: unknown;
+      activity?: unknown;
       ts?: unknown;
       notme?: unknown;
     };
@@ -473,14 +475,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         [effectiveCid, expectedVer, JSON.stringify(rec)],
       );
       if (ok === 1) {
+        const activityAck = await appendMinuteActivity(cid, 'dex', body.activity, receivedAt);
         const prevEver = new Set(existing?.everIds ?? []);
         const newlyEver = rec.everIds.filter((id) => !prevEver.has(id));
         if (newlyEver.length > 0) await bumpDexPickFreq(newlyEver);
         if (kind === 'export') {
           const highlight = await recordToolExport('pokedex', ids);
-          return res.status(200).json({ ok: true, highlight });
+          return res.status(200).json({ ok: true, highlight, activityAck });
         }
-        return res.status(200).json({ ok: true });
+        return res.status(200).json({ ok: true, activityAck });
       }
       // Lost the race — brief backoff, then re-read and retry.
       await new Promise((r) => setTimeout(r, 15 + attempt * 20));
