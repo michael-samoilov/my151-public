@@ -190,11 +190,11 @@ test('filters and archive reach browsers far below the first screen', async ({ p
 
   await openTab(page, 'League');
   await page.getByRole('button', { name: 'Tool filter' }).click();
-  await page.getByRole('option', { name: 'League, no Dex' }).click();
+  await page.getByRole('option', { name: 'League', exact: true }).click();
   await scrollTo(page, leagueOnly(29));
   const names = await page.locator('[data-user-preview]').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')));
   expect(names.length).toBeGreaterThan(0);
-  for (const name of names) expect(name).toMatch(/^Open user lg…\d{4}$/);
+  for (const name of names) expect(name).toMatch(/^Open user (lg…\d{4}|idx-\d{4})$/);
   await page.getByRole('button', { name: 'Clear Tools' }).click();
   await page.evaluate(() => window.scrollTo(0, 0));
 

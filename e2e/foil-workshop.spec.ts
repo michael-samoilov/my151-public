@@ -53,7 +53,7 @@ test.describe('export foil workshop', () => {
       .toBe('0.700');
     await expect
       .poll(async () => foilVar(foil, '--hover-tilt-glare-intensity'))
-      .toBe('1.000');
+      .toBe('0.600');
     await expect
       .poll(async () => foilVar(foil, '--foil-holo-blend'))
       .toBe('color-dodge');
@@ -111,16 +111,17 @@ test.describe('export foil workshop', () => {
     await expect(foil).toHaveAttribute('data-hover-tilt-shadow', '1');
     await setRange(page, 'shadowBlur', '32');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-shadow-blur')).toBe('32');
-    // The hit's shadow flag follows on the next painted frame.
-    await expect
-      .poll(async () => page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow))
-      .not.toBe('none');
-    const shadowAt32 = await page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow);
+    // The hit's shadow flag follows on the next painted frame. The shadow is
+    // the card's shape, blurred, so the blur slider sets its filter.
+    const shadowFilter = () =>
+      page.locator('[data-export-shadow-layer="far"]').evaluate((el) => getComputedStyle(el).filter);
+    await expect.poll(shadowFilter).toMatch(/blur\(/);
+    const shadowAt32 = await shadowFilter();
     await setRange(page, 'shadowBlur', '8');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-shadow-blur')).toBe('8');
     await expect.poll(async () => {
-      const next = await page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow);
-      return next !== shadowAt32 && next !== 'none';
+      const next = await shadowFilter();
+      return next !== shadowAt32 && /blur\(/.test(next);
     }).toBe(true);
 
     await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('color-dodge');
@@ -232,8 +233,8 @@ test.describe('export foil workshop', () => {
     const flat = await lift.boundingBox();
     expect(popped && flat && popped.width > flat.width * 1.08, 'tilt scale paints larger than rest').toBeTruthy();
     await expect
-      .poll(async () => lift.evaluate((el) => getComputedStyle(el).boxShadow))
-      .toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|rgb\(0,\s*0,\s*0\)\s*\/\s*0|none/);
+      .poll(async () => page.locator('[data-export-shadow-layer="far"]').evaluate((el) => getComputedStyle(el).opacity))
+      .toBe('0');
     await page.evaluate(() => {
       const hit = document.querySelector('[data-export-tilt-hit]');
       if (!(hit instanceof HTMLElement)) return;

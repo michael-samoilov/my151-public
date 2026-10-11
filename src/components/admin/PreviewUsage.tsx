@@ -9,7 +9,7 @@ import { PREVIEW_PROGRESS, sessionChipParts } from '@/components/admin/userPrevi
 /** One half of a column: two lines of text. On a phone the column's merged
  *  chip draws the border; on desktop each half is its own chip. */
 const HALF =
-  'inline-flex shrink-0 flex-col items-center justify-center whitespace-nowrap px-1 py-0.5 text-xs leading-tight tabular-nums max-md:flex-1 md:rounded-xl md:border md:border-border md:bg-card md:px-2';
+  'inline-flex shrink-0 flex-col items-center justify-center whitespace-nowrap px-1 py-0.5 text-xs leading-tight tabular-nums max-md:flex-1 md:rounded-xl md:border md:border-border md:bg-card md:px-1';
 
 /** On a phone, one chip per column: progress on top, sessions and time below,
  *  split by a short rule. On desktop the column dissolves into the table. */

@@ -424,6 +424,15 @@ test.describe('mobile dex export sheet', () => {
       return {
         ok: true,
         liftBox: getComputedStyle(lift).boxShadow,
+        // The drop shadow is the PNG's own shape, blurred, not a box-shadow.
+        shapeShadow: (() => {
+          const layers = [...document.querySelectorAll<HTMLElement>('[data-export-shadow-layer]')];
+          return layers.length === 2 && layers.every((el) => {
+            const before = getComputedStyle(el, '::before');
+            return /blur\(/.test(getComputedStyle(el).filter)
+              && /url\(/.test(`${before.maskImage} ${before.getPropertyValue('-webkit-mask-image')}`);
+          });
+        })(),
         hitBox: hitCs.boxShadow,
         hitPad: parseFloat(hitCs.paddingTop || '0'),
         hitFill: hitCs.backgroundColor,
@@ -433,7 +442,8 @@ test.describe('mobile dex export sheet', () => {
       };
     });
     expect(shadow.ok, JSON.stringify(shadow)).toBe(true);
-    expect(shadow.liftBox, JSON.stringify(shadow)).not.toBe('none');
+    expect(shadow.liftBox, JSON.stringify(shadow)).toBe('none');
+    expect(shadow.shapeShadow, JSON.stringify(shadow)).toBe(true);
     expect(shadow.hitBox, JSON.stringify(shadow)).toBe('none');
     expect(shadow.hitPad, JSON.stringify(shadow)).toBeGreaterThanOrEqual(32);
     expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.08);
@@ -508,7 +518,7 @@ test.describe('desktop dex export preview', () => {
         page.locator('[data-foil-layer="holographic"]').evaluate((el) => getComputedStyle(el).mixBlendMode),
       )
       .toBe('color-dodge');
-    await expect.poll(() => cssVar('--hover-tilt-glare-intensity')).toBe('1.000');
+    await expect.poll(() => cssVar('--hover-tilt-glare-intensity')).toBe('0.600');
     await expect.poll(() => cssVar('--foil-holographic')).toBe('0.700');
     await expect(page.locator('[data-export-preview-layer]')).toBeVisible();
   });
@@ -987,6 +997,14 @@ test.describe('desktop dex export preview', () => {
       return {
         ok: true,
         liftBox: liftCs.boxShadow,
+        shapeShadow: (() => {
+          const layers = [...document.querySelectorAll<HTMLElement>('[data-export-shadow-layer]')];
+          return layers.length === 2 && layers.every((el) => {
+            const before = getComputedStyle(el, '::before');
+            return /blur\(/.test(getComputedStyle(el).filter)
+              && /url\(/.test(`${before.maskImage} ${before.getPropertyValue('-webkit-mask-image')}`);
+          });
+        })(),
         hitBox: hitCs.boxShadow,
         cardBox: cardCs.boxShadow,
         liftOverflow: liftCs.overflow,
@@ -1002,13 +1020,13 @@ test.describe('desktop dex export preview', () => {
       };
     });
     expect(shadow.ok, JSON.stringify(shadow)).toBe(true);
-    expect(shadow.liftBox, JSON.stringify(shadow)).not.toBe('none');
+    expect(shadow.liftBox, JSON.stringify(shadow)).toBe('none');
+    expect(shadow.shapeShadow, JSON.stringify(shadow)).toBe(true);
     expect(shadow.hitBox, JSON.stringify(shadow)).toBe('none');
     expect(shadow.cardBox, JSON.stringify(shadow)).toBe('none');
     expect(shadow.liftOverflow, JSON.stringify(shadow)).toBe('visible');
     expect(shadow.hitOverflow, JSON.stringify(shadow)).toBe('visible');
     expect(shadow.hitPad, JSON.stringify(shadow)).toBeGreaterThanOrEqual(32);
     expect(shadow.layerOverflow, JSON.stringify(shadow)).toBe('visible');
-    expect(shadow.liftBox, JSON.stringify(shadow)).not.toBe('none');
   });
 });

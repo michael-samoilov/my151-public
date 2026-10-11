@@ -23,12 +23,10 @@ interface Axis {
 
 /**
  * Day-by-hour heatmap of browsers, each counted once in every weekday hour it
- * was active in, on one of two clocks. Wide containers put days down and hours
- * across. Below 32rem, 24 hour columns leave no room for their totals, so the
- * axes swap. Both layouts render and a container query shows one: a width
- * measured after mount changed the card's height after Back had already
- * restored the dashboard scroll. Each row and column ends in its total, in
- * browser-hours. A mouse reads a cell out on hover; a tap toggles the readout,
+ * was active in, on one of two clocks. Days run down and hours across at
+ * every width. Narrow cards omit hourly totals to keep labels readable.
+ * Each row ends in its total, in browser-hours. A mouse reads a cell on
+ * hover; a tap toggles the readout,
  * so it stays up while the clock changes.
  */
 export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, number[][]> }) {
@@ -42,25 +40,25 @@ export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, numbe
   const label = 'flex items-center text-xs leading-none text-muted-foreground';
   const num = 'flex items-center justify-center text-xs leading-none tabular-nums text-muted-foreground';
 
-  const grid = (landscape: boolean) => {
+  const grid = () => {
     const days: Axis = { n: 7, label: (i) => DAYS[i], every: 1, totals: dayTotals };
-    const hours: Axis = { n: 24, label: hourShort, every: landscape ? 3 : 1, totals: hourTotals };
-    const [down, across] = landscape ? [days, hours] : [hours, days];
-    const slotAt = (r: number, c: number) => (landscape ? { dow: r, hour: c } : { dow: c, hour: r });
+    const hours: Axis = { n: 24, label: hourShort, every: 3, totals: hourTotals };
+    const [down, across] = [days, hours];
+    const slotAt = (r: number, c: number) => ({ dow: r, hour: c });
     return (
       <div
         data-testid="heatmap-grid"
-        data-layout={landscape ? 'landscape' : 'portrait'}
+        data-layout="landscape"
         role="img"
         aria-label={`${CLOCK_OPTIONS.find((o) => o.key === clock)?.label}: ${total} browser-hours by day and hour`}
-        className={cn('w-full gap-px', landscape ? 'hidden @min-[32rem]:grid' : 'grid @min-[32rem]:hidden')}
+        className="grid w-full gap-px"
         style={{ gridTemplateColumns: `auto repeat(${across.n}, minmax(0, 1fr)) auto` }}
         onPointerLeave={(e) => e.pointerType === 'mouse' && setActive(null)}
       >
         <div />
-        {Array.from({ length: across.n }, (_, c) => (
-          <div key={c} className={cn(num, 'pb-0.5')}>
-            {c % across.every === 0 ? across.label(c) : ''}
+        {Array.from({ length: across.n / across.every }, (_, i) => (
+          <div key={i} className={cn(num, 'justify-start pb-0.5')} style={{ gridColumn: `span ${across.every}` }}>
+            <span className="@min-[32rem]:w-1/3 @min-[32rem]:text-center">{across.label(i * across.every)}</span>
           </div>
         ))}
         <div className={cn(num, 'pb-0.5 pl-1')}>Σ</div>
@@ -78,7 +76,7 @@ export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, numbe
                   data-testid="heatmap-cell"
                   className={cn(
                     'relative rounded-[2px]',
-                    landscape ? 'aspect-[4/3]' : 'h-[0.875rem]',
+                    'h-4 @min-[32rem]:h-auto @min-[32rem]:aspect-[4/3]',
                     on && 'z-10 ring-1 ring-foreground',
                   )}
                   style={{
@@ -107,8 +105,9 @@ export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, numbe
         ))}
 
         <div className={cn(label, 'justify-end pr-1 pt-0.5')}>Σ</div>
+        <div className="@min-[32rem]:hidden" style={{ gridColumn: `span ${across.n}` }} />
         {across.totals.map((t, c) => (
-          <div key={c} className={cn(num, 'pt-0.5')}>
+          <div key={c} className={cn(num, 'hidden pt-0.5 @min-[32rem]:flex')}>
             {t}
           </div>
         ))}
@@ -124,8 +123,7 @@ export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, numbe
       actions={<Seg ariaLabel="Clock" options={CLOCK_OPTIONS} value={clock} onChange={setClock} />}
     >
       <div className="@container">
-        {grid(true)}
-        {grid(false)}
+        {grid()}
       </div>
     </Panel>
   );

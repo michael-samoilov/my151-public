@@ -1,6 +1,7 @@
+// keeps: API preference aggregation is stubbed by browser tests; guard form-count bias and chart deduplication.
 import {describe, expect, it, vi} from 'vitest';
 import cellData from '../../../api/_favoriteCells.json';
-import {favoritePicks, favoritePreference, fitFavoritePreference} from '../../../api/_favoriteAggregate';
+import {favoritePicks, favoritePreference, fitFavoritePreference, favoriteSpeciesId} from '../../../api/_favoriteAggregate';
 import {parseFavoriteSnapshot, type FavoriteRecord} from '../../../api/_favoriteRecord';
 
 const record = (fills: Record<string, number>): FavoriteRecord => ({
@@ -9,6 +10,48 @@ const record = (fills: Record<string, number>): FavoriteRecord => ({
 const cells = cellData as Record<string, {kind: string; ids?: number[]; sources?: string[]}>;
 
 describe('favorite preference evidence', () => {
+  it('does not let unpicked Unown forms inflate Espeon preference', () => {
+    const result = favoritePreference(Array.from({length: 20}, () => record({'psychic|2': 196})));
+    const ids = [199, 238, 196, 177, 178, 202, 203, 249, 251, 201];
+    const expected = fitFavoritePreference([{ids, wins: ids.map(id => id === 196 ? 20 : 0)}]);
+    expect(result.candidates).toBe(10);
+    expect(result.entries[0].score).toBeCloseTo(expected.scores[expected.ids.indexOf(196)], 8);
+  });
+
+  it('combines Charizard forms without altering raw per-cell counts', () => {
+    const fills = {'fire|1': 6, 'gimmick|1': 10034, 'fire|gimmick': 10035, 'dragon|gimmick': 10034};
+    for (const [key, id] of Object.entries(fills)) expect(cells[key].ids).toContain(id);
+    const picks = favoritePicks([record(fills)]);
+    expect(picks.preference!.entries).toHaveLength(1);
+    expect(picks.preference!.entries[0]).toMatchObject({id: 6, picks: 4, charts: 1});
+    expect(picks.cells['gimmick|1']).toEqual([[10034, 1]]);
+    expect(picks.cells['fire|gimmick']).toEqual([[10035, 1]]);
+    expect(picks.top).toContainEqual([10034, 1]);
+  });
+
+  it('does not treat favorite pointers between forms of one species as comparisons', () => {
+    const direct = {'fire|1': 6, 'gimmick|1': 10034};
+    const before = favoritePreference([record(direct)]);
+    const after = favoritePreference([record({...direct, 'favorite|1': 10034})]);
+    expect(after.choices).toBe(before.choices);
+    expect(after.entries[0]).toMatchObject({id: 6, picks: 3, charts: 1});
+    expect(after.entries[0].score).toBe(before.entries[0].score);
+  });
+
+  it('preserves species boundaries across regional IDs, evolutions, and lookalikes', () => {
+    expect(favoriteSpeciesId(10100)).toBe(26);
+    expect(favoriteSpeciesId(10179)).toBe(562);
+    expect(favoriteSpeciesId(10180)).toBe(618);
+    expect(favoriteSpeciesId(11072)).toBe(555);
+    expect(favoriteSpeciesId(10191)).toBe(892);
+    expect(favoriteSpeciesId(10227)).toBe(892);
+    expect(favoriteSpeciesId(133)).not.toBe(favoriteSpeciesId(196));
+    expect(favoriteSpeciesId(50)).not.toBe(favoriteSpeciesId(960));
+    for (const cell of Object.values(cells)) {
+      for (const id of cell.ids ?? []) expect(Number.isSafeInteger(favoriteSpeciesId(id))).toBe(true);
+    }
+  });
+
   it('does not mistake blank and forced selections for preference comparisons', () => {
     const result = favoritePreference([record({}), record({'ghost|2': 200, 'dragon|2': 230})]);
     expect(result.choices).toBe(0);
@@ -23,10 +66,10 @@ describe('favorite preference evidence', () => {
   it('reconstructs pointer alternatives once per identity despite repeated source picks', () => {
     const fills = {'fire|1': 6, 'flying|1': 6, 'water|1': 7, 'favorite|1': 6};
     const result = favoritePreference([record(fills)]);
-    const pools = ['fire|1', 'flying|1', 'water|1'].map(key => ({
-      ids: cells[key].ids!,
-      wins: cells[key].ids!.map(id => id === fills[key as keyof typeof fills] ? 1 : 0),
-    }));
+    const pools = ['fire|1', 'flying|1', 'water|1'].map(key => {
+      const ids = [...new Set(cells[key].ids!.map(favoriteSpeciesId))];
+      return {ids, wins: ids.map(id => id === fills[key as keyof typeof fills] ? 1 : 0)};
+    });
     pools.push({ids: [6, 7], wins: [1, 0]});
     const expected = fitFavoritePreference(pools);
     expect(result.choices).toBe(4);
@@ -49,7 +92,7 @@ describe('favorite preference evidence', () => {
     expect(result.entries).toHaveLength(1);
     expect(result.entries[0]).toMatchObject({id: 4, picks: 1, charts: 1, evidencePicks: 1});
     expect(result.choices).toBe(1);
-    expect(result.candidates).toBe(cells['fire|1'].ids!.length);
+    expect(result.candidates).toBe(new Set(cells['fire|1'].ids!.map(favoriteSpeciesId)).size);
     const picks = favoritePicks([record({'fire|1': 4})]);
     expect(picks.top).toEqual([[4, 1]]);
     expect(picks.cells).toEqual({'fire|1': [[4, 1]]});

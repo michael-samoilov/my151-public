@@ -277,10 +277,8 @@ test.describe('desktop export preview', () => {
         mask,
         amount: Number(getComputedStyle(card).getPropertyValue('--foil-holographic')),
         foil: Number(card.getAttribute('data-foil-opacity')),
-        shadow: (() => {
-          const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
-          return lift ? getComputedStyle(lift).boxShadow : 'none';
-        })(),
+        // The drop shadow is the PNG's own shape, blurred.
+        shadow: document.querySelectorAll('[data-export-shadow-layer]').length,
         hypot: Math.hypot(Number(card.getAttribute('data-tilt-x') || 0), Number(card.getAttribute('data-tilt-y') || 0)),
       };
     });
@@ -289,7 +287,7 @@ test.describe('desktop export preview', () => {
     expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.7, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
-    expect(holo.shadow, JSON.stringify(holo)).not.toBe('none');
+    expect(holo.shadow, JSON.stringify(holo)).toBe(2);
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2);
     expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(10.2);
   });

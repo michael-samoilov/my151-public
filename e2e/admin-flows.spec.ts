@@ -129,17 +129,19 @@ test.describe('admin flows', () => {
     await expect(funnel.locator('canvas')).toBeVisible();
     const annotations = await funnel.evaluate((el) => {
       type Glyph = { type: string; style?: { text?: string }; getBoundingRect(): { x: number; y: number; width: number; height: number; clone(): ReturnType<Glyph['getBoundingRect']>; applyTransform(matrix: number[]): void }; getComputedTransform(): number[] | undefined };
-      type Chart = { getWidth(): number; getHeight(): number; getZr(): { storage: { getDisplayList(update: boolean): Glyph[] } } };
+      type Chart = { getWidth(): number; getHeight(): number; getModel(): { getSeriesByIndex(i: number): { getGraph(): { nodes: { id: string; getGraphicEl(): { getTextContent(): Glyph } }[] } } } };
       type Hook = { memoizedState: unknown; next: Hook | null };
       type Fiber = { memoizedState: Hook | null; return: Fiber | null };
       const key = Object.keys(el).find((k) => k.startsWith('__reactFiber$'))!;
       let fiber = (el as unknown as Record<string, Fiber>)[key], instance: Chart | undefined;
       for (let i = 0; fiber && i < 30 && !instance; i++, fiber = fiber.return!) for (let hook = fiber.memoizedState; hook && !instance; hook = hook.next) {
         const current = (hook.memoizedState as { current?: Chart } | null)?.current;
-        if (current && typeof current.getZr === 'function') instance = current;
+        if (current && typeof current.getModel === 'function') instance = current;
       }
       if (!instance) throw new Error('Rendered export chart missing');
-      return instance.getZr().storage.getDisplayList(true).filter((g) => g.type === 'tspan' && /League export|Gym export|Both exported/.test(g.style?.text ?? '')).map((g) => {
+      // Measure whole label blocks so wrapped words still count as one name.
+      return instance.getModel().getSeriesByIndex(0).getGraph().nodes.filter((n) => /^(League export|Gym export|Both exported)$/.test(n.id)).map((n) => {
+        const g = n.getGraphicEl().getTextContent();
         const r = g.getBoundingRect().clone(), matrix = g.getComputedTransform();
         if (matrix) r.applyTransform(matrix);
         return { text: g.style!.text!, finite: [r.x, r.y, r.width, r.height].every(Number.isFinite), inside: r.x >= 0 && r.y >= 0 && r.x + r.width <= instance!.getWidth() && r.y + r.height <= instance!.getHeight() };

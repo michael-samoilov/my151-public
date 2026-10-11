@@ -204,6 +204,7 @@ function PreferenceRanking({ preference }: { preference: Preference | undefined 
             These choices form {preference.components} separate groups. Comparisons between these groups depend on smoothing.
           </p>
         )}
+        <p className="mt-2">Forms count together as one Pokémon.</p>
         <details className="mt-2">
           <summary className="cursor-pointer font-semibold text-foreground">What does the number mean?</summary>
           <p className="mt-2">
