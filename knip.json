@@ -1,0 +1,33 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "index.html",
+    "pokedex-builder.html",
+    "custom-gym-leader.html",
+    "favorite-pokemon-picker.html",
+    "evolution-levels.html",
+    "slot-lab.html",
+    "foil-workshop.html",
+    "src/main.tsx",
+    "src/league/main.tsx",
+    "src/favorites/main.tsx",
+    "src/levels/main.tsx",
+    "src/slotlab/main.tsx",
+    "src/foil-workshop/main.tsx",
+    "src/home/prerender.ts",
+    "src/favorites/model/spritePacks.ts",
+    "api/*.ts",
+    "!api/_*.ts",
+    "scripts/check-*.mjs",
+    "scripts/build-favorite-analytics-cells.ts",
+    "scripts/performance/*.mjs",
+    "e2e/preview.config.ts"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "api/**/*.ts",
+    "scripts/**/*.{ts,mts,mjs,cjs,js}",
+    "e2e/**/*.ts",
+    "*.config.ts"
+  ]
+}
