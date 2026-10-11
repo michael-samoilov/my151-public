@@ -518,6 +518,16 @@ export const enUi = {
   'league.target.ace': 'Ace Pokémon',
   'league.target.legend': 'Endgame Boss legendary',
   'league.target.partner': 'Partner / Shouldermon',
+  // Move categories and contest conditions. The other locales take the games'
+  // own words from docs/i18n/sources/game-terms.json, through catalogs/terms.
+  'league.category.physical': 'Physical',
+  'league.category.special': 'Special',
+  'league.category.status': 'Status',
+  'league.contest.beautiful': 'Beautiful',
+  'league.contest.clever': 'Clever',
+  'league.contest.cool': 'Cool',
+  'league.contest.cute': 'Cute',
+  'league.contest.tough': 'Tough',
   'league.tm.category': 'Category',
   'league.tm.categoryTitle': 'Move category',
   'league.tm.clear': 'Clear',

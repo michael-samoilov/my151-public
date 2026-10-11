@@ -20,6 +20,11 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { en } from '../../src/i18n/catalogs/en';
 import { LOCALES, type Locale } from '../../src/i18n/config';
+import { tierOf } from '../../src/i18n/tiers';
+import type { MessageKey } from '../../src/i18n/types';
+import {
+  GAME_TERMS_PATH, MOVE_NAMES_PATH, type GameTermsFixture, type MoveNamesFixture,
+} from './extract-game-terms';
 import { GAME_TEXT_PATH, type GameTextSource } from './fetch-game-text';
 
 const TERMS_DIR = 'src/i18n/catalogs/terms';
@@ -88,6 +93,73 @@ function gameTextParity(): void {
         );
       }
     }
+  }
+}
+
+const gameTerms = readJson<GameTermsFixture>(GAME_TERMS_PATH);
+const moveNames = readJson<MoveNamesFixture>(MOVE_NAMES_PATH);
+/** Catalog keys whose values are the games' own text, held to the fixture below. */
+const SOURCED_KEYS = new Set(gameTerms.terms.map((t) => t.key).filter((k) => !k.startsWith('form.')));
+
+/** HOME's box list adds this after a region name; see build-term-catalogs.ts. */
+const REGION_SUFFIX: Partial<Record<Locale, string>> = {
+  en: ' Region', ja: '地方', ko: '지방', 'zh-Hans': '地区', 'zh-Hant': '地區',
+};
+
+/**
+ * The move names, move categories, contest conditions, sub-labels and region
+ * names sourced from the games (`npm run i18n:game-terms`) must be what the
+ * fixtures say, so a hand edit to a catalog fails here rather than shipping a
+ * word no game uses. A key the fixture leaves out for a locale stays English.
+ */
+function sourcedGameText(): void {
+  for (const locale of LOCALES) {
+    if (locale === 'en') continue;
+    const catalog = termCatalogs.get(locale) ?? {};
+    for (const term of gameTerms.terms) {
+      if (term.key.startsWith('form.')) continue;
+      if (locale === 'de' && tierOf(term.key as MessageKey) !== 'official') {
+        fail('game-text', 'sourced from the games but not in the official tier (src/i18n/tiers.ts)', undefined, term.key);
+      }
+      const want = term.text[locale];
+      const got = catalog[term.key];
+      if (want !== got) {
+        fail('game-text', `catalog says ${JSON.stringify(got)}, ${term.from[0]?.qid ?? 'the fixture'} gives ${JSON.stringify(want)}`, locale, term.key);
+      }
+      if (uiCatalogs.get(locale)?.[term.key] !== undefined) {
+        fail('game-text', 'a translated value in catalogs/ui would hide the sourced one', locale, term.key);
+      }
+    }
+    for (const [id, home] of Object.entries(gameTerms.regions)) {
+      const key = `region.${id}`;
+      const got = catalog[key];
+      const theirs = home.text[locale];
+      if (theirs && got !== theirs && theirs !== `${got}${REGION_SUFFIX[locale] ?? ''}`) {
+        fail('game-text', `catalog says ${JSON.stringify(got)}, ${home.qid} says ${JSON.stringify(theirs)}`, locale, key);
+      }
+    }
+    const path = `src/i18n/moves/${locale}.json`;
+    const shipped = existsSync(path) ? readJson<Record<string, string>>(path) : {};
+    for (const [id, row] of Object.entries(moveNames.moves)) {
+      if (shipped[id] !== row.text[locale]) {
+        fail('game-text', `${path} says ${JSON.stringify(shipped[id])}, ${row.qid} says ${JSON.stringify(row.text[locale])}`, locale, `move ${id}`);
+      }
+    }
+    if (Object.keys(shipped).length !== Object.keys(moveNames.moves).length) {
+      fail('game-text', `${path} has ${Object.keys(shipped).length} moves, the fixture ${Object.keys(moveNames.moves).length}`, locale);
+    }
+  }
+  // The league's English names come from src/data/moves.json. A regenerated
+  // moves.json that renames or adds a move must regenerate the fixture too.
+  const appMoves = readJson<{ id: number; name: string }[]>('src/data/moves.json');
+  for (const move of appMoves) {
+    const row = moveNames.moves[move.id];
+    if (row?.text.en !== move.name) {
+      fail('game-text', `src/data/moves.json says ${JSON.stringify(move.name)}, ${MOVE_NAMES_PATH} says ${JSON.stringify(row?.text.en)}; run npm run i18n:game-terms`, undefined, `move ${move.id}`);
+    }
+  }
+  if (appMoves.length !== Object.keys(moveNames.moves).length) {
+    fail('game-text', `src/data/moves.json has ${appMoves.length} moves, ${MOVE_NAMES_PATH} ${Object.keys(moveNames.moves).length}`);
   }
 }
 
@@ -185,6 +257,9 @@ function untranslatedLeftovers(): void {
     }
 
     for (const [key, value] of entries) {
+      // Sourced game text is held to the games themselves: "X／Y" and
+      // "Pokémon LEGENDS アルセウス" are what the Chinese and Japanese games say.
+      if (SOURCED_KEYS.has(key)) continue;
       if (cjk.includes(locale) && value.length > 0 && asciiLetters(value) / value.length > 0.6) {
         fail('untranslated', `${JSON.stringify(value)} is mostly ASCII in a CJK locale`, locale, key);
       }
@@ -526,6 +601,7 @@ function duplicateKeys(): void {
 function main(): void {
   const gates: [string, () => void][] = [
     ['official game text', gameTextParity],
+    ['sourced game terms and move names', sourcedGameText],
     ['placeholder integrity', placeholderIntegrity],
     ['untranslated leftovers', untranslatedLeftovers],
     ['unicode hygiene', unicodeHygiene],

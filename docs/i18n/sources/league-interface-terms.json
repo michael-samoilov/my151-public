@@ -2,7 +2,7 @@
   "source": "Pokémon Scarlet/Violet, Sword/Shield, Ultra Sun/Ultra Moon and Let’s Go game text",
   "mirror": "https://github.com/abcboy101/poke-corpus",
   "commit": "d74a89ba69cbabc491b65c3e88af8722bb34a927",
-  "note": "The league builder’s authored strings follow these terms. Move names, move categories (Physical, Special, Status) and contest conditions have no sourced text in all nine languages, so they stay English.",
+  "note": "The league builder’s authored strings follow these terms. Move names, move categories (Physical, Special, Status) and contest conditions are sourced in move-names.json and game-terms.json.",
   "terms": [
     {
       "qid": "sv.trtype.MSG_TRTYPE_GYMLEADER",

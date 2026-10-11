@@ -104,3 +104,39 @@ Chinese sources contain no descriptor for the six Cosplay Pikachu variants or
 Spiky-eared Pichu. Those sprites show their localized species name. Female
 sprite variants without a published form descriptor use the sex symbol `♀`.
 Neither case invents official form wording.
+
+## Move names and other game terms
+
+`move-names.json` and `game-terms.json` come from `npm run i18n:game-terms`
+(`scripts/i18n/extract-game-terms.ts`), at the same pinned commit. They
+record the game, file and message id of every string, and the SHA-256 of
+every file read. The downloads are cached in `docs/i18n/poke-corpus/`, which
+is not committed.
+
+The newest game that has a string wins: Pokémon Champions, then Legends: Z-A,
+then Pokémon HOME, then Scarlet/Violet and older games.
+
+| What | Where in the games |
+|---|---|
+| 845 move names | Champions `wazaname` (832), Legends: Z-A `wazaname` (13) |
+| Physical, Special, Status | Champions `narrowdown_s_14` to `_16`, the move filter |
+| Contest conditions | HOME `nx_status_detailed_521` to `_525` (かっこよさ, Coolness, Sang-froid) |
+| Paldean Tauros breeds | Champions `zkn_form_syn.ZKN_FORM_128_001` to `_003` |
+| Game titles | Champions `bgm_series`, Bank's Poké Transporter titles, HOME's software names |
+| Villain teams and leaders | Let's Go, BDSP, Ultra Sun/Ultra Moon, Sword/Shield, Scarlet/Violet and Masters trainer classes and names |
+| Region names | HOME's box list, `nx_box_list_pokedex_01` to `_10` |
+
+A sub-label that joins several strings says so in `composed`, and a language
+the games leave without a string is listed in `english`. Chinese has no Black 2
+or White 2, so the Chinese "Black 2/White 2" label stays English. No game
+names Yellow in Korean or Chinese, or the Totem and Titan Pokémon as a group,
+so those labels name only the titles the games give. Traditional Chinese
+writes the Ultra Sun/Ultra Moon team names as trainer classes (海洋隊的), the
+only form those games use.
+
+```sh
+npm run i18n:game-terms   # re-extract (network on the first run)
+npm run i18n:terms        # catalogs/terms and src/i18n/moves
+npm run i18n:names        # the Tauros breeds in src/i18n/names
+npm run i18n:verify       # holds the catalogs to the fixtures
+```

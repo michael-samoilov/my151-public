@@ -129,15 +129,18 @@ translated too, so the browser's filters can show them.
   `docs/i18n/sources/build-section-terms.json`. Regional forms come from
   `pokemon-formnames.json`, and Gym Leader and Legendary from
   `picker-interface-terms.json`. Region names come from the term catalogs,
-  except Spanish Unova: the term catalog says Unova, and the games say Teselia.
+  which check them against Pokémon HOME: Spanish Unova is Teselia.
 - **Fan terms** use each fandom's own word: 600族 and 600족 for
   pseudo-legendary, 准神 and 準神 in Chinese, 電鼠/电鼠 and 전기쥐 for
   Pikaclones, and 序盤 (early game) for the regional bug, bird and mammal in
   Japanese.
-- **Left in English**, because the games' names for them are not sourced here:
-  the game titles in the gift, prize and static encounter sub-labels, Legends:
-  Arceus, the villain team and character names, and "Sweet (Milcery)". Every
-  overlay omits the same keys.
+- **From the games, not in these files:** the game titles in the gift, prize
+  and static encounter sub-labels, Legends: Arceus, the villain teams and
+  their leaders, and Milcery. They are official text, so they live in
+  `../terms/`, generated from `docs/i18n/sources/game-terms.json`. Every
+  overlay omits the same keys. Where a game names no title in a language,
+  the label names the titles it has: Yellow, the Totems and the Titans have
+  no name in every language, and Chinese has no Black 2 or White 2.
 - **One cell.** Outline labels on the View page shorten from the section name
   to `sectionShort` to `sectionTiny`, and the tiny form is what a one-cell
   outline shows. Every section has a tiny key. Where English has no shorter
@@ -170,9 +173,12 @@ export popups keep their `nudge.*` keys.
   Sub-Legendäres, légendaire mineur, legendario menor and leggendario minore.
 - **Rows and columns** in Chinese follow the regional usage: a row is 行 and
   a column 列 in Simplified, a row 列 and a column 欄 in Traditional.
-- **Not translated:** move names, move categories (Physical, Special, Status)
-  and contest conditions have no sourced text in all nine languages, so they
-  stay English.
+- **From the games, not in these files:** move names, the move categories
+  (Physical, Special, Status) and the contest conditions. They come from
+  Pokémon Champions, Legends: Z-A and Pokémon HOME through
+  `docs/i18n/sources/move-names.json` and `game-terms.json`. Move names load
+  per language from `src/i18n/moves/`; the categories and conditions live in
+  `../terms/`.
 
 ### The favorite picker
 

@@ -41,6 +41,10 @@ __pycache__/
 # are ~730 kB and 21k lines of pure noise in a review.
 docs/i18n/pokeapi/
 
+# poke-corpus game-text dumps, fetched on demand by scripts/i18n/extract-game-terms.ts.
+# The fixtures in docs/i18n/sources/ record each file's SHA-256 instead.
+docs/i18n/poke-corpus/
+
 # verify-my151 run artifacts
 .claude/skills/verify-my151/evidence/
 

@@ -1,5 +1,6 @@
+import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
-import { CATEGORY_COLORS, type Move } from '../moves';
+import { CATEGORY_COLORS, CATEGORY_LABEL, type Move } from '../moves';
 
 /**
  * Bulbapedia's move-category mark: the Scarlet/Violet icon on its category
@@ -10,6 +11,8 @@ export function CategoryChip({ category, className }: {
   category: Move['category'];
   className?: string;
 }) {
+  const t = useT();
+  const label = t(CATEGORY_LABEL[category]);
   return (
     <span
       className={cn(
@@ -17,9 +20,9 @@ export function CategoryChip({ category, className }: {
         className ?? 'h-[1.4rem] w-[1.875rem]',
       )}
       style={{ background: CATEGORY_COLORS[category] }}
-      title={category}
+      title={label}
     >
-      <img src={`/sprites/moves/${category}.png`} alt={category} width={50} height={40} className="h-auto w-[62%]" />
+      <img src={`/sprites/moves/${category}.png`} alt={label} width={50} height={40} className="h-auto w-[62%]" />
     </span>
   );
 }

@@ -9,6 +9,7 @@
  * Run: npm run i18n:names
  */
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { GAME_TERMS_PATH, type GameTermsFixture } from './extract-game-terms';
 import { LANGUAGE_IDS, ROMAJI_LANGUAGE_ID, ensureCsvs, readCsv } from './pokeapi';
 import type { IdMapEntry } from './propose-id-map';
 import { searchAffix } from './searchAffixes';
@@ -154,13 +155,21 @@ async function main(): Promise<void> {
     if (!english) return;
     const normalize = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, '');
     const target = entry.formIdentifier.endsWith('-gmax') ? 'Gigantamax'
-      : entry.appName.startsWith('tauros-paldea-') ? 'Paldean Form'
       : entry.formIdentifier === 'tatsugiri-curly-mega' ? 'Mega Tatsugiri'
       : english;
     const match = Object.values(gameText.forms).find((row) =>
       row.species === species && normalize(row.names.en) === normalize(target));
     return match?.names[locale] || undefined;
   };
+
+  // Form names the Pokédex tables leave ambiguous, from newer game text: the
+  // three Paldean Tauros breeds are all "Paldean Form" in zkn_form, and
+  // Pokémon Champions names each breed (`npm run i18n:game-terms`).
+  const sourcedForms = new Map(
+    (JSON.parse(readFileSync(GAME_TERMS_PATH, 'utf8')) as GameTermsFixture).terms
+      .filter((term) => term.key.startsWith('form.'))
+      .map((term) => [Number(term.key.slice('form.'.length)), term.from[0].text]),
+  );
 
   const itemIdBySlug = new Map<string, number>();
   for (const r of readCsv('items')) itemIdBySlug.set(r.identifier, Number(r.id));
@@ -268,7 +277,8 @@ async function main(): Promise<void> {
         marked += 1;
       }
 
-      const descriptor = formNames.get(`${entry.formId}:${langId}`) ?? gameDescriptor(entry, locale);
+      const descriptor = sourcedForms.get(entry.appId)?.[locale as keyof typeof LANGUAGE_IDS]
+        ?? formNames.get(`${entry.formId}:${langId}`) ?? gameDescriptor(entry, locale);
       if (descriptor) {
         catalog.forms[entry.appId] = descriptor;
         catalog.formSource[entry.appId] = 'official';
