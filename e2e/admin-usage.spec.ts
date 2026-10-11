@@ -61,7 +61,8 @@ test.describe('admin database usage', () => {
       await expect(card).toContainText('3,500 recorded minute fragments');
       await expect(card).toContainText('40,000 / 2,000,000 operation units');
       await expect(card).toContainText('1.0 / 16 MB');
-      if (status !== 'collecting') await expect(card).toContainText('2026-11-01 UTC');
+      if (status === 'paused') await expect(card).toContainText('2026-11-01 UTC');
+      if (status === 'disabled') await expect(card).toContainText('Collection resumes when enabled.');
       await testInfo.attach('minute-history-status', {body: await card.screenshot(), contentType: 'image/png'});
     });
   }

@@ -45,7 +45,8 @@ function ActivityStatus({budget}: {budget?: ActivityBudget}) {
     <p className="mt-1">{fmt.format(budget.acceptedBuckets)} recorded minute fragments · retained for 400 days</p>
     <p className="mt-1">Monthly allowance: {fmt.format(budget.usedUnits)} / {fmt.format(budget.limitUnits)} operation units · {(budget.bytes / 1048576).toFixed(1)} / {(budget.limitBytes / 1048576).toFixed(0)} MB</p>
     <p className="mt-1">Conservative allowance including retries; separate from the actual bill and stored size. Supports session cutoffs of 1 minute or longer.</p>
-    {budget.pausedUntil && <p className="mt-1">Collection resumes after {new Date(budget.pausedUntil).toISOString().slice(0, 10)} UTC{budget.status === 'disabled' ? ' when enabled' : ''}.</p>}
+    {budget.status === 'disabled' && <p className="mt-1">Collection resumes when enabled.</p>}
+    {budget.status === 'paused' && budget.pausedUntil && <p className="mt-1">Collection resumes after {new Date(budget.pausedUntil).toISOString().slice(0, 10)} UTC.</p>}
   </div>;
 }
 
