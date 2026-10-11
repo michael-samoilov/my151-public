@@ -95,10 +95,13 @@ test.describe('Picker preference strength @viewport', () => {
   test('warns when groups lack direct comparisons and fits sparse large counts', async ({ page }, testInfo) => {
     await openPicks(page, {
       ...preference, components: 2,
-      entries: preference.entries.map((entry, index) => ({
-        ...entry, picks: index === 0 ? 12345 : entry.picks,
-        charts: index === 0 ? 1234 : entry.charts, component: index === 1 ? 1 : entry.component,
-      })),
+      entries: [
+        ...preference.entries.map((entry, index) => ({
+          ...entry, picks: index === 0 ? 12345 : entry.picks,
+          charts: index === 0 ? 1234 : entry.charts, component: index === 1 ? 1 : entry.component,
+        })),
+        ...[1, 2, 3, 8, 9].map((id) => ({ id, score: 0.5, picks: 1, charts: 1, component: 1, evidencePicks: 1 })),
+      ],
     });
     await page.getByRole('button', { name: 'Preference strength', exact: true }).click();
     const ranking = page.getByTestId('admin-picker-preference');
@@ -107,7 +110,9 @@ test.describe('Picker preference strength @viewport', () => {
     await expect(caption).toHaveAttribute('title', /12345 picks · 1234 charts/);
     const fit = await caption.evaluate((element) => [...element.querySelectorAll('span')].every((span) => span.scrollWidth <= span.clientWidth + 1));
     expect(fit).toBe(true);
-    await testInfo.attach('preference-sparse-fit.json', { body: JSON.stringify({ fit, viewport: page.viewportSize() }), contentType: 'application/json' });
+    const gridFits = await ranking.getByTestId('favorites-pretty-grid').evaluate((grid) => grid.getBoundingClientRect().width <= grid.parentElement!.clientWidth + 1);
+    expect(gridFits).toBe(true);
+    await testInfo.attach('preference-sparse-fit.json', { body: JSON.stringify({ fit, gridFits, viewport: page.viewportSize() }), contentType: 'application/json' });
     await testInfo.attach('preference-sparse-fit.png', { body: await page.screenshot(), contentType: 'image/png' });
   });
 });
