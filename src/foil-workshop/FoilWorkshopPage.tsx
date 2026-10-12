@@ -21,7 +21,7 @@ import { generateExportImage } from '@/lib/exportImage';
 import { computeAnalytics } from '@/hooks/useAnalytics';
 import { detailedStatsData } from '@/components/view/useDetailedStatsData';
 import { DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
-import { renderFoilTestCard } from './testCard';
+import { renderFoilFlatCard, renderFoilTestCard } from './testCard';
 import { buildFavoritesSnapshot } from '@/favorites/export/snapshot';
 import { renderFullChart } from '@/favorites/export/renderFullChart';
 import {
@@ -63,6 +63,7 @@ const WORKSHOP_SAMPLES = [
   { id: 'trainer', label: 'Trainer card' },
   { id: 'favorites', label: 'Favorites chart' },
   { id: 'test', label: 'Test card' },
+  { id: 'flat', label: 'Flat gray card' },
 ] as const;
 
 /** A few picks across types and generations, like a chart in progress. */
@@ -103,6 +104,7 @@ function renderSample(sample: WorkshopSample): Promise<Blob> {
   if (sample === 'trainer') return exportGymCard(kantoCards({ full: true })[12]);
   if (sample === 'favorites') return renderFullChart(buildFavoritesSnapshot(WORKSHOP_FAVORITE_FILLS));
   if (sample === 'test') return renderFoilTestCard();
+  if (sample === 'flat') return renderFoilFlatCard();
   const full = sample !== 'league';
   const layout =
     sample === 'league-both'
