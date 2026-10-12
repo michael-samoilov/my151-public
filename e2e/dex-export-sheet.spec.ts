@@ -941,7 +941,7 @@ test.describe('desktop dex export preview', () => {
     expect(hypot, 'desktop peak hypot').toBeLessThanOrEqual(10.2);
   });
 
-  test('paints rainbow holographic foil on the live overlay', async ({ page }, testInfo) => {
+  test('paints the prism and gleam foil on the live overlay', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
     await openDexExport(page);
     await waitPreviewReady(page);

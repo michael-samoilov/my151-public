@@ -7,8 +7,8 @@
 .export-foil-prism,
 .export-foil-gleam {
   /* The pointer as -1 to 1 from the card center. */
-  --holo-dx: calc(var(--pointer-from-left) * 2 - 1);
-  --holo-dy: calc(var(--pointer-from-top) * 2 - 1);
+  --holo-dx: var(--foil-dx);
+  --holo-dy: var(--foil-dy);
 }
 
 /* Prism bands: a repeating pastel spectrum on a steep diagonal, about
