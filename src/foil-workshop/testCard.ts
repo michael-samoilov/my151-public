@@ -131,20 +131,22 @@ export async function renderFoilTestCard(): Promise<Blob> {
 /**
  * One flat mid-gray field in the export frame. With no ink edges to break
  * them up, the holo bands show their whole cross-section: the highlight, the
- * darker core, and the reflected light on either side.
+ * darker core, and the reflected light on either side. The default is the
+ * test card's shape; `tall` matches the full Dex export's.
  */
-export async function renderFoilFlatCard(): Promise<Blob> {
+export async function renderFoilFlatCard(shape: 'wide' | 'tall' = 'wide'): Promise<Blob> {
+  const [w, h] = shape === 'tall' ? [1100, 1800] : [W, H];
   const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('No 2D context');
 
-  clipExportCanvas(ctx, W, H);
+  clipExportCanvas(ctx, w, h);
   ctx.fillStyle = DEX_EXPORT_FRAME_RED;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0, 0, w, h);
   ctx.beginPath();
-  ctx.roundRect(FRAME, FRAME, W - 2 * FRAME, H - 2 * FRAME, exportInnerCornerRadius(W, H, FRAME));
+  ctx.roundRect(FRAME, FRAME, w - 2 * FRAME, h - 2 * FRAME, exportInnerCornerRadius(w, h, FRAME));
   ctx.fillStyle = '#777777';
   ctx.fill();
 

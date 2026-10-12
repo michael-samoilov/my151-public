@@ -156,7 +156,7 @@ test.describe('export foil workshop', () => {
     test.setTimeout(120_000);
     await page.goto('/foil-workshop');
     const img = page.locator('[data-export-tilt-hit] img');
-    for (const id of ['dex', 'dex-full', 'dex-stats', 'league', 'league-full', 'league-both', 'trainer', 'test', 'flat']) {
+    for (const id of ['dex', 'dex-full', 'dex-stats', 'league', 'league-full', 'league-both', 'trainer', 'test', 'flat', 'flat-tall']) {
       await page.locator(`[data-workshop-sample-btn="${id}"]`).click();
       await expect(page.locator('[data-foil-workshop]')).toHaveAttribute('data-workshop-sample', id);
       await expect
