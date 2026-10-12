@@ -4,6 +4,8 @@
  * Source: https://github.com/simeydotme/hover-tilt
  *   packages/hover-tilt/src/lib/components/HoverTilt.svelte
  *   packages/hover-tilt/src/lib/utils.ts
+ * License: MIT, copyright (c) 2026 Simeydotme. Full text in
+ *   public/licenses/hover-tilt-MIT.txt; see THIRD_PARTY_NOTICES.md.
  *
  * Do not invent a parallel orbit. Write their CSS custom properties.
  */
