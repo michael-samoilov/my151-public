@@ -127,3 +127,28 @@ export async function renderFoilTestCard(): Promise<Blob> {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');
   });
 }
+
+/**
+ * One flat mid-gray field in the export frame. With no ink edges to break
+ * them up, the holo bands show their whole cross-section: the highlight, the
+ * darker core, and the reflected light on either side.
+ */
+export async function renderFoilFlatCard(): Promise<Blob> {
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('No 2D context');
+
+  clipExportCanvas(ctx, W, H);
+  ctx.fillStyle = DEX_EXPORT_FRAME_RED;
+  ctx.fillRect(0, 0, W, H);
+  ctx.beginPath();
+  ctx.roundRect(FRAME, FRAME, W - 2 * FRAME, H - 2 * FRAME, exportInnerCornerRadius(W, H, FRAME));
+  ctx.fillStyle = '#777777';
+  ctx.fill();
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');
+  });
+}

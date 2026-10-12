@@ -21,7 +21,7 @@ import { generateExportImage } from '@/lib/exportImage';
 import { computeAnalytics } from '@/hooks/useAnalytics';
 import { detailedStatsData } from '@/components/view/useDetailedStatsData';
 import { DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
-import { renderFoilTestCard } from './testCard';
+import { renderFoilFlatCard, renderFoilTestCard } from './testCard';
 import { buildFavoritesSnapshot } from '@/favorites/export/snapshot';
 import { renderFullChart } from '@/favorites/export/renderFullChart';
 import {
@@ -63,6 +63,7 @@ const WORKSHOP_SAMPLES = [
   { id: 'trainer', label: 'Trainer card' },
   { id: 'favorites', label: 'Favorites chart' },
   { id: 'test', label: 'Test card' },
+  { id: 'flat', label: 'Flat gray card' },
 ] as const;
 
 /** A few picks across types and generations, like a chart in progress. */
@@ -103,6 +104,7 @@ function renderSample(sample: WorkshopSample): Promise<Blob> {
   if (sample === 'trainer') return exportGymCard(kantoCards({ full: true })[12]);
   if (sample === 'favorites') return renderFullChart(buildFavoritesSnapshot(WORKSHOP_FAVORITE_FILLS));
   if (sample === 'test') return renderFoilTestCard();
+  if (sample === 'flat') return renderFoilFlatCard();
   const full = sample !== 'league';
   const layout =
     sample === 'league-both'
@@ -466,7 +468,7 @@ export function FoilWorkshopPage() {
               ))}
             </div>
             <p className="mt-1 text-[0.65rem] leading-snug text-zinc-500">
-              Current: the live rainbow and V shine. New: the redrawn prism bands and V gleam. Amounts stay as set.
+              Current: the live rainbow and V shine. New: the redrawn prism bands and gleam. Amounts stay as set.
             </p>
           </fieldset>
 
@@ -617,15 +619,15 @@ export function FoilWorkshopPage() {
 
           <LayerDial
             id="gleam"
-            title="V gleam (new holo)"
-            toggle="Crossed grainy stripes near the light"
+            title="Gleam (new holo)"
+            toggle="Broad grainy diagonal stripes"
             recipe={recipe}
             onRecipe={setRecipe}
           />
           <LayerDial
             id="prism"
             title="Prism bands (new holo)"
-            toggle="Fine rainbow bands slide with the tilt"
+            toggle="Pastel rainbow bands slide with the tilt"
             recipe={recipe}
             onRecipe={setRecipe}
           />
