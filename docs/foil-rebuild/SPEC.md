@@ -18,8 +18,9 @@ This describes the look and behavior of the export card's holo foil, from screen
 
 ## Layer 2: "V" shine
 
-- A brighter, metallic sheen over the ink, made of two sets of soft colored stripes that cross at an angle, so the highlights form a chevron or "V" pattern.
-- The sheen is strongest near the pointer and fades with distance from it.
+- A brighter, metallic sheen over the ink, made of broad, soft colored stripes on one diagonal. Each stripe holds several hues at once (pink, white, cyan, green), with unlit gaps between stripes. On a tall card, some ink near the stripe's core goes almost white.
+- At the three capture poses the sheen is strongest on the side of the card away from the pointer.
+- Correction, October 12: this section first described two crossing stripe sets, strongest near the pointer. The captures show one diagonal direction, lit away from the pointer, and the captures are the reference.
 - A faint grainy texture breaks up the sheen, so it reads as foil rather than a smooth gradient.
 - The stripes move with the pointer at a different rate from the card, a parallax that makes the shine glide over the ink.
 - The blend lightens: highlights glow on colored ink and leave white paper unchanged.

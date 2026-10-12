@@ -466,7 +466,7 @@ export function FoilWorkshopPage() {
               ))}
             </div>
             <p className="mt-1 text-[0.65rem] leading-snug text-zinc-500">
-              Current: the live rainbow and V shine. New: the redrawn prism bands and V gleam. Amounts stay as set.
+              Current: the live rainbow and V shine. New: the redrawn prism bands and gleam. Amounts stay as set.
             </p>
           </fieldset>
 
@@ -617,15 +617,15 @@ export function FoilWorkshopPage() {
 
           <LayerDial
             id="gleam"
-            title="V gleam (new holo)"
-            toggle="Crossed grainy stripes near the light"
+            title="Gleam (new holo)"
+            toggle="Broad grainy diagonal stripes"
             recipe={recipe}
             onRecipe={setRecipe}
           />
           <LayerDial
             id="prism"
             title="Prism bands (new holo)"
-            toggle="Fine rainbow bands slide with the tilt"
+            toggle="Pastel rainbow bands slide with the tilt"
             recipe={recipe}
             onRecipe={setRecipe}
           />

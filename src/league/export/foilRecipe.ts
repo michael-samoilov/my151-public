@@ -72,11 +72,11 @@ export const FOIL_LAYER_META = {
   },
   prism: {
     title: 'Prism bands',
-    blurb: 'Fine pastel rainbow bands slide over colored ink with the tilt.',
+    blurb: 'Pastel rainbow bands slide over colored ink with the tilt.',
   },
   gleam: {
-    title: 'V gleam',
-    blurb: 'Crossed, grainy stripes brighten colored ink near the light.',
+    title: 'Gleam',
+    blurb: 'Broad, grainy diagonal stripes brighten colored ink as the card tilts.',
   },
   iridescence: {
     title: 'Iridescence / color shift',
