@@ -1,7 +1,8 @@
 import { SECTION_TYPE } from '@/data/section-types';
 import { typeGlyphPath } from '@/data/type-ids';
 import pokeball from '@/assets/glyphs/pokeball.svg?url';
-import legendary from '@/assets/glyphs/legendary.svg?url';
+// Kept a file, not inlined into the script: the Pokédex text budget is tight.
+import legendary from '@/assets/glyphs/legendary.svg?url&no-inline';
 
 /** Concept sections that have their own glyph instead of a type symbol. The
  *  legendary ring is the favorite picker's legendary header. */

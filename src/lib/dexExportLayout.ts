@@ -1,3 +1,4 @@
+import { sectionGlyphMask } from '@/lib/sectionGlyph';
 import { BAR_H } from '@/league/export/layout';
 import type { Pokemon } from '@/types/pokemon';
 import { EXPORT_FRAME_PX, EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
@@ -141,7 +142,7 @@ export function layoutDexExportGrid(
         shapes,
         spandrels,
         tileTop,
-        spandrelMasks: [...new Set(spandrels.map((s) => s.mask).filter((m): m is string => m !== null))],
+        spandrelMasks: [...new Set(spandrels.map((s) => sectionGlyphMask(s.sectionId)).filter((m): m is string => m !== null))],
       },
     };
   }
