@@ -13,7 +13,7 @@ import {
   type LicenseFile,
   type SpriteCreditId,
 } from '@/data/acknowledgements';
-import { spritesBySource } from '@/data/spriteCredits';
+import { chosenSprites } from '@/data/spriteCredits';
 import { AcknowledgementsSprites } from './AcknowledgementsSprites';
 
 const GROUP_KEYS = {
@@ -27,12 +27,13 @@ const GROUP_KEYS = {
 const isSpriteCredit = (id: string): id is SpriteCreditId => (SPRITE_CREDIT_IDS as readonly string[]).includes(id);
 
 /**
- * The groups as shown. A sprite source with no sprite in this build stays
- * out, so a source appears once its sprites ship and leaves when they go.
+ * The groups as shown. A source whose sprites come only as rows stays out
+ * while it has none, so it appears once its sprites ship and leaves when
+ * they go.
  */
 const GROUPS = ACKNOWLEDGEMENTS.map((group) => ({
   ...group,
-  entries: group.entries.filter((entry) => !isSpriteCredit(entry.id) || spritesBySource(entry.id).length > 0),
+  entries: group.entries.filter((entry) => !entry.rowsOnly || (isSpriteCredit(entry.id) && chosenSprites(entry.id).length > 0)),
 })).filter((group) => group.entries.length > 0);
 
 const ENTRIES = new Map(GROUPS.flatMap((group) => group.entries.map((entry) => [entry.id, entry] as const)));

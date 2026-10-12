@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
 import { useLocale, useT, type Locale } from '@/i18n';
 import altFormSpecies from '@/i18n/alt-form-species.json';
 import { pickerFullName, type PickerNameTables } from '@/favorites/pickerFullName';
-import { spritesBySource } from '@/data/spriteCredits';
+import { chosenSprites } from '@/data/spriteCredits';
 import type { SpriteCreditId } from '@/data/acknowledgements';
 
 interface SharedNames { species: string[]; forms: Record<string, string> }
@@ -35,72 +34,51 @@ function loadTables(locale: Locale): Promise<PickerNameTables> {
   return pending;
 }
 
-/** Lists of this many names or fewer show in full, without generation groups. */
-const FLAT_LIMIT = 24;
-
 /** The small-caps heading the View settings pane uses for its sections. */
 const HEADING = 'text-xs font-semibold uppercase tracking-wide text-muted-foreground';
 
 /**
- * The Pokémon and forms whose sprite the app takes from one source, by name
- * in the current locale. A long list folds into one row per generation.
+ * The sprites my151 chose one by one from a source (see `spriteCredits.ts`),
+ * by name in the current locale, each with the people its row credits.
+ * A bulk source with no such row shows no list.
  */
 export function AcknowledgementsSprites({ source }: { source: SpriteCreditId }) {
   const t = useT();
   const locale = useLocale();
-  const groups = useMemo(() => spritesBySource(source), [source]);
-  const total = groups.reduce((sum, group) => sum + group.mons.length, 0);
+  const chosen = useMemo(() => chosenSprites(source), [source]);
   const [names, setNames] = useState<{ locale: Locale; tables: PickerNameTables } | null>(null);
 
   useEffect(() => {
+    if (!chosen.length) return;
     let live = true;
     loadTables(locale).then((loaded) => live && setNames({ locale, tables: loaded }), () => {});
     return () => {
       live = false;
     };
-  }, [locale]);
+  }, [chosen.length, locale]);
 
-  const named = useMemo(() => names && groups.map((group) => ({
-    generation: group.generation,
-    mons: group.mons.map((mon) => ({ id: mon.id, name: pickerFullName(mon, names.tables) })),
-  })), [groups, names]);
-
-  if (!total) return null;
+  if (!chosen.length) return null;
+  const ready = names?.locale === locale ? names.tables : null;
   return (
     <section className="flex flex-col gap-1.5" data-testid="ack-sprites">
       <h4 className={`${HEADING} flex justify-between px-1`}>
-        <span>{t('ack.spriteList')}</span> <span className="tabular-nums">{total}</span>
+        <span>{t('ack.spriteList')}</span> <span className="tabular-nums">{chosen.length}</span>
       </h4>
-      {!named || names?.locale !== locale ? (
-        <p className="rounded-lg border bg-card p-3 text-sm text-muted-foreground">{t('ack.loading')}</p>
-      ) : total <= FLAT_LIMIT ? (
-        <div className="rounded-lg border bg-card p-3">
-          <NameList mons={named.flatMap((group) => group.mons)} />
-        </div>
-      ) : (
-        <div className="divide-y overflow-hidden rounded-lg border bg-card">
-          {named.map((group) => (
-            <details key={group.generation} className="group" data-ack-generation={group.generation}>
-              <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
-                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none" aria-hidden />
-                <span className="flex-1">{t('browser.subgroupGeneration', { gen: group.generation })}</span>
-                <span className="tabular-nums text-muted-foreground">{group.mons.length}</span>
-              </summary>
-              <div className="pb-3 ps-9 pe-3">
-                <NameList mons={group.mons} />
-              </div>
-            </details>
-          ))}
-        </div>
-      )}
+      <div className="rounded-lg border bg-card p-3">
+        {ready ? (
+          <ul className="list-disc ps-5 text-sm leading-relaxed marker:text-muted-foreground">
+            {chosen.map((sprite) => (
+              <li key={sprite.mon.id}>
+                {pickerFullName(sprite.mon, ready)}
+                {sprite.by && <span className="text-muted-foreground"> {t('ack.by', { name: sprite.by })}</span>}
+                {sprite.with && <span className="text-muted-foreground"> {t('ack.with', { name: sprite.with })}</span>}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t('ack.loading')}</p>
+        )}
+      </div>
     </section>
-  );
-}
-
-function NameList({ mons }: { mons: readonly { id: number; name: string }[] }) {
-  return (
-    <ul className="list-disc ps-5 text-sm leading-relaxed marker:text-muted-foreground">
-      {mons.map((mon) => <li key={mon.id}>{mon.name}</li>)}
-    </ul>
   );
 }

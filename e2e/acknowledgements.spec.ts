@@ -53,12 +53,13 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
     await expect(row).toBeFocused();
 
-    // A sprite source lists the Pokémon it drew, by generation.
+    // A sprite source lists the sprites my151 chose from it, each with the
+    // people its row credits: Kyle Dove's post asks to credit MyMarshlands
+    // for Victreebel.
     await dialog.locator('[data-ack-id="kyle-dove"]').click();
     const sprites = dialog.getByTestId('ack-sprites');
-    await expect(sprites.getByRole('heading', { name: /^Sprites on my151 \d+$/ })).toBeVisible();
-    await sprites.getByText('Generation 1', { exact: true }).click();
-    await expect(sprites.getByRole('listitem').first()).toBeVisible();
+    await expect(sprites.getByRole('heading', { name: /^Sprites chosen for my151 \d+$/ })).toBeVisible();
+    await expect(sprites.getByRole('listitem').filter({ hasText: 'Mega Victreebel' })).toHaveText('Mega Victreebel with MyMarshlands');
     const kyleDoveSprites = Number(/(\d+)$/.exec((await sprites.getByRole('heading').textContent())!.trim())?.[1]);
     await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');

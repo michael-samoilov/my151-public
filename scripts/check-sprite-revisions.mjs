@@ -56,7 +56,7 @@ for (const file of replaced) {
 for (const file of [...replaced, ...added]) {
   const sprite = /^public\/sprites\/pokemon\/([^/]+)\.png$/.exec(file)?.[1];
   if (sprite !== undefined && sources[sprite] === undefined) {
-    problems.push(`${file} was ${replaced.includes(file) ? 'replaced' : 'added'} since ${BASE}. Add "${sprite}": "<source id>" to ${SOURCES}, naming who drew it.`);
+    problems.push(`${file} was ${replaced.includes(file) ? 'replaced' : 'added'} since ${BASE}. Add "${sprite}": { "source": "<source id>" } to ${SOURCES}, with "by" when the spriter is known.`);
   }
 }
 

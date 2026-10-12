@@ -33,12 +33,17 @@ export interface Acknowledgement {
   links: readonly string[];
   /** A link's button text, for an entry whose links share one site. Otherwise the button names the site. */
   linkLabels?: Readonly<Record<string, string>>;
+  /**
+   * The source's sprites reach the app only as rows in `spriteSources.json`,
+   * so the entry shows only while one of them does.
+   */
+  rowsOnly?: true;
   texts?: readonly LicenseFile[];
 }
 
 export type AcknowledgementGroupId = 'sprites' | 'icons' | 'fonts' | 'data' | 'code';
 
-/** The entries whose detail lists the sprites they drew, from `spriteCredits.ts`. */
+/** The sprite sources whose detail lists the sprites my151 chose from them, from `spriteCredits.ts`. */
 export const SPRITE_CREDIT_IDS = [
   'smogon-sprite-project',
   'kingofthe-x-roads',
@@ -105,15 +110,14 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         license: 'Free to use, with credit',
         terms:
           "PokéAPI's README thanks “x.com/DoveKyle/github.com/kyledovey for providing the back_default, back_shiny and z-a mega sprites for generation 9”. His terms, quoted from one of his X posts, not read at the source: “Free to use with credits! Victreebel (front & back) please credit my friend MyMarshlands - I do not follow size nor color limits, feel free to resize/edit as needed!”",
-        // His post asks for MyMarshlands's credit on Mega Victreebel, which the app shows.
-        artists: ['Kyle Dove', 'MyMarshlands'],
         links: ['https://x.com/DoveKyle', 'https://github.com/kyledovey'],
       },
       {
         id: 'gen9-resource-pack',
         name: 'Generation 9 Resource Pack',
+        rowsOnly: true,
         by: 'Caruban and contributors',
-        usedFor: 'Mega Dragalge, Mega Raichu Y and Mega Heatran.',
+        usedFor: 'Sprites that replace single PokéAPI sprites or fill its gaps, listed below.',
         license: 'Free to use, with credit',
         terms: 'Reported, not read at the source: free to use with credit to the creator.',
         artists: ['Caruban', 'ace_stryfe', 'KingOfThe-X-Roads', 'camiloveso', 'Mak'],
@@ -122,7 +126,8 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
       {
         id: 'ghasty001',
         name: 'Ghasty001',
-        usedFor: 'Mega Eelektross, from a base sprite by kiriaura.',
+        rowsOnly: true,
+        usedFor: 'Animated sprites, of which the app shows the first frame. They are listed below, with the artist of each base sprite.',
         license: 'Free to use, with credit',
         terms:
           "From the repository's README: “All these sprites are free to use, for other projects to use *with credit*. The credits also apply to all the artists who made the base sprite I used for the animation (also shared with free to use consent), and all of them will be listed below.”",
