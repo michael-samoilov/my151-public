@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
-import { BarChart3, Camera, Hammer, Lock } from 'lucide-react';
+import { BarChart3, Camera, Hammer } from 'lucide-react';
+import { AnalyticsLockedIcon } from '@/components/shared/AnalyticsLockedIcon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { isAnalyticsUnlocked, ANALYTICS_UNLOCK_AT } from '@/lib/milestones';
 import { useT } from '@/i18n';
@@ -231,7 +232,7 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
                   data-state="inactive"
                   aria-label={t('nav.analyticsLocked', { count: ANALYTICS_UNLOCK_AT })}
                 >
-                  <Lock className="h-4 w-4" />
+                  <AnalyticsLockedIcon className="h-4 w-4" />
                   <span className={tabLabelClass(false)}>{t('nav.analytics')}</span>
                 </Button>
               </TooltipTrigger>

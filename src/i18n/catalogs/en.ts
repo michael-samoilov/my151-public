@@ -330,6 +330,7 @@ export const enUi = {
   'favorites.generation': 'Generation {gen}',
   'favorites.scrollMore': 'Scroll for more',
   'favorites.completion.label': '{filled} of {total} favorites selected',
+  'favorites.nudge.25.body': 'Your favorites have enough shape to analyze. See what your picks have in common.',
   'favorites.nudge.complete.body': 'Tap the download icon to save your chart as an image and share it.',
   'favorites.nudge.complete.title': 'Grid complete',
   'favorites.typeRepair.message': 'Saved picks affected by corrected form types: {count}. They stay in your grid but are omitted from exports. Review their cells to choose replacements.',

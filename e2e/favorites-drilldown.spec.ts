@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 const full = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
 async function seed(page: import('@playwright/test').Page, fills: Record<string, number>) {
   await page.addInitScript(saved => localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: saved }, version: 3 })), fills);
+  // Analytics unlocks at 25 favorites and stays unlocked (useAnalyticsUnlock.ts).
+  await page.addInitScript(() => localStorage.setItem('personal-151-favorites-analytics-v1', '1'));
   await page.goto('/favorite-pokemon-picker?notme&lang=en');
   await page.locator('#favorites-tab-analytics').click();
 }
