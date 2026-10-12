@@ -30,11 +30,11 @@
       var(--prism-angle),
       hsl(350 95% 77%) 0,
       hsl(38 95% 76%) calc(var(--prism-band) * 0.14),
-      hsl(92 90% 76%) calc(var(--prism-band) * 0.28),
-      hsl(112 90% 76%) calc(var(--prism-band) * 0.38),
-      hsl(170 90% 76%) calc(var(--prism-band) * 0.5),
-      hsl(218 95% 78%) calc(var(--prism-band) * 0.62),
-      hsl(252 95% 79%) calc(var(--prism-band) * 0.76),
+      hsl(88 90% 76%) calc(var(--prism-band) * 0.28),
+      hsl(104 90% 76%) calc(var(--prism-band) * 0.4),
+      hsl(175 90% 76%) calc(var(--prism-band) * 0.49),
+      hsl(238 95% 79%) calc(var(--prism-band) * 0.62),
+      hsl(262 95% 79%) calc(var(--prism-band) * 0.76),
       hsl(285 92% 79%) calc(var(--prism-band) * 0.88),
       hsl(350 95% 77%) var(--prism-band)
     );
@@ -49,49 +49,57 @@
   opacity: calc(var(--foil-opacity) * var(--foil-prism));
 }
 
-/* V gleam: broad, soft stripes on a 45 degree diagonal, each a short
-   spectrum around a pale core, broken into foil sparkle by a colored grain
-   tile. Black is no change under color-dodge, so only the stripes light the
-   ink. The light is strongest on the side of the card away from the
-   pointer and fades toward it. The stripe tile is wider than tall, so the
-   period follows the card's width more than its height, and the stripes
-   slide across the card as the pointer moves sideways. */
+/* V gleam: soft stripes on a 45 degree diagonal, lit like a polished
+   cylinder. Across each stripe a dim cyan glow (reflected light) leads into
+   a darker core, then a broad pale highlight with a pink and an orange
+   fringe, then the unlit gap. A long wave on the same diagonal dims every
+   few stripes, so the light gathers in broad patches, and a colored grain
+   tile breaks it into foil sparkle. Black is no change under color-dodge,
+   so only the stripes light the ink. Both tiles are wider than tall, so
+   the period follows the card's width more than its height, and both slide
+   across the card as the pointer moves sideways. */
 .export-foil-gleam {
   --gleam-period: 7.16%;
-  /* The stripes change hue as the card tips up and down, like a metal
-     sheen. oklch keeps every hue at the same lightness, so a green stripe
-     lights the ink no more than a pink one. */
+  --gleam-wave: 14.7%;
+  /* The core and highlight change hue as the card tips up and down, like
+     a metal sheen. oklch keeps every hue at the same lightness, so a green
+     stripe lights the ink no more than a pink one. */
   --gleam-hue: calc(145 + var(--holo-dy) * 210);
-  --gleam-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='g' x='0' y='0' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' seed='151' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1.6 0 0 0 -0.1  0.8 0.8 0 0 -0.1  0.8 0 0.8 0 -0.1  0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23g)'/%3E%3C/svg%3E");
+  --gleam-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='g' x='0' y='0' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' seed='151' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1.1 0 0 0 0.15  0.55 0.55 0 0 0.15  0.55 0 0.55 0 0.15  0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23g)'/%3E%3C/svg%3E");
   background-color: #000;
   background-image:
     var(--gleam-grain),
-    radial-gradient(
-      farthest-corner circle at calc(80% - var(--pointer-x) * 0.6) calc(80% - var(--pointer-y) * 0.6),
-      hsl(0 0% 100%) 0%,
-      hsl(0 0% 74%) 40%,
-      hsl(0 0% 40%) 100%
+    repeating-linear-gradient(
+      133deg,
+      hsl(0 0% 14%) 0,
+      hsl(0 0% 14%) calc(var(--gleam-wave) * 0.1),
+      hsl(0 0% 100%) calc(var(--gleam-wave) * 0.25),
+      hsl(0 0% 100%) calc(var(--gleam-wave) * 0.75),
+      hsl(0 0% 14%) calc(var(--gleam-wave) * 0.9),
+      hsl(0 0% 14%) var(--gleam-wave)
     ),
     repeating-linear-gradient(
       133deg,
       #000 0,
-      #000 calc(var(--gleam-period) * 0.26),
-      oklch(0.44 0.12 calc(var(--gleam-hue) - 60)) calc(var(--gleam-period) * 0.36),
-      oklch(0.62 0.15 var(--gleam-hue)) calc(var(--gleam-period) * 0.44),
-      oklch(0.76 0.07 calc(var(--gleam-hue) + 30)) calc(var(--gleam-period) * 0.5),
-      oklch(0.7 0.12 calc(var(--gleam-hue) + 70)) calc(var(--gleam-period) * 0.56),
-      oklch(0.58 0.13 calc(var(--gleam-hue) + 130)) calc(var(--gleam-period) * 0.64),
-      #000 calc(var(--gleam-period) * 0.74),
+      #000 calc(var(--gleam-period) * 0.16),
+      oklch(0.42 0.1 210) calc(var(--gleam-period) * 0.24),
+      oklch(0.44 0.09 var(--gleam-hue)) calc(var(--gleam-period) * 0.31),
+      oklch(0.28 0.06 var(--gleam-hue)) calc(var(--gleam-period) * 0.36),
+      oklch(0.62 0.15 350) calc(var(--gleam-period) * 0.41),
+      oklch(0.82 0.04 var(--gleam-hue)) calc(var(--gleam-period) * 0.45),
+      oklch(0.84 0.04 calc(var(--gleam-hue) + 20)) calc(var(--gleam-period) * 0.55),
+      oklch(0.66 0.13 50) calc(var(--gleam-period) * 0.59),
+      #000 calc(var(--gleam-period) * 0.65),
       #000 var(--gleam-period)
     );
   background-size:
     128px 128px,
-    100% 100%,
+    705% 300%,
     353% 150%;
   background-repeat: repeat, no-repeat, no-repeat;
   background-position:
     0 0,
-    0 0,
+    calc(38% - var(--holo-dx) * 22%) 20%,
     calc(33.6% - var(--holo-dx) * 5.4%) calc(11.6% + var(--holo-dy) * 0.9%);
   background-blend-mode: multiply, multiply, normal;
   mix-blend-mode: color-dodge;
