@@ -624,23 +624,64 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-pretty-grid').screenshot({ path: testInfo.outputPath('gimmick-origins.png') });
   });
 
-  test('empty favorite pickers explain the next step without ineffective actions', async ({ page }, testInfo) => {
+  test('an empty favorite selector names its source and opens the next cell to fill', async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-favorite-1').click();
     const empty = page.getByTestId('favorites-picker-empty');
-    await expect(empty.getByRole('heading', { name: 'Nothing to choose yet' })).toBeVisible();
+    await expect(empty.getByRole('heading', { name: 'No Gen I picks yet' })).toBeVisible();
+    await expect(empty).toContainText('You choose your Gen I favorite from your picks in this row.');
     await expect(empty.locator('svg')).toHaveCount(1);
-    await expect(empty).toContainText('generation');
     await expect(page.getByTestId('favorites-type-toggle')).toHaveCount(0);
-    await expect(empty.getByRole('button', { name: 'Back to grid' })).toHaveCount(0);
+    await empty.getByRole('button', { name: 'Pick a Gen I Pokémon' }).click();
+    // The first cell of the row, with its picks.
+    await expect(page.getByTestId('favorites-cell-normal-1')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId('favorites-picker-empty')).toHaveCount(0);
+    await expect(page.getByTestId('favorites-pick-16')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('favorites-picker')).toBeHidden();
+
     await page.getByTestId('favorites-cell-fire-favorite').click();
-    await expect(page.getByTestId('favorites-picker-empty')).toContainText('column');
+    await expect(page.getByRole('heading', { name: 'No Fire picks yet' })).toBeVisible();
+    await expect(page.getByTestId('favorites-picker-empty')).toContainText('in this column');
     await testInfo.attach('empty-selector.png', { body: await page.screenshot(), contentType: 'image/png' });
+    await page.getByRole('button', { name: 'Pick your first Fire Pokémon' }).click();
+    await expect(page.getByTestId('favorites-cell-fire-1')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId('favorites-pick-4')).toBeVisible();
   });
 
-  test('mobile empty state clears the sheet heading and uses the themed Unown-inspired icon', async ({ page }, testInfo) => {
+  test('the overall favorite opens a favorite that has choices, or the first pick on a new grid', async ({ page }, testInfo) => {
+    await page.goto('/favorite-pokemon-picker');
+    await page.getByTestId('favorites-cell-favorite-favorite').click();
+    await expect(page.getByRole('heading', { name: 'No favorites yet' })).toBeVisible();
+    await page.getByRole('button', { name: 'Pick your first Normal Pokémon' }).click();
+    await expect(page.getByTestId('favorites-cell-normal-1')).toHaveAttribute('aria-expanded', 'true');
+    await page.getByTestId('favorites-pick-16').click();
+    await expect(page.getByTestId('favorites-picker')).toBeHidden();
+
+    // A pick now sits in the Normal column and the Gen I row, so their
+    // favorites have a choice. The overall favorite opens the first of them.
+    await page.getByTestId('favorites-cell-favorite-favorite').click();
+    await page.getByRole('button', { name: 'Choose a favorite' }).click();
+    await expect(page.getByTestId('favorites-cell-normal-favorite')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId('favorites-pick-16')).toBeVisible();
+    await testInfo.attach('overall-next-cell', {
+      body: JSON.stringify({ newGrid: 'normal|1', afterAPick: 'normal|favorite' }),
+      contentType: 'application/json',
+    });
+  });
+
+  test('the Legendary favorite opens the first Legendary cell', async ({ page }) => {
+    await page.goto('/favorite-pokemon-picker');
+    await page.getByTestId('favorites-cell-legendary-legendary').click();
+    const empty = page.getByTestId('favorites-picker-empty');
+    await expect(empty.getByRole('heading', { name: 'No Legendary picks yet' })).toBeVisible();
+    await expect(empty).toContainText('in this row and column');
+    await empty.getByRole('button', { name: 'Pick your first Legendary Pokémon' }).click();
+    await expect(page.getByTestId('favorites-cell-legendary-1')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId('favorites-pick-144')).toBeVisible();
+  });
+
+  test('mobile empty state clears the sheet heading and draws the outline Psyduck', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-favorite-1').click();
@@ -650,9 +691,14 @@ test.describe('favorite Pokémon picker', () => {
     expect(headerBox).toBeTruthy();
     expect(emptyBox).toBeTruthy();
     expect(emptyBox!.y).toBeGreaterThan(headerBox!.y + headerBox!.height);
-    await expect(empty.getByTestId('favorites-empty-unown').locator('path')).toHaveCount(2);
-    await expect(empty.getByTestId('favorites-empty-unown').locator('circle')).toHaveCount(2);
-    await expect(empty.getByRole('button', { name: 'Back to grid' })).toHaveCount(0);
+    await expect(empty.locator('svg[data-art="psyduck"]')).toBeVisible();
+    // The picture is never the darkest thing: lighter than the body text.
+    const [art, body] = await Promise.all([
+      empty.locator('svg').evaluate((el) => getComputedStyle(el).color),
+      empty.locator('p').evaluate((el) => getComputedStyle(el).color),
+    ]);
+    const lightness = (rgb: string) => rgb.match(/\d+/g)!.slice(0, 3).map(Number).reduce((a, b) => a + b, 0);
+    expect(lightness(art)).toBeGreaterThan(lightness(body));
     await expect(page.getByTestId('favorites-type-toggle')).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath('favorite-empty-state.png') });
   });

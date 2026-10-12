@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useT, type NoArgKey } from '@/i18n';
 import { createPortal } from 'react-dom';
-import confetti from 'canvas-confetti';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import type { AppView } from '@/components/layout/Header';
 import { X } from 'lucide-react';
+import { fireCompletionConfetti, preloadCompletionConfetti } from './completionConfetti';
 
 /**
  * Milestone celebrations — the once-per-user payoff moments. When a milestone
@@ -41,32 +41,6 @@ const CARD_W = 264;
 const REVEAL_DELAY_MOBILE_MS = 950;
 const REVEAL_DELAY_DESKTOP_MS = 640;
 
-const prefersReducedMotion = () => {
-  try {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  } catch {
-    return false;
-  }
-};
-
-function fireConfetti() {
-  if (prefersReducedMotion()) return;
-  const colors = ['#dc2626', '#7ac74c', '#ee8130', '#6390f0', '#f7d02c'];
-  // A single restrained burst — enough to register as a celebration without
-  // covering the screen (previously a bigger burst plus a 1.1s stream from
-  // both corners).
-  confetti({
-    particleCount: 60,
-    spread: 65,
-    startVelocity: 28,
-    origin: { x: 0.5, y: 0.35 },
-    colors,
-    zIndex: 300,
-    scalar: 0.9,
-    ticks: 160,
-  });
-}
-
 export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppView) => void }) {
   const t = useT();
   const celebration = usePokedexStore((s) => s.milestoneCelebration);
@@ -95,11 +69,15 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
   const ready = canShow && armed;
 
   // Confetti at 151 — once per armed celebration (store guarantees once-ever),
-  // held until the celebration is actually visible (ready).
+  // held until the celebration is actually visible (ready). Its code starts
+  // loading when the celebration arms, so the burst lands with the popup.
+  useEffect(() => {
+    if (celebration === 151) preloadCompletionConfetti();
+  }, [celebration]);
   useEffect(() => {
     if (celebration === 151 && ready && confettiFor.current !== 151) {
       confettiFor.current = 151;
-      fireConfetti();
+      fireCompletionConfetti();
     }
     if (celebration == null) confettiFor.current = null;
   }, [celebration, ready]);
