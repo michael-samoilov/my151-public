@@ -86,7 +86,25 @@ export const SCREENS: Screen[] = [
   { id: 'league-tools-menu', path: '/custom-gym-leader', seed: LEAGUE, act: openTools },
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
+  {
+    // The Pokémon picker's empty state: a search that finds nothing.
+    id: 'builder-search-empty', path: '/pokedex-builder', seed: DEX,
+    act: async (page) => {
+      await click('[data-add-slot]')(page);
+      await page.locator('input[placeholder]').filter({ visible: true }).first().fill('zzzz');
+      await page.locator('[data-result-count="0"]').filter({ visible: true }).first().waitFor({ timeout: 30_000 });
+    },
+  },
+  { id: 'not-found', path: '/404.html' },
   { id: 'favorites-selector', path: '/favorite-pokemon-picker', act: openPickerCell('water-1') },
+  {
+    // A favorite selector before any picks: nothing to choose yet.
+    id: 'favorites-selector-empty', path: '/favorite-pokemon-picker',
+    act: async (page) => {
+      await click('[data-testid="favorites-cell-favorite-1"]')(page);
+      await page.locator('#favorites-selector').waitFor({ timeout: 30_000 });
+    },
+  },
   { id: 'favorites-selector-filled', path: '/favorite-pokemon-picker', seed: FAVORITES, act: openPickerCell('fire-5') },
   {
     id: 'favorites-export', path: '/favorite-pokemon-picker', seed: FAVORITES,

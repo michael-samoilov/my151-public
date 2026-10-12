@@ -10,17 +10,17 @@ import { useBrowserStore, useFavoriteBrowserStore } from './browserStore';
 import { readFavoritePickerIds } from './favoritePickerBridge';
 import { ARCHETYPES } from '@/data/archetypes';
 import { BUILD_GROUPS } from '@/data/slot-template';
-import { DEX_TOTAL } from '@/lib/milestones';
 import { CATEGORIES, type PokemonCategory } from '@/data/categories';
 import { TYPE_NAMES, type Pokemon, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { COLOR_ORDER, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER } from '@/data/classifications';
-import { archetypeName as archetypeLabel, archetypeSubgroupLabel, categoryColumnLabel, categoryName as categoryLabel, categorySubgroupLabel, colorLabel, eggGroupLabel, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
+import { archetypeName as archetypeLabel, archetypeSubgroupLabel, categoryColumnLabel, categoryName as categoryLabel, categorySubgroupLabel, colorLabel, eggGroupLabel, raw, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Search, X, ChevronDown, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { EmptyState, QueryTitle } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useSheetCloseGuard, type SheetCloseVia } from '@/components/ui/sheetCloseGuard';
 
@@ -580,6 +580,13 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     setCategoryFilter(null);
     setArchetypeFilter(null);
   };
+  const clearAllFilters = () => {
+    clearPropertyFilters();
+    clearBrowseFilters();
+  };
+  // A search skips most filters, but My favorites, My dex, the team scope and
+  // Stages still apply to it (usePokemonData.ts).
+  const filtersApplyToSearch = !!(favoritesFilter || myDexFilter || scopeFilter || (evoLineSizeFilter && evoLineSizeFilter.length > 0));
 
   // When searching, generate subgroups from actual results (ignoring filters)
   /**
@@ -1405,10 +1412,25 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             </div>
           )}
           {rowsReady && groups.length === 0 && (
-            <div className="py-12 text-center text-muted-foreground">
-              <p>{t('browser.empty.title')}</p>
-              <p className="text-sm mt-1">{t('browser.empty.hint')}</p>
-            </div>
+            isSearching ? (
+              <EmptyState
+                testId="browser-empty"
+                title={<QueryTitle template={raw('browser.empty.search.title')} query={deferredOptions.search} />}
+                body={t(filtersApplyToSearch ? 'browser.empty.search.filtered' : 'browser.empty.search.body')}
+                action={filtersApplyToSearch
+                  ? { label: t('browser.empty.clearFilters'), onClick: clearAllFilters }
+                  : { label: t('browser.search.clear'), onClick: () => setSearchQuery('') }}
+              />
+            ) : (
+              <EmptyState
+                testId="browser-empty"
+                title={t('browser.empty.filters.title')}
+                body={t('browser.empty.filters.body')}
+                action={hasActiveFilters
+                  ? { label: t('browser.empty.clearFilters'), onClick: clearAllFilters }
+                  : undefined}
+              />
+            )
           )}
           {rowsReady && <PageFooter />}
       </div>
@@ -1571,19 +1593,12 @@ function FavoriteLabel({ count }: { count: number }) {
   );
 }
 
-/** Active filter chip — shows value with dismiss */
-/**
- * "My dex 37/151" — the count in the app red, the total in whatever the chip
- * itself is set in, so the pair reads the same on the outlined chip and on
- * the filled one. Same shape as the dex builder's own header counter.
- */
 function MyDexLabel({ count }: { count: number }) {
   const t = useT();
   return (
     <span className="whitespace-nowrap">
       {t('browser.myDex')}{' '}
       <span className="font-bold tabular-nums text-primary">{count}</span>
-      <span className="tabular-nums">/{DEX_TOTAL}</span>
     </span>
   );
 }

@@ -18,6 +18,7 @@ import { SHAPE_ORDER } from '@/components/shared/ShapeIcon';
 import { regionName, shapeLabel, typeLabel, useT } from '@/i18n';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { StageDistributionChart } from './StageDistributionChart';
 
 // The gen and shape charts use a single app-red bar (no per-category colors);
@@ -69,7 +70,8 @@ function alignHistograms(
   return { merged, xTicks, xDomain, binSize, yDomain, yTicks };
 }
 
-export function AnalyticsDashboard() {
+/** `onAddPokemon` goes back to Build, from the page shown with no Pokémon. */
+export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void }) {
   const t = useT();
   const [excludeSpecial, setExcludeSpecial] = useState(false);
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
@@ -457,13 +459,13 @@ export function AnalyticsDashboard() {
 
   if (analytics.total === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center space-y-2">
-          <p className="text-xl font-semibold text-muted-foreground">{t('analytics.emptyTitle')}</p>
-          <p className="text-sm text-muted-foreground">
-            {t('analytics.empty')}
-          </p>
-        </div>
+      <div className="flex h-full items-center justify-center">
+        <EmptyState
+          testId="analytics-empty"
+          title={t('analytics.empty.title')}
+          body={t('analytics.empty.body')}
+          action={{ label: t('analytics.empty.action'), onClick: onAddPokemon }}
+        />
       </div>
     );
   }

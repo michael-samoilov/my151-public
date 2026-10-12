@@ -7,6 +7,7 @@ import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
 import { installOptOut, isOptedOut } from '../lib/clientId'
 import { installStaleDeployReload } from '../lib/staleDeploy'
+import { installHideBrokenImages } from '../lib/hideBrokenImages'
 import { whenIdle } from '../lib/whenIdle'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
@@ -42,6 +43,7 @@ if (isIos) {
 installLayoutFontSize();
 // `?notme` marks this browser as the owner's, out of analytics.
 installOptOut();
+installHideBrokenImages()
 installStaleDeployReload();
 
 // Vercel's own page-view counting obeys the same opt-out as our beacons. It is

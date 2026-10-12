@@ -83,6 +83,14 @@ When unsure, take the higher tier. A batch takes the tier of its riskiest change
 
 Batch the work. Start a Standard or Full run only when the batch is final. A request that arrives during the run goes into the next batch, unless it fixes a failure in this run. A stopped and restarted run costs more than the wait.
 
+Design review comes before checks: measure twice, cut once. Michael set this rule on 2026-10-12.
+
+1. While Michael reviews a visual design, do not run tier checks: `scripts/ci-local.sh`, the `/verify-my151` diff, or the whole Playwright suite.
+2. Show the built design as pictures from a local build. Then stop and wait for his answer.
+3. This applies also when Michael described the change. Show the result before the checks start.
+4. Start the tier checks only when Michael says the design is final, for example "ship it" or "ready".
+5. During review, fast checks are permitted: `npm run lint`, `npm test`, `npm run build`, and the proof test.
+
 Work-branch tier:
 
 1. Run `npm run lint`, `npm test`, and `npm run build`.
