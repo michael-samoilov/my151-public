@@ -94,7 +94,7 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   rim: { on: false, amount: 0 },
   // The holo pair Michael picked on October 12: prism bands and gleam.
   prism: { on: true, amount: 0.21 },
-  gleam: { on: true, amount: 0.6 },
+  gleam: { on: true, amount: 0.65 },
   iridescence: { on: true, amount: 0.1 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
