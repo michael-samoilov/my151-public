@@ -1,5 +1,5 @@
 import { BAR_H } from '@/league/export/layout';
-import type { Pokemon, TypeName } from '@/types/pokemon';
+import type { Pokemon } from '@/types/pokemon';
 import { EXPORT_FRAME_PX, EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import {
   computeOutlineLayout,
@@ -47,7 +47,7 @@ export type DexExportOutline = {
   shapes: OutlineShape[];
   spandrels: Spandrel[];
   tileTop: (r: number) => number;
-  spandrelTypes: TypeName[];
+  spandrelMasks: string[];
 };
 
 export type DexExportGrid = {
@@ -141,7 +141,7 @@ export function layoutDexExportGrid(
         shapes,
         spandrels,
         tileTop,
-        spandrelTypes: [...new Set(spandrels.map((s) => s.type).filter((t): t is TypeName => t !== null))],
+        spandrelMasks: [...new Set(spandrels.map((s) => s.mask).filter((m): m is string => m !== null))],
       },
     };
   }

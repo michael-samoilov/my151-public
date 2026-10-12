@@ -19,7 +19,6 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
 import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
-import { getTypeMask } from '@/lib/typeSymbol';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import {
   type SectionRun,
@@ -402,14 +401,14 @@ export function SectionOverlays({
           );
         })}
         {spandrels.map((sp) =>
-          sp.type ? null : (
+          sp.mask ? null : (
             <path key={sp.key} d={starPath(sp.cx, sp.cy, sp.r)} fill={sp.color} fillOpacity={0.2} stroke="none" />
           ),
         )}
       </svg>
       {spandrels.map((sp) => {
-        if (!sp.type) return null;
-        const mask = getTypeMask(sp.type);
+        const mask = sp.mask;
+        if (!mask) return null;
         // Cropped mask fills its box, so match the star's bounding box (2·r).
         const size = sp.r * 2;
         return (
@@ -423,8 +422,8 @@ export function SectionOverlays({
               height: size,
               backgroundColor: sp.color,
               opacity: 0.2,
-              WebkitMaskImage: `url(${mask})`,
-              maskImage: `url(${mask})`,
+              WebkitMaskImage: `url("${mask}")`,
+              maskImage: `url("${mask}")`,
               WebkitMaskSize: 'contain',
               maskSize: 'contain',
               WebkitMaskRepeat: 'no-repeat',
