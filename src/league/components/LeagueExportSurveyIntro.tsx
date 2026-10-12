@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { PokemonNameText } from '@/components/shared/PokemonNameText';
 import { getPokemonById } from '@/league/data/catalog';
 import { pokemonLabel, raw, useNamesVersion, useT, type MessageKey } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
@@ -63,7 +64,7 @@ export function LeagueExportSurveyIntro({
             {splitTemplate(raw(FIRST_POKEMON_LINE[highlight.tool])).map((part, i) =>
               part.kind === 'literal' ? part.text : (
                 <strong key={i} className="font-bold" style={nameColor ? { color: nameColor } : undefined}>
-                  {pokeName}
+                  <PokemonNameText name={pokeName} />
                 </strong>
               ),
             )}
@@ -92,7 +93,7 @@ export function LeagueExportSurveyIntro({
             }}
             draggable={false}
           />
-          <p className="text-sm leading-relaxed text-foreground">{t('exportSurvey.hi', { name: pokeName })}</p>
+          <p className="text-sm leading-relaxed text-foreground"><PokemonNameText name={t('exportSurvey.hi', { name: pokeName })} /></p>
         </div>
       )}
 

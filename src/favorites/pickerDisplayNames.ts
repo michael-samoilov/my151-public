@@ -2,7 +2,7 @@ import englishNames from '@/i18n/names/en.json';
 import englishForms from '@/i18n/picker-names/en.json';
 import altFormSpecies from '@/i18n/alt-form-species.json';
 import { fullPokemonName } from '@/i18n/names';
-import { genderFormOf } from '@/i18n/genderForms';
+import { pokemonNameContext } from '@/i18n/fullPokemonName';
 import { getPickerMon, pickerNameId, type PickerMon } from './model/catalog';
 
 // Only the picker bundles this canonical fallback. Other pages keep lazy names.
@@ -18,11 +18,7 @@ export function englishPickerName(mon: PickerMon): string {
   const species = englishNames.species[speciesId - 1] ?? 'Pokémon';
   const key = mon.id === 10227 ? 'picker:10227' : id;
   let descriptor = descriptors[key];
-  const gender = genderFormOf(id, mon.name);
-  if (gender && id !== 29 && id !== 32) {
-    const qualifier = gender === 'male' ? englishNames.forms['678'] : englishForms.forms['10025'];
-    descriptor = descriptor && descriptor !== qualifier ? fullPokemonName(descriptor, qualifier) : qualifier;
-  }
+  const context = pokemonNameContext(id, mon.name, descriptors, 'en');
   // Future forms retain their known species and readable descriptor, never an ID.
   if (!descriptor && id > 1025 && !mon.name.endsWith('-female')) {
     const ownerSlug = owner?.name;
@@ -31,5 +27,5 @@ export function englishPickerName(mon: PickerMon): string {
       : '';
     if (suffix) descriptor = suffix.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   }
-  return fullPokemonName(species, descriptor);
+  return fullPokemonName(species, descriptor, context);
 }

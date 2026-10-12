@@ -65,7 +65,7 @@ import {
   wrapTracked,
 } from './paint';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
-import { drawGenderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
+import { drawGenderSymbol, genderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
 
 export { CARD_FILENAME, HOME_FILENAME } from './exportOptions';
 
@@ -336,7 +336,7 @@ function speciesCaption(pokemonId: number): { text: string; mark?: string } {
   if (!pokemon) return { text: '' };
   const label = pokemonLabel(pokemon.id, pokemon.name);
   return { text: localeUppercase(label.pending ? pokemon.name : label.name),
-    mark: label.mark && /[♂♀]/u.test(label.mark) ? label.mark : undefined };
+    mark: label.mark ?? undefined };
 }
 
 /** One run of a signature caption: its text and its face. */
@@ -362,9 +362,14 @@ function headRun(text: string, colour: string, face: HeadFace): CaptionRun {
   return { text, px: face.px, track: face.track, colour };
 }
 
-function captionMarkWidth(mark: string | undefined, px: number): number {
+function captionMarkWidth(ctx: CanvasRenderingContext2D, mark: string | undefined, px: number): number {
   if (!mark) return 0;
-  return genderSymbolWidth(mark, px * 0.8) + px * 0.15;
+  const previous = ctx.font;
+  ctx.font = font(px * 0.8, 600);
+  const width = mark.split(/([♂♀])/u).reduce((sum, part) => sum + (genderSymbol(part)
+    ? genderSymbolWidth(part, px * 0.8) : ctx.measureText(part).width), 0);
+  ctx.font = previous;
+  return width + px * 0.15;
 }
 
 /**
@@ -376,11 +381,11 @@ function nameRun(ctx: CanvasRenderingContext2D, pokemonId: number | null, room: 
   const trackAt = (px: number) => (L.NAME_TRACK / L.NAME_PX) * px;
   let px = L.NAME_PX;
   ctx.font = font(px, 800);
-  while (px > L.CAPTION_NAME_MIN_PX && trackedWidth(ctx, text, trackAt(px)) + captionMarkWidth(mark, px) > room) {
+  while (px > L.CAPTION_NAME_MIN_PX && trackedWidth(ctx, text, trackAt(px)) + captionMarkWidth(ctx, mark, px) > room) {
     px = Math.max(L.CAPTION_NAME_MIN_PX, px - 0.5);
     ctx.font = font(px, 800);
   }
-  return { text: ellipsizeTracked(ctx, text, room - captionMarkWidth(mark, px), trackAt(px)), mark,
+  return { text: ellipsizeTracked(ctx, text, room - captionMarkWidth(ctx, mark, px), trackAt(px)), mark,
     px, track: trackAt(px), colour: FG };
 }
 
@@ -398,7 +403,7 @@ function layoutCaption(
 ): CaptionLine[] {
   return runs.map((run, i) => {
     ctx.font = font(run.px, 800);
-    const w = trackedWidth(ctx, run.text, run.track) + captionMarkWidth(run.mark, run.px);
+    const w = trackedWidth(ctx, run.text, run.track) + captionMarkWidth(ctx, run.mark, run.px);
     const x = align === 'center' ? anchor - w / 2 : anchor - w;
     // Tracking follows the last letter too, as in CSS, but it is not ink.
     const ink = Math.max(0, w - run.track);
@@ -426,7 +431,17 @@ function fillCaption(ctx: CanvasRenderingContext2D, lines: CaptionLine[]): void 
       const markX = line.x + trackedWidth(ctx, line.text, line.track) + line.px * 0.15;
       ctx.save();
       ctx.globalAlpha *= 0.7;
-      drawGenderSymbol(ctx, line.mark, markX, baseline, line.px * 0.8);
+      ctx.font = font(line.px * 0.8, 600);
+      let x = markX;
+      for (const part of line.mark.split(/([♂♀])/u)) {
+        if (genderSymbol(part)) {
+          drawGenderSymbol(ctx, part, x, baseline, line.px * 0.8);
+          x += genderSymbolWidth(part, line.px * 0.8);
+        } else {
+          ctx.fillText(part, x, baseline);
+          x += ctx.measureText(part).width;
+        }
+      }
       ctx.restore();
     }
   }

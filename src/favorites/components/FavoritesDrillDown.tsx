@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useT } from '@/i18n';
 import { AnalyticsDrillDownPanel, AnalyticsDrillDownSheet, type AnalyticsDrillDownItem } from '@/components/analytics/DrillDownSheet';
+import { PokemonNameText } from '@/components/shared/PokemonNameText';
 import type { DrillDownData } from '@/hooks/useDrillDownData';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -88,7 +89,7 @@ export function FavoritesDrillDown({ snapshot, contributors, selection, siblings
           totalPokemon: cells.length,
           totalLines: cells.length,
           showGenBadges: false,
-          emptyContent: details && category.key === selection.key ? <div className="px-1 py-2 text-xs border-b"><strong>{details.name}</strong><p>{details.coordinates.map(origin => coordinateLabel(origin.type, origin.gen)).join('; ')}</p></div> : !cells.length ? <p className="text-sm text-muted-foreground py-4">{t('favorites.analytics.noContributors')}</p> : undefined,
+          emptyContent: details && category.key === selection.key ? <div className="px-1 py-2 text-xs border-b"><strong><PokemonNameText name={details.name} /></strong><p>{details.coordinates.map(origin => coordinateLabel(origin.type, origin.gen)).join('; ')}</p></div> : !cells.length ? <p className="text-sm text-muted-foreground py-4">{t('favorites.analytics.noContributors')}</p> : undefined,
         };
         return data;
       },
