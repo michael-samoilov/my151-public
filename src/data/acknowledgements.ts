@@ -266,16 +266,40 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
     id: 'code',
     entries: [
       {
+        id: 'npm-packages',
+        name: 'Open-source packages',
+        usedFor:
+          "The npm packages the site is built with, such as React, Radix UI, d3 and ECharts. Each package's license notice is in the files below.",
+        license: 'MIT, ISC, Apache-2.0 and others',
+        // The build writes npm-packages.txt (vite.config.ts, build.license);
+        // npm-packages-extra.txt holds the notices it misses.
+        links: ['/licenses/npm-packages.txt', '/licenses/npm-packages-extra.txt'],
+        linkLabels: {
+          '/licenses/npm-packages.txt': 'package licenses',
+          '/licenses/npm-packages-extra.txt': 'more package licenses',
+        },
+      },
+      {
         id: 'hover-tilt',
         name: 'hover-tilt',
         by: 'Simon Goellner',
-        usedFor: 'The pointer tilt of the export card.',
+        usedFor: 'The tilt, springs, drop shadow, and glare of the export card.',
         license: 'MIT (repository) · MPL-2.0 (package)',
+        // MPL-2.0 section 3.2(a): say where the source of the changed files is.
+        terms: "my151's changed hover-tilt files are available as source at the links above.",
         texts: [
           { name: 'MIT (repository)', file: 'hover-tilt-MIT.txt' },
           { name: 'MPL-2.0 (package)', file: 'hover-tilt-MPL-2.0.txt' },
         ],
-        links: ['https://github.com/simeydotme/hover-tilt'],
+        links: [
+          'https://github.com/simeydotme/hover-tilt',
+          '/licenses/source/hover-tilt/hoverTilt.ts.txt',
+          '/licenses/source/hover-tilt/hoverTilt.css.txt',
+        ],
+        linkLabels: {
+          '/licenses/source/hover-tilt/hoverTilt.ts.txt': 'hoverTilt.ts source',
+          '/licenses/source/hover-tilt/hoverTilt.css.txt': 'hoverTilt.css source',
+        },
       },
     ],
   },

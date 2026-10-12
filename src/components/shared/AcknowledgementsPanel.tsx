@@ -54,7 +54,7 @@ function loadLicense(file: string): Promise<string> {
   return text;
 }
 
-const host = (href: string) => new URL(href).hostname.replace(/^www\./, '');
+const host = (href: string) => new URL(href, window.location.href).hostname.replace(/^www\./, '');
 
 const indent = (line: string) => line.length - line.trimStart().length;
 const isRule = (line: string) => /^\s*[=\-_*]{3,}\s*$/.test(line);
