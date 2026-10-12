@@ -28,7 +28,7 @@
  *
  * Only code that comes from hover-tilt belongs in this folder. Its source is
  * published as https://my151.app/licenses/source/hover-tilt/hoverTilt.ts.txt,
- * and scripts/check-hover-tilt-source.mjs keeps that copy equal to this file.
+ * and scripts/check-published-source.mjs keeps that copy equal to this file.
  */
 
 /** The box hover-tilt `readElementBox` reads: the untransformed card. */
