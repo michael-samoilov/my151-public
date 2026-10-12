@@ -8,6 +8,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
+import { PokemonNameText } from '@/components/shared/PokemonNameText';
 import { BrowserStoreContext } from '@/components/browser/browserStore';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
@@ -404,7 +405,7 @@ export function LeagueApp() {
               <>
                 {sheetHeading.parts.map((part, i) =>
                   part.kind === 'slot' ? (
-                    <span key={i} className="text-primary">{sheetHeading.subject}</span>
+                    <span key={i} className="text-primary"><PokemonNameText name={sheetHeading.subject} /></span>
                   ) : (
                     <span key={i} className="text-foreground">{part.text}</span>
                   ),

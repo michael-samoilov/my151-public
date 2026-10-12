@@ -5,6 +5,7 @@ import { LEAGUE_ALTERNATE_FORMS } from './data/catalog';
 interface FormNames {
   forms: Record<string, string>;
   formSource: Record<string, NameProvenance>;
+  formCompact?: Record<string,string>;
 }
 
 const sources = import.meta.glob<FormNames>('./data/names/*.json', { import: 'default' });
@@ -25,6 +26,10 @@ registerNameExtension(async (locale, catalog, species) => {
   const fallback = missingDescriptor && locale !== 'en' ? await loadFormNames('en') : names;
   for (const form of LEAGUE_ALTERNATE_FORMS) {
     const id = form.id;
+    if (names.formCompact?.[id]) {
+      catalog.formCompact ??= {};
+      catalog.formCompact[id] = names.formCompact[id];
+    }
     species[id] = form.ownerId;
     const female = form.name.endsWith('-female');
     const descriptor = names.forms[id] ?? (female ? '♀' : fallback.forms[id]);

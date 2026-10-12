@@ -37,6 +37,24 @@ function seedValue(sections: Record<string, number[]>): string {
 
 const ok = (name: string, cond: boolean, detail?: string): Check => ({ name, status: cond ? 'pass' : 'fail', detail });
 
+/**
+ * The Linux WebKit here (WebKitGTK) lays the Gym trainer card out narrower than
+ * Safari does, so these text-fit checks fail on it alone. Michael checked the
+ * same card in Safari on an iPhone on 2026-10-12: "Stomping Tantrum" wraps onto
+ * two lines and a long badge name keeps its "Badge" suffix. On WebKit a failure
+ * of these checks reports skip, with the measurement kept in the detail.
+ */
+const GTK_NARROW_CARD = new Set([
+  'gym-export:tm-chip-inside-cell',
+  'gym-export:tm-two-word-wrap',
+  'gym-export:tm-one-word-line',
+  'gym-export:badge-suffix-visible',
+]);
+const cardFit = (s: Session, check: Check): Check =>
+  s.engine === 'webkit' && check.status === 'fail' && GTK_NARROW_CARD.has(check.name)
+    ? { ...check, status: 'skip', detail: `${check.detail ?? ''} (WebKitGTK lays this card out narrower than Safari)` }
+    : check;
+
 interface AuditFinding { kind: string; severity: string; path: string; text: string; detail: string; }
 
 /**
@@ -2787,11 +2805,11 @@ export async function runGymCardExportParitySuite(
      const chipRight=c?c.right:0;
      return {tmW:r?r.width:0,chipRight,tmRight,inside:!!c&&chipRight<=tmRight+0.5};`,
   );
-  checks.push(ok(
+  checks.push(cardFit(s, ok(
     'gym-export:tm-chip-inside-cell',
     tmFit.inside && tmFit.tmW > 70,
     `tmW=${tmFit.tmW.toFixed(1)} chipRight=${tmFit.chipRight.toFixed(1)} tmRight=${tmFit.tmRight.toFixed(1)}`,
-  ));
+  )));
   // The card's own export, not the league pane's: both carry the attribute, and
   // the league pane's comes first in the DOM, which WebKit and Gecko pick.
   await s.click('[data-league-export="card"]');
@@ -2980,12 +2998,12 @@ export async function runGymCardExportParitySuite(
      };`,
   );
   await s.screenshot(ctx.shot('gym-export-tm-two-word-wrap'));
-  checks.push(ok(
+  checks.push(cardFit(s, ok(
     'gym-export:tm-two-word-wrap',
     /stomping tantrum/i.test(wrap.text) && !wrap.ellipsis && wrap.lines === 2 && wrap.lastVisible
       && Math.abs(wrap.topGap - wrap.bottomGap) <= TM_GAP_SLACK,
     `text=${wrap.text} ellipsis=${wrap.ellipsis} lines=${wrap.lines} lastVisible=${wrap.lastVisible} top=${wrap.topGap.toFixed(1)} bottom=${wrap.bottomGap.toFixed(1)}`,
-  ));
+  )));
 
   await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${SABRINA_SOLO_LEAGUE}); return true;`);
   await s.navigate(url);
@@ -3025,11 +3043,11 @@ export async function runGymCardExportParitySuite(
      };`,
   );
   await s.screenshot(ctx.shot('gym-export-tm-one-word-line'));
-  checks.push(ok(
+  checks.push(cardFit(s, ok(
     'gym-export:tm-one-word-line',
     /^psychic$/i.test(oneLine.text) && oneLine.lines === 1 && Math.abs(oneLine.topGap - oneLine.bottomGap) <= TM_GAP_SLACK,
     `text=${oneLine.text} lines=${oneLine.lines} top=${oneLine.topGap.toFixed(1)} bottom=${oneLine.bottomGap.toFixed(1)}`,
-  ));
+  )));
 
   const BADGE_OVERFLOW_LEAGUE = SABRINA_SOLO_LEAGUE.replace("badgeName:'Marsh'", "badgeName:'Thunder Thunder Thunder'");
   await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BADGE_OVERFLOW_LEAGUE}); return true;`);
@@ -3055,12 +3073,12 @@ export async function runGymCardExportParitySuite(
      return {rendered:(field.textContent||'').replace(/\\u00a0/g,' '),suffixVisible,overflows:box.scrollHeight>box.clientHeight+1};`,
   );
   await s.screenshot(ctx.shot('gym-export-badge-suffix-visible'));
-  checks.push(ok(
+  checks.push(cardFit(s, ok(
     'gym-export:badge-suffix-visible',
     /Badge/.test(badgeFit.rendered) && !/Thunder Thunder Thunder/.test(badgeFit.rendered)
       && badgeFit.suffixVisible && !badgeFit.overflows,
     `rendered=${badgeFit.rendered} suffixVisible=${badgeFit.suffixVisible} overflows=${badgeFit.overflows}`,
-  ));
+  )));
   return checks;
 }
 
