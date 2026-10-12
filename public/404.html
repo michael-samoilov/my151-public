@@ -101,7 +101,7 @@ svg.ic, svg.go { fill: none; stroke: currentColor; stroke-width: 2; stroke-linec
 @media (min-width: 1024px) { :root { --u: 3px; } }
 .col { max-width: none; width: auto; align-items: stretch; }
 .scene { position: relative; width: calc(var(--u) * 176); padding: calc(var(--u) * 8); margin-top: 1rem; background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; }
-.screen { position: relative; width: calc(var(--u) * 160); height: calc(var(--u) * 104); }
+.screen { position: relative; width: calc(var(--u) * 160); height: calc(var(--u) * 56); }
 .screen > * { position: absolute; margin: 0; }
 .px { font-size: calc(var(--u) * 8); line-height: calc(var(--u) * 8); }
 .foe-name { left: calc(var(--u) * 8); top: 0; }
@@ -117,13 +117,23 @@ svg.ic, svg.go { fill: none; stroke: currentColor; stroke-width: 2; stroke-linec
 /* The text box and the menu are flat panels in the app's muted grey, with
  * the app's radius: no game frame, no outline. */
 .box { background: var(--hover); border-radius: 0.5rem; }
-.say { left: 0; top: calc(var(--u) * 64); width: calc(var(--u) * 160); height: calc(var(--u) * 40); padding: calc(var(--u) * 8); }
-.say span { display: block; width: max-content; }
-.say span + span { margin-top: calc(var(--u) * 8); }
-/* Gen 1 prints text one letter at a time. 15 and 9 letters, about 40 ms each. */
+/* The encounter line opens the page, in the pixel font at a multiple of its
+ * 8 px grid (24 px; 16 px under 384 px; 32 px on desktop), one line per span,
+ * with the 404 in red. */
+.say { margin: 0; display: flex; flex-direction: column; align-items: center; font-size: 24px; line-height: 32px; font-weight: 400; letter-spacing: 0; }
+.say b { font-weight: 400; color: var(--red); }
+@media (max-width: 383px) { .say { font-size: 16px; line-height: 24px; } }
+@media (min-width: 1024px) { .say { font-size: 32px; line-height: 40px; } }
+/* Gen 1 prints text one letter at a time, about 40 ms a letter: the
+ * encounter's three lines (11, 10 and 9 letters), then the heading's two
+ * (9 and 14). The menu works from the start. */
+.say span, .title span { display: block; width: max-content; }
 @media (prefers-reduced-motion: no-preference) {
-  .say .l1 { animation: type 0.6s steps(15, end) 0.3s both; }
-  .say .l2 { animation: type 0.36s steps(9, end) 1s both; }
+  .say .l1 { animation: type 0.44s steps(11, end) 0.3s both; }
+  .say .l2 { animation: type 0.4s steps(10, end) 0.8s both; }
+  .say .l3 { animation: type 0.36s steps(9, end) 1.25s both; }
+  .title .t1 { animation: type 0.36s steps(9, end) 1.85s both; }
+  .title .t2 { animation: type 0.56s steps(14, end) 2.25s both; }
 }
 @keyframes type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 /* The menu: the tools, then RUN. One cursor marks the selected entry, as in
@@ -136,28 +146,26 @@ svg.ic, svg.go { fill: none; stroke: currentColor; stroke-width: 2; stroke-linec
 .menu:not([data-js]) a:hover::before, .menu:not([data-js]) a:focus-visible::before, .menu:not([data-js]):not(:hover):not(:focus-within) li:first-child a::before, .menu a.sel::before { visibility: visible; }
 .menu:not([data-js]) a:hover, .menu:not([data-js]) a:focus-visible, .menu a.sel { color: var(--red); }
 .menu a:focus-visible { outline: none; }
-/* The heading in the scene's pixel font, at a multiple of its 8 px grid so
- * every pixel lands on a screen pixel: 24 px, or 16 px under 384 px. */
-h1.px { text-align: center; font-size: 24px; line-height: 32px; font-weight: 400; letter-spacing: 0; }
-@media (max-width: 383px) { h1.px { font-size: 16px; line-height: 24px; } }
-/* Desktop: 32 px, a step above the scene's 24 px text, wrapped to the scene's width. */
-@media (min-width: 1024px) { h1.px { font-size: 32px; line-height: 40px; max-width: calc(var(--u) * 176); margin-inline: auto; } }
+/* After the encounter and before the menu: the scene's pixel text,
+ * centered, one line per span. */
+.title { margin: calc(var(--u) * 8) 0 calc(var(--u) * 4); font-weight: 400; letter-spacing: 0; display: flex; flex-direction: column; align-items: center; }
+.title span + span { margin-top: calc(var(--u) * 4); }
     </style>
   </head>
   <body>
     <header class="bar"><a class="wm" href="/"><span>my151</span>.app</a></header>
     <main>
       <div class="col">
-        <h1 class="px">That page does not exist</h1>
+        <h1 class="px say"><span class="l1"><b>404</b>: A wild</span> <span class="l2">MISSINGNO.</span> <span class="l3">appeared!</span></h1>
         <section class="scene">
-          <div class="screen" role="img" aria-label="Wild MissingNo. appeared!">
+          <div class="screen" role="img" aria-label="MissingNo., level 404">
             <p class="px foe-name" aria-hidden="true">MISSINGNO.</p>
             <p class="px foe-lv" aria-hidden="true">:L404</p>
             <p class="px foe-hp" aria-hidden="true"><b>HP:</b><span class="hpbar"></span></p>
             <div class="foe-frame" aria-hidden="true"></div>
             <div class="ms" role="img" aria-label="MissingNo."><i></i><i class="r"></i><i class="c"></i><i class="b1"></i><i class="b2"></i></div>
-            <p class="px box say"><span class="l1">Wild MISSINGNO.</span><span class="l2">appeared!</span></p>
           </div>
+          <p class="px title"><span class="t1">That page</span> <span class="t2">does not exist</span></p>
           <ul class="px box menu" aria-label="Where to go">
             <li><a href="/pokedex-builder">POKéDEX MAKER</a></li>
             <li><a href="/custom-gym-leader">GYM LEADER MAKER</a></li>
