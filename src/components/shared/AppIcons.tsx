@@ -91,3 +91,27 @@ export function RibbonIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/**
+ * A Pokémon Egg about to hatch. The outline, the crack and the three edge
+ * spots are traced from the games' cracked-egg sprite. The crack opens a little
+ * about the crown, so every run stays 2 units clear of its neighbours. The left
+ * spot sits 3.75 sprite pixels left of and 2.75 below its traced place, to make
+ * room for the left run's down-left turn. Drawn at `pathScale(1.35)`. Sources:
+ * `docs/design/tools-menu-icons/egg-*`.
+ */
+export function EggIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 2C13.98 2 15.99 3.08 17.64 4.93C19.3 6.78 20.6 9.38 20.97 12C21.33 14.62 20.69 17.22 19.03 19.07C17.37 20.92 14.71 22 12 22C9.29 22 6.63 20.92 4.97 19.07C3.31 17.22 2.67 14.62 3.03 12C3.4 9.38 4.7 6.78 6.36 4.93C8.01 3.08 10.02 2 12 2Z" />
+      <path d="M12 2L12 5.2" />
+      <path d="M12 5.2L10 6.7L10 7.9L7.92 9.49" />
+      <path d="M12 5.2L13.3 6.9L13.3 8" />
+      <path d="M13.3 8L13.78 10.1" />
+      <path d="M13.3 8L15.3 8.8L15.48 8.96" />
+      <path d="M3.5 9.97A4 2.76 0 0 1 3.08 15.18" />
+      <path d="M20.02 17.7A3.45 3.45 0 1 1 21.05 12.78" />
+      <path d="M4.79 18.87A2.76 2.76 0 1 1 9.53 21.71" />
+    </Icon>
+  );
+}
