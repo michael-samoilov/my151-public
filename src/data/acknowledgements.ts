@@ -105,6 +105,8 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         license: 'Free to use, with credit',
         terms:
           "PokéAPI's README thanks “x.com/DoveKyle/github.com/kyledovey for providing the back_default, back_shiny and z-a mega sprites for generation 9”. His terms, quoted from one of his X posts, not read at the source: “Free to use with credits! Victreebel (front & back) please credit my friend MyMarshlands - I do not follow size nor color limits, feel free to resize/edit as needed!”",
+        // His post asks for MyMarshlands's credit on Mega Victreebel, which the app shows.
+        artists: ['Kyle Dove', 'MyMarshlands'],
         links: ['https://x.com/DoveKyle', 'https://github.com/kyledovey'],
       },
       {
