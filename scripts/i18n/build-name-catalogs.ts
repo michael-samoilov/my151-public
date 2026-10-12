@@ -22,8 +22,38 @@ const PICKER_OUT_DIR = 'src/i18n/picker-names';
 const MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 10322, 11007]] as const;
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
-/** How a name was arrived at. Anything but `official` is flagged in the UI. */
-export type NameProvenance = 'official' | 'official-composed';
+/**
+ * How a name was arrived at. `english-only` marks a descriptor that no game
+ * publishes in any language: every locale carries the same English words.
+ * `formProvenance` in src/i18n/names.ts exposes the value; no UI marker
+ * renders it yet.
+ */
+export type NameProvenance = 'official' | 'official-composed' | 'english-only';
+
+/**
+ * Battle appearances with no official name in any language, by app id. Each
+ * locale gets the English descriptor, never an invented translation. A fusion
+ * leads with its official name, so the two Kyurem Overdrives stay distinct.
+ */
+const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; officialPrefix?: number }>> = {
+  11105: { descriptor: 'Overdrive' },
+  11106: { descriptor: 'Overdrive' },
+  11107: { descriptor: 'Overdrive', officialPrefix: 10022 },
+  11108: { descriptor: 'Overdrive', officialPrefix: 10023 },
+  11109: { descriptor: 'Radiant Sun Phase' },
+  11110: { descriptor: 'Full Moon Phase' },
+  11111: { descriptor: 'Zenith' },
+  11112: { descriptor: 'DJ' },
+};
+
+/**
+ * Terastallized Ogerpon, by app id, with the mask each one wears. No game
+ * names these battle forms. Each joins two official descriptors in the same
+ * language: the mask, then Terapagos's Terastal Form. The full name lists
+ * both after the species: Ogerpon (Wellspring Mask, Terastal Form).
+ */
+const TERASTAL_MASKS: Readonly<Record<number, number>> = { 11113: 1017, 11114: 10273, 11115: 10274, 11116: 10275 };
+const TERASTAL_FORM = 10276;
 
 /** Regions whose forms the app carries, by PokeAPI region id. */
 const REGIONS: Record<string, number> = { alola: 7, galar: 8, hisui: 9, paldea: 10 };
@@ -110,7 +140,10 @@ async function main(): Promise<void> {
   for (const form of ALTERNATE_PICKER_FORMS) {
     if (originalIds.has(form.id)) continue;
     const speciesId = entries.find((entry) => entry.appId === form.ownerId)?.speciesId ?? form.ownerId;
-    addForm(form.id, form.name, form.name === 'vivillon-pokeball' ? 'vivillon-poke-ball' : form.name, speciesId);
+    // A Terastal Ogerpon's identity names its whole mask, as the masks' own
+    // identities do, so its compact code is the mask's code plus T.
+    addForm(form.id, form.name, form.name === 'vivillon-pokeball' ? 'vivillon-poke-ball'
+      : form.name.replace(/^(ogerpon-[a-z]+)-tera$/, '$1-mask-tera'), speciesId);
   }
   const powerups = JSON.parse(readFileSync('src/league/data/powerupForms.json', 'utf8')) as
     Record<string, Record<string, { id: number; label: string }[]>>;
@@ -341,6 +374,21 @@ async function main(): Promise<void> {
       if (!mega || !variant || (own && own !== mega)) continue;
       catalog.forms[variantId] = `${mega} — ${variant}`;
       catalog.formSource[variantId] = 'official-composed';
+    }
+    for (const [id, mask] of Object.entries(TERASTAL_MASKS)) {
+      if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`Terastal form ${id} is not a picker form`);
+      const maskName = catalog.forms[mask];
+      const terastal = catalog.forms[TERASTAL_FORM];
+      if (!maskName || !terastal) throw new Error(`${locale} has no official name for ${maskName ? TERASTAL_FORM : mask}`);
+      catalog.forms[id] = `${maskName} — ${terastal}`;
+      catalog.formSource[id] = 'official-composed';
+    }
+    for (const [id, { descriptor, officialPrefix }] of Object.entries(ENGLISH_ONLY_FORMS)) {
+      if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`English-only form ${id} is not a picker form`);
+      const prefix = officialPrefix === undefined ? undefined : catalog.forms[officialPrefix];
+      if (officialPrefix !== undefined && !prefix) throw new Error(`${locale} has no official name for ${officialPrefix}`);
+      catalog.forms[id] = prefix ? `${prefix} — ${descriptor}` : descriptor;
+      catalog.formSource[id] = 'english-only';
     }
     const femaleDescriptor = catalog.forms[10025];
     if (femaleDescriptor) {

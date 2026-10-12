@@ -75,24 +75,6 @@ export const SPRITE_REVIEWS: SpriteReview[] = [
     ]
   },
   {
-    "key": "reshiram-overdrive",
-    "name": "Reshiram Overdrive",
-    "placement": "Gen 5 legendary",
-    "status": "needs-art",
-    "note": "No separately named matching sprite verified. The regular Reshiram sprite is already present.",
-    "search": "Reshiram Overdrive Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "zekrom-overdrive",
-    "name": "Zekrom Overdrive",
-    "placement": "Gen 5 legendary",
-    "status": "needs-art",
-    "note": "No separately named matching sprite verified. The regular Zekrom sprite is already present.",
-    "search": "Zekrom Overdrive Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
     "key": "primal-dialga",
     "name": "Primal Dialga",
     "placement": "Gen 4 legendary",
@@ -235,114 +217,6 @@ export const SPRITE_REVIEWS: SpriteReview[] = [
     "candidates": []
   },
   {
-    "key": "kyurem-black-overdrive",
-    "name": "Kyurem Black Overdrive",
-    "placement": "Gen 5 Kyurem family",
-    "status": "needs-art",
-    "note": "No distinct matching sprite verified.",
-    "search": "Kyurem Black Overdrive Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "kyurem-white-overdrive",
-    "name": "Kyurem White Overdrive",
-    "placement": "Gen 5 Kyurem family",
-    "status": "needs-art",
-    "note": "No distinct matching sprite verified.",
-    "search": "Kyurem White Overdrive Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "furfrou-dandy",
-    "name": "Furfrou Dandy Trim",
-    "placement": "Gen 6 Furfrou family",
-    "status": "needs-art",
-    "note": "Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable.",
-    "search": "Furfrou Dandy Trim Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "furfrou-debutante",
-    "name": "Furfrou Debutante Trim",
-    "placement": "Gen 6 Furfrou family",
-    "status": "needs-art",
-    "note": "Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable.",
-    "search": "Furfrou Debutante Trim Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "furfrou-diamond",
-    "name": "Furfrou Diamond Trim",
-    "placement": "Gen 6 Furfrou family",
-    "status": "needs-art",
-    "note": "Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable.",
-    "search": "Furfrou Diamond Trim Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "furfrou-heart",
-    "name": "Furfrou Heart Trim",
-    "placement": "Gen 6 Furfrou family",
-    "status": "needs-art",
-    "note": "Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable.",
-    "search": "Furfrou Heart Trim Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "furfrou-kabuki",
-    "name": "Furfrou Kabuki Trim",
-    "placement": "Gen 6 Furfrou family",
-    "status": "needs-art",
-    "note": "Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable.",
-    "search": "Furfrou Kabuki Trim Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "furfrou-la-reine",
-    "name": "Furfrou La Reine Trim",
-    "placement": "Gen 6 Furfrou family",
-    "status": "needs-art",
-    "note": "Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable.",
-    "search": "Furfrou La Reine Trim Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "furfrou-matron",
-    "name": "Furfrou Matron Trim",
-    "placement": "Gen 6 Furfrou family",
-    "status": "needs-art",
-    "note": "Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable.",
-    "search": "Furfrou Matron Trim Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "furfrou-pharaoh",
-    "name": "Furfrou Pharaoh Trim",
-    "placement": "Gen 6 Furfrou family",
-    "status": "needs-art",
-    "note": "Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable.",
-    "search": "Furfrou Pharaoh Trim Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "furfrou-star",
-    "name": "Furfrou Star Trim",
-    "placement": "Gen 6 Furfrou family",
-    "status": "needs-art",
-    "note": "Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable.",
-    "search": "Furfrou Star Trim Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "marshadow-zenith",
-    "name": "Marshadow Zenith",
-    "placement": "Gen 7 Marshadow family",
-    "status": "needs-art",
-    "note": "No distinct matching sprite verified.",
-    "search": "Marshadow Zenith Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
     "key": "pecharunt-shell",
     "name": "Pecharunt Shell",
     "placement": "Gen 9 Pecharunt family",
@@ -367,24 +241,6 @@ export const SPRITE_REVIEWS: SpriteReview[] = [
       }
     ],
     "currentId": 1000
-  },
-  {
-    "key": "solgaleo-radiant-sun-phase",
-    "name": "Solgaleo Radiant Sun phase",
-    "placement": "Gen 7 legendary",
-    "status": "needs-art",
-    "note": "Requested 2026-09-30. No distinct Gen 5 front sprite found in the searched Smogon source.",
-    "search": "Solgaleo Radiant Sun phase Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
-  },
-  {
-    "key": "lunala-full-moon-phase",
-    "name": "Lunala Full Moon phase",
-    "placement": "Gen 7 legendary",
-    "status": "needs-art",
-    "note": "Requested 2026-09-30. No distinct Gen 5 front sprite found in the searched Smogon source.",
-    "search": "Lunala Full Moon phase Gen 5 front sprite pixel art non-shiny",
-    "candidates": []
   },
   {
     "key": "koraidon-sprinting-build",
