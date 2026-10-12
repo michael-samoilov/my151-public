@@ -1043,10 +1043,11 @@ function drawGymCard(
       ? [...occupied.slice(0, -1).reverse(), ...occupied.slice(-1)]
       : resolved;
     const span = L.GLYPH_SPAN[row] ?? 1;
-    const lead = 7 - cells.length - span;
-    drawGlyphCell(ctx, row, span, shades, ox + lead * L.COL, y);
+    const glyphLead = 7 - resolved.length - span;
+    const pokemonLead = 7 - cells.length;
+    drawGlyphCell(ctx, row, span, shades, ox + glyphLead * L.COL, y);
     cells.forEach((cell, i) => {
-      const cx = ox + (lead + span + i) * L.COL + L.COL / 2;
+      const cx = ox + (pokemonLead + i) * L.COL + L.COL / 2;
       const cy = y + L.ROW / 2;
       const w = L.COL - 2 * L.INX;
       const h = L.ROW - 2 * L.INY;
