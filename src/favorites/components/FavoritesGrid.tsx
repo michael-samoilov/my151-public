@@ -31,11 +31,12 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import { NameTooltip } from './NameTooltip';
 
 // Preview only: `?badges=wide` stretches each column badge's pill to the
-// column, `?badges=scale` keeps the badge's 5:1 shape at 90% of the column
-// and grows the header row to hold it, and `?genbadges=1` puts a badge under
-// each generation disc. By default, the badge keeps the header's size.
+// column past the capped header, `?badges=capped` stops the badge at the
+// capped header's size, and `?genbadges=1` puts a badge under each
+// generation disc. The default keeps the badge's 5:1 shape at 90% of the
+// column, and the header row grows to hold it.
 const PREVIEW = new URLSearchParams(!PRODUCTION_DEPLOY && typeof location !== 'undefined' ? location.search : '');
-const BADGE_ZOOM = PREVIEW.get('badges') === 'wide' ? 'wide' : PREVIEW.get('badges') === 'scale' ? 'scale' : 'capped';
+const BADGE_ZOOM = PREVIEW.get('badges') === 'wide' ? 'wide' : PREVIEW.get('badges') === 'capped' ? 'capped' : 'scale';
 const GEN_ROW_BADGES = PREVIEW.get('genbadges') === '1';
 // A header mark over its badge: the mark keeps its size, and the badge takes
 // the room under it.
@@ -44,9 +45,9 @@ const HEAD_GAP = 0.03;
 const HEAD_BADGE = 0.18;
 
 /**
- * Height of the header row. A column badge that keeps its shape grows with
- * the column, so the row grows by the badge's growth. The generation column
- * keeps its width.
+ * Height of the header row. Past the header cap, a column badge that keeps
+ * its shape grows with the column, so the row grows by the badge's growth.
+ * The generation column keeps the capped width.
  */
 function headRowPx(cell: number, head: number): number {
   return BADGE_ZOOM === 'scale' ? head + HEAD_BADGE * (cell - head) : head;
@@ -58,6 +59,9 @@ const DESKTOP_CELL_PX = 96;
 // Zoom multiplies the body cell size, so 1 is the unzoomed grid. Mobile
 // cells start small and get more headroom than native-size desktop sprites.
 const ZOOM_RANGE = { mobile: { min: 1, max: 4 }, desktop: { min: 1, max: 2.5 } };
+// The header row and generation column stop growing at this zoom, so a
+// zoomed grid keeps most of the frame for body cells.
+const HEAD_MAX_ZOOM = 1.25;
 // Minimap opacity while it shows. It is opaque while the pointer is on it.
 const MINIMAP_SHOWN = '0.95';
 const MINIMAP_HOVER = '1';
@@ -94,6 +98,14 @@ function facingEdge(pane: DOMRect, cell: DOMRect): string {
   return pane.left >= cell.right - 1 ? 'left' : 'right';
 }
 
+/** How a column badge scales across and along its column when the tracks
+ *  go from (cell0, head0) to (cell, head). It mirrors the badge's CSS size. */
+function badgeScale(cell: number, head: number, cell0: number, head0: number): { x: number; y: number } {
+  if (BADGE_ZOOM === 'scale') return { x: cell / cell0, y: cell / cell0 };
+  const capped = Math.min(cell, head) / Math.min(cell0, head0);
+  return BADGE_ZOOM === 'wide' ? { x: cell / cell0, y: capped } : { x: capped, y: capped };
+}
+
 /** Minimap size. Body cells are square, so it keeps the body's aspect ratio. */
 function minimapBox(desktop: boolean): { width: number; height: number } {
   const width = desktop ? 180 : 100;
@@ -109,11 +121,14 @@ type Pinch = { source: 'touch' | 'gesture'; zoom: number; distance: number; body
 type GestureEventLike = UIEvent & { scale: number; clientX: number; clientY: number };
 /** Track sizes and scroll state, laid out or previewed. */
 type View = { cell: number; head: number; headRow: number; left: number; top: number; width: number; height: number };
+/** A column header's mark and badge, with their gesture-start boxes in
+ *  the header, measured from its top. */
+type HeadParts = { icon: HTMLElement; badge: HTMLElement; iconTop: number; iconH: number; badgeTop: number; badgeH: number };
 /**
- * A gesture in progress. Transforms show the grid at `zoom` without a layout:
- * the grid scales from its gesture-start layout, and the headers undo that
- * scale across their axis, so the header row keeps its height and the
- * generation column its width. `view` is the layout that the transforms show.
+ * A gesture in progress. Transforms show the layout of `zoom` without laying
+ * it out: the grid scales from its gesture-start layout, and each sticky
+ * header, mark, and badge takes the size and place that layout gives it, so
+ * nothing moves when the gesture ends. `view` is the layout shown.
  */
 type Preview = {
   zoom: number;
@@ -123,9 +138,10 @@ type Preview = {
   start: { cell: number; head: number; headRow: number; gridLeft: number; spill: { x: number; y: number } };
   grid: HTMLElement;
   rows: HTMLElement[];
+  heads: HeadParts[];
   cols: HTMLElement[];
+  marks: HTMLElement[];
   corner: HTMLElement | null;
-  marks: { rows: HTMLElement[]; cols: HTMLElement[] };
   pane: HTMLElement | null;
 };
 
@@ -300,14 +316,14 @@ function useZoomFrame(
     let armed = false;
     let drag: { id: number; x: number; y: number; left: number; top: number } | null = null;
 
-    // Body cells scale with the zoom. The header row and generation column
-    // keep their zoom-1 size, so no zoom resizes them, and a zoomed grid
-    // keeps most of the frame for body cells.
-    const tracks = () => {
-      const cell = base * zoom;
-      const head = base;
+    // Body cells scale with the zoom. Headers scale up to HEAD_MAX_ZOOM, and
+    // the header row also holds the column badges' growth past it.
+    const tracksAt = (z: number) => {
+      const cell = base * z;
+      const head = base * Math.min(z, HEAD_MAX_ZOOM);
       return { cell, head, headRow: headRowPx(cell, head) };
     };
+    const tracks = () => tracksAt(zoom);
     const writeTracks = () => {
       zoomRef.current = zoom;
       const { cell, head, headRow } = tracks();
@@ -381,6 +397,16 @@ function useZoomFrame(
       // scales with the cells and counts toward the scroll range.
       const spill = { x: Math.max(0, grid.scrollWidth - grid.clientWidth), y: Math.max(0, grid.scrollHeight - grid.clientHeight) };
       const start = { cell, head, headRow, gridLeft: gridLeft(), spill };
+      const rows = all(':scope > [data-head="row"]');
+      const heads = rows.flatMap((row): HeadParts[] => {
+        const icon = row.querySelector<HTMLElement>('[data-head-icon]');
+        const badge = row.querySelector<HTMLElement>('[data-testid^="favorites-header-badge-"]');
+        if (!icon || !badge) return [];
+        const top = row.getBoundingClientRect().top;
+        const i = icon.getBoundingClientRect();
+        const b = badge.getBoundingClientRect();
+        return [{ icon, badge, iconTop: i.top - top, iconH: i.height, badgeTop: b.top - top, badgeH: b.height }];
+      });
       const next: Preview = {
         zoom,
         view: shown(),
@@ -388,10 +414,11 @@ function useZoomFrame(
         focus: { x: 0, y: 0, body: { u: 0, v: 0 } },
         start,
         grid,
-        rows: all(':scope > [data-head="row"]'),
+        rows,
+        heads,
         cols: all(':scope > [data-head="col"]'),
+        marks: all(':scope > [data-head="col"] > [data-head-mark]'),
         corner: grid.querySelector<HTMLElement>(':scope > [data-head="corner"]'),
-        marks: { rows: all(':scope > [data-head="row"] > [data-head-mark]'), cols: all(':scope > [data-head="col"] > [data-head-mark]') },
         pane: grid.querySelector<HTMLElement>(':scope > [data-testid="favorites-picker"]'),
       };
       for (const node of [grid, ...next.rows, ...next.cols, next.corner]) {
@@ -412,7 +439,11 @@ function useZoomFrame(
         node.style.transformOrigin = '';
         node.style.willChange = '';
       }
-      for (const node of [...p.marks.rows, ...p.marks.cols]) node.style.scale = '';
+      for (const { icon, badge } of p.heads) {
+        icon.style.transform = '';
+        badge.style.transform = '';
+      }
+      for (const node of p.marks) node.style.scale = '';
       if (p.pane) {
         p.pane.style.scale = '';
         p.pane.style.transformOrigin = '';
@@ -424,36 +455,50 @@ function useZoomFrame(
       const body = target.body ?? bodyAt(target.x, target.y);
       const p = preview ??= beginPreview();
       const { start } = p;
-      // The layout this zoom gets with the headers at their start size.
-      const cell = base * target.zoom;
-      const width = start.head + cell * (COLS - 1);
-      const height = start.headRow + cell * (ROWS - 1);
+      // The layout of this zoom.
+      const { cell, head, headRow } = tracksAt(target.zoom);
+      const width = head + cell * (COLS - 1);
+      const height = headRow + cell * (ROWS - 1);
       const s = cell / start.cell;
       const gl = desktop || fitFrame ? Math.max(0, (el.clientWidth - width) / 2) : 0;
       const contentWidth = Math.max(el.clientWidth, gl + width + start.spill.x * s);
       const contentHeight = Math.max(el.clientHeight, height + start.spill.y * s);
-      const left = Math.max(0, Math.min(contentWidth - el.clientWidth, body.u * cell + start.head + gl - target.x));
-      const top = Math.max(0, Math.min(contentHeight - el.clientHeight, body.v * cell + start.headRow - target.y));
+      const left = Math.max(0, Math.min(contentWidth - el.clientWidth, body.u * cell + head + gl - target.x));
+      const top = Math.max(0, Math.min(contentHeight - el.clientHeight, body.v * cell + headRow - target.y));
       p.zoom = target.zoom;
       p.gridLeft = gl;
       p.focus = { x: target.x, y: target.y, body };
-      p.view = { cell, head: start.head, headRow: start.headRow, left, top, width: contentWidth, height: contentHeight };
+      p.view = { cell, head, headRow, left, top, width: contentWidth, height: contentHeight };
       target = null;
       // Scale the grid so every body point lands where that layout puts it.
       // The transformed grid then reaches exactly as far past the current
       // scroll offsets as that layout does, so the browser never clamps them.
-      const tx = gl - start.gridLeft + start.head * (1 - s) + el.scrollLeft - left;
-      const ty = start.headRow * (1 - s) + el.scrollTop - top;
+      const tx = gl + head - start.head * s - start.gridLeft + el.scrollLeft - left;
+      const ty = headRow - start.headRow * s + el.scrollTop - top;
       p.grid.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
-      // Each sticky header undoes that transform across its axis, from where
-      // its sticky offset holds it in the grid. Header marks keep their size.
-      const ax = (Math.max(0, el.scrollLeft - start.gridLeft) * (1 - s) - tx) / s;
-      const ay = (Math.max(0, el.scrollTop) * (1 - s) - ty) / s;
-      for (const node of p.rows) node.style.transform = `translateY(${ay}px) scaleY(${1 / s})`;
-      for (const node of p.cols) node.style.transform = `translateX(${ax}px) scaleX(${1 / s})`;
-      if (p.corner) p.corner.style.transform = `translate(${ax}px, ${ay}px) scale(${1 / s})`;
-      for (const node of p.marks.rows) node.style.scale = `${1 / s} 1`;
-      for (const node of p.marks.cols) node.style.scale = `1 ${1 / s}`;
+      // Each sticky header replaces the grid's transform across its axis with
+      // its own size and sticky place in that layout. The header row is
+      // `headRow` tall at the frame top; the generation column is `head` wide.
+      const kHead = head / start.head;
+      const kRow = headRow / start.headRow;
+      const ax = (Math.max(0, gl - left) - start.gridLeft + el.scrollLeft - Math.max(0, el.scrollLeft - start.gridLeft) * s - tx) / s;
+      const ay = (el.scrollTop * (1 - s) - ty) / s;
+      for (const node of p.rows) node.style.transform = `translateY(${ay}px) scaleY(${kRow / s})`;
+      for (const node of p.cols) node.style.transform = `translateX(${ax}px) scaleX(${kHead / s})`;
+      if (p.corner) p.corner.style.transform = `translate(${ax}px, ${ay}px) scale(${kHead / s}, ${kRow / s})`;
+      // A generation mark sizes from the column width alone.
+      for (const node of p.marks) node.style.scale = `1 ${kHead / s}`;
+      // A column header centers its mark, sized from the column width, over
+      // its badge, sized from the column. Place each where that layout does.
+      const k = badgeScale(cell, head, start.cell, start.head);
+      for (const part of p.heads) {
+        const iconH = part.iconH * kHead;
+        const gap = (part.badgeTop - part.iconTop - part.iconH) * kHead;
+        const badgeH = part.badgeH * k.y;
+        const y = (headRow - iconH - gap - badgeH) / 2;
+        part.icon.style.transform = `translateY(${(y + iconH / 2) / kRow - part.iconTop - part.iconH / 2}px) scale(${kHead / s}, ${kHead / kRow})`;
+        part.badge.style.transform = `translateY(${(y + iconH + gap + badgeH / 2) / kRow - part.badgeTop - part.badgeH / 2}px) scale(${k.x / s}, ${k.y / kRow})`;
+      }
       if (p.pane) p.pane.style.scale = String(1 / s);
       paint(true);
     };
@@ -785,6 +830,7 @@ function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenA
         // header height, it stops at the header's own width.
         <div data-head-mark className="absolute inset-0 flex flex-col items-center justify-center" style={{ gap: trackPart('--head', HEAD_GAP) }}>
           <div
+            data-head-icon
             className="flex items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain"
             style={{ width: trackPart('--head', HEAD_ICON), height: trackPart('--head', HEAD_ICON) }}
           >
