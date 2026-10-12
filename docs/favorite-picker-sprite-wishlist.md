@@ -6,8 +6,6 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 
 | Wanted form | Intended picker placement | Status / note |
 | --- | --- | --- |
-| Reshiram Overdrive | Gen 5 legendary | No separately named matching sprite verified. The regular Reshiram sprite is already present. |
-| Zekrom Overdrive | Gen 5 legendary | No separately named matching sprite verified. The regular Zekrom sprite is already present. |
 | Primal Dialga | Gen 4 legendary | No matching sprite verified. Keep separate from Origin Dialga. |
 | Shadow Lugia (XD001) | Gen 3 legendary | No matching Gen 5-style front sprite verified. |
 | Meta Groudon (Jirachi: Wish Maker) | Gen 3 legendary | No matching sprite verified; do not confuse with Primal Groudon. |
@@ -21,20 +19,28 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Purple Kecleon (Mystery Dungeon) | Gen 3 Kecleon family | No matching Gen 5-style front sprite verified. |
 | Ukulele Pichu | Gen 4 Pichu family | Confirmed by Michael 2026-09-30. Pokémon Ranger: Guardian Signs design. No matching Gen 5-style front sprite verified in the searched source. |
 | Mega Darkrai eye form | Gen 4 Darkrai gimmick family | The existing Mega Darkrai sprite is present; no distinct matching eye-form sprite verified. |
-| Kyurem Black Overdrive | Gen 5 Kyurem family | No distinct matching sprite verified. |
-| Kyurem White Overdrive | Gen 5 Kyurem family | No distinct matching sprite verified. |
-| Furfrou Dandy, Debutante, Diamond, Heart, Kabuki, La Reine, Matron, Pharaoh, and Star trims | Gen 6 Furfrou family | Available trim files were rejected after visual review: they do not consistently match the app's Gen 5-style pixel art. None are selectable. |
-| Marshadow Zenith | Gen 7 Marshadow family | No distinct matching sprite verified. |
 | Pecharunt Shell | Gen 9 Pecharunt family | No distinct matching sprite verified. |
 | Gholdengo without surfboard | Gen 9 Gholdengo family | Confirmed by Michael 2026-09-30. Ordinary standing Gholdengo; a pose replacement for id 1000, not a new form. Current Smogon Gen 5 art still has the board. Smooth standing art is a rejected pose reference. |
-| Solgaleo Radiant Sun phase | Gen 7 legendary | Requested 2026-09-30. No separately named Gen 5 front sprite found in the current Smogon source. |
-| Lunala Full Moon phase | Gen 7 legendary | Requested 2026-09-30. No separately named Gen 5 front sprite found in the current Smogon source. |
 | Koraidon ride builds (Sprinting, Swimming, Gliding) | Gen 9 Koraidon family | Requested 2026-09-30. No separately named Gen 5 front sprite found for these ride builds in the current Smogon source. |
 | Miraidon ride modes (Drive, Aquatic, Glide) | Gen 9 Miraidon family | Requested 2026-09-30. No separately named Gen 5 front sprite found for these ride builds in the current Smogon source. |
-| Mega Zygarde (PokeAPI 10301) | Gen 6 gimmick / Zygarde family | Michael (2026-10-07): important. Checked 2026-10-07: PokeAPI has no sprite (404), and Showdown's Gen 5 index has no `zygarde-mega`. Add it as a picker-only `source: 'powerup'` form once a Gen 5-style sprite is found. |
-| Female Mega Meowstic (PokeAPI 10326) | Gen 6 gimmick / Meowstic family | Checked 2026-10-07: PokeAPI's 10326 and Showdown's `meowstic-fmega` are pixel-identical to the male Mega Meowstic, so neither is a distinct sprite. Showdown's file is also a smoothed render, not pixel art. |
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
+
+## Added on 2026-10-12
+
+Michael chose these sprites from the sprite lab's locked selections (`sprite-lab/selections/`). They are copied without pixel edits. The forms are on the preview branch `claude/new-forms` until Michael ships them.
+
+| Form | Picker id | Placement and note |
+| --- | --- | --- |
+| Furfrou Heart, Star, Diamond, Debutante, Matron, Dandy, La Reine, Kabuki, and Pharaoh trims | 11096–11104 | `alternateForms.ts`, in game order, right after Furfrou in Normal × VI. |
+| Reshiram Overdrive and Zekrom Overdrive | 11105, 11106 | `alternateForms.ts`, beside each owner in its type × Gen V cells and Legendary × Gen V. Kept out of the League builder as battle states. |
+| Black Kyurem Overdrive and White Kyurem Overdrive | 11107, 11108 | `alternateForms.ts`, owned by Kyurem (646). The Kyurem line reads Kyurem, Black Kyurem, its Overdrive, White Kyurem, its Overdrive. |
+| Solgaleo Radiant Sun phase, Lunala Full Moon phase, and Marshadow Zenith | 11109–11111 | `alternateForms.ts`, beside each owner in its Gen VII cells. |
+| DJ Rotom | 11112 | `alternateForms.ts`, Generation IX: it debuted in Pokémon Pokopia (2026). It sorts last in Electric × IX and Ghost × IX. |
+| Mega Zygarde | 10301 | `src/league/data/powerupForms.json`, not a picker-only form. Its label is unique to Zygarde, and `npm run league:powerups` dropped it only because PokeAPI has no sprite. With the local sprite in place, the harvester keeps it, so the League builder also gets a Mega button on Zygarde. |
+| Female Mega Meowstic | 10326 | Picker-only `source: 'powerup'` form in `alternateForms.ts`. The harvester keeps one Mega per label, and this one shares "Mega Meowstic" with the male Mega (10314). PokeAPI's own 10326 is a pixel copy of the male, so the app ships its own file. In the League builder, female Meowstic (10025) gets this Mega. |
+
+Overdrive, the two phases, Zenith, and DJ Rotom have no official name in any language. Every locale shows the same English descriptor, with `english-only` provenance in the name catalogs.
 
 ## Pokopia candidates
 
@@ -47,7 +53,6 @@ Requested by Michael on 2026-10-06. Sprite sources and picker placement have not
 | Tinkmaster Tinkaton | Sprite search pending. |
 | Peakychu | Sprite search pending. |
 | Smearguru | Sprite search pending. |
-| DJ Rotom | Sprite search pending. |
 | Chef Dente Greedent | Sprite search pending. |
 
 ## Sprites to replace
