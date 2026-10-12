@@ -107,7 +107,7 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   holoRainbow: { on: true, amount: 0.2 },
   holographic: { on: true, amount: FOIL_HOLO_AMOUNT },
   // The redrawn holo pair, off until Michael picks it in the workshop.
-  prism: { on: false, amount: 0.5 },
+  prism: { on: false, amount: 0.21 },
   gleam: { on: false, amount: 0.6 },
   iridescence: { on: true, amount: 0.1 },
   emboss: { on: false, amount: 0 },
