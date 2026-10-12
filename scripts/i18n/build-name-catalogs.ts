@@ -21,8 +21,29 @@ const PICKER_OUT_DIR = 'src/i18n/picker-names';
 const MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 10322, 11007]] as const;
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
-/** How a name was arrived at. Anything but `official` is flagged in the UI. */
-export type NameProvenance = 'official' | 'official-composed';
+/**
+ * How a name was arrived at. `english-only` marks a descriptor that no game
+ * publishes in any language: every locale carries the same English words.
+ * `formProvenance` in src/i18n/names.ts exposes the value; no UI marker
+ * renders it yet.
+ */
+export type NameProvenance = 'official' | 'official-composed' | 'english-only';
+
+/**
+ * Battle appearances with no official name in any language, by app id. Each
+ * locale gets the English descriptor, never an invented translation. A fusion
+ * leads with its official name, so the two Kyurem Overdrives stay distinct.
+ */
+const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; officialPrefix?: number }>> = {
+  11105: { descriptor: 'Overdrive' },
+  11106: { descriptor: 'Overdrive' },
+  11107: { descriptor: 'Overdrive', officialPrefix: 10022 },
+  11108: { descriptor: 'Overdrive', officialPrefix: 10023 },
+  11109: { descriptor: 'Radiant Sun Phase' },
+  11110: { descriptor: 'Full Moon Phase' },
+  11111: { descriptor: 'Zenith' },
+  11112: { descriptor: 'DJ' },
+};
 
 /** Regions whose forms the app carries, by PokeAPI region id. */
 const REGIONS: Record<string, number> = { alola: 7, galar: 8, hisui: 9, paldea: 10 };
@@ -338,6 +359,13 @@ async function main(): Promise<void> {
       if (!mega || !variant || (own && own !== mega)) continue;
       catalog.forms[variantId] = `${mega} — ${variant}`;
       catalog.formSource[variantId] = 'official-composed';
+    }
+    for (const [id, { descriptor, officialPrefix }] of Object.entries(ENGLISH_ONLY_FORMS)) {
+      if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`English-only form ${id} is not a picker form`);
+      const prefix = officialPrefix === undefined ? undefined : catalog.forms[officialPrefix];
+      if (officialPrefix !== undefined && !prefix) throw new Error(`${locale} has no official name for ${officialPrefix}`);
+      catalog.forms[id] = prefix ? `${prefix} — ${descriptor}` : descriptor;
+      catalog.formSource[id] = 'english-only';
     }
 
     const affix = catalog.species.map((name, i) =>

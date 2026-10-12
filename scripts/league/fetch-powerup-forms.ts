@@ -90,7 +90,8 @@ async function main() {
     }
 
     // A form with no sprite cannot be drawn, so it is not a form this app
-    // has. PokeAPI carries a `zygarde-mega` row with nothing behind it.
+    // has. PokeAPI's `zygarde-mega` row has no sprite; the app ships its own
+    // 10301.png, which the existence check below keeps.
     const dest = join(dir, `${id}.png`);
     if (!existsSync(dest)) {
       const sprite = await fetch(`${SPRITES}/${id}.png`);

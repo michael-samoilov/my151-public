@@ -107,7 +107,16 @@
     "11090": "Blue Flower",
     "11091": "Orange Flower",
     "11092": "White Flower",
-    "11093": "Yellow Flower"
+    "11093": "Yellow Flower",
+    "11096": "Heart Trim",
+    "11097": "Star Trim",
+    "11098": "Diamond Trim",
+    "11099": "Debutante Trim",
+    "11100": "Matron Trim",
+    "11101": "Dandy Trim",
+    "11102": "La Reine Trim",
+    "11103": "Kabuki Trim",
+    "11104": "Pharaoh Trim"
   },
   "formSource": {
     "10001": "official",
@@ -217,6 +226,15 @@
     "11090": "official",
     "11091": "official",
     "11092": "official",
-    "11093": "official"
+    "11093": "official",
+    "11096": "official",
+    "11097": "official",
+    "11098": "official",
+    "11099": "official",
+    "11100": "official",
+    "11101": "official",
+    "11102": "official",
+    "11103": "official",
+    "11104": "official"
   }
 }

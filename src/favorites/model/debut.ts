@@ -2,13 +2,17 @@ import type { GenNumber } from './cells';
 import { isPowerupForm, type PickerMon } from './catalog';
 
 /**
- * Main-series games in release order, limited to games where a picker entry
- * debuted. RB stands for Red, Green, Blue, and Yellow, and GS for Gold,
- * Silver, and Crystal. Sword/Shield and Scarlet/Violet include their DLC.
+ * Games in release order, limited to games where a picker entry debuted. RB
+ * stands for Red, Green, Blue, and Yellow, and GS for Gold, Silver, and
+ * Crystal. Sword/Shield and Scarlet/Violet include their DLC.
+ *
+ * All are main-series games except Pokémon Pokopia, the one spin-off listed.
+ * DJ Rotom debuted there, and a form takes the generation and debut of the
+ * game that introduced it.
  */
 export const DEBUT_GAMES = [
   'RB', 'GS', 'RS', 'FRLG', 'E', 'DP', 'Pt', 'HGSS', 'BW', 'B2W2', 'XY', 'ORAS',
-  'SM', 'USUM', 'LGPE', 'SwSh', 'PLA', 'SV', 'PLZA',
+  'SM', 'USUM', 'LGPE', 'SwSh', 'PLA', 'SV', 'PLZA', 'Pokopia',
 ] as const;
 export type DebutGame = (typeof DEBUT_GAMES)[number];
 
@@ -31,6 +35,7 @@ const LATER_DEBUTS: readonly (readonly [first: number, last: number, game: Debut
   [10006, 10012, 'Pt'], // Shaymin Sky, Giratina Origin, Rotom appliances
   [11064, 11064, 'HGSS'], // Spiky-eared Pichu
   [10019, 10023, 'B2W2'], // Therian Formes, Black and White Kyurem
+  [11107, 11108, 'B2W2'], // Black and White Kyurem Overdrive
   [10062, 10090, 'ORAS'], // ORAS Megas, Primal Reversion, Cosplay Pikachu, Hoopa Unbound
   [803, 807, 'USUM'], // Poipole to Zeraora
   [10148, 10148, 'USUM'], // Partner Cap Pikachu
@@ -39,7 +44,8 @@ const LATER_DEBUTS: readonly (readonly [first: number, last: number, game: Debut
   [808, 809, 'LGPE'], // Meltan and Melmetal
   [899, 905, 'PLA'], // Wyrdeer to Enamorus
   [10245, 10249, 'PLA'], // Origin Dialga and Palkia, White-Striped Basculin, female Basculegion, Therian Enamorus
-  [10278, 10325, 'PLZA'], // Legends: Z-A Megas, including Mega Dimension
+  [10278, 10326, 'PLZA'], // Legends: Z-A Megas, including Mega Dimension and female Mega Meowstic
+  [11112, 11112, 'Pokopia'], // DJ Rotom
 ];
 
 export function debutGame(mon: PickerMon): DebutGame {
@@ -56,13 +62,14 @@ export function debutGame(mon: PickerMon): DebutGame {
  * Each game's generation and primary region. Games that share both are one
  * debut: B2W2 sorts with BW, USUM with SM, and Emerald with Ruby and
  * Sapphire. A game in the same generation but another region stays apart:
- * FRLG, HGSS, ORAS, LGPE, PLA, and PLZA.
+ * FRLG, HGSS, ORAS, LGPE, PLA, and PLZA. Pokopia has no main-series region,
+ * so its own value keeps it apart and last.
  */
 const GAME_REGION: Record<DebutGame, `${GenNumber} ${string}`> = {
   RB: '1 kanto', GS: '2 johto', RS: '3 hoenn', FRLG: '3 kanto', E: '3 hoenn',
   DP: '4 sinnoh', Pt: '4 sinnoh', HGSS: '4 johto', BW: '5 unova', B2W2: '5 unova',
   XY: '6 kalos', ORAS: '6 hoenn', SM: '7 alola', USUM: '7 alola', LGPE: '7 kanto',
-  SwSh: '8 galar', PLA: '8 hisui', SV: '9 paldea', PLZA: '9 kalos',
+  SwSh: '8 galar', PLA: '8 hisui', SV: '9 paldea', PLZA: '9 kalos', Pokopia: '9 pokopia',
 };
 
 /** Release position of the entry's debut region. Earlier regions sort first. */

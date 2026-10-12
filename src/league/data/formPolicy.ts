@@ -4,6 +4,11 @@ const TEMPORARY_FORM_IDS = new Set([
   10013, 10014, 10015, 10017, 10018, 10026, 10117, 10120, 10127,
   10136, 10137, 10138, 10139, 10140, 10141, 10142, 10143, 10157,
   10182, 10183, 10185, 10187, 10190, 10276, 10277, 11004, 11072,
+  // Overdrive, the Radiant Sun and Full Moon phases, and Zenith Marshadow.
+  11105, 11106, 11107, 11108, 11109, 11110, 11111,
+  // DJ Rotom is not a battle form. It stays out because it comes from the
+  // spin-off Pokémon Pokopia, not from a main-series game.
+  11112,
 ]);
 const FUSION_FORM_IDS = new Set([10022, 10023, 10155, 10156, 10193, 10194]);
 

@@ -107,7 +107,16 @@
     "11090": "Fiore Blu",
     "11091": "Fiore Arancione",
     "11092": "Fiore Bianco",
-    "11093": "Fiore Giallo"
+    "11093": "Fiore Giallo",
+    "11096": "Taglio Cuore",
+    "11097": "Taglio Stella",
+    "11098": "Taglio Diamante",
+    "11099": "Taglio Signorina",
+    "11100": "Taglio Gentildonna",
+    "11101": "Taglio Gentiluomo",
+    "11102": "Taglio Regina",
+    "11103": "Taglio Kabuki",
+    "11104": "Taglio Faraone"
   },
   "formSource": {
     "10001": "official",
@@ -217,6 +226,15 @@
     "11090": "official",
     "11091": "official",
     "11092": "official",
-    "11093": "official"
+    "11093": "official",
+    "11096": "official",
+    "11097": "official",
+    "11098": "official",
+    "11099": "official",
+    "11100": "official",
+    "11101": "official",
+    "11102": "official",
+    "11103": "official",
+    "11104": "official"
   }
 }

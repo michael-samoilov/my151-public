@@ -107,7 +107,16 @@
     "11090": "Fleur Bleue",
     "11091": "Fleur Orange",
     "11092": "Fleur Blanche",
-    "11093": "Fleur Jaune"
+    "11093": "Fleur Jaune",
+    "11096": "Coupe Cœur",
+    "11097": "Coupe Étoile",
+    "11098": "Coupe Diamant",
+    "11099": "Coupe Demoiselle",
+    "11100": "Coupe Madame",
+    "11101": "Coupe Monsieur",
+    "11102": "Coupe Reine",
+    "11103": "Coupe Kabuki",
+    "11104": "Coupe Pharaon"
   },
   "formSource": {
     "10001": "official",
@@ -217,6 +226,15 @@
     "11090": "official",
     "11091": "official",
     "11092": "official",
-    "11093": "official"
+    "11093": "official",
+    "11096": "official",
+    "11097": "official",
+    "11098": "official",
+    "11099": "official",
+    "11100": "official",
+    "11101": "official",
+    "11102": "official",
+    "11103": "official",
+    "11104": "official"
   }
 }

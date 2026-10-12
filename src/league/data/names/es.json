@@ -107,7 +107,16 @@
     "11090": "Flor Azul",
     "11091": "Flor Naranja",
     "11092": "Flor Blanca",
-    "11093": "Flor Amarilla"
+    "11093": "Flor Amarilla",
+    "11096": "Corte Corazón",
+    "11097": "Corte Estrella",
+    "11098": "Corte Rombo",
+    "11099": "Corte Señorita",
+    "11100": "Corte Dama",
+    "11101": "Corte Caballero",
+    "11102": "Corte Aristocrático",
+    "11103": "Corte Kabuki",
+    "11104": "Corte Faraónico"
   },
   "formSource": {
     "10001": "official",
@@ -217,6 +226,15 @@
     "11090": "official",
     "11091": "official",
     "11092": "official",
-    "11093": "official"
+    "11093": "official",
+    "11096": "official",
+    "11097": "official",
+    "11098": "official",
+    "11099": "official",
+    "11100": "official",
+    "11101": "official",
+    "11102": "official",
+    "11103": "official",
+    "11104": "official"
   }
 }

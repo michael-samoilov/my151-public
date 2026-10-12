@@ -30,6 +30,7 @@ const FORMS = formsData as PowerupForms;
 const ALTERNATE_FORMS: PowerupForms = {
   10061: FORMS[670],
   10184: FORMS[849],
+  10025: { mega: [{ id: 10326, label: 'Mega Meowstic (Female)' }], dynamax: [] },
   10147: { mega: [{ id: 10318, label: 'Mega Magearna (Original Color)' }], dynamax: [] },
   11006: { mega: [{ id: 10323, label: 'Mega Tatsugiri (Droopy Form)' }], dynamax: [] },
   11007: { mega: [{ id: 10324, label: 'Mega Tatsugiri (Stretchy Form)' }], dynamax: [] },

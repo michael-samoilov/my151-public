@@ -83,7 +83,7 @@ describe('alternate picker forms', () => {
     expect(eligibleFor('electric', 2).some((mon) => mon.id === 11064)).toBe(false);
   });
 
-  it('offers distinct sea, gender, flower, and regional Zen forms without nonmatching trims', () => {
+  it('offers distinct sea, gender, flower, trim, and regional Zen forms', () => {
     const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
       eligibleFor(type, gen).map((mon) => mon.id);
     for (const [type, gen, expected] of [
@@ -96,6 +96,8 @@ describe('alternate picker forms', () => {
       ['normal', 5, [521, 11095]],
       ['flying', 5, [521, 11095]],
       ['fairy', 6, [669, 11082, 11083, 11084, 11085, 670, 11086, 11087, 11088, 11089]],
+      // Natural Form, then the nine trims in game order.
+      ['normal', 6, [676, 11096, 11097, 11098, 11099, 11100, 11101, 11102, 11103, 11104]],
     ] as const) {
       const list = ids(type, gen);
       const start = list.indexOf(expected[0]);
@@ -110,7 +112,6 @@ describe('alternate picker forms', () => {
     expect(ids('gimmick', 8)).toContain(11072);
     expect(ids('psychic', 8)).toContain(10186); // Indeedee female already existed.
     expect(ids('dragon', 9)).toEqual(expect.arrayContaining([978, 11006, 11007]));
-    expect(ids('normal', 6)).toContain(676);
     for (let id = 11073; id <= 11081; id += 1) expect(getPickerMon(id)).toBeUndefined();
   });
 
@@ -138,6 +139,42 @@ describe('alternate picker forms', () => {
     expect(getPickerMon(889)?.sprite).toMatch(/^\/sprites\/pokemon\/889\.png(\?|$)/);
     expect(getPickerMon(889)?.types).toEqual(['fighting']);
     expect(getPickerMon(746)?.sprite).toBe('/sprites/pokemon/746.png');
+  });
+
+  it('keeps battle appearances, DJ Rotom, and the new Megas beside their species', () => {
+    const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
+      eligibleFor(type, gen).map((mon) => mon.id);
+    const cells = [
+      // Overdrive follows each owner; each Kyurem Overdrive follows its fusion.
+      [[643, 11105], ['dragon', 5], ['fire', 5], ['legendary', 5], ['dragon', 'legendary'], ['fire', 'legendary']],
+      [[644, 11106], ['dragon', 5], ['electric', 5], ['legendary', 5], ['electric', 'legendary']],
+      [[646, 10022, 11107, 10023, 11108], ['dragon', 5], ['ice', 5], ['legendary', 5], ['ice', 'legendary']],
+      [[791, 11109], ['psychic', 7], ['steel', 7], ['legendary', 7], ['steel', 'legendary']],
+      [[792, 11110], ['psychic', 7], ['ghost', 7], ['legendary', 7], ['ghost', 'legendary']],
+      [[802, 11111], ['fighting', 7], ['ghost', 7], ['legendary', 7], ['fighting', 'legendary']],
+      // Female Mega Meowstic follows the male Mega in every gimmick cell.
+      [[10314, 10326], ['gimmick', 6], ['psychic', 'gimmick']],
+    ] as const;
+    for (const [expected, ...positions] of cells) {
+      for (const [type, gen] of positions) {
+        const list = ids(type, gen);
+        const start = list.indexOf(expected[0]);
+        expect(start, `${type}|${gen}`).toBeGreaterThanOrEqual(0);
+        expect(list.slice(start, start + expected.length), `${type}|${gen}`).toEqual(expected);
+      }
+    }
+    // DJ Rotom debuted in Pokémon Pokopia, after every other Generation IX game.
+    for (const type of ['electric', 'ghost'] as const) expect(ids(type, 9).at(-1), type).toBe(11112);
+    expect(ids('electric', 4)).not.toContain(11112);
+    expect(ids('legendary', 9)).not.toContain(11112);
+    for (const [type, gen] of [['gimmick', 6], ['dragon', 'gimmick'], ['ground', 'gimmick'], ['legendary', 'gimmick']] as const) {
+      expect(ids(type, gen), `${type}|${gen}`).toContain(10301);
+    }
+    // Battle forms stay out of the ordinary type × generation cells.
+    expect(ids('dragon', 6)).not.toContain(10301);
+    expect(ids('legendary', 6)).not.toContain(10301);
+    expect(ids('psychic', 6)).not.toContain(10326);
+    expect(ids('legendary', 'gimmick')).not.toContain(10326);
   });
 
   it('removes alternate sprites that duplicate the same form', () => {

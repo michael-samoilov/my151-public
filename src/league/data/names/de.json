@@ -107,7 +107,16 @@
     "11090": "Blaublütler",
     "11091": "Orangeblütler",
     "11092": "Weißblütler",
-    "11093": "Gelbblütler"
+    "11093": "Gelbblütler",
+    "11096": "Herzchenschnitt",
+    "11097": "Sternchenschnitt",
+    "11098": "Diamantenschnitt",
+    "11099": "Fräuleinschnitt",
+    "11100": "Damenschnitt",
+    "11101": "Kavaliersschnitt",
+    "11102": "Königinnenschnitt",
+    "11103": "Kabuki-Schnitt",
+    "11104": "Herrscherschnitt"
   },
   "formSource": {
     "10001": "official",
@@ -217,6 +226,15 @@
     "11090": "official",
     "11091": "official",
     "11092": "official",
-    "11093": "official"
+    "11093": "official",
+    "11096": "official",
+    "11097": "official",
+    "11098": "official",
+    "11099": "official",
+    "11100": "official",
+    "11101": "official",
+    "11102": "official",
+    "11103": "official",
+    "11104": "official"
   }
 }
