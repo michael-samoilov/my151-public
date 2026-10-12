@@ -262,6 +262,9 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
 
 /** The egg draws 35% larger in its box; its stroke stays 2 units. */
 const EGG = pathScale(1.35);
+/** The egg's box: 35 units on the phone panel, which is 79.167 units tall. It
+ *  keeps that share of the panel's height on the lower desktop panel. */
+const EGG_BOX = `calc(${U(35)} * var(--panel-h, 79.167) / 79.167)`;
 
 /** The panel body for a card in the grid: artwork, or the egg. */
 function TallBody({ tool }: { tool: Tool }) {
@@ -269,7 +272,7 @@ function TallBody({ tool }: { tool: Tool }) {
     <Artwork tool={tool} />
   ) : (
     <span className="absolute inset-0 flex items-center justify-center" data-card-badge>
-      <EggIcon style={{ width: U(35), height: U(35), ...EGG.style }} strokeWidth={EGG.strokeWidth} />
+      <EggIcon style={{ width: EGG_BOX, height: EGG_BOX, ...EGG.style }} strokeWidth={EGG.strokeWidth} />
     </span>
   );
 }
