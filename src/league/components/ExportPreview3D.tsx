@@ -55,6 +55,9 @@ import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
 import { FOIL_HOLO_BLEND } from '../export/foilBlend';
 import { exportCornerRadius } from '@/lib/exportPngShape';
 import './ExportPreview3D.css';
+import './foil/pokeHolo.css';
+import { HoloShineParts } from './foil/pokeHoloParts';
+import { setPokeHoloPointer } from './foil/pokeHoloPointer';
 
 const TAP_MS = 320;
 /** Opening the export eases auto-tilt, glare, pop, and foil in from flat. */
@@ -96,17 +99,6 @@ function tiltAxes(tilt: HoverTiltRecipe | undefined, maxTilt: number): HoverTilt
     tiltFactor: tilt?.tiltFactor ?? DEFAULT_HOVER_TILT_RECIPE.tiltFactor,
     tiltFactorY: tilt?.tiltFactorY ?? DEFAULT_HOVER_TILT_RECIPE.tiltFactorY,
   };
-}
-
-function HoloShineParts() {
-  return (
-    <>
-      <span className="export-foil-holo-part export-foil-holo-radial" />
-      <span className="export-foil-holo-part export-foil-holo-bands" />
-      <span className="export-foil-holo-part export-foil-holo-pillars" />
-      <span className="export-foil-holo-part export-foil-holo-grain" />
-    </>
-  );
 }
 
 /**
@@ -243,9 +235,7 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-y', ny.toFixed(4));
     el.style.setProperty('--gradient-x', `${pointerX}%`);
     el.style.setProperty('--gradient-y', `${pointerY}%`);
-    // poke-holo maps the pointer to 37-63% across and 33-67% down for the shine.
-    el.style.setProperty('--background-x', `${(37 + pointerX * 0.26).toFixed(2)}%`);
-    el.style.setProperty('--background-y', `${(33 + pointerY * 0.34).toFixed(2)}%`);
+    setPokeHoloPointer(el, pointerX, pointerY);
     const recipeNow = recipeRef.current;
     const tiltNow = tiltNowEarly;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
