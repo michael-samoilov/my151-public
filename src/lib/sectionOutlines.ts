@@ -6,7 +6,6 @@ import { sectionName, t, type NoArgKey } from '@/i18n';
 import { en } from '@/i18n/catalogs/en';
 import { sectionColor } from '@/lib/sectionColors';
 import { buildIdToSection } from '@/hooks/useViewSort';
-import { sectionGlyphMask } from '@/lib/sectionGlyph';
 
 export const COLS = 10;
 
@@ -290,8 +289,9 @@ export interface Spandrel {
   cy: number;
   r: number;
   color: string;
-  /** The section's glyph mask (`sectionGlyphMask`), or null → 4-point star. */
-  mask: string | null;
+  /** Its glyph comes from `sectionGlyphMask(sectionId)`: a mask, or null for the
+   *  4-point star. The renderers look it up, so this module loads no images. */
+  sectionId: string;
 }
 
 export interface OutlineShape {
@@ -603,7 +603,7 @@ export function buildOutlines(
       const cy = (tileTop(n) + tileSize + tileTop(below)) / 2 - tileSize * 0.03;
       spandrels.push({
         key: `sp-${n}-${c}`, cx, cy, r: tileSize * 0.16,
-        color: secStroke.get(s) ?? '#555555', mask: sectionGlyphMask(s),
+        color: secStroke.get(s) ?? '#555555', sectionId: s,
       });
     }
   }

@@ -1,3 +1,4 @@
+import { sectionGlyphMask } from '@/lib/sectionGlyph';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
@@ -622,7 +623,8 @@ function drawOutlines(
 
   // Spandrels: recoloured glyph where its mask loaded, else a 4-point star.
   for (const sp of spandrels) {
-    const img = sp.mask ? maskImgs.get(sp.mask) : undefined;
+    const mask = sectionGlyphMask(sp.sectionId);
+    const img = mask ? maskImgs.get(mask) : undefined;
     if (img) {
       const size = sp.r * 2;
       const px = Math.max(1, Math.round(size * SCALE));

@@ -1,3 +1,4 @@
+import { sectionGlyphMask } from '@/lib/sectionGlyph';
 import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { useDragSensors } from '@/lib/dragSensors';
@@ -401,13 +402,13 @@ export function SectionOverlays({
           );
         })}
         {spandrels.map((sp) =>
-          sp.mask ? null : (
+          sectionGlyphMask(sp.sectionId) ? null : (
             <path key={sp.key} d={starPath(sp.cx, sp.cy, sp.r)} fill={sp.color} fillOpacity={0.2} stroke="none" />
           ),
         )}
       </svg>
       {spandrels.map((sp) => {
-        const mask = sp.mask;
+        const mask = sectionGlyphMask(sp.sectionId);
         if (!mask) return null;
         // Cropped mask fills its box, so match the star's bounding box (2·r).
         const size = sp.r * 2;
