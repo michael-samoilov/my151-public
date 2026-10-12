@@ -307,7 +307,7 @@ function App() {
             {analyticsMounted && (
               <ErrorBoundary where="analytics">
                 <Suspense fallback={<RouteFallback />}>
-                  <AnalyticsDashboard />
+                  <AnalyticsDashboard onAddPokemon={() => handleViewChange('builder')} />
                 </Suspense>
               </ErrorBoundary>
             )}
