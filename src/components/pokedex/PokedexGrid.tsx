@@ -551,7 +551,6 @@ function GroupBox({
         border: `1px solid ${sectionStroke}30`,
       }}
     >
-      {showGlyph && <SectionBoxGlyph sectionId={group.id} color={sectionStroke} />}
       {/* Label */}
       <div
         className="text-xs font-semibold uppercase tracking-wide px-1.5"
@@ -656,6 +655,9 @@ function GroupBox({
           )}
         </div>
       )}
+      {/* Last, so it leaves the label's and grid's selector paths as they were;
+          its negative z-index puts it behind them. */}
+      {showGlyph && <SectionBoxGlyph sectionId={group.id} color={sectionStroke} />}
     </div>
   );
 }
