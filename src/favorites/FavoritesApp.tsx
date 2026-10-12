@@ -180,6 +180,12 @@ function FavoritesContent({ sel, setSel }: {
         if (typeof sel.gen === 'number') applyPack(sel.gen, path);
       }}
       onClear={() => clear(sel.type, sel.gen)}
+      onOpenCell={(type, gen, keyboard) => {
+        // The grid may be scrolled away from the cell. The scroller's padding
+        // keeps it clear of the sticky headers.
+        document.querySelector(`[data-testid="favorites-cell-${type}-${gen}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        open(type, gen, keyboard);
+      }}
     />
   ) : null;
 
