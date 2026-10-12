@@ -22,8 +22,12 @@ import { allPickerMons, comparePickerOrder, pickerNameId, type PickerMon } from 
 import { DEBUT_GAMES, debutGame } from '@/favorites/model/debut';
 import { SPRITE_CREDIT_IDS } from './acknowledgements';
 
-/** Game Freak's own sprites have no entry in the panel; every other source does. */
-export const SPRITE_SOURCES = ['game-freak', ...SPRITE_CREDIT_IDS] as const;
+/**
+ * Every source a sprite can have. Game Freak's own sprites and my151's own
+ * drawings (the sprite lab's) have no entry in the panel; every other source
+ * does.
+ */
+export const SPRITE_SOURCES = ['game-freak', 'my151', ...SPRITE_CREDIT_IDS] as const;
 export type SpriteSourceId = (typeof SPRITE_SOURCES)[number];
 
 const isSource = (id: string): id is SpriteSourceId => (SPRITE_SOURCES as readonly string[]).includes(id);
