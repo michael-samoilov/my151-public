@@ -49,61 +49,78 @@
   opacity: calc(var(--foil-opacity) * var(--foil-prism));
 }
 
-/* V gleam: soft stripes on a 45 degree diagonal, lit like a polished
-   cylinder. Across each stripe a dim violet glow leads through a warm pink
-   fringe into a soft highlight tinted by the card's tilt, then a violet
-   core shadow, a faint reflected glow, and a gradual fade to the unlit
-   gap. A long wave on the same diagonal dims every few stripes, so the
-   light gathers in broad patches, and a colored grain tile breaks it into
-   foil sparkle. Black is no change under color-dodge, so only the stripes
-   light the ink. Both tiles are wider than tall, so the period follows the
-   card's width more than its height, and both slide across the card as the
-   pointer moves sideways. */
+/* V gleam: light on polished cylinders. Soft, bell-shaped stripes on a
+   steep diagonal set the brightness, and a long wave on the same diagonal
+   makes one stripe the highlight, dims its neighbors to a core shadow and
+   lets the next one back as reflected light. The color comes from a
+   separate, slow spectrum that runs up the card, so each stripe shows one
+   tint and the tints step through the spectrum from stripe to stripe.
+   A colored grain tile breaks the light into foil sparkle. Black is no
+   change under color-dodge, so only the stripes light the ink. The stripe
+   and wave tiles are wider than tall, so their period follows the card's
+   width more than its height. They slide across the card as the pointer
+   moves sideways, and the spectrum slides up and down as it tips. */
 .export-foil-gleam {
-  --gleam-period: 7.16%;
-  --gleam-wave: 14.7%;
-  /* The core and highlight change hue as the card tips up and down, like
-     a metal sheen. oklch keeps every hue at the same lightness, so a green
-     stripe lights the ink no more than a pink one. */
-  --gleam-hue: calc(145 + var(--holo-dy) * 210);
+  --gleam-period: 6.73%;
+  --gleam-wave: 17.17%;
+  --gleam-hue-period: 44.3%;
   --gleam-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='g' x='0' y='0' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' seed='151' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1.1 0 0 0 0.15  0.55 0.55 0 0 0.15  0.55 0 0.55 0 0.15  0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23g)'/%3E%3C/svg%3E");
   background-color: #000;
   background-image:
     var(--gleam-grain),
     repeating-linear-gradient(
-      133deg,
-      hsl(0 0% 14%) 0,
-      hsl(0 0% 14%) calc(var(--gleam-wave) * 0.1),
-      hsl(0 0% 100%) calc(var(--gleam-wave) * 0.25),
-      hsl(0 0% 100%) calc(var(--gleam-wave) * 0.75),
-      hsl(0 0% 14%) calc(var(--gleam-wave) * 0.9),
-      hsl(0 0% 14%) var(--gleam-wave)
+      127deg,
+      hsl(0 0% 10%) calc(var(--gleam-wave) * 0),
+      hsl(0 0% 15%) calc(var(--gleam-wave) * 0.15),
+      hsl(0 0% 40%) calc(var(--gleam-wave) * 0.3),
+      hsl(0 0% 78%) calc(var(--gleam-wave) * 0.4),
+      hsl(0 0% 100%) calc(var(--gleam-wave) * 0.5),
+      hsl(0 0% 78%) calc(var(--gleam-wave) * 0.6),
+      hsl(0 0% 40%) calc(var(--gleam-wave) * 0.7),
+      hsl(0 0% 15%) calc(var(--gleam-wave) * 0.85),
+      hsl(0 0% 10%) calc(var(--gleam-wave) * 1)
     ),
     repeating-linear-gradient(
-      133deg,
-      #000 0,
-      #000 calc(var(--gleam-period) * 0.25),
-      oklch(0.3 0.08 295) calc(var(--gleam-period) * 0.33),
-      oklch(0.6 0.14 20) calc(var(--gleam-period) * 0.41),
-      oklch(0.8 0.09 var(--gleam-hue)) calc(var(--gleam-period) * 0.47),
-      oklch(0.82 0.08 calc(var(--gleam-hue) + 15)) calc(var(--gleam-period) * 0.53),
-      oklch(0.5 0.11 300) calc(var(--gleam-period) * 0.59),
-      oklch(0.38 0.08 290) calc(var(--gleam-period) * 0.64),
-      oklch(0.42 0.08 calc(var(--gleam-hue) - 100)) calc(var(--gleam-period) * 0.69),
-      oklch(0.26 0.06 215) calc(var(--gleam-period) * 0.75),
-      #000 calc(var(--gleam-period) * 0.81),
-      #000 var(--gleam-period)
+      127deg,
+      hsl(0 0% 0%) 0,
+      hsl(0 0% 0%) calc(var(--gleam-period) * 0.284),
+      hsl(0 0% 4.6%) calc(var(--gleam-period) * 0.32),
+      hsl(0 0% 22%) calc(var(--gleam-period) * 0.356),
+      hsl(0 0% 50%) calc(var(--gleam-period) * 0.392),
+      hsl(0 0% 82%) calc(var(--gleam-period) * 0.428),
+      hsl(0 0% 96%) calc(var(--gleam-period) * 0.464),
+      hsl(0 0% 100%) calc(var(--gleam-period) * 0.5),
+      hsl(0 0% 97%) calc(var(--gleam-period) * 0.536),
+      hsl(0 0% 78%) calc(var(--gleam-period) * 0.572),
+      hsl(0 0% 52%) calc(var(--gleam-period) * 0.608),
+      hsl(0 0% 29%) calc(var(--gleam-period) * 0.644),
+      hsl(0 0% 12%) calc(var(--gleam-period) * 0.68),
+      hsl(0 0% 1.4%) calc(var(--gleam-period) * 0.716),
+      hsl(0 0% 0%) calc(var(--gleam-period) * 0.752),
+      hsl(0 0% 0%) var(--gleam-period)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      oklch(0.91 0.07 125) calc(var(--gleam-hue-period) * 0),
+      oklch(0.91 0.07 150) calc(var(--gleam-hue-period) * 0.167),
+      oklch(0.91 0.07 230) calc(var(--gleam-hue-period) * 0.333),
+      oklch(0.91 0.07 280) calc(var(--gleam-hue-period) * 0.45),
+      oklch(0.91 0.07 340) calc(var(--gleam-hue-period) * 0.62),
+      oklch(0.91 0.07 405) calc(var(--gleam-hue-period) * 0.8),
+      oklch(0.91 0.07 485) calc(var(--gleam-hue-period) * 1)
     );
   background-size:
     128px 128px,
-    705% 300%,
-    353% 150%;
-  background-repeat: repeat, no-repeat, no-repeat;
+    705% 500%,
+    353% 150%,
+    100% 300%;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
   background-position:
     0 0,
-    calc(38% - var(--holo-dx) * 22%) 20%,
-    calc(33.6% - var(--holo-dx) * 5.4%) calc(11.6% + var(--holo-dy) * 0.9%);
-  background-blend-mode: multiply, multiply, normal;
+    calc(36.1% - var(--holo-dx) * 18.6%) calc(27.3% + var(--holo-dy) * 27.3%),
+    calc(28.9% - var(--holo-dx) * 5.4%) calc(11.6% + var(--holo-dy) * 0.9%),
+    0 calc(50% + var(--holo-dy) * 31.25%);
+  background-blend-mode: multiply, multiply, multiply, normal;
   mix-blend-mode: color-dodge;
   opacity: calc(var(--foil-opacity) * var(--foil-gleam));
 }
