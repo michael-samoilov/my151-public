@@ -50,7 +50,7 @@ test.describe('export foil workshop', () => {
     await expect(page.locator('[data-workshop-dark-card-toggle]')).toHaveCount(0);
     await expect
       .poll(async () => foilVar(foil, '--foil-gleam'))
-      .toBe('0.600');
+      .toBe('0.650');
     await expect
       .poll(async () => foilVar(foil, '--hover-tilt-glare-intensity'))
       .toBe('0.600');

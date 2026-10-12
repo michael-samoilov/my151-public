@@ -440,7 +440,7 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
      if(mix!=='color-dodge') return {ok:false,reason:'blend '+mix};
      if(!(opacity>0.04)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
-     if(Math.abs(amount-0.6)>0.02) return {ok:false,reason:'amount '+amount};
+     if(Math.abs(amount-0.65)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
      if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
      if(mask.includes('image/svg')) return {ok:false,reason:'frame mask hides ink'};
@@ -903,7 +903,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        }
      }
      const holoAmt=Number(style.getPropertyValue('--foil-gleam'));
-     if(Math.abs(holoAmt-0.6)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
+     if(Math.abs(holoAmt-0.65)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
      return {ok:true,reason:bloom?'ink-holo-clipped':'ink-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
@@ -2551,7 +2551,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
      };`,
   ).catch(() => ({ rot: '', holo: '', glare: '', holoBlend: '', glareBlend: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^14\.29deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
-  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.6) < 0.02, `holo=${tiltVars.holo}`));
+  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.65) < 0.02, `holo=${tiltVars.holo}`));
   checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 0.6) < 0.02, `glare=${tiltVars.glare}`));
   checks.push(ok('foil-workshop:prod-holo-blend', tiltVars.holoBlend === 'color-dodge', `blend=${tiltVars.holoBlend}`));
   checks.push(ok('foil-workshop:prod-glare-blend', tiltVars.glareBlend === 'overlay', `blend=${tiltVars.glareBlend}`));

@@ -49,24 +49,27 @@
   opacity: calc(var(--foil-opacity) * var(--foil-prism));
 }
 
-/* V gleam: two sets of stripes on one steep diagonal, screened together
-   and then passed through a soft knee made of two flat grays: an overlay
-   with a dark gray, then a color-burn with a light gray. Light under the
-   knee rises slowly from a low floor, and light above it rises steeply.
-   Each stripe is a narrow crest on a wide, low skirt. A stripe alone shows
-   its crest and a faint tail; as two stripes approach, their skirts add
-   up past the knee, so the lit part swells into a wide, bright knot that
-   trails off slowly at its sides. On one side of each crest the stripe
-   has a little less green, so that tail reads violet. The first set is
-   strong and drifts slowly with the pointer; the second is spaced wider
-   and runs fast the other way as the card tilts sideways. A slow pastel
-   spectrum running up the card tints every stripe by its height on the
-   card and scrolls up and down as the card tips. A mostly gray grain tile
-   on top uses color-burn, so each grain pixel raises the cut a little:
-   where the light is bright it stays smooth, and where it is faint it
-   breaks into sparse specks. Black is no change under color-dodge, so only
-   the stripes light the ink. The stripe tiles are wider than tall, so the
-   period follows the card's width more than its height. */
+/* V gleam: two sets of stripes on one steep diagonal, screened together,
+   tinted by a slow pastel spectrum, and then passed through a soft knee
+   made of two flat grays: an overlay with a dark gray, then a color-burn
+   with a light gray. Light under the knee rises slowly from a low floor,
+   and light above it rises steeply. Each stripe is a narrow crest on a
+   wide, low skirt. A stripe alone shows its crest and a faint tail; as two
+   stripes approach, their skirts add up past the knee, so the lit part
+   swells into a wide knot that trails off slowly at its sides. Where the
+   two crests meet, every color channel clears the knee, so the middle of
+   the knot turns into a narrow, near-white line while its tails keep the
+   spectrum's tint. On one side of each crest the stripe has a little less
+   green, so that tail reads violet. The first set is strong and drifts
+   slowly with the pointer; the second is spaced wider and runs fast the
+   other way as the card tilts sideways. The spectrum runs up the card, so
+   it tints every stripe by its height on the card, and it scrolls up and
+   down as the card tips. A mostly gray grain tile on top uses color-burn,
+   so each grain pixel raises the cut a little: where the light is bright
+   it stays smooth, and where it is faint it breaks into sparse specks.
+   Black is no change under color-dodge, so only the stripes light the
+   ink. The stripe tiles are wider than tall, so the period follows the
+   card's width more than its height. */
 .export-foil-gleam {
   --gleam-period: 6.73%;
   --gleam-period-b: 8.95%;
@@ -75,46 +78,46 @@
   background-color: #000;
   background-image:
     var(--gleam-grain),
+    linear-gradient(hsl(0 0% 93%), hsl(0 0% 93%)),
+    linear-gradient(hsl(0 0% 23%), hsl(0 0% 23%)),
     repeating-linear-gradient(
       0deg,
-      oklch(0.82 0.09 125) calc(var(--gleam-hue-period) * 0),
-      oklch(0.82 0.09 150) calc(var(--gleam-hue-period) * 0.167),
-      oklch(0.82 0.09 230) calc(var(--gleam-hue-period) * 0.333),
-      oklch(0.82 0.09 280) calc(var(--gleam-hue-period) * 0.45),
-      oklch(0.82 0.09 340) calc(var(--gleam-hue-period) * 0.62),
-      oklch(0.82 0.09 405) calc(var(--gleam-hue-period) * 0.8),
-      oklch(0.82 0.09 485) calc(var(--gleam-hue-period) * 1)
+      oklch(0.97 0.06 125) calc(var(--gleam-hue-period) * 0),
+      oklch(0.97 0.06 150) calc(var(--gleam-hue-period) * 0.167),
+      oklch(0.97 0.06 230) calc(var(--gleam-hue-period) * 0.333),
+      oklch(0.97 0.06 280) calc(var(--gleam-hue-period) * 0.45),
+      oklch(0.97 0.06 340) calc(var(--gleam-hue-period) * 0.62),
+      oklch(0.97 0.06 405) calc(var(--gleam-hue-period) * 0.8),
+      oklch(0.97 0.06 485) calc(var(--gleam-hue-period) * 1)
     ),
-    linear-gradient(hsl(0 0% 94%), hsl(0 0% 94%)),
-    linear-gradient(hsl(0 0% 25%), hsl(0 0% 25%)),
     repeating-linear-gradient(
       127deg,
       hsl(0 0% 0%) 0,
       hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.17),
-      hsl(0 0% 4.7%) calc(var(--gleam-period-b) * 0.2125),
-      hsl(0 0% 11.6%) calc(var(--gleam-period-b) * 0.255),
-      hsl(0 0% 19.7%) calc(var(--gleam-period-b) * 0.2975),
-      hsl(0 0% 28.6%) calc(var(--gleam-period-b) * 0.34),
-      hsl(0 0% 38.3%) calc(var(--gleam-period-b) * 0.3825),
-      hsl(0 0% 48.5%) calc(var(--gleam-period-b) * 0.425),
-      hsl(0 0% 49.1%) calc(var(--gleam-period-b) * 0.4375),
-      hsl(0 0% 51.5%) calc(var(--gleam-period-b) * 0.45),
-      hsl(0 0% 55.2%) calc(var(--gleam-period-b) * 0.4625),
-      hsl(0 0% 59.6%) calc(var(--gleam-period-b) * 0.475),
-      hsl(0 0% 61.5%) calc(var(--gleam-period-b) * 0.4875),
-      hsl(0 0% 62%) calc(var(--gleam-period-b) * 0.5),
-      hsl(0 0% 61.6%) calc(var(--gleam-period-b) * 0.5125),
-      rgb(59% 58.7% 59%) calc(var(--gleam-period-b) * 0.525),
-      rgb(55.5% 53.6% 55.5%) calc(var(--gleam-period-b) * 0.5375),
-      rgb(52.4% 49.1% 52.4%) calc(var(--gleam-period-b) * 0.55),
-      rgb(50.1% 45.5% 50.1%) calc(var(--gleam-period-b) * 0.5625),
-      rgb(48.7% 42.8% 48.7%) calc(var(--gleam-period-b) * 0.575),
-      rgb(48.5% 42.7% 48.5%) calc(var(--gleam-period-b) * 0.5875),
-      rgb(38.3% 33.7% 38.3%) calc(var(--gleam-period-b) * 0.6175),
-      rgb(28.6% 25.2% 28.6%) calc(var(--gleam-period-b) * 0.66),
-      rgb(19.7% 17.3% 19.7%) calc(var(--gleam-period-b) * 0.7025),
-      rgb(11.6% 10.2% 11.6%) calc(var(--gleam-period-b) * 0.745),
-      rgb(4.7% 4.2% 4.7%) calc(var(--gleam-period-b) * 0.7875),
+      hsl(0 0% 8.1%) calc(var(--gleam-period-b) * 0.2142),
+      hsl(0 0% 16.2%) calc(var(--gleam-period-b) * 0.2583),
+      hsl(0 0% 24.2%) calc(var(--gleam-period-b) * 0.3025),
+      hsl(0 0% 32.3%) calc(var(--gleam-period-b) * 0.3467),
+      hsl(0 0% 40.4%) calc(var(--gleam-period-b) * 0.3908),
+      hsl(0 0% 48.5%) calc(var(--gleam-period-b) * 0.435),
+      hsl(0 0% 48.8%) calc(var(--gleam-period-b) * 0.4458),
+      hsl(0 0% 50.2%) calc(var(--gleam-period-b) * 0.4567),
+      hsl(0 0% 52.2%) calc(var(--gleam-period-b) * 0.4675),
+      hsl(0 0% 54.6%) calc(var(--gleam-period-b) * 0.4783),
+      hsl(0 0% 55.7%) calc(var(--gleam-period-b) * 0.4892),
+      hsl(0 0% 56%) calc(var(--gleam-period-b) * 0.5),
+      hsl(0 0% 55.8%) calc(var(--gleam-period-b) * 0.5108),
+      rgb(54.3% 54% 54.3%) calc(var(--gleam-period-b) * 0.5217),
+      rgb(52.4% 50.6% 52.4%) calc(var(--gleam-period-b) * 0.5325),
+      rgb(50.7% 47.5% 50.7%) calc(var(--gleam-period-b) * 0.5433),
+      rgb(49.4% 44.9% 49.4%) calc(var(--gleam-period-b) * 0.5542),
+      rgb(48.6% 42.8% 48.6%) calc(var(--gleam-period-b) * 0.565),
+      rgb(48.5% 42.7% 48.5%) calc(var(--gleam-period-b) * 0.5758),
+      rgb(40.4% 35.6% 40.4%) calc(var(--gleam-period-b) * 0.6092),
+      rgb(32.3% 28.5% 32.3%) calc(var(--gleam-period-b) * 0.6533),
+      rgb(24.2% 21.3% 24.2%) calc(var(--gleam-period-b) * 0.6975),
+      rgb(16.2% 14.2% 16.2%) calc(var(--gleam-period-b) * 0.7417),
+      rgb(8.1% 7.1% 8.1%) calc(var(--gleam-period-b) * 0.7858),
       hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.83),
       hsl(0 0% 0%) var(--gleam-period-b)
     ),
@@ -122,49 +125,49 @@
       127deg,
       hsl(0 0% 0%) 0,
       hsl(0 0% 0%) calc(var(--gleam-period) * 0.08),
-      hsl(0 0% 4.7%) calc(var(--gleam-period) * 0.1333),
-      hsl(0 0% 11.6%) calc(var(--gleam-period) * 0.1867),
-      hsl(0 0% 19.7%) calc(var(--gleam-period) * 0.24),
-      hsl(0 0% 28.6%) calc(var(--gleam-period) * 0.2933),
-      hsl(0 0% 38.3%) calc(var(--gleam-period) * 0.3467),
-      hsl(0 0% 48.5%) calc(var(--gleam-period) * 0.4),
-      hsl(0 0% 49.5%) calc(var(--gleam-period) * 0.4167),
-      hsl(0 0% 53.2%) calc(var(--gleam-period) * 0.4333),
-      hsl(0 0% 59.2%) calc(var(--gleam-period) * 0.45),
-      hsl(0 0% 66.1%) calc(var(--gleam-period) * 0.4667),
-      hsl(0 0% 69.1%) calc(var(--gleam-period) * 0.4833),
-      hsl(0 0% 70%) calc(var(--gleam-period) * 0.5),
-      hsl(0 0% 69.4%) calc(var(--gleam-period) * 0.5167),
-      rgb(65.3% 64.9% 65.3%) calc(var(--gleam-period) * 0.5333),
-      rgb(59.7% 57.6% 59.7%) calc(var(--gleam-period) * 0.55),
-      rgb(54.7% 51.3% 54.7%) calc(var(--gleam-period) * 0.5667),
-      rgb(51.1% 46.4% 51.1%) calc(var(--gleam-period) * 0.5833),
-      rgb(48.8% 42.9% 48.8%) calc(var(--gleam-period) * 0.6),
-      rgb(48.5% 42.7% 48.5%) calc(var(--gleam-period) * 0.6167),
-      rgb(38.3% 33.7% 38.3%) calc(var(--gleam-period) * 0.6533),
-      rgb(28.6% 25.2% 28.6%) calc(var(--gleam-period) * 0.7067),
-      rgb(19.7% 17.3% 19.7%) calc(var(--gleam-period) * 0.76),
-      rgb(11.6% 10.2% 11.6%) calc(var(--gleam-period) * 0.8133),
-      rgb(4.7% 4.2% 4.7%) calc(var(--gleam-period) * 0.8667),
+      hsl(0 0% 8.1%) calc(var(--gleam-period) * 0.1358),
+      hsl(0 0% 16.2%) calc(var(--gleam-period) * 0.1917),
+      hsl(0 0% 24.2%) calc(var(--gleam-period) * 0.2475),
+      hsl(0 0% 32.3%) calc(var(--gleam-period) * 0.3033),
+      hsl(0 0% 40.4%) calc(var(--gleam-period) * 0.3592),
+      hsl(0 0% 48.5%) calc(var(--gleam-period) * 0.415),
+      hsl(0 0% 49.1%) calc(var(--gleam-period) * 0.4292),
+      hsl(0 0% 51.5%) calc(var(--gleam-period) * 0.4433),
+      hsl(0 0% 55.2%) calc(var(--gleam-period) * 0.4575),
+      hsl(0 0% 59.6%) calc(var(--gleam-period) * 0.4717),
+      hsl(0 0% 61.5%) calc(var(--gleam-period) * 0.4858),
+      hsl(0 0% 62%) calc(var(--gleam-period) * 0.5),
+      hsl(0 0% 61.6%) calc(var(--gleam-period) * 0.5142),
+      rgb(59% 58.7% 59%) calc(var(--gleam-period) * 0.5283),
+      rgb(55.5% 53.6% 55.5%) calc(var(--gleam-period) * 0.5425),
+      rgb(52.4% 49.1% 52.4%) calc(var(--gleam-period) * 0.5567),
+      rgb(50.1% 45.5% 50.1%) calc(var(--gleam-period) * 0.5708),
+      rgb(48.7% 42.8% 48.7%) calc(var(--gleam-period) * 0.585),
+      rgb(48.5% 42.7% 48.5%) calc(var(--gleam-period) * 0.5992),
+      rgb(40.4% 35.6% 40.4%) calc(var(--gleam-period) * 0.6408),
+      rgb(32.3% 28.5% 32.3%) calc(var(--gleam-period) * 0.6967),
+      rgb(24.2% 21.3% 24.2%) calc(var(--gleam-period) * 0.7525),
+      rgb(16.2% 14.2% 16.2%) calc(var(--gleam-period) * 0.8083),
+      rgb(8.1% 7.1% 8.1%) calc(var(--gleam-period) * 0.8642),
       hsl(0 0% 0%) calc(var(--gleam-period) * 0.92),
       hsl(0 0% 0%) var(--gleam-period)
     );
   background-size:
     128px 128px,
+    100% 100%,
+    100% 100%,
     100% 300%,
-    100% 100%,
-    100% 100%,
     353% 150%,
     353% 150%;
   background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   background-position:
     0 0,
+    0 0,
+    0 0,
     0 calc(50% + var(--holo-dy) * 31.25%),
-    0 0,
-    0 0,
     calc(32.6% + var(--holo-dx) * 9.6%) 20%,
     calc(28.9% - var(--holo-dx) * 3.6%) calc(11.6% + var(--holo-dy) * 0.9%);
-  background-blend-mode: color-burn, multiply, color-burn, overlay, screen, normal;
+  background-blend-mode: color-burn, color-burn, overlay, multiply, screen, normal;
   mix-blend-mode: color-dodge;
   opacity: calc(var(--foil-opacity) * var(--foil-gleam));
 }
