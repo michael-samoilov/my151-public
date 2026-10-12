@@ -113,11 +113,12 @@ function reflow(text: string): string {
 /** The small-caps heading the View settings pane uses for its sections. */
 const HEADING = 'text-xs font-semibold uppercase tracking-wide text-muted-foreground';
 
+/** A detail section: its heading above a white card, as the list groups are. */
 function Section({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-1">
-      <h4 className={HEADING}>{label}</h4>
-      {children}
+    <section className="flex flex-col gap-1.5">
+      <h4 className={cn(HEADING, 'px-1')}>{label}</h4>
+      <div className="flex flex-col gap-2 rounded-lg border bg-card p-3">{children}</div>
     </section>
   );
 }
@@ -142,7 +143,7 @@ function LicenseText({ file, titled }: { file: LicenseFile; titled: boolean }) {
       {state.text !== undefined ? (
         <pre
           data-testid="ack-license-text"
-          className="whitespace-pre-wrap break-words rounded-md border bg-card p-3 font-mono text-xs leading-relaxed text-foreground/90"
+          className="whitespace-pre-wrap break-words border-t pt-3 font-mono text-xs leading-relaxed text-foreground/90"
         >
           {reflow(state.text)}
         </pre>
@@ -175,7 +176,7 @@ function Detail({ entry, backRef, onBack }: {
           {t('ack.back')}
         </button>
       </div>
-      <div className="flex flex-col gap-4 px-4 pt-3 pb-6">
+      <div className="flex flex-col gap-5 px-4 pt-3 pb-6">
         <div>
           <h3 className="break-words text-base font-semibold leading-snug" data-testid="ack-detail-name">
             {entry.name}
@@ -278,19 +279,19 @@ function AcknowledgementsBody() {
           {tn('ack.count', ENTRIES.size)}
         </p>
         {GROUPS.map((group) => (
-          <section key={group.id} className="pt-4" data-testid={`ack-group-${group.id}`}>
-            <h3 className={cn(HEADING, 'flex justify-between px-4 pb-1')}>
+          <section key={group.id} className="pt-5" data-testid={`ack-group-${group.id}`}>
+            <h3 className={cn(HEADING, 'flex justify-between px-5 pb-1.5')}>
               <span>{t(GROUP_KEYS[group.id])}</span>{' '}
               <span className="tabular-nums">{group.entries.length}</span>
             </h3>
-            <ul className="mx-4 divide-y">
+            <ul className="mx-4 divide-y overflow-hidden rounded-lg border bg-card">
               {group.entries.map((entry) => (
                 <li key={entry.id}>
                   <button
                     type="button"
                     data-ack-id={entry.id}
                     onClick={() => open(entry.id)}
-                    className="-mx-2 flex w-[calc(100%+1rem)] cursor-pointer items-center gap-2 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-muted"
+                    className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted"
                   >
                     <span className="flex min-w-0 flex-1 flex-col">
                       {/* Two boxes, each with its own ellipsis: the credit

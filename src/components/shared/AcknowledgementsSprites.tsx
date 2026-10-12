@@ -67,24 +67,26 @@ export function AcknowledgementsSprites({ source }: { source: SpriteCreditId }) 
 
   if (!total) return null;
   return (
-    <section className="flex flex-col gap-1" data-testid="ack-sprites">
-      <h4 className={`${HEADING} flex justify-between`}>
+    <section className="flex flex-col gap-1.5" data-testid="ack-sprites">
+      <h4 className={`${HEADING} flex justify-between px-1`}>
         <span>{t('ack.spriteList')}</span> <span className="tabular-nums">{total}</span>
       </h4>
       {!named || names?.locale !== locale ? (
-        <p className="text-sm text-muted-foreground">{t('ack.loading')}</p>
+        <p className="rounded-lg border bg-card p-3 text-sm text-muted-foreground">{t('ack.loading')}</p>
       ) : total <= FLAT_LIMIT ? (
-        <NameList mons={named.flatMap((group) => group.mons)} />
+        <div className="rounded-lg border bg-card p-3">
+          <NameList mons={named.flatMap((group) => group.mons)} />
+        </div>
       ) : (
-        <div className="divide-y border-y">
+        <div className="divide-y overflow-hidden rounded-lg border bg-card">
           {named.map((group) => (
-            <details key={group.generation} className="group">
-              <summary className="-mx-2 flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-2.5 text-sm transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
+            <details key={group.generation} className="group" data-ack-generation={group.generation}>
+              <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-sm transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none" aria-hidden />
                 <span className="flex-1">{t('browser.subgroupGeneration', { gen: group.generation })}</span>
                 <span className="tabular-nums text-muted-foreground">{group.mons.length}</span>
               </summary>
-              <div className="pb-3 ps-6">
+              <div className="pb-3 ps-9 pe-3">
                 <NameList mons={group.mons} />
               </div>
             </details>
