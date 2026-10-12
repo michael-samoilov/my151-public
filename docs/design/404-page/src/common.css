@@ -12,9 +12,6 @@
   --red: #dc2626;
   /* One MISSINGNO. pixel, in CSS px. Each layout sets it per breakpoint. */
   --u: 2px;
-  /* The RGB split: a fixed 2 px fringe, less than one sprite pixel, so it
-   * tints edges without doubling the pixels. */
-  --split: 2px;
 }
 html { font-size: 16px; }
 @media (min-width: 1024px) { html { font-size: 20px; } }
@@ -57,27 +54,20 @@ h1 { text-wrap: balance; margin: 0; font-size: 1.375rem; line-height: 1.25; font
 .tools .go { width: 1rem; height: 1rem; flex: none; margin-left: auto; color: #a3a3a3; }
 svg.ic, svg.go { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-/* MISSINGNO.: the sprite, two one-colour copies of its dark pixels for the
- * RGB split (multiplied, so they tint the light pixels and leave the dark
- * ones dark), and two bands of rows that slip sideways. Every layer is the
- * same 56x56 image scaled by a whole number, so pixels stay square. */
+/* MISSINGNO.: the sprite and two bands of its rows that slip sideways. It
+ * keeps the official sprite's three colours and white at every frame, so the
+ * glitch moves pixels and never adds a colour. Every layer is the same 56x56
+ * image scaled by a whole number, so pixels stay square. */
 .ms { position: relative; width: calc(var(--u) * 56); height: calc(var(--u) * 56); flex: none; }
 .ms i { position: absolute; inset: 0; background: url(data:image/png;base64,{{MS}}) 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
-.ms .r, .ms .c { mix-blend-mode: multiply; opacity: 0.6; }
-.ms .r { background-image: url(data:image/png;base64,{{MS_RED}}); transform: translateX(calc(var(--split) * -1)); }
-.ms .c { background-image: url(data:image/png;base64,{{MS_CYAN}}); transform: translateX(var(--split)); }
 /* Bands sit on whole sprite rows: 56 rows, so 1 row = 1/56 of the height. */
 .ms .b1 { clip-path: inset(calc(100% * 37 / 56) 0 calc(100% * 15 / 56) 0); transform: translateX(var(--u)); }
 .ms .b2 { clip-path: inset(calc(100% * 12 / 56) 0 calc(100% * 41 / 56) 0); transform: translateX(calc(var(--u) * -1)); opacity: 0; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .ms .r { animation: ms-r 4.8s steps(1, end) infinite; }
-  .ms .c { animation: ms-c 4.8s steps(1, end) infinite; }
   .ms .b1 { animation: ms-b1 4.8s steps(1, end) infinite; }
   .ms .b2 { animation: ms-b2 4.8s steps(1, end) infinite; }
 }
 /* One short burst every 4.8 s: three frames of about 80 ms, then still. */
-@keyframes ms-r { 0%, 90% { transform: translateX(calc(var(--split) * -1)); } 91.7% { transform: translateX(calc(var(--split) * -3)); } 93.4% { transform: translateX(calc(var(--split) * -2)); } 95.1%, 100% { transform: translateX(calc(var(--split) * -1)); } }
-@keyframes ms-c { 0%, 90% { transform: translateX(var(--split)); } 91.7% { transform: translateX(calc(var(--split) * 3)); } 93.4% { transform: translateX(calc(var(--split) * 2)); } 95.1%, 100% { transform: translateX(var(--split)); } }
 @keyframes ms-b1 { 0%, 90% { transform: translateX(var(--u)); } 91.7% { transform: translateX(calc(var(--u) * -3)); } 93.4% { transform: translateX(calc(var(--u) * 4)); } 95.1%, 100% { transform: translateX(var(--u)); } }
 @keyframes ms-b2 { 0%, 90% { opacity: 0; } 91.7% { opacity: 1; transform: translateX(calc(var(--u) * 4)); } 93.4% { opacity: 1; transform: translateX(calc(var(--u) * -3)); } 95.1%, 100% { opacity: 0; } }

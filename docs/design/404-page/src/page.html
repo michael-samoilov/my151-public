@@ -38,14 +38,18 @@
 @media (min-width: 1024px) { .say { font-size: 32px; line-height: 40px; } }
 /* Gen 1 prints text one letter at a time, about 40 ms a letter: the
  * encounter's three lines (11, 10 and 9 letters), then the heading's two
- * (9 and 14). The menu works from the start. */
+ * (9 and 14). The menu works from the start. Each line holds only the
+ * animation's first frame (backwards): once it ends, the line's own style
+ * shows it whole. WebKit, which every iOS browser uses, leaves a 9-step line
+ * one step short when it holds the last frame, which cut the last letter of
+ * "appeared!" and "That page". */
 .say span, .title span { display: block; width: max-content; }
 @media (prefers-reduced-motion: no-preference) {
-  .say .l1 { animation: type 0.44s steps(11, end) 0.3s both; }
-  .say .l2 { animation: type 0.4s steps(10, end) 0.8s both; }
-  .say .l3 { animation: type 0.36s steps(9, end) 1.25s both; }
-  .title .t1 { animation: type 0.36s steps(9, end) 1.85s both; }
-  .title .t2 { animation: type 0.56s steps(14, end) 2.25s both; }
+  .say .l1 { animation: type 0.44s steps(11, end) 0.3s backwards; }
+  .say .l2 { animation: type 0.4s steps(10, end) 0.8s backwards; }
+  .say .l3 { animation: type 0.36s steps(9, end) 1.25s backwards; }
+  .title .t1 { animation: type 0.36s steps(9, end) 1.85s backwards; }
+  .title .t2 { animation: type 0.56s steps(14, end) 2.25s backwards; }
 }
 @keyframes type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 /* The menu: the tools, then RUN. One cursor marks the selected entry, as in
