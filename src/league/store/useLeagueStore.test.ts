@@ -219,6 +219,42 @@ describe('the v4 roster popup migration', () => {
 });
 
 /**
+ * The completion confetti fires once, when all 14 cards first have a full
+ * team. The ways the v7 step could go wrong:
+ *
+ * 1. A league that was full before the update replays a completion from the
+ *    past.
+ * 2. A league one line short loses the burst it has not had yet.
+ * 3. A later step overwrites a v7 save's own answer with the derived one.
+ * 4. The step drops or rewrites a card or the popups already seen.
+ */
+describe('the v7 completion confetti migration', () => {
+  const league = (short: boolean) =>
+    Array.from({ length: SLOT_COUNT }, (_, i) =>
+      cardWith(Array.from({ length: short && i === 13 ? 5 : 6 }, () => RHYHORN)));
+
+  it('counts a league that was already full as celebrated', () => {
+    const cards = league(false);
+    const migrated = migrateLeagueState({ cards, celebratedNudges: ['card', 'league', 'complete'] }, 6);
+    expect(migrated.fullLeagueCelebrated).toBe(true);
+    expect(migrated.cards).toEqual(cards);
+    expect(migrated.celebratedNudges).toEqual(['card', 'league', 'complete']);
+  });
+
+  it('leaves a league one line short free to celebrate later', () => {
+    const migrated = migrateLeagueState({ cards: league(true), celebratedNudges: ['card'] }, 6);
+    expect(migrated.fullLeagueCelebrated).toBe(false);
+    expect(migrated.cards).toEqual(league(true));
+    expect(migrated.celebratedNudges).toEqual(['card']);
+  });
+
+  it('keeps a v7 save’s own answer', () => {
+    const migrated = migrateLeagueState({ cards: league(false), fullLeagueCelebrated: false }, 7);
+    expect(migrated.fullLeagueCelebrated).toBe(false);
+  });
+});
+
+/**
  * Starting one card over. The dex builder's build page has the same control
  * for the whole dex; here the blast radius is one card, so the test that
  * matters most is what it does NOT touch.

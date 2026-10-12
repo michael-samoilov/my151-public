@@ -195,6 +195,8 @@ test('desktop pane scrolls and zooms with its cell, under the sticky headers', a
     const before = gap();
     const frame = el.getBoundingClientRect();
     el.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -50, clientX: frame.left + 300, clientY: frame.top + 300, bubbles: true, cancelable: true }));
+    // The grid lays out the zoom once the wheel events pause.
+    for (let i = 0; i < 50 && el.dataset.zoom === '1'; i++) await new Promise((resolve) => setTimeout(resolve, 20));
     await new Promise((resolve) => requestAnimationFrame(resolve));
     return { zoom: Number(el.dataset.zoom), before, after: gap() };
   });

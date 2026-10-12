@@ -55,3 +55,17 @@ The generator checks the pinned source hashes and rejects artwork outside the
 shared frame. If an upstream reference changes, measure it again before
 updating the calibration. Changing each SVG to its tight bounds would erase
 the game proportions and optical placement.
+
+## Confetti glyph paths
+
+The completion confetti draws each glyph on a canvas with a white edge, so it
+needs path data rather than an SVG image. After you regenerate the glyphs,
+run this command:
+
+```bash
+npm run type-icons:glyph-paths
+```
+
+It rewrites `src/data/typeGlyphPaths.json` from the registry's glyph files and
+keeps the shared 44-unit frame. `scripts/build-type-glyph-paths.test.ts` fails
+while that file is stale.

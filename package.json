@@ -33,7 +33,8 @@
     "i18n:game-terms": "tsx scripts/i18n/extract-game-terms.ts",
     "i18n:verify": "tsx scripts/i18n/verify.ts",
     "i18n:extract": "tsx scripts/i18n/translate/extract.ts",
-    "favorites:browser-ids": "tsx --tsconfig tsconfig.node.json scripts/build-favorite-browser-ids.ts"
+    "favorites:browser-ids": "tsx --tsconfig tsconfig.node.json scripts/build-favorite-browser-ids.ts",
+    "type-icons:glyph-paths": "tsx --tsconfig tsconfig.node.json scripts/build-type-glyph-paths.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -1,7 +1,7 @@
 import '../../lib/visitorAtBoot';
 import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import { KANTO_LEAGUE_NAME, kantoCards } from '../data/kantoLeague';
-import { reachedNudges } from '../model/funnelNudges';
+import { allCardsHaveFullTeams, reachedNudges } from '../model/funnelNudges';
 
 /**
  * Seed a Kanto league on a preview build's first visit.
@@ -23,12 +23,13 @@ import { reachedNudges } from '../model/funnelNudges';
 export const LEAGUE_STORAGE_KEY = 'league-builder';
 
 /** The store's persisted version. `useLeagueStore` reads this same constant. */
-export const LEAGUE_PERSIST_VERSION = 6;
+export const LEAGUE_PERSIST_VERSION = 7;
 
 /**
  * The record `seedLeagueOnFirstVisit` writes. Kanto already has full trainer
- * cards, so `celebratedNudges` is filled in here — otherwise the export
- * popups would fire on a preview's first paint.
+ * cards, so `celebratedNudges` and `fullLeagueCelebrated` are filled in
+ * here — otherwise the export popups, or the completion confetti once every
+ * card is full, would fire on a preview's first paint.
  */
 export function previewLeagueSeed() {
   const cards = kantoCards();
@@ -37,6 +38,7 @@ export function previewLeagueSeed() {
       name: KANTO_LEAGUE_NAME,
       cards,
       celebratedNudges: reachedNudges(cards),
+      fullLeagueCelebrated: allCardsHaveFullTeams(cards),
     },
     version: LEAGUE_PERSIST_VERSION,
   };

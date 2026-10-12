@@ -57,8 +57,10 @@ test.describe('English copy is unchanged by extraction', { tag: '@viewport' }, (
 
     await expect(sheet.getByText(/^\d+ found$/)).toBeVisible();
     await search.fill('zzzzzz');
-    await expect(sheet.getByText('No Pokémon found.')).toBeVisible();
-    await expect(sheet.getByText('Try adjusting your filters.')).toBeVisible();
+    // The empty state Michael picked on 2026-10-11 repeats the search words.
+    await expect(sheet.getByRole('heading', { name: 'No Pokémon match “zzzzzz”' })).toBeVisible();
+    await expect(sheet.getByText('Check the spelling, or search by Pokédex number.')).toBeVisible();
+    await expect(sheet.getByTestId('browser-empty').getByRole('button', { name: 'Clear search' })).toBeVisible();
   });
 
   test('the filter chips and sheet titles read as before', async ({ page }) => {

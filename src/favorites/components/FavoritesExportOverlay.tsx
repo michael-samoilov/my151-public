@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Download, Grid3x3, LayoutGrid, Loader2, X } from 'lucide-react';
+import { Check, Download, Grid3x3, LayoutGrid, X } from 'lucide-react';
+import { PokeBallSpinner } from '@/components/shared/PokeBallSpinner';
 import { ExportPreviewShell } from '@/components/export/ExportPreviewShell';
 import { useExportPreviewCache } from '@/components/export/useExportPreviewCache';
 import { shareOrDownload, isShareAbort } from '@/lib/shareOrDownload';
@@ -146,7 +147,7 @@ export default function FavoritesExportOverlay({ fills, onClose, onReview }: {
       </div>
       <div className="mt-auto shrink-0 border-t px-3 py-3">
         <Button className="w-full cursor-pointer" data-testid="favorites-export-save" disabled={frames.busy || saving || error} onClick={() => void save()}>
-          {frames.busy || saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {frames.busy || saving ? <PokeBallSpinner tone="line" className="h-4 w-4" /> : <Download className="h-4 w-4" />}
           {t('favorites.export.save')}
         </Button>
       </div>
