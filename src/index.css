@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* License texts and published third-party source, never class names. */
+@source not "../public/licenses";
 
 /* A launch notice points at Tools without covering the navigation below it. */
 [data-radix-popper-content-wrapper]:has([data-callout-click-through]) {

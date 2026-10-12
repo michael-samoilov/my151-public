@@ -13,24 +13,34 @@ import {
   type PreviewCamera,
 } from '@/components/export/exportPreviewFit';
 import {
-  applySpringOpts,
-  createSpring,
-  HOVER_TILT_EXIT_DELAY_MS,
-  HOVER_TILT_EXIT_SPRING,
-  HOVER_TILT_SPRING,
-  hoverTiltFromNormalized,
-  hoverTiltFromPointer,
   normalizedForTilt,
   pointInBox,
   idleOrbitPose,
   pointerMovedFrom,
   REST_POSE,
+} from '@/components/export/hoverTilt';
+import {
+  applySpringOpts,
+  cancelHoverTiltFrame,
+  createSpring,
+  HOVER_TILT_EXIT_DELAY_MS,
+  HOVER_TILT_EXIT_SPRING,
+  HOVER_TILT_SPRING,
+  hoverTiltEnter,
+  hoverTiltFromNormalized,
+  hoverTiltFromPointer,
+  hoverTiltLeave,
+  hoverTiltPointerMove,
+  hoverTiltScale,
+  hoverTiltShadow,
+  scheduleHoverTiltFrame,
   springSettled,
   tickSpring,
   type HoverTiltAxes,
   type HoverTiltPose,
   type HoverTiltSpring,
-} from '@/components/export/hoverTilt';
+} from '@/components/export/hover-tilt/hoverTilt';
+import '@/components/export/hover-tilt/hoverTilt.css';
 import {
   DEFAULT_HOVER_TILT_RECIPE,
   hoverTiltCssVars,
@@ -100,8 +110,9 @@ function tiltAxes(tilt: HoverTiltRecipe | undefined, maxTilt: number): HoverTilt
 }
 
 /**
- * Live export preview. Pointer tracking, springs, rest, and CSS vars
- * copy hover-tilt (https://github.com/simeydotme/hover-tilt).
+ * Live export preview. It tilts with hover-tilt's pointer tracking, springs,
+ * and leave, which live in `@/components/export/hover-tilt/`, and writes
+ * hover-tilt's documented CSS variables.
  */
 export function ExportPreview3D({
   src,
@@ -195,7 +206,7 @@ export function ExportPreview3D({
     // The glare and the pop ease in with the opening. The foil does not: a
     // flat card already shows it at its floor.
     const open = openEase(openMsRef.current);
-    const liveScale = 1 + (tiltNowEarly.scaleFactor - 1) * activation * open;
+    const liveScale = hoverTiltScale(tiltNowEarly.scaleFactor, activation, open);
     if (stageSize.w > 0 && cardW > 0 && cardH > 0) {
       const clamped = clampTiltToBox({
         tiltX: rotateX,
@@ -245,10 +256,11 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-angle', `${angle.toFixed(1)}deg`);
     el.style.setProperty('--hover-tilt-from-center', Math.min(1, Math.hypot(nx - 0.5, ny - 0.5) / 0.5).toFixed(3));
     el.style.setProperty('--hover-tilt-at-edge', Math.min(1, Math.max(Math.abs(nx - 0.5), Math.abs(ny - 0.5)) * 2).toFixed(3));
-    const shadowX = nx * 2 - 1;
-    const shadowY = ny * 2 - 1;
+    const shadow = hoverTiltShadow(nx, ny, activation);
+    const shadowX = shadow.x;
+    const shadowY = shadow.y;
     const shadowOn = tiltNow.shadow && tiltNow.shadowBlur > 0;
-    const shadowAmt = shadowOn ? activation * 0.125 : 0;
+    const shadowAmt = shadowOn ? shadow.alpha : 0;
     el.style.setProperty('--shadow-x', shadowX.toFixed(4));
     el.style.setProperty('--shadow-y', shadowY.toFixed(4));
     el.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
@@ -339,12 +351,7 @@ export function ExportPreview3D({
     const from = normalizedForTilt(last.rotateX, last.rotateY, axes);
     springXRef.current.value = from.nx;
     springYRef.current.value = from.ny;
-    springXRef.current.target = pose.nx;
-    springYRef.current.target = pose.ny;
-    springARef.current.target = 1;
-    applySpringOpts(springXRef.current, HOVER_TILT_SPRING);
-    applySpringOpts(springYRef.current, HOVER_TILT_SPRING);
-    applySpringOpts(springARef.current, HOVER_TILT_SPRING);
+    hoverTiltEnter(springXRef.current, springYRef.current, springARef.current, pose);
     pointerPoseRef.current = pose;
     pendingPointerRef.current = { x: clientX, y: clientY };
     orbitRef.current = 'pointer';
@@ -354,17 +361,13 @@ export function ExportPreview3D({
 
   const schedulePointer = useCallback((clientX: number, clientY: number) => {
     pendingPointerRef.current = { x: clientX, y: clientY };
-    if (moveFrameRef.current !== null) return;
-    moveFrameRef.current = requestAnimationFrame(() => {
-      moveFrameRef.current = null;
+    scheduleHoverTiltFrame(moveFrameRef, () => {
       const pending = pendingPointerRef.current;
       if (!pending || orbitRef.current !== 'pointer') return;
       const box = restPointerBox();
       if (!box || box.width === 0) return;
       const pose = hoverTiltFromPointer(pending.x, pending.y, box, tiltAxes(tiltRef.current, recipeRef.current.maxTilt));
-      springXRef.current.target = pose.nx;
-      springYRef.current.target = pose.ny;
-      springARef.current.target = 1;
+      hoverTiltPointerMove(springXRef.current, springYRef.current, springARef.current, pose);
       pointerPoseRef.current = pose;
     });
   }, [restPointerBox]);
@@ -375,10 +378,7 @@ export function ExportPreview3D({
     const delay = tiltRef.current?.exitDelay ?? HOVER_TILT_EXIT_DELAY_MS;
     restAtRef.current = now + delay;
     pendingPointerRef.current = null;
-    if (moveFrameRef.current !== null) {
-      cancelAnimationFrame(moveFrameRef.current);
-      moveFrameRef.current = null;
-    }
+    cancelHoverTiltFrame(moveFrameRef);
   }, []);
 
   const parkFlat = useCallback((now: number) => {
@@ -390,10 +390,7 @@ export function ExportPreview3D({
     restAtRef.current = null;
     enterSinceRef.current = null;
     lastPointerRef.current = null;
-    if (moveFrameRef.current !== null) {
-      cancelAnimationFrame(moveFrameRef.current);
-      moveFrameRef.current = null;
-    }
+    cancelHoverTiltFrame(moveFrameRef);
     paint(lerpPose(releaseRef.current.from, REST_POSE, 0));
   }, [paint]);
 
@@ -513,12 +510,7 @@ export function ExportPreview3D({
         if (restAt !== null && now < restAt) {
           paint(lastPoseRef.current);
         } else {
-          applySpringOpts(springXRef.current, HOVER_TILT_EXIT_SPRING);
-          applySpringOpts(springYRef.current, HOVER_TILT_EXIT_SPRING);
-          applySpringOpts(springARef.current, HOVER_TILT_EXIT_SPRING);
-          springXRef.current.target = 0.5;
-          springYRef.current.target = 0.5;
-          springARef.current.target = 0;
+          hoverTiltLeave(springXRef.current, springYRef.current, springARef.current);
           tickSpring(springXRef.current, dt);
           tickSpring(springYRef.current, dt);
           tickSpring(springARef.current, dt);
