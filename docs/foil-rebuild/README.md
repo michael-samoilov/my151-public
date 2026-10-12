@@ -4,14 +4,14 @@ Michael decided on 2026-10-12 to redraw the export card's holo foil from scratch
 
 ## What is on this branch
 
-1. `Fence the poke-holo code into its own files`: the adapted code now lives only in `src/league/components/foil/pokeHolo.css`, `pokeHoloParts.tsx` and `pokeHoloPointer.ts`. No behavior change: the built CSS has the same rules as production, except that the moved custom properties sit in a second `.export-foil` rule.
+1. `Fence the poke-holo code into its own files`: the adapted code now lives only in `src/league/components/foil/pokeHolo.css` and `pokeHoloPointer.ts`. A third fenced file, `pokeHoloParts.tsx`, held the workshop-only "move" shine engine; it was deleted on October 12 with that engine. No behavior change: the built CSS has the same rules as production, except that the moved custom properties sit in a second `.export-foil` rule.
 2. Any `WIP:` commit after it is the first clean-room implementer's partial work, written without seeing the fenced files.
 
 ## Rules for whoever writes the new layers
 
 The point is an independent implementation. The person or agent who writes the new layers must not have seen the GPL-derived code:
 
-1. Never open, grep or print the three fenced files.
+1. Never open, grep or print the fenced files: `src/league/components/foil/pokeHolo.css`, `pokeHoloPointer.ts`, and the deleted `pokeHoloParts.tsx`.
 2. Never read the git history of `src/league/components/ExportPreview3D.css` or `ExportPreview3D.tsx` before the fence commit.
 3. Never read pokemon-cards-css, poke-holo.simey.me, poke-151.simey.me, the css-tricks holographic-card article or its CodePen, or any other holo-card CSS.
 4. Do not reuse the names `--sunpillar-*`, `--background-x`, `--background-y`, `export-foil-holo-*`, `export-foil-holographic` or `export-foil-holo-rainbow`.
@@ -27,4 +27,4 @@ Someone who has seen the old code can coordinate, review and integrate, but shou
 
 - Two new layers in new files, wired into the foil recipe and the layer list, off by default in the live tools.
 - A one-tap "Holo: current / new" switch in the foil workshop, with the URL sharing kept, so Michael compares on his phone.
-- After Michael picks the new foil: switch the live recipe to it, delete the three fenced files and the old layer wiring, and remove poke-holo from the credits (`sprite-lab/data/site-credits.json` on `claude/sprite-lab`).
+- After Michael picks the new foil: switch the live recipe to it, delete the fenced files and the old layer wiring, and remove poke-holo from the credits (`sprite-lab/data/site-credits.json` on `claude/sprite-lab`).

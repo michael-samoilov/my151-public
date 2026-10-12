@@ -198,7 +198,7 @@ function readStoredTilt(): HoverTiltRecipe {
 /**
  * Dials for the export proposals, read against the live site's look: the
  * camera distance, the rainbow and iridescence blend, the glare's dark edge
- * (October 9), and the card size and shine engine (October 11). They live
+ * (October 9), and the card size (October 11). They live
  * in the URL only, so a shared link shows the same.
  */
 type RainbowBlend = 'soft-light' | 'hue';
@@ -211,7 +211,6 @@ type Proposal = {
   glareDark: number;
   /** A multiple of the pre-October-10 size, or `room`: as big as the tilt allows. */
   size: number | 'room';
-  shine: 'move' | 'paint';
 };
 
 const LIVE_CAMERA_PX = 600;
@@ -221,9 +220,8 @@ const NEW_PROPOSAL: Proposal = {
   blend: 'soft-light',
   glareDark: 0,
   size: 1,
-  shine: 'paint',
 };
-/** The live site since October 10. */
+/** The live site from October 10 to October 11. */
 const LIVE_PROPOSAL: Proposal = { ...NEW_PROPOSAL, size: 'room' };
 const NEW_GLARE = DEFAULT_HOVER_TILT_RECIPE.glareIntensity;
 const LIVE_GLARE = 1;
@@ -239,14 +237,13 @@ function readProposal(): Proposal {
     blend: params.get('blend') === 'hue' ? 'hue' : 'soft-light',
     glareDark: params.has('dark') && Number.isFinite(dark) ? Math.min(1, Math.max(0, dark)) : NEW_PROPOSAL.glareDark,
     size: size === 'room' ? 'room' : size && Number.isFinite(Number(size)) ? Math.min(1.3, Math.max(0.6, Number(size))) : NEW_PROPOSAL.size,
-    shine: params.get('shine') === 'move' ? 'move' : 'paint',
   };
 }
 
 function proposalSearch(p: Proposal): string {
   const cam = p.camera === 'live' ? 'live' : p.camera.toFixed(2);
   const size = p.size === 'room' ? 'room' : p.size.toFixed(2);
-  return `cam=${cam}&blend=${p.blend}&dark=${p.glareDark.toFixed(2)}&size=${size}&shine=${p.shine}`;
+  return `cam=${cam}&blend=${p.blend}&dark=${p.glareDark.toFixed(2)}&size=${size}`;
 }
 
 function proposalCamera(camera: Proposal['camera']): PreviewCamera {
@@ -396,7 +393,6 @@ export function FoilWorkshopPage() {
             maskContext={maskContext}
             camera={camera}
             size={proposal.size}
-            shine={proposal.shine}
           />
         </div>
       </section>
@@ -481,8 +477,8 @@ export function FoilWorkshopPage() {
             <div className="grid grid-cols-2 gap-1">
               {(
                 [
-                  { id: 'live', label: 'Live site', next: LIVE_PROPOSAL, glare: LIVE_GLARE },
-                  { id: 'new', label: 'New', next: NEW_PROPOSAL, glare: NEW_GLARE },
+                  { id: 'live', label: 'Before October 11', next: LIVE_PROPOSAL, glare: LIVE_GLARE },
+                  { id: 'new', label: 'Live site', next: NEW_PROPOSAL, glare: NEW_GLARE },
                 ] as const
               ).map(({ id, label, next, glare }) => (
                 <button
@@ -500,9 +496,8 @@ export function FoilWorkshopPage() {
               ))}
             </div>
             <p className="mt-1 text-[0.65rem] leading-snug text-zinc-500">
-              New: the card is its size from before October 10, and the glare is 0.6. Both show the new shadow,
-              which follows the card&apos;s shape. Try the shine engine switch on your own computer: only a real GPU
-              shows which one is smoother.
+              Live site since October 11: the card is its size from before October 10, and the glare is 0.6. Both
+              show the shadow that follows the card&apos;s shape.
             </p>
             <label className="mt-2 flex items-center gap-2 text-[0.7rem] text-zinc-300">
               <input
@@ -525,30 +520,6 @@ export function FoilWorkshopPage() {
                 onChange={(size) => setProposal({ ...proposal, size })}
               />
             )}
-            <div className="mt-2 text-[0.7rem] text-zinc-400">
-              <span>Shine engine</span>
-              <div className="mt-1 grid grid-cols-2 gap-1">
-                {(
-                  [
-                    { id: 'paint', label: 'Repaints (live site)' },
-                    { id: 'move', label: 'Moves (try it)' },
-                  ] as const
-                ).map(({ id, label }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    data-workshop-shine={id}
-                    aria-pressed={proposal.shine === id}
-                    onClick={() => setProposal({ ...proposal, shine: id })}
-                    className={`rounded-md px-1 py-1.5 text-center leading-tight ${
-                      proposal.shine === id ? 'bg-zinc-100 font-medium text-zinc-950' : 'bg-zinc-800 text-zinc-200'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </fieldset>
 
           <fieldset>
