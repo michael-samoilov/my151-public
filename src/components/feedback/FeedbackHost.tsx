@@ -6,6 +6,7 @@ import {
   type FeedbackAnchor,
 } from '@/components/feedback/feedbackChannel';
 import type { FeedbackCategory, FeedbackContext, FeedbackToolContext } from '@/lib/feedbackContext';
+import { ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
 const FeedbackSheet = lazy(() => reloadIfStale(import('./FeedbackSheet'))
   .then(module => ({ default: module.FeedbackSheet })));
@@ -57,7 +58,7 @@ export function FeedbackHost({ route, getToolContext }: {
 
   if (!open) return null;
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ScreenSpinner />}>
       <FeedbackSheet
         route={route}
         toolContext={toolContext}

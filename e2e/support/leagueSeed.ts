@@ -118,6 +118,35 @@ export async function filledSlotsLeague(page: Page, slots: readonly number[]): P
   }, slots);
 }
 
+/**
+ * Start with all 14 trainer cards at six lines but one, which has five.
+ * A version 1 save, so the store's migration marks every export popup as
+ * played, and none covers the league summary. Seeds once per tab, so a
+ * reload keeps what the page saved.
+ */
+export async function oneLineShortLeague(page: Page, shortSlot: number): Promise<void> {
+  await page.addInitScript((short) => {
+    if (sessionStorage.getItem('league-seeded')) return;
+    sessionStorage.setItem('league-seeded', '1');
+    const line = (id: number) => ({ branch: [id], boundaries: [1] });
+    const team = [1, 4, 7, 25, 133, 143].map(line);
+    const cards = Array.from({ length: 14 }, (_, i) => ({
+      type: null,
+      theme: '',
+      lines: i === short ? team.slice(0, 5) : team,
+      signatureSeat: null,
+      tmMoveId: null,
+      badgeName: '',
+      legend: null,
+      powerup: null,
+    }));
+    window.localStorage.setItem(
+      'league-builder',
+      JSON.stringify({ state: { name: '', cards }, version: 1 }),
+    );
+  }, shortSlot);
+}
+
 /** Start the league builder on the seeded Kanto league, whatever the visit. */
 export async function seededLeague(page: Page): Promise<void> {
   await page.addInitScript(() => window.localStorage.removeItem('league-builder'));
