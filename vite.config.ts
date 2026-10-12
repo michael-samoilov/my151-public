@@ -104,6 +104,11 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1000,
+    // The license notices of every npm package in the bundle, as the
+    // Acknowledgements panel's "Open-source packages" entry links them.
+    // Plain text, so a browser shows it rather than downloads it.
+    // public/licenses/npm-packages-extra.txt adds the three this misses.
+    license: { fileName: 'licenses/npm-packages.txt' },
     rollupOptions: {
       output: {
         codeSplitting: {

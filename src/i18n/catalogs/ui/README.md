@@ -109,6 +109,12 @@ eight overlays. The FAQ answers are prose, so they use the same words as the
 tool names in `tools.*` and the official terms: Kanto, the Elite Four, the
 Champion, and Pokémon names come from `../terms/` and the name catalogs.
 
+`ack.*` is the footer's Acknowledgements panel: its title, intro, group
+names, and labels. The credited names, credit lines, and license texts stay
+in English in every locale, because they are proper nouns and the sources'
+own words (`src/data/acknowledgements.ts`). German, French, and Spanish keep
+Sprites, and German and French keep Code; `SAME_AS_ENGLISH_OK` lists them.
+
 The FAQ also names fan concepts that the games do not. These are described,
 not sourced: Japanese 600族 and Chinese 准神 and 準神 for pseudo-legendary,
 ピカチュウ枠 for Pikaclone, and 創作ポケモン, 창작 포켓몬, 自创宝可梦, and
