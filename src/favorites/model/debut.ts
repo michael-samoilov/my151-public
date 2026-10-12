@@ -44,7 +44,7 @@ const LATER_DEBUTS: readonly (readonly [first: number, last: number, game: Debut
   [808, 809, 'LGPE'], // Meltan and Melmetal
   [899, 905, 'PLA'], // Wyrdeer to Enamorus
   [10245, 10249, 'PLA'], // Origin Dialga and Palkia, White-Striped Basculin, female Basculegion, Therian Enamorus
-  [10278, 10326, 'PLZA'], // Legends: Z-A Megas, including Mega Dimension and female Mega Meowstic
+  [10278, 10325, 'PLZA'], // Legends: Z-A Megas, including Mega Dimension
   [11112, 11112, 'Pokopia'], // DJ Rotom
 ];
 

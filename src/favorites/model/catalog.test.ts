@@ -156,8 +156,6 @@ describe('alternate picker forms', () => {
       [[791, 11109], ['psychic', 7], ['steel', 7], ['legendary', 7], ['steel', 'legendary']],
       [[792, 11110], ['psychic', 7], ['ghost', 7], ['legendary', 7], ['ghost', 'legendary']],
       [[802, 11111], ['fighting', 7], ['ghost', 7], ['legendary', 7], ['fighting', 'legendary']],
-      // Female Mega Meowstic follows the male Mega in every gimmick cell.
-      [[10314, 10326], ['gimmick', 6], ['psychic', 'gimmick']],
       // Outside the Gimmick cells, each Terastal Ogerpon follows its mask,
       // although battle forms otherwise sort last.
       [[1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116], ['grass', 9], ['grass', 'legendary'], ['legendary', 9]],
@@ -185,8 +183,6 @@ describe('alternate picker forms', () => {
     // Battle forms stay out of the ordinary type × generation cells.
     expect(ids('dragon', 6)).not.toContain(10301);
     expect(ids('legendary', 6)).not.toContain(10301);
-    expect(ids('psychic', 6)).not.toContain(10326);
-    expect(ids('legendary', 'gimmick')).not.toContain(10326);
   });
 
   it('removes alternate sprites that duplicate the same form', () => {

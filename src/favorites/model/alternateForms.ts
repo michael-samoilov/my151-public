@@ -203,9 +203,6 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   // A form takes the generation of the game it debuted in. DJ Rotom debuted
   // in Pokémon Pokopia, released in 2026 during Generation IX.
   { id: 11112, ownerId: 479, name: 'rotom-dj', types: ['electric', 'ghost'], generation: 9 },
-  // The male Mega (10314) comes from powerupForms.json. The slug gives this
-  // one the female marker.
-  { id: 10326, ownerId: 678, name: 'meowstic-female-mega', types: ['psychic'], source: 'powerup' },
   // Terastallized Ogerpon in each mask: battle-only forms 4 to 7 of Scarlet
   // and Violet's personal table, which match each mask's types and stats.
   // PokéAPI has no record of them; the slugs follow Pokémon Showdown.
