@@ -24,10 +24,13 @@ display options, exportable as a PNG.
   card flat, and each later hover tilts it again. A click locks it flat and
   ignores hover until the next click, which resumes hover tilt. On touch, a
   tap toggles auto-tilt, and a drag follows the finger, then settles flat.
-- The holo layer is the poke-holo "V" shine: a sunpillar rainbow, diagonal
-  bands, and faint noise, blended with `color-dodge` and masked to the ink.
-  A second copy (`::after`, `soft-light`) moves its bands the opposite way.
-  The rainbow and the iridescence blend with `soft-light`, and the glare is
+- The holo pair is the gleam and the prism bands (October 12), in
+  `src/league/components/foil/my151Holo.css`. The gleam is two sets of soft
+  diagonal bands that slide against each other as the card tilts, under a
+  top-to-bottom pastel rainbow and grain, blended with `color-dodge` and
+  masked to the ink; their crossings swell into bright knots. The prism is
+  fine pastel bands with `soft-light`. The iridescence blends with
+  `soft-light`, and the glare is
   fixed `overlay` with no dark far stop. The export pane has no blend
   selector.
 - The camera sits `PREVIEW_PERSPECTIVE_RATIO` (1.75) times the card's long
@@ -40,20 +43,21 @@ display options, exportable as a PNG.
   follows the concave kinks between joined panes, which a box-shadow left
   as light wedges. The lift has no box-shadow.
 - `/foil-workshop` (off in production) drives the same `ExportPreview3D` card
-  with Shine (the V shine), Rainbow, Point light, Iridescence, Max tilt, Glare
+  with Shine (the gleam), Rainbow (the prism), Point light, Iridescence, Max tilt, Glare
   (intensity and size), and Shadow controls. Max tilt sets the hover tilt, the
   auto-tilt, and the cap together. It restores only those dials from its saved
   recipe or link; everything else, the 1.15 pop included, is the in-app
   default. Compare buttons switch between the live site's look and the
   proposal under review. Dials kept in the link only set the camera distance
-  (or a fixed 600 px), the rainbow blend (`soft-light` or `hue`), the glare's
-  dark edge, the card size (a multiple of the pre-October-10 size, or as big
-  as the tilt allows), and the shine engine (`paint` repaints the V shine's
-  backgrounds every frame; `move` slides its band layers with transforms).
-  Samples: Dex, Dex of all 151, Dex of 151 with stats, league, league
-  filled, league with story and rematch teams, trainer card, favorites
-  chart, and a test card of color swatches.
-- Defaults (Michael's workshop pick, September 27): shine 0.7, rainbow 0.2,
+  (or a fixed 600 px), the iridescence blend (`soft-light` or `hue`), the
+  glare's dark edge, and the card size (a multiple of the pre-October-10
+  size, or as big as the tilt allows). Samples: Dex, Dex of all 151, Dex of
+  151 with stats, league, league filled, league with story and rematch
+  teams, trainer card, favorites chart, a test card of color swatches, and
+  three flat gray cards (wide, league-shaped and tall) that show the bands
+  with nothing in the way.
+- Defaults (Michael's workshop pick, September 27; the holo pair from
+  October 12): gleam 0.6, prism 0.21,
   point light 1, iridescence 0.1, max and auto tilt 10 degrees, tilt factor
   10/7, glare 0.6 at size 0.5 (1 until October 11), shadow blur 25, exit
   delay 420 ms, pop 1.15.
@@ -78,8 +82,8 @@ is clean.
 `[data-export-preview-layer]` and `[data-dex-export-confirm]` before any
 download. After the preview paints, it checks:
 
-- `dex-export:rainbow-on-open`: the holo layer is `color-dodge`, visible,
-  masked to the ink, and carries the V bands and the crossing `::after` layer.
+- `dex-export:rainbow-on-open`: the gleam layer is `color-dodge`, visible,
+  masked to the ink, and carries at least two sets of repeating bands.
   It polls up to 1.5 seconds, because WebKitGTK here paints near 7 fps.
 - `dex-export:auto-tilt` and `idle-circular`: with a stationary cursor on the
   card, `data-export-orbit=idle`, the tilt changes, and the painted box moves
@@ -118,7 +122,7 @@ that the harness uses, `/api/submit` has no handler, so nothing is recorded.
 `runFoilWorkshopSuite` opens `/foil-workshop` and asserts the keeper
 controls (Shine, Rainbow, Point light, Iridescence, Max tilt, Glare, Shadow),
 no blend, mask, sparkle, or parallax controls,
-`--foil-holographic` at `0.7`, and a working glare slider.
+`--foil-gleam` at `0.6`, and a working glare slider.
 
 Manual drive (a Playwright script, local build): seed 37 with
 `viewSortOption: 'national'`, open the view tab, and expect 37

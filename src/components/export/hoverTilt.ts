@@ -56,7 +56,7 @@ export const HOVER_TILT_EXIT_SPRING = {
 
 export const HOVER_TILT_EXIT_DELAY_MS = 200;
 
-/** Parked-cursor jitter below this keeps poke-holo idle on desktop. */
+/** Parked-cursor jitter below this keeps the idle orbit running on desktop. */
 export const POINTER_WAKE_PX = 12;
 
 /** True when the pointer left the seed by at least `slop` px. */
@@ -220,7 +220,7 @@ export function pointInBox(clientX: number, clientY: number, box: HoverTiltBox, 
  * Idle orbit: 10° / 14s circle (sin on X, cos on Y).
  * In-phase sin/sin is a diagonal corner flip, not an orbit.
  */
-export function pokeHoloIdle(opts: {
+export function idleOrbitPose(opts: {
   now: number;
   origin: number;
   idleMsX: number;
