@@ -3,6 +3,7 @@ import { DEFAULT_LOCALE, type Locale } from './config';
 import altFormSpecies from './alt-form-species.json';
 import { normalizeSearch } from './searchNormalize';
 import { genderFormOf, GENDER_MARKS } from './genderForms';
+import { formatFullPokemonName, pokemonNameContext, type PokemonNameContext } from './fullPokemonName';
 
 /**
  * Localized Pokémon names.
@@ -31,6 +32,9 @@ interface NameCatalog {
   formSource: Record<string, NameProvenance>;
   /** One-grapheme form marker; see `formMark` in build-name-catalogs.ts. */
   formMark: Record<string, string>;
+  /** Protected authored display codes; full descriptors remain separate. */
+  formCompact?: Record<string, string>;
+  formSearchIndex?: Record<string, string>;
   /**
    * Extra spellings a query might use, beyond the name itself — romaji, jamo
    * initials, pinyin. Absent for the Latin locales. Joined to the folded name
@@ -70,6 +74,7 @@ export async function loadNames(locale: Locale): Promise<void> {
   const catalog = loaded.get(locale);
   if (extensionLoader && catalog) {
     await extensionLoader(locale, catalog, ALT_FORM_SPECIES);
+    buildFormSearchIndex(catalog);
     notify();
   }
 }
@@ -164,7 +169,7 @@ export function formLabel(appId: number): string | null {
  * The tile label, split so the parts can be laid out independently.
  *
  * `name` is the visible name and is the part allowed to truncate. `mark` is the
- * one-grapheme form marker and must not: putting it inside the truncating
+ * compact form marker and must not: putting it inside the truncating
  * string is what made alt forms indistinguishable on a narrow tile, because the
  * suffix is exactly the part a text overflow eats first. `full` is the whole
  * thing spelled out, for the accessible name and the tooltip.
@@ -189,7 +194,7 @@ export interface PokemonLabel {
 }
 
 /** Complete form names already include their species; descriptors do not. */
-export function fullPokemonName(species: string, descriptor?: string): string {
+function displayPokemonFormName(species: string, descriptor?: string): string {
   if (!descriptor) return species;
   const name = species.normalize('NFKC').toLocaleLowerCase();
   const form = descriptor.normalize('NFKC').toLocaleLowerCase();
@@ -207,21 +212,27 @@ export function fullPokemonName(species: string, descriptor?: string): string {
   return `${species} — ${descriptor}`;
 }
 
+export function fullPokemonName(species: string, descriptor?: string, context: Partial<PokemonNameContext> = {}): string {
+  return formatFullPokemonName(species, descriptor, { ...context, locale: context.locale ?? getLocale() });
+}
+
 export function pokemonLabel(appId: number, slug: string, formKey: number | `picker:${number}` = appId): PokemonLabel {
   const catalog = loaded.get(getLocale());
   const species = speciesName(appId);
   if (!catalog || !species) return { name: slug, mark: null, full: slug, pending: true };
-  let mark: string | null = catalog.formMark[appId] ?? null;
+  const compact = catalog.formCompact?.[formKey];
+  let mark: string | null = compact ?? catalog.formMark[appId] ?? null;
   const descriptor = catalog.forms[formKey];
+  const context = pokemonNameContext(appId, slug, catalog.forms, getLocale());
   const gender = genderFormOf(appId, slug);
   if (gender) {
-    mark = GENDER_MARKS[gender];
+    mark = [compact?.replace(/[♂♀]/gu, '').trim(), GENDER_MARKS[gender]].filter(Boolean).join(' ');
     const name = species.replace(/[♂♀]$/u, '');
-    if (appId === 29 || appId === 32) return { name, mark, full: `${name}${mark}`, pending: false };
     const qualifier = catalog.forms[gender === 'male' ? 678 : 10025] ?? mark;
     const formName = descriptor && descriptor !== qualifier && descriptor !== mark
-      ? fullPokemonName(name, descriptor) : name;
-    return { name: formName, mark, full: fullPokemonName(formName, qualifier), pending: false };
+      ? displayPokemonFormName(name, descriptor) : name;
+    const full = fullPokemonName(name, descriptor, context);
+    return { name: compact ? name : formName, mark, full, pending: false };
   }
   // The three Paldean Tauros share one region mark, so the tile names the
   // breed: the part of the game's form name after "Paldean Form" —
@@ -230,14 +241,15 @@ export function pokemonLabel(appId: number, slug: string, formKey: number | `pic
   const isBreed = appId === 10250 || appId === 10251 || appId === 10252;
   const breed = isBreed ? descriptor?.match(/[(（]([^()（）]+)[)）]$|[・/]([^・/]+)$/u) : null;
   const breedQualifier = breed?.[1] ?? breed?.[2];
-  const full = fullPokemonName(species, descriptor);
-  let name = isBreed ? breedQualifier ? `${species} (${breedQualifier})` : full
-    : !mark && (appId > 1025 || formKey !== appId) ? full : species;
+  const displayFull = displayPokemonFormName(species, descriptor);
+  const full = fullPokemonName(species, descriptor, context);
+  let name = compact ? species : isBreed ? breedQualifier ? `${species} (${breedQualifier})` : displayFull
+    : !mark && (appId > 1025 || formKey !== appId) ? displayFull : species;
   // X/Y are part of the official name. Reserve the final glyph just like a
   // regional mark so an ellipsis never makes the two Mega forms identical.
-  if ([10034, 10035, 10043, 10044, 10304, 10305].includes(appId)) {
-    const variant = full.match(/[XYＸＹ]$/u)?.[0];
-    if (variant) { mark = variant; name = full.slice(0, -variant.length).trimEnd(); }
+  if (!compact && [10034, 10035, 10043, 10044, 10304, 10305].includes(appId)) {
+    const variant = displayFull.match(/[XYＸＹ]$/u)?.[0];
+    if (variant) { mark = variant; name = displayFull.slice(0, -variant.length).trimEnd(); }
   }
   return {
     // Named alternate forms need their full name when no compact marker
@@ -271,6 +283,7 @@ export function formProvenance(appId: number): NameProvenance | null {
  * typed, and normalizing 1,025 names on every keypress is not free.
  */
 function buildSearchIndex(catalog: NameCatalog): void {
+  buildFormSearchIndex(catalog);
   catalog.searchIndex = catalog.species.map((name, i) => {
     if (!name) return '';
     const folded = normalizeSearch(name);
@@ -290,6 +303,26 @@ function buildSearchIndex(catalog: NameCatalog): void {
 export function speciesSearchText(appId: number): string | null {
   const catalog = loaded.get(getLocale());
   return catalog?.searchIndex?.[speciesIndex(appId)] || null;
+}
+
+function buildFormSearchIndex(catalog: NameCatalog): void {
+  catalog.formSearchIndex = Object.fromEntries(Object.entries(catalog.forms).map(([key, descriptor]) => {
+    const id = Number(key);
+    const species = catalog.species[speciesIndex(id)] ?? '';
+    return [key, normalizeSearch(`${species} ${descriptor}`).replace(/[^\p{L}\p{N}♂♀]+/gu, ' ')];
+  }));
+  const genderCandidates = new Set([...catalog.species.keys()].map(index => index + 1));
+  for (const key of Object.keys(catalog.forms)) if (Number.isFinite(Number(key))) genderCandidates.add(Number(key));
+  for (const id of genderCandidates) {
+    const gender = genderFormOf(id, '');
+    if (!gender || id === 29 || id === 32) continue;
+    const descriptor = catalog.forms[gender === 'male' ? 678 : 10025] ?? GENDER_MARKS[gender];
+    catalog.formSearchIndex[id] = normalizeSearch(`${catalog.species[speciesIndex(id)]} ${catalog.forms[id] ?? ''} ${descriptor}`);
+  }
+}
+
+export function formSearchText(appId: number): string | null {
+  return loaded.get(getLocale())?.formSearchIndex?.[appId] ?? null;
 }
 
 /** Test seam: install a catalog without going through the lazy loader. */

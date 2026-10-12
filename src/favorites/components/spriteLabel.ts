@@ -13,15 +13,15 @@ export function pickerLabelOf(mon: PickerMon): PokemonLabel {
   if (label.pending) {
     const full = englishPickerName(mon);
     const gender = genderFormOf(id, mon.name);
-    return { name: gender ? full.replace(/(?: — (?:Male|Female)|[♂♀])$/u, '') : full,
+    return { name: gender ? full.replace(/\s*[♂♀]$/u, '') : full,
       full, mark: gender ? GENDER_MARKS[gender] : null, pending: false };
   }
   // A named sub-form can inherit a regional identity, for example Galarian
   // Darmanitan's Zen Mode. Keep both, rather than collapsing it to the base G.
   const owner = getPickerMon(mon.ownerId);
-  if (owner && owner.id !== mon.id && isRegional(mon) && !label.mark) {
+  if (owner && owner.id !== mon.id && isRegional(mon)) {
     const regional = pokemonLabel(pickerNameId(owner), owner.name);
-    if (regional.mark) return { ...label, mark: regional.mark,
+    if (regional.mark) return { ...label, mark: label.mark ?? regional.mark,
       full: fullPokemonName(regional.full, formLabel(id) ?? undefined) };
   }
   return label;

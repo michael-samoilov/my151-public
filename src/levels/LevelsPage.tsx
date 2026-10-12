@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { predictLevel } from '@/league/model/levelFit';
+import { PokemonNameText } from '@/components/shared/PokemonNameText';
 import { ROW_THRESHOLDS, levelModel, type LevelPoint } from './levelData';
 
 /**
@@ -224,7 +225,7 @@ function Scatter({ model }: { model: ReturnType<typeof levelModel> }) {
 
         {hover && (
           <div className="pointer-events-none absolute left-2 top-2 rounded-md border bg-background/95 px-2 py-1 text-[0.75rem] shadow-sm">
-            <span className="font-semibold">{hover.p.name}</span>
+            <span className="font-semibold"><PokemonNameText name={hover.p.name} /></span>
             <span className="text-muted-foreground">
               {' '}· BST {hover.p.bst} · {hover.implied ? 'implied' : 'stated'} L{hover.p.level} · row{' '}
               {hover.p.row}
