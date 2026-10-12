@@ -35,8 +35,8 @@ test('picker identity shifts retain the correct localized species', async ({ pag
   await page.getByTestId('favorites-cell-ground-8').click();
   const yamask = page.getByTestId('favorites-pick-10179');
   const stunfisk = page.getByTestId('favorites-pick-10180');
-  await expect(yamask).toHaveAttribute('aria-label', 'Yamask — Galarian Form');
-  await expect(stunfisk).toHaveAttribute('aria-label', 'Stunfisk — Galarian Form');
+  await expect(yamask).toHaveAttribute('aria-label', 'Galarian Yamask');
+  await expect(stunfisk).toHaveAttribute('aria-label', 'Galarian Stunfisk');
   await testInfo.attach('shifted-species.json', {
     body: JSON.stringify({ yamask: await yamask.getAttribute('aria-label'), stunfisk: await stunfisk.getAttribute('aria-label') }),
     contentType: 'application/json',

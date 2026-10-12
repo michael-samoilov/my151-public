@@ -40,7 +40,7 @@ test('the sort debug panel reorders an open selector and stays off without its f
   expect(regionalFirstOrder.slice().sort()).toEqual(defaultOrder.slice().sort());
   // Regional first lists every regional variant before the first Mega.
   const firstMega = regionalFirstOrder.findIndex((entry) => entry.includes('Mega '));
-  const lastRegional = regionalFirstOrder.findLastIndex((entry) => /(Alolan|Galarian|Hisuian|Paldean) Form$/.test(entry));
+  const lastRegional = regionalFirstOrder.findLastIndex((entry) => /^\d+:(Alolan|Galarian|Hisuian|Paldean) /.test(entry));
   expect(lastRegional).toBeGreaterThanOrEqual(0);
   expect(lastRegional).toBeLessThan(firstMega);
 
