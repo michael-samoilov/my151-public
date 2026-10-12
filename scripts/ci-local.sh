@@ -13,6 +13,7 @@ node scripts/check-test-rules.mjs
 node scripts/check-sprite-revisions.mjs
 npx tsx --tsconfig tsconfig.app.json scripts/build-favorite-analytics-cells.ts --check
 node scripts/check-speed-test-detection.mjs
+node scripts/check-hover-tilt-source.mjs
 
 if [ -n "${PLAYWRIGHT_BASE_URL:-}" ]; then
   npx playwright test -c e2e/preview.config.ts

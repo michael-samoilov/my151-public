@@ -14,8 +14,18 @@ The other 13 type SVGs use artwork from [Elginive's Pokémon type icons](https:/
 
 The source README says “Free to use. Credit is always appreciated, but not necessary.” Its original text is preserved in [the source README](scripts/type-icons/sources/elginive/README.md).
 
-## Pointer tilt from hover-tilt by Simeydotme
+## hover-tilt by Simon Goellner
 
-The pointer-to-tilt code in `src/components/export/hoverTilt.ts` is copied from [hover-tilt](https://github.com/simeydotme/hover-tilt) (`packages/hover-tilt/src/lib/components/HoverTilt.svelte` and `packages/hover-tilt/src/lib/utils.ts`). Its license was read at commit `5db58f38cbbfa20054ca2c21a144d866d304b34a`.
+The export card's pointer tilt, springs, drop shadow, and glare are adapted from [hover-tilt](https://github.com/simeydotme/hover-tilt), commit `5db58f38cbbfa20054ca2c21a144d866d304b34a`: `packages/hover-tilt/src/lib/components/HoverTilt.svelte` and `packages/hover-tilt/src/lib/utils.ts`. Copyright (c) 2026 Simeydotme.
 
-This code uses the MIT license. The original copyright notice and full license text are preserved in [the distributed license](public/licenses/hover-tilt-MIT.txt).
+hover-tilt states two licenses. The repository's `LICENSE` file is MIT. The package (`packages/hover-tilt/package.json`, its README, and npm `hover-tilt@1.0.0`) states MPL-2.0. my151 meets both:
+
+- MIT: the copyright notice and full license text ship in [the distributed MIT license](public/licenses/hover-tilt-MIT.txt), served at <https://my151.app/licenses/hover-tilt-MIT.txt>.
+- MPL-2.0: the full license text ships in [the distributed MPL-2.0 license](public/licenses/hover-tilt-MPL-2.0.txt), served at <https://my151.app/licenses/hover-tilt-MPL-2.0.txt>. MPL-2.0 applies file by file, so hover-tilt's code sits only in the files below, and they hold no other my151 code. Each file starts with the MPL-2.0 notice and lists what my151 changed. The site serves each file's source as is.
+
+| File | What it holds | Source for people who use the app |
+|---|---|---|
+| `src/components/export/hover-tilt/hoverTilt.ts` | The spring defaults and the spring that imitates svelte/motion, the leave spring and delay, `ROTATION`, the pointer position, the `--rotation-x` and `--rotation-y` formulas, the enter, move, and leave steps, the scale, and the shadow offset and alpha. | [hoverTilt.ts.txt](public/licenses/source/hover-tilt/hoverTilt.ts.txt), <https://my151.app/licenses/source/hover-tilt/hoverTilt.ts.txt> |
+| `src/components/export/hover-tilt/hoverTilt.css` | The tilt transform, the two-layer shadow, the glare gradient, and the glare layer with its mask. | [hoverTilt.css.txt](public/licenses/source/hover-tilt/hoverTilt.css.txt), <https://my151.app/licenses/source/hover-tilt/hoverTilt.css.txt> |
+
+`node scripts/check-hover-tilt-source.mjs` fails when a published copy differs from its file, or when a file lacks the MPL-2.0 notice. Run it with `--write` to update the copies, and commit them. Put new code from hover-tilt in `src/components/export/hover-tilt/` only, and keep my151's own code out of that folder.
