@@ -1,5 +1,3 @@
-import { FOIL_HOLO_AMOUNT } from './foilBlend';
-
 /**
  * Lighting recipe for the export preview foil.
  *
@@ -14,8 +12,8 @@ export const FOIL_LAYER_IDS = [
   'ambient',
   'specular',
   'rim',
-  'holoRainbow',
-  'holographic',
+  'prism',
+  'gleam',
   'iridescence',
   'emboss',
   'parallax',
@@ -60,13 +58,13 @@ export const FOIL_LAYER_META = {
     title: 'Rim lighting',
     blurb: 'Edge glow opposite the light, masked to ridges.',
   },
-  holoRainbow: {
-    title: 'Rainbow holofoil',
-    blurb: 'Rainbow bands sweep across colored ink as the card tilts.',
+  prism: {
+    title: 'Prism bands',
+    blurb: 'Pastel rainbow bands slide over colored ink with the tilt.',
   },
-  holographic: {
-    title: 'V shine',
-    blurb: 'Diagonal bands cross on colored ink. White paper stays paper.',
+  gleam: {
+    title: 'Gleam',
+    blurb: 'Broad, grainy diagonal stripes brighten colored ink as the card tilts.',
   },
   iridescence: {
     title: 'Iridescence / color shift',
@@ -94,8 +92,9 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
-  holoRainbow: { on: true, amount: 0.2 },
-  holographic: { on: true, amount: FOIL_HOLO_AMOUNT },
+  // The holo pair Michael picked on October 12: prism bands and gleam.
+  prism: { on: true, amount: 0.21 },
+  gleam: { on: true, amount: 0.6 },
   iridescence: { on: true, amount: 0.1 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
@@ -114,7 +113,7 @@ export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
   layers: DEFAULT_LAYERS,
 };
 
-const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holoRainbow', 'holographic', 'iridescence', 'parallax'];
+const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['prism', 'gleam', 'iridescence', 'parallax'];
 const EDGE_MASK_LAYERS: readonly FoilLayerId[] = ['emboss', 'rim'];
 const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'bloom'];
 

@@ -294,7 +294,7 @@ function ShowcaseStaircase() {
   const planeRef = useRef<HTMLDivElement>(null);
   const stages = useMemo(() => computeShowcaseStages(), []);
 
-  // Desktop-only pointer tilt (poke-holo style, restrained). Direct style
+  // Desktop-only pointer tilt (restrained). Direct style
   // writes so mousemove never re-renders React.
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const plane = planeRef.current;
