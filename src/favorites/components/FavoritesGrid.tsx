@@ -68,6 +68,8 @@ const MINIMAP_HOVER = '1';
 // The desktop minimap takes the pointer only after the pointer rests on it
 // this long, so a quick click on a cell under it still reaches the cell.
 const MINIMAP_HOVER_MS = 200;
+// A ctrl+wheel zoom lays the grid out once its events pause this long.
+const WHEEL_SETTLE_MS = 120;
 // Shared idle delay after the last scroll, zoom, or drag.
 const MINIMAP_LINGER_MS = 1200;
 // The minimap rests on the bottom edge, over the locked Favorite × Gimmick
@@ -89,6 +91,13 @@ function trackPart(track: '--cell' | '--head', fraction: number): string {
   return `calc((var(${track}) - 1px) * ${fraction})`;
 }
 
+/** The `transform-origin` on the edge of `pane` that faces `cell`. */
+function facingEdge(pane: DOMRect, cell: DOMRect): string {
+  if (pane.top >= cell.bottom - 1) return 'top';
+  if (pane.bottom <= cell.top + 1) return 'bottom';
+  return pane.left >= cell.right - 1 ? 'left' : 'right';
+}
+
 /** Minimap size. Body cells are square, so it keeps the body's aspect ratio. */
 function minimapBox(desktop: boolean): { width: number; height: number } {
   const width = desktop ? 180 : 100;
@@ -102,6 +111,27 @@ type BodyPoint = { u: number; v: number };
 type ZoomTarget = { zoom: number; x: number; y: number; body?: BodyPoint };
 type Pinch = { source: 'touch' | 'gesture'; zoom: number; distance: number; body: BodyPoint };
 type GestureEventLike = UIEvent & { scale: number; clientX: number; clientY: number };
+/** Track sizes and scroll state, laid out or previewed. */
+type View = { cell: number; head: number; headRow: number; left: number; top: number; width: number; height: number };
+/**
+ * A gesture in progress. Transforms show the grid at `zoom` without a layout:
+ * the grid scales from its gesture-start layout, and the headers undo that
+ * scale across their axis, so the header row keeps its height and the
+ * generation column its width. `view` is the layout that the transforms show.
+ */
+type Preview = {
+  zoom: number;
+  view: View;
+  gridLeft: number;
+  focus: { x: number; y: number; body: BodyPoint };
+  start: { cell: number; head: number; headRow: number; gridLeft: number; spill: { x: number; y: number } };
+  grid: HTMLElement;
+  rows: HTMLElement[];
+  cols: HTMLElement[];
+  corner: HTMLElement | null;
+  marks: { rows: HTMLElement[]; cols: HTMLElement[] };
+  pane: HTMLElement | null;
+};
 
 export function FavoritesGrid({
   fills,
@@ -223,9 +253,10 @@ function ZoomFrame({
  * Sizes cells, applies pinch and ctrl+wheel zoom, and paints the minimap.
  * A drag on the minimap scrolls the grid.
  *
- * Gestures write the track sizes and scroll offsets straight to the DOM once
- * per animation frame. React renders none of it, so a pinch never waits on a
- * render.
+ * A gesture writes transforms once per animation frame, so a pinch frame
+ * needs no style or layout pass over the cells. When the gesture ends, the
+ * track sizes and scroll offsets take its zoom in one layout. React renders
+ * none of it, so a pinch never waits on a render.
  */
 function useZoomFrame(
   refs: {
@@ -258,6 +289,8 @@ function useZoomFrame(
     let base = baseCell();
     let zoom = clampZoom(zoomRef.current);
     let target: ZoomTarget | null = null;
+    let preview: Preview | null = null;
+    let settleTimer = 0;
     let pinch: Pinch | null = null;
     // A run of ctrl+wheel events at one pointer spot keeps one body point
     // under the pointer, so per-event rounding cannot drift it.
@@ -293,15 +326,19 @@ function useZoomFrame(
       if (!grid) return 0;
       return grid.getBoundingClientRect().left - el.getBoundingClientRect().left - el.clientLeft + el.scrollLeft;
     };
+    /** What the frame shows: the previewed layout during a gesture. */
+    const shown = (): View => preview?.view
+      ?? { ...tracks(), left: el.scrollLeft, top: el.scrollTop, width: el.scrollWidth, height: el.scrollHeight };
     /** The body point under a frame-local point. */
     const bodyAt = (x: number, y: number): BodyPoint => {
-      const { cell, head, headRow } = tracks();
-      return { u: (el.scrollLeft + x - gridLeft() - head) / cell, v: (el.scrollTop + y - headRow) / cell };
+      const { cell, head, headRow, left, top } = shown();
+      return { u: (left + x - (preview?.gridLeft ?? gridLeft()) - head) / cell, v: (top + y - headRow) / cell };
     };
     const paint = (show: boolean) => {
       const map = mapRef.current;
       const view = windowRef.current;
-      const overflows = el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+      const { cell, head, headRow, left, top, width: contentWidth, height: contentHeight } = shown();
+      const overflows = contentWidth > el.clientWidth + 1 || contentHeight > el.clientHeight + 1;
       if (cueRef.current) cueRef.current.style.display = overflows ? '' : 'none';
       if (!map || !view) return;
       map.style.display = overflows ? '' : 'none';
@@ -311,13 +348,12 @@ function useZoomFrame(
       map.style.bottom = `${el.offsetHeight - el.clientHeight - el.clientTop}px`;
       // The sticky headers cover the first track on each axis, so the
       // visible body starts at the scroll offset and is one header short.
-      const { cell, head, headRow } = tracks();
       const sx = box.width / (TYPE_AXIS.length * cell);
       const sy = box.height / (GEN_AXIS.length * cell);
       const width = Math.min(box.width, Math.max(2, (el.clientWidth - head) * sx));
       const height = Math.min(box.height, Math.max(2, (el.clientHeight - headRow) * sy));
-      view.style.left = `${minimapViewportX(el.scrollLeft, sx, box.width, width)}px`;
-      view.style.top = `${Math.max(0, Math.min(box.height - height, el.scrollTop * sy))}px`;
+      view.style.left = `${minimapViewportX(left, sx, box.width, width)}px`;
+      view.style.top = `${Math.max(0, Math.min(box.height - height, top * sy))}px`;
       view.style.width = `${width}px`;
       view.style.height = `${height}px`;
       if (!show) return;
@@ -340,27 +376,116 @@ function useZoomFrame(
         if (!desktop) map.style.pointerEvents = '';
       }, MINIMAP_LINGER_MS);
     };
+    const beginPreview = (): Preview => {
+      const grid = el.firstElementChild as HTMLElement;
+      const all = (selector: string) => [...grid.querySelectorAll<HTMLElement>(selector)];
+      const { cell, head, headRow } = tracks();
+      // Sprites in the last column and row spill past the grid. The spill
+      // scales with the cells and counts toward the scroll range.
+      const spill = { x: Math.max(0, grid.scrollWidth - grid.clientWidth), y: Math.max(0, grid.scrollHeight - grid.clientHeight) };
+      const start = { cell, head, headRow, gridLeft: gridLeft(), spill };
+      const next: Preview = {
+        zoom,
+        view: shown(),
+        gridLeft: start.gridLeft,
+        focus: { x: 0, y: 0, body: { u: 0, v: 0 } },
+        start,
+        grid,
+        rows: all(':scope > [data-head="row"]'),
+        cols: all(':scope > [data-head="col"]'),
+        corner: grid.querySelector<HTMLElement>(':scope > [data-head="corner"]'),
+        marks: { rows: all(':scope > [data-head="row"] > [data-head-mark]'), cols: all(':scope > [data-head="col"] > [data-head-mark]') },
+        pane: grid.querySelector<HTMLElement>(':scope > [data-testid="favorites-picker"]'),
+      };
+      for (const node of [grid, ...next.rows, ...next.cols, next.corner]) {
+        if (!node) continue;
+        node.style.transformOrigin = '0 0';
+        node.style.willChange = 'transform';
+      }
+      // The pane keeps its size, and its edge that faces its cell moves with
+      // the cell, so a zoom out cannot slide the pane over the cell.
+      const selected = grid.querySelector('button[aria-expanded="true"]');
+      if (next.pane && selected) next.pane.style.transformOrigin = facingEdge(next.pane.getBoundingClientRect(), selected.getBoundingClientRect());
+      return next;
+    };
+    const endPreview = (p: Preview) => {
+      for (const node of [p.grid, ...p.rows, ...p.cols, p.corner]) {
+        if (!node) continue;
+        node.style.transform = '';
+        node.style.transformOrigin = '';
+        node.style.willChange = '';
+      }
+      for (const node of [...p.marks.rows, ...p.marks.cols]) node.style.scale = '';
+      if (p.pane) {
+        p.pane.style.scale = '';
+        p.pane.style.transformOrigin = '';
+      }
+    };
     const draw = () => {
       frame = 0;
       if (!target) return;
-      const { u, v } = target.body ?? bodyAt(target.x, target.y);
-      zoom = target.zoom;
-      writeTracks();
-      const { cell, head, headRow } = tracks();
-      el.scrollLeft = u * cell + head + gridLeft() - target.x;
-      el.scrollTop = v * cell + headRow - target.y;
+      const body = target.body ?? bodyAt(target.x, target.y);
+      const p = preview ??= beginPreview();
+      const { start } = p;
+      // The layout this zoom gets with the headers at their start size.
+      const cell = base * target.zoom;
+      const width = start.head + cell * (COLS - 1);
+      const height = start.headRow + cell * (ROWS - 1);
+      const s = cell / start.cell;
+      const gl = desktop || fitFrame ? Math.max(0, (el.clientWidth - width) / 2) : 0;
+      const contentWidth = Math.max(el.clientWidth, gl + width + start.spill.x * s);
+      const contentHeight = Math.max(el.clientHeight, height + start.spill.y * s);
+      const left = Math.max(0, Math.min(contentWidth - el.clientWidth, body.u * cell + start.head + gl - target.x));
+      const top = Math.max(0, Math.min(contentHeight - el.clientHeight, body.v * cell + start.headRow - target.y));
+      p.zoom = target.zoom;
+      p.gridLeft = gl;
+      p.focus = { x: target.x, y: target.y, body };
+      p.view = { cell, head: start.head, headRow: start.headRow, left, top, width: contentWidth, height: contentHeight };
       target = null;
+      // Scale the grid so every body point lands where that layout puts it.
+      // The transformed grid then reaches exactly as far past the current
+      // scroll offsets as that layout does, so the browser never clamps them.
+      const tx = gl - start.gridLeft + start.head * (1 - s) + el.scrollLeft - left;
+      const ty = start.headRow * (1 - s) + el.scrollTop - top;
+      p.grid.style.transform = `translate(${tx}px, ${ty}px) scale(${s})`;
+      // Each sticky header undoes that transform across its axis, from where
+      // its sticky offset holds it in the grid. Header marks keep their size.
+      const ax = (Math.max(0, el.scrollLeft - start.gridLeft) * (1 - s) - tx) / s;
+      const ay = (Math.max(0, el.scrollTop) * (1 - s) - ty) / s;
+      for (const node of p.rows) node.style.transform = `translateY(${ay}px) scaleY(${1 / s})`;
+      for (const node of p.cols) node.style.transform = `translateX(${ax}px) scaleX(${1 / s})`;
+      if (p.corner) p.corner.style.transform = `translate(${ax}px, ${ay}px) scale(${1 / s})`;
+      for (const node of p.marks.rows) node.style.scale = `${1 / s} 1`;
+      for (const node of p.marks.cols) node.style.scale = `1 ${1 / s}`;
+      if (p.pane) p.pane.style.scale = String(1 / s);
       paint(true);
     };
     const zoomTo = (next: ZoomTarget) => {
       target = next;
       if (!frame) frame = requestAnimationFrame(draw);
     };
+    /** Lays the grid out at the previewed zoom, with the focus point held. */
+    const commit = () => {
+      window.clearTimeout(settleTimer);
+      cancelAnimationFrame(frame);
+      draw();
+      const p = preview;
+      if (!p) return;
+      preview = null;
+      endPreview(p);
+      zoom = p.zoom;
+      writeTracks();
+      const { cell, head, headRow } = tracks();
+      el.scrollLeft = p.focus.body.u * cell + head + gridLeft() - p.focus.x;
+      el.scrollTop = p.focus.body.v * cell + headRow - p.focus.y;
+      paint(true);
+    };
     const local = (clientX: number, clientY: number) => {
       const rect = el.getBoundingClientRect();
       return { x: clientX - rect.left - el.clientLeft, y: clientY - rect.top - el.clientTop };
     };
     const startPinch = (source: Pinch['source'], clientX: number, clientY: number, distance: number): Pinch => {
+      commit();
       const point = local(clientX, clientY);
       pinch = { source, zoom, distance, body: bodyAt(point.x, point.y) };
       return pinch;
@@ -390,7 +515,9 @@ function useZoomFrame(
       zoomTo({ zoom: clampZoom(start.zoom * pair.distance / start.distance), ...local(pair.x, pair.y), body: start.body });
     };
     const onTouchEnd = (event: TouchEvent) => {
-      if (event.touches.length < 2 && pinch?.source === 'touch') pinch = null;
+      if (event.touches.length >= 2 || pinch?.source !== 'touch') return;
+      pinch = null;
+      commit();
     };
     // Safari reports trackpad and touch pinches as gesture events too. Touch
     // events already drive a touch pinch, so these drive only a trackpad
@@ -408,11 +535,13 @@ function useZoomFrame(
     };
     const onGestureEnd = (event: Event) => {
       event.preventDefault();
-      if (pinch?.source === 'gesture') pinch = null;
+      if (pinch?.source !== 'gesture') return;
+      pinch = null;
+      commit();
     };
     // Chromium and Firefox report a trackpad pinch as a ctrl+wheel event.
     // Chromium sets deltaY to -100 * ln(scale). A mouse wheel step is larger,
-    // so cap each event.
+    // so cap each event. The grid lays out once the events pause.
     const onWheel = (event: WheelEvent) => {
       if (!event.ctrlKey) return;
       event.preventDefault();
@@ -425,9 +554,13 @@ function useZoomFrame(
         wheel = { ...point, time: 0, body: bodyAt(point.x, point.y) };
       }
       wheel.time = event.timeStamp;
-      zoomTo({ zoom: clampZoom((target?.zoom ?? zoom) * factor), ...point, body: wheel.body });
+      zoomTo({ zoom: clampZoom((target?.zoom ?? preview?.zoom ?? zoom) * factor), ...point, body: wheel.body });
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(commit, WHEEL_SETTLE_MS);
     };
     const onScroll = () => {
+      // A scroll under a gesture redraws its preview from the new offsets.
+      if (preview) zoomTo({ ...preview.focus, zoom: preview.zoom });
       paint(true);
       if (scrolled) return;
       scrolled = true;
@@ -507,6 +640,7 @@ function useZoomFrame(
     const onResize = () => {
       const next = baseCell();
       if (next > 0 && Math.abs(next - base) > 0.01) {
+        commit();
         const ratio = next / base;
         const left = el.scrollLeft * ratio;
         const top = el.scrollTop * ratio;
@@ -563,6 +697,8 @@ function useZoomFrame(
       el.removeEventListener('gestureend', onGestureEnd);
       el.removeEventListener('wheel', onWheel);
       cancelAnimationFrame(frame);
+      if (preview) endPreview(preview);
+      window.clearTimeout(settleTimer);
       window.clearTimeout(fadeTimer);
       window.clearTimeout(hoverTimer);
     };
@@ -606,7 +742,7 @@ function GenRow({
 }
 
 function Corner() {
-  return <div className="sticky left-0 top-0 z-40 border-[0.5px] border-neutral-200 bg-background" />;
+  return <div data-head="corner" className="sticky left-0 top-0 z-40 border-[0.5px] border-neutral-200 bg-background" />;
 }
 
 function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenAxisId; pin?: boolean; banded?: boolean }) {
@@ -629,6 +765,7 @@ function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenA
   return (
     <div
       data-row-banded={pin ? banded : undefined}
+      data-head={pin ? 'col' : 'row'}
       className={cn(
         'min-h-0 min-w-0 overflow-hidden border-[0.5px] border-neutral-200 bg-card',
         // Sprites paint above body cells at z-10. Headers stay above them,
@@ -639,6 +776,7 @@ function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenA
       {banded ? <span className="pointer-events-none absolute inset-0 bg-foreground/[0.026]" /> : null}
       {isGenNumber(id) && !GEN_ROW_BADGES ? (
         <div
+          data-head-mark
           className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain [&_span]:!h-full [&_span]:!w-full [&_span]:!text-[0.62em]"
           style={{ width: trackPart('--head', iconSize / 100), height: trackPart('--head', iconSize / 100), fontSize: trackPart('--head', iconSize / 100) }}
         >
@@ -648,7 +786,7 @@ function HeaderCell({ id, pin = false, banded = false }: { id: TypeAxisId | GenA
         // The mark sits over its badge. The badge spans the header across
         // the axis, and in a column that a zoom widened past the capped
         // header height, it stops at the header's own width.
-        <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ gap: trackPart('--head', HEAD_GAP) }}>
+        <div data-head-mark className="absolute inset-0 flex flex-col items-center justify-center" style={{ gap: trackPart('--head', HEAD_GAP) }}>
           <div
             className="flex items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-contain"
             style={{ width: trackPart('--head', HEAD_ICON), height: trackPart('--head', HEAD_ICON) }}
