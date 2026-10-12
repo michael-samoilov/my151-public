@@ -1,15 +1,15 @@
 import type { TypeName } from '@/types/pokemon';
 
 // Draft mapping of each build section to a representative Pokémon type, used for
-// the corner-spandrel icon. `null` marks a concept/non-type section, which keeps
-// the 4-point star instead of a type symbol (per the original spec: starter,
-// legendary, mythical, …).
+// the section glyph (`sectionGlyphMask` in src/lib/sectionGlyph.ts). `null` marks
+// a concept/non-type section: starter, legendary, and mythical have their own
+// glyphs there, and the rest keep the 4-point star.
 //
 // This is a thematic first pass — later it could be derived from the actual
 // most-common type of each section's canonical Pokémon. Multiple sections may
 // share a type (e.g. beach / fishing / ocean → water).
 export const SECTION_TYPE: Record<string, TypeName | null> = {
-  'starter': null,            // concept (green/red/blue trio) → star
+  'starter': null,            // concept (green/red/blue trio) → Poké Ball
   'early-bug': 'bug',
   'early-bird': 'flying',
   'early-rodent': 'normal',
@@ -35,6 +35,6 @@ export const SECTION_TYPE: Record<string, TypeName | null> = {
   'other': null,             // catch-all → star
   'fossil': 'rock',
   'pseudo-legendary': 'dragon',
-  'legendary': null,         // concept → star
-  'mythical': null,          // concept → star
+  'legendary': null,         // concept → Arceus's ring
+  'mythical': null,          // concept → Arceus's ring
 };

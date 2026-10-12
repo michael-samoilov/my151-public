@@ -1,12 +1,11 @@
 // Section-outline geometry, shared by the live View page (SVG render) and the
 // PNG export (canvas render). Everything here is pure — no React, no DOM beyond
 // an offscreen canvas for text measurement — so it can run in either context.
-import type { Pokemon, TypeName } from '@/types/pokemon';
+import type { Pokemon } from '@/types/pokemon';
 import { sectionName, t, type NoArgKey } from '@/i18n';
 import { en } from '@/i18n/catalogs/en';
 import { sectionColor } from '@/lib/sectionColors';
 import { buildIdToSection } from '@/hooks/useViewSort';
-import { SECTION_TYPE } from '@/data/section-types';
 
 export const COLS = 10;
 
@@ -290,8 +289,9 @@ export interface Spandrel {
   cy: number;
   r: number;
   color: string;
-  /** The section's representative type → type-symbol icon, or null → 4-point star. */
-  type: TypeName | null;
+  /** Its glyph comes from `sectionGlyphMask(sectionId)`: a mask, or null for the
+   *  4-point star. The renderers look it up, so this module loads no images. */
+  sectionId: string;
 }
 
 export interface OutlineShape {
@@ -575,7 +575,7 @@ export function buildOutlines(
   }
 
   // --- Corner spandrels ----------------------------------------------------
-  // A curved 4-point star (or the section's type icon) in each interior corner
+  // A curved 4-point star (or the section's glyph) in each interior corner
   // where (1) all four diagonally adjacent cells belong to the same section, and
   // (2) the lower of the two rows carries the extended top gap (it is a band row
   // — another section begins later in it).
@@ -603,7 +603,7 @@ export function buildOutlines(
       const cy = (tileTop(n) + tileSize + tileTop(below)) / 2 - tileSize * 0.03;
       spandrels.push({
         key: `sp-${n}-${c}`, cx, cy, r: tileSize * 0.16,
-        color: secStroke.get(s) ?? '#555555', type: SECTION_TYPE[s] ?? null,
+        color: secStroke.get(s) ?? '#555555', sectionId: s,
       });
     }
   }

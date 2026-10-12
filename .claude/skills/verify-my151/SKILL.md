@@ -31,7 +31,7 @@ string.
 | Surface | Engine | How it runs here |
 | --- | --- | --- |
 | desktop Chrome, Android Chrome | Blink | agent-browser CLI, Playwright as the fallback (Chromium from `PLAYWRIGHT_BROWSERS_PATH`) |
-| iOS Safari, iOS Chrome | WebKit | WebKitGTK MiniBrowser over W3C WebDriver |
+| iOS Safari, iOS Chrome | WebKit | WebKitGTK MiniBrowser over W3C WebDriver, with Safari's feature defaults (`SAFARI_FEATURES`) |
 | desktop Firefox | Gecko | Mozilla-tarball Firefox over Marionette |
 
 Two jobs, kept separate. **Personas** (Blink + init-script stubs for iOS Safari,

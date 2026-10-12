@@ -7,13 +7,9 @@ import { decode, type Raster } from './png-rgba';
  * glyph-only PNG: white pixels, alpha from the symbol, cropped to its bounding
  * box.
  *
- * This is the build-time twin of `src/lib/typeSymbol.ts`, which does the same
- * thing in a canvas at runtime. That one still earns its place — the view page
- * and the poster export recolour the symbol, and a mask is the only way to do
- * that — but the type badge always draws it white, and a badge grid renders up
+ * The type badge always draws the symbol white, and a badge grid renders up
  * to ~300 of them. Referencing one cached URL 300 times is free; inlining a
- * ~3 kB data URL into 300 style attributes is not, and it would also mean the
- * first paint has no symbols while the canvases run.
+ * ~3 kB data URL into 300 style attributes is not.
  *
  * Output is committed, so this never runs in CI or on Vercel. Re-run it if the
  * upstream icons are ever refreshed:  npm run build-type-glyphs
@@ -22,7 +18,7 @@ import { decode, type Raster } from './png-rgba';
 const SRC_DIR = 'public/sprites/types/small';
 const OUT_DIR = 'public/sprites/types/glyph';
 
-/** min(R,G,B) above this counts as the white symbol — same threshold as typeSymbol.ts. */
+/** min(R,G,B) above this counts as the white symbol. */
 const WHITE_T = 200;
 
 const CRC_TABLE = (() => {
