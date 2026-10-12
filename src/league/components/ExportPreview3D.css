@@ -135,8 +135,6 @@
   --foil-ambient: 0;
   --foil-specular: 0;
   --foil-rim: 0;
-  --foil-holographic: 0;
-  --foil-holoRainbow: 0;
   --foil-prism: 0;
   --foil-gleam: 0;
   --foil-iridescence: 0;
@@ -188,8 +186,6 @@
 }
 
 .export-foil-mask-sat,
-.export-foil-holo-rainbow,
-.export-foil-holographic,
 .export-foil-prism,
 .export-foil-gleam,
 .export-foil-iridescence,
@@ -224,8 +220,6 @@
   mask-repeat: no-repeat;
 }
 
-.export-foil:not([data-foil-maps='1']) .export-foil-holo-rainbow,
-.export-foil:not([data-foil-maps='1']) .export-foil-holographic,
 .export-foil:not([data-foil-maps='1']) .export-foil-prism,
 .export-foil:not([data-foil-maps='1']) .export-foil-gleam,
 .export-foil:not([data-foil-maps='1']) .export-foil-iridescence,

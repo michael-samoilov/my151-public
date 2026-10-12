@@ -22,7 +22,7 @@ import {
   hoverTiltFromPointer,
   normalizedForTilt,
   pointInBox,
-  pokeHoloIdle,
+  idleOrbitPose,
   pointerMovedFrom,
   REST_POSE,
   springSettled,
@@ -53,12 +53,9 @@ import {
   type FoilRecipe,
 } from '../export/foilRecipe';
 import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
-import { FOIL_HOLO_BLEND } from '../export/foilBlend';
 import { exportCornerRadius } from '@/lib/exportPngShape';
 import './ExportPreview3D.css';
-import './foil/pokeHolo.css';
 import './foil/my151Holo.css';
-import { setPokeHoloPointer } from './foil/pokeHoloPointer';
 
 const TAP_MS = 320;
 /** Opening the export eases auto-tilt, glare, pop, and foil in from flat. */
@@ -236,7 +233,6 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-y', ny.toFixed(4));
     el.style.setProperty('--gradient-x', `${pointerX}%`);
     el.style.setProperty('--gradient-y', `${pointerY}%`);
-    setPokeHoloPointer(el, pointerX, pointerY);
     const recipeNow = recipeRef.current;
     const tiltNow = tiltNowEarly;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
@@ -303,7 +299,7 @@ export function ExportPreview3D({
     if (reducedMotionRef.current || origin === null) return REST_POSE;
     const recipeNow = recipeRef.current;
     // The orbit radius grows with `open`, so auto-tilt starts flat and spirals out.
-    return pokeHoloIdle({
+    return idleOrbitPose({
       now,
       origin,
       idleMsX: recipeNow.idleMsX,
@@ -595,7 +591,6 @@ export function ExportPreview3D({
     }
     // On the hit, so the card and its shape shadow both inherit the outline.
     hitRef.current?.style.setProperty('--export-shape-mask', foilMaskCss(activeSrc ?? ''));
-    el.style.setProperty('--foil-holo-blend', FOIL_HOLO_BLEND);
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
     el.dataset.hoverTilt = '1';
     el.dataset.maskSpriteCount = String(maskContext.sprites.length);

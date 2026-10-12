@@ -12,7 +12,6 @@ import {
   parseFoilRecipe,
   parseFoilRecipeFromSearch,
   withFoilLayer,
-  type FoilLayerId,
   type FoilRecipe,
 } from '@/league/export/foilRecipe';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
@@ -129,35 +128,7 @@ function sampleMaskContext(sample: WorkshopSample): HoverTiltMaskContext {
  * such as no pop (scaleFactor 1) or an auto-tilt smaller than max tilt.
  */
 /** Foil layers the page has dials for. */
-const WORKSHOP_LAYERS = ['holographic', 'holoRainbow', 'prism', 'gleam', 'pointLight', 'iridescence'] as const;
-
-/**
- * The live holo pair and its redrawn replacement (October 12). The switch
- * turns one pair on and the other off, and keeps every amount.
- */
-type HoloPair = 'current' | 'new';
-
-const HOLO_PAIRS: Record<HoloPair, readonly FoilLayerId[]> = {
-  current: ['holoRainbow', 'holographic'],
-  new: ['prism', 'gleam'],
-};
-
-function withHoloPair(recipe: FoilRecipe, pair: HoloPair): FoilRecipe {
-  const next = cloneFoilRecipe(recipe);
-  for (const name of ['current', 'new'] as const) {
-    for (const id of HOLO_PAIRS[name]) next.layers[id] = { ...next.layers[id], on: name === pair };
-  }
-  return next;
-}
-
-/** The pair that alone is on, or null when both or neither are. */
-function holoPairOf(recipe: FoilRecipe): HoloPair | null {
-  const anyOn = (ids: readonly FoilLayerId[]) => ids.some((id) => recipe.layers[id].on);
-  const current = anyOn(HOLO_PAIRS.current);
-  const fresh = anyOn(HOLO_PAIRS.new);
-  if (current === fresh) return null;
-  return current ? 'current' : 'new';
-}
+const WORKSHOP_LAYERS = ['gleam', 'prism', 'pointLight', 'iridescence'] as const;
 
 function workshopFoil(saved: FoilRecipe): FoilRecipe {
   const next = cloneFoilRecipe(DEFAULT_FOIL_RECIPE);
@@ -299,9 +270,8 @@ export function FoilWorkshopPage() {
   const maskContext = useMemo(() => sampleMaskContext(sample), [sample]);
 
   const busy = src === null;
-  const holo = recipe.layers.holographic;
-  const rainbow = recipe.layers.holoRainbow;
-  const holoPair = holoPairOf(recipe);
+  const gleam = recipe.layers.gleam;
+  const prism = recipe.layers.prism;
 
   useEffect(() => {
     persistWorkshop(recipe, tilt, sample, proposal);
@@ -446,36 +416,6 @@ export function FoilWorkshopPage() {
             </button>
           </div>
 
-          <fieldset data-workshop-holo-switch>
-            <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
-              Holo
-            </legend>
-            <div className="grid grid-cols-2 gap-1">
-              {(
-                [
-                  { id: 'current', label: 'Holo: current' },
-                  { id: 'new', label: 'Holo: new' },
-                ] as const
-              ).map(({ id, label }) => (
-                <button
-                  key={id}
-                  type="button"
-                  data-workshop-holo={id}
-                  aria-pressed={holoPair === id}
-                  onClick={() => setRecipe(withHoloPair(recipe, id))}
-                  className={`rounded-md px-1 py-2 text-center text-[0.7rem] leading-tight ${
-                    holoPair === id ? 'bg-zinc-100 font-medium text-zinc-950' : 'bg-zinc-800 text-zinc-200'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-1 text-[0.65rem] leading-snug text-zinc-500">
-              Current: the live rainbow and V shine. New: the redrawn prism bands and gleam. Amounts stay as set.
-            </p>
-          </fieldset>
-
           <fieldset data-workshop-compare>
             <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
               Compare
@@ -549,54 +489,54 @@ export function FoilWorkshopPage() {
             </div>
           </fieldset>
 
-          <fieldset className="space-y-2" data-foil-control="holographic">
+          <fieldset className="space-y-2" data-foil-control="gleam">
             <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
               Shine
             </legend>
             <label className="flex items-center gap-2 text-[0.7rem] text-zinc-300">
               <input
                 type="checkbox"
-                checked={holo.on}
-                data-foil-on="holographic"
-                onChange={(e) => setRecipe(withFoilLayer(recipe, 'holographic', { on: e.target.checked }))}
+                checked={gleam.on}
+                data-foil-on="gleam"
+                onChange={(e) => setRecipe(withFoilLayer(recipe, 'gleam', { on: e.target.checked }))}
               />
-              Diagonal V shine on ink
+              Grainy diagonal gleam on ink
             </label>
             <Slider
               label="Amount"
               min={0}
               max={1}
               step={0.01}
-              value={holo.amount}
-              testId="holographic"
-              onChange={(amount) => setRecipe(withFoilLayer(recipe, 'holographic', { amount }))}
+              value={gleam.amount}
+              testId="gleam"
+              onChange={(amount) => setRecipe(withFoilLayer(recipe, 'gleam', { amount }))}
             />
           </fieldset>
 
-          <fieldset className="space-y-2" data-foil-control="holoRainbow">
+          <fieldset className="space-y-2" data-foil-control="prism">
             <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
               Rainbow
             </legend>
             <label className="flex items-center gap-2 text-[0.7rem] text-zinc-300">
               <input
                 type="checkbox"
-                checked={rainbow.on}
-                data-foil-on="holoRainbow"
-                onChange={(e) => setRecipe(withFoilLayer(recipe, 'holoRainbow', { on: e.target.checked }))}
+                checked={prism.on}
+                data-foil-on="prism"
+                onChange={(e) => setRecipe(withFoilLayer(recipe, 'prism', { on: e.target.checked }))}
               />
-              Rainbow holofoil on ink
+              Pastel prism bands on ink
             </label>
             <Slider
               label="Amount"
               min={0}
               max={1}
               step={0.01}
-              value={rainbow.amount}
-              testId="holoRainbow"
-              onChange={(amount) => setRecipe(withFoilLayer(recipe, 'holoRainbow', { amount }))}
+              value={prism.amount}
+              testId="prism"
+              onChange={(amount) => setRecipe(withFoilLayer(recipe, 'prism', { amount }))}
             />
             <div className="text-[0.7rem] text-zinc-400">
-              <span>Blend, rainbow and iridescence</span>
+              <span>Blend, iridescence</span>
               <div className="mt-1 grid grid-cols-2 gap-1">
                 {(
                   [
@@ -621,20 +561,6 @@ export function FoilWorkshopPage() {
             </div>
           </fieldset>
 
-          <LayerDial
-            id="gleam"
-            title="Gleam (new holo)"
-            toggle="Broad grainy diagonal stripes"
-            recipe={recipe}
-            onRecipe={setRecipe}
-          />
-          <LayerDial
-            id="prism"
-            title="Prism bands (new holo)"
-            toggle="Pastel rainbow bands slide with the tilt"
-            recipe={recipe}
-            onRecipe={setRecipe}
-          />
           <LayerDial
             id="pointLight"
             title="Point light"
@@ -759,7 +685,7 @@ function LayerDial({
   recipe,
   onRecipe,
 }: {
-  id: 'prism' | 'gleam' | 'pointLight' | 'iridescence';
+  id: 'pointLight' | 'iridescence';
   title: string;
   toggle: string;
   recipe: FoilRecipe;
