@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
+import { fireCompletionConfetti, preloadCompletionConfetti } from '@/components/milestone/completionConfetti';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -35,6 +36,12 @@ const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./component
 const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/FavoritesExportOverlay')));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId; keyboard?: boolean };
+
+/** The completion popup is on screen: the confetti lands with it, once, as the popup does. */
+function completionShown() {
+  sendFavoriteNudgeShownBeacon();
+  fireCompletionConfetti();
+}
 
 function savedShowIcons(): boolean {
   try { return window.localStorage.getItem(ICONS_STORAGE_KEY) !== '0'; }
@@ -93,6 +100,9 @@ function FavoritesContent({ sel, setSel }: {
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
   const exportRef = useRef<HTMLButtonElement>(null);
   const completionNudge = useCompletionNudge();
+  useEffect(() => {
+    if (completionNudge.armed) preloadCompletionConfetti();
+  }, [completionNudge.armed]);
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
@@ -218,7 +228,8 @@ function FavoritesContent({ sel, setSel }: {
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
-      {/* The Dex builder's follow-up popup, pointing at Export once the grid is first complete. */}
+      {/* The Dex builder's follow-up popup, pointing at Export once the grid is
+          first complete, with the completion confetti. */}
       <FollowUpHint
         armed={completionNudge.armed}
         dismiss={completionNudge.dismiss}
@@ -226,7 +237,7 @@ function FavoritesContent({ sel, setSel }: {
         anchorRef={exportRef}
         title={t('favorites.nudge.complete.title')}
         body={t('favorites.nudge.complete.body')}
-        onShown={sendFavoriteNudgeShownBeacon}
+        onShown={completionShown}
       />
       {exportOpen && <Suspense fallback={<ScreenSpinner />}>
         <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)}

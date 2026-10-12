@@ -7,6 +7,7 @@ import { legendsOf } from '../model/cardPicks';
 export { legendsOf } from '../model/cardPicks';
 import {
   allCardsFilled,
+  allCardsHaveFullTeams,
   parseCelebratedNudges,
   reachedNudges,
   type LeagueNudgeId,
@@ -115,6 +116,11 @@ export interface LeagueState {
    * the way the dex builder persists `milestoneCelebrated`.
    */
   celebratedNudges: LeagueNudgeId[];
+  /**
+   * The completion confetti has played. It fires once, the first time every
+   * trainer card has a full team with the league summary on screen.
+   */
+  fullLeagueCelebrated: boolean;
 
   setName: (name: string) => void;
   setView: (view: LeagueView) => void;
@@ -154,6 +160,7 @@ export interface LeagueState {
   swapLegends: (card: number, fromSeat: number, toSeat: number) => void;
   moveSlot: (fromIndex: number, toIndex: number) => void;
   markNudgeCelebrated: (id: LeagueNudgeId) => void;
+  markFullLeagueCelebrated: () => void;
 }
 
 export function emptyCard(): GymCard {
@@ -264,6 +271,7 @@ type PersistedLeagueState = {
   cards?: GymCard[];
   view?: LeagueView;
   celebratedNudges?: unknown;
+  fullLeagueCelebrated?: unknown;
 };
 
 export function migrateLeagueState(persisted: unknown, version: number): PersistedLeagueState {
@@ -311,8 +319,14 @@ export function migrateLeagueState(persisted: unknown, version: number): Persist
     && allCardsFilled(cards ?? [])
     ? [...celebrated, 'complete' as const]
     : celebrated;
+  // v7 adds the completion confetti. A league that was full before v7 has
+  // had its moment, so it counts as celebrated, the way `celebratedNudges`
+  // starts from what an older save had already reached.
+  const fullLeagueCelebrated = version < 7 || state.fullLeagueCelebrated === undefined
+    ? allCardsHaveFullTeams(cards ?? [])
+    : state.fullLeagueCelebrated === true;
 
-  return { ...state, cards, celebratedNudges };
+  return { ...state, cards, celebratedNudges, fullLeagueCelebrated };
 }
 
 // Writes a seeded league on a preview build's first visit, before `persist`
@@ -359,6 +373,7 @@ export const useLeagueStore = create<LeagueState>()(
       cards: Array.from({ length: SLOT_COUNT }, emptyCard),
       view: 'challenge',
       celebratedNudges: [],
+      fullLeagueCelebrated: false,
 
       setName: (name) => set({ name }),
 
@@ -567,6 +582,8 @@ export const useLeagueStore = create<LeagueState>()(
         set((s) =>
           s.celebratedNudges.includes(id) ? {} : { celebratedNudges: [...s.celebratedNudges, id] },
         ),
+
+      markFullLeagueCelebrated: () => set({ fullLeagueCelebrated: true }),
     }),
     {
       name: LEAGUE_STORAGE_KEY,

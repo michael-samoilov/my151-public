@@ -14,6 +14,7 @@ import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useLeagueBeacon } from './hooks/useLeagueBeacon';
 import { useLeagueFunnelNudges } from './hooks/useLeagueFunnelNudges';
+import { useFullLeagueConfetti } from './hooks/useFullLeagueConfetti';
 import { getPokemonById, leaguePokemonDataSource } from '@/league/data/catalog';
 import { pokemonLabel, raw, useDocumentLocale, useNamesVersion, useT } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
@@ -177,6 +178,7 @@ export function LeagueApp() {
   const t = useT();
   useLeagueBeacon();
   useLeagueFunnelNudges();
+  useFullLeagueConfetti();
   useJsErrorCounter();
   useEffect(() => {
     sendEventBeacon('league-open', { once: true });
