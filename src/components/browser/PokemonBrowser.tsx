@@ -10,7 +10,6 @@ import { useBrowserStore, useFavoriteBrowserStore } from './browserStore';
 import { readFavoritePickerIds } from './favoritePickerBridge';
 import { ARCHETYPES } from '@/data/archetypes';
 import { BUILD_GROUPS } from '@/data/slot-template';
-import { DEX_TOTAL } from '@/lib/milestones';
 import { CATEGORIES, type PokemonCategory } from '@/data/categories';
 import { TYPE_NAMES, type Pokemon, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
@@ -1594,19 +1593,12 @@ function FavoriteLabel({ count }: { count: number }) {
   );
 }
 
-/** Active filter chip — shows value with dismiss */
-/**
- * "My dex 37/151" — the count in the app red, the total in whatever the chip
- * itself is set in, so the pair reads the same on the outlined chip and on
- * the filled one. Same shape as the dex builder's own header counter.
- */
 function MyDexLabel({ count }: { count: number }) {
   const t = useT();
   return (
     <span className="whitespace-nowrap">
       {t('browser.myDex')}{' '}
       <span className="font-bold tabular-nums text-primary">{count}</span>
-      <span className="tabular-nums">/{DEX_TOTAL}</span>
     </span>
   );
 }
