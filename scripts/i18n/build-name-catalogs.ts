@@ -49,7 +49,8 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
 /**
  * Terastallized Ogerpon, by app id, with the mask each one wears. No game
  * names these battle forms. Each joins two official descriptors in the same
- * language: the mask, then Terapagos's Terastal Form.
+ * language: the mask, then Terapagos's Terastal Form. The full name lists
+ * both after the species: Ogerpon (Wellspring Mask, Terastal Form).
  */
 const TERASTAL_MASKS: Readonly<Record<number, number>> = { 11113: 1017, 11114: 10273, 11115: 10274, 11116: 10275 };
 const TERASTAL_FORM = 10276;
@@ -139,7 +140,10 @@ async function main(): Promise<void> {
   for (const form of ALTERNATE_PICKER_FORMS) {
     if (originalIds.has(form.id)) continue;
     const speciesId = entries.find((entry) => entry.appId === form.ownerId)?.speciesId ?? form.ownerId;
-    addForm(form.id, form.name, form.name === 'vivillon-pokeball' ? 'vivillon-poke-ball' : form.name, speciesId);
+    // A Terastal Ogerpon's identity names its whole mask, as the masks' own
+    // identities do, so its compact code is the mask's code plus T.
+    addForm(form.id, form.name, form.name === 'vivillon-pokeball' ? 'vivillon-poke-ball'
+      : form.name.replace(/^(ogerpon-[a-z]+)-tera$/, '$1-mask-tera'), speciesId);
   }
   const powerups = JSON.parse(readFileSync('src/league/data/powerupForms.json', 'utf8')) as
     Record<string, Record<string, { id: number; label: string }[]>>;
