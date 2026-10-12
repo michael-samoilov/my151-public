@@ -1,3 +1,5 @@
+import { PokemonNameTooltip } from '@/components/shared/PokemonNameTooltip';
+import { pokemonLabel, useNamesVersion } from '@/i18n';
 import type { PokemonLabel } from '@/i18n/names';
 import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -288,6 +290,7 @@ function formatDoublings(n: number): string {
 }
 
 function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, tileAttributes, tileTestId, displayName, displayLabel, onSelect, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
+  useNamesVersion();
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   // Shared press state so clicking any member shrinks the *whole* evo line
@@ -353,6 +356,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, ti
   return (
     <>
       {members.map((pokemon, i) => {
+        const label = displayLabel ?? (displayName ? { name: displayName, full: displayName, mark: '', pending: false } : pokemonLabel(pokemon.id, pokemon.name));
         const inDex = assignedIds.has(pokemon.id);
         const markedForRemoval = standaloneTiles
           ? (removalStagedIds?.has(pokemon.id) ?? false)
@@ -406,6 +410,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, ti
                 }}
               />
             )}
+            <PokemonNameTooltip label={label} enabled={Boolean(label.mark)}>
             <div
               role="button"
               tabIndex={0}
@@ -464,8 +469,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, ti
                      or explicitly muted (e.g. filtered starters/legendaries shown for context). */}
                 <PokemonTileContent
                   pokemon={pokemon}
-                  displayName={displayName}
-                  displayLabel={displayLabel}
+                  displayLabel={label}
                   imgLoading={variant === 'analytics' ? 'eager' : 'lazy'}
                   spriteUrl={spriteOverrides?.[pokemon.id]
                     ?? (shinyIds?.has(pokemon.id)
@@ -517,6 +521,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, ti
                 />
               </div>
             </div>
+            </PokemonNameTooltip>
             {/* Chevron between evo line members. Standalone tiles have no
                 such relation to show: each tile is its own pick, so an arrow
                 from one to the next would claim an evolution the tap does

@@ -13,6 +13,7 @@ import { GAME_TERMS_PATH, type GameTermsFixture } from './extract-game-terms';
 import { LANGUAGE_IDS, ROMAJI_LANGUAGE_ID, ensureCsvs, readCsv } from './pokeapi';
 import type { IdMapEntry } from './propose-id-map';
 import { searchAffix } from './searchAffixes';
+import { compactFormLabels } from './compact-form-labels';
 import { ALTERNATE_PICKER_FORMS } from '../../src/favorites/model/alternateForms';
 
 const OUT_DIR = 'src/i18n/names';
@@ -72,6 +73,7 @@ interface NameCatalog {
    * how the games distinguish them too.
    */
   formMark: Record<string, string>;
+  formCompact?: Record<string, string>;
   /**
    * Extra spellings a query might use, beyond the name itself: Hepburn romaji
    * in Japanese, jamo initials in Korean, pinyin and its initials in Chinese.
@@ -185,6 +187,7 @@ async function main(): Promise<void> {
 
   const maxSpecies = Math.max(...entries.map((e) => e.speciesId));
   const summary: string[] = [];
+  let englishDescriptors: Record<string,string> = {};
 
   for (const [locale, langId] of Object.entries(LANGUAGE_IDS)) {
     /**
@@ -339,6 +342,14 @@ async function main(): Promise<void> {
       catalog.forms[variantId] = `${mega} — ${variant}`;
       catalog.formSource[variantId] = 'official-composed';
     }
+    const femaleDescriptor = catalog.forms[10025];
+    if (femaleDescriptor) {
+      for (const entry of entries.filter(entry => entry.formIdentifier.endsWith('-female') && !catalog.forms[entry.appId])) {
+        catalog.forms[entry.appId] = femaleDescriptor;
+        catalog.formSource[entry.appId] = 'official-composed';
+        composed += 1;
+      }
+    }
 
     const affix = catalog.species.map((name, i) =>
       name ? searchAffix(locale, name, romaji.get(i + 1)) : '',
@@ -347,10 +358,22 @@ async function main(): Promise<void> {
     // would be '', which is 1,025 commas of nothing in the payload.
     if (affix.some(Boolean)) catalog.affix = affix;
 
-    const overlay = { species: Object.fromEntries(entries.filter(e => !originalIds.has(e.appId) && e.appId !== e.speciesId).map(e => [e.appId, e.speciesId])), forms: {} as Record<string, string>, formSource: {} as Record<string, NameProvenance> };
+    if (locale === 'en') englishDescriptors = { ...catalog.forms };
+    for (const [key, descriptor] of Object.entries(englishDescriptors)) {
+      if (catalog.forms[key]) continue;
+      catalog.forms[key] = descriptor;
+      catalog.formSource[key] = 'official-composed';
+      composed += 1;
+    }
+    catalog.formCompact = compactFormLabels(entries, catalog.forms, catalog.formMark);
+    const overlay = { formCompact: {} as Record<string, string>, species: Object.fromEntries(entries.filter(e => !originalIds.has(e.appId) && e.appId !== e.speciesId).map(e => [e.appId, e.speciesId])), forms: {} as Record<string, string>, formSource: {} as Record<string, NameProvenance> };
     for (const key of Object.keys(catalog.forms)) {
       if (originalIds.has(Number(key))) continue;
       overlay.forms[key] = catalog.forms[key];
+      if (catalog.formCompact[key]) {
+        overlay.formCompact[key] = catalog.formCompact[key];
+        delete catalog.formCompact[key];
+      }
       overlay.formSource[key] = catalog.formSource[key];
       delete catalog.forms[key];
       delete catalog.formSource[key];
