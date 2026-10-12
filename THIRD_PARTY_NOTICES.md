@@ -29,3 +29,7 @@ hover-tilt states two licenses. The repository's `LICENSE` file is MIT. The pack
 | `src/components/export/hover-tilt/hoverTilt.css` | The tilt transform, the two-layer shadow, the glare gradient, and the glare layer with its mask. | [hoverTilt.css.txt](public/licenses/source/hover-tilt/hoverTilt.css.txt), <https://my151.app/licenses/source/hover-tilt/hoverTilt.css.txt> |
 
 `scripts/published-source.json` maps each published copy to its file, and `node scripts/check-published-source.mjs` fails when a copy differs from its file, when a file lacks the MPL-2.0 notice, or when the folder holds a file that is not published. Run it with `--write` to update the copies, and commit them. Put new code from hover-tilt in `src/components/export/hover-tilt/` only, list each new file in the manifest, and keep my151's own code out of that folder.
+
+## npm packages
+
+`build.license` in `vite.config.ts` makes each production build write the name, version, license, and license text of every npm package in the browser bundle to `dist/licenses/npm-packages.txt`, served at <https://my151.app/licenses/npm-packages.txt>. Vite's list misses three notices, which [npm-packages-extra.txt](public/licenses/npm-packages-extra.txt) holds: Tailwind CSS with modern-normalize, country-flag-icons, and the Apache ECharts NOTICE. Its versions are written by hand, so update it after you upgrade one of those packages. The Acknowledgements panel links both files.
