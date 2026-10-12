@@ -12,6 +12,8 @@ const CODES: Record<string, string> = {
   '10': '10%', '50': '50%', complete: '100%',
   mega: 'M', primal: 'P', gmax: 'GMX',
   male: '♂', female: '♀',
+  // An abbreviation stays whole: DJ Rotom reads DJ (Michael, 2026-10-12).
+  dj: 'DJ',
 };
 const DEFAULT_SUFFIX: Record<string, string> = {
   castform: 'normal', hoopa: 'confined', zacian: 'hero', zamazenta: 'hero',

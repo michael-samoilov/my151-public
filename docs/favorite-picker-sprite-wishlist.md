@@ -43,7 +43,7 @@ Overdrive, the two phases, Zenith, and DJ Rotom have no official name in any lan
 
 No game names the Terastal Ogerpon forms. Each locale joins two official names, the mask and Terapagos's Terastal Form, with `official-composed` provenance. The tooltip reads "Ogerpon (Wellspring Mask, Terastal Form)" and the compact code is WM T: the mask's code, then Terapagos's T. Black and White Kyurem Overdrive read B O and W O by the same rule.
 
-Every new form follows production's name format (#203): a compact code from `scripts/i18n/compact-form-labels.ts` and a full tooltip name from `src/i18n/fullPokemonName.ts`. Mega Zygarde reads "Mega Zygarde" (M). The other qualifiers take parentheses, such as "Furfrou (Heart Trim)" (H) and "Rotom (DJ)" (D).
+Every new form follows production's name format (#203): a compact code from `scripts/i18n/compact-form-labels.ts` and a full tooltip name from `src/i18n/fullPokemonName.ts`. Mega Zygarde reads "Mega Zygarde" (M), as production's other Megas do: the tile shows the species and M, and the tooltip names the Mega. The other qualifiers take parentheses, such as "Furfrou (Heart Trim)" (H) and "Rotom (DJ)" (DJ: Michael kept the abbreviation whole on 2026-10-12).
 
 Female Mega Meowstic (10326) is not added. Michael decided on 2026-10-12: PokéAPI's official artwork and HOME render for the male and female Mega are pixel-identical, so a female tile would duplicate the male one. The male Mega (10314) keeps its PokéAPI sprite.
 
