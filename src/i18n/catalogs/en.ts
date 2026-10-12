@@ -38,7 +38,7 @@ export const enUi = {
   'ack.group.fonts': 'Fonts',
   'ack.group.icons': 'Icons and art',
   'ack.group.sprites': 'Sprites',
-  'ack.intro': 'my151 is a free, non-profit fan site, built with the work of the people and projects below. Thank you. Tap one to see its credit and license.',
+  'ack.intro': 'my151 is a free, non-profit fan site, built with the work of the people and projects below. Thank you.',
   'ack.license': 'License',
   'ack.loadFailed': 'The license text did not load.',
   'ack.loading': 'Loading…',
