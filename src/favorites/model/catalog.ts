@@ -68,6 +68,10 @@ const FORM_ORDER_BY_OWNER = new Map([
   [1017, listedOrder([1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116])],
   // Each Overdrive follows the fusion it belongs to.
   [646, listedOrder([646, 10022, 11107, 10023, 11108])],
+  // Ultra Necrozma and Terapagos's forms sit with their species, not after
+  // the battle-form sort (Michael, 2026-10-12).
+  [800, listedOrder([800, 10155, 10156, 10157])],
+  [1024, listedOrder([1024, 10276, 10277])],
 ]);
 const COSPLAY_PIKACHU_FORM_ORDER = new Map(
   [10085, 10080, 10081, 10082, 10083, 10084].map((id, index) => [id, 10080 + index]),
