@@ -32,7 +32,7 @@ export function SectionBoxGlyph({ sectionId, color }: { sectionId: string; color
   const type = SECTION_TYPE[sectionId];
   const rise = (type && OWN_RISE[type]) ?? INK_RISE;
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]">
+    <div aria-hidden="true" data-audit-clip="intended" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]">
       <div
         className="absolute aspect-square"
         style={{
