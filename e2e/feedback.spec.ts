@@ -35,7 +35,10 @@ async function openForm(page: Page) {
   await page.goto('/pokedex-builder');
   await page.getByRole('button', { name: 'Report a problem' }).first().click();
   // The dwell check rejects anything sent within 2s of the form opening, so a
-  // test that types instantly would be indistinguishable from a bot.
+  // test that types instantly would be indistinguishable from a bot. The form
+  // loads lazily and starts its clock when it mounts, so wait for it first: a
+  // wait that starts at the click comes up short when the chunk is slow.
+  await page.getByRole('textbox', { name: 'What happened?' }).waitFor();
   await page.waitForTimeout(2100);
 }
 

@@ -263,6 +263,22 @@ body {
   .tile-name-skeleton { animation: none; }
 }
 
+/* A loading mark that waits 400 ms before it shows, so a wait that ends sooner
+ * shows nothing at all. The spinner's own turn keeps running underneath. */
+@keyframes load-reveal { to { opacity: 1; } }
+.load-delay {
+  opacity: 0;
+}
+.load-delay.animate-spin {
+  animation: load-reveal 160ms ease-out 400ms forwards, spin 1s linear infinite;
+}
+.load-delay:not(.animate-spin) {
+  animation: load-reveal 160ms ease-out 400ms forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .load-delay:not(.animate-spin), .load-delay.animate-spin { animation: load-reveal 1ms linear 400ms forwards; }
+}
+
 /* Elevated card surfaces — layered transparent shadow instead of a 1px border
  * (make-interfaces-feel-better #3). Used by the analytics chart cards and the
  * admin cards. The main layer's blur radius exceeds its y-offset, so the shadow
@@ -328,6 +344,12 @@ img {
   img {
     color: transparent;
   }
+}
+
+/* An image that failed to load shows nothing, not the browser's broken-image
+ * icon (src/lib/hideBrokenImages.ts marks it). */
+img[data-failed] {
+  visibility: hidden;
 }
 
 /* Every drag surface, marked by the one thing they all share.
@@ -583,11 +605,12 @@ img {
  * `.hub-stage` is a fixed-size box pinned to each card's bottom-left, and every
  * screenshot measurement is a share of the stage, not the card. On a phone the
  * stage is the whole card. Its reserve keeps the sheets fixed while the red
- * band has the same relative height as desktop. `--panel-ar` is the panel's
- * aspect ratio; the stage keeps the
- * phone proportion so the screenshots render at their current size. */
+ * band has the same relative height as desktop. `--panel-h` is the panel's
+ * height in 166-unit card widths, and `--panel-ar` its aspect ratio; the stage
+ * keeps the phone proportion so the screenshots render at their current size. */
 .hub-grid {
-  --panel-ar: 166 / 79.167;
+  --panel-h: 79.167;
+  --panel-ar: 166 / var(--panel-h);
   /* Lower the red band without moving the sheets or the caption. */
   --panel-inset: 12.550cqw;
   /* Radius, front-sheet lean, and clearance for the hover lift. */
@@ -607,7 +630,7 @@ img {
 }
 @media (min-width: 1024px) {
   .hub-grid {
-    --panel-ar: 166 / 57;
+    --panel-h: 57;
     --panel-inset: 0px;
     /* The stage is 72% of the card; its clip and front shift use the full width. */
     --card-width: 138.889cqw;

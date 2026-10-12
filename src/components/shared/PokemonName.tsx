@@ -14,7 +14,7 @@ export function PokemonName({ label, className, truncate = true }: {
     className={cn('flex items-baseline justify-center gap-[0.15em]', className)}
     {...(label.pending ? { 'aria-busy': true } : { title: label.full, 'aria-label': label.full })}
   >
-    {label.pending ? <span aria-hidden data-name-skeleton className="flex h-[1.25em] w-[62%] items-center">
+    {label.pending ? <span aria-hidden data-name-skeleton className="load-delay flex h-[1.25em] w-[62%] items-center">
       <span className="tile-name-skeleton block h-[0.68em] w-full rounded-full bg-current" />
     </span> : <>
       <span className={truncate ? 'truncate' : undefined}>{label.name}</span>

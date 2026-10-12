@@ -7,6 +7,9 @@ import { ALTERNATE_PICKER_FORMS } from './alternateForms';
 import { allPickerMons, getPickerMon } from './catalog';
 import { eligibleFor } from './eligibility';
 
+/** The file behind a sprite URL. A replaced sprite's URL carries a ?v= revision (src/lib/spriteUrl.ts); the file has none. */
+const spriteFile = (sprite: string) => `public${sprite.split('?')[0]}`;
+
 describe('alternate picker forms', () => {
   it('keeps the new form catalog inside the picker and resolves local sprites', () => {
     const dexIds = new Set(pokemonData.map((p) => p.id));
@@ -15,8 +18,9 @@ describe('alternate picker forms', () => {
       const mon = getPickerMon(form.id);
       expect(mon?.name, String(form.id)).toBe(form.name);
       expect(mon?.types, String(form.id)).toEqual(form.types);
-      expect(existsSync(`public${mon?.sprite}`), String(form.id)).toBe(true);
-      expect(statSync(`public${mon?.sprite}`).size, String(form.id)).toBeGreaterThan(100);
+      const file = spriteFile(mon!.sprite);
+      expect(existsSync(file), String(form.id)).toBe(true);
+      expect(statSync(file).size, String(form.id)).toBeGreaterThan(100);
       if (form.id !== 10191) expect(dexIds.has(form.id), String(form.id)).toBe(false);
     }
     expect(new Set(allPickerMons().map((m) => m.id)).size).toBe(allPickerMons().length);
@@ -66,7 +70,7 @@ describe('alternate picker forms', () => {
     expect(vivillon).toHaveLength(20);
     expect(vivillon[0].id).toBe(666); // Meadow, the base form.
     expect(vivillon.map((mon) => mon.id)).toEqual([666, ...Array.from({ length: 19 }, (_, i) => 11018 + i)]);
-    expect(new Set(vivillon.map((mon) => createHash('sha256').update(readFileSync(`public${mon.sprite}`)).digest('hex'))).size).toBe(20);
+    expect(new Set(vivillon.map((mon) => createHash('sha256').update(readFileSync(spriteFile(mon.sprite))).digest('hex'))).size).toBe(20);
     for (const id of [10027, 10030, 10118]) expect(getPickerMon(id)).toBeUndefined();
     expect(eligibleFor('legendary', 7).filter((mon) => mon.id === 10181)).toHaveLength(1);
   });
@@ -185,8 +189,8 @@ describe('alternate picker forms', () => {
     }
     const seen = new Set<string>();
     for (const mon of allPickerMons()) {
-      if (!existsSync(`public${mon.sprite}`)) continue;
-      const hash = createHash('sha256').update(readFileSync(`public${mon.sprite}`)).digest('hex');
+      if (!existsSync(spriteFile(mon.sprite))) continue;
+      const hash = createHash('sha256').update(readFileSync(spriteFile(mon.sprite))).digest('hex');
       const key = `${mon.ownerId}|${mon.types.join(',')}|${hash}`;
       expect(seen.has(key), `${mon.name} duplicates an earlier form`).toBe(false);
       seen.add(key);
