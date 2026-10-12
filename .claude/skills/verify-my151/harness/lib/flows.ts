@@ -3189,3 +3189,24 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   checks.push(ok('league-funnel:complete-nudge-shown', complete, complete ? 'full league export nudge' : 'no complete nudge after the last card'));
   return checks;
 }
+
+// The 404 page types its lines letter by letter with a stepped clip-path. Once
+// the animations end, every line must show whole: WebKit held a 9-step line one
+// step short when the animation kept its last frame, and cut the last letter.
+export async function runNotFoundSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  await s.navigate(ctx.base + '/404.html');
+  let lines: Array<{ text: string; clip: string; running: number }> = [];
+  for (let i = 0; i < 40; i++) {
+    await sleep(250);
+    lines = await s.evalJson(`return [...document.querySelectorAll('.say span, .title span')].map((el) => ({
+      text: el.textContent || '', clip: getComputedStyle(el).clipPath,
+      running: el.getAnimations().filter((a) => a.playState === 'running' || a.playState === 'pending').length }));`).catch(() => []);
+    if (lines.length && lines.every((l) => l.running === 0)) break;
+  }
+  const whole = (clip: string) => clip === 'none' || /^inset\(0px( 0(px|%)){0,3}\)$/.test(clip);
+  const cut = lines.filter((l) => !whole(l.clip));
+  await s.screenshot(ctx.shot('not-found-typed'));
+  const found = lines.length === 5;
+  return [ok('not-found:typed-lines-whole', found && cut.length === 0,
+    !found ? `found ${lines.length} typed lines, expected 5` : cut.length ? cut.map((l) => `"${l.text}" ends at ${l.clip}`).join('; ') : 'all 5 lines whole')];
+}
