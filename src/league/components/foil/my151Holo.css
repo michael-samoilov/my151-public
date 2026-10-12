@@ -50,14 +50,15 @@
 }
 
 /* V gleam: soft stripes on a 45 degree diagonal, lit like a polished
-   cylinder. Across each stripe a dim cyan glow (reflected light) leads into
-   a darker core, then a broad pale highlight with a pink and an orange
-   fringe, then the unlit gap. A long wave on the same diagonal dims every
-   few stripes, so the light gathers in broad patches, and a colored grain
-   tile breaks it into foil sparkle. Black is no change under color-dodge,
-   so only the stripes light the ink. Both tiles are wider than tall, so
-   the period follows the card's width more than its height, and both slide
-   across the card as the pointer moves sideways. */
+   cylinder. Across each stripe a dim violet glow leads through a warm pink
+   fringe into a soft highlight tinted by the card's tilt, then a violet
+   core shadow, a faint reflected glow, and a gradual fade to the unlit
+   gap. A long wave on the same diagonal dims every few stripes, so the
+   light gathers in broad patches, and a colored grain tile breaks it into
+   foil sparkle. Black is no change under color-dodge, so only the stripes
+   light the ink. Both tiles are wider than tall, so the period follows the
+   card's width more than its height, and both slide across the card as the
+   pointer moves sideways. */
 .export-foil-gleam {
   --gleam-period: 7.16%;
   --gleam-wave: 14.7%;
@@ -81,15 +82,16 @@
     repeating-linear-gradient(
       133deg,
       #000 0,
-      #000 calc(var(--gleam-period) * 0.16),
-      oklch(0.42 0.1 210) calc(var(--gleam-period) * 0.24),
-      oklch(0.44 0.09 var(--gleam-hue)) calc(var(--gleam-period) * 0.31),
-      oklch(0.28 0.06 var(--gleam-hue)) calc(var(--gleam-period) * 0.36),
-      oklch(0.62 0.15 350) calc(var(--gleam-period) * 0.41),
-      oklch(0.82 0.04 var(--gleam-hue)) calc(var(--gleam-period) * 0.45),
-      oklch(0.84 0.04 calc(var(--gleam-hue) + 20)) calc(var(--gleam-period) * 0.55),
-      oklch(0.66 0.13 50) calc(var(--gleam-period) * 0.59),
-      #000 calc(var(--gleam-period) * 0.65),
+      #000 calc(var(--gleam-period) * 0.25),
+      oklch(0.3 0.08 295) calc(var(--gleam-period) * 0.33),
+      oklch(0.6 0.14 20) calc(var(--gleam-period) * 0.41),
+      oklch(0.8 0.09 var(--gleam-hue)) calc(var(--gleam-period) * 0.47),
+      oklch(0.82 0.08 calc(var(--gleam-hue) + 15)) calc(var(--gleam-period) * 0.53),
+      oklch(0.5 0.11 300) calc(var(--gleam-period) * 0.59),
+      oklch(0.38 0.08 290) calc(var(--gleam-period) * 0.64),
+      oklch(0.42 0.08 calc(var(--gleam-hue) - 100)) calc(var(--gleam-period) * 0.69),
+      oklch(0.26 0.06 215) calc(var(--gleam-period) * 0.75),
+      #000 calc(var(--gleam-period) * 0.81),
       #000 var(--gleam-period)
     );
   background-size:
