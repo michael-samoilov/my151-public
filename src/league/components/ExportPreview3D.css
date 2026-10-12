@@ -113,13 +113,13 @@
 }
 
 .export-foil {
-  --pointer-x: 50%;
-  --pointer-y: 50%;
-  --pointer-from-center: 0;
-  --pointer-from-top: 0.5;
-  --pointer-from-left: 0.5;
-  --rotate-x: 0deg;
-  --rotate-y: 0deg;
+  --foil-at-x: 50%;
+  --foil-at-y: 50%;
+  --foil-reach: 0;
+  --foil-down: 0.5;
+  --foil-across: 0.5;
+  --foil-dx: 0;
+  --foil-dy: 0;
   --rotation-x: 0deg;
   --rotation-y: 0deg;
   --hover-tilt-x: 0.5;
@@ -147,8 +147,8 @@
   --foil-sat-mask: none;
   --foil-edge-mask: none;
   --foil-gloss-mask: none;
-  --foil-shift-x: calc((var(--pointer-from-left) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
-  --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
+  --foil-shift-x: calc((var(--foil-across) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
+  --foil-shift-y: calc((var(--foil-down) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   position: relative;
   /* The PNG alpha owns the outline, including each joined pane's corners. */
   border-radius: 0;
@@ -234,7 +234,7 @@
 .export-foil-ambient {
   z-index: 1;
   background-image: linear-gradient(
-    calc(var(--pointer-from-left) * 180deg - 90deg),
+    calc(var(--foil-across) * 180deg - 90deg),
     hsla(40, 30%, 100%, 0.42),
     transparent 42%,
     hsla(222, 28%, 12%, 0.38)
@@ -246,33 +246,33 @@
 .export-foil-point-light {
   z-index: 2;
   background-image: radial-gradient(
-    circle at var(--pointer-x) var(--pointer-y),
+    circle at var(--foil-at-x) var(--foil-at-y),
     hsla(40, 45%, 100%, 0.70) 0%,
     hsla(40, 30%, 96%, 0.24) 22%,
     transparent 58%
   );
   mix-blend-mode: soft-light;
-  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.72 + 0.08 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.72 + 0.08 * var(--foil-reach)));
 }
 
 .export-foil-iridescence {
   z-index: 4;
   background-image: linear-gradient(
-    calc(var(--pointer-from-left) * 360deg),
-    hsl(calc(var(--pointer-from-left) * 360), 88%, 58%),
-    hsl(calc(120 + var(--pointer-from-left) * 360), 88%, 58%),
-    hsl(calc(240 + var(--pointer-from-left) * 360), 88%, 58%)
+    calc(var(--foil-across) * 360deg),
+    hsl(calc(var(--foil-across) * 360), 88%, 58%),
+    hsl(calc(120 + var(--foil-across) * 360), 88%, 58%),
+    hsl(calc(240 + var(--foil-across) * 360), 88%, 58%)
   );
   /* soft-light, like the rainbow, so the shift never darkens the ink. */
   mix-blend-mode: var(--foil-rainbow-blend, soft-light);
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
-  opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--foil-reach)));
 }
 
 .export-foil-emboss {
   z-index: 5;
   background-image: linear-gradient(
-    calc(var(--pointer-from-left) * 180deg + var(--pointer-from-top) * 90deg),
+    calc(var(--foil-across) * 180deg + var(--foil-down) * 90deg),
     hsla(0, 0%, 100%, 0.82) 0%,
     hsla(0, 0%, 50%, 0) 46%,
     hsla(0, 0%, 0%, 0.72) 100%
@@ -284,19 +284,19 @@
 .export-foil-rim {
   z-index: 6;
   background-image: radial-gradient(
-    ellipse 85% 60% at calc(100% - var(--pointer-x)) calc(100% - var(--pointer-y)),
+    ellipse 85% 60% at calc(100% - var(--foil-at-x)) calc(100% - var(--foil-at-y)),
     hsla(205, 90%, 92%, 0.9) 0%,
     hsla(205, 70%, 80%, 0.25) 28%,
     transparent 58%
   );
   mix-blend-mode: screen;
-  opacity: calc(var(--foil-opacity) * var(--foil-rim) * (0.75 + 0.25 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-rim) * (0.75 + 0.25 * var(--foil-reach)));
 }
 
 .export-foil-parallax {
   z-index: 7;
   background-image: linear-gradient(
-    calc(var(--pointer-from-top) * 80deg + 40deg),
+    calc(var(--foil-down) * 80deg + 40deg),
     hsla(0, 0%, 100%, 0.4),
     transparent 38%,
     hsla(0, 0%, 0%, 0.22)
@@ -312,32 +312,32 @@
 .export-foil-specular {
   z-index: 8;
   background-image: radial-gradient(
-    circle at var(--pointer-x) var(--pointer-y),
+    circle at var(--foil-at-x) var(--foil-at-y),
     hsla(0, 0%, 100%, 0.95) 0%,
     hsla(0, 0%, 100%, 0.4) calc(var(--foil-spec-size) * 42%),
     transparent calc(var(--foil-spec-size) * 95%)
   );
   mix-blend-mode: screen;
-  opacity: calc(var(--foil-opacity) * var(--foil-specular) * (0.72 + 0.28 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-specular) * (0.72 + 0.28 * var(--foil-reach)));
 }
 
 .export-foil-bloom {
   z-index: 9;
   inset: 0;
   background-image: radial-gradient(
-    circle at var(--pointer-x) var(--pointer-y),
+    circle at var(--foil-at-x) var(--foil-at-y),
     hsla(0, 0%, 100%, 0.85) 0%,
     hsla(48, 100%, 80%, 0.35) calc(var(--foil-spec-size) * 50%),
     transparent calc(var(--foil-spec-size) * 120%)
   );
   mix-blend-mode: screen;
   filter: blur(var(--foil-bloom-blur));
-  opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--foil-reach)));
 }
 
 .export-foil[data-hover-tilt='1'] {
-  --hover-tilt-from-center: var(--pointer-from-center);
-  --hover-tilt-at-edge: var(--pointer-from-center);
+  --hover-tilt-from-center: var(--foil-reach);
+  --hover-tilt-at-edge: var(--foil-reach);
   --hover-tilt-glare-mask: none;
   --hover-tilt-glare-mask-size: cover;
   --hover-tilt-glare-mask-repeat: no-repeat;
@@ -347,8 +347,8 @@
   --hover-tilt-glare-intensity: 1;
   --hover-tilt-glare-size: 0.5;
   --hover-tilt-glare-hue: 40;
-  --gradient-x: var(--pointer-x);
-  --gradient-y: var(--pointer-y);
+  --gradient-x: var(--foil-at-x);
+  --gradient-y: var(--foil-at-y);
   /* Size pulls the light stops in toward the pointer, then fades them to a
      clear neutral stop. At 1 this is close to hover-tilt's glare, whose light
      already crossed mid-gray near 56%. Smaller keeps the light in a hotspot,
