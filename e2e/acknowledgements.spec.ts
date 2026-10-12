@@ -23,7 +23,9 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     for (const group of ['Sprites', 'Icons and art', 'Fonts', 'Data', 'Code']) {
       await expect(dialog.getByRole('heading', { name: new RegExp(`^${group}`) })).toBeVisible();
     }
-    await expect(dialog.getByText('20 credits')).toBeVisible();
+    // The count matches the rows: a sprite source with no sprite in this build has no row.
+    const rows = await dialog.locator('[data-ack-id]').count();
+    await expect(dialog.getByText(`${rows} credits`)).toBeVisible();
 
     // The container differs by width: a sheet along the bottom on a phone, a
     // full-height pane along the right on desktop.
@@ -51,6 +53,16 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
     await expect(row).toBeFocused();
 
+    // A sprite source lists the Pokémon it drew, by generation.
+    await dialog.locator('[data-ack-id="kyle-dove"]').click();
+    const sprites = dialog.getByTestId('ack-sprites');
+    await expect(sprites.getByRole('heading', { name: /^Sprites on my151 \d+$/ })).toBeVisible();
+    await sprites.getByText('Generation 1', { exact: true }).click();
+    await expect(sprites.getByRole('listitem').first()).toBeVisible();
+    const kyleDoveSprites = Number(/(\d+)$/.exec((await sprites.getByRole('heading').textContent())!.trim())?.[1]);
+    await dialog.getByRole('button', { name: 'Back' }).click();
+    await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
+
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(link).toBeFocused();
@@ -67,6 +79,8 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
         container: desktop ? 'side pane' : 'bottom sheet',
         licenseRequests: licenseRequests.map((url) => new URL(url).pathname),
         licenseChars,
+        rows,
+        kyleDoveSprites,
       }, null, 2),
     });
   });

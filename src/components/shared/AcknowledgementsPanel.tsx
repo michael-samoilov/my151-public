@@ -7,10 +7,14 @@ import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
 import {
   ACKNOWLEDGEMENTS,
+  SPRITE_CREDIT_IDS,
   type Acknowledgement,
   type AcknowledgementGroupId,
   type LicenseFile,
+  type SpriteCreditId,
 } from '@/data/acknowledgements';
+import { spritesBySource } from '@/data/spriteCredits';
+import { AcknowledgementsSprites } from './AcknowledgementsSprites';
 
 const GROUP_KEYS = {
   sprites: 'ack.group.sprites',
@@ -20,7 +24,18 @@ const GROUP_KEYS = {
   code: 'ack.group.code',
 } as const satisfies Record<AcknowledgementGroupId, NoArgKey>;
 
-const ENTRIES = new Map(ACKNOWLEDGEMENTS.flatMap((group) => group.entries.map((entry) => [entry.id, entry] as const)));
+const isSpriteCredit = (id: string): id is SpriteCreditId => (SPRITE_CREDIT_IDS as readonly string[]).includes(id);
+
+/**
+ * The groups as shown. A sprite source with no sprite in this build stays
+ * out, so a source appears once its sprites ship and leaves when they go.
+ */
+const GROUPS = ACKNOWLEDGEMENTS.map((group) => ({
+  ...group,
+  entries: group.entries.filter((entry) => !isSpriteCredit(entry.id) || spritesBySource(entry.id).length > 0),
+})).filter((group) => group.entries.length > 0);
+
+const ENTRIES = new Map(GROUPS.flatMap((group) => group.entries.map((entry) => [entry.id, entry] as const)));
 
 /** One request per file per page load, shared by every open of the panel. */
 const licenseTexts = new Map<string, Promise<string>>();
@@ -166,6 +181,7 @@ function Detail({ entry, backRef, onBack }: {
         <Section label={t('ack.usedFor')}>
           <p className="text-sm leading-relaxed">{entry.usedFor}</p>
         </Section>
+        {isSpriteCredit(entry.id) && <AcknowledgementsSprites source={entry.id} />}
         {entry.artists && (
           <Section label={t('ack.artists')}>
             {/* Each name in one piece: "Involuntary Twitch" never breaks
@@ -189,7 +205,7 @@ function Detail({ entry, backRef, onBack }: {
               className="inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-sm transition-colors hover:bg-muted"
             >
               <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              {t('ack.open', { site: host(href) })}
+              {t('ack.open', { site: entry.linkLabels?.[href] ?? host(href) })}
             </a>
           ))}
         </div>
@@ -257,7 +273,7 @@ function AcknowledgementsBody() {
         <p className="px-4 pt-3 text-xs text-muted-foreground">
           {tn('ack.count', ENTRIES.size)}
         </p>
-        {ACKNOWLEDGEMENTS.map((group) => (
+        {GROUPS.map((group) => (
           <section key={group.id} className="pt-4" data-testid={`ack-group-${group.id}`}>
             <h3 className={cn(HEADING, 'flex justify-between px-4 pb-1')}>
               <span>{t(GROUP_KEYS[group.id])}</span>{' '}

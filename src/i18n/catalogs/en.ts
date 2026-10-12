@@ -43,6 +43,7 @@ export const enUi = {
   'ack.loadFailed': 'The license text did not load.',
   'ack.loading': 'Loading…',
   'ack.open': 'Open {site}',
+  'ack.spriteList': 'Sprites on my151',
   'ack.title': 'Acknowledgements',
   'ack.usedFor': 'Used for',
   'advisor.allTypes': 'All 18 types covered',
