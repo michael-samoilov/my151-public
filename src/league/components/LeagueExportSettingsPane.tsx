@@ -1,4 +1,5 @@
-import { Check, Download, Loader2, X } from 'lucide-react';
+import { Check, Download, X } from 'lucide-react';
+import { PokeBallSpinner } from '@/components/shared/PokeBallSpinner';
 import { useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { useT, type NoArgKey } from '@/i18n';
@@ -29,6 +30,7 @@ export function LeagueExportSettingsPane({
   onCardTeamOrder,
   busy,
   onExport,
+  failed = false,
   onClose,
   mobileSheet = false,
 }: {
@@ -39,6 +41,8 @@ export function LeagueExportSettingsPane({
   onCardTeamOrder: (next: CardTeamOrder) => void;
   busy: boolean;
   onExport: () => void;
+  /** The last save failed. */
+  failed?: boolean;
   onClose: () => void;
   mobileSheet?: boolean;
 }) {
@@ -128,10 +132,11 @@ export function LeagueExportSettingsPane({
       )}
 
       <div className={`flex shrink-0 flex-col gap-2 border-t pt-2 ${mobileSheet ? 'px-3 pb-3' : 'px-4 pb-4'}`}>
+        {failed && <p role="alert" className="text-sm text-destructive">{t('favorites.export.error')}</p>}
         <Button type="button" disabled={busy} onClick={onExport} data-league-export-confirm>
           {busy ? (
             <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <PokeBallSpinner tone="line" className="mr-2 size-4" />
               {t('export.preparing')}
             </>
           ) : (

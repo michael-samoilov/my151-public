@@ -44,6 +44,8 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   const [tilt] = useState<HoverTiltRecipe>(() => cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE));
   const [phase, setPhase] = useState<ExportPreviewPhase>('settings');
   const [exportBusy, setExportBusy] = useState(false);
+  // A failed save says so in the pane; the next try clears it.
+  const [exportFailed, setExportFailed] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
   const [surveyOpenedAt, setSurveyOpenedAt] = useState(0);
   const isDesktop = useViewportAtLeast(1024);
@@ -93,6 +95,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   const runExport = useCallback(async () => {
     if (exportBusy || sorted.length === 0) return;
     setExportBusy(true);
+    setExportFailed(false);
     const ids = sorted.map((p) => p.id);
     try {
       const nextHighlight = (await sendExportBeacon(
@@ -131,6 +134,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('Export failed:', err);
+      setExportFailed(true);
     } finally {
       setExportBusy(false);
     }
@@ -171,6 +175,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
           seedCustomIds={seedCustomIds}
           busy={exportBusy || busy}
           onExport={() => void runExport()}
+          failed={exportFailed}
           onClose={onClose}
           mobileSheet={!isDesktop}
         />

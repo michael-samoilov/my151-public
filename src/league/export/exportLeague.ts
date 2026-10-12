@@ -1036,10 +1036,11 @@ function drawGymCard(
       ctx.restore();
     }
     const resolved = exportRow(card, row);
+    const occupied = resolved.filter((cell) => cell.pokemonId !== null);
     // Keep the original rightmost seat last. The other active seats follow
     // their introduction order. Resolve legendary and form identity first.
-    const cells = teamOrder === 'first-last'
-      ? [...resolved.slice(0, -1).reverse(), ...resolved.slice(-1)]
+    const cells = teamOrder === 'first-last' && occupied.length > 0
+      ? [...occupied.slice(0, -1).reverse(), ...occupied.slice(-1)]
       : resolved;
     const span = L.GLYPH_SPAN[row] ?? 1;
     const lead = 7 - cells.length - span;

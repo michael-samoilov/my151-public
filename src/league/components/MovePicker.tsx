@@ -23,6 +23,7 @@ import {
 import { keepLastWord } from '../keepLastWord';
 import { useMoveNames } from '../moveNames';
 import { CategoryChip } from './CategoryChip';
+import { EmptyState, QueryTitle } from '@/components/shared/EmptyState';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 
@@ -455,7 +456,21 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
             <span className="text-right text-[0.65625rem] tabular-nums">{m.pp}</span>
           </button>
         ))}
-        {results.length === 0 && <div className="py-10 text-center text-sm text-muted-foreground">{t('league.tm.empty')}</div>}
+        {results.length === 0 && (isSearching ? (
+          <EmptyState
+            testId="tm-empty"
+            title={<QueryTitle template={raw('league.tm.empty.search.title')} query={search} />}
+            body={t('league.tm.empty.search.body')}
+            action={{ label: t('league.tm.empty.clearSearch'), onClick: () => setSearch('') }}
+          />
+        ) : (
+          <EmptyState
+            testId="tm-empty"
+            title={t('league.tm.empty.filters.title')}
+            body={t('league.tm.empty.filters.body')}
+            action={hasActiveFilters ? { label: t('league.tm.empty.clearFilters'), onClick: clearFilters } : undefined}
+          />
+        ))}
       </div>
     </div>
   );
