@@ -31,12 +31,11 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import { NameTooltip } from './NameTooltip';
 
 // Preview only: `?badges=wide` stretches each column badge's pill to the
-// column past the capped header, `?badges=capped` stops the badge at the
-// capped header's size, and `?genbadges=1` puts a badge under each
-// generation disc. The default keeps the badge's 5:1 shape at 90% of the
-// column, and the header row grows to hold it.
+// column, `?badges=scale` keeps the badge's 5:1 shape at 90% of the column
+// and grows the header row to hold it, and `?genbadges=1` puts a badge under
+// each generation disc. By default, the badge keeps the header's size.
 const PREVIEW = new URLSearchParams(!PRODUCTION_DEPLOY && typeof location !== 'undefined' ? location.search : '');
-const BADGE_ZOOM = PREVIEW.get('badges') === 'wide' ? 'wide' : PREVIEW.get('badges') === 'capped' ? 'capped' : 'scale';
+const BADGE_ZOOM = PREVIEW.get('badges') === 'wide' ? 'wide' : PREVIEW.get('badges') === 'scale' ? 'scale' : 'capped';
 const GEN_ROW_BADGES = PREVIEW.get('genbadges') === '1';
 // A header mark over its badge: the mark keeps its size, and the badge takes
 // the room under it.
@@ -45,9 +44,9 @@ const HEAD_GAP = 0.03;
 const HEAD_BADGE = 0.18;
 
 /**
- * Height of the header row. Past the header cap, a column badge that keeps
- * its shape grows with the column, so the row grows by the badge's growth.
- * The generation column keeps the capped width.
+ * Height of the header row. A column badge that keeps its shape grows with
+ * the column, so the row grows by the badge's growth. The generation column
+ * keeps its width.
  */
 function headRowPx(cell: number, head: number): number {
   return BADGE_ZOOM === 'scale' ? head + HEAD_BADGE * (cell - head) : head;
@@ -59,9 +58,6 @@ const DESKTOP_CELL_PX = 96;
 // Zoom multiplies the body cell size, so 1 is the unzoomed grid. Mobile
 // cells start small and get more headroom than native-size desktop sprites.
 const ZOOM_RANGE = { mobile: { min: 1, max: 4 }, desktop: { min: 1, max: 2.5 } };
-// The header row and generation column stop growing at this zoom, so a
-// zoomed grid keeps most of the frame for body cells.
-const HEAD_MAX_ZOOM = 1.25;
 // Minimap opacity while it shows. It is opaque while the pointer is on it.
 const MINIMAP_SHOWN = '0.95';
 const MINIMAP_HOVER = '1';
@@ -304,11 +300,12 @@ function useZoomFrame(
     let armed = false;
     let drag: { id: number; x: number; y: number; left: number; top: number } | null = null;
 
-    // Body cells scale with the zoom. Headers scale up to HEAD_MAX_ZOOM, and
-    // the header row also holds the column badges' growth past it.
+    // Body cells scale with the zoom. The header row and generation column
+    // keep their zoom-1 size, so no zoom resizes them, and a zoomed grid
+    // keeps most of the frame for body cells.
     const tracks = () => {
       const cell = base * zoom;
-      const head = base * Math.min(zoom, HEAD_MAX_ZOOM);
+      const head = base;
       return { cell, head, headRow: headRowPx(cell, head) };
     };
     const writeTracks = () => {

@@ -25,7 +25,7 @@ gimmick, legendary, and favorite picks.
 - Zoom: a two-finger pinch, a Safari gesture, or ctrl+wheel over the frame zooms
   the grid, not the page. `data-zoom` on the frame holds the factor, 1 to 4 on
   mobile and 1 to 2.5 on desktop. Body cells scale fully. The sticky headers
-  grow to at most 1.25 times their zoom-1 size.
+  keep their zoom-1 size at every zoom, during a pinch too.
 - Minimap `[data-testid="favorites-minimap"]`: sits in the frame's bottom-right
   corner with no transform. It draws body cells only, shows filled and empty
   cells differently, and shows while the grid scrolls or zooms. On every
