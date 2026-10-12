@@ -6,6 +6,8 @@ const TEMPORARY_FORM_IDS = new Set([
   10182, 10183, 10185, 10187, 10190, 10276, 10277, 11004, 11072,
   // Overdrive, the Radiant Sun and Full Moon phases, and Zenith Marshadow.
   11105, 11106, 11107, 11108, 11109, 11110, 11111,
+  // Terastallized Ogerpon in each mask.
+  11113, 11114, 11115, 11116,
   // DJ Rotom is not a battle form. It stays out because it comes from the
   // spin-off Pokémon Pokopia, not from a main-series game.
   11112,

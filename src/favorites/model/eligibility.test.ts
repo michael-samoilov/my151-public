@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { eligibleFor, isEmptyTypePicker, kindFor } from './eligibility';
 import { debutSortRank, isBattleForm, regionalPickerTier } from './sortKeys';
-import { isLegendaryEligible, isPowerupForm } from './catalog';
+import { hasListedFormOrder, isLegendaryEligible, isPowerupForm } from './catalog';
 import { TYPE_NAMES } from '@/types/pokemon';
 
 describe('eligibleFor', () => {
@@ -86,8 +86,11 @@ describe('eligibleFor', () => {
         const ranks = tieredMons.map(debutSortRank);
         expect(ranks, `${type}|${gen} debut games`).toEqual(ranks.slice().sort((a, b) => a - b));
         for (const rank of new Set(ranks)) {
-          // Eternamax stays inside Eternatus's group despite its battle classification.
-          const game = tieredMons.filter((mon) => debutSortRank(mon) === rank && mon.id !== 10190);
+          // Eternamax stays inside Eternatus's group despite its battle
+          // classification, and outside the Gimmick row each Terastal Ogerpon
+          // follows its mask.
+          const game = tieredMons.filter((mon) => debutSortRank(mon) === rank && mon.id !== 10190
+            && !(type !== 'gimmick' && isBattleForm(mon) && hasListedFormOrder(mon.ownerId)));
           const kinds = game.map((mon) => Number(isBattleForm(mon)));
           expect(kinds, `${type}|${gen} battle forms`).toEqual(kinds.slice().sort((a, b) => a - b));
           for (const kind of new Set(kinds)) {

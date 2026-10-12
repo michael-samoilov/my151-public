@@ -145,7 +145,7 @@ describe('alternate picker forms', () => {
     expect(getPickerMon(746)?.sprite).toBe('/sprites/pokemon/746.png');
   });
 
-  it('keeps battle appearances, DJ Rotom, and the new Megas beside their species', () => {
+  it('keeps battle appearances, Terastal Ogerpon, DJ Rotom, and the new Megas beside their species', () => {
     const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
       eligibleFor(type, gen).map((mon) => mon.id);
     const cells = [
@@ -158,6 +158,14 @@ describe('alternate picker forms', () => {
       [[802, 11111], ['fighting', 7], ['ghost', 7], ['legendary', 7], ['fighting', 'legendary']],
       // Female Mega Meowstic follows the male Mega in every gimmick cell.
       [[10314, 10326], ['gimmick', 6], ['psychic', 'gimmick']],
+      // Outside the Gimmick cells, each Terastal Ogerpon follows its mask,
+      // although battle forms otherwise sort last.
+      [[1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116], ['grass', 9], ['grass', 'legendary'], ['legendary', 9]],
+      [[10273, 11114], ['water', 9], ['water', 'legendary']],
+      [[10274, 11115, 1020], ['fire', 9], ['fire', 'legendary']],
+      [[10275, 11116, 1022], ['rock', 9], ['rock', 'legendary']],
+      // In the Gimmick cells they sort as battle forms, before Terapagos's.
+      [[11113, 11114, 11115, 11116, 10276, 10277], ['gimmick', 9], ['legendary', 'gimmick']],
     ] as const;
     for (const [expected, ...positions] of cells) {
       for (const [type, gen] of positions) {

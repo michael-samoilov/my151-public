@@ -64,7 +64,8 @@ const FIRST_BY_LINE = new Map<number, number>();
 const listedOrder = (ids: number[]) => new Map(ids.map((id, index) => [id, index]));
 /** Form order within one species, where ID order would read wrong. */
 const FORM_ORDER_BY_OWNER = new Map([
-  [1017, listedOrder([1017, 10273, 10274, 10275])],
+  // Each Terastal form follows its mask.
+  [1017, listedOrder([1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116])],
   // Each Overdrive follows the fusion it belongs to.
   [646, listedOrder([646, 10022, 11107, 10023, 11108])],
 ]);
@@ -178,7 +179,7 @@ export function isPowerupForm(mon: PickerMon): boolean {
   return mon.source === 'powerup';
 }
 
-const TERASTAL_FORM_IDS = new Set([10276, 10277]);
+const TERASTAL_FORM_IDS = new Set([10276, 10277, 11113, 11114, 11115, 11116]);
 
 export function isTerastalForm(mon: PickerMon): boolean {
   return TERASTAL_FORM_IDS.has(mon.id);
@@ -196,6 +197,11 @@ export function isStarter(mon: PickerMon): boolean {
 /** Evolution chain for this form. Members of one chain stay on one picker row. */
 export function evolutionLineKey(mon: PickerMon): number {
   return LINE_BY_ID.get(mon.id) ?? LINE_BY_ID.get(mon.ownerId) ?? mon.id;
+}
+
+/** Whether the species lists its form order in `FORM_ORDER_BY_OWNER`. */
+export function hasListedFormOrder(ownerId: number): boolean {
+  return FORM_ORDER_BY_OWNER.has(ownerId);
 }
 
 export function comparePickerOrder(a: PickerMon, b: PickerMon): number {

@@ -206,4 +206,11 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   // The male Mega (10314) comes from powerupForms.json. The slug gives this
   // one the female marker.
   { id: 10326, ownerId: 678, name: 'meowstic-female-mega', types: ['psychic'], source: 'powerup' },
+  // Terastallized Ogerpon in each mask: battle-only forms 4 to 7 of Scarlet
+  // and Violet's personal table, which match each mask's types and stats.
+  // PokéAPI has no record of them; the slugs follow Pokémon Showdown.
+  { id: 11113, ownerId: 1017, name: 'ogerpon-teal-tera', types: ['grass'] },
+  { id: 11114, ownerId: 1017, name: 'ogerpon-wellspring-tera', types: ['grass', 'water'] },
+  { id: 11115, ownerId: 1017, name: 'ogerpon-hearthflame-tera', types: ['grass', 'fire'] },
+  { id: 11116, ownerId: 1017, name: 'ogerpon-cornerstone-tera', types: ['grass', 'rock'] },
 ];

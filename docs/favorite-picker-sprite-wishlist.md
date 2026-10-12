@@ -13,7 +13,6 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Armored Mewtwo | Mewtwo's Gen 1 legendary family | No matching sprite verified. |
 | Zygarde Cell | Gen 6 Zygarde family | No matching battle-style sprite verified. |
 | Zygarde Core | Gen 6 Zygarde family | No matching battle-style sprite verified. |
-| Ogerpon Terastal mask variants | Gen 9 legendary / gimmick | Prior artwork was rejected. Four newer Gen 5 source candidates found 2026-09-30; preview-only checklist shows them. No form registered. |
 | Koraidon Limited Build | Gen 9 Koraidon family | No distinct matching sprite verified. |
 | Miraidon Low-Power Mode | Gen 9 Miraidon family | No distinct matching sprite verified. |
 | Purple Kecleon (Mystery Dungeon) | Gen 3 Kecleon family | No matching Gen 5-style front sprite verified. |
@@ -39,8 +38,13 @@ Michael chose these sprites from the sprite lab's locked selections (`sprite-lab
 | DJ Rotom | 11112 | `alternateForms.ts`, Generation IX: it debuted in Pokémon Pokopia (2026). It sorts last in Electric × IX and Ghost × IX. |
 | Mega Zygarde | 10301 | `src/league/data/powerupForms.json`, not a picker-only form. Its label is unique to Zygarde, and `npm run league:powerups` dropped it only because PokeAPI has no sprite. With the local sprite in place, the harvester keeps it, so the League builder also gets a Mega button on Zygarde. |
 | Female Mega Meowstic | 10326 | Picker-only `source: 'powerup'` form in `alternateForms.ts`. The harvester keeps one Mega per label, and this one shares "Mega Meowstic" with the male Mega (10314). PokeAPI's own 10326 is a pixel copy of the male, so the app ships its own file. In the League builder, female Meowstic (10025) gets this Mega. |
+| Ogerpon Teal, Wellspring, Hearthflame, and Cornerstone Mask Terastal | 11113–11116 | `alternateForms.ts` and `TERASTAL_FORM_IDS`. In each type × Gen IX cell and Legendary cell, each follows its mask; in the Gimmick cells, they sort before Terapagos's Terastal forms. Kept out of the League builder as battle forms. Sprites by KingOfThe-X-Roads (`sprite-lab/inputs/kingofthe-x-roads/`), not from the locked selections. |
 
 Overdrive, the two phases, Zenith, and DJ Rotom have no official name in any language. Every locale shows the same English descriptor, with `english-only` provenance in the name catalogs.
+
+No game names the Terastal Ogerpon forms. Each locale joins two official names, the mask and Terapagos's Terastal Form, such as "Wellspring Mask — Terastal Form", with `official-composed` provenance.
+
+Michael decided on 2026-10-12 that every Ogerpon sprite comes from one artist, KingOfThe-X-Roads. The four masks (1017 and 10273–10275) also use his own uploads, in his own placement.
 
 ## Pokopia candidates
 

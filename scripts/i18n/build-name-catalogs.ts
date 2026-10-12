@@ -45,6 +45,14 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
   11112: { descriptor: 'DJ' },
 };
 
+/**
+ * Terastallized Ogerpon, by app id, with the mask each one wears. No game
+ * names these battle forms. Each joins two official descriptors in the same
+ * language: the mask, then Terapagos's Terastal Form.
+ */
+const TERASTAL_MASKS: Readonly<Record<number, number>> = { 11113: 1017, 11114: 10273, 11115: 10274, 11116: 10275 };
+const TERASTAL_FORM = 10276;
+
 /** Regions whose forms the app carries, by PokeAPI region id. */
 const REGIONS: Record<string, number> = { alola: 7, galar: 8, hisui: 9, paldea: 10 };
 
@@ -359,6 +367,14 @@ async function main(): Promise<void> {
       if (!mega || !variant || (own && own !== mega)) continue;
       catalog.forms[variantId] = `${mega} — ${variant}`;
       catalog.formSource[variantId] = 'official-composed';
+    }
+    for (const [id, mask] of Object.entries(TERASTAL_MASKS)) {
+      if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`Terastal form ${id} is not a picker form`);
+      const maskName = catalog.forms[mask];
+      const terastal = catalog.forms[TERASTAL_FORM];
+      if (!maskName || !terastal) throw new Error(`${locale} has no official name for ${maskName ? TERASTAL_FORM : mask}`);
+      catalog.forms[id] = `${maskName} — ${terastal}`;
+      catalog.formSource[id] = 'official-composed';
     }
     for (const [id, { descriptor, officialPrefix }] of Object.entries(ENGLISH_ONLY_FORMS)) {
       if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`English-only form ${id} is not a picker form`);
