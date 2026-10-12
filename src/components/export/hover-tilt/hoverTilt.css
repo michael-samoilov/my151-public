@@ -76,8 +76,8 @@
   --hover-tilt-mask-mode: match-source;
   --hover-tilt-blend-mode: overlay;
   --hover-tilt-glare-intensity: 1;
-  --gradient-x: var(--pointer-x);
-  --gradient-y: var(--pointer-y);
+  --gradient-x: var(--foil-at-x);
+  --gradient-y: var(--foil-at-y);
   /* Size pulls the light stops in toward the pointer, then fades them to a
      clear neutral stop. At 1 this is close to hover-tilt's glare, whose light
      already crossed mid-gray near 56%. Smaller keeps the light in a hotspot,
