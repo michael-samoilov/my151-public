@@ -58,6 +58,8 @@ const host = (href: string) => new URL(href, window.location.href).hostname.repl
 
 const indent = (line: string) => line.length - line.trimStart().length;
 const isRule = (line: string) => /^\s*[=\-_*]{3,}\s*$/.test(line);
+/** Short enough to fit the license box on a 320 px phone. */
+const RULE_COLUMNS = 32;
 /** A Markdown heading, or a short capitals line with no closing punctuation ("PREAMBLE"). */
 const isHeading = (line: string) => {
   const text = line.trim();
@@ -94,13 +96,15 @@ function continues(prev: string, line: string, beforePrev: string | undefined): 
  * held one or two words. Blank lines, list items, headings and rules keep
  * their breaks, so the license's structure survives. A centred line (an
  * indent of 12 or more, like GPL's title) loses its indent, which would
- * otherwise wrap it on a phone.
+ * otherwise wrap it on a phone. A rule line shrinks to RULE_COLUMNS, so its
+ * dashes do not break onto a second line.
  */
 function reflow(text: string): string {
   const lines = text.replace(/\r\n?/g, '\n').replace(/^\n+|\s+$/g, '').split('\n');
   const out: string[] = [];
   lines.forEach((line, i) => {
     if (i > 0 && continues(lines[i - 1], line, lines[i - 2])) out[out.length - 1] += ` ${line.trim()}`;
+    else if (isRule(line)) out.push(line.trim().slice(0, RULE_COLUMNS));
     else out.push(indent(line) >= 12 ? line.trim() : line.trimEnd());
   });
   return out.join('\n');
