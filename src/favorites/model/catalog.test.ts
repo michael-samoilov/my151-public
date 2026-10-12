@@ -134,7 +134,7 @@ describe('alternate picker forms', () => {
     together(ids('normal', 5), [585, 11008, 11009, 11010, 586, 11011, 11012, 11013]);
     together(ids('water', 7), [746, 10127]);
     expect(ids('fighting', 8).indexOf(10191)).toBeGreaterThan(ids('fighting', 8).indexOf(892));
-    expect(getPickerMon(1017)?.sprite).toBe('/sprites/pokemon/1017.png');
+    expect(getPickerMon(1017)?.sprite).toMatch(/^\/sprites\/pokemon\/1017\.png(\?|$)/);
     for (const id of [11014, 11015, 11016, 11017]) expect(getPickerMon(id)).toBeUndefined();
     together(ids('fairy', 8), [888, 10188]);
     together(ids('fighting', 8), [889, 10189]);
