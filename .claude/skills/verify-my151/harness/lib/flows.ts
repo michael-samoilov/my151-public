@@ -1928,12 +1928,14 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     await closePicker();
     await clickCell(s, '[data-testid="favorites-cell-favorite-1"]');
     await waitFor(s, '[data-testid="favorites-picker"]');
+    // The Gen I favorite has nothing to choose yet: the empty state names the
+    // cause and offers the way there, a button that opens a Gen I cell.
     const emptyCard = await s.evalJson<boolean>(`
       const empty = document.querySelector('[data-testid="favorites-picker-empty"]');
       return !!empty && !!empty.querySelector('svg')
         && !!empty.querySelector('h2')?.textContent?.trim()
         && !!empty.querySelector('p')?.textContent?.trim()
-        && !empty.querySelector('button');
+        && !!empty.querySelector('button')?.textContent?.trim();
     `);
     checks.push(ok('favorites:pointer-empty-guidance', emptyCard));
     await s.screenshot(ctx.shot('favorites-pointer-empty'));
