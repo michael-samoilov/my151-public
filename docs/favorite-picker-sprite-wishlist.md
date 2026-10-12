@@ -31,18 +31,23 @@ Michael chose these sprites from the sprite lab's locked selections (`sprite-lab
 
 | Form | Picker id | Placement and note |
 | --- | --- | --- |
-| Furfrou Heart, Star, Diamond, Debutante, Matron, Dandy, La Reine, Kabuki, and Pharaoh trims | 11096–11104 | `alternateForms.ts`, in game order, right after Furfrou in Normal × VI. |
+| Furfrou Heart, Star, Diamond, Debutante, Matron, Dandy, La Reine, Kabuki, and Pharaoh trims | 11096–11104 | `alternateForms.ts`, in game order, right after Furfrou in Normal × VI. Base Furfrou (676) takes the same pack's Natural Form, so all ten Furfrou sprites have one source. |
 | Reshiram Overdrive and Zekrom Overdrive | 11105, 11106 | `alternateForms.ts`, beside each owner in its type × Gen V cells and Legendary × Gen V. Kept out of the League builder as battle states. |
 | Black Kyurem Overdrive and White Kyurem Overdrive | 11107, 11108 | `alternateForms.ts`, owned by Kyurem (646). The Kyurem line reads Kyurem, Black Kyurem, its Overdrive, White Kyurem, its Overdrive. |
 | Solgaleo Radiant Sun phase, Lunala Full Moon phase, and Marshadow Zenith | 11109–11111 | `alternateForms.ts`, beside each owner in its Gen VII cells. |
 | DJ Rotom | 11112 | `alternateForms.ts`, Generation IX: it debuted in Pokémon Pokopia (2026). It sorts last in Electric × IX and Ghost × IX. |
 | Mega Zygarde | 10301 | `src/league/data/powerupForms.json`, not a picker-only form. Its label is unique to Zygarde, and `npm run league:powerups` dropped it only because PokeAPI has no sprite. With the local sprite in place, the harvester keeps it, so the League builder also gets a Mega button on Zygarde. |
-| Female Mega Meowstic | 10326 | Picker-only `source: 'powerup'` form in `alternateForms.ts`. The harvester keeps one Mega per label, and this one shares "Mega Meowstic" with the male Mega (10314). PokeAPI's own 10326 is a pixel copy of the male, so the app ships its own file. In the League builder, female Meowstic (10025) gets this Mega. |
 | Ogerpon Teal, Wellspring, Hearthflame, and Cornerstone Mask Terastal | 11113–11116 | `alternateForms.ts` and `TERASTAL_FORM_IDS`. In each type × Gen IX cell and Legendary cell, each follows its mask; in the Gimmick cells, they sort before Terapagos's Terastal forms. Kept out of the League builder as battle forms. Sprites by KingOfThe-X-Roads (`sprite-lab/inputs/kingofthe-x-roads/`), not from the locked selections. |
 
 Overdrive, the two phases, Zenith, and DJ Rotom have no official name in any language. Every locale shows the same English descriptor, with `english-only` provenance in the name catalogs.
 
-No game names the Terastal Ogerpon forms. Each locale joins two official names, the mask and Terapagos's Terastal Form, such as "Wellspring Mask — Terastal Form", with `official-composed` provenance.
+No game names the Terastal Ogerpon forms. Each locale joins two official names, the mask and Terapagos's Terastal Form, with `official-composed` provenance. The tooltip reads "Ogerpon (Wellspring Mask, Terastal Form)" and the compact code is WM T: the mask's code, then Terapagos's T. Black and White Kyurem Overdrive read B O and W O by the same rule.
+
+Every new form follows production's name format (#203): a compact code from `scripts/i18n/compact-form-labels.ts` and a full tooltip name from `src/i18n/fullPokemonName.ts`. Mega Zygarde reads "Mega Zygarde" (M). The other qualifiers take parentheses, such as "Furfrou (Heart Trim)" (H) and "Rotom (DJ)" (D).
+
+Female Mega Meowstic (10326) is not added. Michael decided on 2026-10-12: PokéAPI's official artwork and HOME render for the male and female Mega are pixel-identical, so a female tile would duplicate the male one. The male Mega (10314) keeps its PokéAPI sprite.
+
+Base Furfrou (676) changed on 2026-10-12, by Michael's rules of that day: one artist per species when avoidable, and Smogon has no trim sprites. The new file is the pack's `FURFROU.png` at 1x (every second pixel of the 192x192 file), placed as `sprite-lab/src/chooser/missing.py` placed the trims: centered on the old sprite's ink and on its bottom edge. A rerun of `missing.py` reads the new 676.png, whose ink center sits half a pixel left, so it would place three trims (Heart, Diamond, and Kabuki) 1 px further left. Keep the committed trim files.
 
 Michael decided on 2026-10-12 that every Ogerpon sprite comes from one artist, KingOfThe-X-Roads. The four masks (1017 and 10273–10275) also use his own uploads, in his own placement.
 
