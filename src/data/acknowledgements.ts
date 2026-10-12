@@ -120,7 +120,9 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         usedFor: 'Sprites that replace single PokéAPI sprites or fill its gaps, listed below.',
         license: 'Free to use, with credit',
         terms: 'Reported, not read at the source: free to use with credit to the creator.',
-        artists: ['Caruban', 'ace_stryfe', 'KingOfThe-X-Roads', 'camiloveso', 'Mak'],
+        // Every artist the pack's Credits.txt names (read 2026-10-11). Its per-sprite sheet covers
+        // only Generation 9 species, so it names no artist for the sprites my151 takes from it.
+        artists: ['KingOfThe-X-Roads', 'Mak', 'Caruban', 'jinxed', 'leParagon', 'Sopita_Yorita', 'Azria', 'Mashirosakura', 'JordanosArt', 'Abnayami', 'OldSoulja', 'Katten', 'Divaruta 666', 'Clara', 'Skyflyer', 'AshnixsLaw', 'ace_stryfe', 'camiloveso'],
         links: ['https://github.com/Teffa14/AutoPTU/tree/main/Generation%209%20Pack%20v3.3.4'],
       },
       {
