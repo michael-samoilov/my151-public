@@ -15,8 +15,10 @@ describe('alternate picker forms', () => {
       const mon = getPickerMon(form.id);
       expect(mon?.name, String(form.id)).toBe(form.name);
       expect(mon?.types, String(form.id)).toEqual(form.types);
-      expect(existsSync(`public${mon?.sprite}`), String(form.id)).toBe(true);
-      expect(statSync(`public${mon?.sprite}`).size, String(form.id)).toBeGreaterThan(100);
+      // A replaced sprite's URL carries a ?v= revision (src/lib/spriteUrl.ts); the file has none.
+      const file = `public${mon?.sprite.split('?')[0]}`;
+      expect(existsSync(file), String(form.id)).toBe(true);
+      expect(statSync(file).size, String(form.id)).toBeGreaterThan(100);
       if (form.id !== 10191) expect(dexIds.has(form.id), String(form.id)).toBe(false);
     }
     expect(new Set(allPickerMons().map((m) => m.id)).size).toBe(allPickerMons().length);
