@@ -24,6 +24,27 @@ import { enData } from './en.data';
 
 /** Hand-authored UI copy. Data-module strings live in the generated en.data.ts. */
 export const enUi = {
+  // The footer's Acknowledgements panel. Only the chrome is here: the credited
+  // names, credit lines and license texts stay in English in every locale
+  // (src/data/acknowledgements.ts).
+  'ack.artists': 'Artists',
+  'ack.back': 'Back',
+  'ack.by': 'by {name}',
+  'ack.count_one': '{count} credit',
+  'ack.count_other': '{count} credits',
+  'ack.credit': 'Credit',
+  'ack.group.code': 'Code',
+  'ack.group.data': 'Data',
+  'ack.group.fonts': 'Fonts',
+  'ack.group.icons': 'Icons and art',
+  'ack.group.sprites': 'Sprites',
+  'ack.intro': 'my151 is a free, non-profit fan site, built with the work of the people and projects below. Thank you. Tap one to see its credit and license.',
+  'ack.license': 'License',
+  'ack.loadFailed': 'The license text did not load.',
+  'ack.loading': 'Loading…',
+  'ack.open': 'Open {site}',
+  'ack.title': 'Acknowledgements',
+  'ack.usedFor': 'Used for',
   'advisor.allTypes': 'All 18 types covered',
   'advisor.categoryMissing': 'No {category} assigned yet',
   'advisor.categoryPresent': '{category} represented',
@@ -381,6 +402,7 @@ export const enUi = {
   'feedback.sending': 'Sending…',
   'feedback.thanks': 'Thanks — that helps.',
   'feedback.title': 'Report a problem',
+  'footer.acknowledgements': 'Acknowledgements',
   'footer.disclaimer': 'Not affiliated with or endorsed by Nintendo.',
   'footer.report': 'Report a problem',
   'header.tagline': ' — make your own custom Pokédex',
