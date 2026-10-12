@@ -34,7 +34,7 @@ async function artifact(page: Page, testInfo: TestInfo, name: string, evidence: 
 test('Analytics stays locked below 25 favorites, and the 25th unlocks it with the Dex popup', async ({ page }, testInfo) => {
   expect(Object.keys(twentyFour)).toHaveLength(24);
   await open(page, twentyFour);
-  await expect(tab(page)).toHaveAttribute('data-locked', '');
+  await expect(tab(page)).toHaveAttribute('data-locked');
   await expect(tab(page)).toHaveAccessibleName('Analytics locked. Reach 25 Pokémon to unlock');
   await tab(page).click();
   const tip = page.getByRole('tooltip');
@@ -49,7 +49,7 @@ test('Analytics stays locked below 25 favorites, and the 25th unlocks it with th
   await page.getByTestId('favorites-pick-7').click();
   await expect(nudge(page)).toBeVisible();
   await expect(nudge(page)).toContainText('Your favorites have enough shape to analyze.');
-  await expect(tab(page)).not.toHaveAttribute('data-locked', '');
+  await expect(tab(page)).not.toHaveAttribute('data-locked');
   const popup = await nudge(page).innerText();
   await nudge(page).getByRole('button', { name: 'Open Analytics' }).click();
   await expect(tab(page)).toHaveAttribute('aria-selected', 'true');
@@ -61,7 +61,7 @@ test('Analytics stays locked below 25 favorites, and the 25th unlocks it with th
 
 test('the unlock stays after cells are cleared', async ({ page }, testInfo) => {
   await open(page, { 'fire|1': 4 }, true);
-  await expect(tab(page)).not.toHaveAttribute('data-locked', '');
+  await expect(tab(page)).not.toHaveAttribute('data-locked');
   await tab(page).click();
   await expect(tab(page)).toHaveAttribute('aria-selected', 'true');
   await expect(dashboard(page)).toBeVisible();
@@ -70,7 +70,7 @@ test('the unlock stays after cells are cleared', async ({ page }, testInfo) => {
 
 test('a restored grid of 25 unlocks Analytics without the popup', async ({ page }, testInfo) => {
   await open(page, twentyFive);
-  await expect(tab(page)).not.toHaveAttribute('data-locked', '');
+  await expect(tab(page)).not.toHaveAttribute('data-locked');
   // The popup would show 640 ms after an unlock; a restored grid never arms it.
   await page.waitForTimeout(1500);
   await expect(nudge(page)).toHaveCount(0);

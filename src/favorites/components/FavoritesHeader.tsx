@@ -44,7 +44,7 @@ export function FavoritesHeader({ fills, filled, analyticsUnlocked, currentView,
             <TooltipTrigger asChild>
               <button type="button" role="tab" id={`favorites-tab-${view}`}
                 aria-label={t('nav.analyticsLocked', { count: ANALYTICS_UNLOCK_AT })} aria-selected={false}
-                aria-disabled tabIndex={-1} data-state="inactive" data-locked
+                tabIndex={-1} data-state="inactive" data-locked
                 onClick={() => setLockTip((open) => !open)}
                 className="inline-flex h-7 cursor-pointer items-center justify-center rounded-md px-1.5 text-xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:px-3">
                 <AnalyticsLockedIcon className="h-4 w-4 shrink-0" />
