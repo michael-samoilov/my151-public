@@ -64,6 +64,7 @@ const WORKSHOP_SAMPLES = [
   { id: 'favorites', label: 'Favorites chart' },
   { id: 'test', label: 'Test card' },
   { id: 'flat', label: 'Flat gray card' },
+  { id: 'flat-league', label: 'Flat gray, league' },
   { id: 'flat-tall', label: 'Flat gray, tall' },
 ] as const;
 
@@ -106,6 +107,7 @@ function renderSample(sample: WorkshopSample): Promise<Blob> {
   if (sample === 'favorites') return renderFullChart(buildFavoritesSnapshot(WORKSHOP_FAVORITE_FILLS));
   if (sample === 'test') return renderFoilTestCard();
   if (sample === 'flat') return renderFoilFlatCard();
+  if (sample === 'flat-league') return renderFoilFlatCard('league');
   if (sample === 'flat-tall') return renderFoilFlatCard('tall');
   const full = sample !== 'league';
   const layout =

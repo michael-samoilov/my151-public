@@ -132,10 +132,11 @@ export async function renderFoilTestCard(): Promise<Blob> {
  * One flat mid-gray field in the export frame. With no ink edges to break
  * them up, the holo bands show their whole cross-section: the highlight, the
  * darker core, and the reflected light on either side. The default is the
- * test card's shape; `tall` matches the full Dex export's.
+ * test card's shape; `league` matches the filled league export's, and `tall`
+ * the full Dex export's.
  */
-export async function renderFoilFlatCard(shape: 'wide' | 'tall' = 'wide'): Promise<Blob> {
-  const [w, h] = shape === 'tall' ? [1100, 1800] : [W, H];
+export async function renderFoilFlatCard(shape: 'wide' | 'league' | 'tall' = 'wide'): Promise<Blob> {
+  const [w, h] = shape === 'tall' ? [1100, 1800] : shape === 'league' ? [1260, 1700] : [W, H];
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
