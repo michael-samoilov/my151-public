@@ -58,7 +58,6 @@ import { exportCornerRadius } from '@/lib/exportPngShape';
 import './ExportPreview3D.css';
 import './foil/pokeHolo.css';
 import './foil/my151Holo.css';
-import { HoloShineParts } from './foil/pokeHoloParts';
 import { setPokeHoloPointer } from './foil/pokeHoloPointer';
 
 const TAP_MS = 320;
@@ -119,7 +118,6 @@ export function ExportPreview3D({
   darkCard = false,
   camera = previewPerspectivePx,
   size = 1,
-  shine = 'paint',
 }: {
   src: string | null;
   alt: string;
@@ -138,13 +136,6 @@ export function ExportPreview3D({
    * room the tilt leaves. `room` fills that room, as on October 10.
    */
   size?: number | 'room';
-  /**
-   * `paint` moves the V shine's backgrounds, which repaints the shine on
-   * every frame. `move`, in the workshop only, slides its band layers with
-   * transforms: half the raster work in Chrome, but more layers to blend,
-   * so only a real GPU shows whether it is smoother.
-   */
-  shine?: 'move' | 'paint';
 }) {
   const t = useT();
   const stageRef = useRef<HTMLDivElement>(null);
@@ -905,17 +896,7 @@ export function ExportPreview3D({
                 className={cn('export-foil-layer', foilLayerClassName(id))}
                 aria-hidden
                 data-foil-layer={id}
-                data-holo-engine={id === 'holographic' ? shine : undefined}
-              >
-                {id === 'holographic' && shine === 'move' ? (
-                  <>
-                    <HoloShineParts />
-                    <span className="export-foil-holo-cross">
-                      <HoloShineParts />
-                    </span>
-                  </>
-                ) : null}
-              </div>
+              />
             ))}
           </div>
           </div>

@@ -1,6 +1,6 @@
 // Adapted from poke-holo (pokemon-cards-css) by Simon Goellner, GNU GPL 3.0:
 // https://github.com/simeydotme/pokemon-cards-css. Kept apart with pokeHolo.css
-// and pokeHoloParts.tsx so the independent redraw never reads it.
+// so the independent redraw never reads it.
 
 /** poke-holo maps the pointer to 37-63% across and 33-67% down for the shine. */
 export function setPokeHoloPointer(el: HTMLElement, pointerX: number, pointerY: number) {

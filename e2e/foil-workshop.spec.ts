@@ -31,7 +31,7 @@ test.describe('export foil workshop', () => {
       .poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 })
       .toBe('1');
     await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
-    await expect(page.locator('[data-foil-control]')).toHaveCount(5);
+    await expect(page.locator('[data-foil-control]')).toHaveCount(7);
     for (const id of ['pointLight', 'iridescence', 'glareSize']) {
       await expect(page.locator(`[data-foil-slider="${id}"]`)).toBeVisible();
     }
@@ -126,6 +126,30 @@ test.describe('export foil workshop', () => {
 
     await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('color-dodge');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-blend-mode')).toBe('overlay');
+  });
+
+  test('the holo switch swaps the live pair for the redrawn pair, and the link keeps it', async ({ page }) => {
+    await page.goto('/foil-workshop?sample=dex');
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 30_000 }).toBe('1');
+    const layer = (id: string) => page.locator(`[data-foil-layer="${id}"]`);
+    await expect(page.locator('[data-workshop-holo="current"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(layer('holographic')).toHaveCount(1);
+    await expect(layer('holoRainbow')).toHaveCount(1);
+    await expect(layer('prism')).toHaveCount(0);
+    await expect(layer('gleam')).toHaveCount(0);
+
+    await page.locator('[data-workshop-holo="new"]').click();
+    await expect(page.locator('[data-workshop-holo="new"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(layer('prism')).toHaveCount(1);
+    await expect(layer('gleam')).toHaveCount(1);
+    await expect(layer('holographic')).toHaveCount(0);
+    await expect(layer('holoRainbow')).toHaveCount(0);
+
+    await page.goto(page.url());
+    await expect(page.locator('[data-workshop-holo="new"]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(layer('gleam')).toHaveCount(1);
+    await expect(layer('holographic')).toHaveCount(0);
   });
 
   test('every sample renders a card', async ({ page }) => {
