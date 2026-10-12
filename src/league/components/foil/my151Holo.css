@@ -49,78 +49,114 @@
   opacity: calc(var(--foil-opacity) * var(--foil-prism));
 }
 
-/* V gleam: light on polished cylinders. Soft, bell-shaped stripes on a
-   steep diagonal set the brightness, and a long wave on the same diagonal
-   makes one stripe the highlight, dims its neighbors to a core shadow and
-   lets the next one back as reflected light. The color comes from a
-   separate, slow spectrum that runs up the card, so each stripe shows one
-   tint and the tints step through the spectrum from stripe to stripe.
-   A colored grain tile breaks the light into foil sparkle. Black is no
-   change under color-dodge, so only the stripes light the ink. The stripe
-   and wave tiles are wider than tall, so their period follows the card's
-   width more than its height. They slide across the card as the pointer
-   moves sideways, and the spectrum slides up and down as it tips. */
+/* V gleam: two sets of soft stripes on one steep diagonal. The first set
+   is strong and drifts slowly with the pointer; the second is weaker,
+   wider spaced, and runs fast the other way as the card tilts sideways.
+   Where a stripe of one set passes over a stripe of the other, their
+   light adds up and color-dodge turns it into a bright knot, so the glint
+   jumps along the card while the stripes beside it stay dim. A slow
+   pastel spectrum running up the card tints every stripe by its height
+   on the card and scrolls up and down as the card tips. A colored grain
+   tile breaks the light into foil sparkle. The second set lives on the
+   ::before box and adds to the first with plus-lighter; the layer then
+   lights the ink with color-dodge, where black means no change. The
+   stripe tiles are wider than tall, so the period follows the card's
+   width more than its height. */
 .export-foil-gleam {
   --gleam-period: 6.73%;
-  --gleam-wave: 17.17%;
+  --gleam-period-b: 8.95%;
   --gleam-hue-period: 44.3%;
   --gleam-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='g' x='0' y='0' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' seed='151' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1.1 0 0 0 0.15  0.55 0.55 0 0 0.15  0.55 0 0.55 0 0.15  0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23g)'/%3E%3C/svg%3E");
   background-color: #000;
   background-image:
     var(--gleam-grain),
     repeating-linear-gradient(
-      127deg,
-      hsl(0 0% 10%) calc(var(--gleam-wave) * 0),
-      hsl(0 0% 15%) calc(var(--gleam-wave) * 0.15),
-      hsl(0 0% 40%) calc(var(--gleam-wave) * 0.3),
-      hsl(0 0% 78%) calc(var(--gleam-wave) * 0.4),
-      hsl(0 0% 100%) calc(var(--gleam-wave) * 0.5),
-      hsl(0 0% 78%) calc(var(--gleam-wave) * 0.6),
-      hsl(0 0% 40%) calc(var(--gleam-wave) * 0.7),
-      hsl(0 0% 15%) calc(var(--gleam-wave) * 0.85),
-      hsl(0 0% 10%) calc(var(--gleam-wave) * 1)
+      0deg,
+      oklch(0.87 0.07 125) calc(var(--gleam-hue-period) * 0),
+      oklch(0.87 0.07 150) calc(var(--gleam-hue-period) * 0.167),
+      oklch(0.87 0.07 230) calc(var(--gleam-hue-period) * 0.333),
+      oklch(0.87 0.07 280) calc(var(--gleam-hue-period) * 0.45),
+      oklch(0.87 0.07 340) calc(var(--gleam-hue-period) * 0.62),
+      oklch(0.87 0.07 405) calc(var(--gleam-hue-period) * 0.8),
+      oklch(0.87 0.07 485) calc(var(--gleam-hue-period) * 1)
     ),
     repeating-linear-gradient(
       127deg,
       hsl(0 0% 0%) 0,
       hsl(0 0% 0%) calc(var(--gleam-period) * 0.284),
-      hsl(0 0% 4.6%) calc(var(--gleam-period) * 0.32),
-      hsl(0 0% 22%) calc(var(--gleam-period) * 0.356),
-      hsl(0 0% 50%) calc(var(--gleam-period) * 0.392),
-      hsl(0 0% 82%) calc(var(--gleam-period) * 0.428),
-      hsl(0 0% 96%) calc(var(--gleam-period) * 0.464),
-      hsl(0 0% 100%) calc(var(--gleam-period) * 0.5),
-      hsl(0 0% 97%) calc(var(--gleam-period) * 0.536),
-      hsl(0 0% 78%) calc(var(--gleam-period) * 0.572),
-      hsl(0 0% 52%) calc(var(--gleam-period) * 0.608),
-      hsl(0 0% 29%) calc(var(--gleam-period) * 0.644),
-      hsl(0 0% 12%) calc(var(--gleam-period) * 0.68),
-      hsl(0 0% 1.4%) calc(var(--gleam-period) * 0.716),
+      hsl(0 0% 0%) calc(var(--gleam-period) * 0.32),
+      hsl(0 0% 6.2%) calc(var(--gleam-period) * 0.356),
+      hsl(0 0% 26%) calc(var(--gleam-period) * 0.392),
+      hsl(0 0% 49.6%) calc(var(--gleam-period) * 0.428),
+      hsl(0 0% 59.5%) calc(var(--gleam-period) * 0.464),
+      hsl(0 0% 62%) calc(var(--gleam-period) * 0.5),
+      hsl(0 0% 60.1%) calc(var(--gleam-period) * 0.536),
+      hsl(0 0% 47.1%) calc(var(--gleam-period) * 0.572),
+      hsl(0 0% 27.3%) calc(var(--gleam-period) * 0.608),
+      hsl(0 0% 9.9%) calc(var(--gleam-period) * 0.644),
+      hsl(0 0% 1.2%) calc(var(--gleam-period) * 0.68),
+      hsl(0 0% 0%) calc(var(--gleam-period) * 0.716),
       hsl(0 0% 0%) calc(var(--gleam-period) * 0.752),
       hsl(0 0% 0%) var(--gleam-period)
-    ),
-    repeating-linear-gradient(
-      0deg,
-      oklch(0.91 0.07 125) calc(var(--gleam-hue-period) * 0),
-      oklch(0.91 0.07 150) calc(var(--gleam-hue-period) * 0.167),
-      oklch(0.91 0.07 230) calc(var(--gleam-hue-period) * 0.333),
-      oklch(0.91 0.07 280) calc(var(--gleam-hue-period) * 0.45),
-      oklch(0.91 0.07 340) calc(var(--gleam-hue-period) * 0.62),
-      oklch(0.91 0.07 405) calc(var(--gleam-hue-period) * 0.8),
-      oklch(0.91 0.07 485) calc(var(--gleam-hue-period) * 1)
     );
   background-size:
     128px 128px,
-    705% 500%,
-    353% 150%,
-    100% 300%;
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+    100% 300%,
+    353% 150%;
+  background-repeat: repeat, no-repeat, no-repeat;
   background-position:
     0 0,
-    calc(36.1% - var(--holo-dx) * 18.6%) calc(27.3% + var(--holo-dy) * 27.3%),
-    calc(28.9% - var(--holo-dx) * 5.4%) calc(11.6% + var(--holo-dy) * 0.9%),
-    0 calc(50% + var(--holo-dy) * 31.25%);
-  background-blend-mode: multiply, multiply, multiply, normal;
+    0 calc(50% + var(--holo-dy) * 31.25%),
+    calc(28.9% - var(--holo-dx) * 3.6%) calc(11.6% + var(--holo-dy) * 0.9%);
+  background-blend-mode: multiply, multiply, normal;
   mix-blend-mode: color-dodge;
   opacity: calc(var(--foil-opacity) * var(--foil-gleam));
+}
+
+.export-foil-gleam::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    var(--gleam-grain),
+    repeating-linear-gradient(
+      0deg,
+      oklch(0.87 0.07 125) calc(var(--gleam-hue-period) * 0),
+      oklch(0.87 0.07 150) calc(var(--gleam-hue-period) * 0.167),
+      oklch(0.87 0.07 230) calc(var(--gleam-hue-period) * 0.333),
+      oklch(0.87 0.07 280) calc(var(--gleam-hue-period) * 0.45),
+      oklch(0.87 0.07 340) calc(var(--gleam-hue-period) * 0.62),
+      oklch(0.87 0.07 405) calc(var(--gleam-hue-period) * 0.8),
+      oklch(0.87 0.07 485) calc(var(--gleam-hue-period) * 1)
+    ),
+    repeating-linear-gradient(
+      127deg,
+      hsl(0 0% 0%) 0,
+      hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.284),
+      hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.32),
+      hsl(0 0% 5.5%) calc(var(--gleam-period-b) * 0.356),
+      hsl(0 0% 23.1%) calc(var(--gleam-period-b) * 0.392),
+      hsl(0 0% 44%) calc(var(--gleam-period-b) * 0.428),
+      hsl(0 0% 52.8%) calc(var(--gleam-period-b) * 0.464),
+      hsl(0 0% 55%) calc(var(--gleam-period-b) * 0.5),
+      hsl(0 0% 53.3%) calc(var(--gleam-period-b) * 0.536),
+      hsl(0 0% 41.8%) calc(var(--gleam-period-b) * 0.572),
+      hsl(0 0% 24.2%) calc(var(--gleam-period-b) * 0.608),
+      hsl(0 0% 8.8%) calc(var(--gleam-period-b) * 0.644),
+      hsl(0 0% 1.1%) calc(var(--gleam-period-b) * 0.68),
+      hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.716),
+      hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.752),
+      hsl(0 0% 0%) var(--gleam-period-b)
+    );
+  background-size:
+    128px 128px,
+    100% 300%,
+    353% 150%;
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-position:
+    0 0,
+    0 calc(50% + var(--holo-dy) * 31.25%),
+    calc(32.6% + var(--holo-dx) * 9.6%) 20%;
+  background-blend-mode: multiply, multiply, normal;
+  mix-blend-mode: plus-lighter;
 }
