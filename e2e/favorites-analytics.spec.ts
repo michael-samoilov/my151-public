@@ -29,6 +29,8 @@ async function rowValues(page: Page, dimension: string, key: string) {
   return row.locator('td').allTextContents();
 }
 const number = (text: string) => Number(text.replace(/[^\d.-]/g, ''));
+// Analytics unlocks at 25 favorites and stays unlocked (useAnalyticsUnlock.ts).
+test.beforeEach(({ page }) => page.addInitScript(() => localStorage.setItem('personal-151-favorites-analytics-v1', '1')));
 
 test('short header retains full search title and keyboard tabs stay on the same URL', async ({ page, request }, testInfo) => {
   await seed(page, { 'fire|1': 6 });

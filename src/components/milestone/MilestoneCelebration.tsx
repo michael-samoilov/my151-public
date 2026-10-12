@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useT, type NoArgKey } from '@/i18n';
-import { createPortal } from 'react-dom';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import type { AppView } from '@/components/layout/Header';
-import { X } from 'lucide-react';
 import { fireCompletionConfetti, preloadCompletionConfetti } from './completionConfetti';
+import { NudgeCard } from './NudgeCard';
 
 /**
  * Milestone celebrations — the once-per-user payoff moments. When a milestone
@@ -30,9 +29,6 @@ const NUDGES: Record<number, Nudge> = {
   151: { nav: 'view', titleKey: 'nudge.151.title', bodyKey: 'nudge.151.body', ctaKey: 'nudge.151.cta' },
 };
 
-const AUTO_DISMISS_MS = 10000;
-const CARD_W = 264;
-
 // The popup drops down over the progress bar, so it must not appear until the
 // bar's own animation has fully played and the user has seen it. On mobile the
 // bar defers its count ~320ms after the selection sheet closes, then runs its
@@ -49,7 +45,6 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
   const isDesktop = useViewportAtLeast(1024);
   const nudge = celebration != null ? NUDGES[celebration] : null;
 
-  const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const confettiFor = useRef<number | null>(null);
 
   // On mobile the milestone is usually crossed from inside the selection sheet.
@@ -87,30 +82,6 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
     if (celebration != null) sendEventBeacon(`milestone-${celebration}`, { once: true });
   }, [celebration]);
 
-  // Track the target nav button's position (stale anchor is harmless — the
-  // render guard hides the card whenever there's no active nudge).
-  useLayoutEffect(() => {
-    if (!nudge) return;
-    const el = document.querySelector(`[data-nav="${nudge.nav}"]`);
-    if (!el) return;
-    const update = () => setAnchor(el.getBoundingClientRect());
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [nudge]);
-
-  // Auto-dismiss — timed from when the card actually appears (ready), so a long
-  // mobile sheet session doesn't eat into its on-screen life.
-  useEffect(() => {
-    if (!nudge || !ready) return;
-    const t = setTimeout(dismiss, AUTO_DISMISS_MS);
-    return () => clearTimeout(t);
-  }, [nudge, ready, dismiss]);
-
   const handleCta = useCallback(() => {
     if (nudge) onNavigate(nudge.nav);
     // Both the 100- and 151-milestone CTAs land on View, but the feature they
@@ -128,44 +99,17 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
     dismiss();
   }, [nudge, celebration, onNavigate, dismiss]);
 
-  if (!nudge || !anchor || !ready) return null;
-
-  const centerX = anchor.left + anchor.width / 2;
-  const left = Math.max(8, Math.min(centerX - CARD_W / 2, window.innerWidth - CARD_W - 8));
-  const arrowLeft = Math.max(14, Math.min(centerX - left, CARD_W - 14));
-  const top = anchor.bottom + 10;
-
-  return createPortal(
-    <div className="fixed z-[220]" style={{ left, top, width: CARD_W }} role="status">
-      <div className="relative rounded-lg border bg-popover shadow-xl p-3 milestone-nudge-in">
-        {/* up-arrow — a rotated square whose two bordered edges form the
-            pointer. Sized + positioned in px (not rem) so its left/right
-            corners land exactly on the card's top border line: the element's
-            vertical center sits at the border (top = -border - size/2), and its
-            fill covers the border between the corners so there's no seam. */}
-        <div
-          className="absolute z-10 rotate-45 bg-popover border-l border-t"
-          style={{ width: 12, height: 12, left: arrowLeft - 6, top: -7 }}
-        />
-        <button
-          type="button"
-          aria-label={t('common.dismiss')}
-          onClick={dismiss}
-          className="absolute right-1.5 top-1.5 p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-        <div className="text-sm font-bold pr-5">{t(nudge.titleKey)}</div>
-        <p className="mt-1 text-xs text-muted-foreground text-pretty">{t(nudge.bodyKey)}</p>
-        <button
-          type="button"
-          onClick={handleCta}
-          className="mt-2.5 w-full rounded-md bg-primary text-primary-foreground text-xs font-semibold py-1.5 hover:bg-primary/90 transition-colors cursor-pointer"
-        >
-          {t(nudge.ctaKey)}
-        </button>
-      </div>
-    </div>,
-    document.body,
+  // The card mounts only once ready, so its auto-dismiss timer runs from when
+  // it appears: a long mobile sheet session doesn't eat into its on-screen life.
+  if (!nudge || !ready) return null;
+  return (
+    <NudgeCard
+      anchor={`[data-nav="${nudge.nav}"]`}
+      title={t(nudge.titleKey)}
+      body={t(nudge.bodyKey)}
+      cta={t(nudge.ctaKey)}
+      onCta={handleCta}
+      onDismiss={dismiss}
+    />
   );
 }
