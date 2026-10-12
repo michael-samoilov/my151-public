@@ -1,0 +1,83 @@
+/* my151's own holo pair for the export preview card: prism bands and a V
+   gleam. Both sit on the saturation mask (ExportPreview3D.css), so white
+   paper and black outlines keep their color, and both scale with
+   --foil-opacity, which grows with the tilt. */
+
+.export-foil-prism,
+.export-foil-gleam {
+  /* The pointer as -1 to 1 from the card center. */
+  --holo-dx: calc(var(--pointer-from-left) * 2 - 1);
+  --holo-dy: calc(var(--pointer-from-top) * 2 - 1);
+}
+
+/* Prism bands: one repeating pastel spectrum on a diagonal. The tile is
+   twice the card, so moving it with the pointer never shows a seam. */
+.export-foil-prism {
+  --prism-period: 52px;
+  background-image: repeating-linear-gradient(
+    118deg,
+    hsl(0 92% 74%) 0,
+    hsl(42 95% 70%) calc(var(--prism-period) * 0.17),
+    hsl(96 72% 68%) calc(var(--prism-period) * 0.33),
+    hsl(178 78% 66%) calc(var(--prism-period) * 0.5),
+    hsl(222 92% 76%) calc(var(--prism-period) * 0.67),
+    hsl(282 80% 76%) calc(var(--prism-period) * 0.83),
+    hsl(360 92% 74%) var(--prism-period)
+  );
+  background-size: 200% 200%;
+  background-repeat: no-repeat;
+  background-position: calc(50% - var(--holo-dx) * 22%) calc(50% - var(--holo-dy) * 14%);
+  mix-blend-mode: soft-light;
+  opacity: calc(var(--foil-opacity) * var(--foil-prism));
+}
+
+/* V gleam: two mirrored sets of soft stripes, screened together so they
+   cross in chevrons, then dimmed away from the pointer and broken up by
+   grain. Black is no change under color-dodge, so only the stripes light
+   the ink. Each set slides against the tilt, faster than the card turns. */
+.export-foil-gleam {
+  --gleam-period: 74px;
+  --gleam-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='151' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1.3 0 0 0 0.3 1.3 0 0 0 0.3 1.3 0 0 0 0.3 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-color: #000;
+  background-image:
+    var(--gleam-grain),
+    radial-gradient(
+      farthest-corner circle at var(--pointer-x) var(--pointer-y),
+      hsl(0 0% 100%) 0%,
+      hsl(0 0% 62%) 22%,
+      hsl(0 0% 22%) 55%,
+      hsl(0 0% 6%) 100%
+    ),
+    repeating-linear-gradient(
+      62deg,
+      #000 0,
+      #000 calc(var(--gleam-period) * 0.3),
+      hsl(190 70% 52%) calc(var(--gleam-period) * 0.5),
+      hsl(275 60% 58%) calc(var(--gleam-period) * 0.62),
+      #000 calc(var(--gleam-period) * 0.8),
+      #000 var(--gleam-period)
+    ),
+    repeating-linear-gradient(
+      -62deg,
+      #000 0,
+      #000 calc(var(--gleam-period) * 0.3),
+      hsl(48 80% 54%) calc(var(--gleam-period) * 0.5),
+      hsl(330 70% 60%) calc(var(--gleam-period) * 0.62),
+      #000 calc(var(--gleam-period) * 0.8),
+      #000 var(--gleam-period)
+    );
+  background-size:
+    140px 140px,
+    100% 100%,
+    200% 200%,
+    200% 200%;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+  background-position:
+    0 0,
+    0 0,
+    calc(50% + var(--holo-dx) * 30%) calc(50% + var(--holo-dy) * 18%),
+    calc(50% - var(--holo-dx) * 30%) calc(50% + var(--holo-dy) * 18%);
+  background-blend-mode: multiply, multiply, screen, normal;
+  mix-blend-mode: color-dodge;
+  opacity: calc(var(--foil-opacity) * var(--foil-gleam));
+}

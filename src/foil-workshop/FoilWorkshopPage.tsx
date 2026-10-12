@@ -12,6 +12,7 @@ import {
   parseFoilRecipe,
   parseFoilRecipeFromSearch,
   withFoilLayer,
+  type FoilLayerId,
   type FoilRecipe,
 } from '@/league/export/foilRecipe';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
@@ -122,7 +123,35 @@ function sampleMaskContext(sample: WorkshopSample): HoverTiltMaskContext {
  * such as no pop (scaleFactor 1) or an auto-tilt smaller than max tilt.
  */
 /** Foil layers the page has dials for. */
-const WORKSHOP_LAYERS = ['holographic', 'holoRainbow', 'pointLight', 'iridescence'] as const;
+const WORKSHOP_LAYERS = ['holographic', 'holoRainbow', 'prism', 'gleam', 'pointLight', 'iridescence'] as const;
+
+/**
+ * The live holo pair and its redrawn replacement (October 12). The switch
+ * turns one pair on and the other off, and keeps every amount.
+ */
+type HoloPair = 'current' | 'new';
+
+const HOLO_PAIRS: Record<HoloPair, readonly FoilLayerId[]> = {
+  current: ['holoRainbow', 'holographic'],
+  new: ['prism', 'gleam'],
+};
+
+function withHoloPair(recipe: FoilRecipe, pair: HoloPair): FoilRecipe {
+  const next = cloneFoilRecipe(recipe);
+  for (const name of ['current', 'new'] as const) {
+    for (const id of HOLO_PAIRS[name]) next.layers[id] = { ...next.layers[id], on: name === pair };
+  }
+  return next;
+}
+
+/** The pair that alone is on, or null when both or neither are. */
+function holoPairOf(recipe: FoilRecipe): HoloPair | null {
+  const anyOn = (ids: readonly FoilLayerId[]) => ids.some((id) => recipe.layers[id].on);
+  const current = anyOn(HOLO_PAIRS.current);
+  const fresh = anyOn(HOLO_PAIRS.new);
+  if (current === fresh) return null;
+  return current ? 'current' : 'new';
+}
 
 function workshopFoil(saved: FoilRecipe): FoilRecipe {
   const next = cloneFoilRecipe(DEFAULT_FOIL_RECIPE);
@@ -269,6 +298,7 @@ export function FoilWorkshopPage() {
   const busy = src === null;
   const holo = recipe.layers.holographic;
   const rainbow = recipe.layers.holoRainbow;
+  const holoPair = holoPairOf(recipe);
 
   useEffect(() => {
     persistWorkshop(recipe, tilt, sample, proposal);
@@ -413,6 +443,36 @@ export function FoilWorkshopPage() {
               Reset default
             </button>
           </div>
+
+          <fieldset data-workshop-holo-switch>
+            <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
+              Holo
+            </legend>
+            <div className="grid grid-cols-2 gap-1">
+              {(
+                [
+                  { id: 'current', label: 'Holo: current' },
+                  { id: 'new', label: 'Holo: new' },
+                ] as const
+              ).map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  data-workshop-holo={id}
+                  aria-pressed={holoPair === id}
+                  onClick={() => setRecipe(withHoloPair(recipe, id))}
+                  className={`rounded-md px-1 py-2 text-center text-[0.7rem] leading-tight ${
+                    holoPair === id ? 'bg-zinc-100 font-medium text-zinc-950' : 'bg-zinc-800 text-zinc-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-[0.65rem] leading-snug text-zinc-500">
+              Current: the live rainbow and V shine. New: the redrawn prism bands and V gleam. Amounts stay as set.
+            </p>
+          </fieldset>
 
           <fieldset data-workshop-compare>
             <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
@@ -585,6 +645,20 @@ export function FoilWorkshopPage() {
           </fieldset>
 
           <LayerDial
+            id="gleam"
+            title="V gleam (new holo)"
+            toggle="Crossed grainy stripes near the light"
+            recipe={recipe}
+            onRecipe={setRecipe}
+          />
+          <LayerDial
+            id="prism"
+            title="Prism bands (new holo)"
+            toggle="Fine rainbow bands slide with the tilt"
+            recipe={recipe}
+            onRecipe={setRecipe}
+          />
+          <LayerDial
             id="pointLight"
             title="Point light"
             toggle="Soft light disc at the tilt"
@@ -708,7 +782,7 @@ function LayerDial({
   recipe,
   onRecipe,
 }: {
-  id: 'pointLight' | 'iridescence';
+  id: 'prism' | 'gleam' | 'pointLight' | 'iridescence';
   title: string;
   toggle: string;
   recipe: FoilRecipe;

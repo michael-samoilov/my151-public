@@ -16,6 +16,8 @@ export const FOIL_LAYER_IDS = [
   'rim',
   'holoRainbow',
   'holographic',
+  'prism',
+  'gleam',
   'iridescence',
   'emboss',
   'parallax',
@@ -68,6 +70,14 @@ export const FOIL_LAYER_META = {
     title: 'V shine',
     blurb: 'Diagonal bands cross on colored ink. White paper stays paper.',
   },
+  prism: {
+    title: 'Prism bands',
+    blurb: 'Fine pastel rainbow bands slide over colored ink with the tilt.',
+  },
+  gleam: {
+    title: 'V gleam',
+    blurb: 'Crossed, grainy stripes brighten colored ink near the light.',
+  },
   iridescence: {
     title: 'Iridescence / color shift',
     blurb: 'Hue of colored surfaces shifts with the tilt.',
@@ -96,6 +106,9 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   rim: { on: false, amount: 0 },
   holoRainbow: { on: true, amount: 0.2 },
   holographic: { on: true, amount: FOIL_HOLO_AMOUNT },
+  // The redrawn holo pair, off until Michael picks it in the workshop.
+  prism: { on: false, amount: 0.5 },
+  gleam: { on: false, amount: 0.6 },
   iridescence: { on: true, amount: 0.1 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
@@ -114,7 +127,14 @@ export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
   layers: DEFAULT_LAYERS,
 };
 
-const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holoRainbow', 'holographic', 'iridescence', 'parallax'];
+const SAT_MASK_LAYERS: readonly FoilLayerId[] = [
+  'holoRainbow',
+  'holographic',
+  'prism',
+  'gleam',
+  'iridescence',
+  'parallax',
+];
 const EDGE_MASK_LAYERS: readonly FoilLayerId[] = ['emboss', 'rim'];
 const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'bloom'];
 

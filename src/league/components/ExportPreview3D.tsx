@@ -56,6 +56,7 @@ import { FOIL_HOLO_BLEND } from '../export/foilBlend';
 import { exportCornerRadius } from '@/lib/exportPngShape';
 import './ExportPreview3D.css';
 import './foil/pokeHolo.css';
+import './foil/my151Holo.css';
 import { HoloShineParts } from './foil/pokeHoloParts';
 import { setPokeHoloPointer } from './foil/pokeHoloPointer';
 
