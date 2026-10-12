@@ -50,10 +50,14 @@ function rad(deg: number): number {
 }
 
 /**
- * Screen-space AABB of a plane after CSS `rotateY() rotateX()` (rotateX first)
- * under a perspective camera sitting `perspectivePx` in front of the card,
+ * Screen-space AABB of a plane turned about X first, then about Y, under a
+ * perspective camera sitting `perspectivePx` in front of the card,
  * by default `camera` (`previewPerspectivePx`) of the card's own size.
  * Origin is the card centre. No translateZ — the rotator does not lift.
+ *
+ * The lift's CSS `rotateX() rotateY()` turns about Y first. At full tilt this
+ * model puts a corner about 1 px short of where it paints, so the 8 px rest
+ * gap is about 7 px in practice. Kept on October 11: the fit sizes stay put.
  */
 export function projectedCardAabb(opts: {
   width: number;

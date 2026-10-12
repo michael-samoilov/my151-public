@@ -20,7 +20,7 @@ import { generateExportImage } from '@/lib/exportImage';
 import { computeAnalytics } from '@/hooks/useAnalytics';
 import { detailedStatsData } from '@/components/view/useDetailedStatsData';
 import { DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
-import { renderFoilTestCard } from './testCard';
+import { renderFoilFlatCard, renderFoilTestCard } from './testCard';
 import { buildFavoritesSnapshot } from '@/favorites/export/snapshot';
 import { renderFullChart } from '@/favorites/export/renderFullChart';
 import {
@@ -62,6 +62,9 @@ const WORKSHOP_SAMPLES = [
   { id: 'trainer', label: 'Trainer card' },
   { id: 'favorites', label: 'Favorites chart' },
   { id: 'test', label: 'Test card' },
+  { id: 'flat', label: 'Flat gray card' },
+  { id: 'flat-league', label: 'Flat gray, league' },
+  { id: 'flat-tall', label: 'Flat gray, tall' },
 ] as const;
 
 /** A few picks across types and generations, like a chart in progress. */
@@ -102,6 +105,9 @@ function renderSample(sample: WorkshopSample): Promise<Blob> {
   if (sample === 'trainer') return exportGymCard(kantoCards({ full: true })[12]);
   if (sample === 'favorites') return renderFullChart(buildFavoritesSnapshot(WORKSHOP_FAVORITE_FILLS));
   if (sample === 'test') return renderFoilTestCard();
+  if (sample === 'flat') return renderFoilFlatCard();
+  if (sample === 'flat-league') return renderFoilFlatCard('league');
+  if (sample === 'flat-tall') return renderFoilFlatCard('tall');
   const full = sample !== 'league';
   const layout =
     sample === 'league-both'
@@ -122,7 +128,7 @@ function sampleMaskContext(sample: WorkshopSample): HoverTiltMaskContext {
  * such as no pop (scaleFactor 1) or an auto-tilt smaller than max tilt.
  */
 /** Foil layers the page has dials for. */
-const WORKSHOP_LAYERS = ['holographic', 'holoRainbow', 'pointLight', 'iridescence'] as const;
+const WORKSHOP_LAYERS = ['gleam', 'prism', 'pointLight', 'iridescence'] as const;
 
 function workshopFoil(saved: FoilRecipe): FoilRecipe {
   const next = cloneFoilRecipe(DEFAULT_FOIL_RECIPE);
@@ -169,7 +175,7 @@ function readStoredTilt(): HoverTiltRecipe {
 /**
  * Dials for the export proposals, read against the live site's look: the
  * camera distance, the rainbow and iridescence blend, the glare's dark edge
- * (October 9), and the card size and shine engine (October 11). They live
+ * (October 9), and the card size (October 11). They live
  * in the URL only, so a shared link shows the same.
  */
 type RainbowBlend = 'soft-light' | 'hue';
@@ -182,7 +188,6 @@ type Proposal = {
   glareDark: number;
   /** A multiple of the pre-October-10 size, or `room`: as big as the tilt allows. */
   size: number | 'room';
-  shine: 'move' | 'paint';
 };
 
 const LIVE_CAMERA_PX = 600;
@@ -192,9 +197,8 @@ const NEW_PROPOSAL: Proposal = {
   blend: 'soft-light',
   glareDark: 0,
   size: 1,
-  shine: 'paint',
 };
-/** The live site since October 10. */
+/** The live site from October 10 to October 11. */
 const LIVE_PROPOSAL: Proposal = { ...NEW_PROPOSAL, size: 'room' };
 const NEW_GLARE = DEFAULT_HOVER_TILT_RECIPE.glareIntensity;
 const LIVE_GLARE = 1;
@@ -210,14 +214,13 @@ function readProposal(): Proposal {
     blend: params.get('blend') === 'hue' ? 'hue' : 'soft-light',
     glareDark: params.has('dark') && Number.isFinite(dark) ? Math.min(1, Math.max(0, dark)) : NEW_PROPOSAL.glareDark,
     size: size === 'room' ? 'room' : size && Number.isFinite(Number(size)) ? Math.min(1.3, Math.max(0.6, Number(size))) : NEW_PROPOSAL.size,
-    shine: params.get('shine') === 'move' ? 'move' : 'paint',
   };
 }
 
 function proposalSearch(p: Proposal): string {
   const cam = p.camera === 'live' ? 'live' : p.camera.toFixed(2);
   const size = p.size === 'room' ? 'room' : p.size.toFixed(2);
-  return `cam=${cam}&blend=${p.blend}&dark=${p.glareDark.toFixed(2)}&size=${size}&shine=${p.shine}`;
+  return `cam=${cam}&blend=${p.blend}&dark=${p.glareDark.toFixed(2)}&size=${size}`;
 }
 
 function proposalCamera(camera: Proposal['camera']): PreviewCamera {
@@ -267,8 +270,8 @@ export function FoilWorkshopPage() {
   const maskContext = useMemo(() => sampleMaskContext(sample), [sample]);
 
   const busy = src === null;
-  const holo = recipe.layers.holographic;
-  const rainbow = recipe.layers.holoRainbow;
+  const gleam = recipe.layers.gleam;
+  const prism = recipe.layers.prism;
 
   useEffect(() => {
     persistWorkshop(recipe, tilt, sample, proposal);
@@ -366,7 +369,6 @@ export function FoilWorkshopPage() {
             maskContext={maskContext}
             camera={camera}
             size={proposal.size}
-            shine={proposal.shine}
           />
         </div>
       </section>
@@ -421,8 +423,8 @@ export function FoilWorkshopPage() {
             <div className="grid grid-cols-2 gap-1">
               {(
                 [
-                  { id: 'live', label: 'Live site', next: LIVE_PROPOSAL, glare: LIVE_GLARE },
-                  { id: 'new', label: 'New', next: NEW_PROPOSAL, glare: NEW_GLARE },
+                  { id: 'live', label: 'Before October 11', next: LIVE_PROPOSAL, glare: LIVE_GLARE },
+                  { id: 'new', label: 'Live site', next: NEW_PROPOSAL, glare: NEW_GLARE },
                 ] as const
               ).map(({ id, label, next, glare }) => (
                 <button
@@ -440,9 +442,8 @@ export function FoilWorkshopPage() {
               ))}
             </div>
             <p className="mt-1 text-[0.65rem] leading-snug text-zinc-500">
-              New: the card is its size from before October 10, and the glare is 0.6. Both show the new shadow,
-              which follows the card&apos;s shape. Try the shine engine switch on your own computer: only a real GPU
-              shows which one is smoother.
+              Live site since October 11: the card is its size from before October 10, and the glare is 0.6. Both
+              show the shadow that follows the card&apos;s shape.
             </p>
             <label className="mt-2 flex items-center gap-2 text-[0.7rem] text-zinc-300">
               <input
@@ -465,30 +466,6 @@ export function FoilWorkshopPage() {
                 onChange={(size) => setProposal({ ...proposal, size })}
               />
             )}
-            <div className="mt-2 text-[0.7rem] text-zinc-400">
-              <span>Shine engine</span>
-              <div className="mt-1 grid grid-cols-2 gap-1">
-                {(
-                  [
-                    { id: 'paint', label: 'Repaints (live site)' },
-                    { id: 'move', label: 'Moves (try it)' },
-                  ] as const
-                ).map(({ id, label }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    data-workshop-shine={id}
-                    aria-pressed={proposal.shine === id}
-                    onClick={() => setProposal({ ...proposal, shine: id })}
-                    className={`rounded-md px-1 py-1.5 text-center leading-tight ${
-                      proposal.shine === id ? 'bg-zinc-100 font-medium text-zinc-950' : 'bg-zinc-800 text-zinc-200'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </fieldset>
 
           <fieldset>
@@ -512,54 +489,54 @@ export function FoilWorkshopPage() {
             </div>
           </fieldset>
 
-          <fieldset className="space-y-2" data-foil-control="holographic">
+          <fieldset className="space-y-2" data-foil-control="gleam">
             <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
               Shine
             </legend>
             <label className="flex items-center gap-2 text-[0.7rem] text-zinc-300">
               <input
                 type="checkbox"
-                checked={holo.on}
-                data-foil-on="holographic"
-                onChange={(e) => setRecipe(withFoilLayer(recipe, 'holographic', { on: e.target.checked }))}
+                checked={gleam.on}
+                data-foil-on="gleam"
+                onChange={(e) => setRecipe(withFoilLayer(recipe, 'gleam', { on: e.target.checked }))}
               />
-              Diagonal V shine on ink
+              Grainy diagonal gleam on ink
             </label>
             <Slider
               label="Amount"
               min={0}
               max={1}
               step={0.01}
-              value={holo.amount}
-              testId="holographic"
-              onChange={(amount) => setRecipe(withFoilLayer(recipe, 'holographic', { amount }))}
+              value={gleam.amount}
+              testId="gleam"
+              onChange={(amount) => setRecipe(withFoilLayer(recipe, 'gleam', { amount }))}
             />
           </fieldset>
 
-          <fieldset className="space-y-2" data-foil-control="holoRainbow">
+          <fieldset className="space-y-2" data-foil-control="prism">
             <legend className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
               Rainbow
             </legend>
             <label className="flex items-center gap-2 text-[0.7rem] text-zinc-300">
               <input
                 type="checkbox"
-                checked={rainbow.on}
-                data-foil-on="holoRainbow"
-                onChange={(e) => setRecipe(withFoilLayer(recipe, 'holoRainbow', { on: e.target.checked }))}
+                checked={prism.on}
+                data-foil-on="prism"
+                onChange={(e) => setRecipe(withFoilLayer(recipe, 'prism', { on: e.target.checked }))}
               />
-              Rainbow holofoil on ink
+              Pastel prism bands on ink
             </label>
             <Slider
               label="Amount"
               min={0}
               max={1}
               step={0.01}
-              value={rainbow.amount}
-              testId="holoRainbow"
-              onChange={(amount) => setRecipe(withFoilLayer(recipe, 'holoRainbow', { amount }))}
+              value={prism.amount}
+              testId="prism"
+              onChange={(amount) => setRecipe(withFoilLayer(recipe, 'prism', { amount }))}
             />
             <div className="text-[0.7rem] text-zinc-400">
-              <span>Blend, rainbow and iridescence</span>
+              <span>Blend, iridescence</span>
               <div className="mt-1 grid grid-cols-2 gap-1">
                 {(
                   [

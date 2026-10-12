@@ -22,7 +22,7 @@ import {
   hoverTiltFromPointer,
   normalizedForTilt,
   pointInBox,
-  pokeHoloIdle,
+  idleOrbitPose,
   pointerMovedFrom,
   REST_POSE,
   springSettled,
@@ -53,9 +53,9 @@ import {
   type FoilRecipe,
 } from '../export/foilRecipe';
 import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
-import { FOIL_HOLO_BLEND } from '../export/foilBlend';
 import { exportCornerRadius } from '@/lib/exportPngShape';
 import './ExportPreview3D.css';
+import './foil/my151Holo.css';
 
 const TAP_MS = 320;
 /** Opening the export eases auto-tilt, glare, pop, and foil in from flat. */
@@ -99,17 +99,6 @@ function tiltAxes(tilt: HoverTiltRecipe | undefined, maxTilt: number): HoverTilt
   };
 }
 
-function HoloShineParts() {
-  return (
-    <>
-      <span className="export-foil-holo-part export-foil-holo-radial" />
-      <span className="export-foil-holo-part export-foil-holo-bands" />
-      <span className="export-foil-holo-part export-foil-holo-pillars" />
-      <span className="export-foil-holo-part export-foil-holo-grain" />
-    </>
-  );
-}
-
 /**
  * Live export preview. Pointer tracking, springs, rest, and CSS vars
  * copy hover-tilt (https://github.com/simeydotme/hover-tilt).
@@ -126,7 +115,6 @@ export function ExportPreview3D({
   darkCard = false,
   camera = previewPerspectivePx,
   size = 1,
-  shine = 'paint',
 }: {
   src: string | null;
   alt: string;
@@ -145,13 +133,6 @@ export function ExportPreview3D({
    * room the tilt leaves. `room` fills that room, as on October 10.
    */
   size?: number | 'room';
-  /**
-   * `paint` moves the V shine's backgrounds, which repaints the shine on
-   * every frame. `move`, in the workshop only, slides its band layers with
-   * transforms: half the raster work in Chrome, but more layers to blend,
-   * so only a real GPU shows whether it is smoother.
-   */
-  shine?: 'move' | 'paint';
 }) {
   const t = useT();
   const stageRef = useRef<HTMLDivElement>(null);
@@ -252,9 +233,6 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-y', ny.toFixed(4));
     el.style.setProperty('--gradient-x', `${pointerX}%`);
     el.style.setProperty('--gradient-y', `${pointerY}%`);
-    // poke-holo maps the pointer to 37-63% across and 33-67% down for the shine.
-    el.style.setProperty('--background-x', `${(37 + pointerX * 0.26).toFixed(2)}%`);
-    el.style.setProperty('--background-y', `${(33 + pointerY * 0.34).toFixed(2)}%`);
     const recipeNow = recipeRef.current;
     const tiltNow = tiltNowEarly;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
@@ -321,7 +299,7 @@ export function ExportPreview3D({
     if (reducedMotionRef.current || origin === null) return REST_POSE;
     const recipeNow = recipeRef.current;
     // The orbit radius grows with `open`, so auto-tilt starts flat and spirals out.
-    return pokeHoloIdle({
+    return idleOrbitPose({
       now,
       origin,
       idleMsX: recipeNow.idleMsX,
@@ -613,7 +591,6 @@ export function ExportPreview3D({
     }
     // On the hit, so the card and its shape shadow both inherit the outline.
     hitRef.current?.style.setProperty('--export-shape-mask', foilMaskCss(activeSrc ?? ''));
-    el.style.setProperty('--foil-holo-blend', FOIL_HOLO_BLEND);
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
     el.dataset.hoverTilt = '1';
     el.dataset.maskSpriteCount = String(maskContext.sprites.length);
@@ -914,17 +891,7 @@ export function ExportPreview3D({
                 className={cn('export-foil-layer', foilLayerClassName(id))}
                 aria-hidden
                 data-foil-layer={id}
-                data-holo-engine={id === 'holographic' ? shine : undefined}
-              >
-                {id === 'holographic' && shine === 'move' ? (
-                  <>
-                    <HoloShineParts />
-                    <span className="export-foil-holo-cross">
-                      <HoloShineParts />
-                    </span>
-                  </>
-                ) : null}
-              </div>
+              />
             ))}
           </div>
           </div>
