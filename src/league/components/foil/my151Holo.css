@@ -49,17 +49,20 @@
   opacity: calc(var(--foil-opacity) * var(--foil-prism));
 }
 
-/* V gleam: two sets of soft stripes on one steep diagonal, multiplied
-   together. The first set is strong and drifts slowly with the pointer;
-   the second is spaced wider and runs fast the other way as the card tilts
-   sideways. Each set keeps a faint floor, so a stripe alone stays dim and
-   a stripe of one set passing over a stripe of the other makes a bright
-   knot that jumps along the card. A slow pastel spectrum running up the
-   card tints every stripe by its height on the card and scrolls up and
-   down as the card tips, and a colored grain tile breaks the light into
-   foil sparkle. Black is no change under color-dodge, so only the stripes
-   light the ink. The stripe tiles are wider than tall, so the period
-   follows the card's width more than its height. */
+/* V gleam: two sets of stripes on one steep diagonal, screened together
+   and then cut at a threshold with color-burn against a flat gray. Each
+   stripe is a soft, rounded crest on a wide, low skirt that stays under
+   the threshold. The first set is strong and drifts slowly with the
+   pointer; the second is spaced wider and runs fast the other way as the
+   card tilts sideways. A stripe alone shows only its crest, a thin line;
+   as two stripes approach, their skirts add up past the threshold, so the
+   lit part swells into a wide, bright knot. Everything outside the crests
+   stays black, so pale ink there is left unlit. A slow pastel spectrum
+   running up the card tints every stripe by its height on the card and
+   scrolls up and down as the card tips, and a colored grain tile breaks
+   the light into foil sparkle. Black is no change under color-dodge, so
+   only the stripes light the ink. The stripe tiles are wider than tall,
+   so the period follows the card's width more than its height. */
 .export-foil-gleam {
   --gleam-period: 6.73%;
   --gleam-period-b: 8.95%;
@@ -70,64 +73,91 @@
     var(--gleam-grain),
     repeating-linear-gradient(
       0deg,
-      oklch(0.93 0.09 125) calc(var(--gleam-hue-period) * 0),
-      oklch(0.93 0.09 150) calc(var(--gleam-hue-period) * 0.167),
-      oklch(0.93 0.09 230) calc(var(--gleam-hue-period) * 0.333),
-      oklch(0.93 0.09 280) calc(var(--gleam-hue-period) * 0.45),
-      oklch(0.93 0.09 340) calc(var(--gleam-hue-period) * 0.62),
-      oklch(0.93 0.09 405) calc(var(--gleam-hue-period) * 0.8),
-      oklch(0.93 0.09 485) calc(var(--gleam-hue-period) * 1)
+      oklch(0.97 0.09 125) calc(var(--gleam-hue-period) * 0),
+      oklch(0.97 0.09 150) calc(var(--gleam-hue-period) * 0.167),
+      oklch(0.97 0.09 230) calc(var(--gleam-hue-period) * 0.333),
+      oklch(0.97 0.09 280) calc(var(--gleam-hue-period) * 0.45),
+      oklch(0.97 0.09 340) calc(var(--gleam-hue-period) * 0.62),
+      oklch(0.97 0.09 405) calc(var(--gleam-hue-period) * 0.8),
+      oklch(0.97 0.09 485) calc(var(--gleam-hue-period) * 1)
+    ),
+    linear-gradient(hsl(0 0% 50%), hsl(0 0% 50%)),
+    repeating-linear-gradient(
+      127deg,
+      hsl(0 0% 0%) 0,
+      hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.19),
+      hsl(0 0% 4.7%) calc(var(--gleam-period-b) * 0.2313),
+      hsl(0 0% 11.6%) calc(var(--gleam-period-b) * 0.2727),
+      hsl(0 0% 19.7%) calc(var(--gleam-period-b) * 0.314),
+      hsl(0 0% 28.6%) calc(var(--gleam-period-b) * 0.3553),
+      hsl(0 0% 38.3%) calc(var(--gleam-period-b) * 0.3967),
+      hsl(0 0% 48.5%) calc(var(--gleam-period-b) * 0.438),
+      hsl(0 0% 49.3%) calc(var(--gleam-period-b) * 0.4483),
+      hsl(0 0% 52.3%) calc(var(--gleam-period-b) * 0.4587),
+      hsl(0 0% 57.2%) calc(var(--gleam-period-b) * 0.469),
+      hsl(0 0% 62.9%) calc(var(--gleam-period-b) * 0.4793),
+      hsl(0 0% 65.3%) calc(var(--gleam-period-b) * 0.4897),
+      hsl(0 0% 66%) calc(var(--gleam-period-b) * 0.5),
+      hsl(0 0% 65.5%) calc(var(--gleam-period-b) * 0.5103),
+      hsl(0 0% 62.2%) calc(var(--gleam-period-b) * 0.5207),
+      hsl(0 0% 57.6%) calc(var(--gleam-period-b) * 0.531),
+      hsl(0 0% 53.6%) calc(var(--gleam-period-b) * 0.5413),
+      hsl(0 0% 50.6%) calc(var(--gleam-period-b) * 0.5517),
+      hsl(0 0% 48.7%) calc(var(--gleam-period-b) * 0.562),
+      hsl(0 0% 48.5%) calc(var(--gleam-period-b) * 0.5723),
+      hsl(0 0% 38.3%) calc(var(--gleam-period-b) * 0.6033),
+      hsl(0 0% 28.6%) calc(var(--gleam-period-b) * 0.6447),
+      hsl(0 0% 19.7%) calc(var(--gleam-period-b) * 0.686),
+      hsl(0 0% 11.6%) calc(var(--gleam-period-b) * 0.7273),
+      hsl(0 0% 4.7%) calc(var(--gleam-period-b) * 0.7687),
+      hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.81),
+      hsl(0 0% 0%) var(--gleam-period-b)
     ),
     repeating-linear-gradient(
       127deg,
-      hsl(0 0% 17%) 0,
-      hsl(0 0% 17%) calc(var(--gleam-period-b) * 0.248),
-      hsl(0 0% 20.8%) calc(var(--gleam-period-b) * 0.29),
-      hsl(0 0% 35.3%) calc(var(--gleam-period-b) * 0.332),
-      hsl(0 0% 58.5%) calc(var(--gleam-period-b) * 0.374),
-      hsl(0 0% 85.1%) calc(var(--gleam-period-b) * 0.416),
-      hsl(0 0% 96.7%) calc(var(--gleam-period-b) * 0.458),
-      hsl(0 0% 100%) calc(var(--gleam-period-b) * 0.5),
-      hsl(0 0% 97.5%) calc(var(--gleam-period-b) * 0.542),
-      hsl(0 0% 81.7%) calc(var(--gleam-period-b) * 0.584),
-      hsl(0 0% 60.2%) calc(var(--gleam-period-b) * 0.626),
-      hsl(0 0% 41.1%) calc(var(--gleam-period-b) * 0.668),
-      hsl(0 0% 27%) calc(var(--gleam-period-b) * 0.71),
-      hsl(0 0% 18.2%) calc(var(--gleam-period-b) * 0.752),
-      hsl(0 0% 17%) calc(var(--gleam-period-b) * 0.794),
-      hsl(0 0% 17%) var(--gleam-period-b)
-    ),
-    repeating-linear-gradient(
-      127deg,
-      hsl(0 0% 12%) 0,
-      hsl(0 0% 12%) calc(var(--gleam-period) * 0.248),
-      hsl(0 0% 16%) calc(var(--gleam-period) * 0.29),
-      hsl(0 0% 31.4%) calc(var(--gleam-period) * 0.332),
-      hsl(0 0% 56%) calc(var(--gleam-period) * 0.374),
-      hsl(0 0% 84.2%) calc(var(--gleam-period) * 0.416),
-      hsl(0 0% 96.5%) calc(var(--gleam-period) * 0.458),
-      hsl(0 0% 100%) calc(var(--gleam-period) * 0.5),
-      hsl(0 0% 97.4%) calc(var(--gleam-period) * 0.542),
-      hsl(0 0% 80.6%) calc(var(--gleam-period) * 0.584),
-      hsl(0 0% 57.8%) calc(var(--gleam-period) * 0.626),
-      hsl(0 0% 37.5%) calc(var(--gleam-period) * 0.668),
-      hsl(0 0% 22.6%) calc(var(--gleam-period) * 0.71),
-      hsl(0 0% 13.2%) calc(var(--gleam-period) * 0.752),
-      hsl(0 0% 12%) calc(var(--gleam-period) * 0.794),
-      hsl(0 0% 12%) var(--gleam-period)
+      hsl(0 0% 0%) 0,
+      hsl(0 0% 0%) calc(var(--gleam-period) * 0.1),
+      hsl(0 0% 4.7%) calc(var(--gleam-period) * 0.1533),
+      hsl(0 0% 11.6%) calc(var(--gleam-period) * 0.2067),
+      hsl(0 0% 19.7%) calc(var(--gleam-period) * 0.26),
+      hsl(0 0% 28.6%) calc(var(--gleam-period) * 0.3133),
+      hsl(0 0% 38.3%) calc(var(--gleam-period) * 0.3667),
+      hsl(0 0% 48.5%) calc(var(--gleam-period) * 0.42),
+      hsl(0 0% 49.7%) calc(var(--gleam-period) * 0.4333),
+      hsl(0 0% 54.1%) calc(var(--gleam-period) * 0.4467),
+      hsl(0 0% 61.3%) calc(var(--gleam-period) * 0.46),
+      hsl(0 0% 69.4%) calc(var(--gleam-period) * 0.4733),
+      hsl(0 0% 73%) calc(var(--gleam-period) * 0.4867),
+      hsl(0 0% 74%) calc(var(--gleam-period) * 0.5),
+      hsl(0 0% 73.2%) calc(var(--gleam-period) * 0.5133),
+      hsl(0 0% 68.4%) calc(var(--gleam-period) * 0.5267),
+      hsl(0 0% 61.8%) calc(var(--gleam-period) * 0.54),
+      hsl(0 0% 55.9%) calc(var(--gleam-period) * 0.5533),
+      hsl(0 0% 51.6%) calc(var(--gleam-period) * 0.5667),
+      hsl(0 0% 48.9%) calc(var(--gleam-period) * 0.58),
+      hsl(0 0% 48.5%) calc(var(--gleam-period) * 0.5933),
+      hsl(0 0% 38.3%) calc(var(--gleam-period) * 0.6333),
+      hsl(0 0% 28.6%) calc(var(--gleam-period) * 0.6867),
+      hsl(0 0% 19.7%) calc(var(--gleam-period) * 0.74),
+      hsl(0 0% 11.6%) calc(var(--gleam-period) * 0.7933),
+      hsl(0 0% 4.7%) calc(var(--gleam-period) * 0.8467),
+      hsl(0 0% 0%) calc(var(--gleam-period) * 0.9),
+      hsl(0 0% 0%) var(--gleam-period)
     );
   background-size:
     128px 128px,
     100% 300%,
+    100% 100%,
     353% 150%,
     353% 150%;
-  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   background-position:
     0 0,
     0 calc(50% + var(--holo-dy) * 31.25%),
+    0 0,
     calc(32.6% + var(--holo-dx) * 9.6%) 20%,
     calc(28.9% - var(--holo-dx) * 3.6%) calc(11.6% + var(--holo-dy) * 0.9%);
-  background-blend-mode: multiply, multiply, multiply, normal;
+  background-blend-mode: multiply, multiply, color-burn, screen, normal;
   mix-blend-mode: color-dodge;
   opacity: calc(var(--foil-opacity) * var(--foil-gleam));
 }
