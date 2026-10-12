@@ -24,7 +24,7 @@ for (const filename of fs.readdirSync(namesRoot).filter(name => name.endsWith('.
   for (const form of records) {
     if (catalog.species[form.id] !== form.ownerId) throw new Error(`League species mismatch: ${filename}, ${form.id}`);
   }
-  const scoped = Object.fromEntries(['forms', 'formSource'].map(key => [
+  const scoped = Object.fromEntries(['forms', 'formSource', 'formCompact'].map(key => [
     key, Object.fromEntries(Object.entries(catalog[key]).filter(([id]) => formIds.has(id))),
   ]));
   files.push([`${scopedRoot}/${filename}`, `${JSON.stringify(scoped, null, 2)}\n`]);

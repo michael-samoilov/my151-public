@@ -4,7 +4,7 @@ import pokemonData from '@/data/pokemon.json';
 import { pokemonShape } from '@/data/pokemonShape';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
-import { normalizeSearch, speciesSearchText, useNamesVersion } from '@/i18n';
+import { normalizeSearch, formSearchText, speciesSearchText, pokemonLabel, useNamesVersion } from '@/i18n';
 import { revisedSprite } from '@/lib/spriteUrl';
 
 // A replaced sprite file gets a new URL, so no cache keeps serving the old art.
@@ -424,14 +424,19 @@ function useFilteredPokemon({
     // knows what they want and filters would only get in the way.
     if (search) {
       const q = normalizeSearch(search);
+      const words = q.split(/[^\p{L}\p{N}♂♀]+/u).filter(Boolean);
       filtered = filtered.filter(p => {
         // The English slug stays searchable in every locale. A Japanese user on
         // a Latin keyboard typing `pikachu` is the common case, not the
         // exception — and it is the only thing that works before the locale's
         // name catalog has finished loading.
         if (p.name.includes(q) || p.id.toString() === q) return true;
+        const full = `${p.name.replace(/-/g, ' ')} ${formSearchText(p.id) ?? ''}`;
+        if (words.length && words.every(word => full.includes(word))) return true;
         const localized = speciesSearchText(p.id);
-        return localized ? localized.includes(q) : false;
+        if (localized?.includes(q)) return true;
+        const resolvedFull = normalizeSearch(pokemonLabel(p.id, p.name).full);
+        return words.length > 0 && words.every(word => resolvedFull.includes(word));
       });
     } else {
       if (category) {
