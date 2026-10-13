@@ -56,15 +56,9 @@ interface BootInputs {
  * `visualViewport.width` forces layout, and Firefox paints a page as soon as
  * its layout starts: read before the stylesheet, it showed the hub unstyled
  * for about 600 ms on every load.
- *
- * The empty animation frame asks Chrome for a frame. Under Lighthouse, when
- * the stylesheet arrives after the parser has reached it, Chrome scheduled no
- * frame until the app mounted: the first paint came at about 2.3 s instead of
- * 0.2 s, in every local run against the live site and in about half of
- * PageSpeed Insights' phone runs (11 October).
  */
 const FONT_SIZE_SCRIPT =
-  "(function(){var v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;document.documentElement.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px';requestAnimationFrame(function(){})})()";
+  "(function(){var v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;document.documentElement.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px'})()";
 
 function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
