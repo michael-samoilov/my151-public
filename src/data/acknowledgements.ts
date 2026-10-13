@@ -15,7 +15,7 @@
  * packages from the build's own license list.
  */
 import typeIconSelections from '../../scripts/type-icons/selections.json';
-import { projectSpriteCount, spriteArtists } from './spriteCredits';
+import { hasSpriteRows, spriteArtists } from './spriteCredits';
 
 /** A license or terms file under `public/licenses/`. */
 export interface LicenseFile {
@@ -54,12 +54,6 @@ export interface Acknowledgement {
   kind?: 'project' | 'artist' | 'packages';
   /** A project whose sprites reach the app only as rows shows only while one of them does. */
   rowsOnly?: true;
-  /**
-   * How a bundle's "Used for" counts: the sprite files the app took through
-   * it, or, for the Smogon Sprite Project, whose sprites reach the app
-   * through the other bundles, the sprites its artists drew.
-   */
-  countAs?: 'drew';
 }
 
 export type AcknowledgementGroupId =
@@ -93,13 +87,14 @@ const byCount = <T,>(count: (item: T) => number, name: (item: T) => string) => (
 
 /**
  * The bundles the app's sprites came through, credited under their own
- * permissions (Michael, 2026-10-13; docs/credits/README.md). Each one says how
- * many of the app's sprites it carried, and lists none of them.
+ * permissions (Michael, 2026-10-13; docs/credits/README.md). Each one says
+ * only what can be proven, with no count and no list of sprites.
  */
 const SPRITE_SOURCES: readonly Acknowledgement[] = [
   {
     id: 'pokeapi-sprites',
     name: 'PokéAPI sprites',
+    usedFor: "The source of most of the app's sprite files.",
     kind: 'project',
     links: ['https://github.com/PokeAPI/sprites', 'https://github.com/PokeAPI/sprites/blob/master/README.md#special-thanks'],
     linkLabels: {
@@ -110,6 +105,8 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
   {
     id: 'pokemon-showdown',
     name: 'Pokémon Showdown',
+    // Both are forms that alternateForms.ts names as Showdown files.
+    usedFor: "The source of some form sprites, such as Unown's letters and the Flabébé family's colours.",
     kind: 'project',
     links: ['https://github.com/smogon/sprites'],
     linkLabels: { 'https://github.com/smogon/sprites': 'the smogon/sprites repository' },
@@ -121,6 +118,9 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     // app takes from it to Caruban (credits research, 2026-10-13).
     compiledBy: 'Caruban',
     rowsOnly: true,
+    // Rows via the pack include the Furfrou trims (11096-11104) and Mega
+    // Eelektross (10290).
+    usedFor: 'The source of some newer forms and Mega Evolutions, such as the Furfrou trims and Mega Eelektross.',
     license: 'Open collaboration, with credit',
     kind: 'project',
     links: ['https://eeveeexpo.com/resources/1101/'],
@@ -131,9 +131,9 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     // project.
     id: 'smogon-sprite-project',
     name: 'Smogon Sprite Project',
+    usedFor: 'Its artists drew most of the fan-made sprites that PokéAPI and Showdown carry.',
     license: 'Non-profit use, with credit',
     kind: 'project',
-    countAs: 'drew',
     // The X and Y thread asks for a credit page that links back to it.
     links: [
       'https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/',
@@ -151,11 +151,9 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
 export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
   {
     id: 'sprite-projects',
-    // The most sprite files first. The Smogon Sprite Project's sprites reach
-    // the app through the other bundles, so it carries none itself.
-    entries: SPRITE_SOURCES
-      .filter((project) => !project.rowsOnly || projectSpriteCount(project.id) > 0)
-      .sort(byCount((project) => projectSpriteCount(project.id), (project) => project.name)),
+    // The bundles that carried the files first, and last the project whose
+    // artists drew most of them.
+    entries: SPRITE_SOURCES.filter((project) => !project.rowsOnly || hasSpriteRows(project.id)),
   },
   {
     id: 'sprite-artists',

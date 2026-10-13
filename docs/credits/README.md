@@ -19,7 +19,7 @@ A bundle is a published collection that my151 took sprite files from, and that c
 
 The Smogon Sprite Project drew most of the fan sprites that PokéAPI and Showdown carry. Its terms ask users to credit "the spriter or the project itself", so crediting the project meets them.
 
-Each bundle entry in the panel shows how many of the app's sprites came through it, one permission quote from the bundle's own page, and the bundle's links. It does not list the sprites.
+Each bundle entry in the panel says only what the evidence proves about the bundle's part in the app, with no count. It shows one permission quote from the bundle's own page and the bundle's links. It does not list the sprites.
 
 An artist has an entry of their own only when my151 took the sprites from the artist's own upload, not from a bundle. On 2026-10-13 that is KingOfThe-X-Roads: the Ogerpon sprites from his Sta.sh uploads and DJ Rotom from his X post.
 

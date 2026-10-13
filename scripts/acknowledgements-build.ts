@@ -105,22 +105,21 @@ type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-ex
 const quote = ({ text, url }: Json) => ({ text, url });
 
 const OWN_UPLOAD = 'own upload';
-/** Rows of sprites no bundle carried: Game Freak's own, and the app's own drawings. */
-const UNCOUNTED = new Set(['game-freak', 'my151']);
+/** Rows the panel reads: its direct uploads, and the bundle it shows only while a row names it. */
+const PANEL_ROWS = new Set([OWN_UPLOAD, 'gen9-resource-pack']);
 
 /**
  * What the panel reads from each credits file. Sprites are credited through
- * their bundles (docs/credits/README.md), so a row ships only its source, and
- * its artists only when the app took the sprite from them directly; only
- * those artists' links and terms ship. Everything else stays in the
- * repository as evidence.
+ * their bundles (docs/credits/README.md), so only two kinds of row ship: a
+ * direct upload, with its artists, and a Generation 9 Resource Pack row, as
+ * its source alone. Only the direct uploads' artists' links and terms ship.
+ * Everything else stays in the repository as evidence.
  */
 const PANEL_FIELDS: Record<string, (data: Json, root: string) => Json> = {
   '/src/data/spriteAttribution.json': (data) => ({
     sprites: Object.fromEntries(Object.entries(data.sprites as Json)
-      .filter(([, row]) => !UNCOUNTED.has(row.via))
+      .filter(([, row]) => PANEL_ROWS.has(row.via))
       .map(([file, row]) => [file, row.via === OWN_UPLOAD ? { via: row.via, artists: row.artists } : { via: row.via }])),
-    uncounted: Object.entries(data.sprites as Json).filter(([, row]) => UNCOUNTED.has(row.via)).map(([file]) => file),
   }),
   '/src/data/creditTerms.json': (data, root) => {
     const rows = JSON.parse(fs.readFileSync(path.join(root, 'src/data/spriteAttribution.json'), 'utf8')).sprites as Json;

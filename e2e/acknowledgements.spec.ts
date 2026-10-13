@@ -54,11 +54,11 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
     await expect(row).toBeFocused();
 
-    // Sprites are credited through their bundles: a bundle says how many of
-    // the app's sprites came through it, quotes its own permission once and
-    // links its pages, and lists no sprites.
+    // Sprites are credited through their bundles: a bundle says only what
+    // can be proven, with no count, quotes its own permission once and links
+    // its pages, and lists no sprites.
     await dialog.locator('[data-ack-id="pokeapi-sprites"]').click();
-    await expect(dialog.getByTestId('ack-project-count')).toHaveText(/^my151 shows [\d,]+ sprites from it\.$/);
+    await expect(dialog.getByTestId('ack-detail')).toContainText("The source of most of the app's sprite files.");
     await expect(dialog.getByTestId('ack-terms').locator('blockquote')).toHaveCount(1);
     await expect(dialog.getByTestId('ack-sprites')).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Back' }).click();
