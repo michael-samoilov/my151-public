@@ -1,12 +1,14 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { t } from '@/i18n';
-import { openFeedback, setPendingCrash } from '@/components/feedback/feedbackChannel';
+import { PsyduckArt } from '@/components/shared/EmptyState';
+import { sendCrashReport } from '@/lib/feedbackContext';
 
 /**
  * The app had no error reporting at all: no boundary, no `window.onerror`, and
  * client fetch failures swallowed. A crash produced a white screen and zero
  * signal — the user could not tell you what happened and you could not see that
- * it had.
+ * it had. Now each crash a boundary catches sends a report by itself, and the
+ * screen offers one thing to do: reload.
  *
  * Still a class, because React 19 has no hook equivalent for
  * `componentDidCatch`.
@@ -17,6 +19,22 @@ import { openFeedback, setPendingCrash } from '@/components/feedback/feedbackCha
  * than the whole session's work.
  */
 
+/**
+ * The feedback form's route for each boundary, so the admin counts a crash with
+ * its surface's reports and opens the right tool from it. The boundary's own
+ * name travels in the report as `where`.
+ */
+const ROUTE: Record<string, string> = {
+  hub: 'home',
+  'pokedex-builder': 'builder',
+  view: 'view',
+  analytics: 'analytics',
+  league: 'league',
+  'league-desktop': 'league',
+  'league-export': 'league',
+  'favorite-picker': '/favorite-pokemon-picker',
+};
+
 interface Props {
   children: ReactNode;
   /** Named in the report so a crash can be traced to the boundary that caught it. */
@@ -25,7 +43,6 @@ interface Props {
 
 interface State {
   error: Error | null;
-  componentStack?: string;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -36,7 +53,14 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    this.setState({ componentStack: info.componentStack ?? undefined });
+    const { where } = this.props;
+    sendCrashReport(ROUTE[where] ?? where, {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      componentStack: info.componentStack ?? undefined,
+      where,
+    });
     // Logged as well as shown: the console is where this is visible during
     // development, and swallowing it here would be a regression on today's
     // behaviour of letting it reach the console uncaught.
@@ -44,37 +68,22 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   render() {
-    const { error, componentStack } = this.state;
-    if (!error) return this.props.children;
+    if (!this.state.error) return this.props.children;
 
+    // The empty state's Psyduck and type, with the picture larger: this is the
+    // whole page, not one list.
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <p className="text-sm font-medium">{t('error.title')}</p>
-        <p className="text-xs text-muted-foreground max-w-sm">{t('error.body')}</p>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="px-3 h-9 rounded-md border text-sm cursor-pointer hover:bg-muted"
-          >
-            {t('error.reload')}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setPendingCrash({
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-                componentStack,
-              });
-              openFeedback('bug');
-            }}
-            className="px-3 h-9 rounded-md border text-sm cursor-pointer hover:bg-muted"
-          >
-            {t('error.report')}
-          </button>
-        </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+        <PsyduckArt className="mb-4 size-24 shrink-0 text-[#a3a3a3]" />
+        <h2 className="text-sm font-semibold tracking-tight text-foreground text-balance">{t('error.title')}</h2>
+        <p className="mt-1 max-w-[17.5rem] text-xs leading-[1.125rem] text-muted-foreground text-balance">{t('error.body')}</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-4 px-3 h-9 rounded-md border text-sm cursor-pointer hover:bg-muted"
+        >
+          {t('error.reload')}
+        </button>
       </div>
     );
   }

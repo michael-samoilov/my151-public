@@ -35,7 +35,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   idea: 'Idea',
   data: 'Data',
   other: 'Other',
+  crash: 'Crash',
 };
+
+/** What a row says: the person's words, or for a crash report the error it carries. */
+function rowText(item: FeedbackItem): string {
+  if (item.message) return item.message;
+  const err = item.context?.error as { name?: string; message?: string } | undefined;
+  return err ? `${err.name ?? 'Error'}: ${err.message ?? ''}` : '';
+}
 
 function loadSeen(): Set<string> {
   try {
@@ -60,7 +68,7 @@ function asIssue(item: FeedbackItem): string {
   const lines = [
     `**${CATEGORY_LABELS[item.category] ?? item.category}** — ${new Date(item.ts).toISOString()}`,
     '',
-    item.message,
+    rowText(item),
     '',
     '<details><summary>Context</summary>',
     '',
@@ -127,7 +135,7 @@ function Row({
         </button>
       </div>
 
-      <p className="whitespace-pre-wrap break-words">{item.message}</p>
+      <p className="whitespace-pre-wrap break-words">{rowText(item)}</p>
 
       <div className="flex gap-3">
         <button

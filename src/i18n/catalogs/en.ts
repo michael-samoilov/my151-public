@@ -298,7 +298,6 @@ export const enUi = {
   'drilldown.typeTitle': '{type} Type',
   'error.body': 'Something in the page failed. Reloading usually fixes it — and a report tells us what broke.',
   'error.reload': 'Reload',
-  'error.report': 'Send report',
   'error.title': 'This part stopped working',
   'faq.dex.a1': 'my151 is smart, it knows that if you choose Bulbasaur, then Venusaur should join your dex too. my151 is smooth and easy to use, providing a "paint-by-numbers" template of Pokédex sections (like regional bird, Pikaclone, pseudo-legendary, and more), so you spend more time making thoughtful choices instead of trying to remember Pokémon. my151 also guides you towards making a balanced and realistic regional Pokédex, by providing detailed analytics into your dex\'s distribution of type, BST, and evolutionary stage, as well as comparisons to official regional Pokédexes.',
   'faq.dex.a2': 'Generation 1 introduced the original 151 Pokémon in the Kanto region. While later generations introduced anywhere from 72-156 new Pokémon, regional dexes usually included Pokémon from prior generations, landing them around 200-400 total. my151 encourages using 151 slots because that is the size that forces real choices, and the size most fans grew up with.',
@@ -388,7 +387,6 @@ export const enUi = {
   // The placeholders carry raw data that is sent as is and never translated.
   'feedback.context.browser': 'browser: {ua}',
   'feedback.context.browserLanguages': 'browser languages: {languages}',
-  'feedback.context.error': 'error: {error}',
   'feedback.context.favoritePicks_one': '{count} pick',
   'feedback.context.favoritePicks_other': '{count} picks',
   'feedback.context.favoriteSummaries_one': '{count} summary',
