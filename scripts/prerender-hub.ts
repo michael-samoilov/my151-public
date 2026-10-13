@@ -152,15 +152,17 @@ export function prerenderHub(): Plugin {
         // arrived after about 170 ms held the first frame until about 1.3 or
         // 2.3 s, in every local run against the live site and in about half of
         // PageSpeed Insights' phone runs; inline, the hub painted at about
-        // 0.2 s (11 October). The prefetch at the end of the page puts the file
-        // in the cache for the tool pages, which still link it.
+        // 0.2 s (11 October). After the page has loaded, a prefetch puts the
+        // file in the cache for the tool pages, which still link it. A prefetch
+        // in the HTML started at once and delayed the screenshots by about 5%.
         const sheets = [...html.matchAll(/<link rel="stylesheet" crossorigin href="([^"]+\.css)">/g)];
         if (sheets.length === 0) throw new Error('prerender-hub: index.html links no stylesheet');
         for (const [tag, href] of sheets) {
           const css = fs.readFileSync(path.join(outDir, href.slice(config.base.length)), 'utf8');
           if (css.includes('</style')) throw new Error(`prerender-hub: ${href} cannot be inlined`);
           html = html.replace(tag, () => `<style>${css}</style>`);
-          html = html.replace('</body>', () => `<link rel="prefetch" href="${href}">\n  </body>`);
+          const prefetch = `addEventListener('load',function(){var l=document.createElement('link');l.rel='prefetch';l.href=${JSON.stringify(href)};document.head.appendChild(l)})`;
+          html = html.replace('</body>', () => `<script>${prefetch}</script>\n  </body>`);
         }
         const lastSheet = html.lastIndexOf('</style>');
         const after = lastSheet + '</style>'.length;

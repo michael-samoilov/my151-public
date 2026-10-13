@@ -56,12 +56,12 @@ test('the hub HTML reads no layout before its stylesheet', async ({ request }, t
   for (const at of reads) expect(at).toBeGreaterThan(sheet);
 });
 
-test('the hub inlines its stylesheet and prefetches the file for the tools', async ({ request }) => {
-  const html = await (await request.get('/')).text();
-  expect(html).not.toContain('<link rel="stylesheet"');
-  const href = /<link rel="prefetch" href="([^"]+\.css)">/.exec(html)?.[1];
-  expect(href).toBeTruthy();
-  expect((await request.get(href!)).status()).toBe(200);
+test('the hub inlines its stylesheet and prefetches the file for the tools', async ({ page }) => {
+  const response = await page.goto('/?notme');
+  expect(await response!.text()).not.toContain('<link rel="stylesheet"');
+  // The prefetch starts after the load event, so it never competes with the screenshots.
+  const href = await page.locator('link[rel="prefetch"][href$=".css"]').getAttribute('href');
+  expect((await page.request.get(href!)).status()).toBe(200);
 });
 
 /**
