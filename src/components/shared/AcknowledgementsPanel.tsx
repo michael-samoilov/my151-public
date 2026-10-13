@@ -389,27 +389,34 @@ function emphasis(text: string): ReactNode[] {
   });
 }
 
-/** A source's terms, each quote as written, with a link to the page it is on. */
+/**
+ * A source's terms: its quote as written, with a link to the page it is on.
+ * The research keeps one quote per source; a record with more shows each the
+ * same way, one under the other, and a record with none shows nothing.
+ */
 function TermsQuotes({ quotes }: { quotes: readonly TermsQuote[] }) {
+  if (!quotes.length) return null;
   return (
-    <ul className="flex flex-col gap-3" data-testid="ack-terms">
+    <div className="flex flex-col gap-3" data-testid="ack-terms">
       {quotes.map((quote) => (
-        <li key={quote.text} className="flex flex-col gap-1">
-          <blockquote className="border-s-2 border-primary/40 ps-3 text-sm leading-relaxed">
+        <figure key={quote.text} className="flex flex-col gap-1">
+          <blockquote cite={quote.url} className="border-s-2 border-primary/40 ps-3 text-sm leading-relaxed">
             “{emphasis(quote.text)}”
           </blockquote>
-          <a
-            href={quote.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex max-w-full items-start gap-1 self-start rounded-sm ps-3 text-xs font-semibold text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <ExternalLink className="mt-px h-3 w-3 shrink-0 text-primary" aria-hidden />
-            <span className="min-w-0 break-words">{host(quote.url)}</span>
-          </a>
-        </li>
+          <figcaption className="ps-3">
+            <a
+              href={quote.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex max-w-full items-start gap-1 rounded-sm text-xs font-semibold text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ExternalLink className="mt-px h-3 w-3 shrink-0 text-primary" aria-hidden />
+              <span className="min-w-0 break-words">{host(quote.url)}</span>
+            </a>
+          </figcaption>
+        </figure>
       ))}
-    </ul>
+    </div>
   );
 }
 
@@ -470,7 +477,7 @@ function Detail({ entry, backRef, onBack, onOpen }: {
         {hasLicense && (
           <Section label={t('ack.license')}>
             {entry.license && <p className="text-sm font-medium leading-relaxed">{entry.license}</p>}
-            {own.quotes.length > 0 && <TermsQuotes quotes={own.quotes} />}
+            <TermsQuotes quotes={own.quotes} />
             {shared && (
               <p className="text-sm leading-relaxed">
                 {withNode(t('ack.termsOf', { source: '\u0000' }), <EntryLink onClick={() => onOpen(shared.id)}>{shared.name}</EntryLink>)}

@@ -159,7 +159,9 @@ export function projectOnlySprites(entry: string): readonly CreditedSprite[] {
 export function projectArtists(entry: string): { credited: { artist: ArtistCredit; count: number }[]; others: string[] } {
   const credited = spriteArtists()
     .map((artist) => ({ artist, count: artist.sprites.filter((sprite) => sprite.via === entry).length }))
-    .filter(({ count }) => count > 0);
+    .filter(({ count }) => count > 0)
+    // Most sprites first, as the panel's list of artists is.
+    .sort((a, b) => b.count - a.count || a.artist.name.localeCompare(b.artist.name, 'en', { sensitivity: 'base' }));
   const named = new Set(credited.map(({ artist }) => artist.name));
   const listed = Object.entries(DATA.projects)
     .filter(([via]) => VIA_ENTRY[via] === entry)

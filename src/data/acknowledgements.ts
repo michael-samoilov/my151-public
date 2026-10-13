@@ -81,6 +81,10 @@ const typeIconsFrom = (source: string) => {
   return `The ${new Intl.ListFormat('en', { type: 'conjunction' }).format(names)} type icons.`;
 };
 
+/** Most sprites first (Michael, 2026-10-13); a tie goes by name. */
+const byCount = <T,>(count: (item: T) => number, name: (item: T) => string) => (a: T, b: T) =>
+  count(b) - count(a) || name(a).localeCompare(name(b), 'en', { sensitivity: 'base' });
+
 const SPRITE_PROJECTS: readonly Acknowledgement[] = [
   {
     id: 'smogon-sprite-project',
@@ -132,11 +136,15 @@ const SPRITE_PROJECTS: readonly Acknowledgement[] = [
 export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
   {
     id: 'sprite-projects',
-    entries: SPRITE_PROJECTS.filter((project) => !project.rowsOnly || projectSpriteCount(project.id) > 0),
+    entries: SPRITE_PROJECTS
+      .filter((project) => !project.rowsOnly || projectSpriteCount(project.id) > 0)
+      .sort(byCount((project) => projectSpriteCount(project.id), (project) => project.name)),
   },
   {
     id: 'sprite-artists',
-    entries: spriteArtists().map((artist) => ({
+    // Counted from the same list the artist's Used for shows, so the order
+    // and the entry cannot disagree.
+    entries: [...spriteArtists()].sort(byCount((artist) => artist.sprites.length, (artist) => artist.name)).map((artist) => ({
       id: artistEntryId(artist.name),
       name: artist.name,
       links: artist.links,
