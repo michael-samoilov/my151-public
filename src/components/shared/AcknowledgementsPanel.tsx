@@ -156,13 +156,13 @@ function EntryRow({ entry, note, onOpen }: { entry: Acknowledgement; note: strin
       className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
     >
       <span className="flex min-w-0 flex-1 flex-col">
-        {/* Two boxes, each with its own ellipsis: the credit gives way
-            first, and the name only past the row. */}
-        <span className="flex min-w-0 items-baseline gap-1 text-sm">
-          <span className="max-w-full shrink-0 truncate font-medium">{entry.name}</span>
-          {entry.by && <span className="min-w-0 truncate text-muted-foreground">{t('ack.by', { name: entry.by })}</span>}
+        {/* A credit shows whole: the name and its author wrap onto a second
+            line rather than lose their ends to an ellipsis. */}
+        <span className="break-words text-sm">
+          <span className="font-medium">{entry.name}</span>
+          {entry.by && <span className="text-muted-foreground"> {t('ack.by', { name: entry.by })}</span>}
         </span>
-        <span className="truncate text-xs text-muted-foreground">{note}</span>
+        <span className="break-words text-xs text-muted-foreground">{note}</span>
       </span>
       <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
     </button>
