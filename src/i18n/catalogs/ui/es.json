@@ -504,7 +504,7 @@
   "favorites.title": "Elige tus Pokémon favoritos por tipo y generación",
   "favorites.icons.hide": "Ocultar iconos",
   "favorites.icons.show": "Mostrar iconos",
-  "error.body": "Algo ha fallado en la página. Recargar suele solucionarlo, y un informe nos dice qué se ha roto.",
+  "error.body": "Algo ha fallado en la página. Recargar suele solucionarlo.",
   "error.reload": "Recargar",
   "error.title": "Esta parte ha dejado de funcionar",
   "feedback.category.bug": "Error",

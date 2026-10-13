@@ -504,7 +504,7 @@
   "favorites.title": "Choisissez vos Pokémon préférés par type et génération",
   "favorites.icons.hide": "Masquer les icônes",
   "favorites.icons.show": "Afficher les icônes",
-  "error.body": "Une erreur est survenue sur la page. Recharger suffit souvent, et un signalement nous indique ce qui a cassé.",
+  "error.body": "Une erreur est survenue sur la page. Recharger suffit souvent.",
   "error.reload": "Recharger",
   "error.title": "Cette partie ne fonctionne plus",
   "feedback.category.bug": "Bug",

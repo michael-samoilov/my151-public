@@ -504,7 +504,7 @@
   "favorites.title": "Lieblings-Pokémon nach Typ und Generation wählen",
   "favorites.icons.hide": "Symbole ausblenden",
   "favorites.icons.show": "Symbole anzeigen",
-  "error.body": "Auf der Seite ist etwas schiefgelaufen. Neu laden behebt das meist – und eine Meldung zeigt uns, was kaputt ist.",
+  "error.body": "Auf der Seite ist etwas schiefgelaufen. Neu laden behebt das meist.",
   "error.reload": "Neu laden",
   "error.title": "Dieser Teil funktioniert nicht mehr",
   "feedback.category.bug": "Fehler",

@@ -296,7 +296,7 @@ export const enUi = {
   'drilldown.tier.loss_other': '−{count} doublings of advantage',
   'drilldown.titleWithDex': '{title} — {dex}',
   'drilldown.typeTitle': '{type} Type',
-  'error.body': 'Something in the page failed. Reloading usually fixes it — and a report tells us what broke.',
+  'error.body': 'Something in the page failed. Reloading usually fixes it.',
   'error.reload': 'Reload',
   'error.title': 'This part stopped working',
   'faq.dex.a1': 'my151 is smart, it knows that if you choose Bulbasaur, then Venusaur should join your dex too. my151 is smooth and easy to use, providing a "paint-by-numbers" template of Pokédex sections (like regional bird, Pikaclone, pseudo-legendary, and more), so you spend more time making thoughtful choices instead of trying to remember Pokémon. my151 also guides you towards making a balanced and realistic regional Pokédex, by providing detailed analytics into your dex\'s distribution of type, BST, and evolutionary stage, as well as comparisons to official regional Pokédexes.',
