@@ -130,9 +130,15 @@ export function prerenderHub(): Plugin {
         // was painted. `blocking="render"` holds the first paint until the
         // marker is parsed (Chromium); the `:has()` rule hides the hub until
         // then in other browsers.
-        html = html.replace(root, () => `<div id="root" data-prerendered>${markup}</div><span id="p151-end" hidden></span>`);
+        // React puts the screenshots' preloads at the start of the markup. They
+        // go in the head instead, ahead of the inline stylesheet, so the
+        // browser starts the images before it has read the styles.
+        const imagePreload = /<link rel="preload" as="image"[^>]*\/>/g;
+        const imagePreloads = markup.match(imagePreload) ?? [];
+        html = html.replace(root, () => `<div id="root" data-prerendered>${markup.replace(imagePreload, '')}</div><span id="p151-end" hidden></span>`);
         const head = [
           `<link rel="preload" as="font" type="font/woff2" crossorigin href="${config.base}assets/${font}">`,
+          ...imagePreloads,
           '<link rel="expect" href="#p151-end" blocking="render">',
           '<style>html .p151-boot{display:none}html.p151-wait .p151-boot{display:flex}html.p151-wait #root{display:none}</style>',
           '<style>html:not(:has(#p151-end)) #root{visibility:hidden}</style>',
