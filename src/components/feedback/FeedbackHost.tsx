@@ -1,14 +1,11 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { reloadIfStale } from '@/lib/staleDeploy';
+import { useEffect, useRef, useState } from 'react';
+import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
 import {
   registerFeedbackOpener,
   takePendingCrash,
   type FeedbackAnchor,
 } from '@/components/feedback/feedbackChannel';
 import type { FeedbackCategory, FeedbackContext, FeedbackToolContext } from '@/lib/feedbackContext';
-
-const FeedbackSheet = lazy(() => reloadIfStale(import('./FeedbackSheet'))
-  .then(module => ({ default: module.FeedbackSheet })));
 
 /**
  * The single mount point for the report form.
@@ -22,6 +19,11 @@ const FeedbackSheet = lazy(() => reloadIfStale(import('./FeedbackSheet'))
  *
  * It also sits outside every page's error boundary, so a page that has crashed
  * can still open the form its fallback offers.
+ *
+ * The sheet is imported, not loaded on first open. Loaded on open, its text
+ * field took focus after the download, outside the tap, and iOS opens the
+ * keyboard only for a focus inside the tap: the first report after a reload
+ * opened without a keyboard (October 2026).
  *
  * `route` is the page the report is about. It comes from the visible view
  * rather than from whichever button was clicked, so the footer link, which
@@ -57,15 +59,13 @@ export function FeedbackHost({ route, getToolContext }: {
 
   if (!open) return null;
   return (
-    <Suspense fallback={null}>
-      <FeedbackSheet
-        route={route}
-        toolContext={toolContext}
-        initialCategory={category}
-        error={crash}
-        anchor={anchor}
-        onClose={() => setOpen(false)}
-      />
-    </Suspense>
+    <FeedbackSheet
+      route={route}
+      toolContext={toolContext}
+      initialCategory={category}
+      error={crash}
+      anchor={anchor}
+      onClose={() => setOpen(false)}
+    />
   );
 }
