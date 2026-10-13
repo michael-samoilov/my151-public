@@ -1,3 +1,4 @@
+import {acknowledgeMinuteActivity,encodeActivityBeacon} from '@/lib/minuteActivity';
 /** Bounded best-effort delivery. Requests retain one ID across retries. */
 interface Operation {
   id: string;
@@ -45,7 +46,8 @@ export function createFavoriteBeaconDelivery(enabled: () => boolean) {
       });
       if (!pending.has(operation.id)) return;
       if (response.ok) {
-        const result = await response.json() as {ok?:boolean;contended?:boolean;capped?:boolean};
+        const result = await response.json() as {ok?:boolean;contended?:boolean;capped?:boolean;activityAck?:unknown};
+        acknowledgeMinuteActivity('favorites',result.activityAck);
         if (result.ok === true && !result.contended && !result.capped) {
           if (operation.sequence >= acknowledgedSequence) {
             acknowledgedSequence = operation.sequence;
@@ -91,7 +93,7 @@ export function createFavoriteBeaconDelivery(enabled: () => boolean) {
       }
       const id = crypto.randomUUID();
       const operation: Operation = {
-        id,body:JSON.stringify({...payload,id}),content,export:isExport,sequence:++sequence,attempts:0,
+        id,body:encodeActivityBeacon({...payload,id}),content,export:isExport,sequence:++sequence,attempts:0,
       };
       if (!isExport) latestProgress = operation;
       pending.set(id,operation);

@@ -1,3 +1,5 @@
+import {parseAttentionForIngest,mergeAttention} from './_attention.js';
+import {appendMinuteActivity} from './_activityHistoryStore.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
@@ -22,7 +24,7 @@ import {
   type BeaconKind,
   type ClientRecord,
 } from './_shared.js';
-import { alignSessionMs, isSubsetRegression, parseCapturedAt, sessionTarget } from './_sessionize.js';
+import { alignSessionMs, isSubsetRegression, parseCapturedAt, sessionTarget, checkpointRecording, endStampedSpans, retiredCapture } from './_sessionize.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
 
 /** A Pokédex holds species and forms, such as Alolan Raichu (10100). The chain
@@ -182,6 +184,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ref?: unknown;
       tool?: unknown;
       page?: unknown;
+      attention?: unknown;
+      activity?: unknown;
       ts?: unknown;
       notme?: unknown;
     };
@@ -191,6 +195,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'invalid cid' });
     }
     const cid = body.cid;
+    const receivedAt=Date.now();
+    const attention=parseAttentionForIngest(body.attention,receivedAt);
+    if(attention===null)return res.status(400).json({error:'invalid attention'});
 
     if (typeof body.kind !== 'string' || !isBeaconKind(body.kind)) {
       return res.status(400).json({ error: 'invalid kind' });
@@ -256,7 +263,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    const receivedAt = Date.now();
+
     const captured = parseCapturedAt(body.ts, receivedAt);
     const now = captured ?? receivedAt;
     const capturedKnown = captured !== null;
@@ -276,7 +283,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Merge this beacon into an existing record (or seed a new one). Pure given
     // `existing`, so it can be re-run on retry after a concurrent write.
     const mergeRecord = (existing: ClientRecord | null, recCid: string): ClientRecord => {
-      const rec: ClientRecord = existing ?? {
+      const oldSpans = existing?.sessions !== undefined ? endStampedSpans(existing) : [];
+      const rec: ClientRecord = existing ? {...existing} : {
         cid: recCid,
         firstTs: now,
         firstAt: at,
@@ -291,6 +299,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         exported: false,
       };
 
+      const measured=mergeAttention(existing?.attention,attention,receivedAt);
+      if(measured)rec.attention=measured;
       rec.submits += 1;
       rec.maxDepth = Math.max(rec.maxDepth, depth);
       rec.country = geo.country;
@@ -305,7 +315,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       rec.browser = ua.browser;
       rec.everIds = Array.from(new Set([...(rec.everIds ?? []), ...ids])).sort((a, b) => a - b);
       if (secs) {
-        const ever = rec.everSections ?? {};
+        const ever = {...(rec.everSections ?? {})};
         for (const [sid, sIds] of Object.entries(secs)) {
           ever[sid] = Array.from(new Set([...(ever[sid] ?? []), ...sIds])).slice(0, 200);
         }
@@ -349,54 +359,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         };
       };
 
-      if (log.length === 0) {
-        log.push(makeEntry(now));
-        ms.push(0);
-        depths.push(depth);
-        rec.sessions = 1;
-        rec.curSessionStart = now;
-      } else {
-        const target = sessionTarget(
-          log.map((s) => s.ts),
-          ms,
-          now,
-          SESSION_GAP_MS,
-        );
-        if (
-          target.kind === 'insert' &&
-          !capturedKnown &&
-          existing &&
-          isSubsetRegression(ids, rec.latestIds ?? [])
-        ) {
-          rec.sessionLog = log;
-          rec.sessionMs = ms;
-          rec.sessionDepth = depths;
-          if (now > rec.lastTs) {
-            rec.lastTs = now;
-            rec.lastAt = at;
-            rec.localHour = localHourIn(geo.tz, now);
-            rec.localDow = localDowIn(geo.tz, now);
-          }
-          return rec;
-        }
-        if (target.kind === 'join') {
-          const i = target.index;
-          if (now >= log[i].ts) {
-            const start = log[i].ts - ms[i];
-            const newEnd = Math.max(log[i].ts, now);
-            ms[i] = Math.max(0, newEnd - start);
-            depths[i] = depth;
-            log[i] = makeEntry(newEnd, log[i]);
-          }
+      if (!retiredCapture(existing ?? {},now,Math.min(...oldSpans.map(s=>s.start)),SESSION_GAP_MS)) {
+        if (log.length === 0) {
+          log.push(makeEntry(now));
+          ms.push(0);
+          depths.push(depth);
+          rec.sessions = 1;
+          rec.curSessionStart = now;
         } else {
-          log.splice(target.index, 0, makeEntry(now));
-          ms.splice(target.index, 0, 0);
-          depths.splice(target.index, 0, depth);
-          rec.sessions = (rec.sessions ?? 0) + 1;
+          const target = sessionTarget(
+            log.map((s) => s.ts),
+            ms,
+            now,
+            SESSION_GAP_MS,
+          );
+          if (
+            target.kind === 'insert' &&
+            !capturedKnown &&
+            existing &&
+            isSubsetRegression(ids, rec.latestIds ?? [])
+          ) {
+            rec.sessionLog = log;
+            rec.sessionMs = ms;
+            rec.sessionDepth = depths;
+            if (now > rec.lastTs) {
+              rec.lastTs = now;
+              rec.lastAt = at;
+              rec.localHour = localHourIn(geo.tz, now);
+              rec.localDow = localDowIn(geo.tz, now);
+            }
+            Object.assign(rec,checkpointRecording(existing ?? {},oldSpans,endStampedSpans(rec),now,receivedAt));
+            return rec;
+          }
+          if (target.kind === 'join') {
+            const i = target.index;
+            if (now >= log[i].ts) {
+              const start = log[i].ts - ms[i];
+              const newEnd = Math.max(log[i].ts, now);
+              ms[i] = Math.max(0, newEnd - start);
+              depths[i] = depth;
+              log[i] = makeEntry(newEnd, log[i]);
+            }
+          } else {
+            log.splice(target.index, 0, makeEntry(now));
+            ms.splice(target.index, 0, 0);
+            depths.splice(target.index, 0, depth);
+            rec.sessions = (rec.sessions ?? 0) + 1;
+          }
         }
       }
 
       const overflow = log.length - MAX_SESSIONS_TRACKED;
+      const retiredThrough = overflow > 0 ? Math.max(...log.slice(0,overflow).map(s=>s.ts)) : undefined;
+      Object.assign(rec,checkpointRecording(existing ?? {},oldSpans,endStampedSpans({sessionLog:log,sessionMs:ms}),now,receivedAt,retiredThrough));
       rec.sessionLog = overflow > 0 ? log.slice(overflow) : log;
       rec.sessionMs = overflow > 0 ? ms.slice(overflow) : ms;
       rec.sessionDepth = overflow > 0 ? depths.slice(overflow) : depths;
@@ -460,14 +475,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         [effectiveCid, expectedVer, JSON.stringify(rec)],
       );
       if (ok === 1) {
+        const activityAck = await appendMinuteActivity(cid, 'dex', body.activity, receivedAt);
         const prevEver = new Set(existing?.everIds ?? []);
         const newlyEver = rec.everIds.filter((id) => !prevEver.has(id));
         if (newlyEver.length > 0) await bumpDexPickFreq(newlyEver);
         if (kind === 'export') {
           const highlight = await recordToolExport('pokedex', ids);
-          return res.status(200).json({ ok: true, highlight });
+          return res.status(200).json({ ok: true, highlight, activityAck });
         }
-        return res.status(200).json({ ok: true });
+        return res.status(200).json({ ok: true, activityAck });
       }
       // Lost the race — brief backoff, then re-read and retry.
       await new Promise((r) => setTimeout(r, 15 + attempt * 20));

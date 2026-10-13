@@ -14,6 +14,7 @@ import {
   type ExportSurveyTool,
 } from '@/lib/exportSurvey';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import { useT } from '@/i18n';
 
 export type ExportPreviewPhase = 'settings' | 'surveyIntro' | 'survey';
 
@@ -117,8 +118,8 @@ export function ExportPreviewShell({
   recipe = DEFAULT_FOIL_RECIPE,
   tilt = DEFAULT_HOVER_TILT_RECIPE,
   bare = false,
-  settingsTitle = 'Export',
-  closeLabel = 'Close export',
+  settingsTitle,
+  closeLabel: closeLabelProp,
 }: {
   phase: ExportPreviewPhase;
   onClose: () => void;
@@ -140,6 +141,8 @@ export function ExportPreviewShell({
   settingsTitle?: string;
   closeLabel?: string;
 }) {
+  const t = useT();
+  const closeLabel = closeLabelProp ?? t('export.close');
   const isDesktop = useViewportAtLeast(1024);
   const sheetCap = useSettingsSheetCap(!isDesktop && phase === 'settings');
   const chrome = useExportChrome(isDesktop);
@@ -169,7 +172,9 @@ export function ExportPreviewShell({
   const surveyActions = { dismiss: dismissSurvey, finish: finishSurvey };
   const closeOverlay = phase === 'settings' ? onClose : () => dismissSurvey('dismiss');
   const paneTitle =
-    phase === 'settings' ? settingsTitle : phase === 'surveyIntro' ? 'Your export' : 'Quick question';
+    phase === 'settings'
+      ? settingsTitle ?? t('export.title')
+      : t(phase === 'surveyIntro' ? 'exportSurvey.introTitle' : 'exportSurvey.title');
   const paneBody =
     phase === 'settings'
       ? settings

@@ -4,7 +4,7 @@ import pokemonData from '@/data/pokemon.json';
 import { pokemonShape } from '@/data/pokemonShape';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
-import { normalizeSearch, speciesSearchText, useNamesVersion } from '@/i18n';
+import { normalizeSearch, formSearchText, speciesSearchText, pokemonLabel, useNamesVersion } from '@/i18n';
 import { revisedSprite } from '@/lib/spriteUrl';
 
 // A replaced sprite file gets a new URL, so no cache keeps serving the old art.
@@ -347,7 +347,19 @@ function getAllEvolutionLines(pokemonId: number): Pokemon[][] {
   return suffixes.map(suffix => [...prefix, ...suffix]);
 }
 
-interface UseFilteredPokemonOptions {
+export interface PokemonDataSource {
+  readonly pokemon: readonly Pokemon[];
+  getPokemonById(id: number): Pokemon | undefined;
+  getAllEvolutionLines(id: number): Pokemon[][];
+  includeEvolutionItemForms?: boolean;
+  archetypeMemberId?(id: number): number;
+  favoritePickerId?(id: number): number | undefined;
+  compareBrowserOrder?(a: number, b: number): number;
+  standaloneGroupId?(id: number): number;
+}
+
+export interface UseFilteredPokemonOptions {
+  dataSource?: PokemonDataSource;
   search?: string;
   category?: string | null;
   archetype?: string | null;
@@ -365,6 +377,7 @@ interface UseFilteredPokemonOptions {
 }
 
 function useFilteredPokemon({
+  dataSource,
   search = '',
   category = null,
   archetype = null,
@@ -405,20 +418,25 @@ function useFilteredPokemon({
     // Read so the dependency is real rather than decorative: the memo's output
     // depends on the name catalog, which this counter stands in for.
     void namesVersion;
-    let filtered = pokemonList;
+    let filtered = dataSource ? [...dataSource.pokemon] : pokemonList;
 
     // When searching by name/number, ignore all other filters — the user
     // knows what they want and filters would only get in the way.
     if (search) {
       const q = normalizeSearch(search);
+      const words = q.split(/[^\p{L}\p{N}♂♀]+/u).filter(Boolean);
       filtered = filtered.filter(p => {
         // The English slug stays searchable in every locale. A Japanese user on
         // a Latin keyboard typing `pikachu` is the common case, not the
         // exception — and it is the only thing that works before the locale's
         // name catalog has finished loading.
         if (p.name.includes(q) || p.id.toString() === q) return true;
+        const full = `${p.name.replace(/-/g, ' ')} ${formSearchText(p.id) ?? ''}`;
+        if (words.length && words.every(word => full.includes(word))) return true;
         const localized = speciesSearchText(p.id);
-        return localized ? localized.includes(q) : false;
+        if (localized?.includes(q)) return true;
+        const resolvedFull = normalizeSearch(pokemonLabel(p.id, p.name).full);
+        return words.length > 0 && words.every(word => resolvedFull.includes(word));
       });
     } else {
       if (category) {
@@ -432,7 +450,7 @@ function useFilteredPokemon({
         const archetypeDef = ARCHETYPES.find(a => a.id === archetype);
         if (archetypeDef) {
           const idSet = new Set(archetypeDef.pokemonIds);
-          filtered = filtered.filter(p => idSet.has(p.id));
+          filtered = filtered.filter(p => idSet.has(p.id) || idSet.has(dataSource?.archetypeMemberId?.(p.id) ?? p.id));
         }
       }
 
@@ -475,7 +493,7 @@ function useFilteredPokemon({
       }
     }
 
-    if (archetype !== 'evolution-item') {
+    if (archetype !== 'evolution-item' && !dataSource?.includeEvolutionItemForms) {
       filtered = filtered.filter(p => !EVOLUTION_ITEM_ONLY_IDS.has(p.id));
     }
 
@@ -489,7 +507,7 @@ function useFilteredPokemon({
 
     return filtered;
   // eslint-disable-next-line react-hooks/exhaustive-deps -- excludeKey/restrictKey stand in for their Sets
-  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeKey, restrictKey, namesVersion]);
+  }, [dataSource, search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeKey, restrictKey, namesVersion]);
 }
 
 export interface EvolutionGroup {
@@ -517,10 +535,10 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
     const seenBranches = new Set<string>();
     const result: EvolutionGroup[] = [];
 
-    const hideFormAlts = options.archetype !== 'evolution-item';
+    const hideFormAlts = options.archetype !== 'evolution-item' && !options.dataSource?.includeEvolutionItemForms;
 
     for (const p of filtered) {
-      const lines = getAllEvolutionLines(p.id);
+      const lines = options.dataSource?.getAllEvolutionLines(p.id) ?? getAllEvolutionLines(p.id);
 
       for (const rawLine of lines) {
         const line = hideFormAlts ? rawLine.filter(m => !EVOLUTION_ITEM_ONLY_IDS.has(m.id)) : rawLine;
@@ -551,7 +569,8 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
       }
     }
 
-    result.sort((a, b) => a.members[0].id - b.members[0].id);
+    const compare = options.dataSource?.compareBrowserOrder ?? ((a: number, b: number) => a - b);
+    result.sort((a, b) => compare(a.members[0].id, b.members[0].id));
 
     // Post-filter by evo line size
     if (options.evoLineSize && options.evoLineSize.length > 0) {
@@ -567,5 +586,5 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
 
     return result;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, evoLineSizeKey]);
+  }, [filtered, evoLineSizeKey, options.archetype, options.dataSource]);
 }

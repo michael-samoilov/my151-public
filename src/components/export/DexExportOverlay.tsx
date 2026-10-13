@@ -5,6 +5,7 @@ import { isOptedOut } from '@/lib/clientId';
 import { PREVIEW_DEPLOY } from '@/lib/demoMode';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import { useT } from '@/i18n';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { computeViewSort } from '@/hooks/useViewSort';
 import { DEFAULT_STATS_HEIGHTS, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
@@ -36,12 +37,15 @@ function seedDraft(): DexExportDraft {
 }
 
 export function DexExportOverlay({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const sections = usePokedexStore((s) => s.sections);
   const [draft, setDraft] = useState<DexExportDraft>(seedDraft);
   const [recipe] = useState<FoilRecipe>(() => cloneFoilRecipe(DEFAULT_FOIL_RECIPE));
   const [tilt] = useState<HoverTiltRecipe>(() => cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE));
   const [phase, setPhase] = useState<ExportPreviewPhase>('settings');
   const [exportBusy, setExportBusy] = useState(false);
+  // A failed save says so in the pane; the next try clears it.
+  const [exportFailed, setExportFailed] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
   const [surveyOpenedAt, setSurveyOpenedAt] = useState(0);
   const isDesktop = useViewportAtLeast(1024);
@@ -91,6 +95,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   const runExport = useCallback(async () => {
     if (exportBusy || sorted.length === 0) return;
     setExportBusy(true);
+    setExportFailed(false);
     const ids = sorted.map((p) => p.id);
     try {
       const nextHighlight = (await sendExportBeacon(
@@ -129,6 +134,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('Export failed:', err);
+      setExportFailed(true);
     } finally {
       setExportBusy(false);
     }
@@ -156,7 +162,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       surveyTool="pokedex"
       overlayMarker="data-dex-export-overlay"
-      previewAlt="Pokedex export preview"
+      previewAlt={t('export.preview.dex')}
       frames={{ activeKey, urls, busy: busy || exportBusy }}
       maskContext={maskContext}
       recipe={recipe}
@@ -169,6 +175,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
           seedCustomIds={seedCustomIds}
           busy={exportBusy || busy}
           onExport={() => void runExport()}
+          failed={exportFailed}
           onClose={onClose}
           mobileSheet={!isDesktop}
         />

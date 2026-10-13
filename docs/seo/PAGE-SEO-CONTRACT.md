@@ -44,8 +44,13 @@ whether that copy reaches a crawler at all.
 7. **Each page carries a collapsed FAQ block under the footer,** rendered by
    React, with the questions as `h2` elements and the answers as paragraphs.
    Copy is in `LAUNCH-COPY.md`. Google indexes collapsed content at full
-   weight. Do not put it in the pre-mount boot copy: that markup is replaced
-   when React mounts, so only Bing would ever read it.
+   weight. Since 11 October 2026 each tool page also serves the same English
+   FAQ, collapsed, inside its boot copy, for crawlers that do not run
+   JavaScript (most AI crawlers, and Bing in part). `scripts/static-faq.ts`
+   writes it at build time from the catalog, at a `<!-- p151-faq:<page> -->`
+   marker, so the two copies cannot drift. It shares the boot copy's
+   one-second hold, so a normal load never paints it; React replaces it on
+   mount. `e2e/served-faq.spec.ts` guards all three.
 8. **Internal links are `<a href>` elements** in the served HTML, not click
    handlers. Anchor text to a tool page shares that page's h1 phrase.
 9. **Images that carry meaning have descriptive alt text.** Sprites use the

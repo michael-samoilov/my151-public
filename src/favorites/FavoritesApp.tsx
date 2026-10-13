@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
+import { fireCompletionConfetti, preloadCompletionConfetti } from '@/components/milestone/completionConfetti';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -20,6 +21,8 @@ import { buildFavoritesSnapshot } from './export/snapshot';
 import type { FeedbackToolContext } from '@/lib/feedbackContext';
 import { sendFavoriteExportShownBeacon, sendFavoriteNudgeShownBeacon, useFavoriteBeacon } from './hooks/useFavoriteBeacon';
 import { useCompletionNudge } from './hooks/useCompletionNudge';
+import { filledCount, useAnalyticsUnlock } from './hooks/useAnalyticsUnlock';
+import { AnalyticsNudge } from './components/AnalyticsNudge';
 import { useFavoritesStore } from './store/useFavoritesStore';
 import { FavoritesGrid } from './components/FavoritesGrid';
 import { FavoritesHeader, type FavoritesView } from './components/FavoritesHeader';
@@ -28,12 +31,19 @@ import { PickerSheet } from './components/PickerSheet';
 import { SortDebugPanel } from './components/SortDebugPanel';
 import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
+import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
 const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./components/FavoritesAnalyticsDashboard')));
 const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/FavoritesExportOverlay')));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId; keyboard?: boolean };
+
+/** The completion popup is on screen: the confetti lands with it, once, as the popup does. */
+function completionShown() {
+  sendFavoriteNudgeShownBeacon();
+  fireCompletionConfetti();
+}
 
 function savedShowIcons(): boolean {
   try { return window.localStorage.getItem(ICONS_STORAGE_KEY) !== '0'; }
@@ -92,6 +102,11 @@ function FavoritesContent({ sel, setSel }: {
   const [analyticsMounted, setAnalyticsMounted] = useState(false);
   const exportRef = useRef<HTMLButtonElement>(null);
   const completionNudge = useCompletionNudge();
+  const analytics = useAnalyticsUnlock();
+  const filled = useMemo(() => filledCount(fills), [fills]);
+  useEffect(() => {
+    if (completionNudge.armed) preloadCompletionConfetti();
+  }, [completionNudge.armed]);
   // Always the default order for users. `?sortdebug=1` lets a preview change it.
   const [sortOrder, setSortOrder] = useState(initialSortOrder);
   const t = useT();
@@ -169,6 +184,12 @@ function FavoritesContent({ sel, setSel }: {
         if (typeof sel.gen === 'number') applyPack(sel.gen, path);
       }}
       onClear={() => clear(sel.type, sel.gen)}
+      onOpenCell={(type, gen, keyboard) => {
+        // The grid may be scrolled away from the cell. The scroller's padding
+        // keeps it clear of the sticky headers.
+        document.querySelector(`[data-testid="favorites-cell-${type}-${gen}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        open(type, gen, keyboard);
+      }}
     />
   ) : null;
 
@@ -179,8 +200,10 @@ function FavoritesContent({ sel, setSel }: {
         {/* One `<main>` for both tabs. A `<main>` that is also a tab panel
             loses its landmark role, so the panels are plain elements. */}
         <main className="flex shrink-0 flex-col">
-        <FavoritesHeader fills={fills} currentView={currentView} exportOpen={exportOpen} exportRef={exportRef}
+        <FavoritesHeader fills={fills} filled={filled} analyticsUnlocked={analytics.unlocked}
+          currentView={currentView} exportOpen={exportOpen} exportRef={exportRef}
           onViewChange={(view) => {
+            if (view === 'analytics' && !analytics.unlocked) return;
             setSel(null);
             if (view === 'analytics') setAnalyticsMounted(true);
             setCurrentView(view);
@@ -209,7 +232,7 @@ function FavoritesContent({ sel, setSel }: {
         </div>
         <div id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"
           hidden={currentView !== 'analytics'} className={currentView === 'analytics' ? 'h-[calc(100dvh-2*2.75rem)] shrink-0 min-h-0' : 'hidden'}>
-          {analyticsMounted && <Suspense fallback={<div role="status" aria-label={t('nav.analytics')} className="m-4 h-32 animate-pulse rounded-lg bg-muted" />}>
+          {analyticsMounted && <Suspense fallback={<div role="status" aria-label={t('favorites.nav.analytics')} className="flex h-full items-center justify-center opacity-70"><PokeBallSpinner delayed className="h-12 w-12" /></div>}>
             <FavoritesAnalyticsDashboard fills={fills} active={currentView === 'analytics'} />
           </Suspense>}
         </div>
@@ -217,7 +240,17 @@ function FavoritesContent({ sel, setSel }: {
         {desktop ? null : picker}
         <PageFooter faq="favorites" compact />
       </div>
-      {/* The Dex builder's follow-up popup, pointing at Export once the grid is first complete. */}
+      {/* The Dex builder's 25 popup, under Analytics once the grid first holds 25. */}
+      <AnalyticsNudge armed={analytics.armed} canShow={desktop || sel === null} desktop={desktop}
+        onDismiss={analytics.dismiss}
+        onOpen={() => {
+          setSel(null);
+          setAnalyticsMounted(true);
+          setCurrentView('analytics');
+          analytics.dismiss();
+        }} />
+      {/* The Dex builder's follow-up popup, pointing at Export once the grid is
+          first complete, with the completion confetti. */}
       <FollowUpHint
         armed={completionNudge.armed}
         dismiss={completionNudge.dismiss}
@@ -225,9 +258,9 @@ function FavoritesContent({ sel, setSel }: {
         anchorRef={exportRef}
         title={t('favorites.nudge.complete.title')}
         body={t('favorites.nudge.complete.body')}
-        onShown={sendFavoriteNudgeShownBeacon}
+        onShown={completionShown}
       />
-      {exportOpen && <Suspense fallback={null}>
+      {exportOpen && <Suspense fallback={<ScreenSpinner />}>
         <FavoritesExportOverlay fills={fills} onClose={() => setExportOpen(false)}
           onReview={(type, gen) => { setExportOpen(false); open(type, gen); }} />
       </Suspense>}

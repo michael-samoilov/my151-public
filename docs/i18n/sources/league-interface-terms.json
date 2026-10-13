@@ -1,0 +1,248 @@
+{
+  "source": "Pokémon Scarlet/Violet, Sword/Shield, Ultra Sun/Ultra Moon and Let’s Go game text",
+  "mirror": "https://github.com/abcboy101/poke-corpus",
+  "commit": "d74a89ba69cbabc491b65c3e88af8722bb34a927",
+  "note": "The league builder’s authored strings follow these terms. Move names, move categories (Physical, Special, Status) and contest conditions are sourced in move-names.json and game-terms.json.",
+  "terms": [
+    {
+      "qid": "sv.trtype.MSG_TRTYPE_GYMLEADER",
+      "table": "ScarletViolet/*_common.txt.gz",
+      "text": {
+        "en": "Gym Leader",
+        "ja": "ジムリーダー",
+        "ko": "체육관 관장",
+        "zh-Hans": "道馆馆主",
+        "zh-Hant": "道館館主",
+        "fr": "Champion d’Arène",
+        "de": "Arenaleiter",
+        "es": "Líder de Gimnasio",
+        "it": "Capopalestra"
+      },
+      "usage": "Gym Leader: the section band, the gym leader team band, and the vacancy line."
+    },
+    {
+      "qid": "sv.trtype.MSG_TRTYPE_E4",
+      "table": "ScarletViolet/*_common.txt.gz",
+      "text": {
+        "en": "Elite Four",
+        "ja": "四天王",
+        "ko": "사천왕",
+        "zh-Hans": "四天王",
+        "zh-Hant": "四天王",
+        "fr": "Conseil 4",
+        "de": "Top Vier",
+        "es": "Alto Mando",
+        "it": "Superquattro"
+      },
+      "usage": "Elite Four: the section band, the slot names, and the Elite Four band."
+    },
+    {
+      "qid": "swsh.trtype.MSG_TRTYPE_CHAMPION1",
+      "table": "SwordShield/*_common.txt.gz",
+      "text": {
+        "en": "Champion",
+        "ja": "チャンピオン",
+        "ko": "챔피언",
+        "zh-Hans": "冠军",
+        "zh-Hant": "冠軍",
+        "fr": "Maître",
+        "de": "Champ",
+        "es": "Campeón",
+        "it": "Campione"
+      },
+      "usage": "Champion: the masculine generic form. Scarlet/Violet has only a female Champion, so its French, Spanish and Italian forms are feminine."
+    },
+    {
+      "qid": "usum.common.123.93",
+      "table": "UltraSunUltraMoon/*_common.txt.gz",
+      "text": {
+        "en": "Mega Evolution",
+        "ja": "メガシンカ",
+        "ko": "메가진화",
+        "zh-Hans": "超级进化",
+        "zh-Hant": "超級進化",
+        "fr": "Méga-Évolution",
+        "de": "Mega-Entwicklung",
+        "es": "Megaevolución",
+        "it": "Megaevoluzione"
+      },
+      "usage": "Mega Evolution: the Mega disc label. The band note shortens it to the games’ own Mega prefix (Méga in French, 超级 and 超級 in Chinese)."
+    },
+    {
+      "qid": "swsh.zkn_form.ZKN_FORM_003_999",
+      "table": "SwordShield/*_common.txt.gz",
+      "text": {
+        "en": "Gigantamax",
+        "ja": "キョダイマックス",
+        "ko": "거다이맥스",
+        "zh-Hans": "超极巨化",
+        "zh-Hant": "超極巨化",
+        "fr": "Gigamax",
+        "de": "Gigadynamax",
+        "es": "Gigamax",
+        "it": "Gigamax"
+      },
+      "usage": "Gigantamax: the Elite Four band note."
+    },
+    {
+      "qid": "swsh.dressup_item_name.color_text_Daimax",
+      "table": "SwordShield/*_common.txt.gz",
+      "text": {
+        "en": "Dynamax",
+        "ja": "ダイマックス",
+        "ko": "다이맥스",
+        "zh-Hans": "极巨化",
+        "zh-Hant": "極巨化",
+        "fr": "Dynamax",
+        "de": "Dynamax",
+        "es": "Dinamax",
+        "it": "Dynamax"
+      },
+      "usage": "Dynamax: the Dynamax disc label."
+    },
+    {
+      "qid": "sv.zkn_form.ZKN_FORM_382_001",
+      "table": "ScarletViolet/*_common.txt.gz",
+      "text": {
+        "en": "Primal Reversion",
+        "ja": "ゲンシカイキのすがた",
+        "ko": "원시회귀의 모습",
+        "zh-Hans": "原始回归的样子",
+        "zh-Hant": "原始回歸的樣子",
+        "fr": "Primo-Résurgence",
+        "de": "Protomorphose",
+        "es": "Regresión Primigenia",
+        "it": "Archeorisveglio"
+      },
+      "usage": "Primal Reversion: the Primal disc label, without the form suffix (のすがた, 的样子, 의 모습)."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_328",
+      "table": "ScarletViolet/*_common.txt.gz",
+      "text": {
+        "en": "TM001",
+        "ja": "わざマシン００１",
+        "ko": "기술머신001",
+        "zh-Hans": "招式学习器００１",
+        "zh-Hant": "招式學習器００１",
+        "fr": "CT001",
+        "de": "TM001",
+        "es": "MT001",
+        "it": "MT001"
+      },
+      "usage": "TM: the TM slot mark and the TM picker title take the prefix before the number."
+    },
+    {
+      "qid": "lgpe.itemname.ITEMNAME_942",
+      "table": "LetsGoPikachuLetsGoEevee/*_common.txt.gz",
+      "text": {
+        "en": "Surge Badge",
+        "ja": "だいだいバッジ",
+        "ko": "주황배지",
+        "zh-Hans": "桔色徽章",
+        "zh-Hant": "橘色徽章",
+        "fr": "Fulguro-Badge",
+        "de": "Gewitterorden",
+        "es": "Medalla Fulgor",
+        "it": "Medaglia Tonante"
+      },
+      "usage": "Badge: where the badge word goes around a name, and whether a space separates it."
+    },
+    {
+      "qid": "swsh.status.msg_ui_status_skill_category_00",
+      "table": "SwordShield/*_common.txt.gz",
+      "text": {
+        "en": "Category",
+        "ja": "ぶんるい",
+        "ko": "분류",
+        "zh-Hans": "分类",
+        "zh-Hant": "分類",
+        "fr": "Catégorie",
+        "de": "Kategorie",
+        "es": "Clase",
+        "it": "Categoria"
+      },
+      "usage": "Category: the TM picker filter. Japanese takes the kanji 分類 for the kana ぶんるい, as the app sets its other labels."
+    },
+    {
+      "qid": "swsh.status.msg_ui_status_skill_power_00",
+      "table": "SwordShield/*_common.txt.gz",
+      "text": {
+        "en": "Power",
+        "ja": "いりょく",
+        "ko": "위력",
+        "zh-Hans": "威力",
+        "zh-Hant": "威力",
+        "fr": "Puissance",
+        "de": "Stärke",
+        "es": "Potencia",
+        "it": "Potenza"
+      },
+      "usage": "Power: the TM picker column, shortened where the column is narrow."
+    },
+    {
+      "qid": "swsh.status.msg_ui_status_skill_hit_00",
+      "table": "SwordShield/*_common.txt.gz",
+      "text": {
+        "en": "Accuracy",
+        "ja": "めいちゅう",
+        "ko": "명중",
+        "zh-Hans": "命中",
+        "zh-Hant": "命中",
+        "fr": "Précision",
+        "de": "Genauigkeit",
+        "es": "Precisión",
+        "it": "Precisione"
+      },
+      "usage": "Accuracy: the TM picker column, shortened where the column is narrow."
+    },
+    {
+      "qid": "swsh.status.msg_ui_status_skill_01",
+      "table": "SwordShield/*_common.txt.gz",
+      "text": {
+        "en": "PP",
+        "ja": "PP",
+        "ko": "PP",
+        "zh-Hans": "PP",
+        "zh-Hant": "PP",
+        "fr": "PP",
+        "de": "AP",
+        "es": "PP",
+        "it": "PP"
+      },
+      "usage": "PP: the TM picker column. German says AP."
+    },
+    {
+      "qid": "sv.status.msg_ui_status_pokemon_type_00",
+      "table": "ScarletViolet/*_common.txt.gz",
+      "text": {
+        "en": "Type",
+        "ja": "タイプ",
+        "ko": "타입",
+        "zh-Hans": "属性",
+        "zh-Hant": "屬性",
+        "fr": "Type",
+        "de": "Typ",
+        "es": "Tipo",
+        "it": "Tipo"
+      },
+      "usage": "Type: the TM picker filter and column, and the unset type tile."
+    },
+    {
+      "qid": "lgpe.place_name.PLACENAME_CHAMP01",
+      "table": "LetsGoPikachuLetsGoEevee/*_common.txt.gz",
+      "text": {
+        "en": "Pokémon League",
+        "ja": "ポケモンリーグ",
+        "ko": "포켓몬리그",
+        "zh-Hans": "宝可梦联盟",
+        "zh-Hant": "寶可夢聯盟",
+        "fr": "Ligue Pokémon",
+        "de": "Pokémon-Liga",
+        "es": "Liga Pokémon",
+        "it": "Lega Pokémon"
+      },
+      "usage": "Pokémon League: the league summary credit."
+    }
+  ]
+}

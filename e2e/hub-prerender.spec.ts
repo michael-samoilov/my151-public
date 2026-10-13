@@ -39,6 +39,20 @@ test('the hub HTML holds the whole page without JavaScript', async ({ browser, b
   await context.close();
 });
 
+// Firefox paints a page as soon as a script forces its layout, even with the
+// stylesheet still loading. `visualViewport.width` forces layout, so a read
+// before the stylesheet link showed the hub unstyled for about 600 ms on every
+// Firefox load. Every such read must come after the link, where the browser
+// holds the script until the stylesheet has loaded.
+test('the hub HTML reads no layout before its stylesheet', async ({ request }, testInfo) => {
+  const html = await (await request.get('/')).text();
+  const sheet = html.indexOf('<link rel="stylesheet"');
+  const reads = [...html.matchAll(/visualViewport|getBoundingClientRect|offsetWidth|clientWidth/g)].map((m) => m.index);
+  await testInfo.attach('head-order.json', { body: JSON.stringify({ sheet, reads }), contentType: 'application/json' });
+  expect(sheet).toBeGreaterThan(0);
+  for (const at of reads) expect(at).toBeGreaterThan(sheet);
+});
+
 /**
  * Loads the hub and reports what the visitor saw: whether #root showed before
  * the app ran, whether the app kept the prerendered heading, the layout shifts
@@ -94,7 +108,9 @@ async function visit(
   });
   await page.goto('/?notme');
   await expect(page.locator('.p151-boot')).toHaveCount(0);
-  await expect(page.getByRole('img', { name: /^Custom Pokédex Maker: a custom regional Pokédex in progress/ })).toHaveJSProperty('complete', true);
+  // The dex card's front shot. Its alt text is translated, so it is found by
+  // its file and by having alt text at all (the shadow and hit copies have none).
+  await expect(page.locator('img[alt]:not([alt=""])[src*="/tool-dex-"]:not([src*="/tool-dex-b-"])')).toHaveJSProperty('complete', true);
   await expect(page.locator('[data-card-progress]:not([data-empty])')).toHaveCount(lines);
   await page.waitForTimeout(500);
   const seen = await page.evaluate(() => {

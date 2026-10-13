@@ -8,6 +8,7 @@ import { isOptedOut } from '@/lib/clientId';
 import { PREVIEW_DEPLOY } from '@/lib/demoMode';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import { useT } from '@/i18n';
 import {
   CARD_FILENAME,
   HOME_FILENAME,
@@ -31,6 +32,7 @@ import { LeagueExportSurvey } from './LeagueExportSurvey';
 import { LeagueExportSurveyIntro } from './LeagueExportSurveyIntro';
 
 export function LeagueExportOverlay() {
+  const t = useT();
   const exportCardIndex = useLeagueUi((s) => s.exportCardIndex);
   const exportPhase = useLeagueUi((s) => s.exportPhase);
   const closeLeagueExport = useLeagueUi((s) => s.closeLeagueExport);
@@ -47,6 +49,8 @@ export function LeagueExportOverlay() {
   );
   const [cardTeamOrder, setCardTeamOrder] = useState<CardTeamOrder>('fixed');
   const [exportBusy, setExportBusy] = useState(false);
+  // A failed save says so in the pane; the next try clears it.
+  const [exportFailed, setExportFailed] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
   const [surveyOpenedAt, setSurveyOpenedAt] = useState(0);
 
@@ -81,6 +85,7 @@ export function LeagueExportOverlay() {
   const runExport = useCallback(async () => {
     if (exportBusy) return;
     setExportBusy(true);
+    setExportFailed(false);
     try {
       const { name, cards, view } = useLeagueStore.getState();
       const ids = exportPokemonIds(isLeague ? cards : [cards[exportCardIndex!]]);
@@ -118,6 +123,7 @@ export function LeagueExportOverlay() {
     } catch (err) {
       if (isShareAbort(err)) return;
       console.error('League export failed:', err);
+      setExportFailed(true);
     } finally {
       setExportBusy(false);
     }
@@ -139,7 +145,7 @@ export function LeagueExportOverlay() {
       phase={exportPhase}
       onClose={closeLeagueExport}
       surveyTool={exportKind}
-      previewAlt={isLeague ? 'League export preview' : 'Trainer card export preview'}
+      previewAlt={t(isLeague ? 'leagueExport.preview.league' : 'leagueExport.preview.card')}
       frames={{ activeKey, urls, busy: busy || exportBusy }}
       bare={!isLeague}
       settings={
@@ -151,6 +157,7 @@ export function LeagueExportOverlay() {
           onCardTeamOrder={setCardTeamOrder}
           busy={exportBusy || busy}
           onExport={() => void runExport()}
+          failed={exportFailed}
           onClose={closeLeagueExport}
           mobileSheet={!isDesktop}
         />

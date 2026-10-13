@@ -86,14 +86,16 @@ and `.powerups[row]`.
   interface has no keyboard.
 - The ace picker is windowed: Eevee's row is not in the DOM until the results
   scroll to it, so the check scrolls in steps and re-queries.
-- WebKitGTK does not scale rem-sized boxes inside the card's CSS `zoom`
-  (`useFitScale`). The fit then drops to its 0.55 floor, the ace sprite
-  overflows its slot, the ace and partner hit boxes overlap, and the TM and
-  badge boxes overflow. On production that fails 6 `gym-export:*` checks, and
-  the `league-change` and `league-home` suites stop at a WebKit click or move
-  error. Safari 26.4 to 26.6 shipped zoom fixes, so check a real Safari
-  before you call it an app bug: with a card open, compare
-  `[data-ace-partner-slot]` height / (12.75 × root rem) with the card's zoom.
+- WebKitGTK ships `EvaluationTimeZoom` off, and Safari ships it on. Without
+  it, WebKit does not scale rem-sized boxes inside the card's CSS `zoom`
+  (`useFitScale`), so the fit drops to its floor and the TM, badge and ace
+  boxes overflow. `openWebKit` turns on Safari's feature set
+  (`SAFARI_FEATURES` in `lib/engines.ts`), so the card zooms as in Safari.
+- WebKit keeps zoomed text at 9 px or more (`MinimumLogicalFontSize`, the
+  same default in Safari). Below a card zoom of about 0.85, the TM move name
+  draws larger than in Chrome, so `gym-export:tm-two-word-wrap` and
+  `gym-export:tm-one-word-line` fail on the 1280 px WebKit surface. A phone
+  draws the card at zoom 1, and there both pass.
 - Headless Firefox reports no hover-capable pointer, so
   `league-hover:desktop-column-wash` skips on Gecko by name. A desktop
   browser with a mouse is the proof.

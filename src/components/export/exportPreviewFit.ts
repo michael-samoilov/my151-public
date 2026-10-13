@@ -1,9 +1,28 @@
 /** Geometry for keeping a tilted export card inside its preview box. */
 
-export const PREVIEW_PERSPECTIVE_PX = 600;
+/**
+ * Camera distance as a multiple of the card's long edge. A fixed distance
+ * leans a big desktop card harder than a phone card at the same angle: at
+ * 600 px and full tilt, a 1090 px card drew its near edge 1.25 times its far
+ * edge, and a 342 px phone card 1.06 times. 1.75 is the phone card's ratio,
+ * so every card leans like the phone card did.
+ */
+export const PREVIEW_PERSPECTIVE_RATIO = 1.75;
+
+/** Camera distance in px for a card of this size. The workshop swaps in others. */
+export type PreviewCamera = (width: number, height: number) => number;
+
+export const previewPerspectivePx: PreviewCamera = (width, height) =>
+  PREVIEW_PERSPECTIVE_RATIO * Math.max(1, width, height);
+
+/**
+ * The card's size comes from a fit for this fixed camera, the one the
+ * preview had before October 10. Its strong lean on a big card kept the
+ * desktop card at the size Michael wants; the look still uses
+ * `previewPerspectivePx`, whose milder lean then leaves the card spare room.
+ */
+export const previewSizeCamera: PreviewCamera = () => 600;
 export const PREVIEW_REST_PAD = 8;
-/** Live tilt must keep this many CSS px between the painted AABB and the pane. */
-export const PREVIEW_TILT_INSET = 24;
 /** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;
 export const PREVIEW_SHADOW_REST = 0.14;
@@ -31,9 +50,14 @@ function rad(deg: number): number {
 }
 
 /**
- * Screen-space AABB of a plane after CSS `rotateY() rotateX()` (rotateX first)
- * under a perspective camera sitting `perspectivePx` in front of the card.
+ * Screen-space AABB of a plane turned about X first, then about Y, under a
+ * perspective camera sitting `perspectivePx` in front of the card,
+ * by default `camera` (`previewPerspectivePx`) of the card's own size.
  * Origin is the card centre. No translateZ — the rotator does not lift.
+ *
+ * The lift's CSS `rotateX() rotateY()` turns about Y first. At full tilt this
+ * model puts a corner about 1 px short of where it paints, so the 8 px rest
+ * gap is about 7 px in practice. Kept on October 11: the fit sizes stay put.
  */
 export function projectedCardAabb(opts: {
   width: number;
@@ -41,10 +65,11 @@ export function projectedCardAabb(opts: {
   tiltXDeg: number;
   tiltYDeg: number;
   perspectivePx?: number;
+  camera?: PreviewCamera;
 }): ProjectedCardAabb {
   const width = Math.max(0, opts.width);
   const height = Math.max(0, opts.height);
-  const perspectivePx = opts.perspectivePx ?? PREVIEW_PERSPECTIVE_PX;
+  const perspectivePx = opts.perspectivePx ?? (opts.camera ?? previewPerspectivePx)(width, height);
   const ax = rad(opts.tiltXDeg);
   const ay = rad(opts.tiltYDeg);
   const cosX = Math.cos(ax);
@@ -121,6 +146,7 @@ export function fitScaleForTilt(opts: {
   tiltXDeg: number;
   tiltYDeg: number;
   pad?: number;
+  camera?: PreviewCamera;
 }): number {
   const pad = opts.pad ?? 0;
   if (opts.cardWidth <= 0 || opts.cardHeight <= 0) return 1;
@@ -131,6 +157,7 @@ export function fitScaleForTilt(opts: {
         height: opts.cardHeight * scale,
         tiltXDeg: opts.tiltXDeg,
         tiltYDeg: opts.tiltYDeg,
+        camera: opts.camera,
       }),
       opts.boxWidth,
       opts.boxHeight,
@@ -189,6 +216,7 @@ export function fitCardInPreviewBox(opts: {
   aspect: number;
   tiltDeg: number;
   pad?: number;
+  camera?: PreviewCamera;
 }): { width: number; height: number } {
   const pad = opts.pad ?? PREVIEW_REST_PAD;
   const contained = containUnrotatedSize({ ...opts, pad });
@@ -200,6 +228,7 @@ export function fitCardInPreviewBox(opts: {
     tiltXDeg: opts.tiltDeg,
     tiltYDeg: opts.tiltDeg,
     pad,
+    camera: opts.camera,
   });
   return { width: contained.width * scale, height: contained.height * scale };
 }
@@ -225,48 +254,6 @@ export function stableFitScale(opts: {
   });
 }
 
-/**
- * How far a painted card AABB spills past `inset` inside `box`.
- * 0 means every edge keeps at least `inset` px of pane.
- */
-/** Keep the 24px target when rest has room; leave ~20px for idle AABB growth. */
-export function tiltInsetForRestGap(restGap: number, want = PREVIEW_TILT_INSET): number {
-  return Math.min(want, Math.max(8, restGap - 20));
-}
-
-/**
- * Live clamp pad. Measure the gap from the scaled card.
- * A pad taken from the unscaled layout stays 24px on a phone and the clamp returns 0°.
- */
-export function tiltPadForScaledCard(opts: {
-  stageWidth: number;
-  stageHeight: number;
-  cardWidth: number;
-  cardHeight: number;
-  liveScale: number;
-}): number {
-  if (opts.stageWidth <= 0 || opts.cardWidth <= 0) return PREVIEW_TILT_INSET;
-  const visualW = opts.cardWidth * opts.liveScale;
-  const visualH = opts.cardHeight * opts.liveScale;
-  const restGap = Math.min((opts.stageWidth - visualW) / 2, (opts.stageHeight - visualH) / 2);
-  if (restGap < 8) return 0;
-  return tiltInsetForRestGap(restGap);
-}
-
-export function paintedBoxOverflow(
-  card: { left: number; top: number; right: number; bottom: number },
-  box: { left: number; top: number; right: number; bottom: number },
-  inset = PREVIEW_TILT_INSET,
-): number {
-  return Math.max(
-    0,
-    box.left + inset - card.left,
-    card.right - (box.right - inset),
-    box.top + inset - card.top,
-    card.bottom - (box.bottom - inset),
-  );
-}
-
 /** Scale a tilt vector so hypot(x, y) never exceeds `maxHypot`. */
 export function clampHypot(
   x: number,
@@ -288,6 +275,7 @@ export function clampTiltToBox(opts: {
   boxWidth: number;
   boxHeight: number;
   pad?: number;
+  camera?: PreviewCamera;
 }): { x: number; y: number } {
   const { tiltX, tiltY } = opts;
   const pad = opts.pad ?? 0;
@@ -298,6 +286,7 @@ export function clampTiltToBox(opts: {
         height: opts.cardHeight,
         tiltXDeg: x,
         tiltYDeg: y,
+        camera: opts.camera,
       }),
       opts.boxWidth,
       opts.boxHeight,

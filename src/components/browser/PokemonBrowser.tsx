@@ -1,25 +1,28 @@
+import { PREVIEW_FEATURES } from '@/lib/demoMode';
+import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { startTransition, useCallback, useDeferredValue, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FilterChipList } from './FilterChipList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
-import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup } from '@/hooks/usePokemonData';
-import { mergeBranchesByChain } from './chainMerge';
+import { useFilteredPokemonGrouped, getAllPokemon, getPokemonById, getExclusiveForms, type EvolutionGroup, type PokemonDataSource } from '@/hooks/usePokemonData';
+import { mergeEvolutionBranches } from './chainMerge';
 import { useBrowserStore, useFavoriteBrowserStore } from './browserStore';
+import { readFavoritePickerIds } from './favoritePickerBridge';
 import { ARCHETYPES } from '@/data/archetypes';
 import { BUILD_GROUPS } from '@/data/slot-template';
-import { DEX_TOTAL } from '@/lib/milestones';
 import { CATEGORIES, type PokemonCategory } from '@/data/categories';
 import { TYPE_NAMES, type Pokemon, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { COLOR_ORDER, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER } from '@/data/classifications';
-import { archetypeName as archetypeLabel, categoryName as categoryLabel, colorLabel, eggGroupLabel, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
+import { archetypeName as archetypeLabel, archetypeSubgroupLabel, categoryColumnLabel, categoryName as categoryLabel, categorySubgroupLabel, colorLabel, eggGroupLabel, raw, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Search, X, ChevronDown, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { EmptyState, QueryTitle } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useSheetCloseGuard, type SheetCloseVia } from '@/components/ui/sheetCloseGuard';
 
@@ -95,7 +98,8 @@ interface SubgroupGridGroup {
   matchedIds: Set<number>;
 }
 
-export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows = false }: {
+export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows = false, dataSource }: {
+  dataSource?: PokemonDataSource;
   /** 'stage' is the dex builder's flow (mobile taps stage, the FAB commits).
    *  'instant' is the league's: a tap places the line and closes the sheet. */
   pickMode?: 'stage' | 'instant';
@@ -107,6 +111,14 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   deferRows?: boolean;
 } = {}) {
   const searchQuery = useBrowserStore((s) => s.searchQuery);
+  const namesVersion = useNamesVersion();
+  const [formIndicatorsOnly, setFormIndicatorsOnly] = useState(() => PREVIEW_FEATURES && typeof location !== 'undefined'
+    && new URLSearchParams(location.search).get('form-indicators') === '1');
+  const indicatorIds = useMemo(() => {
+    void namesVersion;
+    if (!formIndicatorsOnly) return new Set<number>();
+    return new Set((dataSource?.pokemon ?? getAllPokemon()).filter(mon => pokemonLabel(mon.id, mon.name).mark).map(mon => mon.id));
+  }, [dataSource, namesVersion, formIndicatorsOnly]);
   /**
    * The text as it stood when an IME began composing, or null when nothing is
    * being composed.
@@ -152,7 +164,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const activeSection = useBrowserStore((s) => s.activeSection);
   const addToSection = useBrowserStore((s) => s.addToSection);
   const favoritesFilter = useFavoriteBrowserStore((s) => s.favoritesFilter);
-  const favoriteIds = useFavoriteBrowserStore((s) => s.favoriteIds);
+  const storedFavoriteIds = useFavoriteBrowserStore((s) => s.favoriteIds);
+  const favoriteIds = useMemo(() => dataSource?.favoritePickerId
+    ? readFavoritePickerIds(dataSource.favoritePickerId) : storedFavoriteIds, [storedFavoriteIds, dataSource]);
   const setFavoritesFilter = useFavoriteBrowserStore((s) => s.setFavoritesFilter);
   const refreshFavorites = useFavoriteBrowserStore((s) => s.refreshFavorites);
   useLayoutEffect(() => { refreshFavorites(); }, [activeSection, refreshFavorites]);
@@ -216,9 +230,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const handleToggleStage = useCallback((memberIds: number[]) => {
     if ((isDesktop || pickMode === 'instant') && activeSection) {
       // Desktop (and the league's instant mode): add with no staging.
-      const newIds = memberIds.filter(id => !assignedIds.has(id));
-      if (newIds.length > 0) {
-        addToSection(activeSection, newIds);
+      const idsToAdd = pickMode === 'instant' ? memberIds : memberIds.filter(id => !assignedIds.has(id));
+      if (idsToAdd.length > 0) {
+        addToSection(activeSection, idsToAdd);
         // Scroll the build page to the target section
         if (isDesktop) window.dispatchEvent(new CustomEvent('scroll-to-section', { detail: activeSection }));
       }
@@ -395,14 +409,16 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   const restrictToIds = useMemo(() => {
     const active: Set<number>[] = [];
     if (restrictIds) active.push(restrictIds);
+    if (formIndicatorsOnly) active.push(indicatorIds);
     if (favoritesFilter) active.push(favoriteIds);
     if (myDexFilter && myDexIds) active.push(myDexIds);
     if (scopeFilter && scopeFilterIds) active.push(scopeFilterIds);
     if (active.length === 0) return undefined;
     return active.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))));
-  }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds, favoritesFilter, favoriteIds]);
+  }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds, favoritesFilter, favoriteIds, formIndicatorsOnly, indicatorIds]);
 
   const filterOptions = useMemo(() => ({
+    dataSource,
     search: searchInput,
     category: activeCategory,
     archetype: activeArchetype,
@@ -414,9 +430,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     eggGroups: eggGroupFilter,
     evoLineSize: evoLineSizeFilter,
     restrictToIds: restrictToIds,
-  }), [searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter, restrictToIds]);
+  }), [dataSource, searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter, restrictToIds]);
   const deferredOptions = useDeferredValue(filterOptions);
   const groups = useFilteredPokemonGrouped(deferredOptions);
+  const lookupPokemon = deferredOptions.dataSource?.getPokemonById ?? getPokemonById;
 
   const totalCount = useMemo(() => groups.reduce((sum, g) => sum + g.members.length, 0), [groups]);
 
@@ -468,12 +485,12 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     const inScope = [...ids].filter((id) => scopeFilterLines.some((line) => line.includes(id)));
     if (inScope.length === 0) return [];
     return [{
-      label: scopeFilterLabel ?? 'Scope',
+      label: scopeFilterLabel ?? t('browser.scope'),
       pokemonIds: inScope,
       order: 'evoLine',
       lines: scopeFilterLines,
     }];
-  }, [scopedToLines, scopeFilterLines, scopeFilterLabel]);
+  }, [scopedToLines, scopeFilterLines, scopeFilterLabel, t]);
 
   /**
    * The dex, in the order the user built it: one subgroup per build section,
@@ -494,8 +511,14 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
 
   // Subgroups: custom if archetype/category defines them, otherwise auto-generate by generation
   const effectiveSubgroups = useMemo((): BrowserSubgroup[] => {
-    if (gridArchetypeDef?.subgroups) return gridArchetypeDef.subgroups;
-    if (gridCategoryDef?.subgroups) return gridCategoryDef.subgroups;
+    // Labels come from the catalog by position; the data module's own
+    // `label` is the English source the catalog is generated from.
+    if (gridArchetypeDef?.subgroups) {
+      return gridArchetypeDef.subgroups.map((sub, i) => ({ ...sub, label: archetypeSubgroupLabel(gridArchetypeDef.id, i) }));
+    }
+    if (gridCategoryDef?.subgroups) {
+      return gridCategoryDef.subgroups.map((sub, i) => ({ ...sub, label: categorySubgroupLabel(gridCategoryDef.id, i) }));
+    }
 
     // For archetypes: group archetype pokemonIds by generation
     // For default/category views: group matched member IDs by generation
@@ -513,7 +536,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
 
     const genMap = new Map<number, number[]>();
     for (const id of sourceIds) {
-      const p = getPokemonById(id);
+      const p = lookupPokemon(id);
       if (!p) continue;
       if (!genMap.has(p.generation)) genMap.set(p.generation, []);
       genMap.get(p.generation)!.push(id);
@@ -524,7 +547,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: ids }));
     // gridCategoryDef is read for its `.subgroups`; it's a stable .find() over
     // the static CATEGORIES array, so it only changes when the category does.
-  }, [gridArchetypeDef, gridCategoryDef, groups, scopeSubgroup, sectionSubgroups, t]);
+  }, [gridArchetypeDef, gridCategoryDef, groups, scopeSubgroup, sectionSubgroups, lookupPokemon, t]);
 
   const toggleEvoSize = (size: number) => {
     if (!evoLineSizeFilter) {
@@ -568,6 +591,13 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     setCategoryFilter(null);
     setArchetypeFilter(null);
   };
+  const clearAllFilters = () => {
+    clearPropertyFilters();
+    clearBrowseFilters();
+  };
+  // A search skips most filters, but My favorites, My dex, the team scope and
+  // Stages still apply to it (usePokemonData.ts).
+  const filtersApplyToSearch = !!(favoritesFilter || myDexFilter || scopeFilter || (evoLineSizeFilter && evoLineSizeFilter.length > 0));
 
   // When searching, generate subgroups from actual results (ignoring filters)
   /**
@@ -604,6 +634,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   // component. Hoisting it also gives EvoLineGrid stable `groups` prop
   // identities, so its internal memo holds across unrelated re-renders.
   const subgroupModels = useMemo(() => {
+    const compareBrowserOrder = deferredOptions.dataSource?.compareBrowserOrder ?? ((a: number, b: number) => a - b);
     const source = isSearching ? searchSubgroups : effectiveSubgroups;
     const dualCols = !isSearching ? gridCategoryDef?.dualColumns : undefined;
     const models: {
@@ -616,22 +647,21 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       spriteOverrides?: Record<number, string>;
     }[] = [];
 
-    // Standalone tiles draw one card per chain, and the generation (or build
-    // section) headings are cut from the *members*, so a chain that spans
-    // several of them is drawn under each: Eevee appeared under Generation 1,
-    // 2, 4 and 6. The first heading that claims a chain keeps it, which is
-    // the earliest generation holding a member the filters matched.
-    const claimedChains = standaloneTiles ? new Set<number>() : null;
+    const claimedPokemonIds = standaloneTiles ? new Set<number>() : null;
 
     for (const sub of source) {
       const subIdSet = new Set(sub.pokemonIds);
+      const inheritedMemberId = !isSearching && !sub.lines && (gridArchetypeDef || gridCategoryDef?.subgroups || dualCols)
+        ? deferredOptions.dataSource?.archetypeMemberId
+        : undefined;
+      const matchesMember = (ids: Set<number>, id: number) => ids.has(id) || ids.has(inheritedMemberId?.(id) ?? id);
 
       if (sub.lines) {
         // One card per seated line, in whole-line order. Nothing is derived
         // from the chain here, so a split chain contributes only the branch
         // that was seated and no Pokémon appears twice.
         const drawn = sub.lines
-          .map((line) => line.map((id) => getPokemonById(id)).filter((p): p is Pokemon => !!p))
+          .map((line) => line.map((id) => lookupPokemon(id)).filter((p): p is Pokemon => !!p && (!standaloneTiles || !formIndicatorsOnly || indicatorIds.has(p.id))))
           .filter((members) => members.length > 0 && members.some((m) => subIdSet.has(m.id)))
           .map((members) => {
             let gen = Infinity;
@@ -652,13 +682,16 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         continue;
       }
 
-      let matching = groups.filter(g => g.members.some(m => subIdSet.has(m.id)));
+      let matching = groups.filter(g => g.members.some(m => matchesMember(subIdSet, m.id)));
       if (matching.length === 0) continue;
       // A standalone tile picks one Pokémon, so a Pokémon may only appear
       // once — not once per branch, and not once per heading.
-      if (claimedChains) {
-        matching = mergeBranchesByChain(matching).filter((g) => !claimedChains.has(g.chainId));
-        for (const group of matching) claimedChains.add(group.chainId);
+      if (claimedPokemonIds) {
+        matching = mergeEvolutionBranches(matching, deferredOptions.dataSource?.standaloneGroupId).flatMap((group) => {
+          const members = group.members.filter(member => matchesMember(subIdSet, member.id) && (!formIndicatorsOnly || indicatorIds.has(member.id)) && !claimedPokemonIds.has(member.id));
+          for (const member of members) claimedPokemonIds.add(member.id);
+          return members.length > 0 ? [{ ...group, members }] : [];
+        });
         if (matching.length === 0) continue;
       }
 
@@ -666,7 +699,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         // Archetype view: preserve curated pokemonIds order.
         const orderIdx = new Map<EvolutionGroup, number>();
         for (const g of matching) {
-          orderIdx.set(g, sub.pokemonIds.findIndex(id => g.members.some(m => m.id === id)));
+          orderIdx.set(g, sub.pokemonIds.findIndex(id => g.members.some(m => m.id === id || inheritedMemberId?.(m.id) === id)));
         }
         matching.sort((a, b) => orderIdx.get(a)! - orderIdx.get(b)!);
       } else if (sub.order === 'evoLine') {
@@ -680,28 +713,28 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
           let id = Infinity;
           for (const m of g.members) {
             if (m.generation < gen) gen = m.generation;
-            if (m.id < id) id = m.id;
+            if (id === Infinity || compareBrowserOrder(m.id, id) < 0) id = m.id;
           }
           key.set(g, [gen, id]);
         }
-        matching.sort((a, b) => key.get(a)![0] - key.get(b)![0] || key.get(a)![1] - key.get(b)![1]);
+        matching.sort((a, b) => key.get(a)![0] - key.get(b)![0] || compareBrowserOrder(key.get(a)![1], key.get(b)![1]));
       } else {
         // Default view: sort by lowest matching member's dex number.
         const minId = new Map<EvolutionGroup, number>();
         for (const g of matching) {
           let min = Infinity;
           for (const m of g.members) {
-            if (subIdSet.has(m.id) && m.id < min) min = m.id;
+            if (matchesMember(subIdSet, m.id) && (min === Infinity || compareBrowserOrder(m.id, min) < 0)) min = m.id;
           }
           minId.set(g, min);
         }
-        matching.sort((a, b) => minId.get(a)! - minId.get(b)!);
+        matching.sort((a, b) => compareBrowserOrder(minId.get(a)!, minId.get(b)!));
       }
 
       const mapGroup = (group: EvolutionGroup): SubgroupGridGroup => ({
-        key: `${sub.label}-${group.chainId}`,
+        key: `${sub.label}-${group.members.map(member => member.id).join('-')}`,
         members: group.members,
-        matchedIds: new Set(group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)),
+        matchedIds: new Set(group.members.filter(m => matchesMember(subIdSet, m.id)).map(m => m.id)),
       });
 
       if (dualCols) {
@@ -710,8 +743,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         models.push({
           label: sub.label,
           dualCols,
-          leftGroups: matching.filter(g => g.members.some(m => leftIdSet.has(m.id))).map(mapGroup),
-          rightGroups: matching.filter(g => g.members.some(m => rightIdSet.has(m.id))).map(mapGroup),
+          leftGroups: matching.filter(g => g.members.some(m => matchesMember(leftIdSet, m.id))).map(mapGroup),
+          rightGroups: matching.filter(g => g.members.some(m => matchesMember(rightIdSet, m.id))).map(mapGroup),
         });
       } else {
         models.push({
@@ -723,7 +756,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
       }
     }
     return models;
-  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides, standaloneTiles]);
+  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides, standaloneTiles, lookupPokemon, deferredOptions.dataSource, formIndicatorsOnly, indicatorIds]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   /**
    * The count beside the search box has to agree with what is drawn.
@@ -758,7 +791,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
   // from scratch — catastrophic for INP. Scrolling the existing node to
   // the top gives the same UX at ~0 ms cost.
   const resultsScrollRef = useRef<HTMLDivElement>(null);
-  const resultsResetKey = `${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${shapeKey}-${colorKey}-${eggKey}-${deferredOptions.search}-${evoSizeKey}`;
+  const resultsResetKey = `${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${shapeKey}-${colorKey}-${eggKey}-${deferredOptions.search}-${evoSizeKey}-${formIndicatorsOnly}`;
   useEffect(() => {
     resultsScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [resultsResetKey]);
@@ -997,6 +1030,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               <button type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                aria-label={t('browser.search.clear')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1018,6 +1052,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         {/* Row 1: Property filters (Type, Gen, Stages) */}
         <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 px-2 py-1">
+          {PREVIEW_FEATURES && <button type="button" data-i18n-exempt="preview-debug" data-filter-chip="form-indicators"
+            aria-pressed={formIndicatorsOnly} onClick={() => setFormIndicatorsOnly(value => !value)}
+            className={cn('shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border', formIndicatorsOnly ? 'bg-foreground text-background border-foreground' : 'border-border text-muted-foreground')}
+          >Form indicators</button>}
           {favoritesFilter ? (
             <FilterChip
               label={<FavoriteLabel count={favoriteIds.size} />}
@@ -1056,13 +1094,13 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             scopeFilter ? (
               scopeFilterLocked ? (
                 <LockedFilterChip
-                  label={scopeFilterLabel ?? 'Scope'}
+                  label={scopeFilterLabel ?? t('browser.scope')}
                   hint={scopeFilterLockedHint ?? ''}
                   className="bg-foreground text-background"
                 />
               ) : (
                 <FilterChip
-                  label={scopeFilterLabel ?? 'Scope'}
+                  label={scopeFilterLabel ?? t('browser.scope')}
                   onDismiss={() => setScopeFilter(false)}
                   onClick={() => setScopeFilter(false)}
                   className="bg-foreground text-background"
@@ -1074,7 +1112,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
                 data-filter-chip="scope"
                 className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
               >
-                {scopeFilterLabel ?? 'Scope'}
+                {scopeFilterLabel ?? t('browser.scope')}
               </button>
             )
           )}
@@ -1286,8 +1324,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
         <div className="border-b px-3 py-2 bg-muted/30 max-h-[40vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold">{sheetTitle(openSheet)}</span>
-            <button type="button" onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
-              <X size={16} />
+            <button type="button" onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label={t('browser.close')}>
+              <X size={16} aria-hidden />
             </button>
           </div>
           {filterContent}
@@ -1305,10 +1343,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             <div className="sticky top-0 z-30 bg-background border-b">
               <div className="grid grid-cols-2 gap-x-1">
                 <div className="w-full text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW3, marginInline: gridMaxW3 ? 'auto' : undefined }}>
-                  {gridCategoryDef.dualColumns.left.label}
+                  {categoryColumnLabel(gridCategoryDef.id, 'left')}
                 </div>
                 <div className="w-full text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW3, marginInline: gridMaxW3 ? 'auto' : undefined }}>
-                  {gridCategoryDef.dualColumns.right.label}
+                  {categoryColumnLabel(gridCategoryDef.id, 'right')}
                 </div>
               </div>
             </div>
@@ -1389,10 +1427,25 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
             </div>
           )}
           {rowsReady && groups.length === 0 && (
-            <div className="py-12 text-center text-muted-foreground">
-              <p>{t('browser.empty.title')}</p>
-              <p className="text-sm mt-1">{t('browser.empty.hint')}</p>
-            </div>
+            isSearching ? (
+              <EmptyState
+                testId="browser-empty"
+                title={<QueryTitle template={raw('browser.empty.search.title')} query={deferredOptions.search} />}
+                body={t(filtersApplyToSearch ? 'browser.empty.search.filtered' : 'browser.empty.search.body')}
+                action={filtersApplyToSearch
+                  ? { label: t('browser.empty.clearFilters'), onClick: clearAllFilters }
+                  : { label: t('browser.search.clear'), onClick: () => setSearchQuery('') }}
+              />
+            ) : (
+              <EmptyState
+                testId="browser-empty"
+                title={t('browser.empty.filters.title')}
+                body={t('browser.empty.filters.body')}
+                action={hasActiveFilters
+                  ? { label: t('browser.empty.clearFilters'), onClick: clearAllFilters }
+                  : undefined}
+              />
+            )
           )}
           {rowsReady && <PageFooter />}
       </div>
@@ -1506,8 +1559,8 @@ function SheetOverlay({ onClose, openSheet, children, footer, onHeight }: {
           <span className="text-sm font-semibold">
             {sheetTitle(openSheet as Exclude<FilterSheet, null>)}
           </span>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer">
-            <X size={16} />
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label={t('browser.close')}>
+            <X size={16} aria-hidden />
           </button>
         </div>
 
@@ -1555,18 +1608,12 @@ function FavoriteLabel({ count }: { count: number }) {
   );
 }
 
-/** Active filter chip — shows value with dismiss */
-/**
- * "My dex 37/151" — the count in the app red, the total in whatever the chip
- * itself is set in, so the pair reads the same on the outlined chip and on
- * the filled one. Same shape as the dex builder's own header counter.
- */
 function MyDexLabel({ count }: { count: number }) {
+  const t = useT();
   return (
     <span className="whitespace-nowrap">
-      My dex{' '}
+      {t('browser.myDex')}{' '}
       <span className="font-bold tabular-nums text-primary">{count}</span>
-      <span className="tabular-nums">/{DEX_TOTAL}</span>
     </span>
   );
 }

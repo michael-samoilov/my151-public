@@ -44,6 +44,11 @@ export function allCardsFilled(cards: readonly { lines: readonly unknown[] }[]):
   return cards.length >= SLOT_COUNT && cards.slice(0, SLOT_COUNT).every((c) => c.lines.length > 0);
 }
 
+/** Every trainer card has a full team: the league's completion confetti. */
+export function allCardsHaveFullTeams(cards: readonly { lines: readonly unknown[] }[]): boolean {
+  return cards.length >= SLOT_COUNT && cards.slice(0, SLOT_COUNT).every(cardHasFullTeam);
+}
+
 export function reachedNudges(
   cards: readonly { lines: readonly unknown[] }[],
 ): LeagueNudgeId[] {

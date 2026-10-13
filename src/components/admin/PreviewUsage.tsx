@@ -3,13 +3,13 @@ import { Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PreviewChipZoomProvider } from '@/components/admin/FitNowrap';
 import { PREVIEW_CHIP_MD, usePreviewChipZoom } from '@/components/admin/previewChipZoom';
-import type { ToolCell, UsageTool } from '@/components/admin/browserUsage';
+import type { CardTime, ToolCell, UsageTool } from '@/components/admin/browserUsage';
 import { PREVIEW_PROGRESS, sessionChipParts } from '@/components/admin/userPreview';
 
 /** One half of a column: two lines of text. On a phone the column's merged
  *  chip draws the border; on desktop each half is its own chip. */
 const HALF =
-  'inline-flex shrink-0 flex-col items-center justify-center whitespace-nowrap px-1 py-0.5 text-xs leading-tight tabular-nums max-md:flex-1 md:rounded-xl md:border md:border-border md:bg-card md:px-2';
+  'inline-flex shrink-0 flex-col items-center justify-center whitespace-nowrap px-1 py-0.5 text-xs leading-tight tabular-nums max-md:flex-1 md:rounded-xl md:border md:border-border md:bg-card md:px-1';
 
 /** On a phone, one chip per column: progress on top, sessions and time below,
  *  split by a short rule. On desktop the column dissolves into the table. */
@@ -42,11 +42,15 @@ function TimeHalf({
   tool,
   sessions,
   totalMs,
+  missing,
+  partial,
   className,
 }: {
   tool: UsageTool | 'total';
   sessions: number;
   totalMs: number;
+  missing?: boolean;
+  partial?: boolean;
   className?: string;
 }) {
   const parts = sessionChipParts(sessions, totalMs);
@@ -54,15 +58,17 @@ function TimeHalf({
     <span
       data-metric="session"
       data-tool={tool}
-      title={tool === 'total' ? 'Browser total: sessions merged across tools, time counted once' : undefined}
+      title={missing ? 'Foreground attention has not been recorded for this history' : partial ? 'Partial foreground history: older intervals or another tool’s attention are missing' : tool === 'total' ? 'Browser total: sessions merged across tools, time counted once' : undefined}
       className={cn(HALF, className)}
     >
+      {missing ? <><span className="font-bold text-foreground">—</span><span className="sr-only">{' · '}</span><span className="font-medium text-muted-foreground">not recorded</span></> : <>
       <span>
         <span className="font-bold text-foreground">{parts.count}</span>{' '}
         <span className="font-medium text-muted-foreground">{parts.unit}</span>
       </span>
       <span className="sr-only">{' · '}</span>
-      <span className="font-medium text-muted-foreground">{parts.duration}</span>
+      <span className="font-medium text-muted-foreground">{parts.duration}{partial ? '*' : ''}</span>
+      </>}
     </span>
   );
 }
@@ -79,7 +85,7 @@ const DESKTOP_COL: Record<UsageTool | 'total', string> = {
  * merged chip each: Dex, Gyms, Favs, then the browser total. Desktop places
  * each half in the list's table columns, progress above sessions and time.
  */
-function UsageGrid({ cells, total }: { cells: ToolCell[]; total: { sessions: number; totalMs: number } }) {
+function UsageGrid({ cells, total }: { cells: ToolCell[]; total: CardTime }) {
   return (
     <>
       {cells.map((c) => (
@@ -93,6 +99,8 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: { sessions: num
             tool={c.tool}
             sessions={c.sessions}
             totalMs={c.totalMs}
+            missing={c.missing}
+            partial={c.partial}
             className={cn('md:row-start-2 md:self-stretch md:justify-self-stretch', DESKTOP_COL[c.tool], !c.used && 'md:opacity-40')}
           />
         </span>
@@ -111,6 +119,8 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: { sessions: num
           tool="total"
           sessions={total.sessions}
           totalMs={total.totalMs}
+          missing={total.missing}
+          partial={total.partial}
           className={cn('md:row-start-2 md:self-stretch md:justify-self-stretch md:border-foreground/25 md:bg-muted', DESKTOP_COL.total)}
         />
       </span>
@@ -121,7 +131,7 @@ function UsageGrid({ cells, total }: { cells: ToolCell[]; total: { sessions: num
 /** The usage block of one Newest browsers card. On a phone its four columns
  *  always split the card width equally, and the list-wide zoom sizes the text.
  *  `total` is the browser as a whole, merged on the server. */
-export function BrowserUsage({ cells, total }: { cells: ToolCell[]; total: { sessions: number; totalMs: number } }) {
+export function BrowserUsage({ cells, total }: { cells: ToolCell[]; total: CardTime }) {
   const zoom = usePreviewChipZoom();
   return (
     <div data-usage-host className="min-w-0 md:contents">

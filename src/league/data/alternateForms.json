@@ -1,0 +1,1569 @@
+[
+  {
+    "id": 10001,
+    "ownerId": 386,
+    "name": "deoxys-attack",
+    "types": [
+      "psychic"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 50,
+        "atk": 180,
+        "def": 20,
+        "spe": 150,
+        "spa": 180,
+        "spd": 20
+      }
+    }
+  },
+  {
+    "id": 10002,
+    "ownerId": 386,
+    "name": "deoxys-defense",
+    "types": [
+      "psychic"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 50,
+        "atk": 70,
+        "def": 160,
+        "spe": 90,
+        "spa": 70,
+        "spd": 160
+      }
+    }
+  },
+  {
+    "id": 10003,
+    "ownerId": 386,
+    "name": "deoxys-speed",
+    "types": [
+      "psychic"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 50,
+        "atk": 95,
+        "def": 90,
+        "spe": 180,
+        "spa": 95,
+        "spd": 90
+      }
+    }
+  },
+  {
+    "id": 10004,
+    "ownerId": 413,
+    "name": "wormadam-sandy",
+    "types": [
+      "bug",
+      "ground"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 60,
+        "atk": 79,
+        "def": 105,
+        "spe": 36,
+        "spa": 59,
+        "spd": 85
+      },
+      "color": "brown"
+    }
+  },
+  {
+    "id": 10005,
+    "ownerId": 413,
+    "name": "wormadam-trash",
+    "types": [
+      "bug",
+      "steel"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 60,
+        "atk": 69,
+        "def": 95,
+        "spe": 36,
+        "spa": 69,
+        "spd": 95
+      },
+      "color": "red"
+    }
+  },
+  {
+    "id": 10006,
+    "ownerId": 492,
+    "name": "shaymin-sky",
+    "types": [
+      "grass",
+      "flying"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 100,
+        "atk": 103,
+        "def": 75,
+        "spe": 127,
+        "spa": 120,
+        "spd": 75
+      }
+    }
+  },
+  {
+    "id": 10007,
+    "ownerId": 487,
+    "name": "giratina-origin",
+    "types": [
+      "ghost",
+      "dragon"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 150,
+        "atk": 120,
+        "def": 100,
+        "spe": 90,
+        "spa": 120,
+        "spd": 100
+      }
+    }
+  },
+  {
+    "id": 10008,
+    "ownerId": 479,
+    "name": "rotom-heat",
+    "types": [
+      "electric",
+      "fire"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 50,
+        "atk": 65,
+        "def": 107,
+        "spe": 86,
+        "spa": 105,
+        "spd": 107
+      },
+      "bst": 520
+    }
+  },
+  {
+    "id": 10009,
+    "ownerId": 479,
+    "name": "rotom-wash",
+    "types": [
+      "electric",
+      "water"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 50,
+        "atk": 65,
+        "def": 107,
+        "spe": 86,
+        "spa": 105,
+        "spd": 107
+      },
+      "bst": 520
+    }
+  },
+  {
+    "id": 10010,
+    "ownerId": 479,
+    "name": "rotom-frost",
+    "types": [
+      "electric",
+      "ice"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 50,
+        "atk": 65,
+        "def": 107,
+        "spe": 86,
+        "spa": 105,
+        "spd": 107
+      },
+      "bst": 520
+    }
+  },
+  {
+    "id": 10011,
+    "ownerId": 479,
+    "name": "rotom-fan",
+    "types": [
+      "electric",
+      "flying"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 50,
+        "atk": 65,
+        "def": 107,
+        "spe": 86,
+        "spa": 105,
+        "spd": 107
+      },
+      "bst": 520
+    }
+  },
+  {
+    "id": 10012,
+    "ownerId": 479,
+    "name": "rotom-mow",
+    "types": [
+      "electric",
+      "grass"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 50,
+        "atk": 65,
+        "def": 107,
+        "spe": 86,
+        "spa": 105,
+        "spd": 107
+      },
+      "bst": 520
+    }
+  },
+  {
+    "id": 10016,
+    "ownerId": 550,
+    "name": "basculin-blue-striped",
+    "types": [
+      "water"
+    ]
+  },
+  {
+    "id": 10019,
+    "ownerId": 641,
+    "name": "tornadus-therian",
+    "types": [
+      "flying"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 79,
+        "atk": 100,
+        "def": 80,
+        "spe": 121,
+        "spa": 110,
+        "spd": 90
+      }
+    }
+  },
+  {
+    "id": 10020,
+    "ownerId": 642,
+    "name": "thundurus-therian",
+    "types": [
+      "electric",
+      "flying"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 79,
+        "atk": 105,
+        "def": 70,
+        "spe": 101,
+        "spa": 145,
+        "spd": 80
+      }
+    }
+  },
+  {
+    "id": 10021,
+    "ownerId": 645,
+    "name": "landorus-therian",
+    "types": [
+      "ground",
+      "flying"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 89,
+        "atk": 145,
+        "def": 90,
+        "spe": 91,
+        "spa": 105,
+        "spd": 80
+      }
+    }
+  },
+  {
+    "id": 10024,
+    "ownerId": 647,
+    "name": "keldeo-resolute",
+    "types": [
+      "water",
+      "fighting"
+    ]
+  },
+  {
+    "id": 10025,
+    "ownerId": 678,
+    "name": "meowstic-female",
+    "types": [
+      "psychic"
+    ],
+    "metadata": {
+      "color": "white"
+    }
+  },
+  {
+    "id": 10061,
+    "ownerId": 670,
+    "name": "floette-eternal",
+    "types": [
+      "fairy"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 74,
+        "atk": 65,
+        "def": 67,
+        "spe": 92,
+        "spa": 125,
+        "spd": 128
+      },
+      "bst": 551,
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10080,
+    "ownerId": 25,
+    "name": "pikachu-rock-star",
+    "types": [
+      "electric"
+    ],
+    "generation": 6,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10081,
+    "ownerId": 25,
+    "name": "pikachu-belle",
+    "types": [
+      "electric"
+    ],
+    "generation": 6,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10082,
+    "ownerId": 25,
+    "name": "pikachu-pop-star",
+    "types": [
+      "electric"
+    ],
+    "generation": 6,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10083,
+    "ownerId": 25,
+    "name": "pikachu-phd",
+    "types": [
+      "electric"
+    ],
+    "generation": 6,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10084,
+    "ownerId": 25,
+    "name": "pikachu-libre",
+    "types": [
+      "electric"
+    ],
+    "generation": 6,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10085,
+    "ownerId": 25,
+    "name": "pikachu-cosplay",
+    "types": [
+      "electric"
+    ],
+    "generation": 6,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10086,
+    "ownerId": 720,
+    "name": "hoopa-unbound",
+    "types": [
+      "psychic",
+      "dark"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 80,
+        "atk": 160,
+        "def": 60,
+        "spe": 80,
+        "spa": 170,
+        "spd": 130
+      },
+      "bst": 680
+    }
+  },
+  {
+    "id": 10094,
+    "ownerId": 25,
+    "name": "pikachu-original-cap",
+    "types": [
+      "electric"
+    ],
+    "generation": 7,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10095,
+    "ownerId": 25,
+    "name": "pikachu-hoenn-cap",
+    "types": [
+      "electric"
+    ],
+    "generation": 7,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10096,
+    "ownerId": 25,
+    "name": "pikachu-sinnoh-cap",
+    "types": [
+      "electric"
+    ],
+    "generation": 7,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10097,
+    "ownerId": 25,
+    "name": "pikachu-unova-cap",
+    "types": [
+      "electric"
+    ],
+    "generation": 7,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10098,
+    "ownerId": 25,
+    "name": "pikachu-kalos-cap",
+    "types": [
+      "electric"
+    ],
+    "generation": 7,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10099,
+    "ownerId": 25,
+    "name": "pikachu-alola-cap",
+    "types": [
+      "electric"
+    ],
+    "generation": 7,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10123,
+    "ownerId": 741,
+    "name": "oricorio-pom-pom",
+    "types": [
+      "electric",
+      "flying"
+    ],
+    "generation": 7,
+    "metadata": {
+      "color": "yellow"
+    }
+  },
+  {
+    "id": 10124,
+    "ownerId": 741,
+    "name": "oricorio-pau",
+    "types": [
+      "psychic",
+      "flying"
+    ],
+    "generation": 7,
+    "metadata": {
+      "color": "pink"
+    }
+  },
+  {
+    "id": 10125,
+    "ownerId": 741,
+    "name": "oricorio-sensu",
+    "types": [
+      "ghost",
+      "flying"
+    ],
+    "generation": 7,
+    "metadata": {
+      "color": "purple"
+    }
+  },
+  {
+    "id": 10126,
+    "ownerId": 745,
+    "name": "lycanroc-midnight",
+    "types": [
+      "rock"
+    ],
+    "generation": 7,
+    "metadata": {
+      "stats": {
+        "hp": 85,
+        "atk": 115,
+        "def": 75,
+        "spe": 82,
+        "spa": 55,
+        "spd": 75
+      },
+      "color": "red"
+    }
+  },
+  {
+    "id": 10147,
+    "ownerId": 801,
+    "name": "magearna-original",
+    "types": [
+      "steel",
+      "fairy"
+    ],
+    "generation": 7,
+    "metadata": {
+      "color": "red"
+    }
+  },
+  {
+    "id": 10148,
+    "ownerId": 25,
+    "name": "pikachu-partner-cap",
+    "types": [
+      "electric"
+    ],
+    "generation": 7,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10152,
+    "ownerId": 745,
+    "name": "lycanroc-dusk",
+    "types": [
+      "rock"
+    ],
+    "generation": 7,
+    "metadata": {
+      "stats": {
+        "hp": 75,
+        "atk": 117,
+        "def": 65,
+        "spe": 110,
+        "spa": 55,
+        "spd": 65
+      }
+    }
+  },
+  {
+    "id": 10160,
+    "ownerId": 25,
+    "name": "pikachu-world-cap",
+    "types": [
+      "electric"
+    ],
+    "generation": 8,
+    "metadata": {
+      "eggGroups": [
+        "no-eggs"
+      ]
+    }
+  },
+  {
+    "id": 10181,
+    "ownerId": 718,
+    "name": "zygarde-10",
+    "types": [
+      "dragon",
+      "ground"
+    ],
+    "generation": 7,
+    "metadata": {
+      "stats": {
+        "hp": 54,
+        "atk": 100,
+        "def": 71,
+        "spe": 115,
+        "spa": 61,
+        "spd": 85
+      },
+      "bst": 486,
+      "color": "black"
+    }
+  },
+  {
+    "id": 10184,
+    "ownerId": 849,
+    "name": "toxtricity-low-key",
+    "types": [
+      "electric",
+      "poison"
+    ],
+    "generation": 8
+  },
+  {
+    "id": 10186,
+    "ownerId": 876,
+    "name": "indeedee-female",
+    "types": [
+      "psychic",
+      "normal"
+    ],
+    "generation": 8,
+    "metadata": {
+      "stats": {
+        "hp": 70,
+        "atk": 55,
+        "def": 65,
+        "spe": 85,
+        "spa": 95,
+        "spd": 105
+      }
+    }
+  },
+  {
+    "id": 10188,
+    "ownerId": 888,
+    "name": "zacian-crowned",
+    "types": [
+      "fairy",
+      "steel"
+    ],
+    "generation": 8,
+    "metadata": {
+      "stats": {
+        "hp": 92,
+        "atk": 150,
+        "def": 115,
+        "spe": 148,
+        "spa": 80,
+        "spd": 115
+      },
+      "bst": 700
+    }
+  },
+  {
+    "id": 10189,
+    "ownerId": 889,
+    "name": "zamazenta-crowned",
+    "types": [
+      "fighting",
+      "steel"
+    ],
+    "generation": 8,
+    "metadata": {
+      "stats": {
+        "hp": 92,
+        "atk": 120,
+        "def": 140,
+        "spe": 128,
+        "spa": 80,
+        "spd": 140
+      },
+      "bst": 700
+    }
+  },
+  {
+    "id": 10192,
+    "ownerId": 893,
+    "name": "zarude-dada",
+    "types": [
+      "dark",
+      "grass"
+    ],
+    "generation": 8
+  },
+  {
+    "id": 10245,
+    "ownerId": 483,
+    "name": "dialga-origin",
+    "types": [
+      "steel",
+      "dragon"
+    ],
+    "generation": 8,
+    "metadata": {
+      "stats": {
+        "hp": 100,
+        "atk": 100,
+        "def": 120,
+        "spe": 90,
+        "spa": 150,
+        "spd": 120
+      },
+      "color": "blue"
+    }
+  },
+  {
+    "id": 10246,
+    "ownerId": 484,
+    "name": "palkia-origin",
+    "types": [
+      "water",
+      "dragon"
+    ],
+    "generation": 8,
+    "metadata": {
+      "stats": {
+        "hp": 90,
+        "atk": 100,
+        "def": 100,
+        "spe": 120,
+        "spa": 150,
+        "spd": 120
+      }
+    }
+  },
+  {
+    "id": 10247,
+    "ownerId": 550,
+    "name": "basculin-white-striped",
+    "types": [
+      "water"
+    ],
+    "generation": 8
+  },
+  {
+    "id": 10248,
+    "ownerId": 902,
+    "name": "basculegion-female",
+    "types": [
+      "water",
+      "ghost"
+    ],
+    "generation": 8,
+    "metadata": {
+      "stats": {
+        "hp": 120,
+        "atk": 92,
+        "def": 65,
+        "spe": 78,
+        "spa": 100,
+        "spd": 75
+      }
+    }
+  },
+  {
+    "id": 10249,
+    "ownerId": 905,
+    "name": "enamorus-therian",
+    "types": [
+      "fairy",
+      "flying"
+    ],
+    "generation": 8,
+    "metadata": {
+      "stats": {
+        "hp": 74,
+        "atk": 115,
+        "def": 110,
+        "spe": 46,
+        "spa": 135,
+        "spd": 100
+      }
+    }
+  },
+  {
+    "id": 10260,
+    "ownerId": 931,
+    "name": "squawkabilly-blue-plumage",
+    "types": [
+      "normal",
+      "flying"
+    ],
+    "metadata": {
+      "color": "blue"
+    }
+  },
+  {
+    "id": 10261,
+    "ownerId": 931,
+    "name": "squawkabilly-yellow-plumage",
+    "types": [
+      "normal",
+      "flying"
+    ],
+    "metadata": {
+      "color": "yellow"
+    }
+  },
+  {
+    "id": 10262,
+    "ownerId": 931,
+    "name": "squawkabilly-white-plumage",
+    "types": [
+      "normal",
+      "flying"
+    ],
+    "metadata": {
+      "color": "white"
+    }
+  },
+  {
+    "id": 10263,
+    "ownerId": 999,
+    "name": "gimmighoul-roaming",
+    "types": [
+      "ghost"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 45,
+        "atk": 30,
+        "def": 25,
+        "spe": 80,
+        "spa": 75,
+        "spd": 45
+      },
+      "color": "gray"
+    }
+  },
+  {
+    "id": 10272,
+    "ownerId": 901,
+    "name": "ursaluna-bloodmoon",
+    "types": [
+      "ground",
+      "normal"
+    ],
+    "generation": 9,
+    "metadata": {
+      "stats": {
+        "hp": 113,
+        "atk": 70,
+        "def": 120,
+        "spe": 52,
+        "spa": 135,
+        "spd": 65
+      },
+      "bst": 555
+    }
+  },
+  {
+    "id": 10273,
+    "ownerId": 1017,
+    "name": "ogerpon-wellspring-mask",
+    "types": [
+      "grass",
+      "water"
+    ],
+    "metadata": {
+      "color": "blue"
+    }
+  },
+  {
+    "id": 10274,
+    "ownerId": 1017,
+    "name": "ogerpon-hearthflame-mask",
+    "types": [
+      "grass",
+      "fire"
+    ],
+    "metadata": {
+      "color": "red"
+    }
+  },
+  {
+    "id": 10275,
+    "ownerId": 1017,
+    "name": "ogerpon-cornerstone-mask",
+    "types": [
+      "grass",
+      "rock"
+    ],
+    "metadata": {
+      "color": "gray"
+    }
+  },
+  {
+    "id": 11001,
+    "ownerId": 716,
+    "name": "xerneas-neutral",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11002,
+    "ownerId": 916,
+    "name": "oinkologne-female",
+    "types": [
+      "normal"
+    ],
+    "metadata": {
+      "stats": {
+        "hp": 115,
+        "atk": 90,
+        "def": 70,
+        "spe": 65,
+        "spa": 59,
+        "spd": 90
+      },
+      "color": "brown"
+    }
+  },
+  {
+    "id": 11003,
+    "ownerId": 982,
+    "name": "dudunsparce-three-segment",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11005,
+    "ownerId": 925,
+    "name": "maushold-family-of-three",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11006,
+    "ownerId": 978,
+    "name": "tatsugiri-droopy",
+    "types": [
+      "dragon",
+      "water"
+    ],
+    "metadata": {
+      "color": "pink"
+    }
+  },
+  {
+    "id": 11007,
+    "ownerId": 978,
+    "name": "tatsugiri-stretchy",
+    "types": [
+      "dragon",
+      "water"
+    ],
+    "metadata": {
+      "color": "yellow"
+    }
+  },
+  {
+    "id": 11008,
+    "ownerId": 585,
+    "name": "deerling-summer",
+    "types": [
+      "normal",
+      "grass"
+    ],
+    "metadata": {
+      "color": "green"
+    }
+  },
+  {
+    "id": 11009,
+    "ownerId": 585,
+    "name": "deerling-autumn",
+    "types": [
+      "normal",
+      "grass"
+    ],
+    "metadata": {
+      "color": "red"
+    }
+  },
+  {
+    "id": 11010,
+    "ownerId": 585,
+    "name": "deerling-winter",
+    "types": [
+      "normal",
+      "grass"
+    ],
+    "metadata": {
+      "color": "brown"
+    }
+  },
+  {
+    "id": 11011,
+    "ownerId": 586,
+    "name": "sawsbuck-summer",
+    "types": [
+      "normal",
+      "grass"
+    ]
+  },
+  {
+    "id": 11012,
+    "ownerId": 586,
+    "name": "sawsbuck-autumn",
+    "types": [
+      "normal",
+      "grass"
+    ]
+  },
+  {
+    "id": 11013,
+    "ownerId": 586,
+    "name": "sawsbuck-winter",
+    "types": [
+      "normal",
+      "grass"
+    ]
+  },
+  {
+    "id": 11018,
+    "ownerId": 666,
+    "name": "vivillon-archipelago",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "brown"
+    }
+  },
+  {
+    "id": 11019,
+    "ownerId": 666,
+    "name": "vivillon-continental",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "yellow"
+    }
+  },
+  {
+    "id": 11020,
+    "ownerId": 666,
+    "name": "vivillon-elegant",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "purple"
+    }
+  },
+  {
+    "id": 11021,
+    "ownerId": 666,
+    "name": "vivillon-fancy",
+    "types": [
+      "bug",
+      "flying"
+    ]
+  },
+  {
+    "id": 11022,
+    "ownerId": 666,
+    "name": "vivillon-garden",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "green"
+    }
+  },
+  {
+    "id": 11023,
+    "ownerId": 666,
+    "name": "vivillon-high-plains",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "brown"
+    }
+  },
+  {
+    "id": 11024,
+    "ownerId": 666,
+    "name": "vivillon-icy-snow",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "white"
+    }
+  },
+  {
+    "id": 11025,
+    "ownerId": 666,
+    "name": "vivillon-jungle",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "green"
+    }
+  },
+  {
+    "id": 11026,
+    "ownerId": 666,
+    "name": "vivillon-marine",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "blue"
+    }
+  },
+  {
+    "id": 11027,
+    "ownerId": 666,
+    "name": "vivillon-modern",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "red"
+    }
+  },
+  {
+    "id": 11028,
+    "ownerId": 666,
+    "name": "vivillon-monsoon",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "gray"
+    }
+  },
+  {
+    "id": 11029,
+    "ownerId": 666,
+    "name": "vivillon-ocean",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "red"
+    }
+  },
+  {
+    "id": 11030,
+    "ownerId": 666,
+    "name": "vivillon-pokeball",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "red"
+    }
+  },
+  {
+    "id": 11031,
+    "ownerId": 666,
+    "name": "vivillon-polar",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "blue"
+    }
+  },
+  {
+    "id": 11032,
+    "ownerId": 666,
+    "name": "vivillon-river",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "brown"
+    }
+  },
+  {
+    "id": 11033,
+    "ownerId": 666,
+    "name": "vivillon-sandstorm",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "brown"
+    }
+  },
+  {
+    "id": 11034,
+    "ownerId": 666,
+    "name": "vivillon-savanna",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "green"
+    }
+  },
+  {
+    "id": 11035,
+    "ownerId": 666,
+    "name": "vivillon-sun",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "red"
+    }
+  },
+  {
+    "id": 11036,
+    "ownerId": 666,
+    "name": "vivillon-tundra",
+    "types": [
+      "bug",
+      "flying"
+    ],
+    "metadata": {
+      "color": "blue"
+    }
+  },
+  {
+    "id": 11064,
+    "ownerId": 172,
+    "name": "pichu-spiky-eared",
+    "types": [
+      "electric"
+    ],
+    "generation": 4
+  },
+  {
+    "id": 11065,
+    "ownerId": 422,
+    "name": "shellos-east",
+    "types": [
+      "water"
+    ],
+    "metadata": {
+      "color": "blue"
+    }
+  },
+  {
+    "id": 11066,
+    "ownerId": 423,
+    "name": "gastrodon-east",
+    "types": [
+      "water",
+      "ground"
+    ],
+    "metadata": {
+      "color": "blue"
+    }
+  },
+  {
+    "id": 11067,
+    "ownerId": 449,
+    "name": "hippopotas-female",
+    "types": [
+      "ground"
+    ]
+  },
+  {
+    "id": 11068,
+    "ownerId": 450,
+    "name": "hippowdon-female",
+    "types": [
+      "ground"
+    ]
+  },
+  {
+    "id": 11069,
+    "ownerId": 592,
+    "name": "frillish-female",
+    "types": [
+      "water",
+      "ghost"
+    ]
+  },
+  {
+    "id": 11070,
+    "ownerId": 593,
+    "name": "jellicent-female",
+    "types": [
+      "water",
+      "ghost"
+    ]
+  },
+  {
+    "id": 11071,
+    "ownerId": 668,
+    "name": "pyroar-female",
+    "types": [
+      "fire",
+      "normal"
+    ]
+  },
+  {
+    "id": 11094,
+    "ownerId": 415,
+    "name": "combee-female",
+    "types": [
+      "bug",
+      "flying"
+    ]
+  },
+  {
+    "id": 11095,
+    "ownerId": 521,
+    "name": "unfezant-female",
+    "types": [
+      "normal",
+      "flying"
+    ]
+  },
+  {
+    "id": 11082,
+    "ownerId": 669,
+    "name": "flabebe-blue",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11083,
+    "ownerId": 669,
+    "name": "flabebe-orange",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11084,
+    "ownerId": 669,
+    "name": "flabebe-white",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11085,
+    "ownerId": 669,
+    "name": "flabebe-yellow",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11086,
+    "ownerId": 670,
+    "name": "floette-blue",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11087,
+    "ownerId": 670,
+    "name": "floette-orange",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11088,
+    "ownerId": 670,
+    "name": "floette-white",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11089,
+    "ownerId": 670,
+    "name": "floette-yellow",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11090,
+    "ownerId": 671,
+    "name": "florges-blue",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11091,
+    "ownerId": 671,
+    "name": "florges-orange",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11092,
+    "ownerId": 671,
+    "name": "florges-white",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11093,
+    "ownerId": 671,
+    "name": "florges-yellow",
+    "types": [
+      "fairy"
+    ]
+  },
+  {
+    "id": 11096,
+    "ownerId": 676,
+    "name": "furfrou-heart",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11097,
+    "ownerId": 676,
+    "name": "furfrou-star",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11098,
+    "ownerId": 676,
+    "name": "furfrou-diamond",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11099,
+    "ownerId": 676,
+    "name": "furfrou-debutante",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11100,
+    "ownerId": 676,
+    "name": "furfrou-matron",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11101,
+    "ownerId": 676,
+    "name": "furfrou-dandy",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11102,
+    "ownerId": 676,
+    "name": "furfrou-la-reine",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11103,
+    "ownerId": 676,
+    "name": "furfrou-kabuki",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11104,
+    "ownerId": 676,
+    "name": "furfrou-pharaoh",
+    "types": [
+      "normal"
+    ]
+  }
+]

@@ -3,8 +3,11 @@ import { persist } from 'zustand/middleware';
 import { LEAGUE_PERSIST_VERSION, LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } from './seedLeague';
 import type { TypeName } from '@/types/pokemon';
 import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW, ROW_COUNT } from '../model/constants';
+import { legendsOf } from '../model/cardPicks';
+export { legendsOf } from '../model/cardPicks';
 import {
   allCardsFilled,
+  allCardsHaveFullTeams,
   parseCelebratedNudges,
   reachedNudges,
   type LeagueNudgeId,
@@ -113,6 +116,11 @@ export interface LeagueState {
    * the way the dex builder persists `milestoneCelebrated`.
    */
   celebratedNudges: LeagueNudgeId[];
+  /**
+   * The completion confetti has played. It fires once, the first time every
+   * trainer card has a full team with the league summary on screen.
+   */
+  fullLeagueCelebrated: boolean;
 
   setName: (name: string) => void;
   setView: (view: LeagueView) => void;
@@ -152,6 +160,7 @@ export interface LeagueState {
   swapLegends: (card: number, fromSeat: number, toSeat: number) => void;
   moveSlot: (fromIndex: number, toIndex: number) => void;
   markNudgeCelebrated: (id: LeagueNudgeId) => void;
+  markFullLeagueCelebrated: () => void;
 }
 
 export function emptyCard(): GymCard {
@@ -178,17 +187,6 @@ export function emptyCard(): GymCard {
  * `powerups` map and one `powerup` instead, which applied to both rows — so
  * that is what it answers with, and the card keeps drawing what it drew.
  */
-/**
- * Every legendary on a card's endgame row.
- *
- * A card saved before the row could hold more than one carries a single
- * `legend`, which reads as a one-entry list — exactly what it meant.
- */
-export function legendsOf(card: GymCard): LegendPick[] {
-  if (card.legends) return card.legends;
-  return card.legend ? [card.legend] : [];
-}
-
 /** The legendary on one seat of the endgame row, or null. */
 export function legendAt(card: GymCard, seat: number): LegendPick | null {
   return legendsOf(card).find((l) => l.seat === seat) ?? null;
@@ -273,6 +271,7 @@ type PersistedLeagueState = {
   cards?: GymCard[];
   view?: LeagueView;
   celebratedNudges?: unknown;
+  fullLeagueCelebrated?: unknown;
 };
 
 export function migrateLeagueState(persisted: unknown, version: number): PersistedLeagueState {
@@ -320,8 +319,14 @@ export function migrateLeagueState(persisted: unknown, version: number): Persist
     && allCardsFilled(cards ?? [])
     ? [...celebrated, 'complete' as const]
     : celebrated;
+  // v7 adds the completion confetti. A league that was full before v7 has
+  // had its moment, so it counts as celebrated, the way `celebratedNudges`
+  // starts from what an older save had already reached.
+  const fullLeagueCelebrated = version < 7 || state.fullLeagueCelebrated === undefined
+    ? allCardsHaveFullTeams(cards ?? [])
+    : state.fullLeagueCelebrated === true;
 
-  return { ...state, cards, celebratedNudges };
+  return { ...state, cards, celebratedNudges, fullLeagueCelebrated };
 }
 
 // Writes a seeded league on a preview build's first visit, before `persist`
@@ -368,6 +373,7 @@ export const useLeagueStore = create<LeagueState>()(
       cards: Array.from({ length: SLOT_COUNT }, emptyCard),
       view: 'challenge',
       celebratedNudges: [],
+      fullLeagueCelebrated: false,
 
       setName: (name) => set({ name }),
 
@@ -576,6 +582,8 @@ export const useLeagueStore = create<LeagueState>()(
         set((s) =>
           s.celebratedNudges.includes(id) ? {} : { celebratedNudges: [...s.celebratedNudges, id] },
         ),
+
+      markFullLeagueCelebrated: () => set({ fullLeagueCelebrated: true }),
     }),
     {
       name: LEAGUE_STORAGE_KEY,

@@ -1,0 +1,2243 @@
+{
+  "source": {
+    "repo": "https://github.com/abcboy101/poke-corpus",
+    "commit": "d74a89ba69cbabc491b65c3e88af8722bb34a927",
+    "sha256": {
+      "Champions/ms": {
+        "qid": "1c03fc7edc304ea2dfaf4286d31f995e29d7a5e1444619c0f154b68b74a530e0",
+        "en": "f4d63c2ab4d4fa06122d0b7b1601384ac847c8911430c8267fae5a07c7b51d16",
+        "ja": "90d2fdab9c455e1a493506aec42b63c16ec83d61ee6575ed3c343fe70105fcb3",
+        "ko": "bb0d0e80b0f3854bdf68d300d5420afdde888c813fdd827d5cd880d813c3f3d5",
+        "zh-Hans": "196c345938d4968c1f5ad32a6795be1c1dc087b0d11f863d9e65d481911bec7e",
+        "zh-Hant": "ac81b417e13f3eba9b8524c39a4d68b25a133438b97e854ea4c7915eb5e7b039",
+        "fr": "78e176d716ea196721a5d40d8f32ae01ed17d49f30672da8abcf0f654aedf1ee",
+        "de": "bbbe06196280ecc70db029906cb0e05d809e70eb6486962a786eef66cdf056fe",
+        "es": "3225dae8b3e2665f56a7bdc27ba1c516ed51c56f5b673fa8501dc7d4c52de43a",
+        "it": "b402bd501ae4a787811e6e576804fa82550a359db3b5aec5f0339cb2211ad370"
+      },
+      "HOME/megaturtle_nx": {
+        "qid": "4454d1d9bc5082fff8c295d52d0c226bead37ab422cf482987208fe8c13cfb50",
+        "en": "5b5ee1f14f7e49f522595275aec7d4c2daf293251c3d35622e3fafa4da2ef8ff",
+        "ja": "d580bac76cdbdded03ec1c1a3e268c9efd9fd3543d40e292cf9b4c281d42e837",
+        "ko": "5574efd11a2bf78487a5807d2fb6baf0c8a7a7cb91694fc984c9dc82233f8fdc",
+        "zh-Hans": "01d30abe24c62f44b67289f51a65c8281978f96142241299d5cc254dc1a5b9e9",
+        "zh-Hant": "ac8d159c72e257a733c7ae800a150ee74a77ea9052b337239e93e9cbb766fd00",
+        "fr": "d9e062d6c1e93a25d8466f643c61f95b8c1308e3213d67fdbb6dee6cf45cf27f",
+        "de": "c16a5db54a6ba66ff6fec19424e83e87724c2e3de5f9f8141ef440a56aff4cac",
+        "es": "2012b3f896654d031999b9cc60606a5172b5d0611fd392c1919feb7b06c1628b",
+        "it": "d381b17665d715204eff222a6a9a00614a38a69fa703369e76a6dbd7929f21bf"
+      },
+      "HOME/megaturtle_sp": {
+        "qid": "0b9b59117c8bb7fa71a999fc985e1f5de6618be084e9f04c7c2d2193e3680a4c",
+        "en": "6dca2c37b7dd755ebbfeb7cadde7e362732ef63a6bd48191cedd75bde43f9126",
+        "ja": "73397520bf42ec7e5ec8cde3c896134d12300cf19d0f91a18cd65435a262903a",
+        "ko": "88c5b7f5971f68ec7424a1b611ca5643c227b4f94ab8f74f8be5cb667938ae7b",
+        "zh-Hans": "27ad0955a11d9f01b1cd026991af91190ed58a5eaa4f8d11f8132381786f2bbf",
+        "zh-Hant": "3e429bec975987b3c8206a82760117099e1423bbc39553bcc557b532870ee8c5",
+        "fr": "b47b16766ef575dee31e39b3c8c8f6cebeb3fec007616ac43070c6708483443b",
+        "de": "9bca91db04a5c55e3adc5e70d98499787f3ee0a202f36f6f337965bd87ac2dc4",
+        "es": "fb25acf498a6b8519b3fb410f48908d3bc3cc00173a6f3223c9a29b605b14ee5",
+        "it": "55d32b3abfd22c37c5e4e84582bc149ca674715448f80848d36b0d930c88aa1d"
+      },
+      "ScarletViolet/common": {
+        "qid": "cbd68c658591b7938f6e17007085d57d4bd63912f5353348f0f8d7a480661793",
+        "en": "e124161806f2d16ebc1821522aac12c8745b615ba770b56b407524c046368ad5",
+        "ja": "a789a8e24bbc3210d7328b137840436900a9f74cdc59224e6360aeed3434096e",
+        "ko": "0b972225ea00fe1caf309f5b0e0bdbd316f8d63b40c3b76bd700e7d3ccfca827",
+        "zh-Hans": "75675f86872a317144e2566ff6c810b2e9b670125067c73272d3760abf82e40d",
+        "zh-Hant": "54afd18d4a73fdc85d5881834bd0fb57605b991fad7e2e64259996fb5e11586a",
+        "fr": "48a3a6704e700c866b37f8c9316a75626f6f7364815ad6285846e432530ca289",
+        "de": "c9a1d1702a12e2e814bfa9d83065f374cbb59dc8500eaa5819a5dca9c12e315b",
+        "es": "3ca911e8b10eed63d713e2bb16335acc58b40d119f1329ac75394f8e17b52524",
+        "it": "125b315261ecdbed9d68cb200febbb304aeee89b1bb1c8e2fac72d6a176f7c82"
+      },
+      "BrilliantDiamondShiningPearl/message": {
+        "qid": "071db2c0597e406af9a91af2e47144ab8e6ab3795211a59898ffba03cd1e29bb",
+        "en": "92a90574cc5dd0dc69dae346840f8b0281a5ec2364255d1baa72ee57ab9ca54f",
+        "ja": "2c8de151bae4f5ae8b942bee308b43346e42cfccc2b4c4d1abc517787916e55c",
+        "ko": "b1af0dfacbee439283fda5279166d3df01d8c617d1f3914b7d56b61afd5a1bdd",
+        "zh-Hans": "1d28ddb7a1f1858bc6aba8a134e4e877b73880ecfbd338334c2a510a203a087c",
+        "zh-Hant": "b964926a7bb478a63689400eaff31b62b9040f067bf92fc7b29a849894f741ac",
+        "fr": "e73dc21fda864e46fb27b5ee9baaaf9d2a07d9b88c4ab77075e2b7674717627a",
+        "de": "8de7a23ac682d172795d55304f04c2e11adee4fa6c51a108b30acc7290ac4c7f",
+        "es": "e44b98c2e2b9e37725aeb3a53f4c9e63e2cff6ed4302950b6f08bd76feb868dc",
+        "it": "8e257582180a054e58d0dd22373445212b6b613b0dd40517be3618b90da407b9"
+      },
+      "SwordShield/common": {
+        "qid": "407b38344468a0665290b6d4b7d12eb32f52160eeb15837d173bfd432d8e9899",
+        "en": "9b7cfc0c8966359d307021d885633f7be8183f9aab6f545e282adc2427a58ff9",
+        "ja": "314f67251ba9993e8ca847504b93b06dc821f2499076a1bcd94af836ce93ab0a",
+        "ko": "b2cb3a17852902e1c790d329a34818aa63353605b0b97e256071c5d8e8f23aaf",
+        "zh-Hans": "f32dd6530008390f0fd82db5dd165e5ac808844fa0ea6fa4ca7c8ec82ba5710a",
+        "zh-Hant": "4135b9ffdf977b32430871cb4007102d187e6fd6dc5259f00a7ce20595cafd57",
+        "fr": "eaad29ad36d6825f15539b38ddfae6d2096de72997dce9860f09edd93d9b033c",
+        "de": "df5e1575a19a4845c2fd35a1d2a7c816a5dcbc4f39f53aa0672b89eb1f5dfced",
+        "es": "f4cdc4248222f96ed9441e30d9e780b3bb2b77678b580057df4ec087fbe4fcba",
+        "it": "b1ed2c21f6c37f966029539af947fae114931b5b3e8c2ecfe14e5394c646ff9c"
+      },
+      "LetsGoPikachuLetsGoEevee/common": {
+        "qid": "09dc925c1360347bef35a6ee384efdd4d7ec7362536d51b10efef891d5308b59",
+        "en": "b665c3d002f635a87cc6fe8020bc4c255f1940ca0a9181d45a1c081b7f21d52f",
+        "ja": "fd2cfcf9fe7b6934e4e04b55c0d267b5725edbcb08f027965fd73a367c3a559a",
+        "ko": "ed0b2efcc26289b2a0c2cda77a1e30083dbf1e66cdfe25f2599868fc85ad0efa",
+        "zh-Hans": "537c3bc77448a5f1b568675373536bf76d534dc6434843e2d2e51f6f2174b13d",
+        "zh-Hant": "a40bfd336ae04faf22c5c692fed9fd0c067f3a2760df92052ed57e8e92b01b63",
+        "fr": "98b9bdcd6b4cc65ee48736653faeeb9f7ff80cfd352886b78d94348cee3a27c3",
+        "de": "aa0bb52557d037c0738e6dcf374157e5047f4b940d39bee3119b851c74df4ab6",
+        "es": "5db88a01dee7b58f2751e9424d7bb57296347c5b34aa9f6917c82d9cd7a1ca08",
+        "it": "5b78557dfa7daa1028cbbef6b2f0fc32b7c08504b422e1894d60b4880331dfe8"
+      },
+      "UltraSunUltraMoon/common": {
+        "qid": "9488e84a234caa5a325f048f41b7e5cf1b32d96c95fa19bb539c22b372c38dbb",
+        "en": "675f24c77fb31577f19f97914e5ff631b6a1ec1bdc0abec2cb5e193102ccf966",
+        "ja": "47c924868b9c65b3b29709dee5bb09027ce2629e3607a27ad7029a1367ec95fb",
+        "ko": "dc5d21626bc51713151314291ce75f4c014b34ec0da553a523f098af31dea519",
+        "zh-Hans": "22d3234c7ae4b5aef8b6f45fe59b5d02d02f24175b87070fad327715d7e9c076",
+        "zh-Hant": "9c4edeb837b93d994629da6887992445245d3608684ae29015f9b475f9b8b3cb",
+        "fr": "925345ae733551851c380ba0e220163ca45e0f476f1a4ea6a403a4241dd9f64a",
+        "de": "3341d0d652201084361cb94b38de4cf549f41c36ff74abff7b94526d710deec1",
+        "es": "6ba3a7f203d3f5b89ea3ff87e3ce188f569822ef2fb5734a5421c077f561a449",
+        "it": "65f63b42cc3775a5345c91ef9833ded47d95ab4218ab46b25885e6fcac26361f"
+      },
+      "Bank/turtle": {
+        "qid": "fae34d9adce1df4c9e20b54bf33c774023f2f54dc9af11031d30ba834a653f4b",
+        "en": "c12e6bcad2ed5c569f6f3adf79c1915fdc32d0e1aebd0106fcd345b62b52dafb",
+        "ja": "9ae394a34726d79a564423c89e417f5ec7bf347a2a2abad5c1a593a5f4d8a216",
+        "ko": "dc2fea2061742c2e6b9e8ae4a290f126896a1d751a6e35e14706980a32448921",
+        "zh-Hans": "9270bf58a0e51382c174d8da3194f5f328e877f823592e21a145908699aae8b0",
+        "zh-Hant": "50ef0174c0904c7ef097f433ce31858406f56e99f51d58ed322887c0608d8722",
+        "fr": "f5ac6fc327c58066549ddc41a3f0e62b66e071c6ef6c19f44b6692380b250c7e",
+        "de": "a5b58044a7dafeb9e31630e87f89947647a29bdcee0288395360dc4163d07564",
+        "es": "09376393daab788fc91cde008a97dfc8fa1aa66edab6608bd1e62f974cb53585",
+        "it": "d4b45b0e1d3f558cf664d7d248a7ef2fde78175c768e8cca98f43e57c5b50ce4"
+      },
+      "Masters/messages": {
+        "qid": "93b17d4705ba6ff49239cbfb2dde53393b8bc8a70d7c7f09759c207ffeabd41e",
+        "en": "de8ca7d16b669182e2c38060f759d24eeaa7f15303ccad8bf1f278e4af72d51a",
+        "ja": "021650c12c71383c3d63febd31250904a50082a2f04f25190a2ad8dcb2e1546f",
+        "ko": "ccd674d77acd3c097c881a6ceb61d52e3b8cb74b326926bbd662747c4f4cce46",
+        "zh-Hant": "6d6cbe2d550d9df7ed82def8bc0ebae230a8155455df9699c9ec59cb971717fa",
+        "fr": "68b6ff6997e888d48a65d85cd19d6ece9cd9922f84e8b915b56644d2007c8633",
+        "de": "1ed67b6f3c0520d668f95f247e684b584d758c6f187c26d59ce08c03891a34a0",
+        "es": "90f55b5f5371423dd5bd1f9475f2e38cae15550d0653b915629ab80928f79846",
+        "it": "d29318ddf9e0b159edc2e93766d847f3fa39244f5e62a52c73d4771fd742b15b"
+      }
+    }
+  },
+  "note": "Sourced values for catalog keys (src/i18n/catalogs/terms) and Tauros form names (src/i18n/names). `npm run i18n:terms` and `npm run i18n:names` copy them in; `npm run i18n:verify` holds the catalogs to them.",
+  "terms": [
+    {
+      "key": "league.category.physical",
+      "use": "Move category: the TM picker’s filter chips and the category icon’s name.",
+      "text": {
+        "ja": "物理",
+        "ko": "물리",
+        "zh-Hans": "物理",
+        "zh-Hant": "物理",
+        "fr": "Physique",
+        "de": "Physisch",
+        "es": "Físico",
+        "it": "Fisica"
+      },
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.narrowdown.narrowdown_s_14",
+          "text": {
+            "en": "Physical",
+            "ja": "物理",
+            "ko": "물리",
+            "zh-Hans": "物理",
+            "zh-Hant": "物理",
+            "fr": "Physique",
+            "de": "Physisch",
+            "es": "Físico",
+            "it": "Fisica"
+          }
+        }
+      ]
+    },
+    {
+      "key": "league.category.special",
+      "use": "Move category: the TM picker’s filter chips and the category icon’s name.",
+      "text": {
+        "ja": "特殊",
+        "ko": "특수",
+        "zh-Hans": "特殊",
+        "zh-Hant": "特殊",
+        "fr": "Spéciale",
+        "de": "Spezial",
+        "es": "Especial",
+        "it": "Speciale"
+      },
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.narrowdown.narrowdown_s_15",
+          "text": {
+            "en": "Special",
+            "ja": "特殊",
+            "ko": "특수",
+            "zh-Hans": "特殊",
+            "zh-Hant": "特殊",
+            "fr": "Spéciale",
+            "de": "Spezial",
+            "es": "Especial",
+            "it": "Speciale"
+          }
+        }
+      ]
+    },
+    {
+      "key": "league.category.status",
+      "use": "Move category: the TM picker’s filter chips and the category icon’s name.",
+      "text": {
+        "ja": "変化",
+        "ko": "변화",
+        "zh-Hans": "变化",
+        "zh-Hant": "變化",
+        "fr": "Statut",
+        "de": "Status",
+        "es": "De estado",
+        "it": "Di stato"
+      },
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.narrowdown.narrowdown_s_16",
+          "text": {
+            "en": "Status",
+            "ja": "変化",
+            "ko": "변화",
+            "zh-Hans": "变化",
+            "zh-Hant": "變化",
+            "fr": "Statut",
+            "de": "Status",
+            "es": "De estado",
+            "it": "Di stato"
+          }
+        }
+      ]
+    },
+    {
+      "key": "league.contest.cool",
+      "use": "Contest condition: the TM picker’s filter chips.",
+      "text": {
+        "ja": "かっこよさ",
+        "ko": "근사함",
+        "zh-Hans": "帅气",
+        "zh-Hant": "帥氣",
+        "fr": "Sang-froid",
+        "de": "Coolness",
+        "es": "Carisma",
+        "it": "Classe"
+      },
+      "from": [
+        {
+          "game": "HOME",
+          "file": "megaturtle_nx",
+          "qid": "home.nx.status_system.nx_status_detailed_521",
+          "text": {
+            "en": "Coolness",
+            "ja": "かっこよさ",
+            "ko": "근사함",
+            "zh-Hans": "帅气",
+            "zh-Hant": "帥氣",
+            "fr": "Sang-froid",
+            "de": "Coolness",
+            "es": "Carisma",
+            "it": "Classe"
+          }
+        }
+      ]
+    },
+    {
+      "key": "league.contest.beautiful",
+      "use": "Contest condition: the TM picker’s filter chips.",
+      "text": {
+        "ja": "うつくしさ",
+        "ko": "아름다움",
+        "zh-Hans": "美丽",
+        "zh-Hant": "美麗",
+        "fr": "Beauté",
+        "de": "Schönheit",
+        "es": "Belleza",
+        "it": "Bellezza"
+      },
+      "from": [
+        {
+          "game": "HOME",
+          "file": "megaturtle_nx",
+          "qid": "home.nx.status_system.nx_status_detailed_522",
+          "text": {
+            "en": "Beauty",
+            "ja": "うつくしさ",
+            "ko": "아름다움",
+            "zh-Hans": "美丽",
+            "zh-Hant": "美麗",
+            "fr": "Beauté",
+            "de": "Schönheit",
+            "es": "Belleza",
+            "it": "Bellezza"
+          }
+        }
+      ]
+    },
+    {
+      "key": "league.contest.cute",
+      "use": "Contest condition: the TM picker’s filter chips.",
+      "text": {
+        "ja": "かわいさ",
+        "ko": "귀여움",
+        "zh-Hans": "可爱",
+        "zh-Hant": "可愛",
+        "fr": "Grâce",
+        "de": "Putzigkeit",
+        "es": "Dulzura",
+        "it": "Grazia"
+      },
+      "from": [
+        {
+          "game": "HOME",
+          "file": "megaturtle_nx",
+          "qid": "home.nx.status_system.nx_status_detailed_523",
+          "text": {
+            "en": "Cuteness",
+            "ja": "かわいさ",
+            "ko": "귀여움",
+            "zh-Hans": "可爱",
+            "zh-Hant": "可愛",
+            "fr": "Grâce",
+            "de": "Putzigkeit",
+            "es": "Dulzura",
+            "it": "Grazia"
+          }
+        }
+      ]
+    },
+    {
+      "key": "league.contest.clever",
+      "use": "Contest condition: the TM picker’s filter chips.",
+      "text": {
+        "ja": "かしこさ",
+        "ko": "슬기로움",
+        "zh-Hans": "聪明",
+        "zh-Hant": "聰明",
+        "fr": "Intelligence",
+        "de": "Klugheit",
+        "es": "Ingenio",
+        "it": "Acume"
+      },
+      "from": [
+        {
+          "game": "HOME",
+          "file": "megaturtle_nx",
+          "qid": "home.nx.status_system.nx_status_detailed_524",
+          "text": {
+            "en": "Cleverness",
+            "ja": "かしこさ",
+            "ko": "슬기로움",
+            "zh-Hans": "聪明",
+            "zh-Hant": "聰明",
+            "fr": "Intelligence",
+            "de": "Klugheit",
+            "es": "Ingenio",
+            "it": "Acume"
+          }
+        }
+      ]
+    },
+    {
+      "key": "league.contest.tough",
+      "use": "Contest condition: the TM picker’s filter chips.",
+      "text": {
+        "ja": "たくましさ",
+        "ko": "강인함",
+        "zh-Hans": "强壮",
+        "zh-Hant": "強壯",
+        "fr": "Robustesse",
+        "de": "Stärke",
+        "es": "Dureza",
+        "it": "Grinta"
+      },
+      "from": [
+        {
+          "game": "HOME",
+          "file": "megaturtle_nx",
+          "qid": "home.nx.status_system.nx_status_detailed_525",
+          "text": {
+            "en": "Toughness",
+            "ja": "たくましさ",
+            "ko": "강인함",
+            "zh-Hans": "强壮",
+            "zh-Hant": "強壯",
+            "fr": "Robustesse",
+            "de": "Stärke",
+            "es": "Dureza",
+            "it": "Grinta"
+          }
+        }
+      ]
+    },
+    {
+      "key": "form.10250",
+      "use": "The Paldean Tauros breed’s form name, in the Pokémon names catalog.",
+      "text": {
+        "ja": "パルデアのすがた・コンバットしゅ",
+        "ko": "팔데아의 모습/컴뱃종",
+        "zh-Hans": "帕底亚的样子・斗战种",
+        "zh-Hant": "帕底亞的樣子（鬥戰種）",
+        "fr": "Forme de Paldea (Race Combative)",
+        "de": "Paldea-Form (Gefechtvariante)",
+        "es": "Forma de Paldea (Variedad Combatiente)",
+        "it": "Forma di Paldea (Varietà Combattiva)"
+      },
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.zkn_form_syn.ZKN_FORM_128_001",
+          "text": {
+            "en": "Paldean Form (Combat Breed)",
+            "ja": "パルデアのすがた・コンバットしゅ",
+            "ko": "팔데아의 모습/컴뱃종",
+            "zh-Hans": "帕底亚的样子・斗战种",
+            "zh-Hant": "帕底亞的樣子（鬥戰種）",
+            "fr": "Forme de Paldea (Race Combative)",
+            "de": "Paldea-Form (Gefechtvariante)",
+            "es": "Forma de Paldea (Variedad Combatiente)",
+            "it": "Forma di Paldea (Varietà Combattiva)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "form.10251",
+      "use": "The Paldean Tauros breed’s form name, in the Pokémon names catalog.",
+      "text": {
+        "ja": "パルデアのすがた・ブレイズしゅ",
+        "ko": "팔데아의 모습/블레이즈종",
+        "zh-Hans": "帕底亚的样子・火炽种",
+        "zh-Hant": "帕底亞的樣子（火熾種）",
+        "fr": "Forme de Paldea (Race Flamboyante)",
+        "de": "Paldea-Form (Flammenvariante)",
+        "es": "Forma de Paldea (Variedad Ardiente)",
+        "it": "Forma di Paldea (Varietà Infuocata)"
+      },
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.zkn_form_syn.ZKN_FORM_128_002",
+          "text": {
+            "en": "Paldean Form (Blaze Breed)",
+            "ja": "パルデアのすがた・ブレイズしゅ",
+            "ko": "팔데아의 모습/블레이즈종",
+            "zh-Hans": "帕底亚的样子・火炽种",
+            "zh-Hant": "帕底亞的樣子（火熾種）",
+            "fr": "Forme de Paldea (Race Flamboyante)",
+            "de": "Paldea-Form (Flammenvariante)",
+            "es": "Forma de Paldea (Variedad Ardiente)",
+            "it": "Forma di Paldea (Varietà Infuocata)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "form.10252",
+      "use": "The Paldean Tauros breed’s form name, in the Pokémon names catalog.",
+      "text": {
+        "ja": "パルデアのすがた・ウォーターしゅ",
+        "ko": "팔데아의 모습/워터종",
+        "zh-Hans": "帕底亚的样子・水澜种",
+        "zh-Hant": "帕底亞的樣子（水瀾種）",
+        "fr": "Forme de Paldea (Race Aquatique)",
+        "de": "Paldea-Form (Flutenvariante)",
+        "es": "Forma de Paldea (Variedad Acuática)",
+        "it": "Forma di Paldea (Varietà Acquatica)"
+      },
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.zkn_form_syn.ZKN_FORM_128_003",
+          "text": {
+            "en": "Paldean Form (Aqua Breed)",
+            "ja": "パルデアのすがた・ウォーターしゅ",
+            "ko": "팔데아의 모습/워터종",
+            "zh-Hans": "帕底亚的样子・水澜种",
+            "zh-Hant": "帕底亞的樣子（水瀾種）",
+            "fr": "Forme de Paldea (Race Aquatique)",
+            "de": "Paldea-Form (Flutenvariante)",
+            "es": "Forma de Paldea (Variedad Acuática)",
+            "it": "Forma di Paldea (Varietà Acquatica)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.gift-pokemon.sub.0",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "赤・緑",
+        "ko": "레드・그린",
+        "zh-Hans": "红／绿",
+        "zh-Hant": "紅／綠",
+        "fr": "Rouge/Bleu",
+        "de": "Rot/Blau",
+        "es": "Rojo/Azul",
+        "it": "Rosso/Blu"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use. Leaves out Yellow: the Champions series list names Red and Blue (Red and Green in Japanese) only.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_RG",
+          "text": {
+            "en": "Pokémon Red & Pokémon Blue",
+            "ja": "ポケットモンスター 赤・緑",
+            "ko": "포켓몬스터 레드・그린",
+            "zh-Hans": "宝可梦 红／绿",
+            "zh-Hant": "寶可夢 紅／綠",
+            "fr": "Pokémon Rouge et Pokémon Bleu",
+            "de": "Pokémon Rot und Pokémon Blau",
+            "es": "Pokémon Rojo y Pokémon Azul",
+            "it": "Pokémon Rosso e Pokémon Blu"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.gift-pokemon.sub.1",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "金・銀",
+        "ko": "금・은",
+        "zh-Hans": "金／银",
+        "zh-Hant": "金／銀",
+        "fr": "Or/Argent",
+        "de": "Gold/Silber",
+        "es": "Oro/Plata",
+        "it": "Oro/Argento"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_GSC",
+          "text": {
+            "en": "Pokémon Gold, Pokémon Silver & Pokémon Crystal",
+            "ja": "ポケットモンスター\\n金・銀・クリスタルバージョン",
+            "ko": "포켓몬스터 금・은・크리스탈",
+            "zh-Hans": "宝可梦 金／银／水晶版",
+            "zh-Hant": "寶可夢 金／銀／水晶版",
+            "fr": "Pokémon Or, Pokémon Argent et Pokémon Cristal",
+            "de": "Pokémon Gold, Pokémon Silber und Pokémon Kristall",
+            "es": "Pokémon Oro, Pokémon Plata y Pokémon Cristal",
+            "it": "Pokémon Oro, Pokémon Argento e Pokémon Cristallo"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.gift-pokemon.sub.2",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "ルビー・サファイア・エメラルド",
+        "ko": "루비・사파이어・에메랄드",
+        "zh-Hans": "红宝石／蓝宝石／绿宝石",
+        "zh-Hant": "紅寶石／藍寶石／綠寶石",
+        "fr": "Rubis/Saphir/Émeraude",
+        "de": "Rubin/Saphir/Smaragd",
+        "es": "Rubí/Zafiro/Esmeralda",
+        "it": "Rubino/Zaffiro/Smeraldo"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_RSE",
+          "text": {
+            "en": "Pokémon Ruby, Pokémon Sapphire & Pokémon Emerald",
+            "ja": "ポケットモンスター\\nルビー・サファイア・エメラルド",
+            "ko": "포켓몬스터 루비・사파이어・에메랄드",
+            "zh-Hans": "宝可梦 红宝石／蓝宝石／绿宝石",
+            "zh-Hant": "寶可夢 紅寶石／藍寶石／綠寶石",
+            "fr": "Pokémon Rubis, Pokémon Saphir et Pokémon Émeraude",
+            "de": "Pokémon Rubin, Pokémon Saphir und Pokémon Smaragd",
+            "es": "Pokémon Rubí, Pokémon Zafiro y Pokémon Esmeralda",
+            "it": "Pokémon Rubino, Pokémon Zaffiro e Pokémon Smeraldo"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.gift-pokemon.sub.3",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "ダイヤモンド・パール・プラチナ",
+        "ko": "DP 디아루가・DP 펄기아・Pt 기라티나",
+        "zh-Hans": "钻石／珍珠／白金",
+        "zh-Hant": "鑽石／珍珠／白金",
+        "fr": "Diamant/Perle/Platine",
+        "de": "Diamant/Perl/Platin",
+        "es": "Diamante/Perla/Platino",
+        "it": "Diamante/Perla/Platino"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_DPPt",
+          "text": {
+            "en": "Pokémon Diamond, Pokémon Pearl & Pokémon Platinum",
+            "ja": "ポケットモンスター\\nダイヤモンド・パール・プラチナ",
+            "ko": "포켓몬스터DP 디아루가・DP 펄기아・Pt 기라티나",
+            "zh-Hans": "宝可梦 钻石／珍珠／白金",
+            "zh-Hant": "寶可夢 鑽石／珍珠／白金",
+            "fr": "Pokémon Diamant, Pokémon Perle et Pokémon Platine",
+            "de": "Pokémon Diamant, Pokémon Perl und Pokémon Platin",
+            "es": "Pokémon Diamante, Pokémon Perla y Pokémon Platino",
+            "it": "Pokémon Diamante, Pokémon Perla e Pokémon Platino"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.gift-pokemon.sub.4",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "ブラック・ホワイト",
+        "ko": "블랙・화이트",
+        "zh-Hans": "黑／白",
+        "zh-Hant": "黑／白",
+        "fr": "Noir/Blanc",
+        "de": "Schwarz/Weiß",
+        "es": "Negro/Blanco",
+        "it": "Nero/Bianco"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_BW",
+          "text": {
+            "en": "Pokémon Black & Pokémon White",
+            "ja": "ポケットモンスターブラック・ホワイト",
+            "ko": "포켓몬스터 블랙・화이트",
+            "zh-Hans": "宝可梦 黑／白",
+            "zh-Hant": "寶可夢 黑／白",
+            "fr": "Pokémon Noir et Pokémon Blanc",
+            "de": "Pokémon Schwarz und Pokémon Weiß",
+            "es": "Pokémon Negro y Pokémon Blanco",
+            "it": "Pokémon Nero e Pokémon Bianco"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.gift-pokemon.sub.5",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "Ｘ・Ｙ",
+        "ko": "X・Y",
+        "zh-Hans": "X／Y",
+        "zh-Hant": "X／Y",
+        "fr": "X/Y",
+        "de": "X/Y",
+        "es": "X/Y",
+        "it": "X/Y"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_XY",
+          "text": {
+            "en": "Pokémon X & Pokémon Y",
+            "ja": "ポケットモンスター Ｘ・Ｙ",
+            "ko": "포켓몬스터 X・Y",
+            "zh-Hans": "宝可梦 X／Y",
+            "zh-Hant": "寶可夢 X／Y",
+            "fr": "Pokémon X et Pokémon Y",
+            "de": "Pokémon X und Pokémon Y",
+            "es": "Pokémon X y Pokémon Y",
+            "it": "Pokémon X e Pokémon Y"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.gift-pokemon.sub.6",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "サン・ムーン",
+        "ko": "썬・문",
+        "zh-Hans": "太阳／月亮",
+        "zh-Hant": "太陽／月亮",
+        "fr": "Soleil/Lune",
+        "de": "Sonne/Mond",
+        "es": "Sol/Luna",
+        "it": "Sole/Luna"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_SM",
+          "text": {
+            "en": "Pokémon Sun & Pokémon Moon",
+            "ja": "ポケットモンスター サン・ムーン",
+            "ko": "포켓몬스터썬・문",
+            "zh-Hans": "精灵宝可梦 太阳／月亮",
+            "zh-Hant": "精靈寶可夢 太陽／月亮",
+            "fr": "Pokémon Soleil et Pokémon Lune",
+            "de": "Pokémon Sonne und Pokémon Mond",
+            "es": "Pokémon Sol y Pokémon Luna",
+            "it": "Pokémon Sole e Pokémon Luna"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.gift-pokemon.sub.7",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "ソード・シールド",
+        "ko": "소드・실드",
+        "zh-Hans": "剑／盾",
+        "zh-Hant": "劍／盾",
+        "fr": "Épée/Bouclier",
+        "de": "Schwert/Schild",
+        "es": "Espada/Escudo",
+        "it": "Spada/Scudo"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_SWSH",
+          "text": {
+            "en": "Pokémon Sword & Pokémon Shield",
+            "ja": "ポケットモンスター ソード・シールド",
+            "ko": "포켓몬스터소드・실드",
+            "zh-Hans": "宝可梦 剑／盾",
+            "zh-Hant": "寶可夢 劍／盾",
+            "fr": "Pokémon Épée et Pokémon Bouclier",
+            "de": "Pokémon Schwert und Pokémon Schild",
+            "es": "Pokémon Espada y Pokémon Escudo",
+            "it": "Pokémon Spada e Pokémon Scudo"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.reward-pokemon.sub.0",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "赤・緑",
+        "ko": "레드・그린",
+        "zh-Hans": "红／绿",
+        "zh-Hant": "紅／綠",
+        "fr": "Rouge/Bleu",
+        "de": "Rot/Blau",
+        "es": "Rojo/Azul",
+        "it": "Rosso/Blu"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use. Leaves out Yellow, as above.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_RG",
+          "text": {
+            "en": "Pokémon Red & Pokémon Blue",
+            "ja": "ポケットモンスター 赤・緑",
+            "ko": "포켓몬스터 레드・그린",
+            "zh-Hans": "宝可梦 红／绿",
+            "zh-Hant": "寶可夢 紅／綠",
+            "fr": "Pokémon Rouge et Pokémon Bleu",
+            "de": "Pokémon Rot und Pokémon Blau",
+            "es": "Pokémon Rojo y Pokémon Azul",
+            "it": "Pokémon Rosso e Pokémon Blu"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.reward-pokemon.sub.1",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "クリスタルバージョン・ハートゴールド・ソウルシルバー",
+        "ko": "크리스탈・하트골드・소울실버",
+        "zh-Hans": "水晶版／心金／魂银",
+        "zh-Hant": "水晶版／心金／魂銀",
+        "fr": "Cristal/Or HeartGold/Argent SoulSilver",
+        "de": "Kristall/HeartGold/SoulSilver",
+        "es": "Cristal/Oro HeartGold/Plata SoulSilver",
+        "it": "Cristallo/HeartGold/SoulSilver"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_GSC",
+          "text": {
+            "en": "Pokémon Gold, Pokémon Silver & Pokémon Crystal",
+            "ja": "ポケットモンスター\\n金・銀・クリスタルバージョン",
+            "ko": "포켓몬스터 금・은・크리스탈",
+            "zh-Hans": "宝可梦 金／银／水晶版",
+            "zh-Hant": "寶可夢 金／銀／水晶版",
+            "fr": "Pokémon Or, Pokémon Argent et Pokémon Cristal",
+            "de": "Pokémon Gold, Pokémon Silber und Pokémon Kristall",
+            "es": "Pokémon Oro, Pokémon Plata y Pokémon Cristal",
+            "it": "Pokémon Oro, Pokémon Argento e Pokémon Cristallo"
+          }
+        },
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_HGSS",
+          "text": {
+            "en": "Pokémon HeartGold & Pokémon SoulSilver",
+            "ja": "ポケットモンスター\\nハートゴールド・ソウルシルバー",
+            "ko": "포켓몬스터 하트골드・소울실버",
+            "zh-Hans": "宝可梦 心金／魂银",
+            "zh-Hant": "寶可夢 心金／魂銀",
+            "fr": "Pokémon Or HeartGold et Pokémon Argent SoulSilver",
+            "de": "Pokémon HeartGold und Pokémon SoulSilver",
+            "es": "Pokémon Oro HeartGold y Pokémon Plata SoulSilver",
+            "it": "Pokémon HeartGold e Pokémon SoulSilver"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.reward-pokemon.sub.2",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "ブラック２・ホワイト２",
+        "ko": "블랙 2・화이트 2",
+        "fr": "Version Noire 2/Version Blanche 2",
+        "de": "Schwarze Edition 2/Weiße Edition 2",
+        "es": "Edición Negra 2/Edición Blanca 2",
+        "it": "Versione Nera 2/Versione Bianca 2"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "english": {
+        "zh-Hans": "No zh-Hans title for black2, white2 in any game.",
+        "zh-Hant": "No zh-Hant title for black2, white2 in any game."
+      },
+      "from": [
+        {
+          "game": "Bank",
+          "file": "turtle",
+          "qid": "bank.24.6",
+          "text": {
+            "en": "Pokémon Black 2",
+            "ja": "ポケットモンスターブラック２",
+            "ko": "포켓몬스터 블랙 2",
+            "zh-Hans": "ポケットモンスターブラック２",
+            "zh-Hant": "ポケットモンスターブラック２",
+            "fr": "Pokémon Version Noire 2",
+            "de": "Pokémon Schwarze Edition 2",
+            "es": "Pokémon Edición Negra 2",
+            "it": "Pokémon Versione Nera 2"
+          }
+        },
+        {
+          "game": "Bank",
+          "file": "turtle",
+          "qid": "bank.24.7",
+          "text": {
+            "en": "Pokémon White 2",
+            "ja": "ポケットモンスターホワイト２",
+            "ko": "포켓몬스터 화이트 2",
+            "zh-Hans": "ポケットモンスターホワイト２",
+            "zh-Hant": "ポケットモンスターホワイト２",
+            "fr": "Pokémon Version Blanche 2",
+            "de": "Pokémon Weiße Edition 2",
+            "es": "Pokémon Edición Blanca 2",
+            "it": "Pokémon Versione Bianca 2"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.static-encounter.sub.0",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "赤・緑",
+        "ko": "레드・그린",
+        "zh-Hans": "红／绿",
+        "zh-Hant": "紅／綠",
+        "fr": "Rouge/Bleu",
+        "de": "Rot/Blau",
+        "es": "Rojo/Azul",
+        "it": "Rosso/Blu"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use. Leaves out Yellow, as above.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_RG",
+          "text": {
+            "en": "Pokémon Red & Pokémon Blue",
+            "ja": "ポケットモンスター 赤・緑",
+            "ko": "포켓몬스터 레드・그린",
+            "zh-Hans": "宝可梦 红／绿",
+            "zh-Hant": "寶可夢 紅／綠",
+            "fr": "Pokémon Rouge et Pokémon Bleu",
+            "de": "Pokémon Rot und Pokémon Blau",
+            "es": "Pokémon Rojo y Pokémon Azul",
+            "it": "Pokémon Rosso e Pokémon Blu"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.static-encounter.sub.1",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "金・銀・クリスタルバージョン",
+        "ko": "금・은・크리스탈",
+        "zh-Hans": "金／银／水晶版",
+        "zh-Hant": "金／銀／水晶版",
+        "fr": "Or/Argent/Cristal",
+        "de": "Gold/Silber/Kristall",
+        "es": "Oro/Plata/Cristal",
+        "it": "Oro/Argento/Cristallo"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_GSC",
+          "text": {
+            "en": "Pokémon Gold, Pokémon Silver & Pokémon Crystal",
+            "ja": "ポケットモンスター\\n金・銀・クリスタルバージョン",
+            "ko": "포켓몬스터 금・은・크리스탈",
+            "zh-Hans": "宝可梦 金／银／水晶版",
+            "zh-Hant": "寶可夢 金／銀／水晶版",
+            "fr": "Pokémon Or, Pokémon Argent et Pokémon Cristal",
+            "de": "Pokémon Gold, Pokémon Silber und Pokémon Kristall",
+            "es": "Pokémon Oro, Pokémon Plata y Pokémon Cristal",
+            "it": "Pokémon Oro, Pokémon Argento e Pokémon Cristallo"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.static-encounter.sub.2",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "ルビー・サファイア・エメラルド",
+        "ko": "루비・사파이어・에메랄드",
+        "zh-Hans": "红宝石／蓝宝石／绿宝石",
+        "zh-Hant": "紅寶石／藍寶石／綠寶石",
+        "fr": "Rubis/Saphir/Émeraude",
+        "de": "Rubin/Saphir/Smaragd",
+        "es": "Rubí/Zafiro/Esmeralda",
+        "it": "Rubino/Zaffiro/Smeraldo"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_RSE",
+          "text": {
+            "en": "Pokémon Ruby, Pokémon Sapphire & Pokémon Emerald",
+            "ja": "ポケットモンスター\\nルビー・サファイア・エメラルド",
+            "ko": "포켓몬스터 루비・사파이어・에메랄드",
+            "zh-Hans": "宝可梦 红宝石／蓝宝石／绿宝石",
+            "zh-Hant": "寶可夢 紅寶石／藍寶石／綠寶石",
+            "fr": "Pokémon Rubis, Pokémon Saphir et Pokémon Émeraude",
+            "de": "Pokémon Rubin, Pokémon Saphir und Pokémon Smaragd",
+            "es": "Pokémon Rubí, Pokémon Zafiro y Pokémon Esmeralda",
+            "it": "Pokémon Rubino, Pokémon Zaffiro e Pokémon Smeraldo"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.static-encounter.sub.3",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "ダイヤモンド・パール・プラチナ",
+        "ko": "DP 디아루가・DP 펄기아・Pt 기라티나",
+        "zh-Hans": "钻石／珍珠／白金",
+        "zh-Hant": "鑽石／珍珠／白金",
+        "fr": "Diamant/Perle/Platine",
+        "de": "Diamant/Perl/Platin",
+        "es": "Diamante/Perla/Platino",
+        "it": "Diamante/Perla/Platino"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_DPPt",
+          "text": {
+            "en": "Pokémon Diamond, Pokémon Pearl & Pokémon Platinum",
+            "ja": "ポケットモンスター\\nダイヤモンド・パール・プラチナ",
+            "ko": "포켓몬스터DP 디아루가・DP 펄기아・Pt 기라티나",
+            "zh-Hans": "宝可梦 钻石／珍珠／白金",
+            "zh-Hant": "寶可夢 鑽石／珍珠／白金",
+            "fr": "Pokémon Diamant, Pokémon Perle et Pokémon Platine",
+            "de": "Pokémon Diamant, Pokémon Perl und Pokémon Platin",
+            "es": "Pokémon Diamante, Pokémon Perla y Pokémon Platino",
+            "it": "Pokémon Diamante, Pokémon Perla e Pokémon Platino"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.static-encounter.sub.4",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "ブラック・ホワイト・ブラック２・ホワイト２",
+        "ko": "블랙・화이트・블랙 2・화이트 2",
+        "zh-Hans": "黑／白",
+        "zh-Hant": "黑／白",
+        "fr": "Noir/Blanc/Version Noire 2/Version Blanche 2",
+        "de": "Schwarz/Weiß/Schwarze Edition 2/Weiße Edition 2",
+        "es": "Negro/Blanco/Edición Negra 2/Edición Blanca 2",
+        "it": "Nero/Bianco/Versione Nera 2/Versione Bianca 2"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "english": {
+        "zh-Hans": "Names 2 of 4 titles; no zh-Hans title for black2, white2.",
+        "zh-Hant": "Names 2 of 4 titles; no zh-Hant title for black2, white2."
+      },
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_BW",
+          "text": {
+            "en": "Pokémon Black & Pokémon White",
+            "ja": "ポケットモンスターブラック・ホワイト",
+            "ko": "포켓몬스터 블랙・화이트",
+            "zh-Hans": "宝可梦 黑／白",
+            "zh-Hant": "寶可夢 黑／白",
+            "fr": "Pokémon Noir et Pokémon Blanc",
+            "de": "Pokémon Schwarz und Pokémon Weiß",
+            "es": "Pokémon Negro y Pokémon Blanco",
+            "it": "Pokémon Nero e Pokémon Bianco"
+          }
+        },
+        {
+          "game": "Bank",
+          "file": "turtle",
+          "qid": "bank.24.6",
+          "text": {
+            "en": "Pokémon Black 2",
+            "ja": "ポケットモンスターブラック２",
+            "ko": "포켓몬스터 블랙 2",
+            "zh-Hans": "ポケットモンスターブラック２",
+            "zh-Hant": "ポケットモンスターブラック２",
+            "fr": "Pokémon Version Noire 2",
+            "de": "Pokémon Schwarze Edition 2",
+            "es": "Pokémon Edición Negra 2",
+            "it": "Pokémon Versione Nera 2"
+          }
+        },
+        {
+          "game": "Bank",
+          "file": "turtle",
+          "qid": "bank.24.7",
+          "text": {
+            "en": "Pokémon White 2",
+            "ja": "ポケットモンスターホワイト２",
+            "ko": "포켓몬스터 화이트 2",
+            "zh-Hans": "ポケットモンスターホワイト２",
+            "zh-Hant": "ポケットモンスターホワイト２",
+            "fr": "Pokémon Version Blanche 2",
+            "de": "Pokémon Weiße Edition 2",
+            "es": "Pokémon Edición Blanca 2",
+            "it": "Pokémon Versione Bianca 2"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.static-encounter.sub.5",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "サン・ムーン・ウルトラサン・ウルトラムーン",
+        "ko": "썬・문・울트라썬・울트라문",
+        "zh-Hans": "太阳／月亮／究极之日／究极之月",
+        "zh-Hant": "太陽／月亮／究極之日／究極之月",
+        "fr": "Soleil/Lune/Ultra-Soleil/Ultra-Lune",
+        "de": "Sonne/Mond/Ultrasonne/Ultramond",
+        "es": "Sol/Luna/Ultrasol/Ultraluna",
+        "it": "Sole/Luna/Ultrasole/Ultraluna"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use. Leaves out Totems: no game names the Totem Pokémon as a group.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_SM",
+          "text": {
+            "en": "Pokémon Sun & Pokémon Moon",
+            "ja": "ポケットモンスター サン・ムーン",
+            "ko": "포켓몬스터썬・문",
+            "zh-Hans": "精灵宝可梦 太阳／月亮",
+            "zh-Hant": "精靈寶可夢 太陽／月亮",
+            "fr": "Pokémon Soleil et Pokémon Lune",
+            "de": "Pokémon Sonne und Pokémon Mond",
+            "es": "Pokémon Sol y Pokémon Luna",
+            "it": "Pokémon Sole e Pokémon Luna"
+          }
+        },
+        {
+          "game": "Bank",
+          "file": "turtle",
+          "qid": "bank.39.67",
+          "text": {
+            "en": "Pokémon Ultra Sun",
+            "ja": "ポケットモンスター ウルトラサン",
+            "ko": "포켓몬스터 울트라썬",
+            "zh-Hans": "精灵宝可梦 究极之日",
+            "zh-Hant": "精靈寶可夢 究極之日",
+            "fr": "Pokémon Ultra-Soleil",
+            "de": "Pokémon Ultrasonne",
+            "es": "Pokémon Ultrasol",
+            "it": "Pokémon Ultrasole"
+          }
+        },
+        {
+          "game": "Bank",
+          "file": "turtle",
+          "qid": "bank.39.68",
+          "text": {
+            "en": "Pokémon Ultra Moon",
+            "ja": "ポケットモンスター ウルトラムーン",
+            "ko": "포켓몬스터 울트라문",
+            "zh-Hans": "精灵宝可梦 究极之月",
+            "zh-Hant": "精靈寶可夢 究極之月",
+            "fr": "Pokémon Ultra-Lune",
+            "de": "Pokémon Ultramond",
+            "es": "Pokémon Ultraluna",
+            "it": "Pokémon Ultraluna"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.static-encounter.sub.6",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "Pokémon LEGENDS アルセウス",
+        "ko": "Pokémon LEGENDS 아르세우스",
+        "zh-Hans": "宝可梦传说 阿尔宙斯",
+        "zh-Hant": "寶可夢傳說 阿爾宙斯",
+        "fr": "Légendes Pokémon : Arceus",
+        "de": "Pokémon-Legenden: Arceus",
+        "es": "Leyendas Pokémon: Arceus",
+        "it": "Leggende Pokémon: Arceus"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "HOME",
+          "file": "megaturtle_sp",
+          "qid": "home.sp.sp_softwarename.sp_softwarename_047",
+          "text": {
+            "en": "Pokémon Legends: Arceus",
+            "ja": "Pokémon LEGENDS アルセウス",
+            "ko": "Pokémon LEGENDS 아르세우스",
+            "zh-Hans": "宝可梦传说 阿尔宙斯",
+            "zh-Hant": "寶可夢傳說 阿爾宙斯",
+            "fr": "Légendes Pokémon : Arceus",
+            "de": "Pokémon-Legenden: Arceus",
+            "es": "Leyendas Pokémon: Arceus",
+            "it": "Leggende Pokémon: Arceus"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.static-encounter.sub.7",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "スカーレット・バイオレット",
+        "ko": "스칼렛・바이올렛",
+        "zh-Hans": "朱／紫",
+        "zh-Hant": "朱／紫",
+        "fr": "Écarlate/Violet",
+        "de": "Karmesin/Purpur",
+        "es": "Escarlata/Púrpura",
+        "it": "Scarlatto/Violetto"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use. Leaves out Titans: no game names the Titan Pokémon as a group.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.bgm_series.bgm_series_SV",
+          "text": {
+            "en": "Pokémon Scarlet & Pokémon Violet",
+            "ja": "ポケットモンスター スカーレット・バイオレット",
+            "ko": "포켓몬스터스칼렛・바이올렛",
+            "zh-Hans": "宝可梦 朱／紫",
+            "zh-Hant": "寶可夢 朱／紫",
+            "fr": "Pokémon Écarlate et Pokémon Violet",
+            "de": "Pokémon Karmesin und Pokémon Purpur",
+            "es": "Pokémon Escarlata y Pokémon Púrpura",
+            "it": "Pokémon Scarlatto e Pokémon Violetto"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.cross-gen-evo.sub.5",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "Pokémon LEGENDS アルセウス",
+        "ko": "Pokémon LEGENDS 아르세우스",
+        "zh-Hans": "宝可梦传说 阿尔宙斯",
+        "zh-Hant": "寶可夢傳說 阿爾宙斯",
+        "fr": "Légendes Pokémon : Arceus",
+        "de": "Pokémon-Legenden: Arceus",
+        "es": "Leyendas Pokémon: Arceus",
+        "it": "Leggende Pokémon: Arceus"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "HOME",
+          "file": "megaturtle_sp",
+          "qid": "home.sp.sp_softwarename.sp_softwarename_047",
+          "text": {
+            "en": "Pokémon Legends: Arceus",
+            "ja": "Pokémon LEGENDS アルセウス",
+            "ko": "Pokémon LEGENDS 아르세우스",
+            "zh-Hans": "宝可梦传说 阿尔宙斯",
+            "zh-Hant": "寶可夢傳說 阿爾宙斯",
+            "fr": "Légendes Pokémon : Arceus",
+            "de": "Pokémon-Legenden: Arceus",
+            "es": "Leyendas Pokémon: Arceus",
+            "it": "Leggende Pokémon: Arceus"
+          }
+        }
+      ]
+    },
+    {
+      "key": "category.starter.sub.8",
+      "use": "A subgroup heading in the Pokédex builder’s Pokémon browser.",
+      "text": {
+        "ja": "Pokémon LEGENDS アルセウス",
+        "ko": "Pokémon LEGENDS 아르세우스",
+        "zh-Hans": "宝可梦传说 阿尔宙斯",
+        "zh-Hant": "寶可夢傳說 阿爾宙斯",
+        "fr": "Légendes Pokémon : Arceus",
+        "de": "Pokémon-Legenden: Arceus",
+        "es": "Leyendas Pokémon: Arceus",
+        "it": "Leggende Pokémon: Arceus"
+      },
+      "composed": "Game titles with the series name removed, joined with the separator the language’s own series lines use.",
+      "from": [
+        {
+          "game": "HOME",
+          "file": "megaturtle_sp",
+          "qid": "home.sp.sp_softwarename.sp_softwarename_047",
+          "text": {
+            "en": "Pokémon Legends: Arceus",
+            "ja": "Pokémon LEGENDS アルセウス",
+            "ko": "Pokémon LEGENDS 아르세우스",
+            "zh-Hans": "宝可梦传说 阿尔宙斯",
+            "zh-Hant": "寶可夢傳說 阿爾宙斯",
+            "fr": "Légendes Pokémon : Arceus",
+            "de": "Pokémon-Legenden: Arceus",
+            "es": "Leyendas Pokémon: Arceus",
+            "it": "Leggende Pokémon: Arceus"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evil-team.sub.1",
+      "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
+      "text": {
+        "ja": "ロケット団（サカキ）",
+        "ko": "로켓단 (비주기)",
+        "zh-Hans": "火箭队（坂木）",
+        "zh-Hant": "火箭隊（阪木）",
+        "fr": "Team Rocket (Giovanni)",
+        "de": "Team Rocket (Giovanni)",
+        "es": "Team Rocket (Giovanni)",
+        "it": "Team Rocket (Giovanni)"
+      },
+      "composed": "Team names, then their leaders in brackets, as the English label has them.",
+      "from": [
+        {
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.speaker_name.speaker_109",
+          "text": {
+            "en": "Team Rocket",
+            "ja": "ロケット団",
+            "ko": "로켓단",
+            "zh-Hant": "火箭隊",
+            "fr": "Team Rocket",
+            "de": "Team Rocket",
+            "es": "Team Rocket",
+            "it": "Team Rocket"
+          }
+        },
+        {
+          "game": "LetsGoPikachuLetsGoEevee",
+          "file": "common",
+          "qid": "lgpe.trname.trname_23",
+          "text": {
+            "en": "Giovanni",
+            "ja": "サカキ",
+            "ko": "비주기",
+            "zh-Hans": "坂木",
+            "zh-Hant": "阪木",
+            "fr": "Giovanni",
+            "de": "Giovanni",
+            "es": "Giovanni",
+            "it": "Giovanni"
+          }
+        },
+        {
+          "game": "LetsGoPikachuLetsGoEevee",
+          "file": "common",
+          "qid": "lgpe.trtype.TRTYPE_ROCKETM",
+          "text": {
+            "en": "Team Rocket",
+            "ja": "ロケットだん",
+            "ko": "로켓단",
+            "zh-Hans": "火箭队",
+            "zh-Hant": "火箭隊",
+            "fr": "Team Rocket",
+            "de": "Team Rocket",
+            "es": "Team Rocket",
+            "it": "Team Rocket"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evil-team.sub.2",
+      "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
+      "text": {
+        "ja": "アクア団・マグマ団（アオギリ・マツブサ）",
+        "ko": "아쿠아단・마그마단 (아강・마적)",
+        "zh-Hans": "海洋队／熔岩队（水梧桐／赤焰松）",
+        "zh-Hant": "海洋隊／熔岩隊（水梧桐／赤焰松）",
+        "fr": "Team Aqua/Team Magma (Arthur/Max)",
+        "de": "Team Aqua/Team Magma (Adrian/Marc)",
+        "es": "Equipo Aqua/Equipo Magma (Aquiles/Magno)",
+        "it": "Team Idro/Team Magma (Ivan/Max)"
+      },
+      "composed": "Team names, then their leaders in brackets, as the English label has them.",
+      "from": [
+        {
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280002000",
+          "text": {
+            "en": "#TeamAqua",
+            "ja": "#アクア団",
+            "ko": "#아쿠아단",
+            "zh-Hant": "#海洋隊",
+            "fr": "#TeamAqua",
+            "de": "#TeamAqua",
+            "es": "#EquipoAqua",
+            "it": "#TeamIdro"
+          }
+        },
+        {
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280001000",
+          "text": {
+            "en": "#TeamMagma",
+            "ja": "#マグマ団",
+            "ko": "#마그마단",
+            "zh-Hant": "#熔岩隊",
+            "fr": "#TeamMagma",
+            "de": "#TeamMagma",
+            "es": "#EquipoMagma",
+            "it": "#TeamMagma"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.63.34",
+          "text": {
+            "en": "Archie",
+            "ja": "アオギリ",
+            "ko": "아강",
+            "zh-Hans": "水梧桐",
+            "zh-Hant": "水梧桐",
+            "fr": "Arthur",
+            "de": "Adrian",
+            "es": "Aquiles",
+            "it": "Ivan"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.63.33",
+          "text": {
+            "en": "Maxie",
+            "ja": "マツブサ",
+            "ko": "마적",
+            "zh-Hans": "赤焰松",
+            "zh-Hant": "赤焰松",
+            "fr": "Max",
+            "de": "Marc",
+            "es": "Magno",
+            "it": "Max"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.198",
+          "text": {
+            "en": "Team Aqua",
+            "ja": "アクアだん",
+            "ko": "아쿠아단",
+            "zh-Hans": "海洋队",
+            "zh-Hant": "海洋隊的",
+            "fr": "Team Aqua",
+            "de": "Team Aqua",
+            "es": "Equipo Aqua",
+            "it": "Team Idro"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.200",
+          "text": {
+            "en": "Team Magma",
+            "ja": "マグマだん",
+            "ko": "마그마단",
+            "zh-Hans": "熔岩队",
+            "zh-Hant": "熔岩隊的",
+            "fr": "Team Magma",
+            "de": "Team Magma",
+            "es": "Equipo Magma",
+            "it": "Team Magma"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evil-team.sub.3",
+      "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
+      "text": {
+        "ja": "ギンガ団（アカギ、マーズ、ジュピター、サターン）",
+        "ko": "갤럭시단 (태홍, 마스, 주피터, 새턴)",
+        "zh-Hans": "银河队（赤日、伙星、岁星、镇星）",
+        "zh-Hant": "銀河隊（赤日、夥星、歲星、鎮星）",
+        "fr": "Team Galaxie (Hélio, Mars, Jupiter, Saturne)",
+        "de": "Team Galaktik (Zyrus, Mars, Jupiter, Saturn)",
+        "es": "Equipo Galaxia (Helio, Venus, Ceres, Saturno)",
+        "it": "Team Galassia (Cyrus, Martes, Giovia, Saturno)"
+      },
+      "composed": "Team names, then their leaders in brackets, as the English label has them.",
+      "from": [
+        {
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280003000",
+          "text": {
+            "en": "#TeamGalactic",
+            "ja": "#ギンガ団",
+            "ko": "#갤럭시단",
+            "zh-Hant": "#銀河隊",
+            "fr": "#TeamGalaxie",
+            "de": "#TeamGalaktik",
+            "es": "#EquipoGalaxia",
+            "it": "#TeamGalassia"
+          }
+        },
+        {
+          "game": "BrilliantDiamondShiningPearl",
+          "file": "message",
+          "qid": "bdsp.dp_trainers_name.DP_Trainers_Name_TR_GINGALBOSS_01",
+          "text": {
+            "en": "Cyrus",
+            "ja": "アカギ",
+            "ko": "태홍",
+            "zh-Hans": "赤日",
+            "zh-Hant": "赤日",
+            "fr": "Hélio",
+            "de": "Zyrus",
+            "es": "Helio",
+            "it": "Cyrus"
+          }
+        },
+        {
+          "game": "BrilliantDiamondShiningPearl",
+          "file": "message",
+          "qid": "bdsp.dp_trainers_name.DP_Trainers_Name_TR_GINGALEADER1_01",
+          "text": {
+            "en": "Mars",
+            "ja": "マーズ",
+            "ko": "마스",
+            "zh-Hans": "伙星",
+            "zh-Hant": "夥星",
+            "fr": "Mars",
+            "de": "Mars",
+            "es": "Venus",
+            "it": "Martes"
+          }
+        },
+        {
+          "game": "BrilliantDiamondShiningPearl",
+          "file": "message",
+          "qid": "bdsp.dp_trainers_name.DP_Trainers_Name_TR_GINGALEADER2_01",
+          "text": {
+            "en": "Jupiter",
+            "ja": "ジュピター",
+            "ko": "주피터",
+            "zh-Hans": "岁星",
+            "zh-Hant": "歲星",
+            "fr": "Jupiter",
+            "de": "Jupiter",
+            "es": "Ceres",
+            "it": "Giovia"
+          }
+        },
+        {
+          "game": "BrilliantDiamondShiningPearl",
+          "file": "message",
+          "qid": "bdsp.dp_trainers_name.DP_Trainers_Name_TR_GINGALEADER3_01",
+          "text": {
+            "en": "Saturn",
+            "ja": "サターン",
+            "ko": "새턴",
+            "zh-Hans": "镇星",
+            "zh-Hant": "鎮星",
+            "fr": "Saturne",
+            "de": "Saturn",
+            "es": "Saturno",
+            "it": "Saturno"
+          }
+        },
+        {
+          "game": "BrilliantDiamondShiningPearl",
+          "file": "message",
+          "qid": "bdsp.dp_trainers_type.DP_Trainers_Type_TR_GINGAM_01",
+          "text": {
+            "en": "Team Galactic",
+            "ja": "ギンガだん",
+            "ko": "갤럭시단",
+            "zh-Hans": "银河队",
+            "zh-Hant": "銀河隊",
+            "fr": "Team Galaxie",
+            "de": "Team Galaktik",
+            "es": "Equipo Galaxia",
+            "it": "Team Galassia"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evil-team.sub.4",
+      "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
+      "text": {
+        "ja": "プラズマ団（ゲーチス、N、アクロマ）",
+        "ko": "플라스마단 (게치스, N, 아크로마)",
+        "zh-Hans": "等离子队（魁奇思、N、阿克罗玛）",
+        "zh-Hant": "等離子隊（魁奇思、Ｎ、阿克羅瑪）",
+        "fr": "Team Plasma (Ghetis, N, Nikolaï)",
+        "de": "Team Plasma (G-Cis, N, Achromas)",
+        "es": "Equipo Plasma (Ghechis, N, Acromo)",
+        "it": "Team Plasma (Ghecis, N, Acromio)"
+      },
+      "composed": "Team names, then their leaders in brackets, as the English label has them.",
+      "english": {
+        "zh-Hans": "N has no Simplified Chinese source; the label writes N, as every other language does."
+      },
+      "from": [
+        {
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280004000",
+          "text": {
+            "en": "#TeamPlasma",
+            "ja": "#プラズマ団",
+            "ko": "#플라스마단",
+            "zh-Hant": "#等離子隊",
+            "fr": "#TeamPlasma",
+            "de": "#TeamPlasma",
+            "es": "#EquipoPlasma",
+            "it": "#TeamPlasma"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.63.36",
+          "text": {
+            "en": "Ghetsis",
+            "ja": "ゲーチス",
+            "ko": "게치스",
+            "zh-Hans": "魁奇思",
+            "zh-Hant": "魁奇思",
+            "fr": "Ghetis",
+            "de": "G-Cis",
+            "es": "Ghechis",
+            "it": "Ghecis"
+          }
+        },
+        {
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.trainer_name.ch0089",
+          "text": {
+            "en": "N",
+            "ja": "N",
+            "ko": "N",
+            "zh-Hant": "Ｎ",
+            "fr": "N",
+            "de": "N",
+            "es": "N",
+            "it": "N"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.63.43",
+          "text": {
+            "en": "Colress",
+            "ja": "アクロマ",
+            "ko": "아크로마",
+            "zh-Hans": "阿克罗玛",
+            "zh-Hant": "阿克羅瑪",
+            "fr": "Nikolaï",
+            "de": "Achromas",
+            "es": "Acromo",
+            "it": "Acromio"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.201",
+          "text": {
+            "en": "Team Plasma",
+            "ja": "プラズマだん",
+            "ko": "플라스마단",
+            "zh-Hans": "等离子队",
+            "zh-Hant": "等離子隊的",
+            "fr": "Team Plasma",
+            "de": "Team Plasma",
+            "es": "Equipo Plasma",
+            "it": "Team Plasma"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evil-team.sub.5",
+      "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
+      "text": {
+        "ja": "フレア団（フラダリ）",
+        "ko": "플레어단 (플라드리)",
+        "zh-Hans": "闪焰队（弗拉达利）",
+        "zh-Hant": "閃焰隊（弗拉達利）",
+        "fr": "Team Flare (Lysandre)",
+        "de": "Team Flare (Flordelis)",
+        "es": "Team Flare (Lysson)",
+        "it": "Team Flare (Elisio)"
+      },
+      "composed": "Team names, then their leaders in brackets, as the English label has them.",
+      "from": [
+        {
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280005000",
+          "text": {
+            "en": "#TeamFlare",
+            "ja": "#フレア団",
+            "ko": "#플레어단",
+            "zh-Hant": "#閃焰隊",
+            "fr": "#TeamFlare",
+            "de": "#TeamFlare",
+            "es": "#TeamFlare",
+            "it": "#TeamFlare"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.63.37",
+          "text": {
+            "en": "Lysandre",
+            "ja": "フラダリ",
+            "ko": "플라드리",
+            "zh-Hans": "弗拉达利",
+            "zh-Hant": "弗拉達利",
+            "fr": "Lysandre",
+            "de": "Flordelis",
+            "es": "Lysson",
+            "it": "Elisio"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.202",
+          "text": {
+            "en": "Team Flare",
+            "ja": "フレアだん",
+            "ko": "플레어단",
+            "zh-Hans": "闪焰队",
+            "zh-Hant": "閃焰隊的",
+            "fr": "Team Flare",
+            "de": "Team Flare",
+            "es": "Team Flare",
+            "it": "Team Flare"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evil-team.sub.6",
+      "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
+      "text": {
+        "ja": "スカル団（グズマ、プルメリ）",
+        "ko": "스컬단 (구즈마, 플루메리)",
+        "zh-Hans": "骷髅队（古兹马、布尔美丽）",
+        "zh-Hant": "骷髏隊（古茲馬、布爾美麗）",
+        "fr": "Team Skull (Guzma, Apocyne)",
+        "de": "Team Skull (Bromley, Fran)",
+        "es": "Team Skull (Guzmán, Francine)",
+        "it": "Team Skull (Guzman, Plumeria)"
+      },
+      "composed": "Team names, then their leaders in brackets, as the English label has them.",
+      "from": [
+        {
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280006000",
+          "text": {
+            "en": "#TeamSkull",
+            "ja": "#スカル団",
+            "ko": "#스컬단",
+            "zh-Hant": "#骷髏隊",
+            "fr": "#TeamSkull",
+            "de": "#TeamSkull",
+            "es": "#TeamSkull",
+            "it": "#TeamSkull"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.63.23",
+          "text": {
+            "en": "Guzma",
+            "ja": "グズマ",
+            "ko": "구즈마",
+            "zh-Hans": "古兹马",
+            "zh-Hant": "古茲馬",
+            "fr": "Guzma",
+            "de": "Bromley",
+            "es": "Guzmán",
+            "it": "Guzman"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.63.24",
+          "text": {
+            "en": "Plumeria",
+            "ja": "プルメリ",
+            "ko": "플루메리",
+            "zh-Hans": "布尔美丽",
+            "zh-Hant": "布爾美麗",
+            "fr": "Apocyne",
+            "de": "Fran",
+            "es": "Francine",
+            "it": "Plumeria"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.28",
+          "text": {
+            "en": "Team Skull",
+            "ja": "スカルだん",
+            "ko": "스컬단",
+            "zh-Hans": "骷髅队",
+            "zh-Hant": "骷髏隊的",
+            "fr": "Team Skull",
+            "de": "Team Skull",
+            "es": "Team Skull",
+            "it": "Team Skull"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evil-team.sub.7",
+      "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
+      "text": {
+        "ja": "エーテル財団（ルザミーネ）",
+        "ko": "에테르재단 (루자미네)",
+        "zh-Hans": "以太基金会（露莎米奈）",
+        "zh-Hant": "以太基金會（露莎米奈）",
+        "fr": "Fondation Æther (Elsa-Mina)",
+        "de": "Æther Foundation (Samantha)",
+        "es": "Fundación Æther (Samina)",
+        "it": "Fondazione Æther (Samina)"
+      },
+      "composed": "Team names, then their leaders in brackets, as the English label has them.",
+      "from": [
+        {
+          "game": "Masters",
+          "file": "messages",
+          "qid": "masters.profile_hash_tag_name.280007000",
+          "text": {
+            "en": "#AetherFoundation",
+            "ja": "#エーテル財団",
+            "ko": "#에테르재단",
+            "zh-Hant": "#以太基金會",
+            "fr": "#FondationÆther",
+            "de": "#ÆtherFoundation",
+            "es": "#FundaciónÆther",
+            "it": "#FondazioneÆther"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.63.20",
+          "text": {
+            "en": "Lusamine",
+            "ja": "ルザミーネ",
+            "ko": "루자미네",
+            "zh-Hans": "露莎米奈",
+            "zh-Hant": "露莎米奈",
+            "fr": "Elsa-Mina",
+            "de": "Samantha",
+            "es": "Samina",
+            "it": "Samina"
+          }
+        },
+        {
+          "game": "UltraSunUltraMoon",
+          "file": "common",
+          "qid": "usum.common.111.73",
+          "text": {
+            "en": "Aether Foundation",
+            "ja": "エーテルざいだん",
+            "ko": "에테르재단",
+            "zh-Hans": "以太基金会",
+            "zh-Hant": "以太基金會的",
+            "fr": "Fondation Æther",
+            "de": "Æther Foundation",
+            "es": "Fundación Æther",
+            "it": "Fondazione Æther"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evil-team.sub.8",
+      "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
+      "text": {
+        "ja": "マクロコスモス（ローズ）",
+        "ko": "매크로코스모스 (로즈)",
+        "zh-Hans": "马洛科蒙（洛兹）",
+        "zh-Hant": "馬洛科蒙（洛茲）",
+        "fr": "Macro Cosmos (Shehroz)",
+        "de": "Macro Cosmos (Rose)",
+        "es": "Macrocosmos (Rose)",
+        "it": "Macro Cosmos (Rose)"
+      },
+      "composed": "Team names, then their leaders in brackets, as the English label has them.",
+      "from": [
+        {
+          "game": "SwordShield",
+          "file": "common",
+          "qid": "swsh.pw_worklist.msg_ui_pw_worklist_00",
+          "text": {
+            "en": "Macro Cosmos",
+            "ja": "マクロコスモス",
+            "ko": "매크로코스모스",
+            "zh-Hans": "马洛科蒙",
+            "zh-Hant": "馬洛科蒙",
+            "fr": "Macro Cosmos",
+            "de": "Macro Cosmos",
+            "es": "Macrocosmos",
+            "it": "Macro Cosmos"
+          }
+        },
+        {
+          "game": "SwordShield",
+          "file": "common",
+          "qid": "swsh.trname.ROSE_01",
+          "text": {
+            "en": "Rose",
+            "ja": "ローズ",
+            "ko": "로즈",
+            "zh-Hans": "洛兹",
+            "zh-Hant": "洛茲",
+            "fr": "Shehroz",
+            "de": "Rose",
+            "es": "Rose",
+            "it": "Rose"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evil-team.sub.9",
+      "use": "A subgroup heading in the Pokédex builder’s Evil Team section.",
+      "text": {
+        "ja": "スター団（メロコ、シュウメイ、オルティガ、ビワ、ピーニャ、ボタン）",
+        "ko": "스타단 (멜로코, 추명, 오르티가, 비파, 피나, 모란)",
+        "zh-Hans": "天星队（梅洛可、秋明、奥尔迪加、枇琶、皮拿、牡丹）",
+        "zh-Hant": "天星隊（梅洛可、秋明、奧爾迪加、枇琶、皮拿、牡丹）",
+        "fr": "Team Star (Meloco, Erio, Ortiga, Nèflie, Brome, Pania)",
+        "de": "Team Star (Irsa, Shugi, Otis, Rioba, Pinio, Cosima)",
+        "es": "Team Star (Melo, Henzo, Gus, Erin, Anán, Noa)",
+        "it": "Team Star (Pruna, Henzo, Ortiz, Nespera, Romelio, Penny)"
+      },
+      "composed": "Team names, then their leaders in brackets, as the English label has them.",
+      "from": [
+        {
+          "game": "ScarletViolet",
+          "file": "common",
+          "qid": "sv.trtype.MSG_TRTYPE_STAR_BOSS",
+          "text": {
+            "en": "Team Star",
+            "ja": "スター団",
+            "ko": "스타단",
+            "zh-Hans": "天星队",
+            "zh-Hant": "天星隊",
+            "fr": "Team Star",
+            "de": "Team Star",
+            "es": "Team Star",
+            "it": "Team Star"
+          }
+        },
+        {
+          "game": "ScarletViolet",
+          "file": "common",
+          "qid": "sv.trname.TRNAME_MEROKO",
+          "text": {
+            "en": "Mela",
+            "ja": "メロコ",
+            "ko": "멜로코",
+            "zh-Hans": "梅洛可",
+            "zh-Hant": "梅洛可",
+            "fr": "Meloco",
+            "de": "Irsa",
+            "es": "Melo",
+            "it": "Pruna"
+          }
+        },
+        {
+          "game": "ScarletViolet",
+          "file": "common",
+          "qid": "sv.trname.TRNAME_SYUUMEI",
+          "text": {
+            "en": "Atticus",
+            "ja": "シュウメイ",
+            "ko": "추명",
+            "zh-Hans": "秋明",
+            "zh-Hant": "秋明",
+            "fr": "Erio",
+            "de": "Shugi",
+            "es": "Henzo",
+            "it": "Henzo"
+          }
+        },
+        {
+          "game": "ScarletViolet",
+          "file": "common",
+          "qid": "sv.trname.TRNAME_ORUTHIGA",
+          "text": {
+            "en": "Ortega",
+            "ja": "オルティガ",
+            "ko": "오르티가",
+            "zh-Hans": "奥尔迪加",
+            "zh-Hant": "奧爾迪加",
+            "fr": "Ortiga",
+            "de": "Otis",
+            "es": "Gus",
+            "it": "Ortiz"
+          }
+        },
+        {
+          "game": "ScarletViolet",
+          "file": "common",
+          "qid": "sv.trname.TRNAME_BIWA",
+          "text": {
+            "en": "Eri",
+            "ja": "ビワ",
+            "ko": "비파",
+            "zh-Hans": "枇琶",
+            "zh-Hant": "枇琶",
+            "fr": "Nèflie",
+            "de": "Rioba",
+            "es": "Erin",
+            "it": "Nespera"
+          }
+        },
+        {
+          "game": "ScarletViolet",
+          "file": "common",
+          "qid": "sv.trname.TRNAME_PIINYA",
+          "text": {
+            "en": "Giacomo",
+            "ja": "ピーニャ",
+            "ko": "피나",
+            "zh-Hans": "皮拿",
+            "zh-Hant": "皮拿",
+            "fr": "Brome",
+            "de": "Pinio",
+            "es": "Anán",
+            "it": "Romelio"
+          }
+        },
+        {
+          "game": "ScarletViolet",
+          "file": "common",
+          "qid": "sv.trname.TRNAME_BOTAN",
+          "text": {
+            "en": "Penny",
+            "ja": "ボタン",
+            "ko": "모란",
+            "zh-Hans": "牡丹",
+            "zh-Hant": "牡丹",
+            "fr": "Pania",
+            "de": "Cosima",
+            "es": "Noa",
+            "it": "Penny"
+          }
+        }
+      ]
+    },
+    {
+      "key": "archetype.evolution-item.sub.28",
+      "use": "A subgroup heading in the Pokédex builder’s Evolution Item section.",
+      "text": {
+        "ja": "マホミル",
+        "ko": "마빌크",
+        "zh-Hans": "小仙奶",
+        "zh-Hant": "小仙奶",
+        "fr": "Crèmy",
+        "de": "Hokumil",
+        "es": "Milcery",
+        "it": "Milcery"
+      },
+      "composed": "Milcery’s name alone. The seven Sweets are separate items, and no game names them as a group.",
+      "from": [
+        {
+          "game": "Champions",
+          "file": "ms",
+          "qid": "cmp.monsname_syn.MONSNAME_868",
+          "text": {
+            "en": "Milcery",
+            "ja": "マホミル",
+            "ko": "마빌크",
+            "zh-Hans": "小仙奶",
+            "zh-Hant": "小仙奶",
+            "fr": "Crèmy",
+            "de": "Hokumil",
+            "es": "Milcery",
+            "it": "Milcery"
+          }
+        }
+      ]
+    }
+  ],
+  "regions": {
+    "kanto": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_01",
+      "text": {
+        "en": "Kanto Region",
+        "ja": "カントー地方",
+        "ko": "관동지방",
+        "zh-Hans": "关都地区",
+        "zh-Hant": "關都地區",
+        "fr": "Kanto",
+        "de": "Kanto",
+        "es": "Kanto",
+        "it": "Kanto"
+      }
+    },
+    "johto": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_02",
+      "text": {
+        "en": "Johto Region",
+        "ja": "ジョウト地方",
+        "ko": "성도지방",
+        "zh-Hans": "城都地区",
+        "zh-Hant": "城都地區",
+        "fr": "Johto",
+        "de": "Johto",
+        "es": "Johto",
+        "it": "Johto"
+      }
+    },
+    "hoenn": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_03",
+      "text": {
+        "en": "Hoenn Region",
+        "ja": "ホウエン地方",
+        "ko": "호연지방",
+        "zh-Hans": "丰缘地区",
+        "zh-Hant": "豐緣地區",
+        "fr": "Hoenn",
+        "de": "Hoenn",
+        "es": "Hoenn",
+        "it": "Hoenn"
+      }
+    },
+    "sinnoh": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_04",
+      "text": {
+        "en": "Sinnoh Region",
+        "ja": "シンオウ地方",
+        "ko": "신오지방",
+        "zh-Hans": "神奥地区",
+        "zh-Hant": "神奧地區",
+        "fr": "Sinnoh",
+        "de": "Sinnoh",
+        "es": "Sinnoh",
+        "it": "Sinnoh"
+      }
+    },
+    "unova": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_05",
+      "text": {
+        "en": "Unova Region",
+        "ja": "イッシュ地方",
+        "ko": "하나지방",
+        "zh-Hans": "合众地区",
+        "zh-Hant": "合眾地區",
+        "fr": "Unys",
+        "de": "Einall",
+        "es": "Teselia",
+        "it": "Unima"
+      }
+    },
+    "kalos": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_06",
+      "text": {
+        "en": "Kalos Region",
+        "ja": "カロス地方",
+        "ko": "칼로스지방",
+        "zh-Hans": "卡洛斯地区",
+        "zh-Hant": "卡洛斯地區",
+        "fr": "Kalos",
+        "de": "Kalos",
+        "es": "Kalos",
+        "it": "Kalos"
+      }
+    },
+    "alola": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_07",
+      "text": {
+        "en": "Alola Region",
+        "ja": "アローラ地方",
+        "ko": "알로라지방",
+        "zh-Hans": "阿罗拉地区",
+        "zh-Hant": "阿羅拉地區",
+        "fr": "Alola",
+        "de": "Alola",
+        "es": "Alola",
+        "it": "Alola"
+      }
+    },
+    "galar": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_08",
+      "text": {
+        "en": "Galar Region",
+        "ja": "ガラル地方",
+        "ko": "가라르지방",
+        "zh-Hans": "伽勒尔地区",
+        "zh-Hant": "伽勒爾地區",
+        "fr": "Galar",
+        "de": "Galar",
+        "es": "Galar",
+        "it": "Galar"
+      }
+    },
+    "hisui": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_09",
+      "text": {
+        "en": "Hisui Region",
+        "ja": "ヒスイ地方",
+        "ko": "히스이지방",
+        "zh-Hans": "洗翠地区",
+        "zh-Hant": "洗翠地區",
+        "fr": "Hisui",
+        "de": "Hisui",
+        "es": "Hisui",
+        "it": "Hisui"
+      }
+    },
+    "paldea": {
+      "game": "HOME",
+      "file": "megaturtle_nx",
+      "qid": "home.nx.box_system.nx_box_list_pokedex_10",
+      "text": {
+        "en": "Paldea Region",
+        "ja": "パルデア地方",
+        "ko": "팔데아지방",
+        "zh-Hans": "帕底亚地区",
+        "zh-Hant": "帕底亞地區",
+        "fr": "Paldea",
+        "de": "Paldea",
+        "es": "Paldea",
+        "it": "Paldea"
+      }
+    }
+  }
+}

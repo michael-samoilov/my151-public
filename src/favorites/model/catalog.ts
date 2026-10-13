@@ -61,8 +61,20 @@ const DEX_ID_BY_PICKER_ID = new Map<number, number>();
 const LINE_BY_ID = new Map<number, number>();
 const STAGE_BY_ID = new Map<number, number>();
 const FIRST_BY_LINE = new Map<number, number>();
-const OGERPON_FORM_ORDER = new Map(
-  [1017, 10273, 10274, 10275].map((id, index) => [id, index]),
+const listedOrder = (ids: number[]) => new Map(ids.map((id, index) => [id, index]));
+/** Form order within one species, where ID order would read wrong. */
+const FORM_ORDER_BY_OWNER = new Map([
+  // Each Terastal form follows its mask.
+  [1017, listedOrder([1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116])],
+  // Each Overdrive follows the fusion it belongs to.
+  [646, listedOrder([646, 10022, 11107, 10023, 11108])],
+  // Ultra Necrozma and Terapagos's forms sit with their species, not after
+  // the battle-form sort (Michael, 2026-10-12).
+  [800, listedOrder([800, 10155, 10156, 10157])],
+  [1024, listedOrder([1024, 10276, 10277])],
+]);
+const COSPLAY_PIKACHU_FORM_ORDER = new Map(
+  [10085, 10080, 10081, 10082, 10083, 10084].map((id, index) => [id, 10080 + index]),
 );
 
 for (const p of SPECIES) {
@@ -171,7 +183,7 @@ export function isPowerupForm(mon: PickerMon): boolean {
   return mon.source === 'powerup';
 }
 
-const TERASTAL_FORM_IDS = new Set([10276, 10277]);
+const TERASTAL_FORM_IDS = new Set([10276, 10277, 11113, 11114, 11115, 11116]);
 
 export function isTerastalForm(mon: PickerMon): boolean {
   return TERASTAL_FORM_IDS.has(mon.id);
@@ -191,6 +203,11 @@ export function evolutionLineKey(mon: PickerMon): number {
   return LINE_BY_ID.get(mon.id) ?? LINE_BY_ID.get(mon.ownerId) ?? mon.id;
 }
 
+/** Whether the species lists its form order in `FORM_ORDER_BY_OWNER`. */
+export function hasListedFormOrder(ownerId: number): boolean {
+  return FORM_ORDER_BY_OWNER.has(ownerId);
+}
+
 export function comparePickerOrder(a: PickerMon, b: PickerMon): number {
   const lineA = evolutionLineKey(a);
   const lineB = evolutionLineKey(b);
@@ -198,13 +215,13 @@ export function comparePickerOrder(a: PickerMon, b: PickerMon): number {
   const firstB = FIRST_BY_LINE.get(lineB) ?? b.ownerId;
   const stageA = STAGE_BY_ID.get(a.id) ?? STAGE_BY_ID.get(a.ownerId) ?? 1;
   const stageB = STAGE_BY_ID.get(b.id) ?? STAGE_BY_ID.get(b.ownerId) ?? 1;
-  const ogerponOrder = a.ownerId === 1017 && b.ownerId === 1017
-    ? (OGERPON_FORM_ORDER.get(a.id) ?? 99) - (OGERPON_FORM_ORDER.get(b.id) ?? 99)
-    : 0;
+  const ownerOrder = a.ownerId === b.ownerId ? FORM_ORDER_BY_OWNER.get(a.ownerId) : undefined;
+  const listedFormOrder = ownerOrder ? (ownerOrder.get(a.id) ?? 99) - (ownerOrder.get(b.id) ?? 99) : 0;
   const floetteEternalLast = a.ownerId === 670 && b.ownerId === 670
     ? Number(a.id === 10061) - Number(b.id === 10061)
     : 0;
-  return firstA - firstB || stageA - stageB || a.ownerId - b.ownerId || ogerponOrder || floetteEternalLast || a.id - b.id;
+  const formOrder = (COSPLAY_PIKACHU_FORM_ORDER.get(a.id) ?? a.id) - (COSPLAY_PIKACHU_FORM_ORDER.get(b.id) ?? b.id);
+  return firstA - firstB || stageA - stageB || a.ownerId - b.ownerId || listedFormOrder || floetteEternalLast || formOrder;
 }
 
 const LEGENDARY_OWNER_IDS = new Set<number>();

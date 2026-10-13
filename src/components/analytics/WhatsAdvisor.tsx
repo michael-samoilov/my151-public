@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { categoryName, formatList, t, tn, typeLabel } from '@/i18n';
+import { categoryName, formatList, speciesName, typeLabel, useT, useTn } from '@/i18n';
 import type { TypeName } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById, getAllPokemon, getEvolutionChainIds, withoutSpecials } from '@/hooks/usePokemonData';
@@ -49,6 +49,8 @@ export function WhatsAdvisor() {
   const sections = usePokedexStore((s) => s.sections);
   const expanded = usePokedexStore((s) => s.whatsAdvisorExpanded);
   const setExpanded = usePokedexStore((s) => s.setWhatsAdvisorExpanded);
+  const t = useT();
+  const tn = useTn();
 
   const advice = useMemo(() => {
     const items: { type: 'missing' | 'suggestion' | 'complete'; text: string }[] = [];
@@ -176,7 +178,7 @@ export function WhatsAdvisor() {
             member.evolutionLevel != null &&
             member.evolutionLevel >= 40
           ) {
-            const name = member.name.charAt(0).toUpperCase() + member.name.slice(1);
+            const name = speciesName(member.id) ?? member.name.charAt(0).toUpperCase() + member.name.slice(1);
             lateEvoWarnings.push(t('advisor.lateEvoEntry', { name, level: member.evolutionLevel }));
             break; // one warning per chain
           }
@@ -191,7 +193,7 @@ export function WhatsAdvisor() {
     }
 
     return items;
-  }, [sections]);
+  }, [sections, t, tn]);
 
   const gapCount = advice.filter((a) => a.type === 'missing' || a.type === 'suggestion').length;
   const completeCount = advice.filter((a) => a.type === 'complete').length;

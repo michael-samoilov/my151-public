@@ -23,6 +23,7 @@ import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { IntroCard } from '@/components/pokedex/IntroCard';
+import { SectionBoxGlyph } from '@/components/pokedex/SectionBoxGlyph';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
@@ -258,23 +259,13 @@ function trailingPlusAspect(precedingCount: number): string {
 
 const STARTER_TYPES = [['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const;
 
-function StarterContent({
-  pokemonIds,
-  dragLineIds,
-  dragSet,
-  insertIndicator,
-  onTypeClick,
-  onAddClick,
-  showXIds = new Set(),
-}: {
-  pokemonIds: number[];
-  dragLineIds: number[] | null;
-  dragSet: Set<number>;
-  insertIndicator: { tileId: string | null; endSection: string | null; side: 'left' | 'right' };
-  onTypeClick: (type: string) => void;
-  onAddClick: () => void;
-  showXIds?: Set<number>;
-}) {
+type StarterSlot =
+  | { kind: 'tile'; pid: number }
+  | { kind: 'ph'; type: (typeof STARTER_TYPES)[number][0]; color: string; i: number };
+
+/** The starter box's grass, fire, and water groups as one flat list of slots in
+ *  grid order, or null when it shows a plain list with a trailing "+". */
+function starterTypeSlots(pokemonIds: number[], dragging: boolean): StarterSlot[] | null {
   // Check if every pokemon matches a starter type (grass/fire/water)
   const allMatchStarterType = pokemonIds.length === 0 || pokemonIds.every(pid => {
     const p = getPokemonById(pid);
@@ -287,35 +278,55 @@ function StarterContent({
   }));
 
   // Use colored placeholders only when < 3 chains AND all pokemon fit grass/fire/water
-  const useTypePlaceholders = !dragLineIds && chains.size < 3 && allMatchStarterType;
+  if (dragging || chains.size >= 3 || !allMatchStarterType) return null;
 
-  if (useTypePlaceholders) {
-    const pidsByType = new Map<string, number[]>();
-    for (const pid of pokemonIds) {
-      const p = getPokemonById(pid);
-      if (!p) continue;
-      const matched = STARTER_TYPES.find(([t]) => p.types.includes(t as never));
-      if (matched) {
-        if (!pidsByType.has(matched[0])) pidsByType.set(matched[0], []);
-        pidsByType.get(matched[0])!.push(pid);
-      }
+  const pidsByType = new Map<string, number[]>();
+  for (const pid of pokemonIds) {
+    const p = getPokemonById(pid);
+    if (!p) continue;
+    const matched = STARTER_TYPES.find(([t]) => p.types.includes(t as never));
+    if (matched) {
+      if (!pidsByType.has(matched[0])) pidsByType.set(matched[0], []);
+      pidsByType.get(matched[0])!.push(pid);
     }
+  }
 
-    // One flat list of slots in grid order, so a placeholder can tell whether a
-    // Pokémon tile shares its six-column row: if so it stretches to that tile's
-    // height, otherwise it stays a square rather than a short strip.
-    type Slot =
-      | { kind: 'tile'; pid: number }
-      | { kind: 'ph'; type: (typeof STARTER_TYPES)[number][0]; color: string; i: number };
-    const slots: Slot[] = [];
-    for (const [type, color] of STARTER_TYPES) {
-      const typePids = pidsByType.get(type);
-      if (typePids) {
-        for (const pid of typePids) slots.push({ kind: 'tile', pid });
-      } else {
-        for (let i = 0; i < 3; i++) slots.push({ kind: 'ph', type, color, i });
-      }
+  // One flat list of slots in grid order, so a placeholder can tell whether a
+  // Pokémon tile shares its six-column row: if so it stretches to that tile's
+  // height, otherwise it stays a square rather than a short strip.
+  const slots: StarterSlot[] = [];
+  for (const [type, color] of STARTER_TYPES) {
+    const typePids = pidsByType.get(type);
+    if (typePids) {
+      for (const pid of typePids) slots.push({ kind: 'tile', pid });
+    } else {
+      for (let i = 0; i < 3; i++) slots.push({ kind: 'ph', type, color, i });
     }
+  }
+  return slots;
+}
+
+function StarterContent({
+  pokemonIds,
+  typeSlots,
+  dragLineIds,
+  dragSet,
+  insertIndicator,
+  onTypeClick,
+  onAddClick,
+  showXIds = new Set(),
+}: {
+  pokemonIds: number[];
+  typeSlots: StarterSlot[] | null;
+  dragLineIds: number[] | null;
+  dragSet: Set<number>;
+  insertIndicator: { tileId: string | null; endSection: string | null; side: 'left' | 'right' };
+  onTypeClick: (type: string) => void;
+  onAddClick: () => void;
+  showXIds?: Set<number>;
+}) {
+  if (typeSlots) {
+    const slots = typeSlots;
     const rowHasTile: boolean[] = [];
     slots.forEach((s, idx) => {
       if (s.kind === 'tile') rowHasTile[Math.floor(idx / PLUS_COLS)] = true;
@@ -384,7 +395,7 @@ function StarterContent({
       {!dragLineIds && (
         <button type="button"
           onClick={onAddClick}
-          aria-label="Add a Pokémon to Starters"
+          aria-label={t('builder.addToSection', { section: sectionName('starter') })}
           className={`${trailingPlusAspect(pokemonIds.length)} rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary`}
         >
           <Plus className="w-[27%] h-[27%]" />
@@ -416,6 +427,15 @@ function GroupBox({
   // Starters always use the expanded grid path (for green/red/blue placeholders)
   const showEmptyState = isEmpty && !isStarter;
   const hasPokemon = pokemonIds.length > 0;
+  const dragging = dragLineIds !== null;
+  const starterSlots = useMemo(
+    () => (isStarter ? starterTypeSlots(pokemonIds, dragging) : null),
+    [isStarter, pokemonIds, dragging],
+  );
+  // Cells in the grid: tiles plus the trailing "+" (or the drop zone during a
+  // drag). The glyph needs the last row's two right-hand cells free.
+  const cellCount = starterSlots?.length ?? pokemonIds.length + 1;
+  const showGlyph = (cellCount - 1) % PLUS_COLS < PLUS_COLS - 2;
   // Accessible fill/stroke pair (see src/lib/sectionColors.ts): the light FILL
   // tints the section background, the dark STROKE draws the border, label, and
   // empty-state "+", so text/outline stay legible on the fill for every section.
@@ -525,7 +545,7 @@ function GroupBox({
       ref={boxRef}
       data-section-id={group.id}
       onTransitionEnd={handleTransitionEnd}
-      className="rounded-lg"
+      className="relative isolate rounded-lg"
       style={{
         backgroundColor: `${sectionFill}${hasPokemon ? '10' : '10'}`,
         border: `1px solid ${sectionStroke}30`,
@@ -582,6 +602,7 @@ function GroupBox({
           {isStarter ? (
             <StarterContent
               pokemonIds={pokemonIds}
+              typeSlots={starterSlots}
               dragLineIds={dragLineIds}
               dragSet={dragSet}
               insertIndicator={insertIndicator}
@@ -634,6 +655,9 @@ function GroupBox({
           )}
         </div>
       )}
+      {/* Last, so it leaves the label's and grid's selector paths as they were;
+          its negative z-index puts it behind them. */}
+      {showGlyph && <SectionBoxGlyph sectionId={group.id} color={sectionStroke} />}
     </div>
   );
 }
@@ -681,23 +705,26 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
     <div ref={menuRef} className="relative">
       <HeaderActionButton type="button"
         onClick={() => { setOpen(!open); setConfirming(false); }}
-        aria-label="Settings"
+        aria-label={t('builder.settings')}
         className="text-muted-foreground hover:text-foreground hover:bg-muted"
       >
         <Settings className="w-4 h-4" />
       </HeaderActionButton>
+      {/* The menu is sized to its label, not to the gear button it hangs
+          from: an absolute box shrinks to its containing block, which is the
+          32px button, so a label past the 160px minimum used to wrap. */}
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
+        <div className="absolute right-0 top-full mt-1 w-max bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
           <button type="button"
             onClick={handleClearClick}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
+            className={`w-full flex items-center gap-2 px-3 py-2 text-sm whitespace-nowrap cursor-pointer transition-colors ${
               confirming
                 ? 'text-destructive bg-destructive/10 font-medium'
                 : 'text-destructive/80 hover:bg-muted'
             }`}
           >
             <Trash2 className="w-3.5 h-3.5" />
-            {confirming ? 'Are you sure?' : 'Clear All'}
+            {confirming ? t('builder.clearConfirm') : t('builder.clearAll')}
           </button>
         </div>
       )}

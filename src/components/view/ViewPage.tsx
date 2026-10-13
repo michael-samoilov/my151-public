@@ -1,8 +1,10 @@
+import { sectionGlyphMask } from '@/lib/sectionGlyph';
 import { HeaderActionButton } from '@/components/ui/HeaderActionButton';
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { useDragSensors } from '@/lib/dragSensors';
 import { createPortal } from 'react-dom';
 import { useToolbarSlot } from '@/components/layout/toolbarSlot';
+import { useT } from '@/i18n';
 import { Settings, Download } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
@@ -18,7 +20,6 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
 import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
-import { getTypeMask } from '@/lib/typeSymbol';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import {
   type SectionRun,
@@ -401,14 +402,14 @@ export function SectionOverlays({
           );
         })}
         {spandrels.map((sp) =>
-          sp.type ? null : (
+          sectionGlyphMask(sp.sectionId) ? null : (
             <path key={sp.key} d={starPath(sp.cx, sp.cy, sp.r)} fill={sp.color} fillOpacity={0.2} stroke="none" />
           ),
         )}
       </svg>
       {spandrels.map((sp) => {
-        if (!sp.type) return null;
-        const mask = getTypeMask(sp.type);
+        const mask = sectionGlyphMask(sp.sectionId);
+        if (!mask) return null;
         // Cropped mask fills its box, so match the star's bounding box (2·r).
         const size = sp.r * 2;
         return (
@@ -422,8 +423,8 @@ export function SectionOverlays({
               height: size,
               backgroundColor: sp.color,
               opacity: 0.2,
-              WebkitMaskImage: `url(${mask})`,
-              maskImage: `url(${mask})`,
+              WebkitMaskImage: `url("${mask}")`,
+              maskImage: `url("${mask}")`,
               WebkitMaskSize: 'contain',
               maskSize: 'contain',
               WebkitMaskRepeat: 'no-repeat',
@@ -486,6 +487,7 @@ export function ViewPage() {
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
   const toolbarSlot = useToolbarSlot('view');
+  const t = useT();
   const totalSlots = Math.max(count, 151);
 
   // Build-section outlines overlay: shown when the user enables it, in build order.
@@ -1100,13 +1102,13 @@ export function ViewPage() {
               ref={settingsBtnRef}
               onClick={() => setSettingsOpen(true)}
               className="text-muted-foreground hover:text-foreground hover:bg-muted"
-              aria-label="View settings"
+              aria-label={t('view.settings')}
             >
               <Settings className="w-4 h-4" />
               {hasCustom && (
                 <span
                   className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary"
-                  aria-label="Custom order active"
+                  aria-label={t('view.customOrderActive')}
                 />
               )}
             </HeaderActionButton>
@@ -1115,7 +1117,7 @@ export function ViewPage() {
               onClick={openExport}
               disabled={count === 0}
               data-dex-export
-              aria-label="Export"
+              aria-label={t('export.title')}
               className="text-primary hover:bg-primary hover:text-primary-foreground disabled:hover:bg-card disabled:hover:text-primary"
             >
               <Download className="w-4 h-4" />
@@ -1368,16 +1370,16 @@ export function ViewPage() {
         dismiss={dismissStatsHint}
         fulfilled={exportOpen}
         anchorRef={exportBtnRef}
-        title="Stats live in Export"
-        body="Tap download and turn on “Show detailed stats” to add type, generation, and base-stat charts to your image."
+        title={t('view.hint.stats.title')}
+        body={t('view.hint.stats.body')}
       />
       <FollowUpHint
         armed={exportHintArmed}
         dismiss={dismissExportHint}
         fulfilled={exportOpen}
         anchorRef={exportBtnRef}
-        title="Export is right here"
-        body="Tap the download icon to save your dex as an image and share it."
+        title={t('view.hint.export.title')}
+        body={t('view.hint.export.body')}
       />
     </div>
   );
@@ -1386,8 +1388,9 @@ export function ViewPage() {
 // ---------- Mobile bottom sheet for settings ----------
 
 function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
+  const t = useT();
   return (
-    <BottomSheet onClose={onClose} closeLabel="Close settings" title="View Settings">
+    <BottomSheet onClose={onClose} closeLabel={t('viewSettings.close')} title={t('viewSettings.title')}>
       <ViewSettingsPane onClose={onClose} mobileSheet />
     </BottomSheet>
   );

@@ -130,10 +130,10 @@ test.describe('mobile export sheet', () => {
     const foil = page.locator('[data-export-preview]');
     await expect(foil).toHaveAttribute('data-paused', '0');
 
-    // The default layers, and only those: point light, rainbow, shine, iridescence.
+    // The default layers, and only those: point light, prism, gleam, iridescence.
     await expect
       .poll(async () => (await page.locator('[data-foil-layer]').evaluateAll((els) => els.map((el) => el.getAttribute('data-foil-layer')))).sort().join(','))
-      .toBe('holoRainbow,holographic,iridescence,pointLight');
+      .toBe('gleam,iridescence,pointLight,prism');
     await expect(page.locator('[data-foil-layer="sparkle"]')).toHaveCount(0);
     expect(await foil.evaluate((el) => getComputedStyle(el, '::after').content)).toBe('none');
     await expect(page.locator('[data-foil-layer="ambient"]')).toHaveCount(0);
@@ -238,7 +238,7 @@ test.describe('desktop export preview', () => {
     await expect.poll(async () => foil.getAttribute('data-foil-maps')).toBe('1');
     const rainbowOnOpen = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
-      const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      const layer = document.querySelector<HTMLElement>('[data-foil-layer="gleam"]');
       if (!card || !layer) return { ok: false, reason: 'missing' };
       const cs = getComputedStyle(layer);
       if (cs.mixBlendMode !== 'color-dodge') return { ok: false, reason: `blend ${cs.mixBlendMode}` };
@@ -249,7 +249,7 @@ test.describe('desktop export preview', () => {
       const glare = getComputedStyle(card, '::before');
       const glareMask = `${glare.getPropertyValue('-webkit-mask-image')} ${glare.maskImage}`;
       if (!glareMask.includes('none')) return { ok: false, reason: `glare mask ${glareMask}` };
-      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-holographic')) - 0.7) > 0.02) {
+      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-gleam')) - 0.7) > 0.02) {
         return { ok: false, reason: 'amount' };
       }
       return { ok: true, reason: 'open' };
@@ -266,7 +266,7 @@ test.describe('desktop export preview', () => {
       .toBeGreaterThan(2);
     const holo = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
-      const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      const layer = document.querySelector<HTMLElement>('[data-foil-layer="gleam"]');
       if (!card || !layer) return { ok: false, reason: 'missing' };
       const cs = getComputedStyle(layer);
       const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`.replace(/\s+/g, ' ').trim();
@@ -275,12 +275,10 @@ test.describe('desktop export preview', () => {
         mix: cs.mixBlendMode,
         opacity: Number(cs.opacity),
         mask,
-        amount: Number(getComputedStyle(card).getPropertyValue('--foil-holographic')),
+        amount: Number(getComputedStyle(card).getPropertyValue('--foil-gleam')),
         foil: Number(card.getAttribute('data-foil-opacity')),
-        shadow: (() => {
-          const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
-          return lift ? getComputedStyle(lift).boxShadow : 'none';
-        })(),
+        // The drop shadow is the PNG's own shape, blurred.
+        shadow: document.querySelectorAll('[data-export-shadow-layer]').length,
         hypot: Math.hypot(Number(card.getAttribute('data-tilt-x') || 0), Number(card.getAttribute('data-tilt-y') || 0)),
       };
     });
@@ -289,7 +287,7 @@ test.describe('desktop export preview', () => {
     expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.7, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
-    expect(holo.shadow, JSON.stringify(holo)).not.toBe('none');
+    expect(holo.shadow, JSON.stringify(holo)).toBe(2);
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2);
     expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(10.2);
   });
@@ -361,14 +359,14 @@ test.describe('gym trainer-card export', () => {
       .toBeGreaterThan(2);
     const holo = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
-      const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      const layer = document.querySelector<HTMLElement>('[data-foil-layer="gleam"]');
       if (!card || !layer) return { ok: false, mix: '', mask: '', amount: 0 };
       const cs = getComputedStyle(layer);
       return {
         ok: true,
         mix: cs.mixBlendMode,
         mask: `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`,
-        amount: Number(getComputedStyle(card).getPropertyValue('--foil-holographic')),
+        amount: Number(getComputedStyle(card).getPropertyValue('--foil-gleam')),
         hypot: Math.hypot(Number(card.getAttribute('data-tilt-x') || 0), Number(card.getAttribute('data-tilt-y') || 0)),
       };
     });

@@ -9,7 +9,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { computePerPokemonMatchup } from '@/hooks/useTypeDominance';
 import type { Pokemon, TypeName, ShapeName } from '@/types/pokemon';
 import { typeIconPath } from '@/data/type-ids';
-import { regionName, sectionName, shapeLabel, t, tn, typeLabel } from '@/i18n';
+import { getLocale, regionName, sectionName, shapeLabel, t, tn, typeLabel } from '@/i18n';
 
 const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
@@ -344,7 +344,7 @@ function computeRegionalDrillDown(
     if (groups.length > 0) {
       sections.push({
         sectionId: `gen-${anchorGenForNewOnly}`,
-        sectionName: `Generation ${anchorGenForNewOnly}`,
+        sectionName: t('drilldown.generationTitle', { gen: anchorGenForNewOnly }),
         sectionColor: genColors[(anchorGenForNewOnly - 1) % genColors.length],
         groups,
       });
@@ -357,7 +357,7 @@ function computeRegionalDrillDown(
       groups.sort((a, b) => a.members[0].id - b.members[0].id);
       sections.push({
         sectionId: `gen-${gen}`,
-        sectionName: `Generation ${gen}`,
+        sectionName: t('drilldown.generationTitle', { gen }),
         sectionColor: genColors[(gen - 1) % genColors.length],
         groups,
       });
@@ -402,9 +402,11 @@ function computeTypeMatchupDrillDown(
   // For regional/national dex, the matchup data depends only on (type,
   // dexId, excludeSpecial, newOnly) — not on storeSections (which only
   // affects branch preference in multi-branch evo lines like Eevee).
-  // Cache the expensive result so swiping between types is instant.
+  // Cache the expensive result so swiping between types is instant. The
+  // result holds translated titles and tier labels, so the key carries the
+  // locale too.
   if (isRegional) {
-    const cacheKey = `${segment.type}|${dexId}|${excludeSpecial}|${newOnly}`;
+    const cacheKey = `${getLocale()}|${segment.type}|${dexId}|${excludeSpecial}|${newOnly}`;
     const cached = _nationalMatchupCache.get(cacheKey);
     if (cached) return cached;
   }
@@ -481,10 +483,11 @@ function computeTypeMatchupDrillDown(
   const sections: SectionGroup[] = [];
   for (const tier of sortedTiers) {
     const ids = tierMap.get(tier)!;
-    // U+002B (+) and U+2212 (−) are the same width in proportional fonts
+    // U+002B (+) and U+2212 (−) are the same width in proportional fonts;
+    // each message carries its own sign.
     const label = tier > 0
-      ? `+${tier} ${tier === 1 ? 'doubling' : 'doublings'} of advantage`
-      : `\u2212${Math.abs(tier)} ${Math.abs(tier) === 1 ? 'doubling' : 'doublings'} of advantage`;
+      ? tn('drilldown.tier.gain', tier)
+      : tn('drilldown.tier.loss', Math.abs(tier));
     const color = tierColors.get(tier) ?? (tier > 0 ? '#15803d' : '#991b1b');
     const meta = { label, color };
 
@@ -536,7 +539,7 @@ function computeTypeMatchupDrillDown(
   const shownPokemon = [...tierMap.values()].reduce((s, ids) => s + ids.size, 0);
   const dexLabel = isRegional ? (dexId === 'national' ? t('dex.national') : regionName(dexId)) : null;
   const result: DrillDownData = {
-    title: dexLabel ? `${title} — ${dexLabel}` : title,
+    title: dexLabel ? t('drilldown.titleWithDex', { title, dex: dexLabel }) : title,
     subtitle: t('drilldown.matchupSubtitle', { count: shownPokemon }),
     color,
     icon,
@@ -549,7 +552,7 @@ function computeTypeMatchupDrillDown(
   };
   // Cache regional/national results for instant access on re-visit
   if (isRegional) {
-    const cacheKey = `${segment.type}|${dexId}|${excludeSpecial}|${newOnly}`;
+    const cacheKey = `${getLocale()}|${segment.type}|${dexId}|${excludeSpecial}|${newOnly}`;
     _nationalMatchupCache.set(cacheKey, result);
   }
   return result;

@@ -1,33 +1,46 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { PokeBallSpinner } from '@/components/shared/PokeBallSpinner';
+import { useT } from '@/i18n';
 import {
   clampHypot,
   clampTiltToBox,
   fitCardInPreviewBox,
-  PREVIEW_PERSPECTIVE_PX,
+  previewPerspectivePx,
+  previewSizeCamera,
   PREVIEW_REST_PAD,
   PREVIEW_SHADOW_PAD_PX,
-  tiltPadForScaledCard,
+  type PreviewCamera,
 } from '@/components/export/exportPreviewFit';
 import {
+  normalizedForTilt,
+  pointInBox,
+  idleOrbitPose,
+  pointerMovedFrom,
+  REST_POSE,
+} from '@/components/export/hoverTilt';
+import {
   applySpringOpts,
+  cancelHoverTiltFrame,
   createSpring,
   HOVER_TILT_EXIT_DELAY_MS,
   HOVER_TILT_EXIT_SPRING,
   HOVER_TILT_SPRING,
+  hoverTiltEnter,
   hoverTiltFromNormalized,
   hoverTiltFromPointer,
-  normalizedForTilt,
-  pointInBox,
-  pokeHoloIdle,
-  pointerMovedFrom,
-  REST_POSE,
+  hoverTiltLeave,
+  hoverTiltPointerMove,
+  hoverTiltScale,
+  hoverTiltShadow,
+  scheduleHoverTiltFrame,
   springSettled,
   tickSpring,
   type HoverTiltAxes,
   type HoverTiltPose,
   type HoverTiltSpring,
-} from '@/components/export/hoverTilt';
+} from '@/components/export/hover-tilt/hoverTilt';
+import '@/components/export/hover-tilt/hoverTilt.css';
 import {
   DEFAULT_HOVER_TILT_RECIPE,
   hoverTiltCssVars,
@@ -50,9 +63,9 @@ import {
   type FoilRecipe,
 } from '../export/foilRecipe';
 import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
-import { FOIL_HOLO_BLEND } from '../export/foilBlend';
 import { exportCornerRadius } from '@/lib/exportPngShape';
 import './ExportPreview3D.css';
+import './foil/my151Holo.css';
 
 const TAP_MS = 320;
 /** Opening the export eases auto-tilt, glare, pop, and foil in from flat. */
@@ -97,8 +110,9 @@ function tiltAxes(tilt: HoverTiltRecipe | undefined, maxTilt: number): HoverTilt
 }
 
 /**
- * Live export preview. Pointer tracking, springs, rest, and CSS vars
- * copy hover-tilt (https://github.com/simeydotme/hover-tilt).
+ * Live export preview. It tilts with hover-tilt's pointer tracking, springs,
+ * and leave, which live in `@/components/export/hover-tilt/`, and writes
+ * hover-tilt's documented CSS variables.
  */
 export function ExportPreview3D({
   src,
@@ -110,6 +124,8 @@ export function ExportPreview3D({
   tilt = DEFAULT_HOVER_TILT_RECIPE,
   maskContext = DEFAULT_MASK_CONTEXT,
   darkCard = false,
+  camera = previewPerspectivePx,
+  size = 1,
 }: {
   src: string | null;
   alt: string;
@@ -121,7 +137,15 @@ export function ExportPreview3D({
   tilt?: HoverTiltRecipe;
   maskContext?: HoverTiltMaskContext;
   darkCard?: boolean;
+  /** Camera distance for a card size. The workshop compares others. */
+  camera?: PreviewCamera;
+  /**
+   * A multiple of the card size `previewSizeCamera` gives, never past the
+   * room the tilt leaves. `room` fills that room, as on October 10.
+   */
+  size?: number | 'room';
 }) {
+  const t = useT();
   const stageRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -147,13 +171,23 @@ export function ExportPreview3D({
   const springARef = useRef<HoverTiltSpring>(createSpring(0));
   const recipeRef = useRef(recipe);
   const tiltRef = useRef(tilt);
+  const cameraRef = useRef(camera);
+  const sizeRef = useRef(size);
   const measureRef = useRef<() => void>(() => {});
   const stageSizeRef = useRef({ w: 0, h: 0 });
   const cardMaxRef = useRef({ w: 0, h: 0 });
   const [cardMax, setCardMax] = useState({ w: 0, h: 0 });
   const layerIds = activeFoilLayerIds(recipe);
   const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
-  const activeSrc = (frames ? frames.urls[frames.activeKey] : null) ?? src;
+  const liveSrc = (frames ? frames.urls[frames.activeKey] : null) ?? src;
+  // While a changed setting renders, keep the last picture on screen: a
+  // placeholder between two finished pictures flickers. The Save button shows
+  // the wait instead. A picture the cache has since released is not kept.
+  const [heldSrc, setHeldSrc] = useState(liveSrc);
+  if (liveSrc && liveSrc !== heldSrc) setHeldSrc(liveSrc);
+  const heldIsLive = heldSrc != null && (heldSrc === src || Object.values(frames?.urls ?? {}).includes(heldSrc));
+  const activeSrc = liveSrc ?? (heldIsLive ? heldSrc : null);
+  const shownKey = frames ? Object.keys(frames.urls).find((key) => frames.urls[key] === activeSrc) : undefined;
 
   const paint = useCallback((pose: HoverTiltPose) => {
     const el = cardRef.current;
@@ -172,14 +206,7 @@ export function ExportPreview3D({
     // The glare and the pop ease in with the opening. The foil does not: a
     // flat card already shows it at its floor.
     const open = openEase(openMsRef.current);
-    const liveScale = 1 + (tiltNowEarly.scaleFactor - 1) * activation * open;
-    const tiltPad = tiltPadForScaledCard({
-      stageWidth: stageSize.w,
-      stageHeight: stageSize.h,
-      cardWidth: cardW,
-      cardHeight: cardH,
-      liveScale,
-    });
+    const liveScale = hoverTiltScale(tiltNowEarly.scaleFactor, activation, open);
     if (stageSize.w > 0 && cardW > 0 && cardH > 0) {
       const clamped = clampTiltToBox({
         tiltX: rotateX,
@@ -188,7 +215,10 @@ export function ExportPreview3D({
         cardHeight: cardH * liveScale,
         boxWidth: stageSize.w,
         boxHeight: stageSize.h,
-        pad: tiltPad,
+        // The fit already holds the widest tilt this far inside, so this
+        // only catches a stage that resized before the card refit.
+        pad: PREVIEW_REST_PAD,
+        camera: cameraRef.current,
       });
       rotateX = clamped.x;
       rotateY = clamped.y;
@@ -202,21 +232,18 @@ export function ExportPreview3D({
     const ny = pose.ny;
     el.style.setProperty('--rotation-x', `${rotateX}deg`);
     el.style.setProperty('--rotation-y', `${rotateY}deg`);
-    el.style.setProperty('--rotate-x', `${rotateY}deg`);
-    el.style.setProperty('--rotate-y', `${rotateX}deg`);
     lastPoseRef.current = { rotateX: logicalX, rotateY: logicalY, pointerX, pointerY, nx, ny };
-    el.style.setProperty('--pointer-x', `${pointerX}%`);
-    el.style.setProperty('--pointer-y', `${pointerY}%`);
-    el.style.setProperty('--pointer-from-center', Math.min(1, Math.hypot(pointerX - 50, pointerY - 50) / 50).toFixed(3));
-    el.style.setProperty('--pointer-from-top', (pointerY / 100).toFixed(3));
-    el.style.setProperty('--pointer-from-left', (pointerX / 100).toFixed(3));
+    el.style.setProperty('--foil-at-x', `${pointerX}%`);
+    el.style.setProperty('--foil-at-y', `${pointerY}%`);
+    el.style.setProperty('--foil-reach', Math.min(1, Math.hypot(pointerX - 50, pointerY - 50) / 50).toFixed(3));
+    el.style.setProperty('--foil-down', (pointerY / 100).toFixed(3));
+    el.style.setProperty('--foil-across', (pointerX / 100).toFixed(3));
+    el.style.setProperty('--foil-dx', (pointerX / 50 - 1).toFixed(3));
+    el.style.setProperty('--foil-dy', (pointerY / 50 - 1).toFixed(3));
     el.style.setProperty('--hover-tilt-x', nx.toFixed(4));
     el.style.setProperty('--hover-tilt-y', ny.toFixed(4));
     el.style.setProperty('--gradient-x', `${pointerX}%`);
     el.style.setProperty('--gradient-y', `${pointerY}%`);
-    // poke-holo maps the pointer to 37-63% across and 33-67% down for the shine.
-    el.style.setProperty('--background-x', `${(37 + pointerX * 0.26).toFixed(2)}%`);
-    el.style.setProperty('--background-y', `${(33 + pointerY * 0.34).toFixed(2)}%`);
     const recipeNow = recipeRef.current;
     const tiltNow = tiltNowEarly;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
@@ -229,10 +256,11 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-angle', `${angle.toFixed(1)}deg`);
     el.style.setProperty('--hover-tilt-from-center', Math.min(1, Math.hypot(nx - 0.5, ny - 0.5) / 0.5).toFixed(3));
     el.style.setProperty('--hover-tilt-at-edge', Math.min(1, Math.max(Math.abs(nx - 0.5), Math.abs(ny - 0.5)) * 2).toFixed(3));
-    const shadowX = nx * 2 - 1;
-    const shadowY = ny * 2 - 1;
+    const shadow = hoverTiltShadow(nx, ny, activation);
+    const shadowX = shadow.x;
+    const shadowY = shadow.y;
     const shadowOn = tiltNow.shadow && tiltNow.shadowBlur > 0;
-    const shadowAmt = shadowOn ? activation * 0.125 : 0;
+    const shadowAmt = shadowOn ? shadow.alpha : 0;
     el.style.setProperty('--shadow-x', shadowX.toFixed(4));
     el.style.setProperty('--shadow-y', shadowY.toFixed(4));
     el.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
@@ -283,7 +311,7 @@ export function ExportPreview3D({
     if (reducedMotionRef.current || origin === null) return REST_POSE;
     const recipeNow = recipeRef.current;
     // The orbit radius grows with `open`, so auto-tilt starts flat and spirals out.
-    return pokeHoloIdle({
+    return idleOrbitPose({
       now,
       origin,
       idleMsX: recipeNow.idleMsX,
@@ -323,12 +351,7 @@ export function ExportPreview3D({
     const from = normalizedForTilt(last.rotateX, last.rotateY, axes);
     springXRef.current.value = from.nx;
     springYRef.current.value = from.ny;
-    springXRef.current.target = pose.nx;
-    springYRef.current.target = pose.ny;
-    springARef.current.target = 1;
-    applySpringOpts(springXRef.current, HOVER_TILT_SPRING);
-    applySpringOpts(springYRef.current, HOVER_TILT_SPRING);
-    applySpringOpts(springARef.current, HOVER_TILT_SPRING);
+    hoverTiltEnter(springXRef.current, springYRef.current, springARef.current, pose);
     pointerPoseRef.current = pose;
     pendingPointerRef.current = { x: clientX, y: clientY };
     orbitRef.current = 'pointer';
@@ -338,17 +361,13 @@ export function ExportPreview3D({
 
   const schedulePointer = useCallback((clientX: number, clientY: number) => {
     pendingPointerRef.current = { x: clientX, y: clientY };
-    if (moveFrameRef.current !== null) return;
-    moveFrameRef.current = requestAnimationFrame(() => {
-      moveFrameRef.current = null;
+    scheduleHoverTiltFrame(moveFrameRef, () => {
       const pending = pendingPointerRef.current;
       if (!pending || orbitRef.current !== 'pointer') return;
       const box = restPointerBox();
       if (!box || box.width === 0) return;
       const pose = hoverTiltFromPointer(pending.x, pending.y, box, tiltAxes(tiltRef.current, recipeRef.current.maxTilt));
-      springXRef.current.target = pose.nx;
-      springYRef.current.target = pose.ny;
-      springARef.current.target = 1;
+      hoverTiltPointerMove(springXRef.current, springYRef.current, springARef.current, pose);
       pointerPoseRef.current = pose;
     });
   }, [restPointerBox]);
@@ -359,10 +378,7 @@ export function ExportPreview3D({
     const delay = tiltRef.current?.exitDelay ?? HOVER_TILT_EXIT_DELAY_MS;
     restAtRef.current = now + delay;
     pendingPointerRef.current = null;
-    if (moveFrameRef.current !== null) {
-      cancelAnimationFrame(moveFrameRef.current);
-      moveFrameRef.current = null;
-    }
+    cancelHoverTiltFrame(moveFrameRef);
   }, []);
 
   const parkFlat = useCallback((now: number) => {
@@ -374,10 +390,7 @@ export function ExportPreview3D({
     restAtRef.current = null;
     enterSinceRef.current = null;
     lastPointerRef.current = null;
-    if (moveFrameRef.current !== null) {
-      cancelAnimationFrame(moveFrameRef.current);
-      moveFrameRef.current = null;
-    }
+    cancelHoverTiltFrame(moveFrameRef);
     paint(lerpPose(releaseRef.current.from, REST_POSE, 0));
   }, [paint]);
 
@@ -402,18 +415,24 @@ export function ExportPreview3D({
       const img = imgRef.current;
       const aspect = img && img.naturalWidth > 0 ? img.naturalWidth / img.naturalHeight : 1;
       // Room for the widest tilt a pointer or auto-tilt can reach. A card
-      // sized for less leans on clampTiltToBox, which jumps: the projected
+      // sized for more leans on clampTiltToBox, which jumps: the projected
       // card is tallest mid-tilt, so fitting is not monotonic in the angle.
-      const size = fitCardInPreviewBox({
-        boxWidth: r.width,
-        boxHeight: r.height,
-        aspect,
-        tiltDeg: Math.max(recipeRef.current.idleTilt, recipeRef.current.maxTilt),
-        pad: PREVIEW_REST_PAD,
-      });
+      const fitFor = (fitCamera: PreviewCamera) =>
+        fitCardInPreviewBox({
+          boxWidth: r.width,
+          boxHeight: r.height,
+          aspect,
+          tiltDeg: Math.max(recipeRef.current.idleTilt, recipeRef.current.maxTilt),
+          pad: PREVIEW_REST_PAD,
+          camera: fitCamera,
+        });
+      const room = fitFor(cameraRef.current);
+      const want = sizeRef.current;
+      const scale =
+        want === 'room' ? 1 : Math.min(1, (fitFor(previewSizeCamera).width * want) / Math.max(1, room.width));
       const pop = Math.max(1, tiltRef.current?.scaleFactor ?? 1);
-      const restW = size.width / pop;
-      const restH = size.height / pop;
+      const restW = (room.width * scale) / pop;
+      const restH = (room.height * scale) / pop;
       cardMaxRef.current = { w: restW, h: restH };
       setCardMax((prev) => {
         if (Math.abs(prev.w - restW) < 1 && Math.abs(prev.h - restH) < 1) return prev;
@@ -491,12 +510,7 @@ export function ExportPreview3D({
         if (restAt !== null && now < restAt) {
           paint(lastPoseRef.current);
         } else {
-          applySpringOpts(springXRef.current, HOVER_TILT_EXIT_SPRING);
-          applySpringOpts(springYRef.current, HOVER_TILT_EXIT_SPRING);
-          applySpringOpts(springARef.current, HOVER_TILT_EXIT_SPRING);
-          springXRef.current.target = 0.5;
-          springYRef.current.target = 0.5;
-          springARef.current.target = 0;
+          hoverTiltLeave(springXRef.current, springYRef.current, springARef.current);
           tickSpring(springXRef.current, dt);
           tickSpring(springYRef.current, dt);
           tickSpring(springARef.current, dt);
@@ -554,6 +568,8 @@ export function ExportPreview3D({
   useLayoutEffect(() => {
     recipeRef.current = recipe;
     tiltRef.current = tilt;
+    cameraRef.current = camera;
+    sizeRef.current = size;
     const el = cardRef.current;
     if (!el) return;
     const vars = foilRecipeCssVars(recipe);
@@ -565,8 +581,8 @@ export function ExportPreview3D({
     for (const [key, value] of Object.entries(tiltVars)) {
       el.style.setProperty(key, value);
     }
-    el.style.setProperty('--export-shape-mask', foilMaskCss(activeSrc ?? ''));
-    el.style.setProperty('--foil-holo-blend', FOIL_HOLO_BLEND);
+    // On the hit, so the card and its shape shadow both inherit the outline.
+    hitRef.current?.style.setProperty('--export-shape-mask', foilMaskCss(activeSrc ?? ''));
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
     el.dataset.hoverTilt = '1';
     el.dataset.maskSpriteCount = String(maskContext.sprites.length);
@@ -587,12 +603,12 @@ export function ExportPreview3D({
     return () => {
       cancelled = true;
     };
-  }, [activeSrc, idleAt, maskContext, paint, recipe, tilt]);
+  }, [activeSrc, camera, idleAt, maskContext, paint, recipe, size, tilt]);
 
-  // The fit reserves room for the tilt, so a new extent refits the card.
+  // The fit reserves room for the tilt, so a new extent, camera, or size refits the card.
   useLayoutEffect(() => {
     measureRef.current();
-  }, [recipe.idleTilt, recipe.maxTilt]);
+  }, [camera, recipe.idleTilt, recipe.maxTilt, size]);
 
   useLayoutEffect(() => {
     const el = cardRef.current;
@@ -786,6 +802,10 @@ export function ExportPreview3D({
   const pop = Math.max(1, tilt?.scaleFactor ?? 1);
   const maxW = cardMax.w > 0 ? `${Math.round(cardMax.w * pop)}px` : '100%';
   const maxH = cardMax.h > 0 ? `${Math.round(cardMax.h * pop)}px` : '100%';
+  // The lift is laid out at its popped size, so the camera scales with that.
+  // Until the first measure, the stylesheet's default stands in.
+  const perspectivePx =
+    cardMax.w > 0 ? Math.round(camera(cardMax.w * pop, cardMax.h * pop)) : null;
 
   return (
     <div
@@ -802,7 +822,7 @@ export function ExportPreview3D({
           style={
             {
               padding: PREVIEW_SHADOW_PAD_PX,
-              '--export-perspective': `${PREVIEW_PERSPECTIVE_PX}px`,
+              ...(perspectivePx ? { '--export-perspective': `${perspectivePx}px` } : {}),
               '--export-lift-scale': 1 / pop,
               '--export-lift-rest': 1 / pop,
             } as React.CSSProperties
@@ -813,13 +833,15 @@ export function ExportPreview3D({
           data-export-tilt-hit
           data-export-shadow
           data-shadow-pad={String(PREVIEW_SHADOW_PAD_PX)}
-          data-tilt-perspective={String(PREVIEW_PERSPECTIVE_PX)}
+          data-tilt-perspective={perspectivePx ? String(perspectivePx) : undefined}
           data-hover-tilt="1"
           data-hover-tilt-shadow="1"
           data-tilt-active="0"
           data-pointer-box="rest"
         >
           <div className="export-foil-lift" data-export-foil-lift>
+          <div className="export-foil-shadow export-foil-shadow-far" aria-hidden data-export-shadow-layer="far" />
+          <div className="export-foil-shadow export-foil-shadow-near" aria-hidden data-export-shadow-layer="near" />
           <div
             ref={cardRef}
             className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden bg-transparent select-none"
@@ -849,7 +871,7 @@ export function ExportPreview3D({
               className="pointer-events-none block h-auto w-auto object-contain"
               style={{ maxHeight: maxH, maxWidth: maxW, width: 'auto', height: 'auto' }}
               draggable={false}
-              data-export-frame={frames?.activeKey}
+              data-export-frame={shownKey}
               data-export-frame-active="1"
               onLoad={() => {
                 measureRef.current();
@@ -867,13 +889,19 @@ export function ExportPreview3D({
           </div>
         </div>
       ) : (
-        <div
-          className="flex h-48 w-64 items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground md:h-64 md:w-80"
-          aria-busy={busy}
-          data-export-preview
-        >
-          {busy ? 'Rendering preview…' : 'Preview unavailable'}
-        </div>
+        busy ? (
+          <div className="flex h-48 w-64 items-center justify-center opacity-70 md:h-64 md:w-80"
+            role="status" aria-label={t('export.preview.rendering')} data-export-preview>
+            <PokeBallSpinner delayed className="h-12 w-12" />
+          </div>
+        ) : (
+          <div
+            className="flex h-48 w-64 items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground md:h-64 md:w-80"
+            data-export-preview
+          >
+            {t('export.preview.unavailable')}
+          </div>
+        )
       )}
     </div>
   );

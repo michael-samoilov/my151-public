@@ -4,7 +4,7 @@ import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore'
 import { computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownData';
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
 import { ShapeIconCircle } from '@/components/shared/ShapeIcon';
-import { shapeLabel, typeLabel } from '@/i18n';
+import { shapeLabel, typeLabel, useT, useTn } from '@/i18n';
 import type { ShapeName, TypeName } from '@/types/pokemon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
@@ -88,6 +88,7 @@ function CardPanel({
   onToggleRemoval?: (memberIds: number[]) => void;
   onConfirmRemoval?: () => void;
 }) {
+  const tn = useTn();
   const emptySet = useMemo(() => new Set<number>(), []);
   const noOp = useCallback(() => {}, []);
   const removalCount = removalStagedIds?.size ?? 0;
@@ -210,7 +211,7 @@ function CardPanel({
             onClick={onConfirmRemoval}
             className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"
           >
-            Remove {removalCount} Pokemon
+            {tn('drilldown.remove', removalCount)}
           </button>
         </div>
       )}
@@ -585,6 +586,8 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
 
 /** Desktop side panel for analytics drilldown — no drag/carousel, static layout */
 export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, assignedIds, closeDrillDown, spriteOverrides, removalStagedIds = [], handleToggleRemoval, handleConfirmRemoval }: AnalyticsDrillDownProps) {
+  const t = useT();
+  const tn = useTn();
   const currentIdx = useMemo(() => {
     if (!segment || siblings.length < 2) return -1;
     return siblings.findIndex(s => s.id === segment.id);
@@ -631,8 +634,9 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
           <button type="button"
             onClick={closeDrillDown}
             className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+            aria-label={t('browser.close')}
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden />
           </button>
         </div>
         <div className="px-3 pb-1.5 text-[0.625rem] text-muted-foreground -mt-0.5">
@@ -715,7 +719,7 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
             onClick={handleConfirmRemoval}
             className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"
           >
-            Remove {removalStagedIds.length} Pokemon
+            {tn('drilldown.remove', removalStagedIds.length)}
           </button>
         </div>
       )}
@@ -725,6 +729,7 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
 
 /** Dex keeps its store and removal workflow; both tools use the same views. */
 function useDexDrillDown(): AnalyticsDrillDownProps {
+  const t = useT();
   const sections = usePokedexStore(s => s.sections);
   const segment = usePokedexStore(s => s.drillDownSegment);
   const siblings = usePokedexStore(s => s.drillDownSiblings);
@@ -743,15 +748,15 @@ function useDexDrillDown(): AnalyticsDrillDownProps {
       id: JSON.stringify(item),
       label: item.kind === 'type' || item.kind === 'typeMatchup' ? typeLabel(item.type as TypeName)
         : item.kind === 'shape' ? shapeLabel(item.shape as ShapeName)
-        : item.kind === 'generation' ? `Gen ${item.generation}`
-        : item.kind === 'evoLevel' ? `Lv ${item.binStart}–${item.binEnd - 1}`
+        : item.kind === 'generation' ? t('browser.genChip', { gen: item.generation })
+        : item.kind === 'evoLevel' ? t('drilldown.evoLevelLabel', { from: item.binStart, to: item.binEnd - 1 })
         : item.kind === 'bst' ? `${item.binStart}–${item.binEnd - 1}` : '',
       shape: item.kind === 'shape' ? item.shape as ShapeName : undefined,
       getData: () => computeDrillDownData(item, sections, excludeSpecial, dexId, newOnly),
       onSelect: () => navigateDrillDown(item),
     });
     return { segment: segment ? entry(segment) : null, siblings: siblings.map(entry) };
-  }, [segment, siblings, sections, excludeSpecial, dexId, newOnly, navigateDrillDown]);
+  }, [segment, siblings, sections, excludeSpecial, dexId, newOnly, navigateDrillDown, t]);
   useEffect(() => { setRemovalStagedIds([]); }, [segment]);
   const handleToggleRemoval = useCallback((memberIds: number[]) => {
     setRemovalStagedIds(prev => {

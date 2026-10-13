@@ -1,0 +1,923 @@
+{
+  "source": "Pokémon Scarlet/Violet, Ultra Sun/Ultra Moon and X/Y game text",
+  "mirror": "https://github.com/abcboy101/poke-corpus",
+  "commit": "d74a89ba69cbabc491b65c3e88af8722bb34a927",
+  "table": "<Collection>/*_common.txt.gz",
+  "sha256": {
+    "ScarletViolet": {
+      "qid": "cbd68c658591b7938f6e17007085d57d4bd63912f5353348f0f8d7a480661793",
+      "en": "e124161806f2d16ebc1821522aac12c8745b615ba770b56b407524c046368ad5",
+      "ja": "a789a8e24bbc3210d7328b137840436900a9f74cdc59224e6360aeed3434096e",
+      "ko": "0b972225ea00fe1caf309f5b0e0bdbd316f8d63b40c3b76bd700e7d3ccfca827",
+      "zh-Hans": "75675f86872a317144e2566ff6c810b2e9b670125067c73272d3760abf82e40d",
+      "zh-Hant": "54afd18d4a73fdc85d5881834bd0fb57605b991fad7e2e64259996fb5e11586a",
+      "fr": "48a3a6704e700c866b37f8c9316a75626f6f7364815ad6285846e432530ca289",
+      "de": "c9a1d1702a12e2e814bfa9d83065f374cbb59dc8500eaa5819a5dca9c12e315b",
+      "es": "3ca911e8b10eed63d713e2bb16335acc58b40d119f1329ac75394f8e17b52524",
+      "it": "125b315261ecdbed9d68cb200febbb304aeee89b1bb1c8e2fac72d6a176f7c82"
+    },
+    "UltraSunUltraMoon": {
+      "qid": "9488e84a234caa5a325f048f41b7e5cf1b32d96c95fa19bb539c22b372c38dbb",
+      "en": "675f24c77fb31577f19f97914e5ff631b6a1ec1bdc0abec2cb5e193102ccf966",
+      "ja": "47c924868b9c65b3b29709dee5bb09027ce2629e3607a27ad7029a1367ec95fb",
+      "ko": "dc5d21626bc51713151314291ce75f4c014b34ec0da553a523f098af31dea519",
+      "zh-Hans": "22d3234c7ae4b5aef8b6f45fe59b5d02d02f24175b87070fad327715d7e9c076",
+      "zh-Hant": "9c4edeb837b93d994629da6887992445245d3608684ae29015f9b475f9b8b3cb",
+      "fr": "925345ae733551851c380ba0e220163ca45e0f476f1a4ea6a403a4241dd9f64a",
+      "de": "3341d0d652201084361cb94b38de4cf549f41c36ff74abff7b94526d710deec1",
+      "es": "6ba3a7f203d3f5b89ea3ff87e3ce188f569822ef2fb5734a5421c077f561a449",
+      "it": "65f63b42cc3775a5345c91ef9833ded47d95ab4218ab46b25885e6fcac26361f"
+    },
+    "XY": {
+      "qid": "4af6220e97d6be1ce41f24e019175fe85bf81611e9eab2f95517e2390f0fcbbe",
+      "en": "361cddd88fcc29647569ee50c09a0f8dd0a264934b7e71d00fed59b403b8d114",
+      "ja": "cde0a69b3153df53eb91c8c44c6f98442037e8548bcd852b6977adad2b6cf2d5",
+      "ko": "1aa47f779a401b754af70d2478c418893134354a1a8c173d29c6ae965106eb03",
+      "fr": "121d5c4f5ff7f74e69c844e6ba8b30c0e7605e7669af861cac01686c21411b67",
+      "de": "0cd6708de7281f75b90be0513c8b6ff5c6ebac0ca208f40a2efcd2db72062159",
+      "es": "d78a6ca61e684045206ccaed3d106566ea949a8199806feb6b8395ab71eb1430",
+      "it": "b75a4356d60639a8be712c49486da92547a4391318db68e3ea387437f88148f5"
+    }
+  },
+  "scope": "Official terms in the Pokédex builder’s section, archetype and category labels (src/i18n/catalogs/ui). Regional form names come from pokemon-formnames.json; Gym Leader and Legendary also appear in picker-interface-terms.json.",
+  "terms": [
+    {
+      "qid": "sv.itemname.ITEMNAME_080",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Sun Stone",
+        "ja": "たいようのいし",
+        "ko": "태양의돌",
+        "zh-Hans": "日之石",
+        "zh-Hant": "日之石",
+        "fr": "Pierre Soleil",
+        "de": "Sonnenstein",
+        "es": "Piedra Solar",
+        "it": "Pietrasolare"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_081",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Moon Stone",
+        "ja": "つきのいし",
+        "ko": "달의돌",
+        "zh-Hans": "月之石",
+        "zh-Hant": "月之石",
+        "fr": "Pierre Lune",
+        "de": "Mondstein",
+        "es": "Piedra Lunar",
+        "it": "Pietralunare"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_082",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Fire Stone",
+        "ja": "ほのおのいし",
+        "ko": "불꽃의돌",
+        "zh-Hans": "火之石",
+        "zh-Hant": "火之石",
+        "fr": "Pierre Feu",
+        "de": "Feuerstein",
+        "es": "Piedra Fuego",
+        "it": "Pietrafocaia"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_083",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Thunder Stone",
+        "ja": "かみなりのいし",
+        "ko": "천둥의돌",
+        "zh-Hans": "雷之石",
+        "zh-Hant": "雷之石",
+        "fr": "Pierre Foudre",
+        "de": "Donnerstein",
+        "es": "Piedra Trueno",
+        "it": "Pietratuono"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_084",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Water Stone",
+        "ja": "みずのいし",
+        "ko": "물의돌",
+        "zh-Hans": "水之石",
+        "zh-Hant": "水之石",
+        "fr": "Pierre Eau",
+        "de": "Wasserstein",
+        "es": "Piedra Agua",
+        "it": "Pietraidrica"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_085",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Leaf Stone",
+        "ja": "リーフのいし",
+        "ko": "리프의돌",
+        "zh-Hans": "叶之石",
+        "zh-Hant": "葉之石",
+        "fr": "Pierre Plante",
+        "de": "Blattstein",
+        "es": "Piedra Hoja",
+        "it": "Pietrafoglia"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_107",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Shiny Stone",
+        "ja": "ひかりのいし",
+        "ko": "빛의돌",
+        "zh-Hans": "光之石",
+        "zh-Hant": "光之石",
+        "fr": "Pierre Éclat",
+        "de": "Leuchtstein",
+        "es": "Piedra Día",
+        "it": "Pietrabrillo"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_108",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Dusk Stone",
+        "ja": "やみのいし",
+        "ko": "어둠의돌",
+        "zh-Hans": "暗之石",
+        "zh-Hant": "暗之石",
+        "fr": "Pierre Nuit",
+        "de": "Finsterstein",
+        "es": "Piedra Noche",
+        "it": "Neropietra"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_109",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Dawn Stone",
+        "ja": "めざめいし",
+        "ko": "각성의돌",
+        "zh-Hans": "觉醒之石",
+        "zh-Hant": "覺醒之石",
+        "fr": "Pierre Aube",
+        "de": "Funkelstein",
+        "es": "Piedra Alba",
+        "it": "Pietralbore"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_110",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Oval Stone",
+        "ja": "まんまるいし",
+        "ko": "동글동글돌",
+        "zh-Hans": "浑圆之石",
+        "zh-Hant": "渾圓之石",
+        "fr": "Pierre Ovale",
+        "de": "Ovaler Stein",
+        "es": "Piedra Oval",
+        "it": "Pietraovale"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_221",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "King’s Rock",
+        "ja": "おうじゃのしるし",
+        "ko": "왕의징표석",
+        "zh-Hans": "王者之证",
+        "zh-Hant": "王者之證",
+        "fr": "Roche Royale",
+        "de": "King-Stein",
+        "es": "Roca del Rey",
+        "it": "Roccia di re"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_226",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Deep Sea Tooth",
+        "ja": "しんかいのキバ",
+        "ko": "심해의이빨",
+        "zh-Hans": "深海之牙",
+        "zh-Hant": "深海之牙",
+        "fr": "Dent Océan",
+        "de": "Abysszahn",
+        "es": "Diente Marino",
+        "it": "Dente abissi"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_227",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Deep Sea Scale",
+        "ja": "しんかいのウロコ",
+        "ko": "심해의비늘",
+        "zh-Hans": "深海鳞片",
+        "zh-Hant": "深海鱗片",
+        "fr": "Écaille Océan",
+        "de": "Abyssschuppe",
+        "es": "Escama Marina",
+        "it": "Squamabissi"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_233",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Metal Coat",
+        "ja": "メタルコート",
+        "ko": "금속코트",
+        "zh-Hans": "金属膜",
+        "zh-Hant": "金屬膜",
+        "fr": "Peau Métal",
+        "de": "Metallmantel",
+        "es": "Revest. Metálico",
+        "it": "Metalcopertura"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_235",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Dragon Scale",
+        "ja": "りゅうのウロコ",
+        "ko": "용의비늘",
+        "zh-Hans": "龙之鳞片",
+        "zh-Hant": "龍之鱗片",
+        "fr": "Écaille Draco",
+        "de": "Drachenschuppe",
+        "es": "Escama Dragón",
+        "it": "Squama drago"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_252",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Upgrade",
+        "ja": "アップグレード",
+        "ko": "업그레이드",
+        "zh-Hans": "升级数据",
+        "zh-Hant": "升級資料",
+        "fr": "Améliorator",
+        "de": "Upgrade",
+        "es": "Mejora",
+        "it": "Upgrade"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_321",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Protector",
+        "ja": "プロテクター",
+        "ko": "프로텍터",
+        "zh-Hans": "护具",
+        "zh-Hant": "護具",
+        "fr": "Protecteur",
+        "de": "Schützer",
+        "es": "Protector",
+        "it": "Copertura"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_322",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Electirizer",
+        "ja": "エレキブースター",
+        "ko": "에레키부스터",
+        "zh-Hans": "电力增幅器",
+        "zh-Hant": "電力增幅器",
+        "fr": "Électriseur",
+        "de": "Stromisierer",
+        "es": "Electrizador",
+        "it": "Elettritore"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_323",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Magmarizer",
+        "ja": "マグマブースター",
+        "ko": "마그마부스터",
+        "zh-Hans": "熔岩增幅器",
+        "zh-Hant": "熔岩增幅器",
+        "fr": "Magmariseur",
+        "de": "Magmaisierer",
+        "es": "Magmatizador",
+        "it": "Magmatore"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_324",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Dubious Disc",
+        "ja": "あやしいパッチ",
+        "ko": "괴상한패치",
+        "zh-Hans": "可疑补丁",
+        "zh-Hant": "可疑修正檔",
+        "fr": "CD Douteux",
+        "de": "Dubiosdisc",
+        "es": "Disco Extraño",
+        "it": "Dubbiodisco"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_325",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Reaper Cloth",
+        "ja": "れいかいのぬの",
+        "ko": "영계의천",
+        "zh-Hans": "灵界之布",
+        "zh-Hant": "靈界之布",
+        "fr": "Tissu Fauche",
+        "de": "Düsterumhang",
+        "es": "Tela Terrible",
+        "it": "Terrorpanno"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_326",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Razor Claw",
+        "ja": "するどいツメ",
+        "ko": "예리한손톱",
+        "zh-Hans": "锐利之爪",
+        "zh-Hant": "銳利之爪",
+        "fr": "Griffe Rasoir",
+        "de": "Scharfklaue",
+        "es": "Garra Afilada",
+        "it": "Affilartiglio"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_327",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Razor Fang",
+        "ja": "するどいキバ",
+        "ko": "예리한이빨",
+        "zh-Hans": "锐利之牙",
+        "zh-Hant": "銳利之牙",
+        "fr": "Croc Rasoir",
+        "de": "Scharfzahn",
+        "es": "Colmillo Agudo",
+        "it": "Affilodente"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_537",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Prism Scale",
+        "ja": "きれいなウロコ",
+        "ko": "고운비늘",
+        "zh-Hans": "美丽鳞片",
+        "zh-Hant": "美麗鱗片",
+        "fr": "Bel’Écaille",
+        "de": "Schönschuppe",
+        "es": "Escama Bella",
+        "it": "Squama bella"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_646",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Whipped Dream",
+        "ja": "ホイップポップ",
+        "ko": "휘핑팝",
+        "zh-Hans": "泡沫奶油",
+        "zh-Hant": "泡沫奶油",
+        "fr": "Chantibonbon",
+        "de": "Sahnehäubchen",
+        "es": "Dulce de Nata",
+        "it": "Dolcespuma"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_647",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Sachet",
+        "ja": "においぶくろ",
+        "ko": "향기주머니",
+        "zh-Hans": "香袋",
+        "zh-Hant": "香袋",
+        "fr": "Sachet Senteur",
+        "de": "Duftbeutel",
+        "es": "Saquito Fragante",
+        "it": "Bustina aromi"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_849",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Ice Stone",
+        "ja": "こおりのいし",
+        "ko": "얼음의돌",
+        "zh-Hans": "冰之石",
+        "zh-Hant": "冰之石",
+        "fr": "Pierre Glace",
+        "de": "Eisstein",
+        "es": "Piedra Hielo",
+        "it": "Pietragelo"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1109",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Strawberry Sweet",
+        "ja": "いちごアメざいく",
+        "ko": "딸기사탕공예",
+        "zh-Hans": "草莓糖饰",
+        "zh-Hant": "草莓糖飾",
+        "fr": "Fraise en Sucre",
+        "de": "Zucker-Erdbeere",
+        "es": "Confite Fresa",
+        "it": "Bonbonfragola"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1116",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Sweet Apple",
+        "ja": "あまーいりんご",
+        "ko": "달콤한사과",
+        "zh-Hans": "甜甜苹果",
+        "zh-Hant": "甜甜蘋果",
+        "fr": "Pomme Sucrée",
+        "de": "Süßer Apfel",
+        "es": "Manzana Dulce",
+        "it": "Dolcepomo"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1117",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Tart Apple",
+        "ja": "すっぱいりんご",
+        "ko": "새콤한사과",
+        "zh-Hans": "酸酸苹果",
+        "zh-Hant": "酸酸蘋果",
+        "fr": "Pomme Acidulée",
+        "de": "Saurer Apfel",
+        "es": "Manzana Ácida",
+        "it": "Aspropomo"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1253",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Cracked Pot",
+        "ja": "われたポット",
+        "ko": "깨진포트",
+        "zh-Hans": "破裂的茶壶",
+        "zh-Hant": "破裂的茶壺",
+        "fr": "Théière Fêlée",
+        "de": "Rissige Kanne",
+        "es": "Tetera Agrietada",
+        "it": "Teiera rotta"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1254",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Chipped Pot",
+        "ja": "かけたポット",
+        "ko": "이빠진포트",
+        "zh-Hans": "缺损的茶壶",
+        "zh-Hant": "缺損的茶壺",
+        "fr": "Théière Ébréchée",
+        "de": "Löchrige Kanne",
+        "es": "Tetera Rota",
+        "it": "Teiera crepata"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1582",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Galarica Cuff",
+        "ja": "ガラナツブレス",
+        "ko": "가라두구팔찌",
+        "zh-Hans": "伽勒豆蔻手环",
+        "zh-Hant": "伽勒荳蔻手環",
+        "fr": "Bracelet Galanoa",
+        "de": "Galarnuss-Reif",
+        "es": "Brazal Galanuez",
+        "it": "Fascia Galarnoce"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1592",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Galarica Wreath",
+        "ja": "ガラナツリース",
+        "ko": "가라두구머리장식",
+        "zh-Hans": "伽勒豆蔻花圈",
+        "zh-Hant": "伽勒荳蔻花圈",
+        "fr": "Couronne Galanoa",
+        "de": "Galarnuss-Kranz",
+        "es": "Corona Galanuez",
+        "it": "Corona Galarnoce"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1691",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Black Augurite",
+        "ja": "くろのきせき",
+        "ko": "검은휘석",
+        "zh-Hans": "黑奇石",
+        "zh-Hant": "黑奇石",
+        "fr": "Obsidienne",
+        "de": "Schwarzaugit",
+        "es": "Mineral Negro",
+        "it": "Augite nera"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1692",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Peat Block",
+        "ja": "ピートブロック",
+        "ko": "피트블록",
+        "zh-Hans": "泥炭块",
+        "zh-Hant": "泥炭塊",
+        "fr": "Bloc de Tourbe",
+        "de": "Torfblock",
+        "es": "Bloque de Turba",
+        "it": "Blocco di torba"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1857",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Scroll of Darkness",
+        "ja": "あくのかけじく",
+        "ko": "악의 족자",
+        "zh-Hans": "恶之挂轴",
+        "zh-Hant": "惡之掛軸",
+        "fr": "Rouleau des Ténèbres",
+        "de": "Unlicht-Schriftrolle",
+        "es": "Manuscrito Sombras",
+        "it": "Rotolo del Buio"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1858",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Scroll of Waters",
+        "ja": "みずのかけじく",
+        "ko": "물의 족자",
+        "zh-Hans": "水之挂轴",
+        "zh-Hant": "水之掛軸",
+        "fr": "Rouleau de l’Eau",
+        "de": "Wasser-Schriftrolle",
+        "es": "Manuscrito Aguas",
+        "it": "Rotolo dell’Acqua"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_1861",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Malicious Armor",
+        "ja": "ノロイノヨロイ",
+        "ko": "저주받은갑옷",
+        "zh-Hans": "咒术之铠",
+        "zh-Hant": "詛咒之鎧",
+        "fr": "Armure de la Rancune",
+        "de": "Fluchrüstung",
+        "es": "Armadura Maldita",
+        "it": "Armatura infausta"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_2344",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Auspicious Armor",
+        "ja": "イワイノヨロイ",
+        "ko": "축복받은갑옷",
+        "zh-Hans": "庆祝之铠",
+        "zh-Hant": "慶祝之鎧",
+        "fr": "Armure de la Fortune",
+        "de": "Glorienrüstung",
+        "es": "Armadura Auspiciosa",
+        "it": "Armatura fausta"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_2402",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Syrupy Apple",
+        "ja": "みついりりんご",
+        "ko": "꿀맛사과",
+        "zh-Hans": "蜜汁苹果",
+        "zh-Hant": "蜜汁蘋果",
+        "fr": "Pomme Nectar",
+        "de": "Saftiger Apfel",
+        "es": "Manzana Melosa",
+        "it": "Sciroppomo"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_2403",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Unremarkable Teacup",
+        "ja": "ボンサクのちゃわん",
+        "ko": "범작찻잔",
+        "zh-Hans": "凡作茶碗",
+        "zh-Hant": "凡作茶碗",
+        "fr": "Bol Médiocre",
+        "de": "Simple Teeschale",
+        "es": "Cuenco Mediocre",
+        "it": "Tazza dozzinale"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_2404",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Masterpiece Teacup",
+        "ja": "ケッサクのちゃわん",
+        "ko": "걸작찻잔",
+        "zh-Hans": "杰作茶碗",
+        "zh-Hant": "傑作茶碗",
+        "fr": "Bol Exceptionnel",
+        "de": "Edle Teeschale",
+        "es": "Cuenco Exquisito",
+        "it": "Tazza eccezionale"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.itemname.ITEMNAME_2482",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Metal Alloy",
+        "ja": "ふくごうきんぞく",
+        "ko": "복합금속",
+        "zh-Hans": "复合金属",
+        "zh-Hant": "複合金屬",
+        "fr": "Métal Composite",
+        "de": "Legierungsmetall",
+        "es": "Metal Compuesto",
+        "it": "Metallo composito"
+      },
+      "usage": "Evolution item sub-label."
+    },
+    {
+      "qid": "sv.trname.TRNAME_STAR_M",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Grunt",
+        "ja": "したっぱ",
+        "ko": "조무래기",
+        "zh-Hans": "手下",
+        "zh-Hant": "手下",
+        "fr": "Sbire",
+        "de": "Rüpel",
+        "es": "Recluta",
+        "it": "Recluta"
+      },
+      "usage": "Grunt. The evil team section says Grunts, so the Latin languages take the plural."
+    },
+    {
+      "qid": "sv.trtype.MSG_TRTYPE_GYMLEADER",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Gym Leader",
+        "ja": "ジムリーダー",
+        "ko": "체육관 관장",
+        "zh-Hans": "道馆馆主",
+        "zh-Hant": "道館館主",
+        "fr": "Champion d’Arène",
+        "de": "Arenaleiter",
+        "es": "Líder de Gimnasio",
+        "it": "Capopalestra"
+      },
+      "usage": "Gym Leader, in the gym ace sub-labels."
+    },
+    {
+      "qid": "sv.trtype.MSG_TRTYPE_E4",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Elite Four",
+        "ja": "四天王",
+        "ko": "사천왕",
+        "zh-Hans": "四天王",
+        "zh-Hant": "四天王",
+        "fr": "Conseil 4",
+        "de": "Top Vier",
+        "es": "Alto Mando",
+        "it": "Superquattro"
+      },
+      "usage": "Elite Four, in the gym ace description."
+    },
+    {
+      "qid": "sv.trtype.MSG_TRTYPE_CHAMPION",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Champion",
+        "ja": "チャンピオン",
+        "ko": "챔피언",
+        "zh-Hans": "冠军",
+        "zh-Hant": "冠軍",
+        "fr": "Maîtresse",
+        "de": "Champ",
+        "es": "Campeona",
+        "it": "Campionessa"
+      },
+      "usage": "Champion. The game’s fr, es and it forms are feminine (Geeta); the Galar Champion sub-label takes the masculine Maître, Campeón and Campione."
+    },
+    {
+      "qid": "sv.place_name.PLACENAME_a_w03_01",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Pokémon League",
+        "ja": "ポケモンリーグ",
+        "ko": "포켓몬리그",
+        "zh-Hans": "宝可梦联盟",
+        "zh-Hant": "寶可夢聯盟",
+        "fr": "Ligue Pokémon",
+        "de": "Pokémon-Liga",
+        "es": "Liga Pokémon",
+        "it": "Lega Pokémon"
+      },
+      "usage": "Pokémon League, in the gym ace sub-labels."
+    },
+    {
+      "qid": "sv.zkn_type.ZKN_TYPE_984",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Paradox Pokémon",
+        "ja": "パラドックスポケモン",
+        "ko": "패러독스포켓몬",
+        "zh-Hans": "悖谬宝可梦",
+        "zh-Hant": "悖謬寶可夢",
+        "fr": "Pokémon Paradoxe",
+        "de": "Paradox-Pokémon",
+        "es": "Pokémon Paradoja",
+        "it": "Pokémon Paradosso"
+      },
+      "usage": "Paradox Pokémon, the Paradox category."
+    },
+    {
+      "qid": "sv.mystery_card.mystery_card_t_05",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Mythical Pokémon [VAR 0101(0000)] Gift",
+        "ja": "幻のポケモン [VAR 0101(0000)]",
+        "ko": "환상의 포켓몬 [VAR 0101(0000)]",
+        "zh-Hans": "幻之宝可梦[VAR 0101(0000)]",
+        "zh-Hant": "幻之寶可夢 [VAR 0101(0000)]",
+        "fr": "[VAR 0101(0000)] (Pokémon fabuleux)",
+        "de": "Das Mysteriöse Pokémon [VAR 0101(0000)]",
+        "es": "El Pokémon singular [VAR 0101(0000)]",
+        "it": "[VAR 0101(0000)] (Pokémon misterioso)"
+      },
+      "usage": "Mythical Pokémon, the Mythical section and category."
+    },
+    {
+      "qid": "sv.zkn_form.ZKN_FORM_025_004",
+      "collection": "ScarletViolet",
+      "text": {
+        "en": "Unova Cap",
+        "ja": "イッシュキャップ",
+        "ko": "하나캡",
+        "zh-Hans": "合众帽子",
+        "zh-Hant": "合眾帽子",
+        "fr": "Casquette d’Unys",
+        "de": "Einall-Kappe",
+        "es": "Gorra Teselia",
+        "it": "Berretto Unima"
+      },
+      "usage": "The Spanish name of Unova is Teselia. The term catalog has Unova for es, because PokeAPI has no Spanish region rows."
+    },
+    {
+      "qid": "usum.common.3.12",
+      "collection": "UltraSunUltraMoon",
+      "text": {
+        "en": "♪ “Enter the Ultra Beasts”",
+        "ja": "♪ウルトラビースト",
+        "ko": "♪울트라비스트",
+        "zh-Hans": "♪究极异兽",
+        "zh-Hant": "♪究極異獸",
+        "fr": "♪ Ultra-Chimère",
+        "de": "♪ Ultrabestie ♪",
+        "es": "♪Ultraente♪",
+        "it": " Ultracreatura "
+      },
+      "usage": "Ultra Beast, the Ultra Beast category (track title, singular)."
+    },
+    {
+      "qid": "usum.common.22.14",
+      "collection": "UltraSunUltraMoon",
+      "text": {
+        "en": "And so [VAR TRNAME(0000)]’s\\nisland challenge came to an end.",
+        "ja": "[VAR TRNAME(0000)]さんの\\n島巡りは　これで　おしまい",
+        "ko": "[VAR TRNAME(0000)]님의\\n섬 순례는 이것으로 끝이에요",
+        "zh-Hans": "[VAR TRNAME(0000)]的诸岛巡礼\\n到这里就结束了。",
+        "zh-Hant": "[VAR TRNAME(0000)]的諸島巡禮\\n到這裡落幕了。",
+        "fr": "C’est ainsi que le Tour des Îles\\n[VAR 1408(0000)][VAR TRNAME(0000)] prit fin.",
+        "de": "Und so kam die Inselwanderschaft von\\n[VAR TRNAME(0000)] zu einem Ende.",
+        "es": "Y así fue como [VAR TRNAME(0000)] superó con\\néxito el recorrido insular.",
+        "it": "Così [VAR TRNAME(0000)] ha portato a termine\\nil suo giro delle isole."
+      },
+      "usage": "Island challenge, the Alola sub-label of the gym ace archetype."
+    },
+    {
+      "qid": "xy.common.74.32",
+      "collection": "XY",
+      "text": {
+        "en": "National Pokédex",
+        "ja": "全国図鑑の　評価",
+        "ko": "전국도감의 평가",
+        "fr": "Évaluer votre Pokédex National",
+        "de": "Nationalen Pokédex bewerten",
+        "es": "Pokédex Nacional",
+        "it": "Pokédex Nazionale"
+      },
+      "usage": "National Pokédex (dex.national). X and Y have no Chinese text; zh composes the Scarlet/Violet word 图鉴/圖鑑 with 全国/全國."
+    }
+  ]
+}

@@ -28,8 +28,8 @@
         "src/components/analytics/AnalyticsDashboard.tsx"
       ],
       "text": {
-        "baseline": 220582,
-        "ceiling": 231612
+        "baseline": 231850,
+        "ceiling": 243443
       },
       "images": {
         "baseline": 133722,
@@ -39,11 +39,12 @@
     "league": {
       "html": "custom-gym-leader.html",
       "startup": [
-        "src/i18n/names/en.json"
+        "src/i18n/names/en.json",
+        "src/league/data/names/en.json"
       ],
       "text": {
-        "baseline": 249440,
-        "ceiling": 261912
+        "baseline": 262997,
+        "ceiling": 276147
       },
       "images": {
         "baseline": 0,

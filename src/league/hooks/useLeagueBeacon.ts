@@ -1,3 +1,5 @@
+import {minuteActivityPayload,acknowledgeMinuteActivity,encodeActivityBeacon} from '@/lib/minuteActivity';
+import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useState } from 'react';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
@@ -49,7 +51,7 @@ function postLeagueBeacon(
   }
   const switched = getPinnedLocale();
   const events = takePendingEvents();
-  const payload = JSON.stringify({
+  const payload = encodeActivityBeacon({
     cid: getClientId(),
     tool: 'league',
     page: currentPage(),
@@ -62,6 +64,8 @@ function postLeagueBeacon(
     ...(switched ? { switched } : {}),
     ref: externalReferrerHost() || undefined,
     ts: capturedAt,
+    attention: attentionPayload('league'),
+    activity: minuteActivityPayload('league'),
     notme: isOptedOut() || undefined,
     events: events.length ? events : undefined,
   });
@@ -73,7 +77,8 @@ function postLeagueBeacon(
   })
     .then(async (res) => {
       if (!res.ok) return null;
-      const data = (await res.json()) as { highlight?: ExportHighlight };
+      const data = (await res.json()) as { highlight?: ExportHighlight;activityAck?:unknown };
+      acknowledgeMinuteActivity('league',data.activityAck);
       return data.highlight ?? null;
     })
     .catch(() => null);
@@ -98,6 +103,12 @@ export function useLeagueBeacon() {
     });
   }, [name, cards, debouncer]);
 
+  useEffect(()=>subscribeAttention('league',()=>{
+    const {name,cards}=useLeagueStore.getState();
+    const summary=summarizeLeague(name,cards);
+    if(summary.seats)debouncer.schedule(()=>{void postLeagueBeacon('progress',summary,describeLeague(cards));});
+  }),[debouncer]);
+
   useEffect(() => {
     const flushIfHidden = () => {
       if (document.visibilityState === 'hidden') debouncer.flush();
@@ -105,9 +116,11 @@ export function useLeagueBeacon() {
     const flush = () => debouncer.flush();
     document.addEventListener('visibilitychange', flushIfHidden);
     window.addEventListener('pagehide', flush);
+    window.addEventListener('blur', flush);
     return () => {
       document.removeEventListener('visibilitychange', flushIfHidden);
       window.removeEventListener('pagehide', flush);
+      window.removeEventListener('blur', flush);
       debouncer.flush();
     };
   }, [debouncer]);

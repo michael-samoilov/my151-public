@@ -1,12 +1,13 @@
+import type {RecordedUsage} from '../../../api/_dashboard';
+import {RecordedUsagePanel} from './RecordedUsagePanel';
 import {FavoriteDetailBody} from './FavoriteDetailBody';
 import type {FavoritePicks,FavoriteUser,FavoriteUsageFunnel} from '../../../api/_favoriteAggregate';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { isOptedOut, setOptedOut, storedClientId } from '@/lib/clientId';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { LeaguePicksPage, PicksDetailPage } from '@/components/admin/PicksDetailPage';
 import { PickerPicksPage } from '@/components/admin/PickerPicksPage';
-import { pickerFace } from '@/components/admin/pickerPicks';
+import { formatPreferenceStrength, pickerFace, preferencePreview } from '@/components/admin/pickerPicks';
 import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
@@ -21,6 +22,7 @@ import { clampedN, type PlatformJoint } from '@/lib/platformStacks';
 import { filteredN, type WhoFilter } from '@/lib/whoOrigin';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById as getLeaguePokemonById } from '@/league/data/catalog';
 import { cn, displayName } from '@/lib/utils';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
@@ -59,7 +61,6 @@ import {
   geoChipLabel,
   uiLanguage,
   TOOL_FILTER_OPTIONS,
-  toolKind,
   uniqueFacetValues,
   type ArchiveFilter,
   type FacetFilters,
@@ -70,9 +71,9 @@ import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
 import { FitNowrap } from '@/components/admin/FitNowrap';
 import { BrowserUsage, PreviewUsageScale } from '@/components/admin/PreviewUsage';
 import { UsageCard } from '@/components/admin/UsageCard';
-import { toolCells, whenShapes, widestRow, type ToolCell } from '@/components/admin/browserUsage';
+import { toolCells, totalTime, whenShapes, widestRow, type CardTime, type UsageSource, type ToolCell } from '@/components/admin/browserUsage';
 import { VirtualRows } from '@/components/admin/VirtualRows';
-import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Monitor, AppWindow } from 'lucide-react';
+import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Compass, MonitorSmartphone } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
 import type { BrowserIndex, BrowserRow } from '../../../api/_dashboard';
 import type { ExportSurveySkip } from '../../../api/_events';
@@ -299,6 +300,8 @@ export interface LeagueSummary {
 }
 
 export interface ApiResponse {
+  recordedUsage?: RecordedUsage;
+  attentionUsage?: RecordedUsage;
   /** The date range the aggregates count, and where its window opens (null for all). */
   range?: DashboardRange;
   rangeStart?: number | null;
@@ -606,19 +609,29 @@ function dexFace(id: number): PopularFace | undefined {
   return p ? { sprite: p.sprite, alt: p.name, name: displayName(p.name) } : undefined;
 }
 
+function leagueFace(id: number): PopularFace | undefined {
+  const p = getLeaguePokemonById(id);
+  return p ? { sprite: p.sprite, alt: p.name, name: displayName(p.name) } : undefined;
+}
+
 /** Grid of small sprites with the pick-count beneath — ~9-10 per row. `face`
  *  finds a sprite by id; the Picker's ids include its own forms. */
-function PopularGrid({ rows, face = dexFace }: { rows: [string, number][]; face?: (id: number) => PopularFace | undefined }) {
+function PopularGrid({ rows, face = dexFace, formatValue = String }: {
+  rows: [string, number][];
+  face?: (id: number) => PopularFace | undefined;
+  formatValue?: (value: number) => string;
+}) {
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
   return (
     <div className="grid grid-cols-9 gap-1">
       {rows.map(([id, n]) => {
         const p = face(Number(id));
+        const label = formatValue(n);
         return (
           <div
             key={id}
             className="flex flex-col items-center"
-            title={p ? `#${id} ${p.name}: ${n}` : `#${id}: ${n}`}
+            title={p ? `#${id} ${p.name}: ${label}` : `#${id}: ${label}`}
           >
             <div className="w-full aspect-square flex items-center justify-center">
               {p ? (
@@ -635,7 +648,7 @@ function PopularGrid({ rows, face = dexFace }: { rows: [string, number][]; face?
                 <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
               )}
             </div>
-            <span className="text-[0.65rem] tabular-nums leading-none">{n}</span>
+            <span className="text-[0.65rem] tabular-nums leading-none">{label}</span>
           </div>
         );
       })}
@@ -696,35 +709,6 @@ interface HeaderRec {
 function middleId(cid: string): string {
   if (cid.length <= 8 || cid.includes('…')) return cid;
   return `${cid.slice(0, 2)}…${cid.slice(-4)}`;
-}
-
-/**
- * Whether the browser showing this dashboard reports analytics. One `?notme`
- * visit silences a browser for good, so the owner can lose their own sessions
- * without noticing. This row shows the state and flips it in place, without
- * clearing site data, which would delete saved selections.
- */
-function ThisBrowserRow() {
-  const [optedOut, setOptedOutState] = useState(isOptedOut);
-  const [cid] = useState(storedClientId);
-  const toggle = () => {
-    setOptedOut(!optedOut);
-    setOptedOutState(isOptedOut());
-  };
-  return (
-    <div data-testid="admin-this-browser" className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border bg-card px-3 py-1.5 text-xs">
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span aria-hidden className={cn('h-2 w-2 shrink-0 rounded-full', optedOut ? 'bg-amber-500' : 'bg-emerald-500')} />
-        <span>
-          This browser: <span className="font-semibold">{optedOut ? 'not counted' : 'counted'}</span>
-          {cid && <span className="text-muted-foreground"> · {middleId(cid)}</span>}
-        </span>
-      </span>
-      <Button variant="outline" size="sm" className="h-6 px-2 text-xs" onClick={toggle}>
-        {optedOut ? 'Count this browser' : 'Stop counting'}
-      </Button>
-    </div>
-  );
 }
 
 const KIND_WORD = { browser: 'Browser', served: 'Served', switched: 'Switched' } as const;
@@ -936,7 +920,7 @@ function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
 function leagueLinesByChain(cards: LeagueCard[]): Map<number, number> {
   const seats = new Map<number, number>();
   for (const { b } of cards.flatMap((c) => c.l)) {
-    const chain = getPokemonById(b[0])?.evolutionChainId ?? -b[0];
+    const chain = getLeaguePokemonById(b[0])?.evolutionChainId ?? -b[0];
     seats.set(chain, (seats.get(chain) ?? 0) + 1);
   }
   return seats;
@@ -1251,7 +1235,7 @@ function UserDetailPage({
 
 /** When over Ago, five who columns, Dex, Gyms, Favs, Total, then the archive button. */
 const PREVIEW_TABLE =
-  'relative flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_auto_auto_auto_1fr] md:gap-x-2 md:gap-y-2';
+  'relative flex w-full flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto_auto_auto_auto_auto_auto] md:gap-x-1 md:gap-y-2';
 
 const FACET_COL: Record<FacetKey, string> = {
   country: 'md:col-start-2',
@@ -1275,9 +1259,9 @@ function facetIcon(key: FacetKey, value: string): ReactNode {
 function facetLeadIcon(key: FacetKey): ReactNode {
   const cls = 'h-3.5 w-3.5';
   if (key === 'country') return <Globe className={cls} />;
-  if (key === 'device') return <DeviceIcon value="Desktop" />;
-  if (key === 'os') return <Monitor className={cls} />;
-  if (key === 'browser') return <AppWindow className={cls} />;
+  if (key === 'device') return <MonitorSmartphone className={cls} />;
+  if (key === 'os') return <span className="text-[0.65rem] font-semibold leading-none">OS</span>;
+  if (key === 'browser') return <Compass className={cls} />;
   return <Languages className={cls} />;
 }
 
@@ -1337,7 +1321,6 @@ function PreviewStatusMenus({
 }: {
   archiveFilter: ArchiveFilter;
   setArchiveFilter: (v: ArchiveFilter) => void;
-  /** Leave out for a list whose rows have no Dex and League pair to filter. */
   toolFilter?: ToolFilter;
   setToolFilter?: (v: ToolFilter) => void;
 }) {
@@ -1386,7 +1369,7 @@ function PreviewPlatformSlot({
 }
 
 /** The text of a card's When cell. */
-const WHEN_TEXT = 'whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1';
+const WHEN_TEXT = 'whitespace-nowrap md:whitespace-normal text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1';
 
 /** Invisible desktop copies of every When shape in the list, in the table's
  *  first column, so it is as wide as the widest. Shares the header's grid
@@ -1439,7 +1422,7 @@ function UserPreviewCard({
   /** Every tool this browser used, whichever list the card is on. */
   cells: ToolCell[];
   /** The browser as a whole: sessions merged across tools, time counted once. */
-  total: { sessions: number; totalMs: number };
+  total: CardTime;
   /** A row of the Picker list. */
   pickerRow?: boolean;
   archived: boolean;
@@ -1466,7 +1449,7 @@ function UserPreviewCard({
       aria-label={sizer ? undefined : `Open user ${middleId(rec.cid)}`}
       className={cn(
         'flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'md:col-span-full md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:gap-y-1 md:py-1.5',
+        'md:col-span-full md:grid md:grid-cols-subgrid md:items-center md:gap-x-1 md:gap-y-1 md:py-1.5',
         archived && 'opacity-70',
         sizer && 'invisible max-md:hidden md:row-start-1 md:h-0 md:overflow-hidden md:py-0',
       )}
@@ -1559,38 +1542,46 @@ function UserPreviewCard({
   );
 }
 
-/** Dashboard entry for picks: a one-row preview of the overall most-picked, with
- *  a button that opens the full per-section page. Kept short so it doesn't run
- *  the dashboard long with every section expanded. */
+/** One-row picks preview. Tools can supply fitted ranking rows and labels,
+ *  while count-based previews retain their existing aggregation. */
 function WhatPeoplePick({
   mostBySection,
+  rankedRows,
+  formatValue,
+  actionLabel = 'Most picked ›',
+  emptyLabel = 'No picks yet.',
   n,
   unit,
   face,
   onOpen,
 }: {
-  mostBySection: Record<string, [string, number][]>;
+  mostBySection?: Record<string, [string, number][]>;
+  rankedRows?: [string, number][];
+  formatValue?: (value: number) => string;
+  actionLabel?: string;
+  emptyLabel?: string;
   n: number;
   unit: string;
   face?: (id: number) => PopularFace | undefined;
   onOpen: () => void;
 }) {
   const top = useMemo<[string, number][]>(() => {
+    if (rankedRows !== undefined) return rankedRows.slice(0, 9);
     const totals: Record<string, number> = {};
-    for (const rows of Object.values(mostBySection)) for (const [id, c] of rows) totals[id] = (totals[id] ?? 0) + c;
+    for (const rows of Object.values(mostBySection ?? {})) for (const [id, c] of rows) totals[id] = (totals[id] ?? 0) + c;
     return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 9);
-  }, [mostBySection]);
+  }, [mostBySection, rankedRows]);
   return (
     <Panel
       title="What people pick"
       sub={[`of ${n} ${unit}`]}
       actions={
         <Button variant="ghost" size="sm" onClick={onOpen}>
-          Most picked ›
+          {actionLabel}
         </Button>
       }
     >
-      {top.length > 0 ? <PopularGrid rows={top} face={face} /> : <p className="text-sm text-muted-foreground">No picks yet.</p>}
+      {top.length > 0 ? <PopularGrid rows={top} face={face} formatValue={formatValue} /> : <p className="text-sm text-muted-foreground">{emptyLabel}</p>}
     </Panel>
   );
 }
@@ -1731,6 +1722,7 @@ export function AdminPage() {
     return n;
   }, [feedbackItems]);
   // A user page fetches the shared feedback list once for its chip and chart.
+  const [summarySource, setSummarySource] = useState<UsageSource>('active');
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
   const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
@@ -1760,6 +1752,17 @@ export function AdminPage() {
   // Open a detail page from the dashboard, remembering the scroll position so
   // Back returns the reader to exactly where they were, not the top.
   const [dashScrollY, setDashScrollY] = useState(0);
+  const tabScrollY = useRef<Partial<Record<AdminNavKey, number>>>({});
+  const dashboardTab: AdminNavKey = page === 'analytics' ? tool : page;
+  const previousTab = useRef(dashboardTab);
+  useLayoutEffect(() => {
+    if (previousTab.current !== dashboardTab && !detail) {
+      // Restore after the new tab's measured cards settle, as detail Back does.
+      queueMicrotask(() => window.scrollTo(0, tabScrollY.current[dashboardTab] ?? 0));
+    }
+    previousTab.current = dashboardTab;
+  }, [dashboardTab, detail]);
+
   const openDetail = useCallback((d: Detail) => {
     setDashScrollY(window.scrollY);
     setDetail(d);
@@ -2010,7 +2013,9 @@ export function AdminPage() {
 
   const navKey: AdminNavKey = page === 'feedback' ? 'feedback' : page === 'search' ? 'search' : tool;
   const onNav = (k: AdminNavKey) => {
+    if (!detail && k !== navKey) tabScrollY.current[navKey] = window.scrollY;
     if (detail) {
+      tabScrollY.current[k] = 0;
       // A nav press opens the tab at its top; Back is the way to the old place.
       setDashScrollY(0);
       setDetail(null);
@@ -2130,7 +2135,6 @@ export function AdminPage() {
           </div>
         )}
 
-        {!detail && <ThisBrowserRow />}
 
         {!detail && page === 'feedback' &&
           (token ? (
@@ -2295,7 +2299,7 @@ export function AdminPage() {
                     )}
                     {showFavoriteFunnel && favoriteSankey && <div>
                       {tool === 'all' && <div className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Favorite Pokémon Picker</div>}
-                      <FlowSankey labelHalo nodes={favoriteSankey.nodes} links={favoriteSankey.links} ariaLabel={favoriteSankey.ariaLabel}/>
+                      <FlowSankey nodes={favoriteSankey.nodes} links={favoriteSankey.links} ariaLabel={favoriteSankey.ariaLabel}/>
                     </div>}
                   </div>
                 )}
@@ -2328,6 +2332,10 @@ export function AdminPage() {
                 />
               </Panel>
             )}
+
+            {data.recordedUsage && <Panel title="Recorded time and sessions" sub={["non-bounced browsers"]}>
+              <RecordedUsagePanel data={data.recordedUsage[tool]} tools={tool === 'all' ? data.recordedUsage : undefined} active={data.attentionUsage?.[tool]} activeTools={tool === 'all' ? data.attentionUsage : undefined} />
+            </Panel>}
 
             <Panel
               title="Who"
@@ -2370,12 +2378,16 @@ export function AdminPage() {
                 mostBySection={data.league.picks.byType}
                 n={data.league.users}
                 unit="leagues"
+                face={leagueFace}
                 onOpen={openLeaguePicks}
               />
             )}
             {tool === 'favorites' && data.favoritePicks && (
               <WhatPeoplePick
-                mostBySection={{ charts: data.favoritePicks.top.map(([id, n]) => [String(id), n]) }}
+                rankedRows={preferencePreview(data.favoritePicks.preference)}
+                formatValue={formatPreferenceStrength}
+                actionLabel="Preference strength ›"
+                emptyLabel={data.favoritePicks.charts > 0 ? 'Preference strength unavailable.' : 'No picks yet.'}
                 n={data.favoritePicks.charts}
                 unit="charts"
                 face={pickerFace}
@@ -2396,9 +2408,7 @@ export function AdminPage() {
                 const archivedOf = (row: BrowserRow) => archiveOverride[bareCid(row.cid)] ?? row.archived;
                 const listed = list.filter((row) => {
                   if (!matchesArchiveFilter(archivedOf(row), archiveFilter)) return false;
-                  if (showPicker) return true;
-                  const both = toolKind(!!row.dex, !!row.league);
-                  return both !== null && matchesToolFilter(both, toolFilter);
+                  return matchesToolFilter(row, toolFilter);
                 });
                 const rows = listed.filter((row) => matchesFacetFilters(row, facetFilters));
                 const sizer = widestRow(rows);
@@ -2412,18 +2422,24 @@ export function AdminPage() {
                     {list.length > 0 && rows.length === 0 && !loading && (
                       <p className="text-sm text-muted-foreground">No users match these filters.</p>
                     )}
+                    <div className="mb-3 space-y-2">
+                      <Seg ariaLabel="Browser summary source" options={[{key: 'active', label: 'Active'}, {key: 'legacy', label: 'Legacy spans'}]} value={summarySource} onChange={setSummarySource} />
+                      <p className="text-xs text-muted-foreground">{summarySource === 'active'
+                        ? 'Idle gaps <5 min between interactions included in session length'
+                        : 'Idle gaps <30 min between interactions included in session length'}</p>
+                    </div>
                     <div className={PREVIEW_TABLE}>
                       <div
                         data-preview-header
                         // Sticks under the page header on a phone, and under the date-and-tab bar on desktop.
                         // Its ::before covers the panel's padding, where the rows' shadows would show beside it.
-                        className="sticky top-[var(--admin-header-h,0px)] z-10 -mt-2 flex flex-wrap items-center gap-1.5 border-b border-border bg-card py-2 before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-card md:top-[calc(var(--admin-header-h,0px)+var(--admin-bar-h,0px))] md:col-span-full md:row-start-1 md:-mt-1.5 md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:px-2.5 md:pb-1.5 md:pt-1.5"
+                        className="sticky top-[var(--admin-header-h,0px)] z-10 -mt-2 flex flex-wrap items-center gap-1.5 border-b border-border bg-card py-2 before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-card md:top-[calc(var(--admin-header-h,0px)+var(--admin-bar-h,0px))] md:col-span-full md:row-start-1 md:-mt-1.5 md:grid md:grid-cols-subgrid md:items-center md:gap-x-1 md:px-2.5 md:pb-1.5 md:pt-1.5"
                       >
                         <PreviewStatusMenus
                           archiveFilter={archiveFilter}
                           setArchiveFilter={setArchiveFilter}
-                          toolFilter={showPicker ? undefined : toolFilter}
-                          setToolFilter={showPicker ? undefined : setToolFilter}
+                          toolFilter={toolFilter}
+                          setToolFilter={setToolFilter}
                         />
                         <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-1 md:row-start-1 md:flex">When</div>
                         <PreviewFacetMenus listed={listed} facets={facetFilters} setFacets={setFacetFilters} />
@@ -2433,8 +2449,8 @@ export function AdminPage() {
                           <UserPreviewCard
                             sizer
                             rec={sizer}
-                            cells={toolCells(sizer)}
-                            total={sizer.total}
+                            cells={toolCells(sizer, summarySource)}
+                            total={totalTime(sizer, summarySource)}
                             archived={false}
                             reports={Math.max(0, ...rows.map((row) => reportsByCid.get(bareCid(row.cid)) ?? 0))}
                           />
@@ -2443,15 +2459,15 @@ export function AdminPage() {
                         <VirtualRows
                           items={rows}
                           keyOf={(row) => `${listKey}:${row.cid}`}
-                          className="flex flex-col gap-2 md:col-span-full md:grid md:grid-cols-subgrid md:gap-x-2 md:gap-y-2"
+                          className="flex flex-col gap-2 md:col-span-full md:grid md:grid-cols-subgrid md:gap-x-1 md:gap-y-2"
                           render={(row) => {
                             const archived = archivedOf(row);
                             const split = row.cid.indexOf('::');
                             return (
                               <UserPreviewCard
                                 rec={row}
-                                cells={toolCells(row)}
-                                total={row.total}
+                                cells={toolCells(row, summarySource)}
+                                total={totalTime(row, summarySource)}
                                 pickerRow={showPicker}
                                 archived={archived}
                                 reports={reportsByCid.get(bareCid(row.cid)) ?? 0}

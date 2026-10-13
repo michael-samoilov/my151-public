@@ -6,13 +6,44 @@
       "width": 240.60009765625,
       "height": 240.5999755859375
     },
-    "glyph": {
-      "x": 3138.2001953125,
+    "sourceInk": {
+      "x": 3138.199951171875,
       "y": 660.2000122070312,
       "width": 240.60009765625,
       "height": 240.5999755859375
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "201e5b8c3d00b197938e9bb61438e74f5008a76507a3690988529f22a399ced1",
+      "gameBounds": {
+        "x": 10,
+        "y": 10,
+        "width": 40,
+        "height": 40
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 40,
+      "scale": 0.16625097158999816,
+      "translation": {
+        "x": -519.728790926009,
+        "y": -107.75888332599357
+      },
+      "inkBounds": {
+        "x": 2,
+        "y": 2.000010147154029,
+        "width": 40,
+        "height": 39.99997970569195
+      }
+    }
   },
   "fighting": {
     "original": {
@@ -21,13 +52,44 @@
       "width": 123.41715240478516,
       "height": 135.04803466796875
     },
-    "glyph": {
+    "sourceInk": {
       "x": 66.72733306884766,
       "y": 64.45137786865234,
       "width": 123.41715240478516,
-      "height": 135.04803466796875
+      "height": 135.04804229736328
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "2d28c8a1d64904cd4a5e234393094ce214a327c1a8e1d9e4bc409217df5fbdb5",
+      "gameBounds": {
+        "x": 14,
+        "y": 12,
+        "width": 32,
+        "height": 35
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 29.5
+      },
+      "targetMaxExtent": 35,
+      "scale": 0.25916702978139616,
+      "translation": {
+        "x": -11.286353123100213,
+        "y": -12.703672167537036
+      },
+      "inkBounds": {
+        "x": 6.007171593586968,
+        "y": 4.0000000000000036,
+        "width": 31.985656812826065,
+        "height": 35
+      }
+    }
   },
   "flying": {
     "original": {
@@ -36,13 +98,44 @@
       "width": 192.70947265625,
       "height": 209.98382568359375
     },
-    "glyph": {
+    "sourceInk": {
       "x": 2595.38818359375,
       "y": 667.5067749023438,
       "width": 192.70947265625,
       "height": 209.98382568359375
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "7860d8279906e45b1936e50bbb6b76a504fe19e666b1ba44daff28bbe60d2583",
+      "gameBounds": {
+        "x": 17,
+        "y": 13,
+        "width": 31,
+        "height": 34
+      },
+      "gameCenter": {
+        "x": 32.5,
+        "y": 30
+      },
+      "targetMaxExtent": 34,
+      "scale": 0.16191723285978998,
+      "translation": {
+        "x": -411.33956516368124,
+        "y": -103.08084990735021
+      },
+      "inkBounds": {
+        "x": 8.89850772081536,
+        "y": 5,
+        "width": 31.202984558369362,
+        "height": 34
+      }
+    }
   },
   "poison": {
     "original": {
@@ -51,13 +144,44 @@
       "width": 244.800048828125,
       "height": 244.5999755859375
     },
-    "glyph": {
-      "x": 2569.30029296875,
+    "sourceInk": {
+      "x": 2569.300048828125,
       "y": 1263.199951171875,
-      "width": 244.800048828125,
-      "height": 244.5999755859375
+      "width": 244.80029296875,
+      "height": 244.60009765625
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "758c04bb7a4b39ad7150ee4bb5b742d61e18b78ee2bc5fb0d9f184d85c38b3fe",
+      "gameBounds": {
+        "x": 10,
+        "y": 11,
+        "width": 40,
+        "height": 38
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 40,
+      "scale": 0.1633984972604024,
+      "translation": {
+        "x": -417.81976698959414,
+        "y": -204.38861795428753
+      },
+      "inkBounds": {
+        "x": 2,
+        "y": 2.016355806610534,
+        "width": 40,
+        "height": 39.967288386778925
+      }
+    }
   },
   "ground": {
     "original": {
@@ -66,13 +190,44 @@
       "width": 202.8988037109375,
       "height": 206.2998046875
     },
-    "glyph": {
-      "x": 337.43914794921875,
+    "sourceInk": {
+      "x": 337.4390563964844,
       "y": 1282.300048828125,
-      "width": 202.8988037109375,
-      "height": 206.2998046875
+      "width": 202.89877319335938,
+      "height": 206.2999267578125
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "8b402298a27637722d20b5f5bf2c46811739022c1e15eac5101e4e197aed6401",
+      "gameBounds": {
+        "x": 13,
+        "y": 13,
+        "width": 34,
+        "height": 34
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 34,
+      "scale": 0.16480858977674084,
+      "translation": {
+        "x": -50.33258535901288,
+        "y": -206.33406271800922
+      },
+      "inkBounds": {
+        "x": 5.280269661285828,
+        "y": 4.999999999999972,
+        "width": 33.43946067742835,
+        "height": 34
+      }
+    }
   },
   "rock": {
     "original": {
@@ -81,13 +236,44 @@
       "width": 143.48001098632812,
       "height": 143.46998596191406
     },
-    "glyph": {
-      "x": 56.26002883911133,
+    "sourceInk": {
+      "x": 56.2599983215332,
       "y": 56.2599983215332,
-      "width": 143.48001098632812,
-      "height": 143.46998596191406
+      "width": 143.48000717163086,
+      "height": 143.46999740600586
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "968ba5a79c7b19b3722e27b56e640c89bd48aa8dcdf52ad71616053ba6dc23e7",
+      "gameBounds": {
+        "x": 12,
+        "y": 12,
+        "width": 36,
+        "height": 36
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 36,
+      "scale": 0.25090603708248205,
+      "translation": {
+        "x": -10.115973225122985,
+        "y": -10.114717469810444
+      },
+      "inkBounds": {
+        "x": 4.000000000000002,
+        "y": 4.001255755312544,
+        "width": 36,
+        "height": 35.99748848937491
+      }
+    }
   },
   "bug": {
     "original": {
@@ -96,13 +282,44 @@
       "width": 140.3400421142578,
       "height": 144.31494140625
     },
-    "glyph": {
-      "x": 57.820003509521484,
-      "y": 56.90709686279297,
-      "width": 140.35999298095703,
-      "height": 144.31494140625
+    "sourceInk": {
+      "x": 57.82000732421875,
+      "y": 56.90713882446289,
+      "width": 140.3599853515625,
+      "height": 144.31489181518555
     },
-    "mirrorAxis": 128
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": 22,
+    "calibration": {
+      "referenceSha256": "d2e0c13e0f2a5e3f6516730ad7f7416840347c3546572fd964091ae99cac2e6f",
+      "gameBounds": {
+        "x": 13,
+        "y": 13,
+        "width": 34,
+        "height": 34
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 34,
+      "scale": 0.23559592203098162,
+      "translation": {
+        "x": -8.156278019965647,
+        "y": -8.407089841494408
+      },
+      "inkBounds": {
+        "x": 5.465879917421779,
+        "y": 4.999999999999998,
+        "width": 33.06824016515644,
+        "height": 34
+      }
+    }
   },
   "ghost": {
     "original": {
@@ -111,13 +328,44 @@
       "width": 245.30889892578125,
       "height": 199.9000244140625
     },
-    "glyph": {
-      "x": 869.1730346679688,
+    "sourceInk": {
+      "x": 869.173095703125,
       "y": 1898.4000244140625,
-      "width": 245.30889892578125,
+      "width": 245.308837890625,
       "height": 199.9000244140625
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "fe1c71c13e707bbe250c487cdac184897718a0de6dbf7041a273a8eeee533fbb",
+      "gameBounds": {
+        "x": 10,
+        "y": 14,
+        "width": 40,
+        "height": 32
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 40,
+      "scale": 0.1630597590529317,
+      "translation": {
+        "x": -139.72715556064233,
+        "y": -303.85047547485283
+      },
+      "inkBounds": {
+        "x": 2,
+        "y": 5.702175092183893,
+        "width": 40,
+        "height": 32.5956498156322
+      }
+    }
   },
   "steel": {
     "original": {
@@ -126,13 +374,44 @@
       "width": 210.5662841796875,
       "height": 204.3641357421875
     },
-    "glyph": {
+    "sourceInk": {
       "x": 2019.8104248046875,
-      "y": 1906.2999267578125,
+      "y": 1906.300048828125,
       "width": 210.5662841796875,
-      "height": 204.3641357421875
+      "height": 204.36376953125
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "e3abd8808c74925db96bcb14930a9441bbaef7468be0bf92b7765a0063353a1e",
+      "gameBounds": {
+        "x": 13,
+        "y": 13,
+        "width": 34,
+        "height": 33
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 29.5
+      },
+      "targetMaxExtent": 34,
+      "scale": 0.16146934506849148,
+      "translation": {
+        "x": -321.13746645572445,
+        "y": -302.8082623992802
+      },
+      "inkBounds": {
+        "x": 5,
+        "y": 5.00075798903049,
+        "width": 34,
+        "height": 32.99848402193907
+      }
+    }
   },
   "fire": {
     "original": {
@@ -141,13 +420,44 @@
       "width": 161.86004638671875,
       "height": 219.1943359375
     },
-    "glyph": {
+    "sourceInk": {
       "x": 910.7999877929688,
-      "y": 662.9421997070312,
-      "width": 161.86004638671875,
-      "height": 219.1943359375
+      "y": 662.942138671875,
+      "width": 161.86041259765625,
+      "height": 219.19427490234375
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "9856958805631302676110e687d29a1e2d974b33ea9ff8fcc8e200b1cfa770da",
+      "gameBounds": {
+        "x": 17,
+        "y": 12,
+        "width": 26,
+        "height": 36
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 36,
+      "scale": 0.16423786623094447,
+      "translation": {
+        "x": -140.87965095443712,
+        "y": -104.88020229004765
+      },
+      "inkBounds": {
+        "x": 8.708195603850328,
+        "y": 4,
+        "width": 26.583608792299344,
+        "height": 36
+      }
+    }
   },
   "water": {
     "original": {
@@ -156,13 +466,44 @@
       "width": 93.54790496826172,
       "height": 155.74465942382812
     },
-    "glyph": {
-      "x": 81.37826538085938,
-      "y": 50.50535202026367,
-      "width": 93.24346923828125,
-      "height": 155.74465942382812
+    "sourceInk": {
+      "x": 81.37828826904297,
+      "y": 50.50571060180664,
+      "width": 93.2434310913086,
+      "height": 155.74428939819336
     },
-    "mirrorAxis": 128
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": 22,
+    "calibration": {
+      "referenceSha256": "ffb98c212555575e83d56fa83e77dc49772e51d17cd1c85bc232c673faca6987",
+      "gameBounds": {
+        "x": 18,
+        "y": 10,
+        "width": 24,
+        "height": 40
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 40,
+      "scale": 0.25683124661946033,
+      "translation": {
+        "x": -10.87440054702438,
+        "y": -10.971444615263692
+      },
+      "inkBounds": {
+        "x": 10.026086676871731,
+        "y": 2.0000000000000018,
+        "width": 23.947826646256534,
+        "height": 40
+      }
+    }
   },
   "grass": {
     "original": {
@@ -171,13 +512,44 @@
       "width": 238.02493286132812,
       "height": 245.6005859375
     },
-    "glyph": {
-      "x": 308.1904602050781,
-      "y": 636.3994140625,
-      "width": 238.02493286132812,
-      "height": 245.6005859375
+    "sourceInk": {
+      "x": 308.19049072265625,
+      "y": 636.3993530273438,
+      "width": 238.02490234375,
+      "height": 245.60064697265625
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "815bbc7863567202e33a5698826554364afb898f67420e47c170c0fc2944a109",
+      "gameBounds": {
+        "x": 10,
+        "y": 10,
+        "width": 40,
+        "height": 41
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30.5
+      },
+      "targetMaxExtent": 41,
+      "scale": 0.16693767099304385,
+      "translation": {
+        "x": -49.31626416124969,
+        "y": -104.23902581586468
+      },
+      "inkBounds": {
+        "x": 2.1323385821938317,
+        "y": 2,
+        "width": 39.73532283561233,
+        "height": 41
+      }
+    }
   },
   "electric": {
     "original": {
@@ -186,13 +558,44 @@
       "width": 143.09619140625,
       "height": 222.2628173828125
     },
-    "glyph": {
+    "sourceInk": {
       "x": 2053.45556640625,
-      "y": 661.4076538085938,
-      "width": 143.09619140625,
+      "y": 661.4075927734375,
+      "width": 143.096435546875,
       "height": 222.2628173828125
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "0fef3ef85716ae092f794c77c16bc907e7efad8a2a8cc5b5a5f5175db5cf0c95",
+      "gameBounds": {
+        "x": 18,
+        "y": 11,
+        "width": 24,
+        "height": 38
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 38,
+      "scale": 0.17096876772938147,
+      "translation": {
+        "x": -341.30927840147365,
+        "y": -110.08004110333115
+      },
+      "inkBounds": {
+        "x": 9.767489374041986,
+        "y": 3,
+        "width": 24.465021251916077,
+        "height": 38
+      }
+    }
   },
   "psychic": {
     "original": {
@@ -201,13 +604,44 @@
       "width": 138.8336181640625,
       "height": 155.1650390625
     },
-    "glyph": {
-      "x": 58.52519607543945,
-      "y": 50.390342712402344,
-      "width": 138.9496078491211,
-      "height": 155.1650390625
+    "sourceInk": {
+      "x": 58.52518844604492,
+      "y": 50.39032745361328,
+      "width": 138.9496192932129,
+      "height": 155.16504669189453
     },
-    "mirrorAxis": 128
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": 22,
+    "calibration": {
+      "referenceSha256": "8151448da03de4c09603ea5b4fe2c52f0e2648af94e8f0570f16007d1dde5587",
+      "gameBounds": {
+        "x": 14,
+        "y": 13,
+        "width": 32,
+        "height": 34
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 34,
+      "scale": 0.2191215143157372,
+      "translation": {
+        "x": -6.047553414473242,
+        "y": -6.041604858501607
+      },
+      "inkBounds": {
+        "x": 6.776574503438008,
+        "y": 5.000000000000002,
+        "width": 30.446850993123984,
+        "height": 34
+      }
+    }
   },
   "ice": {
     "original": {
@@ -216,13 +650,44 @@
       "width": 194.10006713867188,
       "height": 238.89990234375
     },
-    "glyph": {
-      "x": 341.8999328613281,
-      "y": 1878.85009765625,
-      "width": 194.10006713867188,
-      "height": 238.89990234375
+    "sourceInk": {
+      "x": 341.8999938964844,
+      "y": 1878.8499755859375,
+      "width": 194.10000610351562,
+      "height": 238.9000244140625
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "59127775fdf83488aeeeee9388ac6112736e6d490493e1cf144ef815c9f6c372",
+      "gameBounds": {
+        "x": 14,
+        "y": 10,
+        "width": 32,
+        "height": 40
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 40,
+      "scale": 0.16743405572312473,
+      "translation": {
+        "x": -51.495178248697414,
+        "y": -312.5834715076474
+      },
+      "inkBounds": {
+        "x": 5.750524381102551,
+        "y": 2,
+        "width": 32.498951237794884,
+        "height": 40
+      }
+    }
   },
   "dragon": {
     "original": {
@@ -231,13 +696,44 @@
       "width": 236.65869140625,
       "height": 242.1966552734375
     },
-    "glyph": {
+    "sourceInk": {
       "x": 2573.420654296875,
       "y": 1877.2032470703125,
       "width": 236.65869140625,
       "height": 242.1966552734375
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "af7f697602ff6250cce265220651222e08e8211cc38549ae8ae050b06f2e6bf8",
+      "gameBounds": {
+        "x": 11,
+        "y": 10,
+        "width": 38,
+        "height": 40
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 30
+      },
+      "targetMaxExtent": 40,
+      "scale": 0.16515504706223302,
+      "translation": {
+        "x": -422.55609792976577,
+        "y": -308.0295906152741
+      },
+      "inkBounds": {
+        "x": 2.4573113415571015,
+        "y": 2,
+        "width": 39.0853773168857,
+        "height": 40
+      }
+    }
   },
   "dark": {
     "original": {
@@ -246,13 +742,44 @@
       "width": 212.199951171875,
       "height": 153.550048828125
     },
-    "glyph": {
+    "sourceInk": {
       "x": 1452.5,
       "y": 1941.550048828125,
       "width": 212.199951171875,
       "height": 153.550048828125
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "a1309de1544e307e9d466bdc8e08b14a3d47d362abf1f99616a75f1c3dafe001",
+      "gameBounds": {
+        "x": 13,
+        "y": 20,
+        "width": 34,
+        "height": 25
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 32.5
+      },
+      "targetMaxExtent": 34,
+      "scale": 0.16022623856525356,
+      "translation": {
+        "x": -227.72861151603078,
+        "y": -298.8886346875356
+      },
+      "inkBounds": {
+        "x": 5,
+        "y": 12.198626622379265,
+        "width": 34,
+        "height": 24.60274675524149
+      }
+    }
   },
   "fairy": {
     "original": {
@@ -261,12 +788,43 @@
       "width": 199.25341796875,
       "height": 193.14404296875
     },
-    "glyph": {
+    "sourceInk": {
       "x": 3158.67333984375,
-      "y": 1916.811279296875,
+      "y": 1916.8114013671875,
       "width": 199.25341796875,
-      "height": 193.14404296875
+      "height": 193.1439208984375
     },
-    "mirrorAxis": null
+    "glyph": {
+      "x": 0,
+      "y": 0,
+      "width": 44,
+      "height": 44
+    },
+    "mirrorAxis": null,
+    "calibration": {
+      "referenceSha256": "44b04797c47a387f0d297413e666b9b1f060441d647e029478b846e670b1176a",
+      "gameBounds": {
+        "x": 14,
+        "y": 16,
+        "width": 32,
+        "height": 32
+      },
+      "gameCenter": {
+        "x": 30,
+        "y": 32
+      },
+      "targetMaxExtent": 32,
+      "scale": 0.1605995035177702,
+      "translation": {
+        "x": -501.2813701537233,
+        "y": -299.3483682986539
+      },
+      "inkBounds": {
+        "x": 5.999999999999943,
+        "y": 8.490591098117761,
+        "width": 32,
+        "height": 31.01881780376454
+      }
+    }
   }
 }

@@ -15,7 +15,10 @@ preview and layout options.
   name, theme, TM reward, badge name) and a team mode
   (`[data-export-team="story"|"rematch"|"both"]`). A card export has neither.
 - Card export only: a team-order setting
-  (`[data-export-card-order="fixed"|"first-last"]`, with `aria-pressed`). Its
+  (`[data-export-card-order="fixed"|"first-last"]`, with `aria-pressed`). First & last
+  packs occupied Pokémon against the right edge with no empty seats between them,
+  preserving the original rightmost Pokémon and introduction order. Fixed columns
+  and completely empty rows retain their placeholders. Its
   preview frame key is `card:<i>:<order>`.
 - Save (`[data-league-export-confirm]`) shares or downloads `my151-league.png`
   or `my151-trainer-card.png`. Both paint the team sprites at 1× (96 px) and

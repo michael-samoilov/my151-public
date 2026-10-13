@@ -1,23 +1,25 @@
-import { Check, Download, Loader2, X } from 'lucide-react';
+import { Check, Download, X } from 'lucide-react';
+import { PokeBallSpinner } from '@/components/shared/PokeBallSpinner';
 import { useId } from 'react';
 import { Button } from '@/components/ui/button';
+import { useT, type NoArgKey } from '@/i18n';
 import { ExportSettingsScroll } from '@/components/export/ExportSettingsScroll';
 import type { CardTeamOrder, LeagueHomeExportLayout, LeagueHomeTeamMode } from '../export/exportOptions';
 
-const TEAM_OPTIONS: { mode: LeagueHomeTeamMode; label: string; fill: 'left' | 'right' | 'both' }[] = [
-  { mode: 'story', label: 'Story', fill: 'left' },
-  { mode: 'rematch', label: 'Rematch', fill: 'right' },
-  { mode: 'both', label: 'Story and Rematch', fill: 'both' },
+const TEAM_OPTIONS: { mode: LeagueHomeTeamMode; label: NoArgKey; fill: 'left' | 'right' | 'both' }[] = [
+  { mode: 'story', label: 'leagueExport.team.story', fill: 'left' },
+  { mode: 'rematch', label: 'leagueExport.team.rematch', fill: 'right' },
+  { mode: 'both', label: 'leagueExport.team.both', fill: 'both' },
 ];
 
 const DETAIL_OPTIONS: {
   key: 'showLeagueName' | 'showTheme' | 'showTmReward' | 'showBadgeName';
-  title: string;
+  title: NoArgKey;
 }[] = [
-  { key: 'showLeagueName', title: 'League Name' },
-  { key: 'showTheme', title: 'Theme' },
-  { key: 'showTmReward', title: 'TM Reward' },
-  { key: 'showBadgeName', title: 'Badge Name' },
+  { key: 'showLeagueName', title: 'leagueExport.detail.leagueName' },
+  { key: 'showTheme', title: 'leagueExport.detail.theme' },
+  { key: 'showTmReward', title: 'leagueExport.detail.tmReward' },
+  { key: 'showBadgeName', title: 'leagueExport.detail.badgeName' },
 ];
 
 export function LeagueExportSettingsPane({
@@ -28,6 +30,7 @@ export function LeagueExportSettingsPane({
   onCardTeamOrder,
   busy,
   onExport,
+  failed = false,
   onClose,
   mobileSheet = false,
 }: {
@@ -38,20 +41,23 @@ export function LeagueExportSettingsPane({
   onCardTeamOrder: (next: CardTeamOrder) => void;
   busy: boolean;
   onExport: () => void;
+  /** The last save failed. */
+  failed?: boolean;
   onClose: () => void;
   mobileSheet?: boolean;
 }) {
+  const t = useT();
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-background">
       {!mobileSheet && (
         <div className="shrink-0 border-b">
           <div className="flex h-11 items-center justify-between px-3 py-2">
-            <span className="text-sm font-semibold text-foreground">Export</span>
+            <span className="text-sm font-semibold text-foreground">{t('export.title')}</span>
             <button
               type="button"
               onClick={onClose}
               className="shrink-0 cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Close export"
+              aria-label={t('export.close')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -64,14 +70,15 @@ export function LeagueExportSettingsPane({
           <div className={mobileSheet ? 'space-y-2 px-3 pb-2 pt-1' : 'space-y-4 px-3 pb-2 pt-3'}>
             <div>
               <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                Details
+                {t('leagueExport.details')}
               </h3>
               <div className={mobileSheet ? 'grid grid-cols-2 gap-1' : 'space-y-1'}>
                 {DETAIL_OPTIONS.map(({ key, title }) => (
                   <LayoutToggle
                     key={key}
                     on={layout[key]}
-                    title={title}
+                    id={key}
+                    title={t(title)}
                     compact={mobileSheet}
                     onClick={() => onLayout({ ...layout, [key]: !layout[key] })}
                   />
@@ -80,14 +87,14 @@ export function LeagueExportSettingsPane({
             </div>
             <div>
               <h3 className="mb-1 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
-                Teams
+                {t('leagueExport.teams')}
               </h3>
               <div className="grid grid-cols-3 gap-1">
                 {TEAM_OPTIONS.map(({ mode, label, fill }) => (
                   <TeamModeOption
                     key={mode}
                     selected={layout.teamMode === mode}
-                    label={label}
+                    label={t(label)}
                     fill={fill}
                     onClick={() => onLayout({ ...layout, teamMode: mode })}
                   />
@@ -99,7 +106,7 @@ export function LeagueExportSettingsPane({
       ) : (
         <div className={mobileSheet ? 'px-3 pb-2 pt-1' : 'min-h-0 flex-1 px-3 pb-2 pt-3'}>
           <h3 className="mb-1 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
-            Team order
+            {t('leagueExport.teamOrder')}
           </h3>
           <div className="grid grid-cols-2 gap-1">
             {(['fixed', 'first-last'] as const).map((order) => (
@@ -114,35 +121,34 @@ export function LeagueExportSettingsPane({
                 }`}
               >
                 <CardOrderGlyph order={order} />
-                {order === 'fixed' ? 'Fixed columns' : 'First & last'}
+                {t(order === 'fixed' ? 'leagueExport.order.fixed' : 'leagueExport.order.firstLast')}
               </button>
             ))}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            {cardTeamOrder === 'fixed'
-              ? 'Keep each evolution line in one column.'
-              : 'Keep the first Pokémon first and the last Pokémon last.'}
+            {t(cardTeamOrder === 'fixed' ? 'leagueExport.order.fixedHint' : 'leagueExport.order.firstLastHint')}
           </p>
         </div>
       )}
 
       <div className={`flex shrink-0 flex-col gap-2 border-t pt-2 ${mobileSheet ? 'px-3 pb-3' : 'px-4 pb-4'}`}>
+        {failed && <p role="alert" className="text-sm text-destructive">{t('favorites.export.error')}</p>}
         <Button type="button" disabled={busy} onClick={onExport} data-league-export-confirm>
           {busy ? (
             <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Preparing…
+              <PokeBallSpinner tone="line" className="mr-2 size-4" />
+              {t('export.preparing')}
             </>
           ) : (
             <>
               <Download className="mr-2 size-4" />
-              Save image
+              {t('export.save')}
             </>
           )}
         </Button>
         {!mobileSheet && (
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
+            {t('export.cancel')}
           </Button>
         )}
       </div>
@@ -152,11 +158,14 @@ export function LeagueExportSettingsPane({
 
 function LayoutToggle({
   on,
+  id,
   title,
   onClick,
   compact = false,
 }: {
   on: boolean;
+  /** Language-neutral name for tests and the verify harness. */
+  id: string;
   title: string;
   onClick: () => void;
   compact?: boolean;
@@ -165,7 +174,7 @@ function LayoutToggle({
     <button
       type="button"
       onClick={onClick}
-      data-export-detail={title}
+      data-export-detail={id}
       className={`w-full cursor-pointer rounded-md text-left transition-colors ${
         compact ? 'px-2 py-1.5' : 'px-3 py-2'
       } ${on ? 'bg-primary/10' : 'hover:bg-muted'}`}

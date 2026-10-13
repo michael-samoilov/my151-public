@@ -1,3 +1,4 @@
+import {mergeAttention,type AttentionPayload} from './_attention.js';
 /**
  * The gym leader maker's per-browser record, and the pure merge that builds
  * it from one beacon. Mirrors the dex builder's ClientRecord (see _shared.ts)
@@ -9,7 +10,7 @@
  * serving this file as a route.
  */
 
-import { alignSessionMs, isSubsetRegression, sessionTarget } from './_sessionize.js';
+import { alignSessionMs, isSubsetRegression, sessionTarget, checkpointRecording, endStampedSpans, retiredCapture, sanitizeRecordingFields, type RecordingFields } from './_sessionize.js';
 
 /** A quiet gap longer than this between two beacons starts a new session. */
 export const LEAGUE_SESSION_GAP_MS = 30 * 60_000;
@@ -123,7 +124,7 @@ export interface LeagueSessionEntry {
   cards?: LeagueCardShape[];
 }
 
-export interface LeagueRecord {
+export interface LeagueRecord extends RecordingFields {
   cid: string;
   firstTs: number;
   firstAt: string;
@@ -350,6 +351,8 @@ export function parseCards(v: unknown): LeagueCardShape[] | undefined {
 }
 
 export interface LeagueBeaconInput {
+  attention?: AttentionPayload;
+  receivedAt?: number;
   cid: string;
   kind: LeagueBeaconKind;
   exportKind?: LeagueExportKind;
@@ -386,6 +389,7 @@ function memberIds(cards?: LeagueCardShape[]): number[] {
 
 export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeaconInput): LeagueRecord {
   const at = new Date(b.now).toISOString();
+  const oldSpans = existing ? endStampedSpans(existing) : [];
   const rec: LeagueRecord = existing
     ? { ...existing, sessionMs: [...existing.sessionMs], sessionLog: [...existing.sessionLog] }
     : {
@@ -407,6 +411,8 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
         exportsLeague: 0,
       };
 
+  const attention=mergeAttention(existing?.attention,b.attention,b.receivedAt ?? b.now);
+  if(attention)rec.attention=attention;
   rec.submits += 1;
   rec.maxCards = Math.max(rec.maxCards, b.summary.cards);
   rec.maxSeats = Math.max(rec.maxSeats, b.summary.seats);
@@ -452,53 +458,58 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
   const log = rec.sessionLog;
   const ms = alignSessionMs(log.length, rec.sessionMs);
 
-  if (log.length === 0) {
-    log.push(makeEntry(b.now, b.cards));
-    ms.push(0);
-  } else {
-    const target = sessionTarget(
-      log.map((s) => s.ts),
-      ms,
-      b.now,
-      LEAGUE_SESSION_GAP_MS,
-    );
-
-    // Old client: arrival-stamped, would open a new sitting, board is a
-    // strict subset of the stored league. A delayed keepalive from the first
-    // sitting, not a user wiping their team.
-    if (
-      target.kind === 'insert' &&
-      !b.capturedKnown &&
-      existing &&
-      b.cards &&
-      rec.latestCards &&
-      isSubsetRegression(memberIds(b.cards), memberIds(rec.latestCards))
-    ) {
-      if (b.now > rec.lastTs) {
-        rec.lastTs = b.now;
-        rec.lastAt = at;
-      }
-      rec.sessionMs = ms;
-      rec.sessionLog = log;
-      return rec;
-    }
-
-    if (target.kind === 'join') {
-      const i = target.index;
-      if (b.now >= log[i].ts) {
-        const start = log[i].ts - ms[i];
-        const newEnd = Math.max(log[i].ts, b.now);
-        ms[i] = Math.max(0, newEnd - start);
-        log[i] = makeEntry(newEnd, b.cards ?? log[i].cards, log[i]);
-      }
+  if (!retiredCapture(existing ?? {},b.now,Math.min(...oldSpans.map(s=>s.start)),LEAGUE_SESSION_GAP_MS)) {
+    if (log.length === 0) {
+      log.push(makeEntry(b.now, b.cards));
+      ms.push(0);
     } else {
-      log.splice(target.index, 0, makeEntry(b.now, b.cards));
-      ms.splice(target.index, 0, 0);
-      rec.sessions += 1;
+      const target = sessionTarget(
+        log.map((s) => s.ts),
+        ms,
+        b.now,
+        LEAGUE_SESSION_GAP_MS,
+      );
+
+      // Old client: arrival-stamped, would open a new sitting, board is a
+      // strict subset of the stored league. A delayed keepalive from the first
+      // sitting, not a user wiping their team.
+      if (
+        target.kind === 'insert' &&
+        !b.capturedKnown &&
+        existing &&
+        b.cards &&
+        rec.latestCards &&
+        isSubsetRegression(memberIds(b.cards), memberIds(rec.latestCards))
+      ) {
+        if (b.now > rec.lastTs) {
+          rec.lastTs = b.now;
+          rec.lastAt = at;
+        }
+        rec.sessionMs = ms;
+        rec.sessionLog = log;
+        Object.assign(rec,checkpointRecording(existing ?? {},oldSpans,endStampedSpans(rec),b.now,b.receivedAt ?? b.now));
+        return rec;
+      }
+
+      if (target.kind === 'join') {
+        const i = target.index;
+        if (b.now >= log[i].ts) {
+          const start = log[i].ts - ms[i];
+          const newEnd = Math.max(log[i].ts, b.now);
+          ms[i] = Math.max(0, newEnd - start);
+          log[i] = makeEntry(newEnd, b.cards ?? log[i].cards, log[i]);
+        }
+      } else {
+        log.splice(target.index, 0, makeEntry(b.now, b.cards));
+        ms.splice(target.index, 0, 0);
+        rec.sessions += 1;
+      }
     }
   }
 
   const overflow = log.length - LEAGUE_MAX_SESSIONS;
+  const retiredThrough = overflow > 0 ? Math.max(...log.slice(0,overflow).map(s=>s.ts)) : undefined;
+  Object.assign(rec,checkpointRecording(existing ?? {},oldSpans,endStampedSpans({sessionLog:log,sessionMs:ms}),b.now,b.receivedAt ?? b.now,retiredThrough));
   rec.sessionLog = overflow > 0 ? log.slice(overflow) : log;
   rec.sessionMs = overflow > 0 ? ms.slice(overflow) : ms;
   rec.maxSessionMs = rec.sessionMs.reduce((m, n) => Math.max(m, n), rec.maxSessionMs);
@@ -522,10 +533,11 @@ export function parseLeagueRecord(raw: unknown): LeagueRecord | null {
   if (raw == null) return null;
   if (typeof raw === 'string') {
     try {
-      return JSON.parse(raw) as LeagueRecord;
+      return parseLeagueRecord(JSON.parse(raw));
     } catch {
       return null;
     }
   }
-  return raw as LeagueRecord;
+  if (typeof raw !== 'object' || Array.isArray(raw)) return null;
+  return sanitizeRecordingFields(raw as LeagueRecord);
 }

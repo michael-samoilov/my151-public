@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { t, tn } from '@/i18n';
+import { t, tn, useLocale } from '@/i18n';
 import { type DrillDownSegment } from '@/store/usePokedexStore';
 import { getPokemonByIds, getEvolutionLine, withoutSpecials } from '@/hooks/usePokemonData';
 
@@ -35,6 +35,8 @@ interface StageDistributionChartProps {
  * and data derivation so the analytics dashboard doesn't carry mekko concerns.
  */
 function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle }: StageDistributionChartProps) {
+  // Memoized, so it subscribes itself: a language switch must repaint labels.
+  useLocale();
   const [excludeSpecialMekko, setExcludeSpecialMekko] = useState(false);
 
   // Container width, used to scale chart geometry (bar heights, legend label
@@ -422,7 +424,7 @@ function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle 
                       >
                         <span className="whitespace-nowrap" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{names[col.lineLength - 1]}</span>
                         <br />
-                        {col.chainCount}{idx === 0 && ' lines'}
+                        {idx === 0 ? tn('stage.columnLines', col.chainCount) : col.chainCount}
                       </div>
                     );
                   })}

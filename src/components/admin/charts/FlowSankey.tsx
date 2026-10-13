@@ -92,6 +92,10 @@ function chipInLabel(
   return nodeDepth(n.name, links) === last && compactFunnelLabelSide(n, nodes, links) === 'right';
 }
 
+function rateLabel(node: SankeyNode): string {
+  return node.percentage ? node.percentage.value === null ? '—' : `${Math.round(node.percentage.value)}%` : '';
+}
+
 function nodeLabel(
   n: SankeyNode,
   compact: boolean,
@@ -101,8 +105,23 @@ function nodeLabel(
   roleColor: (role?: FunnelRole) => string,
   fontSize: number,
   lines?: string[],
+  crowded = false,
 ) {
-  if (chipInLabel(n, compact, kind, nodes, links)) {
+  if (chipInLabel(n, compact, kind, nodes, links) || (crowded && !!n.percentage && nodeDepth(n.name, links) === Math.max(...nodes.map((node) => nodeDepth(node.name, links))))) {
+    const value = Math.max(
+      links.filter((l) => l.source === n.name).reduce((sum, l) => sum + l.value, 0),
+      links.filter((l) => l.target === n.name).reduce((sum, l) => sum + l.value, 0),
+    );
+    if (n.percentage) {
+      const chipWidth = Math.max(labelMeasure(fontSize)(String(Math.round(value))), labelMeasure(Math.max(7, fontSize - 1))(rateLabel(n))) + 4;
+      const lead = chipWidth + labelMeasure(fontSize)(' ');
+      return {
+        ...compactLabel('right', fontSize),
+        distance: CHIP_LABEL_DISTANCE + lead,
+        width: COMPACT_WRAP_EM.right * fontSize - lead,
+        formatter: '{b}',
+      };
+    }
     return {
       ...compactLabel('right', fontSize),
       distance: CHIP_LABEL_DISTANCE,
@@ -135,9 +154,69 @@ function nodeLabel(
 type SankeyLayoutSeries = {
   layoutInfo: { x: number; y: number; width: number };
   getGraph(): {
-    getNodeById(name: string): { getLayout(): { x: number; y: number; dx: number; dy: number; value: number } };
+    getNodeById(name: string): { getGraphicEl(): { setTextConfig(config: { offset: number[] }): void }; getLayout(): { x: number; y: number; dx: number; dy: number; value: number } };
   };
 };
+
+/** Separate count/rate annotation rows while preserving every bar and flow. */
+function percentageLabelOffsets(el: HTMLDivElement, nodes: SankeyNode[], links: SankeyLink[], fontSize: number, crowded = false): Map<string, number> {
+  const chart = echarts.getInstanceByDom(el) as unknown as { getModel(): { getSeriesByIndex(i: number): SankeyLayoutSeries } };
+  const graph = chart.getModel().getSeriesByIndex(0).getGraph();
+  const columns = new Map<number, SankeyNode[]>();
+  for (const node of nodes) {
+    const depth = nodeDepth(node.name, links);
+    columns.set(depth, [...(columns.get(depth) ?? []), node]);
+  }
+  const offsets = new Map<string, number>();
+  for (const column of columns.values()) {
+    if (!column.some((n) => n.percentage)) continue;
+    const peers = column.map((n) => {
+      const bar = graph.getNodeById(n.name).getLayout();
+      return { node: n, y: bar.y + bar.dy / 2, spacing: 0 };
+    }).sort((a, b) => a.y - b.y);
+    peers.forEach((peer, i) => {
+      if (i) peer.spacing = peers[i - 1].spacing + fontSize + 3 + (peers[i - 1].node.percentage ? 3 + Math.max(7, fontSize - 1) : 0);
+    });
+    // Pool overlapping rows, preserving their average position within the column.
+    const blocks: { start: number; end: number; mean: number }[] = [];
+    peers.forEach((peer, i) => {
+      blocks.push({ start: i, end: i, mean: peer.y - peer.spacing });
+      while (blocks.length > 1 && blocks[blocks.length - 2].mean > blocks[blocks.length - 1].mean) {
+        const b = blocks.pop()!, a = blocks.pop()!;
+        const na = a.end - a.start + 1, nb = b.end - b.start + 1;
+        blocks.push({ start: a.start, end: b.end, mean: (a.mean * na + b.mean * nb) / (na + nb) });
+      }
+    });
+    for (const block of blocks) for (const peer of peers.slice(block.start, block.end + 1)) {
+      offsets.set(peer.node.name, block.mean + peer.spacing - peer.y);
+    }
+  }
+  if (crowded) {
+    const exported = nodes.find((n) => n.name === 'Exported' && links.some((l) => l.source === n.name));
+    if (exported) {
+      const depth = nodeDepth(exported.name, links);
+      const previous = nodes.filter((n) => nodeDepth(n.name, links) === depth - 1);
+      const bottom = Math.max(...previous.map((n) => {
+        const bar = graph.getNodeById(n.name).getLayout();
+        return bar.y + bar.dy;
+      }));
+      const bar = graph.getNodeById(exported.name).getLayout();
+      offsets.set(exported.name, bottom + fontSize + 4 - (bar.y + bar.dy / 2));
+      const last = Math.max(...nodes.map((n) => nodeDepth(n.name, links)));
+      const privateNodes = nodes.filter((n) => n.role === 'priv' && nodeDepth(n.name, links) === last - 1);
+      const start = (privateNodes.length ? Math.max(...privateNodes.map((n) => {
+        const layout = graph.getNodeById(n.name).getLayout();
+        return layout.y + layout.dy / 2;
+      })) : bar.y) + fontSize + 4;
+      const terminal = nodes.filter((n) => n.percentage && nodeDepth(n.name, links) === last).map((n) => {
+        const layout = graph.getNodeById(n.name).getLayout();
+        return { name: n.name, center: layout.y + layout.dy / 2 };
+      }).sort((a, b) => a.center - b.center);
+      terminal.forEach((n, i) => offsets.set(n.name, start + i * (fontSize + Math.max(7, fontSize - 1) + 7) - n.center));
+    }
+  }
+  return offsets;
+}
 
 /**
  * A node's count chip, drawn by a custom series in the same pass as the
@@ -155,15 +234,20 @@ function countChip(
   side: FunnelLabelSide,
   roleColor: (role?: FunnelRole) => string,
   fontSize: number,
+  inlineCount = false,
+  labelOffset = 0,
+  leader = false,
 ) {
   const chart = echarts.getInstanceByDom(el) as unknown as { getModel(): { getSeriesByIndex(i: number): SankeyLayoutSeries } };
   const sankey = chart.getModel().getSeriesByIndex(0);
-  const bar = sankey.getGraph().getNodeById(node.name).getLayout();
+  const graphNode = sankey.getGraph().getNodeById(node.name);
+  const bar = graphNode.getLayout();
+  graphNode.getGraphicEl().setTextConfig({ offset: [0, labelOffset] });
   const left = sankey.layoutInfo.x + (localX != null ? localX * sankey.layoutInfo.width : bar.x);
-  return {
+  const count = {
     type: 'text' as const,
-    x: side === 'top' || side === 'bottom' ? left + bar.dx / 2 : left + bar.dx,
-    y: sankey.layoutInfo.y + bar.y + bar.dy / 2,
+    x: inlineCount ? left + bar.dx + CHIP_LABEL_DISTANCE : side === 'top' || side === 'bottom' || node.percentage ? left + bar.dx / 2 : left + bar.dx,
+    y: sankey.layoutInfo.y + bar.y + bar.dy / 2 + labelOffset,
     style: {
       text: String(Math.round(bar.value)),
       fill: node.role === 'sink' ? '#171717' : '#ffffff',
@@ -171,9 +255,40 @@ function countChip(
       fontWeight: 600,
       backgroundColor: roleColor(node.role),
       padding: [0, 2],
-      align: side === 'right' ? ('right' as const) : ('center' as const),
+      align: inlineCount ? 'left' as const : side === 'right' && !node.percentage ? ('right' as const) : ('center' as const),
       verticalAlign: 'middle' as const,
     },
+  };
+  if (!node.percentage) return inlineCount ? { type: 'group' as const, children: [] } : count;
+  const rateFont = Math.max(7, fontSize - 1);
+  const width = Math.max(labelMeasure(fontSize)(count.style.text), labelMeasure(rateFont)(rateLabel(node))) + 4;
+  const center = inlineCount ? count.x + width / 2 : count.x;
+  return {
+    type: 'group' as const,
+    x: 0, y: 0,
+    children: [...(leader ? [{
+      type: 'line' as const,
+      shape: { x1: left + bar.dx / 2, y1: sankey.layoutInfo.y + bar.y + bar.dy, x2: center, y2: count.y - fontSize / 2 - 2 },
+      style: { stroke: roleColor(node.role), opacity: 0.25, lineWidth: 0.5 },
+    }] : []), {
+      type: 'text' as const,
+      x: center,
+      y: count.y - fontSize / 2,
+      style: {
+        text: `{count|${count.style.text}}\n{rate|${rateLabel(node)}}`,
+        fill: count.style.fill,
+        backgroundColor: roleColor(node.role),
+        padding: [0, 2],
+        width: width - 4,
+        align: 'center' as const,
+        verticalAlign: 'top' as const,
+        fontWeight: 600,
+        rich: {
+          count: { fontSize, lineHeight: fontSize, align: 'center' as const },
+          rate: { fontSize: rateFont, lineHeight: rateFont, align: 'center' as const },
+        },
+      },
+    }],
   };
 }
 
@@ -278,7 +393,7 @@ export function FlowSankey({
       const base = sankeyGeometry(width, kind);
       const { g, shares, lines } =
         kind === 'funnel' ? funnelLayout(nodes, links, width, base) : { g: base, shares: null, lines: new Map<string, string[]>() };
-      const chips = nodes.filter((n) => !chipInLabel(n, g.compact, kind, nodes, links));
+      const chips = nodes.filter((n) => n.percentage || !chipInLabel(n, g.compact, kind, nodes, links));
 
       return {
         animation: false,
@@ -288,7 +403,8 @@ export function FlowSankey({
           formatter: (p: unknown) => {
             const d = p as { dataType: string; name?: string; value?: number; data?: { source?: string; target?: string } };
             if (d.dataType === 'edge' && d.data) return `${d.data.source} → ${d.data.target}<br/><b>${d.value}</b>`;
-            return `${d.name}<br/><b>${d.value}</b>`;
+            const node = nodes.find((n) => n.name === d.name);
+            return `${d.name}<br/><b>${d.value}</b>${node?.percentage ? `<br/>${rateLabel(node)} of ${node.percentage.basis}` : ''}`;
           },
         },
         series: [
@@ -317,7 +433,7 @@ export function FlowSankey({
               name: n.name,
               localX: shares?.get(n.name),
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
-              label: nodeLabel(n, g.compact, kind, nodes, links, roleColor, g.fontSize, lines.get(n.name)),
+              label: nodeLabel(n, g.compact, kind, nodes, links, roleColor, g.fontSize, lines.get(n.name), g.compact && !shares && links.some((l) => l.source === 'Exported')),
             })),
             links: links.map((l) => ({
               source: l.source,
@@ -336,7 +452,7 @@ export function FlowSankey({
             renderItem: (params: { dataIndex: number }) => {
               const n = chips[params.dataIndex];
               const side = g.compact ? compactFunnelLabelSide(n, nodes, links) : n.label;
-              return countChip(el, n, shares?.get(n.name), side, roleColor, g.fontSize);
+              return countChip(el, n, shares?.get(n.name), side, roleColor, g.fontSize, chipInLabel(n, g.compact, kind, nodes, links) || (g.compact && !!n.percentage && nodeDepth(n.name, links) === Math.max(...nodes.map((node) => nodeDepth(node.name, links)))), g.compact && kind === 'funnel' ? percentageLabelOffsets(el, nodes, links, g.fontSize, !shares).get(n.name) ?? 0 : 0, g.compact && !shares && links.some((l) => l.source === 'Exported') && !!n.percentage && (links.some((l) => l.source === n.name) || nodeDepth(n.name, links) === Math.max(...nodes.map((node) => nodeDepth(node.name, links)))));
             },
           },
         ],

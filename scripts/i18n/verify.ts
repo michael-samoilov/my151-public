@@ -20,6 +20,11 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { en } from '../../src/i18n/catalogs/en';
 import { LOCALES, type Locale } from '../../src/i18n/config';
+import { tierOf } from '../../src/i18n/tiers';
+import type { MessageKey } from '../../src/i18n/types';
+import {
+  GAME_TERMS_PATH, MOVE_NAMES_PATH, type GameTermsFixture, type MoveNamesFixture,
+} from './extract-game-terms';
 import { GAME_TEXT_PATH, type GameTextSource } from './fetch-game-text';
 
 const TERMS_DIR = 'src/i18n/catalogs/terms';
@@ -88,6 +93,73 @@ function gameTextParity(): void {
         );
       }
     }
+  }
+}
+
+const gameTerms = readJson<GameTermsFixture>(GAME_TERMS_PATH);
+const moveNames = readJson<MoveNamesFixture>(MOVE_NAMES_PATH);
+/** Catalog keys whose values are the games' own text, held to the fixture below. */
+const SOURCED_KEYS = new Set(gameTerms.terms.map((t) => t.key).filter((k) => !k.startsWith('form.')));
+
+/** HOME's box list adds this after a region name; see build-term-catalogs.ts. */
+const REGION_SUFFIX: Partial<Record<Locale, string>> = {
+  en: ' Region', ja: '地方', ko: '지방', 'zh-Hans': '地区', 'zh-Hant': '地區',
+};
+
+/**
+ * The move names, move categories, contest conditions, sub-labels and region
+ * names sourced from the games (`npm run i18n:game-terms`) must be what the
+ * fixtures say, so a hand edit to a catalog fails here rather than shipping a
+ * word no game uses. A key the fixture leaves out for a locale stays English.
+ */
+function sourcedGameText(): void {
+  for (const locale of LOCALES) {
+    if (locale === 'en') continue;
+    const catalog = termCatalogs.get(locale) ?? {};
+    for (const term of gameTerms.terms) {
+      if (term.key.startsWith('form.')) continue;
+      if (locale === 'de' && tierOf(term.key as MessageKey) !== 'official') {
+        fail('game-text', 'sourced from the games but not in the official tier (src/i18n/tiers.ts)', undefined, term.key);
+      }
+      const want = term.text[locale];
+      const got = catalog[term.key];
+      if (want !== got) {
+        fail('game-text', `catalog says ${JSON.stringify(got)}, ${term.from[0]?.qid ?? 'the fixture'} gives ${JSON.stringify(want)}`, locale, term.key);
+      }
+      if (uiCatalogs.get(locale)?.[term.key] !== undefined) {
+        fail('game-text', 'a translated value in catalogs/ui would hide the sourced one', locale, term.key);
+      }
+    }
+    for (const [id, home] of Object.entries(gameTerms.regions)) {
+      const key = `region.${id}`;
+      const got = catalog[key];
+      const theirs = home.text[locale];
+      if (theirs && got !== theirs && theirs !== `${got}${REGION_SUFFIX[locale] ?? ''}`) {
+        fail('game-text', `catalog says ${JSON.stringify(got)}, ${home.qid} says ${JSON.stringify(theirs)}`, locale, key);
+      }
+    }
+    const path = `src/i18n/moves/${locale}.json`;
+    const shipped = existsSync(path) ? readJson<Record<string, string>>(path) : {};
+    for (const [id, row] of Object.entries(moveNames.moves)) {
+      if (shipped[id] !== row.text[locale]) {
+        fail('game-text', `${path} says ${JSON.stringify(shipped[id])}, ${row.qid} says ${JSON.stringify(row.text[locale])}`, locale, `move ${id}`);
+      }
+    }
+    if (Object.keys(shipped).length !== Object.keys(moveNames.moves).length) {
+      fail('game-text', `${path} has ${Object.keys(shipped).length} moves, the fixture ${Object.keys(moveNames.moves).length}`, locale);
+    }
+  }
+  // The league's English names come from src/data/moves.json. A regenerated
+  // moves.json that renames or adds a move must regenerate the fixture too.
+  const appMoves = readJson<{ id: number; name: string }[]>('src/data/moves.json');
+  for (const move of appMoves) {
+    const row = moveNames.moves[move.id];
+    if (row?.text.en !== move.name) {
+      fail('game-text', `src/data/moves.json says ${JSON.stringify(move.name)}, ${MOVE_NAMES_PATH} says ${JSON.stringify(row?.text.en)}; run npm run i18n:game-terms`, undefined, `move ${move.id}`);
+    }
+  }
+  if (appMoves.length !== Object.keys(moveNames.moves).length) {
+    fail('game-text', `src/data/moves.json has ${appMoves.length} moves, ${MOVE_NAMES_PATH} ${Object.keys(moveNames.moves).length}`);
   }
 }
 
@@ -185,6 +257,9 @@ function untranslatedLeftovers(): void {
     }
 
     for (const [key, value] of entries) {
+      // Sourced game text is held to the games themselves: "X／Y" and
+      // "Pokémon LEGENDS アルセウス" are what the Chinese and Japanese games say.
+      if (SOURCED_KEYS.has(key)) continue;
       if (cjk.includes(locale) && value.length > 0 && asciiLetters(value) / value.length > 0.6) {
         fail('untranslated', `${JSON.stringify(value)} is mostly ASCII in a CJK locale`, locale, key);
       }
@@ -317,6 +392,24 @@ function cjkSafety(): void {
  * makes the check meaningful for every other key.
  */
 const SAME_AS_ENGLISH_OK = new Set([
+  // The Pokédex builder's sections. Dojo and Tundra are the same loanwords in
+  // these languages; Pika, Pseudo and Fossil are the same one-cell outline
+  // forms. Upgrade and Protector are the item names the games use.
+  'de:section.dojo', 'de:archetype.dojo', 'de:sectionTiny.dojo',
+  'es:section.dojo', 'es:archetype.dojo', 'es:sectionTiny.dojo',
+  'fr:section.dojo', 'fr:archetype.dojo', 'fr:sectionTiny.dojo',
+  'it:section.dojo', 'it:archetype.dojo', 'it:sectionTiny.dojo',
+  'de:section.tundra', 'de:archetype.tundra', 'de:sectionTiny.tundra',
+  'es:section.tundra', 'es:archetype.tundra', 'es:sectionTiny.tundra',
+  'it:section.tundra', 'it:archetype.tundra', 'it:sectionTiny.tundra',
+  'de:sectionTiny.pikachu-clone', 'es:sectionTiny.pikachu-clone',
+  'fr:sectionTiny.pikachu-clone', 'it:sectionTiny.pikachu-clone',
+  'de:sectionTiny.pseudo-legendary', 'es:sectionTiny.pseudo-legendary',
+  'fr:sectionTiny.pseudo-legendary', 'it:sectionTiny.pseudo-legendary',
+  'de:sectionTiny.fossil',
+  'de:archetype.evolution-item.sub.9', // Upgrade
+  'it:archetype.evolution-item.sub.9', // Upgrade
+  'es:archetype.evolution-item.sub.19', // Protector
   'es:chart.header.color', // "Color" is also the Spanish color header.
   'es:feedback.category.idea', // "Idea" is the Spanish word too.
   'it:feedback.category.idea', // And the Italian one.
@@ -326,9 +419,68 @@ const SAME_AS_ENGLISH_OK = new Set([
   'fr:term.shape.squiggle', // Serpent is the French noun as well.
   'fr:favorites.stats.final', // Final is the French masculine evolution-role adjective.
   'es:favorites.stats.final', // Final is also the Spanish evolution-role adjective.
+  'fr:sort.type', // Type is the French noun too.
+  // The poster's clause separator is a spaced middle dot in every locale.
+  'de:poster.separator',
+  'es:poster.separator',
+  'fr:poster.separator',
+  'it:poster.separator',
+  'ja:poster.separator',
+  'ko:poster.separator',
+  'zh-Hans:poster.separator',
+  'zh-Hant:poster.separator',
+  // League builder. The game terms follow docs/i18n/sources/league-interface-terms.json.
+  'de:league.tm.mark', // The German games label TMs "TM".
+  'de:league.powerup.dynamax', // Dynamax is the German, French and Italian game term.
+  'fr:league.powerup.dynamax',
+  'it:league.powerup.dynamax',
+  'fr:league.badge.mark', // The French games say "Badge".
+  'fr:league.type.word', // Type is the French noun too.
+  'de:league.badge.placeholder', // "Name" is the German noun too.
+  'de:league.view.story', // German games and players say "Story".
+  'fr:league.tm.col.category', // "Cat." abbreviates Catégorie, Categoría and Categoria.
+  'es:league.tm.col.category',
+  'it:league.tm.col.category',
+  'es:league.tm.col.pp', // PP is the games' own abbreviation in every language but German.
+  'fr:league.tm.col.pp',
+  'it:league.tm.col.pp',
+  'ja:league.tm.col.pp',
+  'ko:league.tm.col.pp',
+  'zh-Hans:league.tm.col.pp',
+  'zh-Hant:league.tm.col.pp',
   'fr:feedback.category.bug', // French tech writing uses "Bug".
   'es:feedback.context.error', // "error" is the Spanish word too.
   'it:feedback.context.browser', // Italian says "browser".
+  // The Pokémon browser, drill-downs and analytics.
+  'de:browser.sheet.generation', // "Generation" is the German noun.
+  'de:browser.subgroupGeneration',
+  'de:drilldown.generationTitle',
+  'fr:browser.chip.type', // Type is the French noun.
+  'fr:browser.sheet.type',
+  'fr:analytics.dex.nationalShort', // National is the French adjective.
+  'fr:chart.header.score', // French uses "score" for a points total.
+  'es:browser.chip.color', // "Color" is the Spanish noun.
+  'es:browser.sheet.color',
+  // "Pokémon" is the word in all four Latin-script languages.
+  'de:stage.columnTotal_one',
+  'de:stage.columnTotal_other',
+  'de:stage.legendUnit',
+  'fr:stage.columnTotal_one',
+  'fr:stage.columnTotal_other',
+  'fr:stage.legendUnit',
+  'es:stage.columnTotal_one',
+  'es:stage.columnTotal_other',
+  'es:stage.legendUnit',
+  'it:stage.columnTotal_one',
+  'it:stage.columnTotal_other',
+  'it:stage.legendUnit',
+  // The footer's Acknowledgements panel. German and French fans say "Sprites",
+  // as do Spanish ones; "Code" is the German and French noun.
+  'de:ack.group.sprites',
+  'fr:ack.group.sprites',
+  'es:ack.group.sprites',
+  'de:ack.group.code',
+  'fr:ack.group.code',
 ]);
 
 /**
@@ -431,15 +583,39 @@ function lengthBudgets(): void {
 
 //#endregion
 
+//#region Duplicate keys
+
+/**
+ * A locale file that lists a key twice still parses: `JSON.parse` keeps the
+ * last value and drops the first without a word. Two branches that each
+ * translate the same key merge into exactly that, so the gate reads the raw
+ * text. The files are flat objects with one key per line.
+ */
+function duplicateKeys(): void {
+  for (const dir of [UI_DIR, TERMS_DIR]) {
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+      const seen = new Set<string>();
+      for (const match of readFileSync(join(dir, file), 'utf8').matchAll(/^\s*"([^"]+)"\s*:/gm)) {
+        if (seen.has(match[1])) fail('duplicate keys', `${dir}/${file} lists this key more than once`, undefined, match[1]);
+        seen.add(match[1]);
+      }
+    }
+  }
+}
+
+//#endregion
+
 function main(): void {
   const gates: [string, () => void][] = [
     ['official game text', gameTextParity],
+    ['sourced game terms and move names', sourcedGameText],
     ['placeholder integrity', placeholderIntegrity],
     ['untranslated leftovers', untranslatedLeftovers],
     ['unicode hygiene', unicodeHygiene],
     ['CJK safety', cjkSafety],
     ['translated UI strings', translatedUi],
     ['length budgets', lengthBudgets],
+    ['duplicate keys', duplicateKeys],
   ];
 
   for (const [name, gate] of gates) {

@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { useFavoriteBrowserStore } from '@/components/browser/browserStore';
 import type { BrowserStoreState } from '@/components/browser/browserStore';
-import { getAllPokemon, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
+import { getAllPokemon, getEvolutionLine, branchEndingAt } from '../data/catalog';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { CATEGORIES } from '@/data/categories';
+import { t } from '@/i18n';
 import { placedIds } from '../model/engine';
 import { BOSS_ROW, ROW_COUNT, TEAM_SIZES } from '../model/constants';
 import { useLeagueStore } from './useLeagueStore';
@@ -27,17 +28,6 @@ const LEGEND_ELIGIBLE: Set<number> = (() => {
       .map((p) => p.id),
   );
 })();
-
-/** Root→tapped path, walking `evolvesFrom` up from the tapped branch's leaf. */
-function branchEndingAt(finalId: number): number[] {
-  const branch: number[] = [];
-  let cur = getPokemonById(finalId);
-  while (cur) {
-    branch.unshift(cur.id);
-    cur = cur.evolvesFrom !== null ? getPokemonById(cur.evolvesFrom) : undefined;
-  }
-  return branch;
-}
 
 /**
  * The whole line through one Pokemon, root to leaf, along its first branch.
@@ -201,9 +191,9 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // a chip whose only effect is an empty result is a dead end. A full
         // card does get one, locked — see `scopeLocked` above.
         scopeFilterIds: scoped && lines.length > 0 ? placed : undefined,
-        scopeFilterLabel: scoped && lines.length > 0 ? 'Current Team' : undefined,
+        scopeFilterLabel: scoped && lines.length > 0 ? t('league.scope.team') : undefined,
         scopeFilterLocked: scopeLocked,
-        scopeFilterLockedHint: scopeLocked ? 'Choose a pokemon from your team' : undefined,
+        scopeFilterLockedHint: scopeLocked ? t('league.scope.locked') : undefined,
         // The branches themselves, so the scoped view can draw the lines the
         // user seated rather than the chains they belong to.
         scopeFilterLines: scoped ? lines.map((l) => l.branch) : undefined,
@@ -220,7 +210,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       if (ids.length === 0) return;
       const card = cardIndex();
       const purpose = ui().browserPurpose;
-      const branch = branchEndingAt(ids[ids.length - 1]);
+      const branch = branchEndingAt(ids[ids.length - 1], ids);
       if (purpose === 'legend') {
         league().setLegend(card, {
           pokemonId: branch[branch.length - 1],

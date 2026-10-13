@@ -15,9 +15,10 @@ import { generationChartIcon, shapeBadgeChartIcon } from '@/components/shared/at
 import type { GenNumber } from '@/favorites/model/cells';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { SHAPE_ORDER } from '@/components/shared/ShapeIcon';
-import { regionName, shapeLabel, t, typeLabel } from '@/i18n';
+import { regionName, shapeLabel, typeLabel, useT } from '@/i18n';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { StageDistributionChart } from './StageDistributionChart';
 
 // The gen and shape charts use a single app-red bar (no per-category colors);
@@ -69,7 +70,9 @@ function alignHistograms(
   return { merged, xTicks, xDomain, binSize, yDomain, yTicks };
 }
 
-export function AnalyticsDashboard() {
+/** `onAddPokemon` goes back to Build, from the page shown with no Pokémon. */
+export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void }) {
+  const t = useT();
   const [excludeSpecial, setExcludeSpecial] = useState(false);
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
   const [newPokemonOnly, setNewPokemonOnly] = useState(true);
@@ -137,7 +140,7 @@ export function AnalyticsDashboard() {
         icon: generationChartIcon(gen as GenNumber),
       };
     }),
-    [analytics.generationDeviation],
+    [analytics.generationDeviation, t],
   );
 
   // Body-shape distribution vs the national dex (same over/under-index
@@ -456,13 +459,13 @@ export function AnalyticsDashboard() {
 
   if (analytics.total === 0) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center space-y-2">
-          <p className="text-xl font-semibold text-muted-foreground">No Pokémon assigned yet</p>
-          <p className="text-sm text-muted-foreground">
-            {t('analytics.empty')}
-          </p>
-        </div>
+      <div className="flex h-full items-center justify-center">
+        <EmptyState
+          testId="analytics-empty"
+          title={t('analytics.empty.title')}
+          body={t('analytics.empty.body')}
+          action={{ label: t('analytics.empty.action'), onClick: onAddPokemon }}
+        />
       </div>
     );
   }
@@ -547,7 +550,7 @@ export function AnalyticsDashboard() {
                       : 'text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  Gen {selectedDex.generation} only
+                  {t('analytics.genOnly', { gen: selectedDex.generation })}
                 </button>
                 <button type="button"
                   onClick={() => setNewPokemonOnly(false)}
@@ -557,7 +560,7 @@ export function AnalyticsDashboard() {
                       : 'text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  Regional Dex
+                  {t('analytics.regionalDex')}
                 </button>
               </div>
             )}
@@ -681,7 +684,7 @@ export function AnalyticsDashboard() {
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.evoLevel.heading')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            {t('analytics.avgCompare', { yours: analytics.evolutionStats.avgLevel || 'N/A', national: analytics.evolutionStats.nationalAvgLevel })}
+            {t('analytics.avgCompare', { yours: analytics.evolutionStats.avgLevel || t('analytics.notAvailable'), national: analytics.evolutionStats.nationalAvgLevel })}
           </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <div className="flex items-center gap-4 mb-2">

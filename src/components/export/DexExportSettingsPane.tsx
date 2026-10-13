@@ -1,4 +1,5 @@
-import { Check, Download, Loader2, Lock, RotateCcw, X } from 'lucide-react';
+import { Check, Download, Lock, RotateCcw, X } from 'lucide-react';
+import { PokeBallSpinner } from '@/components/shared/PokeBallSpinner';
 import { Button } from '@/components/ui/button';
 import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { useT, type MessageKey } from '@/i18n';
@@ -22,6 +23,7 @@ export function DexExportSettingsPane({
   seedCustomIds,
   busy,
   onExport,
+  failed = false,
   onClose,
   mobileSheet = false,
 }: {
@@ -31,6 +33,8 @@ export function DexExportSettingsPane({
   seedCustomIds: number[];
   busy: boolean;
   onExport: () => void;
+  /** The last save failed. */
+  failed?: boolean;
   onClose: () => void;
   mobileSheet?: boolean;
 }) {
@@ -61,12 +65,12 @@ export function DexExportSettingsPane({
       {!mobileSheet && (
         <div className="shrink-0 border-b">
           <div className="flex h-11 items-center justify-between px-3 py-2">
-            <span className="text-sm font-semibold text-foreground">Export</span>
+            <span className="text-sm font-semibold text-foreground">{t('export.title')}</span>
             <button
               type="button"
               onClick={onClose}
               className="shrink-0 cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Close export"
+              aria-label={t('export.close')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -273,22 +277,23 @@ export function DexExportSettingsPane({
       </ExportSettingsScroll>
 
       <div className={`flex shrink-0 flex-col gap-2 border-t pt-2 ${mobileSheet ? 'px-3 pb-3' : 'px-4 pb-4'}`}>
+        {failed && <p role="alert" className="text-sm text-destructive">{t('favorites.export.error')}</p>}
         <Button type="button" disabled={busy} onClick={onExport} data-dex-export-confirm>
           {busy ? (
             <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Preparing…
+              <PokeBallSpinner tone="line" className="mr-2 size-4" />
+              {t('export.preparing')}
             </>
           ) : (
             <>
               <Download className="mr-2 size-4" />
-              Save image
+              {t('export.save')}
             </>
           )}
         </Button>
         {!mobileSheet && (
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
+            {t('export.cancel')}
           </Button>
         )}
       </div>

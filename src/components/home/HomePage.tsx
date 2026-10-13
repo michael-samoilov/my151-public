@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useHomeSheetLift } from './useHomeSheetLift';
 import { SLOT_COUNT } from '@/league/model/constants';
-import { Hammer } from 'lucide-react';
 import { useDocumentLocale, useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { useXHeightAlignment } from './useXHeightAlignment';
@@ -22,6 +21,9 @@ import leagueBack from '@/assets/home/tool-league-b.webp';
 import leagueFront from '@/assets/home/tool-league.webp';
 import favoritesBack from '@/assets/home/tool-favorites-b.webp';
 import favoritesFront from '@/assets/home/tool-favorites.webp';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { EggIcon } from '@/components/shared/AppIcons';
+import { pathScale } from '@/lib/pathScale';
 
 /**
  * The router page: one card per tool, plus a call to action.
@@ -95,7 +97,7 @@ interface Tool {
   alts?: [string, string];
 }
 
-const HAMMER_TITLE = 'next';
+const NEXT_CARD = 'next';
 
 /**
  * The tools, in the order they appear. Adding the favorite picker back is one
@@ -158,10 +160,7 @@ function useTools(placed: number): Tool[] {
       // The page's largest paint on a phone. The hub's HTML is prerendered,
       // so the browser sees this priority before it requests anything.
       shots: [shot(dexFront, 'high'), shot(dexBack)],
-      alts: [
-        'Custom Pokédex Maker: a custom regional Pokédex in progress on the Build page',
-        'A custom regional Pokédex exported with detailed type, generation and base-stat distribution charts',
-      ],
+      alts: [t('home.dex.buildAlt'), t('home.dex.exportAlt')],
     },
     {
       key: 'league',
@@ -170,10 +169,7 @@ function useTools(placed: number): Tool[] {
       blurb: t('home.league.blurb'),
       progress: { count: league, total: SLOT_COUNT, label: t('home.league.saved', { progress: PROGRESS_TOKEN }) },
       shots: [shot(leagueBack), shot(leagueFront)],
-      alts: [
-        'Gym Leader Maker: a whole league exported with eight gym leaders, the Elite Four, the Champion and the endgame boss with their story teams',
-        'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
-      ],
+      alts: [t('home.league.leagueAlt'), t('home.league.cardAlt')],
     },
     {
       key: 'favorites',
@@ -184,7 +180,7 @@ function useTools(placed: number): Tool[] {
       shots: [shot(favoritesBack), shot(favoritesFront)],
       alts: [t('home.favorites.fullGridAlt'), t('home.favorites.simplifiedAlt')],
     },
-    { key: HAMMER_TITLE, title: t('home.next.title'), blurb: t('home.next.blurb') },
+    { key: NEXT_CARD, title: t('home.next.title'), blurb: t('home.next.blurb') },
   ];
 }
 
@@ -264,13 +260,19 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
   );
 }
 
-/** The panel body for a card in the grid: artwork, or the build mark. */
+/** The egg draws 35% larger in its box; its stroke stays 2 units. */
+const EGG = pathScale(1.35);
+/** The egg's box: 35 units on the phone panel, which is 79.167 units tall. It
+ *  keeps that share of the panel's height on the lower desktop panel. */
+const EGG_BOX = `calc(${U(35)} * var(--panel-h, 79.167) / 79.167)`;
+
+/** The panel body for a card in the grid: artwork, or the egg. */
 function TallBody({ tool }: { tool: Tool }) {
   return tool.shots ? (
     <Artwork tool={tool} />
   ) : (
     <span className="absolute inset-0 flex items-center justify-center" data-card-badge>
-      <Hammer style={{ width: U(35), height: U(35) }} strokeWidth={2} />
+      <EggIcon style={{ width: EGG_BOX, height: EGG_BOX, ...EGG.style }} strokeWidth={EGG.strokeWidth} />
     </span>
   );
 }
@@ -287,7 +289,7 @@ function WideBody({ tool }: { tool: Tool }) {
       style={{ gap: U(7), padding: `${U(7.4)} ${U(8)}` }}
       data-card-badge
     >
-      <Hammer style={{ width: U(15), height: U(15), flex: 'none' }} strokeWidth={2} />
+      <EggIcon style={{ width: U(15), height: U(15), flex: 'none', ...EGG.style }} strokeWidth={EGG.strokeWidth} />
       <span className="block">
         <span
           className="block font-bold tracking-tight"
@@ -352,7 +354,7 @@ function Caption({ tool }: { tool: Tool }) {
         )}
       </Title>
       <p
-        className={`m-0 text-muted-foreground ${tool.key === HAMMER_TITLE ? 'whitespace-pre-line' : 'text-pretty'}`}
+        className={`m-0 text-muted-foreground ${tool.key === NEXT_CARD ? 'whitespace-pre-line' : 'text-pretty'}`}
         style={{ fontSize: BLURB, lineHeight: 'var(--caption-leading, 1.4)', marginTop: `var(--caption-gap, ${U(3)})` }}
       >
         {tool.blurb}
@@ -637,6 +639,7 @@ export function HomePage() {
               Safari before 16 has no `clip` and gets `hidden`, which makes
               `main` a scroll container; nothing in it overflows vertically. */}
           <main className="hub-home flex flex-1 flex-col overflow-x-clip not-supports-[overflow:clip]:overflow-x-hidden px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
+            <ErrorBoundary where="hub">
             <div className="hub-spacer min-h-6 flex-1" />
             <section className="md:grid md:grid-cols-4 md:items-baseline md:gap-x-6">
               <h1
@@ -647,7 +650,9 @@ export function HomePage() {
                 // narrowest width the e2e projects cover; 22px spills to three.
                 // Desktop copy spans the same two-card halves as the grid.
                 // Keep the larger heading size at xl to preserve its line fit.
-                className="m-0 font-extrabold tracking-tight text-pretty text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:col-span-2"
+                // `auto-phrase` breaks Japanese between phrases, not inside
+                // ジムリーダー. Other languages break as before.
+                className="m-0 font-extrabold tracking-tight text-pretty [word-break:auto-phrase] text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:col-span-2"
                 style={{ lineHeight: 1.08 }}
               >
                 {t('home.h1')}
@@ -685,11 +690,12 @@ export function HomePage() {
                   reserve={reserves[i]}
                   // The card asks what to build next, so the form opens on Idea
                   // rather than the Bug it defaults to elsewhere.
-                  onPress={tool.key === HAMMER_TITLE ? () => openFeedback('idea') : undefined}
+                  onPress={tool.key === NEXT_CARD ? () => openFeedback('idea') : undefined}
                 />
               ))}
             </div>
             <div className="hub-spacer min-h-6 flex-1" />
+            </ErrorBoundary>
           </main>
         </div>
 

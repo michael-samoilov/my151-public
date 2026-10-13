@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   One entry per served page. The hub is index.html at "/"; each tool has its
-  own HTML file that Vercel's cleanUrls serves at the path below. Preview-only
-  diagnostics (/evolution-levels, /slot-lab, /foil-workshop) carry noindex and stay out.
+  own HTML file that Vercel's cleanUrls serves at the path below.
   `npm run indexnow` reads this file, so a new page is submitted once listed.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

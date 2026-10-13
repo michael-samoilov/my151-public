@@ -79,7 +79,7 @@ export function decodePng(buf: Buffer): RgbImage {
   return { w: width, h: height, rgb };
 }
 
-/** Share of interior pixels the holographic layer changes. The red frame is excluded. */
+/** Share of interior pixels the gleam layer changes. The red frame is excluded. */
 export function interiorChangeRatio(live: RgbImage, hidden: RgbImage): number {
   const w = Math.min(live.w, hidden.w);
   const h = Math.min(live.h, hidden.h);
@@ -111,7 +111,7 @@ async function cardClip(page: Page): Promise<{ x: number; y: number; width: numb
 }
 
 /**
- * Open-state rainbow: hide the holographic layer and count interior pixels that change.
+ * Open-state rainbow: hide the gleam layer and count interior pixels that change.
  * A frame-only mask leaves the ink unchanged.
  */
 export async function paintedInkRainbow(page: Page): Promise<{ ok: boolean; reason: string }> {
@@ -125,19 +125,19 @@ export async function paintedInkRainbow(page: Page): Promise<{ ok: boolean; reas
   const clip = await cardClip(page);
   const live = decodePng(await page.screenshot({ clip, animations: 'disabled' }));
   await page.evaluate(() => {
-    const holo = document.querySelector('[data-foil-layer="holographic"]');
+    const holo = document.querySelector('[data-foil-layer="gleam"]');
     if (holo instanceof HTMLElement) holo.style.visibility = 'hidden';
   });
   const hidden = decodePng(await page.screenshot({ clip, animations: 'disabled' }));
   await page.evaluate(() => {
-    const holo = document.querySelector('[data-foil-layer="holographic"]');
+    const holo = document.querySelector('[data-foil-layer="gleam"]');
     if (holo instanceof HTMLElement) holo.style.visibility = '';
   });
   const ratio = interiorChangeRatio(live, hidden);
   const amount = await page.evaluate(() => {
     const card = document.querySelector('[data-export-preview]');
     if (!(card instanceof HTMLElement)) return 0;
-    return Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
+    return Number(getComputedStyle(card).getPropertyValue('--foil-gleam'));
   });
   if (Math.abs(amount - 0.7) > 0.02) return { ok: false, reason: `amount ${amount}` };
   if (ratio < MIN_CHANGED_INK_RATIO) return { ok: false, reason: `ink unchanged ${(ratio * 100).toFixed(2)}%` };

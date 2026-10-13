@@ -29,6 +29,8 @@ async function rowValues(page: Page, dimension: string, key: string) {
   return row.locator('td').allTextContents();
 }
 const number = (text: string) => Number(text.replace(/[^\d.-]/g, ''));
+// Analytics unlocks at 25 favorites and stays unlocked (useAnalyticsUnlock.ts).
+test.beforeEach(({ page }) => page.addInitScript(() => localStorage.setItem('personal-151-favorites-analytics-v1', '1')));
 
 test('short header retains full search title and keyboard tabs stay on the same URL', async ({ page, request }, testInfo) => {
   await seed(page, { 'fire|1': 6 });
@@ -197,7 +199,8 @@ test('complete saved chart reports every independent vote and honest per-chart c
   await expect(chart(page, 'evolution').locator('[data-favorite-chart-row="basic"]')).toHaveCount(1);
   const bstText = await chart(page, 'bst').innerText();
   const means = await chart(page, 'bst').locator('[data-mean-marker] text').allTextContents();
-  expect(means).toEqual(expect.arrayContaining(['Your Avg 430.5', '442.1 Options Avg']));
+  // The options mean moves when a form joins an ordinary selector: 443.5 since the Terastal Ogerpon forms.
+  expect(means).toEqual(expect.arrayContaining(['Your Avg 430.5', '443.5 Options Avg']));
   await artifact(page, testInfo, 'complete-live-coverage', { population: 224, coverage, bstText, originalCells: Object.keys(fullSeed).length });
 });
 

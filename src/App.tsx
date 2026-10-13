@@ -29,13 +29,8 @@ const ViewPage = lazy(() =>
 
 function RouteFallback() {
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 animate-spin opacity-70">
-        <circle cx="16" cy="16" r="15" fill="#fafafa" stroke="#dc2626" strokeWidth="1.5" />
-        <path d="M2 16 A14 14 0 0 1 30 16" fill="#dc2626" />
-        <line x1="2" y1="16" x2="30" y2="16" stroke="#fafafa" strokeWidth="2" />
-        <circle cx="16" cy="16" r="4.5" fill="#fafafa" stroke="#dc2626" strokeWidth="2" />
-      </svg>
+    <div className="flex-1 flex items-center justify-center opacity-70">
+      <PokeBallSpinner delayed className="w-12 h-12" />
     </div>
   );
 }
@@ -45,10 +40,11 @@ import { useCompletionBeacon, sendEventBeacon } from '@/hooks/useCompletionBeaco
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
+import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
-import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
+import { sectionName as sectionLabel, useDocumentLocale, useT } from '@/i18n';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -65,20 +61,21 @@ function MobileSheet({ sectionName, topGap, onClose, isDesktop }: { sectionName:
   // Escape handler is what closes the desktop pane.
   const [browserMounted, setBrowserMounted] = useState(!isDesktop);
   if (!isDesktop && !browserMounted) setBrowserMounted(true);
+  const t = useT();
   return (
     <BottomSheet
       onClose={onClose}
       size="full"
       topGap={topGap}
-      closeLabel={sectionName ? `Adding to ${sectionName}` : 'Browse Pokémon'}
+      closeLabel={sectionName ? t('builder.addingToLabel', { section: sectionName }) : t('builder.browse')}
       title={
         sectionName !== null ? (
           <>
-            <span className="text-foreground">Adding to: </span>
+            <span className="text-foreground">{t('builder.addingTo')}</span>
             <span className="text-primary">{sectionName}</span>
           </>
         ) : (
-          <span className="text-muted-foreground">Browse Pokémon</span>
+          <span className="text-muted-foreground">{t('builder.browse')}</span>
         )
       }
     >
@@ -266,6 +263,7 @@ function App() {
             past the header. It takes the header's leftover height, as each
             view did on its own. */}
         <main className="flex min-h-0 flex-1 flex-col">
+        <ErrorBoundary where="pokedex-builder">
         {/* Builder — always mounted to avoid remount cost on tab switch */}
         <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' ? 'hidden' : 'p151-view-enter')}>
           <div className={cn(
@@ -309,17 +307,18 @@ function App() {
             {analyticsMounted && (
               <ErrorBoundary where="analytics">
                 <Suspense fallback={<RouteFallback />}>
-                  <AnalyticsDashboard />
+                  <AnalyticsDashboard onAddPokemon={() => handleViewChange('builder')} />
                 </Suspense>
               </ErrorBoundary>
             )}
           </div>
           {drillDownSegment && isDesktop && (
             <div className="hidden md:flex w-1/2 flex-shrink-0 border-l">
-              <Suspense fallback={null}><DrillDownPanel /></Suspense>
+              <Suspense fallback={<ScreenSpinner />}><DrillDownPanel /></Suspense>
             </div>
           )}
         </div>
+        </ErrorBoundary>
         </main>
         </ToolbarSlotContext.Provider>
       </div>
@@ -332,7 +331,7 @@ function App() {
       {/* Analytics drill-down sheet — only on analytics view, mobile only.
           The desktop pane above covers >=1024px; mounting both built three
           hidden carousel panels per desktop chart tap. */}
-      {currentView === 'analytics' && drillDownSegment && !isDesktop && <Suspense fallback={null}><DrillDownSheet topGap={headerHeight} /></Suspense>}
+      {currentView === 'analytics' && drillDownSegment && !isDesktop && <Suspense fallback={<ScreenSpinner />}><DrillDownSheet topGap={headerHeight} /></Suspense>}
 
       {/* The report form's single mount point, outside every page's hidden
           subtree and error boundary, so the footer link and the crash fallback

@@ -528,8 +528,8 @@ function attempt(
     const count = regions[cell.key] ?? 0;
     const text = String(count);
     const w = measure(text, font);
-    // Room for the count plus the two inset outlines on each side of the cell.
-    const room = pad + 2 * strokeW;
+    // Padding includes the thin label halo.
+    const room = pad;
     if (w + 2 * room <= cell.w && font + 2 * room <= cell.h) {
       const x = cell.x + cell.w / 2;
       const y = cell.y + cell.h / 2;

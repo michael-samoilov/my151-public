@@ -1,5 +1,5 @@
 import { memo, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById } from '@/league/data/catalog';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { cn, displayName } from '@/lib/utils';
 import { starPath } from '@/lib/sectionOutlines';

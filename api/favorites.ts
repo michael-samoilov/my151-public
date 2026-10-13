@@ -1,3 +1,5 @@
+import {parseAttentionForIngest} from './_attention.js';
+import {appendMinuteActivity} from './_activityHistoryStore.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
@@ -46,6 +48,8 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     if(parseNotmeFlag(b.notme)||isReadOnlyDeployment(req))return res.status(200).json({ok:true});
     const received=Date.now();const now=parseCapturedAt(b.ts,received);
     if(now===null)return res.status(400).json({error:'invalid captured time'});
+    const attention=parseAttentionForIngest(b.attention,received);
+    if(attention===null)return res.status(400).json({error:'invalid attention'});
     const drop=async(reason:string)=>{await redis.hincrby('funnel',`favorites-drop:${reason}`,1);};
     for(const [limiter,key,reason] of [[burstLimiter,getClientIp(req),'rate-limit-ip'],[clientLimiter,`favorites:${b.cid}`,'rate-limit-client']] as const){
       const limit=await limiter.limit(key);
@@ -65,12 +69,15 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
       if(b.kind==='export-shown'&&!session?.events.includes('favorites-export-shown'))events.push('favorites-export-shown');
       if(exportKind)events.push(`favorites-export-${exportKind}`);
       if(stats)events.push('favorites-export-stats');
-      const rec=mergeFavoriteRecord(existing,{cid:b.cid,id:b.id,now,kind:b.kind as FavoriteBeaconKind,snapshot,exportKind:exportKind as FavoriteExportKind|undefined,events,
+      const rec=mergeFavoriteRecord(existing,{cid:b.cid,id:b.id,now,receivedAt:received,attention,kind:b.kind as FavoriteBeaconKind,snapshot,exportKind:exportKind as FavoriteExportKind|undefined,events,
         ...geo,...ua,lang:getLang(req),locale:parseLocale(b.locale),switched:parseLocale(b.switched),referrer:parseReferrerHost(b.ref)});
       const entries=events.map(ev=>({t:now,cid:b.cid,tool:'favorites',ev,...(parsePage(b.page)?{page:parsePage(b.page)}:{})}));
       const result=await redis.eval(CAS,[FAVORITE_CLIENTS_KEY,FAVORITE_VERSION_KEY,`favorites:request:${b.cid}:${b.id}`,'funnel',`funnel:${day}`,`journal:${day}`],
         [b.cid,version==null?'0':String(version),JSON.stringify(rec),MAX_CLIENTS,JSON.stringify(entries),JOURNAL_TTL_S,JOURNAL_MAX_PER_DAY,exportKind?JOURNAL_TTL_S:604800]);
-      if(result===1||result===2)return res.status(200).json({ok:true});
+      if(result===1||result===2){
+        const activityAck=await appendMinuteActivity(b.cid,'favorites',b.activity,received);
+        return res.status(200).json({ok:true,activityAck});
+      }
       if(result===3){await drop('cap');return res.status(200).json({ok:true,capped:true});}
       await new Promise(r=>setTimeout(r,15+attempt*20));
     }
