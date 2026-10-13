@@ -158,9 +158,9 @@ function EntryRow({ entry, note, onOpen }: { entry: Acknowledgement; note: strin
       <span className="flex min-w-0 flex-1 flex-col">
         {/* A credit shows whole: the name and its author wrap onto a second
             line rather than lose their ends to an ellipsis. */}
-        <span className="break-words text-sm">
-          <span className="font-medium">{entry.name}</span>
-          {entry.by && <span className="text-muted-foreground"> {t('ack.by', { name: entry.by })}</span>}
+        <span className="break-words text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{entry.name}</span>
+          {entry.by && ` ${t('ack.by', { name: entry.by })}`}
         </span>
         <span className="break-words text-xs text-muted-foreground">{note}</span>
       </span>
