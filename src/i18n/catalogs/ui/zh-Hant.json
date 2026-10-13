@@ -500,7 +500,7 @@
   "favorites.title": "依屬性和世代挑選最愛的寶可夢",
   "favorites.icons.hide": "隱藏圖示",
   "favorites.icons.show": "顯示圖示",
-  "error.body": "頁面中有部分內容發生錯誤。重新載入通常就能解決；傳送回報能讓我們知道哪裡出了問題。",
+  "error.body": "頁面中有部分內容發生錯誤。重新載入通常就能解決。",
   "error.reload": "重新載入",
   "error.title": "這個部分已停止運作",
   "feedback.category.bug": "程式錯誤",

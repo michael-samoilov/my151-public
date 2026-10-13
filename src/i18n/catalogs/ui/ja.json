@@ -500,7 +500,7 @@
   "favorites.title": "タイプ・世代別のお気に入りポケモン",
   "favorites.icons.hide": "アイコンを隠す",
   "favorites.icons.show": "アイコンを表示",
-  "error.body": "ページの一部でエラーが発生しました。たいていは再読み込みで直ります。報告していただくと、原因の特定に役立ちます。",
+  "error.body": "ページの一部でエラーが発生しました。たいていは再読み込みで直ります。",
   "error.reload": "再読み込み",
   "error.title": "この部分が動作しなくなりました",
   "feedback.category.bug": "不具合",

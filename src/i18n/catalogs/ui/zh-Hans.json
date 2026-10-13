@@ -500,7 +500,7 @@
   "favorites.title": "按属性和世代挑选最爱的宝可梦",
   "favorites.icons.hide": "隐藏图标",
   "favorites.icons.show": "显示图标",
-  "error.body": "页面中有部分内容出错了。重新加载通常就能解决；发送报告能让我们知道哪里出了问题。",
+  "error.body": "页面中有部分内容出错了。重新加载通常就能解决。",
   "error.reload": "重新加载",
   "error.title": "此部分已停止运行",
   "feedback.category.bug": "程序错误",

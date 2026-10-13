@@ -500,7 +500,7 @@
   "favorites.title": "타입·세대별 좋아하는 포켓몬 고르기",
   "favorites.icons.hide": "아이콘 숨기기",
   "favorites.icons.show": "아이콘 표시",
-  "error.body": "페이지 일부에서 오류가 발생했습니다. 대부분 새로고침하면 해결되며, 신고해 주시면 무엇이 문제인지 알 수 있습니다.",
+  "error.body": "페이지 일부에서 오류가 발생했습니다. 대부분 새로고침하면 해결됩니다.",
   "error.reload": "새로고침",
   "error.title": "이 부분이 작동을 멈췄습니다",
   "feedback.category.bug": "버그",
