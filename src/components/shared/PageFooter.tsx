@@ -39,8 +39,11 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
     // full footer used to reserve. The FAQ stays for SEO, collapsed and tight.
     return (
       <div className="flex flex-col items-center">
-        <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-4 py-1.5 text-center text-[0.5625rem] text-muted-foreground">
-          <span>v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures / TPC</span>
+        <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-4 py-1.5 text-center text-[length:max(11px,0.5625rem)] text-muted-foreground">
+          <span>
+            v{BUILD_VERSION} · Pokémon © 1995–{YEAR}{' '}
+            <span className="whitespace-nowrap">Nintendo / Game Freak / Creatures / TPC</span>
+          </span>
           <span aria-hidden className="text-muted-foreground/40">·</span>
           <button
             type="button"
@@ -71,13 +74,14 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
         <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
         <circle cx="12" cy="12" r="1.5" fill="currentColor" />
       </svg>
-      <span className="text-[0.5625rem] text-muted-foreground text-center">
-        v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures / TPC
+      <span className="text-[length:max(11px,0.5625rem)] text-muted-foreground text-center">
+        v{BUILD_VERSION} · Pokémon © 1995–{YEAR}{' '}
+        <span className="whitespace-nowrap">Nintendo / Game Freak / Creatures / TPC</span>
       </span>
-      <span className="text-[0.5rem] text-muted-foreground">
+      <span className="text-[length:max(11px,0.5rem)] text-muted-foreground">
         {t('footer.disclaimer')}
       </span>
-      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[0.5625rem] text-muted-foreground">
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[length:max(11px,0.5625rem)] text-muted-foreground">
         {/* The secondary path to the report form. The floating button is the one
             people find by accident; this is the one they go looking for. */}
         <button
