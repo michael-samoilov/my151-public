@@ -152,6 +152,9 @@ test.describe('section outline labels in every language', () => {
 
   test('the shortest label fits a one-cell outline', async ({ page }, testInfo) => {
     test.setTimeout(120_000);
+    // The League notice's tooltip covers the View tab once the favorites
+    // notice window has closed (src/lib/launchFlags.ts).
+    await page.addInitScript(() => localStorage.setItem('p151-league-promo-seen', '1'));
     const english = await labels(page, 'en');
     const results: Record<string, { text: string; scale: number; widthEm: number }[]> = { en: english };
     const bad: string[] = [];
