@@ -249,7 +249,7 @@ test.describe('desktop export preview', () => {
       const glare = getComputedStyle(card, '::before');
       const glareMask = `${glare.getPropertyValue('-webkit-mask-image')} ${glare.maskImage}`;
       if (!glareMask.includes('none')) return { ok: false, reason: `glare mask ${glareMask}` };
-      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-gleam')) - 0.65) > 0.02) {
+      if (Math.abs(Number(getComputedStyle(card).getPropertyValue('--foil-gleam')) - 0.7) > 0.02) {
         return { ok: false, reason: 'amount' };
       }
       return { ok: true, reason: 'open' };
@@ -284,7 +284,7 @@ test.describe('desktop export preview', () => {
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.65, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.7, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.shadow, JSON.stringify(holo)).toBe(2);
@@ -372,7 +372,7 @@ test.describe('gym trainer-card export', () => {
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.65, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.7, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2);
     expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(10.2);

@@ -139,7 +139,7 @@ export async function paintedInkRainbow(page: Page): Promise<{ ok: boolean; reas
     if (!(card instanceof HTMLElement)) return 0;
     return Number(getComputedStyle(card).getPropertyValue('--foil-gleam'));
   });
-  if (Math.abs(amount - 0.65) > 0.02) return { ok: false, reason: `amount ${amount}` };
+  if (Math.abs(amount - 0.7) > 0.02) return { ok: false, reason: `amount ${amount}` };
   if (ratio < MIN_CHANGED_INK_RATIO) return { ok: false, reason: `ink unchanged ${(ratio * 100).toFixed(2)}%` };
   return { ok: true, reason: `ink ${(ratio * 100).toFixed(1)}%` };
 }

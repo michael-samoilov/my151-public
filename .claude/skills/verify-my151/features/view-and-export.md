@@ -57,7 +57,7 @@ display options, exportable as a PNG.
   three flat gray cards (wide, league-shaped and tall) that show the bands
   with nothing in the way.
 - Defaults (Michael's workshop pick, September 27; the holo pair from
-  October 12): gleam 0.65, prism 0.21,
+  October 12): gleam 0.70, prism 0.21,
   point light 1, iridescence 0.1, max and auto tilt 10 degrees, tilt factor
   10/7, glare 0.6 at size 0.5 (1 until October 11), shadow blur 25, exit
   delay 420 ms, pop 1.15.
@@ -122,7 +122,7 @@ that the harness uses, `/api/submit` has no handler, so nothing is recorded.
 `runFoilWorkshopSuite` opens `/foil-workshop` and asserts the keeper
 controls (Shine, Rainbow, Point light, Iridescence, Max tilt, Glare, Shadow),
 no blend, mask, sparkle, or parallax controls,
-`--foil-gleam` at `0.65`, and a working glare slider.
+`--foil-gleam` at `0.70`, and a working glare slider.
 
 Manual drive (a Playwright script, local build): seed 37 with
 `viewSortOption: 'national'`, open the view tab, and expect 37
