@@ -29,6 +29,7 @@ export const enUi = {
   // (src/data/acknowledgements.ts).
   'ack.artists': 'Artists',
   'ack.back': 'Back',
+  'ack.baseBy': 'base sprite by {name}',
   'ack.by': 'by {name}',
   'ack.count_one': '{count} credit',
   'ack.count_other': '{count} credits',

@@ -72,6 +72,7 @@ export function AcknowledgementsSprites({ source }: { source: SpriteCreditId }) 
                 {pickerFullName(sprite.mon, ready)}
                 {sprite.by && <span className="text-muted-foreground"> {t('ack.by', { name: sprite.by })}</span>}
                 {sprite.with && <span className="text-muted-foreground"> {t('ack.with', { name: sprite.with })}</span>}
+                {sprite.base && <span className="text-muted-foreground"> {t('ack.baseBy', { name: sprite.base })}</span>}
               </li>
             ))}
           </ul>

@@ -1,6 +1,7 @@
 {
   "ack.artists": "아티스트",
   "ack.back": "뒤로",
+  "ack.baseBy": "원본 스프라이트: {name}",
   "ack.by": "제작: {name}",
   "ack.count_other": "{count}개 항목",
   "ack.credit": "크레디트",

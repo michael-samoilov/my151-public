@@ -1,6 +1,7 @@
 {
   "ack.artists": "画师",
   "ack.back": "返回",
+  "ack.baseBy": "原始精灵图：{name}",
   "ack.by": "作者：{name}",
   "ack.count_other": "{count}项",
   "ack.credit": "署名",

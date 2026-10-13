@@ -1,6 +1,7 @@
 {
   "ack.artists": "Artisti",
   "ack.back": "Indietro",
+  "ack.baseBy": "sprite di base di {name}",
   "ack.by": "di {name}",
   "ack.count_one": "{count} voce",
   "ack.count_other": "{count} voci",

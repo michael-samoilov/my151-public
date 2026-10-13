@@ -1,6 +1,7 @@
 {
   "ack.artists": "アーティスト",
   "ack.back": "戻る",
+  "ack.baseBy": "元のドット絵：{name}",
   "ack.by": "作者：{name}",
   "ack.count_other": "{count}件",
   "ack.credit": "クレジット",

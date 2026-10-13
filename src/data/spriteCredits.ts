@@ -10,7 +10,10 @@
  *
  * Each such sprite is a row in `spriteSources.json`, keyed by the file name
  * it is served under. `source` is the entry that credits it; `by` names the
- * spriter, and `with` names someone the source asks to credit beside it.
+ * spriter, `with` names someone the source asks to credit beside it, and
+ * `base` names the artist of the base sprite an animation is drawn on. A row
+ * with `cleanup` records a sprite my151 only repaired, saying what changed; the
+ * panel does not list it, because nobody chose it.
  * `scripts/check-sprite-revisions.mjs` fails when a sprite is added or
  * replaced without a row, or when a row names a missing file.
  */
@@ -31,6 +34,8 @@ interface SpriteRow {
   source: SpriteSourceId;
   by?: string;
   with?: string;
+  base?: string;
+  cleanup?: string;
 }
 
 const isSource = (id: unknown): id is SpriteSourceId => (SPRITE_SOURCES as readonly unknown[]).includes(id);
@@ -45,6 +50,7 @@ export interface ChosenSprite {
   mon: PickerMon;
   by?: string;
   with?: string;
+  base?: string;
 }
 
 /** The file name a sprite is served under, without `.png` and the `?v=` revision. */
@@ -59,14 +65,14 @@ function groupRows(): Map<SpriteSourceId, ChosenSprite[]> {
   const listed = allPickerMons()
     .flatMap((mon) => {
       const row = ROWS.get(spriteFile(mon.sprite));
-      return row ? [{ mon, row, species: speciesOf(pickerNameId(mon)) || speciesOf(mon.ownerId) }] : [];
+      return row && !row.cleanup ? [{ mon, row, species: speciesOf(pickerNameId(mon)) || speciesOf(mon.ownerId) }] : [];
     })
     .sort((a, b) => a.species - b.species || comparePickerOrder(a.mon, b.mon));
   const groups = new Map<SpriteSourceId, ChosenSprite[]>();
   for (const { mon, row } of listed) {
     const list = groups.get(row.source) ?? [];
     groups.set(row.source, list);
-    list.push({ mon, by: row.by, with: row.with });
+    list.push({ mon, by: row.by, with: row.with, base: row.base });
   }
   return groups;
 }

@@ -1,6 +1,7 @@
 {
   "ack.artists": "Artistes",
   "ack.back": "Retour",
+  "ack.baseBy": "sprite de base par {name}",
   "ack.by": "par {name}",
   "ack.count_one": "{count} crédit",
   "ack.count_other": "{count} crédits",

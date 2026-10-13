@@ -1,6 +1,7 @@
 {
   "ack.artists": "Künstler",
   "ack.back": "Zurück",
+  "ack.baseBy": "Basis-Sprite von {name}",
   "ack.by": "von {name}",
   "ack.count_one": "{count} Eintrag",
   "ack.count_other": "{count} Einträge",

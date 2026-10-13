@@ -1,6 +1,7 @@
 {
   "ack.artists": "繪師",
   "ack.back": "返回",
+  "ack.baseBy": "原始精靈圖：{name}",
   "ack.by": "作者：{name}",
   "ack.count_other": "{count}項",
   "ack.credit": "署名",
