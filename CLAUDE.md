@@ -66,7 +66,7 @@ Every work-branch push runs the work-branch checks. A production merge adds the 
 
 | Production tier | When | Run before the merge | About |
 |---|---|---|---|
-| Small | One tool and a few files. No saved data, store, API, analytics write, i18n catalog, build config, dependency, or component that another tool also uses. | The work-branch checks, the repo guards (`check-viewport-tags`, `check-test-rules`, `check-sprite-revisions`, `check-speed-test-detection`, `check-bundle-budget`), the proof test, and the specs for the changed area. A visual change adds `/verify-my151` diff with `--surfaces blink`. | 6 min |
+| Small | One tool and a few files. No saved data, store, API, analytics write, i18n catalog, build config, dependency, or component that another tool also uses. | The work-branch checks, the repo guards (`check-viewport-tags`, `check-test-rules`, `check-sprite-revisions`, `check-speed-test-detection`, `check-bundle-budget`, `check-published-source`), the proof test, and the specs for the changed area. A visual change adds `/verify-my151` diff with `--surfaces blink`. | 6 min |
 | Standard | Shared code, or a change that more than one tool shows. | `bash scripts/ci-local.sh` once, on the merged result. A visual change adds `/verify-my151` diff with `--surfaces blink,blink-ios-safari`. | 20 min |
 | Full | Saved-data shape or migration, a store, an API or analytics write, build or deploy config, a dependency upgrade, or a launch. | `bash scripts/ci-local.sh` once, on the merged result. A change that reaches the browser bundle adds `/verify-my151` diff on all engines. A server-only change does not: the harness serves a build whose API calls fail, so it cannot observe the change. | 40 min |
 | Admin | Every changed file is admin-only: the command below prints nothing. This covers the admin page and its read-only API code. Michael set this tier on 2026-10-08. | `npm run lint`, `npm test`, `node scripts/check-test-rules.mjs`, the proof test, and `flock /tmp/my151-browser.lock npx playwright test e2e/admin- --project=desktop --project=mobile --project=narrow`, which builds first. A visual change adds 390 and 1280 px before-and-after shots on live data. | 3 min |
@@ -123,6 +123,7 @@ The other checks, which `scripts/ci-local.sh` also runs:
 | `node scripts/check-sprite-revisions.mjs` | Fails when a file under `public/sprites` was replaced under the same name since production without a matching entry in `src/data/spriteRevisions.json`, or when an entry no longer matches its file. Sprites are cached `immutable` for a year and the service worker keeps them forever, so a replaced file needs a new URL. `src/lib/spriteUrl.ts` adds the entry as `?v=`. The error prints the entry to add. |
 | `node scripts/check-speed-test-detection.mjs` | Fails when code a browser or the server runs mentions Lighthouse, PageSpeed, a headless browser, or WebDriver. A page must never serve a speed test something different from what people get. |
 | `node scripts/check-bundle-budget.mjs` | Fails when the first-load download of the hub, the Pokédex builder, or the league builder grows more than 5% over its baseline in `scripts/performance/budgets.json`. Text is measured with Brotli, images as emitted, every `srcset` size included. It builds its own copy with a Vite manifest, so `dist/` does not change. After a change that shrinks a page, or an increase that was agreed on, run it with `--rebase` and commit the new baselines. |
+| `node scripts/check-published-source.mjs` | Fails when a file under `public/licenses/source/` differs from the source file that `scripts/published-source.json` maps it to, when a published or fenced file is not in the manifest, or when a source file does not start with its license notice. Run it with `--write` to refresh the copies. See "Published license source". |
 | `npm run test:e2e` | Playwright. Required for UI changes. Auto-starts isolated preview and development servers on ports derived from the worktree path. Use `PLAYWRIGHT_PREVIEW_PORT` and `PLAYWRIGHT_DEV_PORT` to override them. Projects: `mobile`, `desktop`, `narrow` (320px). `desktop` runs every test; `mobile` and `narrow` run only `@viewport` tests. Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
 
 Against a Vercel preview, skip the local web servers. A preview builds only on request (see "Vercel builds"):
@@ -148,6 +149,18 @@ Builds are most of the Vercel bill. Michael set these rules on 2026-10-09.
 - Never push an experiment to production to measure it. Measure with `lighthouse.mjs` and `lab.mjs` locally, then merge the result.
 - Batch production merges. Each code merge is a full build of about 66 seconds.
 - When the site build starts to read a file under a path that the script skips, remove that path from the script's skip list.
+
+## Published license source
+
+Michael set these rules on 2026-10-12.
+
+1. Never release our own code under an open-source license, and never publish its source.
+2. Keep code whose license makes us publish its source, such as MPL-2.0, in files of its own. Put none of our code in those files. Our code imports from them.
+3. Publish each such file unchanged as `public/licenses/source/<project>/<file>.txt`. The site serves it at `https://my151.app/licenses/source/<project>/<file>.txt`.
+4. Link each published file from the project's Acknowledgements entry and from its section in `THIRD_PARTY_NOTICES.md`.
+5. List each file in `scripts/published-source.json`. `node scripts/check-published-source.mjs` enforces the list, and `scripts/ci-local.sh` runs it.
+
+Do not copy code under a license that covers the whole work, such as GPL-3.0. Fencing does not help there: rewrite the feature without that code.
 
 ## Deployment
 

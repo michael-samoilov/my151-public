@@ -15,6 +15,8 @@ const byId=new Map(pokemon.rows.map(row=>[Number(row.id),row]));const byName=new
 const formByName=new Map(forms.rows.map(row=>[row.identifier,row]));const map=new Map(reviewed.entries.map(row=>[row.appId,row]));
 const bst:Record<number,number>={},inventory:unknown[]=[],unknown:unknown[]=[];
 const cosmeticGenderIds=new Set([11067,11068,11094,11095]);
+// Appearances with no upstream record of their own use the record they are drawn from: Overdrive, the legendary phases, Zenith Marshadow, and DJ Rotom. Kyurem's Overdrives take the fusion's record, not the species'. Each Terastal Ogerpon takes its mask's record; Scarlet and Violet give both the same stats.
+const sharedRecords=new Map([[11105,'reshiram'],[11106,'zekrom'],[11107,'kyurem-black'],[11108,'kyurem-white'],[11109,'solgaleo'],[11110,'lunala'],[11111,'marshadow'],[11112,'rotom'],[11113,'ogerpon'],[11114,'ogerpon-wellspring-mask'],[11115,'ogerpon-hearthflame-mask'],[11116,'ogerpon-cornerstone-mask']]);
 for(const mon of allPickerMons()){
  const reviewedMon=map.get(pickerDexId(mon)),owner=map.get(mon.ownerId),speciesId=reviewedMon?.speciesId??owner?.speciesId??mon.ownerId;
  let row;
@@ -26,11 +28,12 @@ for(const mon of allPickerMons()){
  if(!row&&reviewedMon&&mon.id===pickerDexId(mon)){const candidate=byName.get(reviewedMon.formIdentifier);if(candidate)row=candidate;}
  const battle=powerups.forms.find(form=>form.id===mon.id);if(!row&&battle){const candidate=byId.get(battle.id);if(candidate?.identifier===battle.identifier&&Number(candidate.species_id)===battle.owner)row=candidate;}
  if(!row&&cosmeticGenderIds.has(mon.id)){const candidate=byId.get(speciesId);if(candidate&&Number(candidate.species_id)===speciesId)row=candidate;}
+ if(!row&&sharedRecords.has(mon.id))row=byName.get(sharedRecords.get(mon.id)!);
  if(!row||Number(row.species_id)!==speciesId){unknown.push({id:mon.id,name:mon.name,reason:'No identity-checked upstream Pokémon/form mapping'});continue;}
  const values=stats.rows.filter(s=>Number(s.pokemon_id)===Number(row.id));
  if(values.length!==6||new Set(values.map(v=>v.stat_id)).size!==6||values.some(v=>!Number.isFinite(Number(v.base_stat))||Number(v.base_stat)<=0))throw Error(`Incomplete stats ${row.id}`);
  const gameCorrection=formAudit.gameStatsConflicts.find(correction=>correction.id===mon.id);
- bst[mon.id]=gameCorrection?Object.values(gameCorrection.gameStats).reduce((sum,value)=>sum+value,0):values.reduce((sum,v)=>sum+Number(v.base_stat),0);inventory.push({id:mon.id,name:mon.name,sourceId:Number(row.id),identifier:row.identifier,speciesId,bst:bst[mon.id],...(cosmeticGenderIds.has(mon.id)?{mapping:'Cosmetic female sprite uses species personal record'}:{}),...(gameCorrection?{gameCorrection:'Direct ZA personal record; see form-metadata-audit/provenance.json'}:{})});
+ bst[mon.id]=gameCorrection?Object.values(gameCorrection.gameStats).reduce((sum,value)=>sum+value,0):values.reduce((sum,v)=>sum+Number(v.base_stat),0);inventory.push({id:mon.id,name:mon.name,sourceId:Number(row.id),identifier:row.identifier,speciesId,bst:bst[mon.id],...(cosmeticGenderIds.has(mon.id)?{mapping:'Cosmetic female sprite uses species personal record'}:{}),...(sharedRecords.has(mon.id)?{mapping:'Appearance without its own record uses the record it is drawn from'}:{}),...(gameCorrection?{gameCorrection:'Direct ZA personal record; see form-metadata-audit/provenance.json'}:{})});
 }
 writeFileSync('src/favorites/data/formBst.json',JSON.stringify(bst,null,2)+'\n');
 writeFileSync('docs/favorite-picker-work/conditional-stats/bst-provenance.json',JSON.stringify({repository:'https://github.com/PokeAPI/pokeapi',revision,sources:[pokemon,forms,stats].map(({name,sha256})=>({name,sha256,url:`https://raw.githubusercontent.com/PokeAPI/pokeapi/${revision}/data/v2/csv/${name}.csv`})),inventory,unknown},null,2)+'\n');

@@ -473,6 +473,13 @@ const SAME_AS_ENGLISH_OK = new Set([
   'it:stage.columnTotal_one',
   'it:stage.columnTotal_other',
   'it:stage.legendUnit',
+  // The footer's Acknowledgements panel. German and French fans say "Sprites",
+  // as do Spanish ones; "Code" is the German and French noun.
+  'de:ack.group.sprites',
+  'fr:ack.group.sprites',
+  'es:ack.group.sprites',
+  'de:ack.group.code',
+  'fr:ack.group.code',
 ]);
 
 /**

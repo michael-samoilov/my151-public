@@ -6,6 +6,8 @@
  * ids from a URL or localStorage drop out at parse time.
  */
 
+import { HOVER_TILT_ROTATION } from './hover-tilt/hoverTilt';
+
 export const HOVER_TILT_MASK_IDS = [
   'none',
   'typeIcon',
@@ -176,8 +178,8 @@ const MASK_COMPOSITE_WEBKIT: Record<HoverTiltMaskComposite, string> = {
 export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string> {
   return {
     '--hover-tilt-scale': recipe.scaleFactor.toFixed(3),
-    '--hover-tilt-rotation-x': `${(10 * recipe.tiltFactor).toFixed(2)}deg`,
-    '--hover-tilt-rotation-y': `${(10 * recipe.tiltFactorY).toFixed(2)}deg`,
+    '--hover-tilt-rotation-x': `${(HOVER_TILT_ROTATION * recipe.tiltFactor).toFixed(2)}deg`,
+    '--hover-tilt-rotation-y': `${(HOVER_TILT_ROTATION * recipe.tiltFactorY).toFixed(2)}deg`,
     '--hover-tilt-glare-intensity': recipe.glareIntensity.toFixed(3),
     '--hover-tilt-glare-size': recipe.glareSize.toFixed(3),
     '--hover-tilt-glare-hue': String(Math.round(recipe.glareHue)),
