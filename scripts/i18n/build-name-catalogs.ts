@@ -164,6 +164,11 @@ async function main(): Promise<void> {
       }
     }
   }
+  // Mega Meowstic has one design for both genders: PokéAPI's female Mega is a
+  // pixel copy of the male one. Its name still comes from PokéAPI's
+  // meowstic-male-mega row, but its identity names no gender, so its code is
+  // M rather than M ♂.
+  entries.find((entry) => entry.appId === 10314)!.formIdentifier = 'meowstic-mega';
   const xerneas = entries.find((entry) => entry.appId === 716)!;
   xerneas.formId = Number(formsBySlug.get('xerneas-active')!.id);
   xerneas.formIdentifier = 'xerneas-active';
