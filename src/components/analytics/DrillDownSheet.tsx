@@ -9,7 +9,8 @@ import type { ShapeName, TypeName } from '@/types/pokemon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
-const PEEK_HEIGHT = 68;
+/** The peek shows the whole pull tab, accent line included, plus this strip. */
+const PEEK_STRIP = 5;
 const EXPAND_THRESHOLD = 40;
 const DISMISS_THRESHOLD = 80;
 const SWIPE_THRESHOLD = 50;
@@ -53,6 +54,7 @@ function CardPanel({
   prevShape,
   nextShape,
   scrollRef,
+  pullTabRef,
   spriteOverrides,
   onHandleTouchStart,
   onHandleTouchMove,
@@ -73,6 +75,7 @@ function CardPanel({
   prevShape?: ShapeName;
   nextShape?: ShapeName;
   scrollRef?: React.RefObject<HTMLDivElement | null>;
+  pullTabRef?: React.RefObject<HTMLDivElement | null>;
   spriteOverrides?: Record<number, string>;
   onHandleTouchStart?: (e: React.TouchEvent) => void;
   onHandleTouchMove?: (e: React.TouchEvent) => void;
@@ -91,8 +94,9 @@ function CardPanel({
 
   return (
     <div {...panelAttributes} className="flex flex-col h-full bg-background rounded-t-2xl overflow-hidden" style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.2)' }}>
-      {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
+      {/* Pull tab: entire area is draggable (handle + header + subtitle + accent line) */}
       <div
+        ref={pullTabRef}
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
         onTouchStart={onHandleTouchStart}
         onTouchMove={onHandleTouchMove}
@@ -152,10 +156,10 @@ function CardPanel({
           </div>
           <span className="text-[0.625rem] text-muted-foreground mt-0.5">{data.subtitle}</span>
         </div>
-      </div>
 
-      {/* Accent line */}
-      <div className="h-[2px] shrink-0" style={{ backgroundColor: data.color, opacity: 0.5 }} />
+        {/* Accent line */}
+        <div className="h-[2px]" style={{ backgroundColor: data.color, opacity: 0.5 }} />
+      </div>
 
       {/* Scrollable content */}
       <div
@@ -229,6 +233,9 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
   const sheetRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const currentScrollRef = useRef<HTMLDivElement>(null);
+  const currentPullTabRef = useRef<HTMLDivElement>(null);
+  const [pullTabHeight, setPullTabHeight] = useState(0);
+  const [slides, setSlides] = useState(false);
   const pendingNav = useRef<AnalyticsDrillDownItem | null>(null);
 
   // Current index in siblings
@@ -283,6 +290,19 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
       return () => { document.body.style.overflow = ''; };
     }
   }, [peek]);
+
+  // A shape header stacks icons under its labels and stands taller than a
+  // type or color header, so the peek follows the measured pull tab.
+  useLayoutEffect(() => {
+    const tab = currentPullTabRef.current;
+    if (!tab) return;
+    setPullTabHeight(tab.offsetHeight);
+    // The first callback comes after the browser styles the measured peek, so
+    // the sheet opens in place and slides only for later changes.
+    const observer = new ResizeObserver(() => { setPullTabHeight(tab.offsetHeight); setSlides(true); });
+    observer.observe(tab);
+    return () => observer.disconnect();
+  }, [segment]);
 
   // Reset scroll + staged removals when segment changes
   useEffect(() => {
@@ -427,9 +447,10 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
   if (!currentData) return null;
 
   const sheetHeight = `calc(100dvh - ${topGap}px)`;
+  const peekHeight = pullTabHeight + PEEK_STRIP;
 
   const currentTranslateY = peek
-    ? `calc(100dvh - ${topGap}px - ${PEEK_HEIGHT}px + ${Math.max(dragY, -(PEEK_HEIGHT))}px)`
+    ? `calc(100dvh - ${topGap}px - ${peekHeight}px + ${Math.max(dragY, -peekHeight)}px)`
     : `${Math.max(dragY, 0)}px`;
 
   // At rest (fully expanded, no drag), avoid transform to prevent GPU compositing blur
@@ -443,7 +464,7 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
         style={{
           height: sheetHeight,
           transform: isAtRest ? undefined : `translateY(${currentTranslateY})`,
-          transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
+          transition: slides && dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
         }}
       >
@@ -512,6 +533,7 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
                 prevShape={prevSibling ? getSegmentShape(prevSibling) : undefined}
                 nextShape={nextSibling ? getSegmentShape(nextSibling) : undefined}
                 scrollRef={currentScrollRef}
+                pullTabRef={currentPullTabRef}
                 spriteOverrides={bstOverrides}
                 onHandleTouchStart={touchStart}
                 onHandleTouchMove={handleHeaderTouchMove}
