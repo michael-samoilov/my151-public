@@ -35,6 +35,7 @@ import {
   type DragMoveEvent,
 } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
+import { useDndAccessibility } from '@/lib/dndAccessibility';
 
 /**
  * Re-measure droppable rects on every frame. See ViewPage.tsx for the
@@ -153,7 +154,7 @@ const DraggableTile = memo(function DraggableTile({
     listeners,
     setNodeRef: setDragRef,
     isDragging,
-  } = useDraggable({ id });
+  } = useDraggable({ id, attributes: { roleDescription: t('dnd.roleDescription') } });
 
   const { setNodeRef: setDropRef } = useDroppable({ id });
 
@@ -711,6 +712,7 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
 // ---------- main grid ----------
 
 export function PokedexGrid() {
+  const dndAccessibility = useDndAccessibility();
   const sections = usePokedexStore((s) => s.sections);
   const setActiveSection = usePokedexStore((s) => s.setActiveSection);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
@@ -975,6 +977,7 @@ export function PokedexGrid() {
               onChooseStarters={() => handleAddClick('starter')}
             />
             <DndContext
+              accessibility={dndAccessibility}
               sensors={sensors}
               collisionDetection={effectiveCursorCollision}
               modifiers={[snapCenterToPointer]}

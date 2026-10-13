@@ -637,6 +637,8 @@
   "favorites.typeRepair.message": "形態屬性修正影響了{count}個已儲存的選擇。它們仍保留在表格中，但不會包含在匯出圖片中。請檢查對應儲存格並重新選擇。",
   "favorites.typeRepair.review": "檢查",
   "viewSettings.showStats": "顯示詳細統計",
+  "viewSettings.groupSpecialHint": "將化石、額外的最初夥伴、悖謬寶可夢、準神、究極異獸、傳說的寶可夢和幻之寶可夢移到網格最後。不影響自訂排序。",
+  "viewSettings.outlinesHint": "依照製作頁面的分區為寶可夢分組加上輪廓。",
   "stats.type.title": "屬性分布",
   "stats.bst.title": "種族值總和",
   "favorites.stats.shape": "寶可夢體形",
@@ -810,5 +812,13 @@
   "faq.favorites.q4": "免費嗎？需要應用程式或帳號嗎？",
   "faq.favorites.a4": "免費，在瀏覽器中使用，無需註冊或下載。你的選擇儲存在此瀏覽器中。清除瀏覽器資料可能會刪除這些選擇，因此請匯出PNG以保留你的表格。",
   "faq.favorites.q5": "可以在my151的其他工具中使用我的最愛嗎？",
-  "faq.favorites.a5": "可以。寶可夢圖鑑建立器和道館館主製作器可以按此瀏覽器中儲存的最愛篩選寶可夢列表。"
+  "faq.favorites.a5": "可以。寶可夢圖鑑建立器和道館館主製作器可以按此瀏覽器中儲存的最愛篩選寶可夢列表。",
+  "dnd.cancelled": "已取消拖曳。已放下可拖曳的項目 {id}。",
+  "dnd.dropped": "已放下可拖曳的項目 {id}。",
+  "dnd.droppedOver": "已將可拖曳的項目 {id} 放到放置區域 {over}",
+  "dnd.instructions": "按空白鍵拿起可拖曳的項目。拖曳時，用方向鍵移動項目。再按一次空白鍵將其放到新位置，或按 Esc 鍵取消。",
+  "dnd.movedOver": "可拖曳的項目 {id} 已移到放置區域 {over} 上方。",
+  "dnd.notOver": "可拖曳的項目 {id} 已不在放置區域上方。",
+  "dnd.pickedUp": "已拿起可拖曳的項目 {id}。",
+  "dnd.roleDescription": "可拖曳"
 }

@@ -23,7 +23,8 @@ import { cn } from '@/lib/utils';
 import { useDragSensors } from '@/lib/dragSensors';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { slotLabel } from '../slotLabel';
-import { localeUppercase, typeLabel, useT, type NoArgKey } from '@/i18n';
+import { localeUppercase, spriteAlt, typeLabel, useNamesVersion, useT, type NoArgKey } from '@/i18n';
+import { useDndAccessibility } from '@/lib/dndAccessibility';
 import { deriveRow, leagueSlotIsEmpty, moveLeagueSlots } from '../model/engine';
 import { cardShades } from '../theme';
 import { fitStyle, useFitScale } from '../useFitScale';
@@ -164,6 +165,7 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
   const filled = card.lines.length > 0;
   const m = useContext(HomeMetricsContext);
   const t = useT();
+  useNamesVersion();
 
   return (
     <div
@@ -205,7 +207,7 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
                 <img
                   key={form ? pokemonSpriteUrl(form.id) : p.sprite}
                   src={form ? pokemonSpriteUrl(form.id) : p.sprite}
-                  alt={form ? form.label : p.name}
+                  alt={form ? spriteAlt(form.label, form.id, p.id) : spriteAlt(p.name, p.id)}
                   className="max-w-none"
                   style={{
                     width: `${HOME_SPRITE_REM}rem`,
@@ -249,12 +251,14 @@ function SlotRow({ position, card, held, canDrag }: {
   held: boolean;
   canDrag: boolean;
 }) {
+  const t = useT();
   const openCardPage = useLeagueUi((s) => s.openCardPage);
   const active = useLeagueUi((s) => s.openCard === position);
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id: `slot-${position}`,
     data: { index: position },
     disabled: !canDrag,
+    attributes: { roleDescription: t('dnd.roleDescription') },
   });
   const { setNodeRef: setDropRef } = useDroppable({ id: `slotdrop-${position}`, data: { index: position } });
   const dragProps = canDrag ? { ...listeners, ...attributes } : {};
@@ -318,6 +322,7 @@ export function LeagueHome() {
   const cards = useLeagueStore((s) => s.cards);
   const blank = cards.every((c) => leagueSlotIsEmpty(c));
   const t = useT();
+  const dndAccessibility = useDndAccessibility();
 
   const displayCards = useMemo(() => {
     if (!preview) return cards;
@@ -363,6 +368,7 @@ export function LeagueHome() {
 
   return (
     <DndContext
+      accessibility={dndAccessibility}
       sensors={sensors}
       collisionDetection={rowCollision}
       autoScroll={{ canScroll: canScrollRows }}

@@ -14,7 +14,8 @@ import {
 } from '@dnd-kit/core';
 import { ArrowLeftRight, ArrowUpDown, Plus } from 'lucide-react';
 import { getPokemonById } from '@/league/data/catalog';
-import { getLocale, localeUppercase, pokemonLabel, raw, t as translate, useNamesVersion, useT, type NoArgKey } from '@/i18n';
+import { getLocale, localeUppercase, pokemonLabel, raw, spriteAlt, t as translate, useNamesVersion, useT, type NoArgKey } from '@/i18n';
+import { useDndAccessibility } from '@/lib/dndAccessibility';
 import { splitTemplate, type TemplatePart } from '@/lib/richTemplate';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
@@ -415,11 +416,13 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
   tint?: string;
 }) {
   const t = useT();
+  useNamesVersion();
   const id = `cell-${datum.row}-${datum.seat}`;
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id,
     data: datum as unknown as Record<string, unknown>,
     disabled: !datum.filled,
+    attributes: { roleDescription: t('dnd.roleDescription') },
   });
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `drop-${datum.row}-${datum.seat}`,
@@ -532,7 +535,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           <img
             key={form ? formSprite(form) : pokemon.sprite}
             src={form ? formSprite(form) : pokemon.sprite}
-            alt={form ? form.label : pokemon.name}
+            alt={form ? spriteAlt(form.label, form.id, pokemon.id) : spriteAlt(pokemon.name, pokemon.id)}
             className="pointer-events-none max-w-none"
             style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: SPRITE_RENDERING }}
           />
@@ -867,6 +870,7 @@ function SlotHalf({
   onPick: () => void;
   onRemove: () => void;
 }) {
+  useNamesVersion();
   const mirrored = half === 'partner';
   const nameLabel = pokemon ? pokemonLabel(pokemon.id, pokemon.name) : null;
   const genderMarked = Boolean(nameLabel?.mark && /[♂♀]/u.test(nameLabel.mark));
@@ -942,7 +946,7 @@ function SlotHalf({
           <img
             key={pokemon.sprite}
             src={pokemon.sprite}
-            alt={pokemon.name}
+            alt={spriteAlt(pokemon.name, pokemon.id)}
             className="relative z-[1] h-full w-full max-w-none"
             style={{ imageRendering: SPRITE_RENDERING }}
           />
@@ -2040,6 +2044,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const cyclePowerupOnCard = useLeagueStore((s) => s.cyclePowerup);
   const { card, shades, rows } = view;
   const t = useT();
+  const dndAccessibility = useDndAccessibility();
 
   const sensors = useGridDragSensors();
 
@@ -2390,6 +2395,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
 
   return (
     <DndContext
+      accessibility={dndAccessibility}
       sensors={sensors}
       // The compensation is dnd-kit answering a layout shift that is not one.
       // A held cell lifts by `CELL_LIFT_REM`, so its rect moves the moment the

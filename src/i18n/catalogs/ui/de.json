@@ -643,6 +643,8 @@
   "favorites.typeRepair.message": "Korrigierte Formen-Typen betreffen {count} gespeicherte Auswahlen. Sie bleiben im Raster, fehlen aber im Export. Prüfe die Felder und wähle Ersatz.",
   "favorites.typeRepair.review": "Prüfen",
   "viewSettings.showStats": "Detaillierte Statistiken anzeigen",
+  "viewSettings.groupSpecialHint": "Stellt Fossil-Pokémon, zusätzliche Starter, Paradox-Pokémon, Pseudo-Legendäre, Ultrabestien, Legendäre und Mysteriöse ans Ende des Rasters. Wirkt sich nicht auf die Sortierung „Eigene“ aus.",
+  "viewSettings.outlinesHint": "Umrahmt Pokémon-Gruppen nach den Abschnitten deiner Bauen-Seite.",
   "stats.type.title": "Typenverteilung",
   "stats.bst.title": "Statuswertsumme",
   "favorites.stats.shape": "Pokémon-Form",
@@ -831,5 +833,13 @@
   "faq.favorites.q4": "Ist es kostenlos? Brauche ich eine App oder ein Konto?",
   "faq.favorites.a4": "Kostenlos, im Browser, ohne Anmeldung und ohne Download. Deine Auswahl wird in diesem Browser gespeichert. Wenn du die Browserdaten löschst, kann sie verloren gehen. Exportiere daher ein PNG, um deine Übersicht zu behalten.",
   "faq.favorites.q5": "Kann ich meine Favoriten in den anderen my151-Tools verwenden?",
-  "faq.favorites.a5": "Ja. Der Pokédex-Builder und der Arenaleiter-Builder können ihre Pokémon-Listen nach deinen in diesem Browser gespeicherten Favoriten filtern."
+  "faq.favorites.a5": "Ja. Der Pokédex-Builder und der Arenaleiter-Builder können ihre Pokémon-Listen nach deinen in diesem Browser gespeicherten Favoriten filtern.",
+  "dnd.cancelled": "Ziehen abgebrochen. Ziehbares Element {id} wurde abgelegt.",
+  "dnd.dropped": "Ziehbares Element {id} wurde abgelegt.",
+  "dnd.droppedOver": "Ziehbares Element {id} wurde im Ablagebereich {over} abgelegt",
+  "dnd.instructions": "Drücke die Leertaste, um ein ziehbares Element aufzunehmen. Bewege es beim Ziehen mit den Pfeiltasten. Drücke erneut die Leertaste, um es an der neuen Position abzulegen, oder Escape, um abzubrechen.",
+  "dnd.movedOver": "Ziehbares Element {id} wurde über den Ablagebereich {over} bewegt.",
+  "dnd.notOver": "Ziehbares Element {id} ist nicht mehr über einem Ablagebereich.",
+  "dnd.pickedUp": "Ziehbares Element {id} aufgenommen.",
+  "dnd.roleDescription": "ziehbar"
 }
