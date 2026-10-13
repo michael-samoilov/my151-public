@@ -19,6 +19,8 @@
   "ack.group.spriteProjects": "Progetti di sprite",
   "ack.intro": "my151 è un sito di fan gratuito e senza scopo di lucro, realizzato grazie al lavoro delle persone e dei progetti qui sotto. Grazie!",
   "ack.license": "Licenza",
+  "ack.licenseCount_one": "{count} licenza",
+  "ack.licenseCount_other": "{count} licenze",
   "ack.loadFailed": "Impossibile caricare il testo della licenza.",
   "ack.loading": "Caricamento…",
   "ack.open": "Apri {site}",

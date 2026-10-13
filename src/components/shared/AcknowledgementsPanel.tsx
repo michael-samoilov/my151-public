@@ -182,7 +182,7 @@ function useRowNote() {
     if (entry.kind === 'project' && !entry.license && projectSpriteCount(entry.id) > 0) return tn('ack.sprites', projectSpriteCount(entry.id));
     if (entry.kind === 'packages') {
       if (!index.index) return index.failed ? t('ack.packagesFailed') : t('ack.loading');
-      return `${tn('ack.packageCount', index.index.packages.length)} · ${byLicense(index.index).map(([license]) => license).join(', ')}`;
+      return `${tn('ack.packageCount', index.index.packages.length)} · ${tn('ack.licenseCount', byLicense(index.index).length)}`;
     }
     return entry.license ?? t('ack.credit');
   };

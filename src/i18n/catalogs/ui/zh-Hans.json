@@ -18,6 +18,7 @@
   "ack.group.spriteProjects": "精灵图项目",
   "ack.intro": "my151 是一个免费的非营利粉丝网站，借助以下各位和各个项目的成果建成。谢谢你们！",
   "ack.license": "许可证",
+  "ack.licenseCount_other": "{count} 种许可证",
   "ack.loadFailed": "许可证文本未能加载。",
   "ack.loading": "正在加载…",
   "ack.open": "打开 {site}",

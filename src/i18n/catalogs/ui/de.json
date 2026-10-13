@@ -19,6 +19,8 @@
   "ack.group.spriteProjects": "Sprite-Projekte",
   "ack.intro": "my151 ist eine kostenlose, nicht kommerzielle Fanseite, entstanden aus der Arbeit der Menschen und Projekte unten. Danke!",
   "ack.license": "Lizenz",
+  "ack.licenseCount_one": "{count} Lizenz",
+  "ack.licenseCount_other": "{count} Lizenzen",
   "ack.loadFailed": "Der Lizenztext konnte nicht geladen werden.",
   "ack.loading": "Wird geladen …",
   "ack.open": "{site} öffnen",

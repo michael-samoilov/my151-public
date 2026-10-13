@@ -47,6 +47,8 @@ export const enUi = {
   'ack.group.spriteProjects': 'Sprite projects',
   'ack.intro': 'my151 is a free, non-profit fan site, built with the work of the people and projects below. Thank you.',
   'ack.license': 'License',
+  'ack.licenseCount_one': '{count} license',
+  'ack.licenseCount_other': '{count} licenses',
   'ack.loadFailed': 'The license text did not load.',
   'ack.loading': 'Loading…',
   'ack.open': 'Open {site}',

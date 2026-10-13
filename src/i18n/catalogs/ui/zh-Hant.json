@@ -18,6 +18,7 @@
   "ack.group.spriteProjects": "精靈圖專案",
   "ack.intro": "my151 是免費的非營利粉絲網站，借助下列各位與各個專案的成果打造而成。謝謝你們！",
   "ack.license": "授權條款",
+  "ack.licenseCount_other": "{count} 種授權條款",
   "ack.loadFailed": "無法載入授權條款文字。",
   "ack.loading": "載入中…",
   "ack.open": "開啟 {site}",
