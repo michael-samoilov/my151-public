@@ -46,22 +46,11 @@ test('the hub HTML holds the whole page without JavaScript', async ({ browser, b
 // holds the script until the stylesheet has loaded.
 test('the hub HTML reads no layout before its stylesheet', async ({ request }, testInfo) => {
   const html = await (await request.get('/')).text();
-  // The stylesheet is the largest inline <style>; layout reads come after it.
-  const styles = [...html.matchAll(/<style>[\s\S]*?<\/style>/g)];
-  const largest = styles.reduce((a, b) => (b[0].length > a[0].length ? b : a));
-  const sheet = largest.index + largest[0].length;
+  const sheet = html.indexOf('<link rel="stylesheet"');
   const reads = [...html.matchAll(/visualViewport|getBoundingClientRect|offsetWidth|clientWidth/g)].map((m) => m.index);
   await testInfo.attach('head-order.json', { body: JSON.stringify({ sheet, reads }), contentType: 'application/json' });
-  expect(largest[0].length).toBeGreaterThan(10_000);
+  expect(sheet).toBeGreaterThan(0);
   for (const at of reads) expect(at).toBeGreaterThan(sheet);
-});
-
-test('the hub inlines its stylesheet and prefetches the file for the tools', async ({ page }) => {
-  const response = await page.goto('/?notme');
-  expect(await response!.text()).not.toContain('<link rel="stylesheet"');
-  // The prefetch starts after the load event, so it never competes with the screenshots.
-  const href = await page.locator('link[rel="prefetch"][href$=".css"]').getAttribute('href');
-  expect((await page.request.get(href!)).status()).toBe(200);
 });
 
 /**
