@@ -134,7 +134,12 @@ export function prerenderHub(): Plugin {
         // go in the head instead, ahead of the inline stylesheet, so the
         // browser starts the images before it has read the styles.
         const imagePreload = /<link rel="preload" as="image"[^>]*\/>/g;
-        const imagePreloads = markup.match(imagePreload) ?? [];
+        // The first screenshot is the largest paint; the rest wait for it. With
+        // the stylesheet inline, Chrome no longer holds low-priority requests
+        // back while a stylesheet loads, so all six shared the connection and
+        // the largest paint came about 9% later on a throttled phone.
+        const imagePreloads = (markup.match(imagePreload) ?? []).map((tag) =>
+          /fetchPriority="high"/i.test(tag) ? tag : tag.replace(/\/>$/, ' fetchPriority="low"/>'));
         html = html.replace(root, () => `<div id="root" data-prerendered>${markup.replace(imagePreload, '')}</div><span id="p151-end" hidden></span>`);
         const head = [
           `<link rel="preload" as="font" type="font/woff2" crossorigin href="${config.base}assets/${font}">`,
