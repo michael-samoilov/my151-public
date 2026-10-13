@@ -14,7 +14,7 @@ import {
 } from '@/data/acknowledgements';
 import type { NpmPackageIndex } from '@/data/npmPackages';
 import { artistTerms, sourceTerms, type TermsQuote } from '@/data/creditTerms';
-import { artistCredit, hostedSprites, projectArtists, projectOnlySprites, projectSpriteCount } from '@/data/spriteCredits';
+import { artistCredit, hostedSprites, projectArtists, projectCreditedCount, projectOnlySprites, projectSpriteCount } from '@/data/spriteCredits';
 import { ArtistSprites, EntryLink, ProjectOnlySprites } from './AcknowledgementsSprites';
 import { withNode } from './withNode';
 
@@ -493,7 +493,9 @@ function Detail({ entry, backRef, onBack, onOpen }: {
               <p className="text-sm leading-relaxed">{entry.usedFor}</p>
               {shown > 0 && (
                 <p className="text-sm leading-relaxed" data-testid="ack-project-count">
-                  {tn(entry.countLine === 'credited' ? 'ack.creditedThrough' : 'ack.shownFrom', shown)}
+                  {entry.countLine === 'credited'
+                    ? tn('ack.creditedThrough', projectCreditedCount(entry.id))
+                    : tn('ack.shownFrom', shown)}
                 </p>
               )}
             </>

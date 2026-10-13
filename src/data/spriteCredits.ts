@@ -96,6 +96,8 @@ interface Parsed {
   artists: Map<string, ArtistCredit>;
   /** How many of the app's sprites came through each project entry. */
   projectSprites: Map<string, number>;
+  /** How many of those name an artist. */
+  projectCredited: Map<string, number>;
   /** Each project's sprites that no source names an artist for. */
   projectOnly: Map<string, CreditedSprite[]>;
 }
@@ -105,6 +107,7 @@ function parse(): Parsed {
   const monByFile = new Map(allPickerMons().map((mon) => [spriteFile(mon.sprite), mon] as const));
   const credits = new Map<string, CreditedSprite[]>();
   const projectSprites = new Map<string, number>();
+  const projectCredited = new Map<string, number>();
   const projectOnly = new Map<string, CreditedSprite[]>();
   for (const [file, row] of Object.entries(DATA.sprites)) {
     if (UNCREDITED.has(row.via)) continue;
@@ -114,6 +117,7 @@ function parse(): Parsed {
     // A file the app does not show is nobody's credit here.
     if (!mon) continue;
     if (via !== OWN_UPLOAD) projectSprites.set(via, (projectSprites.get(via) ?? 0) + 1);
+    if (via !== OWN_UPLOAD && row.artists.length) projectCredited.set(via, (projectCredited.get(via) ?? 0) + 1);
     if (!row.artists.length) {
       const list = projectOnly.get(via) ?? [];
       projectOnly.set(via, list);
@@ -141,7 +145,7 @@ function parse(): Parsed {
     artists.set(name, { name, creditedAs: info?.creditedAs, links: info?.links ?? [], sprites: credits.get(name)!.sort(dexOrder) });
   }
   for (const list of projectOnly.values()) list.sort(dexOrder);
-  return { artists, projectSprites, projectOnly };
+  return { artists, projectSprites, projectCredited, projectOnly };
 }
 
 let parsed: Parsed | undefined;
@@ -187,6 +191,11 @@ export function hostedSprites(entry: string): readonly CreditedSprite[] {
 /** How many of the app's sprites came through a project entry, or from it directly. */
 export function projectSpriteCount(entry: string): number {
   return data().projectSprites.get(entry) ?? hostedSprites(entry).length;
+}
+
+/** How many of the sprites that came through a project name an artist. */
+export function projectCreditedCount(entry: string): number {
+  return data().projectCredited.get(entry) ?? 0;
 }
 
 /** A project's sprites that no source names an artist for, credited to the project alone. */

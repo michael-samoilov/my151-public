@@ -82,7 +82,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await dialog.locator('[data-ack-id="artist:MyMarshlands"]').click();
     await expect(dialog.getByTestId('ack-terms')).toContainText('please credit my friend MyMarshlands');
     // A credit sheet's note on what a person did stays beside them.
-    await expect(dialog.getByTestId('ack-sprites').getByRole('listitem').filter({ hasText: 'Incineroar' })).toHaveText(/^Incineroar · face reference · with leParagon( · via .+)?$/);
+    await expect(dialog.getByTestId('ack-sprites').getByRole('listitem').filter({ hasText: 'Incineroar' })).toHaveText(/^Incineroar\s·\sface reference\s·\swith leParagon(\s·\svia .+)?$/);
     await dialog.getByRole('button', { name: 'Back' }).click();
     await dialog.locator('[data-ack-id="artist:Falgaia"]').click();
     await expect(dialog.getByTestId('ack-credited-as')).toHaveText('Credited as aXl');

@@ -97,7 +97,13 @@ function SpriteList({ sprites, notes }: { sprites: readonly CreditedSprite[]; no
       {items.map((sprite) => (
         <li key={sprite.mon.id}>
           {pickerFullName(sprite.mon, ready)}
-          {notes?.(sprite).map((note, i) => <span key={i} className="text-muted-foreground"> · {note}</span>)}
+          {/* One run of notes, each led by its dot: a line breaks before a
+              dot, never after one. */}
+          {notes && notes(sprite).length > 0 && (
+            <span className="text-muted-foreground">
+              {notes(sprite).map((note, i) => <Fragment key={i}>{' ·\u00a0'}{note}</Fragment>)}
+            </span>
+          )}
         </li>
       ))}
     </ul>
