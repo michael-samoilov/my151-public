@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { eligibleFor, isEmptyTypePicker, kindFor } from './eligibility';
 import { debutSortRank, isBattleForm, regionalPickerTier } from './sortKeys';
-import { isLegendaryEligible, isPowerupForm } from './catalog';
+import { hasListedFormOrder, isLegendaryEligible, isPowerupForm } from './catalog';
 import { TYPE_NAMES } from '@/types/pokemon';
 
 describe('eligibleFor', () => {
@@ -86,8 +86,11 @@ describe('eligibleFor', () => {
         const ranks = tieredMons.map(debutSortRank);
         expect(ranks, `${type}|${gen} debut games`).toEqual(ranks.slice().sort((a, b) => a - b));
         for (const rank of new Set(ranks)) {
-          // Eternamax stays inside Eternatus's group despite its battle classification.
-          const game = tieredMons.filter((mon) => debutSortRank(mon) === rank && mon.id !== 10190);
+          // Eternamax stays inside Eternatus's group despite its battle
+          // classification, and outside the Gimmick row each Terastal Ogerpon
+          // follows its mask.
+          const game = tieredMons.filter((mon) => debutSortRank(mon) === rank && mon.id !== 10190
+            && !(type !== 'gimmick' && isBattleForm(mon) && hasListedFormOrder(mon.ownerId)));
           const kinds = game.map((mon) => Number(isBattleForm(mon)));
           expect(kinds, `${type}|${gen} battle forms`).toEqual(kinds.slice().sort((a, b) => a - b));
           for (const kind of new Set(kinds)) {
@@ -120,11 +123,9 @@ describe('eligibleFor', () => {
     // Hoopa Unbound came in Omega Ruby and Alpha Sapphire, Hoopa and Volcanion in X and Y.
     contiguous(ids('legendary', 6), [720, 10086]);
     // Ultra Sun and Ultra Moon share Alola with Sun and Moon, so Necrozma's
-    // fusions follow Necrozma.
-    contiguous(ids('legendary', 7), [800, 10155, 10156]);
-    // Ultra Necrozma is a battle form, so it closes the Alola entries, before
-    // Meltan from Let's Go in Kanto.
-    expect(ids('legendary', 7).indexOf(10157)).toBe(ids('legendary', 7).indexOf(808) - 1);
+    // fusions follow Necrozma. Ultra Necrozma, a battle form, follows them in
+    // Necrozma's listed form order (Michael, 2026-10-12).
+    contiguous(ids('legendary', 7), [800, 10155, 10156, 10157]);
     // Black 2 and White 2 share Unova with Black and White, so each Therian
     // Forme follows its Incarnate Forme, before Zekrom.
     contiguous(ids('legendary', 5), [641, 10019]);

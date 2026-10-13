@@ -17,8 +17,12 @@ import { formatFullPokemonName, pokemonNameContext, type PokemonNameContext } fr
  * them would not be.
  */
 
-/** How a form descriptor was arrived at. Drives the "not official" marker. */
-export type NameProvenance = 'official' | 'official-composed';
+/**
+ * How a form descriptor was arrived at. `english-only` marks a descriptor
+ * that no game publishes; see `NameProvenance` in
+ * scripts/i18n/build-name-catalogs.ts. Read it through `formProvenance`.
+ */
+export type NameProvenance = 'official' | 'official-composed' | 'english-only';
 
 interface NameCatalog {
   locale: string;
@@ -260,8 +264,9 @@ export function pokemonLabel(appId: number, slug: string, formKey: number | `pic
 /**
  * Where a form descriptor came from. `official-composed` means it was rebuilt
  * from the region's published name plus a pattern learned from another form in
- * the same language — accurate, but not something the publisher printed, so the
- * UI marks it.
+ * the same language — accurate, but not something the publisher printed.
+ * `english-only` means no game publishes the descriptor in any language. No UI
+ * marker reads this value yet.
  */
 export function formProvenance(appId: number): NameProvenance | null {
   const catalog = loaded.get(getLocale());

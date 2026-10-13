@@ -1493,5 +1493,77 @@
     "types": [
       "fairy"
     ]
+  },
+  {
+    "id": 11096,
+    "ownerId": 676,
+    "name": "furfrou-heart",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11097,
+    "ownerId": 676,
+    "name": "furfrou-star",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11098,
+    "ownerId": 676,
+    "name": "furfrou-diamond",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11099,
+    "ownerId": 676,
+    "name": "furfrou-debutante",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11100,
+    "ownerId": 676,
+    "name": "furfrou-matron",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11101,
+    "ownerId": 676,
+    "name": "furfrou-dandy",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11102,
+    "ownerId": 676,
+    "name": "furfrou-la-reine",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11103,
+    "ownerId": 676,
+    "name": "furfrou-kabuki",
+    "types": [
+      "normal"
+    ]
+  },
+  {
+    "id": 11104,
+    "ownerId": 676,
+    "name": "furfrou-pharaoh",
+    "types": [
+      "normal"
+    ]
   }
 ]

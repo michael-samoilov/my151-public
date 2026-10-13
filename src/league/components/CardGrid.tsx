@@ -48,6 +48,7 @@ import { PokeballBg } from '@/components/shared/PokeballBg';
 import {
   formAt, formsFor, isPowerupRow, powerupSymbol, type PowerupForm, type PowerupKind, type PowerupSymbol,
 } from '../model/powerups';
+import { powerupFormName } from '../powerupFormName';
 import { LaurelIcon } from './LaurelIcon';
 import { BALL_OF_SPRITE, RING_OF_SPRITE, SPRITE_REM } from '../slotLayout';
 import {
@@ -415,6 +416,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
   tint?: string;
 }) {
   const t = useT();
+  useNamesVersion();
   const id = `cell-${datum.row}-${datum.seat}`;
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id,
@@ -532,7 +534,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           <img
             key={form ? formSprite(form) : pokemon.sprite}
             src={form ? formSprite(form) : pokemon.sprite}
-            alt={form ? form.label : pokemon.name}
+            alt={form ? powerupFormName(form) : pokemon.name}
             className="pointer-events-none max-w-none"
             style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: SPRITE_RENDERING }}
           />

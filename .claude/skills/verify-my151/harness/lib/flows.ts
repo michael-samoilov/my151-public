@@ -1786,7 +1786,10 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     return checks;
   }
 
-  await clickCell(s, '[data-testid="favorites-cell-electric-5"]');
+  // Fire x Gen V has full rows of six on both sides of a diff. Electric x Gen V
+  // lost its row of six when Overdrive Zekrom made it 13 picks in rows of 5, 5
+  // and 3, and sprite-matches-six-col needs a row of six to measure.
+  await clickCell(s, '[data-testid="favorites-cell-fire-5"]');
   const pretty = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
   checks.push(ok('favorites:picker-opens', pretty));
   await settle(s);
@@ -1824,10 +1827,10 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     ));
     await s.screenshot(ctx.shot('favorites-picker-last-row'));
     const sprite = await s.evalJson<{
-      css: number; dex: number; w: number; dpr: number; natural: number; max: number; same: boolean; inside: boolean;
+      css: number; dex: number; w: number; dpr: number; natural: number; max: number; same: boolean; inside: boolean; lens: number[];
     }>(`
       const el = document.querySelector('[data-testid="favorites-pretty-grid"]');
-      if (!el) return { css:0, dex:0, w:0, dpr:1, natural:96, max:0, same:false, inside:false };
+      if (!el) return { css:0, dex:0, w:0, dpr:1, natural:96, max:0, same:false, inside:false, lens:[] };
       const imgs = [...el.querySelectorAll('img[alt]:not([alt=""])')];
       const widths = imgs.map((node) => node.getBoundingClientRect().width);
       const rows = [...el.querySelectorAll('[data-pretty-row]')].map((row) => row.querySelectorAll('button').length);
@@ -1842,7 +1845,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       const sb = six ? six.getBoundingClientRect() : null;
       const hb = host ? host.getBoundingClientRect() : null;
       const inside = !!sb && !!hb && sb.left >= hb.left - 0.5 && sb.right <= hb.right + 0.5;
-      return { css, dex, w, dpr, natural, max: Math.max(...rows, 0), same, inside };
+      return { css, dex, w, dpr, natural, max: Math.max(...rows, 0), same, inside, lens: rows };
     `);
     const oneX = sprite.natural / Math.max(sprite.dpr, 1);
     const notShrunk = sprite.dex <= oneX + 1 || sprite.css > oneX + 1;
@@ -1853,7 +1856,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
         && Math.abs(sprite.css - sprite.dex) < 0.6
         && sprite.inside
         && notShrunk,
-      `css=${sprite.css} dex=${sprite.dex} w=${sprite.w.toFixed(1)} inside=${sprite.inside} dpr=${sprite.dpr} oneX=${oneX.toFixed(1)}`,
+      `css=${sprite.css} dex=${sprite.dex} w=${sprite.w.toFixed(1)} inside=${sprite.inside} dpr=${sprite.dpr} oneX=${oneX.toFixed(1)} rows=${sprite.lens.join(',')}`,
     ));
     checks.push(await auditRender(s, 'favorites:render-picker'));
 

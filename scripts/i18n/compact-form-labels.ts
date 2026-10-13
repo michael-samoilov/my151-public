@@ -12,11 +12,20 @@ const CODES: Record<string, string> = {
   '10': '10%', '50': '50%', complete: '100%',
   mega: 'M', primal: 'P', gmax: 'GMX',
   male: '♂', female: '♀',
+  // An abbreviation stays whole: DJ Rotom reads DJ (Michael, 2026-10-12).
+  dj: 'DJ',
 };
 const DEFAULT_SUFFIX: Record<string, string> = {
   castform: 'normal', hoopa: 'confined', zacian: 'hero', zamazenta: 'hero',
   ogerpon: 'teal-mask', terapagos: 'normal',
 };
+/**
+ * Battle states that a full name lists after the form they change: Ogerpon
+ * (Teal Mask, Terastal Form), Black Kyurem (Overdrive). The code keeps that
+ * order, the form's own code then the state's, as "G Z" keeps Galarian
+ * Darmanitan (Zen Mode). T is Terapagos's Terastal Form code.
+ */
+const STATE_CODES: Record<string, string> = { tera: 'T', overdrive: 'O' };
 const REGIONS = ['alola', 'galar', 'hisui', 'paldea'];
 const INDICATED_BASE_FORMS = new Set([585, 586, 745, 892, 1017]);
 
@@ -56,6 +65,8 @@ export function compactFormLabels(entries: IdMapEntry[], forms: Record<string, s
         return `${mode === 'gmax' && variant ? 'GM' : CODES[mode]} ${variant}`;
       }
       if (/^mega-[xyz]$/.test(suffix)) return `M ${suffix.at(-1)!.toUpperCase()}`;
+      const state = Object.keys(STATE_CODES).find(state => suffix.endsWith(`-${state}`));
+      if (state) return `${code(suffix.slice(0, -(state.length + 1)))} ${STATE_CODES[state]}`;
       const words = suffix.split('-');
       return words.length > 1 ? words.map(word => CODES[word] ?? word[0].toUpperCase()).join('') : suffix[0].toUpperCase();
     };

@@ -1,16 +1,41 @@
+import { lazy, Suspense, useState } from 'react';
 import { useT } from '@/i18n';
 import { Faq, type FaqPage } from '@/components/shared/Faq';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
 import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
+import { reloadIfStale } from '@/lib/staleDeploy';
+
+// Lazy, with its data: a page's first download carries only the link.
+const AcknowledgementsPanel = lazy(() => reloadIfStale(import('./AcknowledgementsPanel'))
+  .then((module) => ({ default: module.AcknowledgementsPanel })));
 const BUILD_VERSION = BUILD_TIMESTAMP.replace(/[-:T]/g, '').slice(2, 12);
 const YEAR = new Date().getFullYear();
 
 /** `faq` names the page whose "About this tool" block sits under the footer. */
 export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: boolean } = {}) {
   const t = useT();
+  // The link that opened the panel, so closing it returns focus there. Each
+  // footer owns its panel: the panel portals itself to the body, so a footer
+  // in a hidden page cannot hold it, and only a visible footer can be clicked.
+  const [ackFrom, setAckFrom] = useState<HTMLElement | null>(null);
+  const ackLink = (className: string) => (
+    <button
+      type="button"
+      aria-haspopup="dialog"
+      onClick={(e) => setAckFrom(e.currentTarget)}
+      className={className}
+    >
+      {t('footer.acknowledgements')}
+    </button>
+  );
+  const ackPanel = ackFrom && (
+    <Suspense fallback={null}>
+      <AcknowledgementsPanel anchor={ackFrom} onClose={() => setAckFrom(null)} />
+    </Suspense>
+  );
   if (compact) {
     // A slim, pinned footer for the desktop league builder: one centred line
-    // and the report link, so the panes above it keep the vertical room the
+    // and its two links, so the panes above it keep the vertical room the
     // full footer used to reserve. The FAQ stays for SEO, collapsed and tight.
     return (
       <div className="flex flex-col items-center">
@@ -24,8 +49,11 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
           >
             {t('footer.report')}
           </button>
+          <span aria-hidden className="text-muted-foreground/40">·</span>
+          {ackLink('cursor-pointer underline underline-offset-2 hover:text-foreground')}
         </footer>
         {faq && <Faq page={faq} compact />}
+        {ackPanel}
       </div>
     );
   }
@@ -49,17 +77,22 @@ export function PageFooter({ faq, compact = false }: { faq?: FaqPage; compact?: 
       <span className="text-[0.5rem] text-muted-foreground">
         {t('footer.disclaimer')}
       </span>
-      {/* The secondary path to the report form. The floating button is the one
-          people find by accident; this is the one they go looking for. */}
-      <button
-        type="button"
-        onClick={(e) => openFeedback('bug', e.currentTarget)}
-        className="mt-1 text-[0.5625rem] text-muted-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
-      >
-        {t('footer.report')}
-      </button>
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[0.5625rem] text-muted-foreground">
+        {/* The secondary path to the report form. The floating button is the one
+            people find by accident; this is the one they go looking for. */}
+        <button
+          type="button"
+          onClick={(e) => openFeedback('bug', e.currentTarget)}
+          className="underline underline-offset-2 hover:text-foreground cursor-pointer"
+        >
+          {t('footer.report')}
+        </button>
+        <span aria-hidden className="text-muted-foreground/40">·</span>
+        {ackLink('underline underline-offset-2 hover:text-foreground cursor-pointer')}
+      </div>
       </footer>
       {faq && <Faq page={faq} />}
+      {ackPanel}
     </div>
   );
 }

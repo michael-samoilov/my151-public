@@ -12,6 +12,7 @@ import {
 import { ArrowUpDown, ChevronRight, Plus } from 'lucide-react';
 import { getPokemonById } from '@/league/data/catalog';
 import { formAt } from '../model/powerups';
+import { powerupFormName } from '../powerupFormName';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
 import {
@@ -23,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { useDragSensors } from '@/lib/dragSensors';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { slotLabel } from '../slotLabel';
-import { localeUppercase, typeLabel, useT, type NoArgKey } from '@/i18n';
+import { localeUppercase, typeLabel, useNamesVersion, useT, type NoArgKey } from '@/i18n';
 import { deriveRow, leagueSlotIsEmpty, moveLeagueSlots } from '../model/engine';
 import { cardShades } from '../theme';
 import { fitStyle, useFitScale } from '../useFitScale';
@@ -155,6 +156,7 @@ function SlotGlyph({ index, cell }: { index: number; cell: string }) {
  */
 function SlotRowFace({ position, card, active }: { position: number; card: GymCard; active: boolean }) {
   const view = useLeagueStore((s) => s.view);
+  useNamesVersion();
   const shades = card.type || active ? cardShades(card.type) : null;
   const cellColour = shades ? shades.cell : GREY;
   // The gym challenge reads each trainer at the row you meet them; the
@@ -205,7 +207,7 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
                 <img
                   key={form ? pokemonSpriteUrl(form.id) : p.sprite}
                   src={form ? pokemonSpriteUrl(form.id) : p.sprite}
-                  alt={form ? form.label : p.name}
+                  alt={form ? powerupFormName(form) : p.name}
                   className="max-w-none"
                   style={{
                     width: `${HOME_SPRITE_REM}rem`,

@@ -42,22 +42,15 @@
   border-radius: var(--export-card-radius, 4%);
   transform-origin: center center;
   -webkit-transform-origin: center center;
-  -webkit-transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
-    rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
-  transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
-    rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
   box-shadow: none;
 }
 
+/* The lift sits centered in the stage, so its own perspective() about its
+   center draws the same picture a stage perspective did. hover-tilt's
+   transform is in @/components/export/hover-tilt/hoverTilt.css. */
 .export-foil-hit[data-hover-tilt='1'] .export-foil-lift {
   transform-style: flat;
   -webkit-transform-style: flat;
-  /* The lift sits centered in the stage, so its own perspective() about its
-     center draws the same picture a stage perspective did. */
-  -webkit-transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
-    rotateX(var(--rotation-x)) rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
-  transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
-    rotateX(var(--rotation-x)) rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
 }
 
 /* At rest the lift is flat and scaled down from its popped layout size. */
@@ -71,28 +64,13 @@
    kinks between joined panes unshadowed: they showed as light wedges. The
    blur sits on the parent of the masked shape, so it softens the shape's
    edge. Only transform and opacity change per frame, so the browser moves
-   the shadow instead of repainting it. Each layer matches one box-shadow:
-   offset reach r, blur radius b*r/2 (sigma b*r/4), spread -b*r/4. */
+   the shadow instead of repainting it. Each layer's offset, blur, and
+   inset are in @/components/export/hover-tilt/hoverTilt.css. */
 .export-foil-shadow {
-  --shadow-reach: 1;
   position: absolute;
-  inset: calc(var(--hover-tilt-shadow-blur) * var(--shadow-reach) * 0.25px);
   pointer-events: none;
   opacity: var(--hover-tilt-shadow-opacity, 0);
-  filter: blur(calc(var(--hover-tilt-shadow-blur) * var(--shadow-reach) * 0.25px));
-  -webkit-transform: translate(
-    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * var(--shadow-reach) * 1px),
-    calc((var(--shadow-y) * 0.5 + 0.25) * var(--hover-tilt-shadow-blur) * var(--shadow-reach) * 1px)
-  );
-  transform: translate(
-    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * var(--shadow-reach) * 1px),
-    calc((var(--shadow-y) * 0.5 + 0.25) * var(--hover-tilt-shadow-blur) * var(--shadow-reach) * 1px)
-  );
   will-change: transform, opacity;
-}
-
-.export-foil-shadow-near {
-  --shadow-reach: 0.5;
 }
 
 .export-foil-shadow::before {
@@ -335,43 +313,13 @@
   opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--foil-reach)));
 }
 
+/* hover-tilt's glare gradient and its ::before layer are in
+   @/components/export/hover-tilt/hoverTilt.css. */
 .export-foil[data-hover-tilt='1'] {
   --hover-tilt-from-center: var(--foil-reach);
   --hover-tilt-at-edge: var(--foil-reach);
-  --hover-tilt-glare-mask: none;
-  --hover-tilt-glare-mask-size: cover;
-  --hover-tilt-glare-mask-repeat: no-repeat;
-  --hover-tilt-glare-mask-position: center;
-  --hover-tilt-mask-mode: match-source;
-  --hover-tilt-blend-mode: overlay;
-  --hover-tilt-glare-intensity: 1;
   --hover-tilt-glare-size: 0.5;
   --hover-tilt-glare-hue: 40;
-  --gradient-x: var(--foil-at-x);
-  --gradient-y: var(--foil-at-y);
-  /* Size pulls the light stops in toward the pointer, then fades them to a
-     clear neutral stop. At 1 this is close to hover-tilt's glare, whose light
-     already crossed mid-gray near 56%. Smaller keeps the light in a hotspot,
-     so its overlay washes a smaller patch of the card. hover-tilt also ends
-     on a dark stop, which overlay turns into darker ink across most of the
-     card while white paper stays white. The export keeps that stop clear, so
-     the glare only adds light; the workshop's --foil-glare-dark brings it
-     back (1 is hover-tilt's) for comparison. */
-  --hover-tilt-default-gradient: radial-gradient(
-    farthest-corner circle at var(--gradient-x) var(--gradient-y),
-    hsla(var(--hover-tilt-glare-hue), 40%, 95%, calc(var(--hover-tilt-glare-intensity) * 0.66))
-      calc(8% * var(--hover-tilt-glare-size)),
-    hsla(var(--hover-tilt-glare-hue), 30%, 88%, calc(var(--hover-tilt-glare-intensity) * 0.5))
-      calc(28% * var(--hover-tilt-glare-size)),
-    hsla(var(--hover-tilt-glare-hue), 10%, 50%, 0) calc(56% * var(--hover-tilt-glare-size)),
-    hsla(
-        var(--hover-tilt-glare-hue),
-        10%,
-        5%,
-        calc(var(--hover-tilt-glare-intensity) * 0.25 * var(--foil-glare-dark, 0))
-      )
-      90%
-  );
   isolation: auto;
   transform-style: flat;
   -webkit-transform-style: flat;
@@ -379,31 +327,6 @@
   transform: none;
   will-change: auto;
 }
-
-.export-foil[data-hover-tilt='1']::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background-image: var(--hover-tilt-custom-gradient, var(--hover-tilt-default-gradient));
-  mix-blend-mode: var(--hover-tilt-blend-mode, overlay);
-  opacity: var(--hover-tilt-opacity, 0);
-  will-change: background-image, opacity;
-  -webkit-mask-image: var(--hover-tilt-glare-mask, none);
-  mask-image: var(--hover-tilt-glare-mask, none);
-  -webkit-mask-size: var(--hover-tilt-glare-mask-size, cover);
-  mask-size: var(--hover-tilt-glare-mask-size, cover);
-  -webkit-mask-position: var(--hover-tilt-glare-mask-position, center);
-  mask-position: var(--hover-tilt-glare-mask-position, center);
-  -webkit-mask-repeat: var(--hover-tilt-glare-mask-repeat, no-repeat);
-  mask-repeat: var(--hover-tilt-glare-mask-repeat, no-repeat);
-  -webkit-mask-mode: var(--hover-tilt-mask-mode, match-source);
-  mask-mode: var(--hover-tilt-mask-mode, match-source);
-  -webkit-mask-composite: var(--hover-tilt-glare-mask-composite-webkit, source-in);
-  mask-composite: var(--hover-tilt-glare-mask-composite, intersect);
-}
-
 
 .export-foil[data-hover-tilt='1'] .export-foil-layer {
   z-index: auto;

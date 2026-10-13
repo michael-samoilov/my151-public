@@ -9,14 +9,39 @@ import { typeIconPath } from '@/data/type-ids';
 import { COLOR_BADGE_FILLS, type EvolutionRole } from '@/lib/attributeBadgeStyle';
 import { evolutionDotsSvg } from '@/components/shared/attributeBadgeSvg';
 import type { ColorName, Pokemon, ShapeName, TypeName } from '@/types/pokemon';
+import altFormSpecies from '@/i18n/alt-form-species.json';
 import type { FavoritesExportCell, FavoritesSnapshot } from '../export/snapshot';
 import { GEN_AXIS, isGenNumber, ROMAN } from '../model/cells';
+import { comparePickerOrder, getPickerMon, pickerNameId, type PickerMon } from '../model/catalog';
 import { pickerPokemonMetadata } from '../model/metadata';
 import { pointerCoordinates, type SourceCoordinate } from '../model/pointers';
 import { labelOf, pickerLabelOf } from './spriteLabel';
 import { coordinateLabel } from './coordinatePresentation';
 import { CoordinatePills } from './CoordinatePills';
 import { pickerConditionalContributors } from '../stats/pickerConditionalStats';
+
+/** The species a pick belongs to: Alolan Raichu and Mega Raichu X are both Raichu. */
+function speciesOf(mon: PickerMon): number {
+  const owner = pickerNameId(getPickerMon(mon.ownerId) ?? mon);
+  return (altFormSpecies as Record<string, number>)[owner] ?? owner;
+}
+
+/**
+ * A row keeps its cells' order, except that one species' picks sit together
+ * where its first pick sits, in the picker's form order. Another Pokémon
+ * never splits Ogerpon's masks and Terastal forms.
+ */
+function speciesTogether(cells: FavoritesExportCell[]): FavoritesExportCell[] {
+  const first = new Map<number, number>();
+  const placed = cells.map((cell, index) => {
+    const species = cell.mon ? speciesOf(cell.mon) : -1 - index;
+    if (!first.has(species)) first.set(species, index);
+    return { cell, index, species };
+  });
+  return placed.sort((a, b) => first.get(a.species)! - first.get(b.species)!
+    || (a.cell.mon && b.cell.mon ? comparePickerOrder(a.cell.mon, b.cell.mon) : 0)
+    || a.index - b.index).map(({ cell }) => cell);
+}
 
 export interface FavoritesDrillDownSelection {
   dimension: 'type' | 'color' | 'shape' | 'evolution' | 'bst';
@@ -61,7 +86,7 @@ export function FavoritesDrillDown({ snapshot, contributors, selection, siblings
           headerContent: category.dimension === 'color' ? <span aria-hidden className="w-4 h-4 rounded-sm" style={{ backgroundColor: COLOR_BADGE_FILLS[category.key as ColorName], border: category.key === 'white' ? '1px solid #a3a3a3' : undefined }} />
             : category.dimension === 'evolution' ? <svg aria-hidden width="24" height="16" viewBox="0 0 57 27">{evolutionDotsSvg(category.key as EvolutionRole)}</svg> : undefined,
           sections: GEN_AXIS.filter(row => row !== 'favorite').flatMap(row => {
-            const groups = cells.filter(cell => cell.generation === row).flatMap(cell => {
+            const groups = speciesTogether(cells.filter(cell => cell.generation === row)).flatMap(cell => {
               if (!cell.mon) return [];
               const mon = cell.mon;
               const pokemon = pickerPokemonMetadata(mon);
