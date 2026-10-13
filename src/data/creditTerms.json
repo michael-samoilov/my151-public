@@ -1,0 +1,742 @@
+{
+ "note": "One record per credited source and per artist that attribution.json names. 'terms' holds only text copied from a page loaded on the date given. A Smogon spriter with no page of their own here carries the project's terms, marked by termsSource. One quote per record since 2026-10-13: the source's own main terms page, else its most durable official statement; each quote was re-loaded on 2026-10-13 ('verified').",
+ "sources": {
+  "smogon-sprite-project": {
+   "name": "Smogon Sprite Project (X/Y, Sun/Moon, Gen 8 and later threads)",
+   "urls": [
+    "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/",
+    "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/",
+    "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "These sprites are also free for use as long as the spriter or the project itself is credited.",
+     "url": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/",
+     "where": "opening post by G.E.Z.; the X/Y and Sun/Moon opening posts carry the same sentence",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "smogon-credit-sheets": {
+   "name": "Smogon Sprite Project credit sheets (Gen 6, 7, 8, 9)",
+   "urls": [
+    "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+    "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ",
+    "https://docs.google.com/spreadsheets/d/1acgzAjh0dnFRQnjZu8kSjS177rKCzpFfEHRLtwuuXRU",
+    "https://docs.google.com/spreadsheets/d/1MCjDktTOOFjLKM5C-RW6SfBQGkjlxDSCZAZDma_ItuA"
+   ],
+   "status": "read through the Google Drive connector (Gen 6 and Gen 9 on 2026-10-13; Gen 7 and Gen 8 exported on 2026-10-12, unchanged since 2026-04-20 and 2026-07-03); docs.google.com itself is blocked here",
+   "terms": [
+    {
+     "text": "Here is a spreadsheet of the finished Gen 9 sprites.",
+     "url": "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/",
+     "where": "opening post links the Gen 8 and Gen 9 sheets; the X/Y and Sun/Moon opening posts link the Gen 6 and Gen 7 sheets",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "kingofthe-x-roads": {
+   "name": "KingOfThe-X-Roads",
+   "urls": [
+    "https://www.deviantart.com/kingofthe-x-roads/about",
+    "https://x.com/kingofthexroad5"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Any official Pokémon sprites are free for use in non-profit projects. **EXCEPT FOR ANY PERSONS AFFILIATED WITH VERLISWOLF**\nAll I ask is that you provide proper credit, maybe even drop some links around!",
+     "url": "https://www.deviantart.com/kingofthe-x-roads/about",
+     "where": "About page; two consecutive lines",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "kyle-dove": {
+   "name": "Kyle Dove",
+   "urls": [
+    "https://x.com/DoveKyle"
+   ],
+   "status": "read (X posts); github.com/kyledovey not readable here (403)",
+   "terms": [
+    {
+     "text": "Free to use with credits! Victreebel (front & back) please credit my friend MyMarshlands\n\nI do not follow size nor color limits, feel free to resize/edit as needed!",
+     "url": "https://x.com/DoveKyle/status/2043659798055354390",
+     "where": "X post of 2026-04-13",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "gen9-resource-pack": {
+   "name": "Generation 9 Resource Pack [v21.1]",
+   "urls": [
+    "https://eeveeexpo.com/resources/1101/",
+    "https://eeveeexpo.com/threads/5817/"
+   ],
+   "status": "read (Eevee Expo release page); the PokéCommunity copy (https://www.pokecommunity.com/threads/generation-9-resource-pack-v21-1.527398/) answers 403 from the site",
+   "terms": [
+    {
+     "text": "This is an open collaboration project for Essentials v21.1. So, everyone can contribute to this pack, and please give the properly credit.",
+     "url": "https://eeveeexpo.com/resources/1101/",
+     "where": "release page overview, by Caruban",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "gen9-pack-sprites-list": {
+   "name": "Generation 9 Pack 'Sprites list' sheet",
+   "urls": [
+    "https://docs.google.com/spreadsheets/d/1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY"
+   ],
+   "status": "read through the Google Drive connector on 2026-10-13 (all 232 rows of Pokemon Sprites)",
+   "terms": [
+    {
+     "text": "Full Sprites Credit List:\nSee Full Sprites Credit List",
+     "url": "https://eeveeexpo.com/resources/1101/",
+     "where": "release page Credits section links this sheet",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "pokeapi-sprites": {
+   "name": "PokéAPI sprites",
+   "urls": [
+    "https://github.com/PokeAPI/sprites"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "All image contents within are Copyright The Pokémon Company.\n\nThis repository is distributed under CC0 1.0 Universal",
+     "url": "https://github.com/PokeAPI/sprites/blob/HEAD/LICENCE.txt",
+     "where": "first lines of LICENCE.txt",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "pokemon-showdown": {
+   "name": "Pokémon Showdown",
+   "urls": [
+    "https://pokemonshowdown.com",
+    "https://github.com/smogon/pokemon-showdown-client"
+   ],
+   "status": "read (GitHub); blocked: pokemonshowdown.com",
+   "terms": [
+    {
+     "text": "The sprites themselves are property of Nintendo / Game Freak / The Pokémon Company, though Black & White sprites for Pokémon from later generations were created by artists in the community. The license for these community-created sprites is still being determined and may change in the future, but in the meantime please talk to use first before using them.",
+     "url": "https://github.com/smogon/sprites/blob/HEAD/README.md",
+     "where": "README of Smogon's sprite repository, section License; Showdown's Gen 5 sprites come from it",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "partywhale-type-icons": {
+   "name": "Pokémon type icons by Partywhale (James Watkins)",
+   "urls": [
+    "https://github.com/partywhale/pokemon-type-icons"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "MIT License\n\nCopyright (c) 2022 James Watkins",
+     "url": "https://github.com/partywhale/pokemon-type-icons/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "elginive-type-icons": {
+   "name": "Generation 9 type icons by Elginive",
+   "urls": [
+    "https://github.com/Elginive/pokemon-type-icons"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Free to use. Credit is always appreciated, but not necessary.",
+     "url": "https://github.com/Elginive/pokemon-type-icons/blob/HEAD/README.md",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "lucide": {
+   "name": "Lucide",
+   "urls": [
+    "https://github.com/lucide-icons/lucide"
+   ],
+   "status": "read (GitHub); blocked: lucide.dev",
+   "terms": [
+    {
+     "text": "ISC License\n\nCopyright (c) 2026 Lucide Icons and Contributors",
+     "url": "https://github.com/lucide-icons/lucide/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "tabler-icons": {
+   "name": "Tabler Icons",
+   "urls": [
+    "https://github.com/tabler/tabler-icons"
+   ],
+   "status": "read (GitHub); blocked: tabler.io",
+   "terms": [
+    {
+     "text": "MIT License\n\nCopyright (c) 2020-2026 Paweł Kuna",
+     "url": "https://github.com/tabler/tabler-icons/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "simple-icons": {
+   "name": "Simple Icons and react-icons",
+   "urls": [
+    "https://github.com/simple-icons/simple-icons",
+    "https://github.com/react-icons/react-icons"
+   ],
+   "status": "read (GitHub); blocked: simpleicons.org",
+   "terms": [
+    {
+     "text": "# CC0 1.0 Universal",
+     "url": "https://github.com/simple-icons/simple-icons/blob/HEAD/LICENSE.md",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "bulbagarden-archives": {
+   "name": "Bulbagarden Archives",
+   "urls": [
+    "https://archives.bulbagarden.net"
+   ],
+   "status": "blocked: archives.bulbagarden.net (the site answers 403)",
+   "terms": []
+  },
+  "inter": {
+   "name": "Inter",
+   "urls": [
+    "https://github.com/rsms/inter"
+   ],
+   "status": "read (GitHub); blocked: rsms.me",
+   "terms": [
+    {
+     "text": "Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.",
+     "url": "https://github.com/rsms/inter/blob/HEAD/LICENSE.txt",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "noto-sans": {
+   "name": "Noto Sans",
+   "urls": [
+    "https://github.com/notofonts/latin-greek-cyrillic"
+   ],
+   "status": "read (GitHub); blocked: fonts.google.com",
+   "terms": [
+    {
+     "text": "Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)\n\nThis Font Software is licensed under the SIL Open Font License, Version 1.1.",
+     "url": "https://github.com/notofonts/latin-greek-cyrillic/blob/HEAD/OFL.txt",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "press-start-2p": {
+   "name": "Press Start 2P",
+   "urls": [
+    "https://github.com/google/fonts/tree/main/ofl/pressstart2p"
+   ],
+   "status": "read (GitHub); blocked: fonts.google.com",
+   "terms": [
+    {
+     "text": "This Font Software is licensed under the SIL Open Font License, Version 1.1.",
+     "url": "https://github.com/google/fonts/blob/HEAD/ofl/pressstart2p/OFL.txt",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "pokeapi": {
+   "name": "PokéAPI (data)",
+   "urls": [
+    "https://github.com/PokeAPI/pokeapi"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Copyright (c) © 2013–2023 Paul Hallett and PokéAPI contributors (https://github.com/PokeAPI/pokeapi#contributing). Pokémon and Pokémon character names are trademarks of Nintendo.",
+     "url": "https://github.com/PokeAPI/pokeapi/blob/HEAD/LICENSE.md",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "poke-corpus": {
+   "name": "poke-corpus",
+   "urls": [
+    "https://github.com/abcboy101/poke-corpus"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "GNU GENERAL PUBLIC LICENSE\n                       Version 3, 29 June 2007",
+     "url": "https://github.com/abcboy101/poke-corpus/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "bulbapedia": {
+   "name": "Bulbapedia",
+   "urls": [
+    "https://bulbapedia.bulbagarden.net"
+   ],
+   "status": "blocked: bulbapedia.bulbagarden.net (the site answers 403)",
+   "terms": []
+  },
+  "npm-packages": {
+   "name": "Open-source packages",
+   "urls": [
+    "/licenses/npm-packages.txt",
+    "/licenses/npm-packages-extra.txt"
+   ],
+   "status": "not re-read in this pass: the build writes each package's own license text",
+   "terms": []
+  },
+  "hover-tilt": {
+   "name": "hover-tilt",
+   "urls": [
+    "https://github.com/simeydotme/hover-tilt"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "MIT License\n\nCopyright (c) 2026 Simeydotme",
+     "url": "https://github.com/simeydotme/hover-tilt/blob/HEAD/LICENSE",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  }
+ },
+ "artists": {
+  "Arkeis": {
+   "urls": [
+    "https://www.smogon.com/forums/members/arkeis.921/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Banana Toast": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Basic Vanillite": {
+   "urls": [
+    "https://www.smogon.com/forums/members/basic-vanillite.369403/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Blaquaza": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "branflakes": {
+   "urls": [
+    "https://www.smogon.com/forums/members/branflakes.191854/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "creditedAs": [
+    "Branflakes325",
+    "Branflake325"
+   ]
+  },
+  "Brylark": {
+   "urls": [
+    "https://www.smogon.com/forums/members/brylark.225743/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Buna": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Bynine": {
+   "urls": [
+    "https://www.smogon.com/forums/members/bynine.39588/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Caruban": {
+   "urls": [
+    "https://eeveeexpo.com/members/7240/",
+    "https://eeveeexpo.com/resources/1101/"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "This is an open collaboration project for Essentials v21.1. So, everyone can contribute to this pack, and please give the properly credit.",
+     "url": "https://eeveeexpo.com/resources/1101/",
+     "where": "release page overview",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "Corson": {
+   "urls": [
+    "https://www.smogon.com/forums/members/corson.196384/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Cynda": {
+   "urls": [
+    "https://www.smogon.com/forums/members/cynda.486574/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Dleep": {
+   "urls": [
+    "https://www.smogon.com/forums/members/dleep.196318/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Espeon Scientist": {
+   "urls": [
+    "https://www.smogon.com/forums/members/espeon-scientist.211257/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Falgaia": {
+   "urls": [
+    "https://www.smogon.com/forums/members/30808/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "creditedAs": [
+    "aXl"
+   ]
+  },
+  "Farriella": {
+   "urls": [
+    "https://www.smogon.com/forums/members/farriella.199285/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "fishbowlsoul90": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "G.E.Z.": {
+   "urls": [
+    "https://www.smogon.com/forums/members/g-e-z.459791/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Galifia": {
+   "urls": [
+    "https://www.smogon.com/forums/members/galifia.200119/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "GeoisEvil": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "HeaLnDeaL": {
+   "urls": [
+    "https://www.smogon.com/forums/members/healndeal.64801/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "creditedAs": [
+    "HealnDeal"
+   ]
+  },
+  "Hematite": {
+   "urls": [
+    "https://www.smogon.com/forums/members/hematite.500123/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Involuntary Twitch": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Katten": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "KattenK": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "KingOfThe-X-Roads": {
+   "urls": [
+    "https://www.deviantart.com/kingofthe-x-roads/about",
+    "https://x.com/kingofthexroad5"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Any official Pokémon sprites are free for use in non-profit projects. **EXCEPT FOR ANY PERSONS AFFILIATED WITH VERLISWOLF**\nAll I ask is that you provide proper credit, maybe even drop some links around!",
+     "url": "https://www.deviantart.com/kingofthe-x-roads/about",
+     "where": "About page; two consecutive lines",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "Kyle Dove": {
+   "urls": [
+    "https://x.com/DoveKyle"
+   ],
+   "status": "read (X posts); github.com/kyledovey not readable here (403)",
+   "terms": [
+    {
+     "text": "Free to use with credits! Victreebel (front & back) please credit my friend MyMarshlands\n\nI do not follow size nor color limits, feel free to resize/edit as needed!",
+     "url": "https://x.com/DoveKyle/status/2043659798055354390",
+     "where": "X post of 2026-04-13",
+     "read": "2026-10-13",
+     "verified": true
+    }
+   ]
+  },
+  "Larryturbo": {
+   "urls": [
+    "https://www.smogon.com/forums/members/larryturbo.484099/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Layell": {
+   "urls": [
+    "https://www.smogon.com/forums/members/layell.6237/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Legitimate Username": {
+   "urls": [
+    "https://www.smogon.com/forums/members/legitimate-username.143355/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "leParagon": {
+   "urls": [
+    "https://www.smogon.com/forums/members/leparagon.336111/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Mintly": {
+   "urls": [
+    "https://www.smogon.com/forums/members/mintly.254865/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "mjco": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "MrDollSteak": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "MyMarshlands": {
+   "urls": [
+    "https://www.deviantart.com/mymarshlands",
+    "https://x.com/MyMarshlands",
+    "https://bsky.app/profile/mymarshlands.bsky.social"
+   ],
+   "status": "read (DeviantArt profile and X profile; neither states terms); blocked: public.api.bsky.app (Bluesky posts)",
+   "terms": [],
+   "note": "Kyle Dove's post asks to credit MyMarshlands for Victreebel: https://x.com/DoveKyle/status/2043659798055354390"
+  },
+  "N-Kin": {
+   "urls": [
+    "https://www.smogon.com/forums/members/n-kin.211797/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Noscium": {
+   "urls": [
+    "https://www.smogon.com/forums/members/noscium.196469/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "paintseagull": {
+   "urls": [
+    "https://www.smogon.com/forums/members/paintseagull.57019/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "princessofmusic": {
+   "urls": [
+    "https://www.smogon.com/forums/members/princessofmusic.196946/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "PumpkinPastel": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Quanyails": {
+   "urls": [
+    "https://www.smogon.com/forums/members/quanyails.118508/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "RadicalCharizard": {
+   "urls": [
+    "https://www.smogon.com/forums/members/radicalcharizard.486721/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "RedRooster": {
+   "urls": [
+    "https://www.smogon.com/forums/members/redrooster.196411/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Siiilver": {
+   "urls": [
+    "https://www.smogon.com/forums/members/siiilver.196900/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Sleet": {
+   "urls": [
+    "https://www.smogon.com/forums/members/sleet.29427/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "SpheX": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Spook": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "TeraVolt": {
+   "urls": [
+    "https://www.smogon.com/forums/members/teravolt.47134/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "The Cynical Poet": {
+   "urls": [
+    "https://www.smogon.com/forums/members/the-cynical-poet.198798/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project",
+   "creditedAs": [
+    "TheCynicalPoet"
+   ]
+  },
+  "Tooni": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project",
+   "creditedAs": [
+    "Toonie"
+   ]
+  },
+  "TrainerSplash": {
+   "urls": [
+    "https://www.smogon.com/forums/members/trainersplash.223612/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Travis": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Wobblebuns": {
+   "urls": [
+    "https://www.smogon.com/forums/members/wobblebuns.196278/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "WPS": {
+   "urls": [
+    "https://www.smogon.com/forums/members/wps.56547/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Wyverii": {
+   "urls": [
+    "https://www.smogon.com/forums/members/wyverii.20138/"
+   ],
+   "status": "read (project terms); own Smogon profile linked, which states no terms",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Z-nogyroP": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Zermonious": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  },
+  "Zerudez": {
+   "urls": [],
+   "status": "read (project terms); no page of the artist's own was checked",
+   "termsSource": "smogon-sprite-project"
+  }
+ }
+}

@@ -1,6 +1,8 @@
 type GenderForm = 'male' | 'female';
 
-const MALE_FORM_IDS = new Set([32, 415, 449, 450, 521, 592, 593, 668, 678, 876, 902, 916, 10314]);
+// Mega Meowstic (10314) is not here: it has one design for both genders, so
+// it carries no gender mark.
+const MALE_FORM_IDS = new Set([32, 415, 449, 450, 521, 592, 593, 668, 678, 876, 902, 916]);
 
 export const GENDER_MARKS: Record<GenderForm, string> = { male: '♂', female: '♀' };
 

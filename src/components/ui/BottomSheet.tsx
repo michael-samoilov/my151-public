@@ -329,6 +329,13 @@ export function BottomSheet({
       } else {
         const t = (e as TouchEvent).touches[0];
         if (!t) return;
+        // A touch that moves while text in the sheet is selected can be a
+        // drag of a selection handle. iOS WebKit drops that drag when the
+        // page cancels its touchmove, so the handle froze after a long press
+        // had made the selection. Most handle drags run sideways along a line,
+        // where no scroller takes them, so this walk cancelled them all.
+        const selection = document.getSelection();
+        if (selection && !selection.isCollapsed && overlay.contains(selection.focusNode)) return;
         horizontal = Math.abs(t.clientX - startX) > Math.abs(t.clientY - startY);
       }
 

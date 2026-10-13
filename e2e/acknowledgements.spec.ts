@@ -20,7 +20,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
 
     const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
     await expect(dialog).toBeVisible();
-    for (const group of ['Sprites', 'Icons and art', 'Fonts', 'Data', 'Code']) {
+    for (const group of ['Sprite projects', 'Sprite artists', 'Pokémon icons and art', 'Interface icons', 'Fonts', 'Data', 'Code']) {
       await expect(dialog.getByRole('heading', { name: new RegExp(`^${group}`) })).toBeVisible();
     }
     // The count matches the rows: a sprite source with no sprite in this build has no row.
@@ -39,7 +39,8 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
       expect(Math.round(box.width)).toBe(viewport.width);
       expect(Math.round(box.y + box.height)).toBe(viewport.height);
     }
-    expect(licenseRequests, 'no license text loads before an entry opens').toEqual([]);
+    const licenseTexts = () => licenseRequests.filter((url) => url.endsWith('.txt'));
+    expect(licenseTexts(), 'no license text loads before an entry opens').toEqual([]);
 
     const row = dialog.locator('[data-ack-id="pokeapi"]');
     await row.click();
@@ -53,14 +54,51 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
     await expect(row).toBeFocused();
 
-    // A sprite source lists the sprites my151 chose from it, each with the
-    // people its row credits: Kyle Dove's post asks to credit MyMarshlands
-    // for Victreebel.
-    await dialog.locator('[data-ack-id="kyle-dove"]').click();
+    // An artist's entry lists every sprite of theirs the app shows, folded
+    // by generation, each with the people its row also credits: Kyle Dove
+    // asks to credit MyMarshlands for Victreebel.
+    await dialog.locator('[data-ack-id="artist:Kyle Dove"]').click();
     const sprites = dialog.getByTestId('ack-sprites');
-    await expect(sprites.getByRole('heading', { name: /^Sprites chosen for my151 \d+$/ })).toBeVisible();
-    await expect(sprites.getByRole('listitem').filter({ hasText: 'Mega Victreebel' })).toHaveText('Mega Victreebel with MyMarshlands');
-    const kyleDoveSprites = Number(/(\d+)$/.exec((await sprites.getByRole('heading').textContent())!.trim())?.[1]);
+    await expect(sprites.getByTestId('ack-sprites-summary')).toHaveText(/^\d+ sprites via PokéAPI sprites/);
+    await sprites.getByText('Generation 1', { exact: true }).click();
+    await expect(sprites.getByRole('listitem').filter({ hasText: 'Mega Victreebel' })).toHaveText('Mega Victreebel · with MyMarshlands');
+    const kyleDoveSprites = Number(/^(\d+)/.exec((await sprites.getByTestId('ack-sprites-summary').textContent())!)?.[1]);
+
+    // Its "via" opens the project's entry in the panel, which links back to
+    // the artist; Back retraces both steps.
+    await sprites.getByRole('button', { name: 'PokéAPI sprites' }).click();
+    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('PokéAPI sprites');
+    await dialog.getByTestId('ack-project-artists').locator('[data-ack-id="artist:Kyle Dove"]').click();
+    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Kyle Dove');
+    await dialog.getByRole('button', { name: 'Back' }).click();
+    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('PokéAPI sprites');
+    await dialog.getByRole('button', { name: 'Back' }).click();
+    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Kyle Dove');
+    await dialog.getByRole('button', { name: 'Back' }).click();
+    await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
+
+    // MyMarshlands states no terms; the entry quotes Kyle Dove's post, which
+    // asks to credit MyMarshlands. A renamed artist names the old spelling.
+    await dialog.locator('[data-ack-id="artist:MyMarshlands"]').click();
+    await expect(dialog.getByTestId('ack-terms')).toContainText('please credit my friend MyMarshlands');
+    // A credit sheet's note on what a person did stays beside them.
+    await expect(dialog.getByTestId('ack-sprites').getByRole('listitem').filter({ hasText: 'Incineroar' })).toHaveText(/^Incineroar\s·\sface reference\s·\swith leParagon(\s·\svia .+)?$/);
+    await dialog.getByRole('button', { name: 'Back' }).click();
+    await dialog.locator('[data-ack-id="artist:Falgaia"]').click();
+    await expect(dialog.getByTestId('ack-credited-as')).toHaveText('Credited as aXl');
+    await dialog.getByRole('button', { name: 'Back' }).click();
+    await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
+
+    // The npm packages come from the build's own list, by license, and each
+    // license file is named for what it holds.
+    await dialog.locator('[data-ack-id="npm-packages"]').click();
+    const packages = dialog.getByTestId('ack-packages');
+    await expect(packages.getByRole('listitem').filter({ hasText: /^react \d/ })).toBeVisible();
+    const packageCount = await packages.getByRole('listitem').count();
+    await expect(dialog.getByTestId('ack-package-files').getByRole('link')).toHaveText([
+      /^License texts of \d+ packagesnpm-packages\.txt$/,
+      /^License texts of 4 packagestailwindcss, modern-normalize, country-flag-icons, and echarts NOTICE$/,
+    ]);
     await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
@@ -79,6 +117,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
       body: JSON.stringify({
         container: desktop ? 'side pane' : 'bottom sheet',
         licenseRequests: licenseRequests.map((url) => new URL(url).pathname),
+        packageCount,
         licenseChars,
         rows,
         kyleDoveSprites,

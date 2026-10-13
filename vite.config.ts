@@ -5,6 +5,7 @@ import path from 'path'
 import { prerenderHub } from './scripts/prerender-hub'
 import { staticFaq } from './scripts/static-faq'
 import { pickerSpritePacks } from './scripts/picker-sprite-packs'
+import { npmPackageIndex, stripCreditNotes } from './scripts/acknowledgements-build'
 
 /** Keep saved preview links on the canonical picker route in dev and preview. */
 function pickerRouteRedirect(): Plugin {
@@ -93,7 +94,7 @@ function startAppAfterFirstPaint(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), staticFaq(), prerenderHub(), pickerSpritePacks()],
+  plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), staticFaq(), prerenderHub(), pickerSpritePacks(), npmPackageIndex(), stripCreditNotes()],
   define: {
     // Only the hub prerender's server build keeps this constant; the browser
     // reads the meta tag above.
@@ -105,9 +106,10 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000,
     // The license notices of every npm package in the bundle, as the
-    // Acknowledgements panel's "Open-source packages" entry links them.
-    // Plain text, so a browser shows it rather than downloads it.
-    // public/licenses/npm-packages-extra.txt adds the three this misses.
+    // Acknowledgements panel's "npm packages" entry links them. Plain text, so
+    // a browser shows it rather than downloads it.
+    // public/licenses/npm-packages-extra.txt adds the three this misses, and
+    // npmPackageIndex lists both for the panel.
     license: { fileName: 'licenses/npm-packages.txt' },
     rollupOptions: {
       output: {

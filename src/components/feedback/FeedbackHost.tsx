@@ -45,7 +45,13 @@ export function FeedbackHost({ route, getToolContext }: {
   const contextRef = useRef(getToolContext);
   useEffect(() => { contextRef.current = getToolContext; }, [getToolContext]);
   const [toolContext, setToolContext] = useState<FeedbackToolContext | undefined>();
-  const [open, setOpen] = useState(false);
+  // The component that renders the open form, or null while the form is
+  // closed. The host picks it when the form opens and keeps it until the form
+  // closes. When the host picked it on every render, a form opened before the
+  // prefetch finished changed from `LazySheet` to the loaded `FeedbackSheet`
+  // at the next app render. React then mounted a new form, and the typed
+  // message was lost (October 2026).
+  const [OpenSheet, setOpenSheet] = useState<Sheet | typeof LazySheet | null>(null);
   const [category, setCategory] = useState<FeedbackCategory>('bug');
   // What was clicked, so the desktop card can open beside it.
   const [anchor, setAnchor] = useState<FeedbackAnchor>(null);
@@ -56,32 +62,22 @@ export function FeedbackHost({ route, getToolContext }: {
         setCategory(c);
         setAnchor(from);
         setToolContext(contextRef.current?.());
-        setOpen(true);
+        setOpenSheet((current: typeof OpenSheet) => current ?? loadedSheet ?? LazySheet);
       }),
     [],
   );
 
-  if (!open) return null;
-  const Sheet = loadedSheet;
+  if (!OpenSheet) return null;
+  // The loaded component never suspends, so it renders inside the tap.
   return (
-    Sheet ? (
-      <Sheet
+    <Suspense fallback={<ScreenSpinner />}>
+      <OpenSheet
         route={route}
         toolContext={toolContext}
         initialCategory={category}
         anchor={anchor}
-        onClose={() => setOpen(false)}
+        onClose={() => setOpenSheet(null)}
       />
-    ) : (
-      <Suspense fallback={<ScreenSpinner />}>
-        <LazySheet
-          route={route}
-          toolContext={toolContext}
-          initialCategory={category}
-          anchor={anchor}
-          onClose={() => setOpen(false)}
-        />
-      </Suspense>
-    )
+    </Suspense>
   );
 }
