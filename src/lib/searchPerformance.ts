@@ -26,7 +26,7 @@ export const SEARCH_RANGES = ['24h', '7d', '28d', '90d', '180d', '365d', 'all'] 
 export type SearchRangeKey = (typeof SEARCH_RANGES)[number];
 
 /** A range spans a fixed number of buckets, or every reported bucket. */
-export type SearchRangeSpec =
+type SearchRangeSpec =
   | { granularity: SearchGranularity; buckets: number; compare: boolean }
   | { granularity: 'day'; buckets: 'all' };
 
@@ -124,7 +124,7 @@ export function sumSearchMetrics(rows: readonly SearchMetric[]): SearchMetric {
 
 const BUCKET_MS: Record<SearchGranularity, number> = { day: 86_400_000, hour: 3_600_000 };
 
-export function bucketMs(start: string, granularity: SearchGranularity): number {
+function bucketMs(start: string, granularity: SearchGranularity): number {
   return Date.parse(granularity === 'day' ? `${start}T00:00:00Z` : start);
 }
 

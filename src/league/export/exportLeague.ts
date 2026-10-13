@@ -67,8 +67,6 @@ import {
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 import { drawGenderSymbol, genderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
 
-export { CARD_FILENAME, HOME_FILENAME } from './exportOptions';
-
 const FG = '#0a0a0a';
 const RED = '#DC2626';
 /** The league summary's frame: the Dex export's red. */
@@ -96,7 +94,7 @@ export function showcasePair(card: GymCard): { ace: number | null; partner: numb
   return { ace, partner: card.partnerId ?? null };
 }
 
-export interface ExportCell {
+interface ExportCell {
   seat: number;
   pokemonId: number | null;
   form: PowerupForm | null;

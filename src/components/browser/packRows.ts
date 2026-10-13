@@ -8,7 +8,7 @@ export interface PackableGroup {
   anchorGen?: number;
 }
 
-export interface PackedRow<G> {
+interface PackedRow<G> {
   groups: G[];
   /** Empty cells after the last line, so the next line starts a fresh row. */
   trailingSpacers: number;

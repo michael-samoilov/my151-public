@@ -100,7 +100,7 @@ export function showDayLines(t0: number, t1: number, tz?: string): boolean {
 }
 
 /** Calendar date in the viewed user's zone. Missing `tz` is UTC. */
-export function calendarDayKey(t: number, tz?: string): string {
+function calendarDayKey(t: number, tz?: string): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: tz || 'UTC',
     year: 'numeric',

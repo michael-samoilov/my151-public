@@ -9,7 +9,7 @@ import type { AppView } from '@/components/layout/Header';
  * being the active one.
  */
 
-export interface ToolbarSlot {
+interface ToolbarSlot {
   el: HTMLElement | null;
   view: AppView;
 }

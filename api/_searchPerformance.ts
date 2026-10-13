@@ -53,7 +53,7 @@ interface BingRow {
 }
 
 /** A provider row inside one bucket, grouped by `keys` (a page, a query, or both). */
-export interface SearchBucketRow extends SearchSeriesPoint {
+interface SearchBucketRow extends SearchSeriesPoint {
   keys: string[];
 }
 
@@ -324,7 +324,7 @@ async function connectGoogle(): Promise<GoogleQuery | null> {
 }
 
 /** Daily ranges: the date series, then pages and queries for each window. */
-export async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
+async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
   const query = await connectGoogle();
   if (!query) return notConfigured('google');
   const today = todayUtcMs();
@@ -363,7 +363,7 @@ export async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
 }
 
 /** The 24h range: hourly totals, pages, and queries, summed per window. */
-export async function fetchGoogleHourly(): Promise<SearchProviderSnapshot> {
+async function fetchGoogleHourly(): Promise<SearchProviderSnapshot> {
   const query = await connectGoogle();
   if (!query) return notConfigured('google');
   const now = Date.now();
@@ -413,7 +413,7 @@ async function fetchBingMethod(method: 'GetRankAndTrafficStats' | 'GetPageStats'
 }
 
 /** Bing reports days only. Its page and query rows are filtered to each window by their date. */
-export async function fetchBingSearchPerformance(): Promise<SearchProviderSnapshot> {
+async function fetchBingSearchPerformance(): Promise<SearchProviderSnapshot> {
   const apiKey = process.env.BING_WEBMASTER_API_KEY?.trim();
   if (!apiKey) return notConfigured('bing');
   const siteUrl = process.env.BING_WEBMASTER_SITE_URL?.trim() || 'https://my151.app/';

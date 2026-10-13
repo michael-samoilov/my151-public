@@ -6,7 +6,7 @@ import { eligibleFor, kindFor } from '@/favorites/model/eligibility';
 import type { FavoritePicks } from '../../../api/_favoriteAggregate';
 
 export type PickCell = { type: TypeAxisId; gen: GenAxisId };
-export type Ranked = { mon: PickerMon; picks: number };
+type Ranked = { mon: PickerMon; picks: number };
 
 /** Sprite and name for the dashboard's Most picked preview. */
 export function pickerFace(id: number): { sprite: string; alt: string; name: string } | undefined {

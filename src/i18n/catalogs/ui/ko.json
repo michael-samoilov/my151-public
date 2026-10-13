@@ -500,7 +500,7 @@
   "favorites.title": "타입·세대별 좋아하는 포켓몬 고르기",
   "favorites.icons.hide": "아이콘 숨기기",
   "favorites.icons.show": "아이콘 표시",
-  "error.body": "페이지 일부에서 오류가 발생했습니다. 대부분 새로고침하면 해결되며, 신고해 주시면 무엇이 문제인지 알 수 있습니다.",
+  "error.body": "페이지 일부에서 오류가 발생했습니다. 대부분 새로고침하면 해결됩니다.",
   "error.reload": "새로고침",
   "error.title": "이 부분이 작동을 멈췄습니다",
   "feedback.category.bug": "버그",
@@ -669,6 +669,8 @@
   "favorites.typeRepair.message": "폼의 타입 수정으로 저장된 선택 {count}개가 영향을 받았습니다. 표에는 남지만 내보내기에서는 제외됩니다. 해당 칸을 확인하고 다시 선택하세요.",
   "favorites.typeRepair.review": "확인",
   "viewSettings.showStats": "상세 통계 표시",
+  "viewSettings.groupSpecialHint": "화석, 추가 첫 파트너, 패러독스 포켓몬, 600족, 울트라비스트, 전설의 포켓몬, 환상의 포켓몬을 그리드 맨 뒤로 보냅니다. 사용자 지정 순서에는 영향을 주지 않습니다.",
+  "viewSettings.outlinesHint": "만들기 페이지의 섹션에 맞춰 포켓몬 그룹에 윤곽선을 표시합니다.",
   "stats.type.title": "타입 분포",
   "stats.bst.title": "종족값 합계",
   "favorites.stats.shape": "포켓몬 체형",
@@ -846,5 +848,13 @@
   "faq.favorites.q4": "무료인가요? 앱이나 계정이 필요한가요?",
   "faq.favorites.a4": "무료이며 브라우저에서 사용할 수 있습니다. 가입이나 다운로드는 필요 없습니다. 선택한 포켓몬은 이 브라우저에 저장됩니다. 브라우저 데이터를 삭제하면 사라질 수 있으니 PNG로 내보내 표를 보관하세요.",
   "faq.favorites.q5": "좋아하는 포켓몬을 다른 my151 도구에서도 사용할 수 있나요?",
-  "faq.favorites.a5": "네. 포켓몬 도감 빌더와 체육관 관장 메이커에서 이 브라우저에 저장된 좋아하는 포켓몬으로 목록을 필터링할 수 있습니다."
+  "faq.favorites.a5": "네. 포켓몬 도감 빌더와 체육관 관장 메이커에서 이 브라우저에 저장된 좋아하는 포켓몬으로 목록을 필터링할 수 있습니다.",
+  "dnd.cancelled": "드래그를 취소했습니다. 드래그할 수 있는 항목 {id}을(를) 놓았습니다.",
+  "dnd.dropped": "드래그할 수 있는 항목 {id}을(를) 놓았습니다.",
+  "dnd.droppedOver": "드래그할 수 있는 항목 {id}을(를) 놓을 수 있는 영역 {over}에 놓았습니다",
+  "dnd.instructions": "드래그할 수 있는 항목을 들어 올리려면 스페이스바를 누르세요. 드래그하는 동안 화살표 키로 항목을 옮기세요. 스페이스바를 다시 누르면 새 위치에 놓고, 이스케이프 키를 누르면 취소합니다.",
+  "dnd.movedOver": "드래그할 수 있는 항목 {id}을(를) 놓을 수 있는 영역 {over} 위로 옮겼습니다.",
+  "dnd.notOver": "드래그할 수 있는 항목 {id}이(가) 더 이상 놓을 수 있는 영역 위에 있지 않습니다.",
+  "dnd.pickedUp": "드래그할 수 있는 항목 {id}을(를) 들어 올렸습니다.",
+  "dnd.roleDescription": "드래그 가능"
 }

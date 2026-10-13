@@ -140,7 +140,7 @@ function isCjkText(text: string): boolean {
   return /[぀-ヿ㐀-䶿一-鿿豈-﫿가-힯]/.test(text);
 }
 
-export interface TypeBadgeFit {
+interface TypeBadgeFit {
   /** Font size in badge units. */
   fontSize: number;
   /** Baseline y in badge units. */

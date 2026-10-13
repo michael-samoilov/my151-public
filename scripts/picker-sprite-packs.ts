@@ -55,7 +55,7 @@ function pack(files: Buffer[]): Buffer {
   return Buffer.concat([header, ...files]);
 }
 
-export function buildPacks(root: string, base: string, plan: Plan): { manifest: PackManifest; files: Emitted[] } {
+function buildPacks(root: string, base: string, plan: Plan): { manifest: PackManifest; files: Emitted[] } {
   const bytes = new Map<string, Buffer>();
   const read = (sprite: string): Buffer => {
     let file = bytes.get(sprite);

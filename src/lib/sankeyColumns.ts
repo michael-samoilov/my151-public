@@ -23,7 +23,7 @@ const HEADER_MARGIN = 6;
 
 /** Width of the widest line once echarts' `overflow: 'break'` wraps the
  *  text at word gaps. A word wider than `wrap` keeps its own line. */
-export function wrappedWidth(text: string, wrap: number, measure: MeasureText): number {
+function wrappedWidth(text: string, wrap: number, measure: MeasureText): number {
   let widest = 0;
   let line = '';
   for (const word of text.split(' ')) {
@@ -40,7 +40,7 @@ export function wrappedWidth(text: string, wrap: number, measure: MeasureText): 
 
 /** The two lines that break `text` at the word gap with the narrowest
  *  widest line. Null for a single word. */
-export function twoLines(text: string, measure: MeasureText): string[] | null {
+function twoLines(text: string, measure: MeasureText): string[] | null {
   const words = text.split(' ');
   let best: string[] | null = null;
   let bestWidth = Number.POSITIVE_INFINITY;
@@ -76,7 +76,7 @@ function bodyReach(b: LabelBox, w: number, nodeWidth: number): { lo: number; hi:
   return { lo, hi };
 }
 
-export interface ColumnNeeds {
+interface ColumnNeeds {
   /** The gap each column needs before the next column's bars, in px. */
   gaps: number[];
   /** The room the last column's labels need right of its bars, in px. */
@@ -149,7 +149,7 @@ export function columnLefts(needs: number[], plotWidth: number, nodeWidth: numbe
   return lefts;
 }
 
-export interface ColumnFit {
+interface ColumnFit {
   fontSize: number;
   /** Room right of the plot, in px. */
   right: number;

@@ -36,11 +36,11 @@ function bstCardGeometry(ctx: CanvasRenderingContext2D, stats: PickerConditional
  return { chartY, height: chartY + chartHeight + 12 };
 }
 /** Natural panel bounds come from the same histogram measurement used by its painter. */
-export function pickerStatsPanelSize(ctx: CanvasRenderingContext2D, stats: PickerConditionalStats) {
+function pickerStatsPanelSize(ctx: CanvasRenderingContext2D, stats: PickerConditionalStats) {
  return { w: PANEL_W, h: Math.max(864, 608 + bstCardGeometry(ctx, stats).height) };
 }
 /** Native panel, exported for the preview audit; the live export uses exactly this painter. */
-export function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerConditionalStats,images:Map<string,HTMLImageElement>){
+function drawPickerStatsPanel(ctx:CanvasRenderingContext2D,stats:PickerConditionalStats,images:Map<string,HTMLImageElement>){
  function card(d:Dimension,x:number,y:number,h:number){
   ctx.save();ctx.translate(x,y);ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(0,0,W,h,8);ctx.fill();drawExportStatsTitle(ctx,titles()[d],20,12);
   const data=stats.dimensions[d];

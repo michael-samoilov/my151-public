@@ -57,9 +57,9 @@ const HINT_PAD_REM = 0.5;
  * The most the sprite box gives up on each side, in source px. 90% of the
  * 1,227 sprites leave at least this much empty above and below the creature.
  */
-export const MAX_TRIM_PX = 6;
+const MAX_TRIM_PX = 6;
 
-export interface HomeLayout {
+interface HomeLayout {
   /** Source px the sprite box gives up on each side. */
   trimPx: number;
   /** How much of today's spacing is kept: 0 is the tightest, 1 today's. */
@@ -68,8 +68,8 @@ export interface HomeLayout {
   hints: 0 | 1 | 2;
 }
 
-export const ROOMY: HomeLayout = { trimPx: 0, spacing: 1, hints: 2 };
-export const TIGHTEST: HomeLayout = { trimPx: MAX_TRIM_PX, spacing: 0, hints: 0 };
+const ROOMY: HomeLayout = { trimPx: 0, spacing: 1, hints: 2 };
+const TIGHTEST: HomeLayout = { trimPx: MAX_TRIM_PX, spacing: 0, hints: 0 };
 
 interface Stage {
   /** What the stage gives back, for a reader of the list. */
@@ -81,7 +81,7 @@ interface Stage {
 }
 
 /** Where spare height goes, first to last. Each stage starts from `TIGHTEST`. */
-export const HOME_STAGES: readonly Stage[] = [
+const HOME_STAGES: readonly Stage[] = [
   { name: 'sprite box', partial: true, relax: (l, t) => ({ ...l, trimPx: MAX_TRIM_PX * (1 - t) }) },
   { name: 'spacing', partial: true, relax: (l, t) => ({ ...l, spacing: t }) },
   { name: 'one hint line', partial: false, relax: (l) => ({ ...l, hints: 1 }) },
@@ -91,7 +91,7 @@ export const HOME_STAGES: readonly Stage[] = [
 const lerp = (from: number, to: number, t: number) => from + (to - from) * t;
 
 /** The sizes the markup draws a layout at, in rem at zoom 1. */
-export interface HomeMetrics {
+interface HomeMetrics {
   rowRem: number;
   /** How far the sprite hangs past its box on each side. */
   trimRem: number;

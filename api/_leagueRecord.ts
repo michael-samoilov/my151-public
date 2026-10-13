@@ -15,12 +15,12 @@ import { alignSessionMs, isSubsetRegression, sessionTarget, checkpointRecording,
 /** A quiet gap longer than this between two beacons starts a new session. */
 export const LEAGUE_SESSION_GAP_MS = 30 * 60_000;
 /** Keep at most this many sessions per record (most recent wins). */
-export const LEAGUE_MAX_SESSIONS = 50;
+const LEAGUE_MAX_SESSIONS = 50;
 
 export const LEAGUE_CLIENTS_KEY = 'league:clients';
 export const LEAGUE_VERSION_KEY = 'league:clients:ver';
 
-export const LEAGUE_BEACON_KINDS = ['progress', 'export'] as const;
+const LEAGUE_BEACON_KINDS = ['progress', 'export'] as const;
 export type LeagueBeaconKind = (typeof LEAGUE_BEACON_KINDS)[number];
 export const LEAGUE_EXPORT_KINDS = ['card', 'league'] as const;
 export type LeagueExportKind = (typeof LEAGUE_EXPORT_KINDS)[number];
@@ -45,7 +45,7 @@ export interface LeagueSummary {
 }
 
 /** Lines one card may seat. */
-export const SEATS_PER_CARD = 6;
+const SEATS_PER_CARD = 6;
 /** Stages one evolution branch may have. */
 const MAX_STAGES = 5;
 /** Widest plausible Pokemon or powerup-form id. Shape-checked, not matched
@@ -192,7 +192,7 @@ export function isLeagueExportKind(s: unknown): s is LeagueExportKind {
  */
 export const CARD_COUNT = 14;
 /** Six lines per card. */
-export const SEAT_MAX = 6 * CARD_COUNT;
+const SEAT_MAX = 6 * CARD_COUNT;
 
 /**
  * Team size of each league slot (0-based). Must equal

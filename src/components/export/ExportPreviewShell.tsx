@@ -134,8 +134,8 @@ export function ExportPreviewShell({
   recipe?: FoilRecipe;
   tilt?: HoverTiltRecipe;
   /**
-   * The export has no settings: its pane holds only `ExportNoSettings` and the
-   * actions, so the phone sheet sizes to them and the preview gets the rest.
+   * The settings pane is short: the phone sheet sizes to it, and the preview
+   * gets the rest.
    */
   bare?: boolean;
   settingsTitle?: string;

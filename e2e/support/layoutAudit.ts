@@ -16,7 +16,7 @@ import type { Page } from '@playwright/test';
  * already gives: a baseline per state per locale per viewport churns on every
  * unrelated CSS tweak and trains everyone to re-bless it without looking.
  */
-export interface LayoutProblem {
+interface LayoutProblem {
   kind: 'overlap' | 'escapes-parent';
   detail: string;
 }

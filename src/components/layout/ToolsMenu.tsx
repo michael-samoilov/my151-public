@@ -21,7 +21,7 @@ const TOOLS = [
   { id: 'favorites', href: '/favorite-pokemon-picker', label: 'tools.favorites', Icon: RibbonIcon, scale: 1.03 },
 ] as const;
 
-export type ToolId = (typeof TOOLS)[number]['id'];
+type ToolId = (typeof TOOLS)[number]['id'];
 
 /**
  * A one-time pointer at this menu: "the builder moved, it is under Tools",

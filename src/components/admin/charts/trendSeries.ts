@@ -44,7 +44,7 @@ export function chartDailyValues(series: DailyPoint[]): number[] {
   });
 }
 
-export const INCOMPLETE_WEEKLY_DAYS = 6;
+const INCOMPLETE_WEEKLY_DAYS = 6;
 
 /** Days that overlap the window opening at `start`; every day for `null`. */
 export function sliceActivityRange(series: DailyPoint[], start: number | null): DailyPoint[] {
@@ -70,7 +70,7 @@ export function sliceLastUtcDays(series: DailyPoint[], nowMs: number, days: numb
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
-export interface WeekdayTick {
+interface WeekdayTick {
   idx: number;
   weekday: (typeof WEEKDAYS)[number];
 }
@@ -157,7 +157,7 @@ export function weekLineIndices(days: number[], nowMs: number): number[] {
   return out;
 }
 
-export interface MonthLabelTick {
+interface MonthLabelTick {
   idx: number;
   abbr: string;
   year: number | null;
@@ -200,9 +200,9 @@ export function monthDividerIndices(days: number[]): number[] {
   return out;
 }
 
-export type CountLabelSide = 'above' | 'below';
+type CountLabelSide = 'above' | 'below';
 
-export interface CountLabelLayout {
+interface CountLabelLayout {
   x: number;
   side: CountLabelSide;
   dailyY: number;

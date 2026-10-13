@@ -9,9 +9,9 @@ import type { NoArgKey } from '@/i18n';
 
 export const DEX_TOTAL = 151;
 
-export type MilestoneFeature = 'analytics' | 'view' | 'stats' | 'complete';
+type MilestoneFeature = 'analytics' | 'view' | 'stats' | 'complete';
 
-export interface MilestoneDef {
+interface MilestoneDef {
   /** Count at which this milestone triggers. */
   at: number;
   feature: MilestoneFeature;
@@ -22,7 +22,7 @@ export interface MilestoneDef {
   detailKey: NoArgKey;
 }
 
-export const MILESTONE_DEFS: readonly MilestoneDef[] = [
+const MILESTONE_DEFS: readonly MilestoneDef[] = [
   { at: 25, feature: 'analytics', titleKey: 'milestone.25.title', detailKey: 'milestone.25.detail' },
   { at: 100, feature: 'stats', titleKey: 'milestone.100.title', detailKey: 'milestone.100.detail' },
   { at: DEX_TOTAL, feature: 'complete', titleKey: 'milestone.151.title', detailKey: 'milestone.151.detail' },
@@ -32,10 +32,8 @@ export const MILESTONE_DEFS: readonly MilestoneDef[] = [
 export const MILESTONES: readonly number[] = MILESTONE_DEFS.map((m) => m.at);
 
 export const ANALYTICS_UNLOCK_AT = 25;
-export const STATS_UNLOCK_AT = 100;
 
 export const isAnalyticsUnlocked = (milestoneMax: number) => milestoneMax >= ANALYTICS_UNLOCK_AT;
-export const isStatsUnlocked = (milestoneMax: number) => milestoneMax >= STATS_UNLOCK_AT;
 
 /** Milestone thresholds already reached at a given count — used to pre-seed an
  *  existing user's "celebrated" set on hydrate so restored progress never
@@ -44,7 +42,3 @@ export function milestonesAtOrBelow(count: number): number[] {
   return MILESTONES.filter((m) => count <= 0 ? false : m <= count);
 }
 
-/** The next milestone above `count`, or null if the dex is complete. */
-export function nextMilestone(count: number): number | null {
-  return MILESTONES.find((m) => m > count) ?? null;
-}

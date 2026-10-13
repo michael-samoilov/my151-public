@@ -40,7 +40,7 @@ export function singleOriginMark(origin: SourceCoordinate, pointer: boolean, cur
 }
 
 /** Fixed proportional bounds; origin count never changes glyph size. */
-export function coordinatePillLayout(spritePx: number, inset: number, markPx: number) {
+function coordinatePillLayout(spritePx: number, inset: number, markPx: number) {
   const gap = Math.max(1, Math.round(spritePx * 0.02));
   const available = Math.max(1, spritePx - inset * 2);
   const columns = available >= 40 + gap ? 2 : 1;

@@ -185,7 +185,7 @@ export function isPowerupForm(mon: PickerMon): boolean {
 
 const TERASTAL_FORM_IDS = new Set([10276, 10277, 11113, 11114, 11115, 11116]);
 
-export function isTerastalForm(mon: PickerMon): boolean {
+function isTerastalForm(mon: PickerMon): boolean {
   return TERASTAL_FORM_IDS.has(mon.id);
 }
 

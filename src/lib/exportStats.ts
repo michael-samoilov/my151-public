@@ -22,15 +22,15 @@ import type { TypeName } from '@/types/pokemon';
  * caller applies a single ctx.scale() to fit it to the dex card's height.
  */
 
-export const STATS_NAT_W = 320;
+const STATS_NAT_W = 320;
 
 /** Vertical gap between stacked stat cards (natural units). Exported so the
  *  exporter can make the dex↔stats horizontal gutter match it after scaling. */
-export const CARD_GAP = 16;
+const CARD_GAP = 16;
 /** Stat-card inner padding (natural units): px-5 horizontal, py-3 vertical. The
  *  horizontal value is exported so the exporter can match the dex card's padding
  *  to it (uniform content-to-edge spacing across all cards). */
-export const CARD_PADX = 20; // px-5
+const CARD_PADX = 20; // px-5
 const CARD_PADY = 12; // py-3
 const CARD_RADIUS = 8; // rounded-lg
 const CONTENT_W = STATS_NAT_W - CARD_PADX * 2;
@@ -205,8 +205,8 @@ interface CardSpec {
   drawChart: (ctx: CanvasRenderingContext2D, x: number, y: number) => void;
 }
 
-export interface StatsCardBox { y: number; h: number }
-export interface StatsLayout { w: number; h: number; cards: StatsCardBox[] }
+interface StatsCardBox { y: number; h: number }
+interface StatsLayout { w: number; h: number; cards: StatsCardBox[] }
 
 /** Lay out + (optionally) draw the whole stats panel at natural scale, top-left
  *  at the current origin. Returns the panel's natural { w, h } and per-card boxes

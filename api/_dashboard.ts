@@ -138,7 +138,7 @@ function weekStart(ts: number): number {
 
 /** Where a browser's two tools sit relative to each other. `same-day` covers
  *  the common case of finding the second tool from the first one's page. */
-export type ToolOrder = 'dex-first' | 'league-first' | 'same-day';
+type ToolOrder = 'dex-first' | 'league-first' | 'same-day';
 
 function toolOrder(dexFirstTs: number, leagueFirstTs: number): ToolOrder {
   const gap = leagueFirstTs - dexFirstTs;
@@ -240,7 +240,7 @@ function leagueUser(r: LeagueRecord, dexFirstTs?: number): LeagueUser {
   };
 }
 
-export interface Journeys {
+interface Journeys {
   /** Browsers with a record in both stores. */
   both: number;
   dexFirst: number;
@@ -429,7 +429,7 @@ function toolStat(count: number, exported: boolean, usage: ToolUsage, attention?
 }
 
 /** One list record's row, with the tools of its browser. */
-export function browserRow(
+function browserRow(
   rec: SessionRecord,
   tools: { dex?: DexTool; league?: LeagueTool; picker?: PickerTool },
   archived: boolean,
@@ -1012,7 +1012,7 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
 }
 
 /** The stored values one browser has in each store, from one HGET apiece. */
-export interface BrowserSource {
+interface BrowserSource {
   dex: unknown;
   league: unknown;
   favorite: unknown;

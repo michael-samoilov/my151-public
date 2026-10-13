@@ -504,7 +504,7 @@
   "favorites.title": "Choisissez vos Pokémon préférés par type et génération",
   "favorites.icons.hide": "Masquer les icônes",
   "favorites.icons.show": "Afficher les icônes",
-  "error.body": "Une erreur est survenue sur la page. Recharger suffit souvent, et un signalement nous indique ce qui a cassé.",
+  "error.body": "Une erreur est survenue sur la page. Recharger suffit souvent.",
   "error.reload": "Recharger",
   "error.title": "Cette partie ne fonctionne plus",
   "feedback.category.bug": "Bug",
@@ -676,6 +676,8 @@
   "favorites.typeRepair.message": "Les types corrigés des formes affectent {count} choix enregistrés. Ils restent dans la grille, mais sont exclus des exports. Vérifiez leurs cases pour les remplacer.",
   "favorites.typeRepair.review": "Vérifier",
   "viewSettings.showStats": "Afficher les statistiques détaillées",
+  "viewSettings.groupSpecialHint": "Place en fin de grille les fossiles, les Pokémon de départ en plus, les Pokémon Paradoxe, les pseudo-légendaires, les Ultra-Chimères, les légendaires et les fabuleux. Sans effet sur l’ordre Personnalisé.",
+  "viewSettings.outlinesHint": "Encadre les groupes de Pokémon selon les sections de votre page Créer.",
   "stats.type.title": "Répartition des types",
   "stats.bst.title": "Total des statistiques",
   "favorites.stats.shape": "Forme du Pokémon",
@@ -868,5 +870,13 @@
   "faq.favorites.q4": "Est-ce gratuit ? Faut-il une application ou un compte ?",
   "faq.favorites.a4": "Gratuit, dans le navigateur, sans inscription ni téléchargement. Vos choix s’enregistrent dans ce navigateur. Effacer ses données peut les supprimer : exportez un PNG pour conserver votre tableau.",
   "faq.favorites.q5": "Puis-je utiliser mes favoris dans les autres outils my151 ?",
-  "faq.favorites.a5": "Oui. Les créateurs de Pokédex et de Champions d’Arène peuvent filtrer leurs listes de Pokémon selon vos favoris enregistrés dans ce navigateur."
+  "faq.favorites.a5": "Oui. Les créateurs de Pokédex et de Champions d’Arène peuvent filtrer leurs listes de Pokémon selon vos favoris enregistrés dans ce navigateur.",
+  "dnd.cancelled": "Déplacement annulé. L’élément déplaçable {id} a été déposé.",
+  "dnd.dropped": "L’élément déplaçable {id} a été déposé.",
+  "dnd.droppedOver": "L’élément déplaçable {id} a été déposé sur la zone {over}",
+  "dnd.instructions": "Pour saisir un élément déplaçable, appuyez sur la barre d’espace. Pendant le déplacement, utilisez les flèches pour le déplacer. Appuyez de nouveau sur espace pour le déposer à sa nouvelle position, ou sur Échap pour annuler.",
+  "dnd.movedOver": "L’élément déplaçable {id} a été déplacé au-dessus de la zone {over}.",
+  "dnd.notOver": "L’élément déplaçable {id} n’est plus au-dessus d’une zone de dépôt.",
+  "dnd.pickedUp": "Élément déplaçable {id} saisi.",
+  "dnd.roleDescription": "déplaçable"
 }

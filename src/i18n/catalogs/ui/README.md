@@ -252,3 +252,16 @@ Generation, French Type, Spanish Color, and Pokémon, are listed in
   390 px, so the Latin locales say above / below average (überm / unterm
   Schnitt, sopra / sotto la media) or more / less frequent (plus / moins
   fréquent).
+
+### Drag and drop
+
+`dnd.*` is the screen reader text of every draggable tile: the role
+description, the keyboard instructions, and the announcements during a drag.
+The English values are dnd-kit's own defaults, so English reads as before;
+`src/lib/dndAccessibility.ts` hands the other locales' text to each
+`DndContext`. `{id}` and `{over}` are internal ids, as in dnd-kit.
+
+`npx tsx scripts/i18n/find-hardcoded.ts` lists any English that the public
+app renders without the catalog. Its allowlist,
+`scripts/i18n/hardcoded-allowlist.json`, gives the reason for each string
+that stays English.

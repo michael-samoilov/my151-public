@@ -504,7 +504,7 @@
   "favorites.title": "Scegli i tuoi Pokémon preferiti per tipo e generazione",
   "favorites.icons.hide": "Nascondi icone",
   "favorites.icons.show": "Mostra icone",
-  "error.body": "Qualcosa nella pagina non ha funzionato. Di solito basta ricaricare, e una segnalazione ci dice cosa si è rotto.",
+  "error.body": "Qualcosa nella pagina non ha funzionato. Di solito basta ricaricare.",
   "error.reload": "Ricarica",
   "error.title": "Questa parte ha smesso di funzionare",
   "feedback.category.bug": "Errore",
@@ -676,6 +676,8 @@
   "favorites.typeRepair.message": "I tipi corretti delle forme riguardano {count} scelte salvate. Restano nella griglia ma sono escluse dalle esportazioni. Controlla le celle per sostituirle.",
   "favorites.typeRepair.review": "Controlla",
   "viewSettings.showStats": "Mostra statistiche dettagliate",
+  "viewSettings.groupSpecialHint": "Sposta in fondo alla griglia i fossili, gli iniziali extra, i Pokémon Paradosso, gli pseudoleggendari, le Ultracreature, i leggendari e i misteriosi. Non influisce sull’ordine Personalizzato.",
+  "viewSettings.outlinesHint": "Contorna i gruppi di Pokémon in base alle sezioni della tua pagina Crea.",
   "stats.type.title": "Distribuzione dei tipi",
   "stats.bst.title": "Totale statistiche",
   "favorites.stats.shape": "Forma del Pokémon",
@@ -868,5 +870,13 @@
   "faq.favorites.q4": "È gratis? Mi serve un’app o un account?",
   "faq.favorites.a4": "Gratis, nel browser, senza registrazione né download. Le tue scelte si salvano in questo browser. Cancellare i dati del browser può eliminarle, quindi esporta un PNG per conservare il tuo elenco.",
   "faq.favorites.q5": "Posso usare i miei preferiti negli altri strumenti my151?",
-  "faq.favorites.a5": "Sì. Il creatore di Pokédex e quello di Capipalestra possono filtrare i loro elenchi di Pokémon in base ai tuoi preferiti salvati in questo browser."
+  "faq.favorites.a5": "Sì. Il creatore di Pokédex e quello di Capipalestra possono filtrare i loro elenchi di Pokémon in base ai tuoi preferiti salvati in questo browser.",
+  "dnd.cancelled": "Trascinamento annullato. L’elemento trascinabile {id} è stato rilasciato.",
+  "dnd.dropped": "L’elemento trascinabile {id} è stato rilasciato.",
+  "dnd.droppedOver": "L’elemento trascinabile {id} è stato rilasciato sull’area {over}",
+  "dnd.instructions": "Per prendere un elemento trascinabile, premi la barra spaziatrice. Durante il trascinamento, spostalo con i tasti freccia. Premi di nuovo spazio per rilasciarlo nella nuova posizione, oppure Esc per annullare.",
+  "dnd.movedOver": "L’elemento trascinabile {id} è stato spostato sopra l’area {over}.",
+  "dnd.notOver": "L’elemento trascinabile {id} non è più sopra un’area di rilascio.",
+  "dnd.pickedUp": "Elemento trascinabile {id} preso.",
+  "dnd.roleDescription": "trascinabile"
 }

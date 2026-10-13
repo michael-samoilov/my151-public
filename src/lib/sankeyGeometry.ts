@@ -1,36 +1,17 @@
 /** md breakpoint. Below this, a funnel's plot is wider than it is tall,
  *  matching the desktop Sankey shape rather than the card's aspect. */
-export const SANKEY_DESKTOP_WIDTH = 1024;
+const SANKEY_DESKTOP_WIDTH = 1024;
 
 /** Plot width / plot height on a phone funnel. Desktop sits near 2.2. */
-export const FUNNEL_PLOT_ASPECT = 1.5;
+const FUNNEL_PLOT_ASPECT = 1.5;
 
-export function sankeyDesktopHeight(stack: number, kind: 'funnel' | 'referrer'): number {
+function sankeyDesktopHeight(stack: number, kind: 'funnel' | 'referrer'): number {
   if (kind === 'referrer') return Math.max(360, Math.min(520, stack * 36 + 80));
   return Math.max(520, Math.min(740, 200 + stack * 80));
 }
 
-export function sankeyMinHeight(kind: 'funnel' | 'referrer'): number {
+function sankeyMinHeight(kind: 'funnel' | 'referrer'): number {
   return kind === 'referrer' ? 160 : 180;
-}
-
-/** Pixel height of the chart box. Caps at the desktop height so a wide
- *  screen does not grow taller than the current desktop funnel. On a phone
- *  funnel the plot itself is landscape, so height follows plot width. */
-export function sankeyChartHeight(width: number, stack: number, kind: 'funnel' | 'referrer'): number {
-  const desktopH = sankeyDesktopHeight(stack, kind);
-  const g = sankeyGeometry(width, kind);
-  if (kind === 'referrer' || !g.compact) {
-    const minH = sankeyMinHeight(kind);
-    const capped = Math.min(Math.max(width, 0), SANKEY_DESKTOP_WIDTH);
-    const scaled = (desktopH * capped) / SANKEY_DESKTOP_WIDTH;
-    return Math.round(Math.max(minH, Math.min(desktopH, scaled)));
-  }
-  const plotW = Math.max(1, width - g.left - g.right);
-  const plotH = plotW / FUNNEL_PLOT_ASPECT;
-  const minPlot = stack * 10 + Math.max(0, stack - 1) * g.nodeGap;
-  const h = Math.round(Math.max(plotH, minPlot) + g.top + g.bottom);
-  return Math.min(desktopH, h);
 }
 
 export function sankeyHeightCss(stack: number, kind: 'funnel' | 'referrer'): string {

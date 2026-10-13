@@ -31,7 +31,7 @@ export function joinRow(seat: number): number {
 }
 
 /** The 14 league slots, in display order. */
-export type SlotKind = 'gym' | 'elite' | 'champion' | 'boss';
+type SlotKind = 'gym' | 'elite' | 'champion' | 'boss';
 
 export const SLOT_COUNT = 14;
 

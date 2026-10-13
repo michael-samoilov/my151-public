@@ -13,10 +13,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BASE = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv';
-export const CACHE_DIR = 'docs/i18n/pokeapi';
+const CACHE_DIR = 'docs/i18n/pokeapi';
 
 /** The CSVs the name pipeline reads. */
-export const CSVS = [
+const CSVS = [
   'languages',
   'pokemon',
   'pokemon_species',
@@ -31,7 +31,7 @@ export const CSVS = [
   'item_names',
 ] as const;
 
-export type CsvName = (typeof CSVS)[number];
+type CsvName = (typeof CSVS)[number];
 
 /**
  * Populate the local cache, fetching anything missing.
@@ -57,7 +57,7 @@ export async function ensureCsvs(force = false): Promise<void> {
  * commas (a German growth-rate name is "langsam, dann sehr schnell"), so
  * splitting on commas would corrupt rows.
  */
-export function parseCsv(text: string): Record<string, string>[] {
+function parseCsv(text: string): Record<string, string>[] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = '';

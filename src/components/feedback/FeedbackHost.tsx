@@ -1,11 +1,25 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { reloadIfStale } from '@/lib/staleDeploy';
+import { whenIdle } from '@/lib/whenIdle';
 import { registerFeedbackOpener, type FeedbackAnchor } from '@/components/feedback/feedbackChannel';
 import type { FeedbackCategory, FeedbackToolContext } from '@/lib/feedbackContext';
 import { ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 
-const FeedbackSheet = lazy(() => reloadIfStale(import('./FeedbackSheet'))
-  .then(module => ({ default: module.FeedbackSheet })));
+type Sheet = typeof import('./FeedbackSheet').FeedbackSheet;
+let loadedSheet: Sheet | null = null;
+const loadSheet = () => reloadIfStale(import('./FeedbackSheet')).then((module) => (loadedSheet = module.FeedbackSheet));
+const LazySheet = lazy(() => loadSheet().then((FeedbackSheet) => ({ default: FeedbackSheet })));
+
+// The form's code stays off the first download and arrives once the page has
+// loaded and gone idle. A tap after that renders the form inside the tap, so
+// its text field takes focus there and iOS opens the keyboard; loaded on the
+// tap, the focus came after the download and the first report after a reload
+// opened without a keyboard (October 2026).
+if (typeof document !== 'undefined') {
+  const prefetch = () => whenIdle(() => { void loadSheet().catch(() => {}); });
+  if (document.readyState === 'complete') prefetch();
+  else window.addEventListener('load', prefetch, { once: true });
+}
 
 /**
  * The single mount point for the report form.
@@ -48,15 +62,26 @@ export function FeedbackHost({ route, getToolContext }: {
   );
 
   if (!open) return null;
+  const Sheet = loadedSheet;
   return (
-    <Suspense fallback={<ScreenSpinner />}>
-      <FeedbackSheet
+    Sheet ? (
+      <Sheet
         route={route}
         toolContext={toolContext}
         initialCategory={category}
         anchor={anchor}
         onClose={() => setOpen(false)}
       />
-    </Suspense>
+    ) : (
+      <Suspense fallback={<ScreenSpinner />}>
+        <LazySheet
+          route={route}
+          toolContext={toolContext}
+          initialCategory={category}
+          anchor={anchor}
+          onClose={() => setOpen(false)}
+        />
+      </Suspense>
+    )
   );
 }

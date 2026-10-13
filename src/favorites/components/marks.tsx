@@ -1,5 +1,4 @@
 import { useT } from '@/i18n';
-import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
 import favoriteIcon from '../icons/favorite.svg?url';
@@ -66,7 +65,6 @@ export function TypeIcon({ type, size = 24 }: { type: TypeName; size?: number })
 }
 
 import { ULTRA_BAND, MASTER_OUTLINE, MASTER_MARKS, type BallKind } from './ballShape';
-export type { BallKind } from './ballShape';
 
 export function EmptyBall({ kind = 'poke', className }: { kind?: BallKind; className?: string }) {
   return (
@@ -91,5 +89,3 @@ export function EmptyBall({ kind = 'poke', className }: { kind?: BallKind; class
     </svg>
   );
 }
-
-export { TYPE_COLORS };

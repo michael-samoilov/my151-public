@@ -83,9 +83,9 @@ export function typeBadgeSvg(type: TypeName, label: string): ReactNode {
 }
 
 /**
- * The badge as a ButterflyChart row icon — the twin of `shapeChartIcon`, so it
- * drops into the chart's icon slot with no chart-side special casing. Fills the
- * icon column, which the caller widens via `iconColAspect`.
+ * The badge as a ButterflyChart row icon, so it drops into the chart's icon
+ * slot with no chart-side special casing. Fills the icon column, which the
+ * caller widens via `iconColAspect`.
  */
 export function typeChartIcon(type: TypeName) {
   return function render(x: number, y: number, size: number, colWidth: number): ReactNode {

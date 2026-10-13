@@ -323,7 +323,6 @@ test.describe('compact trainer export on a phone', () => {
     await page.locator('[data-testid="league-slot-0"]').waitFor();
     await page.locator('[data-league-export]').first().click();
     await waitPreviewReady(page);
-    await expect(page.locator('[data-export-no-settings]')).toHaveCount(0);
     expect(await sheetHeight(page), 'league sheet height').toBeGreaterThan(MOBILE.height * 0.4);
   });
 });

@@ -91,11 +91,11 @@ export interface FavoritePreference {
   iterations: number;
   regularization: 1;
 }
-export interface FavoritePreferencePool {
+interface FavoritePreferencePool {
   ids: number[];
   wins: number[];
 }
-export interface FavoritePreferenceFit {
+interface FavoritePreferenceFit {
   ids: number[];
   scores: number[];
   components: number[][];

@@ -16,7 +16,7 @@ import type { Messages } from './types';
  */
 
 /** What `?lang=` may name: a real locale, or a pseudo-locale in preview builds. */
-export type ActiveLocale = Locale | PseudoLocale;
+type ActiveLocale = Locale | PseudoLocale;
 
 function langParam(search: string): string | null {
   try {
@@ -34,7 +34,7 @@ function langParam(search: string): string | null {
  * pseudo-locales and support requests ("open ?lang=de and tell me what you
  * see") work without clearing localStorage first.
  */
-export function resolveActiveLocale(opts: {
+function resolveActiveLocale(opts: {
   search?: string;
   stored?: Locale | null;
   navigatorLanguages?: readonly string[];
@@ -77,7 +77,7 @@ const UI_SOURCES = import.meta.glob<Record<string, string>>('./catalogs/ui/*.jso
  * terminology and Pokémon names in its own language with English chrome, which
  * is a coherent intermediate state rather than a half-broken one.
  */
-export async function loadCatalog(locale: ActiveLocale): Promise<Messages> {
+async function loadCatalog(locale: ActiveLocale): Promise<Messages> {
   if (isPseudoLocale(locale)) {
     const { buildPseudoCatalog } = await import('./pseudo');
     return buildPseudoCatalog(locale, en);
@@ -96,7 +96,7 @@ export async function loadCatalog(locale: ActiveLocale): Promise<Messages> {
 }
 
 /** The `Locale` a pseudo-locale stands in for, for `<html lang>` and fonts. */
-export function baseLocale(locale: ActiveLocale): Locale {
+function baseLocale(locale: ActiveLocale): Locale {
   return isPseudoLocale(locale) ? DEFAULT_LOCALE : locale;
 }
 

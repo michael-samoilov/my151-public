@@ -1,7 +1,6 @@
 import type { Page } from '@playwright/test';
 
 export const NAV_PAGES = ['builder', 'view', 'analytics'] as const;
-export type NavPage = (typeof NAV_PAGES)[number];
 
 /**
  * `?tune` is what exposes `window.__pokedexStore` (see MilestoneBar.tsx).
@@ -45,7 +44,3 @@ export async function seedDex(page: Page): Promise<void> {
   );
 }
 
-export async function gotoPage(page: Page, nav: NavPage): Promise<void> {
-  await page.locator(`[data-nav="${nav}"]`).click();
-  await page.waitForTimeout(300);
-}

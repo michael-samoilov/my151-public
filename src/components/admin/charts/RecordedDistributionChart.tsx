@@ -5,7 +5,7 @@ import {cssVar, useECharts, type EChartsOption} from './useECharts';
 const format = (v: number) => v.toLocaleString(undefined, {maximumFractionDigits: 1});
 const timeLabel = (v: number) => v < 60 ? `${format(v)}m` : `${format(v / 60)}h`;
 
-export interface RecordedCurveSeries {name: string; color: string; values: number[]}
+interface RecordedCurveSeries {name: string; color: string; values: number[]}
 
 function survival(values: number[], minutes: boolean) {
   const sorted = values.map(v => minutes ? v / 60_000 : v).sort((a,b) => a-b);

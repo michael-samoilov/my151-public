@@ -3,7 +3,7 @@ import { typeEffectiveness } from '@/data/type-effectiveness';
 import type { Pokemon } from '@/types/pokemon';
 import { getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
 
-export interface TypeDominanceResult {
+interface TypeDominanceResult {
   type: TypeName;
   /** Per-Pokemon average log2(offense/defense). Scale: +1 ≈ SE edge, -1 ≈ resisted, 0 = neutral */
   score: number;

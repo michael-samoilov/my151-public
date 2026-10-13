@@ -12,7 +12,7 @@
 
 /** Human label per route, in the order the app presents the surfaces. Routes
  *  outside this list still count; they render under their own raw name. */
-export const ROUTE_LABELS: Record<string, string> = {
+const ROUTE_LABELS: Record<string, string> = {
   home: 'Hub',
   builder: 'Dex builder',
   view: 'Dex view',
@@ -22,7 +22,7 @@ export const ROUTE_LABELS: Record<string, string> = {
   unknown: 'Unknown',
 };
 
-export interface RouteCount {
+interface RouteCount {
   route: string;
   label: string;
   last7: number;

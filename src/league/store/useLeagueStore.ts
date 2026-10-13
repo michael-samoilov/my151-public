@@ -105,7 +105,7 @@ export interface GymCard {
  */
 export type LeagueView = 'challenge' | 'rematch';
 
-export interface LeagueState {
+interface LeagueState {
   name: string;
   /** Exactly 14, in league order; the index decides the slot kind. */
   cards: GymCard[];

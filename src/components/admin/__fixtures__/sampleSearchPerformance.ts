@@ -127,7 +127,7 @@ const bingRows = {
   pageQueries: [],
 };
 
-export const sampleSearchPerformance: SearchPerformanceSnapshot = {
+const sampleSearchPerformance: SearchPerformanceSnapshot = {
   daily: {
     generatedAt: GENERATED_AT,
     providers: {
