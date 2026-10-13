@@ -63,7 +63,7 @@ export interface SessionRecord {
 }
 
 /** The categorical fields `tallies` can count. */
-export type TallyField = 'country' | 'region' | 'lang' | 'locale' | 'device' | 'os' | 'browser';
+type TallyField = 'country' | 'region' | 'lang' | 'locale' | 'device' | 'os' | 'browser';
 
 export interface SurvivalCurve {
   survival: { t: number; s: number }[];
@@ -90,7 +90,7 @@ export function quantile(sortedAsc: number[], q: number): number {
 }
 
 /** Fraction of values >= t (the survival function), via binary search. */
-export function survivalAt(sortedAsc: number[], t: number): number {
+function survivalAt(sortedAsc: number[], t: number): number {
   const n = sortedAsc.length;
   if (n === 0) return 0;
   let lo = 0;
@@ -109,7 +109,7 @@ export function survivalAt(sortedAsc: number[], t: number): number {
  * then every 60s out to the 95th percentile, so the long tail cannot flatten
  * the interesting region.
  */
-export function buildTimeCurve(secsRaw: number[]): SurvivalCurve {
+function buildTimeCurve(secsRaw: number[]): SurvivalCurve {
   const secs = secsRaw.slice().sort((a, b) => a - b);
   const tMax = Math.max(60, quantile(secs, 0.95));
   const ticks: number[] = [];
@@ -273,7 +273,7 @@ export function impliedActivityGrowth(
   return { ...result, weeklyPercent: percent(7), monthlyPercent: percent(30) };
 }
 
-export interface ActivityCoverage {
+interface ActivityCoverage {
   precision?: 'utc-days' | 'timestamps';
   retainedFrom: number;
   completeThrough: number;
@@ -622,7 +622,7 @@ export function aggregate(
 }
 
 /** Group records so Who can split language, pins, and platform by country. */
-export function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
+function tallyWhoBuckets(records: SessionRecord[]): WhoBucket[] {
   const map = new Map<string, WhoBucket>();
   for (const r of records) {
     const country = (r.country ?? '').toUpperCase();
@@ -808,7 +808,7 @@ export interface LeagueUsageFunnel {
   keptPrivate: number;
 }
 
-export interface SizeTier {
+interface SizeTier {
   label: string;
   min: number;
   max: number;
@@ -816,7 +816,7 @@ export interface SizeTier {
 
 /** Incomplete dex sizes, in Pokémon. The last bucket also takes a 151 that
  *  never flipped `completed`. */
-export const DEX_SIZE_BUCKETS: readonly SizeTier[] = [
+const DEX_SIZE_BUCKETS: readonly SizeTier[] = [
   { label: '1–30', min: 0, max: 30 },
   { label: '31–60', min: 31, max: 60 },
   { label: '61–90', min: 61, max: 90 },
@@ -825,7 +825,7 @@ export const DEX_SIZE_BUCKETS: readonly SizeTier[] = [
 ];
 
 /** Full-gym counts, in-line from "one gym full". 13 full gyms sit in 9–12. */
-export const LEAGUE_GYM_BUCKETS: readonly SizeTier[] = [
+const LEAGUE_GYM_BUCKETS: readonly SizeTier[] = [
   { label: '1–4 gyms', min: 1, max: 4 },
   { label: '5–8 gyms', min: 5, max: 8 },
   { label: '9–12 gyms', min: 9, max: CARD_COUNT - 1 },
@@ -839,7 +839,7 @@ export interface DexFunnelRow {
   exported: boolean;
 }
 
-export interface LeagueFunnelRow {
+interface LeagueFunnelRow {
   maxCards: number;
   maxSeats: number;
   fullGyms: number;
@@ -1058,7 +1058,7 @@ export type ToolUsage = {
  * bundles it) equals both of these. The widest gap means the total never
  * splits a session a tool joined.
  */
-export const BROWSER_SESSION_GAP_MS = Math.max(LEAGUE_SESSION_GAP_MS, FAVORITE_SESSION_GAP_MS);
+const BROWSER_SESSION_GAP_MS = Math.max(LEAGUE_SESSION_GAP_MS, FAVORITE_SESSION_GAP_MS);
 
 const sumMs = (ms: readonly number[] | undefined) =>
   (ms ?? []).reduce((a, b) => a + (Number.isFinite(b) && b > 0 ? b : 0), 0);

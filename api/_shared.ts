@@ -152,7 +152,7 @@ export function firstQueryValue(value: string | string[] | undefined): string {
   return value ?? '';
 }
 
-export function headerValue(req: VercelRequest, name: string): string | undefined {
+function headerValue(req: VercelRequest, name: string): string | undefined {
   const v = req.headers[name];
   const raw = Array.isArray(v) ? v[0] : v;
   const trimmed = raw?.trim();

@@ -32,7 +32,7 @@ const CHOSEONG_SPAN = 588;
  * expects, not a clever extra. Characters outside the syllable block (a digit,
  * a middle dot) are kept as they are so the run still lines up with the word.
  */
-export function jamoInitials(text: string): string {
+function jamoInitials(text: string): string {
   let out = '';
   for (const ch of text) {
     const code = ch.codePointAt(0)!;
@@ -46,12 +46,12 @@ export function jamoInitials(text: string): string {
 }
 
 /** Toneless pinyin, run together: 妙蛙种子 -> `miaowazhongzi`. */
-export function pinyinFull(text: string): string {
+function pinyinFull(text: string): string {
   return pinyin(text, { toneType: 'none', type: 'array' }).join('').toLowerCase();
 }
 
 /** Pinyin initials: 妙蛙种子 -> `mwzz`. The same shorthand jamo initials are. */
-export function pinyinInitials(text: string): string {
+function pinyinInitials(text: string): string {
   return pinyin(text, { pattern: 'first', toneType: 'none', type: 'array' })
     .join('')
     .toLowerCase();

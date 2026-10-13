@@ -42,7 +42,7 @@ export const TOOL_FILTER_OPTIONS: { key: ToolFilter; label: string }[] = [
   { key: 'picker', label: 'Picker' },
 ];
 
-export type PreviewPlatform = {
+type PreviewPlatform = {
   country?: string;
   device?: string;
   os?: string;
@@ -193,7 +193,7 @@ export function fmtChipDuration(ms: number): string {
   return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
 }
 
-export const PREVIEW_SESSION_UNIT = { one: 'session', many: 'sessions' } as const;
+const PREVIEW_SESSION_UNIT = { one: 'session', many: 'sessions' } as const;
 
 /** Each tool's progress chip on a preview card: "12/151 Dex". */
 export const PREVIEW_PROGRESS = {
@@ -251,14 +251,4 @@ export function formatWhen(when: number, tz?: string, locale?: string): string {
     }
   };
   return (tz ? fromZone(tz) : null) ?? fromZone() ?? '';
-}
-
-/** Compact duration: 45s, 3m, 1h 5m. */
-export function fmtDuration(ms: number): string {
-  const s = Math.round(ms / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
 }

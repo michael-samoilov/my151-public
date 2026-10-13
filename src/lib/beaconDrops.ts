@@ -16,12 +16,12 @@
  * notice would say "4 dropped for cap" without saying which store lost them —
  * and the two stores fail for different reasons at different times.
  */
-export const DROP_PREFIXES = {
+const DROP_PREFIXES = {
   dex: 'submit-drop:',
   league: 'league-drop:',
 } as const;
 
-export type DropTool = keyof typeof DROP_PREFIXES;
+type DropTool = keyof typeof DROP_PREFIXES;
 
 /** Human label for each tool, for the notice. */
 export const DROP_TOOL_LABEL: Record<DropTool, string> = {
@@ -29,7 +29,7 @@ export const DROP_TOOL_LABEL: Record<DropTool, string> = {
   league: 'Gym leader maker',
 };
 
-export interface DropRow {
+interface DropRow {
   tool: DropTool;
   reason: string;
   count: number;
@@ -44,7 +44,7 @@ export interface DropRow {
  * Its 31 recorded drops are from before the cadence/cap fix and are frozen, so
  * showing them reads as an ongoing fault rather than as history.
  */
-export const LEGACY_DROP_REASONS = new Set(['rate-limit']);
+const LEGACY_DROP_REASONS = new Set(['rate-limit']);
 
 /** What a live drop reason means, and how it should change your reading of the
  *  numbers above it. The second half is the one that matters: a drop counter is

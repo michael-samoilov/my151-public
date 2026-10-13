@@ -1,4 +1,4 @@
-export interface RegionalDex {
+interface RegionalDex {
   id: string;
   name: string;
   generation: number;

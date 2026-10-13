@@ -1,6 +1,6 @@
 import { TouchSensor, type Activators, type SensorInstance, type SensorProps } from '@dnd-kit/core';
 
-export interface HoldOrMoveOptions {
+interface HoldOrMoveOptions {
   /** How long a still press waits before the drag begins, in ms. */
   delay: number;
   /**

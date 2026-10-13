@@ -26,14 +26,14 @@ export const EMPTY_MASK_CONTEXT: HoverTiltMaskContext = {
 
 export const DEFAULT_MASK_CONTEXT = EMPTY_MASK_CONTEXT;
 
-export type HoverTiltMaskPaint = {
+type HoverTiltMaskPaint = {
   image: string;
   size: string;
   repeat: string;
   position: string;
 };
 
-export type TypeIconGlyphBox = {
+type TypeIconGlyphBox = {
   type: TypeName;
   dexNumber: number;
   x: number;
@@ -97,7 +97,7 @@ export function hoverTiltMaskContextFromDex(
 }
 
 /** Frame / card size. Empty workshop contexts fall back to the trainer card. */
-export function dexBorderInsets(ctx: HoverTiltMaskContext): { x: number; y: number } {
+function dexBorderInsets(ctx: HoverTiltMaskContext): { x: number; y: number } {
   const dex = ctx.width > 8;
   const frame = dex ? DEX_EXPORT_FRAME : FRAME;
   const width = dex ? ctx.width : CARD_IMG_W;
@@ -116,7 +116,7 @@ function dexBorderFrameSvg(ctx: HoverTiltMaskContext): string {
 }
 
 /** Square contain-fit box for each sprite's primary-type glyph. Side = pokéball diameter. */
-export function typeIconGlyphBoxes(ctx: HoverTiltMaskContext): TypeIconGlyphBox[] {
+function typeIconGlyphBoxes(ctx: HoverTiltMaskContext): TypeIconGlyphBox[] {
   return ctx.sprites.map((s) => ({
     type: s.type,
     dexNumber: s.dexNumber,

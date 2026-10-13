@@ -269,7 +269,7 @@ export interface LeagueUser {
 
 /** One seated evolution line: member ids, and the per-stage first row when the
  *  user dragged a stage off the level curve's default. */
-export interface LeagueLine {
+interface LeagueLine {
   b: number[];
   bd?: number[];
 }
@@ -1586,7 +1586,7 @@ function WhatPeoplePick({
   );
 }
 
-export type AdminNavKey = ToolSlice | 'search' | 'feedback';
+type AdminNavKey = ToolSlice | 'search' | 'feedback';
 
 /** The admin's one bar: fixed to the bottom on a phone, stuck under the
  *  header on desktop, where it spans the window. Its height is `--admin-bar-h`.

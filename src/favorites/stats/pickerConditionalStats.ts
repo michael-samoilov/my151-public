@@ -13,7 +13,7 @@ const entries=allPickerMons().map(mon=>{
  const bst=sourcedBst[mon.id];
  return {id:mon.id,attributes:{type:mon.types,shape:data?.shape?[data.shape]:undefined,color:data?.color?[data.color]:undefined,evolution:evolution?[evolution]:undefined,bst:Number.isFinite(bst)?[String(Math.floor(bst/50)*50)]:undefined}};
 });
-export function pickerBstSelectorEligible(cell: FavoritesExportCell) {
+function pickerBstSelectorEligible(cell: FavoritesExportCell) {
  return cell.type !== 'starter' && cell.type !== 'legendary' && cell.type !== 'gimmick'
   && cell.generation !== 'legendary' && cell.generation !== 'gimmick';
 }

@@ -236,6 +236,16 @@ export const enUi = {
   'chart.header.weakerHere1': 'WEAKER',
   'chart.header.weakerHere2': '← HERE',
   'common.dismiss': 'Dismiss',
+  // Screen reader text for drag and drop (src/lib/dndAccessibility.ts). The English
+  // values are dnd-kit's own defaults. {id} and {over} are internal ids.
+  'dnd.cancelled': 'Dragging was cancelled. Draggable item {id} was dropped.',
+  'dnd.dropped': 'Draggable item {id} was dropped.',
+  'dnd.droppedOver': 'Draggable item {id} was dropped over droppable area {over}',
+  'dnd.instructions': 'To pick up a draggable item, press the space bar. While dragging, use the arrow keys to move the item. Press space again to drop the item in its new position, or press escape to cancel.',
+  'dnd.movedOver': 'Draggable item {id} was moved over droppable area {over}.',
+  'dnd.notOver': 'Draggable item {id} is no longer over a droppable area.',
+  'dnd.pickedUp': 'Picked up draggable item {id}.',
+  'dnd.roleDescription': 'draggable',
   'export.dexTitle': 'Custom Pokédex',
   // The export pane that the Pokédex, league, trainer card, and favorites
   // exports share.
@@ -330,9 +340,8 @@ export const enUi = {
   'drilldown.tier.loss_other': '−{count} doublings of advantage',
   'drilldown.titleWithDex': '{title} — {dex}',
   'drilldown.typeTitle': '{type} Type',
-  'error.body': 'Something in the page failed. Reloading usually fixes it — and a report tells us what broke.',
+  'error.body': 'Something in the page failed. Reloading usually fixes it.',
   'error.reload': 'Reload',
-  'error.report': 'Send report',
   'error.title': 'This part stopped working',
   'faq.dex.a1': 'my151 is smart, it knows that if you choose Bulbasaur, then Venusaur should join your dex too. my151 is smooth and easy to use, providing a "paint-by-numbers" template of Pokédex sections (like regional bird, Pikaclone, pseudo-legendary, and more), so you spend more time making thoughtful choices instead of trying to remember Pokémon. my151 also guides you towards making a balanced and realistic regional Pokédex, by providing detailed analytics into your dex\'s distribution of type, BST, and evolutionary stage, as well as comparisons to official regional Pokédexes.',
   'faq.dex.a2': 'Generation 1 introduced the original 151 Pokémon in the Kanto region. While later generations introduced anywhere from 72-156 new Pokémon, regional dexes usually included Pokémon from prior generations, landing them around 200-400 total. my151 encourages using 151 slots because that is the size that forces real choices, and the size most fans grew up with.',
@@ -422,7 +431,6 @@ export const enUi = {
   // The placeholders carry raw data that is sent as is and never translated.
   'feedback.context.browser': 'browser: {ua}',
   'feedback.context.browserLanguages': 'browser languages: {languages}',
-  'feedback.context.error': 'error: {error}',
   'feedback.context.favoritePicks_one': '{count} pick',
   'feedback.context.favoritePicks_other': '{count} picks',
   'feedback.context.favoriteSummaries_one': '{count} summary',
@@ -825,7 +833,9 @@ export const enUi = {
   'viewSettings.close': 'Close settings',
   'viewSettings.customCount': '{count} pokemon',
   'viewSettings.groupSpecial': 'Group special Pokémon at end',
+  'viewSettings.groupSpecialHint': 'Sends fossils, extra starters, paradox, pseudo-legendaries, ultra beasts, legendaries, and mythicals to the back of the grid. Does not affect Custom ordering.',
   'viewSettings.groupingHeading': 'Grouping',
+  'viewSettings.outlinesHint': 'Outlines groups of Pokémon matching your build-page sections.',
   'viewSettings.reset': 'Reset',
   'viewSettings.resetCustom': 'Reset custom order',
   'viewSettings.showOutlines': 'Show section outlines',

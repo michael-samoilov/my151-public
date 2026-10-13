@@ -3,7 +3,7 @@ import {cssVar,useECharts,type EChartsOption} from './useECharts';
 
 const date = (ts:number) => new Date(ts).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
 const hours = (ms:number) => (ms/3_600_000).toLocaleString(undefined,{maximumFractionDigits:2});
-export interface RecordedWeekSeries {name:string; color:string; weeks:RecordedWeek[]}
+interface RecordedWeekSeries {name:string; color:string; weeks:RecordedWeek[]}
 export function WeeklyRecordedChart({weeks,series}: {weeks:RecordedWeek[];series?:RecordedWeekSeries[]}) {
   const pooled = new Map<number,RecordedWeek>();
   for (const s of series ?? []) for (const w of s.weeks) {

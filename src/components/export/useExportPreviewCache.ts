@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-export type ExportPreviewJob = {
+type ExportPreviewJob = {
   key: string;
   render: () => Promise<Blob>;
 };

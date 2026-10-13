@@ -14,7 +14,7 @@ import { drawFavoriteLaurels, drawFavoriteCrown, FAVORITE_ORNAMENTS } from './la
 import type { FavoritesExportCell, FavoritesSnapshot } from './snapshot';
 
 // One generation row, nine types per row, then diagonal support cards and Overall.
-export const SIMPLIFIED_CHART_LAYOUT = {
+const SIMPLIFIED_CHART_LAYOUT = {
   width: 1356, height: 1040, left: 48, column: 140,
   tileWidth: 128, tileHeight: 140, radius: 12, stroke: 3,
   // Painted gaps are 44px: after the generation discs and before the crown.

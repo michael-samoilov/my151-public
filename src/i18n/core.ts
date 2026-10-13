@@ -41,7 +41,7 @@ export function setCatalog(locale: Locale, messages: Messages): void {
 
 const PLACEHOLDER = /\{(\w+)\}/g;
 
-export function interpolate(
+function interpolate(
   template: string,
   args?: Record<string, string | number>,
 ): string {

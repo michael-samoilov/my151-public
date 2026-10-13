@@ -7,7 +7,7 @@ import { create } from 'zustand';
  * turns it on, and that page does not mount on the live deploy.
  */
 
-export interface SlotOffset {
+interface SlotOffset {
   /** Fraction of the slot's width, positive to the right. */
   dx: number;
   /** Fraction of the slot's height, positive downward. */

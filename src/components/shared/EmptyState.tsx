@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
  * The face (bill, eyes and jaw) is the "Traced bill" drawing; the crown, the
  * fanned hair and the spiked, webbed hands are traced from the official art.
  */
-function PsyduckArt({ className }: { className?: string }) {
+export function PsyduckArt({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 64 64"

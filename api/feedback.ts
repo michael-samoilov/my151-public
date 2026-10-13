@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
-import { createHash, randomUUID } from 'node:crypto';
 import { sanitizeFavoriteFeedback } from './_favoriteFeedback.js';
+import { FEEDBACK_KEY, storeReport, underHourlyCap } from './_feedbackStore.js';
 import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
 
 /**
@@ -11,18 +11,8 @@ import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
  * machine-generated and expected in volume; these are typed by a person, so
  * anything arriving faster than a person can type is either a mistake or an
  * attack. There is no public read path — the admin dashboard is the only reader.
- *
- * Storage mirrors the counters-vs-records split the rest of the API uses:
- * `feedback` is a capped LIST (newest first, so LRANGE pages it in the order
- * the admin wants) and `feedback:count:<day>` is a hash of per-category totals.
- * LTRIM bounds growth with no cron job to forget about.
+ * Storage is in _feedbackStore.ts, shared with the error screen's crash reports.
  */
-
-const FEEDBACK_KEY = 'feedback';
-const COUNT_PREFIX = 'feedback:count';
-/** Reports kept. At the volume a hobby site sees this is years of history. */
-const MAX_STORED = 5000;
-const DAILY_TTL_S = 400 * 24 * 60 * 60;
 
 const CATEGORIES = new Set(['bug', 'translation', 'idea', 'data', 'other']);
 
@@ -30,7 +20,7 @@ const MIN_MESSAGE = 4;
 const MAX_MESSAGE = 1000;
 /** Serialized context cap. Rejected rather than truncated — a silently clipped
  *  context is worse than none, because it reads as complete. */
-const MAX_CONTEXT_BYTES = 4096;
+export const MAX_CONTEXT_BYTES = 4096;
 /** Faster than this after the form opened and it was not typed by a person. */
 const MIN_DWELL_MS = 2000;
 /** Global ceiling, so a distributed flood still cannot fill the list. */
@@ -48,10 +38,6 @@ const clientLimiter = new Ratelimit({
   analytics: false,
   prefix: 'rl:fbclient',
 });
-
-function dayKey(now: number): string {
-  return new Date(now).toISOString().slice(0, 10); // UTC YYYY-MM-DD
-}
 
 function str(value: unknown, max: number): string | undefined {
   if (typeof value !== 'string') return undefined;
@@ -120,6 +106,7 @@ export function sanitizeContext(raw: unknown): Record<string, unknown> {
       message: str(err.message, 400) ?? '',
       stack: str(err.stack, 2000) ?? '',
       componentStack: str(err.componentStack, 2000) ?? '',
+      ...(str(err.where, 40) ? { where: str(err.where, 40) } : {}),
     };
   }
 
@@ -184,43 +171,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const now = Date.now();
-    const hourKey = `${FEEDBACK_KEY}:global:${new Date(now).toISOString().slice(0, 13)}`;
-    const globalCount = await redis.incr(hourKey);
-    if (globalCount === 1) await redis.expire(hourKey, 2 * 60 * 60);
-    if (globalCount > GLOBAL_HOURLY_CAP) {
+    if (!(await underHourlyCap(FEEDBACK_KEY, GLOBAL_HOURLY_CAP))) {
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    // The IP is hashed, never stored: enough to see that twenty reports came
-    // from one place, not enough to say where that place is. The salt is the
-    // admin token, which already has to exist and never leaves the server.
-    const ipHash = createHash('sha256')
-      .update(`${ip}|${process.env.ADMIN_TOKEN ?? ''}`)
-      .digest('hex')
-      .slice(0, 16);
-
-    const country = Array.isArray(req.headers['x-vercel-ip-country'])
-      ? req.headers['x-vercel-ip-country'][0]
-      : req.headers['x-vercel-ip-country'];
-
-    const record = {
-      id: randomUUID(),
-      ts: now,
-      category,
-      message,
-      ...(cid ? { cid } : {}),
-      ipHash,
-      ...(country ? { country: String(country).slice(0, 4) } : {}),
-      context,
-    };
-
-    const dailyKey = `${COUNT_PREFIX}:${dayKey(now)}`;
-    await redis.lpush(FEEDBACK_KEY, JSON.stringify(record));
-    await redis.ltrim(FEEDBACK_KEY, 0, MAX_STORED - 1);
-    await redis.hincrby(dailyKey, category, 1);
-    await redis.expire(dailyKey, DAILY_TTL_S);
-
+    await storeReport(req, { category, message, cid, context });
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error('Feedback error:', err);

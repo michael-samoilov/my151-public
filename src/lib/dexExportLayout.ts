@@ -15,7 +15,7 @@ import {
   type Spandrel,
 } from '@/lib/sectionOutlines';
 
-export const DEX_EXPORT_COLS = 10;
+const DEX_EXPORT_COLS = 10;
 export const DEX_EXPORT_TILE = 48;
 /** PNG px per layout px: a tile's sprite paints at 1× (`EXPORT_SPRITE_PX`). */
 export const DEX_EXPORT_SCALE = EXPORT_SPRITE_PX / DEX_EXPORT_TILE;
@@ -28,7 +28,7 @@ export const DEX_EXPORT_PAD_TOP = 8;
 export const DEX_EXPORT_PAD_BOTTOM = 28;
 export const DEX_EXPORT_POKEBALL_R_FRAC = 0.42;
 
-export type DexExportSpriteSpot = {
+type DexExportSpriteSpot = {
   index: number;
   x: number;
   y: number;
@@ -38,7 +38,7 @@ export type DexExportSpriteSpot = {
   pokemon: Pokemon;
 };
 
-export type DexExportOutline = {
+type DexExportOutline = {
   gridSlots: number;
   lastRowGeom: LastRowGeom | null;
   lastRowIndex: number;
@@ -51,7 +51,7 @@ export type DexExportOutline = {
   spandrelMasks: string[];
 };
 
-export type DexExportGrid = {
+type DexExportGrid = {
   width: number;
   height: number;
   footerTop: number;

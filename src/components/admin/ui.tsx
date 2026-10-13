@@ -66,7 +66,7 @@ export function Panel({
   );
 }
 
-export interface SegOption<K extends string> {
+interface SegOption<K extends string> {
   key: K;
   label: string;
 }
@@ -148,39 +148,3 @@ export function Delta({ children }: { children: React.ReactNode }) {
   );
 }
 
-export interface RollupRow {
-  label: React.ReactNode;
-  pct: number;
-  /** Optional per-row delta vs a baseline (points). */
-  delta?: number;
-}
-
-/** Aggregate rollup bars (device / region / browser). One shared linear scale
- *  from zero, so bar length reads as the share it encodes. */
-export function Rollup({ rows }: { rows: RollupRow[] }) {
-  const max = Math.max(1, ...rows.map((r) => r.pct));
-  return (
-    <div className="flex flex-col gap-1.5">
-      {rows.map((r, i) => (
-        <div key={i} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-[0.72rem]">
-          <span className="min-w-[4.5rem] whitespace-nowrap text-muted-foreground">{r.label}</span>
-          <span className="h-2 overflow-hidden rounded-full bg-muted">
-            <span
-              className="block h-full rounded-full"
-              style={{ width: `${Math.round((r.pct / max) * 100)}%`, backgroundColor: 'var(--color-muted-foreground)' }}
-            />
-          </span>
-          <span className="text-right font-bold tabular-nums text-foreground">
-            {r.pct}%
-            {r.delta != null && r.delta !== 0 && (
-              <span className="ml-1 text-[0.62rem] font-bold text-muted-foreground">
-                {r.delta > 0 ? '+' : ''}
-                {r.delta}pt
-              </span>
-            )}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}

@@ -841,4 +841,3 @@ if(sampleResponse.crossTool){
   const era=sampleResponse.crossTool.eras.at(-1)!;
   era.regions.favorites=pickerRecords.length;era.browsers+=pickerRecords.length;
 }
-export default sampleResponse;

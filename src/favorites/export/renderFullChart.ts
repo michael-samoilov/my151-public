@@ -22,9 +22,9 @@ import { drawFavoriteCrown, FAVORITE_ORNAMENTS } from './laurelPaint';
 
 // Native 96px sprites, with 12px breathing room on each side. The shared
 // frame and corner geometry are the same as Dex and League PNGs.
-export const FULL_CHART_CELL = EXPORT_SPRITE_PX + 24;
+const FULL_CHART_CELL = EXPORT_SPRITE_PX + 24;
 const FULL_CHART_GRID_Y = EXPORT_FRAME_PX + 32 + 72;
-export const FULL_CHART_LAYOUT = {
+const FULL_CHART_LAYOUT = {
   width: 2 * EXPORT_FRAME_PX + 48 + (TYPE_AXIS.length + 1) * FULL_CHART_CELL,
   height: FULL_CHART_GRID_Y + (GEN_AXIS.length + 1) * FULL_CHART_CELL + FOOT + EXPORT_FRAME_PX,
   gridX: EXPORT_FRAME_PX + 24,

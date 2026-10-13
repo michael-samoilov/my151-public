@@ -13,7 +13,6 @@ import { applyPlayheadMilestone, applySessionChip } from './sessionChip';
 import { FUNNEL_OFFSET_PX, milestoneFill, plotSittings, type ChartMilestone } from './sessionMilestones';
 
 export type { TimelinePoint };
-export type { ChartMilestone };
 
 /** Native range thumb size. Dot centers use half of this so they sit under the thumb. */
 const SCRUB_THUMB_PX = 22;

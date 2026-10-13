@@ -138,7 +138,7 @@ export interface CardGridRem {
 }
 
 /** Where a sprite's square goes, in pane px. */
-export interface Square {
+interface Square {
   cx: number;
   cy: number;
   size: number;

@@ -26,7 +26,7 @@ import type { Locator, Page } from '@playwright/test';
 /** A pixel classifier, written as a JavaScript source string. It receives
  *  `r`, `g`, `b` and must return a number in 0..1: how much of the colour
  *  the pixel holds. */
-export type Coverage = string;
+type Coverage = string;
 
 /** The coverages the card's controls need. */
 export const INK = {
@@ -43,7 +43,7 @@ export const INK = {
   coloured: 'Math.min(1, (Math.max(r, g, b) - Math.min(r, g, b)) / 60)',
 } as const;
 
-export interface DiscMark {
+interface DiscMark {
   /** The disc's centre and radius, in device pixels of the screenshot, read
    *  from its edges. */
   disc: { x: number; y: number; r: number };
@@ -56,14 +56,14 @@ export interface DiscMark {
   offset: { ink: { dx: number; dy: number }; box: { dx: number; dy: number } } | null;
 }
 
-export interface PhaseSweep {
+interface PhaseSweep {
   /** The mark's ink offset at each sub-pixel position the control was put at. */
   offsets: { dx: number; dy: number }[];
   /** How far the offset wandered, per axis and overall, in device pixels. */
   wander: { x: number; y: number; max: number };
 }
 
-export interface PillEnds {
+interface PillEnds {
   /** Columns from the first ink to the first full-height column, per end:
    *  a round end climbs over several, a clipped end over none. */
   ramp: { left: number; right: number };

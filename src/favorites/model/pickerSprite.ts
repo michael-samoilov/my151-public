@@ -2,7 +2,7 @@ import { tileImageCssPx } from '@/lib/tileImage';
 import { SELECTOR_MAX_COLS } from './prettyWrap';
 
 /** Side inset used when the viewport has room. Matches the dex row's px-2. */
-export const PICKER_INSET_MAX = 8;
+const PICKER_INSET_MAX = 8;
 
 /**
  * CSS px for every picker sprite.

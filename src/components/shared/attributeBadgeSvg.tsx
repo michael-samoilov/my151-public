@@ -29,9 +29,9 @@ export function evolutionDotsSvg(role: EvolutionRole): ReactNode {
       fill={role === 'standalone' || index < filled ? '#dc2626' : 'none'} stroke="#dc2626" strokeWidth={1.5} />)}</g>;
 }
 
-export const evolutionBadgeSvg = (role: EvolutionRole) => attributeBadgeSvg('evolution', role);
-export const colorBadgeSvg = (color: ColorName) => attributeBadgeSvg('color', color);
-export const shapeBadgeSvg = (shape: ShapeName) => attributeBadgeSvg('shape', shape);
+const evolutionBadgeSvg = (role: EvolutionRole) => attributeBadgeSvg('evolution', role);
+const colorBadgeSvg = (color: ColorName) => attributeBadgeSvg('color', color);
+const shapeBadgeSvg = (shape: ShapeName) => attributeBadgeSvg('shape', shape);
 
 function badgeChartIcon(render: () => ReactNode) {
   return (x: number, y: number, size: number, colWidth = size): ReactNode => {

@@ -25,18 +25,8 @@ export const previewSizeCamera: PreviewCamera = () => 600;
 export const PREVIEW_REST_PAD = 8;
 /** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;
-export const PREVIEW_SHADOW_REST = 0.14;
-export const PREVIEW_SHADOW_PEAK = 0.44;
-export const PREVIEW_SHADOW_BASE = 0.18;
-export const PREVIEW_SHADOW_HYPOT_DIV = 18;
 
-/** Raised-edge drop-shadow opacity. Stronger than the 0.36 mild cap, below the old 0.50 slab. */
-export function previewShadowOpacity(hypot: number): number {
-  if (hypot < 0.4) return PREVIEW_SHADOW_REST;
-  return Math.min(PREVIEW_SHADOW_PEAK, PREVIEW_SHADOW_BASE + hypot / PREVIEW_SHADOW_HYPOT_DIV);
-}
-
-export type ProjectedCardAabb = {
+type ProjectedCardAabb = {
   minX: number;
   maxX: number;
   minY: number;
@@ -59,7 +49,7 @@ function rad(deg: number): number {
  * model puts a corner about 1 px short of where it paints, so the 8 px rest
  * gap is about 7 px in practice. Kept on October 11: the fit sizes stay put.
  */
-export function projectedCardAabb(opts: {
+function projectedCardAabb(opts: {
   width: number;
   height: number;
   tiltXDeg: number;
@@ -106,7 +96,7 @@ export function projectedCardAabb(opts: {
 }
 
 /** True when a centred AABB sits inside the box with `pad` on each side. */
-export function aabbFitsCentered(
+function aabbFitsCentered(
   aabb: ProjectedCardAabb,
   boxWidth: number,
   boxHeight: number,
@@ -122,23 +112,8 @@ export function aabbFitsCentered(
   );
 }
 
-/**
- * Screen-space size of a plane after rotateX/rotateY,
- * under a perspective camera sitting `perspectivePx` in front of the card.
- */
-export function projectedCardSize(opts: {
-  width: number;
-  height: number;
-  tiltXDeg: number;
-  tiltYDeg: number;
-  perspectivePx?: number;
-}): { width: number; height: number } {
-  const aabb = projectedCardAabb(opts);
-  return { width: aabb.width, height: aabb.height };
-}
-
 /** Scale that keeps the projected card inside the box at this tilt. */
-export function fitScaleForTilt(opts: {
+function fitScaleForTilt(opts: {
   cardWidth: number;
   cardHeight: number;
   boxWidth: number;
@@ -177,7 +152,7 @@ export function fitScaleForTilt(opts: {
 /**
  * Unrotated contain size of a card with `aspect` (width/height) inside the box.
  */
-export function containUnrotatedSize(opts: {
+function containUnrotatedSize(opts: {
   boxWidth: number;
   boxHeight: number;
   aspect: number;
@@ -191,16 +166,6 @@ export function containUnrotatedSize(opts: {
     return { width: innerH * aspect, height: innerH };
   }
   return { width: innerW, height: innerW / aspect };
-}
-
-/** How much of the layer the card covers on its longer axis (0–1). */
-export function previewCoverRatio(
-  card: { width: number; height: number },
-  layer: { width: number; height: number },
-): number {
-  const layerW = Math.max(1, layer.width);
-  const layerH = Math.max(1, layer.height);
-  return Math.max(card.width / layerW, card.height / layerH);
 }
 
 /**
@@ -231,27 +196,6 @@ export function fitCardInPreviewBox(opts: {
     camera: opts.camera,
   });
   return { width: contained.width * scale, height: contained.height * scale };
-}
-
-/**
- * Scale the unrotated card so its AABB at `maxTiltDeg` still fits the box.
- * Prefer `fitCardInPreviewBox` for the live preview rest size.
- */
-export function stableFitScale(opts: {
-  boxWidth: number;
-  boxHeight: number;
-  maxTiltDeg: number;
-  pad?: number;
-}): number {
-  return fitScaleForTilt({
-    cardWidth: opts.boxWidth,
-    cardHeight: opts.boxHeight,
-    boxWidth: opts.boxWidth,
-    boxHeight: opts.boxHeight,
-    tiltXDeg: opts.maxTiltDeg,
-    tiltYDeg: opts.maxTiltDeg,
-    pad: opts.pad,
-  });
 }
 
 /** Scale a tilt vector so hypot(x, y) never exceeds `maxHypot`. */
@@ -303,18 +247,3 @@ export function clampTiltToBox(opts: {
   return { x: tiltX * lo, y: tiltY * lo };
 }
 
-/** Pointer is near the card when it sits inside the card rect plus a halo. */
-export function pointerNearPreview(
-  clientX: number,
-  clientY: number,
-  card: { left: number; top: number; right: number; bottom: number; width: number; height: number },
-  haloPx = 64,
-): boolean {
-  const halo = Math.max(24, Math.min(haloPx, Math.min(card.width, card.height) * 0.18));
-  return (
-    clientX >= card.left - halo &&
-    clientX <= card.right + halo &&
-    clientY >= card.top - halo &&
-    clientY <= card.bottom + halo
-  );
-}

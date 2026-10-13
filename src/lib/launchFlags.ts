@@ -6,8 +6,7 @@
  * localStorage may be unavailable; every read defaults to "not seen" and
  * every write is best-effort, so the worst case is one repeat.
  */
-export const LEAGUE_PROMO_SEEN_KEY = 'p151-league-promo-seen';
-export const MOVED_NOTICE_SEEN_KEY = 'p151-moved-notice-seen';
+const LEAGUE_PROMO_SEEN_KEY = 'p151-league-promo-seen';
 export const FAVORITES_NOTICE_SEEN_KEY = 'p151-favorites-launch-seen';
 import { VISITED_KEY } from './visitorAtBoot';
 export { isReturningVisitor } from './visitorAtBoot';
@@ -40,5 +39,3 @@ function mark(key: string): void {
 
 export const isLeaguePromoSeen = () => seen(LEAGUE_PROMO_SEEN_KEY);
 export const markLeaguePromoSeen = () => mark(LEAGUE_PROMO_SEEN_KEY);
-export const isMovedNoticeSeen = () => seen(MOVED_NOTICE_SEEN_KEY);
-export const markMovedNoticeSeen = () => mark(MOVED_NOTICE_SEEN_KEY);

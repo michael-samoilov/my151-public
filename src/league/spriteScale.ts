@@ -21,7 +21,7 @@ import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
  * The phone and standard summaries give up the same spacing, but only once
  * their zoom reaches the fit's floor.
  */
-export type SpriteScreen = 'phone' | 'standard' | 'retina';
+type SpriteScreen = 'phone' | 'standard' | 'retina';
 
 interface ScreenRule {
   /**

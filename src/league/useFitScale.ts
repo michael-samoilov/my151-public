@@ -69,7 +69,7 @@ export interface Fit {
  * vertical room a tall pane leaves. The zoom is capped so the sprites never
  * pass their 1x native size (the size the Pokémon browser draws them at).
  */
-export interface Grow {
+interface Grow {
   /** The block's layout width, in rem. Sets the card's proportions; the zoom
    *  then scales the whole thing. */
   baseWidthRem: number;
@@ -88,7 +88,7 @@ export interface Grow {
  * block may spend, so its layout gives up spacing instead. The zoom goes
  * below the held one only when even the shortest layout does not fit.
  */
-export interface Compact {
+interface Compact {
   /**
    * The height its layout takes with `budgetRem` to spend, at zoom 1, in
    * rem: its roomiest at Infinity, its tightest at 0.

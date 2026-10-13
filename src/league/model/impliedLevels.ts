@@ -38,7 +38,3 @@ export function arrivalLevel(p: Pokemon): number {
   return arrivalLevelWith(p, fit());
 }
 
-/** Test seam: drop the memoized fit. */
-export function resetImpliedLevelFit(): void {
-  fitCache = null;
-}

@@ -1,4 +1,4 @@
-export type GenderForm = 'male' | 'female';
+type GenderForm = 'male' | 'female';
 
 // Mega Meowstic (10314) is not here: it has one design for both genders, so
 // it carries no gender mark.

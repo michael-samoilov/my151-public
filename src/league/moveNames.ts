@@ -18,7 +18,7 @@ const loaded = new Map<Locale, Record<string, string>>();
 const inFlight = new Map<Locale, Promise<void>>();
 const listeners = new Set<() => void>();
 
-export function loadMoveNames(locale: Locale): Promise<void> {
+function loadMoveNames(locale: Locale): Promise<void> {
   if (loaded.has(locale)) return Promise.resolve();
   const load = SOURCES[`../i18n/moves/${locale}.json`];
   if (!load) return Promise.resolve();

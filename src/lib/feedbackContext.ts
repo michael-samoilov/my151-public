@@ -52,7 +52,7 @@ export interface FeedbackContext {
   /** For a translation report: the key and both sides of it. */
   message?: { key: string; localeValue: string; sourceValue: string };
   /** For a crash report. */
-  error?: { name: string; message: string; stack?: string; componentStack?: string };
+  error?: { name: string; message: string; stack?: string; componentStack?: string; where?: string };
 }
 
 export type FeedbackToolContext = Pick<FeedbackContext, 'placed' | 'search' | 'filters' | 'favorites'>;
@@ -99,7 +99,7 @@ export function collectFeedbackContext(route: string, toolContext?: FeedbackTool
 
 export type FeedbackCategory = 'bug' | 'translation' | 'idea' | 'data' | 'other';
 
-export interface FeedbackSubmission {
+interface FeedbackSubmission {
   category: FeedbackCategory;
   message: string;
   context: FeedbackContext;
@@ -128,5 +128,47 @@ export async function sendFeedback(body: FeedbackSubmission): Promise<boolean> {
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+/** Crashes this page load has reported, by route, name and message. */
+const reportedCrashes = new Set<string>();
+/** A render loop can throw the same error on every frame; three reports say enough. */
+const MAX_CRASH_REPORTS = 3;
+
+/**
+ * Report a crash an error boundary caught, without asking the person.
+ *
+ * Sends what the report form used to attach to a crash, and nothing typed: the
+ * error, its stacks, and this file's allow-listed page details. Each distinct
+ * crash goes once per page load. The stacks are cut to fit the server's
+ * 4 KB context cap, which rejects a longer field instead of clipping it.
+ * Fire and forget: the crash screen shows the same thing whether or not the
+ * report arrives.
+ */
+export function sendCrashReport(route: string, error: NonNullable<FeedbackContext['error']>): void {
+  const key = `${route}|${error.name}|${error.message}`;
+  if (reportedCrashes.has(key) || reportedCrashes.size >= MAX_CRASH_REPORTS) return;
+  reportedCrashes.add(key);
+  try {
+    const cid = isOptedOut() ? null : getClientId();
+    const context: FeedbackContext = {
+      ...collectFeedbackContext(route),
+      error: {
+        name: error.name.slice(0, 80),
+        message: error.message.slice(0, 400),
+        stack: error.stack?.slice(0, 1500),
+        componentStack: error.componentStack?.slice(0, 1000),
+        where: error.where,
+      },
+    };
+    void fetch('/api/crash', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cid ? { context, cid } : { context }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // The page has already crashed; a report that cannot be built is dropped.
   }
 }

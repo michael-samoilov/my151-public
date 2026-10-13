@@ -31,12 +31,7 @@ export interface LevelPoint {
   row: number;
 }
 
-export interface Chain {
-  members: Pokemon[];
-  boundaries: number[];
-}
-
-export interface LevelModel {
+interface LevelModel {
   fit: LevelFit;
   quality: { n: number; r2: number; rmse: number };
   real: LevelPoint[];

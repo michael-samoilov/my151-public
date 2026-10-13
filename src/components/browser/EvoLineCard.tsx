@@ -82,7 +82,7 @@ function TypeSplitIcon({ types, className }: { types: string[]; className?: stri
   );
 }
 
-export type EvoLineVariant = 'browser' | 'analytics';
+type EvoLineVariant = 'browser' | 'analytics';
 
 const DEFAULT_COLS = 6;
 

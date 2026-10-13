@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-export interface FilterChipItem {
+interface FilterChipItem {
   id: string;
   name: string;
   color: string;

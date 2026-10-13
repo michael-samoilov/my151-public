@@ -12,7 +12,7 @@
  *
  * **Into** (league summary, gym card): you are choosing a *slot*, and the copy
  * can simply BE the preview — it sits on the target
- * (`snapOverlayToTarget`, in `src/lib/dragCollision.ts`), and the slot underneath opens empty rather than
+ * (the slot it would fill draws it), and the slot underneath opens empty rather than
  * drawing the same thing twice. Only the legendary keeps an offset copy,
  * because there the target is a cell that must stay readable underneath.
  *

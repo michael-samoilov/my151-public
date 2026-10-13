@@ -262,6 +262,26 @@ export function pokemonLabel(appId: number, slug: string, formKey: number | `pic
 }
 
 /**
+ * Alt text for a sprite drawn without its name beside it.
+ *
+ * English keeps the text these images have always carried, often a slug
+ * (`mr-mime`), because specs and the English accessibility tree read it.
+ * Every other locale gets the first of `appIds` that its name catalog knows,
+ * so a screen reader does not spell out an English id. A power-up form that
+ * the catalog does not name passes its base species as the next id. Empty
+ * while the catalog loads, which marks the image as decorative for that
+ * moment rather than reading out English.
+ */
+export function spriteAlt(english: string, ...appIds: number[]): string {
+  if (getLocale() === DEFAULT_LOCALE) return english;
+  for (const appId of appIds) {
+    const label = pokemonLabel(appId, english);
+    if (!label.pending) return label.full;
+  }
+  return '';
+}
+
+/**
  * Where a form descriptor came from. `official-composed` means it was rebuilt
  * from the region's published name plus a pattern learned from another form in
  * the same language — accurate, but not something the publisher printed.

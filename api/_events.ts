@@ -69,7 +69,7 @@ export function leagueNudgeEvent(
   return `league-nudge-${id}-${action}`;
 }
 
-export const FUNNEL_EVENTS = [
+const FUNNEL_EVENTS = [
   // Dex builder onboarding.
   'intro-shown',
   'intro-cta',
@@ -185,7 +185,7 @@ export function parseJournalEntry(raw: unknown): JournalEntry | null {
 
 /** Per-browser skip list, joined onto user-detail in /api/submissions. */
 export const EXPORT_SURVEY_SKIPS_KEY = 'export-survey-skips';
-export const EXPORT_SURVEY_SKIPS_CAP = 20;
+const EXPORT_SURVEY_SKIPS_CAP = 20;
 
 export interface ExportSurveySkip {
   t: number;

@@ -20,7 +20,7 @@ function dayOf(ts: number): string {
 }
 
 /** Distinct browsers behind one set of events, and what became of them. */
-export interface HubCounts {
+interface HubCounts {
   /** Browsers that saw the hub. The client de-dupes `hub-shown` once per
    *  browser, so per day this is closer to "new browsers" than to "visits". */
   shown: number;
@@ -42,11 +42,11 @@ export interface HubCounts {
   becameNeither: number;
 }
 
-export interface HubDay extends HubCounts {
+interface HubDay extends HubCounts {
   day: string;
 }
 
-export interface HubViews {
+interface HubViews {
   days: HubDay[];
   /** The same counts over the whole window, distinct across it — not the sum
    *  of the days, which would count a returning browser once per day. */

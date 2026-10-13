@@ -7,8 +7,6 @@ import { en } from '@/i18n/catalogs/en';
 import { sectionColor } from '@/lib/sectionColors';
 import { buildIdToSection } from '@/hooks/useViewSort';
 
-export const COLS = 10;
-
 // Outline-mode spacing, as multiples of tileSize. In outline mode the grid gains
 // a single uniform gap (OUTLINE_GAP) between every cell in both directions, and
 // each section outline is drawn a fixed inset (OUTLINE_PAD) outside its tiles on
@@ -56,7 +54,7 @@ function shortestAvailable(groupId: string, prefix: 'sectionShort' | 'sectionTin
   return key in en ? t(key as NoArgKey) : null;
 }
 
-export function getSectionLabel(groupId: string): string {
+function getSectionLabel(groupId: string): string {
   return sectionName(groupId);
 }
 

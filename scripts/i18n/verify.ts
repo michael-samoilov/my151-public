@@ -456,7 +456,6 @@ const SAME_AS_ENGLISH_OK = new Set([
   'zh-Hans:league.tm.col.pp',
   'zh-Hant:league.tm.col.pp',
   'fr:feedback.category.bug', // French tech writing uses "Bug".
-  'es:feedback.context.error', // "error" is the Spanish word too.
   'it:feedback.context.browser', // Italian says "browser".
   // The Pokémon browser, drill-downs and analytics.
   'de:browser.sheet.generation', // "Generation" is the German noun.

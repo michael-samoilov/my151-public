@@ -10,11 +10,11 @@ import { isPowerupForm, type PickerMon } from './catalog';
  * DJ Rotom debuted there, and a form takes the generation and debut of the
  * game that introduced it.
  */
-export const DEBUT_GAMES = [
+const DEBUT_GAMES = [
   'RB', 'GS', 'RS', 'FRLG', 'E', 'DP', 'Pt', 'HGSS', 'BW', 'B2W2', 'XY', 'ORAS',
   'SM', 'USUM', 'LGPE', 'SwSh', 'PLA', 'SV', 'PLZA', 'Pokopia',
 ] as const;
-export type DebutGame = (typeof DEBUT_GAMES)[number];
+type DebutGame = (typeof DEBUT_GAMES)[number];
 
 const GENERATION_GAME: Record<GenNumber, DebutGame> = {
   1: 'RB', 2: 'GS', 3: 'RS', 4: 'DP', 5: 'BW', 6: 'XY', 7: 'SM', 8: 'SwSh', 9: 'SV',
@@ -48,7 +48,7 @@ const LATER_DEBUTS: readonly (readonly [first: number, last: number, game: Debut
   [11112, 11112, 'Pokopia'], // DJ Rotom
 ];
 
-export function debutGame(mon: PickerMon): DebutGame {
+function debutGame(mon: PickerMon): DebutGame {
   const listed = LATER_DEBUTS.find(([first, last]) => mon.id >= first && mon.id <= last);
   if (listed) return listed[2];
   if (mon.name.startsWith('Gigantamax ')) return 'SwSh';

@@ -11,7 +11,7 @@ export const MARKER_GAP = 4;
 
 export const OTHER_KEY = '\0other';
 
-export const REGION_SHORT: Record<Region, string> = {
+const REGION_SHORT: Record<Region, string> = {
   'North America': 'North America',
   Europe: 'Europe',
   'Asia-Pacific': 'APAC',
@@ -34,13 +34,13 @@ export interface FitSegment {
   folded?: FitItem[];
 }
 
-export interface NameLabel {
+interface NameLabel {
   key: string;
   leftPx: number;
   widthPx: number;
 }
 
-export interface OverrideRow {
+interface OverrideRow {
   lang: string;
   switched: string;
   country: string;
@@ -128,7 +128,7 @@ export function amongTitle(label: string, filter: WhoFilter | null, ownDim?: Who
   return `${label} among ${filter.value}`;
 }
 
-export function bucketValue(bucket: WhoBucket, dim: WhoDim): string {
+function bucketValue(bucket: WhoBucket, dim: WhoDim): string {
   if (dim === 'region') return regionOf(bucket.country);
   if (dim === 'device') return bucket.device || 'Unknown';
   if (dim === 'os') return bucket.os || 'Unknown';
@@ -136,7 +136,7 @@ export function bucketValue(bucket: WhoBucket, dim: WhoDim): string {
 }
 
 /** True when the bucket belongs in this chart. The driving chart keeps its full mix. */
-export function bucketInFilter(bucket: WhoBucket, filter: WhoFilter | null, driving?: WhoDim): boolean {
+function bucketInFilter(bucket: WhoBucket, filter: WhoFilter | null, driving?: WhoDim): boolean {
   if (!filter || filter.dim === driving) return true;
   return bucketValue(bucket, filter.dim) === filter.value;
 }
@@ -200,7 +200,7 @@ export function distinctCountries(countries: Record<string, number>): number {
   return seen.size;
 }
 
-export interface RegionSlice {
+interface RegionSlice {
   key: Region;
   label: string;
   n: number;
@@ -292,7 +292,7 @@ function preferTag(a: string, b: string): string {
 }
 
 /** A pin that differs from the locale the tag would negotiate. */
-export function isLanguageOverride(bucket: WhoBucket): boolean {
+function isLanguageOverride(bucket: WhoBucket): boolean {
   return Boolean(bucket.switched && bucket.lang && negotiateLocale([bucket.lang]) !== bucket.switched);
 }
 
@@ -393,7 +393,7 @@ export function captionKind(fullPx: number, shortPx: number, roomPx: number): 'f
 }
 
 /** Pixels between a marker's right edge and the next limit, after the word gap. */
-export function markerRoom(markerLeft: number, markerWidth: number, limitPx: number): number {
+function markerRoom(markerLeft: number, markerWidth: number, limitPx: number): number {
   return limitPx - (markerLeft + markerWidth + MARKER_GAP);
 }
 

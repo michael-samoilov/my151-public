@@ -31,7 +31,7 @@ export const LEAGUE_PERSIST_VERSION = 7;
  * here — otherwise the export popups, or the completion confetti once every
  * card is full, would fire on a preview's first paint.
  */
-export function previewLeagueSeed() {
+function previewLeagueSeed() {
   const cards = kantoCards();
   return {
     state: {

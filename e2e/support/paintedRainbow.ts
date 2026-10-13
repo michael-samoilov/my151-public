@@ -1,7 +1,7 @@
 import { inflateSync } from 'node:zlib';
 import type { Page } from '@playwright/test';
 
-export type RgbImage = { w: number; h: number; rgb: Uint8Array };
+type RgbImage = { w: number; h: number; rgb: Uint8Array };
 
 const MIN_CHANGED_INK_RATIO = 0.01;
 
@@ -16,7 +16,7 @@ function paeth(a: number, b: number, c: number): number {
 }
 
 /** Decode an 8-bit RGB or RGBA PNG. Playwright card screenshots use this form. */
-export function decodePng(buf: Buffer): RgbImage {
+function decodePng(buf: Buffer): RgbImage {
   if (buf[0] !== 0x89 || buf.toString('ascii', 1, 4) !== 'PNG') {
     throw new Error('not a png');
   }
