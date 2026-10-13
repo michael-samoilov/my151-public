@@ -416,11 +416,10 @@ const SAME_AS_ENGLISH_OK = new Set([
   'de:favorites.axis.starter',
   'de:favorites.generation',
   // The Acknowledgements panel. "Sprite" is the loanword in French, Spanish
-  // and Italian, "via" is French, and "Generation" is the German noun.
+  // and Italian, and "Generation" is the German noun.
   'de:ack.generation',
   'es:ack.sprites_one', 'es:ack.sprites_other',
   'fr:ack.sprites_one', 'fr:ack.sprites_other',
-  'fr:ack.spritesVia_one', 'fr:ack.spritesVia_other', 'fr:ack.via',
   'it:ack.sprites_one',
   'fr:chart.header.type', // Type is the French noun too.
   'fr:term.shape.squiggle', // Serpent is the French noun as well.

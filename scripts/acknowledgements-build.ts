@@ -9,10 +9,10 @@
  * the dependencies. The build fails when the extra file names a version that
  * is not the installed one.
  *
- * `stripCreditNotes` keeps only the fields the panel reads from
+ * `stripCreditNotes` keeps only what the panel reads from
  * `src/data/spriteAttribution.json` and `src/data/creditTerms.json` as the
- * app imports them. The research's evidence, read dates and maintainers'
- * notes (`todo`, `cleanup`) stay in the repository and never reach a browser.
+ * app imports them. The per-artist research, evidence, read dates and
+ * maintainers' notes stay in the repository and never reach a browser.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -102,32 +102,41 @@ export function npmPackageIndex(): Plugin {
 }
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-const mapValues = (record: Json, fn: (value: Json) => Json) =>
-  Object.fromEntries(Object.entries(record).map(([key, value]) => [key, fn(value)]));
 const quote = ({ text, url }: Json) => ({ text, url });
 
-/** What the panel reads from each credits file; everything else is a maintainer's note. */
-const PANEL_FIELDS: Record<string, (data: Json) => Json> = {
+const OWN_UPLOAD = 'own upload';
+/** Rows of sprites no bundle carried: Game Freak's own, and the app's own drawings. */
+const UNCOUNTED = new Set(['game-freak', 'my151']);
+
+/**
+ * What the panel reads from each credits file. Sprites are credited through
+ * their bundles (docs/credits/README.md), so a row ships only its source, and
+ * its artists only when the app took the sprite from them directly; only
+ * those artists' links and terms ship. Everything else stays in the
+ * repository as evidence.
+ */
+const PANEL_FIELDS: Record<string, (data: Json, root: string) => Json> = {
   '/src/data/spriteAttribution.json': (data) => ({
-    sprites: mapValues(data.sprites, ({ artists, role, roles, artistNotes, via }) => ({
-      artists, role, ...(roles ? { roles } : {}), ...(artistNotes ? { artistNotes } : {}), via,
-    })),
-    artists: mapValues(data.artists, ({ creditedAs }) => (creditedAs ? { creditedAs } : {})),
-    projects: mapValues(data.projects, ({ artists }) => ({ artists })),
+    sprites: Object.fromEntries(Object.entries(data.sprites as Json)
+      .filter(([, row]) => !UNCOUNTED.has(row.via))
+      .map(([file, row]) => [file, row.via === OWN_UPLOAD ? { via: row.via, artists: row.artists } : { via: row.via }])),
+    uncounted: Object.entries(data.sprites as Json).filter(([, row]) => UNCOUNTED.has(row.via)).map(([file]) => file),
   }),
-  '/src/data/creditTerms.json': (data) => ({
-    sources: mapValues(data.sources, ({ terms }) => ({ terms: terms.map(quote) })),
-    artists: mapValues(data.artists, ({ urls, terms, termsSource, note }) => {
-      // The links the audit proved, primary first; their proofs stay here.
-      const links = { urls: urls ?? [] };
-      if (termsSource && !terms?.length) return { ...links, termsSource };
-      if (termsSource) return { ...links, terms: terms.map(quote), termsSource };
-      // An artist with no terms of their own may point, in the note, at
-      // another record's quote: MyMarshlands at Kyle Dove's post.
-      const quoteUrl = !terms.length ? /https?:\/\/\S+/.exec(note ?? '')?.[0] : undefined;
-      return { ...links, terms: terms.map(quote), ...(quoteUrl ? { quoteUrl } : {}) };
-    }),
-  }),
+  '/src/data/creditTerms.json': (data, root) => {
+    const rows = JSON.parse(fs.readFileSync(path.join(root, 'src/data/spriteAttribution.json'), 'utf8')).sprites as Json;
+    const direct = new Set(Object.values(rows).filter((row: Json) => row.via === OWN_UPLOAD).flatMap((row: Json) => row.artists));
+    // Only the sources the panel has an entry for: the research also keeps
+    // artist pages as sources.
+    const entries = new Set([...fs.readFileSync(path.join(root, 'src/data/acknowledgements.ts'), 'utf8').matchAll(/\bid: '([^']+)'/g)].map((m) => m[1]));
+    return {
+      sources: Object.fromEntries(Object.entries(data.sources as Json)
+        .filter(([id]) => entries.has(id))
+        .map(([id, { terms }]) => [id, { terms: terms.map(quote) }])),
+      artists: Object.fromEntries(Object.entries(data.artists as Json)
+        .filter(([name]) => direct.has(name))
+        .map(([name, { urls, terms }]) => [name, { urls: urls ?? [], terms: (terms ?? []).map(quote) }])),
+    };
+  },
 };
 
 export function stripCreditNotes(): Plugin {
@@ -136,7 +145,7 @@ export function stripCreditNotes(): Plugin {
     enforce: 'pre',
     load(id) {
       const pick = Object.entries(PANEL_FIELDS).find(([file]) => id.endsWith(file))?.[1];
-      return pick ? JSON.stringify(pick(JSON.parse(fs.readFileSync(id, 'utf8')))) : null;
+      return pick ? JSON.stringify(pick(JSON.parse(fs.readFileSync(id, 'utf8')), id.slice(0, id.indexOf('/src/data/')))) : null;
     },
   };
 }

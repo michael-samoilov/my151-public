@@ -33,8 +33,6 @@ export interface Acknowledgement {
   by?: string;
   /** Who compiled a collection whose parts others drew. Shown as "compiled by …". */
   compiledBy?: string;
-  /** An artist's older spellings, as the sources credit them. Shown as "Credited as …". */
-  creditedAs?: readonly string[];
   /** What my151 uses it for. An artist's entry builds its own from the sprite rows. */
   usedFor?: string;
   /** Short license or terms label for the row's second line. Absent when the source states none. */
@@ -57,11 +55,11 @@ export interface Acknowledgement {
   /** A project whose sprites reach the app only as rows shows only while one of them does. */
   rowsOnly?: true;
   /**
-   * How a project's count reads: "my151 shows N sprites from it", or, for a
-   * host whose own credits name the artists of only some files, "N sprites
-   * are credited to their artists through its credits".
+   * How a bundle's "Used for" counts: the sprite files the app took through
+   * it, or, for the Smogon Sprite Project, whose sprites reach the app
+   * through the other bundles, the sprites its artists drew.
    */
-  countLine?: 'credited';
+  countAs?: 'drew';
 }
 
 export type AcknowledgementGroupId =
@@ -93,14 +91,49 @@ const typeIconsFrom = (source: string) => {
 const byCount = <T,>(count: (item: T) => number, name: (item: T) => string) => (a: T, b: T) =>
   count(b) - count(a) || name(a).localeCompare(name(b), 'en', { sensitivity: 'base' });
 
-const SPRITE_PROJECTS: readonly Acknowledgement[] = [
+/**
+ * The bundles the app's sprites came through, credited under their own
+ * permissions (Michael, 2026-10-13; docs/credits/README.md). Each one says how
+ * many of the app's sprites it carried, and lists none of them.
+ */
+const SPRITE_SOURCES: readonly Acknowledgement[] = [
   {
+    id: 'pokeapi-sprites',
+    name: 'PokéAPI sprites',
+    kind: 'project',
+    links: ['https://github.com/PokeAPI/sprites', 'https://github.com/PokeAPI/sprites/blob/master/README.md#special-thanks'],
+    linkLabels: {
+      'https://github.com/PokeAPI/sprites': 'the PokéAPI sprites repository',
+      'https://github.com/PokeAPI/sprites/blob/master/README.md#special-thanks': "PokéAPI's credits",
+    },
+  },
+  {
+    id: 'pokemon-showdown',
+    name: 'Pokémon Showdown',
+    kind: 'project',
+    links: ['https://github.com/smogon/sprites'],
+    linkLabels: { 'https://github.com/smogon/sprites': 'the smogon/sprites repository' },
+  },
+  {
+    id: 'gen9-resource-pack',
+    name: 'Generation 9 Resource Pack',
+    // Caruban compiled the pack; its sheet credits none of the sprites the
+    // app takes from it to Caruban (credits research, 2026-10-13).
+    compiledBy: 'Caruban',
+    rowsOnly: true,
+    license: 'Open collaboration, with credit',
+    kind: 'project',
+    links: ['https://eeveeexpo.com/resources/1101/'],
+  },
+  {
+    // Its artists drew most of the fan sprites PokéAPI and Showdown carry.
+    // Its terms ask to credit the spriter or the project; this credits the
+    // project.
     id: 'smogon-sprite-project',
     name: 'Smogon Sprite Project',
-    usedFor:
-      "Black and White-style sprites that the project's artists draw for the Pokémon and forms that came after Generation 5. The app takes most of these files from PokéAPI and some from Pokémon Showdown; Radiant Sun Solgaleo, Full Moon Lunala and Zenith Marshadow come from the Generation 9 Resource Pack.",
     license: 'Non-profit use, with credit',
     kind: 'project',
+    countAs: 'drew',
     // The X and Y thread asks for a credit page that links back to it.
     links: [
       'https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/',
@@ -113,51 +146,25 @@ const SPRITE_PROJECTS: readonly Acknowledgement[] = [
       'https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/': 'Generation 8 and later thread',
     },
   },
-  {
-    id: 'gen9-resource-pack',
-    name: 'Generation 9 Resource Pack',
-    // Caruban compiled the pack; its sheet credits none of the sprites my151
-    // takes from it to Caruban (credits research, 2026-10-13).
-    compiledBy: 'Caruban',
-    rowsOnly: true,
-    usedFor: 'Sprites that replace single PokéAPI sprites or fill its gaps.',
-    license: 'Open collaboration, with credit',
-    kind: 'project',
-    links: ['https://eeveeexpo.com/resources/1101/'],
-  },
-  {
-    id: 'pokeapi-sprites',
-    name: 'PokéAPI sprites',
-    usedFor:
-      "The source of most of the app's sprite files; my151 hosts its own copies. Most of them were drawn for the Smogon Sprite Project, which credits their artists.",
-    kind: 'project',
-    countLine: 'credited',
-    links: ['https://github.com/PokeAPI/sprites'],
-  },
-  {
-    id: 'pokemon-showdown',
-    name: 'Pokémon Showdown',
-    usedFor: "Its Gen 5 sprite folder is the source of the form sprites below, which PokéAPI lacks. my151 hosts its own copies.",
-    kind: 'project',
-    links: ['https://pokemonshowdown.com'],
-  },
 ];
 
 export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
   {
     id: 'sprite-projects',
-    entries: SPRITE_PROJECTS
+    // The most sprite files first. The Smogon Sprite Project's sprites reach
+    // the app through the other bundles, so it carries none itself.
+    entries: SPRITE_SOURCES
       .filter((project) => !project.rowsOnly || projectSpriteCount(project.id) > 0)
       .sort(byCount((project) => projectSpriteCount(project.id), (project) => project.name)),
   },
   {
     id: 'sprite-artists',
-    // Counted from the same list the artist's Used for shows, so the order
-    // and the entry cannot disagree.
+    // Only artists whose sprites the app took from them directly, not
+    // through a bundle. Counted from the same list the artist's Used for
+    // shows, so the order and the entry cannot disagree.
     entries: [...spriteArtists()].sort(byCount((artist) => artist.sprites.length, (artist) => artist.name)).map((artist) => ({
       id: artistEntryId(artist.name),
       name: artist.name,
-      creditedAs: artist.creditedAs,
       links: artist.links,
       kind: 'artist',
     })),

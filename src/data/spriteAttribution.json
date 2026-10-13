@@ -6064,7 +6064,29 @@
    "role": "drew",
    "via": "my151",
    "evidence": "my151's sprite lab drew it (spriteSources.json: source 'my151'). No outside artist.",
-   "name": "zygarde-mega"
+   "name": "zygarde-mega",
+   "lineage": {
+    "mainReference": "The official artwork of Mega Zygarde.",
+    "colourReferences": [
+     {
+      "file": "10120.png",
+      "pokemon": "zygarde-complete",
+      "artists": [
+       "leParagon"
+      ]
+     },
+     {
+      "file": "718.png",
+      "pokemon": "zygarde-50",
+      "artists": [
+       "Legitimate Username",
+       "Noscium"
+      ]
+     }
+    ],
+    "note": "my151's sprite lab drew it from the official artwork; the two fan sprites went to the model as colour references only (Michael, 2026-10-13). Not credited in the panel (Michael, 2026-10-13: \"Do not credit my151 for zygarde\").",
+    "source": "sprite-lab/docs/model-inputs-audit.md on claude/sprite-lab"
+   }
   },
   "10302": {
    "artists": [

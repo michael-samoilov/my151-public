@@ -7,19 +7,17 @@ import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
 import {
   ACKNOWLEDGEMENTS,
-  artistEntryId,
   type Acknowledgement,
   type AcknowledgementGroupId,
   type LicenseFile,
 } from '@/data/acknowledgements';
 import type { NpmPackageIndex } from '@/data/npmPackages';
 import { artistTerms, sourceTerms, type TermsQuote } from '@/data/creditTerms';
-import { artistCredit, hostedSprites, projectArtists, projectCreditedCount, projectOnlySprites, projectSpriteCount } from '@/data/spriteCredits';
-import { ArtistSprites, EntryLink, ProjectOnlySprites } from './AcknowledgementsSprites';
-import { withNode } from './withNode';
+import { artistCredit, projectSpriteCount, smogonDrewCount } from '@/data/spriteCredits';
+import { ArtistSprites } from './AcknowledgementsSprites';
 
 const GROUP_KEYS = {
-  'sprite-projects': 'ack.group.spriteProjects',
+  'sprite-projects': 'ack.group.spriteSources',
   'sprite-artists': 'ack.group.spriteArtists',
   'pokemon-art': 'ack.group.pokemonArt',
   'interface-icons': 'ack.group.interfaceIcons',
@@ -221,55 +219,6 @@ function LicenseText({ file, titled }: { file: LicenseFile; titled: boolean }) {
   );
 }
 
-/** A project's artists: a row for each one with sprites in the app, then the rest by name. */
-function ProjectArtists({ id, onOpen }: { id: string; onOpen: (id: string) => void }) {
-  const t = useT();
-  const tn = useTn();
-  const { credited, others } = projectArtists(id);
-  if (!credited.length && !others.length) return null;
-  return (
-    <>
-      {credited.length > 0 && (
-        <section className="flex flex-col gap-1.5" data-testid="ack-project-artists">
-          <h4 className={cn(HEADING, 'flex justify-between gap-2 px-1')}>
-            <span>{t('ack.artists')}</span> <span className="tabular-nums">{credited.length}</span>
-          </h4>
-          <ul className="divide-y overflow-hidden rounded-lg border bg-card">
-            {credited.map(({ artist, count }) => {
-              const entry = ENTRIES.get(artistEntryId(artist.name));
-              return entry ? (
-                <li key={artist.name}>
-                  <EntryRow entry={entry} note={tn('ack.sprites', count)} onOpen={onOpen} />
-                </li>
-              ) : null;
-            })}
-          </ul>
-        </section>
-      )}
-      {others.length > 0 && (
-        <Section label={t('ack.otherArtists')} count={others.length}>
-          {/* Each name in one piece: "Involuntary Twitch" never breaks
-              across two lines and reads as two people. */}
-          <p className="text-sm leading-relaxed">
-            {others.map((artist, i) => {
-              // An artist whose sprites came another way still has an entry.
-              const id = artistEntryId(artist);
-              return (
-                <span key={artist}>
-                  <span className="whitespace-nowrap">
-                    {ENTRIES.has(id) ? <EntryLink onClick={() => onOpen(id)}>{artist}</EntryLink> : artist}
-                    {i < others.length - 1 ? ',' : ''}
-                  </span>{' '}
-                </span>
-              );
-            })}
-          </p>
-        </Section>
-      )}
-    </>
-  );
-}
-
 const PACKAGE_INDEX = '/licenses/npm-packages.json';
 let packageIndex: Promise<NpmPackageIndex> | undefined;
 
@@ -442,23 +391,17 @@ function TermsQuotes({ quotes }: { quotes: readonly TermsQuote[] }) {
   );
 }
 
-function Detail({ entry, backRef, onBack, onOpen }: {
+function Detail({ entry, backRef, onBack }: {
   entry: Acknowledgement;
   backRef: RefObject<HTMLButtonElement | null>;
   onBack: () => void;
-  onOpen: (id: string) => void;
 }) {
   const t = useT();
   const tn = useTn();
-  const locale = useLocale();
   const links = entry.links.map((href) => ({ href, label: t('ack.open', { site: entry.linkLabels?.[href] ?? host(href) }) }));
   // An entry that ships its license text needs no quote of the same words.
-  const own = entry.kind === 'artist' ? artistTerms(entry.name) : { quotes: entry.texts ? [] : sourceTerms(entry.id) };
-  const shared = own.sharedWith ? ENTRIES.get(own.sharedWith) : undefined;
-  const hasLicense = entry.license || own.quotes.length > 0 || shared || entry.note || entry.texts;
-  const shown = entry.kind === 'project' ? projectSpriteCount(entry.id) : 0;
-  const projectOnly = entry.kind === 'project' ? projectOnlySprites(entry.id) : [];
-  const hosted = entry.kind === 'project' ? hostedSprites(entry.id) : [];
+  const quotes = entry.kind === 'artist' ? artistTerms(entry.name) : entry.texts ? [] : sourceTerms(entry.id);
+  const hasLicense = entry.license || quotes.length > 0 || entry.note || entry.texts;
   return (
     <div className="flex flex-col">
       <div className="sticky top-0 z-10 border-b bg-background px-2 py-1.5">
@@ -479,50 +422,26 @@ function Detail({ entry, backRef, onBack, onOpen }: {
           </h3>
           {entry.by && <p className="text-sm text-muted-foreground">{t('ack.by', { name: entry.by })}</p>}
           {entry.compiledBy && <p className="text-sm text-muted-foreground">{t('ack.compiledBy', { name: entry.compiledBy })}</p>}
-          {entry.creditedAs?.length ? (
-            <p className="text-sm text-muted-foreground" data-testid="ack-credited-as">
-              {t('ack.creditedAs', { names: new Intl.ListFormat(locale, { type: 'conjunction' }).format(entry.creditedAs) })}
-            </p>
-          ) : null}
         </div>
         <Section label={t('ack.usedFor')}>
           {entry.kind === 'artist' ? (
-            <ArtistSprites name={entry.name} onOpenProject={onOpen} />
+            <ArtistSprites name={entry.name} />
+          ) : entry.kind === 'project' ? (
+            // A bundle: how many of the app's sprites came through it, and no
+            // list of them (Michael, 2026-10-12).
+            <p className="text-sm leading-relaxed" data-testid="ack-project-count">
+              {entry.countAs === 'drew' ? tn('ack.drewThrough', smogonDrewCount()) : tn('ack.shownFrom', projectSpriteCount(entry.id))}
+            </p>
           ) : (
-            <>
-              <p className="text-sm leading-relaxed">{entry.usedFor}</p>
-              {shown > 0 && (
-                <p className="text-sm leading-relaxed" data-testid="ack-project-count">
-                  {entry.countLine === 'credited'
-                    ? tn('ack.creditedThrough', projectCreditedCount(entry.id))
-                    : tn('ack.shownFrom', shown)}
-                </p>
-              )}
-            </>
+            <p className="text-sm leading-relaxed">{entry.usedFor}</p>
           )}
         </Section>
-        {entry.kind === 'project' && <ProjectArtists id={entry.id} onOpen={onOpen} />}
-        {hosted.length > 0 && (
-          <Section label={t('ack.filesFrom')} count={hosted.length}>
-            <ProjectOnlySprites sprites={hosted} />
-          </Section>
-        )}
-        {projectOnly.length > 0 && (
-          <Section label={t('ack.projectOnly')} count={projectOnly.length}>
-            <ProjectOnlySprites sprites={projectOnly} />
-          </Section>
-        )}
         {entry.kind === 'packages' && <NpmPackages />}
         <ExternalLinks links={links} />
         {hasLicense && (
           <Section label={t('ack.license')}>
             {entry.license && <p className="text-sm font-medium leading-relaxed">{entry.license}</p>}
-            <TermsQuotes quotes={own.quotes} />
-            {shared && (
-              <p className="text-sm leading-relaxed">
-                {withNode(t('ack.termsOf', { source: '\u0000' }), <EntryLink onClick={() => onOpen(shared.id)}>{shared.name}</EntryLink>)}
-              </p>
-            )}
+            <TermsQuotes quotes={quotes} />
             {entry.note && <p className="text-sm leading-relaxed">{entry.note}</p>}
             {entry.texts?.map((file) => (
               <LicenseText key={file.file} file={file} titled={entry.texts!.length > 1} />
@@ -537,9 +456,6 @@ function Detail({ entry, backRef, onBack, onOpen }: {
 /**
  * The list and the open entries, in the two levels Cursor's acknowledgements
  * page uses: a row slides its detail in over the list, and Back slides it out.
- * A link to another entry, such as a project's artist, opens it in the same
- * detail level, and Back returns to the entry it came from, where the reader
- * left it.
  *
  * Both levels stay mounted and scroll on their own, so Back returns to the
  * list where the reader left it. The level that is not on screen is `inert`,
@@ -582,13 +498,6 @@ function AcknowledgementsBody() {
     scrolls.current = [];
     setShownId(id);
     setStack([id]);
-    if (detailRef.current) detailRef.current.scrollTop = 0;
-  };
-  const follow = (id: string) => {
-    if (!ENTRIES.has(id)) return;
-    scrolls.current.push(detailRef.current?.scrollTop ?? 0);
-    setShownId(id);
-    setStack((ids) => [...ids, id]);
     if (detailRef.current) detailRef.current.scrollTop = 0;
   };
   const back = () => {
@@ -644,7 +553,7 @@ function AcknowledgementsBody() {
         )}
         data-testid="ack-detail"
       >
-        {shown && <Detail key={shown.id} entry={shown} backRef={backRef} onBack={back} onOpen={follow} />}
+        {shown && <Detail key={shown.id} entry={shown} backRef={backRef} onBack={back} />}
       </div>
     </div>
   );

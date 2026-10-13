@@ -20,7 +20,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
 
     const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
     await expect(dialog).toBeVisible();
-    for (const group of ['Sprite projects', 'Sprite artists', 'Pokémon icons and art', 'Interface icons', 'Fonts', 'Data', 'Code']) {
+    for (const group of ['Sprite sources', 'Sprite artists', 'Pokémon icons and art', 'Interface icons', 'Fonts', 'Data', 'Code']) {
       await expect(dialog.getByRole('heading', { name: new RegExp(`^${group}`) })).toBeVisible();
     }
     // The count matches the rows: a sprite source with no sprite in this build has no row.
@@ -54,38 +54,26 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
     await expect(row).toBeFocused();
 
-    // An artist's entry lists every sprite of theirs the app shows, folded
-    // by generation, each with the people its row also credits: Kyle Dove
-    // asks to credit MyMarshlands for Victreebel.
-    await dialog.locator('[data-ack-id="artist:Kyle Dove"]').click();
-    const sprites = dialog.getByTestId('ack-sprites');
-    await expect(sprites.getByTestId('ack-sprites-summary')).toHaveText(/^\d+ sprites via PokéAPI sprites/);
-    await sprites.getByText('Generation 1', { exact: true }).click();
-    await expect(sprites.getByRole('listitem').filter({ hasText: 'Mega Victreebel' })).toHaveText('Mega Victreebel · with MyMarshlands');
-    const kyleDoveSprites = Number(/^(\d+)/.exec((await sprites.getByTestId('ack-sprites-summary').textContent())!)?.[1]);
-
-    // Its "via" opens the project's entry in the panel, which links back to
-    // the artist; Back retraces both steps.
-    await sprites.getByRole('button', { name: 'PokéAPI sprites' }).click();
-    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('PokéAPI sprites');
-    await dialog.getByTestId('ack-project-artists').locator('[data-ack-id="artist:Kyle Dove"]').click();
-    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Kyle Dove');
-    await dialog.getByRole('button', { name: 'Back' }).click();
-    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('PokéAPI sprites');
-    await dialog.getByRole('button', { name: 'Back' }).click();
-    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Kyle Dove');
+    // Sprites are credited through their bundles: a bundle says how many of
+    // the app's sprites came through it, quotes its own permission once and
+    // links its pages, and lists no sprites.
+    await dialog.locator('[data-ack-id="pokeapi-sprites"]').click();
+    await expect(dialog.getByTestId('ack-project-count')).toHaveText(/^my151 shows \d+ sprites from it\.$/);
+    await expect(dialog.getByTestId('ack-terms').locator('blockquote')).toHaveCount(1);
+    await expect(dialog.getByTestId('ack-sprites')).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
-    // MyMarshlands states no terms; the entry quotes Kyle Dove's post, which
-    // asks to credit MyMarshlands. A renamed artist names the old spelling.
-    await dialog.locator('[data-ack-id="artist:MyMarshlands"]').click();
-    await expect(dialog.getByTestId('ack-terms')).toContainText('please credit my friend MyMarshlands');
-    // A credit sheet's note on what a person did stays beside them.
-    await expect(dialog.getByTestId('ack-sprites').getByRole('listitem').filter({ hasText: 'Incineroar' })).toHaveText(/^Incineroar\s·\sface reference\s·\swith leParagon(\s·\svia .+)?$/);
-    await dialog.getByRole('button', { name: 'Back' }).click();
-    await dialog.locator('[data-ack-id="artist:Falgaia"]').click();
-    await expect(dialog.getByTestId('ack-credited-as')).toHaveText('Credited as aXl');
+    // Only an artist whose sprites the app took from them directly has an
+    // entry: KingOfThe-X-Roads, for his own uploads.
+    const artists = dialog.getByTestId('ack-group-sprite-artists').locator('[data-ack-id]');
+    await expect(artists).toHaveCount(1);
+    await artists.first().click();
+    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('KingOfThe-X-Roads');
+    const sprites = dialog.getByTestId('ack-sprites');
+    await expect(sprites.getByTestId('ack-sprites-summary')).toHaveText(/^\d+ sprites from their own uploads$/);
+    await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Rotom (DJ)');
+    const kingSprites = await sprites.getByRole('listitem').count();
     await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
@@ -120,7 +108,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
         packageCount,
         licenseChars,
         rows,
-        kyleDoveSprites,
+        kingSprites,
       }, null, 2),
     });
   });
