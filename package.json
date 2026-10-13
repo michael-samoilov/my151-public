@@ -34,6 +34,7 @@
     "i18n:verify": "tsx scripts/i18n/verify.ts",
     "i18n:extract": "tsx scripts/i18n/translate/extract.ts",
     "favorites:browser-ids": "tsx --tsconfig tsconfig.node.json scripts/build-favorite-browser-ids.ts",
+    "credits:check-sprites": "tsx scripts/credits/check-sprite-evidence.ts",
     "type-icons:glyph-paths": "tsx --tsconfig tsconfig.node.json scripts/build-type-glyph-paths.ts"
   },
   "dependencies": {
