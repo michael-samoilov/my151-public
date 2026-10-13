@@ -22,6 +22,7 @@
 import attribution from './spriteAttribution.json';
 import { allPickerMons, comparePickerOrder, getPickerMon, type PickerMon } from '@/favorites/model/catalog';
 import { ALTERNATE_PICKER_FORMS } from '@/favorites/model/alternateForms';
+import { artistLinks } from './creditTerms';
 
 export type SpriteRole = 'drew' | 'edited' | 'base';
 const ROLES: readonly SpriteRole[] = ['drew', 'edited', 'base'];
@@ -57,7 +58,7 @@ interface AttributionRow {
 }
 interface AttributionFile {
   sprites: Record<string, AttributionRow>;
-  artists: Record<string, { links?: string[]; creditedAs?: string[] }>;
+  artists: Record<string, { creditedAs?: string[] }>;
   projects: Record<string, { artists?: string[] }>;
 }
 
@@ -140,7 +141,7 @@ function parse(): Parsed {
   const names = [...credits.keys()].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
   for (const name of names) {
     const info = DATA.artists[name];
-    artists.set(name, { name, creditedAs: info?.creditedAs, links: info?.links ?? [], sprites: credits.get(name)!.sort(dexOrder) });
+    artists.set(name, { name, creditedAs: info?.creditedAs, links: artistLinks(name), sprites: credits.get(name)!.sort(dexOrder) });
   }
   for (const list of projectOnly.values()) list.sort(dexOrder);
   return { artists, projectSprites, projectCredited, projectOnly };

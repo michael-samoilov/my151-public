@@ -822,7 +822,7 @@
    ],
    "role": "drew",
    "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '731 Pikipek': Spriter 'princessofmusic'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/pikipek-png.75943/ (colours differ, same shape).",
+   "evidence": "The app file has exactly the pixels of the attachment https://www.smogon.com/forums/attachments/pikipek-png.71601/ that princessofmusic, the credited artist, posted in the Sun/Moon Sprite Project thread (post https://www.smogon.com/forums/posts/7035496/, page 8; docs/credits/sprite-evidence.json). The Smogon Gen7 sheet's row '731 Pikipek' credits princessofmusic.",
    "name": "pikipek",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/731.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
   },
@@ -3522,18 +3522,13 @@
   },
   "1003": {
    "artists": [
-    "KingOfThe-X-Roads",
-    "G.E.Z."
+    "KingOfThe-X-Roads"
    ],
    "role": "drew",
-   "via": "smogon-gen9",
-   "evidence": "Smogon Gen9 Sprite Project sheet, tab 'static sprites', section 'Gen 9 Pokemon', row '1003 Ting-Lu': Spriter 'KingOfThe-X-Roads, G.E.Z. (colours)'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/1003_1-png.603597/: 99.9% of opaque pixels overlap, 50% have the same colour (a revision or a palette change).",
+   "via": "pokeapi",
+   "evidence": "Every opaque pixel of the app file equals KingOfThe-X-Roads's own DeviantArt sheet 'Gen 9 Sprites - Pokemon Scarlet and Violet' (https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834) at x=684, y=498, with no stray pixel under the sprite's transparent area (docs/credits/sprite-evidence.json). The Smogon Gen9 sheet's row '1003 Ting-Lu' (Spriter 'KingOfThe-X-Roads, G.E.Z. (colours)') links a different colouring of this drawing: https://www.smogon.com/forums/attachments/1003_1-png.603597/ overlaps 99.9% of opaque pixels, but only 50% have the same colour, so G.E.Z.'s colours are not the app's.",
    "name": "ting-lu",
-   "notes": "G.E.Z. (colours)",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/1003.png as added in commit aa370b74e2 (2023-02-02, '[#101] Added front-default sprites for gen9').",
-   "artistNotes": {
-    "G.E.Z.": "colours"
-   }
+   "file": "App file is byte-identical to PokéAPI sprites/pokemon/1003.png as added in commit aa370b74e2 (2023-02-02, '[#101] Added front-default sprites for gen9')."
   },
   "1004": {
    "artists": [
@@ -6896,271 +6891,83 @@
   }
  },
  "artists": {
-  "Arkeis": {
-   "links": [
-    "https://www.smogon.com/forums/members/arkeis.921/"
-   ]
-  },
-  "Banana Toast": {
-   "links": []
-  },
-  "Basic Vanillite": {
-   "links": [
-    "https://www.smogon.com/forums/members/basic-vanillite.369403/"
-   ]
-  },
-  "Blaquaza": {
-   "links": []
-  },
+  "Arkeis": {},
+  "Banana Toast": {},
+  "Basic Vanillite": {},
+  "Blaquaza": {},
   "branflakes": {
-   "links": [
-    "https://www.smogon.com/forums/members/branflakes.191854/"
-   ],
    "creditedAs": [
     "Branflakes325",
     "Branflake325"
    ]
   },
-  "Brylark": {
-   "links": [
-    "https://www.smogon.com/forums/members/brylark.225743/"
-   ]
-  },
-  "Buna": {
-   "links": []
-  },
-  "Bynine": {
-   "links": [
-    "https://www.smogon.com/forums/members/bynine.39588/"
-   ]
-  },
-  "Corson": {
-   "links": [
-    "https://www.smogon.com/forums/members/corson.196384/"
-   ]
-  },
-  "Cynda": {
-   "links": [
-    "https://www.smogon.com/forums/members/cynda.486574/"
-   ]
-  },
-  "Dleep": {
-   "links": [
-    "https://www.smogon.com/forums/members/dleep.196318/"
-   ]
-  },
-  "Espeon Scientist": {
-   "links": [
-    "https://www.smogon.com/forums/members/espeon-scientist.211257/"
-   ]
-  },
+  "Brylark": {},
+  "Buna": {},
+  "Bynine": {},
+  "Corson": {},
+  "Cynda": {},
+  "Dleep": {},
+  "Espeon Scientist": {},
   "Falgaia": {
-   "links": [
-    "https://www.smogon.com/forums/members/30808/"
-   ],
    "creditedAs": [
     "aXl"
    ]
   },
-  "Farriella": {
-   "links": [
-    "https://www.smogon.com/forums/members/farriella.199285/"
-   ]
-  },
-  "fishbowlsoul90": {
-   "links": []
-  },
-  "G.E.Z.": {
-   "links": [
-    "https://www.smogon.com/forums/members/g-e-z.459791/"
-   ]
-  },
-  "Galifia": {
-   "links": [
-    "https://www.smogon.com/forums/members/galifia.200119/"
-   ]
-  },
-  "GeoisEvil": {
-   "links": []
-  },
+  "Farriella": {},
+  "fishbowlsoul90": {},
+  "G.E.Z.": {},
+  "Galifia": {},
+  "GeoisEvil": {},
   "HeaLnDeaL": {
-   "links": [
-    "https://www.smogon.com/forums/members/healndeal.64801/"
-   ],
    "creditedAs": [
     "HealnDeal"
    ]
   },
-  "Hematite": {
-   "links": [
-    "https://www.smogon.com/forums/members/hematite.500123/"
-   ]
-  },
-  "Involuntary Twitch": {
-   "links": []
-  },
-  "Katten": {
-   "links": []
-  },
-  "KattenK": {
-   "links": []
-  },
-  "KingOfThe-X-Roads": {
-   "links": [
-    "https://www.deviantart.com/kingofthe-x-roads",
-    "https://x.com/kingofthexroad5"
-   ]
-  },
-  "Kyle Dove": {
-   "links": [
-    "https://x.com/DoveKyle",
-    "https://github.com/kyledovey",
-    "https://www.deviantart.com/kyle-dove"
-   ]
-  },
-  "Larryturbo": {
-   "links": [
-    "https://www.smogon.com/forums/members/larryturbo.484099/"
-   ]
-  },
-  "Layell": {
-   "links": [
-    "https://www.smogon.com/forums/members/layell.6237/"
-   ]
-  },
-  "Legitimate Username": {
-   "links": [
-    "https://www.smogon.com/forums/members/legitimate-username.143355/"
-   ]
-  },
-  "leParagon": {
-   "links": [
-    "https://www.smogon.com/forums/members/leparagon.336111/"
-   ]
-  },
-  "Mintly": {
-   "links": [
-    "https://www.smogon.com/forums/members/mintly.254865/"
-   ]
-  },
-  "mjco": {
-   "links": []
-  },
-  "MrDollSteak": {
-   "links": []
-  },
-  "MyMarshlands": {
-   "links": [
-    "https://www.deviantart.com/mymarshlands",
-    "https://x.com/MyMarshlands",
-    "https://bsky.app/profile/mymarshlands.bsky.social"
-   ]
-  },
-  "N-Kin": {
-   "links": [
-    "https://www.smogon.com/forums/members/n-kin.211797/"
-   ]
-  },
-  "Noscium": {
-   "links": [
-    "https://www.smogon.com/forums/members/noscium.196469/"
-   ]
-  },
-  "paintseagull": {
-   "links": [
-    "https://www.smogon.com/forums/members/paintseagull.57019/"
-   ]
-  },
-  "princessofmusic": {
-   "links": [
-    "https://www.smogon.com/forums/members/princessofmusic.196946/"
-   ]
-  },
-  "PumpkinPastel": {
-   "links": []
-  },
-  "Quanyails": {
-   "links": [
-    "https://www.smogon.com/forums/members/quanyails.118508/"
-   ]
-  },
-  "RadicalCharizard": {
-   "links": [
-    "https://www.smogon.com/forums/members/radicalcharizard.486721/"
-   ]
-  },
-  "RedRooster": {
-   "links": [
-    "https://www.smogon.com/forums/members/redrooster.196411/"
-   ]
-  },
-  "Siiilver": {
-   "links": [
-    "https://www.smogon.com/forums/members/siiilver.196900/"
-   ]
-  },
-  "Sleet": {
-   "links": [
-    "https://www.smogon.com/forums/members/sleet.29427/"
-   ]
-  },
-  "SpheX": {
-   "links": []
-  },
-  "Spook": {
-   "links": []
-  },
-  "TeraVolt": {
-   "links": [
-    "https://www.smogon.com/forums/members/teravolt.47134/"
-   ]
-  },
+  "Hematite": {},
+  "Involuntary Twitch": {},
+  "Katten": {},
+  "KattenK": {},
+  "KingOfThe-X-Roads": {},
+  "Kyle Dove": {},
+  "Larryturbo": {},
+  "Layell": {},
+  "Legitimate Username": {},
+  "leParagon": {},
+  "Mintly": {},
+  "mjco": {},
+  "MrDollSteak": {},
+  "MyMarshlands": {},
+  "N-Kin": {},
+  "Noscium": {},
+  "paintseagull": {},
+  "princessofmusic": {},
+  "PumpkinPastel": {},
+  "Quanyails": {},
+  "RadicalCharizard": {},
+  "RedRooster": {},
+  "Siiilver": {},
+  "Sleet": {},
+  "SpheX": {},
+  "Spook": {},
+  "TeraVolt": {},
   "The Cynical Poet": {
-   "links": [
-    "https://www.smogon.com/forums/members/the-cynical-poet.198798/"
-   ],
    "creditedAs": [
     "TheCynicalPoet"
    ]
   },
   "Tooni": {
-   "links": [],
    "creditedAs": [
     "Toonie"
    ]
   },
-  "TrainerSplash": {
-   "links": [
-    "https://www.smogon.com/forums/members/trainersplash.223612/"
-   ]
-  },
-  "Travis": {
-   "links": []
-  },
-  "Wobblebuns": {
-   "links": [
-    "https://www.smogon.com/forums/members/wobblebuns.196278/"
-   ]
-  },
-  "WPS": {
-   "links": [
-    "https://www.smogon.com/forums/members/wps.56547/"
-   ]
-  },
-  "Wyverii": {
-   "links": [
-    "https://www.smogon.com/forums/members/wyverii.20138/"
-   ]
-  },
-  "Z-nogyroP": {
-   "links": []
-  },
-  "Zermonious": {
-   "links": []
-  },
-  "Zerudez": {
-   "links": []
-  }
+  "TrainerSplash": {},
+  "Travis": {},
+  "Wobblebuns": {},
+  "WPS": {},
+  "Wyverii": {},
+  "Z-nogyroP": {},
+  "Zermonious": {},
+  "Zerudez": {}
  },
  "projects": {
   "smogon-gen6": {

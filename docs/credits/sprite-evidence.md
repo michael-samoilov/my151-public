@@ -25,8 +25,8 @@ Source files are not in git. Each source in the JSON has its URL and sha256, so 
 | 1413 | Shown in the Favorite picker |
 | 0 | Served files that no page shows |
 | 0 | Shown files that are missing |
-| 655 | Verdict: confirmed |
-| 1 | Verdict: corrected |
+| 656 | Verdict: confirmed |
+| 0 | Verdict: corrected |
 | 66 | Verdict: unproven |
 | 697 | Verdict: official Game Freak |
 
@@ -42,9 +42,9 @@ Source files are not in git. Each source in the JSON has its URL and sha256, so 
 | 1 | Exact match to an attachment in a Smogon thread post |
 | 1 | my151's own drawing, by this repository's history |
 
-## Recommended credit changes
+## Credit changes
 
-- `1003.png` (ting-lu): credited now ['KingOfThe-X-Roads', 'G.E.Z.']; recommended ['KingOfThe-X-Roads']. Evidence: every opaque pixel equals KingOfThe-X-Roads's own DeviantArt sheet at x=684, y=498, with no stray pixel under the sprite's transparent area; the app also credits ['G.E.Z.'] from a Smogon row whose attachment is a different colouring of this drawing (Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/1003_1-png.603597/: 99.9% of opaque pixels overlap, 50% have the same colo). Source: https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834
+- `1003.png` (ting-lu): applied on 2026-10-13. Credited before: ['KingOfThe-X-Roads', 'G.E.Z.']; credited now: ['KingOfThe-X-Roads']. Evidence: every opaque pixel equals KingOfThe-X-Roads's own DeviantArt sheet at x=684, y=498, with no stray pixel under the sprite's transparent area; the app also credits ['G.E.Z.'] from a Smogon row whose attachment is a different colouring of this drawing (Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/1003_1-png.603597/: 99.9% of opaque pixels overlap, 50% have the same colo). Source: https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834
 
 ## Groups re-proven in this audit
 
@@ -354,7 +354,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `993.png` | iron-jugulis | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/993-png.779828/ |
 | `999.png` | gimmighoul | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/999-png.536974/ |
 | `1001.png` | wo-chien | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/1001-png.536980/ |
-| `1003.png` | ting-lu | artist's own file | corrected | https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834 |
+| `1003.png` | ting-lu | artist's own file | confirmed | https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834 |
 | `1020.png` | gouging-fire | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/1020-png.653098/ |
 | `1021.png` | raging-bolt | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/1021-png.779832/ |
 | `10033.png` | Mega Venusaur | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/003_2-png.276600/ |
@@ -487,7 +487,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `989.png` | sandy-shocks | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/989-png.779826/ |
 | `992.png` | iron-hands | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/992-png.492563/ |
 | `994.png` | iron-moth | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/994-png.653084/ |
-| `1003.png` | ting-lu | artist's own file | corrected | https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834 |
+| `1003.png` | ting-lu | artist's own file | confirmed | https://www.deviantart.com/kingofthe-x-roads/art/Gen-9-Sprites---Pokemon-Scarlet-and-Violet-908341834 |
 | `1012.png` | poltchageist | pack sheet | confirmed | https://eeveeexpo.com/resources/1101/ |
 | `1015.png` | munkidori | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/1015-png.653090/ |
 | `1016.png` | fezandipiti | Smogon sheet | confirmed | https://www.smogon.com/forums/attachments/1016-png.653092/ |

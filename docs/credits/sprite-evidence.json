@@ -26244,10 +26244,9 @@
    "Pokédex builder"
   ],
   "creditedNow": [
-   "KingOfThe-X-Roads",
-   "G.E.Z."
+   "KingOfThe-X-Roads"
   ],
-  "creditedVia": "smogon-gen9",
+  "creditedVia": "pokeapi",
   "evidenceType": "exact-artist-own",
   "sources": [
    {
@@ -26261,11 +26260,8 @@
     }
    }
   ],
-  "comparison": "every opaque pixel equals KingOfThe-X-Roads's own DeviantArt sheet at x=684, y=498, with no stray pixel under the sprite's transparent area; the app also credits ['G.E.Z.'] from a Smogon row whose attachment is a different colouring of this drawing (Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/1003_1-png.603597/: 99.9% of opaque pixels overlap, 50% have the same colo)",
-  "verdict": "corrected",
-  "recommended": [
-   "KingOfThe-X-Roads"
-  ]
+  "comparison": "every opaque pixel equals KingOfThe-X-Roads's own DeviantArt sheet at x=684, y=498, with no stray pixel under the sprite's transparent area; G.E.Z. is no longer credited: the Smogon row's attachment is a different colouring of this drawing (Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/1003_1-png.603597/: 99.9% of opaque pixels overlap, 50% have the same colo)",
+  "verdict": "confirmed"
  },
  {
   "file": "public/sprites/pokemon/1004.png",

@@ -16,10 +16,19 @@ export interface TermsQuote {
 
 interface TermsFile {
   sources: Record<string, { terms: TermsQuote[] }>;
-  artists: Record<string, { terms?: TermsQuote[]; termsSource?: string; quoteUrl?: string; note?: string }>;
+  artists: Record<string, { urls?: string[]; terms?: TermsQuote[]; termsSource?: string; quoteUrl?: string; note?: string }>;
 }
 
 const TERMS = data as unknown as TermsFile;
+
+/**
+ * An artist's links, primary first: only pages the credits audit proved are
+ * theirs (2026-10-13), never a Smogon member page, which asks a guest to log
+ * in. An artist with no proven page has none.
+ */
+export function artistLinks(name: string): readonly string[] {
+  return TERMS.artists[name]?.urls ?? [];
+}
 
 /** A source's quoted terms, by its panel entry id. */
 export function sourceTerms(id: string): readonly TermsQuote[] {

@@ -112,17 +112,20 @@ const PANEL_FIELDS: Record<string, (data: Json) => Json> = {
     sprites: mapValues(data.sprites, ({ artists, role, roles, artistNotes, via }) => ({
       artists, role, ...(roles ? { roles } : {}), ...(artistNotes ? { artistNotes } : {}), via,
     })),
-    artists: mapValues(data.artists, ({ links, creditedAs }) => ({ links, ...(creditedAs ? { creditedAs } : {}) })),
+    artists: mapValues(data.artists, ({ creditedAs }) => (creditedAs ? { creditedAs } : {})),
     projects: mapValues(data.projects, ({ artists }) => ({ artists })),
   }),
   '/src/data/creditTerms.json': (data) => ({
     sources: mapValues(data.sources, ({ terms }) => ({ terms: terms.map(quote) })),
-    artists: mapValues(data.artists, ({ terms, termsSource, note }) => {
-      if (termsSource) return { termsSource };
+    artists: mapValues(data.artists, ({ urls, terms, termsSource, note }) => {
+      // The links the audit proved, primary first; their proofs stay here.
+      const links = { urls: urls ?? [] };
+      if (termsSource && !terms?.length) return { ...links, termsSource };
+      if (termsSource) return { ...links, terms: terms.map(quote), termsSource };
       // An artist with no terms of their own may point, in the note, at
       // another record's quote: MyMarshlands at Kyle Dove's post.
       const quoteUrl = !terms.length ? /https?:\/\/\S+/.exec(note ?? '')?.[0] : undefined;
-      return { terms: terms.map(quote), ...(quoteUrl ? { quoteUrl } : {}) };
+      return { ...links, terms: terms.map(quote), ...(quoteUrl ? { quoteUrl } : {}) };
     }),
   }),
 };
