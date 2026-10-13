@@ -2,14 +2,15 @@
  * Prerenders the hub (`/`) into dist/index.html after the client build.
  *
  * Without it the hub's HTML holds only a spinner, and the page appears after
- * about 250 KiB of JavaScript. With it, the hub paints as soon as the HTML and
- * the stylesheet arrive, and the client hydrates the same markup.
+ * about 250 KiB of JavaScript. With it, the hub paints as soon as the HTML
+ * arrives, and the client hydrates the same markup.
  *
  * The plugin builds `src/home/prerender.ts` for Node with the client build's
  * aliases and defines, so asset URLs and the footer's build version match the
- * client. It then writes three things into dist/index.html:
+ * client. It then writes four things into dist/index.html:
  *
  * - The markup, in `#root`, marked `data-prerendered`.
+ * - The stylesheet, inline. The tool pages still link it.
  * - A head script that runs before the first paint. It sets the root font
  *   size with the formula in src/lib/layoutFontSize.ts, so nothing shifts when
  *   that module runs. It adds `p151-saved-<tool>` to <html> for each tool with
@@ -134,12 +135,7 @@ export function prerenderHub(): Plugin {
         // go in the head instead, ahead of the inline stylesheet, so the
         // browser starts the images before it has read the styles.
         const imagePreload = /<link rel="preload" as="image"[^>]*\/>/g;
-        // The first screenshot is the largest paint; the rest wait for it. With
-        // the stylesheet inline, Chrome no longer holds low-priority requests
-        // back while a stylesheet loads, so all six shared the connection and
-        // the largest paint came about 9% later on a throttled phone.
-        const imagePreloads = (markup.match(imagePreload) ?? []).map((tag) =>
-          /fetchPriority="high"/i.test(tag) ? tag : tag.replace(/\/>$/, ' fetchPriority="low"/>'));
+        const imagePreloads = markup.match(imagePreload) ?? [];
         html = html.replace(root, () => `<div id="root" data-prerendered>${markup.replace(imagePreload, '')}</div><span id="p151-end" hidden></span>`);
         const head = [
           `<link rel="preload" as="font" type="font/woff2" crossorigin href="${config.base}assets/${font}">`,
