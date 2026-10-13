@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObjec
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { useLocale, useT, useTn, type NoArgKey } from '@/i18n';
+import { formatNumber, useLocale, useT, useTn, type NoArgKey } from '@/i18n';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
 import {
@@ -177,7 +177,7 @@ function useRowNote() {
   const index = usePackageIndex();
   return (entry: Acknowledgement) => {
     if (entry.kind === 'artist') return tn('ack.sprites', artistCredit(entry.name)?.sprites.length ?? 0);
-    if (entry.kind === 'project' && !entry.license && projectSpriteCount(entry.id) > 0) return tn('ack.sprites', projectSpriteCount(entry.id));
+    if (entry.kind === 'project' && !entry.license && projectSpriteCount(entry.id) > 0) return tn('ack.sprites', projectSpriteCount(entry.id), { count: formatNumber(projectSpriteCount(entry.id)) });
     if (entry.kind === 'packages') {
       if (!index.index) return index.failed ? t('ack.packagesFailed') : t('ack.loading');
       return `${tn('ack.packageCount', packageCount(index.index))} · ${tn('ack.licenseCount', byLicense(index.index).length)}`;
@@ -401,6 +401,8 @@ function Detail({ entry, backRef, onBack }: {
   const links = entry.links.map((href) => ({ href, label: t('ack.open', { site: entry.linkLabels?.[href] ?? host(href) }) }));
   // An entry that ships its license text needs no quote of the same words.
   const quotes = entry.kind === 'artist' ? artistTerms(entry.name) : entry.texts ? [] : sourceTerms(entry.id);
+  // "1,337", not "1337".
+  const counted = (key: 'ack.drewThrough' | 'ack.shownFrom', n: number) => tn(key, n, { count: formatNumber(n) });
   const hasLicense = entry.license || quotes.length > 0 || entry.note || entry.texts;
   return (
     <div className="flex flex-col">
@@ -430,7 +432,7 @@ function Detail({ entry, backRef, onBack }: {
             // A bundle: how many of the app's sprites came through it, and no
             // list of them (Michael, 2026-10-12).
             <p className="text-sm leading-relaxed" data-testid="ack-project-count">
-              {entry.countAs === 'drew' ? tn('ack.drewThrough', smogonDrewCount()) : tn('ack.shownFrom', projectSpriteCount(entry.id))}
+              {entry.countAs === 'drew' ? counted('ack.drewThrough', smogonDrewCount()) : counted('ack.shownFrom', projectSpriteCount(entry.id))}
             </p>
           ) : (
             <p className="text-sm leading-relaxed">{entry.usedFor}</p>
