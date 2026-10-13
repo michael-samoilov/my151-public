@@ -51,11 +51,10 @@ interface BootInputs {
  */
 /**
  * The root font-size before the app mounts: the same layout-viewport width and
- * formula as `src/lib/layoutFontSize.ts`. It runs right after the stylesheet
- * link, so the browser holds it until that stylesheet has loaded. Reading
- * `visualViewport.width` forces layout, and Firefox paints a page as soon as
- * its layout starts: read before the stylesheet, it showed the hub unstyled
- * for about 600 ms on every load.
+ * formula as `src/lib/layoutFontSize.ts`. It runs right after the inline
+ * stylesheet. Reading `visualViewport.width` forces layout, and Firefox paints
+ * a page as soon as its layout starts: read before the stylesheet, it showed
+ * the hub unstyled for about 600 ms on every load.
  */
 const FONT_SIZE_SCRIPT =
   "(function(){var v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;document.documentElement.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px'})()";
@@ -143,10 +142,22 @@ export function prerenderHub(): Plugin {
         const viewport = /<meta name="viewport"[^>]*>/;
         if (!viewport.test(html)) throw new Error('prerender-hub: index.html has no viewport meta tag');
         html = html.replace(viewport, (tag) => `${tag}\n    ${head}`);
-        const sheets = [...html.matchAll(/<link rel="stylesheet"[^>]*>/g)];
-        const lastSheet = sheets.at(-1);
-        if (!lastSheet || lastSheet.index === undefined) throw new Error('prerender-hub: index.html links no stylesheet');
-        const after = lastSheet.index + lastSheet[0].length;
+        // The stylesheet goes inline. Under Lighthouse, a linked stylesheet that
+        // arrived after about 170 ms held the first frame until about 1.3 or
+        // 2.3 s, in every local run against the live site and in about half of
+        // PageSpeed Insights' phone runs; inline, the hub painted at about
+        // 0.2 s (11 October). The prefetch at the end of the page puts the file
+        // in the cache for the tool pages, which still link it.
+        const sheets = [...html.matchAll(/<link rel="stylesheet" crossorigin href="([^"]+\.css)">/g)];
+        if (sheets.length === 0) throw new Error('prerender-hub: index.html links no stylesheet');
+        for (const [tag, href] of sheets) {
+          const css = fs.readFileSync(path.join(outDir, href.slice(config.base.length)), 'utf8');
+          if (css.includes('</style')) throw new Error(`prerender-hub: ${href} cannot be inlined`);
+          html = html.replace(tag, () => `<style>${css}</style>`);
+          html = html.replace('</body>', () => `<link rel="prefetch" href="${href}">\n  </body>`);
+        }
+        const lastSheet = html.lastIndexOf('</style>');
+        const after = lastSheet + '</style>'.length;
         html = `${html.slice(0, after)}\n    <script>${FONT_SIZE_SCRIPT}</script>${html.slice(after)}`;
         fs.writeFileSync(htmlFile, html);
       } finally {
