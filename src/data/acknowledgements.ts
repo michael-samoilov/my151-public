@@ -56,6 +56,12 @@ export interface Acknowledgement {
   kind?: 'project' | 'artist' | 'packages';
   /** A project whose sprites reach the app only as rows shows only while one of them does. */
   rowsOnly?: true;
+  /**
+   * How a project's count reads: "my151 shows N sprites from it", or, for a
+   * host whose own credits name the artists of only some files, "N sprites
+   * are credited to their artists through its credits".
+   */
+  countLine?: 'credited';
 }
 
 export type AcknowledgementGroupId =
@@ -92,7 +98,7 @@ const SPRITE_PROJECTS: readonly Acknowledgement[] = [
     id: 'smogon-sprite-project',
     name: 'Smogon Sprite Project',
     usedFor:
-      "Black and White-style sprites that the project's artists draw for the Pokémon and forms that came after Generation 5. The app takes the files from PokéAPI and Pokémon Showdown.",
+      "Black and White-style sprites that the project's artists draw for the Pokémon and forms that came after Generation 5. The app takes most of these files from PokéAPI and some from Pokémon Showdown; Radiant Sun Solgaleo, Full Moon Lunala and Zenith Marshadow come from the Generation 9 Resource Pack.",
     license: 'Non-profit use, with credit',
     kind: 'project',
     // The X and Y thread asks for a credit page that links back to it.
@@ -122,14 +128,16 @@ const SPRITE_PROJECTS: readonly Acknowledgement[] = [
   {
     id: 'pokeapi-sprites',
     name: 'PokéAPI sprites',
-    usedFor: "The source of the app's Pokémon sprite files. my151 hosts its own copies.",
+    usedFor:
+      "The source of most of the app's sprite files; my151 hosts its own copies. Most of them were drawn for the Smogon Sprite Project, which credits their artists.",
     kind: 'project',
+    countLine: 'credited',
     links: ['https://github.com/PokeAPI/sprites'],
   },
   {
     id: 'pokemon-showdown',
     name: 'Pokémon Showdown',
-    usedFor: "The source of some form sprite files, such as Vivillon's patterns. my151 hosts its own copies.",
+    usedFor: "Its Gen 5 sprite folder is the source of the form sprites below, which PokéAPI lacks. my151 hosts its own copies.",
     kind: 'project',
     links: ['https://pokemonshowdown.com'],
   },
@@ -164,6 +172,7 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         usedFor: typeIconsFrom('partywhale'),
         license: 'MIT',
         texts: [{ name: 'MIT', file: 'partywhale-pokemon-type-icons-MIT.txt' }],
+        note: 'The type symbols the icons draw are artwork © Nintendo / Game Freak / TPC.',
         links: ['https://github.com/partywhale/pokemon-type-icons'],
       },
       {
@@ -172,7 +181,19 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         by: 'Elginive',
         usedFor: typeIconsFrom('elginive'),
         license: 'Free to use',
+        // The README says the icons recreate the games' own type icons.
+        note: 'The type symbols the icons draw are artwork © Nintendo / Game Freak / TPC.',
         links: ['https://github.com/Elginive/pokemon-type-icons'],
+      },
+      {
+        // ShapeIcon.tsx: the 14 silhouettes of the games' shape search. Git
+        // history does not say which site the files came from.
+        id: 'pokemon-home-shapes',
+        name: 'Pokémon HOME body-shape icons',
+        usedFor: "The body-shape icons the app shows for a Pokémon's shape, from Pokémon HOME.",
+        license: 'Artwork © Nintendo / Game Freak / TPC',
+        note: 'The artwork belongs to Nintendo, Game Freak and The Pokémon Company.',
+        links: [],
       },
       {
         id: 'bulbagarden-archives',

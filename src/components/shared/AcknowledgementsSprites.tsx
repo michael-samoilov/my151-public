@@ -164,17 +164,25 @@ export function ArtistSprites({ name, onOpenProject }: { name: string; onOpenPro
     .map((part, i) => (part.type === 'element' ? parts[Number(part.value)] : <Fragment key={`l${i}`}>{part.value}</Fragment>));
 
   // Each name in one piece: "KingOfThe-X-Roads" never breaks at its hyphen.
-  const nameList = (list: string[]) => people.formatToParts(list).map((part, i) => (
-    part.type === 'element'
-      ? <span key={i} className="whitespace-nowrap">{part.value}</span>
-      : <Fragment key={i}>{part.value}</Fragment>
-  ));
+  // A sheet's note on what the person did follows the name, as the sheet
+  // writes it: "MyMarshlands (face reference)".
+  const nameList = (list: readonly { name: string; note?: string }[]) => people.formatToParts(list.map((other) => other.name)).map((part, i) => {
+    if (part.type !== 'element') return <Fragment key={i}>{part.value}</Fragment>;
+    const note = list.find((other) => other.name === part.value)?.note;
+    return (
+      <Fragment key={i}>
+        <span className="whitespace-nowrap">{part.value}</span>
+        {note ? ` (${note})` : null}
+      </Fragment>
+    );
+  });
   const notes = (sprite: CreditedSprite): ReactNode[] => {
-    const coArtists = (role: SpriteRole) => sprite.with.filter((other) => other.role === role).map((other) => other.name);
+    const coArtists = (role: SpriteRole) => sprite.with.filter((other) => other.role === role);
     const drew = coArtists('drew');
     const base = coArtists('base');
     const edited = coArtists('edited');
     return [
+      sprite.note ?? null,
       // A base sprite names the artist who built on it.
       sprite.role === 'base'
         ? drew.length ? withNode(t('ack.baseFor', { name: '\u0000' }), nameList(drew)) : t('ack.role.base')

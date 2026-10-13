@@ -12,9 +12,9 @@ import {
   type AcknowledgementGroupId,
   type LicenseFile,
 } from '@/data/acknowledgements';
-import type { NpmPackage, NpmPackageIndex } from '@/data/npmPackages';
+import type { NpmPackageIndex } from '@/data/npmPackages';
 import { artistTerms, sourceTerms, type TermsQuote } from '@/data/creditTerms';
-import { artistCredit, projectArtists, projectOnlySprites, projectSpriteCount } from '@/data/spriteCredits';
+import { artistCredit, hostedSprites, projectArtists, projectOnlySprites, projectSpriteCount } from '@/data/spriteCredits';
 import { ArtistSprites, EntryLink, ProjectOnlySprites } from './AcknowledgementsSprites';
 import { withNode } from './withNode';
 
@@ -182,7 +182,7 @@ function useRowNote() {
     if (entry.kind === 'project' && !entry.license && projectSpriteCount(entry.id) > 0) return tn('ack.sprites', projectSpriteCount(entry.id));
     if (entry.kind === 'packages') {
       if (!index.index) return index.failed ? t('ack.packagesFailed') : t('ack.loading');
-      return `${tn('ack.packageCount', index.index.packages.length)} · ${tn('ack.licenseCount', byLicense(index.index).length)}`;
+      return `${tn('ack.packageCount', packageCount(index.index))} · ${tn('ack.licenseCount', byLicense(index.index).length)}`;
     }
     return entry.license ?? t('ack.credit');
   };
@@ -303,16 +303,28 @@ function usePackageIndex() {
   return state;
 }
 
-/** The packages grouped by license, the most used license first. */
-function byLicense(index: NpmPackageIndex): [string, NpmPackage[]][] {
-  const groups = new Map<string, NpmPackage[]>();
+/** One package by name, with every version the build ships (@radix-ui/react-slot ships two). */
+interface PackageName { name: string; license: string; versions: string[] }
+
+/** The packages by name, grouped by license, the most used license first. */
+function byLicense(index: NpmPackageIndex): [string, PackageName[]][] {
+  const byName = new Map<string, PackageName>();
   for (const pkg of index.packages) {
+    const entry = byName.get(pkg.name) ?? { name: pkg.name, license: pkg.license, versions: [] };
+    byName.set(pkg.name, entry);
+    if (pkg.version) entry.versions.push(pkg.version);
+  }
+  const groups = new Map<string, PackageName[]>();
+  for (const pkg of byName.values()) {
     const list = groups.get(pkg.license) ?? [];
     groups.set(pkg.license, list);
     list.push(pkg);
   }
   return [...groups].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'en'));
 }
+
+/** How many packages, counted by name. */
+const packageCount = (index: NpmPackageIndex) => new Set(index.packages.map((pkg) => pkg.name)).size;
 
 /** The npm packages by license, and the files that hold their license texts, each named for what it holds. */
 function NpmPackages() {
@@ -331,7 +343,7 @@ function NpmPackages() {
   const names = new Intl.ListFormat(locale, { type: 'conjunction' });
   return (
     <>
-      <Section label={t('ack.packages')} count={state.index.packages.length}>
+      <Section label={t('ack.packages')} count={packageCount(state.index)}>
         <div className="flex flex-col gap-3" data-testid="ack-packages">
           {byLicense(state.index).map(([license, packages]) => (
             <div key={license} className="flex flex-col gap-1">
@@ -340,9 +352,9 @@ function NpmPackages() {
               </h5>
               <ul className="text-sm leading-relaxed">
                 {packages.map((pkg) => (
-                  <li key={`${pkg.name}@${pkg.version}`} className="break-words">
+                  <li key={pkg.name} className="break-words">
                     {pkg.name}
-                    {pkg.version && <span className="text-muted-foreground"> {pkg.version}</span>}
+                    {pkg.versions.length > 0 && <span className="text-muted-foreground"> {pkg.versions.join(', ')}</span>}
                   </li>
                 ))}
               </ul>
@@ -362,7 +374,7 @@ function NpmPackages() {
               >
                 <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                 <span className="flex min-w-0 flex-col">
-                  <span className="text-sm font-semibold">{tn('ack.packageTexts', holds.length)}</span>
+                  <span className="text-sm font-semibold">{tn('ack.packageTexts', new Set(holds).size)}</span>
                   {/* A short file names what it holds; the long one holds the list above. */}
                   <span className="break-words text-xs text-muted-foreground">
                     {holds.length <= 4 ? names.format(holds) : file}
@@ -377,13 +389,23 @@ function NpmPackages() {
   );
 }
 
+/** A page GitHub renders from Markdown, such as a README.md. */
+const isMarkdown = (url: string) => /\.md(?:$|[?#])/i.test(url);
+
 /**
- * A quote's Markdown emphasis as the page shows it. The research wrote a
- * page's bold as `**…**`, and a README's own `*…*` is italic on GitHub.
+ * A quote as its page shows it. Most pages show their text as written, so a
+ * DeviantArt "**EXCEPT …**" keeps its asterisks. A Markdown page shows its
+ * links as their text, a heading without its "#", `**…**` as bold and `*…*`
+ * as italic, so its quote does too.
  */
-function emphasis(text: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*?|\*\*[^*]+$|\*[^*\s][^*]*\*)/).map((part, i) => {
-    if (part.startsWith('**')) return <strong key={i}>{part.replace(/^\*\*|\*\*$/g, '')}</strong>;
+function quoteText(quote: TermsQuote): ReactNode {
+  if (!isMarkdown(quote.url)) return quote.text;
+  const text = quote.text
+    .replace(/^#+\s+/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1');
+  return text.split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)/).map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) return <strong key={i}>{part.slice(2, -2)}</strong>;
     if (part.length > 2 && part.startsWith('*') && part.endsWith('*')) return <em key={i}>{part.slice(1, -1)}</em>;
     return part;
   });
@@ -401,7 +423,7 @@ function TermsQuotes({ quotes }: { quotes: readonly TermsQuote[] }) {
       {quotes.map((quote) => (
         <figure key={quote.text} className="flex flex-col gap-1">
           <blockquote cite={quote.url} className="whitespace-pre-line border-s-2 border-primary/40 ps-3 text-sm leading-relaxed">
-            “{emphasis(quote.text)}”
+            “{quoteText(quote)}”
           </blockquote>
           <figcaption className="ps-3">
             <a
@@ -436,6 +458,7 @@ function Detail({ entry, backRef, onBack, onOpen }: {
   const hasLicense = entry.license || own.quotes.length > 0 || shared || entry.note || entry.texts;
   const shown = entry.kind === 'project' ? projectSpriteCount(entry.id) : 0;
   const projectOnly = entry.kind === 'project' ? projectOnlySprites(entry.id) : [];
+  const hosted = entry.kind === 'project' ? hostedSprites(entry.id) : [];
   return (
     <div className="flex flex-col">
       <div className="sticky top-0 z-10 border-b bg-background px-2 py-1.5">
@@ -468,11 +491,20 @@ function Detail({ entry, backRef, onBack, onOpen }: {
           ) : (
             <>
               <p className="text-sm leading-relaxed">{entry.usedFor}</p>
-              {shown > 0 && <p className="text-sm leading-relaxed" data-testid="ack-project-count">{tn('ack.shownFrom', shown)}</p>}
+              {shown > 0 && (
+                <p className="text-sm leading-relaxed" data-testid="ack-project-count">
+                  {tn(entry.countLine === 'credited' ? 'ack.creditedThrough' : 'ack.shownFrom', shown)}
+                </p>
+              )}
             </>
           )}
         </Section>
         {entry.kind === 'project' && <ProjectArtists id={entry.id} onOpen={onOpen} />}
+        {hosted.length > 0 && (
+          <Section label={t('ack.filesFrom')} count={hosted.length}>
+            <ProjectOnlySprites sprites={hosted} />
+          </Section>
+        )}
         {projectOnly.length > 0 && (
           <Section label={t('ack.projectOnly')} count={projectOnly.length}>
             <ProjectOnlySprites sprites={projectOnly} />

@@ -20,7 +20,8 @@
  * replaced without a row, or when a row names a missing file.
  */
 import attribution from './spriteAttribution.json';
-import { allPickerMons, comparePickerOrder, type PickerMon } from '@/favorites/model/catalog';
+import { allPickerMons, comparePickerOrder, getPickerMon, type PickerMon } from '@/favorites/model/catalog';
+import { ALTERNATE_PICKER_FORMS } from '@/favorites/model/alternateForms';
 
 export type SpriteRole = 'drew' | 'edited' | 'base';
 const ROLES: readonly SpriteRole[] = ['drew', 'edited', 'base'];
@@ -52,6 +53,8 @@ interface AttributionRow {
   artists: string[];
   role: SpriteRole;
   roles?: Record<string, SpriteRole>;
+  /** What one artist did, as the credit sheet's Spriter cell notes it ("face reference"). */
+  artistNotes?: Record<string, string>;
   via: string;
 }
 interface AttributionFile {
@@ -68,8 +71,10 @@ export interface CreditedSprite {
   role: SpriteRole;
   /** The panel entry of the project it came through, or `OWN_UPLOAD`. */
   via: string;
-  /** The sprite's other artists, each with their own role. */
-  with: readonly { name: string; role: SpriteRole }[];
+  /** What this artist did, as the credit sheet notes it ("colours"). */
+  note?: string;
+  /** The sprite's other artists, each with their own role and note. */
+  with: readonly { name: string; role: SpriteRole; note?: string }[];
 }
 
 export interface ArtistCredit {
@@ -120,7 +125,13 @@ function parse(): Parsed {
       const others = row.artists.filter((other) => other !== artist);
       const list = credits.get(artist) ?? [];
       credits.set(artist, list);
-      list.push({ mon, role, via, with: others.map((name) => ({ name, role: row.roles?.[name] ?? row.role })) });
+      list.push({
+        mon,
+        role,
+        via,
+        note: row.artistNotes?.[artist],
+        with: others.map((name) => ({ name, role: row.roles?.[name] ?? row.role, note: row.artistNotes?.[name] })),
+      });
     }
   }
   const artists = new Map<string, ArtistCredit>();
@@ -145,9 +156,37 @@ export function artistCredit(name: string): ArtistCredit | undefined {
   return data().artists.get(name);
 }
 
-/** How many of the app's sprites came through a project entry. */
+/**
+ * The sprite files the app took from Pokémon Showdown's Gen 5 folder: each
+ * picker form that names a Showdown file (`spriteSlug`, fetched by
+ * scripts/fetch-favorite-picker-sprites.ts), and the base Vivillon, whose
+ * Meadow drawing is Showdown's svivillon.png (commit 9c79b5fb).
+ */
+const FROM_POKEAPI_BW = new Set([
+  // alternateForms.ts: taken from PokéAPI's Black/White female folder, which
+  // matches Showdown's art, because Showdown was unreachable from the build.
+  11094, 11095,
+]);
+let showdown: CreditedSprite[] | undefined;
+function showdownSprites(): CreditedSprite[] {
+  showdown ??= [
+    ...ALTERNATE_PICKER_FORMS.filter((form) => form.spriteSlug && !FROM_POKEAPI_BW.has(form.id)).map((form) => getPickerMon(form.id)),
+    getPickerMon(666),
+  ]
+    .filter((mon): mon is PickerMon => mon !== undefined)
+    .map((mon) => ({ mon, role: 'drew' as const, via: 'pokemon-showdown', with: [] }))
+    .sort(dexOrder);
+  return showdown;
+}
+
+/** The sprite files a project hosts that the app took from it directly, when its rows credit none. */
+export function hostedSprites(entry: string): readonly CreditedSprite[] {
+  return entry === 'pokemon-showdown' ? showdownSprites() : [];
+}
+
+/** How many of the app's sprites came through a project entry, or from it directly. */
 export function projectSpriteCount(entry: string): number {
-  return data().projectSprites.get(entry) ?? 0;
+  return data().projectSprites.get(entry) ?? hostedSprites(entry).length;
 }
 
 /** A project's sprites that no source names an artist for, credited to the project alone. */

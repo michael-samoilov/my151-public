@@ -654,7 +654,10 @@
    "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '715 Noivern': Spriter 'leParagon, aXl (flying pose)', QC 'princessofmusic (flying pose), Layell (flying pose)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/715-png.282255/.",
    "name": "noivern",
    "notes": "aXl (flying pose)",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/715.png as added in commit 5bdf22873d (2021-02-18, 'feat: add gen6 sprites')."
+   "file": "App file is byte-identical to PokéAPI sprites/pokemon/715.png as added in commit 5bdf22873d (2021-02-18, 'feat: add gen6 sprites').",
+   "artistNotes": {
+    "Falgaia": "flying pose"
+   }
   },
   "716": {
    "artists": [
@@ -778,7 +781,10 @@
    "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '727 Incineroar': Spriter 'leParagon, MyMarshlands (face reference)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/727-png.273487/.",
    "name": "incineroar",
    "notes": "MyMarshlands (face reference)",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/727.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
+   "file": "App file is byte-identical to PokéAPI sprites/pokemon/727.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7').",
+   "artistNotes": {
+    "MyMarshlands": "face reference"
+   }
   },
   "728": {
    "artists": [
@@ -3534,7 +3540,10 @@
    "evidence": "Smogon Gen9 Sprite Project sheet, tab 'static sprites', section 'Gen 9 Pokemon', row '1003 Ting-Lu': Spriter 'KingOfThe-X-Roads, G.E.Z. (colours)'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/1003_1-png.603597/: 99.9% of opaque pixels overlap, 50% have the same colour (a revision or a palette change).",
    "name": "ting-lu",
    "notes": "G.E.Z. (colours)",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/1003.png as added in commit aa370b74e2 (2023-02-02, '[#101] Added front-default sprites for gen9')."
+   "file": "App file is byte-identical to PokéAPI sprites/pokemon/1003.png as added in commit aa370b74e2 (2023-02-02, '[#101] Added front-default sprites for gen9').",
+   "artistNotes": {
+    "G.E.Z.": "colours"
+   }
   },
   "1004": {
    "artists": [
@@ -5385,7 +5394,10 @@
    "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '888 Zacian-crowned sword': Spriter 'leParagon, KingOfthe-X-Roads (face)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/zacian-png.178831/.",
    "name": "zacian-crowned",
    "notes": "KingOfThe-X-Roads (face)",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10188.png as added in commit 56a76ea8ab (2020-09-23, 'Files 96 x 96 Sword/Shield Sprite Project')."
+   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10188.png as added in commit 56a76ea8ab (2020-09-23, 'Files 96 x 96 Sword/Shield Sprite Project').",
+   "artistNotes": {
+    "KingOfThe-X-Roads": "face"
+   }
   },
   "10189": {
    "artists": [
@@ -5598,7 +5610,10 @@
    "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gigantamax', row '812 Rillaboom': Spriter 'leParagon, KingOfthe-X-Roads (grass arms, small drum)', QC 'G.E.Z., leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/812_g-png.267922/.",
    "name": "rillaboom-gmax",
    "notes": "KingOfThe-X-Roads (grass arms, small drum)",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10209.png as added in commit ff8ae47984 (2022-02-11, 'sync: Rename sprites with id's above 10158 to match Veekun')."
+   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10209.png as added in commit ff8ae47984 (2022-02-11, 'sync: Rename sprites with id's above 10158 to match Veekun').",
+   "artistNotes": {
+    "KingOfThe-X-Roads": "grass arms, small drum"
+   }
   },
   "10210": {
    "artists": [
@@ -5910,7 +5925,10 @@
    "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Hisuan Forms', row '628 Braviary': Spriter 'G.E.Z., KingOfThe-X-Roads (colours)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/628_1-png.420738/.",
    "name": "braviary-hisui",
    "notes": "KingOfThe-X-Roads (colours)",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10240.png as added in commit 1e2f9e6143 (2022-08-06, 'Add sprites for Hisuian forms of existing Pokémon')."
+   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10240.png as added in commit 1e2f9e6143 (2022-08-06, 'Add sprites for Hisuian forms of existing Pokémon').",
+   "artistNotes": {
+    "KingOfThe-X-Roads": "colours"
+   }
   },
   "10241": {
    "artists": [
@@ -6083,7 +6101,10 @@
    "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '888 Zacian-crowned sword': Spriter 'leParagon, KingOfthe-X-Roads (face)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/zacian-png.178831/.",
    "name": "zacian-crowned",
    "notes": "Stale file: PokéAPI numbered this drawing 10257 before it renumbered forms above 10158 in 2022; PokéAPI's 10257 is now maushold-family-of-three. The app shows it nowhere: its own data maps id 10257 to alcremie-clover.png.",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10257.png as added in commit 56a76ea8ab (2020-09-23, 'Files 96 x 96 Sword/Shield Sprite Project')."
+   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10257.png as added in commit 56a76ea8ab (2020-09-23, 'Files 96 x 96 Sword/Shield Sprite Project').",
+   "artistNotes": {
+    "KingOfThe-X-Roads": "face"
+   }
   },
   "10258": {
    "artists": [
@@ -6894,7 +6915,10 @@
    "role": "drew",
    "via": "smogon-gen6",
    "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '669 Flabébé-blue': Spriter 'TheCynicalPoet, princessofmusic (colours)', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/669_3-png.276632/.",
-   "notes": "princessofmusic (colours)"
+   "notes": "princessofmusic (colours)",
+   "artistNotes": {
+    "princessofmusic": "colours"
+   }
   },
   "11083": {
    "artists": [
@@ -6904,7 +6928,10 @@
    "role": "drew",
    "via": "smogon-gen6",
    "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '669 Flabébé-orange': Spriter 'TheCynicalPoet, princessofmusic (colours)', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/669_4-png.276636/.",
-   "notes": "princessofmusic (colours)"
+   "notes": "princessofmusic (colours)",
+   "artistNotes": {
+    "princessofmusic": "colours"
+   }
   },
   "11084": {
    "artists": [
@@ -6914,7 +6941,10 @@
    "role": "drew",
    "via": "smogon-gen6",
    "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '669 Flabébé-white': Spriter 'TheCynicalPoet, princessofmusic (colours)', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/669_5-png.276640/.",
-   "notes": "princessofmusic (colours)"
+   "notes": "princessofmusic (colours)",
+   "artistNotes": {
+    "princessofmusic": "colours"
+   }
   },
   "11085": {
    "artists": [
@@ -6924,7 +6954,10 @@
    "role": "drew",
    "via": "smogon-gen6",
    "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '669 Flabébé-yellow': Spriter 'TheCynicalPoet, princessofmusic (colours)', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/669_2-png.276628/.",
-   "notes": "princessofmusic (colours)"
+   "notes": "princessofmusic (colours)",
+   "artistNotes": {
+    "princessofmusic": "colours"
+   }
   },
   "11086": {
    "artists": [
@@ -7076,7 +7109,7 @@
    "via": "own upload",
    "evidence": "KingOfThe-X-Roads's own X post https://x.com/kingofthexroad5/status/2029643110163091657 (posted 2026-03-05, read 2026-10-13): 'I miss posting. You can have this Rotom Stereo sprite for free then - and predicted shiny'. The posted image (pbs.twimg.com/media/HCq9oszaUAAc-fJ, 384x384) is an exact 4x nearest-neighbour upscale of a 96x96 sprite; sprite-lab/inputs/kingofthe-x-roads/FRONT/rotom-dj.png is the exact 1/4 downscale (sha256 a56747fc…).",
    "name": "rotom-dj (Rotom Stereo)",
-   "cleanup": "Recoloured 2 stray pixels of KingOfThe-X-Roads's 96x96 sprite to the dark brown seam colour (123,57,32): (41,40), teal (105,224,182), and (34,68), orange (197,74,24). Every other pixel is his."
+   "cleanup": "The file is KingOfThe-X-Roads's own 96x96 sprite, on his canvas (sprite-lab/selections/add-rotom-dj.png, approved by Michael on 2026-10-13; it replaced Ghasty001's frame 0, whose pixels sit 2 px left and 4 px up). Recoloured 2 stray pixels to the dark brown seam colour (123,57,32): (41,40), was teal (105,224,182), and (34,68), was orange (197,74,24). Every other pixel is his."
   },
   "11113": {
    "artists": [
@@ -7113,68 +7146,116 @@
   "alcremie-berry": {
    "artists": [
     "RadicalCharizard",
-    "leParagon"
+    "leParagon",
+    "PumpkinPastel"
    ],
    "role": "drew",
    "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla berry': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_2-png.218738/.",
+   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla berry': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_2-png.218738/. Base sprite: 91-92% of the file's pixels equal PumpkinPastel's vanilla strawberry Alcremie (Smogon Gen8 Sprite Project sheet, row '869 Alcremie-vanilla strawberry', Front attachment https://www.smogon.com/forums/attachments/869_1-png.218736/); the sheet credits RadicalCharizard for the sweets and leParagon for the flavours drawn on it (credits audit, 2026-10-13).",
    "name": "alcremie-berry",
-   "notes": "RadicalCharizard (sweets) leParagon (flavours)"
+   "notes": "RadicalCharizard (sweets) leParagon (flavours)",
+   "roles": {
+    "PumpkinPastel": "base"
+   },
+   "artistNotes": {
+    "RadicalCharizard": "sweets",
+    "leParagon": "flavours"
+   }
   },
   "alcremie-clover": {
    "artists": [
     "RadicalCharizard",
-    "leParagon"
+    "leParagon",
+    "PumpkinPastel"
    ],
    "role": "drew",
    "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla clover': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_5-png.218744/.",
+   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla clover': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_5-png.218744/. Base sprite: 91-92% of the file's pixels equal PumpkinPastel's vanilla strawberry Alcremie (Smogon Gen8 Sprite Project sheet, row '869 Alcremie-vanilla strawberry', Front attachment https://www.smogon.com/forums/attachments/869_1-png.218736/); the sheet credits RadicalCharizard for the sweets and leParagon for the flavours drawn on it (credits audit, 2026-10-13).",
    "name": "alcremie-clover",
-   "notes": "RadicalCharizard (sweets) leParagon (flavours)"
+   "notes": "RadicalCharizard (sweets) leParagon (flavours)",
+   "roles": {
+    "PumpkinPastel": "base"
+   },
+   "artistNotes": {
+    "RadicalCharizard": "sweets",
+    "leParagon": "flavours"
+   }
   },
   "alcremie-flower": {
    "artists": [
     "RadicalCharizard",
-    "leParagon"
+    "leParagon",
+    "PumpkinPastel"
    ],
    "role": "drew",
    "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla flower': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_6-png.218746/.",
+   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla flower': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_6-png.218746/. Base sprite: 91-92% of the file's pixels equal PumpkinPastel's vanilla strawberry Alcremie (Smogon Gen8 Sprite Project sheet, row '869 Alcremie-vanilla strawberry', Front attachment https://www.smogon.com/forums/attachments/869_1-png.218736/); the sheet credits RadicalCharizard for the sweets and leParagon for the flavours drawn on it (credits audit, 2026-10-13).",
    "name": "alcremie-flower",
-   "notes": "RadicalCharizard (sweets) leParagon (flavours)"
+   "notes": "RadicalCharizard (sweets) leParagon (flavours)",
+   "roles": {
+    "PumpkinPastel": "base"
+   },
+   "artistNotes": {
+    "RadicalCharizard": "sweets",
+    "leParagon": "flavours"
+   }
   },
   "alcremie-love": {
    "artists": [
     "RadicalCharizard",
-    "leParagon"
+    "leParagon",
+    "PumpkinPastel"
    ],
    "role": "drew",
    "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla love': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_3-png.218740/.",
+   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla love': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_3-png.218740/. Base sprite: 91-92% of the file's pixels equal PumpkinPastel's vanilla strawberry Alcremie (Smogon Gen8 Sprite Project sheet, row '869 Alcremie-vanilla strawberry', Front attachment https://www.smogon.com/forums/attachments/869_1-png.218736/); the sheet credits RadicalCharizard for the sweets and leParagon for the flavours drawn on it (credits audit, 2026-10-13).",
    "name": "alcremie-love",
-   "notes": "RadicalCharizard (sweets) leParagon (flavours)"
+   "notes": "RadicalCharizard (sweets) leParagon (flavours)",
+   "roles": {
+    "PumpkinPastel": "base"
+   },
+   "artistNotes": {
+    "RadicalCharizard": "sweets",
+    "leParagon": "flavours"
+   }
   },
   "alcremie-ribbon": {
    "artists": [
     "RadicalCharizard",
-    "leParagon"
+    "leParagon",
+    "PumpkinPastel"
    ],
    "role": "drew",
    "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla ribbon': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_7-png.218748/.",
+   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla ribbon': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_7-png.218748/. Base sprite: 91-92% of the file's pixels equal PumpkinPastel's vanilla strawberry Alcremie (Smogon Gen8 Sprite Project sheet, row '869 Alcremie-vanilla strawberry', Front attachment https://www.smogon.com/forums/attachments/869_1-png.218736/); the sheet credits RadicalCharizard for the sweets and leParagon for the flavours drawn on it (credits audit, 2026-10-13).",
    "name": "alcremie-ribbon",
-   "notes": "RadicalCharizard (sweets) leParagon (flavours)"
+   "notes": "RadicalCharizard (sweets) leParagon (flavours)",
+   "roles": {
+    "PumpkinPastel": "base"
+   },
+   "artistNotes": {
+    "RadicalCharizard": "sweets",
+    "leParagon": "flavours"
+   }
   },
   "alcremie-star": {
    "artists": [
     "RadicalCharizard",
-    "leParagon"
+    "leParagon",
+    "PumpkinPastel"
    ],
    "role": "drew",
    "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla star': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_4-png.218742/.",
+   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla star': Spriter 'RadicalCharizard (sweets) leParagon (flavours), TheAetherPlayer (shiny), HM100 (sweets back)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_4-png.218742/. Base sprite: 91-92% of the file's pixels equal PumpkinPastel's vanilla strawberry Alcremie (Smogon Gen8 Sprite Project sheet, row '869 Alcremie-vanilla strawberry', Front attachment https://www.smogon.com/forums/attachments/869_1-png.218736/); the sheet credits RadicalCharizard for the sweets and leParagon for the flavours drawn on it (credits audit, 2026-10-13).",
    "name": "alcremie-star",
-   "notes": "RadicalCharizard (sweets) leParagon (flavours)"
+   "notes": "RadicalCharizard (sweets) leParagon (flavours)",
+   "roles": {
+    "PumpkinPastel": "base"
+   },
+   "artistNotes": {
+    "RadicalCharizard": "sweets",
+    "leParagon": "flavours"
+   }
   },
   "alcremie-strawberry": {
    "artists": [

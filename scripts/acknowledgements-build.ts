@@ -109,7 +109,9 @@ const quote = ({ text, url }: Json) => ({ text, url });
 /** What the panel reads from each credits file; everything else is a maintainer's note. */
 const PANEL_FIELDS: Record<string, (data: Json) => Json> = {
   '/src/data/spriteAttribution.json': (data) => ({
-    sprites: mapValues(data.sprites, ({ artists, role, roles, via }) => ({ artists, role, ...(roles ? { roles } : {}), via })),
+    sprites: mapValues(data.sprites, ({ artists, role, roles, artistNotes, via }) => ({
+      artists, role, ...(roles ? { roles } : {}), ...(artistNotes ? { artistNotes } : {}), via,
+    })),
     artists: mapValues(data.artists, ({ links, creditedAs }) => ({ links, ...(creditedAs ? { creditedAs } : {}) })),
     projects: mapValues(data.projects, ({ artists }) => ({ artists })),
   }),
