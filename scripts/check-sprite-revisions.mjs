@@ -11,9 +11,9 @@
  * `?v=`, which every cache treats as a new file.
  *
  * Also fails when a Pokémon sprite was added or replaced since production
- * without a row in `src/data/spriteSources.json`, which names the source the
- * Acknowledgements panel credits for it, and when a row names a sprite that
- * does not exist.
+ * without a row in `src/data/spriteAttribution.json`, which names the artists
+ * the Acknowledgements panel credits for it, and when a row names a sprite
+ * that does not exist.
  *
  * Usage: node scripts/check-sprite-revisions.mjs [base-ref]
  */
@@ -23,9 +23,9 @@ import { existsSync, readFileSync } from 'node:fs';
 
 const BASE = process.argv[2] ?? 'origin/claude/pokedex-region-builder-AviYF';
 const REVISIONS = 'src/data/spriteRevisions.json';
-const SOURCES = 'src/data/spriteSources.json';
+const SOURCES = 'src/data/spriteAttribution.json';
 const revisions = JSON.parse(readFileSync(REVISIONS, 'utf8'));
-const sources = JSON.parse(readFileSync(SOURCES, 'utf8'));
+const sources = JSON.parse(readFileSync(SOURCES, 'utf8')).sprites;
 const shortHash = (file) => createHash('md5').update(readFileSync(file)).digest('hex').slice(0, 8);
 const problems = [];
 
@@ -56,7 +56,7 @@ for (const file of replaced) {
 for (const file of [...replaced, ...added]) {
   const sprite = /^public\/sprites\/pokemon\/([^/]+)\.png$/.exec(file)?.[1];
   if (sprite !== undefined && sources[sprite] === undefined) {
-    problems.push(`${file} was ${replaced.includes(file) ? 'replaced' : 'added'} since ${BASE}. Add "${sprite}": { "source": "<source id>" } to ${SOURCES}, with "by" when the spriter is known.`);
+    problems.push(`${file} was ${replaced.includes(file) ? 'replaced' : 'added'} since ${BASE}. Add "${sprite}": { "artists": ["<artist>"], "role": "drew", "via": "<project id or own upload>" } to "sprites" in ${SOURCES}.`);
   }
 }
 
