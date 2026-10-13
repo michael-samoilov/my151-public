@@ -104,22 +104,6 @@
     }
    ]
   },
-  "ghasty001": {
-   "name": "Ghasty001",
-   "urls": [
-    "https://github.com/Ghasty001/Animated_sprites_by_Ghasty001"
-   ],
-   "status": "read",
-   "terms": [
-    {
-     "text": "All these sprites are free to use, for other projects to use *with credit*. The credits also apply to all the artists who made the base sprite I used for the animation (also shared with free to use consent), and all of them will be listed below.",
-     "url": "https://github.com/Ghasty001/Animated_sprites_by_Ghasty001/blob/25ab1b072dd2fdf96f5c85d503403317f33a857f/README.md",
-     "where": "README at commit 25ab1b0, the repository's HEAD on 2026-10-13",
-     "read": "2026-10-13",
-     "verified": true
-    }
-   ]
-  },
   "pokeapi-sprites": {
    "name": "PokéAPI sprites",
    "urls": [
@@ -485,21 +469,6 @@
    "status": "read (project terms); no page of the artist's own was checked",
    "termsSource": "smogon-sprite-project"
   },
-  "Ghasty001": {
-   "urls": [
-    "https://github.com/Ghasty001/Animated_sprites_by_Ghasty001"
-   ],
-   "status": "read",
-   "terms": [
-    {
-     "text": "All these sprites are free to use, for other projects to use *with credit*. The credits also apply to all the artists who made the base sprite I used for the animation (also shared with free to use consent), and all of them will be listed below.",
-     "url": "https://github.com/Ghasty001/Animated_sprites_by_Ghasty001/blob/25ab1b072dd2fdf96f5c85d503403317f33a857f/README.md",
-     "where": "README at commit 25ab1b0, the repository's HEAD on 2026-10-13",
-     "read": "2026-10-13",
-     "verified": true
-    }
-   ]
-  },
   "HeaLnDeaL": {
    "urls": [
     "https://www.smogon.com/forums/members/healndeal.64801/"
@@ -543,21 +512,6 @@
      "text": "Any official Pokémon sprites are free for use in non-profit projects. **EXCEPT FOR ANY PERSONS AFFILIATED WITH VERLISWOLF**\nAll I ask is that you provide proper credit, maybe even drop some links around!",
      "url": "https://www.deviantart.com/kingofthe-x-roads/about",
      "where": "About page; two consecutive lines",
-     "read": "2026-10-13",
-     "verified": true
-    }
-   ]
-  },
-  "kiriaura": {
-   "urls": [
-    "https://www.deviantart.com/kiriaura/about",
-    "https://www.deviantart.com/kiriaura/art/Mega-Eelektross-Sprite-1261953682"
-   ],
-   "status": "read (pages); the Mega Eelektross image itself is blocked: images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com",
-   "terms": [
-    {
-     "text": "hi, if you enjoy my sprites and you'd like to use them for your projects, feel free to do so! c:",
-     "url": "https://www.deviantart.com/kiriaura/about",
      "read": "2026-10-13",
      "verified": true
     }

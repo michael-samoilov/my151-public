@@ -6335,17 +6335,13 @@
   },
   "10290": {
    "artists": [
-    "Ghasty001",
-    "kiriaura"
+    "KingOfThe-X-Roads"
    ],
    "role": "drew",
-   "via": "ghasty001",
-   "evidence": "Frame 0 of Ghasty001's FRONT/EELEKTROSS_Mega.gif (README: 'Mega Eelektross Base sprite by kiriaura over on its Deviant-Art'). kiriaura's own upload deviantart.com/kiriaura/art/Mega-Eelektross-Sprite-1261953682 (110x108 PNG) could not be downloaded: its image host images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com is blocked here, so the frame is not yet compared with it.",
+   "via": "gen9-resource-pack",
+   "evidence": "The Generation 9 Resource Pack's sheet 'Sprites list' (Drive 1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY), tab 'Pokemon Sprites', Legends Z-A row 13 'Mega Eelektross': front KingOfThe-X-Roads (back Caruban, icon ezerart). The pack's Credits.txt lists him under 'PLZA sprites'. The app file is Graphics/Pokemon/Front/EELEKTROSS_1.png from Generation_9_Pack_v3.3.8.rar (sha256 396a57386c8d938d314b763e163cca17a6ec018e82e0168ff058895d0d09b490), 192x192, an exact 2x nearest-neighbour upscale, reduced by exactly 2 to 96x96. sprite-lab/data/sprite-selections.json entry '10290' records the same facts.",
    "name": "eelektross-mega",
-   "roles": {
-    "kiriaura": "base"
-   },
-   "todo": "kiriaura's own file is on a blocked host. Keep Ghasty001's frame 0 until it is compared."
+   "cleanup": "Replaced on 2026-10-13 (Michael approved): the file was frame 0 of Ghasty001's animated Mega Eelektross on kiriaura's base sprite. The pack's sprite fits 96x96 with a margin (L4 T12 R5 B7) and has an exact-swap shiny."
   },
   "10291": {
    "artists": [
@@ -7356,11 +7352,6 @@
   "GeoisEvil": {
    "links": []
   },
-  "Ghasty001": {
-   "links": [
-    "https://github.com/Ghasty001"
-   ]
-  },
   "HeaLnDeaL": {
    "links": [
     "https://www.smogon.com/forums/members/healndeal.64801/"
@@ -7387,11 +7378,6 @@
    "links": [
     "https://www.deviantart.com/kingofthe-x-roads",
     "https://x.com/kingofthexroad5"
-   ]
-  },
-  "kiriaura": {
-   "links": [
-    "https://www.deviantart.com/kiriaura"
    ]
   },
   "Kyle Dove": {
@@ -7652,14 +7638,6 @@
    "sheet": "https://docs.google.com/spreadsheets/d/1T-KC-4XDOeFKq0Z6tfN6Sz4JIlpaK7B8A0lbmBg9fNY",
    "artists": [
     "KingOfThe-X-Roads"
-   ]
-  },
-  "ghasty001": {
-   "name": "Animated Sprites by Ghasty001",
-   "url": "https://github.com/Ghasty001/Animated_sprites_by_Ghasty001",
-   "artists": [
-    "Ghasty001",
-    "kiriaura"
    ]
   },
   "pokeapi": {

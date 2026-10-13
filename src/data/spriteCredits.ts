@@ -11,8 +11,8 @@
  * artist for.
  *
  * A row may carry `roles`, which sets one artist's role when it differs from
- * the row's: an animation is `drew` for its animator and `base` for the
- * artist of the sprite under it. The other fields (`evidence`, `cleanup`,
+ * the row's: a sprite drawn on another's is `drew` for its artists and
+ * `base` for the artist of the sprite under it. The other fields (`evidence`, `cleanup`,
  * `todo`, and more) are notes for maintainers; the build keeps only what the
  * panel reads (see `scripts/acknowledgements-build.ts`).
  *
@@ -44,8 +44,6 @@ const VIA_ENTRY: Readonly<Record<string, string>> = {
   'smogon-gen9': 'smogon-sprite-project',
   pokeapi: 'pokeapi-sprites',
   'gen9-resource-pack': 'gen9-resource-pack',
-  // Ghasty001's own repository.
-  ghasty001: OWN_UPLOAD,
   [OWN_UPLOAD]: OWN_UPLOAD,
 };
 
