@@ -7,6 +7,7 @@
   "ack.compiledBy": "汇编：{name}",
   "ack.count_other": "{count}项",
   "ack.credit": "署名",
+  "ack.creditedAs": "署名为 {names}",
   "ack.editedBy": "修改：{name}",
   "ack.generation": "第{gen}世代",
   "ack.group.code": "代码",

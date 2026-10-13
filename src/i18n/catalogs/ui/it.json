@@ -8,6 +8,7 @@
   "ack.count_one": "{count} voce",
   "ack.count_other": "{count} voci",
   "ack.credit": "Attribuzione",
+  "ack.creditedAs": "Accreditato come {names}",
   "ack.editedBy": "modificato da {name}",
   "ack.generation": "Generazione {gen}",
   "ack.group.code": "Codice",

@@ -110,12 +110,18 @@ const quote = ({ text, url }: Json) => ({ text, url });
 const PANEL_FIELDS: Record<string, (data: Json) => Json> = {
   '/src/data/spriteAttribution.json': (data) => ({
     sprites: mapValues(data.sprites, ({ artists, role, roles, via }) => ({ artists, role, ...(roles ? { roles } : {}), via })),
-    artists: mapValues(data.artists, ({ links }) => ({ links })),
+    artists: mapValues(data.artists, ({ links, creditedAs }) => ({ links, ...(creditedAs ? { creditedAs } : {}) })),
     projects: mapValues(data.projects, ({ artists }) => ({ artists })),
   }),
   '/src/data/creditTerms.json': (data) => ({
     sources: mapValues(data.sources, ({ terms }) => ({ terms: terms.map(quote) })),
-    artists: mapValues(data.artists, ({ terms, termsSource }) => (termsSource ? { termsSource } : { terms: terms.map(quote) })),
+    artists: mapValues(data.artists, ({ terms, termsSource, note }) => {
+      if (termsSource) return { termsSource };
+      // An artist with no terms of their own may point, in the note, at
+      // another record's quote: MyMarshlands at Kyle Dove's post.
+      const quoteUrl = !terms.length ? /https?:\/\/\S+/.exec(note ?? '')?.[0] : undefined;
+      return { terms: terms.map(quote), ...(quoteUrl ? { quoteUrl } : {}) };
+    }),
   }),
 };
 

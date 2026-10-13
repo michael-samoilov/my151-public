@@ -7,6 +7,7 @@
   "ack.compiledBy": "엮은이: {name}",
   "ack.count_other": "{count}개 항목",
   "ack.credit": "크레디트",
+  "ack.creditedAs": "크레디트 표기: {names}",
   "ack.editedBy": "편집: {name}",
   "ack.generation": "{gen}세대",
   "ack.group.code": "코드",

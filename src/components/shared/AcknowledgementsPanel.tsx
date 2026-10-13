@@ -400,7 +400,7 @@ function TermsQuotes({ quotes }: { quotes: readonly TermsQuote[] }) {
     <div className="flex flex-col gap-3" data-testid="ack-terms">
       {quotes.map((quote) => (
         <figure key={quote.text} className="flex flex-col gap-1">
-          <blockquote cite={quote.url} className="border-s-2 border-primary/40 ps-3 text-sm leading-relaxed">
+          <blockquote cite={quote.url} className="whitespace-pre-line border-s-2 border-primary/40 ps-3 text-sm leading-relaxed">
             “{emphasis(quote.text)}”
           </blockquote>
           <figcaption className="ps-3">
@@ -428,6 +428,7 @@ function Detail({ entry, backRef, onBack, onOpen }: {
 }) {
   const t = useT();
   const tn = useTn();
+  const locale = useLocale();
   const links = entry.links.map((href) => ({ href, label: t('ack.open', { site: entry.linkLabels?.[href] ?? host(href) }) }));
   // An entry that ships its license text needs no quote of the same words.
   const own = entry.kind === 'artist' ? artistTerms(entry.name) : { quotes: entry.texts ? [] : sourceTerms(entry.id) };
@@ -455,6 +456,11 @@ function Detail({ entry, backRef, onBack, onOpen }: {
           </h3>
           {entry.by && <p className="text-sm text-muted-foreground">{t('ack.by', { name: entry.by })}</p>}
           {entry.compiledBy && <p className="text-sm text-muted-foreground">{t('ack.compiledBy', { name: entry.compiledBy })}</p>}
+          {entry.creditedAs?.length ? (
+            <p className="text-sm text-muted-foreground" data-testid="ack-credited-as">
+              {t('ack.creditedAs', { names: new Intl.ListFormat(locale, { type: 'conjunction' }).format(entry.creditedAs) })}
+            </p>
+          ) : null}
         </div>
         <Section label={t('ack.usedFor')}>
           {entry.kind === 'artist' ? (

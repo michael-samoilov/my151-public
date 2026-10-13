@@ -56,7 +56,7 @@ interface AttributionRow {
 }
 interface AttributionFile {
   sprites: Record<string, AttributionRow>;
-  artists: Record<string, { links?: string[] }>;
+  artists: Record<string, { links?: string[]; creditedAs?: string[] }>;
   projects: Record<string, { artists?: string[] }>;
 }
 
@@ -73,7 +73,10 @@ export interface CreditedSprite {
 }
 
 export interface ArtistCredit {
+  /** The name the artist uses now, on their own profile. */
   name: string;
+  /** The spellings the sources credit, when they differ from `name`. */
+  creditedAs?: readonly string[];
   links: readonly string[];
   /** In national dex order, then form order. */
   sprites: readonly CreditedSprite[];
@@ -123,7 +126,8 @@ function parse(): Parsed {
   const artists = new Map<string, ArtistCredit>();
   const names = [...credits.keys()].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
   for (const name of names) {
-    artists.set(name, { name, links: DATA.artists[name]?.links ?? [], sprites: credits.get(name)!.sort(dexOrder) });
+    const info = DATA.artists[name];
+    artists.set(name, { name, creditedAs: info?.creditedAs, links: info?.links ?? [], sprites: credits.get(name)!.sort(dexOrder) });
   }
   for (const list of projectOnly.values()) list.sort(dexOrder);
   return { artists, projectSprites, projectOnly };

@@ -36,6 +36,7 @@ export const enUi = {
   'ack.count_one': '{count} credit',
   'ack.count_other': '{count} credits',
   'ack.credit': 'Credit',
+  'ack.creditedAs': 'Credited as {names}',
   'ack.editedBy': 'edited by {name}',
   'ack.generation': 'Generation {gen}',
   'ack.group.code': 'Code',

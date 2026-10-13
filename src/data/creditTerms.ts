@@ -16,7 +16,7 @@ export interface TermsQuote {
 
 interface TermsFile {
   sources: Record<string, { terms: TermsQuote[] }>;
-  artists: Record<string, { terms?: TermsQuote[]; termsSource?: string }>;
+  artists: Record<string, { terms?: TermsQuote[]; termsSource?: string; quoteUrl?: string; note?: string }>;
 }
 
 const TERMS = data as unknown as TermsFile;
@@ -26,8 +26,19 @@ export function sourceTerms(id: string): readonly TermsQuote[] {
   return TERMS.sources[id]?.terms ?? [];
 }
 
-/** An artist's own quoted terms, or the entry id of the project whose terms they share. */
+const QUOTES = [...Object.values(TERMS.sources), ...Object.values(TERMS.artists)].flatMap((record) => record.terms ?? []);
+
+/**
+ * An artist's own quoted terms, or the entry id of the project whose terms
+ * they share. An artist with no terms of their own whose record points at
+ * another record's quote gets that quote: MyMarshlands has no terms, and Kyle
+ * Dove's post asks to credit MyMarshlands for Victreebel.
+ */
 export function artistTerms(name: string): { quotes: readonly TermsQuote[]; sharedWith?: string } {
   const record = TERMS.artists[name];
-  return { quotes: record?.terms ?? [], sharedWith: record?.termsSource };
+  // The build reduces the note to `quoteUrl`; a script that reads the JSON as
+  // it is finds the link in the note itself.
+  const url = record?.quoteUrl ?? /https?:\/\/\S+/.exec(record?.note ?? '')?.[0];
+  const pointed = url ? QUOTES.filter((quote) => quote.url === url).slice(0, 1) : [];
+  return { quotes: record?.terms?.length ? record.terms : pointed, sharedWith: record?.termsSource };
 }

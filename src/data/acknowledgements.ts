@@ -33,6 +33,8 @@ export interface Acknowledgement {
   by?: string;
   /** Who compiled a collection whose parts others drew. Shown as "compiled by …". */
   compiledBy?: string;
+  /** An artist's older spellings, as the sources credit them. Shown as "Credited as …". */
+  creditedAs?: readonly string[];
   /** What my151 uses it for. An artist's entry builds its own from the sprite rows. */
   usedFor?: string;
   /** Short license or terms label for the row's second line. Absent when the source states none. */
@@ -147,6 +149,7 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
     entries: [...spriteArtists()].sort(byCount((artist) => artist.sprites.length, (artist) => artist.name)).map((artist) => ({
       id: artistEntryId(artist.name),
       name: artist.name,
+      creditedAs: artist.creditedAs,
       links: artist.links,
       kind: 'artist',
     })),

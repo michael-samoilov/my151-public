@@ -77,6 +77,16 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
+    // MyMarshlands states no terms; the entry quotes Kyle Dove's post, which
+    // asks to credit MyMarshlands. A renamed artist names the old spelling.
+    await dialog.locator('[data-ack-id="artist:MyMarshlands"]').click();
+    await expect(dialog.getByTestId('ack-terms')).toContainText('please credit my friend MyMarshlands');
+    await dialog.getByRole('button', { name: 'Back' }).click();
+    await dialog.locator('[data-ack-id="artist:Falgaia"]').click();
+    await expect(dialog.getByTestId('ack-credited-as')).toHaveText('Credited as aXl');
+    await dialog.getByRole('button', { name: 'Back' }).click();
+    await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
+
     // The npm packages come from the build's own list, by license, and each
     // license file is named for what it holds.
     await dialog.locator('[data-ack-id="npm-packages"]').click();

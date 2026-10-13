@@ -8,6 +8,7 @@
   "ack.count_one": "{count} crédit",
   "ack.count_other": "{count} crédits",
   "ack.credit": "Crédit",
+  "ack.creditedAs": "Crédité sous le nom {names}",
   "ack.editedBy": "retouché par {name}",
   "ack.generation": "Génération {gen}",
   "ack.group.code": "Code",

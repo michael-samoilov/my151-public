@@ -8,6 +8,7 @@
   "ack.count_one": "{count} Eintrag",
   "ack.count_other": "{count} Einträge",
   "ack.credit": "Namensnennung",
+  "ack.creditedAs": "Genannt als {names}",
   "ack.editedBy": "bearbeitet von {name}",
   "ack.generation": "Generation {gen}",
   "ack.group.code": "Code",

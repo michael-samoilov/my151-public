@@ -7,6 +7,7 @@
   "ack.compiledBy": "まとめ：{name}",
   "ack.count_other": "{count}件",
   "ack.credit": "クレジット",
+  "ack.creditedAs": "クレジット名：{names}",
   "ack.editedBy": "編集：{name}",
   "ack.generation": "第{gen}世代",
   "ack.group.code": "コード",
