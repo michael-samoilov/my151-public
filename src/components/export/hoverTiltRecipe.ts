@@ -6,6 +6,8 @@
  * ids from a URL or localStorage drop out at parse time.
  */
 
+import { HOVER_TILT_ROTATION } from './hover-tilt/hoverTilt';
+
 export const HOVER_TILT_MASK_IDS = [
   'none',
   'typeIcon',
@@ -17,10 +19,10 @@ export const HOVER_TILT_MASK_IDS = [
 
 export type HoverTiltMaskId = (typeof HOVER_TILT_MASK_IDS)[number];
 
-const HOVER_TILT_MASK_MODES = ['alpha', 'luminance'] as const;
+export const HOVER_TILT_MASK_MODES = ['alpha', 'luminance'] as const;
 export type HoverTiltMaskMode = (typeof HOVER_TILT_MASK_MODES)[number];
 
-const HOVER_TILT_MASK_COMPOSITES = ['intersect', 'add', 'subtract'] as const;
+export const HOVER_TILT_MASK_COMPOSITES = ['intersect', 'add', 'subtract'] as const;
 export type HoverTiltMaskComposite = (typeof HOVER_TILT_MASK_COMPOSITES)[number];
 
 export type HoverTiltRecipe = {
@@ -40,15 +42,45 @@ export type HoverTiltRecipe = {
   glareMaskComposite: HoverTiltMaskComposite;
 };
 
+export const HOVER_TILT_MASK_META = {
+  none: {
+    title: 'None',
+    blurb: 'Full-card glare. No texture clip.',
+  },
+  typeIcon: {
+    title: 'Primary type icon',
+    blurb: 'Each Pokémon\'s primary-type glyph, contain-fit on its own sprite at Poké Ball size.',
+  },
+  wordmark: {
+    title: 'my151.app wordmark',
+    blurb: 'Brand wordmark tiled across the export.',
+  },
+  pokeBall: {
+    title: 'Poké Ball tile',
+    blurb: 'Poké Ball silhouette tiled across the card.',
+  },
+  dexNumber: {
+    title: 'National Dex number',
+    blurb: 'Each Pokémon\'s national Dex number, centered on its sprite.',
+  },
+  dexBorder: {
+    title: 'Export frame',
+    blurb: 'Trainer-card frame stroke without a repeating texture.',
+  },
+} as const satisfies Record<HoverTiltMaskId, { title: string; blurb: string }>;
+
 export const HOVER_TILT_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-tilt';
 
 /**
  * Multiplier on the edge tilt. Above 1 the tilt reaches the max tilt cap
  * before the pointer reaches the edge: at 10/7 it caps 85% of the way out.
  */
-const DEFAULT_TILT_FACTOR = 10 / 7;
+export const DEFAULT_TILT_FACTOR = 10 / 7;
 
-/** Michael's workshop pick, September 27, with the pop kept at 1.15. */
+/**
+ * Michael's workshop pick, September 27, with the pop kept at 1.15. The
+ * glare dropped from 1 to 0.6 on October 11: Michael found it too strong.
+ */
 export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   tiltFactor: DEFAULT_TILT_FACTOR,
   tiltFactorY: DEFAULT_TILT_FACTOR,
@@ -57,7 +89,7 @@ export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   exitDelay: 420,
   shadow: true,
   shadowBlur: 25,
-  glareIntensity: 1,
+  glareIntensity: 0.6,
   glareSize: 0.5,
   glareHue: 40,
   glareMask: 'none',
@@ -65,15 +97,15 @@ export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   glareMaskComposite: 'intersect',
 };
 
-function isHoverTiltMaskId(value: unknown): value is HoverTiltMaskId {
+export function isHoverTiltMaskId(value: unknown): value is HoverTiltMaskId {
   return typeof value === 'string' && (HOVER_TILT_MASK_IDS as readonly string[]).includes(value);
 }
 
-function isHoverTiltMaskMode(value: unknown): value is HoverTiltMaskMode {
+export function isHoverTiltMaskMode(value: unknown): value is HoverTiltMaskMode {
   return typeof value === 'string' && (HOVER_TILT_MASK_MODES as readonly string[]).includes(value);
 }
 
-function isHoverTiltMaskComposite(value: unknown): value is HoverTiltMaskComposite {
+export function isHoverTiltMaskComposite(value: unknown): value is HoverTiltMaskComposite {
   return typeof value === 'string' && (HOVER_TILT_MASK_COMPOSITES as readonly string[]).includes(value);
 }
 
@@ -146,8 +178,8 @@ const MASK_COMPOSITE_WEBKIT: Record<HoverTiltMaskComposite, string> = {
 export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string> {
   return {
     '--hover-tilt-scale': recipe.scaleFactor.toFixed(3),
-    '--hover-tilt-rotation-x': `${(10 * recipe.tiltFactor).toFixed(2)}deg`,
-    '--hover-tilt-rotation-y': `${(10 * recipe.tiltFactorY).toFixed(2)}deg`,
+    '--hover-tilt-rotation-x': `${(HOVER_TILT_ROTATION * recipe.tiltFactor).toFixed(2)}deg`,
+    '--hover-tilt-rotation-y': `${(HOVER_TILT_ROTATION * recipe.tiltFactorY).toFixed(2)}deg`,
     '--hover-tilt-glare-intensity': recipe.glareIntensity.toFixed(3),
     '--hover-tilt-glare-size': recipe.glareSize.toFixed(3),
     '--hover-tilt-glare-hue': String(Math.round(recipe.glareHue)),
@@ -157,4 +189,3 @@ export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string
     '--hover-tilt-glare-mask-composite-webkit': MASK_COMPOSITE_WEBKIT[recipe.glareMaskComposite],
   };
 }
-

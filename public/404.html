@@ -2,31 +2,200 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Page not found | my151</title>
-    <meta name="robots" content="noindex" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Page not found | my151</title>
+<meta name="robots" content="noindex" />
+
     <style>
-      html, body { margin: 0; background: #f7f7f8; color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-      main { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; }
-      .wm { font-size: 24px; font-weight: 800; letter-spacing: -0.025em; text-decoration: none; color: #0a0a0a; }
-      .wm b { color: #dc2626; font-weight: 800; }
-      h1 { margin: 8px 0 0; font-size: 18px; font-weight: 600; }
-      p { margin: 0; max-width: 38ch; font-size: 14px; line-height: 1.5; color: #525252; }
-      ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-      a { color: #dc2626; }
+/* Shared by every 404 alternative. Light only, like the app. Sizes are in rem
+ * and the root steps from 16px to 20px at the app's md breakpoint, the same
+ * two ends as src/lib/layoutFontSize.ts, so text, icons and the sprite grow
+ * together on desktop. No vw: iOS ties it to the visual viewport. */
+:root {
+  --bg: #f7f7f8;
+  --fg: #0a0a0a;
+  --card: #ffffff;
+  --muted: #6e6e6e;
+  --border: #e5e5e5;
+  --hover: #f5f5f5;
+  --red: #dc2626;
+  /* One MISSINGNO. pixel, in CSS px. Each layout sets it per breakpoint. */
+  --u: 2px;
+}
+html { font-size: 16px; }
+@media (min-width: 1024px) { html { font-size: 20px; } }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+*, *::before, *::after { box-sizing: border-box; }
+
+@font-face {
+  font-family: "Pixel151";
+  src: url(data:font/woff2;base64,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) format("woff2");
+  font-display: block;
+}
+.px { font-family: "Pixel151", ui-monospace, monospace; font-weight: 400; letter-spacing: 0; -webkit-font-smoothing: none; }
+
+/* The app's own header bar, wordmark only. */
+.bar { height: 2.75rem; display: flex; align-items: center; padding: 0 0.75rem; background: var(--card); border-bottom: 1px solid var(--border); flex: none; }
+@media (min-width: 640px) { .bar { padding: 0 1.5rem; } }
+.wm { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.025em; color: var(--fg); text-decoration: none; white-space: nowrap; border-radius: 2px; }
+.wm span { color: var(--red); }
+a:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1rem 2rem; }
+.col { width: 100%; max-width: 24rem; display: flex; flex-direction: column; }
+h1 { text-wrap: balance; margin: 0; font-size: 1.375rem; line-height: 1.25; font-weight: 700; letter-spacing: -0.015em; }
+.lede { text-wrap: balance; margin: 0.375rem 0 0; font-size: 0.9375rem; line-height: 1.5; color: var(--muted); }
+
+/* The way back: the three tools and the hub, as rows in one card. */
+.tools { margin: 1.25rem 0 0; padding: 0; list-style: none; background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; overflow: hidden; }
+.tools li + li { border-top: 1px solid var(--border); }
+.tools a { display: flex; align-items: center; gap: 0.75rem; min-height: 3rem; padding: 0.625rem 0.875rem; color: var(--fg); text-decoration: none; font-size: 0.9375rem; font-weight: 600; }
+.tools a:hover { background: var(--hover); }
+.tools a:focus-visible { outline-offset: -2px; }
+.tools .ic { width: 1.25rem; height: 1.25rem; flex: none; color: var(--red); }
+.tools .go { width: 1rem; height: 1rem; flex: none; margin-left: auto; color: #a3a3a3; }
+svg.ic, svg.go { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* MISSINGNO.: the sprite and two bands of its rows that slip sideways. It
+ * keeps the official sprite's three colours and white at every frame, so the
+ * glitch moves pixels and never adds a colour. Every layer is the same 56x56
+ * image scaled by a whole number, so pixels stay square. */
+.ms { position: relative; width: calc(var(--u) * 56); height: calc(var(--u) * 56); flex: none; }
+.ms i { position: absolute; inset: 0; background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAMAAACfWMssAAAAD1BMVEUAAAD////hsY17b5MaFBSsDGyvAAAABXRSTlMA/////xzQJlIAAAHHSURBVHja1ZaJbsMwDEMrkf//zQMp2U5bFImzYdjiXgn0KlnW9XicXMyICH1mpj/rfcY9EBK8Abb0PhgAidK7aSp5c48QGHf2mHlrj7HEN0Ewbe6uqfQlWQF6eV05Dl0xwLEugFJ4A5z7apCKhQBPwYoaR8AeCEAKsa+Rz6CWzuVcIyFhfhvMlO3AZTDGlaDevwgGUwGxDWYg9ezKOVrNBJOpZ38XxA+AzunroL5UCP4BqM3ROfZd0J2oa4ryBuHyJJc7lU7BUWoPoIX2QVfh9B1QTUe/TsGUEHEEg1DLS2oPj0Awoa29gqRFGhz1dYHj/hXU5oAJWrkLeoN5MPMJnG5ujdVDFrhseAbdwBlrjzmcMTQ29Q5K2dJYAaezGSAz6v8LtFGu3rWWc2ZLb1AqoipSVaUCZ+YdwM7IcRwSVk8qt02NXbE15xiM6YsFaiShbD6Ac2CIno6msQbTrfrofuPQ37QQS2JxA5yjSD+VmJZ+5+g1MZNogVTzw7AkFljHn3Yc5QJkGfKiUYRMbDBni7FnYoXIB3AGQs032AdrTNkHfVhK3QYPBfkUTFec6yBYka7H72DHJj+CnUjcBsOzUK7j6NFxgF8IDBEKjT1VWQAAAABJRU5ErkJggg==) 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
+/* Bands sit on whole sprite rows: 56 rows, so 1 row = 1/56 of the height. */
+.ms .b1 { clip-path: inset(calc(100% * 37 / 56) 0 calc(100% * 15 / 56) 0); transform: translateX(var(--u)); }
+.ms .b2 { clip-path: inset(calc(100% * 12 / 56) 0 calc(100% * 41 / 56) 0); transform: translateX(calc(var(--u) * -1)); opacity: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ms .b1 { animation: ms-b1 4.8s steps(1, end) infinite; }
+  .ms .b2 { animation: ms-b2 4.8s steps(1, end) infinite; }
+}
+/* One short burst every 4.8 s: three frames of about 80 ms, then still. */
+@keyframes ms-b1 { 0%, 90% { transform: translateX(var(--u)); } 91.7% { transform: translateX(calc(var(--u) * -3)); } 93.4% { transform: translateX(calc(var(--u) * 4)); } 95.1%, 100% { transform: translateX(var(--u)); } }
+@keyframes ms-b2 { 0%, 90% { opacity: 0; } 91.7% { opacity: 1; transform: translateX(calc(var(--u) * 4)); } 93.4% { opacity: 1; transform: translateX(calc(var(--u) * -3)); } 95.1%, 100% { opacity: 0; } }
+
+/* B: a Gen 1 wild encounter. Everything inside the scene is laid out in Game
+ * Boy pixels (160 wide), scaled by --u: 2 on a phone, 3 on desktop, so the
+ * pixel font (8 GB px), the frames and the sprite share one grid. */
+:root { --u: 2px; }
+/* The scene is 176 GB px wide: 352 px at 2x needs a 384 px screen. */
+@media (max-width: 383px) { :root { --u: 1.5px; } }
+@media (min-width: 1024px) { :root { --u: 3px; } }
+.col { max-width: none; width: auto; align-items: stretch; }
+.scene { position: relative; width: calc(var(--u) * 176); padding: calc(var(--u) * 8); margin-top: 1rem; background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; }
+.screen { position: relative; width: calc(var(--u) * 160); height: calc(var(--u) * 56); }
+.screen > * { position: absolute; margin: 0; }
+.px { font-size: calc(var(--u) * 8); line-height: calc(var(--u) * 8); }
+.foe-name { left: calc(var(--u) * 8); top: 0; }
+/* Two pixels of air between the status rows, so the name and level do not touch. */
+.foe-lv { left: calc(var(--u) * 40); top: calc(var(--u) * 10); }
+.foe-hp { left: calc(var(--u) * 16); top: calc(var(--u) * 20); display: flex; align-items: center; height: calc(var(--u) * 8); }
+.foe-hp b { font-weight: 400; }
+/* The HP bar: full, so one flat 48 x 2 pixel bar, no frame. */
+.hpbar { display: block; width: calc(var(--u) * 48); height: calc(var(--u) * 2); background: var(--fg); }
+/* The bracket Gen 1 draws round the foe's status: down the left, along the bottom. */
+.foe-frame { left: calc(var(--u) * 8); top: calc(var(--u) * 12); width: calc(var(--u) * 82); height: calc(var(--u) * 19); border-left: var(--u) solid #a3a3a3; border-bottom: var(--u) solid #a3a3a3; }
+.screen .ms { right: calc(var(--u) * 8); top: 0; }
+/* The text box and the menu are flat panels in the app's muted grey, with
+ * the app's radius: no game frame, no outline. */
+.box { background: var(--hover); border-radius: 0.5rem; }
+/* The encounter line opens the page, in the pixel font at a multiple of its
+ * 8 px grid (24 px; 16 px under 384 px; 32 px on desktop), one line per span,
+ * with the 404 in red. */
+.say { margin: 0; display: flex; flex-direction: column; align-items: center; font-size: 24px; line-height: 32px; font-weight: 400; letter-spacing: 0; }
+.say b { font-weight: 400; color: var(--red); }
+@media (max-width: 383px) { .say { font-size: 16px; line-height: 24px; } }
+@media (min-width: 1024px) { .say { font-size: 32px; line-height: 40px; } }
+/* Gen 1 prints text one letter at a time, about 40 ms a letter: the
+ * encounter's three lines (11, 10 and 9 letters), then the heading's two
+ * (9 and 14). The menu works from the start. Each line holds only the
+ * animation's first frame (backwards): once it ends, the line's own style
+ * shows it whole. WebKit, which every iOS browser uses, leaves a 9-step line
+ * one step short when it holds the last frame, which cut the last letter of
+ * "appeared!" and "That page". */
+.say span, .title span { display: block; width: max-content; }
+@media (prefers-reduced-motion: no-preference) {
+  .say .l1 { animation: type 0.44s steps(11, end) 0.3s backwards; }
+  .say .l2 { animation: type 0.4s steps(10, end) 0.8s backwards; }
+  .say .l3 { animation: type 0.36s steps(9, end) 1.25s backwards; }
+  .title .t1 { animation: type 0.36s steps(9, end) 1.85s backwards; }
+  .title .t2 { animation: type 0.56s steps(14, end) 2.25s backwards; }
+}
+@keyframes type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+/* The menu: the tools, then RUN. One cursor marks the selected entry, as in
+ * the games: the script moves it on hover, focus and the arrow keys, and
+ * Enter or Space follows it. Without the script, hover and focus mark it. */
+.menu { width: calc(var(--u) * 160); margin: calc(var(--u) * 8) 0 0; padding: 0 0 calc(var(--u) * 8); list-style: none; }
+.menu a { position: relative; display: block; padding: calc(var(--u) * 8) calc(var(--u) * 8) 0 calc(var(--u) * 16); color: var(--fg); text-decoration: none; }
+.menu a::before { content: ""; position: absolute; left: calc(var(--u) * 8); top: calc(var(--u) * 8); width: calc(var(--u) * 8); height: calc(var(--u) * 8); visibility: hidden;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23dc2626' d='M1 0h1v7H1zM2 1h1v5H2zM3 2h1v3H3zM4 3h1v1H4z'/%3E%3C/svg%3E") 0 0 / 100% 100%; }
+.menu:not([data-js]) a:hover::before, .menu:not([data-js]) a:focus-visible::before, .menu:not([data-js]):not(:hover):not(:focus-within) li:first-child a::before, .menu a.sel::before { visibility: visible; }
+.menu:not([data-js]) a:hover, .menu:not([data-js]) a:focus-visible, .menu a.sel { color: var(--red); }
+.menu a:focus-visible { outline: none; }
+/* After the encounter and before the menu: the scene's pixel text,
+ * centered, one line per span. */
+.title { margin: calc(var(--u) * 8) 0 calc(var(--u) * 4); font-weight: 400; letter-spacing: 0; display: flex; flex-direction: column; align-items: center; }
+.title span + span { margin-top: calc(var(--u) * 4); }
     </style>
   </head>
   <body>
+    <header class="bar"><a class="wm" href="/"><span>my151</span>.app</a></header>
     <main>
-      <a class="wm" href="/"><b>my151</b>.app</a>
-      <h1>That page does not exist</h1>
-      <p>The tools live at these addresses.</p>
-      <ul>
-        <li><a href="/pokedex-builder">Custom Pokédex Builder</a></li>
-        <li><a href="/custom-gym-leader">Custom Gym Leader &amp; Trainer Card Maker</a></li>
-        <li><a href="/">All tools</a></li>
-      </ul>
+      <div class="col">
+        <h1 class="px say"><span class="l1"><b>404</b>: A wild</span> <span class="l2">MISSINGNO.</span> <span class="l3">appeared!</span></h1>
+        <section class="scene">
+          <div class="screen" role="img" aria-label="MissingNo., level 404">
+            <p class="px foe-name" aria-hidden="true">MISSINGNO.</p>
+            <p class="px foe-lv" aria-hidden="true">:L404</p>
+            <p class="px foe-hp" aria-hidden="true"><b>HP:</b><span class="hpbar"></span></p>
+            <div class="foe-frame" aria-hidden="true"></div>
+            <div class="ms" role="img" aria-label="MissingNo."><i></i><i class="b1"></i><i class="b2"></i></div>
+          </div>
+          <p class="px title"><span class="t1">That page</span> <span class="t2">does not exist</span></p>
+          <ul class="px box menu" aria-label="Where to go">
+            <li><a href="/pokedex-builder">POKéDEX MAKER</a></li>
+            <li><a href="/custom-gym-leader">GYM LEADER MAKER</a></li>
+            <li><a href="/favorite-pokemon-picker">FAVORITE PICKER</a></li>
+            <li><a href="/" aria-label="RUN, back to all tools">RUN</a></li>
+          </ul>
+        </section>
+      </div>
     </main>
+    <script>
+      (() => {
+        const menu = document.querySelector('.menu');
+        const links = [...menu.querySelectorAll('a')];
+        let at = 0;
+        const select = (i, focus) => {
+          at = (i + links.length) % links.length;
+          links.forEach((a, k) => a.classList.toggle('sel', k === at));
+          if (focus) links[at].focus({ preventScroll: true });
+        };
+        menu.dataset.js = '';
+        select(0, false);
+        links.forEach((a, k) => {
+          a.addEventListener('mouseenter', () => select(k, false));
+          a.addEventListener('focus', () => select(k, false));
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.altKey || e.ctrlKey || e.metaKey) return;
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            select(at + (e.key === 'ArrowDown' ? 1 : -1), true);
+          } else if (e.key === ' ' || (e.key === 'Enter' && document.activeElement !== links[at])) {
+            e.preventDefault();
+            links[at].click();
+          }
+        });
+      })();
+    </script>
   </body>
 </html>

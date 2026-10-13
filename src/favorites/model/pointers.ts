@@ -6,7 +6,8 @@ export type PointerMark =
   | { source: 'type'; value: TypeName }
   | { source: 'starter' | 'gimmick' | 'legendary' };
 
-function pointerSourceKeys(type: TypeAxisId, gen: GenAxisId): string[] {
+/** The cells a favorite cell chooses from, as cell keys, in grid order. */
+export function pointerSourceKeys(type: TypeAxisId, gen: GenAxisId): string[] {
   if (isDisabledFavoriteIntersection(type, gen)) return [];
   if (type === 'legendary' && gen === 'legendary') {
     return [

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Globe, Loader2 } from 'lucide-react';
+import { Check, Globe } from 'lucide-react';
+import { PokeBallSpinner } from '@/components/shared/PokeBallSpinner';
 import { pathScale } from '@/lib/pathScale';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { pressedOutside } from '@/lib/outsidePress';
@@ -68,7 +69,7 @@ function LocaleChips({ onPick, pending }: { onPick: (l: Locale) => void; pending
                 : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
             }`}
           >
-            {pending === locale && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {pending === locale && <PokeBallSpinner tone="line" className="w-3.5 h-3.5" />}
             {selected && pending !== locale && <Check className="w-3.5 h-3.5" />}
             {/* `lang` so a screen reader pronounces the endonym in its own
                 language rather than reading it through the page's voice. */}

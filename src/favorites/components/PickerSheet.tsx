@@ -3,11 +3,12 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useLayoutViewportCssPx } from '@/lib/usePixelPerfectSprite';
 import { pickerRowInsetPx, pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
-import { useT } from '@/i18n';
+import { t as translate, typeLabel, useNamesVersion, useT } from '@/i18n';
+import { EmptyState, type EmptyStateAction } from '@/components/shared/EmptyState';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
+import { PREVIEW_FEATURES, PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
-import { isGenNumber, isTypeName, isTypeCell, type GenAxisId, type TypeAxisId } from '../model/cells';
+import { isGenNumber, isTypeName, isTypeCell, parseCellKey, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { eligibleFor, kindFor } from '../model/eligibility';
 import { evolutionLineKey, getPickerMon, type PickerMon } from '../model/catalog';
 import type { SortOrder } from '../model/sortKeys';
@@ -22,9 +23,11 @@ import {
   type ChainSlot,
   type PackMove,
 } from '../model/packing';
-import { pointerMarks, pointerPool, pointerCoordinates } from '../model/pointers';
+import { pointerMarks, pointerPool, pointerCoordinates, pointerSourceKeys } from '../model/pointers';
 import { takenIn, pickedCoordinatesElsewhere } from '../model/taken';
 import { coordinateLabel } from './coordinatePresentation';
+import { pickerLabelOf } from './spriteLabel';
+import { generationLabel } from './badgeStyle';
 import { PickerTitle } from './PickerTitle';
 import { PrettySpriteGrid } from './PrettySpriteGrid';
 import { PackingChain } from './PackingChain';
@@ -49,6 +52,7 @@ export function PickerSheet({
   onPlace,
   onApplyPack,
   onClear,
+  onOpenCell,
 }: {
   type: TypeAxisId;
   gen: GenAxisId;
@@ -62,6 +66,8 @@ export function PickerSheet({
   onPlace: (id: number) => void;
   onApplyPack: (path: PackMove[]) => void;
   onClear: () => void;
+  /** Opens another cell, from the button of an empty selector. */
+  onOpenCell: (type: TypeAxisId, gen: GenAxisId, keyboard: boolean) => void;
 }) {
   const bodyRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -74,6 +80,9 @@ export function PickerSheet({
     return () => cancelAnimationFrame(frame);
   }, [autoFocus, type, gen]);
   const t = useT();
+  const namesVersion = useNamesVersion();
+  const [formIndicatorsOnly, setFormIndicatorsOnly] = useState(() => PREVIEW_FEATURES && typeof location !== 'undefined'
+    && new URLSearchParams(location.search).get('form-indicators') === '1');
   const desktop = useIsDesktop();
   const viewportPx = useLayoutViewportCssPx();
   const spritePx = pickerSpriteCssPx(viewportPx);
@@ -99,7 +108,7 @@ export function PickerSheet({
     else setPacking(null);
   }
 
-  const mons = useMemo(() => {
+  const eligibleMons = useMemo(() => {
     if (kind === 'pointer') {
       return pointerPool(type, gen, fills)
         .map(getPickerMon)
@@ -107,6 +116,10 @@ export function PickerSheet({
     }
     return eligibleFor(type, gen, sortOrder);
   }, [kind, type, gen, fills, sortOrder]);
+  const mons = useMemo(() => {
+    void namesVersion;
+    return formIndicatorsOnly ? eligibleMons.filter(mon => pickerLabelOf(mon).mark) : eligibleMons;
+  }, [eligibleMons, formIndicatorsOnly, namesVersion]);
   const pickedCoordinates = useMemo(() => pickedCoordinatesElsewhere(fills, type, gen), [fills, type, gen]);
   const taken = useMemo(() => takenIn(fills, type, gen), [fills, type, gen]);
 
@@ -120,11 +133,7 @@ export function PickerSheet({
     spritePx * widestRow + inset * 2 + 2,
   );
 
-  const emptyHint = kind !== 'pointer' ? t('favorites.empty.unavailable')
-    : type === 'favorite' && gen === 'favorite' ? t('favorites.empty.overall')
-      : (type === 'legendary' && gen === 'legendary') || (type === 'gimmick' && gen === 'gimmick') ? t('favorites.empty.pointer')
-        : type === 'favorite' ? t('favorites.empty.row')
-          : t('favorites.empty.column');
+  const empty = mons.length === 0 ? emptyCopy(type, gen, fills, onOpenCell) : null;
 
   function pick(mon: PickerMon) {
     if (mon.id === currentId) {
@@ -158,8 +167,12 @@ export function PickerSheet({
     />
   ) : (
     <div ref={bodyRef} id="favorites-selector" className={mons.length === 0 && currentId == null ? 'pb-4 pt-3' : 'pb-4'} style={{ paddingTop: mons.length > 0 && currentId != null ? 4 : undefined, paddingLeft: inset, paddingRight: inset }}>
-      {mons.length === 0 && currentId == null ? (
-        <PickerEmptyState title={t('favorites.empty.title')} hint={emptyHint} />
+      {PREVIEW_FEATURES && <div className="px-2 pb-2"><button type="button" data-i18n-exempt="preview-debug"
+        aria-pressed={formIndicatorsOnly} onClick={() => setFormIndicatorsOnly(value => !value)}
+        className={`rounded-full border px-2.5 py-0.5 text-xs font-medium cursor-pointer ${formIndicatorsOnly ? 'bg-foreground text-background border-foreground' : 'border-border text-muted-foreground'}`}
+      >Form indicators</button></div>}
+      {empty && currentId == null ? (
+        <EmptyState testId="favorites-picker-empty" className="max-w-[17rem] px-5" {...empty} />
       ) : (
         <PrettySpriteGrid
           mons={mons}
@@ -270,7 +283,7 @@ function PackList({
 }) {
   const t = useT();
   if (chains.length === 0) {
-    return <PickerEmptyState title={t('favorites.empty.packing.title')} hint={t('favorites.empty.packing.hint')} />;
+    return <EmptyState testId="favorites-picker-empty" className="max-w-[17rem] px-5" title={t('favorites.empty.packing.title')} body={t('favorites.empty.packing.hint')} />;
   }
   const mode = packListMode(chains);
   const prefix = stack[stack.length - 1] ?? '';
@@ -300,28 +313,69 @@ function PackList({
   );
 }
 
-function PickerEmptyState({
-  title,
-  hint,
-}: {
-  title: string;
-  hint: string;
-}) {
-  return (
-    <section
-      data-testid="favorites-picker-empty"
-      className="mx-auto flex w-full max-w-[270px] flex-col items-center px-5 py-5 text-center"
-    >
-      <div className="mb-3 grid h-[76px] w-[76px] place-items-center" aria-hidden>
-        <svg data-testid="favorites-empty-unown" viewBox="0 0 500 900" className="h-[68px] w-[40px] text-foreground" fill="none">
-          <path d="M172 109C245 73 347 99 392 176C455 284 388 401 246 421V521" stroke="currentColor" strokeWidth="90" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="246" cy="680" r="208" fill="currentColor" />
-          <path d="M130 680C130 746 181 796 246 796S362 746 362 680Z" fill="var(--color-card)" />
-          <circle cx="246" cy="680" r="49" fill="currentColor" />
-        </svg>
-      </div>
-      <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
-      <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{hint}</p>
-    </section>
-  );
+type Cell = { type: TypeAxisId; gen: GenAxisId };
+
+/** A row or column name: "Gen I", "Fire", "Starter". */
+function axisLabel(axis: TypeAxisId | GenAxisId): string {
+  if (isGenNumber(axis)) return generationLabel(axis);
+  if (isTypeName(axis)) return typeLabel(axis);
+  return translate(`favorites.axis.${axis}`);
+}
+
+/**
+ * The cell that an empty favorite selector's button opens: the first source
+ * cell the person can fill now. That is a pick cell, or a favorite cell that
+ * already has picks to choose from. When no source can be filled yet, as for
+ * the overall favorite on a new grid, it is that cell for the first favorite
+ * source.
+ */
+function nextCell(type: TypeAxisId, gen: GenAxisId, fills: Record<string, number>): Cell | null {
+  const sources = pointerSourceKeys(type, gen).map(parseCellKey).filter((cell): cell is Cell => cell != null);
+  const ready = sources.find((cell) => {
+    const kind = kindFor(cell.type, cell.gen);
+    return kind === 'pick' || (kind === 'pointer' && pointerPool(cell.type, cell.gen, fills).length > 0);
+  });
+  if (ready) return ready;
+  const deeper = sources.find((cell) => kindFor(cell.type, cell.gen) === 'pointer');
+  return deeper ? nextCell(deeper.type, deeper.gen, fills) : null;
+}
+
+/**
+ * The copy of a selector with nothing to choose. A favorite cell names where
+ * its choices come from and opens the next cell to fill. A pick cell with no
+ * Pokémon is empty by design, so it gets no button.
+ */
+function emptyCopy(
+  type: TypeAxisId,
+  gen: GenAxisId,
+  fills: Record<string, number>,
+  onOpenCell: (type: TypeAxisId, gen: GenAxisId, keyboard: boolean) => void,
+): { title: string; body: string; action?: EmptyStateAction } {
+  if (kindFor(type, gen) !== 'pointer') {
+    return { title: translate('favorites.empty.unavailable.title'), body: translate('favorites.empty.unavailable.body') };
+  }
+  const row = type === 'favorite' && gen !== 'favorite';
+  const target = nextCell(type, gen, fills);
+  const action: EmptyStateAction | undefined = target ? {
+    label: kindFor(target.type, target.gen) === 'pointer' ? translate('favorites.empty.overall.action')
+      : row ? translate('favorites.empty.row.action', { gen: axisLabel(target.gen) })
+        : translate('favorites.empty.column.action', { type: axisLabel(target.type) }),
+    onClick: (event) => onOpenCell(target.type, target.gen, event.detail === 0),
+  } : undefined;
+  if (type === 'favorite' && gen === 'favorite') {
+    return { title: translate('favorites.empty.overall.title'), body: translate('favorites.empty.overall.body'), action };
+  }
+  if (row) {
+    const name = axisLabel(gen);
+    return { title: translate('favorites.empty.row.title', { gen: name }), body: translate('favorites.empty.row.body', { gen: name }), action };
+  }
+  // A type or Starter column's favorite, or the Legendary or Gimmick favorite,
+  // which reads both its row and its column.
+  const name = axisLabel(type);
+  const both = type === gen;
+  return {
+    title: translate('favorites.empty.column.title', { type: name }),
+    body: both ? translate('favorites.empty.pointer.body', { type: name }) : translate('favorites.empty.column.body', { type: name }),
+    action,
+  };
 }

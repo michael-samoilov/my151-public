@@ -35,6 +35,12 @@ const flowerColors: AlternatePickerForm[] = [
     spriteSlug: `${species}-${color}`,
   })));
 
+// The nine trims in game order (PokéAPI forms 10115–10123). Natural Form is
+// the base Furfrou (676).
+const furfrouTrims: AlternatePickerForm[] = [
+  'heart', 'star', 'diamond', 'debutante', 'matron', 'dandy', 'la-reine', 'kabuki', 'pharaoh',
+].map((trim, index) => ({ id: 11096 + index, ownerId: 676, name: `furfrou-${trim}`, types: ['normal'] }));
+
 /** Picker-only forms keep dex evolution lines unchanged. IDs above 11000 identify locally sourced sprite variants. */
 export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 10001, ownerId: 386, name: 'deoxys-attack', types: ['psychic'] },
@@ -182,4 +188,26 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11095, ownerId: 521, name: 'unfezant-female', types: ['normal', 'flying'], spriteSlug: 'unfezant-f' },
   { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spriteSlug: 'darmanitan-galarzen' },
   ...flowerColors,
+  ...furfrouTrims,
+  // In-battle appearances with no record of their own. They keep the owner's
+  // types and generation, so each sits beside its species.
+  { id: 11105, ownerId: 643, name: 'reshiram-overdrive', types: ['dragon', 'fire'] },
+  { id: 11106, ownerId: 644, name: 'zekrom-overdrive', types: ['dragon', 'electric'] },
+  // The species owns both fusion Overdrives: a form owner would cost them
+  // their legendary status and their analytics species.
+  { id: 11107, ownerId: 646, name: 'kyurem-black-overdrive', types: ['dragon', 'ice'] },
+  { id: 11108, ownerId: 646, name: 'kyurem-white-overdrive', types: ['dragon', 'ice'] },
+  { id: 11109, ownerId: 791, name: 'solgaleo-radiant-sun', types: ['psychic', 'steel'] },
+  { id: 11110, ownerId: 792, name: 'lunala-full-moon', types: ['psychic', 'ghost'] },
+  { id: 11111, ownerId: 802, name: 'marshadow-zenith', types: ['fighting', 'ghost'] },
+  // A form takes the generation of the game it debuted in. DJ Rotom debuted
+  // in Pokémon Pokopia, released in 2026 during Generation IX.
+  { id: 11112, ownerId: 479, name: 'rotom-dj', types: ['electric', 'ghost'], generation: 9 },
+  // Terastallized Ogerpon in each mask: battle-only forms 4 to 7 of Scarlet
+  // and Violet's personal table, which match each mask's types and stats.
+  // PokéAPI has no record of them; the slugs follow Pokémon Showdown.
+  { id: 11113, ownerId: 1017, name: 'ogerpon-teal-tera', types: ['grass'] },
+  { id: 11114, ownerId: 1017, name: 'ogerpon-wellspring-tera', types: ['grass', 'water'] },
+  { id: 11115, ownerId: 1017, name: 'ogerpon-hearthflame-tera', types: ['grass', 'fire'] },
+  { id: 11116, ownerId: 1017, name: 'ogerpon-cornerstone-tera', types: ['grass', 'rock'] },
 ];

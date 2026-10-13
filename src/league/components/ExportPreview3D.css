@@ -33,6 +33,7 @@
 /* Rotates with the card. Overflow stays visible so the raised-edge
    shadow paints past the paper. `.export-foil` still clips shine. */
 .export-foil-lift {
+  position: relative;
   overflow: visible;
   background: none;
   border: 0;
@@ -41,40 +42,15 @@
   border-radius: var(--export-card-radius, 4%);
   transform-origin: center center;
   -webkit-transform-origin: center center;
-  -webkit-transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
-    rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
-  transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
-    rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
-  box-shadow:
-    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 1px)
-      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.6px + 6px)
-      calc(var(--hover-tilt-shadow-blur) * 1px)
-      calc(var(--hover-tilt-shadow-blur) * -0.06px)
-      rgb(0 0 0 / calc(var(--hover-tilt-shadow-opacity) * 0.38)),
-    0 8px 18px rgb(0 0 0 / 0.10);
+  box-shadow: none;
 }
 
+/* The lift sits centered in the stage, so its own perspective() about its
+   center draws the same picture a stage perspective did. hover-tilt's
+   transform is in @/components/export/hover-tilt/hoverTilt.css. */
 .export-foil-hit[data-hover-tilt='1'] .export-foil-lift {
-  --hover-tilt-default-shadow:
-    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 1px)
-      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.5px + var(--hover-tilt-shadow-blur) * 0.25px)
-      calc(var(--hover-tilt-shadow-blur) * 0.5px)
-      calc(var(--hover-tilt-shadow-blur) * -0.25px)
-      rgb(0 0 0 / var(--hover-tilt-shadow-opacity, 0)),
-    calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 0.5px)
-      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.25px + var(--hover-tilt-shadow-blur) * 0.125px)
-      calc(var(--hover-tilt-shadow-blur) * 0.25px)
-      calc(var(--hover-tilt-shadow-blur) * -0.125px)
-      rgb(0 0 0 / var(--hover-tilt-shadow-opacity, 0));
   transform-style: flat;
   -webkit-transform-style: flat;
-  /* The lift sits centered in the stage, so its own perspective() about its
-     center draws the same picture a stage perspective did. */
-  -webkit-transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
-    rotateX(var(--rotation-x)) rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
-  transform: perspective(var(--export-perspective)) scale(var(--export-lift-scale, 1))
-    rotateX(var(--rotation-x)) rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
-  box-shadow: var(--hover-tilt-custom-shadow, var(--hover-tilt-default-shadow));
 }
 
 /* At rest the lift is flat and scaled down from its popped layout size. */
@@ -83,18 +59,45 @@
   transform: scale(var(--export-lift-rest, 1));
 }
 
-.export-foil-hit[data-hover-tilt='1'][data-hover-tilt-shadow='0'] .export-foil-lift {
-  box-shadow: none;
+/* hover-tilt's two-layer drop shadow, cast by the PNG's own shape. A
+   box-shadow follows the lift's rounded rectangle, so it left the concave
+   kinks between joined panes unshadowed: they showed as light wedges. The
+   blur sits on the parent of the masked shape, so it softens the shape's
+   edge. Only transform and opacity change per frame, so the browser moves
+   the shadow instead of repainting it. Each layer's offset, blur, and
+   inset are in @/components/export/hover-tilt/hoverTilt.css. */
+.export-foil-shadow {
+  position: absolute;
+  pointer-events: none;
+  opacity: var(--hover-tilt-shadow-opacity, 0);
+  will-change: transform, opacity;
+}
+
+.export-foil-shadow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #000;
+  -webkit-mask-image: var(--export-shape-mask);
+  mask-image: var(--export-shape-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.export-foil-hit[data-hover-tilt-shadow='0'] .export-foil-shadow {
+  display: none;
 }
 
 .export-foil {
-  --pointer-x: 50%;
-  --pointer-y: 50%;
-  --pointer-from-center: 0;
-  --pointer-from-top: 0.5;
-  --pointer-from-left: 0.5;
-  --rotate-x: 0deg;
-  --rotate-y: 0deg;
+  --foil-at-x: 50%;
+  --foil-at-y: 50%;
+  --foil-reach: 0;
+  --foil-down: 0.5;
+  --foil-across: 0.5;
+  --foil-dx: 0;
+  --foil-dy: 0;
   --rotation-x: 0deg;
   --rotation-y: 0deg;
   --hover-tilt-x: 0.5;
@@ -110,8 +113,8 @@
   --foil-ambient: 0;
   --foil-specular: 0;
   --foil-rim: 0;
-  --foil-holographic: 0;
-  --foil-holoRainbow: 0;
+  --foil-prism: 0;
+  --foil-gleam: 0;
   --foil-iridescence: 0;
   --foil-emboss: 0;
   --foil-parallax: 0;
@@ -122,17 +125,8 @@
   --foil-sat-mask: none;
   --foil-edge-mask: none;
   --foil-gloss-mask: none;
-  /* poke-holo's sunpillar colors, shared by the rainbow and the V shine. */
-  --sunpillar-1: hsl(2, 100%, 73%);
-  --sunpillar-2: hsl(53, 100%, 69%);
-  --sunpillar-3: hsl(93, 100%, 69%);
-  --sunpillar-4: hsl(176, 100%, 76%);
-  --sunpillar-5: hsl(228, 100%, 74%);
-  --sunpillar-6: hsl(283, 100%, 73%);
-  --foil-shift-x: calc((var(--pointer-from-left) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
-  --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
-  --background-x: 50%;
-  --background-y: 50%;
+  --foil-shift-x: calc((var(--foil-across) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
+  --foil-shift-y: calc((var(--foil-down) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   position: relative;
   /* The PNG alpha owns the outline, including each joined pane's corners. */
   border-radius: 0;
@@ -170,8 +164,8 @@
 }
 
 .export-foil-mask-sat,
-.export-foil-holo-rainbow,
-.export-foil-holographic,
+.export-foil-prism,
+.export-foil-gleam,
 .export-foil-iridescence,
 .export-foil-parallax {
   -webkit-mask-image: var(--foil-sat-mask);
@@ -204,8 +198,8 @@
   mask-repeat: no-repeat;
 }
 
-.export-foil:not([data-foil-maps='1']) .export-foil-holo-rainbow,
-.export-foil:not([data-foil-maps='1']) .export-foil-holographic,
+.export-foil:not([data-foil-maps='1']) .export-foil-prism,
+.export-foil:not([data-foil-maps='1']) .export-foil-gleam,
 .export-foil:not([data-foil-maps='1']) .export-foil-iridescence,
 .export-foil:not([data-foil-maps='1']) .export-foil-emboss,
 .export-foil:not([data-foil-maps='1']) .export-foil-rim,
@@ -218,7 +212,7 @@
 .export-foil-ambient {
   z-index: 1;
   background-image: linear-gradient(
-    calc(var(--pointer-from-left) * 180deg - 90deg),
+    calc(var(--foil-across) * 180deg - 90deg),
     hsla(40, 30%, 100%, 0.42),
     transparent 42%,
     hsla(222, 28%, 12%, 0.38)
@@ -230,164 +224,33 @@
 .export-foil-point-light {
   z-index: 2;
   background-image: radial-gradient(
-    circle at var(--pointer-x) var(--pointer-y),
+    circle at var(--foil-at-x) var(--foil-at-y),
     hsla(40, 45%, 100%, 0.70) 0%,
     hsla(40, 30%, 96%, 0.24) 22%,
     transparent 58%
   );
   mix-blend-mode: soft-light;
-  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.72 + 0.08 * var(--pointer-from-center)));
-}
-
-/* A rainbow holofoil: tight sunpillar bands tint the ink as the card tilts.
-   soft-light leaves white paper and black ink as they are, and the light
-   sunpillars mostly lighten the colors between. A hue blend turned red
-   ink maroon and yellow ink orange, and dulled every color. The workshop
-   sets --foil-rainbow-blend on an ancestor to compare it. Positions stay
-   inside 0-100%, so the tile always covers the card. */
-.export-foil-holo-rainbow {
-  z-index: 3;
-  background-image: repeating-linear-gradient(
-    110deg,
-    var(--sunpillar-1) 0%,
-    var(--sunpillar-2) 1.33%,
-    var(--sunpillar-3) 2.67%,
-    var(--sunpillar-4) 4%,
-    var(--sunpillar-5) 5.33%,
-    var(--sunpillar-6) 6.67%,
-    var(--sunpillar-1) 8%
-  );
-  background-size: 400% 400%;
-  background-position: var(--background-x) var(--background-y);
-  mix-blend-mode: var(--foil-rainbow-blend, soft-light);
-  opacity: calc(var(--foil-opacity) * var(--foil-holoRainbow));
-}
-
-/* The poke-holo "V" shine (https://poke-holo.simey.me/#-v): a sunpillar
-   rainbow, diagonal bands, and noise, dodged onto the card. The ::after copy
-   moves its bands the opposite way, so they cross as the card tilts. The ink
-   mask keeps it off paper and pastel fills, which color-dodge washes white. */
-.export-foil-holographic {
-  --holo-clr-1: var(--sunpillar-1);
-  --holo-clr-2: var(--sunpillar-2);
-  --holo-clr-3: var(--sunpillar-3);
-  --holo-clr-4: var(--sunpillar-4);
-  --holo-clr-5: var(--sunpillar-5);
-  --holo-clr-6: var(--sunpillar-6);
-  --holo-space: 5%;
-  --holo-angle: 133deg;
-  --holo-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
-  z-index: 3;
-  background-image:
-    var(--holo-grain),
-    repeating-linear-gradient(
-      0deg,
-      var(--holo-clr-1) calc(var(--holo-space) * 1),
-      var(--holo-clr-2) calc(var(--holo-space) * 2),
-      var(--holo-clr-3) calc(var(--holo-space) * 3),
-      var(--holo-clr-4) calc(var(--holo-space) * 4),
-      var(--holo-clr-5) calc(var(--holo-space) * 5),
-      var(--holo-clr-6) calc(var(--holo-space) * 6),
-      var(--holo-clr-1) calc(var(--holo-space) * 7)
-    ),
-    repeating-linear-gradient(
-      var(--holo-angle),
-      #0e152e 0%,
-      hsl(180, 10%, 60%) 3.8%,
-      hsl(180, 29%, 66%) 4.5%,
-      hsl(180, 10%, 60%) 5.2%,
-      #0e152e 10%,
-      #0e152e 12%
-    ),
-    radial-gradient(
-      farthest-corner circle at var(--pointer-x) var(--pointer-y),
-      hsla(0, 0%, 0%, 0.1) 12%,
-      hsla(0, 0%, 0%, 0.15) 20%,
-      hsla(0, 0%, 0%, 0.25) 120%
-    );
-  background-blend-mode: screen, hue, hard-light;
-  background-size: 500px 100%, 200% 700%, 300% 100%, 200% 100%;
-  background-position:
-    center,
-    0% var(--background-y),
-    var(--background-x) var(--background-y),
-    var(--background-x) var(--background-y);
-  filter: brightness(0.7) contrast(2) saturate(0.5);
-  mix-blend-mode: var(--foil-holo-blend, color-dodge);
-  opacity: calc(var(--foil-opacity) * var(--foil-holographic));
-}
-
-.export-foil-holographic::after {
-  --holo-clr-1: var(--sunpillar-6);
-  --holo-clr-2: var(--sunpillar-1);
-  --holo-clr-3: var(--sunpillar-2);
-  --holo-clr-4: var(--sunpillar-3);
-  --holo-clr-5: var(--sunpillar-4);
-  --holo-clr-6: var(--sunpillar-5);
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  /* Its own gradients: inherit would carry the parent's resolved colors. */
-  background-image:
-    var(--holo-grain),
-    repeating-linear-gradient(
-      0deg,
-      var(--holo-clr-1) calc(var(--holo-space) * 1),
-      var(--holo-clr-2) calc(var(--holo-space) * 2),
-      var(--holo-clr-3) calc(var(--holo-space) * 3),
-      var(--holo-clr-4) calc(var(--holo-space) * 4),
-      var(--holo-clr-5) calc(var(--holo-space) * 5),
-      var(--holo-clr-6) calc(var(--holo-space) * 6),
-      var(--holo-clr-1) calc(var(--holo-space) * 7)
-    ),
-    repeating-linear-gradient(
-      var(--holo-angle),
-      #0e152e 0%,
-      hsl(180, 10%, 60%) 3.8%,
-      hsl(180, 29%, 66%) 4.5%,
-      hsl(180, 10%, 60%) 5.2%,
-      #0e152e 10%,
-      #0e152e 12%
-    ),
-    radial-gradient(
-      farthest-corner circle at var(--pointer-x) var(--pointer-y),
-      hsla(0, 0%, 0%, 0.1) 12%,
-      hsla(0, 0%, 0%, 0.15) 20%,
-      hsla(0, 0%, 0%, 0.25) 120%
-    );
-  background-blend-mode: screen, hue, hard-light;
-  background-size: 500px 100%, 200% 400%, 195% 100%, 200% 100%;
-  /* 100% - x moves the bands the opposite way and keeps the 195% tile over
-     the whole card. poke-holo's -x starts the tile inside the card, where the
-     band pattern restarts in a vertical seam. */
-  background-position:
-    center,
-    0% var(--background-y),
-    calc(100% - var(--background-x)) calc(var(--background-y) * -1),
-    var(--background-x) var(--background-y);
-  filter: brightness(1) contrast(2.5) saturate(1.75);
-  mix-blend-mode: soft-light;
+  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.72 + 0.08 * var(--foil-reach)));
 }
 
 .export-foil-iridescence {
   z-index: 4;
   background-image: linear-gradient(
-    calc(var(--pointer-from-left) * 360deg),
-    hsl(calc(var(--pointer-from-left) * 360), 88%, 58%),
-    hsl(calc(120 + var(--pointer-from-left) * 360), 88%, 58%),
-    hsl(calc(240 + var(--pointer-from-left) * 360), 88%, 58%)
+    calc(var(--foil-across) * 360deg),
+    hsl(calc(var(--foil-across) * 360), 88%, 58%),
+    hsl(calc(120 + var(--foil-across) * 360), 88%, 58%),
+    hsl(calc(240 + var(--foil-across) * 360), 88%, 58%)
   );
   /* soft-light, like the rainbow, so the shift never darkens the ink. */
   mix-blend-mode: var(--foil-rainbow-blend, soft-light);
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
-  opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--foil-reach)));
 }
 
 .export-foil-emboss {
   z-index: 5;
   background-image: linear-gradient(
-    calc(var(--pointer-from-left) * 180deg + var(--pointer-from-top) * 90deg),
+    calc(var(--foil-across) * 180deg + var(--foil-down) * 90deg),
     hsla(0, 0%, 100%, 0.82) 0%,
     hsla(0, 0%, 50%, 0) 46%,
     hsla(0, 0%, 0%, 0.72) 100%
@@ -399,19 +262,19 @@
 .export-foil-rim {
   z-index: 6;
   background-image: radial-gradient(
-    ellipse 85% 60% at calc(100% - var(--pointer-x)) calc(100% - var(--pointer-y)),
+    ellipse 85% 60% at calc(100% - var(--foil-at-x)) calc(100% - var(--foil-at-y)),
     hsla(205, 90%, 92%, 0.9) 0%,
     hsla(205, 70%, 80%, 0.25) 28%,
     transparent 58%
   );
   mix-blend-mode: screen;
-  opacity: calc(var(--foil-opacity) * var(--foil-rim) * (0.75 + 0.25 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-rim) * (0.75 + 0.25 * var(--foil-reach)));
 }
 
 .export-foil-parallax {
   z-index: 7;
   background-image: linear-gradient(
-    calc(var(--pointer-from-top) * 80deg + 40deg),
+    calc(var(--foil-down) * 80deg + 40deg),
     hsla(0, 0%, 100%, 0.4),
     transparent 38%,
     hsla(0, 0%, 0%, 0.22)
@@ -427,66 +290,36 @@
 .export-foil-specular {
   z-index: 8;
   background-image: radial-gradient(
-    circle at var(--pointer-x) var(--pointer-y),
+    circle at var(--foil-at-x) var(--foil-at-y),
     hsla(0, 0%, 100%, 0.95) 0%,
     hsla(0, 0%, 100%, 0.4) calc(var(--foil-spec-size) * 42%),
     transparent calc(var(--foil-spec-size) * 95%)
   );
   mix-blend-mode: screen;
-  opacity: calc(var(--foil-opacity) * var(--foil-specular) * (0.72 + 0.28 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-specular) * (0.72 + 0.28 * var(--foil-reach)));
 }
 
 .export-foil-bloom {
   z-index: 9;
   inset: 0;
   background-image: radial-gradient(
-    circle at var(--pointer-x) var(--pointer-y),
+    circle at var(--foil-at-x) var(--foil-at-y),
     hsla(0, 0%, 100%, 0.85) 0%,
     hsla(48, 100%, 80%, 0.35) calc(var(--foil-spec-size) * 50%),
     transparent calc(var(--foil-spec-size) * 120%)
   );
   mix-blend-mode: screen;
   filter: blur(var(--foil-bloom-blur));
-  opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--foil-reach)));
 }
 
+/* hover-tilt's glare gradient and its ::before layer are in
+   @/components/export/hover-tilt/hoverTilt.css. */
 .export-foil[data-hover-tilt='1'] {
-  --hover-tilt-from-center: var(--pointer-from-center);
-  --hover-tilt-at-edge: var(--pointer-from-center);
-  --hover-tilt-glare-mask: none;
-  --hover-tilt-glare-mask-size: cover;
-  --hover-tilt-glare-mask-repeat: no-repeat;
-  --hover-tilt-glare-mask-position: center;
-  --hover-tilt-mask-mode: match-source;
-  --hover-tilt-blend-mode: overlay;
-  --hover-tilt-glare-intensity: 1;
+  --hover-tilt-from-center: var(--foil-reach);
+  --hover-tilt-at-edge: var(--foil-reach);
   --hover-tilt-glare-size: 0.5;
   --hover-tilt-glare-hue: 40;
-  --gradient-x: var(--pointer-x);
-  --gradient-y: var(--pointer-y);
-  /* Size pulls the light stops in toward the pointer, then fades them to a
-     clear neutral stop. At 1 this is close to hover-tilt's glare, whose light
-     already crossed mid-gray near 56%. Smaller keeps the light in a hotspot,
-     so its overlay washes a smaller patch of the card. hover-tilt also ends
-     on a dark stop, which overlay turns into darker ink across most of the
-     card while white paper stays white. The export keeps that stop clear, so
-     the glare only adds light; the workshop's --foil-glare-dark brings it
-     back (1 is hover-tilt's) for comparison. */
-  --hover-tilt-default-gradient: radial-gradient(
-    farthest-corner circle at var(--gradient-x) var(--gradient-y),
-    hsla(var(--hover-tilt-glare-hue), 40%, 95%, calc(var(--hover-tilt-glare-intensity) * 0.66))
-      calc(8% * var(--hover-tilt-glare-size)),
-    hsla(var(--hover-tilt-glare-hue), 30%, 88%, calc(var(--hover-tilt-glare-intensity) * 0.5))
-      calc(28% * var(--hover-tilt-glare-size)),
-    hsla(var(--hover-tilt-glare-hue), 10%, 50%, 0) calc(56% * var(--hover-tilt-glare-size)),
-    hsla(
-        var(--hover-tilt-glare-hue),
-        10%,
-        5%,
-        calc(var(--hover-tilt-glare-intensity) * 0.25 * var(--foil-glare-dark, 0))
-      )
-      90%
-  );
   isolation: auto;
   transform-style: flat;
   -webkit-transform-style: flat;
@@ -494,31 +327,6 @@
   transform: none;
   will-change: auto;
 }
-
-.export-foil[data-hover-tilt='1']::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background-image: var(--hover-tilt-custom-gradient, var(--hover-tilt-default-gradient));
-  mix-blend-mode: var(--hover-tilt-blend-mode, overlay);
-  opacity: var(--hover-tilt-opacity, 0);
-  will-change: background-image, opacity;
-  -webkit-mask-image: var(--hover-tilt-glare-mask, none);
-  mask-image: var(--hover-tilt-glare-mask, none);
-  -webkit-mask-size: var(--hover-tilt-glare-mask-size, cover);
-  mask-size: var(--hover-tilt-glare-mask-size, cover);
-  -webkit-mask-position: var(--hover-tilt-glare-mask-position, center);
-  mask-position: var(--hover-tilt-glare-mask-position, center);
-  -webkit-mask-repeat: var(--hover-tilt-glare-mask-repeat, no-repeat);
-  mask-repeat: var(--hover-tilt-glare-mask-repeat, no-repeat);
-  -webkit-mask-mode: var(--hover-tilt-mask-mode, match-source);
-  mask-mode: var(--hover-tilt-mask-mode, match-source);
-  -webkit-mask-composite: var(--hover-tilt-glare-mask-composite-webkit, source-in);
-  mask-composite: var(--hover-tilt-glare-mask-composite, intersect);
-}
-
 
 .export-foil[data-hover-tilt='1'] .export-foil-layer {
   z-index: auto;

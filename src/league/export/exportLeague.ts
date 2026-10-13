@@ -65,7 +65,7 @@ import {
   wrapTracked,
 } from './paint';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
-import { drawGenderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
+import { drawGenderSymbol, genderSymbol, genderSymbolWidth } from '@/lib/genderSymbol';
 
 const FG = '#0a0a0a';
 const RED = '#DC2626';
@@ -334,7 +334,7 @@ function speciesCaption(pokemonId: number): { text: string; mark?: string } {
   if (!pokemon) return { text: '' };
   const label = pokemonLabel(pokemon.id, pokemon.name);
   return { text: localeUppercase(label.pending ? pokemon.name : label.name),
-    mark: label.mark && /[♂♀]/u.test(label.mark) ? label.mark : undefined };
+    mark: label.mark ?? undefined };
 }
 
 /** One run of a signature caption: its text and its face. */
@@ -360,9 +360,14 @@ function headRun(text: string, colour: string, face: HeadFace): CaptionRun {
   return { text, px: face.px, track: face.track, colour };
 }
 
-function captionMarkWidth(mark: string | undefined, px: number): number {
+function captionMarkWidth(ctx: CanvasRenderingContext2D, mark: string | undefined, px: number): number {
   if (!mark) return 0;
-  return genderSymbolWidth(mark, px * 0.8) + px * 0.15;
+  const previous = ctx.font;
+  ctx.font = font(px * 0.8, 600);
+  const width = mark.split(/([♂♀])/u).reduce((sum, part) => sum + (genderSymbol(part)
+    ? genderSymbolWidth(part, px * 0.8) : ctx.measureText(part).width), 0);
+  ctx.font = previous;
+  return width + px * 0.15;
 }
 
 /**
@@ -374,11 +379,11 @@ function nameRun(ctx: CanvasRenderingContext2D, pokemonId: number | null, room: 
   const trackAt = (px: number) => (L.NAME_TRACK / L.NAME_PX) * px;
   let px = L.NAME_PX;
   ctx.font = font(px, 800);
-  while (px > L.CAPTION_NAME_MIN_PX && trackedWidth(ctx, text, trackAt(px)) + captionMarkWidth(mark, px) > room) {
+  while (px > L.CAPTION_NAME_MIN_PX && trackedWidth(ctx, text, trackAt(px)) + captionMarkWidth(ctx, mark, px) > room) {
     px = Math.max(L.CAPTION_NAME_MIN_PX, px - 0.5);
     ctx.font = font(px, 800);
   }
-  return { text: ellipsizeTracked(ctx, text, room - captionMarkWidth(mark, px), trackAt(px)), mark,
+  return { text: ellipsizeTracked(ctx, text, room - captionMarkWidth(ctx, mark, px), trackAt(px)), mark,
     px, track: trackAt(px), colour: FG };
 }
 
@@ -396,7 +401,7 @@ function layoutCaption(
 ): CaptionLine[] {
   return runs.map((run, i) => {
     ctx.font = font(run.px, 800);
-    const w = trackedWidth(ctx, run.text, run.track) + captionMarkWidth(run.mark, run.px);
+    const w = trackedWidth(ctx, run.text, run.track) + captionMarkWidth(ctx, run.mark, run.px);
     const x = align === 'center' ? anchor - w / 2 : anchor - w;
     // Tracking follows the last letter too, as in CSS, but it is not ink.
     const ink = Math.max(0, w - run.track);
@@ -424,7 +429,17 @@ function fillCaption(ctx: CanvasRenderingContext2D, lines: CaptionLine[]): void 
       const markX = line.x + trackedWidth(ctx, line.text, line.track) + line.px * 0.15;
       ctx.save();
       ctx.globalAlpha *= 0.7;
-      drawGenderSymbol(ctx, line.mark, markX, baseline, line.px * 0.8);
+      ctx.font = font(line.px * 0.8, 600);
+      let x = markX;
+      for (const part of line.mark.split(/([♂♀])/u)) {
+        if (genderSymbol(part)) {
+          drawGenderSymbol(ctx, part, x, baseline, line.px * 0.8);
+          x += genderSymbolWidth(part, line.px * 0.8);
+        } else {
+          ctx.fillText(part, x, baseline);
+          x += ctx.measureText(part).width;
+        }
+      }
       ctx.restore();
     }
   }
@@ -1034,16 +1049,18 @@ function drawGymCard(
       ctx.restore();
     }
     const resolved = exportRow(card, row);
+    const occupied = resolved.filter((cell) => cell.pokemonId !== null);
     // Keep the original rightmost seat last. The other active seats follow
     // their introduction order. Resolve legendary and form identity first.
-    const cells = teamOrder === 'first-last'
-      ? [...resolved.slice(0, -1).reverse(), ...resolved.slice(-1)]
+    const cells = teamOrder === 'first-last' && occupied.length > 0
+      ? [...occupied.slice(0, -1).reverse(), ...occupied.slice(-1)]
       : resolved;
     const span = L.GLYPH_SPAN[row] ?? 1;
-    const lead = 7 - cells.length - span;
-    drawGlyphCell(ctx, row, span, shades, ox + lead * L.COL, y);
+    const glyphLead = 7 - resolved.length - span;
+    const pokemonLead = 7 - cells.length;
+    drawGlyphCell(ctx, row, span, shades, ox + glyphLead * L.COL, y);
     cells.forEach((cell, i) => {
-      const cx = ox + (lead + span + i) * L.COL + L.COL / 2;
+      const cx = ox + (pokemonLead + i) * L.COL + L.COL / 2;
       const cy = y + L.ROW / 2;
       const w = L.COL - 2 * L.INX;
       const h = L.ROW - 2 * L.INY;

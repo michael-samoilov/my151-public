@@ -61,7 +61,6 @@ import {
   geoChipLabel,
   uiLanguage,
   TOOL_FILTER_OPTIONS,
-  toolKind,
   uniqueFacetValues,
   type ArchiveFilter,
   type FacetFilters,
@@ -74,7 +73,7 @@ import { BrowserUsage, PreviewUsageScale } from '@/components/admin/PreviewUsage
 import { UsageCard } from '@/components/admin/UsageCard';
 import { toolCells, totalTime, whenShapes, widestRow, type CardTime, type UsageSource, type ToolCell } from '@/components/admin/browserUsage';
 import { VirtualRows } from '@/components/admin/VirtualRows';
-import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Monitor, AppWindow } from 'lucide-react';
+import { Archive, ArchiveRestore, Globe, Languages, MessageSquare, Compass, MonitorSmartphone } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
 import type { BrowserIndex, BrowserRow } from '../../../api/_dashboard';
 import type { ExportSurveySkip } from '../../../api/_events';
@@ -1236,7 +1235,7 @@ function UserDetailPage({
 
 /** When over Ago, five who columns, Dex, Gyms, Favs, Total, then the archive button. */
 const PREVIEW_TABLE =
-  'relative flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_auto_auto_auto_1fr] md:gap-x-2 md:gap-y-2';
+  'relative flex w-full flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto_auto_auto_auto_auto_auto] md:gap-x-1 md:gap-y-2';
 
 const FACET_COL: Record<FacetKey, string> = {
   country: 'md:col-start-2',
@@ -1260,9 +1259,9 @@ function facetIcon(key: FacetKey, value: string): ReactNode {
 function facetLeadIcon(key: FacetKey): ReactNode {
   const cls = 'h-3.5 w-3.5';
   if (key === 'country') return <Globe className={cls} />;
-  if (key === 'device') return <DeviceIcon value="Desktop" />;
-  if (key === 'os') return <Monitor className={cls} />;
-  if (key === 'browser') return <AppWindow className={cls} />;
+  if (key === 'device') return <MonitorSmartphone className={cls} />;
+  if (key === 'os') return <span className="text-[0.65rem] font-semibold leading-none">OS</span>;
+  if (key === 'browser') return <Compass className={cls} />;
   return <Languages className={cls} />;
 }
 
@@ -1322,7 +1321,6 @@ function PreviewStatusMenus({
 }: {
   archiveFilter: ArchiveFilter;
   setArchiveFilter: (v: ArchiveFilter) => void;
-  /** Leave out for a list whose rows have no Dex and League pair to filter. */
   toolFilter?: ToolFilter;
   setToolFilter?: (v: ToolFilter) => void;
 }) {
@@ -1371,7 +1369,7 @@ function PreviewPlatformSlot({
 }
 
 /** The text of a card's When cell. */
-const WHEN_TEXT = 'whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1';
+const WHEN_TEXT = 'whitespace-nowrap md:whitespace-normal text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1';
 
 /** Invisible desktop copies of every When shape in the list, in the table's
  *  first column, so it is as wide as the widest. Shares the header's grid
@@ -1451,7 +1449,7 @@ function UserPreviewCard({
       aria-label={sizer ? undefined : `Open user ${middleId(rec.cid)}`}
       className={cn(
         'flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'md:col-span-full md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:gap-y-1 md:py-1.5',
+        'md:col-span-full md:grid md:grid-cols-subgrid md:items-center md:gap-x-1 md:gap-y-1 md:py-1.5',
         archived && 'opacity-70',
         sizer && 'invisible max-md:hidden md:row-start-1 md:h-0 md:overflow-hidden md:py-0',
       )}
@@ -2410,9 +2408,7 @@ export function AdminPage() {
                 const archivedOf = (row: BrowserRow) => archiveOverride[bareCid(row.cid)] ?? row.archived;
                 const listed = list.filter((row) => {
                   if (!matchesArchiveFilter(archivedOf(row), archiveFilter)) return false;
-                  if (showPicker) return true;
-                  const both = toolKind(!!row.dex, !!row.league);
-                  return both !== null && matchesToolFilter(both, toolFilter);
+                  return matchesToolFilter(row, toolFilter);
                 });
                 const rows = listed.filter((row) => matchesFacetFilters(row, facetFilters));
                 const sizer = widestRow(rows);
@@ -2429,21 +2425,21 @@ export function AdminPage() {
                     <div className="mb-3 space-y-2">
                       <Seg ariaLabel="Browser summary source" options={[{key: 'active', label: 'Active'}, {key: 'legacy', label: 'Legacy spans'}]} value={summarySource} onChange={setSummarySource} />
                       <p className="text-xs text-muted-foreground">{summarySource === 'active'
-                        ? 'Retained foreground intervals · 5-minute session gap · — = not recorded · * = partial history'
-                        : 'Legacy session spans · 30-minute session gap · includes idle between snapshots · retained history'}</p>
+                        ? 'Idle gaps <5 min between interactions included in session length'
+                        : 'Idle gaps <30 min between interactions included in session length'}</p>
                     </div>
                     <div className={PREVIEW_TABLE}>
                       <div
                         data-preview-header
                         // Sticks under the page header on a phone, and under the date-and-tab bar on desktop.
                         // Its ::before covers the panel's padding, where the rows' shadows would show beside it.
-                        className="sticky top-[var(--admin-header-h,0px)] z-10 -mt-2 flex flex-wrap items-center gap-1.5 border-b border-border bg-card py-2 before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-card md:top-[calc(var(--admin-header-h,0px)+var(--admin-bar-h,0px))] md:col-span-full md:row-start-1 md:-mt-1.5 md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:px-2.5 md:pb-1.5 md:pt-1.5"
+                        className="sticky top-[var(--admin-header-h,0px)] z-10 -mt-2 flex flex-wrap items-center gap-1.5 border-b border-border bg-card py-2 before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-card md:top-[calc(var(--admin-header-h,0px)+var(--admin-bar-h,0px))] md:col-span-full md:row-start-1 md:-mt-1.5 md:grid md:grid-cols-subgrid md:items-center md:gap-x-1 md:px-2.5 md:pb-1.5 md:pt-1.5"
                       >
                         <PreviewStatusMenus
                           archiveFilter={archiveFilter}
                           setArchiveFilter={setArchiveFilter}
-                          toolFilter={showPicker ? undefined : toolFilter}
-                          setToolFilter={showPicker ? undefined : setToolFilter}
+                          toolFilter={toolFilter}
+                          setToolFilter={setToolFilter}
                         />
                         <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-1 md:row-start-1 md:flex">When</div>
                         <PreviewFacetMenus listed={listed} facets={facetFilters} setFacets={setFacetFilters} />
@@ -2463,7 +2459,7 @@ export function AdminPage() {
                         <VirtualRows
                           items={rows}
                           keyOf={(row) => `${listKey}:${row.cid}`}
-                          className="flex flex-col gap-2 md:col-span-full md:grid md:grid-cols-subgrid md:gap-x-2 md:gap-y-2"
+                          className="flex flex-col gap-2 md:col-span-full md:grid md:grid-cols-subgrid md:gap-x-1 md:gap-y-2"
                           render={(row) => {
                             const archived = archivedOf(row);
                             const split = row.cid.indexOf('::');

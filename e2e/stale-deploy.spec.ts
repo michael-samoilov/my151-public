@@ -51,13 +51,27 @@ test('a tab opened before a deploy reloads when it opens Export, keeps the picks
   await artifact(page, testInfo, 'stale-tab-after-deploy', { reloaded: true, picksKept: true, exportOpened: true });
 });
 
-test('a chunk missing without a deploy shows the error screen and does not reload', async ({ page }, testInfo) => {
+test('a chunk missing without a deploy shows the error screen, reports it, and does not reload', async ({ page }, testInfo) => {
+  // The preview server has no API, so the report is caught here.
+  const reports: { context: { route: string; error: { where: string; message: string } } }[] = [];
+  await page.route('**/api/crash', (route) => {
+    reports.push(route.request().postDataJSON());
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+  });
   await openStaleTab(page, false);
   let navigations = 0;
   page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) navigations++; });
   await page.getByTestId('favorites-export-open').click();
   await expect(crashScreen(page)).toBeVisible();
+  // Psyduck and one way out: the report is already sent, so there is no button for it.
+  await expect(page.locator('[data-art="psyduck"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reload', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send report' })).toHaveCount(0);
   await page.waitForTimeout(1000);
   expect(navigations).toBe(0);
-  await artifact(page, testInfo, 'missing-chunk-no-deploy', { navigations, crashScreen: true });
+  expect(reports).toHaveLength(1);
+  const { route, error } = reports[0].context;
+  expect({ route, where: error.where }).toEqual({ route: '/favorite-pokemon-picker', where: 'favorite-picker' });
+  expect(error.message).not.toBe('');
+  await artifact(page, testInfo, 'missing-chunk-no-deploy', { navigations, crashScreen: true, report: reports[0] });
 });

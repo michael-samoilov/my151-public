@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
-import {
-  registerFeedbackOpener,
-  takePendingCrash,
-  type FeedbackAnchor,
-} from '@/components/feedback/feedbackChannel';
-import type { FeedbackCategory, FeedbackContext, FeedbackToolContext } from '@/lib/feedbackContext';
+import { registerFeedbackOpener, type FeedbackAnchor } from '@/components/feedback/feedbackChannel';
+import type { FeedbackCategory, FeedbackToolContext } from '@/lib/feedbackContext';
 
 /**
  * The single mount point for the report form.
@@ -17,8 +13,8 @@ import type { FeedbackCategory, FeedbackContext, FeedbackToolContext } from '@/l
  * inside a `display: none` subtree, where it measured 0x0 and never appeared.
  * A host that sits outside every page's subtree cannot land in a hidden one.
  *
- * It also sits outside every page's error boundary, so a page that has crashed
- * can still open the form its fallback offers.
+ * It also sits outside every page's error boundary, so the bug icon still
+ * opens the form after a page has crashed.
  *
  * The sheet is imported, not loaded on first open. Loaded on open, its text
  * field took focus after the download, outside the tap, and iOS opens the
@@ -38,7 +34,6 @@ export function FeedbackHost({ route, getToolContext }: {
   const [toolContext, setToolContext] = useState<FeedbackToolContext | undefined>();
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<FeedbackCategory>('bug');
-  const [crash, setCrash] = useState<FeedbackContext['error']>(undefined);
   // What was clicked, so the desktop card can open beside it.
   const [anchor, setAnchor] = useState<FeedbackAnchor>(null);
 
@@ -47,10 +42,6 @@ export function FeedbackHost({ route, getToolContext }: {
       registerFeedbackOpener((c, from) => {
         setCategory(c);
         setAnchor(from);
-        // An error boundary parks the crash it caught here on its way to
-        // opening the form, because the tree that would have carried it as a
-        // prop is the one that just died.
-        setCrash(takePendingCrash());
         setToolContext(contextRef.current?.());
         setOpen(true);
       }),
@@ -63,7 +54,6 @@ export function FeedbackHost({ route, getToolContext }: {
       route={route}
       toolContext={toolContext}
       initialCategory={category}
-      error={crash}
       anchor={anchor}
       onClose={() => setOpen(false)}
     />

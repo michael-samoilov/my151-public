@@ -90,6 +90,35 @@ export function deriveFoilMaps(src: RgbaBitmap, need: FoilMapNeed = ALL_MAPS): F
     }
   }
 
+  // A blend over a partly transparent pixel shows some of the layer's own
+  // color, so the gleam's dark gaps darkened the anti-aliased rim of the
+  // card's rounded corners. Ink masks stop one pixel inside that rim; the
+  // extra pixel covers the bilinear blur when the preview scales the mask up.
+  if (need.sat || need.gloss) {
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const o = (y * width + x) * 4;
+        if (sat.data[o + 3] === 0 && gloss.data[o + 3] === 0) continue;
+        let rim = false;
+        for (let dy = -1; dy <= 1 && !rim; dy++) {
+          const yy = y + dy;
+          if (yy < 0 || yy >= height) continue;
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = x + dx;
+            if (xx >= 0 && xx < width && data[(yy * width + xx) * 4 + 3]! < 255) {
+              rim = true;
+              break;
+            }
+          }
+        }
+        if (rim) {
+          sat.data[o + 3] = 0;
+          gloss.data[o + 3] = 0;
+        }
+      }
+    }
+  }
+
   if (need.edge && lum) {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {

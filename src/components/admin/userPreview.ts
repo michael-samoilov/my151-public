@@ -11,9 +11,8 @@ const ISO_3166_2 = /^[A-Z]{2}-[A-Z0-9]{1,3}$/;
 const ISO_SUBDIVISION = /^[A-Z0-9]{1,3}$/;
 
 export type ArchiveFilter = 'active' | 'archived' | 'all';
-export type ToolFilter = 'any' | 'dex' | 'league' | 'both';
-type ToolKind = 'dex' | 'league' | 'both';
-type PreviewLangKind = 'served' | 'unsupported' | 'switched';
+export type ToolFilter = 'any' | 'dex' | 'league' | 'picker';
+export type PreviewLangKind = 'served' | 'unsupported' | 'switched';
 
 export const FACET_KEYS = ['country', 'device', 'os', 'browser', 'language'] as const;
 export type FacetKey = (typeof FACET_KEYS)[number];
@@ -38,9 +37,9 @@ export const ARCHIVE_FILTER_OPTIONS: { key: ArchiveFilter; label: string }[] = [
 
 export const TOOL_FILTER_OPTIONS: { key: ToolFilter; label: string }[] = [
   { key: 'any', label: 'Any' },
-  { key: 'dex', label: 'Dex, no League' },
-  { key: 'league', label: 'League, no Dex' },
-  { key: 'both', label: 'Dex + League' },
+  { key: 'dex', label: 'Dex' },
+  { key: 'league', label: 'League' },
+  { key: 'picker', label: 'Picker' },
 ];
 
 type PreviewPlatform = {
@@ -53,16 +52,9 @@ type PreviewPlatform = {
   switched?: string;
 };
 
-export function toolKind(hasDex: boolean, hasLeague: boolean): ToolKind | null {
-  if (hasDex && hasLeague) return 'both';
-  if (hasDex) return 'dex';
-  if (hasLeague) return 'league';
-  return null;
-}
-
-export function matchesToolFilter(kind: ToolKind, filter: ToolFilter): boolean {
-  if (filter === 'any') return true;
-  return kind === filter;
+/** Includes every browser with a record for the selected tool, including bouncers. */
+export function matchesToolFilter(row: { dex?: unknown; league?: unknown; picker?: unknown }, filter: ToolFilter): boolean {
+  return filter === 'any' || !!row[filter];
 }
 
 export function matchesArchiveFilter(archived: boolean, filter: ArchiveFilter): boolean {

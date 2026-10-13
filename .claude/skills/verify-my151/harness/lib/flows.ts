@@ -427,7 +427,7 @@ async function waitForFoilMaps(s: Session, ms = 15000): Promise<boolean> {
 async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: string }> {
   return s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
-     const holo=document.querySelector('[data-foil-layer="holographic"]');
+     const holo=document.querySelector('[data-foil-layer="gleam"]');
      const hit=document.querySelector('[data-export-tilt-hit]');
      if(!(card instanceof HTMLElement) || !(holo instanceof HTMLElement)) return {ok:false,reason:'missing'};
      const maps=card.getAttribute('data-foil-maps')||'';
@@ -436,7 +436,7 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const mask=(cs.getPropertyValue('-webkit-mask-image')+' '+cs.maskImage).replace(/\\s+/g,' ').trim();
      const mix=cs.mixBlendMode;
      const opacity=Number(cs.opacity);
-     const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
+     const amount=Number(getComputedStyle(card).getPropertyValue('--foil-gleam'));
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
      if(mix!=='color-dodge') return {ok:false,reason:'blend '+mix};
      if(!(opacity>0.04)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
@@ -445,20 +445,15 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
      if(mask.includes('image/svg')) return {ok:false,reason:'frame mask hides ink'};
      if(!mask.includes('image/png')) return {ok:false,reason:'ink mask missing'};
-     // The poke-holo V shine: diagonal bands over a sunpillar rainbow, and a
-     // second copy whose bands travel the other way.
-     if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no V bands'};
-     const after=getComputedStyle(holo,'::after');
-     if(after.mixBlendMode!=='soft-light'||!after.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no crossing layer'};
+     // The gleam: two sets of diagonal bands that slide against each other.
+     if((cs.backgroundImage.match(/repeating-linear-gradient/g)||[]).length<2) return {ok:false,reason:'no crossing bands'};
      if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
-     const lift=document.querySelector('[data-export-foil-lift]');
-     const liftStyle=lift instanceof HTMLElement ? getComputedStyle(lift) : null;
-     const shadow=liftStyle?.boxShadow||'';
-     if(!shadow || shadow==='none') return {ok:false,reason:'no lift shadow'};
+     const shadows=[...document.querySelectorAll('[data-export-shadow-layer]')];
+     if(shadows.length!==2 || !shadows.every((el)=>getComputedStyle(el).filter.includes('blur('))) return {ok:false,reason:'no shape shadow'};
      const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
      if(hitStyle && hitStyle.boxShadow!=='none' && hitStyle.boxShadow!=='') return {ok:false,reason:'hit still shadowed'};
      if(hitStyle && parseFloat(hitStyle.paddingTop||'0')<32) return {ok:false,reason:'hit pad '+hitStyle.paddingTop};
-     return {ok:true,reason:'v-shine '+opacity.toFixed(2)+' foil='+foil.toFixed(2)};`,
+     return {ok:true,reason:'gleam '+opacity.toFixed(2)+' foil='+foil.toFixed(2)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
 }
 
@@ -497,7 +492,7 @@ async function measureSharedExportFoil(s: Session, hypotOk: (h: number) => boole
   const img = await waitForDexPreviewImg(s);
   const maps = await waitForFoilMaps(s);
   await pokeExportCorner(s);
-  // Poll like rainbow-on-open: WebKitGTK paints the V shine near 7 fps here.
+  // Poll like rainbow-on-open: WebKitGTK paints the gleam near 7 fps here.
   const started = Date.now();
   let rainbow: { ok: boolean; reason: string };
   let pose: { hypot: number; orbit: string };
@@ -537,7 +532,7 @@ async function readDexPreviewMotion(s: Session): Promise<{
     `const el=document.querySelector('[data-export-preview]');
      const hit=document.querySelector('[data-export-tilt-hit]');
      const light=document.querySelector('[data-foil-layer="pointLight"]');
-     const holo=document.querySelector('[data-foil-layer="holographic"]');
+     const holo=document.querySelector('[data-foil-layer="gleam"]');
      const x=Number(el?.getAttribute('data-tilt-x')||0);
      const y=Number(el?.getAttribute('data-tilt-y')||0);
      const r=el instanceof HTMLElement ? el.getBoundingClientRect() : {top:0,left:0,width:0,height:0};
@@ -753,7 +748,9 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const cardCs=getComputedStyle(card);
      const layerCs=layer instanceof HTMLElement ? getComputedStyle(layer) : null;
      const stageCs=hit.parentElement instanceof HTMLElement ? getComputedStyle(hit.parentElement) : null;
-     if(!liftCs.boxShadow || liftCs.boxShadow==='none') return {ok:false,reason:'lift shadow none'};
+     const shadows=[...document.querySelectorAll('[data-export-shadow-layer]')];
+     if(shadows.length!==2 || !shadows.every((el)=>getComputedStyle(el).filter.includes('blur('))) return {ok:false,reason:'no shape shadow'};
+     if(liftCs.boxShadow!=='none') return {ok:false,reason:'lift box-shadow '+liftCs.boxShadow};
      if(hitCs.boxShadow!=='none') return {ok:false,reason:'hit still shadowed'};
      if(cardCs.boxShadow!=='none') return {ok:false,reason:'card shadowed'};
      if(liftCs.overflow!=='visible') return {ok:false,reason:'lift overflow '+liftCs.overflow};
@@ -892,7 +889,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        const inset=getComputedStyle(bloom).inset;
        if(inset.includes('-')) return {ok:false,reason:'bloom inset '+inset};
      }
-     const holo=document.querySelector('[data-foil-layer="holographic"]');
+     const holo=document.querySelector('[data-foil-layer="gleam"]');
      if(!(holo instanceof HTMLElement)) return {ok:false,reason:'no holo'};
      const holoStyle=getComputedStyle(holo);
      const mask=(holoStyle.getPropertyValue('-webkit-mask-image')+' '+holoStyle.getPropertyValue('mask-image')).replace(/\\s+/g,' ').trim();
@@ -905,7 +902,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
          return {ok:false,reason:'layer-overflow '+(layer.dataset.foilLayer||'')};
        }
      }
-     const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
+     const holoAmt=Number(style.getPropertyValue('--foil-gleam'));
      if(Math.abs(holoAmt-0.7)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
      return {ok:true,reason:bloom?'ink-holo-clipped':'ink-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
@@ -1789,7 +1786,10 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     return checks;
   }
 
-  await clickCell(s, '[data-testid="favorites-cell-electric-5"]');
+  // Fire x Gen V has full rows of six on both sides of a diff. Electric x Gen V
+  // lost its row of six when Overdrive Zekrom made it 13 picks in rows of 5, 5
+  // and 3, and sprite-matches-six-col needs a row of six to measure.
+  await clickCell(s, '[data-testid="favorites-cell-fire-5"]');
   const pretty = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
   checks.push(ok('favorites:picker-opens', pretty));
   await settle(s);
@@ -1827,10 +1827,10 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     ));
     await s.screenshot(ctx.shot('favorites-picker-last-row'));
     const sprite = await s.evalJson<{
-      css: number; dex: number; w: number; dpr: number; natural: number; max: number; same: boolean; inside: boolean;
+      css: number; dex: number; w: number; dpr: number; natural: number; max: number; same: boolean; inside: boolean; lens: number[];
     }>(`
       const el = document.querySelector('[data-testid="favorites-pretty-grid"]');
-      if (!el) return { css:0, dex:0, w:0, dpr:1, natural:96, max:0, same:false, inside:false };
+      if (!el) return { css:0, dex:0, w:0, dpr:1, natural:96, max:0, same:false, inside:false, lens:[] };
       const imgs = [...el.querySelectorAll('img[alt]:not([alt=""])')];
       const widths = imgs.map((node) => node.getBoundingClientRect().width);
       const rows = [...el.querySelectorAll('[data-pretty-row]')].map((row) => row.querySelectorAll('button').length);
@@ -1845,7 +1845,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       const sb = six ? six.getBoundingClientRect() : null;
       const hb = host ? host.getBoundingClientRect() : null;
       const inside = !!sb && !!hb && sb.left >= hb.left - 0.5 && sb.right <= hb.right + 0.5;
-      return { css, dex, w, dpr, natural, max: Math.max(...rows, 0), same, inside };
+      return { css, dex, w, dpr, natural, max: Math.max(...rows, 0), same, inside, lens: rows };
     `);
     const oneX = sprite.natural / Math.max(sprite.dpr, 1);
     const notShrunk = sprite.dex <= oneX + 1 || sprite.css > oneX + 1;
@@ -1856,7 +1856,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
         && Math.abs(sprite.css - sprite.dex) < 0.6
         && sprite.inside
         && notShrunk,
-      `css=${sprite.css} dex=${sprite.dex} w=${sprite.w.toFixed(1)} inside=${sprite.inside} dpr=${sprite.dpr} oneX=${oneX.toFixed(1)}`,
+      `css=${sprite.css} dex=${sprite.dex} w=${sprite.w.toFixed(1)} inside=${sprite.inside} dpr=${sprite.dpr} oneX=${oneX.toFixed(1)} rows=${sprite.lens.join(',')}`,
     ));
     checks.push(await auditRender(s, 'favorites:render-picker'));
 
@@ -1928,12 +1928,14 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     await closePicker();
     await clickCell(s, '[data-testid="favorites-cell-favorite-1"]');
     await waitFor(s, '[data-testid="favorites-picker"]');
+    // The Gen I favorite has nothing to choose yet: the empty state names the
+    // cause and offers the way there, a button that opens a Gen I cell.
     const emptyCard = await s.evalJson<boolean>(`
       const empty = document.querySelector('[data-testid="favorites-picker-empty"]');
       return !!empty && !!empty.querySelector('svg')
         && !!empty.querySelector('h2')?.textContent?.trim()
         && !!empty.querySelector('p')?.textContent?.trim()
-        && !empty.querySelector('button');
+        && !!empty.querySelector('button')?.textContent?.trim();
     `);
     checks.push(ok('favorites:pointer-empty-guidance', emptyCard));
     await s.screenshot(ctx.shot('favorites-pointer-empty'));
@@ -2540,12 +2542,12 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
   checks.push(ok('foil-workshop:preview-img', imgReady, imgReady ? 'preview painted' : 'no preview img'));
   const tiltVars = await s.evalJson<{ rot: string; holo: string; glare: string; holoBlend: string; glareBlend: string }>(
     `const el=document.querySelector('[data-export-preview]');
-     const holoEl=document.querySelector('[data-foil-layer="holographic"]');
+     const holoEl=document.querySelector('[data-foil-layer="gleam"]');
      if(!(el instanceof HTMLElement) || !(holoEl instanceof HTMLElement)) return {rot:'',holo:'',glare:'',holoBlend:'',glareBlend:''};
      const s=getComputedStyle(el);
      return {
        rot: s.getPropertyValue('--hover-tilt-rotation-x').trim(),
-       holo: s.getPropertyValue('--foil-holographic').trim(),
+       holo: s.getPropertyValue('--foil-gleam').trim(),
        glare: s.getPropertyValue('--hover-tilt-glare-intensity').trim(),
        holoBlend: getComputedStyle(holoEl).mixBlendMode,
        glareBlend: getComputedStyle(el,'::before').mixBlendMode,
@@ -2553,7 +2555,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
   ).catch(() => ({ rot: '', holo: '', glare: '', holoBlend: '', glareBlend: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^14\.29deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
   checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.7) < 0.02, `holo=${tiltVars.holo}`));
-  checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 1) < 0.02, `glare=${tiltVars.glare}`));
+  checks.push(ok('foil-workshop:prod-glare', Math.abs(Number(tiltVars.glare) - 0.6) < 0.02, `glare=${tiltVars.glare}`));
   checks.push(ok('foil-workshop:prod-holo-blend', tiltVars.holoBlend === 'color-dodge', `blend=${tiltVars.holoBlend}`));
   checks.push(ok('foil-workshop:prod-glare-blend', tiltVars.glareBlend === 'overlay', `blend=${tiltVars.glareBlend}`));
   await s.screenshot(ctx.shot('foil-workshop'));
@@ -2569,9 +2571,9 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     `const has=(sel)=>!!document.querySelector(sel);
      const extras=[...document.querySelectorAll('[data-foil-slider],[data-hover-tilt-mask],[data-workshop-dark-card-toggle]')]
        .map((el)=>el.getAttribute('data-foil-slider')||el.getAttribute('data-hover-tilt-mask')||el.getAttribute('data-workshop-dark-card-toggle')||el.tagName)
-       .filter((id)=>!['holographic','holoRainbow','pointLight','iridescence','maxTilt','cameraRatio','glareIntensity','glareSize','glareDark','shadowBlur'].includes(id));
+       .filter((id)=>!['gleam','prism','pointLight','iridescence','maxTilt','cameraRatio','cardSize','glareIntensity','glareSize','glareDark','shadowBlur'].includes(id));
      return {
-        holo: has('[data-foil-slider="holographic"]') && has('[data-foil-slider="holoRainbow"]') && has('[data-foil-slider="maxTilt"]'),
+        holo: has('[data-foil-slider="gleam"]') && has('[data-foil-slider="prism"]') && has('[data-foil-slider="maxTilt"]'),
         glare: has('[data-foil-slider="glareIntensity"]'),
         shadow: has('[data-workshop-shadow-toggle]') && has('[data-foil-slider="shadowBlur"]'),
         selectors: document.querySelectorAll('[data-hover-tilt-select]').length,
@@ -3189,4 +3191,25 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   await s.screenshot(ctx.shot('league-funnel-complete-nudge'));
   checks.push(ok('league-funnel:complete-nudge-shown', complete, complete ? 'full league export nudge' : 'no complete nudge after the last card'));
   return checks;
+}
+
+// The 404 page types its lines letter by letter with a stepped clip-path. Once
+// the animations end, every line must show whole: WebKit held a 9-step line one
+// step short when the animation kept its last frame, and cut the last letter.
+export async function runNotFoundSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  await s.navigate(ctx.base + '/404.html');
+  let lines: Array<{ text: string; clip: string; running: number }> = [];
+  for (let i = 0; i < 40; i++) {
+    await sleep(250);
+    lines = await s.evalJson(`return [...document.querySelectorAll('.say span, .title span')].map((el) => ({
+      text: el.textContent || '', clip: getComputedStyle(el).clipPath,
+      running: el.getAnimations().filter((a) => a.playState === 'running' || a.playState === 'pending').length }));`).catch(() => []);
+    if (lines.length && lines.every((l) => l.running === 0)) break;
+  }
+  const whole = (clip: string) => clip === 'none' || /^inset\(0px( 0(px|%)){0,3}\)$/.test(clip);
+  const cut = lines.filter((l) => !whole(l.clip));
+  await s.screenshot(ctx.shot('not-found-typed'));
+  const found = lines.length === 5;
+  return [ok('not-found:typed-lines-whole', found && cut.length === 0,
+    !found ? `found ${lines.length} typed lines, expected 5` : cut.length ? cut.map((l) => `"${l.text}" ends at ${l.clip}`).join('; ') : 'all 5 lines whole')];
 }

@@ -58,9 +58,9 @@ export function cssVar(el: HTMLElement | null, name: string, fallback = ''): str
 /**
  * The one scrub every admin line chart shares. Category positions are evenly
  * spaced; numeric charts can provide their actual axis coordinates.
- * A hover shows the readout; a press adds the vertical line. Both snap to the
+ * Mouse hover and a press show the readout and vertical line. Both snap to the
  * nearest x position, so a drag steps from point to point and never sits
- * between two dates. Release or leave hides them.
+ * between two dates. Mouse leave or touch release hides them.
  */
 interface ChartScrub {
   count: number;
@@ -131,6 +131,7 @@ export function useECharts(
 
     if (scrubs) {
       let pressed = false;
+      let hovering = false;
 
       if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
       // A drag scrubs the chart instead of scrolling the page.
@@ -218,7 +219,7 @@ export function useECharts(
         const w = readout.offsetWidth;
         const maxX = Math.max(el.clientWidth - w, 0);
         readout.style.left = `${Math.max(0, Math.min(x - w / 2, maxX))}px`;
-        if (pressed) {
+        if (pressed || hovering) {
           line.style.left = `${lineLeftInPlot(x, plot)}px`;
           line.style.top = `${plot.y}px`;
           line.style.height = `${plot.height}px`;
@@ -230,32 +231,43 @@ export function useECharts(
       };
       const onDown = (e: PointerEvent) => {
         pressed = true;
+        hovering = e.pointerType === 'mouse';
         try { el.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
         showAt(e.clientX, e.clientY);
       };
       const onMove = (e: PointerEvent) => {
+        hovering = e.pointerType === 'mouse';
         showAt(e.clientX, e.clientY);
         if (pressed) e.preventDefault();
       };
       const onLeave = () => {
+        hovering = false;
         if (!pressed) hide();
       };
-      const onUp = () => {
+      const onUp = (e: PointerEvent) => {
         if (!pressed) return;
         pressed = false;
+        const r = el.getBoundingClientRect();
+        hovering = e.pointerType === 'mouse' && e.clientX >= r.left && e.clientX < r.right && e.clientY >= r.top && e.clientY < r.bottom;
+        if (hovering) showAt(e.clientX, e.clientY);
+        else hide();
+      };
+      const onCancel = () => {
+        pressed = false;
+        hovering = false;
         hide();
       };
       el.addEventListener('pointerdown', onDown);
       el.addEventListener('pointermove', onMove);
       el.addEventListener('pointerleave', onLeave);
       window.addEventListener('pointerup', onUp);
-      window.addEventListener('pointercancel', onUp);
+      window.addEventListener('pointercancel', onCancel);
       cleanupRef.current = () => {
         el.removeEventListener('pointerdown', onDown);
         el.removeEventListener('pointermove', onMove);
         el.removeEventListener('pointerleave', onLeave);
         window.removeEventListener('pointerup', onUp);
-        window.removeEventListener('pointercancel', onUp);
+        window.removeEventListener('pointercancel', onCancel);
         line.remove();
         readout.remove();
       };

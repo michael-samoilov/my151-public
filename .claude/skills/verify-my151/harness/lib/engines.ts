@@ -372,6 +372,24 @@ class WebKitSession implements Session {
   }
 }
 
+/**
+ * The web features that WebKit turns on for Apple platforms only: every
+ * `stable` or `mature` entry in `UnifiedWebPreferences.yaml` (branch
+ * `webkitglib/2.52`) whose default is true under `PLATFORM(COCOA)` and false
+ * elsewhere. Without them the Linux build is not Safari. Safari applies CSS
+ * `zoom` to `rem` lengths, and so does WebKit with `EvaluationTimeZoom`.
+ * Without that feature, the Gym trainer card's TM cell, ace name and badge
+ * name overflowed. Michael's iPhone and Chrome both draw them correctly.
+ * `MiniBrowser --features=help` lists what this build can turn on.
+ */
+const SAFARI_FEATURES = [
+  'EvaluationTimeZoom', 'EnableElementCurrentCSSZoom', 'AltitudeAngle', 'AzimuthAngle',
+  'CanvasColorSpace', 'ScopedCustomElementRegistry', 'StorageAPI', 'StorageAPIEstimate',
+  'FileSystem', 'AccessHandle', 'FileSystemWritableStream', 'WebShareFileAPI',
+  'InputTypeColorEnhancements', 'SwitchControl', 'VerticalFormControls',
+  'ImageCapture', 'MediaSessionCaptureToggleAPI', 'MediaStreamTrackProcessing',
+];
+
 // Video mode runs the driver under a fixed Xvfb display so ffmpeg can grab it; the
 // default keeps the simpler xvfb-run path, which the proven suite relies on.
 export async function openWebKit(videoFile?: string): Promise<Session> {
@@ -390,7 +408,7 @@ export async function openWebKit(videoFile?: string): Promise<Session> {
     try { const s = await w3c('GET', ENGINE_PATHS.webkitPort, '/status'); if (s.status === 200) ready = true; } catch { /* not up yet */ }
   }
   if (!ready) { killGroup(driver); killProc(xvfb); throw new Error('WebKitWebDriver never became ready'); }
-  const caps = { capabilities: { alwaysMatch: { browserName: 'MiniBrowser', 'webkitgtk:browserOptions': { binary: ENGINE_PATHS.webkitBrowser, args: ['--automation'] } } } };
+  const caps = { capabilities: { alwaysMatch: { browserName: 'MiniBrowser', 'webkitgtk:browserOptions': { binary: ENGINE_PATHS.webkitBrowser, args: ['--automation', `--features=${SAFARI_FEATURES.join(',')}`] } } } };
   const sess = await w3c('POST', ENGINE_PATHS.webkitPort, '/session', caps);
   const sid = (sess.value as { sessionId: string }).sessionId;
   if (!sid) { killGroup(driver); killProc(xvfb); throw new Error('webkit: session create failed'); }

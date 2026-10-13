@@ -1,5 +1,3 @@
-import { FOIL_HOLO_AMOUNT } from './foilBlend';
-
 /**
  * Lighting recipe for the export preview foil.
  *
@@ -9,13 +7,13 @@ import { FOIL_HOLO_AMOUNT } from './foilBlend';
  * workshop toggle can come back without losing the slider.
  */
 
-const FOIL_LAYER_IDS = [
+export const FOIL_LAYER_IDS = [
   'pointLight',
   'ambient',
   'specular',
   'rim',
-  'holoRainbow',
-  'holographic',
+  'prism',
+  'gleam',
   'iridescence',
   'emboss',
   'parallax',
@@ -43,6 +41,49 @@ export type FoilRecipe = {
   layers: Record<FoilLayerId, FoilLayer>;
 };
 
+export const FOIL_LAYER_META = {
+  pointLight: {
+    title: 'Point light',
+    blurb: 'Soft disc at the tilt. Lights the paper and the print.',
+  },
+  ambient: {
+    title: 'Ambient / diffuse',
+    blurb: 'Broad fill plus a shadow opposite the light.',
+  },
+  specular: {
+    title: 'Specular hotspot',
+    blurb: 'Tight highlight, masked to glossy color.',
+  },
+  rim: {
+    title: 'Rim lighting',
+    blurb: 'Edge glow opposite the light, masked to ridges.',
+  },
+  prism: {
+    title: 'Prism bands',
+    blurb: 'Pastel rainbow bands slide over colored ink with the tilt.',
+  },
+  gleam: {
+    title: 'Gleam',
+    blurb: 'Broad, grainy diagonal stripes brighten colored ink as the card tilts.',
+  },
+  iridescence: {
+    title: 'Iridescence / color shift',
+    blurb: 'Hue of colored surfaces shifts with the tilt.',
+  },
+  emboss: {
+    title: 'Surface texture / embossing',
+    blurb: 'Ridge lighting from an edge map of the export.',
+  },
+  parallax: {
+    title: 'Parallax',
+    blurb: 'Colored ink slides a few pixels above the paper.',
+  },
+  bloom: {
+    title: 'Bloom / glow',
+    blurb: 'Blurred copy of the hotspot.',
+  },
+} as const satisfies Record<FoilLayerId, { title: string; blurb: string }>;
+
 export const FOIL_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-recipe';
 
 /** Michael's workshop pick, September 27. */
@@ -51,8 +92,9 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
-  holoRainbow: { on: true, amount: 0.2 },
-  holographic: { on: true, amount: FOIL_HOLO_AMOUNT },
+  // The holo pair Michael picked on October 12: prism bands and gleam.
+  prism: { on: true, amount: 0.21 },
+  gleam: { on: true, amount: 0.7 },
   iridescence: { on: true, amount: 0.1 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
@@ -71,7 +113,7 @@ export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
   layers: DEFAULT_LAYERS,
 };
 
-const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holoRainbow', 'holographic', 'iridescence', 'parallax'];
+const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['prism', 'gleam', 'iridescence', 'parallax'];
 const EDGE_MASK_LAYERS: readonly FoilLayerId[] = ['emboss', 'rim'];
 const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'bloom'];
 
@@ -80,6 +122,10 @@ export type FoilMapNeed = {
   edge: boolean;
   gloss: boolean;
 };
+
+export function isFoilLayerId(value: unknown): value is FoilLayerId {
+  return typeof value === 'string' && (FOIL_LAYER_IDS as readonly string[]).includes(value);
+}
 
 export function cloneFoilRecipe(recipe: FoilRecipe): FoilRecipe {
   const layers = {} as Record<FoilLayerId, FoilLayer>;
@@ -146,7 +192,7 @@ export function foilRecipeSearch(recipe: FoilRecipe): string {
   return `r=${encodeURIComponent(JSON.stringify(recipe))}`;
 }
 
-function foilLayerAmount(recipe: FoilRecipe, id: FoilLayerId): number {
+export function foilLayerAmount(recipe: FoilRecipe, id: FoilLayerId): number {
   const layer = recipe.layers[id];
   return layer.on ? layer.amount : 0;
 }
@@ -194,3 +240,11 @@ export function withFoilLayer(
   return next;
 }
 
+export function recipeWithSolo(recipe: FoilRecipe, solo: FoilLayerId | null): FoilRecipe {
+  if (solo === null) return recipe;
+  const next = cloneFoilRecipe(recipe);
+  for (const id of FOIL_LAYER_IDS) {
+    next.layers[id] = { ...next.layers[id], on: id === solo };
+  }
+  return next;
+}

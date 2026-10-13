@@ -1,3 +1,4 @@
+import { sectionGlyphMask } from '@/lib/sectionGlyph';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
@@ -5,7 +6,6 @@ import { getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
 import { typeIconPath } from '@/data/type-ids';
 import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
 import { STARTER_IDS } from '@/data/categories';
-import { ensureTypeMask } from '@/lib/typeSymbol';
 import { expandTemplate } from '@/lib/richTemplate';
 import { formatListToParts, raw, t, typeLabel } from '@/i18n';
 import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, type StatsHeights } from './exportStats';
@@ -324,7 +324,7 @@ export async function generateExportImage(
     maybeLoadImage(insights.leanGens[0] != null ? (GEN_BADGE_URIS[insights.leanGens[0]] ?? null) : null),
     maybeLoadImage(insights.leanGens[1] != null ? (GEN_BADGE_URIS[insights.leanGens[1]] ?? null) : null),
     maybeLoadImage(insights.bestAttackType ? typeIconPath(insights.bestAttackType) : null),
-    loadSpandrelMasks(outline?.spandrelTypes ?? []),
+    loadSpandrelMasks(outline?.spandrelMasks ?? []),
   ]);
 
   const mx = PAD_X;
@@ -536,16 +536,15 @@ export async function generateExportImage(
   });
 }
 
-/** Generate + load the recolourable alpha masks for the given spandrel types.
- *  Failures are skipped (the spandrel falls back to the 4-point star). */
-async function loadSpandrelMasks(types: TypeName[]): Promise<Map<TypeName, HTMLImageElement>> {
-  const out = new Map<TypeName, HTMLImageElement>();
+/** Load the recolourable alpha masks of the spandrel glyphs. Failures are
+ *  skipped (the spandrel falls back to the 4-point star). */
+async function loadSpandrelMasks(urls: string[]): Promise<Map<string, HTMLImageElement>> {
+  const out = new Map<string, HTMLImageElement>();
   await Promise.all(
-    types.map(async (t) => {
+    urls.map(async (url) => {
       try {
-        const url = await ensureTypeMask(t);
         const img = await loadImage(url);
-        out.set(t, img);
+        out.set(url, img);
       } catch {
         /* keep falling back to the star */
       }
@@ -557,14 +556,14 @@ async function loadSpandrelMasks(types: TypeName[]): Promise<Map<TypeName, HTMLI
 /** Draw the section outlines onto the canvas, in the outline coordinate system
  *  translated by (ox, oy). Mirrors the View page's SectionOverlays SVG render:
  *  faint fills (fading on open edges), 20%-opacity borders, dotted continuation
- *  tails, corner spandrels (type icon or 4-point star), and fitted titles. */
+ *  tails, corner spandrels (section glyph or 4-point star), and fitted titles. */
 function drawOutlines(
   ctx: CanvasRenderingContext2D,
   shapes: OutlineShape[],
   spandrels: Spandrel[],
   ox: number,
   oy: number,
-  maskImgs: Map<TypeName, HTMLImageElement>,
+  maskImgs: Map<string, HTMLImageElement>,
 ) {
   const fontSize = TILE * 0.26;
   const strokeW = outlineStrokeW(TILE, OUTLINE_STROKE_FRAC);
@@ -622,9 +621,10 @@ function drawOutlines(
     ctx.restore();
   }
 
-  // Spandrels: recoloured type icon where its mask loaded, else a 4-point star.
+  // Spandrels: recoloured glyph where its mask loaded, else a 4-point star.
   for (const sp of spandrels) {
-    const img = sp.type ? maskImgs.get(sp.type) : undefined;
+    const mask = sectionGlyphMask(sp.sectionId);
+    const img = mask ? maskImgs.get(mask) : undefined;
     if (img) {
       const size = sp.r * 2;
       const px = Math.max(1, Math.round(size * SCALE));

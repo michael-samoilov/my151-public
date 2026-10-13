@@ -103,9 +103,6 @@ function contextLines(context: FeedbackContext, t: TFn, tn: TnFn): string[] {
         : t('feedback.context.pickerCellNone'),
     );
   }
-  if (context.error) {
-    lines.push(t('feedback.context.error', { error: `${context.error.name}: ${context.error.message}` }));
-  }
   if (context.message) lines.push(t('feedback.context.string', { key: context.message.key }));
   return lines;
 }
@@ -114,14 +111,12 @@ function FeedbackForm({
   route,
   toolContext,
   initialCategory,
-  error,
   fill,
   onDone,
 }: {
   route: string;
   toolContext?: FeedbackToolContext;
   initialCategory: FeedbackCategory;
-  error?: FeedbackContext['error'];
   /**
    * Lay the form out to its container's height rather than to its content, so
    * the textarea absorbs whatever is left over. Set by the sheet, where the
@@ -150,10 +145,7 @@ function FeedbackForm({
   // Collected once, on open: the point is to capture the state the person was
   // looking at when something went wrong, not the state after they navigated to
   // the form.
-  const context = useMemo(() => {
-    const c = collectFeedbackContext(route, toolContext);
-    return error ? { ...c, error } : c;
-  }, [route, error, toolContext]);
+  const context = useMemo(() => collectFeedbackContext(route, toolContext), [route, toolContext]);
 
   // Close a moment after success so the acknowledgement is actually read.
   useEffect(() => {
@@ -350,14 +342,12 @@ export function FeedbackSheet({
   route,
   toolContext,
   initialCategory = 'bug',
-  error,
   anchor = null,
   onClose,
 }: {
   route: string;
   toolContext?: FeedbackToolContext;
   initialCategory?: FeedbackCategory;
-  error?: FeedbackContext['error'];
   /** The control that opened the form; the desktop card opens beside it. */
   anchor?: FeedbackAnchor;
   onClose: () => void;
@@ -387,7 +377,6 @@ export function FeedbackSheet({
       route={route}
       toolContext={toolContext}
       initialCategory={initialCategory}
-      error={error}
       fill={fill}
       onDone={onClose}
     />

@@ -7,6 +7,9 @@ import { ALTERNATE_PICKER_FORMS } from './alternateForms';
 import { allPickerMons, getPickerMon } from './catalog';
 import { eligibleFor } from './eligibility';
 
+/** The file behind a sprite URL. A replaced sprite's URL carries a ?v= revision (src/lib/spriteUrl.ts); the file has none. */
+const spriteFile = (sprite: string) => `public${sprite.split('?')[0]}`;
+
 describe('alternate picker forms', () => {
   it('keeps the new form catalog inside the picker and resolves local sprites', () => {
     const dexIds = new Set(pokemonData.map((p) => p.id));
@@ -15,8 +18,9 @@ describe('alternate picker forms', () => {
       const mon = getPickerMon(form.id);
       expect(mon?.name, String(form.id)).toBe(form.name);
       expect(mon?.types, String(form.id)).toEqual(form.types);
-      expect(existsSync(`public${mon?.sprite}`), String(form.id)).toBe(true);
-      expect(statSync(`public${mon?.sprite}`).size, String(form.id)).toBeGreaterThan(100);
+      const file = spriteFile(mon!.sprite);
+      expect(existsSync(file), String(form.id)).toBe(true);
+      expect(statSync(file).size, String(form.id)).toBeGreaterThan(100);
       if (form.id !== 10191) expect(dexIds.has(form.id), String(form.id)).toBe(false);
     }
     expect(new Set(allPickerMons().map((m) => m.id)).size).toBe(allPickerMons().length);
@@ -66,7 +70,7 @@ describe('alternate picker forms', () => {
     expect(vivillon).toHaveLength(20);
     expect(vivillon[0].id).toBe(666); // Meadow, the base form.
     expect(vivillon.map((mon) => mon.id)).toEqual([666, ...Array.from({ length: 19 }, (_, i) => 11018 + i)]);
-    expect(new Set(vivillon.map((mon) => createHash('sha256').update(readFileSync(`public${mon.sprite}`)).digest('hex'))).size).toBe(20);
+    expect(new Set(vivillon.map((mon) => createHash('sha256').update(readFileSync(spriteFile(mon.sprite))).digest('hex'))).size).toBe(20);
     for (const id of [10027, 10030, 10118]) expect(getPickerMon(id)).toBeUndefined();
     expect(eligibleFor('legendary', 7).filter((mon) => mon.id === 10181)).toHaveLength(1);
   });
@@ -83,7 +87,7 @@ describe('alternate picker forms', () => {
     expect(eligibleFor('electric', 2).some((mon) => mon.id === 11064)).toBe(false);
   });
 
-  it('offers distinct sea, gender, flower, and regional Zen forms without nonmatching trims', () => {
+  it('offers distinct sea, gender, flower, trim, and regional Zen forms', () => {
     const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
       eligibleFor(type, gen).map((mon) => mon.id);
     for (const [type, gen, expected] of [
@@ -96,6 +100,8 @@ describe('alternate picker forms', () => {
       ['normal', 5, [521, 11095]],
       ['flying', 5, [521, 11095]],
       ['fairy', 6, [669, 11082, 11083, 11084, 11085, 670, 11086, 11087, 11088, 11089]],
+      // Natural Form, then the nine trims in game order.
+      ['normal', 6, [676, 11096, 11097, 11098, 11099, 11100, 11101, 11102, 11103, 11104]],
     ] as const) {
       const list = ids(type, gen);
       const start = list.indexOf(expected[0]);
@@ -110,7 +116,6 @@ describe('alternate picker forms', () => {
     expect(ids('gimmick', 8)).toContain(11072);
     expect(ids('psychic', 8)).toContain(10186); // Indeedee female already existed.
     expect(ids('dragon', 9)).toEqual(expect.arrayContaining([978, 11006, 11007]));
-    expect(ids('normal', 6)).toContain(676);
     for (let id = 11073; id <= 11081; id += 1) expect(getPickerMon(id)).toBeUndefined();
   });
 
@@ -129,7 +134,7 @@ describe('alternate picker forms', () => {
     together(ids('normal', 5), [585, 11008, 11009, 11010, 586, 11011, 11012, 11013]);
     together(ids('water', 7), [746, 10127]);
     expect(ids('fighting', 8).indexOf(10191)).toBeGreaterThan(ids('fighting', 8).indexOf(892));
-    expect(getPickerMon(1017)?.sprite).toBe('/sprites/pokemon/1017.png');
+    expect(getPickerMon(1017)?.sprite).toMatch(/^\/sprites\/pokemon\/1017\.png(\?|$)/);
     for (const id of [11014, 11015, 11016, 11017]) expect(getPickerMon(id)).toBeUndefined();
     together(ids('fairy', 8), [888, 10188]);
     together(ids('fighting', 8), [889, 10189]);
@@ -140,6 +145,46 @@ describe('alternate picker forms', () => {
     expect(getPickerMon(746)?.sprite).toBe('/sprites/pokemon/746.png');
   });
 
+  it('keeps battle appearances, Terastal Ogerpon, DJ Rotom, and the new Megas beside their species', () => {
+    const ids = (type: Parameters<typeof eligibleFor>[0], gen: Parameters<typeof eligibleFor>[1]) =>
+      eligibleFor(type, gen).map((mon) => mon.id);
+    const cells = [
+      // Overdrive follows each owner; each Kyurem Overdrive follows its fusion.
+      [[643, 11105], ['dragon', 5], ['fire', 5], ['legendary', 5], ['dragon', 'legendary'], ['fire', 'legendary']],
+      [[644, 11106], ['dragon', 5], ['electric', 5], ['legendary', 5], ['electric', 'legendary']],
+      [[646, 10022, 11107, 10023, 11108], ['dragon', 5], ['ice', 5], ['legendary', 5], ['ice', 'legendary']],
+      [[791, 11109], ['psychic', 7], ['steel', 7], ['legendary', 7], ['steel', 'legendary']],
+      [[792, 11110], ['psychic', 7], ['ghost', 7], ['legendary', 7], ['ghost', 'legendary']],
+      [[802, 11111], ['fighting', 7], ['ghost', 7], ['legendary', 7], ['fighting', 'legendary']],
+      // Outside the Gimmick cells, each Terastal Ogerpon follows its mask,
+      // although battle forms otherwise sort last.
+      [[1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116], ['grass', 9], ['grass', 'legendary'], ['legendary', 9]],
+      [[10273, 11114], ['water', 9], ['water', 'legendary']],
+      [[10274, 11115, 1020], ['fire', 9], ['fire', 'legendary']],
+      [[10275, 11116, 1022], ['rock', 9], ['rock', 'legendary']],
+      // In the Gimmick cells they sort as battle forms, before Terapagos's.
+      [[11113, 11114, 11115, 11116, 10276, 10277], ['gimmick', 9], ['legendary', 'gimmick']],
+    ] as const;
+    for (const [expected, ...positions] of cells) {
+      for (const [type, gen] of positions) {
+        const list = ids(type, gen);
+        const start = list.indexOf(expected[0]);
+        expect(start, `${type}|${gen}`).toBeGreaterThanOrEqual(0);
+        expect(list.slice(start, start + expected.length), `${type}|${gen}`).toEqual(expected);
+      }
+    }
+    // DJ Rotom debuted in Pokémon Pokopia, after every other Generation IX game.
+    for (const type of ['electric', 'ghost'] as const) expect(ids(type, 9).at(-1), type).toBe(11112);
+    expect(ids('electric', 4)).not.toContain(11112);
+    expect(ids('legendary', 9)).not.toContain(11112);
+    for (const [type, gen] of [['gimmick', 6], ['dragon', 'gimmick'], ['ground', 'gimmick'], ['legendary', 'gimmick']] as const) {
+      expect(ids(type, gen), `${type}|${gen}`).toContain(10301);
+    }
+    // Battle forms stay out of the ordinary type × generation cells.
+    expect(ids('dragon', 6)).not.toContain(10301);
+    expect(ids('legendary', 6)).not.toContain(10301);
+  });
+
   it('removes alternate sprites that duplicate the same form', () => {
     for (const id of [10028, 10029, 10031, 10032, 10093, 10116, 10119, 10121, 10122,
       10128, 10129, 10130, 10131, 10132, 10133, 10134, 10135, 10144, 10145,
@@ -148,8 +193,8 @@ describe('alternate picker forms', () => {
     }
     const seen = new Set<string>();
     for (const mon of allPickerMons()) {
-      if (!existsSync(`public${mon.sprite}`)) continue;
-      const hash = createHash('sha256').update(readFileSync(`public${mon.sprite}`)).digest('hex');
+      if (!existsSync(spriteFile(mon.sprite))) continue;
+      const hash = createHash('sha256').update(readFileSync(spriteFile(mon.sprite))).digest('hex');
       const key = `${mon.ownerId}|${mon.types.join(',')}|${hash}`;
       expect(seen.has(key), `${mon.name} duplicates an earlier form`).toBe(false);
       seen.add(key);

@@ -12,7 +12,6 @@ import {
   previewLanguage,
   subregionName,
   geoChipLabel,
-  toolKind,
 } from './userPreview';
 
 describe('formatWhen', () => {
@@ -74,13 +73,6 @@ describe('previewLanguage', () => {
 });
 
 describe('preview filters', () => {
-  it('classifies dex, league, and both', () => {
-    expect(toolKind(true, false)).toBe('dex');
-    expect(toolKind(false, true)).toBe('league');
-    expect(toolKind(true, true)).toBe('both');
-    expect(toolKind(false, false)).toBe(null);
-  });
-
   it('hides archived rows on the active filter', () => {
     expect(matchesArchiveFilter(false, 'active')).toBe(true);
     expect(matchesArchiveFilter(true, 'active')).toBe(false);
@@ -89,10 +81,10 @@ describe('preview filters', () => {
   });
 
   it('matches a tool filter against presence', () => {
-    expect(matchesToolFilter('both', 'any')).toBe(true);
-    expect(matchesToolFilter('dex', 'dex')).toBe(true);
-    expect(matchesToolFilter('dex', 'league')).toBe(false);
-    expect(matchesToolFilter('both', 'both')).toBe(true);
+    expect(matchesToolFilter({dex: {}, league: {}}, 'any')).toBe(true);
+    expect(matchesToolFilter({dex: {}}, 'dex')).toBe(true);
+    expect(matchesToolFilter({dex: {}}, 'league')).toBe(false);
+    expect(matchesToolFilter({dex: {}, league: {}, picker: {}}, 'picker')).toBe(true);
   });
 
   it('matches a facet against the displayed platform fields', () => {

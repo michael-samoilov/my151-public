@@ -1,0 +1,173 @@
+/* my151's own holo pair for the export preview card: prism bands and a V
+   gleam. Both sit on the saturation mask (ExportPreview3D.css), so white
+   paper and black outlines keep their color, and both scale with
+   --foil-opacity, which grows with the tilt. Stops in percent scale with
+   the card, so a phone card shows the same pattern as a desktop card. */
+
+.export-foil-prism,
+.export-foil-gleam {
+  /* The pointer as -1 to 1 from the card center. */
+  --holo-dx: var(--foil-dx);
+  --holo-dy: var(--foil-dy);
+}
+
+/* Prism bands: a repeating pastel spectrum on a steep diagonal, about
+   2.5 repeats across a card's width, under a faint fixed grating of fine
+   lines. Every spectrum stop keeps each RGB channel above one half, so
+   soft-light only lifts the ink. The spectrum tile is twice the card, so
+   moving it with the pointer never shows an edge. */
+.export-foil-prism {
+  --prism-angle: 110deg;
+  --prism-band: 15.9%;
+  background-image:
+    repeating-linear-gradient(
+      calc(var(--prism-angle) - 8deg),
+      hsl(0 0% 100% / 0.12) 0,
+      hsl(0 0% 100% / 0) 2px,
+      hsl(0 0% 100% / 0) 5px
+    ),
+    repeating-linear-gradient(
+      var(--prism-angle),
+      hsl(350 95% 77%) 0,
+      hsl(38 95% 76%) calc(var(--prism-band) * 0.14),
+      hsl(88 90% 76%) calc(var(--prism-band) * 0.28),
+      hsl(104 90% 76%) calc(var(--prism-band) * 0.4),
+      hsl(175 90% 76%) calc(var(--prism-band) * 0.49),
+      hsl(238 95% 79%) calc(var(--prism-band) * 0.62),
+      hsl(262 95% 79%) calc(var(--prism-band) * 0.76),
+      hsl(285 92% 79%) calc(var(--prism-band) * 0.88),
+      hsl(350 95% 77%) var(--prism-band)
+    );
+  background-size:
+    100% 100%,
+    200% 200%;
+  background-repeat: no-repeat;
+  background-position:
+    0 0,
+    calc(32.3% + var(--holo-dx) * 19.5%) calc(35% + var(--holo-dy) * 14.2%);
+  mix-blend-mode: soft-light;
+  opacity: calc(var(--foil-opacity) * var(--foil-prism));
+}
+
+/* V gleam: two sets of stripes on one steep diagonal, screened together,
+   tinted by a slow pastel spectrum, and then passed through a soft knee
+   made of two flat grays: an overlay with a dark gray, then a color-burn
+   with a light gray. Light under the knee rises slowly from a low floor,
+   and light above it rises steeply. Each stripe is a narrow crest on a
+   wide, low skirt. A stripe alone shows its crest and a faint tail; as two
+   stripes approach, their skirts add up past the knee, so the lit part
+   swells into a wide knot that trails off slowly at its sides. Where the
+   two crests meet, every color channel clears the knee, so the middle of
+   the knot turns into a narrow, near-white line while its tails keep the
+   spectrum's tint. On one side of each crest the stripe has a little less
+   green, so that tail reads violet. The first set is strong and drifts
+   slowly with the pointer; the second is spaced wider and runs fast the
+   other way as the card tilts sideways. The spectrum runs up the card, so
+   it tints every stripe by its height on the card, and it scrolls up and
+   down as the card tips. A mostly gray grain tile on top uses color-burn,
+   so each grain pixel raises the cut a little: where the light is bright
+   it stays smooth, and where it is faint it breaks into sparse specks.
+   Black is no change under color-dodge, so only the stripes light the
+   ink. The stripe tiles are wider than tall, so the period follows the
+   card's width more than its height. */
+.export-foil-gleam {
+  --gleam-period: 6.73%;
+  --gleam-period-b: 8.95%;
+  --gleam-hue-period: 44.3%;
+  --gleam-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='g' x='0' y='0' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' seed='151' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.32 0 0 0 0.76  0.2944 0.0256 0 0 0.76  0.2944 0 0.0256 0 0.76  0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-color: #000;
+  background-image:
+    var(--gleam-grain),
+    linear-gradient(hsl(0 0% 93%), hsl(0 0% 93%)),
+    linear-gradient(hsl(0 0% 23%), hsl(0 0% 23%)),
+    repeating-linear-gradient(
+      0deg,
+      oklch(0.97 0.06 125) calc(var(--gleam-hue-period) * 0),
+      oklch(0.97 0.06 150) calc(var(--gleam-hue-period) * 0.167),
+      oklch(0.97 0.06 230) calc(var(--gleam-hue-period) * 0.333),
+      oklch(0.97 0.06 280) calc(var(--gleam-hue-period) * 0.45),
+      oklch(0.97 0.06 340) calc(var(--gleam-hue-period) * 0.62),
+      oklch(0.97 0.06 405) calc(var(--gleam-hue-period) * 0.8),
+      oklch(0.97 0.06 485) calc(var(--gleam-hue-period) * 1)
+    ),
+    repeating-linear-gradient(
+      127deg,
+      hsl(0 0% 0%) 0,
+      hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.17),
+      hsl(0 0% 8.1%) calc(var(--gleam-period-b) * 0.2142),
+      hsl(0 0% 16.2%) calc(var(--gleam-period-b) * 0.2583),
+      hsl(0 0% 24.2%) calc(var(--gleam-period-b) * 0.3025),
+      hsl(0 0% 32.3%) calc(var(--gleam-period-b) * 0.3467),
+      hsl(0 0% 40.4%) calc(var(--gleam-period-b) * 0.3908),
+      hsl(0 0% 48.5%) calc(var(--gleam-period-b) * 0.435),
+      hsl(0 0% 48.8%) calc(var(--gleam-period-b) * 0.4458),
+      hsl(0 0% 50.2%) calc(var(--gleam-period-b) * 0.4567),
+      hsl(0 0% 52.2%) calc(var(--gleam-period-b) * 0.4675),
+      hsl(0 0% 54.6%) calc(var(--gleam-period-b) * 0.4783),
+      hsl(0 0% 55.7%) calc(var(--gleam-period-b) * 0.4892),
+      hsl(0 0% 56%) calc(var(--gleam-period-b) * 0.5),
+      hsl(0 0% 55.8%) calc(var(--gleam-period-b) * 0.5108),
+      rgb(54.3% 54% 54.3%) calc(var(--gleam-period-b) * 0.5217),
+      rgb(52.4% 50.6% 52.4%) calc(var(--gleam-period-b) * 0.5325),
+      rgb(50.7% 47.5% 50.7%) calc(var(--gleam-period-b) * 0.5433),
+      rgb(49.4% 44.9% 49.4%) calc(var(--gleam-period-b) * 0.5542),
+      rgb(48.6% 42.8% 48.6%) calc(var(--gleam-period-b) * 0.565),
+      rgb(48.5% 42.7% 48.5%) calc(var(--gleam-period-b) * 0.5758),
+      rgb(40.4% 35.6% 40.4%) calc(var(--gleam-period-b) * 0.6092),
+      rgb(32.3% 28.5% 32.3%) calc(var(--gleam-period-b) * 0.6533),
+      rgb(24.2% 21.3% 24.2%) calc(var(--gleam-period-b) * 0.6975),
+      rgb(16.2% 14.2% 16.2%) calc(var(--gleam-period-b) * 0.7417),
+      rgb(8.1% 7.1% 8.1%) calc(var(--gleam-period-b) * 0.7858),
+      hsl(0 0% 0%) calc(var(--gleam-period-b) * 0.83),
+      hsl(0 0% 0%) var(--gleam-period-b)
+    ),
+    repeating-linear-gradient(
+      127deg,
+      hsl(0 0% 0%) 0,
+      hsl(0 0% 0%) calc(var(--gleam-period) * 0.08),
+      hsl(0 0% 8.1%) calc(var(--gleam-period) * 0.1358),
+      hsl(0 0% 16.2%) calc(var(--gleam-period) * 0.1917),
+      hsl(0 0% 24.2%) calc(var(--gleam-period) * 0.2475),
+      hsl(0 0% 32.3%) calc(var(--gleam-period) * 0.3033),
+      hsl(0 0% 40.4%) calc(var(--gleam-period) * 0.3592),
+      hsl(0 0% 48.5%) calc(var(--gleam-period) * 0.415),
+      hsl(0 0% 49.1%) calc(var(--gleam-period) * 0.4292),
+      hsl(0 0% 51.5%) calc(var(--gleam-period) * 0.4433),
+      hsl(0 0% 55.2%) calc(var(--gleam-period) * 0.4575),
+      hsl(0 0% 59.6%) calc(var(--gleam-period) * 0.4717),
+      hsl(0 0% 61.5%) calc(var(--gleam-period) * 0.4858),
+      hsl(0 0% 62%) calc(var(--gleam-period) * 0.5),
+      hsl(0 0% 61.6%) calc(var(--gleam-period) * 0.5142),
+      rgb(59% 58.7% 59%) calc(var(--gleam-period) * 0.5283),
+      rgb(55.5% 53.6% 55.5%) calc(var(--gleam-period) * 0.5425),
+      rgb(52.4% 49.1% 52.4%) calc(var(--gleam-period) * 0.5567),
+      rgb(50.1% 45.5% 50.1%) calc(var(--gleam-period) * 0.5708),
+      rgb(48.7% 42.8% 48.7%) calc(var(--gleam-period) * 0.585),
+      rgb(48.5% 42.7% 48.5%) calc(var(--gleam-period) * 0.5992),
+      rgb(40.4% 35.6% 40.4%) calc(var(--gleam-period) * 0.6408),
+      rgb(32.3% 28.5% 32.3%) calc(var(--gleam-period) * 0.6967),
+      rgb(24.2% 21.3% 24.2%) calc(var(--gleam-period) * 0.7525),
+      rgb(16.2% 14.2% 16.2%) calc(var(--gleam-period) * 0.8083),
+      rgb(8.1% 7.1% 8.1%) calc(var(--gleam-period) * 0.8642),
+      hsl(0 0% 0%) calc(var(--gleam-period) * 0.92),
+      hsl(0 0% 0%) var(--gleam-period)
+    );
+  background-size:
+    128px 128px,
+    100% 100%,
+    100% 100%,
+    100% 300%,
+    353% 150%,
+    353% 150%;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-position:
+    0 0,
+    0 0,
+    0 0,
+    0 calc(50% + var(--holo-dy) * 31.25%),
+    calc(32.6% + var(--holo-dx) * 9.6%) 20%,
+    calc(28.9% - var(--holo-dx) * 3.6%) calc(11.6% + var(--holo-dy) * 0.9%);
+  background-blend-mode: color-burn, color-burn, overlay, multiply, screen, normal;
+  mix-blend-mode: color-dodge;
+  opacity: calc(var(--foil-opacity) * var(--foil-gleam));
+}

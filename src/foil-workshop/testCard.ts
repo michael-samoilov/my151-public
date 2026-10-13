@@ -127,3 +127,31 @@ export async function renderFoilTestCard(): Promise<Blob> {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');
   });
 }
+
+/**
+ * One flat mid-gray field in the export frame. With no ink edges to break
+ * them up, the holo bands show their whole cross-section: the highlight, the
+ * darker core, and the reflected light on either side. The default is the
+ * test card's shape; `league` matches the filled league export's, and `tall`
+ * the full Dex export's.
+ */
+export async function renderFoilFlatCard(shape: 'wide' | 'league' | 'tall' = 'wide'): Promise<Blob> {
+  const [w, h] = shape === 'tall' ? [1100, 1800] : shape === 'league' ? [1260, 1700] : [W, H];
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('No 2D context');
+
+  clipExportCanvas(ctx, w, h);
+  ctx.fillStyle = DEX_EXPORT_FRAME_RED;
+  ctx.fillRect(0, 0, w, h);
+  ctx.beginPath();
+  ctx.roundRect(FRAME, FRAME, w - 2 * FRAME, h - 2 * FRAME, exportInnerCornerRadius(w, h, FRAME));
+  ctx.fillStyle = '#777777';
+  ctx.fill();
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('toBlob failed'))), 'image/png');
+  });
+}

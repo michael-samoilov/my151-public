@@ -1,3 +1,4 @@
+import {minuteActivityPayload,acknowledgeMinuteActivity,encodeActivityBeacon} from '@/lib/minuteActivity';
 import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
@@ -103,7 +104,7 @@ function postBeacon(
   // knows the outcome. `switched` is set only when the picker pinned a locale,
   // so admin can tell a manual English pick from an unsupported-language fallback.
   const switched = getPinnedLocale();
-  const payload = JSON.stringify({
+  const payload = encodeActivityBeacon({
     cid,
     tool: currentTool(),
     page: currentPage(),
@@ -118,6 +119,7 @@ function postBeacon(
     ref: externalReferrerHost() || undefined,
     ts: capturedAt ?? Date.now(),
     attention: attentionPayload('dex'),
+    activity: minuteActivityPayload('dex'),
     notme: isOptedOut() || undefined,
   });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
@@ -128,7 +130,7 @@ function postBeacon(
     headers: { 'Content-Type': 'application/json' },
     body: payload,
     keepalive: true,
-  }).catch(() => {
+  }).then(async response=>{if(response.ok){const data=await response.json();acknowledgeMinuteActivity('dex',data.activityAck);}}).catch(() => {
     // best-effort analytics; ignore failures
   });
 }
@@ -196,9 +198,11 @@ export function useCompletionBeacon() {
     const flush = () => debouncer.flush();
     document.addEventListener('visibilitychange', flushIfHidden);
     window.addEventListener('pagehide', flush);
+    window.addEventListener('blur', flush);
     return () => {
       document.removeEventListener('visibilitychange', flushIfHidden);
       window.removeEventListener('pagehide', flush);
+      window.removeEventListener('blur', flush);
       // Unmount delivers pending work rather than discarding it.
       debouncer.flush();
     };
@@ -226,7 +230,7 @@ export async function sendExportBeacon(
   if (plan === 'preview') return previewExportHighlight('pokedex', ids);
 
   const cid = getClientId();
-  const payload = JSON.stringify({
+  const payload = encodeActivityBeacon({
     cid,
     tool: currentTool(),
     page: currentPage(),
@@ -239,6 +243,7 @@ export async function sendExportBeacon(
     ref: externalReferrerHost() || undefined,
     ts: Date.now(),
     attention: attentionPayload('dex'),
+    activity: minuteActivityPayload('dex'),
     notme: isOptedOut() || undefined,
   });
   try {
@@ -249,7 +254,8 @@ export async function sendExportBeacon(
       keepalive: true,
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { highlight?: ExportHighlight };
+    const data = (await res.json()) as { highlight?: ExportHighlight;activityAck?:unknown };
+    acknowledgeMinuteActivity('dex',data.activityAck);
     return data.highlight ?? null;
   } catch {
     return null;

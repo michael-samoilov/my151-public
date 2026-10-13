@@ -14,6 +14,14 @@ export type PreviewCamera = (width: number, height: number) => number;
 
 export const previewPerspectivePx: PreviewCamera = (width, height) =>
   PREVIEW_PERSPECTIVE_RATIO * Math.max(1, width, height);
+
+/**
+ * The card's size comes from a fit for this fixed camera, the one the
+ * preview had before October 10. Its strong lean on a big card kept the
+ * desktop card at the size Michael wants; the look still uses
+ * `previewPerspectivePx`, whose milder lean then leaves the card spare room.
+ */
+export const previewSizeCamera: PreviewCamera = () => 600;
 export const PREVIEW_REST_PAD = 8;
 /** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;
@@ -32,10 +40,14 @@ function rad(deg: number): number {
 }
 
 /**
- * Screen-space AABB of a plane after CSS `rotateY() rotateX()` (rotateX first)
- * under a perspective camera sitting `perspectivePx` in front of the card,
+ * Screen-space AABB of a plane turned about X first, then about Y, under a
+ * perspective camera sitting `perspectivePx` in front of the card,
  * by default `camera` (`previewPerspectivePx`) of the card's own size.
  * Origin is the card centre. No translateZ — the rotator does not lift.
+ *
+ * The lift's CSS `rotateX() rotateY()` turns about Y first. At full tilt this
+ * model puts a corner about 1 px short of where it paints, so the 8 px rest
+ * gap is about 7 px in practice. Kept on October 11: the fit sizes stay put.
  */
 function projectedCardAabb(opts: {
   width: number;

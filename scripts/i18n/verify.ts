@@ -449,7 +449,6 @@ const SAME_AS_ENGLISH_OK = new Set([
   'zh-Hans:league.tm.col.pp',
   'zh-Hant:league.tm.col.pp',
   'fr:feedback.category.bug', // French tech writing uses "Bug".
-  'es:feedback.context.error', // "error" is the Spanish word too.
   'it:feedback.context.browser', // Italian says "browser".
   // The Pokémon browser, drill-downs and analytics.
   'de:browser.sheet.generation', // "Generation" is the German noun.
@@ -474,6 +473,13 @@ const SAME_AS_ENGLISH_OK = new Set([
   'it:stage.columnTotal_one',
   'it:stage.columnTotal_other',
   'it:stage.legendUnit',
+  // The footer's Acknowledgements panel. German and French fans say "Sprites",
+  // as do Spanish ones; "Code" is the German and French noun.
+  'de:ack.group.sprites',
+  'fr:ack.group.sprites',
+  'es:ack.group.sprites',
+  'de:ack.group.code',
+  'fr:ack.group.code',
 ]);
 
 /**

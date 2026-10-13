@@ -34,7 +34,8 @@ export {
 } from './dataLabels';
 
 export { useT, useTn, useLocale, useNamesVersion, useDocumentLocale } from './provider';
-export { speciesName, speciesSearchText, pokemonLabel, spriteAlt } from './names';
+export { speciesName, formLabel, formProvenance, speciesSearchText, formSearchText, pokemonLabel, spriteAlt } from './names';
+export type { PokemonLabel } from './names';
 export { normalizeSearch } from './searchNormalize';
 
 export type { MessageKey, NoArgKey, TFn, TnFn } from './types';

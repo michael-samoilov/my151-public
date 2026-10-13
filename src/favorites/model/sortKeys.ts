@@ -4,6 +4,7 @@ import {
   comparePickerOrder,
   CONVERGENT_IDS,
   getPickerMon,
+  hasListedFormOrder,
   isGimmickForm,
   isLegendaryEligible,
   isRegionalFamily,
@@ -141,10 +142,16 @@ export const SORT_PRESETS: readonly { id: string; label: string; order: SortOrde
 
 export function sortComparator(order: SortOrder, cell: SortCell): (a: PickerMon, b: PickerMon) => number {
   const compares: Compare[] = order.map((id) => sortKey(id).compare);
+  // Outside the Gimmick row and column, a species with a listed form order
+  // sorts as one block, in that order, so each Terastal Ogerpon follows its
+  // mask. In a Gimmick cell its Terastal forms sort as battle forms.
+  const listedBlocks = cell.type !== 'gimmick' && cell.gen !== 'gimmick';
+  const inListedBlock = (mon: PickerMon) => listedBlocks && hasListedFormOrder(mon.ownerId);
   return (a, b) => {
+    if (a.ownerId === b.ownerId && inListedBlock(a)) return comparePickerOrder(a, b);
     // Non-gimmick battle forms belong to their species group. Classification
     // still describes their battle behavior; it does not define family position.
-    const anchor = (mon: PickerMon) => OTHER_BATTLE_FORM_IDS.has(mon.id)
+    const anchor = (mon: PickerMon) => OTHER_BATTLE_FORM_IDS.has(mon.id) || inListedBlock(mon)
       ? getPickerMon(mon.ownerId) ?? mon : mon;
     const sameSpecies = a.ownerId === b.ownerId;
     const left = sameSpecies ? a : anchor(a);

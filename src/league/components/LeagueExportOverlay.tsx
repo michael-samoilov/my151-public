@@ -49,6 +49,8 @@ export function LeagueExportOverlay() {
   );
   const [cardTeamOrder, setCardTeamOrder] = useState<CardTeamOrder>('fixed');
   const [exportBusy, setExportBusy] = useState(false);
+  // A failed save says so in the pane; the next try clears it.
+  const [exportFailed, setExportFailed] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
   const [surveyOpenedAt, setSurveyOpenedAt] = useState(0);
 
@@ -83,6 +85,7 @@ export function LeagueExportOverlay() {
   const runExport = useCallback(async () => {
     if (exportBusy) return;
     setExportBusy(true);
+    setExportFailed(false);
     try {
       const { name, cards, view } = useLeagueStore.getState();
       const ids = exportPokemonIds(isLeague ? cards : [cards[exportCardIndex!]]);
@@ -120,6 +123,7 @@ export function LeagueExportOverlay() {
     } catch (err) {
       if (isShareAbort(err)) return;
       console.error('League export failed:', err);
+      setExportFailed(true);
     } finally {
       setExportBusy(false);
     }
@@ -153,6 +157,7 @@ export function LeagueExportOverlay() {
           onCardTeamOrder={setCardTeamOrder}
           busy={exportBusy || busy}
           onExport={() => void runExport()}
+          failed={exportFailed}
           onClose={closeLeagueExport}
           mobileSheet={!isDesktop}
         />

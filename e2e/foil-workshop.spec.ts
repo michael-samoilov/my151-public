@@ -30,13 +30,13 @@ test.describe('export foil workshop', () => {
     await expect
       .poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 })
       .toBe('1');
-    await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
+    await expect(page.locator('[data-foil-layer="gleam"]')).toHaveCount(1);
     await expect(page.locator('[data-foil-control]')).toHaveCount(5);
     for (const id of ['pointLight', 'iridescence', 'glareSize']) {
       await expect(page.locator(`[data-foil-slider="${id}"]`)).toBeVisible();
     }
-    await expect(page.locator('[data-foil-slider="holographic"]')).toBeVisible();
-    await expect(page.locator('[data-foil-slider="holoRainbow"]')).toBeVisible();
+    await expect(page.locator('[data-foil-slider="gleam"]')).toBeVisible();
+    await expect(page.locator('[data-foil-slider="prism"]')).toBeVisible();
     await expect(page.locator('[data-foil-slider="maxTilt"]')).toBeVisible();
     await expect(page.locator('[data-foil-slider="glareIntensity"]')).toBeVisible();
     await expect(page.locator('[data-workshop-shadow-toggle]')).toBeVisible();
@@ -49,13 +49,13 @@ test.describe('export foil workshop', () => {
     await expect(page.locator('[data-foil-slider="idleTilt"]')).toHaveCount(0);
     await expect(page.locator('[data-workshop-dark-card-toggle]')).toHaveCount(0);
     await expect
-      .poll(async () => foilVar(foil, '--foil-holographic'))
+      .poll(async () => foilVar(foil, '--foil-gleam'))
       .toBe('0.700');
     await expect
       .poll(async () => foilVar(foil, '--hover-tilt-glare-intensity'))
-      .toBe('1.000');
+      .toBe('0.600');
     await expect
-      .poll(async () => foilVar(foil, '--foil-holo-blend'))
+      .poll(async () => page.locator('[data-foil-layer="gleam"]').evaluate((el) => getComputedStyle(el).mixBlendMode))
       .toBe('color-dodge');
     await expect
       .poll(async () => {
@@ -65,19 +65,19 @@ test.describe('export foil workshop', () => {
       }, { timeout: 8000 })
       .toBeGreaterThan(3.5);
 
-    await setRange(page, 'holographic', '0.91');
-    await expect.poll(async () => foilVar(foil, '--foil-holographic')).toBe('0.910');
+    await setRange(page, 'gleam', '0.91');
+    await expect.poll(async () => foilVar(foil, '--foil-gleam')).toBe('0.910');
 
-    // The rainbow is its own layer, on at 0.2, and toggles without the shine.
-    await expect(page.locator('[data-foil-layer="holoRainbow"]')).toHaveCount(1);
-    await expect.poll(async () => foilVar(foil, '--foil-holoRainbow')).toBe('0.200');
-    await page.locator('[data-foil-on="holoRainbow"]').uncheck();
-    await expect(page.locator('[data-foil-layer="holoRainbow"]')).toHaveCount(0);
-    await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
-    await page.locator('[data-foil-on="holoRainbow"]').check();
-    await page.locator('[data-foil-on="holographic"]').uncheck();
-    await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(0);
-    await expect(page.locator('[data-foil-layer="holoRainbow"]')).toHaveCount(1);
+    // The prism is its own layer, on at 0.21, and toggles without the gleam.
+    await expect(page.locator('[data-foil-layer="prism"]')).toHaveCount(1);
+    await expect.poll(async () => foilVar(foil, '--foil-prism')).toBe('0.210');
+    await page.locator('[data-foil-on="prism"]').uncheck();
+    await expect(page.locator('[data-foil-layer="prism"]')).toHaveCount(0);
+    await expect(page.locator('[data-foil-layer="gleam"]')).toHaveCount(1);
+    await page.locator('[data-foil-on="prism"]').check();
+    await page.locator('[data-foil-on="gleam"]').uncheck();
+    await expect(page.locator('[data-foil-layer="gleam"]')).toHaveCount(0);
+    await expect(page.locator('[data-foil-layer="prism"]')).toHaveCount(1);
 
     // Max tilt drives the auto-tilt past the default 10 degrees.
     await setRange(page, 'maxTilt', '16');
@@ -111,27 +111,46 @@ test.describe('export foil workshop', () => {
     await expect(foil).toHaveAttribute('data-hover-tilt-shadow', '1');
     await setRange(page, 'shadowBlur', '32');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-shadow-blur')).toBe('32');
-    // The hit's shadow flag follows on the next painted frame.
-    await expect
-      .poll(async () => page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow))
-      .not.toBe('none');
-    const shadowAt32 = await page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow);
+    // The hit's shadow flag follows on the next painted frame. The shadow is
+    // the card's shape, blurred, so the blur slider sets its filter.
+    const shadowFilter = () =>
+      page.locator('[data-export-shadow-layer="far"]').evaluate((el) => getComputedStyle(el).filter);
+    await expect.poll(shadowFilter).toMatch(/blur\(/);
+    const shadowAt32 = await shadowFilter();
     await setRange(page, 'shadowBlur', '8');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-shadow-blur')).toBe('8');
     await expect.poll(async () => {
-      const next = await page.locator('[data-export-foil-lift]').evaluate((el) => getComputedStyle(el).boxShadow);
-      return next !== shadowAt32 && next !== 'none';
+      const next = await shadowFilter();
+      return next !== shadowAt32 && /blur\(/.test(next);
     }).toBe(true);
 
-    await expect.poll(async () => foilVar(foil, '--foil-holo-blend')).toBe('color-dodge');
+    await expect
+      .poll(async () => page.locator('[data-foil-layer="gleam"]').evaluate((el) => getComputedStyle(el).mixBlendMode))
+      .toBe('color-dodge');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-blend-mode')).toBe('overlay');
+  });
+
+  test('a layer turned off travels in the link', async ({ page }) => {
+    await page.goto('/foil-workshop?sample=dex');
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 30_000 }).toBe('1');
+    const layer = (id: string) => page.locator(`[data-foil-layer="${id}"]`);
+    await expect(layer('gleam')).toHaveCount(1);
+    await expect(layer('prism')).toHaveCount(1);
+    await page.locator('[data-foil-on="gleam"]').uncheck();
+    await expect(layer('gleam')).toHaveCount(0);
+
+    await page.goto(page.url());
+    await expect(page.locator('[data-foil-on="gleam"]')).not.toBeChecked();
+    await expect(layer('gleam')).toHaveCount(0);
+    await expect(layer('prism')).toHaveCount(1);
   });
 
   test('every sample renders a card', async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto('/foil-workshop');
     const img = page.locator('[data-export-tilt-hit] img');
-    for (const id of ['dex', 'dex-full', 'dex-stats', 'league', 'league-full', 'league-both', 'trainer', 'test']) {
+    for (const id of ['dex', 'dex-full', 'dex-stats', 'league', 'league-full', 'league-both', 'trainer', 'test', 'flat', 'flat-league', 'flat-tall']) {
       await page.locator(`[data-workshop-sample-btn="${id}"]`).click();
       await expect(page.locator('[data-foil-workshop]')).toHaveAttribute('data-workshop-sample', id);
       await expect
@@ -232,8 +251,8 @@ test.describe('export foil workshop', () => {
     const flat = await lift.boundingBox();
     expect(popped && flat && popped.width > flat.width * 1.08, 'tilt scale paints larger than rest').toBeTruthy();
     await expect
-      .poll(async () => lift.evaluate((el) => getComputedStyle(el).boxShadow))
-      .toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|rgb\(0,\s*0,\s*0\)\s*\/\s*0|none/);
+      .poll(async () => page.locator('[data-export-shadow-layer="far"]').evaluate((el) => getComputedStyle(el).opacity))
+      .toBe('0');
     await page.evaluate(() => {
       const hit = document.querySelector('[data-export-tilt-hit]');
       if (!(hit instanceof HTMLElement)) return;

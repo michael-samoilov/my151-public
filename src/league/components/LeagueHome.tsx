@@ -12,6 +12,7 @@ import {
 import { ArrowUpDown, ChevronRight, Plus } from 'lucide-react';
 import { getPokemonById } from '@/league/data/catalog';
 import { formAt } from '../model/powerups';
+import { powerupFormName } from '../powerupFormName';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
 import {
@@ -156,6 +157,7 @@ function SlotGlyph({ index, cell }: { index: number; cell: string }) {
  */
 function SlotRowFace({ position, card, active }: { position: number; card: GymCard; active: boolean }) {
   const view = useLeagueStore((s) => s.view);
+  useNamesVersion();
   const shades = card.type || active ? cardShades(card.type) : null;
   const cellColour = shades ? shades.cell : GREY;
   // The gym challenge reads each trainer at the row you meet them; the
@@ -207,7 +209,7 @@ function SlotRowFace({ position, card, active }: { position: number; card: GymCa
                 <img
                   key={form ? pokemonSpriteUrl(form.id) : p.sprite}
                   src={form ? pokemonSpriteUrl(form.id) : p.sprite}
-                  alt={form ? spriteAlt(form.label, form.id, p.id) : spriteAlt(p.name, p.id)}
+                  alt={form ? powerupFormName(form) : spriteAlt(p.name, p.id)}
                   className="max-w-none"
                   style={{
                     width: `${HOME_SPRITE_REM}rem`,

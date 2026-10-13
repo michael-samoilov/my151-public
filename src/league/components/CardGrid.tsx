@@ -49,6 +49,7 @@ import { PokeballBg } from '@/components/shared/PokeballBg';
 import {
   formAt, formsFor, isPowerupRow, powerupSymbol, type PowerupForm, type PowerupKind, type PowerupSymbol,
 } from '../model/powerups';
+import { powerupFormName } from '../powerupFormName';
 import { LaurelIcon } from './LaurelIcon';
 import { BALL_OF_SPRITE, RING_OF_SPRITE, SPRITE_REM } from '../slotLayout';
 import {
@@ -535,7 +536,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           <img
             key={form ? formSprite(form) : pokemon.sprite}
             src={form ? formSprite(form) : pokemon.sprite}
-            alt={form ? spriteAlt(form.label, form.id, pokemon.id) : spriteAlt(pokemon.name, pokemon.id)}
+            alt={form ? powerupFormName(form) : spriteAlt(pokemon.name, pokemon.id)}
             className="pointer-events-none max-w-none"
             style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: SPRITE_RENDERING }}
           />
@@ -873,7 +874,7 @@ function SlotHalf({
   useNamesVersion();
   const mirrored = half === 'partner';
   const nameLabel = pokemon ? pokemonLabel(pokemon.id, pokemon.name) : null;
-  const genderMarked = Boolean(nameLabel?.mark && /[♂♀]/u.test(nameLabel.mark));
+  const formMarked = Boolean(nameLabel?.mark);
   const label = (
     <HeadRuns
       lines={heading.lines}
@@ -984,11 +985,11 @@ function SlotHalf({
         lineHeight: `calc(var(--cap-size) * ${CAPTION_LEADING})`,
         letterSpacing: fit.tight ? 0 : undefined,
         maxWidth: clipped ? `${fit.max}px` : undefined,
-        overflow: clipped && !genderMarked ? 'hidden' : undefined,
-        textOverflow: clipped && !genderMarked ? 'ellipsis' : undefined,
+        overflow: clipped && !formMarked ? 'hidden' : undefined,
+        textOverflow: clipped && !formMarked ? 'ellipsis' : undefined,
       }}
     >
-      {genderMarked && nameLabel ? <PokemonName label={nameLabel} truncate={clipped} /> : text}
+      {formMarked && nameLabel ? <PokemonName label={nameLabel} truncate={clipped} /> : text}
     </span>
   );
   // The name at the caption size, unshrunk and unclipped, for the fit to
@@ -999,7 +1000,7 @@ function SlotHalf({
       aria-hidden="true"
       className={cn('pointer-events-none invisible absolute left-0 top-0 w-max whitespace-nowrap', CAPTION_NAME_CLASS)}
     >
-      {genderMarked && nameLabel ? <PokemonName label={nameLabel} truncate={false} /> : text}
+      {formMarked && nameLabel ? <PokemonName label={nameLabel} truncate={false} /> : text}
     </span>
   );
   const caption = (

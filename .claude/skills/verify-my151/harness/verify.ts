@@ -21,6 +21,7 @@ import {
   runLeagueGymExportFoilSuite,
   runLeagueHomeSlotMoveProof,
   runLeagueSuite,
+  runNotFoundSuite,
   runStandardSuite,
 } from './lib/flows.ts';
 import { probeEngines } from './doctor.ts';
@@ -79,6 +80,7 @@ async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: st
       ['league-export-team', () => runLeagueExportTeamSuite(s, def.persona, ctx)],
       ['league-funnel', () => runLeagueFunnelNudgeSuite(s, def.persona, ctx)],
       ['favorites', () => runFavoritesSuite(s, def.persona, ctx)],
+      ['not-found', () => runNotFoundSuite(s, def.persona, ctx)],
     ];
     for (const [name, fn] of suites) {
       try {

@@ -16,12 +16,20 @@ export function useExportPreviewCache(opts: {
   jobs: readonly ExportPreviewJob[];
 }): { urls: Record<string, string>; busy: boolean } {
   const [urls, setUrls] = useState<Record<string, string>>({});
+  // Keys whose render threw. They stop the wait, so Save is not stuck on "Preparing…".
+  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
   const urlsRef = useRef(urls);
   const jobsRef = useRef(opts.jobs);
   const objectUrlsRef = useRef(new Set<string>());
+  // The key whose picture is on screen. A setting switch can drop it from the
+  // job list; its picture stays until the next one is ready, so the preview
+  // never flickers to a placeholder between two finished pictures.
+  const shownKeyRef = useRef<string | null>(null);
+  const activeReady = Boolean(urls[opts.activeKey]);
   useLayoutEffect(() => {
     urlsRef.current = urls;
     jobsRef.current = opts.jobs;
+    if (urls[opts.activeKey]) shownKeyRef.current = opts.activeKey;
   });
 
   useEffect(() => {
@@ -51,6 +59,7 @@ export function useExportPreviewCache(opts: {
         remember(job.key, blob);
       } catch (err) {
         console.error('Export preview failed:', err);
+        if (!cancelled) setFailed((prev) => new Set(prev).add(job.key));
       } finally {
         pending.delete(job.key);
       }
@@ -73,6 +82,7 @@ export function useExportPreviewCache(opts: {
 
   useEffect(() => {
     const live = new Set(opts.jobs.map((job) => job.key));
+    if (!activeReady && shownKeyRef.current) live.add(shownKeyRef.current);
     setUrls((prev) => {
       let changed = false;
       const next = { ...prev };
@@ -85,7 +95,7 @@ export function useExportPreviewCache(opts: {
       }
       return changed ? next : prev;
     });
-  }, [opts.jobs]);
+  }, [opts.jobs, activeReady]);
 
   useEffect(() => {
     const held = objectUrlsRef.current;
@@ -95,5 +105,5 @@ export function useExportPreviewCache(opts: {
     };
   }, []);
 
-  return { urls, busy: opts.enabled && !urls[opts.activeKey] };
+  return { urls, busy: opts.enabled && !urls[opts.activeKey] && !failed.has(opts.activeKey) };
 }

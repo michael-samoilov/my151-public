@@ -148,6 +148,13 @@
         .p151-copy { top: calc(50% + 96px); gap: 14px; }
       }
       @keyframes p151-spin { to { transform: rotate(360deg); } }
+      /* The served FAQ (scripts/static-faq.ts): one collapsed line under the
+       * intro, revealed with it. Opened, it scrolls inside the fixed boot screen. */
+      .p151-faq { max-width: 38ch; text-align: left; }
+      .p151-faq summary { cursor: pointer; text-align: center; font-size: 11px; color: #6e6e6e; text-decoration: underline; text-underline-offset: 2px; }
+      .p151-faq > div { display: flex; flex-direction: column; gap: 12px; max-height: 30vh; overflow-y: auto; padding-top: 8px; }
+      .p151-faq h2 { margin: 0; font-size: 13px; font-weight: 600; color: #0a0a0a; }
+      .p151-boot .p151-faq p { margin: 4px 0 0; max-width: none; font-size: 12px; line-height: 1.5; color: #6e6e6e; }
     </style>
   </head>
   <body>
@@ -166,6 +173,7 @@
           <p>
             my151's custom Pokédex builder lets you create a custom region by filling a "paint-by-numbers" template of archetypes like starters, regional bird, Pikaclone, pseudo-legendary, and more. Hand-pick your ideal region of 151 Pokémon from all 1,025, then compare the type distribution of your picks with the National Dex, and export a PNG of your dex. Made for fans planning a dream region and fan-game developers planning a regional dex. Free, in the browser, no sign-up.
           </p>
+          <!-- p151-faq:dex -->
         </div>
         <span>Loading…</span>
       </div>
