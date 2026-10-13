@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { expandTemplate } from '@/lib/richTemplate';
-import { formatNumber, raw, t } from '@/i18n';
+import { raw, t } from '@/i18n';
 import { DEX_TOTAL } from '@/lib/milestones';
-
-/** Species in the National Dex the user picks from. */
-const SPECIES_TOTAL = 1025;
 import { Button } from '@/components/ui/button';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { TYPE_ICONS } from '@/data/type-icons';
@@ -147,6 +144,11 @@ const SHOT_DIMS = [
  *  randomiser, so the bare term invites visitors expecting one. The words are
  *  catalog keys, so each language describes the images in its own terms. */
 const SHOT_ALTS = ['intro.shot.partial', 'intro.shot.sections', 'intro.shot.complete'] as const;
+
+/** The export shot draws its own rounded red frame: 14px corners at its native
+ *  555×653, transparent outside. Its card takes the same radius and no border,
+ *  so the shadow meets the frame with no light ring between them. */
+const EXPORT_SHOT_RADIUS = `${(14 / 555) * 100}% / ${(14 / 653) * 100}%`;
 
 // ---------- dots face ----------
 
@@ -325,10 +327,15 @@ function ShowcaseStaircase() {
             style={{ height: s.height, marginLeft: i === 0 ? 0 : s.overlap, transform: `translateY(-${s.lift})` }}
           >
             <div
-              className={FACE === 'shots' && i === 2
-                ? 'h-full rounded-md border border-transparent shadow-lg'
-                : 'h-full rounded-md border border-border/70 bg-white shadow-lg overflow-hidden'}
-              style={{ transform: `rotate(${s.rotate})` }}
+              className={FACE === 'dots'
+                ? 'h-full rounded-md border border-border/70 bg-white shadow-lg overflow-hidden'
+                : i === 2
+                  ? 'h-full shadow-lg'
+                  : 'h-full rounded-md bg-white shadow-lg overflow-hidden'}
+              style={{
+                transform: `rotate(${s.rotate})`,
+                borderRadius: FACE === 'shots' && i === 2 ? EXPORT_SHOT_RADIUS : undefined,
+              }}
             >
               {FACE === 'shots' ? (
                 <img
@@ -633,7 +640,7 @@ export function IntroCard({
               })}
             </h2>
             <p className="mt-1.5 mx-auto max-w-[26rem] text-sm text-muted-foreground text-pretty">
-              {t('intro.body', { total: formatNumber(SPECIES_TOTAL) })}
+              {t('intro.body')}
             </p>
             <StarterButton onClick={chooseStarters} />
           </div>
