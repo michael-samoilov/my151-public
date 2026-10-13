@@ -78,6 +78,6 @@ The sprite file is `public/sprites/pokemon/<id>.png`. Mega and Gigantamax sprite
 
 When adding one: verify the source and visual style, save the sprite under `public/sprites/pokemon/`, register a unique picker-only form in `src/favorites/model/alternateForms.ts`, add eligibility/order tests, and remove or update its row here. Keep new forms out of the main dex-browser evolution counts.
 
-## Research and phone checklist
+## Research
 
-Open `/favorite-pokemon-by-type?spritecheck=1` on a work-branch preview. Search terms, candidate comparisons, and source provenance are recorded in [sprite review research](favorite-picker-work/sprites/README.md). The searched Smogon archive does not contain separately named front sprites for the remaining missing variants; this does not establish that none exist elsewhere. Shared sprites and selectable forms remain unchanged.
+Search terms, candidate comparisons, and source provenance are recorded in [sprite review research](favorite-picker-work/sprites/README.md). The searched Smogon archive does not contain separately named front sprites for the remaining missing variants; this does not establish that none exist elsewhere. Shared sprites and selectable forms remain unchanged.

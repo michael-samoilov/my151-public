@@ -36,8 +36,6 @@
     { "file": "src/league/homeLayout.ts", "reason": "Stage names are internal identifiers for the layout solver; nothing renders them." },
     { "file": "src/favorites/components/SortDebugPanel.tsx", "reason": "Dev-only ?sortdebug panel; never on production." },
     { "file": "src/favorites/model/sortKeys.ts", "reason": "Sort key labels show only in the dev-only ?sortdebug panel." },
-    { "file": "src/favorites/components/SpriteChecklist.tsx", "reason": "Dev-only ?spritecheck page; never on production." },
-    { "file": "src/favorites/model/spriteChecklist.ts", "reason": "Data for the dev-only ?spritecheck page." },
     { "file": "src/favorites/model/alternateForms.ts", "text": "unown-{…}", "reason": "A form id, not text." },
     { "file": "src/lib/beaconDrops.ts", "reason": "Drop reason titles show only on the admin dashboard." }
   ]

@@ -1,5 +1,5 @@
 {
- "note": "Every fan-made sprite file my151 serves from public/sprites/pokemon (production 60662926): Pokémon #650-#1025, PokéAPI forms from 10025 up, my151's own form ids, and the Alcremie files. Game Freak's sprites (#1-#649, Generation 5 forms, Unown, seasonal Deerling and Sawsbuck, East Sea Shellos and Gastrodon, Spiky-eared Pichu, Generation 4-5 female sprites, Overdrive forms) are left out. Built 2026-10-13 by credits-tools/build_attribution.py from exact and near pixel matches (evidence/*.json). Copied into the app on 2026-10-13 with these changes: KyleDove merged into Kyle Dove; DJ Rotom (11112) credited to KingOfThe-X-Roads as his own upload; Mega Eelektross (10290) credited to Ghasty001 with kiriaura's base sprite; MyMarshlands added to Mega Victreebel (10279); Mega Zygarde (10301) marked as my151's; the cleanup notes of the old spriteSources.json kept. Corrected on 2026-10-13 (credits-research/app-data/CHANGES.md): same-colour sheet rows, a sheet cell parsed again, five name merges or renames with proof, five stale files renamed, Mega Victreebel's and DJ Rotom's sources.",
+ "note": "Every fan-made sprite file my151 serves from public/sprites/pokemon: Pokémon #650-#1025 (Alcremie as its sweet files), the PokéAPI forms from 10025 up that a tool shows, my151's own form ids, and the Alcremie files. Game Freak's sprites (#1-#649, Generation 5 forms, Unown, seasonal Deerling and Sawsbuck, East Sea Shellos and Gastrodon, Spiky-eared Pichu, Generation 4-5 female sprites, Overdrive forms) are left out. Built 2026-10-13 from production 60662926 by credits-tools/build_attribution.py from exact and near pixel matches (evidence/*.json). Copied into the app on 2026-10-13 with these changes: KyleDove merged into Kyle Dove; DJ Rotom (11112) credited to KingOfThe-X-Roads as his own upload; Mega Eelektross (10290) credited to Ghasty001 with kiriaura's base sprite; MyMarshlands added to Mega Victreebel (10279); Mega Zygarde (10301) marked as my151's; the cleanup notes of the old spriteSources.json kept. Corrected on 2026-10-13 (credits-research/app-data/CHANGES.md): same-colour sheet rows, a sheet cell parsed again, five name merges or renames with proof, five stale files renamed, Mega Victreebel's and DJ Rotom's sources. Trimmed on 2026-10-13: the files that no tool showed were deleted with their rows (869.png, which Alcremie's sweet files replace; the Pumpkaboo and Gourgeist sizes 10027-10032; and 31 PokéAPI forms from 10093 to 10259 that the app gives other ids, uses another file for, or leaves out).",
  "sprites": {
   "650": {
    "artists": [
@@ -2196,16 +2196,6 @@
    "name": "milcery",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/868.png as added in commit 56a76ea8ab (2020-09-23, 'Files 96 x 96 Sword/Shield Sprite Project')."
   },
-  "869": {
-   "artists": [
-    "PumpkinPastel"
-   ],
-   "role": "drew",
-   "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla strawberry': Spriter 'PumpkinPastel (front), leParagon (back)', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_1-png.218736/.",
-   "name": "alcremie",
-   "notes": "RadicalCharizard (sweets) leParagon (flavours)"
-  },
   "870": {
    "artists": [
     "KingOfThe-X-Roads"
@@ -3781,57 +3771,6 @@
    "name": "aegislash-blade",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10026.png as added in commit 720ed5fd05 (2021-02-24, 'feat: add gen 6 and 7 forms')."
   },
-  "10027": {
-   "artists": [
-    "Wobblebuns"
-   ],
-   "role": "drew",
-   "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '710 Pumpkaboo-medium': Spriter 'Wobblebuns'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/710-png.273685/: 99.1% of opaque pixels overlap, 0% have the same colour (a revision or a palette change).",
-   "name": "pumpkaboo-small",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10027.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit')."
-  },
-  "10028": {
-   "artists": [
-    "Wobblebuns"
-   ],
-   "role": "drew",
-   "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '710 Pumpkaboo-medium': Spriter 'Wobblebuns'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/710-png.273685/: 99.1% of opaque pixels overlap, 0% have the same colour (a revision or a palette change).",
-   "name": "pumpkaboo-large",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10028.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit')."
-  },
-  "10029": {
-   "artists": [
-    "Wobblebuns"
-   ],
-   "role": "drew",
-   "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '710 Pumpkaboo-medium': Spriter 'Wobblebuns'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/710-png.273685/: 99.1% of opaque pixels overlap, 0% have the same colour (a revision or a palette change).",
-   "name": "pumpkaboo-super",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10029.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit')."
-  },
-  "10030": {
-   "artists": [],
-   "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/10030.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '711 Gourgeist-medium': Spriter 'RedRooster, N-Kin', QC 'leParagon'; only 46% of opaque pixels overlap, so it is a different drawing.",
-   "name": "gourgeist-small"
-  },
-  "10031": {
-   "artists": [],
-   "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/10031.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '711 Gourgeist-medium': Spriter 'RedRooster, N-Kin', QC 'leParagon'; only 46% of opaque pixels overlap, so it is a different drawing.",
-   "name": "gourgeist-large"
-  },
-  "10032": {
-   "artists": [],
-   "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/10032.png as added in commit 3b5d5f5e34 (2016-08-13, 'Initial commit'). Closest Smogon sheet row: Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '711 Gourgeist-medium': Spriter 'RedRooster, N-Kin', QC 'leParagon'; only 46% of opaque pixels overlap, so it is a different drawing.",
-   "name": "gourgeist-super"
-  },
   "10033": {
    "artists": [
     "G.E.Z."
@@ -4439,16 +4378,6 @@
    "name": "raticate-alola",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10092.png as added in commit e24fdb772a (2021-01-25, 'Updated sprite names to conform to PokeAPI's id numbering schemes for ')."
   },
-  "10093": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Alolan Forms', row '020 Raticate': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/020-png.102472/.",
-   "name": "raticate-totem-alola",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10093.png as added in commit e24fdb772a (2021-01-25, 'Updated sprite names to conform to PokeAPI's id numbering schemes for ')."
-  },
   "10094": {
    "artists": [
     "leParagon"
@@ -4671,16 +4600,6 @@
    "name": "marowak-alola",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10115.png as added in commit e24fdb772a (2021-01-25, 'Updated sprite names to conform to PokeAPI's id numbering schemes for ')."
   },
-  "10116": {
-   "artists": [
-    "Falgaia"
-   ],
-   "role": "drew",
-   "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '658 Greninja': Spriter 'aXl', QC 'Layell'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/658-png.273570/.",
-   "name": "greninja-battle-bond",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10116.png as added in commit 5bdf22873d (2021-02-18, 'feat: add gen6 sprites')."
-  },
   "10117": {
    "artists": [
     "G.E.Z."
@@ -4691,26 +4610,6 @@
    "name": "greninja-ash",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10117.png as added in commit 3506b107ee (2026-06-11, 'fix: Update some incorrect images, and fix downscaling issues for some')."
   },
-  "10118": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Other Forms', row '718 Zygarde-10%': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/718-d-png.113263/.",
-   "name": "zygarde-10-power-construct"
-  },
-  "10119": {
-   "artists": [
-    "Legitimate Username",
-    "Noscium"
-   ],
-   "role": "drew",
-   "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '718 Zygarde-50%': Spriter 'Legitimate Username, Noscium', QC 'Layell, aXl, leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/718_1-png.275704/.",
-   "name": "zygarde-50-power-construct",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10119.png as added in commit 471a90a202 (2026-03-08, 'Add missing Pokémon sprites (#196)')."
-  },
   "10120": {
    "artists": [
     "leParagon"
@@ -4720,26 +4619,6 @@
    "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Other Forms', row '718 Zygarde-100%': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/718-p-png.102432/.",
    "name": "zygarde-complete",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10120.png as added in commit 720ed5fd05 (2021-02-24, 'feat: add gen 6 and 7 forms')."
-  },
-  "10121": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '735 Gumshoos': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/735-png.173680/.",
-   "name": "gumshoos-totem",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10121.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
-  },
-  "10122": {
-   "artists": [
-    "Falgaia"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '738 Vikavolt': Spriter 'aXl', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/738-png.128444/.",
-   "name": "vikavolt-totem",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10122.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
   },
   "10123": {
    "artists": [
@@ -4790,80 +4669,6 @@
    "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '746 Wishiwashi School': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/746_2-png.114000/.",
    "name": "wishiwashi-school",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10127.png as added in commit e24fdb772a (2021-01-25, 'Updated sprite names to conform to PokeAPI's id numbering schemes for ')."
-  },
-  "10128": {
-   "artists": [
-    "Wobblebuns"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '754 Lurantis': Spriter 'Wobblebuns'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/754-png.128459/.",
-   "name": "lurantis-totem",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10128.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
-  },
-  "10129": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '758 Salazzle': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/758-png.114004/.",
-   "name": "salazzle-totem",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10129.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
-  },
-  "10130": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '774 Minior-meteor': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/774_1-png.102500/.",
-   "name": "minior-orange-meteor"
-  },
-  "10131": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '774 Minior-meteor': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/774_1-png.102500/.",
-   "name": "minior-yellow-meteor"
-  },
-  "10132": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '774 Minior-meteor': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/774_1-png.102500/.",
-   "name": "minior-green-meteor"
-  },
-  "10133": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '774 Minior-meteor': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/774_1-png.102500/.",
-   "name": "minior-blue-meteor"
-  },
-  "10134": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '774 Minior-meteor': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/774_1-png.102500/.",
-   "name": "minior-indigo-meteor"
-  },
-  "10135": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '774 Minior-meteor': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/774_1-png.102500/.",
-   "name": "minior-violet-meteor"
   },
   "10136": {
    "artists": [
@@ -4946,37 +4751,6 @@
    "name": "mimikyu-busted",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10143.png as added in commit 720ed5fd05 (2021-02-24, 'feat: add gen 6 and 7 forms')."
   },
-  "10144": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '778 Mimikyu-disguised': Spriter 'leParagon', QC 'princessofmusic, aXl'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/778_1-png.116854/.",
-   "name": "mimikyu-totem-disguised",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10144.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
-  },
-  "10145": {
-   "artists": [
-    "leParagon",
-    "Falgaia"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '778 Mimikyu-busted': Spriter 'leParagon, aXl', QC 'princessofmusic, aXl'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/778_2-png.116856/.",
-   "name": "mimikyu-totem-busted",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10145.png as added in commit 720ed5fd05 (2021-02-24, 'feat: add gen 6 and 7 forms')."
-  },
-  "10146": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '784 Kommo-o': Spriter 'leParagon, TheAetherPlayer (back shiny)', QC 'TheAetherPlayer (shiny)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/784-png.102306/.",
-   "name": "kommo-o-totem",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10146.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
-  },
   "10147": {
    "artists": [
     "leParagon"
@@ -4997,33 +4771,6 @@
    "name": "pikachu-partner-cap",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10148.png as added in commit 28242b540a (2026-06-06, 'feat: Add default back sprites for gen 9 (#233)')."
   },
-  "10149": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Alolan Forms', row '105 Marowak': Spriter 'leParagon', QC 'leParagon, TheAetherPlayer (shiny)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/105-png.177819/.",
-   "name": "marowak-totem",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10149.png as added in commit e24fdb772a (2021-01-25, 'Updated sprite names to conform to PokeAPI's id numbering schemes for ')."
-  },
-  "10150": {
-   "artists": [],
-   "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/10150.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7'). Pixel-identical (after 2x downscale) to Generation 9 Pack file Front/RIBOMBEE.png; the pack sheet has no row for it and Credits.txt credits Gen 6-8 sprites to the Smogon projects as a whole. Closest Smogon sheet row: Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '743 Ribombee': Spriter 'princessofmusic', QC 'aXl'; only 11% of opaque pixels overlap, so it is a different drawing.",
-   "name": "ribombee-totem"
-  },
-  "10151": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '744 Rockruff': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/744-png.102284/.",
-   "name": "rockruff-own-tempo",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10151.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
-  },
   "10152": {
    "artists": [
     "leParagon"
@@ -5033,26 +4780,6 @@
    "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '745 Lycanroc-dusk': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/745_3-png.102290/.",
    "name": "lycanroc-dusk",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10152.png as added in commit 720ed5fd05 (2021-02-24, 'feat: add gen 6 and 7 forms')."
-  },
-  "10153": {
-   "artists": [
-    "The Cynical Poet"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '752 Araquanid': Spriter 'The Cynical Poet, TheAetherPlayer (shiny), leParagon (back)', QC 'Wobblebuns, leParagon, TheAetherPlayer'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/752-png.141996/.",
-   "name": "araquanid-totem",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10153.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
-  },
-  "10154": {
-   "artists": [
-    "Espeon Scientist"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '777 Togedemaru': Spriter 'Espeon Scientist', QC 'princessofmusic'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/togedemaru-png.72906/.",
-   "name": "togedemaru-totem",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10154.png as added in commit 8e4904b491 (2020-09-29, 'Sprites gen 7')."
   },
   "10155": {
    "artists": [
@@ -5083,24 +4810,6 @@
    "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Gen 7 Pokemon', row '800 Necrozma-ultra': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/800_4-png.170122/.",
    "name": "necrozma-ultra",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10157.png as added in commit e24fdb772a (2021-01-25, 'Updated sprite names to conform to PokeAPI's id numbering schemes for ')."
-  },
-  "10158": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Other Forms', row '025 Pikachu-partner male': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/025_8-png.177824/.",
-   "name": "pikachu-starter"
-  },
-  "10159": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen7",
-   "evidence": "Smogon Gen7 Sprite Project sheet, tab 'static sprites', section 'Other Forms', row '133 Eevee-partner male': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/133_2-png.278027/.",
-   "name": "eevee-starter"
   },
   "10160": {
    "artists": [
@@ -5282,16 +4991,6 @@
    "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Galarian Forms', row '555 Darmanitan-standard': Spriter 'G.E.Z.'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/555_3-png.208839/.",
    "name": "darmanitan-galar-standard",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10177.png as added in commit ff8ae47984 (2022-02-11, 'sync: Rename sprites with id's above 10158 to match Veekun')."
-  },
-  "10178": {
-   "artists": [
-    "G.E.Z."
-   ],
-   "role": "drew",
-   "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Galarian Forms', row '555 Darmanitan-zen': Spriter 'G.E.Z.'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/555_4-png.208843/.",
-   "name": "darmanitan-galar-zen",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10178.png as added in commit fc929aff33 (2021-02-22, 'feat: add gen8 forms')."
   },
   "10179": {
    "artists": [
@@ -5795,16 +5494,6 @@
    "name": "urshifu-rapid-strike-gmax",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10227.png as added in commit ff8ae47984 (2022-02-11, 'sync: Rename sprites with id's above 10158 to match Veekun')."
   },
-  "10228": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gigantamax', row '849 Toxtricity': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/849_g-png.222124/.",
-   "name": "toxtricity-low-key-gmax",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10228.png as added in commit e24fdb772a (2021-01-25, 'Updated sprite names to conform to PokeAPI's id numbering schemes for ')."
-  },
   "10229": {
    "artists": [
     "Travis"
@@ -6060,27 +5749,6 @@
    "name": "wooper-paldea",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10253.png as added in commit 471a90a202 (2026-03-08, 'Add missing Pokémon sprites (#196)')."
   },
-  "10254": {
-   "artists": [
-    "KingOfThe-X-Roads"
-   ],
-   "role": "drew",
-   "via": "smogon-gen8",
-   "evidence": "The app file has the same pixels as the app's 10185.png (eiscue-noice). Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '875 Eiscue-noice face': Spriter 'KingOfThe-X-Roads, TheAetherPlayer (shiny), leParagon (back)', QC 'leParagon'. Same drawing as that row's Front attachment https://www.smogon.com/forums/attachments/875_2-png.212860/: 99.9% of opaque pixels overlap, 100% have the same colour (a revision or a palette change).",
-   "name": "eiscue-noice",
-   "notes": "Stale file: PokéAPI numbered this drawing 10254 before it renumbered forms above 10158 in 2022; PokéAPI's 10254 is now oinkologne-female. The app shows it nowhere: its own data maps id 10254 to alcremie-berry.png."
-  },
-  "10255": {
-   "artists": [
-    "Blaquaza"
-   ],
-   "role": "drew",
-   "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '876 Indeedee-female': Spriter 'Blaquaza, TheAetherPlayer (shiny), leParagon (back)', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/876f-png.218806/.",
-   "name": "indeedee-female",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10255.png as added in commit 28242b540a (2026-06-06, 'feat: Add default back sprites for gen 9 (#233)').",
-   "notes": "Stale file: PokéAPI numbered this drawing 10255 before it renumbered forms above 10158 in 2022; PokéAPI's 10255 is now dudunsparce-three-segment. The app shows it nowhere: its own data maps id 10255 to alcremie-love.png."
-  },
   "10256": {
    "artists": [
     "Travis"
@@ -6090,43 +5758,6 @@
    "evidence": "Smogon Gen9 Sprite Project sheet, tab 'static sprites', section 'Gen 9 Pokemon', row '964 Palafin-hero': Spriter 'Travis', QC 'G.E.Z.'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/964-png.536964/.",
    "name": "palafin-hero",
    "file": "App file is byte-identical to PokéAPI sprites/pokemon/10256.png as added in commit 471a90a202 (2026-03-08, 'Add missing Pokémon sprites (#196)')."
-  },
-  "10257": {
-   "artists": [
-    "leParagon",
-    "KingOfThe-X-Roads"
-   ],
-   "role": "drew",
-   "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '888 Zacian-crowned sword': Spriter 'leParagon, KingOfthe-X-Roads (face)'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/zacian-png.178831/.",
-   "name": "zacian-crowned",
-   "notes": "Stale file: PokéAPI numbered this drawing 10257 before it renumbered forms above 10158 in 2022; PokéAPI's 10257 is now maushold-family-of-three. The app shows it nowhere: its own data maps id 10257 to alcremie-clover.png.",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10257.png as added in commit 56a76ea8ab (2020-09-23, 'Files 96 x 96 Sword/Shield Sprite Project').",
-   "artistNotes": {
-    "KingOfThe-X-Roads": "face"
-   }
-  },
-  "10258": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '889 Zamazenta-crowned shield': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/889_1-png.222161/.",
-   "name": "zamazenta-crowned",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10258.png as added in commit 56a76ea8ab (2020-09-23, 'Files 96 x 96 Sword/Shield Sprite Project').",
-   "notes": "Stale file: PokéAPI numbered this drawing 10258 before it renumbered forms above 10158 in 2022; PokéAPI's 10258 is now tatsugiri-droopy. The app shows it nowhere: its own data maps id 10258 to alcremie-flower.png."
-  },
-  "10259": {
-   "artists": [
-    "leParagon"
-   ],
-   "role": "drew",
-   "via": "smogon-gen8",
-   "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gigantamax', row '890 Eternatus': Spriter 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/890_g-png.212878/.",
-   "name": "eternatus-eternamax",
-   "file": "App file is byte-identical to PokéAPI sprites/pokemon/10259.png as added in commit e24fdb772a (2021-01-25, 'Updated sprite names to conform to PokeAPI's id numbering schemes for ').",
-   "notes": "Stale file: PokéAPI numbered this drawing 10259 before it renumbered forms above 10158 in 2022; PokéAPI's 10259 is now tatsugiri-stretchy. The app shows it nowhere: its own data maps id 10259 to alcremie-ribbon.png."
   },
   "10260": {
    "artists": [
