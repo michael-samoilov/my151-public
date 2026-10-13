@@ -194,7 +194,7 @@ interface CardProps {
 }
 
 /** The wide bar spans both columns of the phone grid; a tall card takes one. */
-const SPAN = 'min-[600px]:col-span-2';
+const SPAN = 'col-span-2';
 
 /**
  * One card. The cell wrapper is the query container, so everything inside sizes
@@ -254,12 +254,7 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       className={`hub-card flex flex-col ${wide ? SPAN : ''}`}
       style={{ containerType: 'inline-size' }}
     >
-      <div
-        data-card-reserve={tool.shots ? undefined : 'no-art'}
-        style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art) + var(--panel-inset, 0px))` : 0 }}
-      >
-        {inner}
-      </div>
+      <div style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art) + var(--panel-inset, 0px))` : 0 }}>{inner}</div>
       {wide ? null : <Caption tool={tool} />}
     </div>
   );
@@ -587,13 +582,14 @@ export function HomePage() {
   const tools = useTools(placed);
 
   useEffect(() => { markLeaguePromoSeen(); }, []);
-  // Columns grow with the width and never fall back: one card per row below
-  // 600px, two from 600px, and every card on one row from 1300px. Each step is
-  // where every tool's description and saved-work line still fits on one line
-  // at 12px or more, in every language (13 October). From 1024px the cards go
-  // wide and short so the red reads as a low band, not a block; the screenshots
-  // do not change, because each renders in a fixed-size stage pinned to its
-  // card's bottom-left (see `.hub-stage`). With two up, an odd last card spans.
+  // Columns grow with the width and never fall back: two up below 1300px, and
+  // every card on one row from 1300px. At 1300px every tool's description and
+  // saved-work line fits on one line at 12px or more, in every language (13
+  // October); four up from 1024px shrank them to 9.4px. From 1024px the cards
+  // go wide and short so the red reads as a low band, not a block; the
+  // screenshots do not change, because each renders in a fixed-size stage
+  // pinned to its card's bottom-left (see `.hub-stage`). On a phone an odd
+  // last card is left alone on its row, so it spans instead.
   const desktopCols = tools.length;
   const gridStyle = { '--tool-cols': desktopCols } as React.CSSProperties;
   // The wide bar is a phone shape only, and the two shapes are different markup
@@ -685,7 +681,7 @@ export function HomePage() {
                 `sm:` then beats its own `md:` override above 1024px. Bounding the
                 tablet rules at md means the two bands cannot overlap at all. */}
             <div
-              className="hub-grid grid grid-cols-1 min-[600px]:grid-cols-2 min-[1300px]:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
+              className="hub-grid grid grid-cols-2 min-[1300px]:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
               style={gridStyle}
             >
               {tools.map((tool, i) => (

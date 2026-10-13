@@ -651,14 +651,6 @@ img[data-failed] {
   --hf: calc(var(--hover-lift) * -1);
 }
 
-/* One card per row below 600px (HomePage.tsx), so a card without artwork has
- * a row of its own and keeps no room for artwork to pop into. `reserveByRow`
- * counts two per row on a phone; this keeps the prerendered HTML the same for
- * every width. */
-@media (max-width: 599px) {
-  .hub-grid [data-card-reserve='no-art'] { padding-top: 0 !important; }
-}
-
 /* A hub card's saved-work line (Caption in HomePage.tsx) always shows, with 0
  * for a tool not used in this browser. The head script of the prerendered hub
  * (scripts/prerender-hub.ts) marks the tools with saved work, so their counts
