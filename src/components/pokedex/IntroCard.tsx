@@ -145,10 +145,12 @@ const SHOT_DIMS = [
  *  catalog keys, so each language describes the images in its own terms. */
 const SHOT_ALTS = ['intro.shot.partial', 'intro.shot.sections', 'intro.shot.complete'] as const;
 
-/** The export shot draws its own rounded red frame: 14px corners at its native
- *  555×653, transparent outside. Its card takes the same radius and no border,
- *  so the shadow meets the frame with no light ring between them. */
-const EXPORT_SHOT_RADIUS = `${(14 / 555) * 100}% / ${(14 / 653) * 100}%`;
+/** The export shot is two framed panels with rounded corners, transparent
+ *  outside the frame and in the notches where the panels meet. A box shadow
+ *  stops at the card's box, so those notches showed as white wedges inside the
+ *  shadow. A drop shadow follows the image's own outline. Tuned by eye to
+ *  match `shadow-lg` on the other two cards. */
+const EXPORT_SHOT_SHADOW = 'drop-shadow(0 8px 8px rgb(0 0 0 / 0.1)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.08))';
 
 // ---------- dots face ----------
 
@@ -330,11 +332,11 @@ function ShowcaseStaircase() {
               className={FACE === 'dots'
                 ? 'h-full rounded-md border border-border/70 bg-white shadow-lg overflow-hidden'
                 : i === 2
-                  ? 'h-full shadow-lg'
+                  ? 'h-full'
                   : 'h-full rounded-md bg-white shadow-lg overflow-hidden'}
               style={{
                 transform: `rotate(${s.rotate})`,
-                borderRadius: FACE === 'shots' && i === 2 ? EXPORT_SHOT_RADIUS : undefined,
+                filter: FACE === 'shots' && i === 2 ? EXPORT_SHOT_SHADOW : undefined,
               }}
             >
               {FACE === 'shots' ? (
@@ -639,7 +641,7 @@ export function IntroCard({
                 count: () => [<span key="n" className="text-primary">{DEX_TOTAL}</span>],
               })}
             </h2>
-            <p className="mt-1.5 mx-auto max-w-[26rem] text-sm text-muted-foreground text-pretty">
+            <p className="mt-1.5 mx-auto max-w-[26rem] text-sm text-muted-foreground text-balance">
               {t('intro.body')}
             </p>
             <StarterButton onClick={chooseStarters} />
