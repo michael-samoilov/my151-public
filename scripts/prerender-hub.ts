@@ -66,6 +66,37 @@ export function splitImagePreloads(markup: string): { preloads: string[]; markup
   return { preloads: markup.match(imagePreload) ?? [], markup: markup.replace(imagePreload, '') };
 }
 
+/** The English HTML works before hydration. Let its screenshots finish before
+ * app startup competes for bandwidth and the main thread. An input, an image
+ * error, or a visitor who needs client rendering starts the app immediately. */
+function prioritizeHubImages(html: string): string {
+  const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>/;
+  const preloads = /\s*<link rel="modulepreload" crossorigin href="([^"]+)">/g;
+  const src = entry.exec(html)?.[1];
+  if (!src) throw new Error('prerender-hub: the client entry is missing');
+  const files = JSON.stringify([src, ...[...html.matchAll(preloads)].map(match => match[1])]);
+  const startup = `(function(){
+var d=document.documentElement,started=false,preloaded=false,observer;
+function preload(){if(preloaded)return;preloaded=true;${files}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)})}
+function loaded(){var imgs=Array.from(document.querySelectorAll('[data-artwork] img[alt]:not([alt=""])'));if(imgs.length&&imgs.every(function(i){return i.complete&&i.naturalWidth}))preload()}
+function intent(e){var t=e.target;if(e.type==='keydown'||t&&t.closest&&t.closest('button'))start()}
+function error(e){if(e.target instanceof HTMLImageElement)start()}
+function start(){
+if(started)return;started=true;if(observer)observer.disconnect();
+document.removeEventListener('load',loaded,true);document.removeEventListener('error',error,true);
+['pointerdown','click','keydown'].forEach(function(t){window.removeEventListener(t,intent,true)});
+preload();var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)
+}
+function painted(){if(!d.classList.contains('p151-hub-images-pending'))requestAnimationFrame(function(){setTimeout(start)})}
+if(d.classList.contains('p151-wait')||document.visibilityState!=='visible'){start();return}
+observer=new MutationObserver(painted);observer.observe(d,{attributes:true,attributeFilter:['class']});
+document.addEventListener('load',loaded,true);document.addEventListener('error',error,true);
+['pointerdown','click','keydown'].forEach(function(t){window.addEventListener(t,intent,true)});
+loaded();painted()
+})();`;
+  return html.replace(entry, () => `<script>${startup}</script>`).replace(preloads, '');
+}
+
 function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
   return `(function(){
@@ -197,6 +228,7 @@ Array.from(document.querySelectorAll('[data-hub-card]')).forEach(check);
 setTimeout(function(){Array.from(document.querySelectorAll('[data-hub-card]')).forEach(fallback)},8000)
 })();`;
         html = html.replace('</body>', () => `<script>${ready}</script>\n  </body>`);
+        html = prioritizeHubImages(html);
         const lastSheet = html.lastIndexOf('</style>');
         const after = lastSheet + '</style>'.length;
         html = `${html.slice(0, after)}\n    <script>${FONT_SIZE_SCRIPT}</script>${html.slice(after)}`;

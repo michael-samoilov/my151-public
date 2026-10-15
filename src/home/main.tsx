@@ -42,9 +42,12 @@ if (!isOptedOut()) {
 }
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+  const register = () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
-  });
+  };
+  // Image-first startup can execute this entry after the load event.
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register, { once: true });
 }
 
 const rootEl = document.getElementById('root')!;
