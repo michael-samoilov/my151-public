@@ -172,14 +172,45 @@ function pictureSavings(found, skip, keys) {
   return savings;
 }
 
-function measure(keys, minus) {
+/** Client-rendered pictures are absent from HTML. Their reviewed format
+ * groups also need mandatory browser checks for selection and fallback. */
+function imageFormatSavings(found, skip, groups = []) {
+  const credited = new Set();
+  let savings = 0;
+  if (!Array.isArray(groups)) throw new Error('imageFormats must be an array');
+  for (const group of groups) {
+    if (!group || Object.keys(group).sort().join(',') !== 'avif,webp') throw new Error('Invalid imageFormats group');
+    const totals = [];
+    for (const format of ['avif', 'webp']) {
+      if (!Array.isArray(group[format]) || !group[format].length) throw new Error(`Empty imageFormats ${format} group`);
+      let total = 0;
+      for (const source of group[format]) {
+        const file = manifest[source]?.file;
+        if (!file) throw new Error(`Image format asset missing from manifest: ${source}`);
+        if (extname(source) !== `.${format}` || extname(file) !== `.${format}`) throw new Error(`Wrong image format: ${source}`);
+        if (credited.has(file)) throw new Error(`Image format groups overlap: ${source}`);
+        if (!found.images.has(file) || skip.images.has(file)) throw new Error(`Image format asset not counted on this page: ${source}`);
+        credited.add(file);
+        total += statSync(join(dist, file)).size;
+      }
+      totals.push(total);
+    }
+    savings += totals.reduce((sum, total) => sum + total, 0) - Math.max(...totals);
+  }
+  return { savings, files: credited };
+}
+
+function measure(keys, minus, formats) {
   const found = files(keys);
   const skip = minus ?? { text: new Set(), images: new Set() };
   let text = 0;
   let images = 0;
   for (const f of found.text) if (!skip.text.has(f)) text += brotli(f);
   for (const f of found.images) if (!skip.images.has(f)) images += statSync(join(dist, f)).size;
-  images -= pictureSavings(found, skip, keys);
+  const alternative = imageFormatSavings(found, skip, formats);
+  images -= alternative.savings;
+  // A future prerender must not credit the same assets a second time.
+  images -= pictureSavings(found, { ...skip, images: new Set([...skip.images, ...alternative.files]) }, keys);
   return { text, images, found };
 }
 
@@ -190,7 +221,7 @@ const rebase = process.argv.includes('--rebase');
 const failures = [];
 console.log('Page first-load budget (Brotli text, raw images)');
 for (const [page, spec] of Object.entries(budgets.pages)) {
-  const first = measure([spec.html, ...spec.startup]);
+  const first = measure([spec.html, ...spec.startup], undefined, spec.imageFormats);
   for (const kind of ['text', 'images']) {
     const now = first[kind];
     if (rebase) spec[kind] = { baseline: now, ceiling: Math.ceil(now * HEADROOM) };

@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from 'vitest';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -15,11 +15,20 @@ function run(html: string, sizes: Record<string, number> = { 'preview.avif': 449
   mkdirSync(join(dist, '.vite'));
   mkdirSync(join(dist, 'assets'));
   const manifest: Record<string, object> = {};
-  for (const spec of Object.values(budgets.pages) as { html: string; startup: string[]; lazy?: string[] }[]) {
+  for (const spec of Object.values(budgets.pages) as { html: string; startup: string[]; lazy?: string[]; imageFormats?: { avif: string[]; webp: string[] }[] }[]) {
     writeFileSync(join(dist, spec.html), spec.html === 'index.html' ? html : '<html></html>');
     const entry = `assets/${spec.html}.js`;
     writeFileSync(join(dist, entry), '');
-    manifest[spec.html] = { file: entry };
+    // This fixture exercises hub pictures. Represent other pages' declared
+    // format groups with zero-byte assets so their graph remains valid.
+    const assets: string[] = [];
+    for (const group of spec.imageFormats ?? []) for (const key of [...group.avif, ...group.webp]) {
+      const file = `assets/${basename(key)}`;
+      assets.push(file);
+      writeFileSync(join(dist, file), '');
+      manifest[key] = { file };
+    }
+    manifest[spec.html] = { file: entry, assets };
     for (const key of [...spec.startup, ...spec.lazy ?? []]) manifest[key] = { file: 'assets/empty.js' };
   }
   writeFileSync(join(dist, 'assets/empty.js'), '');
