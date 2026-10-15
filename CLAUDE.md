@@ -231,35 +231,32 @@ Development happens through Cloud Agents, often from the mobile Cursor app. Two 
 
 ## pstack
 
-This repo vendors [open-pstack](https://github.com/ericlitman/open-pstack), a
-port of Lauren Tan's pstack to Claude Code. The skills live in
-`.claude/skills/`; the subagents live in `.claude/agents/`. Provenance, license,
-and resync steps are in `.claude/vendor/open-pstack/README.md`.
+This repo vendors [pstack-claude](https://github.com/michael-denyer/pstack-claude)
+version 0.9.84. The complete upstream distribution lives in
+`.claude/vendor/open-pstack/upstream/`. Skills and agents link to that snapshot.
+Codex discovers the same skills through `.agents/skills`.
+Provenance, local deviations, and resync steps are in
+`.claude/vendor/open-pstack/README.md`.
 
-Run `/poteto-mode` before a non-trivial code change. It reads the task, picks a
-playbook, and routes to the leaf skills. Enter a specific skill directly when
-you already know the shape of the work:
+Use `/poteto-mode` for non-trivial work. The Claude SessionStart hook loads its
+routing instruction. Enter `/how`, `/architect`, `/interrogate`, `/tdd`, or
+`/deslop` directly when the task already fits that skill.
 
-| Skill | Use it when |
-| --- | --- |
-| `/how` | You need to know how a subsystem works before you change it. |
-| `/architect` | The change crosses a module boundary and the types come first. |
-| `/interrogate` | You want other models to attack a design or a diff. |
-| `/tdd` | The bug has a cheap, obvious failing test. |
-| `/deslop` | You are about to commit and want the AI tells removed. |
+Upstream plugin names use the `pstack:` prefix. This checkout exposes bare
+skill and agent names. Resolve `pstack:poteto-mode` as `poteto-mode` and
+`pstack:effort-high` as `effort-high`. Apply this mapping to every plugin skill
+and agent reference. The routing hook applies it to its own output.
 
-The 21 `principle-*` skills are model-invocable only. They do not appear as
-slash commands. `/setup-pstack` configures the multi-model panel, which needs
-the Codex and Grok command-line tools plus Bun.
+`/setup-pstack` configures models for the current runtime. The latest upstream
+uses native model defaults, optional external providers, and per-role effort.
+Do not reuse the previous distribution's provider-qualified model sheet without
+following the updated setup instructions. This update does not change personal
+model sheets or probe provider accounts.
 
-Three notes on how pstack sits next to the rest of this file:
-
-1. This file wins. pstack's own precedence rule says user instructions beat the
-   pstack mandate.
-2. pstack's `prove it works` principle and the Work reports section agree:
-   measure the result, do not infer it from the code.
-3. pstack does not change Deployment. Ask-first cases still need approval,
-   whatever skill produced them.
+This file and direct user instructions take precedence over pstack.
+pstack does not change Deployment or this repository's verification rules.
+Run `node scripts/check-pstack.mjs` to check the upstream snapshot and active
+skill and agent links. The upstream tests run separately from app tests.
 
 ## Responsive sizing
 
