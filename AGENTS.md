@@ -21,6 +21,16 @@
 - Post a compact worker ledger in the coordinator chat whenever a worker starts, completes, fails, or needs input. Use one line per worker with: `Worker | Task | Status | Result or next action`.
 - Actively follow worker progress. Handle routine questions, retries, and integration yourself; involve the user only for a material product choice, external permission, destructive action, or a review required by the policy below.
 - Integrate compatible worker results, run final verification on the combined change, and report the shipped result and evidence in the coordinator chat.
+
+### Checks that outlive a tool connection
+
+- Start long verification jobs in a detached process session. Do not depend on a tool session handle to keep a required check alive.
+- Save the source commit, process ID, stage, exit status, logs, and each completed browser-test outcome to disk.
+- Write live records outside active Vite/Tailwind source trees. Copy them into repository evidence after the development server stops.
+- After an interruption, inspect those records and the live process before restarting. Reuse completed checks when their inputs have not changed.
+- Inspect the current commit and the recorded operational output paths after an environment transition. Use a unique output directory for each new attempt; never overwrite a completed run's artifacts.
+- Remove an orphan preview server only after checking its process command and working directory. Keep the user's other servers running.
+- Continue monitoring through the authorized merge and deployment. A phone or tool reconnect is not a reason to end the task.
 - Never claim a worker is running, finished, verified, or merged unless you have checked its actual state.
 
 ## Reuse existing UI exactly
