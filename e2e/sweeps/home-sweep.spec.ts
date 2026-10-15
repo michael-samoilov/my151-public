@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test';
  */
 const WIDTHS = [
   320, 360, 375, 390, 414, 428, 540, 600, 700, 768, 800, 834, 900, 1000, 1023,
-  1024, 1180, 1280, 1440, 1920,
+  1024, 1180, 1280, 1299, 1300, 1440, 1920,
 ];
 
 /**
@@ -242,15 +242,16 @@ test.describe('home page responsive sweep', () => {
           if (e.scrollWidth - e.clientWidth > 0.5) fail.push(`hero text ${i} overruns its measure`);
         });
 
-        // 13. On desktop the row carries one track per tool and fills the width:
-        // the three cards spread to where a fourth card's right edge would sit,
-        // rather than sitting four-up with an empty trailing column. One track
-        // per tool, the first card flush to the grid's left and the last flush to
-        // its right, is the shape.
+        // 13. On a wide desktop the row carries one track per tool and fills the
+        // width, rather than leaving an empty trailing column. Below 1300px it is
+        // two up, so each caption keeps one line at 12px or more. Either way the
+        // first card sits flush to the grid's left and the last flush to its
+        // right.
         if (desktop && grid) {
           const tracks = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean);
-          if (tracks.length !== cardCount) {
-            fail.push(`desktop grid has ${tracks.length} columns, expected ${cardCount}`);
+          const wantTracks = window.innerWidth >= 1300 ? cardCount : 2;
+          if (tracks.length !== wantTracks) {
+            fail.push(`desktop grid has ${tracks.length} columns, expected ${wantTracks}`);
           }
           if (cards.length) {
             const g = R(grid);

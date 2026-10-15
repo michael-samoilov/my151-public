@@ -582,12 +582,14 @@ export function HomePage() {
   const tools = useTools(placed);
 
   useEffect(() => { markLeaguePromoSeen(); }, []);
-  // Desktop lays the tools on one row that fills the width: three cards spread
-  // to where a fourth card's right edge would sit. The cards go wide and short
-  // so the red reads as a low band, not a block; the screenshots do not change,
-  // because each renders in a fixed-size stage pinned to its card's bottom-left
-  // (see `.hub-stage`). On a phone it is two up, which leaves the last card alone
-  // when the count is odd — that is the card that spans instead.
+  // Columns grow with the width and never fall back: two up below 1300px, and
+  // every card on one row from 1300px. At 1300px every tool's description and
+  // saved-work line fits on one line at 12px or more, in every language (13
+  // October); four up from 1024px shrank them to 9.4px. From 1024px the cards
+  // go wide and short so the red reads as a low band, not a block; the
+  // screenshots do not change, because each renders in a fixed-size stage
+  // pinned to its card's bottom-left (see `.hub-stage`). On a phone an odd
+  // last card is left alone on its row, so it spans instead.
   const desktopCols = tools.length;
   const gridStyle = { '--tool-cols': desktopCols } as React.CSSProperties;
   // The wide bar is a phone shape only, and the two shapes are different markup
@@ -679,7 +681,7 @@ export function HomePage() {
                 `sm:` then beats its own `md:` override above 1024px. Bounding the
                 tablet rules at md means the two bands cannot overlap at all. */}
             <div
-              className="hub-grid grid grid-cols-2 md:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
+              className="hub-grid grid grid-cols-2 min-[1300px]:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
               style={gridStyle}
             >
               {tools.map((tool, i) => (

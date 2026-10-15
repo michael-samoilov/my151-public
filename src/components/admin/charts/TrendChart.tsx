@@ -526,7 +526,7 @@ export function ActiveUsersPanel({
   nowMs: number;
   range: DashboardRange;
 }) {
-  const [shown, setShown] = useState({ daily: true, weekly: true, monthly: true });
+  const [shown, setShown] = useState({ daily: true, weekly: true, monthly: false });
   const padded = useMemo(() => extendThroughToday(series, nowMs), [series, nowMs]);
   const visible = useMemo(() => sliceActivityRange(padded, rangeStart(range, nowMs)), [padded, nowMs, range]);
   const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);

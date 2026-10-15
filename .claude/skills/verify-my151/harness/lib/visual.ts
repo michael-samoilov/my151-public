@@ -144,13 +144,22 @@ async function settle(page: Page): Promise<void> {
   await page.waitForTimeout(500);
 }
 
+/**
+ * Launch notices open and close on set dates (src/lib/launchFlags.ts). Marked
+ * seen, they stay closed, so a screen looks the same on every day. On 13
+ * October the League notice's tooltip covered the 390px tabs, and three
+ * screens could not be rendered on either build.
+ */
+const NOTICES_SEEN = { 'p151-league-promo-seen': '1', 'p151-moved-notice-seen': '1', 'p151-favorites-launch-seen': '1' };
+
 async function render(browser: Browser, url: string, screen: Screen, vp: Viewport): Promise<{ page: Page; png: Buffer }> {
   const ctx = await browser.newContext({
     viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: vp.scale,
     isMobile: vp.mobile, hasTouch: vp.mobile, reducedMotion: 'reduce', serviceWorkers: 'block',
   });
   await ctx.addInitScript(NAME_SHIM);
-  if (screen.seed) await ctx.addInitScript((seed) => { for (const [k, v] of Object.entries(seed)) localStorage.setItem(k, v); }, screen.seed);
+  const seed = { ...NOTICES_SEEN, ...screen.seed };
+  await ctx.addInitScript((seed) => { for (const [k, v] of Object.entries(seed)) localStorage.setItem(k, v); }, seed);
   const page = await ctx.newPage();
   await page.goto(url + screen.path, { waitUntil: 'load' });
   await settle(page);
