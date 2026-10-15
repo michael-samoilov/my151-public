@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
+import { preload } from 'react-dom';
 import { useHomeSheetLift } from './useHomeSheetLift';
 import { SLOT_COUNT } from '@/league/model/constants';
 import { useDocumentLocale, useT } from '@/i18n';
@@ -16,11 +17,17 @@ import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { markLeaguePromoSeen } from '@/lib/launchFlags';
 import dexBack from '@/assets/home/tool-dex-b.webp';
+import dexBackAvif from '@/assets/home/tool-dex-b.avif';
 import dexFront from '@/assets/home/tool-dex.webp';
+import dexFrontAvif from '@/assets/home/tool-dex.avif';
 import leagueBack from '@/assets/home/tool-league-b.webp';
+import leagueBackAvif from '@/assets/home/tool-league-b.avif';
 import leagueFront from '@/assets/home/tool-league.webp';
+import leagueFrontAvif from '@/assets/home/tool-league.avif';
 import favoritesBack from '@/assets/home/tool-favorites-b.webp';
+import favoritesBackAvif from '@/assets/home/tool-favorites-b.avif';
 import favoritesFront from '@/assets/home/tool-favorites.webp';
+import favoritesFrontAvif from '@/assets/home/tool-favorites.avif';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EggIcon } from '@/components/shared/AppIcons';
 import { pathScale } from '@/lib/pathScale';
@@ -81,7 +88,20 @@ const POP_LEFT = 9.6;
  * Smaller copies saved bytes but no measured speed, and they drew at about
  * their own size, which blurred them. They were removed on 9 October.
  */
-const shot = (src: string, fetchPriority?: 'high') => ({ src, fetchPriority });
+const shot = (src: string, avif: string, width: number, height: number, fetchPriority?: 'high') => ({ src, avif, width, height, fetchPriority });
+
+function Screenshot({
+  image,
+  ...props
+}: { image: ReturnType<typeof shot> } & Omit<ComponentProps<'img'>, 'src' | 'fetchPriority'>) {
+  const { avif, ...img } = image;
+  return (
+    <picture className="contents">
+      <source type="image/avif" srcSet={avif} />
+      <img {...img} {...props} />
+    </picture>
+  );
+}
 
 interface Tool {
   key: string;
@@ -159,7 +179,7 @@ function useTools(placed: number): Tool[] {
       progress: { count: placed, total: 151, label: t('home.dex.saved', { progress: PROGRESS_TOKEN }) },
       // The page's largest paint on a phone. The hub's HTML is prerendered,
       // so the browser sees this priority before it requests anything.
-      shots: [shot(dexFront, 'high'), shot(dexBack)],
+      shots: [shot(dexFront, dexFrontAvif, 800, 1777, 'high'), shot(dexBack, dexBackAvif, 800, 942)],
       alts: [t('home.dex.buildAlt'), t('home.dex.exportAlt')],
     },
     {
@@ -168,7 +188,7 @@ function useTools(placed: number): Tool[] {
       title: t('home.league.title'),
       blurb: t('home.league.blurb'),
       progress: { count: league, total: SLOT_COUNT, label: t('home.league.saved', { progress: PROGRESS_TOKEN }) },
-      shots: [shot(leagueBack), shot(leagueFront)],
+      shots: [shot(leagueBack, leagueBackAvif, 800, 1020), shot(leagueFront, leagueFrontAvif, 800, 1268)],
       alts: [t('home.league.leagueAlt'), t('home.league.cardAlt')],
     },
     {
@@ -177,7 +197,7 @@ function useTools(placed: number): Tool[] {
       title: t('home.favorites.title'),
       blurb: t('home.favorites.blurb'),
       progress: { count: favorites.filled, total: favorites.total, label: t('home.favorites.saved', { progress: PROGRESS_TOKEN }) },
-      shots: [shot(favoritesBack), shot(favoritesFront)],
+      shots: [shot(favoritesBack, favoritesBackAvif, 800, 1433), shot(favoritesFront, favoritesFrontAvif, 800, 1773)],
       alts: [t('home.favorites.fullGridAlt'), t('home.favorites.simplifiedAlt')],
     },
     { key: NEXT_CARD, title: t('home.next.title'), blurb: t('home.next.blurb') },
@@ -207,6 +227,9 @@ const SPAN = 'col-span-2';
  * translated title wraps differently.
  */
 function Card({ tool, onPress, wide, reserve }: CardProps) {
+  for (const image of tool.shots ?? []) {
+    preload(image.avif, { as: 'image', type: 'image/avif', fetchPriority: image.fetchPriority });
+  }
   const panel = 'relative block w-full text-left bg-primary text-white no-underline';
   const body = wide ? <WideBody tool={tool} /> : <TallBody tool={tool} />;
   // `--panel-ar` is set on the grid: the tall proportion on a phone, a wide low
@@ -251,6 +274,7 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
   // it, and there is no hover flicker. The float lives in `index.css`.
   return (
     <div
+      data-hub-card={tool.shots ? tool.key : undefined}
       className={`hub-card flex flex-col ${wide ? SPAN : ''}`}
       style={{ containerType: 'inline-size' }}
     >
@@ -390,12 +414,6 @@ function Caption({ tool }: { tool: Tool }) {
  * edge that cuts them. The shadows get their own box with a fade, so they thin
  * out instead of ending on a straight line at that edge.
  *
- * The shadow box holds a hidden copy of the same screenshot, which is what
- * gives it the screenshot's shape. Each asset is cropped to its own content —
- * the dex's grid ends above the app's footer, an export ends at its own edge —
- * so no single aspect ratio describes all four, and a hardcoded one would put
- * the shadow somewhere the picture is not. The copy costs one extra decode of
- * an image the browser has already fetched.
  */
 function Artwork({ tool }: { tool: Tool }) {
   // Which shot is floating, or none. Driven by pointer events on the stationary
@@ -489,7 +507,10 @@ function Artwork({ tool }: { tool: Tool }) {
             className="hub-float-shot block"
             style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 9px 21px -5px rgba(10, 10, 10, 0.42)' }}
           >
-            <img {...tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
+            <span
+              className="block w-full invisible"
+              style={{ aspectRatio: `${tool.shots![i].width} / ${tool.shots![i].height}` }}
+            />
           </span>
         ))}
       </span>
@@ -505,12 +526,12 @@ function Artwork({ tool }: { tool: Tool }) {
           >
             {/* Not lazy: every card sits in the first viewport at every
                 width, and these are the page's largest paint. */}
-            <img
-              {...tool.shots![i]}
+            <Screenshot
+              image={tool.shots![i]}
               alt={tool.alts?.[i] ?? ''}
               draggable={false}
               decoding="async"
-              className="block w-full"
+              className="block w-full h-auto"
             />
           </span>
         ))}
@@ -537,10 +558,10 @@ function Artwork({ tool }: { tool: Tool }) {
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setFloated(i); }}
             onPointerLeave={() => setFloated((prev) => (prev === i ? null : prev))}
           >
-            {/* An invisible copy of the shot gives the twin the shot's exact
-                height, so the hit area matches the screenshot's footprint. The
-                browser has already decoded this image, so it costs no fetch. */}
-            <img {...tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
+            <span
+              className="block w-full invisible"
+              style={{ aspectRatio: `${tool.shots![i].width} / ${tool.shots![i].height}` }}
+            />
           </span>
         ))}
       </span>
