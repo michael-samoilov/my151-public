@@ -106,7 +106,7 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     id: 'pokemon-showdown',
     name: 'Pokémon Showdown',
     // Both are forms that alternateForms.ts names as Showdown files.
-    usedFor: "The source of some form sprites, such as Unown's letters and the Flabébé family's colours.",
+    usedFor: "The source of some form sprites, such as Unown's letters and the Flabébé family's colors.",
     kind: 'project',
     links: ['https://github.com/smogon/sprites'],
     linkLabels: { 'https://github.com/smogon/sprites': 'the smogon/sprites repository' },
