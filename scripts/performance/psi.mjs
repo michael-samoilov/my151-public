@@ -6,8 +6,9 @@
  *   node scripts/performance/psi.mjs --page hub,dex --runs 3
  *   node scripts/performance/psi.mjs --url https://<public deployment>
  *
- * Google cannot load a Vercel preview, because previews need a Vercel login.
- * Use `lighthouse.mjs` to measure a change before it ships.
+ * Google can load public previews. Verify direct access without a login, then
+ * compare two previews with the same build mode and seeded inputs. See
+ * docs/performance.md; keep production baselines separate.
  *
  * It needs PAGESPEED_API_KEY in the environment: a key restricted to the
  * PageSpeed Insights API, the one Google key Michael approved (October 8).
@@ -17,8 +18,8 @@
  *
  * Each page loads with `?notme`, so the runs stay out of the analytics.
  * "Field" is Chrome's real-user data for the whole origin over 28 days. A site
- * with few visits can have none. Use `lighthouse.mjs` to compare a change
- * before it ships; use this script to read what PageSpeed Insights shows.
+ * with few visits can have none. Use matched public previews with this script
+ * to compare Google measurements before shipping.
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';

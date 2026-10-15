@@ -56,11 +56,15 @@ The tools:
   live site and prints the scores, the lab metrics, the real-user field data
   for the origin, and the findings. It needs `PAGESPEED_API_KEY` in the
   environment settings. Google may run a newer Lighthouse than
-  `lighthouse.mjs`, so its numbers are the reference. A Vercel preview needs a
-  Vercel login, so Google can load one only through a share link (the Vercel
-  connection's `get_access_to_vercel_url` makes one that lasts 23 hours; keep
-  it out of commits). The link adds a redirect, so compare two previews with
-  each other, never a preview with the live site. `lighthouse.mjs` runs the
+  `lighthouse.mjs`, so its numbers are the reference. This project's previews
+  are public after Vercel Authentication was disabled on 15 October 2026.
+  Verify a direct HTTP 200 without a login redirect before testing.
+  Compare a preview of current production code with the candidate preview,
+  never a preview with the live site. Previews seed demo Pokémon and a demo
+  league; production starts empty. Record both commits, build modes, seeded
+  inputs, actual URLs, fetch times, and Lighthouse versions. Keep an actual
+  production baseline separate from this controlled comparison.
+  `lighthouse.mjs` runs the
   same Lighthouse version and throttling here without a deploy. Google's runs vary: one desktop run of the dex measured
   238 ms of blocking time and the next 0 ms, with four times the script time
   on the slower machine. Run 3 or more and read the median. Google answers a
