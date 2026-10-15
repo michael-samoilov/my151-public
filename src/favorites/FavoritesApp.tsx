@@ -28,6 +28,7 @@ import { FavoritesGrid } from './components/FavoritesGrid';
 import { FavoritesHeader, type FavoritesView } from './components/FavoritesHeader';
 import { FavoritesTypeRepairNotice } from './components/FavoritesTypeRepairNotice';
 import { PickerSheet } from './components/PickerSheet';
+import { SortDebugPanel } from './components/SortDebugPanel';
 import { initialSortOrder, SORT_DEBUG_ENABLED } from './model/sortDebug';
 import type { PackMove } from './model/packing';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
@@ -35,7 +36,6 @@ import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpin
 const ICONS_STORAGE_KEY = 'personal-151-favorites-show-icons-v1';
 const FavoritesAnalyticsDashboard = lazy(() => reloadIfStale(import('./components/FavoritesAnalyticsDashboard')));
 const FavoritesExportOverlay = lazy(() => reloadIfStale(import('./components/FavoritesExportOverlay')));
-const SortDebugPanel = lazy(() => reloadIfStale(import('./components/SortDebugPanel')).then(module => ({ default: module.SortDebugPanel })));
 
 type Selection = { type: TypeAxisId; gen: GenAxisId; keyboard?: boolean };
 
@@ -227,7 +227,7 @@ function FavoritesContent({ sel, setSel }: {
                 pane={desktop ? picker : null}
               />
             </div>
-            {SORT_DEBUG_ENABLED ? <Suspense fallback={null}><SortDebugPanel desktop={desktop} order={sortOrder} onChange={setSortOrder} /></Suspense> : null}
+            {SORT_DEBUG_ENABLED ? <SortDebugPanel desktop={desktop} order={sortOrder} onChange={setSortOrder} /> : null}
           </div>
         </div>
         <div id="favorites-panel-analytics" role="tabpanel" aria-labelledby="favorites-tab-analytics"

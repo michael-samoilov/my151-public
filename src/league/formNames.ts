@@ -45,4 +45,4 @@ registerNameExtension(async (locale, catalog, species) => {
     if (!key.startsWith('picker:')) species[key] = owner;
     catalog.forms[key] = names.forms[key];
   }
-}, async locale => { await loadFormNames(locale); });
+});
