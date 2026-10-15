@@ -64,6 +64,7 @@ function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
   return `(function(){
 var d=document.documentElement;
+d.classList.add('p151-hub-images-pending');
 function G(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function S(k){try{var s=JSON.parse(G(k)||'null');return s&&s.state||null}catch(e){return null}}
 function some(o,f){for(var k in o)if(f(o[k]))return true;return false}
@@ -142,7 +143,7 @@ export function prerenderHub(): Plugin {
           ...imagePreloads,
           '<link rel="expect" href="#p151-end" blocking="render">',
           '<style>html .p151-boot{display:none}html.p151-wait .p151-boot{display:flex}html.p151-wait #root{display:none}</style>',
-          '<style>html:not(:has(#p151-end)) #root{visibility:hidden}</style>',
+          '<style>html:not(:has(#p151-end)) #root{visibility:hidden}html.p151-hub-images-pending .hub-card[data-hub-card]{visibility:hidden}'+['dex','league','favorites'].map(k=>`html.p151-hub-${k}-fallback .hub-card[data-hub-card="${k}"]{visibility:visible}html.p151-hub-${k}-fallback .hub-card[data-hub-card="${k}"] [data-card-panel]{visibility:hidden}html.p151-hub-${k}-ready .hub-card[data-hub-card="${k}"],html.p151-hub-${k}-ready .hub-card[data-hub-card="${k}"] [data-card-panel]{visibility:visible}`).join('')+'</style>',
           `<script>${bootScript(inputs)}</script>`,
         ].join('\n    ');
         // Before any stylesheet: an inline script after one waits for it.
@@ -165,6 +166,23 @@ export function prerenderHub(): Plugin {
           const prefetch = `addEventListener('load',function(){var l=document.createElement('link');l.rel='prefetch';l.href=${JSON.stringify(href)};document.head.appendChild(l)})`;
           html = html.replace('</body>', () => `<script>${prefetch}</script>\n  </body>`);
         }
+        const ready = `(function(){
+var d=document.documentElement,decoded=new WeakSet(),pending=new WeakSet();
+function fallback(card){var key=card.getAttribute('data-hub-card');if(card.isConnected&&!d.classList.contains('p151-hub-'+key+'-ready'))d.classList.add('p151-hub-'+key+'-fallback')}
+function check(card){
+if(!card)return;var key=card.getAttribute('data-hub-card'),imgs=Array.from(card.querySelectorAll('[data-artwork] img[alt]:not([alt=""])'));
+if(!imgs.length||d.classList.contains('p151-hub-'+key+'-ready'))return;
+if(imgs.some(function(img){return img.complete&&!img.naturalWidth})){fallback(card);return}
+imgs.forEach(function(img){if(decoded.has(img)||pending.has(img))return;pending.add(img);img.decode().then(function(){decoded.add(img);check(img.closest('[data-hub-card]'))},function(){if(img.isConnected)fallback(img.closest('[data-hub-card]'))})});
+if(imgs.some(function(img){return !decoded.has(img)}))return;
+if(card.isConnected){d.classList.remove('p151-hub-'+key+'-fallback');d.classList.add('p151-hub-'+key+'-ready')}
+}
+function event(e){if(e.target instanceof HTMLImageElement)check(e.target.closest('[data-hub-card]'))}
+document.addEventListener('load',event,true);document.addEventListener('error',event,true);
+Array.from(document.querySelectorAll('[data-hub-card]')).forEach(check);
+setTimeout(function(){Array.from(document.querySelectorAll('[data-hub-card]')).forEach(fallback)},8000)
+})();`;
+        html = html.replace('</body>', () => `<script>${ready}</script>\n  </body>`);
         const lastSheet = html.lastIndexOf('</style>');
         const after = lastSheet + '</style>'.length;
         html = `${html.slice(0, after)}\n    <script>${FONT_SIZE_SCRIPT}</script>${html.slice(after)}`;

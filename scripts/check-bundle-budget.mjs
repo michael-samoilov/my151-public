@@ -16,8 +16,8 @@
  *   is what Vercel sends.
  * - `images`: image files those modules import, as emitted. They are already
  *   compressed. Every `srcset` size counts, though a browser downloads one
- *   size of each image, so this is what the page can load, not what one
- *   visitor does.
+ *   size of each image. Recognized AVIF/WebP pictures count the larger format
+ *   total, so this is what the page can load, not what one visitor does.
  *
  * Fonts are not counted. The CSS names every Inter subset, but a browser
  * downloads only the subsets its text needs.
@@ -34,7 +34,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, extname, join } from 'node:path';
+import { basename, dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, constants } from 'node:zlib';
 
@@ -114,6 +114,64 @@ function files(keys) {
   return out;
 }
 
+function pictureSavings(found, skip, keys) {
+  const attributes = (input) => {
+    const out = Object.create(null);
+    let valid = true;
+    const rest = input.replace(/([^\s"'<>/=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g, (_, name, a, b) => {
+      name = name.toLowerCase();
+      if (Object.hasOwn(out, name)) valid = false;
+      out[name] = a ?? b;
+      return '';
+    });
+    return valid && !rest.replace(/\/\s*$/, '').trim() ? out : null;
+  };
+  const urls = (value) => typeof value === 'string' ? value.split(',').map(part =>
+    /^\/?(assets\/[\w./-]+)(?:\s+(?:\d+w|\d+(?:\.\d+)?x))?$/.exec(part.trim())?.[1]) : [];
+  const groups = new Map();
+  const outside = [];
+  for (const file of new Set([...found.text, ...keys.filter(key => extname(key) === '.html')])) {
+    if (extname(file) === '.css') outside.push(readFileSync(join(dist, file), 'utf8'));
+    if (extname(file) !== '.html') continue;
+    outside.push(readFileSync(join(dist, file), 'utf8').replace(
+      /<!--[\s\S]*?-->|<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>|<picture\b[^>]*>[\s\S]*?<\/picture\s*>/gi,
+      block => {
+        const match = /^<picture\b([^>]*)>\s*<source\b([^>]*)>\s*<img\b([^>]*)>\s*<\/picture\s*>$/i.exec(block);
+        if (!match) return block;
+        const [picture, source, img] = match.slice(1).map(attributes);
+        if (!picture || !source || !img || Object.keys(picture).some(k => k !== 'class')) return block;
+        if (Object.keys(source).some(k => !['type', 'srcset'].includes(k)) || source.type !== 'image/avif') return block;
+        if (Object.keys(img).some(k => !['src', 'srcset', 'sizes', 'alt', 'width', 'height', 'class', 'loading', 'decoding', 'fetchpriority', 'draggable'].includes(k))) return block;
+        const avif = [...new Set(urls(source.srcset))];
+        const webp = [...new Set([...urls(img.src), ...urls(img.srcset)])];
+        if (!avif.length || !webp.length || !/^\/?assets\/[\w./-]+\.webp$/.test(img.src ?? '')) return block;
+        if (avif.some(f => !f?.endsWith('.avif')) || webp.some(f => !f?.endsWith('.webp'))) return block;
+        const all = [...avif, ...webp];
+        if (all.some(f => !found.images.has(f) || skip.images.has(f))) return block;
+        groups.set(JSON.stringify([avif.slice().sort(), webp.slice().sort()]), { avif, webp, all });
+        return '';
+      },
+    ));
+  }
+  const uses = outside.join('\n').replace(/<!--[\s\S]*?-->|<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>|<link\b([^>]*)>/gi, (tag, _, input) => {
+    if (input === undefined) return tag;
+    const a = attributes(input);
+    if (!a || Object.keys(a).some(k => !['rel', 'as', 'type', 'href', 'fetchpriority'].includes(k))) return tag;
+    if (a.rel !== 'preload' || a.as !== 'image' || a.type !== 'image/avif') return tag;
+    const files = urls(a.href);
+    return files.length === 1 && [...groups.values()].some(g => g.avif.includes(files[0])) ? '' : tag;
+  });
+  const candidates = [...groups.values()];
+  let savings = 0;
+  for (const group of candidates) {
+    if (group.all.some(f => uses.includes(basename(f)))) continue;
+    if (candidates.some(other => other !== group && other.all.some(f => group.all.includes(f)))) continue;
+    const bytes = files => files.reduce((sum, file) => sum + statSync(join(dist, file)).size, 0);
+    savings += Math.min(bytes(group.avif), bytes(group.webp));
+  }
+  return savings;
+}
+
 function measure(keys, minus) {
   const found = files(keys);
   const skip = minus ?? { text: new Set(), images: new Set() };
@@ -121,6 +179,7 @@ function measure(keys, minus) {
   let images = 0;
   for (const f of found.text) if (!skip.text.has(f)) text += brotli(f);
   for (const f of found.images) if (!skip.images.has(f)) images += statSync(join(dist, f)).size;
+  images -= pictureSavings(found, skip, keys);
   return { text, images, found };
 }
 

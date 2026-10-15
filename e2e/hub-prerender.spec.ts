@@ -191,6 +191,8 @@ test('before the app runs, a tool with saved work holds its count back and the o
   const page = await context.newPage();
   await page.goto('/');
   await expect(page.locator('#root h1')).toBeVisible();
+  await expect(page.locator('[data-card-progress="league"]')).toBeVisible();
+  await expect(page.locator('[data-card-progress="favorites"]')).toBeVisible();
   const lines = await page.evaluate(() => [...document.querySelectorAll('[data-card-progress]')].map((p) => {
     const count = p.querySelector('[data-progress-count]')!;
     return {
