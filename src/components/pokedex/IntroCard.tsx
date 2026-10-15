@@ -25,6 +25,9 @@ import { X } from 'lucide-react';
 import shot45 from '@/assets/intro/shot-45.webp';
 import shot95 from '@/assets/intro/shot-95-outlines.webp';
 import shot151 from '@/assets/intro/shot-151-stats.webp';
+import shot45Avif from '@/assets/intro/shot-45.avif';
+import shot95Avif from '@/assets/intro/shot-95-outlines.avif';
+import shot151Avif from '@/assets/intro/shot-151-stats.avif';
 
 /**
  * First-visit intro card — the top of the Build page for a brand-new visitor.
@@ -110,6 +113,7 @@ const STAGE_STYLES: [StageStyle, StageStyle, StageStyle] = [
 ];
 
 const SHOT_SRCS = [shot45, shot95, shot151] as const;
+const SHOT_AVIFS = [shot45Avif, shot95Avif, shot151Avif] as const;
 
 /** Every device loads these originals. Smaller copies drew at about their own
  *  size on a 3x phone and looked soft, for 42 KiB saved; they were removed on
@@ -331,6 +335,8 @@ function ShowcaseStaircase() {
               style={{ transform: `rotate(${s.rotate})` }}
             >
               {FACE === 'shots' ? (
+                <picture className="contents">
+                <source srcSet={SHOT_AVIFS[i]} type="image/avif" />
                 <img
                   src={SHOT_SRCS[i]}
                   alt={t(SHOT_ALTS[i])}
@@ -342,6 +348,7 @@ function ShowcaseStaircase() {
                   className="h-full w-auto block"
                   draggable={false}
                 />
+                </picture>
               ) : (
                 <DotsHero stage={stages[i]} outlines={STAGE_STYLES[i].outlines} stats={STAGE_STYLES[i].stats} />
               )}

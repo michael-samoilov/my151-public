@@ -47,6 +47,11 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   // A failed save says so in the pane; the next try clears it.
   const [exportFailed, setExportFailed] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const [surveyOpenedAt, setSurveyOpenedAt] = useState(0);
   const isDesktop = useViewportAtLeast(1024);
   const statsData = useDetailedStatsData();
@@ -97,18 +102,8 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     setExportBusy(true);
     setExportFailed(false);
     const ids = sorted.map((p) => p.id);
+    let highlightTimeout: ReturnType<typeof setTimeout> | undefined;
     try {
-      const nextHighlight = (await sendExportBeacon(
-        ids,
-        {
-          sort: draft.sort,
-          outlines: showSectionOverlays,
-          groupSpecial: draft.groupSpecialAtEnd,
-          showStats: showStatsPanel,
-        },
-        sections,
-      )) ?? previewExportHighlight('pokedex', ids);
-      setHighlight(nextHighlight);
       const cached = urls[activeKey];
       const blob = cached
         ? await fetch(cached).then((r) => r.blob())
@@ -117,6 +112,21 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
             stats: showStatsPanel ? { data: statsDataRef.current, heights: DEFAULT_STATS_HEIGHTS } : null,
           });
       await shareOrDownload(blob, 'my151.png');
+      const nextHighlight = (await Promise.race([
+        sendExportBeacon(
+          ids,
+          {
+            sort: draft.sort,
+            outlines: showSectionOverlays,
+            groupSpecial: draft.groupSpecialAtEnd,
+            showStats: showStatsPanel,
+          },
+          sections,
+        ).catch(() => null),
+        new Promise<null>(resolve => { highlightTimeout = setTimeout(() => resolve(null), 2000); }),
+      ])) ?? previewExportHighlight('pokedex', ids);
+      if (!mounted.current) return;
+      setHighlight(nextHighlight);
       if (
         !shouldShowExportSurvey({
           optedOut: isOptedOut(),
@@ -134,9 +144,10 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('Export failed:', err);
-      setExportFailed(true);
+      if (mounted.current) setExportFailed(true);
     } finally {
-      setExportBusy(false);
+      if (highlightTimeout !== undefined) clearTimeout(highlightTimeout);
+      if (mounted.current) setExportBusy(false);
     }
   }, [
     activeKey,

@@ -85,13 +85,14 @@ async function loadCatalog(locale: ActiveLocale): Promise<Messages> {
   const loadTerms = TERM_SOURCES[`./catalogs/terms/${locale}.json`];
   if (!loadTerms) return en;
   const loadUi = UI_SOURCES[`./catalogs/ui/${locale}.json`];
+  const [terms, ui] = await Promise.all([loadTerms(), loadUi ? loadUi() : {}]);
   // English first, then the sourced terms, then our own wording — so a locale
   // that has translated only part of the corpus is partial rather than broken,
   // and anything untranslated is English rather than missing.
   return {
     ...en,
-    ...(await loadTerms()),
-    ...(loadUi ? await loadUi() : {}),
+    ...terms,
+    ...ui,
   } as Messages;
 }
 

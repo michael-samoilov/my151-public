@@ -20,6 +20,20 @@
     },
     "pokedex": {
       "html": "pokedex-builder.html",
+      "imageFormats": [
+        {
+          "avif": [
+            "src/assets/intro/shot-45.avif",
+            "src/assets/intro/shot-95-outlines.avif",
+            "src/assets/intro/shot-151-stats.avif"
+          ],
+          "webp": [
+            "src/assets/intro/shot-45.webp",
+            "src/assets/intro/shot-95-outlines.webp",
+            "src/assets/intro/shot-151-stats.webp"
+          ]
+        }
+      ],
       "startup": [
         "src/i18n/names/en.json"
       ],

@@ -13,8 +13,8 @@
          show: an empty dex, the intro not seen, no `?demo`. The card loads this
          same file with no `srcset`; if it ever gains one, the preload must
          list it too, or the image downloads twice. -->
-    <link id="p151-intro-shot" rel="preload" as="image" fetchpriority="high" media="not all"
-      href="/src/assets/intro/shot-151-stats.webp" />
+    <link id="p151-intro-shot" rel="preload" as="image" type="image/avif" fetchpriority="high" media="not all"
+      href="/src/assets/intro/shot-151-stats.avif" />
     <script>
       (function () {
         try {
@@ -27,6 +27,7 @@
         var link = document.createElement('link');
         link.rel = 'preload';
         link.as = 'image';
+        link.type = inert.type;
         link.fetchPriority = 'high';
         link.href = inert.href;
         document.head.appendChild(link);

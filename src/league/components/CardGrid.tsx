@@ -2061,16 +2061,21 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   // moving a line to a deeper seat, or dragging an evolution boundary, brings
   // in stages no row showed before. Powerup forms come too, because the
   // powerup rides its seat and a reorder hands it to another line.
-  const warmable = card.lines
+  const warmable = [...new Set(card.lines
     .flatMap((line) => line.branch)
     .flatMap((id) => {
       const sprite = getPokemonById(id)?.sprite;
       const forms = [...formsFor(id, 'mega'), ...formsFor(id, 'dynamax')];
       return [...(sprite ? [sprite] : []), ...forms.map(formSprite)];
-    })
+    }))]
+    .sort()
     .join('|');
+  // Keep only this card's decoded sprites alive. Sorting the URL set avoids
+  // replacing them during a reorder; a new card or unmount releases them.
+  const warmedSprites = useRef<HTMLImageElement[]>([]);
   useEffect(() => {
-    warmImages(warmable.split('|').filter(Boolean));
+    warmedSprites.current = warmImages(warmable.split('|').filter(Boolean));
+    return () => { warmedSprites.current = []; };
   }, [warmable]);
 
   const paintRef = useRef<PaintDrag | null>(null);
