@@ -135,7 +135,8 @@ export function prerenderHub(): Plugin {
         // React puts the screenshots' preloads at the start of the markup. They
         // go in the head instead, ahead of the inline stylesheet, so the
         // browser starts the images before it has read the styles.
-        const imagePreload = /<link rel="preload" as="image"[^>]*\/>/g;
+        // Explicit React preloads put href before as; automatic preloads do not.
+        const imagePreload = /<link\b(?=[^>]*\srel="preload")(?=[^>]*\sas="image")[^>]*\/>/g;
         const imagePreloads = markup.match(imagePreload) ?? [];
         html = html.replace(root, () => `<div id="root" data-prerendered>${markup.replace(imagePreload, '')}</div><span id="p151-end" hidden></span>`);
         const head = [
