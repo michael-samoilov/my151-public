@@ -11,7 +11,7 @@ interface PickerNames {
 }
 const sources = import.meta.glob<PickerNames>(['../i18n/picker-names/*.json', '!../i18n/picker-names/en.json'], { import: 'default' });
 const loaded = new Map<Locale, Promise<PickerNames>>();
-registerNameExtension(async (locale, catalog, species) => {
+function loadPickerNames(locale: Locale): Promise<PickerNames> {
   let pending = loaded.get(locale);
   if (!pending) {
     pending = locale === 'en'
@@ -19,9 +19,12 @@ registerNameExtension(async (locale, catalog, species) => {
       : sources[`../i18n/picker-names/${locale}.json`]();
     loaded.set(locale, pending);
   }
-  const overlay = await pending;
+  return pending;
+}
+registerNameExtension(async (locale, catalog, species) => {
+  const overlay = await loadPickerNames(locale);
   Object.assign(catalog.forms, overlay.forms);
   catalog.formCompact = { ...catalog.formCompact, ...overlay.formCompact };
   Object.assign(catalog.formSource, overlay.formSource);
   Object.assign(species, overlay.species);
-});
+}, async locale => { await loadPickerNames(locale); });

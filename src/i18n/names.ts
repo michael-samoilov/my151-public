@@ -63,16 +63,22 @@ const inFlight = new Map<Locale, Promise<void>>();
 const SOURCES = import.meta.glob<NameCatalog>('./names/*.json', { import: 'default' });
 
 let extensionLoader: ((locale: Locale, catalog: NameCatalog, species: Record<string, number>) => Promise<void>) | undefined;
+let extensionPrepare: ((locale: Locale) => Promise<void>) | undefined;
 /** Picker installs its optional names before boot; other pages never import them. */
-export function registerNameExtension(loader: typeof extensionLoader): void {
+export function registerNameExtension(loader: typeof extensionLoader, prepare?: typeof extensionPrepare): void {
   extensionLoader = loader;
+  extensionPrepare = prepare;
 }
 export function hasNameExtension(): boolean { return !!extensionLoader; }
 
 export async function loadNames(locale: Locale): Promise<void> {
+  const preparation = extensionPrepare?.(locale);
+  // Preserve shared-name failure ordering if the independent download fails early.
+  void preparation?.catch(() => {});
   await loadSharedNames(locale);
   const catalog = loaded.get(locale);
   if (extensionLoader && catalog) {
+    await preparation;
     await extensionLoader(locale, catalog, ALT_FORM_SPECIES);
     buildFormSearchIndex(catalog);
     notify();
