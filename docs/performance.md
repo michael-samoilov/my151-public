@@ -140,8 +140,12 @@ PR 214's correction below was insufficient on Michael's iPhone. The
 isolates the earlier image-size regression and app-startup contention.
 It records the candidate he confirmed as clearly faster, five quiet cold
 runs per connection and ten actual Google mobile reports per version.
-Google FCP/Speed Index improve; LCP remains effectively flat. Final checks
-and the merge remain pending at that investigation checkpoint.
+Google FCP/Speed Index improve; LCP remains effectively flat. The complete
+989-case CI plan passes (950 passes, 39 expected skips). Full six-configuration
+verification finds zero regressions and zero changed screens across 44 visual
+comparisons. Two WebKit gym-export assertions also fail on the base, with
+byte-identical before/after PNGs; the absolute verdict therefore remains FAIL.
+The investigation records those limits and the production merge status.
 
 The image decode gates added on 15 October changed first-card paint: the
 whole grid now waits for all six screenshots. FCP alone misses this because
