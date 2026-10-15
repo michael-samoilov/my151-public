@@ -83,7 +83,7 @@ const POP_TOP = 56;
 const POP_LEFT = 9.6;
 
 /**
- * Every device loads screenshots at their original 800px width. A shot draws 128 to 201 CSS px wide,
+ * Every device loads the 800px originals. A shot draws 128 to 201 CSS px wide,
  * so a 2x or 3x screen draws each one at about half size, which stays sharp.
  * Smaller copies saved bytes but no measured speed, and they drew at about
  * their own size, which blurred them. They were removed on 9 October.
@@ -98,13 +98,7 @@ function Screenshot({
   return (
     <picture className="contents">
       <source type="image/avif" srcSet={avif} />
-      <img
-        {...img}
-        // Keep the full sheet's geometry while omitting pixels below every
-        // resting and hovering pocket. The visible artwork keeps its resolution.
-        style={{ aspectRatio: `${image.width} / ${image.height}`, objectFit: 'contain', objectPosition: 'top' }}
-        {...props}
-      />
+      <img {...img} {...props} />
     </picture>
   );
 }
