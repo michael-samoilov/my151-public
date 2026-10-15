@@ -85,7 +85,9 @@ function start(){
 if(started)return;started=true;if(observer)observer.disconnect();
 document.removeEventListener('load',loaded,true);document.removeEventListener('error',error,true);
 ['pointerdown','click','keydown'].forEach(function(t){window.removeEventListener(t,intent,true)});
-preload();var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)
+preload();
+function run(){var s=document.createElement('script');s.type='module';s.crossOrigin='';s.src=${JSON.stringify(src)};document.head.appendChild(s)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run()
 }
 function painted(){if(!d.classList.contains('p151-hub-images-pending'))requestAnimationFrame(function(){setTimeout(start)})}
 if(d.classList.contains('p151-wait')||document.visibilityState!=='visible'){start();return}
