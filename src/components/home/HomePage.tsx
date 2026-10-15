@@ -597,6 +597,8 @@ export function HomePage() {
   useDocumentLocale();
   useJsErrorCounter();
   useEffect(() => {
+    // Child controls have installed their handlers. Replay any earlier button tap.
+    document.dispatchEvent(new Event('p151-hub-interactive'));
     sendEventBeacon('hub-shown', { once: true });
   }, []);
   const placed = usePokedexStore((s) => Object.values(s.sections).reduce((n, ids) => n + ids.length, 0));

@@ -132,3 +132,26 @@ Lighthouse findings left open on purpose:
 
 The first plan, with earlier targets and a phase list, is on the unmerged
 branch `codex/performance-program-plan`. This page replaces its targets.
+
+## Homepage card-paint regression, 15 October
+
+The image decode gates added on 15 October changed first-card paint: the
+whole grid now waits for all six screenshots. FCP alone misses this because
+the heading can already be visible. The 9 October sharpness fix had also
+increased image transfer on affected phones. The complete history, rejected
+experiments and measurements are in
+[the regression handoff](handoff/homepage-regression-2026-10-15.md).
+
+The retained correction moves image hints before CSS, reduces the 800 px
+screenshots from 449,939 to 325,347 bytes without changing their dimensions,
+and removes an unnecessary English-name wait before handler attachment.
+An early button click is retained until those handlers exist; other routes
+keep their normal mounting path. The four cards still appear together.
+
+Five-run controlled complete-card medians: 860 to 753 ms on fast mobile
+(ranges overlap), 3,712 to 2,776 ms on slow 4G (ranges separate). Final Google
+three-run matched-preview mobile score is 84 to 87, LCP 3,826 to 3,452 ms,
+FCP 1,991 to 1,996 ms. Desktop stays at 100. This does not establish a
+0.2-second mobile FCP. All reports, including worse local simulated timings
+and unchanged-page Google negatives, remain in the evidence branch linked
+from the handoff. Do not call a loading state or DOM presence complete paint.
