@@ -53,6 +53,7 @@ const rootEl = document.getElementById('root')!;
 // head script adds `p151-wait` for a visitor who will not get that page, such
 // as one in another language; for them #root stays hidden behind the spinner.
 const waiting = document.documentElement.classList.contains('p151-wait');
+const prerendered = rootEl.hasAttribute('data-prerendered') && !waiting;
 
 /** Renders into #root from scratch, then swaps the spinner for it in one frame. */
 function mount(app: ReactNode) {
@@ -73,20 +74,23 @@ if (new URLSearchParams(window.location.search).has('admin')) {
     );
   });
 } else {
+  const localeReady = initLocale({
+    search: window.location.search,
+    stored: usePokedexStore.getState().locale,
+    navigatorLanguages: navigator.languages,
+  });
+  // The English prerender displays no Pokémon names. Attach its handlers
+  // without waiting for that data, which still loads for the language picker.
   void Promise.all([
     import('../components/home/HomePage'),
-    initLocale({
-      search: window.location.search,
-      stored: usePokedexStore.getState().locale,
-      navigatorLanguages: navigator.languages,
-    }),
+    prerendered ? undefined : localeReady,
   ]).then(([{ HomePage }]) => {
     const app = (
       <StrictMode>
         <HomePage />
       </StrictMode>
     );
-    if (rootEl.hasAttribute('data-prerendered') && !waiting) {
+    if (prerendered) {
       hydrateRoot(rootEl, app);
       document.querySelector('.p151-boot')?.remove();
     } else {

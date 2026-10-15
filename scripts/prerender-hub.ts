@@ -60,11 +60,19 @@ interface BootInputs {
 const FONT_SIZE_SCRIPT =
   "(function(){var v=window.visualViewport,w=v?Math.round(v.width*v.scale):innerWidth;document.documentElement.style.fontSize=Math.max(16,Math.min(13+0.007*w,20))+'px'})()";
 
+export function splitImagePreloads(markup: string): { preloads: string[]; markup: string } {
+  // Explicit React preloads put href before as; automatic preloads do not.
+  const imagePreload = /<link\b(?=[^>]*\srel="preload")(?=[^>]*\sas="image")[^>]*\/>/g;
+  return { preloads: markup.match(imagePreload) ?? [], markup: markup.replace(imagePreload, '') };
+}
+
 function bootScript(input: BootInputs): string {
   const j = JSON.stringify;
   return `(function(){
 var d=document.documentElement;
 d.classList.add('p151-hub-images-pending');
+var earlyButton=null;
+function earlyClick(e){var root=document.getElementById('root'),t=e.target,b=t&&t.closest&&t.closest('button');if(!root||!b||!root.contains(b)||d.classList.contains('p151-wait'))return;e.preventDefault();e.stopImmediatePropagation();earlyButton=b}
 function G(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function S(k){try{var s=JSON.parse(G(k)||'null');return s&&s.state||null}catch(e){return null}}
 function some(o,f){for(var k in o)if(f(o[k]))return true;return false}
@@ -80,7 +88,11 @@ league:!!lg&&Array.isArray(lg.cards)&&some(lg.cards.slice(0,${input.SLOT_COUNT})
 favorites:!!fv&&some(fv.fills,function(x){return typeof x==='number'})},any=false;
 for(var t in saved)if(saved[t]){any=true;d.classList.add('p151-saved-'+t)}
 var now=Date.now(),notice=now>=${input.FAVORITES_NOTICE_START}&&now<${input.FAVORITES_NOTICE_END}&&G(${j(input.FAVORITES_NOTICE_SEEN_KEY)})!=='1'&&(any||${j(input.RETURNING_KEYS)}.some(function(k){return G(k)!==null}));
-if((loc||'en')!=='en'||notice||q.has('admin')||q.has('demo'))d.classList.add('p151-wait')})();`;
+if((loc||'en')!=='en'||notice||q.has('admin')||q.has('demo'))d.classList.add('p151-wait');
+if(!d.classList.contains('p151-wait')){
+document.addEventListener('click',earlyClick,true);
+document.addEventListener('p151-hub-interactive',function(){document.removeEventListener('click',earlyClick,true);var b=earlyButton;earlyButton=null;if(b&&b.isConnected)b.click()},{once:true})}
+})();`;
 }
 
 export function prerenderHub(): Plugin {
@@ -135,9 +147,8 @@ export function prerenderHub(): Plugin {
         // React puts the screenshots' preloads at the start of the markup. They
         // go in the head instead, ahead of the inline stylesheet, so the
         // browser starts the images before it has read the styles.
-        const imagePreload = /<link rel="preload" as="image"[^>]*\/>/g;
-        const imagePreloads = markup.match(imagePreload) ?? [];
-        html = html.replace(root, () => `<div id="root" data-prerendered>${markup.replace(imagePreload, '')}</div><span id="p151-end" hidden></span>`);
+        const { preloads: imagePreloads, markup: body } = splitImagePreloads(markup);
+        html = html.replace(root, () => `<div id="root" data-prerendered>${body}</div><span id="p151-end" hidden></span>`);
         const head = [
           `<link rel="preload" as="font" type="font/woff2" crossorigin href="${config.base}assets/${font}">`,
           ...imagePreloads,
