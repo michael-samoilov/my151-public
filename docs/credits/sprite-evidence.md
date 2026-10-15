@@ -1241,4 +1241,3 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `11104.png` | furfrou-pharaoh | none | unproven | https://eeveeexpo.com/resources/1101/ |
 | `11107.png` | kyurem-black-overdrive | none | unproven |  |
 | `11108.png` | kyurem-white-overdrive | none | unproven |  |
-
