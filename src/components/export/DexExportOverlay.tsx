@@ -10,7 +10,7 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { computeViewSort } from '@/hooks/useViewSort';
 import { DEFAULT_STATS_HEIGHTS, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
-import type { ExportHighlight } from '@/league/export/exportPersonalization';
+import { previewExportHighlight, type ExportHighlight } from '@/league/export/exportPersonalization';
 import { DEFAULT_FOIL_RECIPE, cloneFoilRecipe, type FoilRecipe } from '@/league/export/foilRecipe';
 import { LeagueExportSurvey } from '@/league/components/LeagueExportSurvey';
 import { LeagueExportSurveyIntro } from '@/league/components/LeagueExportSurveyIntro';
@@ -124,7 +124,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
           sections,
         ).catch(() => null),
         new Promise<null>(resolve => { highlightTimeout = setTimeout(() => resolve(null), 2000); }),
-      ]));
+      ])) ?? previewExportHighlight('pokedex', ids);
       if (!mounted.current) return;
       setHighlight(nextHighlight);
       if (
