@@ -135,6 +135,14 @@ branch `codex/performance-program-plan`. This page replaces its targets.
 
 ## Homepage card-paint regression, 15 October
 
+PR 214's correction below was insufficient on Michael's iPhone. The
+[follow-up investigation](handoff/homepage-early-paint-2026-10-15.md)
+isolates the earlier image-size regression and app-startup contention.
+It records the candidate he confirmed as clearly faster, five quiet cold
+runs per connection and ten actual Google mobile reports per version.
+Google FCP/Speed Index improve; LCP remains effectively flat. Final checks
+and the merge remain pending at that investigation checkpoint.
+
 The image decode gates added on 15 October changed first-card paint: the
 whole grid now waits for all six screenshots. FCP alone misses this because
 the heading can already be visible. The 9 October sharpness fix had also
