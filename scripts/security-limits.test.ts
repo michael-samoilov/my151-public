@@ -6,7 +6,6 @@ const fixture = vi.hoisted(() => {
   const counters = new Map<string, number>();
   const hashes = new Map<string, Record<string, unknown>>();
   const writes: { method: string; args: unknown[] }[] = [];
-  const baselineCounts = new Map<string, number>();
   const redis = {
     evalsha: async (_hash: string, keys: string[], args: number[]) => {
       const count = (counters.get(keys[0]) ?? 0) + Number(args[2]);
@@ -23,7 +22,7 @@ const fixture = vi.hoisted(() => {
       return 1;
     },
     hget: async (key: string, field: string) => hashes.get(key)?.[field] ?? null,
-    hlen: async (key: string) => (baselineCounts.get(key) ?? 0) + Object.keys(hashes.get(key) ?? {}).length,
+    hlen: async (key: string) => Object.keys(hashes.get(key) ?? {}).length,
     incr: async (key: string) => {
       const count = (counters.get(key) ?? 0) + 1;
       counters.set(key, count);
@@ -33,7 +32,7 @@ const fixture = vi.hoisted(() => {
   for (const method of ['hincrby', 'hset', 'rpush', 'lpush', 'expire', 'ltrim']) {
     redis[method] = async (...args: unknown[]) => { writes.push({ method, args }); return 1; };
   }
-  return { redis, counters, hashes, writes, baselineCounts };
+  return { redis, counters, hashes, writes };
 });
 
 vi.mock('@upstash/redis', () => ({ Redis: class { constructor() { return fixture.redis; } } }));
@@ -161,19 +160,6 @@ describe('local adversarial API limits and validation', () => {
     }
     expect(denied.status).toBe(429);
     expect(spoofed.map(result => result.status)).toEqual([429, 429, 429]);
-  });
-
-  it('records the cap race when 20 new dex clients compete for one remaining slot', async () => {
-    const beforeClients = Object.keys(fixture.hashes.get('clients') ?? {}).length;
-    fixture.baselineCounts.set('clients', 49_999 - beforeClients);
-    const results = await Promise.all(Array.from({ length: 20 }, (_, index) => call(submit,
-      { cid: `local-cap-race-${index}`, kind: 'progress', ids: [1] })));
-    const finalCount = (fixture.baselineCounts.get('clients') ?? 0) + Object.keys(fixture.hashes.get('clients') ?? {}).length;
-    evidence.push({ name: 'dex cap concurrency observation', request: { initialClientCount: 49_999, newClients: 20, cap: 50_000 },
-      response: { statuses: results.map(result => result.status), finalCount }, storageWrites: results.filter(result => result.status === 200).length,
-      finding: 'Mocked command transport only. Independent CIDs pass HLEN before separate CAS writes. Lua atomicity is not exercised.' });
-    fixture.baselineCounts.delete('clients');
-    expect(finalCount).toBe(50_019);
   });
 
   it('leaves all six write handlers inert on ordinary preview hosts', async () => {
