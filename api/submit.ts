@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { bumpDexPickFreq, parseNotmeFlag, recordToolExport } from './_exportStats.js';
-import { parseFunnelEventList, parsePage, parseTool } from './_events.js';
+import { parseFunnelEventList, parsePage } from './_events.js';
 import {
   redis,
   getClientIp,
@@ -65,16 +65,17 @@ const clientLimiter = new Ratelimit({
 
 // Compare-and-set on a version counter: write `next` to the record only if the
 // record's version still equals the one we read (`expectedVer`); then bump the
-// version. Returns 1 on success, 0 if another beacon wrote first (caller
+// version. Returns 1 on success, 2 at the client cap, 0 if another beacon wrote first (caller
 // re-reads and retries). This makes the whole read-merge-write atomic across the
 // completion/progress/export beacons a single browser fires within seconds of
 // each other — without it they clobber one another (lost updates: missing
 // export flag, wrong pick count, whole record dropped).
 // KEYS[1]=clients hash  KEYS[2]=version hash
-// ARGV[1]=cid  ARGV[2]=expectedVer  ARGV[3]=record JSON
+// ARGV[1]=cid  ARGV[2]=expectedVer  ARGV[3]=record JSON  ARGV[4]=client cap
 const CAS_LUA = `
 local cur = redis.call('HGET', KEYS[2], ARGV[1]) or '0'
 if cur == ARGV[2] then
+  if redis.call('HEXISTS', KEYS[1], ARGV[1]) == 0 and redis.call('HLEN', KEYS[1]) >= tonumber(ARGV[4]) then return 2 end
   redis.call('HSET', KEYS[1], ARGV[1], ARGV[3])
   redis.call('HSET', KEYS[2], ARGV[1], tostring(tonumber(cur) + 1))
   return 1
@@ -254,9 +255,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     // Keyed per tool as well as per browser, so a person running two tools in
     // two tabs each cannot exhaust one budget with the other's beacons.
-    const tool = parseTool(body.tool);
     const page = parsePage(body.page);
-    const perClient = await clientLimiter.limit(`${tool}:${cid}`);
+    const perClient = await clientLimiter.limit(`dex:${cid}`);
     if (!perClient.success) {
       await countDrop('rate-limit-client');
       res.setHeader('Retry-After', Math.ceil((perClient.reset - Date.now()) / 1000));
@@ -459,21 +459,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const existing = parseRecord(rawStr);
       const expectedVer = verStr == null ? '0' : String(verStr);
 
-      // Cap distinct clients; new clients past the cap are dropped.
-      if (!existing) {
-        const count = await redis.hlen(CLIENTS_KEY);
-        if (count >= MAX_CLIENTS) {
-          await countDrop('cap');
-          return res.status(200).json({ ok: true, capped: true });
-        }
-      }
-
       const rec = mergeRecord(existing, effectiveCid);
       const ok = await redis.eval(
         CAS_LUA,
         [CLIENTS_KEY, VERSION_KEY],
-        [effectiveCid, expectedVer, JSON.stringify(rec)],
+        [effectiveCid, expectedVer, JSON.stringify(rec), MAX_CLIENTS],
       );
+      if (ok === 2) {
+        await countDrop('cap');
+        return res.status(200).json({ ok: true, capped: true });
+      }
       if (ok === 1) {
         const activityAck = await appendMinuteActivity(cid, 'dex', body.activity, receivedAt);
         const prevEver = new Set(existing?.everIds ?? []);

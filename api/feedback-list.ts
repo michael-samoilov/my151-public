@@ -68,6 +68,7 @@ async function countsFromHashes(now: number): Promise<Counts> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Cache-Control', 'no-store');
   if (!(await requireAdmin(req, res))) return;
   try {
     const offset = Math.max(0, Number(firstQueryValue(req.query.offset)) || 0);
