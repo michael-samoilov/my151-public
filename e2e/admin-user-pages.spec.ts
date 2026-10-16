@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test } from '@playwright/test';
 
 /**
@@ -11,9 +12,7 @@ import { expect, test } from '@playwright/test';
  */
 
 async function openDemo(page: import('@playwright/test').Page) {
-  await page.goto('/?admin&demo');
-  // Demo fixtures load after navigation; setup shares the existing test budget.
-  await page.getByRole('button', { name: 'Sign out' }).waitFor({ state: 'visible' });
+  await openAdmin(page, '/?admin&demo');
 }
 
 function userTools(page: import('@playwright/test').Page) {

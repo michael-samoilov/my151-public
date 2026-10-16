@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Page } from '@playwright/test';
 import { buildBrowser, buildDashboard, type DashboardSource } from '../api/_dashboard';
 import { scrollToRow } from './admin-virtual-list';
@@ -96,7 +97,7 @@ async function stub(page: Page) {
     localStorage.setItem('p151-admin-token', 'e2e');
     localStorage.setItem('p151-admin-range', 'all');
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   return { calls: () => feedbackCalls };
 }
 

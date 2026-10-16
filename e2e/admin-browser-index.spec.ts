@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Page } from '@playwright/test';
 import { buildBrowser, buildDashboard, type DashboardSource } from '../api/_dashboard';
 import { scrollToRow } from './admin-virtual-list';
@@ -81,7 +82,7 @@ async function stub(page: Page) {
     localStorage.setItem('p151-admin-token', 'e2e');
     localStorage.setItem('p151-admin-range', 'all');
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   return asked;
 }
 
@@ -180,7 +181,7 @@ test('desktop table columns hold still while rows of other widths scroll in', as
   await testInfo.attach('columns.json', { body: JSON.stringify({ top, middle, bottom }), contentType: 'application/json' });
 });
 
-test('filters and archive reach browsers far below the first screen', async ({ page }, testInfo) => {
+test('country and tool filters reach browsers far below the first screen', async ({ page }, testInfo) => {
   await stub(page);
   await openTab(page, 'Dex');
   await page.getByRole('button', { name: 'Country', exact: true }).click();
@@ -196,8 +197,15 @@ test('filters and archive reach browsers far below the first screen', async ({ p
   expect(names.length).toBeGreaterThan(0);
   for (const name of names) expect(name).toMatch(/^Open user (lg…\d{4}|idx-\d{4})$/);
   await page.getByRole('button', { name: 'Clear Tools' }).click();
+  await openTab(page, 'Dex');
   await page.evaluate(() => window.scrollTo(0, 0));
+  const withoutLeague = page.getByRole('link', { name: label(cidAt(1)), exact: true });
+  await expect(withoutLeague).toBeVisible();
+  await testInfo.attach('filtered-rows.json', { body: JSON.stringify({ leagueRows: names, clearToolsShows: await withoutLeague.getAttribute('aria-label') }), contentType: 'application/json' });
+});
 
+test('archive reaches the oldest browser and its country-split record', async ({ page }, testInfo) => {
+  await stub(page);
   await openTab(page, 'Dex');
   const oldest = await scrollTo(page, cidAt(N - 1));
   await oldest.getByRole('button', { name: 'Archive user' }).click();

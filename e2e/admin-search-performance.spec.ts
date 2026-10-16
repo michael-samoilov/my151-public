@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test } from '@playwright/test';
 
 function searchPanel(page: import('@playwright/test').Page) {
@@ -6,7 +7,7 @@ function searchPanel(page: import('@playwright/test').Page) {
 
 test.describe('admin search performance', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
   });
 

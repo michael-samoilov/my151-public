@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Page } from '@playwright/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 
@@ -44,7 +45,7 @@ async function stub(page: Page, usage: unknown) {
     localStorage.setItem('p151-admin-token', 'e2e');
     localStorage.setItem('p151-admin-range', 'all');
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Suite', exact: true }).click();
   return searchReads;
 }

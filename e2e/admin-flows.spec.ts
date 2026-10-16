@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Locator } from '@playwright/test';
 import { buildDashboard } from '../api/_dashboard';
 
@@ -12,7 +13,7 @@ import { buildDashboard } from '../api/_dashboard';
  */
 test.describe('admin flows', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
   });
 
@@ -123,7 +124,7 @@ test.describe('admin flows', () => {
     };
     await page.route('**/api/submissions**', (route) => route.fulfill({ json: fixture }));
     await page.evaluate(() => localStorage.setItem('p151-admin-token', 'e2e'));
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     await page.getByRole('button', { name: 'League', exact: true }).click();
     const funnel = page.getByRole('img', { name: /League usage funnel/ });
     await expect(funnel.locator('canvas')).toBeVisible();

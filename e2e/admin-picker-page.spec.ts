@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 import cellData from '../api/_favoriteCells.json' with { type: 'json' };
@@ -62,7 +63,7 @@ async function stubPickerStore(page: Page) {
     localStorage.setItem('p151-admin-range', 'all');
     if (!localStorage.getItem('p151-admin-tool')) localStorage.setItem('p151-admin-tool', 'favorites');
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   return posts;
 }
 

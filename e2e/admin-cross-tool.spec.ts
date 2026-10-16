@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { test, expect } from '@playwright/test';
 
 /**
@@ -8,7 +9,7 @@ import { test, expect } from '@playwright/test';
  */
 test.describe('admin cross-tool tile', () => {
   test('demo dashboard shows only the diagram for all eras, no percent row', async ({ page }) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     const tile = page.locator('section', { has: page.getByRole('heading', { name: /Cross-tool/ }) });
     // Michael removed the percent row on 8 October; the diagram alone stays.
     await expect(tile.getByTestId('cross-tool-venns')).toBeVisible();
@@ -66,7 +67,7 @@ test.describe('cross-tool diagram @viewport', () => {
         json: { totalUsers: 0, funnel: { users: 0, completed: 0, exported: 0 }, retention: { returning: 0, newUsers: 0 }, timeSurvival: [], timeStats: stats, depthSurvival: [], depthStats: stats, countries: {}, devices: {}, os: {}, popularFinal: [], mostDropped: [], popularBySection: {}, droppedBySection: {}, picksBySectionAll: {}, crossTool: { catalog, kpis: [], eras } },
       }),
     );
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     const chart = page.getByTestId('cross-tool-venns');
     await expect(chart.locator('svg[role="img"]')).toHaveCount(1);
     await expect(chart.getByTestId('cross-tool-region-label')).toHaveCount(6);
@@ -138,7 +139,7 @@ test.describe('cross-tool launch chips @viewport', () => {
         json: { totalUsers: 0, funnel: { users: 0, completed: 0, exported: 0 }, retention: { returning: 0, newUsers: 0 }, timeSurvival: [], timeStats: stats, depthSurvival: [], depthStats: stats, countries: {}, devices: {}, os: {}, popularFinal: [], mostDropped: [], popularBySection: {}, droppedBySection: {}, picksBySectionAll: {}, crossTool: { catalog, kpis: [kpi(156, 333)], eras }, crossToolSince },
       });
     });
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     const tile = page.locator('section', { has: page.getByRole('heading', { name: /Cross-tool/ }) });
     const chips = tile.getByRole('group', { name: 'Since launch' }).getByRole('button');
     const leagueChip = chips.filter({ hasText: 'League 7 Sep' });
