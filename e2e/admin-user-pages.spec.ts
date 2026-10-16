@@ -12,7 +12,8 @@ import { expect, test } from '@playwright/test';
 
 async function openDemo(page: import('@playwright/test').Page) {
   await page.goto('/?admin&demo');
-  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  // Demo fixtures load after navigation; setup shares the existing test budget.
+  await page.getByRole('button', { name: 'Sign out' }).waitFor({ state: 'visible' });
 }
 
 function userTools(page: import('@playwright/test').Page) {
