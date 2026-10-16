@@ -251,7 +251,7 @@ export async function generateExportImage(
 
   // Canvas text metrics for title fitting / stats wrapping need the real font.
   if (typeof document !== 'undefined' && document.fonts?.ready) {
-    try { await document.fonts.ready; } catch {   }
+    await document.fonts.ready.catch(() => undefined);
   }
 
   if (options.stats) {
@@ -486,6 +486,7 @@ async function loadSpandrelMasks(urls: string[]): Promise<Map<string, HTMLImageE
         const img = await loadImage(url);
         out.set(url, img);
       } catch {
+        return;
       }
     }),
   );

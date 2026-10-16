@@ -7,6 +7,7 @@ export function installOptOut(search: string = window.location.search): void {
     if (params.has('notme')) setOptedOut(true);
     else if (params.has('countme')) setOptedOut(false);
   } catch {
+    return;
   }
 }
 
@@ -15,6 +16,7 @@ function setOptedOut(optedOut: boolean): void {
     if (optedOut) localStorage.setItem(OPT_OUT_KEY, '1');
     else localStorage.removeItem(OPT_OUT_KEY);
   } catch {
+    // localStorage may be unavailable
   }
   if (typeof window !== 'undefined') window.dispatchEvent(new Event('p151-opt-out'));
 }
@@ -48,6 +50,7 @@ export function resolveCidFrom(
       store.setItem(CID_KEY, cid);
       if (store.getItem(CID_KEY) === cid) return { cid, persisted: true };
     } catch {
+      continue;
     }
   }
   return { cid: mint(), persisted: false };

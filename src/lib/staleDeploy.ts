@@ -19,7 +19,7 @@ function mayReload(): boolean {
   try {
     if (Date.now() - Number(sessionStorage.getItem(RELOADED_AT)) < 30_000) return false;
     sessionStorage.setItem(RELOADED_AT, String(Date.now()));
-  } catch {   }
+  } catch { return true; }
   return true;
 }
 

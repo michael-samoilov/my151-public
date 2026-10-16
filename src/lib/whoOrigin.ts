@@ -248,6 +248,7 @@ export function spelledLanguage(tag: string): string {
     const name = spelledNames?.of(base);
     if (name) return name;
   } catch {
+    return base;
   }
   return base;
 }

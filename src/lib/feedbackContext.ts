@@ -116,5 +116,6 @@ export function sendCrashReport(route: string, error: NonNullable<FeedbackContex
       keepalive: true,
     }).catch(() => {});
   } catch {
+    return;
   }
 }

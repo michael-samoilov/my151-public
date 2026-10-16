@@ -24,6 +24,7 @@ function mark(key: string): void {
   try {
     localStorage.setItem(key, '1');
   } catch {
+    return;
   }
 }
 

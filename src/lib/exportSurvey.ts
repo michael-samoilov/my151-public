@@ -33,6 +33,7 @@ export function persistExportSurveySeen(production: boolean): void {
   try {
     localStorage.setItem(EXPORT_SURVEY_SEEN_KEY, '1');
   } catch {
+    return;
   }
 }
 

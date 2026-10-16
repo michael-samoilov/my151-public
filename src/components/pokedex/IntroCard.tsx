@@ -65,6 +65,7 @@ function markIntroSeen() {
   try {
     localStorage.setItem(INTRO_SEEN_KEY, '1');
   } catch {
+    return;
   }
 }
 

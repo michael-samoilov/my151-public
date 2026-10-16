@@ -110,6 +110,7 @@ function useSavedToolProgress() {
           if (active) setFavorites({ filled, total });
         } else if (active) setFavorites({ filled: 0, total: 257 });
       } catch {
+        return;
       }
     }
     void readSaved();

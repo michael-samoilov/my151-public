@@ -9,7 +9,7 @@ let loaded=false;
 let persistTimer:ReturnType<typeof setTimeout>|undefined;
 const tab=crypto.randomUUID();
 const allowed=()=>!DEMO_MODE&&!PREVIEW_DEPLOY&&!isOptedOut();
-function clear(){if(persistTimer)clearTimeout(persistTimer);persistTimer=undefined;for(const state of Object.values(states)){state.pending=[];state.open=[];state.pauseUntil=0;delete state.incomplete;}try{sessionStorage.removeItem(KEY);}catch{ }}
+function clear(){if(persistTimer)clearTimeout(persistTimer);persistTimer=undefined;for(const state of Object.values(states)){state.pending=[];state.open=[];state.pauseUntil=0;delete state.incomplete;}try{sessionStorage.removeItem(KEY);}catch{return;}}
 function load(){
  if(loaded)return;loaded=true;
  if(!allowed()){clear();return;}
@@ -29,7 +29,7 @@ function load(){
     }
    }
   }
- }catch{ }
+ }catch{return;}
 }
 function persist(){
  load();

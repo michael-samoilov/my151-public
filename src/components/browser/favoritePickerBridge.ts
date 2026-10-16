@@ -19,6 +19,7 @@ export function favoritePickerIds(raw: string | null, resolveId?: (id: number) =
       if (id !== undefined && (resolveId || getPokemonById(id))) ids.add(id);
     }
   } catch {
+    return ids;
   }
   return ids;
 }

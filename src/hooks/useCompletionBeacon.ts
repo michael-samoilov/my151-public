@@ -50,6 +50,7 @@ function bufferPendingEvent(event: string) {
       localStorage.setItem(PENDING_EVENTS_KEY, JSON.stringify(cur.slice(-20)));
     }
   } catch {
+    return;
   }
 }
 export function takePendingEvents(): string[] {
@@ -217,6 +218,7 @@ export function sendEventBeacon(
       if (localStorage.getItem(k)) return;
       localStorage.setItem(k, '1');
     } catch {
+      // storage unavailable — fall through and send (may double-count)
     }
   }
   bufferPendingEvent(event);
