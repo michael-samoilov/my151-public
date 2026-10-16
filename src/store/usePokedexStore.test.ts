@@ -1,9 +1,8 @@
-// keeps: E2E cannot submit malformed reorders that overwrite saved Dex members.
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 const saved = new Map<string, string>();
 let usePokedexStore: typeof import('./usePokedexStore')['usePokedexStore'];
-let storageKey: string;
+const storageKey = 'personal-151-pokedex-v3';
 
 beforeAll(async () => {
   const storage = {
@@ -14,7 +13,6 @@ beforeAll(async () => {
   vi.stubGlobal('localStorage', storage);
   vi.stubGlobal('window', { localStorage: storage, location: { search: '' } });
   ({ usePokedexStore } = await import('./usePokedexStore'));
-  storageKey = usePokedexStore.persist.getOptions().name;
 });
 
 afterAll(() => vi.unstubAllGlobals());
