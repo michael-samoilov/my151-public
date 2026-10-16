@@ -211,8 +211,10 @@ export function prerenderHub(): Plugin {
           ...imagePreloads,
           initialInter(config.root, markup),
           '<link rel="expect" href="#p151-end" blocking="render">',
-          '<style>html .p151-boot{display:none}html.p151-wait .p151-boot{display:flex}html.p151-wait #root{display:none}</style>',
-          '<style>html:not(:has(#p151-end)) #root{visibility:hidden}html.p151-hub-images-pending .hub-grid{visibility:hidden}'+['dex','league','favorites'].map(k=>`html.p151-hub-${k}-fallback .hub-card[data-hub-card="${k}"] [data-card-panel]{visibility:hidden}`).join('')+'</style>',
+          // Keep the header usable while the complete home content waits.
+          // A failed hub boundary has no grid; its error UI must stay visible.
+          '<style>html .p151-boot{display:none}html.p151-wait .p151-boot,html.p151-hub-images-pending:has(.hub-grid) .p151-boot{display:flex}html.p151-hub-images-pending .p151-boot{pointer-events:none}html.p151-hub-font-pending .p151-boot{visibility:hidden}html.p151-wait #root{display:none}</style>',
+          '<style>html:not(:has(#p151-end)) #root{visibility:hidden}html.p151-hub-images-pending .hub-home:has(.hub-grid),html.p151-hub-images-pending #root:has(.hub-grid) div:has(>footer){visibility:hidden}'+['dex','league','favorites'].map(k=>`html.p151-hub-${k}-fallback .hub-card[data-hub-card="${k}"] [data-card-panel]{visibility:hidden}`).join('')+'</style>',
           `<script>${bootScript(inputs)}</script>`,
         ].join('\n    ');
         // Before any stylesheet: an inline script after one waits for it.
