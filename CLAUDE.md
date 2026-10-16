@@ -114,6 +114,25 @@ Michael reviews a design. Fix failed checks and rerun the affected check. A
 failure reproduced on production HEAD is pre-existing evidence, not a passed run.
 A test that passes only on retry remains a flaky failure to repair.
 
+### Keep final verification proportional
+
+Michael explicitly authorized skipping or changing disproportionate checks on
+October 16, 2026. A verification-infrastructure change can use runner/selection
+proofs and `ci:fast` as its final gate. It does not need every application browser
+scenario. Record the scope decision. All cheap API, migration, type, build, and
+repository gates remain mandatory.
+
+Reuse passed stages and a validated build when their inputs have not changed.
+When production advances, check the incoming changes and their existing evidence,
+then verify the actual integration risk. Do not automatically restart exhaustive
+regression. Build changed application inputs once and run critical journeys plus
+the relevant changed-area checks. The selector remains conservative; a recorded
+scope decision can override an unnecessarily broad selection.
+
+Stop after the relevant risk is covered. Do not turn final verification into
+another release audit or expand a repair to adjacent passing behavior. Preserve
+failed or interrupted outcomes honestly when a redundant run is stopped.
+
 Each invocation records live status, stage logs, selection, identity, and browser
 attempts under `git rev-parse --absolute-git-dir` in `ci-runs/<run-id>`. Inspect
 those records and the PID after a reconnect. Completed output is copied to
