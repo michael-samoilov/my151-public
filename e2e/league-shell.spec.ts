@@ -20,7 +20,16 @@ interface Paint {
   copyOpacity: string | null;
 }
 
-const MEASURE = () => {
+const MEASURE = (animationTime: number | null) => {
+  const copy = document.querySelector('.lg-copy');
+  if (copy && animationTime !== null) {
+    const animations = copy.getAnimations();
+    if (!animations.length) throw new Error('The shell copy reveal animation is missing.');
+    for (const animation of animations) {
+      animation.pause();
+      animation.currentTime = animationTime;
+    }
+  }
   const box = (el: Element | null) => {
     if (!el) return null;
     const r = el.getBoundingClientRect();
@@ -29,7 +38,6 @@ const MEASURE = () => {
   const header = document.querySelector('header');
   const bar = document.querySelector('[data-testid="league-tool-bar"]') ?? document.querySelector('.lg-bar');
   const h1 = document.querySelector('h1');
-  const copy = document.querySelector('.lg-copy');
   return {
     rootFont: getComputedStyle(document.documentElement).fontSize,
     header: box(header),
@@ -44,11 +52,12 @@ test('the static shell paints the app\'s header and tool bar', { tag: '@viewport
   const scripts = await browser.newContext({ ...info.project.use, viewport, javaScriptEnabled: false });
   const shellPage = await scripts.newPage();
   await shellPage.goto(`${baseURL}/custom-gym-leader`, { waitUntil: 'domcontentloaded' });
-  await shellPage.waitForTimeout(80);
-  const shell = await shellPage.evaluate(MEASURE);
+  // Tracing and protocol delays can outlast the reveal delay. Sample the real
+  // CSS animation timeline so host scheduling cannot change the measured state.
+  const shell = await shellPage.evaluate(MEASURE, 80);
   expect(shell.copyOpacity, 'the copy is held back in the first 80ms').toBe('0');
-  await shellPage.waitForTimeout(1500);
-  expect(await shellPage.evaluate(() => getComputedStyle(document.querySelector('.lg-copy')!).opacity), 'and shows once a second has passed').toBe('1');
+  const revealed = await shellPage.evaluate(MEASURE, 1500);
+  expect(revealed.copyOpacity, 'the copy shows after its reveal transition').toBe('1');
   await scripts.close();
 
   const app = await browser.newContext({ ...info.project.use, viewport });
@@ -56,7 +65,7 @@ test('the static shell paints the app\'s header and tool bar', { tag: '@viewport
   await appPage.goto(`${baseURL}/custom-gym-leader`);
   await appPage.waitForSelector('[data-testid="league-slot-0"]');
   await appPage.waitForTimeout(400);
-  const mounted = await appPage.evaluate(MEASURE);
+  const mounted = await appPage.evaluate(MEASURE, null);
   await app.close();
 
   expect(shell.header, 'the shell has a header').not.toBeNull();
@@ -66,4 +75,8 @@ test('the static shell paints the app\'s header and tool bar', { tag: '@viewport
   expect(Math.abs(shell.bar!.height - mounted.bar!.height), `tool bar ${shell.bar!.height} vs ${mounted.bar!.height}`).toBeLessThanOrEqual(1);
   expect(shell.h1!.font, 'the h1 is the eyebrow\'s size').toBe(mounted.h1!.font);
   expect(Math.abs(shell.h1!.top - mounted.h1!.top), `h1 top ${shell.h1!.top} vs ${mounted.h1!.top}`).toBeLessThanOrEqual(1.5);
+  await info.attach('league-shell-paint', {
+    body: JSON.stringify({ shellAt80ms: shell, shellAt1500ms: revealed, mounted }, null, 2),
+    contentType: 'application/json',
+  });
 });
