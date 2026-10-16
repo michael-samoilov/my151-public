@@ -84,6 +84,7 @@ test.describe('admin active users range', () => {
     await page.evaluate(() => localStorage.setItem('p151-admin-token','e2e'));
     await page.goto('/?admin');
     const panel = activeUsers(page);
+    await panel.waitFor({ state: 'visible' });
     const monthly = panel.getByRole('button', { name: 'monthly', exact: true });
     await expect(panel.getByRole('button', { name: 'daily', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.getByRole('button', { name: 'weekly', exact: true })).toHaveAttribute('aria-pressed', 'true');
