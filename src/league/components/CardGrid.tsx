@@ -1145,7 +1145,6 @@ interface HalfRead {
   track: number;
   /** The caption size in px. */
   cap: number;
-  /** Each heading line at the size set for the measurement, without tracking. */
   head: { lines: Omit<HeadLine, 'room'>[]; cap: number };
 }
 
@@ -1197,15 +1196,10 @@ function fitName(natural: number, track: number, room: number, cap: number, floo
   return { scale, tight: true, max: tight > room + 1 ? Math.floor(Math.max(0, room)) : 0 };
 }
 
-/**
- * Fit captions from unfitted headings and fixed sprite positions.
- * Text may cross the seam.
- */
 function solveFit(pane: HTMLElement, remPx: number): CaptionFit {
   const previousSize = pane.style.getPropertyValue('--cap-size');
   const previousTrack = pane.style.getPropertyValue('--cap-track');
   try {
-    // Read a fixed face so the previous fit cannot change its own inputs.
     pane.style.setProperty('--cap-size', paneFace(null).size);
     pane.style.setProperty('--cap-track', '0px');
     const natural = readPane(pane);
@@ -1219,7 +1213,6 @@ function solveFit(pane: HTMLElement, remPx: number): CaptionFit {
       ...m.partner.head.lines.map((line) => ({ ...line, room: partnerRoom })),
     ], m.ace.head.cap);
     const head = headings(natural);
-    // Names and tracking use the solved size, measured before it is painted.
     pane.style.setProperty('--cap-size', paneFace(head).size);
     const fitted = readPane(pane);
     return {
@@ -1243,7 +1236,6 @@ const sameSeam = (a: SeamEnds | null, b: SeamEnds | null) =>
 const sameHead = (a: HeadFace | null, b: HeadFace | null) =>
   a === b || (!!a && !!b && (a.size === b.size || Math.abs(a.size - b.size) < 0.01) && Math.abs(a.track - b.track) < 0.01);
 
-/** The captions' fit and seam, updated when their inputs change. */
 function useCaptionFit(ref: React.RefObject<HTMLDivElement | null>, content: string): CaptionFit {
   const [fit, setFit] = useState(UNFITTED);
   useLayoutEffect(() => {
@@ -1255,7 +1247,6 @@ function useCaptionFit(ref: React.RefObject<HTMLDivElement | null>, content: str
         && sameSeam(next.seam, previous.seam) && sameHead(next.head, previous.head) ? previous : next);
     };
     compute();
-    // Observe input geometry, whose size does not depend on the fitted text.
     const ro = new ResizeObserver(compute);
     ro.observe(el);
     for (const art of el.querySelectorAll('[data-slot-art]')) ro.observe(art);
