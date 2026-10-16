@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test } from '@playwright/test';
 import {buildDashboard} from '../api/_dashboard';
 
@@ -33,7 +34,7 @@ function gutter(label: string | null): { hours24: string | undefined; days7: str
 
 test.describe('admin active users range', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
   });
 
@@ -82,8 +83,9 @@ test.describe('admin active users range', () => {
     const payload = activityPayload();
     await page.route('**/api/submissions?**', route => route.fulfill({json:payload}));
     await page.evaluate(() => localStorage.setItem('p151-admin-token','e2e'));
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     const panel = activeUsers(page);
+    await panel.waitFor({ state: 'visible' });
     const monthly = panel.getByRole('button', { name: 'monthly', exact: true });
     await expect(panel.getByRole('button', { name: 'daily', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await expect(panel.getByRole('button', { name: 'weekly', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -138,7 +140,7 @@ test.describe('admin active users range', () => {
     });
     await page.route('**/api/submissions?**', route => route.fulfill({json:activityPayload()}));
     await page.evaluate(() => localStorage.setItem('p151-admin-token','e2e'));
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     const panel = activeUsers(page);
     const growth = await panel.getByLabel('Implied growth over selected range').textContent();
     const expected = {

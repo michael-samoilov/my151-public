@@ -26,7 +26,7 @@ test.describe('dex continuity across the move', () => {
     await page.addInitScript(([k, v]) => localStorage.setItem(k, v), [STORE_KEY, SEEDED] as const);
   });
 
-  test('the hub reads the saved dex and does not rewrite it', async ({ page }) => {
+  test('the hub reads the saved dex and does not rewrite it', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.goto('/');
     await expect(page.locator('[data-card-panel]')).toHaveCount(4);
     // The dex card offers the way back, with the saved count.
@@ -36,6 +36,7 @@ test.describe('dex continuity across the move', () => {
     await page.waitForTimeout(500);
     const stored = await page.evaluate((k) => localStorage.getItem(k), STORE_KEY);
     expect(JSON.parse(stored!).state.sections).toEqual(JSON.parse(SEEDED).state.sections);
+    await testInfo.attach('critical-journey', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
   test('the picker launch notice shows once', async ({ page }) => {
@@ -51,11 +52,12 @@ test.describe('dex continuity across the move', () => {
     expect(await page.evaluate(() => localStorage.getItem('p151-league-promo-seen'))).toBe('1');
   });
 
-  test('the builder at its new path opens the same dex, every section in order', async ({ page }) => {
+  test('the builder at its new path opens the same dex, every section in order', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.goto('/pokedex-builder');
     await expect(page.getByTestId('tool-title')).toContainText('9/151');
     const sections = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)!).state.sections, STORE_KEY);
     expect(sections).toEqual(JSON.parse(SEEDED).state.sections);
+    await testInfo.attach('critical-journey', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
   test('a visitor with no dex sees no notice', async ({ page, context }) => {

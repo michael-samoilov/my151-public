@@ -35,7 +35,11 @@
     "i18n:extract": "tsx scripts/i18n/translate/extract.ts",
     "favorites:browser-ids": "tsx --tsconfig tsconfig.node.json scripts/build-favorite-browser-ids.ts",
     "credits:check-sprites": "tsx scripts/credits/check-sprite-evidence.ts",
-    "type-icons:glyph-paths": "tsx --tsconfig tsconfig.node.json scripts/build-type-glyph-paths.ts"
+    "type-icons:glyph-paths": "tsx --tsconfig tsconfig.node.json scripts/build-type-glyph-paths.ts",
+    "ci": "node --import tsx scripts/ci/run.ts affected",
+    "ci:fast": "node --import tsx scripts/ci/run.ts fast",
+    "ci:affected": "node --import tsx scripts/ci/run.ts affected",
+    "ci:full": "node --import tsx scripts/ci/run.ts full"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

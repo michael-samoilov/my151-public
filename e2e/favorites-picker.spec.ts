@@ -414,21 +414,30 @@ test.describe('favorite Pokémon picker', () => {
     expect(blank).toEqual([]);
   });
 
-  test('hub card opens the picker', async ({ page }) => {
+  test('hub card opens the picker', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.goto('/');
     // The red card panel is what people click; the card title and the Tools menu also link here.
     await page.locator('a[data-card-panel][href="/favorite-pokemon-picker"]').click();
     await expect(page).toHaveURL(/\/favorite-pokemon-picker/);
     await expect(page.getByTestId('favorites-grid')).toBeVisible();
+    await testInfo.attach('critical-journey', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
-  test('places a Pokémon in a type×gen cell', async ({ page }) => {
+  test('places a Pokémon in a type×gen cell', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-picker');
     await expect(page.getByTestId('favorites-grid')).toBeVisible();
     await page.getByTestId('favorites-cell-fire-1').click();
     await expect(page.getByTestId('favorites-picker')).toBeVisible();
     await page.getByTestId('favorites-pick-4').click();
-    await expect(page.getByTestId('favorites-cell-fire-1').locator('img[alt]')).toHaveCount(1);
+    await expect(page.getByTestId('favorites-cell-fire-1').locator('img[alt]')).toHaveAttribute('alt', /charmander/i);
+    await page.reload();
+    await expect(page.getByTestId('favorites-cell-fire-1').locator('img[alt]')).toHaveAttribute('alt', /charmander/i);
+    expect(await savedFills(page)).toMatchObject({ 'fire|1': 4 });
+    await page.getByTestId('favorites-cell-fire-1').click();
+    await page.getByTestId('favorites-pick-4').getByTestId('favorites-clear').click();
+    await expect(page.getByTestId('favorites-cell-fire-1').locator('img[alt]')).toHaveCount(0);
+    expect((await savedFills(page))['fire|1']).toBeUndefined();
+    await testInfo.attach('saved-and-cleared', { body: JSON.stringify(await savedFills(page)), contentType: 'application/json' });
   });
 
   test('centres the last pretty-wrap row', { tag: '@viewport' }, async ({ page }) => {
@@ -772,7 +781,7 @@ test.describe('favorite Pokémon picker', () => {
     });
   });
 
-  test('a repeated pick replaces the opened cell and preserves its other source without showing packing', async ({ page }, testInfo) => {
+  test('a repeated pick replaces the opened cell and preserves its other source without showing packing', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-picker');
     await page.getByTestId('favorites-cell-fairy-2').click();
     await page.getByTestId('favorites-pick-176').click();

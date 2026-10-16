@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import {expect, test} from '@playwright/test';
 import {buildDashboard} from '../api/_dashboard';
 
@@ -18,7 +19,7 @@ test('recorded usage switches metrics and preserves separate tool samples @viewp
     localStorage.setItem('p151-admin-token','e2e');
     localStorage.setItem('p151-admin-range','all');
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   const panel = page.locator('section').filter({has:page.getByRole('heading',{name:'Recorded time and sessions'})});
   await panel.getByRole('button',{name:'Legacy spans',exact:true}).click();
   await expect(panel.getByText('22.83 recorded hours',{exact:true})).toBeVisible();

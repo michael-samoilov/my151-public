@@ -1,4 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 
 // A deploy removes the previous deploy's hashed chunks, so a tab opened before
 // it gets a 404 for the next lazy chunk it loads (src/lib/staleDeploy.ts).
@@ -41,14 +42,31 @@ test('a tab opened before a deploy reloads when it opens Export, keeps the picks
   const reloaded = page.waitForEvent('framenavigated', (frame) => frame === page.mainFrame());
   await page.getByTestId('favorites-export-open').click();
   await reloaded;
-  await page.unrouteAll();
+  // Removing interception at navigation commit can strand the new stylesheet.
+  // Wait for the reloaded app before removing the missing-chunk routes.
   await expect(page.getByTestId('favorites-export-open')).toBeVisible();
+  await page.unrouteAll();
   await expect(crashScreen(page)).toHaveCount(0);
-  expect(await saved(page)).toBe(before);
+  const after = await saved(page);
+  expect(after).toBe(before);
 
   await page.getByTestId('favorites-export-open').click();
   await expect(page.getByTestId('favorites-export-save')).toBeVisible({ timeout: 30_000 });
-  await artifact(page, testInfo, 'stale-tab-after-deploy', { reloaded: true, picksKept: true, exportOpened: true });
+  await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30_000 });
+  const downloading = page.waitForEvent('download');
+  await page.getByTestId('favorites-export-save').click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toBe('my151-favorites.png');
+  expect(await download.failure()).toBeNull();
+  const path = testInfo.outputPath('recovered-favorites.png');
+  await download.saveAs(path);
+  const png = await readFile(path);
+  expect([...png.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+  await testInfo.attach('recovered-favorites', { path, contentType: 'image/png' });
+  await artifact(page, testInfo, 'stale-tab-after-deploy', {
+    reloaded: true, before, after, picksKept: true, exportOpened: true,
+    exportFilename: download.suggestedFilename(), exportBytes: png.byteLength,
+  });
 });
 
 test('a chunk missing without a deploy shows the error screen, reports it, and does not reload', async ({ page }, testInfo) => {

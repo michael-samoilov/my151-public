@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Page } from '@playwright/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 import type { FavoritePicks } from '../api/_favoriteAggregate';
@@ -47,7 +48,7 @@ async function openPicks(page: Page, model: Preference | null = preference, expe
     localStorage.setItem('p151-admin-range', 'all');
     localStorage.setItem('p151-admin-tool', 'favorites');
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   const preview = page.locator('section').filter({ has: page.getByRole('heading', { name: 'What people pick' }) });
   if (model?.converged && model.choices > 0) {
     await expect(preview.locator('img')).toHaveCount(expectedPreviewIds.length);

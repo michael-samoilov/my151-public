@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import {expect,test} from '@playwright/test';
 import {buildDashboard} from '../api/_dashboard';
 // @viewport: source controls and measured provenance must remain usable in every layout.
@@ -8,7 +9,7 @@ test('active time keeps historical spans separate and shares metric/tool control
  const data=buildDashboard({clients:{[record.cid]:JSON.stringify(record)},archived:[],funnel:{},funnelWindow:null,leagueClients:{}},{range:'all'},now);
  await page.route('**/api/submissions?**',route=>route.fulfill({json:new URL(route.request().url()).searchParams.has('usage')?{status:'not_configured'}:data}));
  await page.addInitScript(()=>{localStorage.setItem('p151-admin-token','e2e');localStorage.setItem('p151-admin-range','all');});
- await page.goto('/?admin');
+ await openAdmin(page, '/?admin');
  const panel=page.locator('section').filter({has:page.getByRole('heading',{name:'Recorded time and sessions'})});
  await expect(panel.getByRole('button',{name:'Active',exact:true})).toHaveAttribute('aria-pressed','true');
  await expect(panel.getByText('0.03 recorded hours',{exact:true})).toBeVisible();

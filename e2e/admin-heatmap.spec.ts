@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
@@ -15,7 +16,7 @@ function shownGrid(card: Locator) {
 
 test.describe('admin When heatmap', { tag: '@viewport' }, () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     await expect(whenCard(page)).toBeVisible();
   });
 

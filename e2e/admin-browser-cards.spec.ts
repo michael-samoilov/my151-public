@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 import { mergeFavoriteRecord, parseFavoriteSnapshot } from '../api/_favoriteRecord';
@@ -77,7 +78,7 @@ async function stub(page: Page) {
     localStorage.setItem('p151-admin-token', 'e2e');
     localStorage.setItem('p151-admin-range', 'all');
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
 }
 
 const card = (page: Page, cid: string) =>

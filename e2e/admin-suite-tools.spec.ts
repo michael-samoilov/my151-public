@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import {test,expect} from '@playwright/test';
 import {buildDashboard,type RecordedUsageSlice} from '../api/_dashboard';
 
@@ -31,7 +32,7 @@ test('Suite tools overlay preserves samples, ties, metric and range controls @vi
       return path ? stroke.call(this,path) : stroke.call(this);
     };
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   const panel=page.locator('section').filter({has:page.getByRole('heading',{name:'Recorded time and sessions'})});
   await panel.getByRole('button',{name:'Legacy spans',exact:true}).click();
   await expect(panel.getByRole('img',{name:/Recorded minutes retention: 3 browsers/})).toBeVisible();

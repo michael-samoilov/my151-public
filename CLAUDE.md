@@ -56,54 +56,90 @@ Two boundaries:
 
 End every turn that changes anything with the five-part report in `.claude/skills/work-report/SKILL.md`: Changed, Merge, Verified, Tradeoffs, You test. The SessionStart hook injects the template each session. "Verified" means measured — root-cause tests, or screenshots from the running app — never inferred from code alone. For UI changes, send a before-and-after side by side so review needs no preview deploy. Show the whole screen with the place to look marked on it, never only a crop — see "Showing a defect" in the same file. Any visual change (bugfix, feature, polish) must run `/verify-my151` and show the same input on the old build, then the new build. Paint those shots in the chat. Do not only link PNG paths. Do not ask Michael to retest a change you can drive here. **You test** is `Nothing` unless the hand-off test names a device-only gap.
 
-Before you share a rendered mockup, an image export, or a static page, run the fix loop in `.claude/skills/render-audit/SKILL.md` until a round is clean: render, audit, fix at the source, repeat. A clipped icon, a truncated name, or a label wrapped onto three lines is a defect you find, not one the reviewer points out. When the real app changed, the loop ends with the verify-my151 diff, which runs the same audit on the surfaces of the change's production tier. The clean round belongs under "Verified".
+Before you share a rendered mockup, an image export, or a static page, run the fix loop in `.claude/skills/render-audit/SKILL.md` until a round is clean: render, audit, fix at the source, repeat. A clipped icon, a truncated name, or a label wrapped onto three lines is a defect you find, not one the reviewer points out. When the real app changed, the loop ends with the verify-my151 diff, which runs the same audit on the relevant screens and engines. The clean round belongs under "Verified".
 
 ## Build Verification
 
 GitHub Actions is not used. Do not retry Actions. Do not wait for PR checks. The workflow file is `workflow_dispatch` only. Restore `push` / `pull_request` only if billing allows jobs to start.
 
-Every work-branch push runs the work-branch checks. A production merge adds the checks of its risk tier, chosen by what the change touches. Michael set these tiers on 2026-10-07, so the checks stay in proportion to the fix. They supersede check steps in older handoff files.
+Michael authorized the CI redesign on 2026-10-16. The commands below replace the
+previous 20/40-minute default tiers. Keep verification proportional to the change.
 
-| Production tier | When | Run before the merge | About |
-|---|---|---|---|
-| Small | One tool and a few files. No saved data, store, API, analytics write, i18n catalog, build config, dependency, or component that another tool also uses. | The work-branch checks, the repo guards (`check-viewport-tags`, `check-test-rules`, `check-sprite-revisions`, `check-speed-test-detection`, `check-bundle-budget`, `check-published-source`), the proof test, and the specs for the changed area. A visual change adds `/verify-my151` diff with `--surfaces blink`. | 6 min |
-| Standard | Shared code, or a change that more than one tool shows. | `bash scripts/ci-local.sh` once, on the merged result. A visual change adds `/verify-my151` diff with `--surfaces blink,blink-ios-safari`. | 20 min |
-| Full | Saved-data shape or migration, a store, an API or analytics write, build or deploy config, a dependency upgrade, or a launch. | `bash scripts/ci-local.sh` once, on the merged result. A change that reaches the browser bundle adds `/verify-my151` diff on all engines. A server-only change does not: the harness serves a build whose API calls fail, so it cannot observe the change. | 40 min |
-| Admin | Every changed file is admin-only: the command below prints nothing. This covers the admin page and its read-only API code. Michael set this tier on 2026-10-08. | `npm run lint`, `npm test`, `node scripts/check-test-rules.mjs`, the proof test, and `flock /tmp/my151-browser.lock npx playwright test e2e/admin- --project=desktop --project=mobile --project=narrow`, which builds first. A visual change adds 390 and 1280 px before-and-after shots on live data. | 3 min |
-| Tuning | The change sets one tuning value, such as a default amount, size, duration, or color, plus the tests and docs that state it. No logic changes. Michael set this tier on 2026-10-13. | The work-branch checks. Vercel's build is the compile check. Do not run `ci-local.sh` or a `/verify-my151` diff. A value that changes what end users see still needs Michael's OK first (see Deployment). | 5 min |
+| Command | Scope | Target |
+| --- | --- | --- |
+| `npm run ci:fast` | All cheap gates, one production build, and critical browser journeys. Use during development. | 3–5 min |
+| `npm run ci` or `npm run ci:affected -- --base REF` | Fast checks plus complete owned spec families for changed areas. Use on the final merge candidate. | Usually 5–10 min |
+| `npm run ci:full` | All cheap gates, one build, and every existing browser project/spec. Use for launches, high-risk changes, and broad scheduled regression. | Measured separately |
 
-Admin work speed (Michael, 2026-10-08): a small admin-only change takes 10 minutes or less from request to production. The Admin tier checks and plain before-and-after shots on live data are the whole evidence. Do not add render-audit loops, side-by-side composites, alternative layouts, or assessments of other surfaces unless Michael asks for them. The coordinator makes a small admin change itself instead of starting a worker, and gives a worker only admin tasks that take more than about 30 minutes.
+A change to one tuning value, plus its tests and docs, can use `ci:fast` as its
+final gate under the existing Tuning exception. It must change no logic, saved-data
+shape, API, catalog, dependency, or build configuration. Record that choice.
+Public visual changes still follow the approval rules in Deployment.
 
-The Admin tier check. Any printed file is outside the admin surface, so the change takes another tier:
+`bash scripts/ci-local.sh` delegates to affected mode. It accepts `fast`, `affected`,
+or `full`, followed by the same options. `--plan` prints the chosen scope and reasons
+without running checks. The default base is `origin/claude/pokedex-region-builder-AviYF`;
+`--base REF` or `MY151_CI_BASE` overrides it. Missing or unusable history selects full.
+A clean diff still runs fast checks. An explicitly known Markdown-only diff skips code checks.
 
-```bash
-git diff --name-only origin/claude/pokedex-region-builder-AviYF...HEAD | grep -v -E '^(src/components/admin/|e2e/admin-|docs/)|\.md$|^src/lib/(usageFunnels|sankey[A-Za-z]*|whoOrigin|searchPerformance[A-Za-z]*|crossTool[A-Za-z]*|dashboardRange|aggregate|platformStacks)\.|^api/(_dashboard|_crossTool|_range|_searchPerformance|_archive|_aggregate|_favoriteAggregate|submissions|search-performance|feedback-list|journal|archive-entry)\.ts$'
-```
+`scripts/ci/policy.ts` owns selection. Unknown files, shared dependencies, APIs,
+saved-data stores, build/deploy configuration, dependencies, and CI changes select
+full coverage. Tool modules reused by other pages are shared inputs. The selector
+includes committed, staged, dirty, deleted, renamed, and untracked paths.
 
-When unsure, take the higher tier. A batch takes the tier of its riskiest change. A change that touches only Markdown files runs no tier.
+Every code mode runs lint, all unit/API/migration tests, translation verification,
+TypeScript, repository guards, analytics-cell verification, and bundle budgets.
+The runner builds once with a manifest into its unique Git operational directory.
+Browser preview and bundle measurement use that same current-run artifact.
+Receipts reject changed source or output. An external preview remains external
+evidence; its source identity is not established by a local receipt.
 
-Batch the work. Start a Standard or Full run only when the batch is final. A request that arrives during the run goes into the next batch, unless it fixes a failure in this run. A stopped and restarted run costs more than the wait.
+The critical journeys use `@ci-smoke` on existing tests. Keep mobile/narrow
+`@viewport` filtering intact. No mode retries a failing browser test into a pass.
+CI records failure screenshots and per-case errors. Full Playwright traces are
+opt-in for diagnosis (`--trace on --retries 0` on a standalone, locked run);
+automatic snapshot tracing slows locator-heavy tests and can cause timeouts.
+Keep full regression coverage. Run it explicitly or on a future nightly schedule;
+automatic Actions triggers remain disabled until billing allows jobs to start.
 
-Design review comes before checks: measure twice, cut once. Michael set this rule on 2026-10-12.
+Visual changes require the relevant before/after mobile and desktop screenshots.
+Use verify-my151 with selected `--screens` and relevant `--surfaces` when the
+change needs visual or native-engine evidence. Platform changes require the
+actual affected engine. The exhaustive all-screen/all-engine matrix is separate
+full/release QA; ordinary changes do not add it automatically. API/auth and
+saved-data checks remain mandatory. Approval and data-deletion protections remain.
 
-1. While Michael reviews a visual design, do not run tier checks: `scripts/ci-local.sh`, the `/verify-my151` diff, or the whole Playwright suite.
-2. Show the built design as pictures from a local build. Then stop and wait for his answer.
-3. This applies also when Michael described the change. Show the result before the checks start.
-4. Start the tier checks only when Michael says the design is final, for example "ship it" or "ready".
-5. During review, fast checks are permitted: `npm run lint`, `npm test`, `npm run build`, and the proof test.
+Batch final verification after design approval. Do not run broad checks while
+Michael reviews a design. Fix failed checks and rerun the affected check. A
+failure reproduced on production HEAD is pre-existing evidence, not a passed run.
+A test that passes only on retry remains a flaky failure to repair.
 
-Work-branch tier:
+### Keep final verification proportional
 
-1. Run `npm run lint`, `npm test`, and `npm run build`.
-2. Run only the specs that cover the change, in the `desktop` project: `npx playwright test e2e/<name>.spec.ts --project=desktop`.
-3. For a layout change, also add `--project=mobile --project=narrow`.
-4. When a test fails, fix the cause. Then run `npx playwright test --last-failed`. Do not rerun the whole suite for one failure.
+Michael explicitly authorized skipping or changing disproportionate checks on
+October 16, 2026. A verification-infrastructure change can use runner/selection
+proofs and `ci:fast` as its final gate. It does not need every application browser
+scenario. Record the scope decision. All cheap API, migration, type, build, and
+repository gates remain mandatory.
 
-Production tiers:
+Reuse passed stages and a validated build when their inputs have not changed.
+When production advances, check the incoming changes and their existing evidence,
+then verify the actual integration risk. Do not automatically restart exhaustive
+regression. Build changed application inputs once and run critical journeys plus
+the relevant changed-area checks. The selector remains conservative; a recorded
+scope decision can override an unnecessarily broad selection.
 
-1. Run the checks of the tier in the table. `bash scripts/ci-local.sh` is lint, unit tests, the repo guards, the whole Playwright suite, `npm run build`, then the bundle budget. On September 30 it took 741 s for 562 browser tests.
-2. A failure outside your change does not block the merge. Report it as pre-existing, with evidence: the same failure on production HEAD. In a verify-my151 diff, `(before=fail)` is that evidence.
-3. A check that fails once and passes on one rerun of the same build is a timing miss, not a pass. Report it, and fix the check when the same miss repeats.
+Stop after the relevant risk is covered. Do not turn final verification into
+another release audit or expand a repair to adjacent passing behavior. Preserve
+failed or interrupted outcomes honestly when a redundant run is stopped.
+
+Each invocation records live status, stage logs, selection, identity, and browser
+attempts under `git rev-parse --absolute-git-dir` in `ci-runs/<run-id>`. Inspect
+those records and the PID after a reconnect. Completed output is copied to
+`.audit/ci/<run-id>` after browser shutdown; `.audit/ci/latest.json` locates it.
+Browser-lock wait is recorded separately. The canonical runner acquires the shared
+`my151-browser.lock` in the platform temporary directory (`os.tmpdir()`) itself;
+do not wrap it in the same lock.
 
 Test rules: read `AGENTS.md` section 4, "Testing", before you write, change, or delete a test. Those rules apply to every agent in this repository. In short: prove a change with a proof test that fails on the old code and passes on the new code, report both results, and do not commit that test. Prefer E2E tests that end with a repeatable artifact. Keep a unit test only when it catches a bug that E2E misses.
 
@@ -125,7 +161,7 @@ The other checks, which `scripts/ci-local.sh` also runs:
 | `node scripts/check-speed-test-detection.mjs` | Fails when code a browser or the server runs mentions Lighthouse, PageSpeed, a headless browser, or WebDriver. A page must never serve a speed test something different from what people get. |
 | `node scripts/check-bundle-budget.mjs` | Fails when the first-load download of the hub, the Pokédex builder, or the league builder grows more than 5% over its baseline in `scripts/performance/budgets.json`. Text is measured with Brotli, images as emitted, every `srcset` size included. It builds its own copy with a Vite manifest, so `dist/` does not change. After a change that shrinks a page, or an increase that was agreed on, run it with `--rebase` and commit the new baselines. |
 | `node scripts/check-published-source.mjs` | Fails when a file under `public/licenses/source/` differs from the source file that `scripts/published-source.json` maps it to, when a published or fenced file is not in the manifest, or when a source file does not start with its license notice. Run it with `--write` to refresh the copies. See "Published license source". |
-| `npm run test:e2e` | Playwright. Required for UI changes. Auto-starts isolated preview and development servers on ports derived from the worktree path. Use `PLAYWRIGHT_PREVIEW_PORT` and `PLAYWRIGHT_DEV_PORT` to override them. Projects: `mobile`, `desktop`, `narrow` (320px). `desktop` runs every test; `mobile` and `narrow` run only `@viewport` tests. Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
+| `npm run test:e2e` | Standalone full Playwright suite. The canonical CI runner selects its scope. Auto-starts isolated preview and development servers on ports derived from the worktree path. Use `PLAYWRIGHT_PREVIEW_PORT` and `PLAYWRIGHT_DEV_PORT` to override them. Projects: `mobile`, `desktop`, `narrow` (320px). `desktop` runs every test; `mobile` and `narrow` run only `@viewport` tests. Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
 
 Against a Vercel preview, skip the local web servers. A preview builds only on request (see "Vercel builds"):
 
@@ -133,11 +169,11 @@ Against a Vercel preview, skip the local web servers. A preview builds only on r
 PLAYWRIGHT_BASE_URL=https://<preview>.vercel.app bash scripts/ci-local.sh
 ```
 
-That uses `e2e/preview.config.ts` (no vite preview/dev; drops the `dev` project, which needs `PREVIEW_FEATURES`).
+The canonical runner keeps its local gates, then records external browser evidence. It drops the `dev` project, which needs `PREVIEW_FEATURES`. Standalone `e2e/preview.config.ts` retains its existing behavior.
 
 Speed changes: prove a change meant to make the app faster with `node scripts/performance/lighthouse.mjs` and `node scripts/performance/lab.mjs`. Both build production and your working tree. `lighthouse.mjs` runs PageSpeed Insights' engine on every page, lists the findings, and fails a change that only games the score (see "Guards" in `docs/performance.md`). `lab.mjs` prints LCP, blocking time, and per-step INP. Paste both tables into the pull request. `node scripts/performance/psi.mjs` reads what Google's PageSpeed Insights shows for the live site, field data included. It needs `PAGESPEED_API_KEY` in the environment settings: the one Google key Michael approved, restricted to PageSpeed Insights. Never print, log, or commit it. Timing is noisy on a shared machine, so the script is evidence, not a ci-local gate. Michael's bar for merging a speed change: it must not hinder the user experience, and it must not overly complicate the code. Prefer the smallest diff that removes the measured cause. A speed change that users can see (content that appears later, a placeholder, a new animation) is a visual choice: show Michael before and after first. The speed targets, and the ideas already tried and left out, are in `docs/performance.md`. Read it before you start speed work.
 
-One browser run at a time on a machine: `lab.mjs` takes the lock itself. Wrap other browser commands in `flock "${TMPDIR:-/tmp}/my151-browser.lock" <command>`, so a Playwright run never overlaps a lab run.
+One browser run at a time on a machine: `lab.mjs` takes the lock itself. The canonical CI runner also takes the lock itself. Wrap standalone browser commands in `flock "${TMPDIR:-/tmp}/my151-browser.lock" <command>`, so a Playwright run never overlaps a lab run.
 
 The local `npm run build` is the compile check. Visual review is whole-screen mobile (~390px) and desktop (~1280px) screenshots, with before/after when the view already existed. Use live admin data, not demo fixtures.
 
@@ -171,7 +207,7 @@ Do not wait for Michael to ship low-risk, already-verified work. Merge it to `cl
 The approval rule keeps an untested change that **end users** see out of the live app.
 Judge the change by what it does, not only by which folder the files sit in.
 
-Before every production push, run the checks of the change's production tier in Build Verification. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the deploy signal. A build that Vercel marks Canceled by the Ignored Build Step is a skip, not a failure.
+Before every production push, run canonical affected CI on the final merge candidate under Build Verification. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the deploy signal. A build that Vercel marks Canceled by the Ignored Build Step is a skip, not a failure.
 
 After every production push, check out the work branch again. A merge leaves you on production, so the next commit would land there. Run `git rev-parse --abbrev-ref HEAD` before any later commit.
 
@@ -184,7 +220,7 @@ Ship without asking when the change is:
 - Docs, tests, scripts, `.claude/`, `.github/`, or other files a browser never receives.
 - Admin dashboard (`/?admin`) copy, counts, or small layout, when you already have a measured before/after or a test that failed then passed.
 - Internal refactors, types, and dead-code removal with no user-noticeable behavior.
-- A public-UI bugfix that restores the intended behavior and changes no design, when `/verify-my151` proves it on the surfaces its tier requires. Report it with that evidence.
+- A public-UI bugfix that restores the intended behavior and changes no design, when targeted `/verify-my151` evidence proves it on the relevant screens and engines. Report it with that evidence.
 - A public-UI change whose outcome Michael already decided, under the gate in "Decided by Michael".
 
 ### Decided by Michael
@@ -192,9 +228,9 @@ Ship without asking when the change is:
 Michael set this rule on 2026-10-08. Merge public UI without asking when Michael already decided the outcome: he gave the exact copy, picked an option from pictures, or described the fix. All of these must hold:
 
 1. A proof check fails on the old build and passes on the new build.
-2. The `/verify-my151` diff for the tier has 0 regressions.
+2. The targeted `/verify-my151` diff has 0 regressions on the relevant screens and engines.
 3. The visual diff shows changes only in the regions the change intends. The `/verify-my151` diff writes it as `visual.json` and `visual.png` in its evidence folder.
-4. The tier's checks pass.
+4. The selected fast/affected/full checks pass.
 
 Before you code, write two short lists in your notes: what must change, and what must not change. The proof check tests the first list. The visual diff tests the second. Every changed region in the visual diff must belong to the first list; explain each one in the work report.
 
