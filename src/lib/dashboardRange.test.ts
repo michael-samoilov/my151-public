@@ -3,18 +3,6 @@ import { buildDashboard, type DashboardSource } from '../../api/_dashboard';
 import { DAY_MS, HOUR_MS } from '../../api/_aggregate';
 import { DASHBOARD_RANGES, funnelDayKeys, type DashboardRange } from '../../api/_range';
 
-// How the date range can go wrong, and the test that catches each:
-// 1. Suite counts a browser the Active users label does not: an off-by-one
-//    window edge, a merged two-tool browser counted twice, or a country-split
-//    record counted twice.
-// 2. A range that covers every browser still changes a card: a legacy record
-//    with no session log dropped, or the archive applied twice.
-// 3. The range leaks into what must keep every browser: the browser index
-//    behind the Newest browsers lists, or the activity series behind the chart.
-// 4. A funnel opens on fewer browsers than it built, so bounced goes negative.
-// 5. A funnel reads the wrong counters: a day outside the window, or day
-//    counters past their 120-day lifetime instead of the all-time hash.
-
 const NOW = Date.UTC(2026, 8, 27, 17, 0, 0);
 const ago = (ms: number) => NOW - ms;
 
@@ -76,18 +64,12 @@ const byCid = <T extends { cid: string }>(rows: T[]) => Object.fromEntries(rows.
 
 const source: DashboardSource = {
   clients: byCid([
-    // Both tools: the dex side is old, the league side is recent.
     dex('both-0001', [ago(10 * DAY_MS)]),
-    // One browser split by country: one half recent, one half old.
     dex('split-001::US', [ago(3 * DAY_MS)]),
     dex('split-001::DE', [ago(20 * DAY_MS)], { country: 'DE' }),
-    // Legacy: no session log, active at first and last beacon only.
     { ...dex('legacy-01', [ago(30 * DAY_MS), ago(1 * DAY_MS)]), sessions: undefined, sessionMs: undefined, sessionLog: undefined },
-    // Exactly on the 7-day edge: outside (the label counts (now − 168h, now]).
     dex('edge-0001', [ago(7 * DAY_MS)]),
-    // Within the last hour, inside every range.
     dex('fresh-001', [ago(HOUR_MS)], { completed: true, exported: true, latestIds: [1, 4, 7, 25] }),
-    // Archived: never counted, still listed.
     dex('archived1', [ago(2 * HOUR_MS)]),
   ]),
   archived: ['archived1'],
@@ -103,7 +85,6 @@ describe('dashboard date range', () => {
     const labels = dash('all').lastPointLabels;
     expect(dash('7d').byTool.all.users).toBe(labels.label168h);
     expect(dash('24h').byTool.all.users).toBe(labels.label24h);
-    // both-0001, split-001, legacy-01, fresh-001.
     expect(dash('7d').byTool.all.users).toBe(4);
   });
 
@@ -141,8 +122,6 @@ const funnelDays: Record<string, Record<string, string>> = {
   [dayKey(0)]: { 'intro-shown': '1', 'league-open': '1' },
 };
 
-/** The source as the handler builds it: its script sums every field over
- *  the window's day keys. */
 function withWindow(range: DashboardRange): DashboardSource {
   const keys = funnelDayKeys(range, NOW);
   if (!keys) return { ...source, funnelWindow: null };
@@ -164,10 +143,7 @@ describe('dashboard funnels by date range', () => {
   });
 
   it("opens on the window's day counters and builds from the browsers first seen in it", () => {
-    // 28 days: split-001, edge-0001, fresh-001, and both-0001 were first seen
-    // in the window; its counters hold 5 + 1 + 1 intro views.
     expect(funnels('28d').dexFunnel).toMatchObject({ opened: 7, built: 4 });
-    // 7 days opens on the edge day: 1 + 1 views, fewer than the 3 builders.
     expect(funnels('7d').dexFunnel).toMatchObject({ opened: 3, built: 3 });
     expect(funnels('7d').leagueFunnel).toMatchObject({ opened: 1, placed: 1 });
   });

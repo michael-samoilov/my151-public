@@ -5,10 +5,8 @@ import gimmick from '../icons/gimmick-white.svg?url';
 import favorite from '../icons/favorite-white.svg?url';
 import type { ExtraTypeAxis } from '../model/cells';
 
-/** Transparent white versions of the existing category header symbols. */
 export const EXTRA_SYMBOL: Record<ExtraTypeAxis, string> = { starter, legendary, gimmick, favorite };
 
-/** Tight origin-only framing enlarges the outlined balls without changing header artwork. */
 export const STARTER_ORIGIN_SYMBOL = `data:image/svg+xml,${encodeURIComponent(
   starterSvg.replace('viewBox="0 0 24 24"', 'viewBox="3.2 6.72 17.6 12"'),
 )}`;

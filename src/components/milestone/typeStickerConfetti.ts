@@ -3,40 +3,14 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import GLYPH_PATHS from '@/data/typeGlyphPaths.json';
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 
-/**
- * The completion burst, with type stickers for pieces: each type's glyph in
- * its type color inside a thin white edge, so a piece reads over any
- * background. Loaded on demand by `completionConfetti.ts`.
- *
- * The motion is the burst the Pokédex Maker fired before stickers: the same
- * canvas-confetti options, physics and fade. Two things differ, and neither
- * changes a piece's path:
- * - The canvas is sized in device pixels, so the stickers stay sharp. Every
- *   distance option is multiplied by the pixel ratio, so each piece covers
- *   the same CSS pixels on the same frame.
- * - Each type gets its own call, so the mix is exact: 3 or 4 of each type in
- *   60. canvas-confetti draws the same random numbers for a piece in any
- *   call, so the pieces follow the paths of one 60-piece call.
- */
-
-/** One restrained burst, in CSS px: it registers as a celebration without covering the screen. */
 const BURST = { particleCount: 60, spread: 65, startVelocity: 28, origin: { x: 0.5, y: 0.35 }, ticks: 160, zIndex: 300 };
-/** The pieces of the burst before stickers, for browsers that cannot draw bitmap pieces. */
 const PLAIN_PIECES = { colors: ['#dc2626', '#7ac74c', '#ee8130', '#6390f0', '#f7d02c'], scalar: 0.9 };
 
-/**
- * Side of a sticker's glyph frame, in CSS px. Every glyph shares one frame,
- * so each symbol keeps its in-game size: fire stays smaller than grass.
- */
 const FRAME_PX = 22.5;
-/** White edge outside the glyph, in CSS px. */
 const EDGE_PX = 1.5;
-/** Bitmap side per frame side: room for a rotated frame's corners. */
 const PAD = 1.5;
-/** Bitmap pixels per device pixel, so rotation and squash stay smooth. */
 const SUPERSAMPLE = 2;
 
-/** Fails to compile when the generated file lacks a type. */
 const GLYPHS: Record<TypeName, readonly string[]> = GLYPH_PATHS;
 
 /**
@@ -57,8 +31,6 @@ async function stickerShapes(dpr: number): Promise<Map<TypeName, confetti.Bitmap
     ctx.translate(side / 2, side / 2);
     ctx.scale(unit, unit);
     const shapes = GLYPHS[type].map((d) => new Path2D(d));
-    // Every edge first, then every fill, so the edge stays outside the
-    // glyph where its shapes overlap.
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = (2 * EDGE_PX * dpr * SUPERSAMPLE) / unit;
@@ -72,7 +44,6 @@ async function stickerShapes(dpr: number): Promise<Map<TypeName, confetti.Bitmap
   return new Map(entries);
 }
 
-/** `count / 18` of each type, and one more of `count % 18` types from a random start. */
 function evenMix(count: number): Map<TypeName, number> {
   const n = TYPE_NAMES.length;
   const base = Math.floor(count / n);
@@ -91,7 +62,6 @@ export async function burstTypeStickers(): Promise<void> {
     await confetti({ ...BURST, ...PLAIN_PIECES });
     return;
   }
-  // Capped at 3: a denser canvas looks no sharper on a phone and costs memory.
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   const shapes = await stickerShapes(dpr);
   const { clientWidth: width, clientHeight: height } = document.documentElement;
@@ -111,10 +81,8 @@ export async function burstTypeStickers(): Promise<void> {
     spread: BURST.spread,
     origin: BURST.origin,
     ticks: BURST.ticks,
-    // Velocity and gravity (1 by default) are distances per frame.
     startVelocity: BURST.startVelocity * dpr,
     gravity: dpr,
-    // Sets the drawn size only, not the path: see stickerShapes.
     scalar: 1 / SUPERSAMPLE,
     shapes: [shapes.get(type)!],
   }));

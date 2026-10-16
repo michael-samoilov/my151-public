@@ -1,29 +1,17 @@
 import { create } from 'zustand';
 
-/**
- * The ace/partner slot, opened up so its two halves can be dragged by hand.
- *
- * Off by default and off in production. `SlotLabPage` is the only thing that
- * turns it on, and that page does not mount on the live deploy.
- */
-
 interface SlotOffset {
-  /** Fraction of the slot's width, positive to the right. */
   dx: number;
-  /** Fraction of the slot's height, positive downward. */
   dy: number;
 }
 
-/** Lab slider default, in the card's own pixels. */
 export const STANDARD_SPRITE = 92;
 
 interface SlotLabState {
   enabled: boolean;
   ace: SlotOffset;
   partner: SlotOffset;
-  /** Both halves' sprite edge, in the card's own pixels. */
   sprite: number;
-  /** The slot's measured size, so the page can show pixels beside fractions. */
   slot: { w: number; h: number } | null;
   enable: () => void;
   nudge: (half: 'ace' | 'partner', dx: number, dy: number) => void;

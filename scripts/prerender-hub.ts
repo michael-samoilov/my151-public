@@ -1,30 +1,5 @@
-/**
- * Prerenders the hub (`/`) into dist/index.html after the client build.
- *
- * Without it the hub's HTML holds only a spinner, and the page appears after
- * about 250 KiB of JavaScript. With it, the hub paints as soon as the HTML
- * arrives, and the client hydrates the same markup.
- *
- * The plugin builds `src/home/prerender.ts` for Node with the client build's
- * aliases and defines, so asset URLs and the footer's build version match the
- * client. It then writes four things into dist/index.html:
- *
- * - The markup, in `#root`, marked `data-prerendered`.
- * - The stylesheet, inline. The tool pages still link it.
- * - A head script that runs before the first paint. It sets the root font
- *   size with the formula in src/lib/layoutFontSize.ts, so nothing shifts when
- *   that module runs. It adds `p151-saved-<tool>` to <html> for each tool with
- *   saved work in this browser, which hides the count on that card's "saved
- *   in this browser" line until the app reads it, so it never shows 0 first
- *   (src/index.css). It adds
- *   `p151-wait` when the visitor will not get this exact page: another
- *   language, `?admin`, `?demo`, or a returning visitor while the Tools menu's
- *   favorites notice runs. Those visitors see the spinner until the app
- *   renders, as before.
- * - An inline Inter subset for the initial page and English controls. Its
- *   glyphs are ready before the hub appears. The client loads full Inter in
- *   parallel with hydration, then replaces the identical initial face.
- */
+
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -33,10 +8,8 @@ import react from '@vitejs/plugin-react';
 import { build, type Plugin, type ResolvedConfig } from 'vite';
 
 const ENTRY = 'src/home/prerender.ts';
-// Saved Pokédex key; its `state.locale` is the language the visitor chose.
 const STORE_KEY = 'personal-151-pokedex-v3';
 
-/** Include the first Inter face in the HTML so its request cannot race paint. */
 function initialInter(root: string, markup: string): string {
   const directory = path.join(root, 'src/assets/fonts');
   const metadata = JSON.parse(fs.readFileSync(path.join(directory, 'inter-home-initial.json'), 'utf8')) as {
@@ -60,7 +33,6 @@ function initialInter(root: string, markup: string): string {
 <script>(function(){var d=document.documentElement;d.classList.add('p151-hub-inter-initial','p151-hub-font-pending');Promise.all([400,700,800].map(function(w){return document.fonts.load(w+' 16px "P151 Inter Initial"','my151.app Pokédex 0123456789').then(function(f){if(!f.length||f.some(function(x){return x.status!=='loaded'}))throw Error('Initial Inter is unavailable')})})).then(function(){d.classList.remove('p151-hub-font-pending')},function(){d.classList.add('p151-hub-font-failed')})})();</script>`;
 }
 
-/** What the server entry exports for the head script. */
 interface BootInputs {
   LOCALES: readonly string[];
   SLOT_COUNT: number;
@@ -70,11 +42,6 @@ interface BootInputs {
   RETURNING_KEYS: readonly string[];
 }
 
-/**
- * The head script. Its language choice mirrors `resolveActiveLocale` in
- * src/i18n/bootstrap.ts. Its saved-work tests mirror the hub's counts in
- * HomePage.tsx, and its notice test mirrors the Tools menu's launch notice.
- */
 /**
  * The root font-size before the app mounts: the same layout-viewport width and
  * formula as `src/lib/layoutFontSize.ts`. It runs right after the inline
@@ -91,9 +58,6 @@ export function splitImagePreloads(markup: string): { preloads: string[]; markup
   return { preloads: markup.match(imagePreload) ?? [], markup: markup.replace(imagePreload, '') };
 }
 
-/** The English HTML works before hydration. Let its screenshots finish before
- * app startup competes for bandwidth and the main thread. An input, an image
- * error, or a visitor who needs client rendering starts the app immediately. */
 function prioritizeHubImages(html: string): string {
   const entry = /<script type="module" crossorigin src="([^"]+)"><\/script>/;
   const preloads = /\s*<link rel="modulepreload" crossorigin href="([^"]+)">/g;
@@ -211,8 +175,7 @@ export function prerenderHub(): Plugin {
           ...imagePreloads,
           initialInter(config.root, markup),
           '<link rel="expect" href="#p151-end" blocking="render">',
-          // Keep the header usable while the complete home content waits.
-          // A failed hub boundary has no grid; its error UI must stay visible.
+
           '<style>html .p151-boot{display:none}html.p151-wait .p151-boot{display:flex}html.p151-hub-images-pending:has(.hub-grid) .p151-boot{display:flex}html.p151-hub-images-pending .p151-boot{pointer-events:none}html.p151-hub-font-pending .p151-boot{visibility:hidden}html.p151-wait #root{display:none}</style>',
           '<style>html:not(:has(#p151-end)) #root{visibility:hidden}html.p151-hub-images-pending .hub-grid{visibility:hidden}html.p151-hub-images-pending .hub-home:has(.hub-grid),html.p151-hub-images-pending #root:has(.hub-grid) div:has(>footer){visibility:hidden}'+['dex','league','favorites'].map(k=>`html.p151-hub-${k}-fallback .hub-card[data-hub-card="${k}"] [data-card-panel]{visibility:hidden}`).join('')+'</style>',
           `<script>${bootScript(inputs)}</script>`,
@@ -221,13 +184,7 @@ export function prerenderHub(): Plugin {
         const viewport = /<meta name="viewport"[^>]*>/;
         if (!viewport.test(html)) throw new Error('prerender-hub: index.html has no viewport meta tag');
         html = html.replace(viewport, (tag) => `${tag}\n    ${head}`);
-        // The stylesheet goes inline. Under Lighthouse, a linked stylesheet that
-        // arrived after about 170 ms held the first frame until about 1.3 or
-        // 2.3 s, in every local run against the live site and in about half of
-        // PageSpeed Insights' phone runs; inline, the hub painted at about
-        // 0.2 s (11 October). After the page has loaded, a prefetch puts the
-        // file in the cache for the tool pages, which still link it. A prefetch
-        // in the HTML started at once and delayed the screenshots by about 5%.
+
         const sheets = [...html.matchAll(/<link rel="stylesheet" crossorigin href="([^"]+\.css)">/g)];
         if (sheets.length === 0) throw new Error('prerender-hub: index.html links no stylesheet');
         for (const [tag, href] of sheets) {
@@ -237,8 +194,7 @@ export function prerenderHub(): Plugin {
           const prefetch = `addEventListener('load',function(){var l=document.createElement('link');l.rel='prefetch';l.href=${JSON.stringify(href)};document.head.appendChild(l)})`;
           html = html.replace('</body>', () => `<script>${prefetch}</script>\n  </body>`);
         }
-        // Reveal the complete grid in one frame, including the feedback card.
-        // A failed image keeps its panel hidden while its caption stays usable.
+
         const ready = `(function(){
 var d=document.documentElement,decoded=new WeakSet(),pending=new WeakSet();
 function reveal(){var cards=Array.from(document.querySelectorAll('[data-hub-card]'));if(cards.length&&cards.every(function(card){var key=card.getAttribute('data-hub-card');return d.classList.contains('p151-hub-'+key+'-ready')||d.classList.contains('p151-hub-'+key+'-fallback')}))d.classList.remove('p151-hub-images-pending')}

@@ -1,15 +1,5 @@
-/**
- * Prints the league card's derived shades per type, with the perceptual
- * distance between the closest pair.
- *
- * Run it when the card's colour ramp changes:
- *
- *     node_modules/.bin/tsx scripts/shade-report.ts
- *
- * The eye is a poor judge of whether eighteen colours separate — fighting
- * and ground read as the same brown until the number says they are 2.8
- * apart. `src/league/theme.test.ts` holds the floor this report explains.
- */
+
+
 import { TYPE_NAMES } from '../src/types/pokemon';
 import { TYPE_COLORS } from '../src/data/type-colors';
 import { cardShades } from '../src/league/theme';

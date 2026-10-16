@@ -1,13 +1,7 @@
 import { TouchSensor, type Activators, type SensorInstance, type SensorProps } from '@dnd-kit/core';
 
 interface HoldOrMoveOptions {
-  /** How long a still press waits before the drag begins, in ms. */
   delay: number;
-  /**
-   * How far a moving press travels before the drag begins, in px. Used
-   * only when the pressed node has no height to read; otherwise the node's
-   * own half-height is the line.
-   */
   distance: number;
 }
 
@@ -93,7 +87,6 @@ export class HoldOrMoveTouchSensor implements SensorInstance {
     props.onPending(props.active, this.constraint(), this.initial);
   }
 
-  /** What the drag is waiting on, in the shape dnd-kit reports. */
   private constraint() {
     return { delay: this.props.options.delay, tolerance: Infinity };
   }

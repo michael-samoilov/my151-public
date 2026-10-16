@@ -4,7 +4,6 @@ const types = new Set<string>([...TYPE_NAMES, 'starter', 'legendary', 'gimmick',
 const generations = new Set(['gimmick', 'legendary', 'favorite']);
 const MAX_CELLS = 264;
 
-/** Keep only bounded diagnostic counts and known coordinates, never picks. */
 export function sanitizeFavoriteFeedback(raw: unknown): Record<string, unknown> | undefined {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return;
   const c = raw as Record<string, unknown>;

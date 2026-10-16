@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { createServer } from 'vite';
 import { chromium } from '@playwright/test';
 
-// Local fixture routes never invoke Vercel functions or Redis. No secrets are needed.
 const output = path.resolve(process.argv[2] || '.audit/security-review/browser');
 await mkdir(output, { recursive: true });
 const payload = '<img src=x onerror=alert(1)>';
@@ -58,7 +57,6 @@ try {
   assert.equal(injectedNodes,0); assert.equal(dialogs,0);
   await page.screenshot({path:path.join(output,'feedback-xss.png'),fullPage:true});
   records.push({attack:'Stored feedback XSS',scope:'Actual FeedbackCard with local fake API, no persistence',request:{path:'/api/feedback-list?limit=200',authorization:'Bearer [FIXTURE]',payload},response:{status:200,literalText:true,injectedNodes,dialogs},result:'refused (escaped as text)'});
-  // Positive control proves that this browser detects the same payload executing.
   await page.evaluate(p => { const d=document.createElement('div'); d.id='positive-control'; d.innerHTML=p; document.body.append(d); },payload);
   await page.waitForTimeout(250); assert.equal(dialogs,1);
   await page.locator('#positive-control').evaluate(el=>el.remove());
@@ -80,7 +78,7 @@ try {
   await page.getByTestId('league-slot-0').click();
   await page.getByTestId('slot-badge').waitFor();
   const badgeText = await page.getByTestId('slot-badge').textContent();
-  assert.ok(badgeText.includes('<img')); 
+  assert.ok(badgeText.includes('<img'));
   assert.equal(await page.locator('img[src="x"]').count(),0);
   assert.equal(dialogs,1);
   await page.screenshot({path:path.join(output,'badge-xss.png'),fullPage:true});

@@ -1,11 +1,5 @@
 import { cn } from '@/lib/utils';
 
-/**
- * The app's one loading mark: the favicon's Poké Ball, turning. `tone="line"`
- * draws it in the text colour for buttons and chips, where the red half would
- * vanish into a red button. `delayed` keeps it hidden for the first 400 ms, so
- * a wait that ends sooner shows nothing at all.
- */
 export function PokeBallSpinner({ className, tone = 'color', delayed = false }: {
   className?: string;
   tone?: 'color' | 'line';
@@ -33,11 +27,6 @@ export function PokeBallSpinner({ className, tone = 'color', delayed = false }: 
   );
 }
 
-/**
- * A Poké Ball on a small card in the middle of the screen, for a sheet or
- * pane whose code is still downloading. The card keeps it from reading as a
- * stray mark on top of the page.
- */
 export function ScreenSpinner() {
   return (
     <div className="pointer-events-none fixed inset-0 z-[400] flex items-center justify-center">

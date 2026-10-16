@@ -33,7 +33,6 @@ export function DexExportSettingsPane({
   seedCustomIds: number[];
   busy: boolean;
   onExport: () => void;
-  /** The last save failed. */
   failed?: boolean;
   onClose: () => void;
   mobileSheet?: boolean;

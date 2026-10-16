@@ -1,15 +1,5 @@
 #!/usr/bin/env node
-/**
- * Fails when shipped code looks for a speed test. A page that detects
- * Lighthouse, PageSpeed Insights, or a headless browser can serve the test a
- * lighter page than people get, so its score stops meaning anything.
- * docs/performance.md, "Guards", explains the rule.
- *
- *   node scripts/check-speed-test-detection.mjs
- *
- * It reads the code a browser or the server runs: src/ (not unit tests), api/,
- * public/ text files, the HTML entries, vercel.json, and vite.config.ts.
- */
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

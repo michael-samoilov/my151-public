@@ -2,13 +2,6 @@ import { expect, test } from '@playwright/test';
 import { en } from '../src/i18n/catalogs/en';
 import { FAQ_KEYS, type FaqPage } from '../src/components/shared/faqKeys';
 
-/**
- * Each tool page serves its "About this tool" FAQ in the HTML, for crawlers
- * that do not run JavaScript (scripts/static-faq.ts). The served copy must
- * match the app's English catalog, stay invisible for the first second like
- * the rest of the boot copy, and be gone once the app mounts, leaving only the
- * app's own FAQ block.
- */
 const PAGES: [string, FaqPage][] = [
   ['/pokedex-builder', 'dex'],
   ['/custom-gym-leader', 'league'],

@@ -1,14 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-// The picker's 1,391 sprites load in the order a visitor needs them
-// (src/favorites/model/spritePreload.ts): Normal / Gen I first, then in the
-// desktop layout nothing more until a cell is hovered or pressed, in the phone
-// layout the cells in view, and the rest after the first selector. The build
-// delivers them in packs (src/favorites/model/spritePacks.ts): bulk packs for
-// that order, and a cell's own pack for a cell opened before its bulk pack. A
-// pack that fails falls back to single files. These tests count the requests
-// that reach the server, by kind, to hold that order.
-
 const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true };
 const DESKTOP = { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 };
 
@@ -31,7 +22,6 @@ function countRequests(target: Page | BrowserContext): Requests {
     const url = request.url();
     if (url.includes('/sprites/packs/picker-sprites-')) {
       seen.bulk.push(url);
-      // A pack starts with its sprite count (src/favorites/model/spritePacks.ts).
       if (url === firstBulk) seen.firstBulkCount = response.body().then((body) => body.readUInt32LE(0));
     } else if (url.includes('/sprites/packs/picker-cell-')) seen.cells.push(url);
     else if (url.includes('/sprites/pokemon/')) seen.files.push(url);
@@ -41,7 +31,6 @@ function countRequests(target: Page | BrowserContext): Requests {
 
 const counts = (r: Requests) => ({ bulk: r.bulk.length, cells: r.cells.length, files: r.files.length });
 
-/** Every sprite in the open selector is drawn: none waits on a pack or a file. */
 async function expectSelectorDrawn(page: Page) {
   const sprites = page.locator('#favorites-selector [data-testid^="favorites-pick-"] img[alt]:not([alt=""])');
   await expect(sprites.first()).toBeVisible();
@@ -62,7 +51,6 @@ test('a desktop loads only Normal / Gen I until a cell is hovered, then that cel
   await page.waitForTimeout(2000);
   const beforeHover = counts(requests);
 
-  // The first pack holds Normal / Gen I, so that cell needs nothing more.
   await page.getByTestId('favorites-cell-normal-1').hover();
   await page.waitForTimeout(500);
   const afterFirstCell = counts(requests);
@@ -90,9 +78,6 @@ test('a desktop loads only Normal / Gen I until a cell is hovered, then that cel
 });
 
 test('a touch screen at desktop width loads only Normal / Gen I before a tap', async ({ browser, baseURL }, testInfo) => {
-  // A tablet in landscape, or a headless desktop browser with no hover: the
-  // desktop layout shows nearly every cell, so in-view loading would fetch
-  // them all.
   const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
   const page = await context.newPage();
   const requests = countRequests(page);

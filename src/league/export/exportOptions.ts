@@ -1,25 +1,13 @@
-/**
- * League summary export layout permutations.
- *
- * The export-settings pane surfaces these; URL query flags seed the overlay for QA.
- */
-
-/** Stable download names, shared without loading the canvas renderer. */
 export const CARD_FILENAME = 'my151-trainer-card.png';
 export const HOME_FILENAME = 'my151-league.png';
 
 export type LeagueHomeTeamMode = 'story' | 'rematch' | 'both';
 
 export interface LeagueHomeExportLayout {
-  /** League name line at the top of the picture. */
   showLeagueName: boolean;
-  /** Theme row in the gym-details column. */
   showTheme: boolean;
-  /** TM disc, move name, type, and category in the gym-details column. */
   showTmReward: boolean;
-  /** Badge hex and name in the gym-details column. */
   showBadgeName: boolean;
-  /** Which team rows appear on the export. */
   teamMode: LeagueHomeTeamMode;
 }
 
@@ -35,7 +23,6 @@ export function layoutShowsBothTeams(layout: LeagueHomeExportLayout): boolean {
   return layout.teamMode === 'both';
 }
 
-/** Theme, TM, or badge — any one of these opens the details column. */
 export function layoutShowsGymDetails(layout: LeagueHomeExportLayout): boolean {
   return layout.showTheme || layout.showTmReward || layout.showBadgeName;
 }
@@ -61,7 +48,6 @@ export function leagueLayoutFrameKey(layout: LeagueHomeExportLayout): string {
 const TEAM_MODES: readonly LeagueHomeTeamMode[] = ['story', 'rematch', 'both'];
 const DETAIL_KEYS = ['showLeagueName', 'showTheme', 'showTmReward', 'showBadgeName'] as const;
 
-/** Current layout first, then one-toggle neighbors, then the rest. */
 export function leagueLayoutPermutations(base: LeagueHomeExportLayout): LeagueHomeExportLayout[] {
   const neighbors: LeagueHomeExportLayout[] = [];
   for (const teamMode of TEAM_MODES) {
@@ -93,11 +79,6 @@ export function leagueLayoutPermutations(base: LeagueHomeExportLayout): LeagueHo
   });
 }
 
-/**
- * Reads `exportTeamMode`, `exportLeagueName`, per-detail flags, and legacy
- * `exportGymDetails` / `exportSideBySide`. Missing flags keep the defaults:
- * every details box on, and `onScreen`, the team the league tab shows.
- */
 export function parseLeagueHomeExportLayout(
   search: string,
   onScreen: LeagueHomeTeamMode,
@@ -124,5 +105,4 @@ export function parseLeagueHomeExportLayout(
   };
 }
 
-/** Trainer-card PNG order. Persistent team seats stay unchanged. */
 export type CardTeamOrder = 'fixed' | 'first-last';

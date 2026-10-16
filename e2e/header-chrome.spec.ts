@@ -1,18 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { blankLeague } from './support/leagueSeed';
 
-/**
- * The two-bar chrome's one hard invariant: the tool bar's three cells —
- * title/count left, view nav centred, page controls right — never overlap,
- * at any project width (320 included) and in both left-cell states (the
- * "Dex Builder" default and the n/151 count). The active tab's label
- * expands from 380px; this is what proves that expansion still leaves
- * enough room even when the count is four digits.
- *
- * The league builder's tool bar must also hold the same 44px height on the
- * home page and the card page, so switching tools does not jump the chrome.
- */
-
 const STORE_KEY = 'personal-151-pokedex-v3';
 const SEED = JSON.stringify({
   state: {
@@ -27,7 +15,6 @@ const SEED = JSON.stringify({
   version: 10,
 });
 
-/** Same dex with analytics already unlocked, so all three tabs navigate. */
 const UNLOCKED_SEED = JSON.stringify({
   state: {
     ...JSON.parse(SEED).state,
@@ -70,8 +57,6 @@ async function readCells(page: Page): Promise<Cells> {
 
 async function expectNoOverlap(page: Page) {
   const c = await readCells(page);
-  // The title cell's content, not the flexible cell box: an empty 1fr cell
-  // legitimately reaches the nav. Content width is what must not cross.
   const titleContentRight = await page.evaluate(() => {
     const cell = document.querySelector('[data-testid="tool-title"]')!;
     const inner = cell.firstElementChild;
@@ -84,16 +69,10 @@ async function expectNoOverlap(page: Page) {
     return kids.length > 0 ? Math.min(...kids) : cell.getBoundingClientRect().right;
   });
   expect(c.navRight).toBeLessThanOrEqual(actionsContentLeft + 0.5);
-  // h-11 = 2.75rem; the root font-size is the app's JS sizing knob, so the
-  // expected pixel height follows it (16px root -> 44, 20px root -> 55).
   const rootPx = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
   expect(Math.abs(c.barHeight - 2.75 * rootPx)).toBeLessThan(1.5);
 }
 
-/**
- * Stamp a 4-digit count into the header without placing 1025 tiles.
- * The overlap risk is the glyph width of `1025/151`, not the grid.
- */
 async function stampFourDigitCount(page: Page) {
   const ok = await page.evaluate(() => {
     const n = document.querySelector('[data-testid="tool-title"] .text-primary');
@@ -145,17 +124,13 @@ test.describe('two-bar chrome', { tag: '@viewport' }, () => {
     await page.goto('/pokedex-builder');
     await page.waitForSelector('[data-testid="tool-title"]');
 
-    // Default state: the tool's name, no selections yet.
     await expect(page.getByTestId('tool-title')).toContainText('Custom Pokédex Maker');
     await expectNoOverlap(page);
 
-    // Seed a dex past the analytics unlock, reload into the count state.
     await page.waitForFunction((k) => !!localStorage.getItem(k), STORE_KEY);
     await page.evaluate(([k, v]) => localStorage.setItem(k, v), [STORE_KEY, SEED]);
     await page.waitForTimeout(400);
     await page.evaluate(([k, v]) => localStorage.setItem(k, v), [STORE_KEY, SEED]);
-    // A dex saved before the page opened summons the one-time gym leader
-    // callout on Tools; this test is about the bars, so mark it seen.
     await page.evaluate(() => localStorage.setItem('p151-league-promo-seen', '1'));
     await page.reload();
     await page.waitForSelector('[data-testid="tool-title"]');
@@ -174,8 +149,6 @@ test.describe('two-bar chrome', { tag: '@viewport' }, () => {
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     const rootPx = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
-    // Both bars carry the same handle: reading up the tree from a control
-    // inside them breaks the moment one of those controls grows a border.
     const barHeight = (index: number) =>
       page.evaluate(
         (i) => document.querySelectorAll('[data-testid="league-tool-bar"]')[i].getBoundingClientRect().height,
@@ -185,7 +158,6 @@ test.describe('two-bar chrome', { tag: '@viewport' }, () => {
 
     await page.click('[data-testid="league-slot-3"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
-    // Mobile keeps both panes mounted, so the card's bar is the second one.
     const bars = await page.locator('[data-testid="league-tool-bar"]').count();
     expect(Math.abs((await barHeight(bars - 1)) - 2.75 * rootPx)).toBeLessThan(1.5);
   });

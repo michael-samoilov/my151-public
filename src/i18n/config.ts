@@ -1,9 +1,3 @@
-/**
- * The nine languages Pokémon is officially published in. These are exactly the
- * locales PokeAPI carries species, type, colour and egg-group names for, so
- * every in-game term the app renders can come from an official source rather
- * than a translation.
- */
 export const LOCALES = [
   'en',
   'ja',
@@ -21,18 +15,12 @@ export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'en';
 
 interface LocaleMeta {
-  /** The language's name in itself. Never a flag: languages aren't countries,
-   *  Spanish spans 20+ of them, zh-Hans/zh-Hant are scripts rather than places,
-   *  and flag emoji have no glyphs on Windows. */
   endonym: string;
-  /** BCP 47 tag for `<html lang>`, `Intl.*` and the `:lang()` font stacks. */
   tag: string;
   /** PokeAPI `languages.csv` id, used by the name-catalog generator.
    *  Japanese uses 1 (ja-Hrkt) rather than 11 (kanji): it is what the games
    *  display, and 11 has gaps in egg groups and stat names. */
   pokeapiId: number;
-  /** All nine are left-to-right. Wired through anyway so a future RTL locale
-   *  has somewhere to declare itself. */
   dir: 'ltr' | 'rtl';
 }
 

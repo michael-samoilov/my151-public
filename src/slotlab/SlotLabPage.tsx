@@ -2,19 +2,6 @@ import { useEffect, useState } from 'react';
 import { LeagueApp } from '../league/LeagueApp';
 import { STANDARD_SPRITE, useSlotLab } from '../league/slotLab';
 
-/**
- * The real league builder, with the ace and partner halves loose.
- *
- * Not a mock of the slot: the whole app, so the pickers work, the empty
- * states are the real empty states, and what a half looks like once a
- * Pokemon lands in it is what it will look like. Drag either half; tap it
- * and it still opens its picker.
- *
- * The readout is the point. It reports each half's offset as a **fraction of
- * the slot**, because that is the number that transfers: the slot is a
- * different size on every device, so a pixel nudge only means something on
- * the screen it was made on.
- */
 export function SlotLabPage() {
   const enable = useSlotLab((s) => s.enable);
   useEffect(enable, [enable]);
@@ -24,8 +11,6 @@ export function SlotLabPage() {
   const sprite = useSlotLab((s) => s.sprite);
   const setSprite = useSlotLab((s) => s.setSprite);
   const reset = useSlotLab((s) => s.reset);
-  // The panel sits over the card's own hint lines, so it folds away to a
-  // title when the thing being judged is underneath it.
   const [open, setOpen] = useState(true);
 
   const row = (label: string, o: { dx: number; dy: number }) => (
@@ -99,8 +84,6 @@ export function SlotLabPage() {
         <div style={{ marginTop: 5, color: '#6b7280' }}>
           slot {slot ? `${slot.w.toFixed(0)} × ${slot.h.toFixed(0)}` : 'not measured'}
           {'  ·  '}
-          {/* What the slot gave one Pokemon before it held two, so a size can
-              be read as a fraction of the thing it replaced. */}
           {(sprite / STANDARD_SPRITE * 100).toFixed(0)}% of standard
         </div>
         <button

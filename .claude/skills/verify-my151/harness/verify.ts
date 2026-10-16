@@ -1,10 +1,5 @@
-// Cross-engine verification CLI.
-//   absolute            invariants must hold on the working-tree build.
-//   diff --base <ref>   build both, drive identical flows, name before/after regressions,
-//                       then compare fixed screens pixel by pixel (lib/visual.ts).
-// Usage (from repo root):
-//   npx tsx .claude/skills/verify-my151/harness/verify.ts [absolute|diff] [--base <ref>]
-//     [--surfaces a,b] [--no-build] [--no-visual | --visual-only] [--screens id,id]
+
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { openSession } from './lib/engines.ts';
@@ -135,9 +130,6 @@ async function main() {
       }
     }
 
-    // The visual diff does not set the verdict: an intended change always changes
-    // pixels. It lists every changed region for the agent to match against the
-    // change's "must change" list (CLAUDE.md, "Decided by Michael").
     let visual: VisualReport | undefined;
     if (args.mode === 'diff' && basePreview && !args.noVisual) {
       console.log('visual diff: rendering fixed screens on both builds...');
@@ -150,7 +142,6 @@ async function main() {
       console.log(`visual sheet: ${ev.dir}/visual.png`);
     }
 
-    // A screen that could not be compared is unverified, never a quiet pass.
     const missingCoverage = args.visualOnly ? [] : [...coverageGaps(surfaces), ...diffCoverage];
     if ((args.visualOnly || visual) && !visual?.screens.length) missingCoverage.push('visual:no screens compared');
     if (visual?.errors) missingCoverage.push(`visual:${visual.errors} screen(s) could not be compared`);
@@ -171,9 +162,6 @@ async function main() {
   }
 }
 
-// Engine drivers and preview children can leave handles open that keep the event
-// loop alive after the report is written (a synchronous write, so exiting here is
-// safe). Exit explicitly on the verdict code.
 main().then(
   () => process.exit(process.exitCode ?? 0),
   (e) => { console.error(e); process.exit(1); },

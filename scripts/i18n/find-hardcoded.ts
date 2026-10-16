@@ -37,7 +37,6 @@ import ts from 'typescript';
 const ROOT = process.cwd();
 const ALLOWLIST_PATH = 'scripts/i18n/hardcoded-allowlist.json';
 
-/** The public app. Everything else under src is admin, diagnostics, or data. */
 const SCAN_ROOTS = [
   'src/App.tsx',
   'src/main.tsx',
@@ -49,23 +48,19 @@ const SCAN_ROOTS = [
   'src/lib',
 ];
 
-/** Admin, preview-only diagnostics, and tests: out of scope by design. */
 const EXCLUDE: RegExp[] = [
   /\.test\.tsx?$/,
   /\.d\.ts$/,
   /^src\/components\/admin\//,
-  // The admin dashboard's helpers (CLAUDE.md, "The Admin tier check").
   /^src\/lib\/(usageFunnels|sankey[A-Za-z]*|whoOrigin|searchPerformance[A-Za-z]*|crossTool[A-Za-z]*|dashboardRange|aggregate|platformStacks)\./,
 ];
 
-/** Attributes whose value is text a person reads or hears. */
 const TEXT_ATTRS = new Set([
   'aria-label', 'aria-description', 'aria-valuetext', 'aria-roledescription', 'aria-placeholder',
   'title', 'placeholder', 'alt', 'label', 'heading', 'description', 'hint', 'caption', 'tooltip',
   'emptyText', 'emptyLabel', 'ariaLabel', 'subtitle', 'text', 'message', 'confirmLabel', 'cancelLabel',
 ]);
 
-/** Attributes that never hold text, so a word-like value there is markup. */
 const NON_TEXT_ATTRS = new Set([
   'className', 'class', 'id', 'key', 'type', 'role', 'href', 'src', 'srcSet', 'sizes', 'rel',
   'target', 'name', 'htmlFor', 'form', 'method', 'action', 'lang', 'dir', 'loading', 'decoding',
@@ -81,7 +76,6 @@ const NON_TEXT_ATTRS = new Set([
   'view', 'orientation', 'direction', 'axis', 'format', 'locale', 'storageKey', 'event',
 ]);
 
-/** Object-literal properties whose value is text a person reads or hears. */
 const TEXT_PROPS = new Set([
   'label', 'title', 'placeholder', 'alt', 'ariaLabel', 'aria-label', 'description', 'hint',
   'heading', 'caption', 'tooltip', 'emptyText', 'emptyLabel', 'subtitle', 'shortLabel',
@@ -89,26 +83,23 @@ const TEXT_PROPS = new Set([
   'body', 'help', 'summary', 'legend', 'unit', 'suffix', 'prefix', 'name', 'displayName',
 ]);
 
-/** A catalog key, a CSS value, a font, a colour, a URL or an identifier is not text. */
 function isTextLike(value: string): boolean {
   const s = value.replace(/&[a-z]+;|&#\d+;/g, ' ').trim();
   if (!/[A-Za-z]/.test(s)) return false;
-  if (/^[a-z][\w-]*(\.[\w-]+)+$/.test(s)) return false; // catalog key: browser.chip.type
+  if (/^[a-z][\w-]*(\.[\w-]+)+$/.test(s)) return false;
   if (/^(https?:|mailto:|\/|#|\.\/|data:)/.test(s)) return false;
   if (/^(rgba?|hsla?|var|calc|url|linear-gradient|radial-gradient)\(/.test(s)) return false;
-  if (/\b\d+(\.\d+)?(px|rem|em|vh|vw|%)\b/.test(s) && !/\s[a-z]{4,}\s[a-z]{4,}/.test(s)) return false; // fonts, sizes
-  if (/^[a-z][a-z0-9]*([-_:][a-z0-9]+)+$/.test(s)) return false; // kebab or snake identifier
-  if (/^[a-z]+[A-Z]\w*$/.test(s)) return false; // camelCase identifier
-  if (/^(bold|italic|normal|\d{3})\s/.test(s)) return false; // canvas font
+  if (/\b\d+(\.\d+)?(px|rem|em|vh|vw|%)\b/.test(s) && !/\s[a-z]{4,}\s[a-z]{4,}/.test(s)) return false;
+  if (/^[a-z][a-z0-9]*([-_:][a-z0-9]+)+$/.test(s)) return false;
+  if (/^[a-z]+[A-Z]\w*$/.test(s)) return false;
+  if (/^(bold|italic|normal|\d{3})\s/.test(s)) return false;
   return true;
 }
 
-/** A word-like value in an unknown attribute: capitalized prose, or words with spaces. */
 function readsAsWords(value: string): boolean {
   const s = value.trim();
   if (!isTextLike(s)) return false;
   if (/^[A-Z][a-z]+(\s|$)/.test(s)) return true;
-  // Several lowercase words with no Tailwind-like tokens.
   return /^[a-z]+(\s[a-z]+){2,}[.!?]?$/.test(s) && !/(^|\s)(flex|grid|block|inline|hidden|absolute|relative|w|h|p|m)(\s|$)/.test(s);
 }
 
@@ -138,12 +129,6 @@ function walkFiles(path: string, out: string[]): void {
   out.push(path);
 }
 
-/**
- * The string literals an expression can evaluate to as text: through
- * parentheses, conditionals, logical operators and concatenation, and the
- * fixed parts of a template literal. Function call arguments are skipped:
- * `t('key')` passes a key, not text.
- */
 function renderedStrings(node: ts.Expression, out: { text: string; node: ts.Node }[]): void {
   if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isNonNullExpression(node)) {
     renderedStrings(node.expression, out);
@@ -166,7 +151,6 @@ function renderedStrings(node: ts.Expression, out: { text: string; node: ts.Node
   }
 }
 
-/** A template literal's fixed text, without the `{…}` holes. */
 const fixedText = (text: string) => text.replace(/\{…\}/g, ' ');
 
 function attrName(attr: ts.JsxAttribute): string {
@@ -183,8 +167,7 @@ function scanFile(path: string): Finding[] {
   };
 
   const visit = (node: ts.Node): void => {
-    // Markup that says why it bypasses the catalog (`data-i18n-exempt`, as in
-    // e2e/dev/unextracted.spec.ts) is skipped with everything inside it.
+
     const opening = ts.isJsxElement(node) ? node.openingElement : ts.isJsxSelfClosingElement(node) ? node : null;
     if (opening?.attributes.properties.some((a) => ts.isJsxAttribute(a) && a.name.getText(sf) === 'data-i18n-exempt')) return;
     if (ts.isJsxText(node)) {
@@ -197,9 +180,7 @@ function scanFile(path: string): Finding[] {
     } else if (ts.isJsxAttribute(node) && node.initializer) {
       const name = attrName(node);
       const isText = TEXT_ATTRS.has(name);
-      if (!isText && (NON_TEXT_ATTRS.has(name) || name.startsWith('data-') || /^on[A-Z]/.test(name))) {
-        // Markup, not text.
-      } else {
+      if (isText || !(NON_TEXT_ATTRS.has(name) || name.startsWith('data-') || /^on[A-Z]/.test(name))) {
         const hits: { text: string; node: ts.Node }[] = [];
         if (ts.isStringLiteral(node.initializer)) hits.push({ text: node.initializer.text, node: node.initializer });
         else if (ts.isJsxExpression(node.initializer) && node.initializer.expression) renderedStrings(node.initializer.expression, hits);
@@ -215,7 +196,6 @@ function scanFile(path: string): Finding[] {
         renderedStrings(node.initializer, hits);
         for (const hit of hits) {
           const text = fixedText(hit.text);
-          // `name: 'pikachu'` is an id; text starts with a capital or holds a space.
           if (isTextLike(text) && (name !== 'name' || /^[A-Z]|\s/.test(text))) add(hit.node, 'prop', name, hit.text);
         }
       }

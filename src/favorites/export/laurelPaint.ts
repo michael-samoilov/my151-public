@@ -1,4 +1,3 @@
-/** HGSS Shiny Leaves follow the upward tangent of an external circular branch. */
 export const FAVORITE_ORNAMENTS = {
   leaf: '/sprites/export/shiny-leaf.png',
   crown: '/sprites/export/leaf-crown.png',
@@ -15,8 +14,6 @@ function rotatedLeaf(source: ImageData, angle: number): HTMLCanvasElement {
   canvas.width = canvas.height = dimension;
   const ctx = canvas.getContext('2d')!;
   const target = ctx.createImageData(dimension, dimension);
-  // Inverse nearest-neighbor sampling keeps source colors and binary alpha.
-  // The source is mirrored for the left branch before its stem is rotated.
   for (let y = 0; y < dimension; y++) for (let x = 0; x < dimension; x++) {
     const dx = x + 0.5 - dimension / 2, dy = y + 0.5 - dimension / 2;
     const sx = Math.floor((cos * dx + sin * dy) / 2 + source.width / 2);
@@ -29,7 +26,6 @@ function rotatedLeaf(source: ImageData, angle: number): HTMLCanvasElement {
   return canvas;
 }
 
-/** Paint only the current approved ten-leaf branches; no alternative layouts. */
 export function drawFavoriteLaurels(ctx: CanvasRenderingContext2D, leaf: HTMLImageElement): void {
   const L = FAVORITE_ORNAMENTS;
   const radius = (L.halfHeight ** 2 + L.depth ** 2) / (2 * L.depth);
@@ -61,7 +57,6 @@ export function drawFavoriteLaurels(ctx: CanvasRenderingContext2D, leaf: HTMLIma
     const cx = leftCenter - radius * Math.cos(phi), cy = L.centerY + radius * Math.sin(phi);
     const x = Math.round(cx - sprite.width / 2), y = Math.round(cy - sprite.height / 2);
     ctx.drawImage(sprite, x, y);
-    // An integer horizontal reflection preserves the audited rotated buffer.
     ctx.save();
     ctx.translate(2 * L.mirrorAxisX - x, y);
     ctx.scale(-1, 1);

@@ -24,7 +24,6 @@ describe('sessionTarget', () => {
   });
 
   it('joins a timestamp that sits inside a session interval', () => {
-    // Session 0: [50, 100], session 1: [190, 200]
     expect(sessionTarget([100, 200], [50, 10], 90, 30)).toEqual({ kind: 'join', index: 0 });
     expect(sessionTarget([100, 200], [50, 10], 195, 30)).toEqual({ kind: 'join', index: 1 });
   });

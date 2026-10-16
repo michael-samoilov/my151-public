@@ -23,11 +23,6 @@ function FourChanMark({ className }: { className?: string }) {
   );
 }
 
-/**
- * `label` is the English the report sends, so the answers read the same in
- * every language. `key` is the shown label; a brand name has none and shows
- * as is.
- */
 const HEARD: {
   id: string;
   label: string;

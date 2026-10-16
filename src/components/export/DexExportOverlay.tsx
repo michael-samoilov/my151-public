@@ -44,7 +44,6 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   const [tilt] = useState<HoverTiltRecipe>(() => cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE));
   const [phase, setPhase] = useState<ExportPreviewPhase>('settings');
   const [exportBusy, setExportBusy] = useState(false);
-  // A failed save says so in the pane; the next try clears it.
   const [exportFailed, setExportFailed] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
   const mounted = useRef(true);

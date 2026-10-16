@@ -8,8 +8,6 @@ type Preference = NonNullable<FavoritePicks['preference']>;
 const NOW = Date.UTC(2026, 9, 11, 12);
 const PLATFORM = { country: 'GB', region: 'ENG', device: 'Mobile', os: 'iOS', browser: 'Safari', tz: 'Europe/London', lang: 'en-GB', locale: 'en' };
 
-// Failure cases: missing model, no comparison evidence, a failed fit, misleading
-// cross-group comparisons, raw-count order, a lingering selector, and overflow.
 const preference: Preference = {
   entries: [
     { id: 7, score: 2, picks: 2, charts: 1, component: 0, evidencePicks: 2 },
@@ -38,7 +36,6 @@ async function openPicks(page: Page, model: Preference | null = preference, expe
   };
   await page.route('**/api/submissions?**', (route) => {
     const dashboard = buildDashboard(source, { range: 'all' }, NOW);
-    // Keep the dashboard and raw counts real; control only the UI's model response.
     dashboard.favoritePicks.preference = model ?? undefined;
     return route.fulfill({ json: dashboard });
   });
@@ -70,7 +67,6 @@ test.describe('Picker preference strength @viewport', () => {
     await expect(page.getByTestId('favorites-cell-fire-1')).toHaveAttribute('aria-label', /Charizard$/);
     await page.getByTestId('favorites-cell-fire-1').click();
     await expect(page.getByTestId('admin-pick-summary')).toHaveText('4 of 4 charts');
-    // A phone sheet covers the page controls until it closes.
     if (page.viewportSize()!.width < 1024) await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Preference strength', exact: true }).click();
     await expect(page.getByTestId('admin-pick-summary')).toHaveCount(0);

@@ -4,19 +4,6 @@ import { en } from '../../../src/i18n/catalogs/en';
 import { tierOf } from '../../../src/i18n/tiers';
 import type { MessageKey } from '../../../src/i18n/types';
 
-/**
- * Guards the corpus that gets sent for translation.
- *
- * The failure this exists for is quiet and expensive: a key with no context is
- * translated from its English alone, arrives plausible, and is wrong — `Clear`
- * as an adjective, `AND` as a conjunction. Nobody notices until a native
- * speaker does, in nine languages at once.
- *
- * Reads the committed `docs/i18n/source.json`, so it also catches the file
- * being stale: add a key without re-running `npm run i18n:extract` and this
- * fails rather than the key being silently left untranslated.
- */
-
 interface Entry {
   key: string;
   source: string;

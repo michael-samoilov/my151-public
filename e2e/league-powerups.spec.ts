@@ -1,14 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { blankLeague } from './support/leagueSeed';
 
-/**
- * Mega Evolution and Gigantamax on the champion and endgame boss rows.
- *
- * The rules are small but easy to get subtly wrong, so each one is driven:
- * where the buttons appear, that one button carries a Pokémon with two
- * Megas, and that a card holds one powerup at a time.
- */
-
 const openCard = async (page: Page, slot: number) => {
   await blankLeague(page);
   await page.goto('/custom-gym-leader');
@@ -33,7 +25,6 @@ const seat = async (page: Page, cell: string, query: string) => {
   await page.waitForTimeout(500);
 };
 
-/** The alt text of a cell's sprite — the form's name once one is on. */
 const drawn = (page: Page, row: number, seatNo: number) =>
   page.evaluate(
     ([r, s]) =>
@@ -94,9 +85,6 @@ test.describe('powerups', () => {
   });
 
   test('a press wide of the disc still toggles, and no two areas meet', { tag: '@viewport' }, async ({ page }) => {
-    // The disc is 1rem so neighbouring seats' buttons cannot touch. That
-    // leaves a 1rem target beside a tap that opens the line picker, so the
-    // press area is larger than the paint — and no larger than the room.
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
@@ -131,8 +119,6 @@ test.describe('powerups', () => {
     expect(geometry.growth, 'the press box is bigger than the disc').toBeGreaterThan(1.7);
     expect(geometry.tightest, 'no two press boxes meet').toBeGreaterThan(0);
 
-    // The mis-tap this prevents: a press above the disc used to land on the
-    // cell, which offers to replace the whole evolution line.
     const spot = await page.evaluate(() => {
       const cell = document.querySelector('[data-testid="card-cell-10-1"]')!;
       const button = cell.parentElement!.querySelector('[data-powerup="dynamax"]')!;
@@ -142,8 +128,6 @@ test.describe('powerups', () => {
     });
     expect(spot.above, 'the probe is clear of the disc').toBeGreaterThan(3);
 
-    // Counted rather than asserted at zero: the desktop pane keeps a grid on
-    // screen between picks, so "the picker opened" is a change in the grid.
     const before = await drawn(page, 10, 1);
     const tilesBefore = await page.locator('[data-testid="verify-evo-card"]').count();
     await page.mouse.click(spot.x, spot.y);
@@ -160,9 +144,7 @@ test.describe('powerups', () => {
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
 
-    // Row 1 is a gym row: no powerups anywhere on it.
     expect(await buttons(page, 1, 1)).toEqual([]);
-    // Charizard has Megas and a Gigantamax; Lapras only a Gigantamax.
     expect(await buttons(page, 10, 1)).toEqual(['mega:false', 'dynamax:false']);
     expect(await buttons(page, 10, 2)).toEqual(['dynamax:false']);
     expect(await buttons(page, 11, 1)).toEqual(['mega:false', 'dynamax:false']);
@@ -177,9 +159,6 @@ test.describe('powerups', () => {
     expect(await drawn(page, 10, 1)).toBe('Mega Charizard X');
     await press(page, 10, 1, 'mega');
     expect(await drawn(page, 10, 1)).toBe('Mega Charizard Y');
-    // The first press filled the boss row too, and the second carries that
-    // fill with it: a person who wanted Charizard Y on the team presses
-    // the same button again, and both rows follow.
     expect(await drawn(page, 11, 1), 'the boss row followed to Y').toBe('Mega Charizard Y');
     await press(page, 10, 1, 'mega');
     expect(await drawn(page, 10, 1), 'the cycle returns to base').toBe('charizard');
@@ -193,12 +172,10 @@ test.describe('powerups', () => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
 
-    await press(page, 10, 1, 'mega'); // X on the champion and the boss
-    await press(page, 11, 1, 'mega'); // the boss alone to Y
+    await press(page, 10, 1, 'mega');
+    await press(page, 11, 1, 'mega');
     expect(await drawn(page, 11, 1)).toBe('Mega Charizard Y');
     expect(await drawn(page, 10, 1), 'the champion stays on X').toBe('Mega Charizard X');
-    // The boss no longer shows what the champion does, so the champion's
-    // next press carries nothing.
     await press(page, 10, 1, 'dynamax');
     expect(await drawn(page, 10, 1)).toBe('Gigantamax Charizard');
     expect(await drawn(page, 11, 1), 'the boss keeps what it was given').toBe('Mega Charizard Y');
@@ -209,9 +186,6 @@ test.describe('powerups', () => {
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
 
-    // With a Mega already on seat 1, the first press on seat 2 used to set
-    // one row, which read as the second powerup working differently from
-    // the first. Filling down is the seat's, not the card's.
     await press(page, 10, 1, 'mega');
     await press(page, 10, 2, 'dynamax');
     expect(await drawn(page, 10, 2)).toBe('Gigantamax Lapras');
@@ -224,19 +198,11 @@ test.describe('powerups', () => {
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
 
-    // A leader's Elite Four, champion and endgame teams are the same six
-    // Pokémon at different strengths, so one press means the rows after it
-    // too. Only the rows after it: the three run weakest to strongest, and a
-    // Mega named on the champion says nothing about the Elite Four team the
-    // player already went through.
     await press(page, 10, 1, 'mega');
     expect(await drawn(page, 10, 1)).toBe('Mega Charizard X');
     expect(await drawn(page, 9, 1), 'the elite four row is left alone').toBe('charizard');
     expect(await drawn(page, 11, 1), 'the endgame team got it too').toBe('Mega Charizard X');
 
-    // A second seat *adds* rather than moving the first one's, so a whole
-    // team can be powered up. On the last row there is nothing below to
-    // fill.
     await press(page, 11, 2, 'dynamax');
     expect(await drawn(page, 11, 2)).toBe('Gigantamax Lapras');
     expect(await drawn(page, 11, 1), 'the boss row kept seat 1 as well').toBe('Mega Charizard X');
@@ -271,13 +237,9 @@ test.describe('powerups', () => {
     await press(page, 10, 1, 'mega');
     expect(await buttons(page, 10, 1)).toEqual(['mega:true', 'dynamax:false']);
 
-    // The other powerup on the same Pokémon replaces it: they are mutually
-    // exclusive on one Pokémon.
     await press(page, 10, 1, 'dynamax');
     expect(await buttons(page, 10, 1)).toEqual(['mega:false', 'dynamax:true']);
 
-    // Another seat adds its own. Both stay: a team where every Pokémon is
-    // powered up is a card a person can build.
     await press(page, 10, 2, 'dynamax');
     expect(await buttons(page, 10, 1), 'seat 1 keeps its own').toEqual(['mega:false', 'dynamax:true']);
     expect(await buttons(page, 10, 2)).toEqual(['dynamax:true']);
@@ -286,10 +248,6 @@ test.describe('powerups', () => {
   });
 
   test('Kyogre and Groudon wear their orbs on the Mega button', async ({ page }, testInfo) => {
-    // A Primal Reversion rides the Mega button, but the games mark it with
-    // the orb that triggers it: the Blue Orb for Kyogre, the Red Orb for
-    // Groudon. Every other Mega keeps the Mega symbol. The orbs are pixel
-    // art, so they draw as the team sprites beside them do.
     await page.addInitScript(() => {
       const empty = {
         type: null, theme: '', lines: [], signatureSeat: null, signatureId: null,

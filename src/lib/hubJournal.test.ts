@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { HAS_DEX, HAS_LEAGUE, type JournalEntry } from '../../api/_events';
 import { hubViews, journalHealth } from './hubJournal';
 
-const D1 = Date.UTC(2026, 8, 8, 10, 0, 0); // 2026-09-08
-const D2 = Date.UTC(2026, 8, 9, 10, 0, 0); // 2026-09-09
+const D1 = Date.UTC(2026, 8, 8, 10, 0, 0);
+const D2 = Date.UTC(2026, 8, 9, 10, 0, 0);
 
 const ev = (cid: string, event: JournalEntry['ev'], t: number): JournalEntry => ({
   t,
@@ -30,8 +30,6 @@ describe('hubViews', () => {
     expect(views.days.map((d) => d.shown)).toEqual([1, 1]);
   });
 
-  // The trap this guards: totals as a sum of days double-count anyone who came
-  // back, so a click share can read above 100%.
   it('counts a returning browser once in the totals', () => {
     const views = hubViews([ev('a', 'hub-shown', D1), ev('a', 'hub-shown', D2)]);
     expect(views.days.map((d) => d.shown)).toEqual([1, 1]);

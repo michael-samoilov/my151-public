@@ -2,15 +2,6 @@ import { openAdmin } from './admin-ready';
 import { expect, test, type Locator } from '@playwright/test';
 import { buildDashboard } from '../api/_dashboard';
 
-/**
- * Admin Flows Sankey, driven against `/?admin&demo` so it needs no token.
- *
- * Locks the three promises of this slice: unknown referrers stay on the
- * referrer chart, the dex incomplete peel is five size tiers in one column,
- * and the gym leader maker has its own usage funnel. The chart is an
- * echarts Sankey at every width; on phone and narrow viewports it must not
- * need a sideways pan.
- */
 test.describe('admin flows', () => {
   test.beforeEach(async ({ page }) => {
     await openAdmin(page, '/?admin&demo');
@@ -140,7 +131,6 @@ test.describe('admin flows', () => {
         if (current && typeof current.getModel === 'function') instance = current;
       }
       if (!instance) throw new Error('Rendered export chart missing');
-      // Measure whole label blocks so wrapped words still count as one name.
       return instance.getModel().getSeriesByIndex(0).getGraph().nodes.filter((n) => /^(League export|Gym export|Both exported)$/.test(n.id)).map((n) => {
         const g = n.getGraphicEl().getTextContent();
         const r = g.getBoundingRect().clone(), matrix = g.getComputedTransform();

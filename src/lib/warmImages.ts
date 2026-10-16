@@ -12,7 +12,6 @@ export function warmImages(urls: readonly string[]): HTMLImageElement[] {
     const img = new Image();
     img.src = url;
     void img.decode().catch(() => {
-      // The visible cell keeps its existing broken-image behavior on failure.
     });
     return img;
   });

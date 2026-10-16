@@ -12,12 +12,10 @@ import {
 } from './catalog';
 import { debutRank } from './debut';
 
-/** The selector a list is sorted for. Some keys apply to one cell only. */
 type SortCell = { type: TypeAxisId; gen: GenAxisId };
 
 type Compare = (a: PickerMon, b: PickerMon, cell: SortCell) => number;
 
-/** Native families precede arrivals from older generations within each section. */
 export function regionalPickerTier(mon: PickerMon): number {
   const legendary = isLegendaryEligible(mon);
   const owner = getPickerMon(mon.ownerId);
@@ -27,42 +25,24 @@ export function regionalPickerTier(mon: PickerMon): number {
   return Number(olderFamily);
 }
 
-/**
- * Battle forms outside the Gimmick candidate set: forms that exist only in
- * battle through a held item or Dynamax.
- */
 const OTHER_BATTLE_FORM_IDS = new Set([
-  10190, // Eternamax Eternatus
+  10190,
 ]);
 
-/**
- * Mega Evolution, Primal Reversion, Gigantamax, Terastal and Stellar
- * Terapagos, Ultra Necrozma, and Eternamax. Forms that an
- * ability changes during battle, such as Aegislash Blade, are not included.
- */
 export function isBattleForm(mon: PickerMon): boolean {
   return isGimmickForm(mon) || OTHER_BATTLE_FORM_IDS.has(mon.id);
 }
 
-/**
- * The entry whose debut game a form sorts by. A form in its species'
- * generation row sits with the species, even when the form came in a later
- * game of another region: Hoopa Unbound (Omega Ruby and Alpha Sapphire)
- * sorts with Hoopa (X and Y), not after Volcanion. Regional forms and battle
- * forms keep their own debut, which their own sort layers expect.
- */
 function debutAnchor(mon: PickerMon): PickerMon {
   if (mon.ownerId === mon.id || isBattleForm(mon) || isRegionalFamily(mon)) return mon;
   const owner = getPickerMon(mon.ownerId);
   return owner != null && owner.generation === mon.generation ? owner : mon;
 }
 
-/** The debut rank a selector sorts by, from `debutAnchor`. */
 export function debutSortRank(mon: PickerMon): number {
   return debutRank(debutAnchor(mon));
 }
 
-/** Entries that fail `test` first. */
 function lastIf(test: (mon: PickerMon) => boolean) {
   return (a: PickerMon, b: PickerMon) => Number(test(a)) - Number(test(b));
 }
@@ -82,7 +62,6 @@ export const SORT_KEYS = [
     label: 'Debut game',
     description: 'Earlier games first. Games of one generation and region count as one: Black 2 and White 2 sort with Black and White, but Legends: Arceus sorts after Sword and Shield. A form sorts with its species in the same generation, except regional and battle forms.',
     compare: (a, b) => debutSortRank(a) - debutSortRank(b)
-      // Within one species, forms still follow their own debut.
       || (a.ownerId === b.ownerId ? debutRank(a) - debutRank(b) : 0),
   },
   {
@@ -114,14 +93,12 @@ export const SORT_KEYS = [
 export type SortKeyId = (typeof SORT_KEYS)[number]['id'];
 type SortKey = (typeof SORT_KEYS)[number];
 
-/** The final tie-break. It always applies, after every enabled key. */
 export const DEX_KEY = {
   id: 'dex',
   label: 'Dex order',
   description: 'Evolution line, stage, then species number. Always the final tie-break.',
 } as const;
 
-/** Enabled keys, first to last. `dex` is implied at the end. */
 export type SortOrder = readonly SortKeyId[];
 
 const KEY_BY_ID = new Map<string, SortKey>(SORT_KEYS.map((key) => [key.id, key]));
@@ -134,7 +111,6 @@ export const DEFAULT_SORT_ORDER: SortOrder = ['unownLast', 'debut', 'formKind', 
 
 export const SORT_PRESETS: readonly { id: string; label: string; order: SortOrder }[] = [
   { id: 'default', label: 'Default', order: DEFAULT_SORT_ORDER },
-  // The order before selectors sorted by debut game (commit 2f71f079).
   { id: 'before-debut', label: 'Before debut order', order: ['unownLast', 'hisuiStartersLast', 'tier'] },
   { id: 'legendaries-last', label: 'Legendaries last', order: ['unownLast', 'legendaryLast', 'debut', 'formKind', 'tier'] },
   { id: 'regional-first', label: 'Regional first', order: ['unownLast', 'formKind', 'debut', 'tier'] },
@@ -142,15 +118,10 @@ export const SORT_PRESETS: readonly { id: string; label: string; order: SortOrde
 
 export function sortComparator(order: SortOrder, cell: SortCell): (a: PickerMon, b: PickerMon) => number {
   const compares: Compare[] = order.map((id) => sortKey(id).compare);
-  // Outside the Gimmick row and column, a species with a listed form order
-  // sorts as one block, in that order, so each Terastal Ogerpon follows its
-  // mask. In a Gimmick cell its Terastal forms sort as battle forms.
   const listedBlocks = cell.type !== 'gimmick' && cell.gen !== 'gimmick';
   const inListedBlock = (mon: PickerMon) => listedBlocks && hasListedFormOrder(mon.ownerId);
   return (a, b) => {
     if (a.ownerId === b.ownerId && inListedBlock(a)) return comparePickerOrder(a, b);
-    // Non-gimmick battle forms belong to their species group. Classification
-    // still describes their battle behavior; it does not define family position.
     const anchor = (mon: PickerMon) => OTHER_BATTLE_FORM_IDS.has(mon.id) || inListedBlock(mon)
       ? getPickerMon(mon.ownerId) ?? mon : mon;
     const sameSpecies = a.ownerId === b.ownerId;
@@ -164,15 +135,10 @@ export function sortComparator(order: SortOrder, cell: SortCell): (a: PickerMon,
   };
 }
 
-/** The order as a comma list, `dex` included, for a URL or a message. */
 export function formatSortOrder(order: SortOrder): string {
   return [...order, DEX_KEY.id].join(',');
 }
 
-/**
- * Reads a comma list. Unknown and repeated IDs are dropped, and `dex` is
- * always last. Returns null when the list names no key at all.
- */
 export function parseSortOrder(text: string): SortOrder | null {
   const ids = [...new Set(text.split(',').map((part) => part.trim()))];
   if (!ids.some((id) => id === DEX_KEY.id || KEY_BY_ID.has(id))) return null;

@@ -17,8 +17,6 @@ import { blankLeague, seededLeague } from './support/leagueSeed';
  * press.
  */
 
-// The card fills the viewport by design — it is scaled to fit — so a pane with
-// something to scroll has to be asked for.
 test.use({ viewport: { width: 393, height: 560 }, hasTouch: true, isMobile: true });
 
 const openCard = async (page: Page) => {
@@ -30,7 +28,6 @@ const openCard = async (page: Page) => {
   await page.waitForTimeout(600);
 };
 
-/** The scrollable ancestor a cell actually lives in, and where it sits. */
 const paneTop = (page: Page) =>
   page.evaluate(() => {
     const cell = document.querySelector('[data-testid="card-cell-4-3"]')!;
@@ -64,9 +61,6 @@ test.describe('a card cell owns the touch it starts', () => {
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(600);
-    // An empty cell opens a picker on a tap and offers no drag at all, so
-    // taking the page's scroll from it buys nothing and costs the reader a
-    // dead patch the size of the grid.
     const actions = await page.evaluate(() =>
       [...document.querySelectorAll('[data-testid^="card-cell-"]')]
         .filter((el) => !el.querySelector('img'))
@@ -80,7 +74,6 @@ test.describe('a card cell owns the touch it starts', () => {
   test('does not scroll the card when a line is pressed and held', async ({ page }) => {
     await openCard(page);
     const before = await paneTop(page);
-    // Nothing to prove on a card that cannot scroll at all.
     test.skip(!before || before.max < 8, 'the card fits its pane at this size');
 
     await page.evaluate(() => {
@@ -117,17 +110,7 @@ test.describe('a card cell owns the touch it starts', () => {
   });
 });
 
-/**
- * The card's two gestures begin identically, and part company on movement.
- *
- * A press that stays inside the cell it pressed picks that column up, ready
- * to reorder. One that sets off first is aiming at an evolution boundary, and
- * lifting its column would say the wrong thing about what the finger is
- * doing — the column read as picked up the instant the hold was up, on every
- * boundary drag. The line between them is the cell's own radius.
- */
 test.describe('a press decides which gesture it is', () => {
-  /** Press a cell, drift by `drift` px during the hold, and report the lift. */
   const press = async (page: Page, cell: string, drift: number) => {
     const box = (await page.locator(cell).boundingBox())!;
     const x = box.x + box.width / 2;
@@ -145,7 +128,6 @@ test.describe('a press decides which gesture it is', () => {
       await touch('touchMove', y + (drift * i) / 5);
       await page.waitForTimeout(30);
     }
-    // Past the sensor's own hold, so the drag has begun either way.
     await page.waitForTimeout(420);
     const lifted = await page.locator('[data-seat-open]').count();
     await touch('touchEnd', y + drift);
@@ -161,23 +143,12 @@ test.describe('a press decides which gesture it is', () => {
 
   test('a press that leaves its cell does not', async ({ page }) => {
     await openCard(page);
-    // Twice the cell's own radius, which is a boundary drag by any reading.
     const box = (await page.locator('[data-testid="card-cell-4-3"]').boundingBox())!;
     const { lifted } = await press(page, '[data-testid="card-cell-4-3"]', box.height);
     expect(lifted, 'no column is lifted for a boundary drag').toBe(0);
   });
 });
 
-/**
- * What the preview shows is what the drop lands.
- *
- * The powerup and the legendary both name a *seat*, and the store re-aims
- * them when a column moves. The preview did not, so a column carrying a Mega
- * showed its base form the whole way across the card while the column it
- * displaced wore the Mega instead — and the two only swapped to the truth
- * once the finger came up. Measured on the seeded champion card, whose seat 3
- * already wears one.
- */
 test.describe('a carried column keeps what it carries', () => {
   const bossRow = (page: Page) =>
     page.evaluate(() => {
@@ -198,7 +169,6 @@ test.describe('a carried column keeps what it carries', () => {
     await page.waitForTimeout(700);
 
     const atRest = await bossRow(page);
-    // A form id above 10000 is a Mega or a Gigantamax.
     const megaSeat = Number(
       Object.keys(atRest).find((s) => Number((atRest[Number(s)] ?? '0').replace('.png', '')) > 10000),
     );
@@ -220,7 +190,7 @@ test.describe('a carried column keeps what it carries', () => {
       });
 
     await touch('touchStart', x);
-    await page.waitForTimeout(420);          // a still press: the column lifts
+    await page.waitForTimeout(420);
     for (let i = 1; i <= 8; i += 1) {
       await touch('touchMove', x + ((to.x - from.x) * i) / 8);
       await page.waitForTimeout(35);
@@ -236,9 +206,6 @@ test.describe('a carried column keeps what it carries', () => {
   });
 
   test('the legendary on a held column rises with it', async ({ page }) => {
-    // Seeded here rather than through the picker: the test needs one column
-    // that carries a legendary, and clicking through to place one proves
-    // nothing this test is about.
     await page.addInitScript(() => {
       const blank = {
         type: null, theme: '', lines: [], signatureSeat: null,
@@ -277,16 +244,13 @@ test.describe('a carried column keeps what it carries', () => {
       });
 
     await touch('touchStart', x);
-    await page.waitForTimeout(420);          // a still press: the column lifts
+    await page.waitForTimeout(420);
     for (let i = 1; i <= 8; i += 1) {
       await touch('touchMove', x + ((to.x - from.x) * i) / 8);
       await page.waitForTimeout(35);
     }
     await page.waitForTimeout(300);
 
-    // The column previews at seat 5, so seat 5 is the column in hand. Every
-    // cell it carries must sit at the same height: a boss row left on the
-    // card is a hole in the middle of the thing being dragged.
     const column = await page.evaluate(() => {
       const lift = (row: number) => {
         const el = document.querySelector(`[data-testid="card-cell-${row}-5"]`);

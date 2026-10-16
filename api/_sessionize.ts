@@ -1,19 +1,8 @@
 import {parseAttentionRecording,type AttentionRecording} from './_attention.js';
-/**
- * Session targeting for out-of-order beacons.
- *
- * Both tools stamp a session by the time the snapshot was captured, not by
- * when the request reached the server. A delayed keepalive from an earlier
- * sitting must join that sitting (or be ignored as stale), not open a new
- * session after a later, fuller one. That mis-order is what made a league
- * look ~85% filled, then drop to one line, then restore.
- */
-
 type SessionTarget =
   | { kind: 'join'; index: number }
   | { kind: 'insert'; index: number };
 
-/** Pair `sessionMs` with `sessionLog` from the end, the way both stores write them. */
 export function alignSessionMs(logLen: number, ms: readonly number[]): number[] {
   if (logLen <= 0) return [];
   if (ms.length === logLen) return ms.slice();
@@ -21,13 +10,6 @@ export function alignSessionMs(logLen: number, ms: readonly number[]): number[] 
   return [...Array<number>(logLen - ms.length).fill(0), ...ms];
 }
 
-/**
- * Which existing session `now` belongs to, or where to insert a new one.
- *
- * A session is the interval `[end - duration, end]`. `now` joins the closest
- * session whose interval it falls within `gapMs` of. Otherwise it inserts so
- * the log stays sorted by end timestamp.
- */
 export function sessionTarget(
   ends: readonly number[],
   durs: readonly number[],
@@ -50,7 +32,6 @@ export function sessionTarget(
   return { kind: 'insert', index };
 }
 
-/** Reorder a log and its durations together by timestamp. */
 export function sortSessions<T extends { ts: number }>(
   log: readonly T[],
   ms: readonly number[],
@@ -63,11 +44,6 @@ export function sortSessions<T extends { ts: number }>(
 const PRODUCT_START_MS = Date.parse('2024-01-01T00:00:00.000Z');
 const FUTURE_SKEW_MS = 5 * 60_000;
 
-/**
- * The time the client captured this snapshot, or null when the payload omitted
- * one / sent junk. Null means the server must stamp arrival time and treat the
- * beacon as an old client (subset-regression guard applies).
- */
 export function parseCapturedAt(v: unknown, receivedAt: number): number | null {
   if (typeof v !== 'number' || !Number.isFinite(v)) return null;
   const ts = Math.round(v);
@@ -75,11 +51,6 @@ export function parseCapturedAt(v: unknown, receivedAt: number): number | null {
   return ts;
 }
 
-/**
- * A late-arriving old-client beacon: no capturedAt, a new sitting by arrival
- * time, and a board that is a strict subset of what we already stored. That
- * is the delayed-keepalive shape, not a user wiping their league.
- */
 export function isSubsetRegression(incoming: Iterable<number>, latest: Iterable<number>): boolean {
   const have = new Set(latest);
   if (have.size === 0) return false;
@@ -93,7 +64,6 @@ export function isSubsetRegression(incoming: Iterable<number>, latest: Iterable<
 
 export type SessionCounts = { cards: number; seats: number };
 
-/** Neighbour agreement when we only have counts, not member ids. */
 function countAgreement(a: SessionCounts, b: SessionCounts): number {
   const cardMax = Math.max(a.cards, b.cards);
   const seatMax = Math.max(a.seats, b.seats);
@@ -101,18 +71,6 @@ function countAgreement(a: SessionCounts, b: SessionCounts): number {
   return Math.min(Math.min(a.cards, b.cards) / cardMax, Math.min(a.seats, b.seats) / seatMax);
 }
 
-/**
- * Drop a middle session that is a strict subset of both neighbours when those
- * neighbours agree with each other. That is the stored shape of a delayed
- * first-sitting keepalive that arrived between two fuller sittings — the
- * admin's drop-then-restore. A real rebuild that lands on different ids is
- * kept.
- *
- * Older league beacons stored `summary.cards` / `summary.seats` but no member
- * ids. When the middle sitting has no ids, fall back to those counts so a
- * 13→1→14 card dip still drops. Callers that omit `countsOf` keep the
- * id-only behavior.
- */
 export function withoutDropRestorePhantoms<T>(
   items: readonly T[],
   idsOf: (item: T) => readonly number[],
@@ -202,7 +160,6 @@ function recordedSpanMs(spans: readonly RecordingSpan[], from: number, until: nu
   return total;
 }
 
-/** Account before trimming; the retired boundary stops expired beacons from recounting old visits. */
 export function checkpointRecording(
   previous: RecordingFields,
   oldSpans: readonly RecordingSpan[],

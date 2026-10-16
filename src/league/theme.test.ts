@@ -3,19 +3,6 @@ import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 import { contrastWithWhite, deltaE2000 } from './colorMetrics';
 import { cardShades } from './theme';
 
-/**
- * The card's colours have to separate as well as the types do.
- *
- * Two pairs collided in review — fighting read as ground, steel as ice —
- * because a fixed luminance target discards brightness, the one thing those
- * pairs differ by. The floor lives here rather than in an eye: run
- * `scripts/shade-report.ts` to see the whole ramp behind these numbers.
- *
- * ΔE2000 is the metric. 1 is the just-noticeable difference and 5 reads as a
- * clear difference at a glance, so 5 is the floor a *pair of types* has to
- * clear. The old ramp's worst pair was 3.95.
- */
-
 const MIN_SEPARATION = 5;
 
 /** The cell holds white glyphs and white text (WCAG AA large text). */
@@ -51,14 +38,12 @@ describe('card shades', () => {
   });
 
   it('separates the pairs that collided under a fixed target', () => {
-    // Both sat near ΔE 4 when every cell solved for the same luminance.
     expect(between('fighting', 'ground', 'cell')).toBeGreaterThan(10);
     expect(between('ghost', 'fairy', 'cell')).toBeGreaterThan(10);
     expect(between('ice', 'steel', 'cell')).toBeGreaterThan(MIN_SEPARATION);
   });
 
   it('spreads the ramp instead of pinning every type to one lightness', () => {
-    // The bug this file exists for: eighteen cells within 0.04 of each other.
     const contrasts = TYPE_NAMES.map((t) => contrastWithWhite(cardShades(t).cell));
     expect(Math.max(...contrasts) - Math.min(...contrasts)).toBeGreaterThan(2);
   });

@@ -12,7 +12,6 @@ import { pointerPool, prunePointers } from '../model/pointers';
 
 const FAVORITES_STORAGE_KEY = 'favorite-picker';
 
-/** Retire the LGPE-only form IDs without leaving invisible saved picks behind. */
 export function migrateFavoriteFills(saved: Record<string, number>): Record<string, number> {
   const fills = { ...saved };
   const lgpeStarter = fills['starter|7'];

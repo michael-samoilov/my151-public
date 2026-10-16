@@ -1,6 +1,3 @@
-/** Archived browsers are stored as a Redis set of bare client ids.
- *  Aggregates skip them; the user list can still show them. */
-
 export const ARCHIVED_KEY = 'clients:archived';
 
 export function bareCid(cid: string): string {

@@ -1,9 +1,7 @@
-/** True when the user cancelled the share sheet. Not a failed export. */
 export function isShareAbort(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError';
 }
 
-/** Share via the iOS share sheet (one tap saves to Photos), or download the file everywhere else. */
 export async function shareOrDownload(blob: Blob, filename: string) {
   const file = new File([blob], filename, { type: blob.type });
 

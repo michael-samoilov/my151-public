@@ -3,25 +3,15 @@ import { expect, test, type Page } from '@playwright/test';
 import { buildBrowser, buildDashboard, type DashboardSource } from '../api/_dashboard';
 import { scrollToRow } from './admin-virtual-list';
 
-/**
- * The Newest browsers lists over the full browser index: every browser is
- * reachable and filterable by scrolling alone, the page holds only the rows
- * near the viewport, and a browser's full records load when its page opens.
- */
-
 const MIN = 60_000;
 const N = 1200;
 const COUNTRIES = ['US', 'GB', 'DE', 'FR', 'JP', 'BR', 'CA', 'AU'];
-/** Rows the page may hold at once, at any width the projects use. */
 const MAX_ROWS = 70;
 
 const cidAt = (i: number) => `idx-${String(i).padStart(4, '0')}`;
 const leagueOnly = (i: number) => `lg-only-${String(i).padStart(4, '0')}`;
-/** The row's accessible name: an id over 8 characters shows its first 2 and last 4. */
 const label = (cid: string) => `Open user ${cid.length <= 8 ? cid : `${cid.slice(0, 2)}…${cid.slice(-4)}`}`;
 
-/** Newest first. The oldest 5 are the only New Zealand browsers, and the
- *  oldest 100 carry the widest values: big counts, long times, a long zone. */
 function dexRecord(i: number, now: number) {
   const cid = cidAt(i);
   const wide = i >= N - 100;
@@ -46,16 +36,12 @@ function leagueRecord(cid: string, end: number) {
   };
 }
 
-/** Answers the dashboard and `?cid=` from one source, as api/submissions.ts
- *  does, and the archive route by updating the archived set. */
 async function stub(page: Page) {
   const now = Date.now();
   const clients: Record<string, string> = {};
   for (let i = 0; i < N; i++) clients[cidAt(i)] = JSON.stringify(dexRecord(i, now));
-  // A second person on the oldest browser, in another country.
   clients[`${cidAt(N - 1)}::JP`] = JSON.stringify({ ...dexRecord(N - 1, now), cid: `${cidAt(N - 1)}::JP`, country: 'JP', lastTs: now - 5 * MIN });
   const leagueClients: Record<string, string> = {};
-  // Every 4th browser also used the League; every 40th used only the League.
   for (let i = 0; i < N; i += 4) leagueClients[cidAt(i)] = JSON.stringify(leagueRecord(cidAt(i), now - (i + 1) * 30 * MIN));
   for (let i = 0; i < 30; i++) leagueClients[leagueOnly(i)] = JSON.stringify(leagueRecord(leagueOnly(i), now - i * 90 * MIN));
   const archived = new Set<string>();
@@ -117,18 +103,14 @@ test.describe('Newest browsers index @viewport', () => {
     await scrollTo(page, cidAt(600));
     const stuck = await page.evaluate(() => {
       const hdr = document.querySelector<HTMLElement>('[data-preview-header]')!;
-      // The header reads both heights through inheritance.
       const root = getComputedStyle(hdr);
       const px = (name: string) => parseFloat(root.getPropertyValue(name)) || 0;
       const desktop = innerWidth >= 1024;
       const box = hdr.getBoundingClientRect();
-      // Rows scroll under the header, so its middle shows the header, not a row,
-      // and so does the panel padding beside it, where a row's shadow would show.
       const mid = box.top + box.height / 2;
       const hits = [box.left + box.width / 2, box.left - 8, box.right + 8].map((x) => document.elementFromPoint(x, mid));
       const row = [...document.querySelectorAll<HTMLElement>('[data-user-preview]')].find((r) => r.getBoundingClientRect().top >= box.bottom)!;
       const edges = (el: Element | undefined) => (el ? [Math.round(el.getBoundingClientRect().left), Math.round(el.getBoundingClientRect().right)] : null);
-      // The exact class, so md:col-start-1 does not also match md:col-start-10.
       const inCol = (scope: Element, c: string) => [...scope.querySelectorAll('*')].find((e) => e.classList.contains(c));
       const cols = ['md:col-start-1', 'md:col-start-2', 'md:col-start-3', 'md:col-start-4', 'md:col-start-5', 'md:col-start-6'];
       return {
@@ -152,7 +134,6 @@ test('desktop table columns hold still while rows of other widths scroll in', as
   await page.setViewportSize({ width: 1280, height: 800 });
   await stub(page);
   await openTab(page, 'Dex');
-  // Each column's left edge, read from the first row on screen.
   const columns = () =>
     page.evaluate(() => {
       const rows = [...document.querySelectorAll<HTMLElement>('[data-user-preview]')];
@@ -212,7 +193,6 @@ test('archive reaches the oldest browser and its country-split record', async ({
   await expect(page.getByRole('link', { name: label(cidAt(N - 1)), exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Archive filter' }).click();
   await page.getByRole('option', { name: 'Archived' }).click();
-  // The browser's country-split record is archived with it.
   await expect(page.locator('[data-user-preview]')).toHaveCount(2);
   await testInfo.attach('archived.png', { body: await page.locator('[data-user-preview]').first().screenshot(), contentType: 'image/png' });
 });

@@ -1,4 +1,3 @@
-/** Picker cohorts and progress from validated records. No storage reads. */
 import {buildDepthCurve} from './_aggregate.js';
 import {FAVORITE_TOTAL_CELLS, parseFavoriteSnapshot, type FavoriteRecord} from './_favoriteRecord.js';
 import cellData from './_favoriteCells.json' with {type: 'json'};
@@ -32,14 +31,11 @@ export function favoriteSummary(records: FavoriteRecord[]) {
     exporters:records.filter(r=>r.exportsFull+r.exportsSimplified>0).length,
     exportsFull:records.reduce((n,r)=>n+r.exportsFull,0),
     exportsSimplified:records.reduce((n,r)=>n+r.exportsSimplified,0),
-    // Builders only, as in the Dex and League depth charts: a visitor who placed nothing bounced.
     depth:buildDepthCurve(records.filter(r=>r.maxFilled>0).map(r=>r.maxFilled)),
     unique:buildDepthCurve(records.filter(r=>r.maxFilled>0).map(r=>r.latest.uniqueIds.length)),
   };
 }
-/** Most charts first, then the lowest Pokémon id, so equal counts keep one order. */
 const byCharts = (a:[number,number], b:[number,number]) => b[1]-a[1] || a[0]-b[0];
-/** How the Picker charts given fill each cell now. */
 export interface FavoritePicks {
   preference?: FavoritePreference;
   /** Charts with at least one filled cell. */
@@ -49,7 +45,6 @@ export interface FavoritePicks {
   /** The nine Pokémon the most charts hold in any cell, each chart counted once. */
   top: [number,number][];
 }
-/** Counts each record's latest snapshot only. No storage reads. */
 export function favoritePicks(records: FavoriteRecord[]): FavoritePicks {
   const cells = new Map<string,Map<number,number>>();
   const charts = new Map<number,number>();
@@ -113,7 +108,6 @@ interface PreferenceState {
 const preferenceCells = cellData as Record<string, {kind: string; ids?: number[]; sources?: string[]}>;
 
 const preferenceSpecies = speciesData as Record<string, number>;
-/** Saved form IDs remain intact; only the population preference model groups them. */
 export function favoriteSpeciesId(id: number): number {
   const species = preferenceSpecies[id];
   if (species === undefined) throw new Error(`Missing Picker species identity: ${id}. Rebuild scripts/build-favorite-analytics-cells.ts.`);
@@ -177,7 +171,6 @@ export function fitFavoritePreference(input: FavoritePreferencePool[], lambda = 
   if (Date.now() - started >= timeBudgetMs) {reason = 'time budget'; break;}
   residual=state.g.reduce((a,b)=>Math.max(a,Math.abs(b)),0);
   if(residual<=tolerance){converged=true;reason="gradient";break;}
-  // Preconditioned conjugate gradients solve H*direction=-gradient.
   const d=new Float64Array(N),r=Float64Array.from(state.g,x=>-x);
   let z=Float64Array.from(r,(x,i)=>x/state.diag[i]),rz=dot(r,z);
   const p=Float64Array.from(z);
@@ -290,7 +283,6 @@ export function favoritePreference(records: FavoriteRecord[]): FavoritePreferenc
     converged: fitted.converged, gradientResidual: fitted.gradientResidual,
     iterations: fitted.iterations, regularization,
   };
-  // Cache only complete fits, so a timed-out cohort can succeed on its next request.
   if (cacheKey !== null && fitted.converged) {
     preferenceCache.set(cacheKey, result);
     if (preferenceCache.size > 4) preferenceCache.delete(preferenceCache.keys().next().value!);

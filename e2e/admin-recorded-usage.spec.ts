@@ -2,7 +2,6 @@ import { openAdmin } from './admin-ready';
 import {expect, test} from '@playwright/test';
 import {buildDashboard} from '../api/_dashboard';
 
-// @viewport: both charts, the long-tail distribution, and metric controls must fit every admin layout.
 test('recorded usage switches metrics and preserves separate tool samples @viewport', async ({page}, testInfo) => {
   const now = Date.UTC(2026,9,10,0);
   const record = {cid:'recorded-e2e',firstTs:now-3_600_000,firstAt:new Date(now-3_600_000).toISOString(),lastTs:now,
@@ -29,7 +28,6 @@ test('recorded usage switches metrics and preserves separate tool samples @viewp
   await panel.getByText('Details',{exact:true}).click();
   await expect(panel.getByRole('img',{name:/Recorded minutes retention: 4 browsers, 2 at zero, maximum 1,368 minutes\./,exact:true})).toBeVisible();
   const curve=panel.getByRole('img',{name:/Recorded minutes retention/});
-  // Keep the pointer target below the desktop's sticky date-and-tab bar.
   await curve.evaluate(el => el.scrollIntoView({block:'center'}));
   const curveBox=await curve.boundingBox();
   await page.mouse.move(curveBox!.x+41,curveBox!.y+90);

@@ -1,4 +1,3 @@
-/** One equally weighted vote per valid occupied multi-option selector. Pointer votes never enter this API. */
 interface ConditionalEntry { id:number; attributes:Readonly<Record<string,readonly string[]|undefined>> }
 interface ConditionalPick { id:number; pool:readonly number[] }
 interface ConditionalRow { key:string; count:number; expected:number; deviation:number|null }

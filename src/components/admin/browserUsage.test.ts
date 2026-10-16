@@ -1,6 +1,3 @@
-// keeps: the browser total's merge math. E2E drives a few fixed browsers; the
-// gap edge, the log pairing, the unlogged older sessions and the bounds need
-// many timelines, and a wrong merge still renders a plausible chip.
 import { describe, expect, it } from 'vitest';
 import { SESSION_GAP_MS } from '../../../api/_shared';
 import { LEAGUE_SESSION_GAP_MS } from '../../../api/_leagueRecord';
@@ -10,7 +7,6 @@ import { browserTotal, endStampedUsage, spanUsage, type ToolUsage } from '../../
 const MIN = 60_000;
 const T = Date.UTC(2026, 9, 1, 12);
 
-/** A Dex or League record: each log entry stamps its session's end. */
 function ended(spans: [number, number][], extra: { sessions?: number; olderMs?: number[] } = {}) {
   const ms = spans.map(([a, b]) => (b - a) * MIN);
   return endStampedUsage({
@@ -20,7 +16,6 @@ function ended(spans: [number, number][], extra: { sessions?: number; olderMs?: 
   });
 }
 
-/** A Picker record: each log entry stores its start and its end. */
 function picked(spans: [number, number][], sessions = spans.length) {
   return spanUsage({
     sessions,
@@ -59,14 +54,10 @@ describe('browserTotal', () => {
   });
 
   it('reads a Dex or League log stamp as the session end, and a Picker stamp as the start', () => {
-    // Dex 0–40 and Picker 40–50 touch. Read as a start, the Dex stamp would
-    // put Dex at 40–80 and count 40 minutes of overlap once.
     expect(minutes(browserTotal([ended([[0, 40]]), picked([[40, 50]])]))).toEqual({ sessions: 1, minutes: 50 });
   });
 
   it('pairs durations with log entries from the newest end', () => {
-    // A legacy Dex record: three durations, one log entry. The newest
-    // duration (20m) belongs to the logged session; 5m and 10m are older.
     const dex = ended([[100, 120]], { olderMs: [5 * MIN, 10 * MIN] });
     expect(dex.spans).toEqual([{ start: T + 100 * MIN, end: T + 120 * MIN }]);
     expect(minutes(dex)).toEqual({ sessions: 3, minutes: 35 });
@@ -74,7 +65,6 @@ describe('browserTotal', () => {
   });
 
   it('counts older sessions that fell out of the log as visits of their own', () => {
-    // 60 Dex sessions, the newest 50 logged; one Picker visit inside a logged Dex one.
     const spans: [number, number][] = Array.from({ length: 50 }, (_, i) => [i * 100, i * 100 + 10]);
     const dex = ended(spans, { sessions: 60 });
     expect(browserTotal([dex, picked([[2, 8]])]).sessions).toBe(60);
@@ -94,10 +84,8 @@ describe('browserTotal', () => {
   });
 
   it('never reports fewer sessions or less time than the busiest tool', () => {
-    // A Picker visit bridges two Dex sessions that Dex itself split.
     const bridged = browserTotal([ended([[0, 10], [70, 80]]), picked([[35, 50]])]);
     expect(minutes(bridged)).toEqual({ sessions: 2, minutes: 35 });
-    // A record whose own sessions overlap: the union is shorter than its sum.
     const overlapping = { sessions: 2, totalMs: 40 * MIN, spans: [{ start: T, end: T + 20 * MIN }, { start: T + 10 * MIN, end: T + 30 * MIN }] };
     expect(minutes(browserTotal([overlapping]))).toEqual({ sessions: 2, minutes: 40 });
   });
@@ -155,7 +143,6 @@ describe('browserTotal', () => {
       expect(total.sessions).toBeLessThanOrEqual(sum.sessions);
       expect(total.totalMs).toBeGreaterThanOrEqual(max.totalMs);
       expect(total.totalMs).toBeLessThanOrEqual(sum.totalMs);
-      // One tool whose sessions keep the gap apart is its own total.
       if (tools.length === 1) expect(total).toEqual({ sessions: tools[0].sessions, totalMs: tools[0].totalMs });
     }
   });

@@ -93,9 +93,6 @@ function speciesId(id: number): number {
 
 const formOrder = (id: number): number => id === speciesId(id) ? 0 : id === 10085 ? 10079 : id;
 
-// Forms of older species follow the native species in their generation section.
-// Keep their descendants there too, so a new species such as Obstagoon does
-// not pull its regional evolution line back into the native-species order.
 const laterFormLineIds = new Set(pokemon
   .filter(mon => mon.generation > byId.get(speciesId(mon.id))!.generation)
   .map(mon => mon.id));

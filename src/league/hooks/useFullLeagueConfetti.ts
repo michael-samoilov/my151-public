@@ -6,12 +6,6 @@ import { allCardsHaveFullTeams } from '../model/funnelNudges';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 
-/**
- * Fires the completion confetti once, the first time all 14 trainer cards
- * have a full team while the league summary is on screen. On desktop the
- * summary stays beside the open card, so that is at once; on a phone it is
- * when the person goes back to the summary. Mount once from LeagueApp.
- */
 export function useFullLeagueConfetti() {
   const due = useLeagueStore((s) => !s.fullLeagueCelebrated && allCardsHaveFullTeams(s.cards));
   const markCelebrated = useLeagueStore((s) => s.markFullLeagueCelebrated);
@@ -26,8 +20,6 @@ export function useFullLeagueConfetti() {
 
   useEffect(() => {
     if (!due || !summaryOnScreen) return;
-    // The popups' reveal delay: a phone's pan back to the summary has ended,
-    // and on desktop the new line has landed on the card.
     const timer = setTimeout(() => {
       markCelebrated();
       fireCompletionConfetti();

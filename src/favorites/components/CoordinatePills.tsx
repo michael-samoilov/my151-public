@@ -6,15 +6,12 @@ import { axisBackground, coordinateLabel, displayCoordinate } from './coordinate
 import { ROMAN_URIS } from './romanDiscAssets';
 import { coordinateOverlayLayout, originShapeGeometry, originMarkBox, visibleOriginCount, singleOriginMark, drillDownOriginMarks, type OriginContext, type DrillDownOriginContext } from './coordinatePillLayout';
 
-// Keep the shared numeral, outline and font; only remove its disc. A tighter
-// viewBox gives the glyph room inside the generation-colored half.
 const ROMAN_GLYPHS = Object.fromEntries(GEN_NUMBERS.map(gen => [gen,
   `data:image/svg+xml,${encodeURIComponent(decodeURIComponent(ROMAN_URIS[gen].split(',')[1])
     .replace(/<circle\b[^>]*\/>/, '')
     .replace('viewBox="0 0 32 32"', 'viewBox="2 5 28 22"'))}`,
 ])) as Record<GenNumber, string>;
 
-/** Show each immediate origin, omitting coordinates supplied by the selector. */
 export function CoordinatePills({ origins, spritePx, inset, markPx, pointer, current, drilldown, id }: {
   origins: SourceCoordinate[]; spritePx: number; inset: number; markPx: number; pointer: boolean; current?: OriginContext; drilldown?: DrillDownOriginContext; id?: string;
 }) {

@@ -1,5 +1,3 @@
-// keeps: API authorization, anonymous-record tampering, and private response headers are unreachable through E2E API stubs.
-// Local adversarial review. Findings are expected observations, not fixes.
 import {afterAll, beforeEach, describe, expect, it, vi} from 'vitest';
 import {randomUUID} from 'node:crypto';
 import {mkdirSync, writeFileSync, existsSync} from 'node:fs';
@@ -63,7 +61,6 @@ vi.mock('../api/_searchPerformance.js', () => {
   const part = (hourly = false) => ({generatedAt: new Date().toISOString(), providers: Object.fromEntries((hourly ? ['google'] : ['google', 'bing']).map(provider => [provider, {provider, status: 'not_configured', series: [], ranges: {}}]))});
   return {buildDailySearchSnapshot: async () => part(), buildHourlySearchSnapshot: async () => part(true)};
 });
-// These independent side effects do not decide which anonymous client owns a record.
 vi.mock('../api/_exportStats.js', () => ({
   parseNotmeFlag: (v: unknown) => v === true || v === 1 || v === '1',
   parsePokemonIds: () => [], bumpDexPickFreq: async () => {}, recordToolExport: async () => ({fixture: true}),
@@ -159,7 +156,6 @@ describe('Admin read authorization attacks', () => {
     await request('submissions', submissions, {headers: bearer()});
     const replacement = randomUUID(); vi.stubEnv('ADMIN_TOKEN', replacement);
     expect((await request('submissions', submissions, {headers: bearer()})).status).toBe(401);
-    // Test replacements never enter evidence as literal bearer values.
     const replacementHandler: Handler = async (req, res) => {if (await requireAdmin(req, res)) res.status(200).json({ok: true});};
     const replacementHeaders = {authorization: `Bearer ${replacement}`};
     const res = {status: vi.fn().mockReturnThis(), json: vi.fn().mockReturnThis(), setHeader: vi.fn()};

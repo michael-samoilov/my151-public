@@ -1,4 +1,3 @@
-/** Collection facts are independent of the session cutoff. */
 export const MINUTE_ACTIVITY_VERSION = 1;
 export const MINUTE_ACTIVITY_RETENTION_DAYS = 400;
 export const MINUTE_ACTIVITY_MIN_GAP_MS = 60_000;
@@ -35,7 +34,6 @@ export interface MinuteActivityAck {
 export interface StoredMinuteActivityBatch extends MinuteActivityBatch {
   cid: string;
   tool: MinuteActivityTool;
-  /** Optional reception metadata; immutable stored facts need only capture timestamps. */
   receivedAt?: number;
 }
 
@@ -66,7 +64,6 @@ export function parseMinuteActivity(raw: unknown, receivedAt: number): MinuteAct
 export interface ReconstructedBrowserActivity {
   cid: string; totalMs: number; sessions: number; intervals: {start: number; end: number}[];
 }
-/** Minute fragments preserve all idle gaps at cutoffs >= one minute. Run boundaries add no foreground time. */
 export function reconstructMinuteActivity(batches: readonly StoredMinuteActivityBatch[], gapMs: number) {
   if (!Number.isSafeInteger(gapMs) || gapMs < MINUTE_ACTIVITY_MIN_GAP_MS) throw new RangeError('Minimum session gap is one minute');
   const runs = new Map<string, {cid: string; buckets: Map<number, {start: number; end: number}>}>();

@@ -1,33 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/**
- * Every league surface carries the app footer, just below its own fold.
- *
- * The dex builder's panes already do this: the footer goes after the fitted
- * block and is not reserved in the fit, so the block takes the whole viewport
- * and the footer starts exactly where it ends. A reader who never scrolls
- * never sees it; a reader who does finds it immediately.
- *
- * The phone keeps one footer at the end of each sliding pane. Desktop keeps
- * one slim footer under the whole pane row, on purpose since f2676ee5 (merged
- * in 07a820ca), so the cards get the height two per-pane footers used to
- * reserve. The contract below holds for both: whatever scrolls, its footer
- * starts at its fold.
- *
- * Both halves of that matter. A footer *above* the fold means the page did not
- * fill the viewport; a footer far below it means something reserved room it
- * should not have.
- */
-
-/**
- * The lowest thing each visible pane actually paints, relative to its fold.
- *
- * Every descendant, not the fitted block's own box. The block's box can lie:
- * the summary's hint lines sat in a container with a written-down height that
- * left its own top padding out, so the block measured 29px while it painted
- * 37. The fit believed the box, ended the card 8px above its last line, and
- * the phone cropped "Tap a row to open its trainer card" in half.
- */
 async function lowestPainted(page: Page) {
   return page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('[data-lg-viewport]')]
@@ -48,19 +20,9 @@ async function lowestPainted(page: Page) {
   );
 }
 
-/**
- * Each scroller on screen that ends in the app footer, with where the footer
- * starts relative to that scroller's fold.
- *
- * The footer is the scroller's own child that holds the credit line: the
- * footer itself at the end of a phone pane, the bar under the pane row on
- * desktop. `panesCovered` says whether every pane on screen scrolls inside
- * one of these, so a pane that lost its footer cannot pass unnoticed.
- */
 async function footers(page: Page) {
   return page.evaluate(() => {
     const scrollsY = (el: HTMLElement) => /^(auto|scroll)$/.test(getComputedStyle(el).overflowY);
-    // Only what is on screen; the phone shell keeps both panes mounted.
     const credits = [...document.querySelectorAll<HTMLElement>('span')].filter(
       (span) => (span.textContent ?? '').includes('Nintendo / Game Freak') && !span.closest('[inert]'),
     );
@@ -84,7 +46,6 @@ async function footers(page: Page) {
   });
 }
 
-/** The footer contract, the same on every surface. */
 async function expectFooterAtFold(page: Page) {
   const { panesCovered, belowFold } = await footers(page);
   expect(panesCovered, 'every pane on screen scrolls to the app footer').toBe(true);

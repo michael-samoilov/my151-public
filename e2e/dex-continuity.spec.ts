@@ -1,12 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-/**
- * The dex builder moved from "/" to "/pokedex-builder" and "/" became the hub.
- * A person's Pokédex lives in localStorage under one key, per origin, so the
- * move cannot lose it — these tests pin that, byte for byte, and check the
- * launch announcement without changing that saved data.
- */
-
 const STORE_KEY = 'personal-151-pokedex-v3';
 const SEEDED = JSON.stringify({
   state: {
@@ -29,10 +22,8 @@ test.describe('dex continuity across the move', () => {
   test('the hub reads the saved dex and does not rewrite it', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.goto('/');
     await expect(page.locator('[data-card-panel]')).toHaveCount(4);
-    // The dex card offers the way back, with the saved count.
     await expect(page.locator('h2', { hasText: 'Pokédex Maker' }).locator('..')).toContainText('9/151');
     await expect(page.getByTestId('favorites-launch-notice')).toContainText('Favorite Pokémon Picker');
-    // The hub only reads the store. The key is what it was, byte for byte.
     await page.waitForTimeout(500);
     const stored = await page.evaluate((k) => localStorage.getItem(k), STORE_KEY);
     expect(JSON.parse(stored!).state.sections).toEqual(JSON.parse(SEEDED).state.sections);
@@ -47,8 +38,6 @@ test.describe('dex continuity across the move', () => {
     await page.reload();
     await expect(page.locator('[data-card-panel]')).toHaveCount(4);
     await expect(page.getByTestId('favorites-launch-notice')).toHaveCount(0);
-    // Seeing the hub counts as seeing the gym leader card, so the dex
-    // builder's own promo for it will not repeat.
     expect(await page.evaluate(() => localStorage.getItem('p151-league-promo-seen'))).toBe('1');
   });
 

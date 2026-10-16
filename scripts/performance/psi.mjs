@@ -109,7 +109,6 @@ for (const pageName of PAGE_NAMES) {
     console.log(field
       ? `  Field, origin, p75: ${Object.entries(FIELD).filter(([, k]) => field[k]).map(([n, k]) => `${n} ${n === 'CLS' ? (field[k].percentile / 100).toFixed(2) : field[k].percentile} (${field[k].category})`).join(', ')}`
       : '  Field: no Chrome real-user data for this origin yet.');
-    // The findings of the run with the median performance score.
     const byScore = [...lhrs].sort((a, b) => a.categories.performance.score - b.categories.performance.score);
     const lhr = byScore[Math.floor((byScore.length - 1) / 2)];
     const findings = Object.values(lhr.audits)

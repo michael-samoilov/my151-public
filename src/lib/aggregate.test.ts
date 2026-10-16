@@ -133,11 +133,8 @@ describe('retained calendar activity', () => {
   });
 });
 
-// Two hand-built records, one per tool shape, so every assertion below is a
-// number a reader can recompute by hand.
-const T0 = Date.UTC(2026, 8, 1, 12, 0, 0); // Tue 2026-09-01 12:00 UTC
+const T0 = Date.UTC(2026, 8, 1, 12, 0, 0);
 
-/** A dex-shaped record: two sessions, two days apart. */
 const dex = (over: Partial<SessionRecord> = {}): SessionRecord => ({
   cid: 'aaaa-0001',
   firstTs: T0,
@@ -155,7 +152,6 @@ const dex = (over: Partial<SessionRecord> = {}): SessionRecord => ({
   ...over,
 });
 
-/** A league-shaped record: one session, the day after the dex record started. */
 const league = (over: Partial<SessionRecord> = {}): SessionRecord => ({
   cid: 'bbbb-0002',
   firstTs: T0 + DAY_MS,
@@ -243,7 +239,6 @@ describe('retention', () => {
 describe('sessionCurves', () => {
   it('separates the first session from the longest', () => {
     const curves = sessionCurves([dex()]);
-    // First is 60s, longest is 300s: half of each is the same single sample.
     expect(curves.first.stats.p50).toBe(60);
     expect(curves.longest.stats.p50).toBe(300);
     expect(curves.all.n).toBe(2);
@@ -266,16 +261,14 @@ describe('tallies', () => {
 
 describe('heatmaps', () => {
   const total = (m: number[][]) => m.flat().reduce((a, b) => a + b, 0);
-  /** A browser with one session ending at each timestamp. */
   const seen = (cid: string, tz: string | undefined, ...ts: number[]): SessionRecord =>
     dex({ cid, tz, firstTs: ts[0], lastTs: ts[ts.length - 1], sessionLog: ts.map((t) => ({ ts: t })), sessionMs: ts.map(() => 60_000) });
-  // September is EDT, UTC-4.
   const MON_9PM = [Date.UTC(2026, 8, 8, 1, 5), Date.UTC(2026, 8, 8, 1, 50), Date.UTC(2026, 8, 15, 1, 30)];
   const FRI_2PM = Date.UTC(2026, 8, 11, 18, 20);
 
   it('reads Eastern Time with daylight saving: the same UTC hour is noon in July and 11 AM in January', () => {
-    const july = seen('jul', 'Asia/Tokyo', Date.UTC(2026, 6, 15, 16)); // Wed
-    const january = seen('jan', 'Asia/Tokyo', Date.UTC(2026, 0, 14, 16)); // Wed
+    const july = seen('jul', 'Asia/Tokyo', Date.UTC(2026, 6, 15, 16));
+    const january = seen('jan', 'Asia/Tokyo', Date.UTC(2026, 0, 14, 16));
     const { eastern } = heatmaps([july, january]);
     expect(eastern[3][12]).toBe(1);
     expect(eastern[3][11]).toBe(1);
@@ -297,8 +290,8 @@ describe('heatmaps', () => {
   });
 
   it('counts only activity after the range start', () => {
-    const start = Date.UTC(2026, 8, 10); // Wed 8 PM EDT
-    const before = Date.UTC(2026, 8, 6, 14); // Sun 10 AM EDT
+    const start = Date.UTC(2026, 8, 10);
+    const before = Date.UTC(2026, 8, 6, 14);
     const r = seen('rng', 'America/New_York', before, start, FRI_2PM, MON_9PM[2]);
     const { eastern } = heatmaps([r], start);
     expect(eastern[0][10]).toBe(0);
@@ -310,8 +303,7 @@ describe('heatmaps', () => {
   });
 
   it('leaves a browser without a timezone out of local time and keeps it in Eastern Time', () => {
-    const london = seen('ldn', 'Europe/London', Date.UTC(2026, 8, 3, 12)); // Thu 13:00 BST
-    // What submit stores for a browser with no timezone: UTC wall-clock fields.
+    const london = seen('ldn', 'Europe/London', Date.UTC(2026, 8, 3, 12));
     const noTz = { ...seen('none', undefined, Date.UTC(2026, 8, 3, 12), FRI_2PM), localDow: 5, localHour: 18 };
     const { local, eastern } = heatmaps([london, noTz]);
     expect(total(local)).toBe(1);
@@ -325,9 +317,9 @@ describe('heatmaps', () => {
 describe('buildDepthCurve', () => {
   it('reports the share reaching each count', () => {
     const curve = buildDepthCurve([1, 3, 11, 11]);
-    expect(curve.survival[0].s).toBe(1); // everyone reached 0
-    expect(curve.survival[3].s).toBe(0.75); // three of four reached 3
-    expect(curve.survival[11].s).toBe(0.5); // two of four reached 11
+    expect(curve.survival[0].s).toBe(1);
+    expect(curve.survival[3].s).toBe(0.75);
+    expect(curve.survival[11].s).toBe(0.5);
   });
 });
 
@@ -345,8 +337,6 @@ describe('mergeByCid', () => {
     expect(merged[0].lastTs).toBe(T0 + 2 * DAY_MS);
   });
 
-  // The reason merging is not a concat: the league session sits BETWEEN the
-  // two dex sessions, so "first session" is only right in time order.
   it('interleaves the two tools sessions by time', () => {
     const merged = mergeByCid([[dex({ cid: shared })], [league({ cid: shared })]]);
     expect(merged[0].sessionMs).toEqual([60_000, 120_000, 300_000]);
@@ -358,8 +348,6 @@ describe('mergeByCid', () => {
     expect(dailyActive(merged).map((p) => p.dau)).toEqual([1, 1, 1]);
   });
 
-  // A dex record split into cid::COUNTRY is still one browser to the league
-  // store, which never split it.
   it('folds a country-split dex record back onto the bare cid', () => {
     const merged = mergeByCid([
       [dex({ cid: `${shared}::US` })],
@@ -446,12 +434,12 @@ describe('depthByDevice', () => {
       { device: 'Desktop', value: 5 },
       { device: 'Mobile', value: 2 },
       { device: 'Mobile', value: 8 },
-      { device: 'Tablet', value: 1 }, // neither split, but still in "all"
+      { device: 'Tablet', value: 1 },
     ]);
     expect(curves.all.n).toBe(4);
     expect(curves.desktop.n).toBe(1);
     expect(curves.mobile.n).toBe(2);
-    expect(curves.mobile.stats.p50).toBe(8); // quantile rounds up: index floor(0.5*2)=1
+    expect(curves.mobile.stats.p50).toBe(8);
   });
 });
 
@@ -463,7 +451,7 @@ describe('referrerFlow', () => {
     const leagueRecords = [withReferrer('bbbb', 'reddit.com'), withReferrer('cccc', 't.co')];
     const rows = referrerFlow(dexRecords, leagueRecords);
     expect(rows).toEqual([
-      { host: 'reddit.com', total: 2, dex: 2, league: 1 }, // aaaa, bbbb: total is distinct browsers, not dex+league
+      { host: 'reddit.com', total: 2, dex: 2, league: 1 },
       { host: 't.co', total: 1, dex: 0, league: 1 },
     ]);
   });
@@ -494,7 +482,6 @@ describe('referrerFlow', () => {
     const dexRecords = Array.from({ length: 9 }, (_, i) =>
       withReferrer(`cid-${i}`, `host-${i}.com`),
     );
-    // Give host-0 a second browser so it is unambiguously the top host.
     dexRecords.push(withReferrer('cid-extra', 'host-0.com'));
     const rows = referrerFlow(dexRecords, []);
     expect(rows).toHaveLength(8);
@@ -648,7 +635,6 @@ describe('leagueUsageFunnel', () => {
     expect(f.bounced).toBe(4);
   });
 });
-
 
 describe('implied activity trend over the selected range', () => {
   const now = Date.UTC(2026, 9, 10, 12);

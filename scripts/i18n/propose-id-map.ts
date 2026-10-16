@@ -1,20 +1,5 @@
-/**
- * Proposes `scripts/i18n/pokemon-id-map.json` — the explicit link from each id
- * in src/data/pokemon.json to a PokeAPI species and form.
- *
- * This exists because the obvious join is wrong. 13 of the 64 alt-form entries
- * carry an id that belongs to a *different* creature upstream: app 10254 is
- * Alcremie Berry Sweet, but PokeAPI's pokemon.csv 10254 is Oinkologne Female.
- * Joining on id would silently label six Alcremie forms as Gen 9 Pokémon in
- * eight languages, and nothing in English would ever reveal it.
- *
- * So the mapping is data, not an algorithm: proposed here by slug matching,
- * then checked in and gated by verify-names.ts. The proposal is deliberately
- * conservative — anything it cannot match with confidence is emitted as
- * `needsReview` rather than guessed at.
- *
- * Run: npm run i18n:propose-map
- */
+
+
 import { readFileSync, writeFileSync } from 'node:fs';
 import { ensureCsvs, readCsv } from './pokeapi';
 
@@ -25,7 +10,6 @@ interface AppPokemon { id: number; name: string }
 
 export interface IdMapEntry {
   appId: number;
-  /** Recorded so drift in either direction is detectable. */
   appName: string;
   speciesId: number;
   formId: number;
@@ -36,18 +20,6 @@ export interface IdMapEntry {
   needsReview?: true;
 }
 
-/**
- * Forms the app names in a way no upstream slug matches, resolved by hand.
- *
- * The six Alcremie entries are sweet variants: the app names them by sweet
- * ("alcremie-berry") while PokeAPI enumerates cream × sweet
- * ("alcremie-vanilla-cream-berry-sweet"), 63 rows for one species. Vanilla
- * cream is the one the app's sprite shows.
- *
- * Urshifu is a different trap — the app's id 10227 is PokeAPI's *Gigantamax*
- * Rapid Strike form, but the app means the ordinary one, so the exact-slug
- * rule below picks the right row and this only records why the id lied.
- */
 const OVERRIDES: Record<number, string> = {
   10254: 'alcremie-vanilla-cream-berry-sweet',
   10255: 'alcremie-vanilla-cream-love-sweet',
@@ -57,7 +29,6 @@ const OVERRIDES: Record<number, string> = {
   10259: 'alcremie-vanilla-cream-ribbon-sweet',
 };
 
-/** Slug differences that are naming style, not identity. */
 function normalize(slug: string): string {
   return slug
     .replace(/-breed$/, '')
@@ -120,23 +91,17 @@ async function main(): Promise<void> {
     const collides = upstream !== undefined && upstream.identifier !== p.name;
     const why = collides ? `app id ${p.id} is "${upstreamName}" upstream` : undefined;
 
-    // 1. The app slug names a form outright — every regional form, and every
-    //    base species PokeAPI happens to slug the same way.
     const exact = formByIdentifier.get(p.name);
     if (exact) { push(p, exact, why); continue; }
 
-    // 2. The app slug names a *species*, and PokeAPI slugs its default form
-    //    differently ("oricorio" vs "oricorio-baile"). Same creature.
     const bySpecies = upstream && species.get(Number(upstream.species_id)) === p.name
       ? defaultFormForSpecies.get(Number(upstream.species_id))
       : undefined;
     if (bySpecies) { push(p, bySpecies, why); continue; }
 
-    // 3. Hand-resolved, because no slug rule can bridge the naming.
     const override = OVERRIDES[p.id] ? formByIdentifier.get(OVERRIDES[p.id]) : undefined;
     if (override) { push(p, override, `${why ?? `app id ${p.id}`}; mapped by hand to ${OVERRIDES[p.id]}`); continue; }
 
-    // 4. Last resort: a unique match once naming-style suffixes are stripped.
     const candidates = formByNormalized.get(normalize(p.name)) ?? [];
     if (candidates.length === 1) { push(p, candidates[0], why); continue; }
 
@@ -153,10 +118,7 @@ async function main(): Promise<void> {
   }
 
   entries.sort((a, b) => a.appId - b.appId);
-  // One line per entry rather than indented. 1,089 entries at seven lines each
-  // is 7.6k lines of review noise, and a change to one field then shows up as a
-  // one-line block; on one line it shows up as one line, next to the id it
-  // belongs to. The file is read by a script and a test, neither of which cares.
+
   writeFileSync(
     OUT,
     [

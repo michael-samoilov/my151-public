@@ -1,11 +1,6 @@
 import { openAdmin } from './admin-ready';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-/**
- * The admin When card uses demo data so CI needs no token. Hours run across
- * at every width. Every label and total fits its box, and tapped readouts
- * stay inside the card.
- */
 function whenCard(page: Page) {
   return page.locator('section', { has: page.getByRole('heading', { name: /^When/ }) });
 }
@@ -69,7 +64,6 @@ test.describe('admin When heatmap', { tag: '@viewport' }, () => {
     await press(clocks.getByRole('button', { name: 'Eastern Time' }));
     await expect(clocks.getByRole('button', { name: 'Eastern Time' })).toHaveAttribute('aria-pressed', 'true');
     await expect(card.getByRole('img', { name: /^Eastern Time: \d+ browser-hours by day and hour$/ })).toBeVisible();
-    // A mouse leaving the grid clears the hover readout; a tap keeps it.
     if (!touch) await cells.last().click();
     await expect(card.getByRole('tooltip')).toHaveText(/^Sat 11 PM · \d+$/);
     await expect(card.getByRole('tooltip')).not.toHaveText(localTip ?? '');

@@ -4,7 +4,6 @@ import { AXIS_FILL } from './badgeStyle';
 import { t, typeLabel } from '@/i18n';
 import { isGenNumber, isTypeName, ROMAN, type GenAxisId, type TypeAxisId } from '../model/cells';
 
-/** Presentation only: the stored summary coordinates keep their original keys. */
 export function displayCoordinate(type: TypeAxisId, gen: GenAxisId): { type: TypeAxisId; gen?: GenAxisId } {
   if (type === gen) {
     if (type === 'favorite') return { type };
@@ -21,7 +20,6 @@ export function coordinateLabel(type: TypeAxisId, gen: GenAxisId): string {
   return `${genName} · ${typeName}`;
 }
 
-/** Shared origin backgrounds use the same palette as their axis badges. */
 export function axisBackground(axis: TypeAxisId | GenAxisId): string {
   if (isGenNumber(axis)) return `linear-gradient(135deg, ${GEN_STOPS[axis].map(stop => `${stop.color} ${stop.offset}`).join(', ')})`;
   if (isTypeName(axis)) return TYPE_COLORS[axis];

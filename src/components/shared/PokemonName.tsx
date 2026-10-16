@@ -3,7 +3,6 @@ import { cn } from '@/lib/utils';
 import { genderSymbol } from '@/lib/genderSymbol';
 import { PokemonGenderSymbol } from './PokemonNameText';
 
-/** Keep a form marker outside the species text so truncation cannot hide it. */
 export function PokemonName({ label, className, truncate = true }: {
   label: PokemonLabel;
   className?: string;

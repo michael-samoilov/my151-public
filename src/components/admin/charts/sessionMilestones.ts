@@ -40,7 +40,6 @@ export function exportSurveySkipMarks(
   }));
 }
 
-/** api/_shared.ts SESSION_GAP_MS: activity this close to a session belongs to it. */
 const SESSION_SLACK_MS = 30 * 60_000;
 
 interface SessionSpan {
@@ -48,12 +47,6 @@ interface SessionSpan {
   end: number;
 }
 
-/**
- * One mark per feedback report this browser sent during one of this tool's
- * sessions, at the time it was sent. A report sent while the browser was in
- * another tool, or in none, gets no mark on this chart; the nearest session
- * of this tool can be days away.
- */
 export function feedbackMarks(
   reports: readonly { ts: number; category: string }[],
   sessions: readonly SessionSpan[],
@@ -89,8 +82,6 @@ const FUNNEL_LABEL: Record<string, string> = {
   'favorites-export-shown': 'export opened',
 };
 
-/** Picker export events. A visit lists each export kind once, so its diamond
- *  carries one label per kind. */
 const FAVORITE_EXPORT_LABEL: Record<string, string> = {
   'favorites-export-full': 'full grid',
   'favorites-export-stats': 'detailed stats',
@@ -105,17 +96,14 @@ export function favoriteExportMarks(sittings: readonly { t: number; ev?: readonl
   );
 }
 
-/** Event names stored on one league sitting, for the timeline funnel marks. */
 export function leagueSittingEv(events: readonly string[] | undefined): string[] | undefined {
   return events?.length ? [...events] : undefined;
 }
 
-/** Horizontal gap when a sitting has both a diamond and a funnel circle. */
 export const FUNNEL_OFFSET_PX = 8;
 
 interface SittingPlot {
   diamond?: { tone: 'export' | 'skip'; title?: string };
-  /** Feedback reports sent nearest this sitting, as one mark. */
   feedback?: { title: string };
   funnel: boolean;
   label: string;

@@ -1,8 +1,6 @@
 @import "tailwindcss";
-/* License texts and published third-party source, never class names. */
 @source not "../public/licenses";
 
-/* A launch notice points at Tools without covering the navigation below it. */
 [data-radix-popper-content-wrapper]:has([data-callout-click-through]) {
   pointer-events: none;
 }
@@ -11,14 +9,6 @@
 }
 
 html {
-  /* overscroll-behavior handled per scroll-container so pull-to-refresh works from the header */
-
-  /* Root font-size is set in JS (see src/lib/layoutFontSize.ts) rather than
-   * via CSS clamp(...vw...) because on iOS the `vw` unit is tied to the
-   * visual viewport — pinch-zoom would otherwise shrink every rem-based
-   * utility (text, padding, gap) across the app. The JS version compensates
-   * the same way usePixelPerfectSprite does so the layout viewport width,
-   * not the zoom-shrunken visual viewport, drives the clamp. */
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -37,7 +27,6 @@ html {
   --color-secondary: #f5f5f5;
   --color-secondary-foreground: #171717;
   --color-muted: #f5f5f5;
-  /* 4.76:1 on the page background, AA for small text. #737373 was 4.43:1. */
   --color-muted-foreground: #6e6e6e;
   --color-accent: #f5f5f5;
   --color-accent-foreground: #171717;
@@ -48,13 +37,11 @@ html {
   --color-ring: #dc2626;
   --radius: 0.5rem;
 
-  /* Admin dashboard semantic colors. Red (--color-primary) stays reserved for
-     data-movement; these carry outcome meaning in the analytics views only. */
-  --color-success: #0b7a54; /* gains / success outcomes */
-  --color-priv: #3f5b8a; /* kept-private */
-  --color-sink: #8b8b93; /* attrition / drop-off */
-  --color-off: #8a5a00; /* off-section picks */
-  --color-info: #2563eb; /* event markers (distinct from data-movement red) */
+  --color-success: #0b7a54;
+  --color-priv: #3f5b8a;
+  --color-sink: #8b8b93;
+  --color-off: #8a5a00;
+  --color-info: #2563eb;
 
   --color-type-normal: #a8a77a;
   --color-type-fire: #ee8130;
@@ -104,8 +91,6 @@ html {
   --color-info: #60a5fa;
 }
 
-/* Admin build scrubber: a slim track with a red thumb — red is the dashboard's
-   one data-movement accent (also the trend average and the playhead). */
 .admin-scrub {
   -webkit-appearance: none;
   appearance: none;
@@ -116,8 +101,6 @@ html {
 .admin-scrub {
   height: 26px;
 }
-/* Track is transparent; the rail and clamp-point dots are drawn by an overlay
-   beneath the thumb, so the dots sit on the rail rather than behind it. */
 .admin-scrub::-webkit-slider-runnable-track {
   height: 7px;
   border-radius: 999px;
@@ -132,9 +115,6 @@ html {
   -webkit-appearance: none;
   appearance: none;
   box-sizing: border-box;
-  /* Horizontal travel matches the overlay dots: thumb center at min is
-     SCRUB_THUMB_PX/2 from the input's left edge. Keep that 22px in sync with
-     SessionTimeline.tsx. */
   margin-top: -7.5px;
   height: 22px;
   width: 22px;
@@ -157,12 +137,6 @@ html {
   border-radius: 999px;
 }
 
-/* Arial or Helvetica, sized to Inter, for the moment before Inter loads. Text
- * then keeps its line breaks when Inter arrives, so nothing shifts. Inter is
- * 5.5% wider than Arial at 400, 1% wider than Arial Bold at 600 to 700, and
- * 2.4% at 800 (measured in Chrome); the ascent and descent are Inter's
- * (0.96875 and 0.2422 em) divided by the same factor. A system without these
- * fonts, such as Android, falls through to system-ui as before. */
 @font-face {
   font-family: 'Inter Fallback';
   src: local('Arial'), local('ArialMT'), local('Helvetica'), local('Liberation Sans');
@@ -197,12 +171,9 @@ body {
   color: var(--color-foreground);
   font-family: 'Inter Variable', 'Inter Fallback', system-ui, -apple-system, sans-serif;
 
-  /* Crisper glyph edges on macOS/iOS — Inter is designed for antialiased
-   * rendering, and the default subpixel smoothing makes it look heavier. */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Body copy: let the browser avoid orphaned last-line words. */
   text-wrap: pretty;
 }
 
@@ -244,15 +215,6 @@ body {
   letter-spacing: normal;
 }
 
-/* The tile name placeholder, shown while the name catalog is in flight.
- *
- * `currentColor` at a low alpha rather than a fixed grey, so it reads as an
- * absence of text on whatever surface the tile is sitting on — a placed tile,
- * an empty slot and the browser sheet all have different grounds.
- *
- * The pulse is what separates "loading" from "this Pokémon has no name". It is
- * slow on purpose: 151 of these breathe together on first paint, and anything
- * quicker turns the grid into a strobe. */
 @keyframes tile-name-pulse {
   0%, 100% { opacity: 0.10; }
   50% { opacity: 0.22; }
@@ -265,8 +227,6 @@ body {
   .tile-name-skeleton { animation: none; }
 }
 
-/* A loading mark that waits 400 ms before it shows, so a wait that ends sooner
- * shows nothing at all. The spinner's own turn keeps running underneath. */
 @keyframes load-reveal { to { opacity: 1; } }
 .load-delay {
   opacity: 0;
@@ -281,12 +241,6 @@ body {
   .load-delay:not(.animate-spin), .load-delay.animate-spin { animation: load-reveal 1ms linear 400ms forwards; }
 }
 
-/* Elevated card surfaces — layered transparent shadow instead of a 1px border
- * (make-interfaces-feel-better #3). Used by the analytics chart cards and the
- * admin cards. The main layer's blur radius exceeds its y-offset, so the shadow
- * diffuses softly on every side (a little past the top included). Dark mode uses
- * much stronger alpha (black shadows are near-invisible on the near-black
- * surface) plus a faint inset hairline to keep the edge legible. */
 .shadow-elevated {
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.06),
@@ -315,17 +269,6 @@ body {
   }
 }
 
-/* iOS Safari long-press image callout blocker.
- *
- * -webkit-touch-callout is NOT inherited, so it must be applied to every
- * element that could become a long-press target. Newer iOS versions fire
- * the callout on elements with background-image, not just <img>, so a
- * selector of just `img` is insufficient. Applying to `*` is the standard
- * fix used across touch-first web apps — it has no side effects beyond
- * disabling the iOS save/copy menu.
- *
- * Additional img-level hardening (pointer-events: none, -webkit-user-drag,
- * user-select) is a backstop for older iOS and non-webkit browsers. */
 * {
   -webkit-touch-callout: none;
 }
@@ -348,8 +291,6 @@ img {
   }
 }
 
-/* An image that failed to load shows nothing, not the browser's broken-image
- * icon (src/lib/hideBrokenImages.ts marks it). */
 img[data-failed] {
   visibility: hidden;
 }
@@ -377,9 +318,6 @@ img[data-failed] {
   -webkit-user-select: none;
 }
 
-/* Except where the point of the element is to type in it. Nothing in the app
- * puts a field inside a drag surface today; this is here so that the day one
- * does, the field still works. */
 [aria-roledescription='draggable'] input,
 [aria-roledescription='draggable'] textarea,
 [aria-roledescription='draggable'] [contenteditable]:not([contenteditable='false']) {
@@ -387,8 +325,6 @@ img[data-failed] {
   -webkit-user-select: text;
 }
 
-/* Always-visible thin scrollbars — mobile browsers hide native scrollbars by default,
- * leaving users without any indicator that content is scrollable. */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -399,26 +335,17 @@ img[data-failed] {
 ::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--color-muted-foreground) 55%, transparent);
   border-radius: 3px;
-  /* Never shrink to nothing on a long page — a thumb that vanishes mid-scroll
-   * leaves no grip. */
   min-height: 36px;
 }
 ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:active {
-  /* Stay fully visible while it is being dragged, even when the pointer runs
-   * off the 6px thumb during a fast drag. */
   background: var(--color-muted-foreground);
 }
-/* Firefox */
 * {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--color-muted-foreground) 45%, transparent) transparent;
 }
 
-/* Intro-card showcase fan — slow asynchronous drift so the three poster cards
- * feel alive without demanding attention. Applied to the card face (inner
- * wrapper), never the positioned wrapper, so the idle float and the base
- * placement/tilt transforms don't fight. */
 @keyframes intro-float-a {
   from { transform: translateY(2px) rotate(-0.5deg); }
   to   { transform: translateY(-4px) rotate(0.5deg); }
@@ -438,9 +365,6 @@ img[data-failed] {
   .intro-float-a, .intro-float-b, .intro-float-c { animation: none; }
 }
 
-/* Milestone bead "pop" — plays once when a milestone is first reached. The
- * positioning wrapper owns the translate centering; this animates only scale on
- * an inner layer so the two never fight. Tunable via MilestoneBar CONFIG. */
 @keyframes milestone-pop {
   0%   { transform: scale(0.4); opacity: 0.4; }
   55%  { transform: scale(var(--ms-pop-scale, 1.35)); opacity: 1; }
@@ -454,10 +378,6 @@ img[data-failed] {
   .milestone-pop, .milestone-ripple { animation: none !important; }
 }
 
-/* Milestone celebration popup entrance — a soft float-up into place under the
- * nav. Deliberately slower and gentler than the default toast slide (which
- * snapped in ~150ms): it rises from just below with a subtle scale and settles
- * on a decelerating ease so it reads as arriving, not appearing. */
 @keyframes milestone-nudge-in {
   0%   { opacity: 0; transform: translateY(10px) scale(0.96); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -467,10 +387,6 @@ img[data-failed] {
   .milestone-nudge-in { animation: none; opacity: 1; transform: none; }
 }
 
-/* The league Export button while a roster export popup shows. That popup sits
- * under or beside the league summary, away from the button, so a ring swells
- * out of the button and fades, over and over, to tie the two together. With
- * reduced motion the ring holds still. */
 @keyframes league-export-pulse {
   0%   { border-color: var(--color-primary); box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 55%, transparent); }
   70%  { border-color: var(--color-primary); box-shadow: 0 0 0 0.375rem color-mix(in srgb, var(--color-primary) 0%, transparent); }
@@ -481,14 +397,6 @@ img[data-failed] {
   .league-export-pulse { animation: none; border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary); }
 }
 
-/* The press target of a builder tile's remove X. With a mouse, the target is
- * the glyph itself. For a finger (a coarse primary pointer, at any width), this
- * ::before widens it to halfway between the glyph (100%) and
- * max(1.5rem, 100% + 0.625rem). That second size is 24px at the smallest root
- * font, the WCAG 2.2 target size, and grows with the glyph on larger tiles.
- * The target is centred on the glyph. It reaches past the glyph by less than
- * the glyph's inset from the tile edge plus the grid gap, so it never enters a
- * neighbouring tile. */
 @media (pointer: coarse) {
   .tile-remove-target::before {
     --hit: calc((100% + max(1.5rem, 100% + 0.625rem)) / 2);
@@ -501,26 +409,10 @@ img[data-failed] {
   }
 }
 
-/* Milestone bar width. The bar is a flex child that GROWS to fill the space
-   between the counter (left) and the page controls (right): width:100% takes the
-   whole flex cell, so it spans whatever space each page's header actually has.
-   The measured pixel width (not a fixed rem) drives the fill-skip math, so the
-   bar stays correct at any resolved width. */
 .milestone-bar { width: 100%; }
 
-/* Fixed reserved width for the header side slots (counter on the left, control
-   buttons on the right). Sized to the widest side element in the worst case —
-   the tabular-nums counter at a triple-digit count ("151/151", whose glyph ink
-   measures ≈6.15rem; the element box under-reports it because tracking-tight
-   pulls the advance box in) — plus ~0.6rem padding, so the flanking divider
-   lines sit at the SAME inset from both edges on every page, never move as the
-   count grows, and keep a clear gap from the counter. In rem so it scales with
-   the viewport root font exactly as the counter does. (The count is capped at
-   151, so the counter is always ≤ 3 digits — 4 digits can't occur.) */
 :root { --ms-side: 6.55rem; }
 
-/* Tab switches fade the incoming page in — the class lands when a view
-   container loses `hidden`, so the animation restarts on each activation. */
 @keyframes p151-view-fade {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -529,9 +421,6 @@ img[data-failed] {
   animation: p151-view-fade 180ms ease-out;
 }
 
-/* The picker's close question takes the floating button's place at the foot
-   of the sheet. Every close gesture but Escape lands at the top, so a short
-   rise draws the eye down to it. */
 @keyframes sheet-ask-in {
   from { opacity: 0; transform: translateY(0.5rem); }
   to { opacity: 1; transform: none; }
@@ -543,14 +432,6 @@ img[data-failed] {
   .sheet-ask-in { animation: none; }
 }
 
-/* The league builder's mobile shell is one two-pane track that the camera pans
-   across: the home and the open gym card sit side by side and the track
-   translates, so opening a card is a move through one space rather than a
-   swap of two. Only `transform` animates, which the compositor owns, so the
-   pan holds its frame rate while the incoming pane's sprites decode.
-
-   280ms on a decelerating curve is the iOS push: long enough to read as
-   travel, short enough that a rapid back-and-forth never feels held up. */
 .p151-pane-track {
   transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -568,27 +449,6 @@ img[data-failed] {
   white-space: nowrap;
 }
 
-/* Each screenshot floats up on its own when the pointer is over THAT screenshot,
- * and settles back when the pointer leaves it. Scan the pointer across the fan
- * and one shot lifts, then the next, never both at once.
- *
- * The float is driven off a stationary hit layer, and that is the guard against
- * flicker. `.hub-hit` is a transparent twin sitting at each shot's rest
- * footprint; it never moves. Hovering a twin sets `--hf` on that shot's index
- * (`data-shot`), and only the visible shot and its shadow move. Because the
- * thing you hover stays put while the shot lifts, the shot can never rise out
- * from under the pointer, un-hover, drop, and re-trigger — the classic hover
- * flicker cannot start. The clip boxes stay put too, so a shot slides up WITHIN
- * its clip and reveals the part of itself hidden below the card's bottom edge,
- * rather than baring the panel.
- *
- * `--hf` feeds each shot's own transform ahead of its rotate (see `Artwork` in
- * HomePage.tsx), so the rise is straight up whatever the tilt. `data-float`
- * names the hovered shot's index; the pointer handlers on the twins set it only
- * for a mouse or pen, so this needs no `:has()` and no hover/pointer media
- * query — both of which suppress the float on hybrid touch devices in use with
- * a mouse. The float retains the owner's gentle ease. */
-/* A bottom inset shadow crosses the sheets without clipping their top overhang. */
 .hub-pocket-edge {
   position: absolute;
   inset: 0;
@@ -602,20 +462,10 @@ img[data-failed] {
   will-change: transform;
 }
 
-/* Desktop card shape. The three cards fill the row and go wide and short, so the
- * red reads as a low band rather than a block. The screenshots do not change:
- * `.hub-stage` is a fixed-size box pinned to each card's bottom-left, and every
- * screenshot measurement is a share of the stage, not the card. On a phone the
- * stage is the whole card. Its reserve keeps the sheets fixed while the red
- * band has the same relative height as desktop. `--panel-h` is the panel's
- * height in 166-unit card widths, and `--panel-ar` its aspect ratio; the stage
- * keeps the phone proportion so the screenshots render at their current size. */
 .hub-grid {
   --panel-h: 79.167;
   --panel-ar: 166 / var(--panel-h);
-  /* Lower the red band without moving the sheets or the caption. */
   --panel-inset: 12.550cqw;
-  /* Radius, front-sheet lean, and clearance for the hover lift. */
   --shot-nudge: calc(min(8.434cqw, 14px) + 1.05cqw + 2px);
 }
 .hub-stage {
@@ -625,8 +475,6 @@ img[data-failed] {
   width: 100%;
   aspect-ratio: 166 / 100;
   container-type: inline-size;
-  /* Panel-relative rest geometry. The active hover lift is measured per sheet,
-   * leaving room below the fold and above neighboring copy. */
   --panel-height: calc(100cqw * 79.167 / 166);
   --hover-lift: 0px;
 }
@@ -634,7 +482,6 @@ img[data-failed] {
   .hub-grid {
     --panel-h: 57;
     --panel-inset: 0px;
-    /* The stage is 72% of the card; its clip and front shift use the full width. */
     --card-width: 138.889cqw;
     --shot-nudge: 30px;
   }
@@ -651,19 +498,13 @@ img[data-failed] {
   --hf: calc(var(--hover-lift) * -1);
 }
 
-/* A hub card's saved-work line (Caption in HomePage.tsx) always shows, with 0
- * for a tool not used in this browser. The head script of the prerendered hub
- * (scripts/prerender-hub.ts) marks the tools with saved work, so their counts
- * stay hidden until the app reads them, instead of showing 0 first. */
 html.p151-saved-dex [data-card-progress='dex'][data-empty] [data-progress-count],
 html.p151-saved-league [data-card-progress='league'][data-empty] [data-progress-count],
 html.p151-saved-favorites [data-card-progress='favorites'][data-empty] [data-progress-count] { visibility: hidden; }
 
-/* Short phones keep complete captions visible while the artwork stays fixed. */
 @media (max-width: 639px) and (max-height: 760px) {
   .hub-home > .hub-spacer { min-height: 2px; }
   .hub-home .hub-grid {
-    /* Leave room for the newly raised second-row sheets above their pockets. */
     row-gap: 16px;
     --caption-top: 2px;
     --caption-gap: 1px;

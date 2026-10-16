@@ -1,10 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/**
- * League home: an empty drop fills only that hole. An occupied drop shifts
- * the nearest occupied segment into a passed hole. Empties are not boxes.
- */
-
 const TYPES = [
   'electric', 'fire', 'water', 'grass', 'ghost', 'psychic',
   null,
@@ -57,7 +52,6 @@ function leagueSeed() {
       lines: [{ branch: [mon], boundaries: [1] }],
     };
   }
-  // The UI's No Type sentinel and an unset type are both empty holes.
   cards[6].type = 'none';
   return JSON.stringify({ state: { name: 'SwapProof', cards }, version: 1 });
 }

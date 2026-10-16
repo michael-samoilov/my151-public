@@ -1,16 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-/**
- * The tooltip on the Tools menu that tells a returning visitor the gym
- * leader maker exists. Once per browser, only for a dex saved before the
- * page opened, and never after the hub already showed the gym leader card.
- */
 const STORE_KEY = 'personal-151-pokedex-v3';
 const SEEDED = JSON.stringify({ state: { sections: { starter: [1, 4, 7] }, milestoneMax: 3, milestoneCelebrated: [] }, version: 10 });
 
 test.describe('gym leader maker callout', () => {
   test.beforeEach(async ({ page }) => {
-    // The legacy League announcement is tested outside the Picker launch week.
     await page.clock.setFixedTime(new Date('2026-10-01T12:00:00Z'));
     await page.route('**/api/**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }),
@@ -23,7 +17,6 @@ test.describe('gym leader maker callout', () => {
     const promo = page.getByTestId('league-promo');
     await expect(promo).toBeVisible();
     await expect(promo).toContainText('Custom Gym Leader & Trainer Card Maker');
-    // It hangs under the Tools button, on its right edge.
     const tip = await promo.boundingBox();
     const tools = await page.getByTestId('tools-menu').boundingBox();
     expect(tip!.y).toBeGreaterThan(tools!.y + tools!.height - 1);

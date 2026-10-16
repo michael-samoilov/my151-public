@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useECharts, cssVar, tooltipStyle, type EChartsOption, echarts } from './useECharts';
 import { nodeDepth, type FunnelLabelSide, type FunnelLink, type FunnelNode, type FunnelRole } from '@/lib/usageFunnels';
 import { sankeyGeometry, sankeyHeightCss } from '@/lib/sankeyGeometry';
@@ -16,14 +17,9 @@ function fattestColumn(nodes: SankeyNode[], links: SankeyLink[]): number {
   return Math.max(2, ...counts.values());
 }
 
-/** echarts' own gap between a node and its label. */
 const LABEL_DISTANCE = 5;
-/** The last column's gap, which holds its count chip in the label instead. */
 const CHIP_LABEL_DISTANCE = 3;
 
-/** Width each compact label wraps at, by side, in multiples of the type
- *  size: 9px type wraps a top label at 48px. Type that steps down keeps
- *  the same line breaks. */
 const COMPACT_WRAP_EM: Record<ReturnType<typeof compactFunnelLabelSide>, number> = {
   top: 48 / 9,
   bottom: 72 / 9,
@@ -44,8 +40,6 @@ function compactTopLabel(fontSize: number, formatter: string) {
   };
 }
 
-/** A phone funnel label. `lines` breaks the name at a fixed word gap. Lines
- *  are 3px taller than the type: 12px for 9px type. */
 function compactLabel(side: ReturnType<typeof compactFunnelLabelSide>, fontSize: number, lines?: string[]) {
   const formatter = lines ? lines.join('\n') : '{b}';
   if (side === 'top') return compactTopLabel(fontSize, formatter);
@@ -77,9 +71,6 @@ function compactLabel(side: ReturnType<typeof compactFunnelLabelSide>, fontSize:
   };
 }
 
-/** On a phone funnel, the last column's count sits in its label, right of
- *  the bar. A chip on the bar would reach left over the previous column's
- *  names, and the last column has no outgoing flow on its right. */
 function chipInLabel(
   n: SankeyNode,
   compact: boolean,
@@ -158,7 +149,6 @@ type SankeyLayoutSeries = {
   };
 };
 
-/** Separate count/rate annotation rows while preserving every bar and flow. */
 function percentageLabelOffsets(el: HTMLDivElement, nodes: SankeyNode[], links: SankeyLink[], fontSize: number, crowded = false): Map<string, number> {
   const chart = echarts.getInstanceByDom(el) as unknown as { getModel(): { getSeriesByIndex(i: number): SankeyLayoutSeries } };
   const graph = chart.getModel().getSeriesByIndex(0).getGraph();
@@ -177,7 +167,6 @@ function percentageLabelOffsets(el: HTMLDivElement, nodes: SankeyNode[], links: 
     peers.forEach((peer, i) => {
       if (i) peer.spacing = peers[i - 1].spacing + fontSize + 3 + (peers[i - 1].node.percentage ? 3 + Math.max(7, fontSize - 1) : 0);
     });
-    // Pool overlapping rows, preserving their average position within the column.
     const blocks: { start: number; end: number; mean: number }[] = [];
     peers.forEach((peer, i) => {
       blocks.push({ start: i, end: i, mean: peer.y - peer.spacing });
@@ -294,7 +283,6 @@ function countChip(
 
 let measureCtx: CanvasRenderingContext2D | null = null;
 
-/** Label text width in px, measured the way echarts draws it. */
 function labelMeasure(fontSize: number): (text: string) => number {
   measureCtx ??= document.createElement('canvas').getContext('2d');
   const ctx = measureCtx;
@@ -306,18 +294,8 @@ function labelMeasure(fontSize: number): (text: string) => number {
   };
 }
 
-/** Smallest type a phone funnel steps down to, in px. */
 const COMPACT_MIN_FONT_SIZE = 7;
 
-/**
- * Where each column sits and how its labels are drawn. Each node's `localX`
- * is its column's left edge as a share of the plot width, spaced so no
- * column's labels run into the next column. On a phone, the right pad holds
- * the last column's labels. When the columns do not fit, headers break onto
- * two lines first, and the type steps down in half-pixel steps only when
- * that is not enough. Null shares when even the smallest type does not fit,
- * and echarts spaces the columns evenly.
- */
 function funnelLayout(
   nodes: SankeyNode[],
   links: SankeyLink[],
@@ -327,7 +305,6 @@ function funnelLayout(
   const box = (n: SankeyNode, measure: MeasureText, fontSize: number): LabelBox => {
     const inflow = links.filter((l) => l.target === n.name).reduce((s, l) => s + l.value, 0);
     const outflow = links.filter((l) => l.source === n.name).reduce((s, l) => s + l.value, 0);
-    // countChip pads the count by 2px on each side.
     const chip = measure(String(Math.round(Math.max(inflow, outflow)))) + 4;
     if (!base.compact) return { side: n.label, wrap: Number.POSITIVE_INFINITY, distance: LABEL_DISTANCE, chip };
     if (chipInLabel(n, true, 'funnel', nodes, links)) {
@@ -360,12 +337,6 @@ function funnelLayout(
   return { g, shares: sharesOf(fit.lefts, width - g.left - g.right), lines: fit.lines };
 }
 
-/**
- * MECE usage funnel as a Sankey at every width. On a phone the plot is
- * wider than it is tall, first-stage names sit on the bar, column titles
- * sit along the top, and stacked peers sit to the right so a short bar
- * cannot drop a name onto the next one. Counts sit in color chips on the bars.
- */
 export function FlowSankey({
   nodes,
   links,
@@ -380,8 +351,8 @@ export function FlowSankey({
   labelHalo?: boolean;
 }) {
   const stack = fattestColumn(nodes, links);
-  const ref = useECharts(
-    (el): EChartsOption => {
+  const build = useCallback(
+    (el: HTMLDivElement): EChartsOption => {
       const ink = cssVar(el, '--color-foreground', '#0a0a0a');
       const faint = cssVar(el, '--color-muted-foreground', '#737373');
       const success = cssVar(el, '--color-success', '#0b7a54');
@@ -460,6 +431,7 @@ export function FlowSankey({
     },
     [nodes, links, kind, labelHalo],
   );
+  const ref = useECharts(build);
 
   return (
     <div className="w-full min-w-0" style={{ containerType: 'inline-size' }}>

@@ -19,8 +19,6 @@ function run(html: string, sizes: Record<string, number> = { 'preview.avif': 449
     writeFileSync(join(dist, spec.html), spec.html === 'index.html' ? html : '<html></html>');
     const entry = `assets/${spec.html}.js`;
     writeFileSync(join(dist, entry), '');
-    // This fixture exercises hub pictures. Represent other pages' declared
-    // format groups with zero-byte assets so their graph remains valid.
     const assets: string[] = [];
     for (const group of spec.imageFormats ?? []) for (const key of [...group.avif, ...group.webp]) {
       const file = `assets/${basename(key)}`;

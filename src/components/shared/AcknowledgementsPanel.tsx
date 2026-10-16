@@ -30,7 +30,6 @@ const GROUPS = ACKNOWLEDGEMENTS.filter((group) => group.entries.length > 0);
 
 const ENTRIES = new Map(GROUPS.flatMap((group) => group.entries.map((entry) => [entry.id, entry] as const)));
 
-/** One request per file per page load, shared by every open of the panel. */
 const licenseTexts = new Map<string, Promise<string>>();
 
 function loadLicense(file: string): Promise<string> {
@@ -40,7 +39,6 @@ function loadLicense(file: string): Promise<string> {
       if (!response.ok) throw new Error(`${response.status} for ${file}`);
       return response.text();
     });
-    // A failed load is asked for again on the next open, not remembered.
     text.catch(() => licenseTexts.delete(file));
     licenseTexts.set(file, text);
   }
@@ -51,9 +49,7 @@ const host = (href: string) => new URL(href, window.location.href).hostname.repl
 
 const indent = (line: string) => line.length - line.trimStart().length;
 const isRule = (line: string) => /^\s*[=\-_*]{3,}\s*$/.test(line);
-/** Short enough to fit the license box on a 320 px phone. */
 const RULE_COLUMNS = 32;
-/** A Markdown heading, or a short capitals line with no closing punctuation ("PREAMBLE"). */
 const isHeading = (line: string) => {
   const text = line.trim();
   return text.startsWith('#')
@@ -62,17 +58,9 @@ const isHeading = (line: string) => {
 const LIST_MARKER = /^([*\-•+]|\d+(\.\d+)*[.)]|\(?[a-z0-9]{1,3}\))\s+/i;
 const isListItem = (line: string) => LIST_MARKER.test(line.trimStart());
 
-/**
- * Whether `line` continues the paragraph `prev` ends. Three layouts do: the
- * same indent, a first line indented deeper than the rest ("  The GNU General
- * Public License is"), and a list item's hanging indent ("(a) that the" over
- * "    in Exhibit B").
- */
 function continues(prev: string, line: string, beforePrev: string | undefined): boolean {
   if (!prev.trim() || !line.trim()) return false;
   if (isRule(line) || isRule(prev) || isHeading(line) || isHeading(prev)) return false;
-  // A marker starts an item after a finished clause. Mid-sentence it is a
-  // wrapped number: GPL's "section" over "7.  This requirement".
   if (isListItem(line) && /[.:;!?)"'”]$/.test(prev.trim())) return false;
   const [from, to] = [indent(prev), indent(line)];
   if (to === from) return true;
@@ -81,17 +69,6 @@ function continues(prev: string, line: string, beforePrev: string | undefined): 
   return marker !== null && to === from + marker[0].length;
 }
 
-/**
- * Joins the hard-wrapped lines of a license file into paragraphs.
- *
- * The files wrap at about 76 columns. A phone shows about 40 monospace
- * columns, so each source line broke again on its own and every second line
- * held one or two words. Blank lines, list items, headings and rules keep
- * their breaks, so the license's structure survives. A centred line (an
- * indent of 12 or more, like GPL's title) loses its indent, which would
- * otherwise wrap it on a phone. A rule line shrinks to RULE_COLUMNS, so its
- * dashes do not break onto a second line.
- */
 function reflow(text: string): string {
   const lines = text.replace(/\r\n?/g, '\n').replace(/^\n+|\s+$/g, '').split('\n');
   const out: string[] = [];
@@ -103,10 +80,8 @@ function reflow(text: string): string {
   return out.join('\n');
 }
 
-/** The small-caps heading the View settings pane uses for its sections. */
 const HEADING = 'text-xs font-semibold uppercase tracking-wide text-muted-foreground';
 
-/** A detail section: its heading above a white card, as the list groups are. */
 function Section({ label, count, children }: { label: string; count?: number; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-1.5">
@@ -119,10 +94,6 @@ function Section({ label, count, children }: { label: string; count?: number; ch
   );
 }
 
-/**
- * A link that leaves the panel: a red icon and a bold label, so a credit's
- * links stand out from its text (Michael, 2026-10-13).
- */
 function ExternalLinks({ links }: { links: readonly { href: string; label: string }[] }) {
   if (!links.length) return null;
   return (
@@ -143,7 +114,6 @@ function ExternalLinks({ links }: { links: readonly { href: string; label: strin
   );
 }
 
-/** One row of a list of entries: the panel's list and a project's artists. */
 function EntryRow({ entry, note, onOpen }: { entry: Acknowledgement; note: string; onOpen: (id: string) => void }) {
   const t = useT();
   return (
@@ -154,8 +124,6 @@ function EntryRow({ entry, note, onOpen }: { entry: Acknowledgement; note: strin
       className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
     >
       <span className="flex min-w-0 flex-1 flex-col">
-        {/* A credit shows whole: the name and its author wrap onto a second
-            line rather than lose their ends to an ellipsis. */}
         <span className="break-words text-sm text-muted-foreground">
           <span className="font-medium text-foreground">{entry.name}</span>
           {entry.by && ` ${t('ack.by', { name: entry.by })}`}
@@ -167,10 +135,6 @@ function EntryRow({ entry, note, onOpen }: { entry: Acknowledgement; note: strin
   );
 }
 
-/**
- * The second line of an entry's row: an artist's sprite count, the npm
- * packages' count and licenses once their list loads, otherwise the license.
- */
 function useRowNote() {
   const t = useT();
   const tn = useTn();
@@ -232,10 +196,6 @@ function loadPackageIndex(): Promise<NpmPackageIndex> {
   return packageIndex;
 }
 
-/**
- * The npm package list the build writes, so it changes with the
- * dependencies. It loads when the panel opens, never with the page.
- */
 function usePackageIndex() {
   const [state, setState] = useState<{ index?: NpmPackageIndex; failed?: boolean }>({});
   useEffect(() => {
@@ -251,10 +211,8 @@ function usePackageIndex() {
   return state;
 }
 
-/** One package by name, with every version the build ships (@radix-ui/react-slot ships two). */
 interface PackageName { name: string; license: string; versions: string[] }
 
-/** The packages by name, grouped by license, the most used license first. */
 function byLicense(index: NpmPackageIndex): [string, PackageName[]][] {
   const byName = new Map<string, PackageName>();
   for (const pkg of index.packages) {
@@ -271,10 +229,8 @@ function byLicense(index: NpmPackageIndex): [string, PackageName[]][] {
   return [...groups].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'en'));
 }
 
-/** How many packages, counted by name. */
 const packageCount = (index: NpmPackageIndex) => new Set(index.packages.map((pkg) => pkg.name)).size;
 
-/** The npm packages by license, and the files that hold their license texts, each named for what it holds. */
 function NpmPackages() {
   const t = useT();
   const tn = useTn();
@@ -323,7 +279,6 @@ function NpmPackages() {
                 <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
                 <span className="flex min-w-0 flex-col">
                   <span className="text-sm font-semibold">{tn('ack.packageTexts', new Set(holds).size)}</span>
-                  {/* A short file names what it holds; the long one holds the list above. */}
                   <span className="break-words text-xs text-muted-foreground">
                     {holds.length <= 4 ? names.format(holds) : file}
                   </span>
@@ -337,15 +292,8 @@ function NpmPackages() {
   );
 }
 
-/** A page GitHub renders from Markdown, such as a README.md. */
 const isMarkdown = (url: string) => /\.md(?:$|[?#])/i.test(url);
 
-/**
- * A quote as its page shows it. Most pages show their text as written, so a
- * DeviantArt "**EXCEPT …**" keeps its asterisks. A Markdown page shows its
- * links as their text, a heading without its "#", `**…**` as bold and `*…*`
- * as italic, so its quote does too.
- */
 function quoteText(quote: TermsQuote): ReactNode {
   if (!isMarkdown(quote.url)) return quote.text;
   const text = quote.text
@@ -359,11 +307,6 @@ function quoteText(quote: TermsQuote): ReactNode {
   });
 }
 
-/**
- * A source's terms: its quote as written, with a link to the page it is on.
- * The research keeps one quote per source; a record with more shows each the
- * same way, one under the other, and a record with none shows nothing.
- */
 function TermsQuotes({ quotes }: { quotes: readonly TermsQuote[] }) {
   if (!quotes.length) return null;
   return (
@@ -397,7 +340,6 @@ function Detail({ entry, backRef, onBack }: {
 }) {
   const t = useT();
   const links = entry.links.map((href) => ({ href, label: t('ack.open', { site: entry.linkLabels?.[href] ?? host(href) }) }));
-  // An entry that ships its license text needs no quote of the same words.
   const quotes = entry.kind === 'artist' ? artistTerms(entry.name) : entry.texts ? [] : sourceTerms(entry.id);
   const hasLicense = entry.license || quotes.length > 0 || entry.note || entry.texts;
   return (
@@ -445,28 +387,15 @@ function Detail({ entry, backRef, onBack }: {
   );
 }
 
-/**
- * The list and the open entries, in the two levels Cursor's acknowledgements
- * page uses: a row slides its detail in over the list, and Back slides it out.
- *
- * Both levels stay mounted and scroll on their own, so Back returns to the
- * list where the reader left it. The level that is not on screen is `inert`,
- * so neither Tab, find-in-page nor a screen reader lands in it. That is also
- * why the closed detail is only moved out, not hidden: a `visibility`
- * transition is still `hidden` on the frame the Back button takes focus.
- */
 function AcknowledgementsBody() {
   const t = useT();
   const tn = useTn();
   const rowNote = useRowNote();
-  // The open entries, the one on screen last. Empty shows the list.
   const [stack, setStack] = useState<string[]>([]);
-  // The last entry opened. It stays rendered while the detail slides out.
   const [shownId, setShownId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const detailRef = useRef<HTMLDivElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
-  // Each open entry's scroll position, restored when Back returns to it.
   const scrolls = useRef<number[]>([]);
   const shown = shownId ? ENTRIES.get(shownId) : undefined;
   const openId = stack.at(-1) ?? null;
@@ -475,8 +404,6 @@ function AcknowledgementsBody() {
     rootRef.current?.focus({ preventScroll: true });
   }, []);
 
-  // `preventScroll`: the levels sit side by side in a clipped box, and a
-  // focus that scrolls would shift that box sideways.
   useEffect(() => {
     if (openId) backRef.current?.focus({ preventScroll: true });
     else if (shownId) {
@@ -502,7 +429,6 @@ function AcknowledgementsBody() {
         if (detailRef.current) detailRef.current.scrollTop = top;
       });
     } else {
-      // The list focuses the row the reader first opened.
       setShownId(stack[0] ?? null);
       setStack([]);
     }
@@ -551,15 +477,6 @@ function AcknowledgementsBody() {
   );
 }
 
-/**
- * The footer's Acknowledgements panel: the app's bottom sheet on a phone, and
- * on desktop the right-hand pane the export settings use, with the View
- * settings pane's header.
- *
- * Escape is taken in the capture phase and stopped there. The footer also
- * sits inside the View settings pane and the Pokémon browser sheet, and their
- * own Escape handlers would otherwise close them too.
- */
 export function AcknowledgementsPanel({ anchor, onClose }: { anchor: HTMLElement | null; onClose: () => void }) {
   const t = useT();
   const isDesktop = useViewportAtLeast(1024);

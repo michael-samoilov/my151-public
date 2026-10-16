@@ -1,12 +1,3 @@
-/**
- * Global export uniqueness: per-tool ordinals, the set of Pokémon that have
- * already appeared in an export, and Pokedex Builder placement frequency.
- *
- * Redis keys:
- *   export:counts          hash  tool -> ordinal
- *   export:seen-pokemon    set   pokemon ids that have been exported
- *   dex:ever-freq          hash  pokemon id -> client count (ever placed)
- */
 import { redis } from './_shared.js';
 
 type ExportTool = 'pokedex' | 'league' | 'card';
@@ -33,8 +24,6 @@ function pickFirstExportPokemon(
   return unseen[0];
 }
 
-// One script call for the whole batch: a pipeline of HINCRBY is still billed
-// one command per Pokémon, and a first full build places 151 at once.
 const BUMP_FREQ_LUA = `
 for _, id in ipairs(ARGV) do
   redis.call('HINCRBY', KEYS[1], id, 1)
@@ -59,9 +48,6 @@ export function isPreviewDeploy(env: string | undefined = process.env.VERCEL_ENV
   return env === 'preview';
 }
 
-/** Writes uniqueness only on the live site. A Vercel preview, local, any other
- *  `VERCEL_ENV`, and an owner `notme` request must not increment
- *  `export:counts` or add to `export:seen-pokemon`. */
 export function canRecordToolExport(
   env: string | undefined = process.env.VERCEL_ENV,
   notme = false,
@@ -70,7 +56,6 @@ export function canRecordToolExport(
   return env === 'production';
 }
 
-/** Same shape the live recorder returns, without touching Redis. */
 export function previewExportHighlight(tool: ExportTool, pokemonIds: number[]): ExportHighlight {
   const firstPokemonId = pokemonIds.find((id) => Number.isInteger(id) && id > 0 && id < 100_000) ?? null;
   return { ordinal: 151, tool, firstPokemonId };

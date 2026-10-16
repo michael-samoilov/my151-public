@@ -24,13 +24,10 @@ function isGimmickCandidate(mon: PickerMon): boolean {
 }
 
 function isStarterSpeciesForm(mon: PickerMon): boolean {
-  // Forms inherit starter status from their own species, not the whole
-  // evolution chain: Gigantamax Pikachu/Eevee qualify, Raichu does not.
   const owner = getPickerMon(mon.ownerId);
   return isStarter(mon) || (owner != null && isStarter(owner));
 }
 
-/** Candidates for a cell, sorted by `order` (see `sortKeys.ts`). */
 export function eligibleFor(type: TypeAxisId, gen: GenAxisId, order: SortOrder = DEFAULT_SORT_ORDER): PickerMon[] {
   const list = allPickerMons();
   let out: PickerMon[] = [];

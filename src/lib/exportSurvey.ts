@@ -1,5 +1,3 @@
-/** One-shot export follow-up, shared by every export tool. */
-
 import {
   EXPORT_SURVEY_SKIP_EVENT,
   type ExportSurveySkipReason,
@@ -21,13 +19,6 @@ export const EXPORT_SURVEY_SEEN_KEY = 'my151-export-survey-seen';
 
 const LAST_EARLY_EXPORT_BUCKET = EARLY_EXPORT_BUCKETS[EARLY_EXPORT_BUCKETS.length - 1];
 
-/**
- * Whether the export survey should stay hidden in this deploy.
- *
- * Production is once-only. Preview and local builds always show it, and they
- * do not write the seen key, so a preview test cannot skip the live survey
- * later in the same browser.
- */
 export function surveySeenInThisEnvironment(production: boolean): boolean {
   if (!production) return false;
   try {
@@ -42,7 +33,6 @@ export function persistExportSurveySeen(production: boolean): void {
   try {
     localStorage.setItem(EXPORT_SURVEY_SEEN_KEY, '1');
   } catch {
-    /* quota or private mode */
   }
 }
 
@@ -50,14 +40,6 @@ export function hasSeenExportSurvey(): boolean {
   return surveySeenInThisEnvironment(PRODUCTION_DEPLOY);
 }
 
-/**
- * Whether this export's global ordinal is still in the early-user window.
- *
- * The window is `EARLY_EXPORT_BUCKETS`, the same cut as "among the first N
- * users". The last bucket still gets the survey. A later ordinal does not,
- * even when a first-Pokémon uniqueness line would have existed. Preview uses
- * ordinal 151, so it stays inside the window.
- */
 export function shouldOfferExportSurvey(ordinal: number | null | undefined): boolean {
   if (typeof ordinal !== 'number' || !Number.isFinite(ordinal)) return true;
   return ordinal <= LAST_EARLY_EXPORT_BUCKET;

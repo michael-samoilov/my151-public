@@ -12,7 +12,6 @@ import { cardShades } from '@/league/theme';
 import { BossBall, Crown } from '@/league/components/glyphs';
 import { applyLeaguePlayhead } from '@/components/admin/memberPresence';
 
-/** The fields a visit board reads. Matches `LeagueCard` on AdminPage. */
 interface VisitCard {
   i: number;
   t?: string;
@@ -21,7 +20,6 @@ interface VisitCard {
   lg?: [number, number][];
 }
 
-/** 14-across only when each card is wide enough that a row still reads. */
 const MIN_CARD_W = 90;
 const COLS = 6;
 

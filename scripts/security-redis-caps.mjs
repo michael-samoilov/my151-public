@@ -23,7 +23,7 @@ const results = [];
 let ready = false;
 try {
   for (let attempt = 0; attempt < 80; attempt++) {
-    try { ready = await command('PING') === 'PONG'; } catch { /* The socket appears after startup. */ }
+    try { ready = await command('PING') === 'PONG'; } catch { ready = false; }
     if (ready) break;
     await new Promise(resolveWait => setTimeout(resolveWait, 25));
   }

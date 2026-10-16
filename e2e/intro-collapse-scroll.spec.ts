@@ -21,7 +21,6 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
 
   const SECTION = 'forest';
 
-  /** Emulate Safari: no scroll anchoring, and no support for the property. */
   async function emulateSafariScrolling(page: Page) {
     await page.addInitScript(() => {
       const real = CSS.supports.bind(CSS) as (...args: string[]) => boolean;
@@ -37,8 +36,6 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
     });
   }
 
-  /** Top of the target section relative to the scroller's top edge. Negative
-   *  means it has been scrolled above the visible area. */
   function sectionOffset(page: Page) {
     return page.evaluate((id) => {
       const scroller = document.querySelector('[data-build-scroll]');
@@ -48,9 +45,6 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
     }, SECTION);
   }
 
-  /** Fresh visitor places the first Pokémon straight into a section below the
-   *  fold, bypassing the intro card's own CTA. Returns the section's offset
-   *  just before and well after the placement. */
   async function placeFirstPokemonBelowTheFold(page: Page) {
     await page.goto('/pokedex-builder');
     await expect(page.getByRole('button', { name: 'Dismiss intro' })).toBeVisible();
@@ -66,7 +60,6 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
 
     await addButton.click();
     await expect(sheet).toBeHidden();
-    // Wait out the collapse animation and any starved timers behind it.
     await expect.poll(() => page.locator('[data-section-id]').first().isVisible(), { timeout: 5_000 }).toBe(true);
     await page.waitForTimeout(1_500);
     const after = await sectionOffset(page);
@@ -80,8 +73,6 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
 
     expect(before).not.toBeNull();
     expect(after).not.toBeNull();
-    // Before the fix this read roughly `before - 374`: the section had left the
-    // screen. A couple of px of slack covers sub-pixel rounding.
     expect(Math.abs(after! - before!)).toBeLessThanOrEqual(2);
     expect(after!).toBeGreaterThan(0);
   });
@@ -96,17 +87,8 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
     expect(Math.abs(after! - before!)).toBeLessThanOrEqual(2);
   });
 
-  /** How much of the card is left on screen in the straddling flow. */
   const CARD_SLICE_ON_SCREEN = 170;
 
-  /** The flow from the original screen recording: scroll a little, so the card
-   *  straddles the top edge with its headline and CTA still showing, then fill
-   *  the Starters section right under it.
-   *
-   *  The card is the first thing in the list, so once it goes the only thing
-   *  above Starters is the list's own top padding. Every straddling collapse
-   *  therefore settles the same way: scrolled to the top, Starters sitting one
-   *  padding below the header rather than jammed against it. */
   async function fillStartersWithCardStraddlingTheTop(page: Page) {
     await page.goto('/pokedex-builder');
     await expect(page.getByRole('button', { name: 'Dismiss intro' })).toBeVisible();
@@ -118,7 +100,6 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
       scroller.scrollTop = Math.max(0, Math.round(target));
     }, CARD_SLICE_ON_SCREEN);
 
-    // First water slot; the sheet opens pre-filtered to water starters.
     await page.locator('[data-section-id="starter"] button.border-dashed').nth(6).click();
     const sheet = page.getByRole('dialog');
     await expect(sheet).toBeVisible();
@@ -144,10 +125,6 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
     });
   }
 
-  /** Where Starters ended up, plus the two things it should line up with: the
-   *  scroll offset, and the list's own top padding. The padding is read from
-   *  the DOM rather than hardcoded — it is rem-based, so it tracks the app's
-   *  JS-computed root font-size and differs between viewports. */
   function restingState(page: Page) {
     return page.evaluate(() => {
       const scroller = document.querySelector('[data-build-scroll]') as HTMLElement | null;
@@ -169,10 +146,7 @@ test.describe('intro card collapse keeps the page still', { tag: '@viewport' }, 
     expect(before).not.toBeNull();
     expect(after).not.toBeNull();
     expect(listPadding).toBeGreaterThan(0);
-    // Old code: `before - 374`, Starters gone off the top.
     expect(after!).toBeGreaterThan(0);
-    // Rests at the top of the list with its padding intact, not jammed under
-    // the header — which is where the first version of this fix left it.
     expect(scrollTop).toBe(0);
     expect(Math.abs(after! - listPadding!)).toBeLessThanOrEqual(2);
   });

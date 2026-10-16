@@ -47,11 +47,11 @@ describe('eligibleFor', () => {
   it('offers gimmick forms of starter species, including Pikachu and Eevee but not Raichu', () => {
     const ids = eligibleFor('starter', 'gimmick').map((mon) => mon.id);
     expect(kindFor('starter', 'gimmick')).toBe('pick');
-    expect(ids).toContain(10034); // Mega Charizard X
-    expect(ids).toContain(10199); // Gigantamax Pikachu
-    expect(ids).toContain(10205); // Gigantamax Eevee
-    expect(ids).not.toContain(10304); // Mega Raichu X
-    expect(ids).not.toContain(10305); // Mega Raichu Y
+    expect(ids).toContain(10034);
+    expect(ids).toContain(10199);
+    expect(ids).toContain(10205);
+    expect(ids).not.toContain(10304);
+    expect(ids).not.toContain(10305);
   });
 
   it('uses regular Gen 1 Pikachu and Eevee as starters without duplicating LGPE variants in Gen 7', () => {
@@ -86,9 +86,6 @@ describe('eligibleFor', () => {
         const ranks = tieredMons.map(debutSortRank);
         expect(ranks, `${type}|${gen} debut games`).toEqual(ranks.slice().sort((a, b) => a - b));
         for (const rank of new Set(ranks)) {
-          // Eternamax stays inside Eternatus's group despite its battle
-          // classification, and outside the Gimmick row each Terastal Ogerpon
-          // follows its mask.
           const game = tieredMons.filter((mon) => debutSortRank(mon) === rank && mon.id !== 10190
             && !(type !== 'gimmick' && isBattleForm(mon) && hasListedFormOrder(mon.ownerId)));
           const kinds = game.map((mon) => Number(isBattleForm(mon)));
@@ -120,19 +117,12 @@ describe('eligibleFor', () => {
     contiguous(ids('legendary', 8), [898, 10193, 10194]);
     contiguous(ids('legendary', 8), [905, 10249]);
     contiguous(ids('legendary', 6), [716, 11001]);
-    // Hoopa Unbound came in Omega Ruby and Alpha Sapphire, Hoopa and Volcanion in X and Y.
     contiguous(ids('legendary', 6), [720, 10086]);
-    // Ultra Sun and Ultra Moon share Alola with Sun and Moon, so Necrozma's
-    // fusions follow Necrozma. Ultra Necrozma, a battle form, follows them in
-    // Necrozma's listed form order (Michael, 2026-10-12).
     contiguous(ids('legendary', 7), [800, 10155, 10156, 10157]);
-    // Black 2 and White 2 share Unova with Black and White, so each Therian
-    // Forme follows its Incarnate Forme, before Zekrom.
     contiguous(ids('legendary', 5), [641, 10019]);
     contiguous(ids('legendary', 5), [642, 10020]);
     contiguous(ids('legendary', 5), [645, 10021]);
     contiguous(ids('electric', 5), [642, 10020, 644]);
-    // Platinum shares Sinnoh with Diamond and Pearl.
     contiguous(ids('legendary', 4), [487, 10007]);
     contiguous(ids('legendary', 4), [492, 10006]);
     contiguous(ids('electric', 4), [479, 10008, 10009, 10010, 10011, 10012]);

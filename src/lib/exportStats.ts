@@ -10,31 +10,13 @@ import { t, formatNumber } from '@/i18n';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import type { TypeName } from '@/types/pokemon';
 
-/**
- * Native-canvas renderer for the View "detailed stats" panel, used by the PNG
- * exporter. We deliberately do NOT rasterize the live DOM (html-to-image relies
- * on an SVG <foreignObject>, which hangs/fails on iOS WebKit). Instead we redraw
- * the three charts directly with the canvas 2D API — the same mechanism the grid
- * uses, which is reliable across engines — reusing the exact d3 scales the
- * on-screen charts use so the geometry matches.
- *
- * Everything draws in "natural" coordinates (a fixed ~320px-wide panel); the
- * caller applies a single ctx.scale() to fit it to the dex card's height.
- */
-
 const STATS_NAT_W = 320;
 
-/** Vertical gap between stacked stat cards (natural units). Exported so the
- *  exporter can make the dex↔stats horizontal gutter match it after scaling. */
 const CARD_GAP = 16;
-/** Stat-card inner padding (natural units): px-5 horizontal, py-3 vertical. The
- *  horizontal value is exported so the exporter can match the dex card's padding
- *  to it (uniform content-to-edge spacing across all cards). */
-const CARD_PADX = 20; // px-5
-const CARD_PADY = 12; // py-3
-const CARD_RADIUS = 8; // rounded-lg
+const CARD_PADX = 20;
+const CARD_PADY = 12;
+const CARD_RADIUS = 8;
 const CONTENT_W = STATS_NAT_W - CARD_PADX * 2;
-/** The index headers may use the card's padding, short of its edge. */
 const BUTTERFLY_OPTIONS = { alignBaselines: true, headerBleed: CARD_PADX - 4 };
 
 const MUTED = '#737373';
@@ -43,21 +25,17 @@ const NAT_HIST = '#94a3b8';
 const YOURS = '#ef4444';
 
 const TITLE_LH = 20;
-const SUB_SIZE = 10; // matches CHART_TEXT (subtitle unified with chart text)
-const SUB_LH = 14; // 10px * leading-snug (1.375)
-const LEGEND_SIZE = 10; // unified with CHART_TEXT (matches on-screen STATS_TEXT)
-/** Single font size for all chart text (headers, axis + value numbers), matching
- *  the on-screen STATS_TEXT (text-[0.625rem] = 10px). */
+const SUB_SIZE = 10;
+const SUB_LH = 14;
+const LEGEND_SIZE = 10;
 const CHART_TEXT = 10;
 
-/** Per-chart vertical-height multipliers (mirror DEFAULT_STATS_HEIGHTS). */
 export interface StatsHeights { type: number; region: number; bst: number }
 
 function font(weight: number, size: number): string {
   return `${weight} ${size}px 'Inter Variable', system-ui, sans-serif`;
 }
 
-/** Greedy word-wrap to a max width. Returns the wrapped lines. */
 function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
   const words = text.split(' ');
   const lines: string[] = [];
@@ -75,10 +53,6 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): st
   return lines;
 }
 
-/**
- * Measure or draw the Base-Stat-Total histogram in natural coords at (ox, oy).
- * Mirrors SuperimposedHistogram.tsx with chartScale = 1.
- */
 export function drawExportHistogram(
   ctx: CanvasRenderingContext2D,
   ox: number,
@@ -115,12 +89,10 @@ export function drawExportHistogram(
 
   ctx.translate(ox + margin.left, oy + margin.top);
 
-  // Baseline
   ctx.strokeStyle = MUTED;
   ctx.lineWidth = 1;
   line(ctx, 0, plotH, plotW, plotH);
 
-  // National bars
   for (const d of visibleData) {
     const barH = plotH - yScale(d.nationalPct);
     if (barH <= 0) continue;
@@ -129,7 +101,6 @@ export function drawExportHistogram(
     roundRect(ctx, xScale(d.x - bst.binSize / 2), yScale(d.nationalPct), barFullWidth, barH, 1);
     ctx.fill();
   }
-  // Yours bars
   for (const d of visibleData) {
     const barH = plotH - yScale(d.yoursPct);
     if (barH <= 0) continue;
@@ -140,7 +111,6 @@ export function drawExportHistogram(
   }
   ctx.globalAlpha = 1;
 
-  // X ticks
   ctx.fillStyle = MUTED;
   ctx.strokeStyle = MUTED;
   ctx.font = font(400, CHART_TEXT);
@@ -165,7 +135,6 @@ export function drawExportHistogram(
     }
   }
   ctx.font = font(400, CHART_TEXT); ctx.fillStyle = MUTED; ctx.strokeStyle = MUTED;
-  // Y ticks
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   const yTickStep=meanRail?Math.max(1,Math.ceil(14/Math.max(1,plotH/Math.max(1,bst.yTicks.length-1)))):1;
@@ -179,7 +148,6 @@ export function drawExportHistogram(
   return height;
 }
 
-/** A generation uses the same pill geometry as its neighboring type identifiers. */
 function genIcon(gen: number): IconDrawer {
   return (ctx, x, y, w, h) => {
     const height = Math.min(h, w / TYPE_BADGE_ASPECT);
@@ -187,9 +155,6 @@ function genIcon(gen: number): IconDrawer {
   };
 }
 
-/** Build the per-row icon drawer for a type badge. Contain-fit and centre within
- *  the column (mirrors the on-screen SVG); the badge's 5:1 aspect differs from
- *  the column's, so filling it would distort the pill. */
 function typeBadgeIcon(type: TypeName, glyph: HTMLImageElement | null): IconDrawer {
   return (ctx, x, y, w, h) => {
     const height = Math.min(h, w / TYPE_BADGE_ASPECT);
@@ -208,11 +173,6 @@ interface CardSpec {
 interface StatsCardBox { y: number; h: number }
 interface StatsLayout { w: number; h: number; cards: StatsCardBox[] }
 
-/** Lay out + (optionally) draw the whole stats panel at natural scale, top-left
- *  at the current origin. Returns the panel's natural { w, h } and per-card boxes
- *  (natural coords). When `cardBg` is false the white card backgrounds are NOT
- *  filled here — the caller draws them (with shadow) in the export's logical
- *  space so their radius/shadow match the dex card. */
 function renderPanel(
   ctx: CanvasRenderingContext2D,
   data: DetailedStatsData,
@@ -260,7 +220,6 @@ function renderPanel(
   const boxes: StatsCardBox[] = [];
   let cursorY = 0;
   for (const card of cards) {
-    // Measure content height.
     ctx.font = font(400, SUB_SIZE);
     const subLines = wrapText(ctx, card.subtitle, CONTENT_W);
     const legendH = card.legend ? LEGEND_SIZE + 8 : 0;
@@ -270,7 +229,6 @@ function renderPanel(
     boxes.push({ y: cursorY, h: cardH });
 
     if (draw) {
-      // Card background (skipped when the caller draws it in logical space).
       if (cardBg) {
         ctx.fillStyle = CARD_BG;
         roundRect(ctx, 0, cursorY, STATS_NAT_W, cardH, CARD_RADIUS);
@@ -279,11 +237,8 @@ function renderPanel(
 
       let y = cursorY + CARD_PADY;
       const x = CARD_PADX;
-      // Title — outline-section style: Inter Black, uppercase, stretched (scaleX)
-      // to fill the card width, capped at the same MAX_LABEL_STRETCH the grid uses.
       drawExportStatsTitle(ctx, card.title, x, y, CONTENT_W);
       y += TITLE_LH + 2;
-      // Subtitle
       ctx.fillStyle = MUTED;
       ctx.font = font(400, SUB_SIZE);
       for (const ln of subLines) {
@@ -291,12 +246,10 @@ function renderPanel(
         y += SUB_LH;
       }
       y += 8;
-      // Legend (BST only)
       if (card.legend) {
         drawLegend(ctx, x, y);
         y += legendH;
       }
-      // Chart
       card.drawChart(ctx, x, y);
     }
 
@@ -347,8 +300,6 @@ export function statsBadgeUrls(data: DetailedStatsData): { type: string; url: st
   return data.typeData.map((d) => ({ type: d.type, url: typeGlyphPath(d.type as TypeName) }));
 }
 
-/** Natural size + per-card boxes for a dataset (for aspect-ratio sizing and for
- *  drawing the card backgrounds/shadows in the export's logical space). */
 export function measureStatsPanel(
   ctx: CanvasRenderingContext2D,
   data: DetailedStatsData,
@@ -357,9 +308,6 @@ export function measureStatsPanel(
   return renderPanel(ctx, data, new Map(), heights, false, true);
 }
 
-/** Draw the stats panel CONTENT (no card backgrounds) at natural scale with its
- *  top-left at the current origin (caller applies translate + scale, and draws
- *  the shadowed card backgrounds itself so they match the dex card). */
 export function drawStatsPanel(
   ctx: CanvasRenderingContext2D,
   data: DetailedStatsData,

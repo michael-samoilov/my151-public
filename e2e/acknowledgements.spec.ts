@@ -1,10 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-/**
- * The footer's Acknowledgements panel: a bottom sheet on a phone and a
- * right-hand pane on desktop, with a list of credits and a detail level that
- * loads the license text only when an entry opens.
- */
 test.describe('acknowledgements', { tag: '@viewport' }, () => {
   test('opens from the hub footer, shows a license, goes back, and closes', async ({ page }, testInfo) => {
     await page.route('**/api/event', (route) => route.fulfill({ status: 200, body: '{}' }));
@@ -23,12 +18,9 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     for (const group of ['Sprite sources', 'Sprite artists', 'Pokémon icons and art', 'Interface icons', 'Fonts', 'Data', 'Code']) {
       await expect(dialog.getByRole('heading', { name: new RegExp(`^${group}`) })).toBeVisible();
     }
-    // The count matches the rows: a sprite source with no sprite in this build has no row.
     const rows = await dialog.locator('[data-ack-id]').count();
     await expect(dialog.getByText(`${rows} credits`)).toBeVisible();
 
-    // The container differs by width: a sheet along the bottom on a phone, a
-    // full-height pane along the right on desktop.
     const viewport = page.viewportSize()!;
     const box = (await dialog.boundingBox())!;
     const desktop = viewport.width >= 1024;
@@ -54,9 +46,6 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
     await expect(row).toBeFocused();
 
-    // Sprites are credited through their bundles: a bundle says only what
-    // can be proven, with no count, quotes its own permission once and links
-    // its pages, and lists no sprites.
     await dialog.locator('[data-ack-id="pokeapi-sprites"]').click();
     await expect(dialog.getByTestId('ack-detail')).toContainText("The source of most of the app's sprite files.");
     await expect(dialog.getByTestId('ack-terms').locator('blockquote')).toHaveCount(1);
@@ -64,8 +53,6 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
-    // Only an artist whose sprites the app took from them directly has an
-    // entry: KingOfThe-X-Roads, for his own uploads.
     const artists = dialog.getByTestId('ack-group-sprite-artists').locator('[data-ack-id]');
     await expect(artists).toHaveCount(1);
     await artists.first().click();
@@ -77,8 +64,6 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
-    // The npm packages come from the build's own list, by license, and each
-    // license file is named for what it holds.
     await dialog.locator('[data-ack-id="npm-packages"]').click();
     const packages = dialog.getByTestId('ack-packages');
     await expect(packages.getByRole('listitem').filter({ hasText: /^react \d/ })).toBeVisible();
@@ -94,7 +79,6 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog).toBeHidden();
     await expect(link).toBeFocused();
 
-    // A press outside the panel closes it too.
     await link.click();
     await expect(dialog).toBeVisible();
     await page.mouse.click(8, 8);

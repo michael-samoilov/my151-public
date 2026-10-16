@@ -18,12 +18,6 @@ type FoilMaskUrls = {
   gloss: string;
 };
 
-/**
- * Chroma ramp from paper to ink. At or below PASTEL_CHROMA a pixel is paper
- * or a pastel fill; from INK_CHROMA up it counts in full. A ramp, not a
- * floor: the league rows' tints sit at chroma 7-16, and a hard floor at 12
- * lit the water, electric, fire, ice, and fighting rows but not the rest.
- */
 const PASTEL_CHROMA = 18;
 const INK_CHROMA = 30;
 
@@ -55,7 +49,6 @@ function sampleLum(lum: Float32Array, width: number, height: number, x: number, 
   return lum[yy * width + xx]!;
 }
 
-/** Pure map derivation. Node tests call this with a hand-built buffer. */
 export function deriveFoilMaps(src: RgbaBitmap, need: FoilMapNeed = ALL_MAPS): FoilMaps {
   const { width, height, data } = src;
   const count = width * height;
@@ -166,7 +159,6 @@ function bitmapToPngUrl(bmp: RgbaBitmap): string {
   return canvas.toDataURL('image/png');
 }
 
-/** Downsample the preview PNG and return CSS mask data URLs. */
 export async function foilMaskUrlsFromImage(
   src: string,
   need: FoilMapNeed = ALL_MAPS,

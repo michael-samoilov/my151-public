@@ -1,13 +1,5 @@
-// Visual diff for diff mode: the same fixed screens on the base and the change,
-// compared pixel by pixel, so a change that moves or repaints something no check
-// covers still shows up. Nothing is stored as a baseline: both builds render in
-// the same run, in the same browser, so the comparison needs no snapshot files.
-//
-// Each screen renders four times: each build twice. A region that differs
-// between two renders of the same build is noise (a timer, a lazy image), and
-// it is reported as unstable instead of as a change. Every other changed
-// region is listed with the text under it, for the agent to match against the
-// change's "must change" list. A region that matches nothing blocks the merge.
+
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium, type Browser, type Page } from 'playwright';
@@ -23,9 +15,7 @@ const VIEWPORTS: Viewport[] = [
 interface Screen {
   id: string;
   path: string;
-  /** localStorage entries set before the page's own scripts run. */
   seed?: Record<string, string>;
-  /** Steps after load, such as opening a tab or a menu. */
   act?: (page: Page) => Promise<void>;
 }
 
@@ -34,7 +24,6 @@ const LEAGUE = { 'league-builder': read('docs/future-tools/home-page/league-fixt
 const FAVORITES = {
   'favorite-picker': JSON.stringify({ state: { fills: JSON.parse(read('docs/favorite-picker-work/export/seed.json')).fills }, version: 3 }),
 };
-// The verifier's 37-Pokémon in-progress dex, as in scripts/capture-tool-art.mjs.
 const DEX = {
   'personal-151-pokedex-v3': JSON.stringify({
     state: {
@@ -51,7 +40,6 @@ const DEX = {
 
 const click = (selector: string) => async (page: Page) => { await page.locator(selector).first().click(); };
 const openTools = async (page: Page) => { await page.locator('button[aria-expanded]').filter({ hasText: /tools/i }).first().click(); };
-/** Open a picker cell and wait until every sprite in its selector has its pixels. */
 const openPickerCell = (cell: string) => async (page: Page) => {
   await page.getByTestId(`favorites-cell-${cell}`).click();
   const sprites = page.locator('#favorites-selector [data-testid^="favorites-pick-"] img[alt]:not([alt=""])');
@@ -61,7 +49,6 @@ const openPickerCell = (cell: string) => async (page: Page) => {
   '#favorites-selector [data-testid^="favorites-pick-"] img[alt]:not([alt=""])', { timeout: 30_000 });
 };
 
-/** The fixed screen set. Add a screen when a change touches a state this list does not reach. */
 export const SCREENS: Screen[] = [
   { id: 'hub', path: '/' },
   { id: 'hub-progress', path: '/', seed: { ...DEX, ...LEAGUE, ...FAVORITES } },
@@ -87,7 +74,6 @@ export const SCREENS: Screen[] = [
   { id: 'favorites', path: '/favorite-pokemon-picker' },
   { id: 'favorites-filled', path: '/favorite-pokemon-picker', seed: FAVORITES },
   {
-    // The Pokémon picker's empty state: a search that finds nothing.
     id: 'builder-search-empty', path: '/pokedex-builder', seed: DEX,
     act: async (page) => {
       await click('[data-add-slot]')(page);
@@ -98,7 +84,6 @@ export const SCREENS: Screen[] = [
   { id: 'not-found', path: '/404.html' },
   { id: 'favorites-selector', path: '/favorite-pokemon-picker', act: openPickerCell('water-1') },
   {
-    // A favorite selector before any picks: nothing to choose yet.
     id: 'favorites-selector-empty', path: '/favorite-pokemon-picker',
     act: async (page) => {
       await click('[data-testid="favorites-cell-favorite-1"]')(page);
@@ -124,11 +109,6 @@ export interface ScreenResult {
 }
 export interface VisualReport { screens: ScreenResult[]; changed: number; regions: number; unstable: number; errors: number }
 
-/**
- * Wait until fonts, the images on screen and two frames have settled. Lazy
- * images below the fold never load, so the wait covers only images inside the
- * viewport, and gives up after 5 s.
- */
 async function settle(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle', { timeout: 15_000 }).catch(() => undefined);
   await page.evaluate(async () => {
@@ -144,12 +124,6 @@ async function settle(page: Page): Promise<void> {
   await page.waitForTimeout(500);
 }
 
-/**
- * Launch notices open and close on set dates (src/lib/launchFlags.ts). Marked
- * seen, they stay closed, so a screen looks the same on every day. On 13
- * October the League notice's tooltip covered the 390px tabs, and three
- * screens could not be rendered on either build.
- */
 const NOTICES_SEEN = { 'p151-league-promo-seen': '1', 'p151-moved-notice-seen': '1', 'p151-favorites-launch-seen': '1' };
 
 async function render(browser: Browser, url: string, screen: Screen, vp: Viewport): Promise<{ page: Page; png: Buffer }> {
@@ -169,12 +143,6 @@ async function render(browser: Browser, url: string, screen: Screen, vp: Viewpor
   return { page, png };
 }
 
-/**
- * Compare two PNGs on a canvas in the browser: no image library is installed,
- * and Chromium already decodes PNG. Changed pixels are binned into 8 px cells,
- * cells within 3 cells of each other join one region, and each region comes
- * back as a box in screenshot pixels.
- */
 async function diffBoxes(page: Page, a: Buffer, b: Buffer): Promise<Array<{ x: number; y: number; w: number; h: number; pixels: number }>> {
   return page.evaluate(async ([a64, b64]) => {
     const load = async (src: string) => { const img = new Image(); img.src = src; await img.decode(); return img; };
@@ -216,12 +184,6 @@ async function diffBoxes(page: Page, a: Buffer, b: Buffer): Promise<Array<{ x: n
 // that helper does not exist, so every page gets a no-op stand-in.
 const NAME_SHIM = 'globalThis.__name = globalThis.__name || ((f) => f);';
 
-// The footer's build stamp is the build minute (PageFooter.tsx). buildIn gives
-// both builds one SOURCE_DATE_EPOCH, but a base ref older than vite.config.ts's
-// SOURCE_DATE_EPOCH support, or a --no-build tree, still stamps its own build
-// minute. This pin is the fallback for those: it rewrites the stamp on both.
-// React renders "v " and the digits as two text nodes, so match the digits
-// node after a node that ends in "v ".
 const PIN_BUILD_STAMP = `(() => {
   const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   let prev = '';
@@ -236,7 +198,6 @@ const PIN_BUILD_STAMP = `(() => {
 const overlaps = (r: { x: number; y: number; w: number; h: number }, s: { x: number; y: number; w: number; h: number }) =>
   r.x < s.x + s.w && s.x < r.x + r.w && r.y < s.y + s.h && s.y < r.y + r.h;
 
-/** The visible text under a region of the change's render, so the report names what changed. */
 async function textAt(page: Page, box: { x: number; y: number; w: number; h: number }, scale: number): Promise<string> {
   return page.evaluate(([x, y, w, h]) => {
     const inBox = (e: Element) => {
@@ -245,7 +206,6 @@ async function textAt(page: Page, box: { x: number; y: number; w: number; h: num
     };
     const ownText = (e: Element) => [...e.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent!.trim()).filter(Boolean).join(' ');
     const words = [...document.querySelectorAll('body *')].filter((e) => inBox(e) && ownText(e)).map(ownText);
-    // Graphics carry their name in alt or aria-label text.
     const labels = [...document.querySelectorAll('img[alt]:not([alt=""]),[aria-label]')].filter(inBox).map((e) => e.getAttribute('alt') ?? e.getAttribute('aria-label')!);
     return ([...new Set(words)].join(' | ') || [...new Set(labels)].join(' | ') || '(no text: graphics or layout)').slice(0, 160);
   }, [box.x / scale, box.y / scale, box.w / scale, box.h / scale] as const);
@@ -262,10 +222,8 @@ export async function runVisualDiff(baseUrl: string, afterUrl: string, dir: stri
     for (const screen of SCREENS.filter((sc) => !only || only.includes(sc.id))) for (const vp of VIEWPORTS) {
       const name = `${screen.id}-${vp.name}`;
       try {
-        // One stuck screen must not stall the run: give each render 90 s.
         const cap = <T,>(p: Promise<T>) => Promise.race([p, new Promise<never>((_, no) => setTimeout(() => no(new Error('render took longer than 90 s')), 90_000))]);
-        // Two renders of each build: a region that differs between two renders
-        // of the same build is noise, whichever build it flickers on.
+
         const after = await cap(render(browser, afterUrl, screen, vp));
         const afterB = await cap(render(browser, afterUrl, screen, vp));
         const baseA = await cap(render(browser, baseUrl, screen, vp));
@@ -297,7 +255,6 @@ export async function runVisualDiff(baseUrl: string, afterUrl: string, dir: stri
   } finally { await browser.close(); }
 }
 
-/** One picture for the report: each changed screen whole, before and after, boxes on every region, and close-ups. */
 async function writeSheet(page: Page, report: VisualReport, shots: string, file: string): Promise<void> {
   const changed = report.screens.filter((s) => s.regions.length);
   const uri = (f: string) => `data:image/png;base64,${fs.readFileSync(path.join(shots, f)).toString('base64')}`;

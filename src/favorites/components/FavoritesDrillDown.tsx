@@ -20,17 +20,11 @@ import { coordinateLabel } from './coordinatePresentation';
 import { CoordinatePills } from './CoordinatePills';
 import { pickerConditionalContributors } from '../stats/pickerConditionalStats';
 
-/** The species a pick belongs to: Alolan Raichu and Mega Raichu X are both Raichu. */
 function speciesOf(mon: PickerMon): number {
   const owner = pickerNameId(getPickerMon(mon.ownerId) ?? mon);
   return (altFormSpecies as Record<string, number>)[owner] ?? owner;
 }
 
-/**
- * A row keeps its cells' order, except that one species' picks sit together
- * where its first pick sits, in the picker's form order. Another Pokémon
- * never splits Ogerpon's masks and Terastal forms.
- */
 function speciesTogether(cells: FavoritesExportCell[]): FavoritesExportCell[] {
   const first = new Map<number, number>();
   const placed = cells.map((cell, index) => {
@@ -49,7 +43,6 @@ export interface FavoritesDrillDownSelection {
   label: string;
 }
 
-/** Picker contributes cells and origins; Dex owns all sheet and tile presentation. */
 export function FavoritesDrillDown({ snapshot, contributors, selection, siblings, topGap, onNavigate, onClose }: {
   snapshot: FavoritesSnapshot;
   contributors: FavoritesExportCell[];

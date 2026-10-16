@@ -1,7 +1,5 @@
-/**
- * Downloads all PokeAPI sprites used by the app into public/ for offline use.
- * Run: node scripts/cache-sprites.mjs
- */
+
+
 import { readFileSync, mkdirSync, existsSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -12,9 +10,8 @@ const PUBLIC = join(ROOT, 'public');
 
 const POKEAPI_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites';
 
-// Retry-capable fetch
 async function download(url, dest) {
-  if (existsSync(dest)) return; // skip if already cached
+  if (existsSync(dest)) return;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const res = await fetch(url);
@@ -30,7 +27,6 @@ async function download(url, dest) {
   }
 }
 
-// Batch downloads with concurrency limit
 async function downloadAll(items, concurrency = 10) {
   let i = 0;
   let done = 0;
@@ -51,12 +47,10 @@ async function downloadAll(items, concurrency = 10) {
 async function main() {
   const downloads = [];
 
-  // 1. Pokemon sprites (base + shiny for specific IDs)
   console.log('Reading pokemon.json...');
   const pokemon = JSON.parse(readFileSync(join(ROOT, 'src/data/pokemon.json'), 'utf-8'));
   const spriteIds = new Set();
   for (const p of pokemon) {
-    // Extract ID from URL like .../pokemon/123.png
     const match = p.sprite.match(/\/pokemon\/(\d+)\.png$/);
     if (match) spriteIds.add(match[1]);
   }
@@ -67,7 +61,6 @@ async function main() {
     });
   }
 
-  // 2. Shiny sprites
   const shinyIds = [77, 130, 147, 443, 612];
   for (const id of shinyIds) {
     downloads.push({
@@ -76,7 +69,6 @@ async function main() {
     });
   }
 
-  // 3. Sprite override (Darmanitan Zen → 10017)
   if (!spriteIds.has('10017')) {
     downloads.push({
       url: `${POKEAPI_BASE}/pokemon/10017.png`,
@@ -84,26 +76,22 @@ async function main() {
     });
   }
 
-  // 4. Type icons (Gen IX Scarlet/Violet)
   const typeIds = {
     normal: 1, fighting: 2, flying: 3, poison: 4, ground: 5, rock: 6,
     bug: 7, ghost: 8, steel: 9, fire: 10, water: 11, grass: 12,
     electric: 13, psychic: 14, ice: 15, dragon: 16, dark: 17, fairy: 18,
   };
   for (const [, id] of Object.entries(typeIds)) {
-    // Full-size badge sprites (128x40px, type name baked in)
     downloads.push({
       url: `${POKEAPI_BASE}/types/generation-ix/scarlet-violet/${id}.png`,
       dest: join(PUBLIC, 'sprites', 'types', 'badges', `${id}.png`),
     });
-    // Small icon sprites (60x60px)
     downloads.push({
       url: `${POKEAPI_BASE}/types/generation-ix/scarlet-violet/small/${id}.png`,
       dest: join(PUBLIC, 'sprites', 'types', 'small', `${id}.png`),
     });
   }
 
-  // Filter out already-cached
   const needed = downloads.filter(d => !existsSync(d.dest));
   console.log(`${downloads.length} total sprites, ${needed.length} to download...`);
 

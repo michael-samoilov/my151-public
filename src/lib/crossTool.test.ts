@@ -13,8 +13,8 @@ import {
 import type { LeagueCardShape } from '../../api/_leagueRecord';
 
 const LAUNCH = LEAGUE_LAUNCH_TS;
-const PRE = Date.UTC(2026, 6, 1); // 1 Jul, before launch
-const POST = Date.UTC(2026, 8, 9); // 9 Sep, after launch
+const PRE = Date.UTC(2026, 6, 1);
+const POST = Date.UTC(2026, 8, 9);
 
 const dex = (cid: string, firstTs: number, lastTs: number, latestIds: number[] = [1]): DexLike => ({
   cid,
@@ -84,7 +84,6 @@ describe('buildCrossTool conversion', () => {
   });
 
   it('counts a dual-tool browser whose dex lastTs is still pre-launch', () => {
-    // They opened league without sending a new dex beacon. They had a chance.
     const snap = buildCrossTool(
       [dex('both', PRE, PRE)],
       [league('both', POST, POST)],
@@ -107,7 +106,6 @@ describe('buildCrossTool conversion', () => {
         league('league-only', POST, POST),
       ],
     );
-    // Eligible: returner, dual, new. Not the two pre-only. Not league-only.
     expect(kpi(snap, 'dex-to-league')).toMatchObject({ n: 1, of: 3, pct: 33 });
     expect(kpi(snap, 'league-has-earlier')).toMatchObject({ n: 1, of: 2, pct: 50 });
   });

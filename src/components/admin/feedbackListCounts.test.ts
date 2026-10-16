@@ -19,7 +19,6 @@ const DAY = 86_400_000;
 const NOW = Date.UTC(2026, 9, 9, 12);
 const stamp = (t: number) => new Date(t).toISOString().slice(0, 10);
 
-/** Reports newest first, as api/feedback.ts stores them, plus the daily hashes it bumps. */
 function seed(ages: [number, string][]) {
   list = ages.map(([days, category], i) => JSON.stringify({ id: `r${i}`, ts: NOW - days * DAY, category, message: 'm' }));
   hashes = {};

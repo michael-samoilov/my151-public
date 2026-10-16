@@ -22,14 +22,12 @@ import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
  * pencil now leaves once, at 21 characters, and returns when the name does.
  */
 
-/** The pencil's own width, and the gap before it. */
 const PENCIL_PX = 11;
 const PENCIL_GAP_REM = 0.25;
 
 export function usePencilRoom(
   block: RefObject<HTMLElement | null>,
   ghost: RefObject<HTMLElement | null>,
-  /** The field's words. Re-measured whenever they change. */
   text: string,
 ): boolean {
   const [room, setRoom] = useState(true);
@@ -51,7 +49,6 @@ export function usePencilRoom(
     };
     compute();
     if (typeof ResizeObserver === 'undefined') return;
-    // The bar changes width on its own: a rotation, a pane opening beside it.
     const ro = new ResizeObserver(compute);
     ro.observe(b);
     return () => ro.disconnect();

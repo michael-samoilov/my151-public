@@ -1,8 +1,5 @@
-/** md breakpoint. Below this, a funnel's plot is wider than it is tall,
- *  matching the desktop Sankey shape rather than the card's aspect. */
 const SANKEY_DESKTOP_WIDTH = 1024;
 
-/** Plot width / plot height on a phone funnel. Desktop sits near 2.2. */
 const FUNNEL_PLOT_ASPECT = 1.5;
 
 function sankeyDesktopHeight(stack: number, kind: 'funnel' | 'referrer'): number {
@@ -28,11 +25,6 @@ export function sankeyHeightCss(stack: number, kind: 'funnel' | 'referrer'): str
   return `max(${minH}px, min(${desktopH}px, calc((100cqw - ${pads}px) / ${FUNNEL_PLOT_ASPECT} + ${chrome}px)))`;
 }
 
-/** Insets and type that fit the chart's own width. Compact kicks in when
- *  desktop pads would leave a 5-column funnel too little plot. Counts sit
- *  in the bars. First-stage names sit on top of the bar, so the left pad
- *  only needs a hairline. Leaf names sit to the right. Top pad holds two
- *  lines so "Placed a Pokémon" is not clipped. */
 export function sankeyGeometry(width: number, kind: 'funnel' | 'referrer') {
   const compact = width < 600;
   const scale = Math.min(1, width / SANKEY_DESKTOP_WIDTH);

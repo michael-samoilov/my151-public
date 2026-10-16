@@ -23,13 +23,9 @@ args = parser.parse_args()
 source = root / args.source_dir
 out = root / args.out_dir
 
-# (capture, left, top, size) in native pixels.
 CROPS = {
-    # Ten full rows of ten, below the header bar.
     'dex': ('dex-plain', 32, 84, 966),
-    # The gen discs, the icon header, and Gen I-V of the Normal to Grass columns.
     'favorites': ('picker-full-icons', 26, 106, 740),
-    # The whole card width, from the top of the header band.
     'trainer-card': ('trainer-brock', 0, 0, 888),
 }
 PAGES = {

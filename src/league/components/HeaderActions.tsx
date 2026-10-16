@@ -8,27 +8,11 @@ import { useLeagueStore, type LeagueView } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { REVEAL_DELAY_MS } from './LeagueFunnelNudge';
 
-/**
- * The summary's two readings, as the shared pill tab set (PR 79).
- *
- * Story and Rematch name themselves; the gym-leaders export spacer is the
- * only place that adds "story teams" / "rematch teams".
- */
 const VIEWS: { value: LeagueView; label: NoArgKey }[] = [
   { value: 'challenge', label: 'league.view.story' },
   { value: 'rematch', label: 'league.view.rematch' },
 ];
 
-/**
- * The height both header fields give their editable line.
- *
- * The league name is 0.875rem and the gym theme 0.6875rem, so left to their
- * own line boxes the two dashed underlines sit at different heights — the
- * card's ran 1.9px higher, which read as the type chip beside it being set
- * low. One height for both, and the shorter text centres in it. The name line
- * above needs no such pinning: both headers set it in the same 0.6875rem, and
- * nothing rides beside it any more.
- */
 export const HEADER_FIELD_H = '1.15625rem';
 
 export function LeagueViewToggle() {
@@ -51,28 +35,8 @@ export function LeagueViewToggle() {
   );
 }
 
-/**
- * The export control, in the shape the dex builder's pages give it.
- *
- * One button, two pictures: the league pane's opens the summary at the team
- * toggle on screen, and a card pane's exports that trainer's card.
- * Both go through the dex export's platform path, so iOS offers "Save Image"
- * into Photos, Android takes the download its gallery scans, and desktop gets
- * a file.
- *
- * It never disables on an empty league. A blank trainer card is a template
- * somebody may want a picture of, which is why the empty states were designed
- * rather than suppressed.
- *
- * The store is read inside the handler rather than subscribed to. This button
- * sits in a bar that is mounted for the whole session, and subscribing to the
- * cards would re-render it on every keystroke in a theme field.
- */
 export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
   const openLeagueExport = useLeagueUi((s) => s.openLeagueExport);
-  // The roster popups sit under or beside the summary, away from this
-  // button, so the button pulses while one shows. It starts after the same
-  // delay as the popup, and it stops when the popup closes or hides.
   const pulse = useLeagueUi(
     (s) => cardIndex === undefined && isRosterNudge(s.activeNudge) && !s.exportOpen && !s.browserOpen,
   );

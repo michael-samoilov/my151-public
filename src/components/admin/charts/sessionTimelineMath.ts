@@ -1,8 +1,3 @@
-/** One session on the timeline. `count` is the headline number shown in the
- *  readout (dex: ids placed; league: cards). `net` is the running size the net
- *  line tracks (dex: ids; league: seated lines). `added`/`removed` are the
- *  insertions and deletions that session — shown as up/down diff bars, never
- *  netted. `dur` is seconds; `ev` are funnel events seen that session. */
 export interface TimelinePoint {
   t: number;
   count: number;
@@ -15,8 +10,6 @@ export interface TimelinePoint {
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** `tz` is the viewed app user's IANA zone. Missing tz is UTC — never the
- *  admin browser's local zone. */
 export function fmtDay(t: number, tz?: string): string {
   const d = new Date(t);
   const zone = tz || 'UTC';
@@ -36,7 +29,6 @@ function clockParts(t: number, tz?: string): { time: string; period: string } {
   return m ? { time: m[1], period: m[2] } : { time: raw, period: '' };
 }
 
-/** Compact range: "7:43–7:53 AM" when both ends share a period. */
 export function fmtRange(start: number, end: number, tz?: string): string {
   const a = clockParts(start, tz);
   const b = clockParts(end, tz);
@@ -60,7 +52,6 @@ function zonedClock(t: number, tz: string): { hour: number; minute: number; week
   return { hour, minute, weekday };
 }
 
-/** Each midnight in [t0, t1]. Uses `tz` when given, otherwise UTC. */
 export function midnightBoundaries(t0: number, t1: number, tz?: string): number[] {
   if (!tz) {
     const out: number[] = [];
@@ -85,21 +76,16 @@ export function midnightBoundaries(t0: number, t1: number, tz?: string): number[
   return out;
 }
 
-/** Each Sunday midnight in [t0, t1] — stronger gridlines than the daily ones. */
 export function weekBoundaries(t0: number, t1: number, tz?: string): number[] {
   const days = midnightBoundaries(t0, t1, tz);
   if (!tz) return days.filter((ts) => new Date(ts).getUTCDay() === 0);
   return days.filter((ts) => zonedClock(ts, tz).weekday === 'Sun');
 }
 
-/** True when the span does not cover two Sunday midnights — it never reaches
- *  from one week to the week two weeks later. Day midnights then fill in
- *  chronological scale. */
 export function showDayLines(t0: number, t1: number, tz?: string): boolean {
   return weekBoundaries(t0, t1, tz).length < 2;
 }
 
-/** Calendar date in the viewed user's zone. Missing `tz` is UTC. */
 function calendarDayKey(t: number, tz?: string): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: tz || 'UTC',
@@ -109,13 +95,11 @@ function calendarDayKey(t: number, tz?: string): string {
   }).format(new Date(t));
 }
 
-/** Distinct calendar days in the viewed user's zone. */
 export function distinctCalendarDays(timestamps: number[], tz?: string): number {
   const keys = new Set(timestamps.map((t) => calendarDayKey(t, tz)));
   return keys.size || (timestamps.length === 0 ? 0 : 1);
 }
 
-/** Compact one-line meta after the count: date, window, length, diff. */
 export function formatSessionMeta(cur: TimelinePoint, tz?: string): {
   date: string;
   window?: string;

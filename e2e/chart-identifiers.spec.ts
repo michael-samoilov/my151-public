@@ -6,7 +6,6 @@ import { observeChartPaint, paintedAxes } from './support/chartPaintEvidence';
 test.setTimeout(120_000);
 async function openPickerAnalytics(page: Page, lang = 'en') {
   await page.addInitScript(fills => localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills }, version: 3 })), filledPicker);
-  // Analytics unlocks at 25 favorites and stays unlocked (useAnalyticsUnlock.ts).
   await page.addInitScript(() => localStorage.setItem('personal-151-favorites-analytics-v1', '1'));
   await page.goto(`/favorite-pokemon-picker?notme&lang=${lang}`);
   await page.locator('#favorites-tab-analytics').click();
@@ -63,7 +62,6 @@ test('localized identifiers fit their fixed rail without touching chart bars @vi
     await page.evaluate(() => document.fonts.ready);
     const cards = await svgEvidence(page);
     for (const card of cards) {
-      // Row identifiers precede the count axis; numeric values and chart headers do not.
       const rowLabels = card.texts.filter(text => text.y > 30 && text.left < card.axes[0] && !/^[-\d.,+]/.test(text.text ?? ''));
       for (const label of rowLabels) {
         expect(label.left, `${locale}/${card.chart}/${label.text} left`).toBeGreaterThanOrEqual(-.5);
@@ -95,12 +93,10 @@ test('native detailed sheets use matching local axes and readable badge labels @
       for (const circle of circles) expect(circle.r ** 2).toBeCloseTo(circles[0].r ** 2, 2);
     }
     else expect(labels).toContain('GEN I');
-    // Each rendered butterfly ends with count/index vertical strokes sharing top/bottom.
     const pairs = axes.filter((line, index) => index % 2 === 0 && axes[index + 1] && Math.abs(line.points[0].y - axes[index + 1].points[0].y) < .1).map(line => {
       const index = axes.indexOf(line); return { count: line.points[0].x, index: axes[index + 1].points[0].x, y: line.points[0].y, width: line.width };
     });
     expect(pairs.length).toBeGreaterThanOrEqual(tool === 'picker' ? 4 : 2);
-    // Pairs on the same source canvas are normalized by their chart column origin.
     const local = pairs.map(pair => ({ ...pair, distance: pair.index - pair.count }));
     local.forEach(pair => expect(pair.distance).toBeCloseTo(local[0].distance, 1));
     if (tool === 'picker') {
@@ -114,7 +110,6 @@ test('native detailed sheets use matching local axes and readable badge labels @
   }
   await testInfo.attach('actual-native-axes', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
 });
-
 
 test('native localized badge ink stays within its painted pill @viewport', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop', 'Native PNG dimensions are independent of viewport.');
@@ -130,8 +125,6 @@ test('native localized badge ink stays within its painted pill @viewport', async
       type Bounds = { width:number; left:number;right:number;top:number;bottom:number; text?:string; fill?:string; color?:string };
       const target = window as unknown as { chartBadges:Bounds[]; chartBadgeTexts:Bounds[]; chartShapeGlyphs:Bounds[]; chartBars:Bounds[] };
       const badges = target.chartBadges.filter(item => item.width === outputWidth && item.left > mainWidth);
-      // Bold BST averages are not pill labels. Match the badge row vertically,
-      // retaining horizontal overflows so the containment assertion catches them.
       const texts = target.chartBadgeTexts.filter(item => item.width === outputWidth && item.left > mainWidth && badges.some(badge => (item.top + item.bottom) / 2 >= badge.top && (item.top + item.bottom) / 2 <= badge.bottom));
       const glyphs = target.chartShapeGlyphs.filter(item => item.width === outputWidth && item.left > mainWidth);
       return { badges, texts, glyphs, bars:target.chartBars.filter(item => item.width === outputWidth && item.left > mainWidth) };
@@ -174,7 +167,6 @@ test('native localized badge ink stays within its painted pill @viewport', async
   await testInfo.attach('native-nine-locale-pill-ink', { body: JSON.stringify(evidence, null, 2), contentType: 'application/json' });
 });
 
-
 test('Dex type generation and shape charts share axes and pill identifiers @viewport', async ({ page }, testInfo) => {
   await page.goto(`${TUNE_URL}&notme&lang=en`);
   await seedDex(page);
@@ -205,7 +197,6 @@ test('Dex type generation and shape charts share axes and pill identifiers @view
   }
   await testInfo.attach('dex-actual-axes-and-pill-shapes', { body:JSON.stringify(evidence,null,2), contentType:'application/json' });
 });
-
 
 test('count labels stay numeric and badge whitespace keeps colored text and shapes readable @viewport', async ({ page }, testInfo) => {
   await openPickerAnalytics(page);

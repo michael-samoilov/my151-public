@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Gen 1 Pokemon data (1-151)"""
-# (id, name, t1, t2, hp, atk, def, spa, spd, spe, gen, chain, from, stage, lvl, leg, myth, cap, grow, baby)
 GEN1 = [
 (1,"bulbasaur","grass","poison",45,49,49,65,65,45,1,1,None,1,None,0,0,45,"ms",0),
 (2,"ivysaur","grass","poison",60,62,63,80,80,60,1,1,1,2,16,0,0,45,"ms",0),

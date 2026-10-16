@@ -122,8 +122,6 @@ describe('enumeratePaths', () => {
 describe('worst keep-everyone grid', () => {
   it('reports the longest real cascade', () => {
     const best = longestRealCascade();
-    // One keep-everyone cascade plus the direct trash swap.
-    // The cascade is 17 links, which is the list that is too long to scan.
     expect(best.listed).toBe(2);
     expect(best.slides).toBe(17);
     expect(best.links).toBe(17);
@@ -139,7 +137,7 @@ describe('worst keep-everyone grid', () => {
     expect(options).toHaveLength(2);
     expect(options.filter((option) => option.path).length).toBe(1);
     expect(options.filter((option) => !option.path).length).toBe(1);
-  }, 45_000); // Exhaustive 18-type search takes about 20 seconds on Windows CI.
+  }, 45_000);
 });
 
 function longestRealCascade(): {

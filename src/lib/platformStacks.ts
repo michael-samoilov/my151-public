@@ -345,7 +345,6 @@ function colorKey(color: string): string {
   return rgb ? rgb.join(',') : color.trim().toLowerCase();
 }
 
-/** Lightest lightness of this hue that still reads on white. */
 function lightCap(h: number, s: number, baseL: number): number {
   let lo = baseL;
   let hi = 0.9;
@@ -370,10 +369,6 @@ function lighterShade(color: string, t: number): string {
   return `#${next.map((n) => n.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/**
- * Repeated colors become a same-hue ramp. The left copy stays darkest.
- * A color that appears once is unchanged.
- */
 export function shadeRamp(colors: readonly string[]): string[] {
   const groups = new Map<string, number[]>();
   colors.forEach((color, i) => {

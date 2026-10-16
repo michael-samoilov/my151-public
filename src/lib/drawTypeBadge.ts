@@ -9,19 +9,6 @@ import {
 } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
 
-/**
- * The canvas twin of `<TypeBadge>`.
- *
- * Both read their proportions from `typeBadgeGeometry.ts`, so the exported
- * poster and the screen cannot disagree about where the symbol sits or how big
- * the word is — the poster is a picture of the app, and a badge that is subtly
- * different in the PNG reads as a bug nobody can name.
- *
- * `glyph` is the shared transparent SVG symbol, already decoded by
- * the caller. Canvas never triggers image or font loading of its own, so this
- * draws whatever the caller has resolved; a missing glyph degrades to the
- * coloured pill with its word, which is still readable.
- */
 export function drawTypeBadge(
   ctx: CanvasRenderingContext2D,
   type: TypeName,
@@ -40,8 +27,6 @@ export function drawTypeBadge(
   ctx.fill();
 
   if (glyphImage) {
-    // Contain-fit into the symbol box, matching the SVG's
-    // preserveAspectRatio="xMidYMid meet" — the crops are not square.
     const box = typeBadgeGlyphBox();
     const side = box.size * s;
     const iw = glyphImage.naturalWidth || 1;
@@ -59,18 +44,11 @@ export function drawTypeBadge(
   }
 
   const label = localeUppercase(typeLabel(type));
-  // The same measured fit the SVG uses, from the same module — so a long
-  // Italian name is condensed identically in the poster and on screen.
   const fit = typeBadgeFit(label, typeLabels().map(localeUppercase));
   ctx.font = `${TYPE_BADGE.fontWeight} ${fit.fontSize * s}px ${typeBadgeFontStack()}`;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
-  // Alphabetic, then shifted — the same baseline placement the SVG does, and
-  // for the same reason: 'middle' is the em-box middle, which is right for CJK
-  // and visibly low for Latin. `fit.baseline` already carries the per-script
-  // correction, so this stays a plain alphabetic draw.
   ctx.textBaseline = 'alphabetic';
-  // Condensed about the text centre, the same way the SVG does it.
   const cx = x + TYPE_BADGE.textCenterX * s;
   ctx.translate(cx, 0);
   ctx.scale(fit.scaleX, 1);

@@ -9,13 +9,11 @@ import type { ShapeName, TypeName } from '@/types/pokemon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { pokemonSpriteUrl } from '@/lib/spriteUrl';
 
-/** The peek shows the whole pull tab, accent line included, plus this strip. */
 const PEEK_STRIP = 5;
 const EXPAND_THRESHOLD = 40;
 const DISMISS_THRESHOLD = 80;
 const SWIPE_THRESHOLD = 50;
 
-/** A tool supplies data and navigation; the sheet and pane own presentation. */
 export interface AnalyticsDrillDownItem {
   id: string;
   label: string;
@@ -40,11 +38,8 @@ const getSegmentLabel = (segment: AnalyticsDrillDownItem) => segment.label;
 const getSegmentShape = (segment: AnalyticsDrillDownItem) => segment.shape;
 const computeData = (segment: AnalyticsDrillDownItem | null) => segment?.getData() ?? null;
 
-/** Wishiwashi's pokemon.json sprite is the school form, but the BST data
- *  reflects the solo form — show the original solo sprite in BST drilldowns. */
 const BST_SPRITE_OVERRIDES: Record<number, string> = { 746: pokemonSpriteUrl(746) };
 
-/** A full card panel: drag handle + header + accent line + scrollable content */
 function CardPanel({
   data,
   panelAttributes,
@@ -95,7 +90,6 @@ function CardPanel({
 
   return (
     <div {...panelAttributes} className="flex flex-col h-full bg-background rounded-t-2xl overflow-hidden" style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.2)' }}>
-      {/* Pull tab: entire area is draggable (handle + header + subtitle + accent line) */}
       <div
         ref={pullTabRef}
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
@@ -104,12 +98,10 @@ function CardPanel({
         onTouchEnd={onHandleTouchEnd}
         onClick={onHandleClick}
       >
-        {/* Drag indicator */}
         <div className="flex items-center justify-center pt-2 pb-1">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
 
-        {/* Card header */}
         <div className="flex flex-col items-center pt-0.5 pb-1.5">
           <div className="flex items-center w-full px-3">
             <div className="flex-1 flex items-center min-w-0">
@@ -158,11 +150,9 @@ function CardPanel({
           <span className="text-[0.625rem] text-muted-foreground mt-0.5">{data.subtitle}</span>
         </div>
 
-        {/* Accent line */}
         <div className="h-[2px]" style={{ backgroundColor: data.color, opacity: 0.5 }} />
       </div>
 
-      {/* Scrollable content */}
       <div
         ref={scrollRef}
         className="flex-1 min-h-0 relative"
@@ -199,12 +189,10 @@ function CardPanel({
               </div>
             </div>
           ))}
-          {/* Extra bottom padding so the floating button doesn't occlude rows */}
           {removalCount > 0 && <div className="h-14" aria-hidden />}
         </div>
       </div>
 
-      {/* Floating "Remove N Pokemon" confirmation button */}
       {removalCount > 0 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
           <button type="button"
@@ -219,8 +207,6 @@ function CardPanel({
   );
 }
 
-/** `topGap` is the space in px above the expanded sheet. App passes the
- *  header's measured height, so the nav tabs stay visible and tappable. */
 export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, siblings, assignedIds, closeDrillDown, expandDrillDown = () => {}, peek = false, spriteOverrides, removalStagedIds = [], handleToggleRemoval, handleConfirmRemoval }: AnalyticsDrillDownProps & { topGap: number }) {
   const [dragY, setDragY] = useState(0);
   const [swipeX, setSwipeX] = useState(0);
@@ -239,7 +225,6 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
   const [slides, setSlides] = useState(false);
   const pendingNav = useRef<AnalyticsDrillDownItem | null>(null);
 
-  // Current index in siblings
   const currentIdx = useMemo(() => {
     if (!segment || siblings.length < 2) return -1;
     return siblings.findIndex(s => s.id === segment.id);
@@ -250,24 +235,14 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
   const nextSibling = siblings.length >= 2 && currentIdx >= 0
     ? siblings[(currentIdx + 1) % siblings.length] : null;
 
-  // Current panel data: computed synchronously (blocks render)
   const currentData = useMemo(() =>
     computeData(segment),
     [segment]);
 
-  // Prev/next panel data: deferred to after paint so the current panel
-  // shows instantly even for expensive drilldowns (e.g. national-dex type
-  // matchup with ~1025 Pokemon). Computed eagerly if already cached (the
-  // computation returns immediately from cache), or scheduled via
-  // requestAnimationFrame otherwise.
   const [prevData, setPrevData] = useState<ReturnType<typeof computeDrillDownData>>(null);
   const [nextData, setNextData] = useState<ReturnType<typeof computeDrillDownData>>(null);
 
   useEffect(() => {
-    // Run after the current panel paints, not inside the interaction that
-    // opened it — the neighbours are off-screen until the user swipes. The
-    // effect body itself runs before paint, so the work is scheduled on the
-    // next frame and its state update is marked non-urgent.
     const id = requestAnimationFrame(() => {
       const prev = prevSibling ? computeData(prevSibling) : null;
       const next = nextSibling ? computeData(nextSibling) : null;
@@ -281,8 +256,6 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
 
   const bstOverrides = spriteOverrides;
 
-  // Only lock body scroll when fully expanded (not peek) — mobile only
-  // Desktop uses the side panel (DrillDownPanel), so body scroll must stay free
   useEffect(() => {
     if (!peek) {
       const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
@@ -292,27 +265,21 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
     }
   }, [peek]);
 
-  // A shape header stacks icons under its labels and stands taller than a
-  // type or color header, so the peek follows the measured pull tab.
   useLayoutEffect(() => {
     const tab = currentPullTabRef.current;
     if (!tab) return;
     setPullTabHeight(tab.offsetHeight);
-    // The first callback comes after the browser styles the measured peek, so
-    // the sheet opens in place and slides only for later changes.
     const observer = new ResizeObserver(() => { setPullTabHeight(tab.offsetHeight); setSlides(true); });
     observer.observe(tab);
     return () => observer.disconnect();
   }, [segment]);
 
-  // Reset scroll + staged removals when segment changes
   useEffect(() => {
     if (currentScrollRef.current) {
       currentScrollRef.current.scrollTop = 0;
     }
   }, [segment]);
 
-  // Handle carousel transitionend: commit the pending navigation
   const justNavigated = useRef(false);
   const handleTransitionEnd = useCallback(() => {
     if (!pendingNav.current) return;
@@ -320,7 +287,6 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
     pendingNav.current = null;
     justNavigated.current = true;
 
-    // Flush state update synchronously so React updates DOM before browser paints
     flushSync(() => {
       target.onSelect();
       setSwipeX(0);
@@ -328,14 +294,12 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
     });
   }, []);
 
-  // After navigation state update, snap carousel to center before paint
   useLayoutEffect(() => {
     if (!justNavigated.current) return;
     justNavigated.current = false;
     if (carouselRef.current) {
       carouselRef.current.style.transition = 'none';
       carouselRef.current.style.transform = 'translateX(0px)';
-      // Force reflow then re-enable transition
       void carouselRef.current.offsetHeight;
       carouselRef.current.style.transition = '';
       carouselRef.current.style.transform = '';
@@ -347,11 +311,9 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
     const width = sheetRef.current.offsetWidth;
     pendingNav.current = targetSibling;
     setIsAnimating(true);
-    // Animate to the target panel position
     setSwipeX(direction * width);
   }, []);
 
-  // Touch handlers
   const touchStart = useCallback((e: React.TouchEvent) => {
     if (isAnimating) return;
     dragStartY.current = e.touches[0].clientY;
@@ -454,7 +416,6 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
     ? `calc(100dvh - ${topGap}px - ${peekHeight}px + ${Math.max(dragY, -peekHeight)}px)`
     : `${Math.max(dragY, 0)}px`;
 
-  // At rest (fully expanded, no drag), avoid transform to prevent GPU compositing blur
   const isAtRest = !peek && dragY === 0;
 
   return (
@@ -469,7 +430,6 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
           overscrollBehavior: 'none',
         }}
       >
-        {/* Carousel container clips horizontal overflow to hide prev/next panels */}
         <div className="h-full relative overflow-x-clip">
           <div
             ref={carouselRef}
@@ -483,11 +443,6 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
             }}
             onTransitionEnd={handleTransitionEnd}
           >
-            {/* Panel wrappers keyed by segment identity — when the user
-                swipes from B→C, React physically MOVES C's wrapper div
-                from index 2 to index 1 (preserving its <img> DOM nodes
-                and painted sprites) instead of destroying index 2 and
-                rebuilding index 1 from scratch (which flashes white). */}
             <div
               key={prevSibling ? prevSibling.id : 'empty-prev'}
               className="h-full flex-1 min-w-0"
@@ -516,7 +471,6 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
               )}
             </div>
 
-            {/* Current panel */}
             <div
               key={segment ? segment.id : 'empty-current'}
               className="h-full flex-1 min-w-0"
@@ -549,7 +503,6 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
               />
             </div>
 
-            {/* Next panel */}
             <div
               key={nextSibling ? nextSibling.id : 'empty-next'}
               className="h-full flex-1 min-w-0"
@@ -584,7 +537,6 @@ export function AnalyticsDrillDownSheet({ topGap, panelAttributes, segment, sibl
   );
 }
 
-/** Desktop side panel for analytics drilldown — no drag/carousel, static layout */
 export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, assignedIds, closeDrillDown, spriteOverrides, removalStagedIds = [], handleToggleRemoval, handleConfirmRemoval }: AnalyticsDrillDownProps) {
   const t = useT();
   const tn = useTn();
@@ -605,7 +557,6 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Reset staged removals when navigating to a different segment
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
@@ -616,7 +567,6 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
 
   return (
     <div {...panelAttributes} className="relative flex flex-col h-full bg-background w-full">
-      {/* Header */}
       <div className="shrink-0 border-b">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-1.5 min-w-0">
@@ -642,7 +592,6 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
         <div className="px-3 pb-1.5 text-[0.625rem] text-muted-foreground -mt-0.5">
           {currentData.subtitle}
         </div>
-        {/* Prev / Next navigation */}
         {(prevSibling || nextSibling) && (
           <div className="flex items-center justify-between px-3 pb-2">
             {prevSibling ? (
@@ -671,11 +620,9 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
             ) : <div />}
           </div>
         )}
-        {/* Accent line */}
         <div className="h-[2px]" style={{ backgroundColor: currentData.color, opacity: 0.5 }} />
       </div>
 
-      {/* Scrollable content */}
       <div
         ref={scrollRef}
         className="flex-1 min-h-0 overflow-y-auto"
@@ -708,11 +655,9 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
             </div>
           ))}
         </div>
-        {/* Extra bottom padding so the floating button doesn't occlude rows */}
         {removalStagedIds.length > 0 && <div className="h-14" aria-hidden />}
       </div>
 
-      {/* Floating "Remove N Pokemon" confirmation button */}
       {removalStagedIds.length > 0 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
           <button type="button"
@@ -727,7 +672,6 @@ export function AnalyticsDrillDownPanel({ panelAttributes, segment, siblings, as
   );
 }
 
-/** Dex keeps its store and removal workflow; both tools use the same views. */
 function useDexDrillDown(): AnalyticsDrillDownProps {
   const t = useT();
   const sections = usePokedexStore(s => s.sections);

@@ -1,20 +1,9 @@
-/**
- * Build src/data/moves.json for the league builder's TM picker.
- *
- * Manual and network-touching, like i18n:game-text — never part of the build.
- * Sources are PokeAPI's canonical CSVs (the repo behind pokeapi.co):
- *
- *   data/v2/csv/moves.csv        id, type, power, pp, accuracy, damage class,
- *                                contest type
- *   data/v2/csv/move_names.csv   English display names
- *
- * Run with: npx tsx scripts/league/fetch-moves.ts
- */
+
+
 import { writeFileSync } from 'node:fs';
 
 const BASE = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv';
 
-// PokeAPI type ids, in their canonical order.
 const TYPE_BY_ID: Record<number, string> = {
   1: 'normal', 2: 'fighting', 3: 'flying', 4: 'poison', 5: 'ground', 6: 'rock',
   7: 'bug', 8: 'ghost', 9: 'steel', 10: 'fire', 11: 'water', 12: 'grass',
@@ -107,14 +96,14 @@ async function main() {
   const out: MoveRow[] = [];
   for (const r of rows) {
     const id = Number(r[cId]);
-    if (id >= 10000) continue; // shadow moves
+    if (id >= 10000) continue;
     const ident = r[cIdent];
     if (ident.startsWith('max-') || ident.startsWith('g-max-')) continue;
     const type = TYPE_BY_ID[Number(r[cType])];
     const category = CATEGORY_BY_ID[Number(r[cClass])];
     const pp = Number(r[cPp]);
     if (!type || !category || !pp) continue;
-    if (pp === 1 && id !== SKETCH_ID) continue; // Z-moves
+    if (pp === 1 && id !== SKETCH_ID) continue;
     out.push({
       id,
       name: english.get(id) ?? ident,

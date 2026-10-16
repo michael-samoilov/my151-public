@@ -1,10 +1,5 @@
 import { expect, test, type Browser } from '@playwright/test';
 
-// pokedex-builder.html preloads the intro card's 151 screenshot, the page's
-// largest paint, only when the card will show (an empty dex, the intro not
-// seen). These tests hold that: one download, started by the preload, on a
-// first visit; none for a visitor who never sees the card.
-
 const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true };
 
 async function visit(browser: Browser, baseURL: string | undefined, seed: Record<string, string>) {

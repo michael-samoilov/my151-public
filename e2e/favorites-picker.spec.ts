@@ -27,7 +27,6 @@ async function seedFills(page: Page, fills: Record<string, number>) {
   await expect(page.getByTestId('favorites-grid')).toBeVisible();
 }
 
-/** Each listed pick's taken marks as `source:value`, and whether its sprite is faded. */
 async function takenState(page: Page, ids: number[]) {
   const out: Record<number, { faded: boolean; marks: string[] }> = {};
   for (const id of ids) {
@@ -66,8 +65,6 @@ test.describe('favorite Pokémon picker', () => {
     expect(box).toBeTruthy();
     expect(box!.y).toBeGreaterThan(40);
     if (viewport!.width >= 1024) {
-      // Native-size sprites make the desktop chart taller than the viewport.
-      // Scrolling the page is preferable to shrinking every sprite to fit.
       expect(box!.y + box!.height).toBeGreaterThan(viewport!.height);
       const scroll = page.getByTestId('favorites-grid-scroll');
       const metrics = await scroll.evaluate((el) => ({
@@ -120,8 +117,6 @@ test.describe('favorite Pokémon picker', () => {
   });
 
   test('selector sprites stay one size', { tag: '@viewport' }, async ({ page }) => {
-    // The desktop pane fits below the sticky header row. A 1200px-tall window
-    // leaves room for the tallest of these selectors at the dex sprite size.
     const width = page.viewportSize()!.width;
     if (width >= 1024) await page.setViewportSize({ width, height: 1200 });
     await page.goto('/favorite-pokemon-picker');
@@ -215,7 +210,6 @@ test.describe('favorite Pokémon picker', () => {
   test('the starter, gimmick, legendary, and favorite headers show their icons', async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-picker');
     const icons = page.locator('[data-testid^="favorites-axis-icon-"]');
-    // Four extra columns and three extra rows.
     await expect(icons).toHaveCount(7);
     await expect.poll(() => icons.evaluateAll((imgs) =>
       (imgs as HTMLImageElement[]).filter((img) => img.complete && img.naturalWidth > 0).length,
@@ -229,12 +223,10 @@ test.describe('favorite Pokémon picker', () => {
     await page.goto('/favorite-pokemon-picker');
     const frame = page.getByTestId('favorites-grid-scroll');
     await expect(page.getByTestId('favorites-header-badge-normal')).toBeVisible();
-    // Off-screen cells skip layout, so measure each end of the grid in view.
     const measure = () => page.evaluate(() => [...document.querySelectorAll('[data-testid^="favorites-header-badge-"]')].map((badge) => {
       const b = badge.getBoundingClientRect();
       const h = badge.closest('.overflow-hidden')!.getBoundingClientRect();
       const icon = badge.previousElementSibling!.getBoundingClientRect();
-      // The gimmick, legendary, and favorite rows share ids with their columns.
       const row = badge.closest('[data-row-banded]') ? ':row' : '';
       return {
         id: (badge as HTMLElement).dataset.testid!.replace('favorites-header-badge-', '') + row,
@@ -250,7 +242,6 @@ test.describe('favorite Pokémon picker', () => {
       await page.waitForTimeout(300);
       for (const row of await measure()) seen.set(row.id, row);
     }
-    // 22 columns, plus the gimmick, legendary, and favorite rows. The generation rows keep only their discs.
     expect([...seen.keys()]).toEqual(expect.arrayContaining(['normal', 'fairy', 'starter', 'legendary', 'gimmick', 'favorite', 'gimmick:row', 'legendary:row', 'favorite:row']));
     expect(seen.size).toBe(25);
     expect(seen.get('fire')!.label).toBe('Fire');
@@ -268,7 +259,6 @@ test.describe('favorite Pokémon picker', () => {
     await page.goto('/favorite-pokemon-picker');
     const frame = page.getByTestId('favorites-grid-scroll');
     await expect(page.getByTestId('favorites-empty-ball').first()).toBeVisible();
-    // The Master Ball cell is the far corner, and off-screen empty cells skip layout.
     await frame.evaluate((el) => {
       el.scrollLeft = el.scrollWidth;
       el.scrollTop = el.scrollHeight;
@@ -279,7 +269,6 @@ test.describe('favorite Pokémon picker', () => {
       const cell = document.querySelector(`[data-testid="favorites-cell-${id}"]`)!;
       const ball = cell.querySelector<HTMLElement>('[data-testid="favorites-empty-ball"]');
       if (!ball) return { id, ball: null, margin: null };
-      // Sample every stroke in screen space, so the tilt and the domes count.
       const cb = cell.getBoundingClientRect();
       let margin = Infinity;
       for (const shape of ball.querySelectorAll<SVGGeometryElement>('path, circle, line')) {
@@ -391,8 +380,6 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-cell-gimmick-8').click();
     const grid = page.getByTestId('favorites-pretty-grid');
     await expect(grid).toBeVisible();
-    // Sprites have alt text; type marks do not. A sprite may draw from a pack's
-    // object URL, and shows a 1 px blank while its pack is on the way.
     const images = grid.locator('button img[alt]:not([alt=""])');
     expect(await images.count()).toBeGreaterThan(50);
     await expect.poll(async () => images.evaluateAll((nodes) => nodes.every((node) => {
@@ -416,7 +403,6 @@ test.describe('favorite Pokémon picker', () => {
 
   test('hub card opens the picker', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.goto('/');
-    // The red card panel is what people click; the card title and the Tools menu also link here.
     await page.locator('a[data-card-panel][href="/favorite-pokemon-picker"]').click();
     await expect(page).toHaveURL(/\/favorite-pokemon-picker/);
     await expect(page.getByTestId('favorites-grid')).toBeVisible();
@@ -537,7 +523,6 @@ test.describe('favorite Pokémon picker', () => {
     await page.reload();
     await page.getByTestId('favorites-cell-grass-6').click();
     const rows = page.getByTestId('favorites-pretty-grid').locator('[data-pretty-row]');
-    // The two removed pumpkin near-duplicates leave 9 picks, with no extra tile.
     expect(await rows.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-pretty-len'))))).toEqual([6, 3]);
     await expect(page.getByTestId('favorites-clear-row')).toHaveCount(0);
     await expect(page.getByTestId('favorites-pick-650').getByTestId('favorites-clear')).toBeVisible();
@@ -642,7 +627,6 @@ test.describe('favorite Pokémon picker', () => {
     await expect(empty.locator('svg')).toHaveCount(1);
     await expect(page.getByTestId('favorites-type-toggle')).toHaveCount(0);
     await empty.getByRole('button', { name: 'Pick a Gen I Pokémon' }).click();
-    // The first cell of the row, with its picks.
     await expect(page.getByTestId('favorites-cell-normal-1')).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByTestId('favorites-picker-empty')).toHaveCount(0);
     await expect(page.getByTestId('favorites-pick-16')).toBeVisible();
@@ -667,8 +651,6 @@ test.describe('favorite Pokémon picker', () => {
     await page.getByTestId('favorites-pick-16').click();
     await expect(page.getByTestId('favorites-picker')).toBeHidden();
 
-    // A pick now sits in the Normal column and the Gen I row, so their
-    // favorites have a choice. The overall favorite opens the first of them.
     await page.getByTestId('favorites-cell-favorite-favorite').click();
     await page.getByRole('button', { name: 'Choose a favorite' }).click();
     await expect(page.getByTestId('favorites-cell-normal-favorite')).toHaveAttribute('aria-expanded', 'true');
@@ -701,7 +683,6 @@ test.describe('favorite Pokémon picker', () => {
     expect(emptyBox).toBeTruthy();
     expect(emptyBox!.y).toBeGreaterThan(headerBox!.y + headerBox!.height);
     await expect(empty.locator('svg[data-art="psyduck"]')).toBeVisible();
-    // The picture is never the darkest thing: lighter than the body text.
     const [art, body] = await Promise.all([
       empty.locator('svg').evaluate((el) => getComputedStyle(el).color),
       empty.locator('p').evaluate((el) => getComputedStyle(el).color),
@@ -1209,11 +1190,9 @@ test.describe('favorite Pokémon picker', () => {
     expect(repeatedFills).toEqual({ 'grass|1': 1, 'poison|1': 1, 'favorite|1': 1 });
     await page.reload();
     expect(await savedFills(page)).toEqual(repeatedFills);
-    // Remove one source: the pointer remains valid through the other source.
     await page.getByTestId('favorites-cell-grass-1').click();
     await page.getByTestId('favorites-pick-1').click();
     expect(await savedFills(page)).toEqual({ 'poison|1': 1, 'favorite|1': 1 });
-    // Remove the final source: ordinary pointer pruning still applies.
     await page.getByTestId('favorites-cell-poison-1').click();
     await page.getByTestId('favorites-pick-1').click();
     expect(await savedFills(page)).toEqual({});

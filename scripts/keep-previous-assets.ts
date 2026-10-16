@@ -24,7 +24,6 @@ import { pathToFileURL } from 'node:url';
 
 export const LIST_FILE = 'deploy-files.json';
 export const KEEP_MS = 7 * 24 * 60 * 60 * 1000;
-/** A deploy is about 16 MB; this keeps 7 days of deploys from growing it without end. */
 export const KEEP_BYTES = 50 * 1024 * 1024;
 
 /**
@@ -47,7 +46,6 @@ export function planKept(previous: DeployFiles, built: string[], now: Date, keep
   for (const [file, value] of Object.entries(previous)) {
     if (file in next) continue;
     const dropped = value === LIVE ? now.toISOString() : value;
-    // Also drops a time that does not parse, so a bad entry cannot stay forever.
     if (!(now.getTime() - Date.parse(dropped) <= keepMs)) continue;
     next[file] = dropped;
     keep.push(file);
@@ -69,11 +67,6 @@ async function text(url: string): Promise<string> {
   return response.text();
 }
 
-/**
- * A live deploy without a list (the first one, before this script) is read
- * from its pages instead, the ones this build also has: every /assets file
- * they load, and every file those files load in turn.
- */
 async function crawlLive(site: string, pages: string[]): Promise<string[]> {
   const found = new Set<string>();
   const pending = pages.map((page) => `${site}${page}`);
@@ -90,7 +83,6 @@ async function crawlLive(site: string, pages: string[]): Promise<string[]> {
   return [...found];
 }
 
-/** A name the list may hold: a file under assets/, with no `..` to leave dist. */
 const ASSET_PATH = /^assets\/(?:[\w-][\w.-]*\/)*[\w-][\w.-]*$/;
 
 async function readLive(site: string, pages: string[]): Promise<DeployFiles> {
@@ -123,7 +115,6 @@ async function main(dist: string, site: string) {
         fs.writeFileSync(path.join(dist, file), body);
         bytes += body.length;
       } catch (error) {
-        // Gone already, unreachable, or over the cap: a tab that needs it reloads instead.
         delete next[file];
         console.warn(`keep-previous-assets: could not keep ${file} (${String(error)})`);
       }
@@ -138,7 +129,6 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const dist = path.resolve(process.argv[2] ?? 'dist');
   const site = process.env.KEEP_ASSETS_FROM
     ?? (process.env.VERCEL_ENV === 'production' ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL ?? 'my151.app'}` : '');
-  // Keeping old files never blocks a deploy; without them a stale tab reloads.
   if (site) await main(dist, site).catch((error) => console.warn(`keep-previous-assets: failed (${String(error)})`));
   else console.log('keep-previous-assets: not a production build; nothing to keep.');
 }

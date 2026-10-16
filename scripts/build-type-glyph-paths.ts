@@ -3,32 +3,12 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { TYPE_ICONS } from '../src/data/type-icons';
 
-/**
- * Flattens each type glyph (`TYPE_ICONS[type].glyph`) into path strings for
- * the completion confetti's sticker pieces
- * (`src/components/milestone/typeStickerConfetti.ts`). The burst draws them
- * on a canvas, which cannot stroke the white edge around an SVG image.
- *
- * Every glyph keeps the shared 44-unit frame (`scripts/type-icons/BUILD.md`).
- * The frame's center goes to (0, 0) and the frame spans 100 units for every
- * type, so each symbol keeps its in-game size. Never fit a glyph to its own
- * bounds.
- *
- * One string per SVG shape, because the shapes paint one over another: one
- * nonzero fill of all of them would cut a hole where two wind in opposite
- * directions. Coordinates are rounded to 0.1 of the 100-unit frame.
- *
- * The output is committed and never built. Run `npm run type-icons:glyph-paths`
- * after the glyphs change; `build-type-glyph-paths.test.ts` fails until then.
- */
-
 type Matrix = [number, number, number, number, number, number];
 type Segment = ['M' | 'L', number, number] | ['C', number, number, number, number, number, number] | ['Z'];
 
 const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0];
 const FRAME = 44;
 const UNITS = 100;
-/** Cubic control distance that draws a quarter circle of radius 1. */
 const KAPPA = (4 / 3) * (Math.SQRT2 - 1);
 
 function multiply([a, b, c, d, e, f]: Matrix, [g, h, i, j, k, l]: Matrix): Matrix {
@@ -55,14 +35,12 @@ function attr(tag: string, name: string): string | undefined {
   return new RegExp(`\\s${name}="([^"]*)"`).exec(tag)?.[1];
 }
 
-/** A path's `d` as absolute moves, lines, cubics and closes. */
 function absoluteSegments(d: string, where: string): Segment[] {
   const tokens = [...d.matchAll(/([MmLlHhVvCcSsQqTtAaZz])|([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)/g)];
   const out: Segment[] = [];
   let i = 0;
   let command = '';
   let x = 0, y = 0, startX = 0, startY = 0;
-  /** The last cubic's or quadratic's second control point, for S and T. */
   let cubicCtrl: [number, number] | null = null;
   let quadCtrl: [number, number] | null = null;
   const num = () => {
@@ -107,8 +85,7 @@ function absoluteSegments(d: string, where: string): Segment[] {
       if (upper === 'Q') { qx = ox + num(); qy = oy + num(); }
       else [qx, qy] = quadCtrl ? [2 * x - quadCtrl[0], 2 * y - quadCtrl[1]] : [x, y];
       const ex = ox + num(), ey = oy + num();
-      // A quadratic is the cubic with its control points two thirds of the
-      // way from each end to the quadratic's control point.
+
       out.push(['C', x + (2 / 3) * (qx - x), y + (2 / 3) * (qy - y), ex + (2 / 3) * (qx - ex), ey + (2 / 3) * (qy - ey), ex, ey]);
       nextQuad = [qx, qy];
       x = ex; y = ey;
@@ -136,7 +113,6 @@ function circleSegments(cx: number, cy: number, r: number): Segment[] {
   ];
 }
 
-/** Every shape of one glyph SVG, in the glyph's 44-unit frame. */
 function glyphShapes(svg: string, where: string): Segment[][] {
   const viewBox = attr(svg.slice(0, svg.indexOf('>') + 1), 'viewBox');
   if (viewBox !== `0 0 ${FRAME} ${FRAME}`) throw new Error(`${where}: viewBox is ${viewBox}, not the shared ${FRAME}-unit frame`);
@@ -170,14 +146,12 @@ function glyphShapes(svg: string, where: string): Segment[][] {
   return shapes;
 }
 
-/** Tenths of a frame unit, from the 44-unit frame to the centered 100-unit one. */
 const tenths = (v: number) => Math.round(((v - FRAME / 2) * UNITS) / FRAME * 10);
 
 function format(n: number): string {
   return (n / 10).toString().replace(/^(-?)0\./, '$1.');
 }
 
-/** Relative path data, from coordinates rounded first, so rounding never accumulates. */
 function relativePath(segments: Segment[]): string {
   let out = '';
   let last = '';

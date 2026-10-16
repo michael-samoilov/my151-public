@@ -1,17 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-/**
- * The league entry's static shell is the app's own first paint.
- *
- * The page is served as real HTML for crawlers, and React replaces it on
- * mount. For the 80ms in between, a person arriving from the dex builder saw
- * the shell's own smaller header and a block of copy, and then both jumped
- * to the app's. Measured with scripts off (the shell alone) against the
- * mounted app: the site header and the tool bar are the same height at the
- * same place, the h1 sits where the tool bar's eyebrow sits at the same
- * size, and the copy is invisible until a second has passed.
- */
-
 interface Paint {
   rootFont: string;
   header: { top: number; height: number } | null;

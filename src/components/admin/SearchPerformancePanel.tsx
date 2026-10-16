@@ -47,7 +47,6 @@ function position(value: number | null): string {
   return value == null ? '—' : value.toFixed(1);
 }
 
-/** A day (`YYYY-MM-DD`, a UTC date) or an hour (an instant, shown in local time). */
 function shortDate(value: string | undefined): string {
   if (!value) return '—';
   const day = value.length === 10;
@@ -83,20 +82,15 @@ function countDelta(comparison: SearchRangeComparison | null, metric: 'clicks' |
 
 type SearchKpiKey = 'clicks' | 'impressions' | 'ctr' | 'position';
 
-/** One Search Console metric: its tile, its line, and its readout part. */
 interface SearchKpi {
   key: SearchKpiKey;
   label: string;
-  /** The word after the value in the scrub readout. */
   unit: string;
-  /** Search Console's color for the metric, on its line and its selected tile. */
   color: string;
   emphasis?: boolean;
-  /** Lower is better, so the scale runs down from 1 at the top, as in Search Console. */
   inverse?: boolean;
   pick: (metric: SearchMetric) => number | null;
   format: (value: number) => string;
-  /** The change from the previous period, or "—" when the range has none. */
   delta: (comparison: SearchRangeComparison | null) => string;
 }
 
@@ -142,7 +136,6 @@ const SEARCH_KPIS: SearchKpi[] = [
   },
 ];
 
-/** Search Console opens the chart on these two. */
 const DEFAULT_KPIS: SearchKpiKey[] = ['clicks', 'impressions'];
 
 function shown(kpi: SearchKpi, value: number | null): string {
@@ -158,18 +151,17 @@ function SearchTrend({
   granularity: SearchGranularity;
   kpis: SearchKpi[];
 }) {
-  const lines = kpis.map((kpi) => ({ kpi, values: rows.map(kpi.pick) }));
-  const drawn = lines.filter((line) => line.values.some((value) => value != null));
-  const scrubLabel = (i: number) => [
-    shortDate(rows[i].start),
-    ...lines.map(({ kpi, values }) => `<b>${shown(kpi, values[i])}</b> ${kpi.unit}`),
-  ];
-  const ref = useECharts(
-    (el): EChartsOption => {
+  const { lines, scrubLabel, build } = useMemo(() => {
+    const lines = kpis.map((kpi) => ({ kpi, values: rows.map(kpi.pick) }));
+    const drawn = lines.filter((line) => line.values.some((value) => value != null));
+    const scrubLabel = (i: number) => [
+      shortDate(rows[i].start),
+      ...lines.map(({ kpi, values }) => `<b>${shown(kpi, values[i])}</b> ${kpi.unit}`),
+    ];
+    const build = (el: HTMLDivElement): EChartsOption => {
       const scale = Math.max(1, Math.min(el.clientWidth / 360, 2));
       return {
         animation: false,
-        // The top band holds the scrub readout, so it never covers a line.
         grid: { left: 2, right: 2, top: 28, bottom: 1 },
         xAxis: {
           type: 'category',
@@ -179,7 +171,6 @@ function SearchTrend({
           axisTick: { show: false },
           axisLabel: { show: false },
         },
-        // One hidden scale per metric, as Search Console draws them.
         yAxis: drawn.length
           ? drawn.map(({ kpi }) =>
               kpi.inverse
@@ -197,10 +188,10 @@ function SearchTrend({
           itemStyle: { color: kpi.color },
         })),
       };
-    },
-    [rows, kpis],
-    { scrub: { count: rows.length, label: scrubLabel } },
-  );
+    };
+    return { lines, scrubLabel, build };
+  }, [rows, kpis]);
+  const ref = useECharts(build, { scrub: { count: rows.length, label: scrubLabel } });
 
   if (rows.length < 2 || rows.every((row) => row.impressions === 0)) return null;
   return (
@@ -219,7 +210,6 @@ function SearchTrend({
   );
 }
 
-/** A KPI tile that toggles its line. Selected, it fills with the line color. */
 function KpiToggle({
   kpi,
   metric,
@@ -318,7 +308,6 @@ function PageRow({ page }: { page: SearchPagePerformance }) {
       className="border-t border-border py-3 first:border-t-0 first:pt-0"
     >
       <div className="mb-1 flex min-w-0 items-baseline justify-between gap-3">
-        {/* The name keeps its width; a long path such as the Picker's gives way first. */}
         <h3 className="max-w-full shrink-0 truncate text-sm font-bold">{page.label}</h3>
         <span className="min-w-0 truncate font-mono text-[0.65rem] text-muted-foreground" title={page.path}>{page.path}</span>
       </div>
@@ -358,7 +347,6 @@ export function SearchPerformancePanel({
   const [provider, setProvider] = useState<SearchProviderKey>('google');
   const [picked, setPicked] = useState<SearchKpiKey[]>(DEFAULT_KPIS);
   const kpis = useMemo(() => SEARCH_KPIS.filter((kpi) => picked.includes(kpi.key)), [picked]);
-  // At least one metric stays on the chart.
   const toggleKpi = (key: SearchKpiKey) =>
     setPicked((cur) => (cur.includes(key) ? (cur.length > 1 ? cur.filter((k) => k !== key) : cur) : [...cur, key]));
   const view = snapshot?.byRange[range] ?? null;

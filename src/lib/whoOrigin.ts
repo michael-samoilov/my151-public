@@ -4,9 +4,7 @@ import { matchLocale, negotiateLocale } from '@/i18n/detect';
 
 export type { WhoBucket };
 
-/** Flag art is 18×12. A later flag stays unless it overlaps the previous one. */
 export const FLAG_W = 18;
-/** Names stay this far apart so the words do not collide. */
 export const MARKER_GAP = 4;
 
 export const OTHER_KEY = '\0other';
@@ -65,7 +63,6 @@ function placeSegments(shown: FitItem[], folded: FitItem[], barWidthPx: number):
   });
 }
 
-/** Kept items stay separate. Everything after them is one Other segment. */
 function trialBar(ranked: readonly FitItem[], keepCount: number, barWidthPx: number): FitSegment[] {
   const kept = ranked.slice(0, keepCount);
   const folded = ranked.slice(keepCount);
@@ -75,13 +72,6 @@ function trialBar(ranked: readonly FitItem[], keepCount: number, barWidthPx: num
   return placeSegments(shown, folded, barWidthPx);
 }
 
-/**
- * Walk largest to smaller. Try the next item as its own segment, with Other
- * holding only the items after it, and draw those widths. Keep it while its
- * marker, left-aligned on that segment, does not overlap the previous marker.
- * A marker may hang past its segment. The first overlap, and every smaller
- * item, folds into Other.
- */
 export function fitBar(
   items: readonly FitItem[],
   barWidthPx: number,
@@ -103,7 +93,6 @@ export function fitBar(
   return trialBar(ranked, keep, barWidthPx);
 }
 
-/** A share under 10% keeps one decimal. The % sign is optional. */
 export function formatShare(n: number, total: number, withSign: boolean): string {
   const pct = total > 0 ? (n / total) * 100 : 0;
   const text = pct < 10 ? (Math.round(pct * 10) / 10).toFixed(1) : String(Math.round(pct));
@@ -117,12 +106,10 @@ export interface WhoFilter {
   value: string;
 }
 
-/** A region slice lists Other. A device, OS, or browser slice leaves the remainder unlabeled. */
 export function countryOtherLabeled(filter: WhoFilter | null): boolean {
   return filter == null || filter.dim === 'region';
 }
 
-/** Header for a Who slice. The pressed bar keeps its own name. */
 export function amongTitle(label: string, filter: WhoFilter | null, ownDim?: WhoDim): string {
   if (!filter || filter.dim === ownDim) return label;
   return `${label} among ${filter.value}`;
@@ -135,7 +122,6 @@ function bucketValue(bucket: WhoBucket, dim: WhoDim): string {
   return bucket.browser || 'Unknown';
 }
 
-/** True when the bucket belongs in this chart. The driving chart keeps its full mix. */
 function bucketInFilter(bucket: WhoBucket, filter: WhoFilter | null, driving?: WhoDim): boolean {
   if (!filter || filter.dim === driving) return true;
   return bucketValue(bucket, filter.dim) === filter.value;
@@ -156,7 +142,6 @@ export function mixWho(
   return out;
 }
 
-/** Country totals inside the filter. A region press does not hide the other regions. */
 export function countryCounts(buckets: readonly WhoBucket[], filter: WhoFilter | null): Record<string, number> {
   const out: Record<string, number> = {};
   for (const bucket of buckets) {
@@ -171,12 +156,6 @@ export function filteredN(buckets: readonly WhoBucket[], filter: WhoFilter | nul
   return buckets.reduce((sum, bucket) => sum + (bucketInFilter(bucket, filter) ? bucket.n : 0), 0);
 }
 
-/**
- * Buckets for the country bar, Unshipped, and Overrides.
- * A platform filter keeps every country in that slice.
- * A region filter keeps that region.
- * No filter keeps every country. `defaultRegion` limits the bar only when it is set.
- */
 export function visibleBuckets(
   buckets: readonly WhoBucket[],
   filter: WhoFilter | null,
@@ -256,7 +235,6 @@ const LEGACY_LANG = new Set(['iw', 'in', 'ji', 'jw']);
 
 let spelledNames: Intl.DisplayNames | null | undefined;
 
-/** The name the bar spells. `he`, `he-IL`, and `iw` are one language. */
 export function spelledLanguage(tag: string): string {
   const base = tag.toLowerCase().split('-')[0] || tag;
   if (spelledNames === undefined) {
@@ -270,7 +248,6 @@ export function spelledLanguage(tag: string): string {
     const name = spelledNames?.of(base);
     if (name) return name;
   } catch {
-    /* keep the tag */
   }
   return base;
 }
@@ -291,7 +268,6 @@ function preferTag(a: string, b: string): string {
   return a;
 }
 
-/** A pin that differs from the locale the tag would negotiate. */
 function isLanguageOverride(bucket: WhoBucket): boolean {
   return Boolean(bucket.switched && bucket.lang && negotiateLocale([bucket.lang]) !== bucket.switched);
 }
@@ -302,10 +278,6 @@ export const LANGUAGE_SHARE_LABEL = {
   overrides: 'Overrides',
 } as const;
 
-/**
- * One 100% bar of the slice. Served leads. Unshipped and Overrides are the
- * problem share of everyone, and a user lands in only one of the three.
- */
 export function languageShare(buckets: readonly WhoBucket[], region: Region | null): FitItem[] {
   let served = 0;
   let unshipped = 0;
@@ -324,7 +296,6 @@ export function languageShare(buckets: readonly WhoBucket[], region: Region | nu
   return items;
 }
 
-/** Lay every item across the full width. Nothing folds into Other. */
 export function proportionBar(items: readonly FitItem[], barWidthPx: number): FitSegment[] {
   const total = items.reduce((sum, it) => sum + it.n, 0);
   if (total <= 0 || barWidthPx <= 0) return [];
@@ -343,7 +314,6 @@ export function proportionBar(items: readonly FitItem[], barWidthPx: number): Fi
   });
 }
 
-/** Browser tags the app does not ship. Tags that spell the same language are one segment. */
 export function unshippedTags(buckets: readonly WhoBucket[], region: Region | null): FitItem[] {
   const groups = new Map<string, { n: number; tag: string }>();
   for (const bucket of buckets) {
@@ -361,10 +331,6 @@ export function unshippedTags(buckets: readonly WhoBucket[], region: Region | nu
   return [...groups.values()].map((group) => ({ key: group.tag, n: group.n }));
 }
 
-/**
- * A pin is an override only when `switched` differs from the locale negotiation
- * would serve for that browser tag. A pin that matches negotiation stays out.
- */
 export function languageOverrides(buckets: readonly WhoBucket[], region: Region | null): OverrideRow[] {
   const map = new Map<string, OverrideRow>();
   for (const bucket of buckets) {
@@ -385,22 +351,16 @@ export function languageOverrides(buckets: readonly WhoBucket[], region: Region 
   );
 }
 
-/** Full name, short code, or nothing. The short code is the fallback. */
 export function captionKind(fullPx: number, shortPx: number, roomPx: number): 'full' | 'short' | 'none' {
   if (fullPx <= roomPx) return 'full';
   if (shortPx <= roomPx) return 'short';
   return 'none';
 }
 
-/** Pixels between a marker's right edge and the next limit, after the word gap. */
 function markerRoom(markerLeft: number, markerWidth: number, limitPx: number): number {
   return limitPx - (markerLeft + markerWidth + MARKER_GAP);
 }
 
-/**
- * Room for a country name after its flag. The limit is the next flag, or the
- * Other stem when this flag is the last one on the bar.
- */
 export function countryRooms(
   segments: readonly FitSegment[],
   barWidthPx: number,
@@ -419,7 +379,6 @@ export function countryRooms(
   return rooms;
 }
 
-/** Distinct countries on the country bar. */
 export function countryHeaderCount(
   buckets: readonly WhoBucket[],
   filter: WhoFilter | null,
@@ -432,7 +391,6 @@ export function countryHeaderCount(
   return all.size;
 }
 
-/** Region with the most users of this language in the buckets already sliced. */
 export function primaryLanguageRegion(buckets: readonly WhoBucket[], lang: string): Region {
   const totals = new Map<Region, number>();
   const spell = spelledLanguage(lang);
@@ -459,11 +417,6 @@ function spanWidth(widths: readonly number[], gapPx: number, from: number, to: n
   return width;
 }
 
-/**
- * Contiguous rows of similar width. One row when everything fits.
- * The top row is the longest. Every row stays inside the container
- * unless it is a single item.
- */
 export function balanceRailRows(widths: readonly number[], gapPx: number, containerPx: number): number[][] {
   const n = widths.length;
   if (n === 0) return [];
@@ -472,8 +425,6 @@ export function balanceRailRows(widths: readonly number[], gapPx: number, contai
 
   const fits = (from: number, to: number) =>
     to - from === 1 || spanWidth(widths, gapPx, from, to) <= containerPx + 0.5;
-  // Each row takes as many items as fit, so the rows are fewest and the upper
-  // ones longest. Null when one item alone is not shorter than the top row.
   const rowsBelow = (from: number, top: number): number[][] | null => {
     const shorter = (a: number, b: number) => fits(a, b) && spanWidth(widths, gapPx, a, b) + 0.5 < top;
     const rows: number[][] = [];
@@ -487,7 +438,6 @@ export function balanceRailRows(widths: readonly number[], gapPx: number, contai
     return rows;
   };
 
-  // Fewest rows first, then the narrowest top row.
   let best: number[][] | null = null;
   for (let topEnd = 1; topEnd <= n && fits(0, topEnd); topEnd++) {
     const below = rowsBelow(topEnd, spanWidth(widths, gapPx, 0, topEnd));
@@ -496,7 +446,6 @@ export function balanceRailRows(widths: readonly number[], gapPx: number, contai
   return best ?? all.map((i) => [i]);
 }
 
-/** Left-align each name on its segment. A name may hang past a short segment. */
 export function layoutNameLabels(
   slices: readonly { key: string; leftPx: number; widthPx: number }[],
   widths: readonly number[],

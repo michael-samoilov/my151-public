@@ -6,7 +6,6 @@ interface ChartQuartile {
   axisValue?: number;
 }
 
-/** Shared percentile guides for empirical survival charts, in their axis coordinates. */
 export function quartileGuideSeries(quartiles: ChartQuartile[], xMin: number, xMax: number, color: string, format: (value: number) => string, background = '#fff') {
   const ctx = document.createElement('canvas').getContext('2d');
   if (ctx) ctx.font = '9px sans-serif';

@@ -1,13 +1,3 @@
-/**
- * Turn a staged usage funnel into Sankey nodes and links.
- *
- * Size / gym buckets fan out of one parent so they sit in one column,
- * not a staircase. Through and success sit at the top of a column;
- * drop-offs sit under them. Incomplete buckets that exported grow a
- * branch into the existing export node. They do not grow a "not
- * exported" peel. Full league peels non-exporters to Kept private,
- * same as Completed on the dex funnel and Not exported on the Picker.
- */
 import {
   LEAGUE_EXPORT_ENDS,
   type DexSizeBucket,
@@ -55,7 +45,6 @@ function percentageDescription(nodes: FunnelNode[]): string {
   ).join('; ');
 }
 
-/** Export buckets converge before splitting into mutually exclusive varieties. */
 function convergeExports(nodes: FunnelNode[], links: FunnelLink[], names: string[]) {
   const branches = links.filter((l) => names.includes(l.target));
   if (!branches.length) return;
@@ -86,8 +75,6 @@ function addLink(links: FunnelLink[], link: FunnelLink) {
   links.push(link);
 }
 
-/** One export end a fan item flows into. Every item lists the same ends
- *  in the same order, so the end column keeps that order. */
 interface FanEnd {
   name: string;
   label: FunnelLabelSide;
@@ -184,8 +171,6 @@ function sizeFan(completed: number, exported: number, keptPrivate: number, bucke
       leftoverRole: 'priv',
     });
   }
-  // High sizes first so they stack under Completed, early drop-offs at the
-  // bottom of the same column.
   for (const b of [...buckets].reverse()) {
     items.push({
       name: b.label,
@@ -276,7 +261,6 @@ export function leagueFunnelSankey(f: LeagueUsageFunnel): FunnelSankey {
 
 type FavoriteBucket = FavoriteUsageFunnel['buckets'][number];
 
-/** Picker export ends, in column order under Not exported. */
 const FAVORITE_EXPORT_NODE = [
   { key: 'full', name: 'Full grid' },
   { key: 'both', name: 'Both exported' },
@@ -287,11 +271,6 @@ function favoriteEnds(b: FavoriteBucket): FanEnd[] {
   return FAVORITE_EXPORT_NODE.map(({ key, name }) => ({ name, label: 'right', value: b.exports[key] }));
 }
 
-/** One browser follows one maximum-progress bucket and one export outcome.
- *  Export outcomes describe the record lifetime, not events in the range.
- *  Same shape as the dex funnel: Bounced ends at the first hop, cell
- *  buckets end beside Completed unless they exported, and Completed peels
- *  its non-exporters straight across into Not exported. */
 export function favoriteFunnelSankey(f: FavoriteUsageFunnel): FunnelSankey {
   const nodes: FunnelNode[] = [];
   const links: FunnelLink[] = [];
@@ -318,7 +297,6 @@ export function favoriteFunnelSankey(f: FavoriteUsageFunnel): FunnelSankey {
       leftoverRole: 'priv',
     };
   }));
-  // An empty-grid export is possible, so Bounced keeps a branch to its end.
   if (notStarted) addFan(nodes, links, seen, 'Opened', [{ name: 'Bounced', value: bounced, role: 'sink', ends: favoriteEnds(notStarted) }]);
 
   convergeExports(nodes, links, FAVORITE_EXPORT_NODE.map((end) => end.name));
@@ -333,8 +311,6 @@ export function favoriteFunnelSankey(f: FavoriteUsageFunnel): FunnelSankey {
     `Favorite Pokémon usage funnel: ${f.opened} opened, ${placedCount} placed a Pokémon, ${bounced} bounced; of ${placedCount} placed, by maximum filled cells of 257: ${completed?.count ?? 0} completed${progress ? `, ${progress}` : ''}; lifetime exports: ${count('full')} full grid only, ${count('simplified')} simplified only, ${count('both')} both exported; of ${completed?.count ?? 0} completed, ${completed?.notExported ?? 0} not exported. ${percentageDescription(nodes)}.`);
 }
 
-/** Distance along the trunk from the start node. Used to assert buckets
- *  that share a parent sit in the same column. */
 export function nodeDepth(name: string, links: FunnelLink[]): number {
   const incoming = links.filter((l) => l.target === name);
   if (incoming.length === 0) return 0;

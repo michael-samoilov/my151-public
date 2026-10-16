@@ -20,8 +20,8 @@ for capture,target in pairs.items():
     path=source/f'{capture}.png'
     if not path.exists(): continue
     native=Image.open(path).convert('RGBA')
-    # A Build page capture has no native export frame. Match the homepage's
-    # 2%-width paper corners without changing any interior screenshot content.
+
+
     if capture=='dex-build':
         scale=4
         mask=Image.new('L',(native.width*scale,native.height*scale),0)

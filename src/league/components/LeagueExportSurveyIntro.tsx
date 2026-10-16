@@ -35,7 +35,6 @@ export function LeagueExportSurveyIntro({
   onSkip: () => void;
 }) {
   const t = useT();
-  // Re-render when the name catalog lands after the locale does.
   useNamesVersion();
   const spriteScale = useExportSurveySpriteScale();
   const spriteCssPx = usePixelPerfectSprite(spriteScale);

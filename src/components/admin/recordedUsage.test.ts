@@ -1,4 +1,3 @@
-// keeps: API duration math is unreachable through E2E, which stubs the admin API.
 import {describe, expect, it} from 'vitest';
 import {recordedUsage} from '../../../api/_dashboard';
 

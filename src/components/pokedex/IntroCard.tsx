@@ -3,7 +3,6 @@ import { expandTemplate } from '@/lib/richTemplate';
 import { formatNumber, raw, t } from '@/i18n';
 import { DEX_TOTAL } from '@/lib/milestones';
 
-/** Species in the National Dex the user picks from. */
 const SPECIES_TOTAL = 1025;
 import { Button } from '@/components/ui/button';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -29,39 +28,16 @@ import shot45Avif from '@/assets/intro/shot-45.avif';
 import shot95Avif from '@/assets/intro/shot-95-outlines.avif';
 import shot151Avif from '@/assets/intro/shot-151-stats.avif';
 
-/**
- * First-visit intro card — the top of the Build page for a brand-new visitor.
- *
- * Job: in a few seconds, communicate (1) what this is, (2) what the payoff
- * artifact looks like (the showcase: the seed dex as a rising staircase of
- * three poster cards — 45 plain → 95 with section outlines → a finished 151
- * with outlines *and* the detailed-stats panel), and (3) the one obvious
- * first action (choose your starters). Inline, not a modal: it should read as
- * part of the page, an invitation rather than an interstitial.
- *
- * Lifecycle: shown only while the dex is empty and the card was never
- * dismissed. The ✕ dismisses it forever; placing the first Pokémon collapses
- * it forever (activation happened — its job is done). Users who already have
- * a dex in progress when this ships are flagged on mount and never see it.
- */
-
 const INTRO_SEEN_KEY = 'p151-intro-seen';
 
-/** Poster-face design under evaluation: live-rendered colored dots, or
- *  pre-rendered View-page screenshots. Overridable per visit via ?intro. */
 type FaceVariant = 'dots' | 'shots';
 const DEFAULT_FACE: FaceVariant = 'shots';
 const FACES = new Set<string>(['dots', 'shots']);
 
-/** Starter-CTA button treatment under evaluation (the colored starter dots
- *  clash with the solid-red default; these are the contrast candidates). */
 type BtnVariant = 'type-marks' | 'solid' | 'outline' | 'gradient-border' | 'fade';
 const DEFAULT_BTN: BtnVariant = 'type-marks';
 const BTNS = new Set<string>(['type-marks', 'solid', 'outline', 'gradient-border', 'fade']);
 
-/** Review overrides. `?intro[=face]` forces the card to show (Vercel previews
- *  auto-seed the demo dex, which would otherwise hide it) and picks the face;
- *  `?btn=<variant>` picks the button treatment. Neither persists a dismissal. */
 const { FORCE_INTRO, FACE, BTN } = (() => {
   try {
     const q = new URLSearchParams(window.location.search);
@@ -81,7 +57,7 @@ function introSeen(): boolean {
   try {
     return localStorage.getItem(INTRO_SEEN_KEY) === '1';
   } catch {
-    return true; // storage unavailable → can't remember a dismissal, so never show
+    return true;
   }
 }
 
@@ -89,19 +65,12 @@ function markIntroSeen() {
   try {
     localStorage.setItem(INTRO_SEEN_KEY, '1');
   } catch {
-    // best-effort
   }
 }
-
-// ---------- showcase stages ----------
 
 const COLS = 10;
 const TOTAL_SLOTS = 151;
 
-// Each stage's face design ramps in richness as the dex fills: plain grid →
-// section outlines → outlines + detailed stats. (Stats is genuinely locked
-// under 100 Pokémon, so only the finished 151 can show it — the ramp mirrors
-// what the app actually unlocks.)
 interface StageStyle {
   outlines: boolean;
   stats: boolean;
@@ -114,10 +83,6 @@ const STAGE_STYLES: [StageStyle, StageStyle, StageStyle] = [
 
 const SHOT_SRCS = [shot45, shot95, shot151] as const;
 const SHOT_AVIFS = [shot45Avif, shot95Avif, shot151Avif] as const;
-
-/** Every device loads these originals. Smaller copies drew at about their own
- *  size on a 3x phone and looked soft, for 42 KiB saved; they were removed on
- *  9 October. */
 
 /** Intrinsic pixel sizes of SHOT_SRCS, in the same order. The staircase sizes
  *  each card by height and leaves width to `w-auto`, so without these the
@@ -152,12 +117,6 @@ const SHOT_DIMS = [
  *  catalog keys, so each language describes the images in its own terms. */
 const SHOT_ALTS = ['intro.shot.partial', 'intro.shot.sections', 'intro.shot.complete'] as const;
 
-// ---------- dots face ----------
-
-/** Live miniature of the View-page poster from the seed dex: one dot per
- *  Pokémon (its primary-type color) in exact View sort order, 10 columns,
- *  151st slot centered on the last row, unfilled slots as faint rings. The
- *  outlined variant reuses the real View outline geometry at dot scale. */
 function DotsGrid({ stage, outlines }: { stage: ShowcaseStage; outlines: boolean }) {
   const { dots, shapes, viewBox, strokeW } = useMemo(() => {
     const sorted = computeViewSort(stage.sections, 'build-order', true, null);
@@ -226,10 +185,6 @@ function DotsGrid({ stage, outlines }: { stage: ShowcaseStage; outlines: boolean
   );
 }
 
-/** Abstract stand-in for the detailed-stats panel on the dots hero: a small
- *  card of horizontal bars = the real top type counts of the finished dex,
- *  colored by type. Gives the dots hero the same wide silhouette (and the
- *  same "you get stats too" read) as the screenshot hero. */
 function DotsStats({ stage }: { stage: ShowcaseStage }) {
   const bars = useMemo(() => {
     const counts = new Map<TypeName, number>();
@@ -274,8 +229,6 @@ function DotsHero({ stage, outlines, stats }: { stage: ShowcaseStage; outlines: 
   );
 }
 
-// ---------- showcase staircase ----------
-
 const REDUCED_MOTION =
   typeof window !== 'undefined' && 'matchMedia' in window
     ? window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -285,9 +238,6 @@ const FINE_POINTER =
     ? window.matchMedia('(pointer: fine)')
     : null;
 
-// Rising staircase: left→right the cards grow taller, lift higher, and stack
-// on top — reading as the dex progressing toward a richer, fuller finish.
-// Heights are in rem; widths follow each face's intrinsic aspect ratio.
 const STAIR = [
   { height: '7.5rem', lift: '0.9rem', rotate: '-5deg', z: 'z-10', overlap: '-1.6rem', float: 'intro-float-a' },
   { height: '8.6rem', lift: '0.45rem', rotate: '-2deg', z: 'z-20', overlap: '-1.9rem', float: 'intro-float-c' },
@@ -298,8 +248,6 @@ function ShowcaseStaircase() {
   const planeRef = useRef<HTMLDivElement>(null);
   const stages = useMemo(() => computeShowcaseStages(), []);
 
-  // Desktop-only pointer tilt (restrained). Direct style
-  // writes so mousemove never re-renders React.
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const plane = planeRef.current;
     if (!plane || REDUCED_MOTION?.matches || !FINE_POINTER?.matches) return;
@@ -342,8 +290,6 @@ function ShowcaseStaircase() {
                   alt={t(SHOT_ALTS[i])}
                   width={SHOT_DIMS[i].width}
                   height={SHOT_DIMS[i].height}
-                  // The card is the first thing a new visitor sees, so these
-                  // three beat the sprite sheets and data fetches to the wire.
                   fetchPriority="high"
                   className="h-full w-auto block"
                   draggable={false}
@@ -360,8 +306,6 @@ function ShowcaseStaircase() {
   );
 }
 
-// ---------- starter CTA (contrast variants) ----------
-
 const STARTER_DOTS = ['#7ac74c', '#ee8130', '#6390f0'];
 
 function StarterDots() {
@@ -374,13 +318,6 @@ function StarterDots() {
   );
 }
 
-/**
- * The starters' type glyphs, sized so each carries the same ink. The glyph
- * files share one 44-unit frame at in-game proportions (scripts/type-icons/
- * BUILD.md), where Grass has 57% more ink than Fire. With no backing circle the
- * eye compares ink, so each glyph is scaled by sqrt(mean ink / its own ink),
- * from the files' measured ink: Grass 707, Fire 451, Water 515 square units.
- */
 const STARTER_MARKS = [
   { type: 'grass', scale: 0.876 },
   { type: 'fire', scale: 1.097 },
@@ -409,8 +346,6 @@ function StarterButton({ onClick }: { onClick: () => void }) {
   const label = t('intro.cta');
 
   if (BTN === 'type-marks') {
-    // The starters' type marks in a row above the label, inside a plain
-    // theme-red border.
     return (
       <button
         type="button"
@@ -424,7 +359,6 @@ function StarterButton({ onClick }: { onClick: () => void }) {
   }
 
   if (BTN === 'outline') {
-    // White surface, red border + red text: dots keep full saturation on white.
     return (
       <Button
         onClick={onClick}
@@ -438,8 +372,6 @@ function StarterButton({ onClick }: { onClick: () => void }) {
   }
 
   if (BTN === 'gradient-border') {
-    // White surface inside a 3-stop starter-color gradient border (padding-box
-    // fill + border-box gradient), dark text, saturated dots on white.
     return (
       <button
         type="button"
@@ -459,8 +391,6 @@ function StarterButton({ onClick }: { onClick: () => void }) {
   }
 
   if (BTN === 'fade') {
-    // Red field that fades to a white zone on the left, so the dots sit on
-    // white; the label rides the red field in white type.
     return (
       <button
         type="button"
@@ -477,7 +407,6 @@ function StarterButton({ onClick }: { onClick: () => void }) {
     );
   }
 
-  // solid (baseline)
   return (
     <Button onClick={onClick} className="mt-3.5 gap-2">
       <StarterDots />
@@ -485,8 +414,6 @@ function StarterButton({ onClick }: { onClick: () => void }) {
     </Button>
   );
 }
-
-// ---------- intro card ----------
 
 const COLLAPSE_MS = 450;
 
@@ -502,7 +429,6 @@ export function IntroCard({
     if (FORCE_INTRO) return 'shown';
     if (introSeen()) return 'gone';
     if (totalPlaced > 0) {
-      // Existing dex predating the intro card — never show it.
       markIntroSeen();
       return 'gone';
     }
@@ -523,13 +449,10 @@ export function IntroCard({
     onChooseStarters();
   }, [onChooseStarters]);
 
-  // Funnel: the intro was actually seen (fires once per browser).
   useEffect(() => {
     if (phase === 'shown') sendEventBeacon('intro-shown', { once: true });
   }, [phase]);
 
-  // First Pokémon placed → the card's job is done; fold away gracefully.
-  // State adjustment during render (not an effect) per react.dev guidance.
   if (!FORCE_INTRO && phase === 'shown' && totalPlaced > 0) setPhase('collapsing');
 
   useEffect(() => {
@@ -539,46 +462,6 @@ export function IntroCard({
     return () => clearTimeout(t);
   }, [phase]);
 
-  /**
-   * Keep the content *below* the card still when the card folds away above the
-   * viewport — placing a Pokémon in a section further down does exactly that.
-   *
-   * No browser gets this right on its own, each in its own way. Safari has no
-   * scroll anchoring at all, so the page jumps up by the card's full height
-   * (374px measured) and the section the user just filled leaves the screen.
-   * Chrome anchors, and that is fine while the card is wholly above the fold,
-   * but when the card *straddles* the top edge Chrome's anchor lands inside the
-   * shrinking card and it scrolls the wrong way — measured 394px, worse than
-   * Safari. So this takes over for the one mutation that matters: switch the
-   * scroller's anchoring off, remove the card, correct scrollTop, and hand
-   * anchoring back the next frame.
-   *
-   * The correction is atomic rather than per-frame on purpose. Placing a
-   * Pokémon re-renders the whole grid, and that starves the main thread badly
-   * enough that the 450ms collapse timer has been measured firing 1342ms late.
-   * Anything spread across animation frames simply does not get the frames,
-   * and the height disappears in one jump anyway.
-   *
-   * So decide once, when the collapse starts:
-   *
-   *   above = scrollTop - (the card's top in content space)
-   *
-   * `above` is how much of the card sits over the viewport's top edge — the
-   * part whose removal moves everything below it. None: the card is on screen,
-   * the user is looking at it, it folds away as designed. Some: that fold is
-   * off screen and worth nothing, so drop the card in a single step and take
-   * `above` off scrollTop before the browser paints. Whatever slice of the card
-   * *was* on screen closes, and the content below moves up by that slice and
-   * no more — which is what it would have done had the card been on screen and
-   * folded in place.
-   *
-   * One clamp on top of that. The card is the first thing in the list, so
-   * `cardTop` is exactly the list's own top padding — nothing else is above it.
-   * When the card straddles the viewport's top edge the arithmetic above lands
-   * on `cardTop` every time, which parks the scroller *inside* that padding and
-   * presses the first section flat against the header. There is nothing up
-   * there worth keeping, so go to the top instead and let the padding show.
-   */
   useLayoutEffect(() => {
     if (phase !== 'collapsing') return;
     const el = rootRef.current;
@@ -588,13 +471,11 @@ export function IntroCard({
     const rect = el.getBoundingClientRect();
     const cardTop = rect.top - scroller.getBoundingClientRect().top + scroller.scrollTop;
     const above = scroller.scrollTop - cardTop;
-    if (above <= 0) return; // card is on screen — let it animate
+    if (above <= 0) return;
 
     const corrected = scroller.scrollTop - Math.min(rect.height, above);
     const anchoring = scroller.style.overflowAnchor;
     scroller.style.overflowAnchor = 'none';
-    // Skipping the animation also skips the effect that records the dismissal,
-    // so record it here or the card comes back on the next visit.
     if (!FORCE_INTRO) markIntroSeen();
     setPhase('gone');
     scroller.scrollTop = corrected <= cardTop ? 0 : corrected;
@@ -632,9 +513,6 @@ export function IntroCard({
 
           <div className="px-5 pb-5 pt-2 text-center">
             <h2 className="text-xl font-extrabold tracking-tight">
-              {/* One sentence with a highlighted slot, rather than a prefix
-                  concatenated with a styled number — the emphasis lands in a
-                  different place in other languages. */}
               {expandTemplate<React.ReactNode>(raw('intro.headline'), (text) => text, {
                 count: () => [<span key="n" className="text-primary">{DEX_TOTAL}</span>],
               })}

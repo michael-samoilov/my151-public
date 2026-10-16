@@ -47,7 +47,6 @@ export function PrettySpriteGrid({
   formKey?: (mon: PickerMon) => number;
   selectedId?: number;
   onPick: (mon: PickerMon) => void;
-  /** Where each Pokémon is already picked in this cell's row or column. */
   takenMarks?: (id: number) => PointerMark[];
   showIcons?: boolean;
   pointer?: boolean;
@@ -57,7 +56,6 @@ export function PrettySpriteGrid({
   onClear?: () => void;
   clearLabel?: string;
   fitToHeight?: boolean;
-  /** Drawn under each sprite, in a band `captionPx` tall. The admin uses it. */
   caption?: (mon: PickerMon) => ReactNode;
   captionPx?: number;
 }) {
@@ -81,8 +79,6 @@ export function PrettySpriteGrid({
     const available = scroller ?? grid.parentElement;
     if (!available) return;
     const resize = () => {
-      // A content-sized sheet can shrink with this grid. Measure its capacity,
-      // rather than feeding the smaller content height back into sprite sizing.
       let container: HTMLElement | null = available;
       let bottom = available.getBoundingClientRect().bottom;
       while (container) {
@@ -182,7 +178,6 @@ function PickCell({
 }) {
   const originsId = useId();
   const clearing = selected && Boolean(onClear);
-  // Pointer selectors list only picks from other cells, so they never show taken.
   const takenHere = pointer ? [] : taken;
   const mark = Math.round(spritePx * 0.28);
   const discSize = equalAreaDiscSize(mark);
@@ -269,8 +264,6 @@ function PickCell({
           ))}
         </span>
       ) : null}
-      {/* The x paints above the source badges and the used mark. It stays
-          soft until a mouse hovers the tile. */}
       {clearing ? (
         <svg
           data-testid="favorites-clear"

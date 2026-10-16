@@ -1,7 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-/** A single square action in the same raised container as the navigation tabs. */
 export const HeaderActionButton = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(
   function HeaderActionButton({ className, children, type = 'button', ...props }, ref) {
     return <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted p-0.5">

@@ -19,7 +19,6 @@ export function favoritePickerIds(raw: string | null, resolveId?: (id: number) =
       if (id !== undefined && (resolveId || getPokemonById(id))) ids.add(id);
     }
   } catch {
-    // A damaged save must not block the other builders.
   }
   return ids;
 }

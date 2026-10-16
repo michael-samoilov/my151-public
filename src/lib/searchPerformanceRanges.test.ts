@@ -34,11 +34,9 @@ function pacificHourKey(ms: number): string {
 
 const KEY_OF: Record<string, string> = { page: HOME, query: 'pokedex maker' };
 
-/** One Google row per day at 1 click and 10 impressions, from GOOGLE_FIRST_DAY on. */
 function googleRows(body: GoogleBody) {
   const [first, ...rest] = body.dimensions;
   if (first === 'hour') {
-    // Hourly data starts at Pacific midnight of startDate. UTC hours 1, 7, 13, and 19 report nothing.
     const hours = [];
     for (let ms = Date.parse(`${body.startDate}T07:00:00Z`); ms <= LAST_REPORTED_HOUR; ms += HOUR_MS) {
       if (new Date(ms).getUTCHours() % 6 !== 1) hours.push(ms);
@@ -51,7 +49,6 @@ function googleRows(body: GoogleBody) {
   return [{ keys: body.dimensions.map((d) => KEY_OF[d]), clicks: days.length, impressions: 10 * days.length, ctr: 0.1, position: 5 }];
 }
 
-/** Bing's dated rows: one per day, plus an old page that only long windows reach. */
 function bingRows(method: string) {
   const dated = (day: string) => `/Date(${Date.parse(`${day}T00:00:00Z`)})/`;
   const days = daysBetween(BING_FIRST_DAY, '2026-09-24');
@@ -102,7 +99,6 @@ interface Expected {
   bingPrevious: boolean;
 }
 
-// Windows end at the Google daily cutoff (three days back) or at the last reported hour.
 const EXPECTED: Record<SearchRangeKey, Expected> = {
   '24h': {
     window: ['2026-09-26T16:00:00.000Z', '2026-09-27T15:00:00.000Z'],
@@ -114,7 +110,6 @@ const EXPECTED: Record<SearchRangeKey, Expected> = {
   '7d': { window: ['2026-09-18', '2026-09-24'], previous: ['2026-09-11', '2026-09-17'], googleClicks: 7, buckets: 7, bingPrevious: true },
   '28d': { window: ['2026-08-28', '2026-09-24'], previous: ['2026-07-31', '2026-08-27'], googleClicks: 28, buckets: 28, bingPrevious: true },
   '90d': { window: ['2026-06-27', '2026-09-24'], previous: ['2026-03-29', '2026-06-26'], googleClicks: 90, buckets: 90, bingPrevious: false },
-  // The previous 180 days start before Google's first reported day, so no comparison exists.
   '180d': { window: ['2026-03-29', '2026-09-24'], previous: null, googleClicks: 180, buckets: 180, bingPrevious: false },
   '365d': { window: ['2025-09-25', '2026-09-24'], previous: null, googleClicks: 208, buckets: 365, bingPrevious: false },
   all: { window: ['2026-03-01', '2026-09-24'], previous: null, googleClicks: 208, buckets: 208, bingPrevious: false },
@@ -209,7 +204,6 @@ describe('search performance by range', () => {
     expect(weekHome?.engines.bing.previous?.impressions).toBe(35);
     expect(view.byRange['7d'].providers.bing.topQueries[0]).toMatchObject({ key: 'make a pokedex', impressions: 21 });
     expect(view.byRange['7d'].pages.some((page) => page.path === '/old')).toBe(false);
-    // Bing starts inside the 90d previous window, so a page delta would compare with part of a period.
     expect(view.byRange['90d'].pages.find((page) => page.path === '/')?.engines.bing.previous).toBeNull();
     expect(view.byRange.all.pages.find((page) => page.path === '/old')?.engines.bing.current?.impressions).toBe(9);
     expect(view.byRange.all.providers.bing.current?.window).toEqual({ start: BING_FIRST_DAY, end: '2026-09-24' });

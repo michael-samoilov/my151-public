@@ -1,22 +1,4 @@
-// Condensed, MECE-respecting change list derived from biome-assignments.json:
-//
-//   NEW    — line is in NO build-page section today; add to its recommended
-//            place section (mountain/lake count as target sections pending
-//            promotion; lines already curated in those archetypes are skipped
-//            since promoting the section covers them).
-//   SWITCH — line currently sits in a place section that disagrees with a
-//            HIGH-confidence recommendation; move it (medium-confidence
-//            disagreements are counted but left to the curation-disagreement
-//            list in validation-report.md).
-//   DEDUP  — line is in 2+ place sections today (already violates MECE);
-//            keep exactly one (the recommendation if it's among them,
-//            otherwise the first current one, flagged for judgment).
-//
-// Lines whose only coverage is a NON-place section (starter, legendary,
-// pikaclone, early-route, mimic, …) are NOT added anywhere — adding them
-// would create cross-section overlap. Their count is reported.
-//
-// Run after build-assignments.mjs:  node scripts/biome/propose-changes.mjs
+
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -27,12 +9,9 @@ const OUT_DIR = join(ROOT, 'docs', 'biome-research', 'output');
 
 const { records } = JSON.parse(readFileSync(join(OUT_DIR, 'biome-assignments.json'), 'utf8'));
 
-// Place sections: the 14 on the build page + the two promotion candidates.
 const PLACE_BUILD_SECTIONS = ['forest', 'meadow', 'cave-pokemon', 'swamp', 'dojo', 'haunted', 'ruins', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
 const PROMOTION_SECTIONS = ['mountain', 'lake'];
 
-// Archetype memberships (to know who is ALREADY in a place archetype,
-// including the not-yet-promoted mountain/lake lists).
 const archetypesSrc = readFileSync(join(ROOT, 'src', 'data', 'archetypes.ts'), 'utf8');
 const archetypeIds = new Map();
 {
@@ -62,25 +41,20 @@ let skippedMece = 0;
 
 for (const r of records) {
   const target = r.recommendedSection;
-  if (!target) continue; // structural/gift/needs-review — no place target
+  if (!target) continue;
   const covPlaces = r.currentlyCovered.filter((s) => PLACE_BUILD_SECTIONS.includes(s));
   const covNonPlace = r.currentlyCovered.filter((s) => !PLACE_BUILD_SECTIONS.includes(s));
 
   if (r.currentlyCovered.length === 0) {
-    // Not on the build page at all.
-    if (inArchetype(r, target)) continue; // already curated in mountain/lake — promotion covers it
-    // Flag lines already curated into a (not-yet-promoted) mountain/lake
-    // archetype with a DIFFERENT recommendation — pick one, not both.
+    if (inArchetype(r, target)) continue;
+
     const conflict = PROMOTION_SECTIONS.find((s) => inArchetype(r, s));
     news.push({ r, target, conflict });
     continue;
   }
 
   if (covPlaces.length >= 2) {
-    // MECE check is member-aware: the same line sitting in two sections via
-    // DIFFERENT members (base Corsola in ocean, Galarian Cursola in haunted)
-    // is a legitimate regional-form split, not an overlap — a member id must
-    // appear in BOTH sections to count as a true violation.
+
     const perSection = covPlaces.map((s) => ({ s, ids: r.members.filter((id) => archetypeIds.get(s)?.has(id)) }));
     let trueOverlap = false;
     for (let i = 0; i < perSection.length && !trueOverlap; i++) {
@@ -103,7 +77,6 @@ for (const r of records) {
 }
 
 const SECTION_ORDER = ['forest', 'meadow', 'cave-pokemon', 'mountain', 'swamp', 'lake', 'dojo', 'haunted', 'ruins', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
-// ---- Unified change table: ordered by proposed section, then confidence.
 const CONF_ORDER = { high: 0, medium: 1, low: 2 };
 const rows = [];
 for (const { r, target, conflict } of news) {
@@ -125,7 +98,7 @@ for (const { r, from, target } of switches) {
   });
 }
 for (const { r, keep, drop, judgment, formSplit } of dedups) {
-  if (formSplit) continue; // legitimate regional-form split — no change proposed
+  if (formSplit) continue;
   rows.push({
     section: keep,
     line: r.line,
@@ -157,12 +130,6 @@ md.push('Form-splits (different members per section — legitimate, no action): 
   (dedups.filter((d) => d.formSplit).map((d) => `${d.r.line} (${[d.keep, ...d.drop].join(' + ')})`).join('; ') || 'none') + '.');
 md.push('');
 
-// ---- Net flow per section (in Pokémon ids, not lines) --------------------
-// Inflows: NEW/SWITCH lines joining a section (base-dex members; the full
-// line joins). Outflows: SWITCH members leaving their old section, DEDUP
-// removing only the DUPLICATED ids from dropped sections (ids unique to the
-// dropped section are untouched), and ⚠ NEW rows leaving the mountain/lake
-// archetype they were curated in (pick-one resolved toward the proposal).
 const ins = new Map();
 const outs = new Map();
 const bump = (m, s, n) => m.set(s, (m.get(s) ?? 0) + n);

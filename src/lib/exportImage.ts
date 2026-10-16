@@ -39,9 +39,9 @@ import { composeStatsExport } from './exportStatsFrame';
 
 export const DEX_EXPORT_FRAME_RED = '#DC2626';
 
-const SPRITE = TILE; // logical draw size = 48px (1:1 with tile)
+const SPRITE = TILE;
 const BG = '#ffffff';
-const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
+const ROTATION = -30 * (Math.PI / 180);
 const SCALE = DEX_EXPORT_SCALE; // SPRITE * SCALE = 96 = native sprites at 1×
 // iOS/Safari (and therefore every iOS browser, incl. Chrome) caps a canvas's
 // backing store at ~16.7M px (4096²). Past it, canvas ops silently no-op and
@@ -50,9 +50,6 @@ const SCALE = DEX_EXPORT_SCALE; // SPRITE * SCALE = 96 = native sprites at 1×
 // area stays capped as a guard. Margin under the hard limit.
 const MAX_CANVAS_AREA = 16_000_000;
 
-// ---------- Footer insight computation ----------
-
-/** National type frequency baseline — proportion of national-dex Pokemon that have each type */
 let _nationalTypeFreq: Map<string, number> | null = null;
 
 function getNationalTypeFreq(): Map<string, number> {
@@ -70,7 +67,6 @@ function getNationalTypeFreq(): Map<string, number> {
   return freq;
 }
 
-/** National generation frequency baseline */
 let _nationalGenFreq: Map<number, number> | null = null;
 
 function getNationalGenFreq(): Map<number, number> {
@@ -85,15 +81,11 @@ function getNationalGenFreq(): Map<number, number> {
 }
 
 interface FooterInsights {
-  /** Up to 2 most over-indexed types (>1.5x in both full and legend-excluded pools), desc by ratio */
   leanTypes: TypeName[];
-  /** Up to 2 most over-indexed generations (>1.3x vs national), desc by ratio */
   leanGens: number[];
-  /** Attacking type with highest positive deviation from national baseline; only if deviation ≥ 0.25 in both full and legend-excluded pools */
   bestAttackType?: TypeName;
 }
 
-/** Compute type over-index ratios for a pool of Pokemon vs national type frequencies */
 function typeOverIndexRatios(pool: Pokemon[], nationalTypeFreq: Map<string, number>): Map<string, number> {
   const count = new Map<string, number>();
   for (const p of pool) {
@@ -113,7 +105,6 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
 
   const nationalTypeFreq = getNationalTypeFreq();
 
-  // Type lean — must be >1.5x in both the full pool AND the legend/mythical-excluded pool.
   const ratiosAll = typeOverIndexRatios(pokemon, nationalTypeFreq);
   const filtered = withoutSpecials(pokemon);
   const ratiosFiltered = filtered.length >= 10
@@ -130,7 +121,6 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
   qualifyingTypes.sort((a, b) => b.ratio - a.ratio);
   const leanTypes = qualifyingTypes.slice(0, 2).map(x => x.type);
 
-  // Gen lean — up to 2 most over-represented generations vs national baseline (>1.3x threshold).
   const nationalGenFreq = getNationalGenFreq();
   const regionGenCount = new Map<number, number>();
   for (const p of pokemon) regionGenCount.set(p.generation, (regionGenCount.get(p.generation) ?? 0) + 1);
@@ -146,11 +136,6 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
   qualifyingGens.sort((a, b) => b.ratio - a.ratio);
   const leanGens = qualifyingGens.slice(0, 2).map(x => x.gen);
 
-  // Attacking type with highest deviation from national baseline — only if ≥ 0.25
-  // in both the full pool AND the legend/mythical/starter-excluded pool (filters out
-  // advantages that only exist because of legendary/mythical picks).
-  // Uses the same baselines as the analytics chart's exclude-special toggle, so the
-  // export result matches what the user sees in the chart.
   const dominanceFull = computeTypeDominance(pokemon);
   const filteredForOverperform = withoutSpecials(pokemon, STARTER_IDS);
   const dominanceFiltered = filteredForOverperform.length >= 10
@@ -178,7 +163,6 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
   return { leanTypes, leanGens, bestAttackType };
 }
 
-/** Load an image by URL, returns a promise. */
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -189,13 +173,11 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Load an image that may not exist; resolves to null on missing src or error. */
 function maybeLoadImage(src: string | null | undefined): Promise<HTMLImageElement | null> {
   if (!src) return Promise.resolve(null);
   return loadImage(src).catch(() => null);
 }
 
-/** Draw a type-colored pokeball behind a sprite tile, rotated to match view page. */
 function drawPokeball(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -208,17 +190,14 @@ function drawPokeball(
   ctx.translate(cx, cy);
   ctx.rotate(ROTATION);
 
-  // Colored fills at reduced opacity
   ctx.globalAlpha = 0.33;
 
-  // Top half — primary type
   ctx.beginPath();
   ctx.arc(0, 0, r, Math.PI, 0);
   ctx.closePath();
   ctx.fillStyle = primary;
   ctx.fill();
 
-  // Bottom half — secondary type
   ctx.beginPath();
   ctx.arc(0, 0, r, 0, Math.PI);
   ctx.closePath();
@@ -227,7 +206,6 @@ function drawPokeball(
 
   ctx.globalAlpha = 1;
 
-  // Gap strokes to cleanly separate halves (white to match background)
   ctx.strokeStyle = BG;
   ctx.lineWidth = 2;
 
@@ -241,7 +219,6 @@ function drawPokeball(
   ctx.closePath();
   ctx.stroke();
 
-  // Center button
   ctx.beginPath();
   ctx.arc(0, 0, r * 0.2, 0, Math.PI * 2);
   ctx.fillStyle = BG;
@@ -250,7 +227,6 @@ function drawPokeball(
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Divider line
   ctx.beginPath();
   ctx.moveTo(-r, 0);
   ctx.lineTo(r, 0);
@@ -261,22 +237,10 @@ function drawPokeball(
   ctx.restore();
 }
 
-/**
- * Render the user's Pokemon list as a sharp PNG image blob.
- * Mirrors the view page: 10-column grid, type-colored rotated pokeball
- * backgrounds, last row centered. No empty placeholders.
- * Rendered at 4x with pixel-perfect sprite scaling.
- *
- * When `options.sections` is provided, the build-section outlines (fills,
- * borders, dotted continuation tails, titles and corner spandrels) are drawn
- * over the grid — matching the View page's outline overlay — using the shared
- * geometry in src/lib/sectionOutlines.ts and a gapped/banded layout.
- */
 export async function generateExportImage(
   pokemon: Pokemon[],
   options: {
     sections?: Record<string, number[]> | null;
-    /** Detailed-stats data to redraw (natively) to the right of the grid. */
     stats?: { data: DetailedStatsData; heights: StatsHeights } | null;
   } = {},
 ): Promise<Blob> {
@@ -287,7 +251,7 @@ export async function generateExportImage(
 
   // Canvas text metrics for title fitting / stats wrapping need the real font.
   if (typeof document !== 'undefined' && document.fonts?.ready) {
-    try { await document.fonts.ready; } catch { /* fall back to metrics-as-is */ }
+    try { await document.fonts.ready; } catch {   }
   }
 
   if (options.stats) {
@@ -303,7 +267,6 @@ export async function generateExportImage(
     }));
     return composeStatsExport(base, layout, t('export.detailedStatsTitle'),
       ctx => drawStatsPanel(ctx, data, badges, heights),
-      // Match the ordinary Dex credit's 6px logical face and footer baseline.
       { size: 6 * SCALE, bottomOffset: (DEX_EXPORT_FRAME + PAD_BOTTOM - 21) * SCALE });
   }
 
@@ -313,10 +276,8 @@ export async function generateExportImage(
   let h = grid.height;
   let footerTop = grid.footerTop;
 
-  // Compute footer insights before loading images so we know which icons to fetch
   const insights = computeFooterInsights(pokemon);
 
-  // Load sprites + footer icons (and any spandrel type masks) in parallel
   const [sprites, leanType1Img, leanType2Img, leanGen1Img, leanGen2Img, attackTypeImg, maskImgs] = await Promise.all([
     Promise.all(pokemon.map((p) => loadImage(p.sprite).catch(() => null))),
     maybeLoadImage(insights.leanTypes[0] ? typeIconPath(insights.leanTypes[0]) : null),
@@ -348,7 +309,6 @@ export async function generateExportImage(
   canvas.height = Math.round(framedH * expScale);
   const ctx = canvas.getContext('2d')!;
 
-  // Scale everything for sharp rendering (≤ SCALE, lowered when capped above).
   ctx.scale(expScale, expScale);
   ctx.imageSmoothingEnabled = false;
   clipExportCanvas(ctx, framedW, framedH);
@@ -365,8 +325,6 @@ export async function generateExportImage(
     [0, 0, exportInnerCornerRadius(framedW, framedH, DEX_EXPORT_FRAME), exportInnerCornerRadius(framedW, framedH, DEX_EXPORT_FRAME)],
   );
   ctx.fill();
-  // Match the trainer/favorites title font, rail and cap-height centering.
-  // The title describes the user's Dex; no editable Dex name is stored.
   ctx.save();
   ctx.font = font(TITLE_PX / SCALE, 800);
   ctx.fillStyle = '#ffffff';
@@ -388,26 +346,22 @@ export async function generateExportImage(
     drawOutlines(ctx, outline.shapes, outline.spandrels, outline.ox, outline.oy, maskImgs);
   }
 
-  ctx.restore(); // end grid translate
+  ctx.restore();
 
-  // Grid-only footer: two lines — insights (top) + "made with my151.app" (bottom).
   const line1Y = footerTop + 10;
   const line2Y = footerTop + 21;
   const zinc = '#a1a1aa';
 
-  // Insights line — original sizes.
   const INSIGHTS_FONT = '600 8px "Inter Variable", system-ui, -apple-system, sans-serif';
-  const TYPE_ICON_SZ = 9;   // logical px: square side for type icons
-  const GEN_ICON_SZ = 11;   // logical px: gen badge circle
-  const ICON_GAP = 2;       // gap after icon before next element
+  const TYPE_ICON_SZ = 9;
+  const GEN_ICON_SZ = 11;
+  const ICON_GAP = 2;
 
-  // Credit line — smaller so it reads as a quiet credit.
   const CREDIT_FONT = '600 6px "Inter Variable", system-ui, -apple-system, sans-serif';
 
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
 
-  // Segment types: text or image icon (with per-icon size)
   type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; img: HTMLImageElement; sz: number };
   const insightSegs: Seg[] = [];
 
@@ -420,7 +374,6 @@ export async function generateExportImage(
   const typeImgs = [leanType1Img, leanType2Img];
   const genImgs  = [leanGen1Img,  leanGen2Img];
 
-  /** One lean subject — a type or a generation — as icon + coloured label. */
   const leanItem = (i: number): Seg[] => {
     if (i < leanTypes.length) {
       const type = leanTypes[i];
@@ -438,12 +391,8 @@ export async function generateExportImage(
     ];
   };
 
-  /** The lean subjects joined the way the active locale joins a list. */
   const leanSubjects = (): Seg[] => {
     const count = leanTypes.length + leanGens.length;
-    // formatToParts gives the separators and conjunction as their own parts, so
-    // the rendered items (icon + coloured label) can be dropped in between them
-    // without sentinel-substituting into a formatted string.
     return formatListToParts(Array.from({ length: count }, (_, i) => String(i))).flatMap((part) =>
       part.type === 'element'
         ? leanItem(Number(part.value))
@@ -462,9 +411,6 @@ export async function generateExportImage(
   const plain = (text: string): Seg => ({ kind: 'text', text, color: zinc });
   const sep = () => insightSegs.push(plain(t('poster.separator')));
 
-  // Each clause is one translatable sentence with slots, not a pile of
-  // fragments — so a translation can put the subject wherever its grammar
-  // wants it and still get the icon in the right place.
   if (isKanto151) {
     insightSegs.push(plain(t('poster.kanto151')));
     if (leanTypes.length > 0 || insights.bestAttackType) {
@@ -494,8 +440,6 @@ export async function generateExportImage(
   }
 
   const creditSegs: Seg[] = expandTemplate(raw('poster.credit'), plain, {
-    // The wordmark is a brand asset, not copy: it stays my151.app in every
-    // locale, and only its position in the sentence is the translator's.
     app: () => [
       { kind: 'text', text: 'my151', color: '#DC2626' },
       { kind: 'text', text: '.app', color: '#0a0a0a' },
@@ -525,8 +469,6 @@ export async function generateExportImage(
   drawLine(creditSegs, line2Y, CREDIT_FONT);
 
   return new Promise<Blob>((resolve, reject) => {
-    // Guard against iOS occasionally never invoking the toBlob callback (which
-    // would hang the export spinner indefinitely).
     const timer = window.setTimeout(() => reject(new Error('Canvas toBlob timed out')), 15000);
     canvas.toBlob((blob) => {
       window.clearTimeout(timer);
@@ -536,8 +478,6 @@ export async function generateExportImage(
   });
 }
 
-/** Load the recolourable alpha masks of the spandrel glyphs. Failures are
- *  skipped (the spandrel falls back to the 4-point star). */
 async function loadSpandrelMasks(urls: string[]): Promise<Map<string, HTMLImageElement>> {
   const out = new Map<string, HTMLImageElement>();
   await Promise.all(
@@ -546,17 +486,12 @@ async function loadSpandrelMasks(urls: string[]): Promise<Map<string, HTMLImageE
         const img = await loadImage(url);
         out.set(url, img);
       } catch {
-        /* keep falling back to the star */
       }
     }),
   );
   return out;
 }
 
-/** Draw the section outlines onto the canvas, in the outline coordinate system
- *  translated by (ox, oy). Mirrors the View page's SectionOverlays SVG render:
- *  faint fills (fading on open edges), 20%-opacity borders, dotted continuation
- *  tails, corner spandrels (section glyph or 4-point star), and fitted titles. */
 function drawOutlines(
   ctx: CanvasRenderingContext2D,
   shapes: OutlineShape[],
@@ -572,7 +507,6 @@ function drawOutlines(
   ctx.save();
   ctx.translate(ox, oy);
 
-  // Fills — open pieces fade toward their open edge, closed pieces are uniform.
   for (const s of shapes) {
     ctx.save();
     ctx.globalAlpha = 0.07;
@@ -591,7 +525,6 @@ function drawOutlines(
     ctx.restore();
   }
 
-  // Borders.
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.lineWidth = strokeW;
@@ -603,7 +536,6 @@ function drawOutlines(
     ctx.restore();
   }
 
-  // Dotted continuation tails on open edges.
   for (const s of shapes) {
     if (!s.open) continue;
     const edge = s.open.side === 'right' ? s.open.x1 : s.open.x0;
@@ -621,7 +553,6 @@ function drawOutlines(
     ctx.restore();
   }
 
-  // Spandrels: recoloured glyph where its mask loaded, else a 4-point star.
   for (const sp of spandrels) {
     const mask = sectionGlyphMask(sp.sectionId);
     const img = mask ? maskImgs.get(mask) : undefined;
@@ -636,7 +567,7 @@ function drawOutlines(
         tctx.imageSmoothingEnabled = true;
         const iw = img.naturalWidth || 1;
         const ih = img.naturalHeight || 1;
-        const scale = Math.min(px / iw, px / ih); // contain-fit, centred
+        const scale = Math.min(px / iw, px / ih);
         const dw = iw * scale;
         const dh = ih * scale;
         tctx.drawImage(img, (px - dw) / 2, (px - dh) / 2, dw, dh);
@@ -658,7 +589,6 @@ function drawOutlines(
     }
   }
 
-  // Titles — uppercase, weight 900, fitted (squash/stretch) to their outline.
   for (const s of shapes) {
     if (!s.label) continue;
     if (!OUTLINE_REPEAT_TITLES && s.isContinuation) continue;
@@ -696,17 +626,11 @@ function drawTile(
   drawPokeball(ctx, cx, cy, r, primary, secondary);
 
   if (sprite) {
-    // Draw sprite at exact integer multiple of native resolution to preserve
-    // pixel art without aliasing artifacts. We reset to the identity transform
-    // (raw canvas pixels) for this, so map the tile centre through the *current*
-    // transform first — otherwise any active translate (e.g. the dex-card offset)
-    // is dropped and the sprite drifts off its pokeball.
     ctx.save();
     const m = ctx.getTransform();
-    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset to identity (canvas pixels)
-    // Size the sprite from the *live* scale (m.a), not the SCALE constant, so it
-    // tracks the effective scale when the canvas area is capped (iOS).
-    const drawSize = SPRITE * m.a; // = native 96px (1×) at full SCALE
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    const drawSize = SPRITE * m.a;
     const sx = m.a * cx + m.c * cy + m.e - drawSize / 2;
     const sy = m.b * cx + m.d * cy + m.f - drawSize / 2;
     ctx.imageSmoothingEnabled = false;
@@ -714,8 +638,7 @@ function drawTile(
     ctx.restore();
   }
 
-  // Position number in top-left corner — matches view page styling
-  const numFontSize = TILE * 0.12; // ~5.76 logical px
+  const numFontSize = TILE * 0.12;
   ctx.save();
   ctx.font = `600 ${numFontSize}px "Inter Variable", system-ui, -apple-system, sans-serif`;
   ctx.fillStyle = 'rgba(10, 10, 10, 0.4)';

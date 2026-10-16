@@ -27,8 +27,8 @@ fi
 changed=$(git diff --name-only "$previous" "$current" 2>/dev/null) || { echo "Cannot compare with $previous: build."; exit 1; }
 [ -n "$changed" ] || { echo "No changed files found: build."; exit 1; }
 
-# Paths the site never serves or builds from. A Markdown file under public/
-# is served, so only Markdown elsewhere is skipped.
+
+
 not_site='^(docs|e2e|\.claude|\.github|\.cursor)/|^[^/]+\.md$|^(src|scripts|api)/.*\.md$|\.test\.ts$|^scripts/performance/|^eslint-suppressions\.json$'
 site=$(printf '%s\n' "$changed" | grep -v -E "$not_site")
 if [ -z "$site" ]; then

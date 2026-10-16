@@ -7,16 +7,6 @@ import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
 import { isTypeName, type ExtraTypeAxis, type TypeAxisId } from '../model/cells';
 import { AXIS_FILL, WORD_BADGE_MARGIN } from './badgeStyle';
 
-/**
- * A type badge that stretches to its box's width. The pill, symbol, and word
- * keep the 200x40 badge's sizes in units of the box height. The pill gets
- * longer, and the word stays centred on it.
- *
- * The word sits in a 200x40 SVG centred on the pill. A type badge puts its
- * word at x 113, the middle of the room right of the symbol, and that room
- * grows on both sides as the pill does. So both kinds of badge centre the
- * same SVG.
- */
 export function WideBadge({ id }: { id: TypeAxisId }) {
   useLocale();
   const t = useT();
@@ -34,8 +24,6 @@ export function WideBadge({ id }: { id: TypeAxisId }) {
     : `linear-gradient(101deg, ${fill.map(([offset, color]) => `${color} ${offset * 100}%`).join(', ')})`;
   const h = (units: number) => `calc(100cqh * ${units / TYPE_BADGE_H})`;
   return (
-    // The outer box is the size container, so the pill inside can read its
-    // height in cqh units.
     <div
       role="img"
       aria-label={spoken}
