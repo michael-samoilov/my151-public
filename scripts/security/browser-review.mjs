@@ -5,7 +5,7 @@ import { createServer } from 'vite';
 import { chromium } from '@playwright/test';
 
 // Local fixture routes never invoke Vercel functions or Redis. No secrets are needed.
-const output = path.resolve(process.argv[2] || '/tmp/my151-security-browser-results');
+const output = path.resolve(process.argv[2] || '.audit/security-review/browser');
 await mkdir(output, { recursive: true });
 const payload = '<img src=x onerror=alert(1)>';
 const records = [];

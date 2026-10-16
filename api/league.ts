@@ -44,6 +44,7 @@ const clientLimiter = new Ratelimit({
 const CAS_LUA = `
 local cur = redis.call('HGET', KEYS[2], ARGV[1]) or '0'
 if cur == ARGV[2] then
+  if redis.call('HEXISTS', KEYS[1], ARGV[1]) == 0 and redis.call('HLEN', KEYS[1]) >= tonumber(ARGV[4]) then return 2 end
   redis.call('HSET', KEYS[1], ARGV[1], ARGV[3])
   redis.call('HSET', KEYS[2], ARGV[1], tostring(tonumber(cur) + 1))
   return 1
@@ -154,15 +155,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ]);
       const existing = parseLeagueRecord(rawStr);
       const expectedVer = verStr == null ? '0' : String(verStr);
-      if (!existing) {
-        const count = await redis.hlen(LEAGUE_CLIENTS_KEY);
-        if (count >= MAX_CLIENTS) {
-          await countDrop('cap');
-          return res.status(200).json({ ok: true, capped: true });
-        }
-      }
       const rec = mergeLeagueRecord(existing, input);
-      const ok = await redis.eval(CAS_LUA, [LEAGUE_CLIENTS_KEY, LEAGUE_VERSION_KEY], [cid, expectedVer, JSON.stringify(rec)]);
+      const ok = await redis.eval(CAS_LUA, [LEAGUE_CLIENTS_KEY, LEAGUE_VERSION_KEY], [cid, expectedVer, JSON.stringify(rec), MAX_CLIENTS]);
+      if (ok === 2) {
+        await countDrop('cap');
+        return res.status(200).json({ ok: true, capped: true });
+      }
       if (ok === 1) {
         const activityAck = await appendMinuteActivity(cid, 'league', body.activity, receivedAt);
         if (exportKind) {
