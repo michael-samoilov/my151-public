@@ -104,7 +104,6 @@ interface EvoLineGroup {
   tileOverlay?: (pokemon: Pokemon, spritePx: number) => React.ReactNode;
   tileAttributes?: Record<string, string>;
   tileTestId?: string;
-  displayName?: string;
   displayLabel?: PokemonLabel;
   onSelect?: (pokemon: Pokemon) => void;
 }
@@ -180,7 +179,6 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
             tileOverlay={group.tileOverlay}
             tileAttributes={group.tileAttributes}
             tileTestId={group.tileTestId}
-            displayName={group.displayName}
             displayLabel={group.displayLabel}
             onSelect={group.onSelect}
             assignedIds={assignedIds}
@@ -242,7 +240,6 @@ interface EvoLineCardProps {
   tileOverlay?: (pokemon: Pokemon, spritePx: number) => React.ReactNode;
   tileAttributes?: Record<string, string>;
   tileTestId?: string;
-  displayName?: string;
   displayLabel?: PokemonLabel;
   onSelect?: (pokemon: Pokemon) => void;
   assignedIds: Set<number>;
@@ -289,7 +286,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, tileAttributes, tileTestId, displayName, displayLabel, onSelect, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, tileAttributes, tileTestId, displayLabel, onSelect, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
   useNamesVersion();
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
@@ -356,7 +353,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, tileOverlay, ti
   return (
     <>
       {members.map((pokemon, i) => {
-        const label = displayLabel ?? (displayName ? { name: displayName, full: displayName, mark: '', pending: false } : pokemonLabel(pokemon.id, pokemon.name));
+        const label = displayLabel ?? pokemonLabel(pokemon.id, pokemon.name);
         const inDex = assignedIds.has(pokemon.id);
         const markedForRemoval = standaloneTiles
           ? (removalStagedIds?.has(pokemon.id) ?? false)

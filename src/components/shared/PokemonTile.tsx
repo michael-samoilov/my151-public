@@ -130,7 +130,6 @@ export const TILE_ACTION_BUTTON_CLASS =
 
 interface PokemonTileContentProps {
   /** A tool can supply a localized form name while retaining the shared tile. */
-  displayName?: string;
   displayLabel?: PokemonLabel;
   pokemon: Pokemon;
   /** Override the sprite URL (shiny variants, regional art overrides). */
@@ -157,7 +156,6 @@ interface PokemonTileContentProps {
  */
 export function PokemonTileContent({
   pokemon,
-  displayName,
   displayLabel,
   spriteUrl,
   contentClassName,
@@ -172,7 +170,7 @@ export function PokemonTileContent({
   // Re-render when the name catalog lands: it is fetched after first paint, so
   // the first frame legitimately shows the slug.
   useNamesVersion();
-  const label = displayLabel ?? (displayName ? { name: displayName, full: displayName, mark: '', pending: false } : pokemonLabel(pokemon.id, pokemon.name));
+  const label = displayLabel ?? pokemonLabel(pokemon.id, pokemon.name);
   return (
     <div className={cn('flex flex-col items-center w-full', contentClassName)}>
       {/*
