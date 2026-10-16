@@ -85,9 +85,10 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-  mkdirSync('docs/evidence/security-review-2026-10-16', { recursive: true });
-  const phase = process.env.SECURITY_EVIDENCE_PHASE === 'after' ? 'after' : 'before';
-  writeFileSync(`docs/evidence/security-review-2026-10-16/limits-${phase}-results.json`, JSON.stringify({
+  const phase = process.env.SECURITY_EVIDENCE_PHASE;
+  const directory = phase === 'before' || phase === 'after' ? 'docs/evidence/security-review-2026-10-16' : '.audit/security-review';
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(`${directory}/limits-${phase === 'before' || phase === 'after' ? phase : 'latest'}-results.json`, JSON.stringify({
     environment: 'Local handler calls. Real SDK limiter. In-memory Redis command fixture. Network forbidden.',
     limitations: 'No HTTP platform parser, live Redis Lua execution, Vercel header normalization, or real users tested.',
     cases: evidence,
