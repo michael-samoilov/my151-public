@@ -530,7 +530,7 @@ function Artwork({ tool }: { tool: Tool }) {
               image={tool.shots![i]}
               alt={tool.alts?.[i] ?? ''}
               draggable={false}
-              decoding="async"
+              decoding="sync"
               className="block w-full h-auto"
             />
           </span>
