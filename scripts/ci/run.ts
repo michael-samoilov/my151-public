@@ -3,6 +3,7 @@ import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
 import { atomicJson, fingerprint, makeReceipt, validateReceipt } from './artifact';
 import { RunJournal } from './execution';
 import { discoveryCounts, type Discovery } from './discovery';
@@ -49,7 +50,7 @@ async function main() {
       const counts = discoveryCounts(discovery);
       if (!counts.total) throw new Error('Browser selection is empty.');
       atomicJson(join(directory, 'discovery-count.json'), counts);
-      await journal.stage('browser', 'flock', ['/tmp/my151-browser.lock', process.execPath, '--import', 'tsx', 'scripts/ci/browser.ts'], environment);
+      await journal.stage('browser', 'flock', [join(tmpdir(), 'my151-browser.lock'), process.execPath, '--import', 'tsx', 'scripts/ci/browser.ts'], environment);
       validateReceipt(root, directory, runId);
     }
     if (fingerprint(root) !== source) throw new Error('Source inputs changed during verification.');

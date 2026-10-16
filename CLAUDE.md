@@ -71,6 +71,11 @@ previous 20/40-minute default tiers. Keep verification proportional to the chang
 | `npm run ci` or `npm run ci:affected -- --base REF` | Fast checks plus complete owned spec families for changed areas. Use on the final merge candidate. | Usually 5–10 min |
 | `npm run ci:full` | All cheap gates, one build, and every existing browser project/spec. Use for launches, high-risk changes, and broad scheduled regression. | Measured separately |
 
+A change to one tuning value, plus its tests and docs, can use `ci:fast` as its
+final gate under the existing Tuning exception. It must change no logic, saved-data
+shape, API, catalog, dependency, or build configuration. Record that choice.
+Public visual changes still follow the approval rules in Deployment.
+
 `bash scripts/ci-local.sh` delegates to affected mode. It accepts `fast`, `affected`,
 or `full`, followed by the same options. `--plan` prints the chosen scope and reasons
 without running checks. The default base is `origin/claude/pokedex-region-builder-AviYF`;
