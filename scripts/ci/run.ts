@@ -34,7 +34,7 @@ async function main() {
     if (selection.effectiveMode !== 'docs') {
       await journal.stage('lint', 'npm', ['run', 'lint']);
       await journal.stage('unit', 'npm', ['test']);
-      for (const script of ['check-viewport-tags', 'check-test-rules', 'check-sprite-revisions', 'check-speed-test-detection', 'check-published-source']) {
+      for (const script of ['check-viewport-tags', 'check-test-rules', 'check-sprite-revisions', 'check-speed-test-detection', 'check-published-source', 'check-pstack']) {
         await journal.stage(script, process.execPath, [`scripts/${script}.mjs`]);
       }
       await journal.stage('analytics-cells', process.execPath, ['node_modules/tsx/dist/cli.mjs', '--tsconfig', 'tsconfig.app.json', 'scripts/build-favorite-analytics-cells.ts', '--check']);
