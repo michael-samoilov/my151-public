@@ -59,7 +59,7 @@ test.describe('localized search', () => {
 
   test('accents never have to be typed', async ({ page }, testInfo) => {
     const browser = await openBrowser(page, 'fr', QUERIES.fr.display);
-    const species = await expectLocalizedQuery(browser, 'flabebe', 'Flabébé');
+    const species = await expectLocalizedQuery(browser, 'flabebe', 'Flabébé (Fleur Rouge)');
     await expect(browser.count).toHaveAttribute('data-result-count', '3');
     await testInfo.attach('accent-query-results', {
       body: JSON.stringify({ species, count: await browser.count.getAttribute('data-result-count') }), contentType: 'application/json',
