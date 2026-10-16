@@ -21,19 +21,44 @@
  *   language, `?admin`, `?demo`, or a returning visitor while the Tools menu's
  *   favorites notice runs. Those visitors see the spinner until the app
  *   renders, as before.
- * - A preload for the Inter font. The fallback in src/index.css keeps the
- *   layout when Inter arrives; the preload makes it arrive with the first
- *   paint more often, and Lighthouse counts the font in the first paint.
+ * - An inline Inter subset for the initial page and English controls. Its
+ *   glyphs are ready before the hub appears. The client loads full Inter in
+ *   parallel with hydration, then replaces the identical initial face.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
 import react from '@vitejs/plugin-react';
 import { build, type Plugin, type ResolvedConfig } from 'vite';
 
 const ENTRY = 'src/home/prerender.ts';
 // Saved Pokédex key; its `state.locale` is the language the visitor chose.
 const STORE_KEY = 'personal-151-pokedex-v3';
+
+/** Include the first Inter face in the HTML so its request cannot race paint. */
+function initialInter(root: string, markup: string): string {
+  const directory = path.join(root, 'src/assets/fonts');
+  const metadata = JSON.parse(fs.readFileSync(path.join(directory, 'inter-home-initial.json'), 'utf8')) as {
+    sha256: string; sourceSha256: string; codepoints: number[];
+  };
+  const font = fs.readFileSync(path.join(directory, 'inter-home-initial.woff2'));
+  const source = fs.readFileSync(path.join(root, 'node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2'));
+  const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
+  if (hash(font) !== metadata.sha256 || hash(source) !== metadata.sourceSha256) {
+    throw new Error('prerender-hub: regenerate the initial Inter font after a font change');
+  }
+  const text = markup.replace(/<[^>]*>/g, '').replace(/&(?:amp|lt|gt|quot|#x27|#39);/g, entity => ({
+    '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#x27;': "'", '&#39;': "'",
+  })[entity] ?? entity);
+  const supported = new Set(metadata.codepoints);
+  const missing = [...new Set(Array.from(text).map(character => character.codePointAt(0)!))]
+    .filter(codepoint => codepoint >= 32 && !supported.has(codepoint));
+  if (missing.length) throw new Error(`prerender-hub: initial Inter lacks ${missing.map(value => `U+${value.toString(16)}`).join(', ')}`);
+  const range = metadata.codepoints.map(value => `U+${value.toString(16)}`).join(',');
+  return `<style>@font-face{font-family:'P151 Inter Initial';font-style:normal;font-weight:100 900;font-display:block;src:url(data:font/woff2;base64,${font.toString('base64')}) format('woff2-variations');unicode-range:${range}}html.p151-hub-inter-initial body{font-family:'P151 Inter Initial','Inter Variable','Inter Fallback',system-ui,-apple-system,sans-serif}html.p151-hub-font-pending #root{visibility:hidden}</style>
+<script>(function(){var d=document.documentElement;d.classList.add('p151-hub-inter-initial','p151-hub-font-pending');Promise.all([400,700,800].map(function(w){return document.fonts.load(w+' 16px "P151 Inter Initial"','my151.app Pokédex 0123456789').then(function(f){if(!f.length||f.some(function(x){return x.status!=='loaded'}))throw Error('Initial Inter is unavailable')})})).then(function(){d.classList.remove('p151-hub-font-pending')},function(){d.classList.add('p151-hub-font-failed')})})();</script>`;
+}
 
 /** What the server entry exports for the head script. */
 interface BootInputs {
@@ -183,8 +208,8 @@ export function prerenderHub(): Plugin {
         const { preloads: imagePreloads, markup: body } = splitImagePreloads(markup);
         html = html.replace(root, () => `<div id="root" data-prerendered>${body}</div><span id="p151-end" hidden></span>`);
         const head = [
-          `<link rel="preload" as="font" type="font/woff2" crossorigin href="${config.base}assets/${font}">`,
           ...imagePreloads,
+          initialInter(config.root, markup),
           '<link rel="expect" href="#p151-end" blocking="render">',
           '<style>html .p151-boot{display:none}html.p151-wait .p151-boot{display:flex}html.p151-wait #root{display:none}</style>',
           '<style>html:not(:has(#p151-end)) #root{visibility:hidden}html.p151-hub-images-pending .hub-grid{visibility:hidden}'+['dex','league','favorites'].map(k=>`html.p151-hub-${k}-fallback .hub-card[data-hub-card="${k}"] [data-card-panel]{visibility:hidden}`).join('')+'</style>',
