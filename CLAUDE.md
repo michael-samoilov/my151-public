@@ -96,6 +96,9 @@ evidence; its source identity is not established by a local receipt.
 
 The critical journeys use `@ci-smoke` on existing tests. Keep mobile/narrow
 `@viewport` filtering intact. No mode retries a failing browser test into a pass.
+CI records failure screenshots and per-case errors. Full Playwright traces are
+opt-in for diagnosis (`--trace on --retries 0` on a standalone, locked run);
+automatic snapshot tracing slows locator-heavy tests and can cause timeouts.
 Keep full regression coverage. Run it explicitly or on a future nightly schedule;
 automatic Actions triggers remain disabled until billing allows jobs to start.
 

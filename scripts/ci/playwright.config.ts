@@ -18,7 +18,7 @@ export default defineConfig({
   workers: Number(process.env.MY151_CI_WORKERS ?? 2),
   outputDir: join(directory, 'test-results'),
   reporter: [['list'], ['./reporter.ts']],
-  use: { ...config.use, ...(external ? { baseURL: external } : {}), trace: 'retain-on-failure' },
+  use: { ...config.use, ...(external ? { baseURL: external } : {}), trace: 'off', screenshot: 'only-on-failure' },
   projects: config.projects!.filter(project => !external || project.name !== 'dev').map(project => ({
     ...project,
     grep: projectFilter(selection.suitePattern, project.name === 'mobile' || project.name === 'narrow'),
