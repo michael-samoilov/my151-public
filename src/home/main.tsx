@@ -23,6 +23,18 @@ preload.crossOrigin = 'anonymous';
 preload.href = interLatinUrl;
 document.head.prepend(preload);
 
+// Keep the initial Inter face until the complete font can render new UI text.
+void Promise.all([400, 700, 800].map(weight =>
+  document.fonts.load(`${weight} 16px "Inter Variable"`, 'my151.app Pokédex 0123456789')
+    .then(faces => {
+      if (!faces.length || faces.some(face => face.status !== 'loaded')) throw new Error('Inter is unavailable');
+    }),
+)).then(() => {
+  document.documentElement.classList.remove('p151-hub-inter-initial', 'p151-hub-font-pending', 'p151-hub-font-failed');
+}).catch(() => {
+  // The initial Inter remains usable if the full font request fails.
+});
+
 installLayoutFontSize();
 // `?notme` marks this browser as the owner's, out of analytics.
 installOptOut();
