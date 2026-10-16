@@ -16,10 +16,14 @@ const ports = (root as PlaywrightTestConfig).webServer as { port: number }[];
 const servers: { close(): Promise<void> }[] = [];
 let child: ChildProcess | undefined;
 let interrupted = false;
-for (const signal of ['SIGINT', 'SIGTERM'] as const) process.once(signal, () => {
+// Cancellation can deliver another signal while the servers close.
+for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, () => {
+  if (interrupted) return;
   interrupted = true;
   child?.kill(signal);
 });
+const terminationListeners = new Set(process.listeners('SIGTERM'));
+const inputEndListeners = new Set(process.stdin.listeners('end'));
 
 try {
   if (!process.env.PLAYWRIGHT_BASE_URL) {
@@ -32,6 +36,14 @@ try {
       servers.push(dev);
       await dev.listen();
     }
+  }
+  // Vite adds process.exit callbacks. This entry point owns shutdown so the
+  // browser child stops and the final server record is written before exit.
+  for (const listener of process.listeners('SIGTERM')) {
+    if (!terminationListeners.has(listener)) process.removeListener('SIGTERM', listener);
+  }
+  for (const listener of process.stdin.listeners('end')) {
+    if (!inputEndListeners.has(listener)) process.stdin.removeListener('end', listener as () => void);
   }
   if (interrupted) throw new Error('Browser startup interrupted.');
   child = spawn(process.execPath, ['node_modules/@playwright/test/cli.js', 'test', '-c', 'scripts/ci/playwright.config.ts'], { stdio: 'inherit' });
