@@ -387,7 +387,7 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   if (s.engine === 'blink' && persona === null) {
     checks.push(await driveRealPlacement(s));
   } else {
-    checks.push({ name: 'placement:real-add-grows-store', status: 'skip', detail: 'desktop-width Blink only (picker staging differs by surface)' });
+    checks.push({ name: 'placement:real-add-grows-store', status: 'skip', skipReason: 'desktop-blink-only', detail: 'desktop-width Blink only (picker staging differs by surface)' });
   }
 
   // Zero-tolerance regression tripwire: no uncaught error or ErrorBoundary crash
@@ -1109,6 +1109,7 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
     checks.push({
       name: 'league:drive-writes-store',
       status: 'skip',
+      skipReason: hydrated ? 'desktop-blink-only' : undefined,
       detail: hydrated ? 'desktop-width Blink only' : 'page never hydrated, drive not attempted',
     });
   }
@@ -1433,12 +1434,13 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       // Detected by construction, not by name: an engine can expose the
       // constructors and still refuse the init dictionaries.
       const touch = await s.evalJson<boolean>(`try { const t=new Touch({identifier:1,target:document.body,clientX:0,clientY:0});
-        new TouchEvent('touchstart',{bubbles:true,touches:[t],targetTouches:[t],changedTouches:[t]}); return true; } catch (e) { return false; }`).catch(() => false);
+        new TouchEvent('touchstart',{bubbles:true,touches:[t],targetTouches:[t],changedTouches:[t]}); return true; } catch (e) { return false; }`);
       const before = await readCard(s, CARD);
       const top = before.lines[0]?.boundaries[2] ?? 0;
       if (!touch) {
-        checks.push({ name: 'league-change:flick-moves-stage', status: 'skip', detail: 'this engine cannot construct a Touch or TouchEvent; a real finger on a device is the only proof here' });
-        checks.push({ name: 'league-change:flick-washes-the-stage', status: 'skip', detail: 'as above' });
+        const detail = 'this engine cannot construct a Touch or TouchEvent; a real finger on a device is the only proof here';
+        checks.push({ name: 'league-change:flick-moves-stage', status: 'skip', skipReason: 'synthetic-touch-unavailable', detail });
+        checks.push({ name: 'league-change:flick-washes-the-stage', status: 'skip', skipReason: 'synthetic-touch-unavailable', detail });
       } else if (top < 4) {
         checks.push(ok('league-change:flick-moves-stage', false, `Charizard's run starts on row ${top}, no room to flick`));
       } else {
@@ -1588,11 +1590,9 @@ export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName
   // The wash is gated on a hover-capable fine pointer (CardGrid.tsx). Headless
   // Firefox reports neither, so there is nothing to wash on that engine and a
   // zero count says nothing about the app.
-  const hoverPointer = await s
-    .evalJson<boolean>(`return matchMedia('(hover: hover) and (pointer: fine)').matches;`)
-    .catch(() => false);
+  const hoverPointer = await s.evalJson<boolean>(`return matchMedia('(hover: hover) and (pointer: fine)').matches;`);
   if (!hoverPointer) {
-    checks.push({ name: 'league-hover:desktop-column-wash', status: 'skip', detail: 'engine reports no hover-capable fine pointer (headless); a desktop browser with a mouse is the proof' });
+    checks.push({ name: 'league-hover:desktop-column-wash', status: 'skip', skipReason: 'hover-pointer-unavailable', detail: 'engine reports no hover-capable fine pointer (headless); a desktop browser with a mouse is the proof' });
     return checks;
   }
   await pointerOverColumn(s, 'card-cell-5-2');
@@ -1709,21 +1709,13 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   try {
     const res = await fetch(url);
     const html = await res.text();
-    const hasH1 = /<h1[^>]*>[^<]*Favorite Pokémon Picker/i.test(html);
-    const hasTitle = /<title>[^<]*Favorite Pokémon Picker/i.test(html);
-    if (!res.ok) {
-      checks.push(ok('favorites:static-seo-content', false, `status ${res.status}`));
-      return checks;
-    }
-    if (!hasH1 || !hasTitle) {
-      checks.push({
-        name: 'favorites:static-seo-content',
-        status: 'skip',
-        detail: `favorite picker not in this build yet (SPA fallback at ${FAV_PATH})`,
-      });
-      return checks;
-    }
-    checks.push(ok('favorites:static-seo-content', true, `status ${res.status}`));
+    const hasH1 = /<h1[^>]*>[^<]{3,}<\/h1>/i.test(html);
+    const hasTitle = /<title>[^<]{3,}<\/title>/i.test(html);
+    const canonical = html.match(/<link rel="canonical"[^>]*>/i)?.[0] ?? '';
+    const ownEntry = canonical.includes(FAV_PATH);
+    checks.push(ok('favorites:static-seo-content', res.ok && hasH1 && hasTitle && ownEntry,
+      `status ${res.status} h1=${hasH1} title=${hasTitle} canonical=${ownEntry}`));
+    if (!res.ok) return checks;
   } catch (e) {
     checks.push({ name: 'favorites:static-seo-content', status: 'fail', detail: (e as Error).message });
     return checks;
@@ -1872,7 +1864,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     const sheetOpen = await s.evalJson<boolean>(`return !!document.querySelector('[role="dialog"]');`);
     let starterRows: number[] = [];
     if (!sheetOpen) {
-      checks.push({ name: 'favorites:short-sheet', status: 'skip', detail: 'desktop pane' });
+      checks.push({ name: 'favorites:short-sheet', status: 'skip', skipReason: 'desktop-pane', detail: 'desktop pane' });
       await closePicker();
       await clickCell(s, '[data-testid="favorites-cell-starter-1"]');
       if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) starterRows = await rowLens();
@@ -1975,7 +1967,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     checks.push(tall.mobile
       ? ok('favorites:tall-selector-fits', tall.rows >= 9 && tall.inside && tall.noScroll && tall.same,
         `rows=${tall.rows} inside=${tall.inside} noScroll=${tall.noScroll} same=${tall.same}`)
-      : { name: 'favorites:tall-selector-fits', status: 'skip', detail: 'desktop pane' });
+      : { name: 'favorites:tall-selector-fits', status: 'skip', skipReason: 'desktop-pane', detail: 'desktop pane' });
     if (tall.mobile) {
       const deadline = Date.now() + 10_000;
       while (Date.now() < deadline) {
