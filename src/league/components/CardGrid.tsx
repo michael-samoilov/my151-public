@@ -1145,8 +1145,7 @@ interface HalfRead {
   track: number;
   /** The caption size in px. */
   cap: number;
-  /** The heading's box, and each of its lines untracked. */
-  head: { box: Box; lines: Omit<HeadLine, 'room'>[]; cap: number };
+  head: { lines: Omit<HeadLine, 'room'>[]; cap: number };
 }
 
 function readPane(pane: HTMLElement): { w: number; h: number; ace: HalfRead; partner: HalfRead } {
@@ -1164,13 +1163,11 @@ function readPane(pane: HTMLElement): { w: number; h: number; ace: HalfRead; par
     const probe = root.querySelector<HTMLElement>('[data-name-probe]');
     const headEl = root.querySelector<HTMLElement>('[data-slot-head]')!;
     const headStyle = getComputedStyle(headEl);
-    // `normal`, as the CJK locales set it, reads as no tracking.
-    const headTrack = parseFloat(headStyle.letterSpacing) || 0;
     const range = document.createRange();
     const headLines = [...headEl.children].map((line) => {
       range.selectNodeContents(line);
       const letters = [...(line.textContent ?? '')].length;
-      return { width: range.getBoundingClientRect().width / zoom - letters * headTrack, letters };
+      return { width: range.getBoundingClientRect().width / zoom, letters };
     });
     return {
       art: rel(root.querySelector('[data-slot-art]')!.getBoundingClientRect()),
@@ -1178,7 +1175,7 @@ function readPane(pane: HTMLElement): { w: number; h: number; ace: HalfRead; par
       natural: probe ? probe.getBoundingClientRect().width / zoom : 0,
       track: probe ? [...(probe.textContent ?? '')].length * (parseFloat(getComputedStyle(probe).letterSpacing) || 0) : 0,
       cap: probe ? parseFloat(getComputedStyle(probe).fontSize) : 0,
-      head: { box: rel(headEl.getBoundingClientRect()), lines: headLines, cap: parseFloat(headStyle.fontSize) },
+      head: { lines: headLines, cap: parseFloat(headStyle.fontSize) },
     };
   };
   return { w: pane.offsetWidth, h: pane.offsetHeight, ace: read('ace'), partner: read('partner') };
@@ -1199,32 +1196,37 @@ function fitName(natural: number, track: number, room: number, cap: number, floo
   return { scale, tight: true, max: tight > room + 1 ? Math.floor(Math.max(0, room)) : 0 };
 }
 
-/**
- * The next fit, from the pane as drawn. Each name and each heading has the
- * room across the pane that its caption can take: the ace's centred on the
- * ace, and the partner's from the pad to the partner. The seam does not
- * limit either; text may cross it.
- */
 function solveFit(pane: HTMLElement, remPx: number): CaptionFit {
-  const m = readPane(pane);
-  const pad = SHOWCASE_PAD_REM * remPx;
-  const floor = CAPTION_MIN_REM * remPx;
-  const a = m.ace;
-  const p = m.partner;
-  // The ace's caption centres on the ace, so its room is twice the way to
-  // the nearer side of the pane, less the pad.
-  const aceCentre = a.art.x + a.art.w / 2;
-  const aceRoom = 2 * (Math.min(aceCentre, m.w - aceCentre) - pad);
-  const partnerRoom = p.head.box.x + p.head.box.w - pad;
-  return {
-    ace: fitName(a.natural, a.track, aceRoom, a.cap, floor),
-    partner: p.name ? fitName(p.natural, p.track, p.name.x + p.name.w - pad, p.cap, floor) : WHOLE,
-    seam: seamBetween(m.w, m.h, a.art, p.art, remPx),
-    head: fitHeadings([
-      ...a.head.lines.map((line) => ({ ...line, room: aceRoom })),
-      ...p.head.lines.map((line) => ({ ...line, room: partnerRoom })),
-    ], a.head.cap),
-  };
+  const previousSize = pane.style.getPropertyValue('--cap-size');
+  const previousTrack = pane.style.getPropertyValue('--cap-track');
+  try {
+    pane.style.setProperty('--cap-size', paneFace(null).size);
+    pane.style.setProperty('--cap-track', '0px');
+    const natural = readPane(pane);
+    const pad = SHOWCASE_PAD_REM * remPx;
+    const floor = CAPTION_MIN_REM * remPx;
+    const aceCentre = natural.ace.art.x + natural.ace.art.w / 2;
+    const aceRoom = 2 * (Math.min(aceCentre, natural.w - aceCentre) - pad);
+    const partnerRoom = natural.partner.art.x - CAPTION_GAP_X_REM * remPx - pad;
+    const headings = (m: ReturnType<typeof readPane>) => fitHeadings([
+      ...m.ace.head.lines.map((line) => ({ ...line, room: aceRoom })),
+      ...m.partner.head.lines.map((line) => ({ ...line, room: partnerRoom })),
+    ], m.ace.head.cap);
+    const head = headings(natural);
+    pane.style.setProperty('--cap-size', paneFace(head).size);
+    const fitted = readPane(pane);
+    return {
+      ace: fitName(fitted.ace.natural, fitted.ace.track, aceRoom, fitted.ace.cap, floor),
+      partner: fitted.partner.name
+        ? fitName(fitted.partner.natural, fitted.partner.track, partnerRoom, fitted.partner.cap, floor)
+        : WHOLE,
+      seam: seamBetween(natural.w, natural.h, natural.ace.art, natural.partner.art, remPx),
+      head: { ...head, track: headings(fitted).track },
+    };
+  } finally {
+    pane.style.setProperty('--cap-size', previousSize);
+    pane.style.setProperty('--cap-track', previousTrack);
+  }
 }
 
 const sameHalf = (a: HalfFit, b: HalfFit) =>
@@ -1234,31 +1236,26 @@ const sameSeam = (a: SeamEnds | null, b: SeamEnds | null) =>
 const sameHead = (a: HeadFace | null, b: HeadFace | null) =>
   a === b || (!!a && !!b && (a.size === b.size || Math.abs(a.size - b.size) < 0.01) && Math.abs(a.track - b.track) < 0.01);
 
-/** The captions' fit and the seam, read from the pane as drawn. */
-function useCaptionFit(ref: React.RefObject<HTMLDivElement | null>): CaptionFit {
+function useCaptionFit(ref: React.RefObject<HTMLDivElement | null>, content: string): CaptionFit {
   const [fit, setFit] = useState(UNFITTED);
-  const [tick, setTick] = useState(0);
-  // Anything that moves a box the fit reads resizes one of these: the pane,
-  // a sprite square, a caption, or a name (a new Pokémon, a new locale, a
-  // webfont landing late). Re-read on every render, since a name's element
-  // can be replaced.
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setTick((n) => n + 1));
+    const compute = () => {
+      const next = solveFit(el, getAppliedRootFontSizePx());
+      setFit((previous) => sameHalf(next.ace, previous.ace) && sameHalf(next.partner, previous.partner)
+        && sameSeam(next.seam, previous.seam) && sameHead(next.head, previous.head) ? previous : next);
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
     ro.observe(el);
-    const parts = el.querySelectorAll('[data-slot-art], [data-slot-caption], [data-slot-head], [data-slot-name], [data-name-probe]');
-    for (const c of parts) ro.observe(c);
-    return () => ro.disconnect();
-  });
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const next = solveFit(el, getAppliedRootFontSizePx());
-    const same = sameHalf(next.ace, fit.ace) && sameHalf(next.partner, fit.partner) && sameSeam(next.seam, fit.seam)
-      && sameHead(next.head, fit.head);
-    if (!same) setFit(next);
-  }, [ref, fit, tick]);
+    for (const art of el.querySelectorAll('[data-slot-art]')) ro.observe(art);
+    document.fonts.addEventListener('loadingdone', compute);
+    return () => {
+      ro.disconnect();
+      document.fonts.removeEventListener('loadingdone', compute);
+    };
+  }, [ref, content]);
   return fit;
 }
 
@@ -1323,7 +1320,7 @@ function useSlotBox(ref: React.RefObject<HTMLDivElement | null>) {
 function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
   const setPartner = useLeagueStore((s) => s.setPartner);
-  useNamesVersion();
+  const namesVersion = useNamesVersion();
   const t = useT();
   const aceHead: Heading = {
     lines: [headingInline('ace')],
@@ -1345,6 +1342,8 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const slotRef = useRef<HTMLDivElement>(null);
   const box = useSlotBox(slotRef);
   const labSprite = useSlotLab((st) => (st.enabled ? st.sprite : 0));
+  const labPosition = useSlotLab((st) => st.enabled
+    ? `${st.ace.dx},${st.ace.dy},${st.partner.dx},${st.partner.dy}` : '');
   const remPx = getAppliedRootFontSizePx();
   // The partner is one cell sprite on the pane's right column and bottom
   // row, and the ace two on its top-left 2x2 cells (`showcaseLayout.ts`).
@@ -1354,7 +1353,10 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
     right: box[0] - (squares.partner.cx + squares.partner.size / 2),
     top: squares.partner.cy - squares.partner.size / 2,
   };
-  const fit = useCaptionFit(slotRef);
+  const content = JSON.stringify([
+    ace?.id, partner?.id, aceHead.lines, partnerHead.lines, getLocale(), namesVersion, remPx, box, labPosition,
+  ]);
+  const fit = useCaptionFit(slotRef, content);
   const face = paneFace(fit.head);
   const seam = fit.seam ?? { x1: 0, y1: 1, x2: 1, y2: 0 };
   const pos = {
