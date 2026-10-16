@@ -218,7 +218,7 @@ test.describe('desktop export preview', () => {
     }
   });
 
-  test('exports rounded league corners without clearing edges or content', async ({ page }) => {
+  test('exports rounded league corners without clearing edges or content', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await openLeagueExport(page);
     await waitPreviewReady(page);
     const pixels = await exportShapePixels(page);
@@ -227,6 +227,7 @@ test.describe('desktop export preview', () => {
     expect(pixels.roundedCutA, JSON.stringify(pixels)).toBe(0);
     expect(pixels.edgeA, JSON.stringify(pixels)).toBe(255);
     expect(pixels.innerA, JSON.stringify(pixels)).toBe(255);
+    await testInfo.attach('critical-journey', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
   test('paints ink-only rainbow on the live league overlay', async ({ page }, testInfo) => {

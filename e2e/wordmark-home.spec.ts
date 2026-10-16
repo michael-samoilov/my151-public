@@ -62,7 +62,7 @@ test.describe('wordmark links home', () => {
     });
   }
 
-  test('following it reaches the hub', async ({ page }) => {
+  test('following it reaches the hub', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.goto(DEX_URL);
     await page.getByTestId('wordmark').click();
     await page.waitForLoadState('networkidle');
@@ -71,6 +71,7 @@ test.describe('wordmark links home', () => {
     await expect(page.locator('h1')).toContainText('Pokédex');
     // Dex, league, favorite picker, then the next-tool call.
     await expect(page.locator('[data-card-panel]')).toHaveCount(4);
+    await testInfo.attach('critical-journey', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
 });

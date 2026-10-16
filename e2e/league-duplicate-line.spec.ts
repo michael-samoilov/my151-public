@@ -52,7 +52,7 @@ test.describe('a line picked twice', () => {
     await page.waitForTimeout(500);
   });
 
-  test('the second tap seats the whole line and the sheet goes away', { tag: '@viewport' }, async ({ page }, info) => {
+  test('the second tap seats the whole line and the sheet goes away', { tag: ['@viewport', '@ci-smoke'] }, async ({ page }, info) => {
     await pick(page, 'geodude');
     const first = await seats(page);
     expect(first, 'the first pick seats Geodude to Golem').toEqual([[74, 75, 76]]);
@@ -73,9 +73,10 @@ test.describe('a line picked twice', () => {
         .filter((el) => el.getAttribute('data-testid')!.endsWith('-2') && el.querySelector('img'))
         .map((el) => el.querySelector('img')!.getAttribute('src')!.split('/').pop()!.replace('.png', '')));
     expect(new Set(column).size, `seat 2 shows more than one stage: ${column.join(',')}`).toBeGreaterThan(1);
+    await info.attach('critical-journey', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
-  test('a line already on the card can replace another', async ({ page }) => {
+  test('a line already on the card can replace another', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await pick(page, 'geodude');
     if (await sheetOpen(page)) await page.keyboard.press('Escape');
     await pick(page, 'gengar');
@@ -110,6 +111,7 @@ test.describe('a line picked twice', () => {
     await page.click('[data-testid="verify-evo-card"]');
     await page.waitForTimeout(800);
     expect(await seats(page), 'seat 2 now holds another Geodude line').toEqual([[74, 75, 76], [74, 75, 76]]);
+    await testInfo.attach('critical-journey', { body: await page.screenshot(), contentType: 'image/png' });
   });
 
   test('the red cross removes the column it is on', async ({ page }) => {

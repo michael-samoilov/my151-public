@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('full favorite chart export', () => {
-  test('partial chart uses shared PNG geometry and preserves saved settings', async ({ page }, testInfo) => {
+  test('partial chart uses shared PNG geometry and preserves saved settings', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.addInitScript(() => {
       localStorage.setItem('favorite-picker', JSON.stringify({ state: { fills: { 'fire|1': 4, 'grass|1': 1 } }, version: 3 }));
       localStorage.setItem('personal-151-favorites-show-icons-v1', '0');
@@ -105,7 +105,7 @@ test.describe('full favorite chart export', () => {
   });
 
 
-  test('export dialog fits the viewport and contains keyboard focus @viewport', async ({ page }, testInfo) => {
+  test('export dialog fits the viewport and contains keyboard focus @viewport', { tag: '@ci-smoke' }, async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-picker?lang=de');
     await page.getByTestId('favorites-export-open').click();
     await expect(page.getByTestId('favorites-export-save')).toBeEnabled({ timeout: 30000 });
