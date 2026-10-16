@@ -244,7 +244,7 @@ present a sandbox clip as a performance proof.
 ## Evidence
 
 Each run writes to `.claude/skills/verify-my151/evidence/<runId>/` (gitignored):
-`report.json` (the verdict, per-surface checks, named regressions), one
+`report.json` (the verdict, per-surface checks, named regressions, missing coverage), one
 `<surface>.json` per surface, and per-step screenshots per surface. Screenshots
 are proof for a human or agent to inspect, not an auto-diff baseline. Observe the
 real user path and its side effects (the localStorage `personal-151-pokedex-v3`
@@ -252,6 +252,11 @@ store is the local oracle). Beacons are not suppressed locally. Only demo mode
 or `?notme` holds them back, and `?notme` still lets an export report through.
 On `vite preview` they POST and get a 404, so do not wait on the network. State
 plainly what is device-only.
+
+Unavailable requested engines, empty suites, and unexplained skipped checks make
+the verdict `INCONCLUSIVE`. Measured capability exceptions apply only to their
+registered checks. Diff mode also reports previously passing checks that disappear
+or become skipped. A failed check takes precedence and produces `FAIL`.
 
 ## The hand-off test
 
