@@ -70,11 +70,27 @@ const rootEl = document.getElementById('root')!;
 const waiting = document.documentElement.classList.contains('p151-wait');
 const prerendered = rootEl.hasAttribute('data-prerendered') && !waiting;
 
-/** Renders into #root from scratch, then swaps the spinner for it in one frame. */
+/** Renders into #root from scratch, then lets the view's readiness gate reveal it. */
 function mount(app: ReactNode) {
   flushSync(() => createRoot(rootEl).render(app));
   document.documentElement.classList.remove('p151-wait');
-  document.querySelector('.p151-boot')?.remove();
+}
+
+/** Early header input can hydrate the hub before its screenshots are ready. */
+function finishHubMount() {
+  const html = document.documentElement;
+  const ready = () => !html.classList.contains('p151-hub-images-pending')
+    && !html.classList.contains('p151-hub-font-pending');
+  if (ready()) {
+    document.querySelector('.p151-boot')?.remove();
+    return;
+  }
+  const observer = new MutationObserver(() => {
+    if (!ready()) return;
+    document.querySelector('.p151-boot')?.remove();
+    observer.disconnect();
+  });
+  observer.observe(html, { attributes: true, attributeFilter: ['class'] });
 }
 
 // Admin-only submissions view, reached at `/?admin`. It lives on the root
@@ -87,6 +103,7 @@ if (new URLSearchParams(window.location.search).has('admin')) {
         <AdminPage />
       </StrictMode>,
     );
+    document.querySelector('.p151-boot')?.remove();
   });
 } else {
   const localeReady = initLocale({
@@ -107,9 +124,9 @@ if (new URLSearchParams(window.location.search).has('admin')) {
     );
     if (prerendered) {
       hydrateRoot(rootEl, app);
-      document.querySelector('.p151-boot')?.remove();
     } else {
       mount(app);
     }
+    finishHubMount();
   });
 }
