@@ -8,9 +8,6 @@ import { artistCredit, type CreditedSprite } from '@/data/spriteCredits';
 interface SharedNames { species: string[]; forms: Record<string, string> }
 interface PickerNames { species: Record<string, number>; forms: Record<string, string> }
 
-// The same files the name loaders read, so each locale stays one chunk. The
-// picker's form names are read here rather than installed: installing them
-// would change the names other pages show.
 const SHARED_NAMES = import.meta.glob<SharedNames>('../../i18n/names/*.json', { import: 'default' });
 const PICKER_NAMES = import.meta.glob<PickerNames>('../../i18n/picker-names/*.json', { import: 'default' });
 
@@ -34,10 +31,8 @@ function loadTables(locale: Locale): Promise<PickerNameTables> {
   return pending;
 }
 
-/** Up to this many sprites show as one list; more fold by generation. */
 const FOLD_AFTER = 12;
 
-/** The current locale's Pokémon names, once they load. */
 function useNameTables(): PickerNameTables | null {
   const locale = useLocale();
   const [names, setNames] = useState<{ locale: Locale; tables: PickerNameTables } | null>(null);
@@ -51,7 +46,6 @@ function useNameTables(): PickerNameTables | null {
   return names?.locale === locale ? names.tables : null;
 }
 
-/** Sprites by name in the current locale. A long list folds by generation. */
 function SpriteList({ sprites }: { sprites: readonly CreditedSprite[] }) {
   const t = useT();
   const tn = useTn();
@@ -91,10 +85,6 @@ function SpriteList({ sprites }: { sprites: readonly CreditedSprite[] }) {
   );
 }
 
-/**
- * The "Used for" of an artist whose sprites the app took from them directly:
- * how many, and each one.
- */
 export function ArtistSprites({ name }: { name: string }) {
   const tn = useTn();
   const sprites = useMemo(() => artistCredit(name)?.sprites ?? [], [name]);

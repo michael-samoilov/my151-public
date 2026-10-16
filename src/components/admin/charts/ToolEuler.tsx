@@ -7,7 +7,6 @@ const HALO = 'rgb(255, 255, 255)';
 
 let measureCtx: CanvasRenderingContext2D | null | undefined;
 
-/** Canvas text width in the SVG's own font, with a margin for tabular digits. */
 function textWidth(text: string, size: number, family: string): number {
   measureCtx ??= document.createElement('canvas').getContext('2d');
   if (!measureCtx) return text.length * size * 0.62;
@@ -15,14 +14,9 @@ function textWidth(text: string, size: number, family: string): number {
   return measureCtx.measureText(text).width * 1.05;
 }
 
-/**
- * One area-exact Euler diagram of tool usage: each region's area is its
- * browser count. Small regions get a leader to a named label.
- */
 export function ToolEuler({ regions, catalog }: { regions: Record<string, number>; catalog: ToolDef[] }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
-  // A new object once the web font loads, so the labels are measured again.
   const [face, setFace] = useState({ family: 'sans-serif' });
   useLayoutEffect(() => {
     const el = wrapRef.current;
@@ -41,8 +35,6 @@ export function ToolEuler({ regions, catalog }: { regions: Record<string, number
   }, [regions, catalog, width, face]);
   const present = catalog.filter((t) => inclusive(t.id, regions) > 0);
   const browsers = Object.values(regions).reduce((s, n) => s + n, 0);
-  // Every combination of the tools in use that no browser has: it has no
-  // cell, so it is listed as text instead.
   const ids = present.map((t) => t.id);
   const zeros: string[] = [];
   for (let m = 1; m < 1 << ids.length; m++) {

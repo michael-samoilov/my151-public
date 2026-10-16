@@ -7,10 +7,7 @@ export interface AlternatePickerForm {
   name: string;
   types: TypeName[];
   generation?: GenNumber;
-  /** Source filename in Pokémon Showdown's Gen 5-style sprite directory. */
   spriteSlug?: string;
-  /** A battle form, such as a cosmetic variant of a Mega that the League
-   *  builder collapses into one Mega. It belongs in the gimmick cells. */
   source?: 'powerup';
 }
 
@@ -35,13 +32,10 @@ const flowerColors: AlternatePickerForm[] = [
     spriteSlug: `${species}-${color}`,
   })));
 
-// The nine trims in game order (PokéAPI forms 10115–10123). Natural Form is
-// the base Furfrou (676).
 const furfrouTrims: AlternatePickerForm[] = [
   'heart', 'star', 'diamond', 'debutante', 'matron', 'dandy', 'la-reine', 'kabuki', 'pharaoh',
 ].map((trim, index) => ({ id: 11096 + index, ownerId: 676, name: `furfrou-${trim}`, types: ['normal'] }));
 
-/** Picker-only forms keep dex evolution lines unchanged. IDs above 11000 identify locally sourced sprite variants. */
 export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 10001, ownerId: 386, name: 'deoxys-attack', types: ['psychic'] },
   { id: 10002, ownerId: 386, name: 'deoxys-defense', types: ['psychic'] },
@@ -150,7 +144,6 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11011, ownerId: 586, name: 'sawsbuck-summer', types: ['normal', 'grass'] },
   { id: 11012, ownerId: 586, name: 'sawsbuck-autumn', types: ['normal', 'grass'] },
   { id: 11013, ownerId: 586, name: 'sawsbuck-winter', types: ['normal', 'grass'] },
-  // Meadow is the base Vivillon (666); these are its other 19 official patterns.
   { id: 11018, ownerId: 666, name: 'vivillon-archipelago', types: ['bug', 'flying'] },
   { id: 11019, ownerId: 666, name: 'vivillon-continental', types: ['bug', 'flying'] },
   { id: 11020, ownerId: 666, name: 'vivillon-elegant', types: ['bug', 'flying'] },
@@ -181,31 +174,19 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11069, ownerId: 592, name: 'frillish-female', types: ['water', 'ghost'], spriteSlug: 'frillish-f' },
   { id: 11070, ownerId: 593, name: 'jellicent-female', types: ['water', 'ghost'], spriteSlug: 'jellicent-f' },
   { id: 11071, ownerId: 668, name: 'pyroar-female', types: ['fire', 'normal'], spriteSlug: 'pyroar-f' },
-  // Sprites from PokeAPI's Black/White female folder: Showdown is unreachable
-  // from the build machines, and that folder matches Showdown's Gen 5 art
-  // pixel for pixel (checked on hippopotas-f).
   { id: 11094, ownerId: 415, name: 'combee-female', types: ['bug', 'flying'], spriteSlug: 'combee-f' },
   { id: 11095, ownerId: 521, name: 'unfezant-female', types: ['normal', 'flying'], spriteSlug: 'unfezant-f' },
   { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spriteSlug: 'darmanitan-galarzen' },
   ...flowerColors,
   ...furfrouTrims,
-  // In-battle appearances with no record of their own. They keep the owner's
-  // types and generation, so each sits beside its species.
   { id: 11105, ownerId: 643, name: 'reshiram-overdrive', types: ['dragon', 'fire'] },
   { id: 11106, ownerId: 644, name: 'zekrom-overdrive', types: ['dragon', 'electric'] },
-  // The species owns both fusion Overdrives: a form owner would cost them
-  // their legendary status and their analytics species.
   { id: 11107, ownerId: 646, name: 'kyurem-black-overdrive', types: ['dragon', 'ice'] },
   { id: 11108, ownerId: 646, name: 'kyurem-white-overdrive', types: ['dragon', 'ice'] },
   { id: 11109, ownerId: 791, name: 'solgaleo-radiant-sun', types: ['psychic', 'steel'] },
   { id: 11110, ownerId: 792, name: 'lunala-full-moon', types: ['psychic', 'ghost'] },
   { id: 11111, ownerId: 802, name: 'marshadow-zenith', types: ['fighting', 'ghost'] },
-  // A form takes the generation of the game it debuted in. DJ Rotom debuted
-  // in Pokémon Pokopia, released in 2026 during Generation IX.
   { id: 11112, ownerId: 479, name: 'rotom-dj', types: ['electric', 'ghost'], generation: 9 },
-  // Terastallized Ogerpon in each mask: battle-only forms 4 to 7 of Scarlet
-  // and Violet's personal table, which match each mask's types and stats.
-  // PokéAPI has no record of them; the slugs follow Pokémon Showdown.
   { id: 11113, ownerId: 1017, name: 'ogerpon-teal-tera', types: ['grass'] },
   { id: 11114, ownerId: 1017, name: 'ogerpon-wellspring-tera', types: ['grass', 'water'] },
   { id: 11115, ownerId: 1017, name: 'ogerpon-hearthflame-tera', types: ['grass', 'fire'] },

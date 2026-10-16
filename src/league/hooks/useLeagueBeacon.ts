@@ -23,14 +23,6 @@ import {
 import { useLeagueStore } from '../store/useLeagueStore';
 import { describeLeague, summarizeLeague } from '../model/leagueSummary';
 
-/**
- * The gym leader maker's build beacon, the dex builder's useCompletionBeacon
- * for a league: a debounced 'progress' report to /api/league as the league
- * changes, and an 'export' report from the export button. Same debouncer,
- * same cadence, same flush at the moments a page can vanish, same reasons
- * (see useCompletionBeacon.ts).
- */
-
 function postLeagueBeacon(
   kind: 'progress' | 'export',
   summary: LeagueSummary,
@@ -126,7 +118,6 @@ export function useLeagueBeacon() {
   }, [debouncer]);
 }
 
-/** One-shot export report, with the league as it was exported. */
 export function sendLeagueExportBeacon(
   exportKind: LeagueExportKind,
   pokemonIds: number[],

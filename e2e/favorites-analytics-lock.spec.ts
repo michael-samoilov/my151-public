@@ -1,13 +1,10 @@
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-// The picker's Analytics tab unlocks at 25 favorites, as the Dex builder's
-// does, and stays unlocked (src/favorites/hooks/useAnalyticsUnlock.ts).
 const UNLOCK_KEY = 'personal-151-favorites-analytics-v1';
 const seedFills = JSON.parse(readFileSync('docs/favorite-picker-work/export/seed.json', 'utf8')).fills as Record<string, number>;
 const TYPES = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying',
   'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
-// 24 type picks from Gen I and II, leaving Water / Gen I empty for the 25th.
 const typePicks = Object.entries(seedFills)
   .filter(([key]) => /^[a-z]+\|[12]$/.test(key) && TYPES.includes(key.split('|')[0]) && key !== 'water|1');
 const twentyFour = Object.fromEntries(typePicks.slice(0, 24));
@@ -71,7 +68,6 @@ test('the unlock stays after cells are cleared', async ({ page }, testInfo) => {
 test('a restored grid of 25 unlocks Analytics without the popup', async ({ page }, testInfo) => {
   await open(page, twentyFive);
   await expect(tab(page)).not.toHaveAttribute('data-locked');
-  // The popup would show 640 ms after an unlock; a restored grid never arms it.
   await page.waitForTimeout(1500);
   await expect(nudge(page)).toHaveCount(0);
   expect(await page.evaluate(key => localStorage.getItem(key), UNLOCK_KEY)).toBe('1');

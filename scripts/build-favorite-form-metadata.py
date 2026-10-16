@@ -101,7 +101,6 @@ for m in cat:
  if 'unknown' in game:unknown.append({'id':m['id'],'name':m['name'],**game})
  inventory.append({'id':m['id'],'name':m['name'],'dexId':m['dexId'],'sourcePokemonId':pid,'sourceSpeciesId':sid,'sourceForm':name,'gamePersonal':game,'metadata':source,'selectorGeneration':m['generation'],'graph':{k:current[k] for k in ['evolutionChainId','evolvesFrom','evolutionStage']},'changes':delta})
 
-# Source values are an explicit audit. No source file is fetched during a build.
 assert seenFormShapes==set(formShapes), 'Form-shape identity coverage must be complete'
 manifest={'pokeapiRevision':'bc92d3b6029ef1abe9e7ad424c400b338f3c11fe','pkhexRevision':'02c9ec108fe3c96735f6c2397eaebc10e29a049f','files':[{ 'name':p.name,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(S.iterdir()) if p.suffix=='.csv' or p.name.startswith('personal_') and not p.name.endswith('.b64')],'inventoryCount':len(inventory),'unknown':unknown,'gameStatsConflicts':[{'id':10280,'name':'Mega Starmie','pokeapiStats':stats[10280],'gameStats':next(r['metadata']['stats'] for r in inventory if r['id']==10280),'decision':'Direct ZA game personal record, species121 form1, takes precedence'}]}
 manifest['formShapes']={'source':'https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_by_shape','review':str(shapeReviewPath),'overrides':len(formShapes),'sha256':hashlib.sha256(shapePath.read_bytes()).hexdigest()}
@@ -109,14 +108,12 @@ if unknown:raise ValueError('Unresolved game records: '+json.dumps(unknown))
 if args.write:
  output={}
  assert len(inventory)==len(cat)==len({r['id'] for r in inventory}), 'Duplicate form identities'
- # One catalog identity per actual shared record; never rewrite a shared local ID from a colliding battle-form ID.
  direct={m['dexId']:r for m,r in zip(cat,inventory) if m['source']=='dex' and m['id']==r['id'] and (m['id']==m['dexId'] or m['id'] in [10179,10180,10191])}
  assert set(direct)==set(byApp), 'Shared record coverage must be complete'
  for appid,r in direct.items():
   row=byApp[appid];values=r['metadata']
   for field in ['types','stats','bst','shape','color','captureRate','growthRate','eggGroups']:
    row[field]=values[field]
- # All live form metadata differences from the resolved biological Dex record.
  for m,r in zip(cat,inventory):
   base=byApp[m['dexId']];values=r['metadata']
   override={field:values[field] for field in ['stats','bst','shape','color','captureRate','growthRate','eggGroups'] if values[field]!=base[field]}

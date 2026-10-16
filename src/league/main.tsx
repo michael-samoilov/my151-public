@@ -14,9 +14,6 @@ import { usePokedexStore } from '../store/usePokedexStore'
 import { LeagueApp } from './LeagueApp'
 import { activeMoveNames } from './moveNames'
 
-// Same boot as the dex builder (src/main.tsx): preload the Latin subset,
-// install the JS-driven root font-size, defer analytics, register the
-// sprite-caching service worker.
 const preload = document.createElement('link');
 preload.rel = 'preload';
 preload.as = 'font';
@@ -41,17 +38,11 @@ if (isIos) {
 }
 
 installLayoutFontSize();
-// `?notme` marks this browser as the owner's, out of analytics.
 installOptOut();
 installHideBrokenImages()
 installStaleDeployReload();
 
-// Vercel's own page-view counting obeys the same opt-out as our beacons. It is
-// a separate system with a separate dashboard, so leaving it ungated meant
-// `?notme` silenced our numbers while the owner kept showing up as a Vercel
-// visitor — the one place the exclusion was expected to hold.
 if (!isOptedOut()) {
-  // Deferred so they don't block first paint or INP.
   whenIdle(() => {
     void import('@vercel/analytics').then((m) => m.inject());
     void import('@vercel/speed-insights').then((m) => m.injectSpeedInsights());
@@ -71,8 +62,6 @@ void initLocale({
   stored: usePokedexStore.getState().locale,
   navigatorLanguages: navigator.languages,
 })
-  // The move names start loading with the locale; wait a moment for them so a
-  // card's TM does not paint in English first, but never hold the page for it.
   .then(() => Promise.race([activeMoveNames(), new Promise((resolve) => setTimeout(resolve, 800))]))
   .finally(() => {
     createRoot(rootEl).render(

@@ -1,40 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { auditLayout } from '../support/layoutAudit';
 
-/**
- * The feedback sheet, in every state it can actually be in.
- *
- * The bug this file was written for: the sheet fitted above the keyboard, every
- * element reported a bottom above the keyboard line, the spec was green — and
- * the textarea was drawn on top of the disclosure and the submit button. The
- * cause was a `min-h-0` that let the field's wrapper shrink past the field's own
- * floor. Bounds checks cannot see that. `auditLayout` can.
- *
- * The matrix is the point. A form has more states than the one it opens in, and
- * the keyboard-open ones are exactly the states nobody looks at while building,
- * because a desktop browser has no keyboard to raise.
- *
- * Lives under `e2e/dev/`, which runs against the dev server.
- */
-
-/**
- * Heights the visible viewport takes with a keyboard up.
- *
- * `null` is no keyboard. 338 is an iPhone 15 Pro. 300 is a smaller phone or a
- * taller keyboard. 220 is below the form's measured 178px floor plus the sheet
- * header — it cannot fit, and the requirement there is that it scrolls rather
- * than overlaps. That last row is the one that would have caught this bug.
- */
 const KEYBOARD_HEIGHTS = [null, 338, 300, 260, 220] as const;
 
-/**
- * en is the baseline. de has the longest chip labels in the set, so it wraps to
- * the most rows and leaves the least for the field. ja is the CJK case, whose
- * line box is taller than Latin at the same font size.
- */
 const LOCALES = ['en', 'de', 'ja'] as const;
 
-/** Every locale the app ships, for the checks that have to hold in all of them. */
 const ALL_LOCALES = [
   'en',
   'ja',
@@ -50,8 +20,6 @@ const ALL_LOCALES = [
 async function openSheet(page: Page, locale: string) {
   await page.goto(`/pokedex-builder?demo&lang=${locale}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('lang', locale, { timeout: 15_000 });
-  // By attribute, not by accessible name: the name is translated, and a regex
-  // of nine translations stops matching the first time one is reworded.
   await page.locator('[data-feedback-open]').first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
 }
@@ -98,15 +66,6 @@ test.describe('feedback sheet layout', () => {
   }
 
   test('the field keeps a usable height at every keyboard height', async ({ page }) => {
-    // Fitting is not the only requirement, and on its own it has a degenerate
-    // solution: a `<textarea>` is a scroll container, so with no floor of its
-    // own a flex column will happily compress it to nothing and report that
-    // everything fits. It does fit. There is just nowhere left to type.
-    //
-    // Measured on the built layout: 110px at rest, 149 at an iPhone 15 Pro's
-    // keyboard, 111 at 300, 71 at 260, and pinned to its 56px floor below about
-    // 240 — where the sheet starts scrolling instead, which the matrix above
-    // proves it does without overlapping anything.
     const FLOOR = 56;
     await openSheet(page, 'en');
 
@@ -132,9 +91,6 @@ test.describe('feedback sheet layout', () => {
       ).toBeGreaterThanOrEqual(FLOOR - 1);
     }
 
-    // The floor is survival, not the target. On the phone this was reported
-    // from, the field has to be worth typing into — five or six lines, not two
-    // — and fitting alone was satisfied at two.
     await raiseKeyboard(page, 338);
     await expect
       .poll(fieldLines, {
@@ -142,8 +98,6 @@ test.describe('feedback sheet layout', () => {
       })
       .toBeGreaterThanOrEqual(4.9);
 
-    // And it takes the room when there is room to take, rather than staying at
-    // its four rows and leaving the space blank.
     await raiseKeyboard(page, 500);
     await expect
       .poll(fieldHeight, { message: 'the field does not grow into spare space' })
@@ -171,18 +125,6 @@ test.describe('feedback sheet layout', () => {
 
   test('the category chips stay on one row at phone width', async ({ page }) => {
     test.setTimeout(90_000);
-    // A second row of chips costs the field 38px, which is most of a line of
-    // typing. Holding the row to one line is why there are four categories
-    // rather than five and why the labels are nouns rather than sentences —
-    // "Wrong translation" was "Erreur de traduction" in French and
-    // "Übersetzungsfehler" in German, and both wrapped at every width.
-    //
-    // 390px is the check because that is a modern phone. It does not hold at
-    // 320: nothing short of dropping the icons fits four chips there, and the
-    // wrap is harmless — the field still clears its floor, and the matrix above
-    // covers 320 for the faults that are not harmless. German is the tightest
-    // pass and clears 390 by 10px, so a longer German label is the thing most
-    // likely to break this.
     await page.setViewportSize({ width: 390, height: 844 });
 
     for (const locale of ALL_LOCALES) {
@@ -200,8 +142,6 @@ test.describe('feedback sheet layout', () => {
   });
 
   test('every category chip keeps the form clean', async ({ page }) => {
-    // Selecting a chip re-renders the row and can change how it wraps, which
-    // changes how much is left for the field.
     await openSheet(page, 'de');
     await raiseKeyboard(page, 300);
     const chips = page.getByRole('dialog').locator('button[aria-pressed]');
@@ -215,8 +155,6 @@ test.describe('feedback sheet layout', () => {
   });
 
   test('expanding "what gets sent" keeps the form clean', async ({ page }) => {
-    // The disclosure is many lines of monospace context. Opened in the space a
-    // keyboard leaves, it is the largest single thing in the sheet.
     await openSheet(page, 'en');
     await raiseKeyboard(page, 338);
     await page.getByRole('dialog').locator('details summary').click();
@@ -225,8 +163,6 @@ test.describe('feedback sheet layout', () => {
   });
 
   test('a typed message and the failure notice keep the form clean', async ({ page }) => {
-    // The failed state inserts a `role="alert"` paragraph the layout has never
-    // had to make room for, in the tightest space it ever has.
     await page.route('**/api/feedback', (route) => route.fulfill({ status: 500, body: '{}' }));
     await openSheet(page, 'en');
     await raiseKeyboard(page, 338);
@@ -253,16 +189,12 @@ test.describe('feedback sheet layout', () => {
   });
 
   test('the desktop card is laid out too', async ({ page }) => {
-    // A different shape entirely — an anchored card, not a sheet — so it needs
-    // its own pass rather than being assumed to follow.
     await page.setViewportSize({ width: 1280, height: 800 });
     await openSheet(page, 'de');
     await expectClean(page, 'desktop card');
   });
 
   test('the desktop card opens beside the control that opened it', async ({ page }) => {
-    // Reported: the card appeared in the bottom-right corner while the bug icon
-    // that opened it is in the `n/151` row, so the eye had to go find it.
     await page.setViewportSize({ width: 1280, height: 800 });
     await openSheet(page, 'en');
 
@@ -287,8 +219,6 @@ test.describe('feedback sheet layout', () => {
   });
 
   test('the desktop card has a close button that dismisses it', async ({ page }) => {
-    // Clicking the bug icon again closed it, and so did Escape and a click
-    // outside — none of which the card shows. It needs a visible way out.
     await page.setViewportSize({ width: 1280, height: 800 });
     await openSheet(page, 'en');
     await page.locator('[data-feedback-close]').click();
@@ -297,9 +227,6 @@ test.describe('feedback sheet layout', () => {
 
   test('the desktop chips stay on one row', async ({ page }) => {
     test.setTimeout(90_000);
-    // The same requirement the phone check makes, on the surface that had more
-    // room and used less of it: the card was narrower than the sheet, so the
-    // row that fits on a 390px phone wrapped on a 1280px desktop.
     await page.setViewportSize({ width: 1280, height: 800 });
 
     for (const locale of ALL_LOCALES) {
@@ -315,13 +242,6 @@ test.describe('feedback sheet layout', () => {
   });
 });
 
-/**
- * The app's other overlays, held to the same standard.
- *
- * A harness that only covers the surface that happened to break is a
- * regression test wearing a harness's clothes. These share `BottomSheet` with
- * the feedback form, so they share its failure modes.
- */
 test.describe('other overlays', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
@@ -335,8 +255,6 @@ test.describe('other overlays', () => {
   }
 
   test('the language picker survives a keyboard being up', async ({ page }) => {
-    // It has no field of its own, but a keyboard raised elsewhere and left up
-    // still resizes every open sheet.
     await page.goto('/pokedex-builder?demo');
     await page.getByRole('button', { name: /language/i }).click();
     await expect(page.getByRole('dialog')).toBeVisible();

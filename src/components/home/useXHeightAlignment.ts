@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 
-/** Offset two first-baseline-aligned text boxes so their lowercase x tops meet. */
 export function useXHeightAlignment(enabled: boolean) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descriptionRef = useRef<HTMLParagraphElement>(null);

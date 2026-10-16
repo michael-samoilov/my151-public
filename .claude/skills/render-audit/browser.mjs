@@ -21,7 +21,6 @@ import path from 'node:path';
 const COMMAND_TIMEOUT_MS = 120_000;
 const MAX_BUFFER = 64 * 1024 * 1024;
 
-/** Where the CLI might live, most explicit first. */
 export function resolveAgentBrowser() {
   const engineDir = process.env.VERIFY_ENGINE_DIR || '/opt/verify-my151';
   const candidates = [
@@ -30,7 +29,7 @@ export function resolveAgentBrowser() {
     path.join(process.cwd(), 'node_modules', '.bin', 'agent-browser'),
   ].filter(Boolean);
   for (const c of candidates) {
-    try { if (existsSync(c) && statSync(c).isFile()) return c; } catch { /* keep looking */ }
+    try { if (existsSync(c) && statSync(c).isFile()) return c; } catch {  }
   }
   return null;
 }
@@ -62,13 +61,11 @@ function agentBrowserPage(bin, env, session) {
     driver: 'agent-browser',
     async setViewport(width, height) { await run(['set', 'viewport', String(width), String(height), '1']); },
     async goto(url) {
-      // Clear per-file, so each page reports only its own errors.
       await run(['errors', '--clear']).catch(() => {});
       await run(['open', url]);
     },
     async addFontFace(fontFile, family) {
-      // Injected after load, exactly where Playwright's addStyleTag put it, so
-      // the @font-face still wins over a rule the page declared for the family.
+
       const css = fontCss(fontFile, family);
       await this.evalJson(`(function(){ const s=document.createElement('style'); s.textContent=${JSON.stringify(css)}; document.head.appendChild(s); return true; })()`);
     },
@@ -116,11 +113,6 @@ function playwrightPage(browser) {
   };
 }
 
-/**
- * Open the audit browser. `chromiumPath` is required by Playwright here (the
- * browser CDN is blocked in this sandbox) and is passed to the CLI as well, so
- * both drivers use the same binary.
- */
 export async function openAuditBrowser({ chromiumPath } = {}) {
   const forced = process.env.RENDER_AUDIT_DRIVER;
   const bin = forced === 'playwright' ? null : resolveAgentBrowser();
@@ -128,7 +120,6 @@ export async function openAuditBrowser({ chromiumPath } = {}) {
   if (bin) {
     const env = { ...process.env, AGENT_BROWSER_ARGS: '--no-sandbox' };
     if (chromiumPath) env.AGENT_BROWSER_EXECUTABLE_PATH = chromiumPath;
-    // Rule: a session name no earlier run can have left behind.
     const session = `render-audit-${process.pid}-${Math.random().toString(36).slice(2, 10)}`;
     try {
       await runCli(bin, env, ['--session', session, 'open', 'about:blank']);

@@ -1,23 +1,11 @@
-/**
- * Build steps for the footer's Acknowledgements panel.
- *
- * `npmPackageIndex` writes `licenses/npm-packages.json`: the name, version
- * and license of every npm package the panel credits, and which license file
- * holds each one's text. It reads the list Vite's `build.license` writes
- * (`licenses/npm-packages.txt`) and the hand-written
- * `public/licenses/npm-packages-extra.txt`, so the panel's list changes with
- * the dependencies. The build fails when the extra file names a version that
- * is not the installed one.
- *
- * `stripCreditNotes` keeps only what the panel reads from
- * `src/data/spriteAttribution.json` and `src/data/creditTerms.json` as the
- * app imports them. The per-artist research, evidence, read dates and
- * maintainers' notes stay in the repository and never reach a browser.
- */
+
+
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from 'vite';
 import type { NpmPackage, NpmPackageIndex } from '../src/data/npmPackages';
+import type spriteAttribution from '../src/data/spriteAttribution.json';
+import type creditTerms from '../src/data/creditTerms.json';
 
 const BUILD_LIST = 'licenses/npm-packages.txt';
 const EXTRA_LIST = 'npm-packages-extra.txt';
@@ -27,7 +15,6 @@ interface Heading {
   name: string;
   version?: string;
   license?: string;
-  /** Text after the license, such as "NOTICE": the file holds a notice of a package listed elsewhere. */
   part?: string;
 }
 
@@ -67,7 +54,6 @@ export function buildIndex(buildList: string, extraList: string): NpmPackageInde
   };
 }
 
-/** The versions the extra file states that differ from the installed packages. */
 function staleVersions(extraList: string, root: string): string[] {
   return readHeadings(extraList).flatMap((heading) => {
     if (!heading.version) return [];
@@ -101,50 +87,139 @@ export function npmPackageIndex(): Plugin {
   };
 }
 
-type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
-const quote = ({ text, url }: Json) => ({ text, url });
+interface QuoteInput {
+  text: string;
+  url: string;
+}
+
+type CheckedInput<Input, Source extends Input> = Source extends Input ? Input : never;
+
+type AttributionInput = CheckedInput<{
+  sprites: Record<string, { via: string; artists?: string[] | null }>;
+}, typeof spriteAttribution>;
+
+type TermsInput = CheckedInput<{
+  sources: Record<string, { terms: QuoteInput[] }>;
+  artists: Record<string, { urls?: string[] | null; terms?: QuoteInput[] | null; [field: string]: unknown }>;
+}, typeof creditTerms>;
+
+interface PanelTerms {
+  sources: Record<string, { terms: QuoteInput[] }>;
+  artists: Record<string, { urls: string[]; terms: QuoteInput[] }>;
+}
+
+const quote = ({ text, url }: QuoteInput): QuoteInput => ({ text, url });
 
 const OWN_UPLOAD = 'own upload';
-/** Rows the panel reads: its direct uploads, and the bundle it shows only while a row names it. */
 const PANEL_ROWS = new Set([OWN_UPLOAD, 'gen9-resource-pack']);
 
-/**
- * What the panel reads from each credits file. Sprites are credited through
- * their bundles (docs/credits/README.md), so only two kinds of row ship: a
- * direct upload, with its artists, and a Generation 9 Resource Pack row, as
- * its source alone. Only the direct uploads' artists' links and terms ship.
- * Everything else stays in the repository as evidence.
- */
-const PANEL_FIELDS: Record<string, (data: Json, root: string) => Json> = {
-  '/src/data/spriteAttribution.json': (data) => ({
-    sprites: Object.fromEntries(Object.entries(data.sprites as Json)
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readRecord(value: unknown, field: string): Record<string, unknown> {
+  if (!isRecord(value)) throw new TypeError(`${field} must be an object`);
+  return value;
+}
+
+function readString(value: unknown, field: string): string {
+  if (typeof value !== 'string') throw new TypeError(`${field} must be a string`);
+  return value;
+}
+
+function readStrings(value: unknown, field: string): string[] {
+  if (!Array.isArray(value)) throw new TypeError(`${field} must be an array`);
+  return value.map((item: unknown, index) => readString(item, `${field}[${index}]`));
+}
+
+function readQuotes(value: unknown, field: string): QuoteInput[] {
+  if (!Array.isArray(value)) throw new TypeError(`${field} must be an array`);
+  return value.map((item: unknown, index) => {
+    const row = readRecord(item, `${field}[${index}]`);
+    return {
+      text: readString(row.text, `${field}[${index}].text`),
+      url: readString(row.url, `${field}[${index}].url`),
+    };
+  });
+}
+
+function readAttribution(file: string): AttributionInput {
+  const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const data = readRecord(parsed, file);
+  const rows = readRecord(data.sprites, `${file}.sprites`);
+  return {
+    sprites: Object.fromEntries(Object.entries(rows).map(([name, value]): [string, AttributionInput['sprites'][string]] => {
+      const row = readRecord(value, `${file}.sprites.${name}`);
+      const via = readString(row.via, `${file}.sprites.${name}.via`);
+      if (via !== OWN_UPLOAD) return [name, { via }];
+      const artists = row.artists;
+      return [name, {
+        via,
+        artists: artists === undefined || artists === null ? artists : readStrings(artists, `${file}.sprites.${name}.artists`),
+      }];
+    })),
+  };
+}
+
+function readTerms(file: string): TermsInput {
+  const parsed: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const data = readRecord(parsed, file);
+  return {
+    sources: Object.fromEntries(Object.entries(readRecord(data.sources, `${file}.sources`))
+      .map(([id, value]): [string, TermsInput['sources'][string]] => {
+        const row = readRecord(value, `${file}.sources.${id}`);
+        return [id, { terms: readQuotes(row.terms, `${file}.sources.${id}.terms`) }];
+      })),
+    artists: Object.fromEntries(Object.entries(readRecord(data.artists, `${file}.artists`))
+      .map(([name, value]): [string, TermsInput['artists'][string]] => {
+        const row = readRecord(value, `${file}.artists.${name}`);
+        const { urls, terms } = row;
+        return [name, {
+          urls: urls === undefined || urls === null ? urls : readStrings(urls, `${file}.artists.${name}.urls`),
+          terms: terms === undefined || terms === null ? terms : readQuotes(terms, `${file}.artists.${name}.terms`),
+        }];
+      })),
+  };
+}
+
+function projectAttribution(data: AttributionInput): AttributionInput {
+  return {
+    sprites: Object.fromEntries(Object.entries(data.sprites)
       .filter(([, row]) => PANEL_ROWS.has(row.via))
       .map(([file, row]) => [file, row.via === OWN_UPLOAD ? { via: row.via, artists: row.artists } : { via: row.via }])),
-  }),
-  '/src/data/creditTerms.json': (data, root) => {
-    const rows = JSON.parse(fs.readFileSync(path.join(root, 'src/data/spriteAttribution.json'), 'utf8')).sprites as Json;
-    const direct = new Set(Object.values(rows).filter((row: Json) => row.via === OWN_UPLOAD).flatMap((row: Json) => row.artists));
-    // Only the sources the panel has an entry for: the research also keeps
-    // artist pages as sources.
-    const entries = new Set([...fs.readFileSync(path.join(root, 'src/data/acknowledgements.ts'), 'utf8').matchAll(/\bid: '([^']+)'/g)].map((m) => m[1]));
-    return {
-      sources: Object.fromEntries(Object.entries(data.sources as Json)
-        .filter(([id]) => entries.has(id))
-        .map(([id, { terms }]) => [id, { terms: terms.map(quote) }])),
-      artists: Object.fromEntries(Object.entries(data.artists as Json)
-        .filter(([name]) => direct.has(name))
-        .map(([name, { urls, terms }]) => [name, { urls: urls ?? [], terms: (terms ?? []).map(quote) }])),
-    };
-  },
-};
+  };
+}
+
+function projectTerms(data: TermsInput, attribution: AttributionInput, acknowledgementSource: string): PanelTerms {
+  const direct = new Set(Object.values(attribution.sprites).filter((row) => row.via === OWN_UPLOAD).flatMap((row) => row.artists ?? []));
+  const entries = new Set([...acknowledgementSource.matchAll(/\bid: '([^']+)'/g)].map((match) => match[1]));
+  return {
+    sources: Object.fromEntries(Object.entries(data.sources)
+      .filter(([id]) => entries.has(id))
+      .map(([id, { terms }]) => [id, { terms: terms.map(quote) }])),
+    artists: Object.fromEntries(Object.entries(data.artists)
+      .filter(([name]) => direct.has(name))
+      .map(([name, { urls, terms }]) => [name, { urls: urls ?? [], terms: (terms ?? []).map(quote) }])),
+  };
+}
 
 export function stripCreditNotes(): Plugin {
   return {
     name: 'my151:strip-credit-notes',
     enforce: 'pre',
     load(id) {
-      const pick = Object.entries(PANEL_FIELDS).find(([file]) => id.endsWith(file))?.[1];
-      return pick ? JSON.stringify(pick(JSON.parse(fs.readFileSync(id, 'utf8')), id.slice(0, id.indexOf('/src/data/')))) : null;
+      if (id.endsWith('/src/data/spriteAttribution.json')) {
+        return JSON.stringify(projectAttribution(readAttribution(id)));
+      }
+      if (id.endsWith('/src/data/creditTerms.json')) {
+        const root = id.slice(0, id.indexOf('/src/data/'));
+        return JSON.stringify(projectTerms(
+          readTerms(id),
+          readAttribution(path.join(root, 'src/data/spriteAttribution.json')),
+          fs.readFileSync(path.join(root, 'src/data/acknowledgements.ts'), 'utf8'),
+        ));
+      }
+      return null;
     },
   };
 }

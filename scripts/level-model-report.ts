@@ -1,14 +1,5 @@
-/**
- * What the implied-level regression does to the dataset.
- *
- * Run it when the curve, the fit or the evolution data changes:
- *
- *     npm run level-report
- *
- * It prints the fit, its error, every level-less evolver's implied level, and
- * the cases where the model produces something the card cannot show honestly.
- * `src/league/LevelsPage.tsx` renders the same numbers in the browser.
- */
+
+
 // The dataset directly, not through `usePokemonData` — that module pulls in
 // the i18n catalogs, which are loaded with `import.meta.glob` and so only
 // resolve inside Vite.
@@ -64,7 +55,6 @@ const report = (title: string, lines: string[]) => {
   if (lines.length > 40) console.log(`   … ${lines.length - 40} more`);
 };
 
-// 1. A stage that arrives no later than the stage it evolves from.
 const outOfOrder: string[] = [];
 for (const p of all) {
   if (p.evolvesFrom === null) continue;
@@ -81,26 +71,22 @@ for (const p of all) {
 }
 report('an evolution arrives at or before its own pre-evolution', outOfOrder);
 
-// 2. Stages the curve can never show: above the last threshold.
 const never = all
   .filter((p) => p.evolvesFrom !== null && rowFor(arrivalLevel(p)) > ROW_COUNT)
   .map((p) => `${p.name} L${arrivalLevel(p)} (curve tops out at ${LEVEL_CURVE[ROW_COUNT - 1]})`);
 report('never reaches a row', never);
 
-// 3. Implied levels the clamp had to move.
 const clamped = implied
   .map((p) => ({ p, raw: predictLevel(p.bst, fit) }))
   .filter((x) => x.raw < 1 || x.raw > 70)
   .map((x) => `${x.p.name} raw ${x.raw.toFixed(1)} → ${arrivalLevel(x.p)}`);
 report('clamped predictions', clamped);
 
-// 4. Babies: an evolver whose own pre-evolution is a baby form.
 const babies = all
   .filter((p) => p.evolvesFrom !== null && (getPokemonById(p.evolvesFrom)?.isBaby ?? false))
   .map((p) => `${getPokemonById(p.evolvesFrom!)!.name} → ${p.name} at L${arrivalLevel(p)}`);
 report('lines that start on a baby form', babies);
 
-// 5. Branch points: one pre-evolution, several evolutions.
 const kids = new Map<number, Pokemon[]>();
 for (const p of all) {
   if (p.evolvesFrom === null) continue;
@@ -112,14 +98,12 @@ const branched = [...kids.entries()]
   .map(([id, v]) => `${getPokemonById(id)?.name}: ${v.map((c) => `${c.name} L${arrivalLevel(c)}`).join(', ')}`);
 report('branching lines (the card seats one branch)', branched);
 
-// 6. Lines whose stages cannot all fit the rows their seat offers.
 const capacity: string[] = [];
 for (let seat = 1; seat <= TEAM_SIZES[ROW_COUNT - 1]; seat++) {
   capacity.push(`seat ${seat} joins at row ${joinRow(seat)} → ${ROW_COUNT - joinRow(seat) + 1} rows`);
 }
 report('rows available per seat (a stage needs one each)', capacity);
 
-// 7. Three-stage lines whose default boundaries collapse onto fewer rows.
 const roots = all.filter((p) => p.evolvesFrom === null);
 const collapsed: string[] = [];
 for (const root of roots) {
@@ -144,7 +128,6 @@ for (const root of roots) {
 }
 report('lines the curve skips a member of at seat 1 (the handle reveals them)', collapsed);
 
-// 8. The biggest misses the fit makes on data it was fitted to.
 const worst = known
   .map((p) => ({ p, err: (p.evolutionLevel as number) - predictLevel(p.bst, fit) }))
   .sort((a, b) => Math.abs(b.err) - Math.abs(a.err))

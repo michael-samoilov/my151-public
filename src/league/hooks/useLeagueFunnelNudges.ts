@@ -3,10 +3,6 @@ import { nextLeagueNudge } from '../model/funnelNudges';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 
-/**
- * Arms one export nudge when a threshold is first crossed, the way
- * `useMilestoneTracker` arms dex celebrations. Mount once from LeagueApp.
- */
 export function useLeagueFunnelNudges() {
   const cards = useLeagueStore((s) => s.cards);
   const celebrated = useLeagueStore((s) => s.celebratedNudges);

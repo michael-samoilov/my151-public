@@ -7,14 +7,6 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } 
 import { GymIcon, PokedexIcon, RibbonIcon } from '@/components/shared/AppIcons';
 import { pathScale } from '@/lib/pathScale';
 
-/**
- * The global header's tool switcher. A dropdown rather than spelled-out
- * links, so the row survives more tools being added. Rendered by every
- * entry, so the links are real navigations, not view state.
- */
-
-// `scale` balances the icons: their square box, the area inside their outline
-// and their ink come out about even.
 const TOOLS = [
   { id: 'dex', href: '/pokedex-builder', label: 'tools.dex', Icon: PokedexIcon, scale: 1 },
   { id: 'league', href: '/custom-gym-leader', label: 'tools.league', Icon: GymIcon, scale: 1.08 },
@@ -23,18 +15,10 @@ const TOOLS = [
 
 type ToolId = (typeof TOOLS)[number]['id'];
 
-/**
- * A one-time pointer at this menu: "the builder moved, it is under Tools",
- * "there is a new tool under Tools". A tooltip anchored to the button, not
- * a block in the page, so it points at the thing it talks about and takes
- * no room from the content. It stays open until the person opens the menu
- * or taps its close mark; `onDismiss` says which.
- */
 export interface ToolsCallout {
   text: string;
   dismissLabel: string;
   testId: string;
-  /** Keep navigation beneath an announcement usable. */
   allowThrough?: boolean;
   onDismiss: (reason: 'menu' | 'close') => void;
 }
@@ -61,7 +45,6 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click — the SettingsMenu recipe.
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -71,9 +54,6 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  // The callout hangs over the tool bar under it. The first tap anywhere
-  // else ends it, so it never stands between a person and the page for
-  // more than one gesture. A tap on the button itself is the menu path.
   const tipRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!callout) return;
@@ -105,8 +85,6 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
   return (
     <div ref={menuRef} className="relative">
       {callout ? (
-        // Controlled and never closed by hover or focus: it is a notice, not
-        // a hint, and it ends only when the person acts on it.
         <Tooltip open>
           <TooltipTrigger asChild>{button}</TooltipTrigger>
           <TooltipPortal>
@@ -121,19 +99,6 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
               // readers; with a label it mirrors only the words, not the
               // close button.
               aria-label={callout.text}
-              // The header, the page and the popover are all within a few
-              // percent of white, so the original `border-0` notice merged
-              // into the header's bottom edge and read as part of the page.
-              // A brand-red outline separates it without inverting the
-              // surface, which at this size read heavier than the message.
-              //
-              // A `ring` rather than a border: it draws outside the box
-              // instead of inside it, so the outline costs the notice no
-              // interior width at the phone size where it is tightest.
-              //
-              // The arrow is red too: filled with the popover colour it was
-              // white on a white header, so the notice never visibly pointed
-              // at the menu it talks about.
               className={cn('z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-xl ring-2 ring-primary', callout.allowThrough && 'pointer-events-none')}
             >
               <TooltipArrow className="fill-primary" />
@@ -152,10 +117,6 @@ export function ToolsMenu({ current, callout: pageCallout }: { current?: ToolId;
       ) : (
         button
       )}
-      {/* Always in the DOM, hidden while closed: crawlers follow these links
-          between the tools, which a menu that mounts on open would hide.
-          z-[120] matches the language picker, the header's other dropdown, so
-          the open menu sits above page controls such as the intro's close button. */}
       <div hidden={!open} className="absolute right-0 top-full z-[120] mt-1 min-w-[170px] rounded-lg border bg-popover py-1 shadow-lg">
           {TOOLS.map((tool) => (
             <a

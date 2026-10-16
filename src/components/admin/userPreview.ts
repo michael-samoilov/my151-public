@@ -18,7 +18,6 @@ export const FACET_KEYS = ['country', 'device', 'os', 'browser', 'language'] as 
 export type FacetKey = (typeof FACET_KEYS)[number];
 export type FacetFilters = Partial<Record<FacetKey, string>>;
 
-/** Missing country / device / OS / browser / language. Distinct from "any". */
 export const FACET_UNKNOWN = '';
 
 export const FACET_LABEL: Record<FacetKey, string> = {
@@ -52,7 +51,6 @@ type PreviewPlatform = {
   switched?: string;
 };
 
-/** Includes every browser with a record for the selected tool, including bouncers. */
 export function matchesToolFilter(row: { dex?: unknown; league?: unknown; picker?: unknown }, filter: ToolFilter): boolean {
   return filter === 'any' || !!row[filter];
 }
@@ -95,7 +93,6 @@ export function sameBaseLang(a: string, b: string): boolean {
 }
 
 let langNames: Intl.DisplayNames | null | undefined;
-/** Language name only, no tag: "es-ES" → "Spanish". Falls back to the tag. */
 export function langName(tag?: string): string | undefined {
   if (!tag) return undefined;
   if (langNames === undefined) {
@@ -109,13 +106,12 @@ export function langName(tag?: string): string | undefined {
     const name = langNames?.of(tag.split('-')[0]);
     if (name) return name;
   } catch {
-    /* unresolvable tag */
+    return tag;
   }
   return tag;
 }
 
 let regionNames: Intl.DisplayNames | null | undefined;
-/** Country name from an ISO code: "CZ" → "Czechia". Falls back to the code. */
 export function countryName(code?: string): string | undefined {
   if (!code) return undefined;
   if (regionNames === undefined) {
@@ -129,14 +125,11 @@ export function countryName(code?: string): string | undefined {
     const name = regionNames?.of(code.toUpperCase());
     if (name) return name;
   } catch {
-    /* unresolvable code */
+    return code;
   }
   return code;
 }
 
-/** Full subregion term from a Vercel ISO 3166-2 code ("VIC" → "Victoria").
- *  Keeps the short code when the name is unknown, and keeps a display name
- *  that is not an ISO code (demo "N. America"). */
 export function subregionName(country?: string, region?: string): string | undefined {
   if (!region) return undefined;
   const raw = region.trim();
@@ -159,7 +152,6 @@ export function geoChipLabel(country?: string, region?: string): string {
   return countryLabel ?? sub ?? '';
 }
 
-/** Language the UI is in: a manual switch, else the locale we served, else the browser. */
 export function uiLanguage(lang?: string, locale?: string, switched?: string): string | undefined {
   return switched || locale || lang;
 }
@@ -171,7 +163,6 @@ export function facetLabel(key: FacetKey, value: string): string {
   return value;
 }
 
-/** One language for a preview card. Detail still shows the full path. */
 export function previewLanguage(
   lang?: string,
   locale?: string,
@@ -184,7 +175,6 @@ export function previewLanguage(
   return { kind: 'served', tag };
 }
 
-/** Minutes for a preview chip. Under 45s is 0m, so a card always shows time. */
 export function fmtChipDuration(ms: number): string {
   if (ms < 45_000) return '0m';
   const m = Math.round(ms / 60_000);
@@ -195,7 +185,6 @@ export function fmtChipDuration(ms: number): string {
 
 const PREVIEW_SESSION_UNIT = { one: 'session', many: 'sessions' } as const;
 
-/** Each tool's progress chip on a preview card: "12/151 Dex". */
 export const PREVIEW_PROGRESS = {
   dex: { of: DEX_TOTAL, noun: 'Dex' },
   league: { of: CARD_COUNT, noun: 'Gyms' },
@@ -221,9 +210,6 @@ export function sessionChipParts(
   };
 }
 
-/** Last-seen time in the user's timezone, with no seconds, plus the short
- *  zone name after the time. Falls back to the viewer's timezone when `tz`
- *  is missing or not a valid IANA zone. */
 export function formatWhen(when: number, tz?: string, locale?: string): string {
   const opts: Intl.DateTimeFormatOptions = {
     month: 'short',

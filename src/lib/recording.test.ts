@@ -1,4 +1,3 @@
-// keeps: Server checkpoint and retained-history boundaries cannot be reached by E2E API stubs.
 import {describe, expect, it} from 'vitest';
 import {checkpointRecording, parseRecordingFields, retiredCapture, type RecordingFields} from '../../api/_sessionize';
 const day = 86_400_000;

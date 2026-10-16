@@ -66,7 +66,6 @@ export function fillTracked(
   }
 }
 
-/** Draw a tracked run centred on `cx`. */
 export function fillTrackedCentered(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -80,11 +79,6 @@ export function fillTrackedCentered(
   ctx.textAlign = prev;
 }
 
-/**
- * The largest size, from `px` down to `floor`, at which every word of `text`
- * fits `maxW` on its own. Words wrap; a word cannot, so the widest word is
- * what decides. Returns `floor` when even that is too wide.
- */
 export function fitFontSize(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -106,7 +100,6 @@ export function fitFontSize(
   return Math.max(size, floor);
 }
 
-/** Shorten a run to fit, with the ellipsis the browser would have added. */
 export function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
   if (ctx.measureText(text).width <= maxW) return text;
   const chars = [...text];
@@ -119,7 +112,6 @@ export function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxW: num
   return out.trimEnd() + '…';
 }
 
-/** Same as `ellipsize`, measuring with the tracking the run will be drawn at. */
 export function ellipsizeTracked(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -137,11 +129,6 @@ export function ellipsizeTracked(
   return out.trimEnd() + '…';
 }
 
-/**
- * Break a tracked run at spaces, filling each line as far as it fits `maxW`.
- * A run that fits stays on one line. A word wider than `maxW` still gets a
- * line of its own, for the caller to clip.
- */
 export function wrapTracked(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -157,13 +144,6 @@ export function wrapTracked(
   return lines;
 }
 
-/**
- * Break a run into at most `maxLines` lines that fit `maxW`.
- *
- * The last line is ellipsized rather than dropped, so a long badge name says
- * that it continues instead of ending mid-word. A single word too wide for the
- * box is ellipsized on its own line, which is what the CSS did.
- */
 export function wrapLines(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -194,7 +174,6 @@ export function wrapLines(
   return lines;
 }
 
-/** Run `draw` with the viewBox mapped onto a `size` square at (x, y). */
 function inBox(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -215,8 +194,6 @@ function inBox(
   draw();
   ctx.restore();
 }
-
-// ---------- the stage glyphs, white on a glyph cell ----------
 
 /**
  * The glyph outlines, built on first use.
@@ -246,12 +223,6 @@ function path(name: keyof typeof PATHS & string): Path2D {
   return p;
 }
 
-/**
- * N−1 filled diamonds and one outline, centred on (cx, cy).
- *
- * Four or fewer sit on one line; more wrap into a left-aligned block four
- * wide, which is how the badge count reads as a count rather than a rule.
- */
 export function drawDiamonds(
   ctx: CanvasRenderingContext2D,
   n: number,
@@ -262,9 +233,6 @@ export function drawDiamonds(
 ): void {
   const perLine = n <= 4 ? n : 4;
   const rows = Math.ceil(n / perLine);
-  // Centred by the marks themselves. The component's wrapping block is two
-  // pixels wider than its marks, which on screen is invisible and in a still
-  // picture reads as the whole count sitting a pixel left of centre.
   const blockW = perLine * size + (perLine - 1) * gap;
   const blockH = rows * size + (rows - 1) * gap;
   const left = cx - blockW / 2;
@@ -315,7 +283,6 @@ export function drawCrown(ctx: CanvasRenderingContext2D, size: number, cx: numbe
   });
 }
 
-/** The solid pokeball: white ball, cell colour as its negative space. */
 export function drawBossBall(
   ctx: CanvasRenderingContext2D,
   cell: string,
@@ -340,7 +307,6 @@ export function drawBossBall(
   });
 }
 
-/** The empty-slot mark: a faint pokeball, turned 30°. */
 export function drawEmptyBall(
   ctx: CanvasRenderingContext2D,
   size: number,
@@ -378,7 +344,6 @@ export function drawEmptyBall(
   );
 }
 
-/** A pokeball with the band taken out, sheared — the TM disc. */
 export function drawTmDisc(
   ctx: CanvasRenderingContext2D,
   colour: string,
@@ -401,11 +366,6 @@ export function drawTmDisc(
   });
 }
 
-/**
- * The badge hexagon. Named, it wears the type's colour at the weight the
- * disc wears; empty, it wears the TM disc's own empty stroke: solid, the dash
- * colour, and 2 in the disc's 24 box, which is 8/3 in this 32 box.
- */
 export function drawHexagon(
   ctx: CanvasRenderingContext2D,
   colour: string,
@@ -424,13 +384,6 @@ export function drawHexagon(
   });
 }
 
-/**
- * The 4-point star the NO TYPE badge carries.
- *
- * Same construction as `starPath` in `sectionOutlines.ts` — a square turned on
- * its point with its sides pulled in — so the export's no-type square and the
- * app's are the same mark.
- */
 export function drawFourPointStar(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -448,7 +401,6 @@ export function drawFourPointStar(
   ctx.fill();
 }
 
-/** The two-tone pokeball a chosen sprite sits on, turned 30°. */
 export function drawPokeballBg(
   ctx: CanvasRenderingContext2D,
   primary: string,
@@ -484,7 +436,6 @@ export function drawPokeballBg(
   );
 }
 
-/** A pixel sprite, drawn without smoothing so a whole multiple stays sharp. */
 export function drawSprite(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,

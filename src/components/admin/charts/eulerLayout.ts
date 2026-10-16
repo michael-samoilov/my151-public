@@ -1,14 +1,3 @@
-/**
- * Area-exact Euler diagram for up to three tools, after Chow and Ruskey's
- * rectilinear construction. Every region is one rectangle whose area is its
- * count, so a region with no browsers draws nothing.
- *
- * The first two tools share a band: first-only | both | second-only. The
- * third tool is a block under the band. Its top row is first+third |
- * all three | second+third (the first two outlines dip into it), and its
- * bottom row is third-only. Tools past the third are not drawn.
- */
-
 interface Box {
   x: number;
   y: number;
@@ -17,7 +6,6 @@ interface Box {
 }
 
 interface Cell extends Box {
-  /** Region key: sorted tool ids joined by `+`. */
   key: string;
 }
 
@@ -47,7 +35,6 @@ export function inclusive(id: string, regions: Record<string, number>): number {
   return n;
 }
 
-/** Region name in catalog order: `Dex + League + Picker`. */
 export function regionName(key: string, tools: readonly EulerTool[]): string {
   const ids = key.split('+');
   const known = tools.filter((t) => ids.includes(t.id)).map((t) => t.short);
@@ -55,11 +42,6 @@ export function regionName(key: string, tools: readonly EulerTool[]): string {
   return [...known, ...unknown].join(' + ');
 }
 
-// ---------------------------------------------------------------------------
-// Layout
-// ---------------------------------------------------------------------------
-
-/** Width : height of the third tool's block while it fits under the band. */
 const BLOCK_ASPECT = 1.4;
 
 interface Units {
@@ -89,7 +71,6 @@ function layoutUnits(regions: Record<string, number>, ids: readonly string[], rh
   const Wc = Ct > 0 ? Math.min(Wt > 0 ? Wt : Infinity, Math.sqrt(Ct * BLOCK_ASPECT)) : 0;
   const h1 = R1 > 0 ? R1 / Wc : 0;
   const h2 = c > 0 ? c / Wc : 0;
-  // A third tool that shares no browser with the band must not touch it.
   const gap = R1 === 0 && Ct > 0 && T > 0 ? 0.12 * Ht : 0;
   const xBl = T > 0 ? a / Ht : 0;
   const xAr = T > 0 ? (a + ab) / Ht : 0;
@@ -97,7 +78,6 @@ function layoutUnits(regions: Record<string, number>, ids: readonly string[], rh
   const hasB = b + ab > 0;
   const anchor = hasA && hasB ? (xBl + xAr) / 2 : hasA ? xAr / 2 : (xBl + Wt) / 2;
   let x0 = Ct === 0 ? 0 : R1 > 0 ? anchor - (ac + abc / 2) / h1 : anchor - Wc / 2;
-  // Keep each tab under its own tool, so every outline stays one piece.
   const tabsAttach = (x: number) => {
     const okA = ac + abc === 0 || (x < xAr - 1e-9 && x + (ac + abc) / h1 > 1e-9);
     const okB = abc + bc === 0 || (x + ac / h1 < Wt - 1e-9 && x + Wc > xBl + 1e-9);
@@ -152,7 +132,6 @@ interface EulerLayout extends Units {
   bbox: Box;
 }
 
-/** Pick the band's aspect so the whole drawing matches `box`, then fit it in. */
 function eulerLayout(regions: Record<string, number>, ids: readonly string[], box: Box): EulerLayout | null {
   const probe = layoutUnits(regions, ids, 1);
   if (probe.cells.length === 0) return null;
@@ -175,11 +154,6 @@ function eulerLayout(regions: Record<string, number>, ids: readonly string[], bo
   return { cells, band: fit(units.band), block: units.block ? fit(units.block) : null, bbox: bboxOf(cells) };
 }
 
-// ---------------------------------------------------------------------------
-// Outlines. Two tools that share an edge draw it as two parallel lines, each
-// inset into its own tool, so neither outline hides the other.
-// ---------------------------------------------------------------------------
-
 function uniq(values: number[]): number[] {
   const out: number[] = [];
   for (const v of [...values].sort((p, q) => p - q)) {
@@ -191,15 +165,12 @@ function uniq(values: number[]): number[] {
 interface Edge {
   a: [number, number];
   b: [number, number];
-  /** Grid line plus the side the tool lies on. */
   slot: string;
   depth: number;
 }
 
 interface Outline {
-  /** The tool's area, for the translucent fill. */
   fill: string;
-  /** The tool's edge, inset by its rank among tools that share that edge. */
   stroke: string;
 }
 
@@ -219,7 +190,6 @@ function outlines(cells: readonly Cell[], ids: readonly string[], strokeW: numbe
     }
   }
   const inside = (id: string, i: number, j: number) => i >= 0 && j >= 0 && i < nx && j < ny && owner[i][j].includes(id);
-  // Unit edges, directed so the tool lies on the left (y grows down).
   const edgesOf = (id: string): Edge[] => {
     const out: Edge[] = [];
     for (let i = 0; i <= nx; i++)
@@ -266,7 +236,6 @@ function outlines(cells: readonly Cell[], ids: readonly string[], strokeW: numbe
         loop.push(e);
         e = (byStart.get(e.b.join(',')) ?? []).find((n) => !used.has(n));
       }
-      // Merge straight runs that share a depth.
       type Run = { a: [number, number]; b: [number, number]; d: [number, number]; depth: number };
       const runs: Run[] = [];
       for (const u of loop) {
@@ -301,11 +270,6 @@ function outlines(cells: readonly Cell[], ids: readonly string[], strokeW: numbe
   });
   return result;
 }
-
-// ---------------------------------------------------------------------------
-// Labels. Each label is a box first: it is checked against the boxes already
-// placed and the painted cells, and only then drawn.
-// ---------------------------------------------------------------------------
 
 export type Measure = (text: string, fontSize: number) => number;
 
@@ -356,7 +320,6 @@ function onCells(b: TextBox, cells: readonly Cell[], m: number): boolean {
   return cells.some((c) => b.left - m < c.x + c.w && c.x < b.right + m && b.top - m < c.y + c.h && c.y < b.bottom + m);
 }
 
-/** Liang-Barsky: does the segment pass through the box? */
 function segmentHits(x1: number, y1: number, x2: number, y2: number, r: TextBox): boolean {
   let t0 = 0;
   let t1 = 1;
@@ -392,7 +355,6 @@ interface Pending {
   cell: Cell;
 }
 
-/** Stack the labels of small regions in one column; keep the clean option with the shortest leaders. */
 function placeLeaders(
   items: Pending[],
   placed: TextBox[],
@@ -415,18 +377,15 @@ function placeLeaders(
   const drawBottom = bboxOf(cells).y + bboxOf(cells).h;
   const byY = [...items].sort((p, q) => cy(p) - cy(q) || cx(p) - cx(q));
   const byX = [...items].sort((p, q) => cx(p) - cx(q) || cy(p) - cy(q));
-  // Shortest label on top lets the lower leaders pass beside the upper labels.
   const byWidth = [...items].sort((p, q) => p.w - q.w);
   const orders = [byY, byX, [...byX].reverse(), byWidth, [...byWidth].reverse()];
   const n = items.length;
-  // The dot sits at the point of the cell nearest its label.
   const start = (c: Cell, tx: number, ty: number) => {
     const m = Math.min(8, c.w / 3, c.h / 3);
     return { x: Math.min(Math.max(tx, c.x + m), c.x + c.w - m), y: Math.min(Math.max(ty, c.y + m), c.y + c.h - m) };
   };
   const entry = (it: Pending, x: number, anchor: 'start' | 'end', y: number) => {
     const b = boxAt(x, y, it.w, h, anchor);
-    // The line meets the end of the label that faces its cell.
     const to = { x: cx(it) > (b.left + b.right) / 2 ? b.right + 3 : b.left - 3, y };
     return { leader: { key: it.key, text: it.text, x, y, anchor, from: start(it.cell, to.x, to.y), to } as Leader, b };
   };
@@ -436,7 +395,6 @@ function placeLeaders(
   const starts = [fit(cl.mid - ((n - 1) * row) / 2), fit(cl.mid - (n - 1) * row - row / 2), fit(cl.mid + row / 2)];
   const below = drawBottom + font * 1.2;
   const options: { col: ReturnType<typeof column>; grows: boolean }[] = [];
-  // Split: cells left of the cluster's middle label to the left, the rest to the right.
   const split = (cl.left + cl.right) / 2;
   const leftGroup = byY.filter((i) => cx(i) <= split);
   const rightGroup = byY.filter((i) => cx(i) > split);
@@ -461,7 +419,6 @@ function placeLeaders(
     options.push({ col: column(width - 2, 'end', below, order), grows: true });
     options.push({ col: column(2, 'start', below, order), grows: true });
   }
-  // Under the drawing, each label may sit at either card edge, in any order.
   if (n <= 4) {
     const perms = (list: Pending[]): Pending[][] =>
       list.length <= 1 ? [list] : list.flatMap((it, i) => perms([...list.slice(0, i), ...list.slice(i + 1)]).map((p) => [it, ...p]));
@@ -487,7 +444,6 @@ function placeLeaders(
         if (segmentsCross(l, o.leader)) bad++;
       }
     }
-    // A column below makes the card taller, so it has to be clearly better.
     const len = col.reduce((s, { leader: l }) => s + Math.hypot(l.to.x - l.from.x, l.to.y - l.from.y), 0);
     const cost = grows ? len * 1.3 + font * 4 : len;
     if (!best || bad < best.bad || (bad === best.bad && cost < best.cost)) best = { col, bad, cost };
@@ -514,7 +470,6 @@ function attempt(
   const plotH = baseH - top - bottom;
   const plotW = Math.min(width - 2 * Math.round(4 * scale), Math.round(plotH * 2.7));
   const full: Box = { x: (width - plotW) / 2, y: top, w: plotW, h: plotH };
-  // Shrinking pulls the drawing to the left middle, which frees room for labels.
   const box: Box = { x: full.x, y: full.y + (full.h * (1 - shrink)) / 2, w: full.w * shrink, h: full.h * shrink };
   const ids = tools.slice(0, 3).map((t) => t.id);
   const layout = eulerLayout(regions, ids, box);
@@ -528,7 +483,6 @@ function attempt(
     const count = regions[cell.key] ?? 0;
     const text = String(count);
     const w = measure(text, font);
-    // Padding includes the thin label halo.
     const room = pad;
     if (w + 2 * room <= cell.w && font + 2 * room <= cell.h) {
       const x = cell.x + cell.w / 2;
@@ -540,8 +494,6 @@ function attempt(
       pending.push({ key: cell.key, text: label, w: measure(label, font), cell });
     }
   }
-  // Inclusive totals: first tool over the band's left end, second over its
-  // right end, third beside its block. The first spot that is clear wins.
   const totals: PlacedText[] = [];
   const gap = Math.round(font * 0.45);
   const band = layout.band;
@@ -589,7 +541,6 @@ function attempt(
   };
 }
 
-/** The whole picture for one card width. Shrinks the drawing only when labels need the room. */
 export function eulerScene(
   regions: Record<string, number>,
   tools: readonly EulerTool[],

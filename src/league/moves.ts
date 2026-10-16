@@ -2,7 +2,6 @@ import movesData from '@/data/moves.json';
 import type { MessageKey } from '@/i18n';
 import type { TypeName } from '@/types/pokemon';
 
-/** One row of src/data/moves.json (built by scripts/league/fetch-moves.ts). */
 export interface Move {
   id: number;
   name: string;
@@ -10,7 +9,6 @@ export interface Move {
   category: 'physical' | 'special' | 'status';
   pp: number;
   power: number | null;
-  /** Null = the move ignores accuracy ("always hits"); sorts above 100%. */
   accuracy: number | null;
   contest: ContestType | null;
 }
@@ -25,7 +23,6 @@ export function getMoveById(id: number): Move | undefined {
   return byId.get(id);
 }
 
-/** Bulbapedia's category palette (DECISIONS.md, TM picker). */
 export const CATEGORY_COLORS: Record<Move['category'], string> = {
   physical: '#EB5628',
   special: '#375AB2',
@@ -42,7 +39,6 @@ export const CONTEST_COLORS: Record<ContestType, string> = {
 
 export const CONTEST_TYPES: ContestType[] = ['beautiful', 'clever', 'cool', 'cute', 'tough'];
 
-/** The games' words for the categories and conditions (catalogs/terms). */
 export const CATEGORY_LABEL = {
   physical: 'league.category.physical',
   special: 'league.category.special',

@@ -1,12 +1,4 @@
-// Adds official Pokédex color (pokemon_colors: 10 groups) and egg groups
-// (egg_groups: up to 2 per species) to every entry in src/data/pokemon.json,
-// sourced from the PokeAPI CSV dumps cached in docs/biome-research/pokeapi/
-// (pokemon_species.csv color_id; pokemon_egg_groups.csv species_id→egg_group_id;
-// alt forms resolve through pokemon.csv's species_id). Idempotent — rerunning
-// just rewrites the same values. No hallucination: every value comes from the
-// official CSVs.
-//
-// Run:  node scripts/add-color-egg.mjs
+
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -18,19 +10,15 @@ const POKEAPI = join(ROOT, 'docs', 'biome-research', 'pokeapi');
 
 const rows = (f) => readFileSync(join(POKEAPI, f), 'utf8').trim().split('\n').slice(1).map((l) => l.split(','));
 
-// color id -> identifier (pokemon_colors.csv)
 const colorName = new Map(rows('pokemon_colors.csv').map((r) => [Number(r[0]), r[1]]));
-// egg group id -> identifier (egg_groups.csv)
 const eggName = new Map(rows('egg_groups.csv').map((r) => [Number(r[0]), r[1]]));
 
-// species id -> color identifier (pokemon_species.csv col 5 = color_id)
 const speciesColor = new Map();
 for (const r of rows('pokemon_species.csv')) {
   const c = colorName.get(Number(r[5]));
   if (c) speciesColor.set(Number(r[0]), c);
 }
 
-// species id -> [egg group identifiers] (preserve CSV order, cap at 2)
 const speciesEgg = new Map();
 for (const r of rows('pokemon_egg_groups.csv')) {
   const sid = Number(r[0]);

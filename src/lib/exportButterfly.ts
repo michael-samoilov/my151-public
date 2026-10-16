@@ -6,14 +6,11 @@ const MUTED = '#737373';
 const CHART_TEXT = 10;
 function font(weight: number, size: number) { return `${weight} ${size}px 'Inter Variable', system-ui, sans-serif`; }
 
-/** Width of `text` as `spacedText` draws it, before any squeeze to fit. */
 function spacedWidth(ctx: CanvasRenderingContext2D, text: string, spacing: number): number {
   const glyphs = [...text];
   return glyphs.reduce((sum, c) => sum + ctx.measureText(c).width, 0) + spacing * Math.max(0, glyphs.length - 1);
 }
 
-/** Draw text with manual letter-spacing (ctx.letterSpacing isn't reliable on
- *  older iOS). `align` controls anchoring around `x`. */
 function spacedText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -51,16 +48,10 @@ export interface ButterflyRowInput {
   deviation: number | null;
   color: string;
   barStroke?: string;
-  /** Override the standard translucent bar paint for badge-matched colors. */
   barOpacity?: number;
   icon: IconDrawer;
 }
 
-/**
- * Measure or draw one butterfly chart (Type / Generation) in natural coords with
- * its top-left at (ox, oy). Returns the chart's natural height. Mirrors
- * ButterflyChart.tsx with chartScale = 1, hideLabelText, iconFillsRow.
- */
 export function drawExportButterfly(
   ctx: CanvasRenderingContext2D,
   ox: number,
@@ -75,7 +66,6 @@ export function drawExportButterfly(
     iconColAspect?: number;
     alignBaselines?: boolean;
     fixedIndexDomain?: number;
-    /** How far the index headers may run past the content box, into the card's padding. */
     headerBleed?: number;
   } = {},
 ): number {
@@ -100,7 +90,7 @@ export function drawExportButterfly(
   const countRightPad = countLabelPad;
   const chartsWidth = (options.contentWidth ?? 280) - labelColEnd;
   const available = chartsWidth - gutter;
-  const chart1Width = Math.floor((available * 1) / 3); // count w=1, deviation w=2
+  const chart1Width = Math.floor((available * 1) / 3);
   const chart2Width = available - chart1Width;
   const countSectionStart = labelColEnd;
   const devSectionStart = labelColEnd + chart1Width + gutter;
@@ -120,7 +110,6 @@ export function drawExportButterfly(
   const maxCount = Math.max(...rows.map((d) => Math.abs(d.count)), 1);
   const countScale = scaleLinear().domain([0, maxCount]).range([0, countBarArea]);
 
-  // Deviation scale (non-score mode), faithful to ButterflyChart.
   const maxUnderDev = Math.max(...rows.map((d) => -(d.deviation ?? 0)), 0);
   const DEV_OVER_CAP = 200;
   const maxOverDev = Math.max(...rows.map((d) => (d.deviation ?? 0)), 0);
@@ -147,24 +136,18 @@ export function drawExportButterfly(
   ctx.save();
   ctx.translate(ox, oy);
 
-  // Headers — all at the uniform CHART_TEXT size.
   ctx.fillStyle = MUTED;
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(600, CHART_TEXT);
   spacedText(ctx, labelHeader, iconStart + iconColW / 2, headerBaseline, 0.05 * CHART_TEXT, 'middle');
   const countHeader = t('chart.header.count');
   spacedText(ctx, countHeader, countSectionStart, headerBaseline, 0.05 * CHART_TEXT, 'start');
-  // Deviation two-line headers, bottom line on headerBaseline.
-  // CJK glyphs can exceed the Latin line box. Keep both header lines separate
-  // without moving the lower baseline or the chart rows.
   const headerLines = [t('chart.header.underIndexed1'), t('chart.header.underIndexed2'), t('chart.header.overIndexed1'), t('chart.header.overIndexed2')];
   const fitIndexHeaders = options.alignBaselines && options.fixedIndexDomain !== undefined;
   const dy = fitIndexHeaders ? Math.max(1.1 * CHART_TEXT, ...headerLines.map(text => {
     const metrics = ctx.measureText(text);
     return metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + 1;
   })) : 1.1 * CHART_TEXT;
-  // A long translation squeezes rather than run into the count header on the
-  // left or off the card on the right.
   const countHeaderEnd = countSectionStart + spacedWidth(ctx, countHeader, 0.05 * CHART_TEXT) + 4;
   const underHeaderWidth = fitIndexHeaders ? zeroX - 5 : devSectionStart + zeroX - 5 - countHeaderEnd;
   const overHeaderWidth = chart2Width - zeroX - 5 + (fitIndexHeaders ? 0 : options.headerBleed ?? 0);
@@ -173,18 +156,15 @@ export function drawExportButterfly(
   spacedText(ctx, t('chart.header.overIndexed1'), devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'start', overHeaderWidth);
   spacedText(ctx, t('chart.header.overIndexed2'), devSectionStart + zeroX + 5, headerBaseline, 0.05 * CHART_TEXT, 'start', overHeaderWidth);
 
-  // Rows
   rows.forEach((d, i) => {
     const y = yScale(String(i))!;
     const rowMid = y + barHeight / 2;
 
-    // Icon
     ctx.globalAlpha = d.unavailable ? .3 : 1;
     d.icon(ctx, iconStart, rowMid - iconBoxH / 2, iconColW, iconBoxH);
     ctx.globalAlpha = 1;
     if (d.unavailable) return;
 
-    // Count bar + number
     const countBarW = countScale(d.count);
     ctx.fillStyle = d.color;
     ctx.globalAlpha = d.barOpacity ?? 0.85;
@@ -198,7 +178,6 @@ export function drawExportButterfly(
     ctx.textBaseline = 'middle';
     ctx.fillText(`${d.count}`, countSectionStart + countBarW + 3, rowMid);
 
-    // Deviation bar
     const clampedDev = Math.max(devLeft, Math.min(devRight, d.deviation ?? 0));
     const barX = clampedDev >= 0 ? zeroX : devScale(clampedDev);
     const barW = Math.abs(devScale(clampedDev) - zeroX);
@@ -206,7 +185,6 @@ export function drawExportButterfly(
       ctx.fillStyle = d.color;
       ctx.globalAlpha = d.barOpacity ?? 0.85;
       if (options.fixedIndexDomain !== undefined && Math.abs(d.deviation) > options.fixedIndexDomain) {
-        // Match the SVG chart's torn edge while the label retains the true index.
         const bx = devSectionStart + barX;
         const right = (d.deviation ?? 0) >= 0;
         const edge = right ? bx + barW : bx;
@@ -225,7 +203,6 @@ export function drawExportButterfly(
       if (d.barStroke) { ctx.strokeStyle = d.barStroke; ctx.lineWidth = .75; ctx.stroke(); }
       ctx.globalAlpha = 1;
     }
-    // Value label
     const val = d.deviation === null ? '—' : (((d.deviation / 100) + 1).toFixed(2) + 'x');
     const barEnd = devSectionStart + devScale(clampedDev);
     ctx.fillStyle = MUTED;
@@ -240,7 +217,6 @@ export function drawExportButterfly(
     ctx.textAlign = 'left';
   });
 
-  // Zero lines
   ctx.strokeStyle = MUTED;
   ctx.lineWidth = 1;
   line(ctx, countSectionStart + countZeroX, topOffset, countSectionStart + countZeroX, topOffset + n * rowHeight);
@@ -263,7 +239,6 @@ function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number,
   ctx.stroke();
 }
 
-/** Dex detail-card title: identical font, uppercasing, and horizontal stretch. */
 export function drawExportStatsTitle(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, width = 280) {
   ctx.fillStyle = '#0a0a0a';
   ctx.textAlign = 'left';

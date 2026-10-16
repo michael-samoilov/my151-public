@@ -6,9 +6,6 @@ import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { useT, type MessageKey } from '@/i18n';
 
-
-/** Sort modes. Only the ids live here now — label and description come from
- *  the catalog, keyed by id, so they can be translated. */
 const SORT_VALUES = ['build-order', 'regional', 'national', 'type', 'custom'] as const satisfies readonly ViewSortOption[];
 
 const SORT_KEYS = {
@@ -24,11 +21,6 @@ export function ViewSettingsPane({
   mobileSheet = false,
 }: {
   onClose: () => void;
-  /** Mobile bottom-sheet mode: hide the internal header (the sheet has its
-   *  own drag tab) and stage changes behind an explicit "Update & View"
-   *  button. Desktop side-pane mode (the default) applies changes live as
-   *  the user toggles options — the grid is visible in the other pane, so
-   *  waiting for a commit step is friction without payoff. */
   mobileSheet?: boolean;
 }) {
   const t = useT();
@@ -42,24 +34,18 @@ export function ViewSettingsPane({
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const setShowSections = usePokedexStore((s) => s.setViewShowSections);
 
-  // Pending state is only used in mobileSheet mode. In desktop mode handlers
-  // write straight to the store and the pending setters go unused.
   const [pendingSort, setPendingSort] = useState<ViewSortOption>(sortOption);
   const [pendingGrouping, setPendingGrouping] = useState<boolean>(groupSpecialAtEnd);
   const [pendingCustomOrder, setPendingCustomOrder] = useState<number[] | null>(customOrder);
   const [pendingShowSections, setPendingShowSections] = useState<boolean>(showSections);
 
-  // Effective values — what the UI reads to render current selection state.
-  // Desktop: live store values. Mobile: pending staged values.
   const effSort = mobileSheet ? pendingSort : sortOption;
   const effGrouping = mobileSheet ? pendingGrouping : groupSpecialAtEnd;
   const effCustomOrder = mobileSheet ? pendingCustomOrder : customOrder;
   const effShowSections = mobileSheet ? pendingShowSections : showSections;
 
-  // Seed source: what's currently visible on the grid (reflects live store state).
   const currentSorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
 
-  // Close on Escape (discards any pending changes)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -71,8 +57,6 @@ export function ViewSettingsPane({
   const hasCustomEffective = effCustomOrder !== null;
 
   const handleSelectSort = (value: ViewSortOption) => {
-    // Picking "Custom" without an existing order seeds it from the current
-    // on-screen sort, so the user has something to drag-rearrange.
     const needsSeed = value === 'custom' && effCustomOrder === null;
     const seed = needsSeed ? currentSorted.map((p) => p.id) : null;
 
@@ -129,7 +113,6 @@ export function ViewSettingsPane({
 
   return (
     <div className="relative flex flex-col h-full bg-background w-full">
-      {/* Header */}
       {!mobileSheet && (
         <div className="shrink-0 border-b">
           <div className="flex items-center justify-between px-3 py-2 h-11">
@@ -145,9 +128,7 @@ export function ViewSettingsPane({
         </div>
       )}
 
-      {/* Scrollable content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {/* Sort Order */}
         <div className="px-3 pt-3 pb-2">
           <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             {t('viewSettings.sortHeading')}
@@ -229,8 +210,6 @@ export function ViewSettingsPane({
                 </button>
               );
 
-              // Outlines are disclosed under (and scoped to) Build Order — the
-              // sort that mirrors your build-page sections.
               const showOutlinesToggle = value === 'build-order' && selected;
 
               return (
@@ -263,7 +242,6 @@ export function ViewSettingsPane({
           </div>
         </div>
 
-        {/* Grouping */}
         <div className="px-3 pt-3 pb-2 border-t">
           <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             {t('viewSettings.groupingHeading')}
@@ -289,11 +267,9 @@ export function ViewSettingsPane({
         </div>
 
         <PageFooter />
-        {/* Extra bottom padding so the floating button doesn't occlude the last row */}
         {hasPendingChanges && <div className="h-16" aria-hidden />}
       </div>
 
-      {/* Floating "Update & View" button — mobile-sheet only */}
       {hasPendingChanges && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
           <button type="button"

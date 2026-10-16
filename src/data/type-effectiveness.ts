@@ -1,11 +1,5 @@
 import type { TypeName } from '@/types/pokemon';
 
-/**
- * Pokemon type effectiveness chart.
- * effectiveness[attacking][defending] = damage multiplier
- * 0 = immune, 0.5 = not very effective, 1 = neutral, 2 = super effective
- */
-
 type TypeChart = Record<TypeName, Record<TypeName, number>>;
 
 const TYPE_EFFECTIVENESS: TypeChart = {
@@ -101,7 +95,6 @@ const TYPE_EFFECTIVENESS: TypeChart = {
   },
 };
 
-/** Compute effectiveness of an attacking type vs a defending Pokemon's types (product of multipliers) */
 export function typeEffectiveness(attackingType: TypeName, defendingTypes: TypeName[]): number {
   let multiplier = 1;
   for (const defType of defendingTypes) {

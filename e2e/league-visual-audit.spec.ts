@@ -40,7 +40,6 @@ import { INK, discMark, phaseSweep, pillEnds } from './support/pixels';
  * are the hard case for the measurement, and are kept on purpose.
  */
 
-/** A card with every control on it. */
 async function denseCard(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const blank = {
@@ -51,8 +50,6 @@ async function denseCard(page: Page): Promise<void> {
     cards[0] = {
       ...blank,
       type: 'grass',
-      // Seat 1 runs to Venusaur, which has a Mega and a Gigantamax. Every
-      // line's rows are set by hand, which is what draws a reset on it.
       lines: [
         { branch: [1, 2, 3], boundaries: [1, 3, 6] },
         { branch: [4, 5, 6], boundaries: [1, 12, 12] },
@@ -75,11 +72,9 @@ async function denseCard(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.click('[data-testid="league-slot-0"]');
   await page.waitForSelector('[data-testid="card-cell-1-1"]');
-  // The pane track finishes moving, and the fit settles.
   await page.waitForTimeout(900);
 }
 
-/** Every small circular control the card draws. */
 const CONTROLS = {
   remove: 'button[aria-label^="Remove"]',
   reset: 'button[aria-label*="evolution rows"]',
@@ -87,8 +82,6 @@ const CONTROLS = {
 } as const;
 
 const DISCS = [
-  // The reset over Bulbasaur's column, and the cross on the TM box, which
-  // sits on the box's white and not on a sprite.
   { kind: 'reset', disc: INK.blue, mark: INK.whiteOnBlue, sweep: 'button[aria-label*="evolution rows"]' },
   { kind: 'remove', disc: INK.red, mark: INK.whiteOnRed, sweep: 'button[aria-label="Remove TM"]' },
 ] as const;
@@ -106,7 +99,6 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
       seen[kind] = n;
       for (let i = 0; i < n; i += 1) {
         const geo = await buttons.nth(i).evaluate((el) => {
-          // The disc is the svg the control draws, or the span that is it.
           const disc = el.querySelector('svg') ?? el.querySelector('span');
           const r = (disc ?? el).getBoundingClientRect();
           return {
@@ -121,7 +113,6 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
     }
     expect(seen.remove, 'the seeded card draws its crosses').toBeGreaterThanOrEqual(4);
     expect(seen.reset, 'the seeded card draws its resets').toBeGreaterThanOrEqual(2);
-    // Every powerup row offers both kinds to a seat that has the forms.
     expect(seen.powerup, 'the seeded card draws its powerups').toBeGreaterThanOrEqual(2);
   });
 
@@ -134,7 +125,6 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
       expect(n, `the card draws a ${kind}`).toBeGreaterThan(0);
       for (let i = 0; i < n; i += 1) {
         const label = await buttons.nth(i).getAttribute('aria-label');
-        // The disc's own svg, so the press box's surroundings stay out of it.
         const m = await discMark(page, buttons.nth(i).locator('svg'), disc, mark);
         expect(m.offset, `${label}: a mark was found in the disc`).not.toBeNull();
         // Within a seventh of the radius. A glyph with a head on one side
@@ -154,9 +144,6 @@ test.describe('the card paints its controls', { tag: '@viewport' }, () => {
       const button = page.locator(sweep).filter({ visible: true }).first();
       const label = await button.getAttribute('aria-label');
       const result = await phaseSweep(page, button, disc, mark);
-      // A quarter of a device pixel is the measurement's own noise on a
-      // stroke; a glyph whose stroke re-rasterises with its origin wanders
-      // by most of a pixel.
       expect(result.wander.max, `${label}: the mark wandered ${JSON.stringify(result.wander)} across ${JSON.stringify(result.offsets)}`)
         .toBeLessThanOrEqual(0.25);
     });
@@ -193,11 +180,8 @@ test.describe('the card paints its TM pill', { tag: '@viewport' }, () => {
     const pill = page.locator('[data-testid="slot-tm"] svg[viewBox="0 0 200 40"]');
     await expect(pill).toBeVisible();
     const ends = await pillEnds(page, pill, INK.coloured);
-    // Ink reaches both edges of its box, less a pixel of antialiasing.
     expect.soft(ends.inkWidth, `the pill paints its whole width: ink ${ends.inkWidth} of box ${ends.boxWidth}`)
       .toBeGreaterThanOrEqual(ends.boxWidth - 4 * PILL_DSF);
-    // Both ends climb, and climb alike. A clipped end has no ramp and a
-    // first column already most of the pill's height.
     expect.soft(ends.ramp.left, `the left end climbs: ${JSON.stringify(ends)}`).toBeGreaterThanOrEqual(2 * PILL_DSF);
     expect.soft(ends.ramp.right, `the right end climbs: ${JSON.stringify(ends)}`).toBeGreaterThanOrEqual(2 * PILL_DSF);
     expect.soft(Math.abs(ends.ramp.left - ends.ramp.right), `the two ends climb alike: ${JSON.stringify(ends)}`)

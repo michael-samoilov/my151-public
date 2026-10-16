@@ -1,17 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/**
- * On a phone, taps in the Pokémon picker only stage picks; the floating
- * button commits them. The staged picks live in the picker, so a close used
- * to drop them without a word. Now a close with picks staged asks first.
- *
- * The scrim stands in for all four close paths (handle, scrim, swipe,
- * Escape), which share one guarded request in `BottomSheet`.
- *
- * Mobile and narrow only: at 1024px and up the picker is a side pane that adds
- * on every tap, so it has nothing staged to lose.
- */
-
 const STORE_KEY = 'personal-151-pokedex-v3';
 const SEED = JSON.stringify({
   state: {
@@ -24,7 +12,6 @@ const SEED = JSON.stringify({
   version: 10,
 });
 
-/** How many Pokémon the saved dex holds in Regional Bird. */
 const birds = (page: Page) =>
   page.evaluate((k) => {
     const raw = localStorage.getItem(k);
@@ -53,7 +40,6 @@ test.describe('mobile picker close', { tag: '@viewport' }, () => {
   const sheet = (page: Page) => page.getByRole('dialog');
   const question = (page: Page) => page.getByRole('alertdialog');
   const tapScrim = async (page: Page) => {
-    // The scrim shows in the gap above the sheet.
     await page.mouse.click(page.viewportSize()!.width / 2, 20);
   };
   const stageFirstLine = async (page: Page) => {
@@ -68,14 +54,12 @@ test.describe('mobile picker close', { tag: '@viewport' }, () => {
     const staged = Number(/\d+/.exec((await question(page).textContent()) ?? '')?.[0]);
     const placedWhileAsking = await birds(page);
 
-    // Escape answers "keep editing": the question goes, the sheet and picks stay.
     await page.keyboard.press('Escape');
     await expect(question(page)).toBeHidden();
     await expect(sheet(page)).toBeVisible();
 
     await tapScrim(page);
     await expect(question(page)).toBeVisible();
-    // Discard comes first, Add last.
     await question(page).getByRole('button').last().click();
     await expect(sheet(page)).toBeHidden();
     const placed = await birds(page);
@@ -95,7 +79,6 @@ test.describe('mobile picker close', { tag: '@viewport' }, () => {
     await expect(sheet(page)).toBeHidden();
     const placed = await birds(page);
 
-    // Reopened, the picker holds no leftover picks: a close just closes.
     await page.locator('[data-section-id="early-bird"] [data-add-slot]').click();
     await expect(sheet(page)).toBeVisible();
     await tapScrim(page);

@@ -23,7 +23,6 @@ export function RomanDisc({ gen, size = 27 }: { gen: GenNumber; size?: number })
   );
 }
 
-// White tiles with a colored edge. Each SVG notes where its symbols come from.
 const EXTRA_ICON: Record<ExtraTypeAxis | ExtraGenAxis, string> = {
   starter: starterIcon,
   gimmick: gimmickIcon,

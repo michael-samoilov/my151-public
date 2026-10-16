@@ -1,22 +1,4 @@
-// Validation harness for the biome assignment pipeline. Two layers:
-//
-// 1. GOLDEN EXPECTATIONS (golden-expectations.json): iconic lines whose
-//    placement a knowledgeable person can assert. A recommendation outside a
-//    line's allowed set is a FAILURE (exit 1) — this is what catches
-//    "Larvesta → forest via a 1% USUM cameo"-class mistakes.
-//
-// 2. RED-FLAG DETECTORS: heuristics that surface *potential* unknown-unknowns
-//    for human review (not failures):
-//    - rare-only: placement whose every cited location is a sub-10% slot
-//    - single-location: placement substantiated by exactly one location
-//    - narrow-margin: top tag barely beats the runner-up
-//    - minority-slice: broad line (many contexts) placed by a 1–2-game slice
-//    - curation-disagreement: pipeline pick differs from every place
-//      archetype the line already sits in (human curation vs data)
-//
-// Run after build-assignments.mjs:
-//   node scripts/biome/validate-assignments.mjs
-// Writes docs/biome-research/output/validation-report.md.
+
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -33,7 +15,6 @@ const nameToId = new Map(pokemon.map((p) => [p.name, p.id]));
 const recordByMember = new Map();
 for (const r of records) for (const id of r.members) recordByMember.set(id, r);
 
-// Place archetype memberships (human curation) for the disagreement detector.
 const PLACE_ARCHETYPES = ['forest', 'meadow', 'cave-pokemon', 'mountain', 'swamp', 'lake', 'dojo', 'haunted', 'ruins', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
 const TAG_BY_SECTION = { 'cave-pokemon': 'cave', 'fishing-pokemon': 'fishing' };
 const archetypesSrc = readFileSync(join(ROOT, 'src', 'data', 'archetypes.ts'), 'utf8');
@@ -51,8 +32,6 @@ const archetypeIds = new Map();
   }
 }
 
-// ---------------------------------------------------------------- 1. Goldens
-
 const goldenResults = [];
 for (const g of goldens) {
   const id = nameToId.get(g.species);
@@ -66,21 +45,10 @@ for (const g of goldens) {
 }
 const failures = goldenResults.filter((g) => g.status !== 'PASS');
 
-// ------------------------------------------------------------- 2. Red flags
-
 const placed = records.filter((r) => r.source === 'encounters');
 
-// Gate assertion: nothing below the rarity-weighted strength gate should have
-// been confidently placed. (1–2 FULL-RATE contexts are placeable by design —
-// e.g. Burmy's honey trees; the strength gate is what rejects rare-slot-only
-// records like Larvesta's two 1% slots.)
 const gateViolations = placed.filter((r) => r.evidenceStrength < 1.0);
 
-// Cameo-suspect: low rarity is NOT a counter-signal by itself (Dreepy and the
-// pseudo-legendaries are rare EVERYWHERE — their rare slots are canonical).
-// Suspicion arises only when the recommended tag's best rate is low while the
-// line has a substantially better rate (≥3×) under some OTHER tag: rare here,
-// common there = possible cameo win.
 const cameoSuspect = placed.filter((r) => {
   const top = r.scores[0];
   if (!top || top.maxRarity == null || top.maxRarity >= 10) return false;
@@ -109,8 +77,6 @@ for (const r of records) {
     curationDisagreement.push({ line: r.line, recommended: r.recommended, confidence: r.confidence, source: r.source, curatedIn });
   }
 }
-
-// ---------------------------------------------------------------- 3. Output
 
 const md = [];
 md.push('# Biome assignment validation report');

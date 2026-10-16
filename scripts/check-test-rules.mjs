@@ -57,7 +57,6 @@ function git(...args) {
 
 const paths = (out) => (out ?? '').split('\0').filter((p) => p && existsSync(join(root, p)));
 
-/** The commit that "new" is measured from, and how it was chosen. */
 function baseCommit() {
   if (git('rev-parse', '--verify', '--quiet', `${PRODUCTION}^{commit}`)) {
     const base = git('merge-base', 'HEAD', PRODUCTION)?.trim();
@@ -69,7 +68,6 @@ function baseCommit() {
   return null;
 }
 
-/** Import specifiers in `text`, resolved to repository paths where possible. */
 function imports(file, text) {
   return IMPORTS.flatMap((re) => [...text.matchAll(re)].map((m) => m[2])).map((spec) => {
     if (spec.startsWith('.')) return { spec, path: posix.normalize(posix.join(posix.dirname(file), spec)) };
@@ -78,7 +76,6 @@ function imports(file, text) {
   });
 }
 
-/** Why `file` may be a unit test without a `// keeps:` line, or null. */
 function keepArea(file, text) {
   if (file.startsWith('scripts/')) return 'lives under scripts/';
   if (SAVED_DATA.test(file)) return 'saved-data path';
@@ -92,7 +89,6 @@ function keepArea(file, text) {
 const problems = [];
 const read = (file) => readFileSync(join(root, file), 'utf8');
 
-// Rule 1: new unit tests.
 const found = baseCommit();
 let newTests = [];
 if (found) {
@@ -109,7 +105,6 @@ if (found) {
   console.log(`check-test-rules: no ${PRODUCTION} and no HEAD~1, so the new-unit-test rule is skipped.`);
 }
 
-// Rule 2: committed proof tests.
 const allTests = paths(git('ls-files', '--cached', '--others', '--exclude-standard', '-z')).filter((p) => ANY_TEST.test(p));
 for (const file of allTests) {
   const name = basename(file);

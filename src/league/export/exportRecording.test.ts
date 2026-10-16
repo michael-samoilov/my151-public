@@ -67,7 +67,6 @@ describe('export uniqueness recording', () => {
   });
 
   it('spends a fixed number of Redis commands however many Pokémon are exported', async () => {
-    // The old one-command-per-Pokémon shape spent 2 × 151 + 2 = 304 on a full Pokédex export.
     vi.stubEnv('VERCEL_ENV', 'production');
     const commands = recordRedisCommands();
     try {
@@ -84,7 +83,6 @@ describe('export uniqueness recording', () => {
   });
 
   it('counts a whole batch of newly placed Pokémon in one Redis command', async () => {
-    // The old pipeline of HINCRBY spent one command per Pokémon: 151 on a first full build.
     const commands = recordRedisCommands();
     try {
       await bumpDexPickFreq(Array.from({ length: 151 }, (_, i) => i + 1));

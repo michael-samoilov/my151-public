@@ -5,13 +5,10 @@ export type UsageTool = 'dex' | 'league' | 'picker';
 export type UsageSource = 'active' | 'legacy';
 export type CardTime = BrowserTime & {missing?: boolean};
 
-/** One tool on a card: its progress, and its sessions and time. `used` is
- *  false when the browser never opened the tool; the card still shows it. */
 export type ToolCell = { tool: UsageTool; used: boolean; count: number; exported: boolean; sessions: number; totalMs: number; missing?: boolean; partial?: true };
 
 const TOOLS: readonly UsageTool[] = ['dex', 'league', 'picker'];
 
-/** All three tools of one row, in card order: Dex, League, Picker. */
 export function toolCells(row: BrowserRow, source: UsageSource = 'legacy'): ToolCell[] {
   return TOOLS.map((tool) => {
     const stat = row[tool];
@@ -29,7 +26,6 @@ function longest<T>(items: readonly T[], length: (item: T) => number): T {
   return items.reduce((a, b) => (length(b) > length(a) ? b : a));
 }
 
-/** Digits read as one width each; a camera icon takes about two. */
 const progressLength = (s: ToolStat) => String(s.count).length + (s.exported ? 2 : 0);
 
 function widestStat(stats: readonly ToolStat[]): ToolStat {
@@ -50,9 +46,6 @@ function widestTime(times: readonly BrowserTime[]): BrowserTime {
     ...(times.some(t => t.partial) ? {partial: true as const} : {})};
 }
 
-/** A row's "When" text with every digit as 0. The digits are tabular, so
- *  texts of one shape are one width. Cached per row object, which lives as
- *  long as its dashboard load, so each date formats once. */
 const shapes = new WeakMap<BrowserRow, string>();
 function whenShape(row: BrowserRow): string {
   let shape = shapes.get(row);
@@ -63,20 +56,10 @@ function whenShape(row: BrowserRow): string {
   return shape;
 }
 
-/** Every distinct "When" shape of `rows`: a hidden copy of each holds the
- *  When column at the width of the widest. Month names, AM and PM, and zone
- *  names differ in width, so the longest text is not always the widest. */
 export function whenShapes(rows: readonly BrowserRow[]): string[] {
   return [...new Set(rows.map(whenShape))];
 }
 
-/**
- * A row as wide as the widest of `rows` in each usage column. The list
- * renders only the rows near the viewport, so the table's auto columns would
- * resize as rows scroll in; a hidden copy of this row holds them at the width
- * every row needs. Each line of a column takes its own widest value. The
- * When column takes its width from `whenShapes`.
- */
 export function widestRow(rows: readonly BrowserRow[]): BrowserRow | null {
   if (rows.length === 0) return null;
   const stats = (tool: UsageTool) => rows.flatMap((r) => r[tool] ?? []);

@@ -11,7 +11,6 @@ const LABEL: Record<DashboardRange, string> = {
   all: 'All',
 };
 
-/** The date range every admin chart follows. */
 export function RangeRibbon({ value, onChange }: { value: DashboardRange; onChange: (next: DashboardRange) => void }) {
   return (
     <div role="group" aria-label="Date range" className="flex gap-1 px-2 pt-2 md:px-4">

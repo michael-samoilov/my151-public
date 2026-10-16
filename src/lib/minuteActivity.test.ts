@@ -1,4 +1,3 @@
-// keeps: API history validation and cutoff math are unreachable through stubbed E2E routes.
 import {describe,it,expect} from 'vitest';
 import {parseMinuteActivity,reconstructMinuteActivity} from '../../api/_minuteActivity';
 const t=Date.UTC(2026,9,10), m=60_000;

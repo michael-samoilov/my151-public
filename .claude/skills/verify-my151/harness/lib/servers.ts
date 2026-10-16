@@ -1,6 +1,5 @@
-// Build and serve the app for verification. Absolute mode serves the working
-// tree. Diff mode also serves a base ref from a git worktree on its own port, so
-// the two builds never share a tree or a port (separate-before-serializing).
+
+
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -21,8 +20,6 @@ function npmCommand(args: string[]): { cmd: string; args: string[] } {
   return { cmd: 'npm', args };
 }
 
-// One build stamp for every build in this run (vite.config.ts reads it), so the
-// base and the change paint the same footer and the visual diff sees no change there.
 const BUILD_EPOCH = process.env.SOURCE_DATE_EPOCH ?? String(Math.floor(Date.now() / 1000));
 
 function run(cmd: string, args: string[], cwd: string, timeoutMs: number): Promise<void> {
@@ -40,7 +37,6 @@ export async function buildIn(dir: string): Promise<void> {
 
 function waitForPort(port: number, timeoutMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
-  // Vite preview often listens on ::1 only; polling 127.0.0.1 spuriously times out.
   const host = 'localhost';
   return new Promise((resolve, reject) => {
     const poll = () => {
@@ -68,7 +64,7 @@ export async function startPreview(dir: string, port: number): Promise<Preview> 
         spawnSync('taskkill', ['/pid', String(proc.pid), '/t', '/f'], { stdio: 'ignore' });
         return;
       }
-      if (proc.pid) { try { process.kill(-proc.pid, 'SIGKILL'); return; } catch { /* fall back */ } }
+      if (proc.pid) { try { process.kill(-proc.pid, 'SIGKILL'); return; } catch {  } }
       proc.kill('SIGKILL');
     },
   };
@@ -76,9 +72,6 @@ export async function startPreview(dir: string, port: number): Promise<Preview> 
 
 export interface Worktree { dir: string; cleanup: () => void; }
 
-// Check a base ref into a throwaway worktree and share the repo's node_modules by
-// symlink, so the base build needs no npm ci. Assumes deps match the working
-// tree (true for a diff against a near base); the SKILL notes the caveat.
 export function addWorktree(ref: string): Worktree {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-base-'));
   execFileSync('git', ['worktree', 'add', '--detach', dir, ref], { cwd: REPO_ROOT, stdio: 'inherit' });
@@ -96,9 +89,9 @@ export function addWorktree(ref: string): Worktree {
       try {
         if (process.platform === 'win32') fs.unlinkSync(nm);
         else fs.rmSync(nm, { force: true });
-      } catch { /* symlink */ }
-      try { execFileSync('git', ['worktree', 'remove', '--force', dir], { cwd: REPO_ROOT, stdio: 'inherit' }); } catch { /* best effort */ }
-      try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* best effort */ }
+      } catch {  }
+      try { execFileSync('git', ['worktree', 'remove', '--force', dir], { cwd: REPO_ROOT, stdio: 'inherit' }); } catch {  }
+      try { fs.rmSync(dir, { recursive: true, force: true }); } catch {  }
     },
   };
 }

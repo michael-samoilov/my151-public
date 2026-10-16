@@ -1,4 +1,3 @@
-/** Import the picker-only Gen 5-style forms recorded in alternateForms.ts. */
 import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';

@@ -96,7 +96,6 @@ function manifestChunk(key) {
   return Object.values(manifest).find((chunk) => chunk.file === file);
 }
 
-/** Every emitted file reachable through static imports from the given keys. */
 function files(keys) {
   const seen = new Set();
   const out = { text: new Set(), images: new Set() };
@@ -172,8 +171,6 @@ function pictureSavings(found, skip, keys) {
   return savings;
 }
 
-/** Client-rendered pictures are absent from HTML. Their reviewed format
- * groups also need mandatory browser checks for selection and fallback. */
 function imageFormatSavings(found, skip, groups = []) {
   const credited = new Set();
   let savings = 0;
@@ -209,7 +206,6 @@ function measure(keys, minus, formats) {
   for (const f of found.images) if (!skip.images.has(f)) images += statSync(join(dist, f)).size;
   const alternative = imageFormatSavings(found, skip, formats);
   images -= alternative.savings;
-  // A future prerender must not credit the same assets a second time.
   images -= pictureSavings(found, { ...skip, images: new Set([...skip.images, ...alternative.files]) }, keys);
   return { text, images, found };
 }

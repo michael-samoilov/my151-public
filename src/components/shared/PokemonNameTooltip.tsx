@@ -3,9 +3,7 @@ import { Tooltip, TooltipArrow, TooltipContent, TooltipPortal, TooltipTrigger } 
 import { useNamesVersion, type PokemonLabel } from '@/i18n';
 import { PokemonNameText } from './PokemonNameText';
 
-/** A finger held still this long on a tile shows its name. */
 const HOLD_MS = 450;
-/** A finger that moves farther than this before HOLD_MS is a scroll, not a hold. */
 const HOLD_SLOP_PX = 10;
 
 interface PokemonNameTooltipProps {
@@ -42,17 +40,8 @@ function ActiveNameTooltip({ label, children, touchHold = true, testId = 'pokemo
   );
 }
 
-/**
- * Opens the tip after a touch pointer holds still for HOLD_MS, and closes it
- * when that finger lifts. A move past HOLD_SLOP_PX, a scroll, a second finger,
- * or a pointercancel drops a hold that has not opened yet, so scrolls and
- * pinches go on as usual. The click that can follow a hold does not reach the
- * tile, so a hold never picks, opens, or clears.
- */
 function useTouchHold(setOpen: (open: boolean) => void) {
   const stopRef = useRef<(() => void) | null>(null);
-  // Set when a hold opened the tip, and kept until the next press, because
-  // some browsers send no click after a hold.
   const heldRef = useRef(false);
   useEffect(() => () => stopRef.current?.(), []);
 
@@ -94,12 +83,10 @@ function useTouchHold(setOpen: (open: boolean) => void) {
     stopRef.current = stop;
   };
 
-  // The hold, not the platform, answers a long press: no context menu.
   const onContextMenu = (event: MouseEvent) => {
     if (stopRef.current || heldRef.current) event.preventDefault();
   };
 
-  // Capture runs before the tile's own click handler and Radix's.
   const onClickCapture = (event: MouseEvent) => {
     if (!heldRef.current) return;
     heldRef.current = false;
@@ -111,7 +98,6 @@ function useTouchHold(setOpen: (open: boolean) => void) {
   return { onPointerDown, onContextMenu, onClickCapture };
 }
 
-/** Only an open tooltip renders this, so closed tiles skip the names hook. */
 function Name({ label: source, testId }: { label: PokemonLabel | (() => PokemonLabel); testId: string }) {
   useNamesVersion();
   const label = typeof source === 'function' ? source() : source;

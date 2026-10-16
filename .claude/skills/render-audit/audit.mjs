@@ -65,7 +65,6 @@ function findChromium() {
   return undefined;
 }
 
-/** Frame sizes from a canvas.json manifest, keyed by file stem. */
 function frames() {
   const map = new Map();
   if (opt.manifest) {
@@ -105,7 +104,6 @@ writeFileSync(path.join(opt.out, 'report.json'), JSON.stringify(report, null, 1)
 console.log(`driver: ${browser.driver}`);
 console.log(`report: ${path.join(opt.out, 'report.json')}; ${errors} error(s) across ${opt.files.length} file(s)`);
 if (selfTest) {
-  // The audit proves it can fail: every defect class in the fixture must be reported, and the clean page must be clean.
   const bad = report[0].findings.map((f) => f.kind);
   const expected = ['truncated', 'text-cut', 'clipped', 'outside-frame', 'image-scale', 'image-broken', 'awkward-wrap', 'tiny-text', 'overlap', 'stretched-box'];
   const missing = expected.filter((k) => !bad.includes(k));

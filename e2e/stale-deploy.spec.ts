@@ -1,12 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-// A deploy removes the previous deploy's hashed chunks, so a tab opened before
-// it gets a 404 for the next lazy chunk it loads (src/lib/staleDeploy.ts).
-// These tests stage that on one build: the Export chunk answers 404, and the
-// page's own HTML, fetched again, carries another build time (a deploy) or
-// the same one (no deploy, so a reload would not help).
-
 test.use({ serviceWorkers: 'block' });
 
 const FILLS = { 'fire|1': 6, 'water|1': 9 };
@@ -70,7 +64,6 @@ test('a tab opened before a deploy reloads when it opens Export, keeps the picks
 });
 
 test('a chunk missing without a deploy shows the error screen, reports it, and does not reload', async ({ page }, testInfo) => {
-  // The preview server has no API, so the report is caught here.
   const reports: { context: { route: string; error: { where: string; message: string } } }[] = [];
   await page.route('**/api/crash', (route) => {
     reports.push(route.request().postDataJSON());
@@ -81,7 +74,6 @@ test('a chunk missing without a deploy shows the error screen, reports it, and d
   page.on('framenavigated', (frame) => { if (frame === page.mainFrame()) navigations++; });
   await page.getByTestId('favorites-export-open').click();
   await expect(crashScreen(page)).toBeVisible();
-  // Psyduck and one way out: the report is already sent, so there is no button for it.
   await expect(page.locator('[data-art="psyduck"]')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reload', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send report' })).toHaveCount(0);

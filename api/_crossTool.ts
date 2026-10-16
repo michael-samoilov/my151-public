@@ -1,32 +1,16 @@
-/**
- * Cross-tool conversion, arrival-era overlap, and "league ⊂ dex".
- *
- * `api/submissions.ts` used to treat every dex browser as the conversion
- * denominator. The gym leader maker launched later, so that ratio mixed
- * "did not convert" with "never had a chance." Everything here is derived
- * from a tool catalog: add a row when a tool ships, and the KPIs, eras, and
- * diagram follow. Nothing here touches Redis.
- *
- * Driven by `src/lib/crossTool.test.ts`.
- */
-
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
 import type { LeagueCardShape } from './_leagueRecord.js';
 
 export interface ToolDef {
   id: string;
   label: string;
-  /** Few characters, for KPI labels (`Dex`, `League`). */
   short: string;
   /** UTC ms. `0` means "before any user" (the first tool). */
   launchedAt: number | null;
 }
 
-/** First production day of the hub and gym leader maker. Same day as
- *  `docs/analytics-accuracy.md` §1b. */
 export const LEAGUE_LAUNCH_TS = Date.UTC(2026, 8, 8);
 
-/** Production rollout cutoff for conversion-era cohorts; deployment Ready is recorded in release evidence. */
 export const FAVORITES_LAUNCH_TS: number | null = 1791336876298;
 
 export const TOOL_CATALOG: readonly ToolDef[] = [
@@ -47,7 +31,6 @@ export interface LabeledRate {
 export interface EraOverlap {
   key: string;
   label: string;
-  /** One-line caption for the tile (`Before 8 Sep`). `label` stays the full phrase. */
   shortLabel: string;
   since: number | null;
   until: number | null;
@@ -137,11 +120,6 @@ function regionKey(ids: string[]): string {
   return [...ids].sort().join('+');
 }
 
-/**
- * Where each later tool's since-launch window opens: the later of the range
- * start and the tool's launch. One entry per tool after the first that has a
- * launch day. `rangeStart` is `null` for `all`.
- */
 export function sinceLaunchStarts(catalog: readonly ToolDef[], rangeStart: number | null): { id: string; start: number }[] {
   return catalog
     .slice(1)
@@ -272,8 +250,6 @@ function companions(catalog: readonly ToolDef[], browsers: Browser[]): LabeledRa
   return kpis;
 }
 
-/** Pokemon ids seated on the board. Line members, ace, partner, legendaries.
- *  Not TM ids (moves) and not power-up form indices. */
 export function seatedPokemonIds(cards: LeagueCardShape[]): number[] {
   const ids = new Set<number>();
   for (const card of cards) {
@@ -291,8 +267,6 @@ function family(id: number): number {
   return EVOLUTION_CHAIN_BY_ID[id] ?? -id;
 }
 
-/** True when every seated league Pokemon is in the same evolution family as
- *  a member of the user's current dex. */
 export function leagueIsDexNative(dexIds: number[], leagueIds: number[]): boolean {
   if (leagueIds.length === 0) return false;
   const families = new Set(dexIds.map(family));

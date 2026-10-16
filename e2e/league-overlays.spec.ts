@@ -1,16 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { blankLeague } from './support/leagueSeed';
-
-/**
- * Every overlay the league builder opens has to land on the viewport.
- *
- * They are all `position: fixed`, and a transformed ancestor becomes the
- * containing block for fixed descendants — so the moment the mobile shell
- * became one translated two-pane track, the type picker anchored to the
- * 200%-wide track and spanned both panes. The pickers are portalled out of
- * the tree now, and this spec is what keeps them there: it measures each
- * open overlay against the window rather than trusting the DOM shape.
- */
 
 const seatLine = async (page: Page, query: string) => {
   await page.click('[data-testid="card-cell-1-1"]');
@@ -27,11 +16,9 @@ const seatLine = async (page: Page, query: string) => {
   await page.waitForTimeout(400);
 };
 
-/** The widest painted box under the given root, in client pixels. */
 async function overlayExtent(page: Page, selector: string) {
   return page.evaluate((sel) => {
     const anchor = document.querySelector(sel)!;
-    // Walk up to the outermost fixed ancestor: that is the overlay's own root.
     let node: HTMLElement | null = anchor as HTMLElement;
     let root: HTMLElement = anchor as HTMLElement;
     while (node) {
@@ -82,7 +69,6 @@ async function fixedUnderATransform(page: Page) {
   });
 }
 
-/** Every on-screen overlay's box, against the window it should fit inside. */
 async function overlayBoxes(page: Page) {
   return page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('[data-overlay], [role="dialog"], [role="menu"]')].map((el) => {
@@ -103,7 +89,6 @@ test.describe('league overlays', { tag: '@viewport' }, () => {
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
-    // The pane track finishes its translate before anything is measured.
     await page.waitForTimeout(500);
 
     const inside = (box: { left: number; right: number; vw: number }, what: string) => {
@@ -111,21 +96,18 @@ test.describe('league overlays', { tag: '@viewport' }, () => {
       expect(box.right, `${what} runs past the viewport`).toBeLessThanOrEqual(box.vw + 1);
     };
 
-    // 1. The type picker.
     await page.click('[aria-label^="Gym type"]');
     await page.waitForSelector('svg[aria-label="No type"]');
     inside(await overlayExtent(page, 'svg[aria-label="No type"]'), 'the type picker');
     await page.click('svg[data-type="water"]');
     await page.waitForTimeout(300);
 
-    // 2. The selection pane, reached from an empty cell.
     await page.click('[data-testid="card-cell-1-1"]');
     await page.waitForSelector('[data-filter-chip="my-dex"]');
     inside(await overlayExtent(page, '[data-filter-chip="my-dex"]'), 'the selection pane');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(400);
 
-    // 3. The TM picker.
     await page.click('text=Pick a move');
     await page.waitForSelector('[data-testid="tm-filter-category"]');
     inside(await overlayExtent(page, '[data-testid="tm-filter-category"]'), 'the TM picker');
@@ -138,46 +120,53 @@ test.describe('league overlays', { tag: '@viewport' }, () => {
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(400);
 
-    /** Open one thing, measure everything, close it. */
-    const sweep = async (what: string, open: () => Promise<void>, close: () => Promise<void>) => {
+    const measurements: Record<string, Awaited<ReturnType<typeof overlayBoxes>>> = {};
+    const sweep = async (what: string, overlay: Locator, open: () => Promise<void>, close: () => Promise<void>) => {
       await open();
+      await expect(overlay).toBeVisible();
       await page.waitForTimeout(600);
       expect(await fixedUnderATransform(page), `${what}: fixed under a transformed ancestor`).toEqual([]);
-      for (const box of await overlayBoxes(page)) {
+      const boxes = await overlayBoxes(page);
+      for (const box of boxes) {
         expect(box.left, `${what}: ${box.tag} starts left of the viewport`).toBeGreaterThanOrEqual(-1);
         expect(box.right, `${what}: ${box.tag} runs past the viewport`).toBeLessThanOrEqual(box.vw + 1);
         expect(box.bottom, `${what}: ${box.tag} runs past the bottom`).toBeLessThanOrEqual(box.vh + 1);
       }
+      measurements[what] = boxes;
       await close();
-      await page.waitForTimeout(400);
-    };
-
-    /**
-     * Close whatever is open, by whatever the overlay itself offers.
-     *
-     * Not every one answers Escape: the type picker closes on its backdrop,
-     * the gear menus on a press outside. Trying the backdrop first and
-     * falling back to Escape covers all five without the sweep having to
-     * know which is which.
-     */
-    const dismiss = async () => {
-      const backdrop = page.locator('.bg-black\\/50').first();
-      if (await backdrop.count()) {
-        await backdrop.click({ position: { x: 5, y: 5 } });
-      } else {
-        await page.keyboard.press('Escape');
-        await page.mouse.click(4, 4);
-      }
+      await expect(overlay).toBeHidden();
     };
 
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(500);
 
-    // The card's type picker, its line picker and its TM picker.
-    await sweep('type picker', () => page.click('[aria-label^="Gym type"]'), dismiss);
-    await sweep('line picker', () => page.click('[data-testid="card-cell-1-1"]'), dismiss);
-    await sweep('TM picker', () => page.click('text=Pick a move'), dismiss);
+    const typePicker = page.locator('.fixed.inset-0')
+      .filter({ has: page.getByText('Gym type', { exact: true }) })
+      .filter({ has: page.locator('svg[aria-label="No type"]') });
+    await sweep('type picker', typePicker, () => page.click('[aria-label^="Gym type"]'),
+      () => typePicker.getByRole('button', { name: 'Close', exact: true }).click());
+
+    const linePicker = page.getByRole('dialog', { name: 'Adding to Gym 1', exact: true });
+    const myDex = linePicker.locator('[data-filter-chip="my-dex"]');
+    await sweep('line picker', linePicker, async () => {
+      await page.click('[data-testid="card-cell-1-1"]');
+      await expect(myDex).toBeVisible();
+    }, async () => {
+      await linePicker.getByRole('button', { name: 'Adding to Gym 1', exact: true }).click();
+      await expect(myDex).toBeHidden();
+    });
+
+    const tmPicker = page.getByRole('dialog', { name: 'TM for Gym 1', exact: true });
+    const tmCategory = tmPicker.getByTestId('tm-filter-category');
+    await sweep('TM picker', tmPicker, async () => {
+      await page.click('text=Pick a move');
+      await expect(tmCategory).toBeVisible();
+    }, async () => {
+      await tmPicker.getByRole('button', { name: 'TM for Gym 1', exact: true }).click();
+      await expect(tmCategory).toBeHidden();
+    });
+    await testInfo.attach('overlay-viewport-boxes', { body: JSON.stringify(measurements), contentType: 'application/json' });
   });
 
   test('seating a line leaves the card inside the viewport', async ({ page }) => {

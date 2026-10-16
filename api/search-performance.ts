@@ -9,8 +9,6 @@ const HOURLY_KEY = 'admin:search-performance:v2:hourly';
 
 const MINUTE_MS = 60_000;
 const READY_MAX_AGE_MS = { daily: 24 * 60 * MINUTE_MS, hourly: 60 * MINUTE_MS };
-// A failed provider expires its part sooner, so the next open retries it. A
-// forced refresh (opening the Search tab) refetches no part younger than this.
 const RETRY_MS = 15 * MINUTE_MS;
 
 type Daily = SearchPerformanceSnapshot['daily'];

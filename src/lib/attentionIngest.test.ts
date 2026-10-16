@@ -1,4 +1,3 @@
-// keeps: E2E stubs analytics writes; only this sees Redis cost, country keys, legacy upgrade, and CAS output.
 import {afterEach, beforeAll, describe, expect, it, vi} from 'vitest';
 import type {VercelRequest, VercelResponse} from '@vercel/node';
 import {recordRedisCommands} from './recordRedisCommands';

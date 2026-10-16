@@ -7,10 +7,9 @@ type State={pending:MinuteActivityBatch[];open:MinuteActivityBucket[];incomplete
 const states:Record<MinuteActivityTool,State>={dex:{pending:[],open:[],pauseUntil:0},league:{pending:[],open:[],pauseUntil:0},favorites:{pending:[],open:[],pauseUntil:0}};
 let loaded=false;
 let persistTimer:ReturnType<typeof setTimeout>|undefined;
-// A fresh page gets a fresh tab token. Persisted batches keep their original token.
 const tab=crypto.randomUUID();
 const allowed=()=>!DEMO_MODE&&!PREVIEW_DEPLOY&&!isOptedOut();
-function clear(){if(persistTimer)clearTimeout(persistTimer);persistTimer=undefined;for(const state of Object.values(states)){state.pending=[];state.open=[];state.pauseUntil=0;delete state.incomplete;}try{sessionStorage.removeItem(KEY);}catch{/* Storage can be unavailable. */}}
+function clear(){if(persistTimer)clearTimeout(persistTimer);persistTimer=undefined;for(const state of Object.values(states)){state.pending=[];state.open=[];state.pauseUntil=0;delete state.incomplete;}try{sessionStorage.removeItem(KEY);}catch{return;}}
 function load(){
  if(loaded)return;loaded=true;
  if(!allowed()){clear();return;}
@@ -30,7 +29,7 @@ function load(){
     }
    }
   }
- }catch{/* Malformed or restricted storage must not affect builds. */}
+ }catch{return;}
 }
 function persist(){
  load();
@@ -105,7 +104,6 @@ export function encodeActivityBeacon(payload:Record<string,unknown>):string{
  return body;
 }
 
-/** Pause optional attention-only requests as well as detail when budget is exhausted. */
 export function canScheduleMinuteActivity(tool:MinuteActivityTool):boolean{
  load();if(!allowed()){clear();return false;}
  return Date.now()>=states[tool].pauseUntil;

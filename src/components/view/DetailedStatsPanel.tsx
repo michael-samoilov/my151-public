@@ -15,24 +15,14 @@ import { typeChartIcon } from '@/components/shared/typeBadgeSvg';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import type { TypeName } from '@/types/pokemon';
 
-/** Single font size shared by all stats text — chart headers, axis + value
- *  numbers, and the card subtitles — so they read uniformly. */
 const STATS_TEXT = 'text-[0.625rem]';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
-/** Minimum number of placed Pokémon before the detailed-stats panel is worth
- *  showing — below this the charts are too sparse to read and there isn't enough
- *  vertical content to justify the side panel. (Tunable; under QA.) */
 export const STATS_MIN_POKEMON = 100;
 
-/** Default per-chart vertical-height multipliers for the three detailed-stats
- *  charts (debug-tunable). BST/Generation are shorter so the Type chart — with its
- *  18 rows — gets the most room. */
 export const DEFAULT_STATS_HEIGHTS = { type: 1.2, region: 0.6, bst: 0.7 };
 
-/** Align yours + national histograms to shared bins (mirror of the analytics
- *  dashboard's helper) so the superimposed histogram can overlay both. */
 function alignHistograms(
   yours: { bin: string; pct: number }[],
   national: { bin: string; pct: number }[],
@@ -65,16 +55,9 @@ function alignHistograms(
   return { merged, xTicks, xDomain, binSize, yDomain, yTicks };
 }
 
-/** Card chrome variants used to QA how the stats read alongside the dex:
- *  - 'bare'           : no chrome — charts sit directly on the canvas (export look)
- *  - 'card-title-out' : title on the canvas, chart on a shadowed card (analytics look)
- *  - 'card-title-in'  : title + chart together on one shadowed card */
 type StatsVariant = 'bare' | 'card-title-out' | 'card-title-in';
 const CARD_CHROME = 'bg-card rounded-lg shadow-elevated py-3 px-5';
 
-/** Card title rendered like the grid's outline section titles: Inter Black,
- *  uppercase, horizontally stretched (scaleX) to fill the card width — capped at
- *  the same MAX_LABEL_STRETCH the outlines use. */
 function StretchTitle({ text }: { text: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [scaleX, setScaleX] = useState(1);
@@ -144,12 +127,6 @@ function HistogramLegend() {
   );
 }
 
-/**
- * Read-only "detailed stats" for the current dex: type distribution, generation
- * origin, and base-stat-total distribution — the same charts as the Analytics
- * page, reused here without its drill-down interactivity. Data comes from the
- * live store (same dex the grid shows).
- */
 export function DetailedStatsPanel({ className = '', variant = 'card-title-in', typeBadges = true, heights = DEFAULT_STATS_HEIGHTS }: { className?: string; variant?: StatsVariant; typeBadges?: boolean; heights?: { type: number; region: number; bst: number } }) {
   const sections = usePokedexStore((s) => s.sections);
   const analytics = useAnalytics(false);
@@ -160,17 +137,13 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
     if (total === 0) return [];
     const rows = buildTypeRows(countTypes(pokemon), total, fullBaseline.typeProp)
       .sort((a, b) => b.deviation - a.deviation);
-    // Swap the small type symbol for the full type-name badge when requested.
     return typeBadges
       ? rows.map((r) => ({ ...r, icon: typeChartIcon(rowKey(r) as TypeName) }))
       : rows;
   }, [sections, typeBadges]);
 
-  // Both charts share this icon-column aspect so their bar columns stay aligned
-  // even when the type chart's identifier is a wide name badge.
   const iconColAspect = typeBadges ? TYPE_BADGE_ASPECT : 1;
 
-  // The hook's `t` changes with the language, so the labels follow a switch.
   const tr = useT();
   const genRows = useMemo<ButterflyRow[]>(
     () =>

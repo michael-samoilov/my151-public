@@ -2,23 +2,9 @@ import { deflateSync } from 'node:zlib';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { decode, type Raster } from './png-rgba';
 
-/**
- * Extract the white type symbol from each Gen IX "small" icon into a
- * glyph-only PNG: white pixels, alpha from the symbol, cropped to its bounding
- * box.
- *
- * The type badge always draws the symbol white, and a badge grid renders up
- * to ~300 of them. Referencing one cached URL 300 times is free; inlining a
- * ~3 kB data URL into 300 style attributes is not.
- *
- * Output is committed, so this never runs in CI or on Vercel. Re-run it if the
- * upstream icons are ever refreshed:  npm run build-type-glyphs
- */
-
 const SRC_DIR = 'public/sprites/types/small';
 const OUT_DIR = 'public/sprites/types/glyph';
 
-/** min(R,G,B) above this counts as the white symbol. */
 const WHITE_T = 200;
 
 const CRC_TABLE = (() => {
@@ -52,8 +38,7 @@ function encode({ width, height, data }: Raster): Buffer {
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8; // bit depth
   ihdr[9] = 6; // RGBA
-  // Filter 0 on every row: these are tiny, and a filter search would only save
-  // a few hundred bytes on an asset that is already under 2 kB.
+
   const stride = width * 4;
   const raw = Buffer.alloc(height * (stride + 1));
   for (let y = 0; y < height; y++) {
@@ -68,13 +53,11 @@ function encode({ width, height, data }: Raster): Buffer {
   ]);
 }
 
-/** The symbol, white with a soft alpha edge, cropped to its bounding box. */
 function extractGlyph(src: Raster): Raster {
   const { width, height, data } = src;
   const alpha = new Uint8Array(width * height);
   let minX = width, minY = height, maxX = -1, maxY = -1;
   for (let i = 0, p = 0; i < alpha.length; i++, p += 4) {
-    // Fully transparent source pixels are the icon's rounded corners, not symbol.
     const mn = data[p + 3] < 128 ? 0 : Math.min(data[p], data[p + 1], data[p + 2]);
     const a = mn <= WHITE_T ? 0 : Math.round(((mn - WHITE_T) / (255 - WHITE_T)) * 255);
     alpha[i] = a;
@@ -100,7 +83,6 @@ function extractGlyph(src: Raster): Raster {
   return { width: w, height: h, data: out };
 }
 
-/** The icon's fill, read well inside the rounded square, as `#rrggbb`. */
 function backgroundColor({ width, height, data }: Raster): string {
   const p = ((height >> 1) * width + 4) * 4;
   return `#${[data[p], data[p + 1], data[p + 2]].map((v) => v.toString(16).padStart(2, '0')).join('')}`.toUpperCase();

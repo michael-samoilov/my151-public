@@ -15,29 +15,17 @@ import { isFavoritesNoticeWindow, isLeaguePromoSeen, markLeaguePromoSeen } from 
 
 export type AppView = 'builder' | 'view' | 'analytics';
 
-/** Where the wordmark goes: the hub, which routes to every tool. */
 const HOME_HREF = '/';
 
 interface HeaderProps {
   currentView: AppView;
   onViewChange: (view: AppView) => void;
-  /** Where the active page portals its controls (second row, right cell). */
   toolbarRef: (el: HTMLElement | null) => void;
-  /** The `<header>` itself. App measures it to place the mobile sheets below it. */
   ref?: React.Ref<HTMLElement>;
 }
 
-// The cap has to be a concrete length for the collapse animation to have
-// something to transition to. 7rem rather than 5rem because the longest
-// translated nav label plus normal expansion overflows 5rem — the e2e
-// pseudo-locale run catches it at 360px.
 const LABEL_ANIM = 'overflow-hidden transition-[max-width,opacity] duration-150 ease-out max-w-0 opacity-0';
 
-/**
- * The active tab's label, expanded. Inactive tabs stay icon-only until `sm`.
- * Gated at 380px: below that, the count, tabs, and page controls need the
- * collapsed pixels so a 4-digit count still clears the centred tablist.
- */
 const LABEL_ACTIVE = 'min-[380px]:max-w-[7rem] min-[380px]:opacity-100 min-[380px]:ml-1';
 const LABEL_WIDE = 'sm:max-w-[7rem] sm:opacity-100 sm:ml-1';
 
@@ -54,16 +42,6 @@ function tabTriggerClass(selected: boolean) {
   );
 }
 
-/**
- * The app's two-bar chrome. The top bar is the site's: wordmark left, the
- * language picker, the report button and the tools menu right — identical
- * across tools, and the same height as the bar under it. The
- * second bar is the dex builder's: the tool name (the count once anything
- * is placed) left, the view nav centred, and the active page's controls
- * right. The milestone progress bar is gone — the admin dashboard showed
- * it did not lift conversion; the milestone popups stay (MilestoneCelebration
- * mounts in App, independent of this chrome).
- */
 export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderProps) {
   const sections = usePokedexStore((s) => s.sections);
   const milestoneMax = usePokedexStore((s) => s.milestoneMax);
@@ -72,12 +50,6 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
   const [lockTip, setLockTip] = useState(false);
   const t = useT();
 
-  // Tells a person who already had a dex that the gym leader maker exists:
-  // once per browser, on the first visit after the launch, and only when a
-  // dex was already saved when the page opened — a new visitor has no
-  // reason to be interrupted, and usually came from the hub, which is the
-  // same message as a page. The hub marks it seen for anyone who came that
-  // way. A tooltip on the Tools menu, so it points at where the tool is.
   const [placedAtMount] = useState(count);
   const [promo, setPromo] = useState(() => !isFavoritesNoticeWindow() && placedAtMount > 0 && !isLeaguePromoSeen());
   useEffect(() => {
@@ -100,81 +72,36 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
   return (
     <header ref={ref} className="bg-card">
       <div className="flex h-11 items-center justify-between border-b px-3 sm:px-6">
-        {/* The wordmark is not the page's heading: the h1 is the tool bar's
-         * eyebrow below, so the heading Google reads names the tool. The sr-only
-         * tagline stays for screen readers, which otherwise hear only
-         * "my151.app". */}
         <p className="m-0 text-2xl font-extrabold whitespace-nowrap">
-          {/* The wordmark is the way back to the router page, the way a logo is
-              on any other site. It is a plain link, not a view switch: the
-              router is a separate entry point, and the Pokédex lives in
-              localStorage, so a full navigation loses nothing.
-              No colour or underline reset needed — Tailwind's preflight already
-              gives `a` `color: inherit` and `text-decoration: inherit`, so the
-              spans below keep their own colours and nothing turns blue. */}
           <a
             href={HOME_HREF}
             data-testid="wordmark"
             className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            {/* The brand keeps Latin tracking. The translated tagline below
-                still inherits the page's language. */}
             <span lang="en" className="tracking-tight">
               <span className="text-primary">my151</span><span className="text-foreground">.app</span>
             </span>
-            {/* Through the catalog like every other visible string. It is
-                screen-reader-only, but "invisible" is not "untranslated": a
-                Japanese visitor's screen reader should not read them an English
-                tagline. The extraction spec catches it either way — that is how
-                this was found. */}
             <span className="sr-only">{t('header.tagline')}</span>
           </a>
         </p>
 
         <div className="flex flex-shrink-0 items-center gap-0 min-[360px]:gap-1">
-          {/* Always present, in every environment. The app negotiates a locale
-              from `navigator.languages` at startup, so a visitor can be switched
-              out of English without ever asking — and a switcher that only
-              existed in preview builds would leave them no way back. Whatever
-              picks the language, the control to change it has to be reachable. */}
           <LanguagePicker />
           <FeedbackButton />
           <ToolsMenu current="dex" callout={promoCallout} />
         </div>
       </div>
 
-      {/* The tool bar. Three cells; the sides are minmax(0,1fr) so the centred
-          nav can never be pushed into either neighbour. */}
       <div
         className="grid h-11 items-center gap-2 border-b px-3 sm:px-6"
         style={{ gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)' }}
       >
-        {/* The tool's identity in two lines, the league builder's pattern: the
-            page's h1 as a small eyebrow that never changes, and the count under
-            it. The eyebrow is the one h1 on the page and matches the title tag,
-            which is what Google falls back to when it rewrites a title. */}
         <div data-testid="tool-title" className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
-          {/* One line, always. The centred nav leaves this cell about 105px on
-              a phone and the full name is 130px (142px at 640px, where the
-              cell is 138px), so below 680px the qualifier is
-              screen-reader-only: the eye reads "Pokédex Builder", the DOM and
-              a crawler read the whole phrase, and nothing is clipped or given
-              an ellipsis. Inline-block with the heading's line height, so its
-              box never stands taller than the heading that clips it. */}
           <h1 className="m-0 overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-            {/* The space is a node between the two, not the qualifier's trailing
-                character: an inline-block box trims trailing whitespace at its
-                edge, which butted "Custom" against "Pokédex". When the qualifier
-                is sr-only (absolute) below 680px, this space is the line's
-                leading whitespace and the browser collapses it, so the eye still
-                reads "Pokédex Builder" with no gap. */}
             <span className="inline-block leading-none max-[680px]:sr-only">{t('header.toolNameQualifier')}</span>{' '}
             {t('header.toolNameCore')}
           </h1>
           <span className="whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
-            {/* The count is the number that changes and the one a person
-                looks for; the total is fixed context. A weight step separates
-                them the way the colour already does. */}
             <span className="font-extrabold text-primary">{count}</span>
             <span className="text-foreground">/151</span>
           </span>
@@ -217,7 +144,6 @@ export function Header({ currentView, onViewChange, toolbarRef, ref }: HeaderPro
               <span className={tabLabelClass(currentView === 'analytics')}>{t('nav.analytics')}</span>
             </Button>
           ) : (
-            /* Locked until 25 Pokémon (sticky). Tapping explains rather than navigating. */
             <Tooltip open={lockTip} onOpenChange={setLockTip}>
               <TooltipTrigger asChild>
                 <Button

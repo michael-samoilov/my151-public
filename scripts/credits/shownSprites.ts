@@ -1,22 +1,5 @@
-/**
- * Every Pokémon sprite file a production page can request, and where each one
- * shows. It imports the catalogs the pages themselves build, so a new form, a
- * new archetype override, or a new catalog rule shows up here without an edit.
- *
- * Production pages with Pokémon sprites: the Pokédex builder
- * (/pokedex-builder), the league builder (/custom-gym-leader), and the
- * Favorite Pokémon Picker (/favorite-pokemon-picker). The hub shows none. The
- * levels, slot-lab, and foil-workshop pages refuse to mount on production.
- *
- * Component-local constants that no module exports (an override map inside a
- * component) are found by a scan of shipped source for literal sprite ids and
- * paths, so they are not missed either.
- *
- * The catalogs load through Vite's module runner, as the build loads them, so
- * `import.meta.glob` and the `@/` alias resolve. The types below name only the
- * fields this file reads, which keeps the app's TSX graph out of the scripts
- * typecheck.
- */
+
+
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { runnerImport } from 'vite';
@@ -67,7 +50,6 @@ export interface SpriteUse {
   via: string;
 }
 
-/** Served path, without the cache-busting `?v=` query. */
 const file = (url: string): string => {
   const path = url.split('?')[0];
   if (!path.startsWith('/sprites/pokemon/')) throw new Error(`Not a Pokémon sprite URL: ${url}`);
@@ -91,7 +73,6 @@ function shippedSourceFiles(root: string): string[] {
   return out;
 }
 
-/** Literal ids and paths in shipped source: `pokemonSpriteUrl(746)`, `'/sprites/pokemon/x.png'`. */
 function literalUses(root: string): Array<{ file: string; source: string }> {
   const found: Array<{ file: string; source: string }> = [];
   for (const path of shippedSourceFiles(root)) {
@@ -120,7 +101,6 @@ export async function shownSprites(root = process.cwd()): Promise<Map<string, Sp
   const dexById = new Map(dex.map((p) => [p.id, p]));
   for (const p of dex) add(p.sprite, { tool: 'Pokédex builder', as: p.name, via: 'src/data/pokemon.json sprite' });
 
-  // Archetype filters in the browser, which both builders mount.
   const league = leaguePokemon();
   const leagueById = new Map(league.map((p) => [p.id, p]));
   for (const archetype of archetypes) {
@@ -153,9 +133,7 @@ export async function shownSprites(root = process.cwd()): Promise<Map<string, Sp
   for (const mon of allPickerMons()) add(mon.sprite, { tool: 'Favorite picker', as: mon.name, via: `picker catalog (${mon.source})` });
 
   for (const literal of literalUses(root)) {
-    // The imported catalogs already account for their own literals.
     if (IMPORTED.has(literal.source)) continue;
-    // A component-local override that no module exports.
     const id = Number(/(\d+)\.png$/.exec(literal.file)?.[1]);
     const mon = dexById.get(id) ?? leagueById.get(id);
     add(`/sprites/${literal.file}`, {

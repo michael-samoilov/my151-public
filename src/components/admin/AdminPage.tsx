@@ -79,32 +79,14 @@ import type { BrowserIndex, BrowserRow } from '../../../api/_dashboard';
 import type { ExportSurveySkip } from '../../../api/_events';
 import type { LeaguePicks } from '../../../api/_leaguePicks';
 
-// Human labels for the onboarding/funnel events shown per session.
-
-/**
- * Admin-only analytics dashboard. Reached at `my151.app/?admin` (gated in
- * main.tsx). Reads the token-protected /api/submissions endpoint, which returns
- * one record per anonymous client plus precomputed aggregates.
- */
-
 const TOKEN_KEY = 'p151-admin-token';
-// Beside the token, so the dashboard opens on the tool you were last reading.
 const TOOL_KEY = 'p151-admin-tool';
 const RANGE_KEY = 'p151-admin-range';
-// Data younger than this is current: returning to the tab or to a date range
-// refetches only older data. While visible, the dashboard also refetches on
-// the interval.
 const STALE_ON_RETURN_MS = 60_000;
 const REFRESH_INTERVAL_MS = 5 * 60_000;
-// Each dashboard request takes a number, and only the newest one writes, so a
-// background refresh that answers late cannot undo a later range pick or
-// archive. The admin page mounts once, so one counter serves it.
 let latestLoad = 0;
-// Each date range's last answer, so a return to it within
-// STALE_ON_RETURN_MS sends nothing. One page, so one cache.
 const rangeCache = new Map<DashboardRange, { data: ApiResponse; at: number }>();
 
-/** Which tool's records every shared card reads. */
 export type ToolSlice = 'all' | 'dex' | 'league' | 'favorites';
 
 export type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
@@ -116,11 +98,6 @@ const TOOL_TABS: { key: ToolSlice; label: string }[] = [
   { key: 'favorites', label: 'Favorite Pokémon Picker' },
 ];
 
-/**
- * The selected tool's aggregates, falling back to the top-level fields for a
- * deploy that predates `byTool`. The fallback is the dex slice, which is what
- * those fields have always held.
- */
 function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
   const slice = data.byTool?.[tool];
   if (slice) return slice;
@@ -151,7 +128,7 @@ function loadToolSlice(): ToolSlice {
     const v = localStorage.getItem(TOOL_KEY);
     if (v === 'all' || v === 'dex' || v === 'league' || v === 'favorites') return v;
   } catch {
-    // localStorage may be unavailable
+    return 'all';
   }
   return 'all';
 }
@@ -161,7 +138,7 @@ function loadRange(): DashboardRange {
     const v = localStorage.getItem(RANGE_KEY);
     if (v && isDashboardRange(v)) return v;
   } catch {
-    // localStorage may be unavailable
+    return 'all';
   }
   return 'all';
 }
@@ -206,12 +183,9 @@ export interface ClientRecord {
     showStats?: boolean;
   };
   exportSurveySkips?: ExportSurveySkip[];
-  /** Dropped from dashboard aggregates; still listed when the archive filter asks. */
   archived?: boolean;
 }
 
-/** One tool's slice of every aggregate that does not care which tool it came
- *  from. `all` is one record per browser with both tools' sessions merged. */
 export interface Aggregates {
   users: number;
   activity: { day: number; dau: number; rolling7: number; label24h?: number | null; label168h?: number | null }[];
@@ -225,13 +199,10 @@ export interface Aggregates {
   browsers: Record<string, number>;
   joints?: PlatformJoint[];
   whoBuckets?: WhoBucket[];
-  /** Absent on a deploy that predates the clock toggle. */
   heatmaps?: Record<HeatmapClock, number[][]>;
   hourly?: { hour: number; unique: number }[];
 }
 
-/** One browser's gym leader maker record. Attached to their dex card when
- *  they have one, and a card of its own under the League slice. */
 export interface LeagueUser {
   cid: string;
   submits: number;
@@ -267,15 +238,11 @@ export interface LeagueUser {
   archived?: boolean;
 }
 
-/** One seated evolution line: member ids, and the per-stage first row when the
- *  user dragged a stage off the level curve's default. */
 interface LeagueLine {
   b: number[];
   bd?: number[];
 }
 
-/** One trainer card's structure. No typed text by design — see describeLeague
- *  in src/league/model/leagueSummary.ts. */
 export interface LeagueCard {
   i: number;
   t?: string;
@@ -284,9 +251,7 @@ export interface LeagueCard {
   aceId?: number;
   pa?: number;
   tm?: number;
-  /** [seat, pokemonId]. */
   lg?: [number, number][];
-  /** [row, seat, formIndex, 0 mega | 1 dynamax]. */
   pw?: [number, number, number, number][];
 }
 
@@ -302,17 +267,13 @@ export interface LeagueSummary {
 export interface ApiResponse {
   recordedUsage?: RecordedUsage;
   attentionUsage?: RecordedUsage;
-  /** The date range the aggregates count, and where its window opens (null for all). */
   range?: DashboardRange;
   rangeStart?: number | null;
   totalUsers: number;
   funnel: { users: number; completed: number; exported: number };
   funnelEvents?: Record<string, number>;
-  /** Dex usage funnel with in-line size buckets. */
   dexFunnel?: DexUsageFunnel;
-  /** Gym leader maker usage funnel with in-line gym-completion buckets. */
   leagueFunnel?: LeagueUsageFunnel;
-  /** Cross-tool identity, from the intersection of the two record hashes. */
   tools?: {
     dex: number;
     league: number;
@@ -324,7 +285,6 @@ export interface ApiResponse {
     leagueExporters: number;
     leagueExportersWithDex: number;
   };
-  /** The gym leader maker's own funnel, from its records. */
   league?: {
     users: number;
     named: number;
@@ -332,7 +292,6 @@ export interface ApiResponse {
     fullLeague: number;
     returning: number;
     activity: { day: number; dau: number }[];
-    /** Aces and seated Pokémon by card type, counted in leagues. Absent on an older deploy. */
     picks?: LeaguePicks;
     recent: {
       cid: string;
@@ -348,13 +307,9 @@ export interface ApiResponse {
       hasDex: boolean;
     }[];
   };
-  /** Per-user cohort samples: [firstTs, peakMon, peakLines, completed, exported]. */
   cohort?: [number, number, number, 0 | 1, 0 | 1][];
-  /** Daily activity: per-day DAU and trailing-7-day rolling active count. */
   activity?: { day: number; dau: number; rolling7: number; label24h?: number | null; label168h?: number | null }[];
-  /** Rolling unique counts at `now` for the All-tool chart gutter (server-computed). */
   lastPointLabels?: { label24h: number | null; label168h: number | null };
-  /** Onboarding launch timestamp — the default cutoff for the pre/post slider. */
   onboardingLaunchTs?: number;
   exportSettings?: {
     tracked: number;
@@ -386,8 +341,6 @@ export interface ApiResponse {
     { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number }
   >;
   countries: Record<string, number>;
-  /** Raw Accept-Language tags (`en-US`, `pt-BR`, …) → user count. Folded into
-   *  shipped locales client-side, using the app's own negotiation rules. */
   languages?: Record<string, number>;
   devices: Record<string, number>;
   os: Record<string, number>;
@@ -398,13 +351,10 @@ export interface ApiResponse {
   popularBySection: Record<string, [string, number][]>;
   droppedBySection: Record<string, [string, number][]>;
   picksBySectionAll: Record<string, [string, number][]>;
-  /** Every shared aggregate, per tool. Absent on an older deploy. */
   byTool?: Partial<Record<ToolSlice, Aggregates>>;
   favoriteFunnel?:FavoriteUsageFunnel;
   favorite?: {users:number;started:number;completed:number;exporters:number;exportsFull:number;exportsSimplified:number;depth:SurvivalCurve;unique:SurvivalCurve};
   favoritePicks?:FavoritePicks;
-  /** Dex cohort breakdowns (built / incomplete / completed). No "bounced" —
-   *  a browser that never built has no record, so its device is unknowable. */
   cohorts?: Record<
     'built' | 'incomplete' | 'completed',
     {
@@ -416,16 +366,10 @@ export interface ApiResponse {
       joints?: PlatformJoint[];
     }
   >;
-  /** Build-depth survival by dex size, split by device. */
   depthByDevice?: Record<'all' | 'mobile' | 'desktop', SurvivalCurve>;
-  /** Acquisition: referring host → dex / league landings. Forward-only, so
-   *  empty until referrers accumulate. */
   referrerFlow?: { host: string; total: number; dex: number; league: number; favorites?:number }[];
-  /** Opportunity conversion, companion share, league⊂dex, and arrival-era overlap. */
   crossTool?: CrossToolSnapshot;
-  /** `crossTool` again, per later tool, with the window opening no earlier than its launch. */
   crossToolSince?: Record<string, CrossToolSnapshot>;
-  /** Cross-tool order and weekly crossover, for browsers in both stores. */
   journeys?: {
     both: number;
     dexFirst: number;
@@ -435,10 +379,7 @@ export interface ApiResponse {
     p75GapDays: number;
     weekly: { week: number; newDex: number; dexToLeague7d: number; newLeague: number; leagueToDex7d: number }[];
   };
-  /** How far a league gets: cards with a line, and seats. */
   leagueCurves?: { cards: SurvivalCurve; seats: SurvivalCurve };
-  /** Every browser of each tool, for the Newest browsers lists. A browser's
-   *  full records load on its detail page. Absent on an older deploy. */
   browsers?: BrowserIndex;
 }
 
@@ -482,14 +423,6 @@ async function fetchSearchPerformance(token: string, refresh: boolean): Promise<
   return res.json() as Promise<SearchPerformanceView>;
 }
 
-// ---------- presentational bits ----------
-
-/**
- * The tools since the launch of the hub and the gym leader maker: how many
- * browsers used each, how many used both, and whether one tool's exporters
- * try the other. Every number is computed on read from the two record
- * hashes, so it reaches back to each tool's first beacon.
- */
 function InfoDialog({
   title,
   onClose,
@@ -530,11 +463,6 @@ function InfoDialog({
   );
 }
 
-/**
- * Beacons the server received but could not record — the only losses it can
- * see. Silence here does not mean nothing was lost: it means nothing was lost
- * *after* the request arrived, which is the point of the counter.
- */
 function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
   const [open, setOpen] = useState(false);
   const live = liveDropReasons(events);
@@ -543,9 +471,6 @@ function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
 
   return (
     <>
-      {/* One flowing paragraph, not a flex row: the reason list now names each
-          tool, so it fills the width and a flex sibling button is pushed onto a
-          line of its own. Inline, the button stays with the text it explains. */}
       <p className="text-[0.65rem] text-amber-600 mt-2">
         ⚠ {total} beacons dropped server-side (
         {live.map((d) => `${DROP_TOOL_LABEL[d.tool]} ${d.reason} ${d.count}`).join(' · ')}){' '}
@@ -614,8 +539,6 @@ function leagueFace(id: number): PopularFace | undefined {
   return p ? { sprite: p.sprite, alt: p.name, name: displayName(p.name) } : undefined;
 }
 
-/** Grid of small sprites with the pick-count beneath — ~9-10 per row. `face`
- *  finds a sprite by id; the Picker's ids include its own forms. */
 function PopularGrid({ rows, face = dexFace, formatValue = String }: {
   rows: [string, number][];
   face?: (id: number) => PopularFace | undefined;
@@ -656,10 +579,6 @@ function PopularGrid({ rows, face = dexFace, formatValue = String }: {
   );
 }
 
-/** Survival (drop-off) curve: % of sessions still active at each x. The
- *  steepest segment = where users churn. Renders an SVG line with a shaded
- *  area, gridlines, and the biggest single-step drop highlighted. `fmtX`
- *  formats the x-axis (seconds → time, or a raw count). */
 function SpriteRow({ ids }: { ids: number[] }) {
   return (
     <div className="flex flex-wrap gap-0.5">
@@ -691,7 +610,6 @@ function SpriteRow({ ids }: { ids: number[] }) {
   );
 }
 
-/** Facts a detail header renders: id plus geo, platform, and languages. */
 interface HeaderRec {
   cid: string;
   country?: string;
@@ -704,8 +622,6 @@ interface HeaderRec {
   switched?: string;
 }
 
-/** Middle-truncate a long id to first two + last four, so it never wraps. A
- *  short, already-elided fixture id is left as-is. */
 function middleId(cid: string): string {
   if (cid.length <= 8 || cid.includes('…')) return cid;
   return `${cid.slice(0, 2)}…${cid.slice(-4)}`;
@@ -722,7 +638,6 @@ const POKEBALL_SVG = (
   </svg>
 );
 
-/** One UI language on the chip. Extra sources and the path live in the tooltip. */
 function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: string; switched?: string }) {
   const items = [
     lang ? { tag: lang, name: langName(lang), kind: 'browser' as const } : null,
@@ -822,8 +737,6 @@ function PreviewLanguageChip({
   );
 }
 
-/** Consolidated detail header: Back, the middle-truncated id, the dex/league
- *  toggle, and the geo / platform / language chips on one rail. */
 function DetailHeader({
   rec,
   onBack,
@@ -842,7 +755,6 @@ function DetailHeader({
   hasDex: boolean;
   hasLeague: boolean;
   hasFavorites?:boolean;
-  /** Feedback reports this browser sent. */
   reports?: number;
   onFeedback?: () => void;
 }) {
@@ -886,7 +798,6 @@ function DetailHeader({
         </div>
       </TooltipScope>
     </div>
-    {/* A phone's who row is full, so the feedback chip ends the tool row. */}
     <div className="flex items-center justify-between gap-2 md:hidden">
       <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} hasFavorites={hasFavorites} />
       {feedbackChip}
@@ -914,9 +825,6 @@ function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
   return (s.cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b));
 }
 
-/** Seated lines per evolution chain, across the whole league. A line is its
- *  chain, so Ivysaur's branch and Venusaur's, or two Eevee branches, are one
- *  line. One chain can fill several seats, so the value counts seats. */
 function leagueLinesByChain(cards: LeagueCard[]): Map<number, number> {
   const seats = new Map<number, number>();
   for (const { b } of cards.flatMap((c) => c.l)) {
@@ -926,14 +834,12 @@ function leagueLinesByChain(cards: LeagueCard[]): Map<number, number> {
   return seats;
 }
 
-/** Seats `a` fills beyond `b`, chain by chain. */
 function seatsBeyond(a: Map<number, number>, b: Map<number, number>): number {
   let n = 0;
   for (const [chain, seats] of a) n += Math.max(0, seats - (b.get(chain) ?? 0));
   return n;
 }
 
-/** Dex user body: session timeline + the build at the scrubbed moment. */
 function DexDetailBody({ rec, reports }: { rec: ClientRecord; reports: FeedbackItem[] }) {
   const { log, ms } = useMemo(
     () => tidySessions(rec.sessionLog ?? [], rec.sessionMs, (s) => s.ids),
@@ -1052,8 +958,6 @@ function DexDetailBody({ rec, reports }: { rec: ClientRecord; reports: FeedbackI
   );
 }
 
-/** The league timeline + board, reused as a page and as the dex page's league
- *  section. */
 function LeagueDetailBody({ league, reports }: { league: LeagueUser; reports: FeedbackItem[] }) {
   const { log, ms } = useMemo(
     () =>
@@ -1177,12 +1081,10 @@ function hasRecord(u: UserRecords): boolean {
   return !!(u.dex || u.league || u.favorite);
 }
 
-/** The tools a browser has records of, in the toggle's order. */
 function userTools(u: UserRecords): FeedbackTool[] {
   return (['dex', 'league', 'favorites'] as const).filter((k) => (k === 'dex' ? u.dex : k === 'league' ? u.league : u.favorite));
 }
 
-/** A user page with no records to show yet, or none at all. */
 function UserStatus({ cid, onBack, children }: { cid: string; onBack: () => void; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2" data-testid="admin-user-status">
@@ -1199,7 +1101,6 @@ function UserStatus({ cid, onBack, children }: { cid: string; onBack: () => void
   );
 }
 
-/** One browser: header, tool toggle, then that tool's timeline. */
 function UserDetailPage({
   tool,
   onTool,
@@ -1233,7 +1134,6 @@ function UserDetailPage({
   );
 }
 
-/** When over Ago, five who columns, Dex, Gyms, Favs, Total, then the archive button. */
 const PREVIEW_TABLE =
   'relative flex w-full flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto_auto_auto_auto_auto_auto_auto] md:gap-x-1 md:gap-y-2';
 
@@ -1368,12 +1268,8 @@ function PreviewPlatformSlot({
   );
 }
 
-/** The text of a card's When cell. */
 const WHEN_TEXT = 'whitespace-nowrap md:whitespace-normal text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1';
 
-/** Invisible desktop copies of every When shape in the list, in the table's
- *  first column, so it is as wide as the widest. Shares the header's grid
- *  row, so it adds no height. */
 function WhenSizer({ texts }: { texts: string[] }) {
   return (
     <div inert aria-hidden className="invisible max-md:hidden md:col-span-full md:row-start-1 md:grid md:h-0 md:grid-cols-subgrid md:overflow-hidden md:px-2.5">
@@ -1386,7 +1282,6 @@ function WhenSizer({ texts }: { texts: string[] }) {
   );
 }
 
-/** Speech bubble with the number of feedback reports a browser sent; opens the Feedback tab on them. */
 function FeedbackChip({ reports, onFeedback }: { reports: number; onFeedback?: () => void }) {
   return (
     <button
@@ -1419,20 +1314,14 @@ function UserPreviewCard({
   sizer,
 }: {
   rec: HeaderRec & { lastTs: number; tz?: string };
-  /** Every tool this browser used, whichever list the card is on. */
   cells: ToolCell[];
-  /** The browser as a whole: sessions merged across tools, time counted once. */
   total: CardTime;
-  /** A row of the Picker list. */
   pickerRow?: boolean;
   archived: boolean;
-  /** Feedback reports this browser sent. */
   reports?: number;
   onOpen?: () => void;
   onArchive?: (next: boolean) => void;
   onFeedback?: () => void;
-  /** An invisible desktop row that only sets the table's column widths. It
-   *  shares the header's grid row, so it adds no height. */
   sizer?: boolean;
 }) {
   const langPreview = previewLanguage(rec.lang, rec.locale, rec.switched);
@@ -1542,8 +1431,6 @@ function UserPreviewCard({
   );
 }
 
-/** One-row picks preview. Tools can supply fitted ranking rows and labels,
- *  while count-based previews retain their existing aggregation. */
 function WhatPeoplePick({
   mostBySection,
   rankedRows,
@@ -1588,9 +1475,6 @@ function WhatPeoplePick({
 
 type AdminNavKey = ToolSlice | 'search' | 'feedback';
 
-/** The admin's one bar: fixed to the bottom on a phone, stuck under the
- *  header on desktop, where it spans the window. Its height is `--admin-bar-h`.
- *  `wide` lets its contents span the page too. */
 function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
   const barRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -1613,7 +1497,6 @@ function AdminBar({ wide, children }: { wide: boolean; children: ReactNode }) {
         'fixed inset-x-0 bottom-0 z-[90] border-t border-border bg-card/95 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:sticky md:w-full md:px-0 md:pb-0 md:top-[var(--admin-header-h,0px)] md:border-t-0 md:border-b md:bg-card md:backdrop-blur-none',
       )}
     >
-      {/* Full width on desktop, so nothing scrolls into view beside it. The contents shrink to fit and centre, so the date pills start at the nav's left edge. */}
       <div className={cn(!wide && 'md:mx-auto md:w-fit md:max-w-5xl')}>{children}</div>
     </div>
   );
@@ -1675,19 +1558,11 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
   );
 }
 
-// ---------- main ----------
-
-/** What the detail pane shows: one browser's dex or league, or the picks page. */
-/** `country` comes from a feedback report. It finds a Dex record that
- *  api/submit.ts stored under `<cid>::<country>` for a second person on the
- *  same browser. */
 type Detail =
   | { kind: 'dex' | 'league' | 'favorites'; cid: string; country?: string }
   | { kind: 'picks'; tool: 'dex' | 'league' | 'favorites' };
 
 export function AdminPage() {
-  // `demo` shows the bundled fixtures even on a browser with a saved token,
-  // and leaves that token in storage for the next plain `?admin`.
   const [demo] = useState(() => new URLSearchParams(window.location.search).has('demo'));
   const [token, setToken] = useState<string | null>(() => {
     if (demo) return null;
@@ -1706,14 +1581,11 @@ export function AdminPage() {
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
   const [range, setRange] = useState<DashboardRange>(loadRange);
   const [page, setPage] = useState<'analytics' | 'search' | 'feedback'>('analytics');
-  // The Feedback tab shows only this browser's reports while set.
   const [feedbackCid, setFeedbackCid] = useState<string | null>(null);
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
   const [whoFilter, setWhoFilter] = useState<WhoFilter | null>(null);
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
-  // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
   const [detail, setDetail] = useState<Detail | null>(null);
-  // The browser lists show a feedback chip, so they share the one feedback-list fetch with the user page.
   const browserList = page === 'analytics' && (tool === 'dex' || tool === 'league' || tool === 'favorites');
   const feedbackItems = useFeedbackList(token, browserList || (detail != null && detail.kind !== 'picks')).data?.items;
   const reportsByCid = useMemo(() => {
@@ -1721,13 +1593,11 @@ export function AdminPage() {
     for (const r of feedbackItems ?? []) if (typeof r.cid === 'string') n.set(r.cid, (n.get(r.cid) ?? 0) + 1);
     return n;
   }, [feedbackItems]);
-  // A user page fetches the shared feedback list once for its chip and chart.
   const [summarySource, setSummarySource] = useState<UsageSource>('active');
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
   const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
   const [archiveOverride, setArchiveOverride] = useState<Record<string, boolean>>({});
-  // A stored token counts as signed in until the server rejects it.
   const [authed, setAuthed] = useState(initialToken !== null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1735,8 +1605,6 @@ export function AdminPage() {
   const [pageHeaderH, setPageHeaderH] = useState(0);
   const [rangeSlot, setRangeSlot] = useState<HTMLDivElement | null>(null);
   const [loadedAt, setLoadedAt] = useState(0);
-  // A user page loads its browser's full records on its own. Each dashboard
-  // load asks again, so an open page stays as current as the dashboard.
   const browserLoader = useMemo<BrowserLoader | null>(() => {
     if (demo) return (cid, country) => import('./__fixtures__/sampleResponse').then((m) => m.sampleBrowser(cid, country));
     return token ? apiBrowserLoader(token, loadedAt) : null;
@@ -1748,16 +1616,12 @@ export function AdminPage() {
     if (pageHeaderRef.current) setPageHeaderH(pageHeaderRef.current.offsetHeight);
   });
 
-
-  // Open a detail page from the dashboard, remembering the scroll position so
-  // Back returns the reader to exactly where they were, not the top.
   const [dashScrollY, setDashScrollY] = useState(0);
   const tabScrollY = useRef<Partial<Record<AdminNavKey, number>>>({});
   const dashboardTab: AdminNavKey = page === 'analytics' ? tool : page;
   const previousTab = useRef(dashboardTab);
   useLayoutEffect(() => {
     if (previousTab.current !== dashboardTab && !detail) {
-      // Restore after the new tab's measured cards settle, as detail Back does.
       queueMicrotask(() => window.scrollTo(0, tabScrollY.current[dashboardTab] ?? 0));
     }
     previousTab.current = dashboardTab;
@@ -1768,9 +1632,6 @@ export function AdminPage() {
     setDetail(d);
     window.scrollTo(0, 0);
   }, []);
-  // Cards that measure themselves (Who) re-render after this effect, still
-  // before paint. The microtask scrolls once they have, so the page is tall
-  // enough and the reader's row sits where it was.
   useLayoutEffect(() => {
     if (!detail) queueMicrotask(() => window.scrollTo(0, dashScrollY));
   }, [detail, dashScrollY]);
@@ -1778,8 +1639,6 @@ export function AdminPage() {
   const openLeaguePicks = useCallback(() => openDetail({ kind: 'picks', tool: 'league' }), [openDetail]);
   const openPickerPicks = useCallback(() => openDetail({ kind: 'picks', tool: 'favorites' }), [openDetail]);
 
-  // A quiet load shows no progress and clears an error only on success, so a
-  // background refresh leaves the page as it is until new data arrives.
   const loadSearch = useCallback(async (tok: string, { refresh = false, quiet = false } = {}) => {
     if (!quiet) {
       setSearchLoading(true);
@@ -1799,7 +1658,6 @@ export function AdminPage() {
     async (
       tok: string,
       asked: DashboardRange,
-      // Only the Search tab shows Search data, so a load elsewhere skips its read.
       { refreshSearch = false, quiet = false, search = false } = {},
     ) => {
       const seq = ++latestLoad;
@@ -1821,11 +1679,10 @@ export function AdminPage() {
         try {
           localStorage.setItem(TOKEN_KEY, tok);
         } catch {
-          // localStorage may be unavailable
+          return;
         }
       } catch (e) {
         if (seq !== latestLoad) return;
-        // Only a rejected token signs out. Any other failure keeps the data on screen.
         if (e instanceof UnauthorizedError) setAuthed(false);
         setError(e instanceof Error ? e.message : 'Something went wrong.');
       } finally {
@@ -1854,7 +1711,6 @@ export function AdminPage() {
   const pickRange = useCallback(
     (next: DashboardRange) => {
       setRange(next);
-      // A request still out for the old range fills the cache, not the screen.
       latestLoad += 1;
       try {
         localStorage.setItem(RANGE_KEY, next);
@@ -1874,9 +1730,6 @@ export function AdminPage() {
     [token, load, page],
   );
 
-  // Keep an open dashboard current: refetch on return to the tab (including an
-  // iOS back-forward restore) and on an interval while visible. The refetch
-  // never forces a search-provider refresh.
   useEffect(() => {
     if (!authed || !token || loading) return;
     let running = false;
@@ -1943,12 +1796,10 @@ export function AdminPage() {
     try {
       localStorage.setItem(TOOL_KEY, next);
     } catch {
-      // localStorage may be unavailable
+      return;
     }
   }, []);
 
-  // The tools each browser has a record in, from the browser index, in the
-  // user page toggle's order.
   const toolsByCid = useMemo(() => {
     const lists = data?.browsers;
     if (!lists) return null;
@@ -2016,7 +1867,6 @@ export function AdminPage() {
     if (!detail && k !== navKey) tabScrollY.current[navKey] = window.scrollY;
     if (detail) {
       tabScrollY.current[k] = 0;
-      // A nav press opens the tab at its top; Back is the way to the old place.
       setDashScrollY(0);
       setDetail(null);
     }
@@ -2032,10 +1882,7 @@ export function AdminPage() {
     }
   };
   const lockUser = detail?.kind === 'dex' || detail?.kind === 'league' || detail?.kind === 'favorites';
-  // Null when no tool has a record of the browser.
   const toolsOf = (cid: string): FeedbackTool[] | null => toolsByCid?.get(bareCid(cid)) ?? null;
-  // The Picker's Most picked grid fills the screen like a user page, and
-  // keeps the range ribbon like the other picks pages.
   const pickerPicks = detail?.kind === 'picks' && detail.tool === 'favorites';
   const lockHeight = lockUser || pickerPicks;
 
@@ -2062,7 +1909,6 @@ export function AdminPage() {
       </header>
 
       <AdminBar wide={detail?.kind === 'picks'}>
-        {/* A user page portals its session scrubber here instead. */}
         <div ref={setRangeSlot} data-admin-range-slot className={cn(detail?.kind === 'picks' && 'pb-2')}>
           {!lockUser && page !== 'feedback' && <RangeRibbon value={range} onChange={pickRange} />}
         </div>
@@ -2080,7 +1926,6 @@ export function AdminPage() {
       >
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {/* A clicked preview opens a full detail page; Back returns here. */}
         {detail && data && (
           <div className={cn(lockHeight && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
           {(() => {
@@ -2135,7 +1980,6 @@ export function AdminPage() {
           </div>
         )}
 
-
         {!detail && page === 'feedback' &&
           (token ? (
             <FeedbackCard
@@ -2181,7 +2025,6 @@ export function AdminPage() {
           const leagueSankey = data.leagueFunnel ? leagueFunnelSankey(data.leagueFunnel) : null;
           const referrerSankey = data.referrerFlow?.length ? referrerFlowSankey(data.referrerFlow) : null;
 
-          // The selected tool's whole population, not a built/incomplete/completed slice.
           const whoSrc = {
             devices: slice.devices,
             os: slice.os,
@@ -2202,8 +2045,6 @@ export function AdminPage() {
                 ? clampedN(whoJoints, { dim: whoFilter.dim, value: whoFilter.value })
                 : null;
 
-          // Build depth: dex tabs use the device split when available, else the dex
-          // total. League uses its own card curve, never the dex curves.
           const depthCurve = showDex
             ? data.depthByDevice?.[depthDevice] ?? data.monCurves?.total ?? data.depthCurves?.total
             : tool === 'favorites' ? data.favorite?.depth : data.leagueCurves?.cards;
@@ -2402,8 +2243,6 @@ export function AdminPage() {
                 const showPicker = tool === 'favorites';
                 const listKey = showDex ? 'dex' : showPicker ? 'picker' : 'league';
                 const kind: 'dex' | 'league' | 'favorites' = showDex ? 'dex' : showPicker ? 'favorites' : 'league';
-                // Every record of the tool, newest first. The list renders the
-                // rows near the viewport; filters run over all of them.
                 const list = data.browsers?.[listKey] ?? [];
                 const archivedOf = (row: BrowserRow) => archiveOverride[bareCid(row.cid)] ?? row.archived;
                 const listed = list.filter((row) => {
@@ -2431,8 +2270,6 @@ export function AdminPage() {
                     <div className={PREVIEW_TABLE}>
                       <div
                         data-preview-header
-                        // Sticks under the page header on a phone, and under the date-and-tab bar on desktop.
-                        // Its ::before covers the panel's padding, where the rows' shadows would show beside it.
                         className="sticky top-[var(--admin-header-h,0px)] z-10 -mt-2 flex flex-wrap items-center gap-1.5 border-b border-border bg-card py-2 before:absolute before:-inset-x-4 before:inset-y-0 before:-z-10 before:bg-card md:top-[calc(var(--admin-header-h,0px)+var(--admin-bar-h,0px))] md:col-span-full md:row-start-1 md:-mt-1.5 md:grid md:grid-cols-subgrid md:items-center md:gap-x-1 md:px-2.5 md:pb-1.5 md:pt-1.5"
                       >
                         <PreviewStatusMenus
@@ -2472,7 +2309,6 @@ export function AdminPage() {
                                 archived={archived}
                                 reports={reportsByCid.get(bareCid(row.cid)) ?? 0}
                                 onArchive={(next) => void setArchived(row.cid, next)}
-                                // A country-split Dex record loads by its browser and country.
                                 onOpen={() => openDetail({ kind, cid: row.cid, ...(split >= 0 ? { country: row.cid.slice(split + 2) } : {}) })}
                                 onFeedback={() => {
                                   setDashScrollY(0);

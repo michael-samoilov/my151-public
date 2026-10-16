@@ -1,12 +1,3 @@
-/**
- * Lighting recipe for the export preview foil.
- *
- * One record drives both the live overlay and the preview-only workshop.
- * Layers are a closed set; unknown ids from a URL or localStorage drop out
- * at parse time. Amount is 0–1. Off still keeps the stored amount so a
- * workshop toggle can come back without losing the slider.
- */
-
 export const FOIL_LAYER_IDS = [
   'pointLight',
   'ambient',
@@ -28,12 +19,10 @@ export type FoilLayer = {
 };
 
 export type FoilRecipe = {
-  /** Auto-tilt amplitude in degrees. The card fit reserves room for it. */
   idleTilt: number;
   idleMsX: number;
   idleMsY: number;
   deadDeg: number;
-  /** Hover tilt at the card edge, and the cap on every tilt, in degrees. */
   maxTilt: number;
   parallaxPx: number;
   bloomBlurPx: number;
@@ -86,13 +75,11 @@ export const FOIL_LAYER_META = {
 
 export const FOIL_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-recipe';
 
-/** Michael's workshop pick, September 27. */
 const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   pointLight: { on: true, amount: 1 },
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
-  // The holo pair Michael picked on October 12: prism bands and gleam.
   prism: { on: true, amount: 0.21 },
   gleam: { on: true, amount: 0.7 },
   iridescence: { on: true, amount: 0.1 },
@@ -152,7 +139,6 @@ function readLayer(value: unknown, fallback: FoilLayer): FoilLayer {
   return { on, amount };
 }
 
-/** Parse untrusted JSON / URL / localStorage into a complete recipe. */
 export function parseFoilRecipe(input: unknown): FoilRecipe {
   const base = cloneFoilRecipe(DEFAULT_FOIL_RECIPE);
   if (typeof input !== 'object' || input === null) return base;
@@ -210,7 +196,6 @@ export function foilMapsNeeded(recipe: FoilRecipe): FoilMapNeed {
   };
 }
 
-/** CSS custom properties the preview card reads each frame. */
 export function foilRecipeCssVars(recipe: FoilRecipe): Record<string, string> {
   const vars: Record<string, string> = {
     '--foil-parallax-px': `${recipe.parallaxPx}px`,

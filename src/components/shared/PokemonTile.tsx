@@ -8,68 +8,22 @@ import { useFluidSpritePx, useLayoutViewportCssPx, useViewportAtLeast } from '@/
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
-/** Base sprite scale, in vw of the tile's *container*. The chrome is this ×
- *  WIDE_LAYOUT_BOOST and the IMG is this × SPRITE_IMG_SCALE, so both grow
- *  smoothly with the container width. Calibrated so a 6-column grid renders
- *  the sprite at ~96% of its column width (e.g. a ~390px phone → ~45px
- *  chrome / ~62px sprite). On desktop every tile host is `md:w-1/2`, so the
- *  container is half the window (see DESKTOP_PANE_DIVISOR). */
 const MOBILE_SPRITE_VW = 8.2;
 
-/** On desktop (≥1024px) every tile host — the build page, the selection
- *  pane, and the analytics drill-down — is `md:w-1/2`. Sizing off half the
- *  window therefore matches each host's real width, so the same Pokemon
- *  renders identically across all of them, and a side pane of width W looks
- *  exactly like a mobile bottom sheet of width W. */
 const DESKTOP_PANE_DIVISOR = 2;
 
-/** Multiplier on the 1× base for the sprite IMG. 1.95× (just under a clean
- *  2×) makes the sprite nearly fill its grid column for a bold, readable
- *  tile while leaving a hair of breathing room before neighbours. */
 const SPRITE_IMG_SCALE = 1.95;
 
-/** Multiplier applied to the 1× base to get the layout scale (--tile-sprite).
- *  The IMG grows by SPRITE_IMG_SCALE; the chrome (text, badges, padding)
- *  grows by this smaller factor so labels stay proportional next to the
- *  bigger sprite without dominating. */
 const WIDE_LAYOUT_BOOST = 1.4;
 
-/** Native sprite resolution (px). Desktop snaps the rendered IMG to integer
- *  multiples of this so `image-rendering: pixelated` produces artifact-free
- *  nearest-neighbour scaling. */
 const SPRITE_NATIVE = 96;
 
-/**
- * Canonical tile primitives used by every "Pokemon tile" in the app —
- * selection browser (`EvoLineCard`), main build page (`DraggableTile`),
- * and drag overlay (`PokemonTileStatic`). Keeping the sprite formula,
- * padding, and per-fraction internal ratios in this single module is
- * what guarantees structural parity: the same Pokemon renders at the
- * same size, with the same gen-badge / name / type-badge proportions,
- * regardless of which tile host is drawing it.
- *
- * Adding a new tile host? Use `useTileSpritePx` for the sprite size,
- * wrap the host in `TILE_ROOT_PADDING_CLASS` (with `--tile-sprite` set
- * inline), and render `<PokemonTileContent>` for the sprite/name/types.
- * Overlays (gen badge, action buttons) should use the shared class
- * constants below so their position and size can't drift either.
- */
-
-/**
- * Layout scale (the `--tile-sprite` CSS var) that every tile internal
- * (name text, type badges, gen badge, padding) is `calc()`-ed off. It's the
- * fluid 1× base × WIDE_LAYOUT_BOOST — intentionally NOT snapped to the
- * pixel-perfect image multiple, so the chrome stays proportional to the
- * column width rather than jumping up with a 2× sprite snap.
- */
 export function useTileSpritePx(): number {
   const isDesktop = useViewportAtLeast(1024);
   const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
   const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
   const fluid = Math.round(oneX * WIDE_LAYOUT_BOOST);
   if (!isDesktop) return fluid;
-  // When the grid is max-width constrained, cap chrome so text/badges
-  // stay proportional to the column width (matching mobile's ratio).
   const fluidImage = oneX * SPRITE_IMG_SCALE;
   const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
   const imagePx = multiple * SPRITE_NATIVE;
@@ -77,26 +31,10 @@ export function useTileSpritePx(): number {
   return Math.min(fluid, cap);
 }
 
-/**
- * Width/height (CSS px) for the sprite `<img>` element. On desktop, snapped
- * to the largest integer multiple of SPRITE_NATIVE (96px) that doesn't
- * exceed the fluid value — so tiles are never denser than mobile. When the
- * pane is wide enough for 2× (≈2400px viewport), sprites step up; otherwise
- * they stay at 1×. On mobile, the fluid continuous value is kept.
- */
 function useTileImagePx(): number {
   return tileImageCssPx(useLayoutViewportCssPx());
 }
 
-/**
- * Max-width (CSS px) for a desktop pixel-perfect tile grid, or undefined on
- * mobile. Sized so each column matches the mobile sprite-to-column ratio
- * (sprite fills ~96% of column width), producing whitespace bands when the
- * pane is wider than the grid needs.
- *
- * `gapPx`:      the grid's column gap (e.g. 4 for gap-1 in PokedexGrid)
- * `overheadPx`: extra container padding outside the grid (e.g. p-1 + p-3)
- */
 export function useTileGridMaxWidth(
   cols: number = 6,
   gapPx: number = 0,
@@ -108,52 +46,28 @@ export function useTileGridMaxWidth(
   const fluidImage = oneX * SPRITE_IMG_SCALE;
   const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
   const imagePx = multiple * SPRITE_NATIVE;
-  // Column width that matches mobile's sprite-to-column fill ratio (~96%)
   const targetCol = imagePx * 100 / (MOBILE_SPRITE_VW * SPRITE_IMG_SCALE * 6);
   return Math.round(cols * targetCol + Math.max(0, cols - 1) * gapPx + overheadPx);
 }
 
-/** Root-padding ratios, shared across tile hosts. */
 export const TILE_ROOT_PADDING_CLASS =
   'pt-[calc(var(--tile-sprite)*0.045)] pb-[calc(var(--tile-sprite)*0.09)]';
 
-/** Positioning + size for the gen badge overlay (generation indicator).
- *  Sits flush in the top-left corner (0.05 offset) so it stays clear of
- *  the now-larger sprite that may render behind it. */
 export const TILE_GEN_BADGE_CLASS =
   'absolute top-[calc(var(--tile-sprite)*0.05)] left-[calc(var(--tile-sprite)*0.05)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-10';
 
-/** Positioning + size for action-button overlays (X / pokeball / plus).
- *  Mirrors the gen badge: same top/right padding (0.05), same size. */
 export const TILE_ACTION_BUTTON_CLASS =
   'absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.05)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-[15]';
 
 interface PokemonTileContentProps {
-  /** A tool can supply a localized form name while retaining the shared tile. */
   displayLabel?: PokemonLabel;
   pokemon: Pokemon;
-  /** Override the sprite URL (shiny variants, regional art overrides). */
   spriteUrl?: string;
-  /** Extra classes for the flex column wrapping sprite + name + types.
-   *  Used for de-emphasis states (e.g. `opacity-35`). */
   contentClassName?: string;
-  /** Rendered inside the content wrapper after the type badges — e.g.
-   *  matchup info in analytics drill-downs. */
   afterTypes?: ReactNode;
-  /** Image loading strategy. Default "lazy" defers off-screen loads; use
-   *  "eager" in contexts like carousels where off-screen panels must
-   *  preload sprites to avoid a blank→load flicker on swipe. */
   imgLoading?: 'lazy' | 'eager';
-  /** Show form-variant suffix for base forms with exclusive alternatives. */
 }
 
-/**
- * Renders the canonical sprite + name + type-badge block for a Pokemon
- * tile. All proportions (text size, type-badge width, inter-type gap,
- * name/type gap) are driven off `--tile-sprite`, which must be set on
- * an ancestor element. The root `--tile-sprite` is typically set by
- * the caller alongside `TILE_ROOT_PADDING_CLASS`.
- */
 export function PokemonTileContent({
   pokemon,
   displayLabel,
@@ -162,13 +76,7 @@ export function PokemonTileContent({
   afterTypes,
   imgLoading = 'lazy',
 }: PokemonTileContentProps) {
-  // The IMG is larger than its layout footprint (--tile-sprite), so it
-  // nearly fills and slightly overflows the grid column, centered. The well
-  // is a fixed imagePx square so the bottom-aligned sprite has a stable box
-  // regardless of the column width.
   const imagePx = useTileImagePx();
-  // Re-render when the name catalog lands: it is fetched after first paint, so
-  // the first frame legitimately shows the slug.
   useNamesVersion();
   const label = displayLabel ?? pokemonLabel(pokemon.id, pokemon.name);
   return (
@@ -206,15 +114,6 @@ export function PokemonTileContent({
         />
       </div>
       <PokemonName label={label} className="w-full text-[calc(var(--tile-sprite)*0.18)] font-medium leading-tight" />
-      {/* The sprite overhangs its column on purpose; a badge may not. The
-          sprite is a picture with transparent margins, so an overhang reads as
-          a creature standing in its cell — a badge is a solid pill, so the same
-          overhang puts it under the neighbouring tile's badge. Measured in the
-          league picker, where the column (61.6px) is narrower than the sprite
-          (69px): adjacent WATER pills overlapped by 1.4px. `min` clamps the
-          badge to its column only where the column is the smaller of the two,
-          so every surface whose column is already wider than the sprite is
-          untouched. */}
       <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">
         {pokemon.types.map((t) => (
           <TypeBadge key={t} type={t as TypeName} className="w-[min(var(--tile-sprite),100%)]" />

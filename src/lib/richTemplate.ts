@@ -1,20 +1,3 @@
-/**
- * Splits a message into literal runs and named slots, so a sentence containing
- * styled or graphical pieces can still be *one* translatable string.
- *
- * The poster's insight line used to be assembled from fragments —
- * `"Water"` + `"-forward"` + `" · "` + `"Fire"` + `" over-performs"` — with
- * type icons and per-type colours interleaved. That is unlocalisable: it hard-
- * codes English word order, and `-forward` is a suffix that exists in no other
- * language. Written instead as `'{types}-forward'` and `'{type} over-performs'`,
- * a translator can move the slot anywhere in the sentence, and the renderer
- * still knows where the icon and the coloured text go.
- *
- * Deliberately renderer-agnostic: `exportImage` maps the parts onto canvas
- * draw-segments, `IntroCard` maps them onto React nodes. Keeping one splitter
- * means the DOM and the exported PNG cannot disagree about word order.
- */
-
 export type TemplatePart =
   | { kind: 'literal'; text: string }
   | { kind: 'slot'; name: string };
@@ -36,12 +19,6 @@ export function splitTemplate(template: string): TemplatePart[] {
   return parts;
 }
 
-/**
- * Expand a template against a map of slot renderers, concatenating the results.
- *
- * A slot with no renderer emits its placeholder verbatim rather than vanishing
- * — a visible `{type}` gets reported; a silently missing subject does not.
- */
 export function expandTemplate<T>(
   template: string,
   literal: (text: string) => T,

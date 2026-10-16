@@ -14,20 +14,11 @@ import {
   type LevelFit,
 } from '@/league/model/levelFit';
 
-/**
- * Everything the diagnostic page draws, computed once.
- *
- * The same numbers `npm run level-report` prints. Both read the model rather
- * than restating it, so the page cannot drift from what the card does.
- */
-
 export interface LevelPoint {
   id: number;
-  /** The published name, form descriptor included — never the dataset slug. */
   name: string;
   bst: number;
   level: number;
-  /** The row the card's curve puts this arrival in. */
   row: number;
 }
 
@@ -37,21 +28,14 @@ interface LevelModel {
   real: LevelPoint[];
   implied: LevelPoint[];
   bstRange: [number, number];
-  /** Stages whose implied arrival lands at or before their pre-evolution's. */
   inversions: { pre: LevelPoint; post: LevelPoint }[];
-  /** Lines whose default rows skip a member; the shelf handle reveals it. */
   skipsAMember: { names: string[]; rows: number[]; skipped: string[] }[];
-  /** The fit's own worst misses, on the data it was fitted to. */
   residuals: { point: LevelPoint; predicted: number; error: number }[];
-  /** Lines that begin on a baby form, which the picker always includes. */
   babyLines: { baby: string; next: string; level: number }[];
-  /** One pre-evolution, several evolutions: the card seats one branch. */
   branches: { from: string; to: { name: string; level: number }[] }[];
-  /** Rows each seat offers, against the stages a line may need. */
   seatCapacity: { seat: number; joinRow: number; rows: number }[];
 }
 
-/** The published name, so the page never prints a slug like `mr-mime`. */
 function label(p: Pokemon): string {
   return pokemonLabel(p.id, p.name).full;
 }
@@ -61,7 +45,6 @@ function point(p: Pokemon, fit: LevelFit): LevelPoint {
   return { id: p.id, name: label(p), bst: p.bst, level, row: rowForLevel(level) };
 }
 
-/** Every chain, root to leaf, one branch per leaf. */
 function chains(all: Pokemon[]): Pokemon[][] {
   const kids = new Map<number, Pokemon[]>();
   for (const p of all) {
@@ -172,5 +155,4 @@ export function levelModel(): LevelModel {
   return cached;
 }
 
-/** The card's own thresholds, for the row bands drawn behind the scatter. */
 export const ROW_THRESHOLDS = LEVEL_CURVE;

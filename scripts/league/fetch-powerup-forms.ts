@@ -1,19 +1,5 @@
-/**
- * Harvests the Mega, Primal and Gigantamax forms, and their sprites.
- *
- *     npm run league:powerups
- *
- * The dataset the app ships (`src/data/pokemon.json`) carries one row per
- * species and no forms at all, so nothing in it can answer "does this
- * Pokémon have a Mega?". PokeAPI's own tables can: `pokemon.csv` lists every
- * form as its own row, keyed back to the species it belongs to, and the
- * sprite repo has a PNG per form id. Both are plain files in GitHub repos,
- * which is the only reason this runs at all — the PokeAPI REST host is not
- * reachable from here.
- *
- * Network, like `i18n:game-text`: run it by hand, commit the result. The
- * build never touches it.
- */
+
+
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -72,7 +58,6 @@ async function main() {
     if (!match) continue;
     const owner = species.get(Number(speciesId));
     if (!owner) {
-      // A form of a species this app does not ship. Nothing to hang it on.
       noSpecies++;
       continue;
     }
@@ -108,7 +93,6 @@ async function main() {
     entry[match.kind].push({ id, label });
   }
 
-  // Lowest id first, so Charizard's cycle runs X then Y as the games do.
   for (const entry of Object.values(forms)) {
     for (const kind of ['mega', 'dynamax'] as PowerupKind[]) {
       entry[kind].sort((a, b) => a.id - b.id);

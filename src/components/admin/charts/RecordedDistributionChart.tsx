@@ -1,3 +1,4 @@
+import {useCallback, useMemo} from 'react';
 import type {CustomSeriesRenderItemAPI} from 'echarts';
 import {quartileGuideSeries} from './quartileGuides';
 import {cssVar, useECharts, type EChartsOption} from './useECharts';
@@ -25,24 +26,25 @@ function survival(values: number[], minutes: boolean) {
   return {sorted, points, thresholds, zeros};
 }
 
-/** Exact empirical survival curves: a threshold includes every tied observation. */
 export function RecordedDistributionChart({values, minutes, series}: {values: number[]; minutes: boolean; series?: RecordedCurveSeries[]}) {
-  const {sorted, points, thresholds, zeros} = survival(values, minutes);
-  const curves = series?.map(s => ({...s,...survival(s.values,minutes)}));
-  const allValues = curves ? curves.flatMap(s=>s.sorted) : sorted;
-  const scrubThresholds = curves ? [...new Set(allValues)].sort((a,b)=>a-b) : thresholds.map(p=>p.value);
-  const max = allValues.reduce((largest,value)=>Math.max(largest,value),0);
+  const {sorted, points, thresholds, zeros, curves, scrubThresholds, max, quartiles} = useMemo(() => {
+    const {sorted, points, thresholds, zeros} = survival(values, minutes);
+    const curves = series?.map(s => ({...s,...survival(s.values,minutes)}));
+    const allValues = curves ? curves.flatMap(s=>s.sorted) : sorted;
+    const scrubThresholds = curves ? [...new Set(allValues)].sort((a,b)=>a-b) : thresholds.map(p=>p.value);
+    const max = allValues.reduce((largest,value)=>Math.max(largest,value),0);
+    const quartiles = [0.25,0.5,0.75].map(q => ({q,value:sorted[Math.min(sorted.length-1,Math.floor(q*sorted.length))] ?? 0}));
+    return {sorted, points, thresholds, zeros, curves, scrubThresholds, max, quartiles};
+  }, [values,minutes,series]);
   const unit = minutes ? 'minutes' : 'sessions';
   const display = minutes ? timeLabel : format;
-  const quartiles = [0.25,0.5,0.75].map(q => ({q,value:sorted[Math.min(sorted.length-1,Math.floor(q*sorted.length))] ?? 0}));
-  const ref = useECharts((el): EChartsOption => {
+  const build = useCallback((el: HTMLDivElement): EChartsOption => {
     const ink = cssVar(el,'--color-foreground','#0a0a0a');
     const faint = cssVar(el,'--color-muted-foreground','#737373');
     const grid = cssVar(el,'--color-muted','#f5f5f5');
     const card = cssVar(el,'--color-card','#fff');
     const candidates = minutes ? [0,1,2,5,10,15,30,60,120,240,480,720,1440,2880,10080]
       : [0,1,2,5,10,20,50,100,200,500,1000];
-    // End on a readable boundary; 1,368 minutes fits on an axis ending at 24h.
     const axisEnd = candidates.find(v => v >= Math.max(1,max)) ??
       Math.ceil(max / candidates.at(-1)!) * candidates.at(-1)!;
     const xMax = Math.log1p(axisEnd);
@@ -79,7 +81,8 @@ export function RecordedDistributionChart({values, minutes, series}: {values: nu
           }},
       ],
     };
-  },[values,minutes,series],{scrub:{count:scrubThresholds.length,xValues:scrubThresholds.map(v=>Math.log1p(v)),label:index=>{
+  },[minutes,max,display,curves,points,quartiles]);
+  const ref = useECharts(build,{scrub:{count:scrubThresholds.length,xValues:scrubThresholds.map(v=>Math.log1p(v)),label:index=>{
     if (curves) {
       const value = scrubThresholds[index];
       return [`≥ ${minutes ? timeLabel(value) : `${format(value)} sessions`}`, ...curves.map(s=>{

@@ -2,7 +2,6 @@ import { raw } from '@/i18n';
 import { expandTemplate } from './richTemplate';
 import { font } from '@/league/export/paint';
 
-/** Localized credit shared by Picker and League exports, with the same wordmark. */
 export function drawExportCredit(
   ctx: CanvasRenderingContext2D,
   cx: number,

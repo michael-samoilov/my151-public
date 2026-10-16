@@ -11,14 +11,12 @@ export type FavoritesView = 'picker' | 'analytics';
 
 export function FavoritesHeader({ fills, filled, analyticsUnlocked, currentView, onViewChange, exportOpen, onExport, exportRef }: {
   fills: Readonly<Record<string, number>>;
-  /** Filled cells, the count that unlocks Analytics. */
   filled: number;
   analyticsUnlocked: boolean;
   currentView: FavoritesView;
   onViewChange: (view: FavoritesView) => void;
   exportOpen: boolean;
   onExport: () => void;
-  /** The Export button, which the completion popup points at. */
   exportRef?: Ref<HTMLButtonElement>;
 }) {
   const t = useT();
@@ -38,8 +36,6 @@ export function FavoritesHeader({ fills, filled, analyticsUnlocked, currentView,
       {tabs.map(({ view, label, Icon }, index) => {
         const active = currentView === view;
         if (view === 'analytics' && !analyticsUnlocked) {
-          // Locked until 25 favorites (sticky), as in the Dex builder. Tapping
-          // explains rather than switching tabs.
           return <Tooltip key={view} open={lockTip} onOpenChange={setLockTip}>
             <TooltipTrigger asChild>
               <button type="button" role="tab" id={`favorites-tab-${view}`}

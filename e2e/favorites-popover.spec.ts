@@ -1,6 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/** The pane box and the grid body on screen: the scrollport past the sticky headers. */
 function paneBounds(page: Page) {
   return page.evaluate(() => {
     const scroller = document.querySelector<HTMLElement>('[data-testid="favorites-grid-scroll"]')!;
@@ -46,8 +45,6 @@ test('desktop picker opens next to its cell inside the visible grid body', async
   await checkBounds('favorite-9', baseWidth);
   await page.keyboard.press('Escape');
 
-  // A one-Pokémon pane grows to fit its header, so the toggle stays clear
-  // of the title.
   await page.getByTestId('favorites-cell-dragon-2').click();
   await checkBounds('dragon-2', baseWidth);
   const header = await page.getByTestId('favorites-picker').evaluate((pane) => {
@@ -59,7 +56,6 @@ test('desktop picker opens next to its cell inside the visible grid body', async
   expect(header.rightInset).toBeGreaterThanOrEqual(8);
   await page.keyboard.press('Escape');
 
-  // Zoomed and scrolled, the picker still opens beside the tapped cell.
   const frame = (await table.boundingBox())!;
   await page.mouse.move(frame.x + frame.width / 2, frame.y + frame.height / 2);
   await page.keyboard.down('Control');
@@ -73,10 +69,8 @@ test('desktop picker opens next to its cell inside the visible grid body', async
   const [c, p] = await Promise.all([cell.boundingBox(), page.getByTestId('favorites-picker').boundingBox()]);
   const gapX = Math.max(p!.x - (c!.x + c!.width), c!.x - (p!.x + p!.width));
   const gapY = Math.max(p!.y - (c!.y + c!.height), c!.y - (p!.y + p!.height));
-  // The picker does not cover the cell and sits one 8px gap from an edge.
   expect(Math.max(gapX, gapY)).toBeGreaterThanOrEqual(7);
   expect(Math.max(gapX, gapY)).toBeLessThan(9);
-  // A smaller frame places the open pane again, inside the new body.
   await page.setViewportSize({ width: 1050, height: 620 });
   await expect.poll(async () => {
     const { pane, body } = await paneBounds(page);
@@ -100,18 +94,14 @@ test('desktop pane switches grid cells and closes on Escape or outside clicks', 
   await page.getByTestId('favorites-cell-ice-4').click();
   await expect(picker).toBeVisible();
   steps.opened = await state();
-  // Clicks inside the pane keep it open.
   await page.getByTestId('favorites-type-toggle').click();
   steps.toggled = await state();
-  // Another cell switches the open pane directly.
   await page.getByTestId('favorites-cell-water-1').click();
   steps.otherCell = await state();
   await expect(page.getByTestId('favorites-pick-7')).toBeVisible();
   steps.reopened = await state();
-  // The selected cell closes its own pane.
   await page.getByTestId('favorites-cell-water-1').click();
   steps.selectedCell = await state();
-  // A click outside the grid closes it.
   await page.getByTestId('favorites-cell-ice-4').click();
   await expect(picker).toBeVisible();
   await page.locator('h1').click();
@@ -144,9 +134,6 @@ test('desktop pane scrolls and zooms with its cell, under the sticky headers', a
   await expect(picker).toBeVisible();
   const atOpen = await paneBounds(page);
 
-  // A scroll moves the pane with its cell in the same task, before any
-  // scroll event. With the pane top a quarter header below the frame top,
-  // the header row paints over the pane.
   const scrolled = await page.evaluate(() => {
     const el = document.querySelector<HTMLElement>('[data-testid="favorites-grid-scroll"]')!;
     const pane = document.querySelector('[data-testid="favorites-picker"]')!;
@@ -172,7 +159,6 @@ test('desktop pane scrolls and zooms with its cell, under the sticky headers', a
     };
   });
 
-  // Wheel over the pane scrolls the grid, not the page.
   await page.getByTestId('favorites-grid-scroll').evaluate((el) => { el.scrollTop = 0; });
   const box = (await picker.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height - 20);
@@ -182,7 +168,6 @@ test('desktop pane scrolls and zooms with its cell, under the sticky headers', a
   await expect.poll(() => page.getByTestId('favorites-grid-scroll').evaluate((el) => el.scrollLeft > 100 && el.scrollTop > 50)).toBe(true);
   const wheeled = await page.getByTestId('favorites-grid-scroll').evaluate((el) => ({ left: el.scrollLeft, top: el.scrollTop, page: window.scrollY }));
 
-  // A ctrl+wheel zoom keeps the pane one gap from its cell in the zoom frame.
   const zoomed = await page.evaluate(async () => {
     const el = document.querySelector<HTMLElement>('[data-testid="favorites-grid-scroll"]')!;
     const pane = document.querySelector('[data-testid="favorites-picker"]')!;
@@ -195,7 +180,6 @@ test('desktop pane scrolls and zooms with its cell, under the sticky headers', a
     const before = gap();
     const frame = el.getBoundingClientRect();
     el.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true, deltaY: -50, clientX: frame.left + 300, clientY: frame.top + 300, bubbles: true, cancelable: true }));
-    // The grid lays out the zoom once the wheel events pause.
     for (let i = 0; i < 50 && el.dataset.zoom === '1'; i++) await new Promise((resolve) => setTimeout(resolve, 20));
     await new Promise((resolve) => requestAnimationFrame(resolve));
     return { zoom: Number(el.dataset.zoom), before, after: gap() };
@@ -228,7 +212,6 @@ test('desktop minimap shows on hover, and dragging its window scrolls the grid',
   const mapBox = (await map.boundingBox())!;
   const center = { x: mapBox.x + mapBox.width / 2, y: mapBox.y + mapBox.height / 2 };
 
-  // A quick click on a cell under the hidden minimap reaches the cell.
   const under = await page.evaluate(({ x, y }) => {
     const cell = document.elementFromPoint(x, y)?.closest('button[data-testid^="favorites-cell-"]');
     return cell?.getAttribute('data-testid') ?? '';
@@ -237,8 +220,6 @@ test('desktop minimap shows on hover, and dragging its window scrolls the grid',
   await page.mouse.click(center.x, center.y);
   const quickClick = { under, ring: await page.locator(`[data-testid="${under}"] [data-testid="favorites-focus-ring"]`).count() };
 
-  // A resting pointer shows the minimap. A drag of its window keeps it
-  // shown, scrolls the grid on both axes, and leaves the pane open.
   await page.mouse.move(mapBox.x + 4, mapBox.y + 4);
   await page.waitForTimeout(600);
   const hover = await opacity();
@@ -255,7 +236,6 @@ test('desktop minimap shows on hover, and dragging its window scrolls the grid',
   const moved = (await page.getByTestId('favorites-minimap-viewport').boundingBox())!;
   await page.screenshot({ path: testInfo.outputPath('minimap-drag.png') });
 
-  // Away from the minimap, it fades as before.
   await page.mouse.move(mapBox.x - 300, mapBox.y - 300);
   await expect.poll(opacity, { timeout: 2000, intervals: [50, 100] }).toBe(0);
   const idle = await opacity();

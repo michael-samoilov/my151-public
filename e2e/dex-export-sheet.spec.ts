@@ -4,10 +4,6 @@ import { seedDex, TUNE_URL } from './support/dexSeed';
 
 const MOBILE = { width: 390, height: 844 } as const;
 
-// Rendering several full-card PNG variants is intentionally allowed up to
-// 45 seconds below. Keep the test budget above that readiness budget so a
-// loaded parallel run cannot time out while the preview is still validly
-// rendering.
 test.setTimeout(60_000);
 
 async function openDexExport(page: Page) {
@@ -37,7 +33,6 @@ async function waitPreviewReady(page: Page) {
   });
 }
 
-/** The export pane has no foil tuning controls: the foil is fixed at its defaults. */
 async function noFoilControlsInPane(page: Page): Promise<{ ok: boolean; reason: string }> {
   return page.evaluate(() => {
     const chrome = document.querySelector('[data-export-chrome]');
@@ -362,7 +357,6 @@ test.describe('mobile dex export sheet', () => {
     await expect.poll(async () => page.locator('[data-export-preview]').getAttribute('data-foil-maps'), { timeout: 15_000 }).toBe('1');
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.1);
-    // The pop eases in over the opening, so wait for the full auto-tilt card.
     await expect.poll(async () => Number(await foil.getAttribute('data-tilt-scale')), { timeout: 10_000 }).toBeGreaterThan(1.14);
     const measure = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
@@ -424,7 +418,6 @@ test.describe('mobile dex export sheet', () => {
       return {
         ok: true,
         liftBox: getComputedStyle(lift).boxShadow,
-        // The drop shadow is the PNG's own shape, blurred, not a box-shadow.
         shapeShadow: (() => {
           const layers = [...document.querySelectorAll<HTMLElement>('[data-export-shadow-layer]')];
           return layers.length === 2 && layers.every((el) => {
@@ -544,8 +537,6 @@ test.describe('desktop dex export preview', () => {
       })
       .toBeGreaterThan(0.4);
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
-    // The pop eases in over the opening, which counts painted frames: a loaded
-    // runner paints slowly, so give it longer than the default 5 s.
     await expect.poll(async () => foil.getAttribute('data-tilt-scale'), { timeout: 15_000 }).toBe('1.150');
 
     const fit = await page.evaluate(() => {
@@ -861,7 +852,6 @@ test.describe('desktop dex export preview', () => {
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
     await page.mouse.move(12, 12, { steps: 4 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).not.toBe('pointer');
-    // Leaving after a hover rests the card; auto-tilt does not come back.
     await expect.poll(async () => foil.getAttribute('data-export-orbit'), { timeout: 8000 }).toBe('static');
     await expect(foil).toHaveAttribute('data-tilt-x', '0.0');
     await expect(foil).toHaveAttribute('data-tilt-y', '0.0');
@@ -875,7 +865,6 @@ test.describe('desktop dex export preview', () => {
     const hit = page.locator('[data-export-tilt-hit]');
     const box = await hit.boundingBox();
     expect(box).toBeTruthy();
-    // The pop eases in over the opening, so wait for the full auto-tilt card.
     await expect
       .poll(
         () =>
@@ -915,7 +904,6 @@ test.describe('desktop dex export preview', () => {
     const hit = page.locator('[data-export-tilt-hit]');
     const box = await hit.boundingBox();
     expect(box).toBeTruthy();
-    // The pop eases in over the opening, so wait for the full auto-tilt card.
     await expect
       .poll(
         () =>
@@ -981,7 +969,6 @@ test.describe('desktop dex export preview', () => {
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.bg, JSON.stringify(holo)).toMatch(/linear-gradient/);
-    // The gleam: diagonal bands under a top-to-bottom rainbow.
     expect(holo.bg, JSON.stringify(holo)).toMatch(/repeating-linear-gradient/);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     const shadow = await page.evaluate(() => {

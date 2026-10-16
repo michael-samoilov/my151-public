@@ -1,6 +1,5 @@
 import {mergeAttention,type AttentionPayload} from './_attention.js';
 import {checkpointRecording, retiredCapture, sanitizeRecordingFields, type RecordingFields} from './_sessionize.js';
-/** Versioned Picker snapshots and retry-safe per-browser history. No Redis reads. */
 import cellData from './_favoriteCells.json' with { type: 'json' };
 const cells = cellData as Record<string, {kind:string;ids?:number[];sources?:string[]}>;
 export const FAVORITE_CLIENTS_KEY = 'favorites:clients';
@@ -77,7 +76,6 @@ export interface FavoriteBeaconInput {
   browser?: string;
   referrer?: string;
 }
-/** Recompute counts from valid cells. Never trust a caller's completion count. */
 export function parseFavoriteSnapshot(value: unknown): FavoriteSnapshot | null {
   if (!value || typeof value !== 'object') return null;
   const o = value as Record<string, unknown>;
@@ -120,7 +118,6 @@ export function parseFavoriteRecord(raw: unknown): FavoriteRecord | null {
     maxSessionMs:Math.max(nonnegative(r.maxSessionMs)?r.maxSessionMs:0,...sessionMs),curSessionStart:sessionLog.at(-1)?.ts??r.lastTs,
     seenIds:r.seenIds.filter((id):id is string=>typeof id==='string'&&/^[\w-]{8,80}$/.test(id)).slice(-256)});
 }
-/** The visit a beacon captured at `now` joins, or undefined when it starts a new one. */
 export function favoriteSessionAt<T extends FavoriteSessionEntry>(log: T[], now: number): T | undefined {
   return [...log].reverse().find(s => now >= s.ts - FAVORITE_SESSION_GAP_MS && now <= s.endTs + FAVORITE_SESSION_GAP_MS);
 }

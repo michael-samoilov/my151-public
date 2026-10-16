@@ -3,8 +3,6 @@ import { matchLocale, negotiateLocale } from './detect';
 
 describe('matchLocale', () => {
   it('maps Chinese regions onto the right script', () => {
-    // Browsers report regions; the app ships scripts. Getting this wrong sends
-    // every Traditional reader to the Simplified catalog.
     expect(matchLocale('zh-TW')).toBe('zh-Hant');
     expect(matchLocale('zh-HK')).toBe('zh-Hant');
     expect(matchLocale('zh-MO')).toBe('zh-Hant');

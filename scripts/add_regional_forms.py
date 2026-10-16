@@ -19,23 +19,22 @@ def sprite(pokemon_id):
     return f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{pokemon_id}.png"
 
 
-# ---------------------------------------------------------------------------
-# All regional forms data
-# Evolution chain IDs match the base-form chains in the existing dataset so
-# that regional forms and their base-game counterparts share a chain.
-# Where a Gen 8/9 regional form has a *unique* evolution chain in PokeAPI
-# (e.g. Hisuian Qwilfish → Overqwil), the existing chain ID of the Kanto/
-# Johto base form is re-used because Overqwil / Sneasler are already in the
-# data under those chain IDs.
-# ---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
 
 REGIONAL_FORMS = [
 
-    # =========================================================================
-    # ALOLAN FORMS  (generation 7)
-    # =========================================================================
 
-    # Alolan Rattata  – Dark/Normal, chain 7, stage 1
+
+
+
     {
         "id": 10091,
         "name": "rattata-alola",
@@ -56,7 +55,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10091),
     },
 
-    # Alolan Raticate – Dark/Normal, chain 7, stage 2
     {
         "id": 10092,
         "name": "raticate-alola",
@@ -77,7 +75,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10092),
     },
 
-    # Alolan Raichu – Electric/Psychic, chain 10, stage 3
     {
         "id": 10100,
         "name": "raichu-alola",
@@ -98,7 +95,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10100),
     },
 
-    # Alolan Sandshrew – Ice/Steel, chain 11, stage 1
     {
         "id": 10101,
         "name": "sandshrew-alola",
@@ -119,7 +115,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10101),
     },
 
-    # Alolan Sandslash – Ice/Steel, chain 11, stage 2
     {
         "id": 10102,
         "name": "sandslash-alola",
@@ -140,7 +135,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10102),
     },
 
-    # Alolan Vulpix – Ice, chain 15, stage 1
     {
         "id": 10103,
         "name": "vulpix-alola",
@@ -161,7 +155,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10103),
     },
 
-    # Alolan Ninetales – Ice/Fairy, chain 15, stage 2
     {
         "id": 10104,
         "name": "ninetales-alola",
@@ -182,7 +175,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10104),
     },
 
-    # Alolan Diglett – Ground/Steel, chain 21, stage 1
     {
         "id": 10105,
         "name": "diglett-alola",
@@ -203,7 +195,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10105),
     },
 
-    # Alolan Dugtrio – Ground/Steel, chain 21, stage 2
     {
         "id": 10106,
         "name": "dugtrio-alola",
@@ -224,7 +215,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10106),
     },
 
-    # Alolan Meowth – Dark, chain 22, stage 1
     {
         "id": 10107,
         "name": "meowth-alola",
@@ -245,7 +235,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10107),
     },
 
-    # Alolan Persian – Dark, chain 22, stage 2
     {
         "id": 10108,
         "name": "persian-alola",
@@ -266,7 +255,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10108),
     },
 
-    # Alolan Geodude – Rock/Electric, chain 31, stage 1
     {
         "id": 10109,
         "name": "geodude-alola",
@@ -287,7 +275,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10109),
     },
 
-    # Alolan Graveler – Rock/Electric, chain 31, stage 2
     {
         "id": 10110,
         "name": "graveler-alola",
@@ -308,7 +295,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10110),
     },
 
-    # Alolan Golem – Rock/Electric, chain 31, stage 3
     {
         "id": 10111,
         "name": "golem-alola",
@@ -329,7 +315,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10111),
     },
 
-    # Alolan Grimer – Poison/Dark, chain 38, stage 1
     {
         "id": 10112,
         "name": "grimer-alola",
@@ -350,7 +335,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10112),
     },
 
-    # Alolan Muk – Poison/Dark, chain 38, stage 2
     {
         "id": 10113,
         "name": "muk-alola",
@@ -371,7 +355,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10113),
     },
 
-    # Alolan Exeggutor – Grass/Dragon, chain 45, stage 2
     {
         "id": 10114,
         "name": "exeggutor-alola",
@@ -392,7 +375,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10114),
     },
 
-    # Alolan Marowak – Fire/Ghost, chain 46, stage 2
     {
         "id": 10115,
         "name": "marowak-alola",
@@ -413,11 +395,10 @@ REGIONAL_FORMS = [
         "sprite": sprite(10115),
     },
 
-    # =========================================================================
-    # GALARIAN FORMS  (generation 8)
-    # =========================================================================
 
-    # Galarian Meowth – Steel, chain 22, stage 1
+
+
+
     {
         "id": 10161,
         "name": "meowth-galar",
@@ -438,7 +419,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10161),
     },
 
-    # Galarian Ponyta – Psychic, chain 32, stage 1
     {
         "id": 10162,
         "name": "ponyta-galar",
@@ -459,7 +439,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10162),
     },
 
-    # Galarian Rapidash – Psychic/Fairy, chain 32, stage 2
     {
         "id": 10163,
         "name": "rapidash-galar",
@@ -480,7 +459,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10163),
     },
 
-    # Galarian Slowpoke – Psychic, chain 33, stage 1
     {
         "id": 10164,
         "name": "slowpoke-galar",
@@ -501,7 +479,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10164),
     },
 
-    # Galarian Slowbro – Poison/Psychic, chain 33, stage 2
     {
         "id": 10165,
         "name": "slowbro-galar",
@@ -522,7 +499,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10165),
     },
 
-    # Galarian Farfetch'd – Fighting, chain 35, stage 1
     {
         "id": 10166,
         "name": "farfetchd-galar",
@@ -543,7 +519,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10166),
     },
 
-    # Galarian Weezing – Poison/Fairy, chain 49, stage 2
     {
         "id": 10167,
         "name": "weezing-galar",
@@ -564,7 +539,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10167),
     },
 
-    # Galarian Mr. Mime – Ice/Psychic, chain 57, stage 2
     {
         "id": 10168,
         "name": "mr-mime-galar",
@@ -585,7 +559,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10168),
     },
 
-    # Galarian Articuno – Psychic/Flying, chain 73, stage 1 (legendary)
     {
         "id": 10169,
         "name": "articuno-galar",
@@ -606,7 +579,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10169),
     },
 
-    # Galarian Zapdos – Fighting/Flying, chain 74, stage 1 (legendary)
     {
         "id": 10170,
         "name": "zapdos-galar",
@@ -627,7 +599,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10170),
     },
 
-    # Galarian Moltres – Dark/Flying, chain 75, stage 1 (legendary)
     {
         "id": 10171,
         "name": "moltres-galar",
@@ -648,7 +619,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10171),
     },
 
-    # Galarian Slowking – Poison/Psychic, chain 33, stage 2
     {
         "id": 10172,
         "name": "slowking-galar",
@@ -669,7 +639,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10172),
     },
 
-    # Galarian Corsola – Ghost, chain 113, stage 1
     {
         "id": 10173,
         "name": "corsola-galar",
@@ -690,7 +659,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10173),
     },
 
-    # Galarian Zigzagoon – Dark/Normal, chain 134, stage 1
     {
         "id": 10174,
         "name": "zigzagoon-galar",
@@ -711,7 +679,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10174),
     },
 
-    # Galarian Linoone – Dark/Normal, chain 134, stage 2
     {
         "id": 10175,
         "name": "linoone-galar",
@@ -732,7 +699,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10175),
     },
 
-    # Galarian Darumaka – Ice, chain 277, stage 1
     {
         "id": 10176,
         "name": "darumaka-galar",
@@ -753,7 +719,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10176),
     },
 
-    # Galarian Darmanitan – Ice, chain 277, stage 2
     {
         "id": 10177,
         "name": "darmanitan-galar",
@@ -774,9 +739,9 @@ REGIONAL_FORMS = [
         "sprite": sprite(10177),
     },
 
-    # Galarian Yamask – Ghost/Ground, chain 282, stage 1
-    # NOTE: chain 282 = Kanto Yamask -> Cofagrigus; Galarian branch -> Runerigus (chain 280 per existing data)
-    # We follow the existing data: Runerigus has chain 280, so Galarian Yamask uses 280
+
+
+
     {
         "id": 10178,
         "name": "yamask-galar",
@@ -797,7 +762,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10178),
     },
 
-    # Galarian Stunfisk – Ground/Steel, chain 308, stage 1
     {
         "id": 10179,
         "name": "stunfisk-galar",
@@ -818,11 +782,10 @@ REGIONAL_FORMS = [
         "sprite": sprite(10179),
     },
 
-    # =========================================================================
-    # HISUIAN FORMS  (generation 8 – Legends: Arceus)
-    # =========================================================================
 
-    # Hisuian Growlithe – Fire/Rock, chain 25, stage 1
+
+
+
     {
         "id": 10229,
         "name": "growlithe-hisui",
@@ -843,7 +806,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10229),
     },
 
-    # Hisuian Arcanine – Fire/Rock, chain 25, stage 2
     {
         "id": 10230,
         "name": "arcanine-hisui",
@@ -864,7 +826,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10230),
     },
 
-    # Hisuian Voltorb – Electric/Grass, chain 44, stage 1
     {
         "id": 10231,
         "name": "voltorb-hisui",
@@ -885,7 +846,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10231),
     },
 
-    # Hisuian Electrode – Electric/Grass, chain 44, stage 2
     {
         "id": 10232,
         "name": "electrode-hisui",
@@ -896,7 +856,7 @@ REGIONAL_FORMS = [
         "evolutionChainId": 44,
         "evolvesFrom": 10231,
         "evolutionStage": 2,
-        "evolutionLevel": None,  # Leaf Stone; no level threshold.
+        "evolutionLevel": None,
         "isLegendary": False,
         "isMythical": False,
         "captureRate": 60,
@@ -906,7 +866,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10232),
     },
 
-    # Hisuian Typhlosion – Fire/Ghost, chain 80, stage 3
     {
         "id": 10233,
         "name": "typhlosion-hisui",
@@ -927,7 +886,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10233),
     },
 
-    # Hisuian Qwilfish – Dark/Poison, chain 106, stage 1
     {
         "id": 10234,
         "name": "qwilfish-hisui",
@@ -935,7 +893,7 @@ REGIONAL_FORMS = [
         "stats": {"hp": 65, "atk": 95, "def": 85, "spa": 55, "spd": 55, "spe": 85},
         "bst": 440,
         "generation": 8,
-        "evolutionChainId": 501,   # same chain as Overqwil in existing data
+        "evolutionChainId": 501,
         "evolvesFrom": None,
         "evolutionStage": 1,
         "evolutionLevel": None,
@@ -948,7 +906,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10234),
     },
 
-    # Hisuian Sneasel – Fighting/Poison, chain 109, stage 1
     {
         "id": 10235,
         "name": "sneasel-hisui",
@@ -956,7 +913,7 @@ REGIONAL_FORMS = [
         "stats": {"hp": 55, "atk": 95, "def": 55, "spa": 35, "spd": 75, "spe": 115},
         "bst": 430,
         "generation": 8,
-        "evolutionChainId": 500,   # same chain as Sneasler in existing data
+        "evolutionChainId": 500,
         "evolvesFrom": None,
         "evolutionStage": 1,
         "evolutionLevel": None,
@@ -969,7 +926,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10235),
     },
 
-    # Hisuian Samurott – Water/Dark, chain 253, stage 3
     {
         "id": 10236,
         "name": "samurott-hisui",
@@ -990,7 +946,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10236),
     },
 
-    # Hisuian Lilligant – Grass/Fighting, chain 274, stage 2
     {
         "id": 10237,
         "name": "lilligant-hisui",
@@ -1011,7 +966,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10237),
     },
 
-    # Hisuian Zorua – Normal/Ghost, chain 286, stage 1
     {
         "id": 10238,
         "name": "zorua-hisui",
@@ -1032,7 +986,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10238),
     },
 
-    # Hisuian Zoroark – Normal/Ghost, chain 286, stage 2
     {
         "id": 10239,
         "name": "zoroark-hisui",
@@ -1053,7 +1006,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10239),
     },
 
-    # Hisuian Braviary – Psychic/Flying, chain 314, stage 2
     {
         "id": 10240,
         "name": "braviary-hisui",
@@ -1074,7 +1026,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10240),
     },
 
-    # Hisuian Sliggoo – Steel/Dragon, chain 375, stage 2
     {
         "id": 10241,
         "name": "sliggoo-hisui",
@@ -1095,7 +1046,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10241),
     },
 
-    # Hisuian Goodra – Steel/Dragon, chain 375, stage 3
     {
         "id": 10242,
         "name": "goodra-hisui",
@@ -1116,7 +1066,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10242),
     },
 
-    # Hisuian Avalugg – Ice/Rock, chain 379, stage 2
     {
         "id": 10243,
         "name": "avalugg-hisui",
@@ -1137,7 +1086,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10243),
     },
 
-    # Hisuian Decidueye – Grass/Fighting, chain 400, stage 3
     {
         "id": 10244,
         "name": "decidueye-hisui",
@@ -1158,12 +1106,12 @@ REGIONAL_FORMS = [
         "sprite": sprite(10244),
     },
 
-    # =========================================================================
-    # PALDEAN FORMS  (generation 9)
-    # =========================================================================
 
-    # Paldean Wooper – Poison/Ground, chain 537, stage 1
-    # Clodsire (its evolution) already exists in the data under chain 537
+
+
+
+
+
     {
         "id": 10253,
         "name": "wooper-paldea",
@@ -1184,7 +1132,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10253),
     },
 
-    # Paldean Tauros (Combat Breed) – Fighting, chain 63, stage 1
     {
         "id": 10250,
         "name": "tauros-paldea-combat",
@@ -1205,7 +1152,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10250),
     },
 
-    # Paldean Tauros (Blaze Breed) – Fighting/Fire, chain 63, stage 1
     {
         "id": 10251,
         "name": "tauros-paldea-blaze",
@@ -1226,7 +1172,6 @@ REGIONAL_FORMS = [
         "sprite": sprite(10251),
     },
 
-    # Paldean Tauros (Aqua Breed) – Fighting/Water, chain 63, stage 1
     {
         "id": 10252,
         "name": "tauros-paldea-aqua",
@@ -1259,7 +1204,6 @@ def main():
     original_count = len(pokemon_list)
     print(f"Original count: {original_count}")
 
-    # Check for duplicates (forms already present by ID or name)
     existing_ids   = {p['id']   for p in pokemon_list}
     existing_names = {p['name'] for p in pokemon_list}
 

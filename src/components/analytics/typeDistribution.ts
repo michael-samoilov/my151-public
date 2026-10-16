@@ -4,10 +4,6 @@ import { typeIconPath } from '@/data/type-ids';
 import type { ButterflyRow } from './butterflyRow';
 import { typeLabel } from '@/i18n';
 
-/**
- * Count how many of `pokemon` have each type. Dual-type Pokémon are counted
- * for both of their types. Every type in TYPE_NAMES is present (0 if absent).
- */
 export function countTypes(pokemon: Pokemon[]): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const t of TYPE_NAMES) counts[t] = 0;
@@ -17,11 +13,6 @@ export function countTypes(pokemon: Pokemon[]): Record<string, number> {
   return counts;
 }
 
-/**
- * Build per-type ButterflyChart rows (unsorted — the caller applies its own
- * sort) with each type's deviation from a baseline proportion map, expressed
- * as a percentage. Deviation is 0 when the baseline proportion is 0.
- */
 export function buildTypeRows(
   typeCounts: Record<string, number>,
   total: number,

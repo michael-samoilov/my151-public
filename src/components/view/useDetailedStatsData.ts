@@ -6,7 +6,6 @@ import { countTypes, buildTypeRows } from '@/components/analytics/typeDistributi
 import { rowKey } from '@/components/analytics/butterflyRow';
 import type { TypeName } from '@/types/pokemon';
 
-/** Per-generation bar colours (mirrors the panel's palette). */
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
 export interface StatsTypeDatum { type: TypeName; label: string; count: number; deviation: number; color: string }
@@ -29,8 +28,6 @@ export interface DetailedStatsData {
   bst: StatsBst;
 }
 
-/** Align yours + national histograms to shared bins so they can be overlaid.
- *  (Shared by the on-screen panel and the export renderer.) */
 function alignHistograms(
   yours: { bin: string; pct: number }[],
   national: { bin: string; pct: number }[],
@@ -63,12 +60,6 @@ function alignHistograms(
   return { merged, xTicks, xDomain, binSize, yDomain, yTicks };
 }
 
-/**
- * Computed data for the View "detailed stats" — type distribution, generation
- * origin, and base-stat-total histogram. Used both by the on-screen panel
- * (DetailedStatsPanel) and by the PNG exporter (which redraws these natively on
- * the export canvas), so both read from a single source of truth.
- */
 export function detailedStatsData(
   sections: Record<string, number[]>,
   analytics: ReturnType<typeof computeAnalytics>,

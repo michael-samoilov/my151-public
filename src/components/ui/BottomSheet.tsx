@@ -3,48 +3,22 @@ import { createPortal } from 'react-dom';
 import { SheetKeyboardContext } from './sheetKeyboard';
 import { SheetCloseGuardContext, type SheetCloseGuard, type SheetCloseVia } from './sheetCloseGuard';
 
-/** px drag distance past which the release dismisses the sheet. */
 const DISMISS_THRESHOLD = 120;
 
 interface BottomSheetProps {
   onClose: () => void;
-  /** Optional header action. Drag, Escape, and the scrim still dismiss the sheet. */
   onHeaderClick?: () => void;
-  /** Accessible name when the header action differs from dismissal. */
   headerLabel?: string;
-  /** Header content beside the grab handle. Rich nodes are fine. */
   title: React.ReactNode;
-  /** Optional independent action opposite the title, outside the drag button. */
   headerAccessory?: React.ReactNode;
-  /** Accessible name for the grab-handle button, which also closes on tap. */
   closeLabel: string;
-  /** Optional dialog name distinct from the dismissal control. */
   dialogLabel?: string;
-  /**
-   * 'full' fills the viewport below `topGap`; 'content' sizes to its content
-   * and only caps at that height. Either way the header stays on-screen — a
-   * bottom-anchored fixed height pushes it up behind the mobile browser chrome.
-   */
   size?: 'full' | 'content';
-  /** px left below the viewport top so the grab handle is always reachable. */
   topGap?: number;
-  /** Stacking order for the portalled overlay. Default 50. */
   layerZIndex?: number;
-  /** When false, omit the full-screen dimmer (caller supplies its own scrim). */
   showScrim?: boolean;
-  /** Optional marker so a caller can measure this sheet (export preview area). */
   exportChrome?: boolean;
-  /**
-   * Extra height cap in px. Combined with the viewport-minus-topGap max.
-   * The export overlay uses this so the live preview keeps a band of the
-   * screen instead of the sheet growing to its content.
-   */
   capHeightPx?: number;
-  /**
-   * An export sheet normally holds the cap's full height so the preview above
-   * it does not jump as settings change. One with nothing to set sizes to its
-   * content, under the same cap, and leaves the rest to the preview.
-   */
   fitContent?: boolean;
   children: React.ReactNode;
 }
@@ -85,11 +59,6 @@ export function BottomSheet({
   const dragStartY = useRef<number | null>(null);
   const isDragging = useRef(false);
 
-  /**
-   * Every close path asks the content first. The picker uses this to ask about
-   * staged picks, which a close would otherwise drop without a word. Returns
-   * whether the sheet closed.
-   */
   const closeGuard = useRef<SheetCloseGuard | null>(null);
   const setCloseGuard = useCallback((guard: SheetCloseGuard | null) => {
     closeGuard.current = guard;
@@ -108,7 +77,6 @@ export function BottomSheet({
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (dragStartY.current === null) return;
     const dy = e.touches[0].clientY - dragStartY.current;
-    // Downward only, and swallow the gesture so it can't pull-to-refresh.
     if (dy > 0) {
       isDragging.current = true;
       setDragY(dy);
@@ -117,14 +85,12 @@ export function BottomSheet({
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    // A short drag, or a close the content held, springs back.
     const closed = dragY > DISMISS_THRESHOLD && requestClose('swipe');
     if (!closed) setDragY(0);
     dragStartY.current = null;
     isDragging.current = false;
   }, [dragY, requestClose]);
 
-  // Tap-to-close, but not as the tail of a drag gesture.
   const handleTap = useCallback(() => {
     if (isDragging.current) return;
     if (onHeaderClick) onHeaderClick();
@@ -191,9 +157,6 @@ export function BottomSheet({
    * exists while a sheet is open rather than for the life of the page.
    */
   const [viewport, setViewport] = useState<{ height: number; top: number } | null>(null);
-  /** iOS does not always shrink visualViewport when the keyboard opens (in-app
-   *  browsers especially). A focused field is itself the signal that a keyboard
-   *  is coming, so the sheet expands immediately and the field sits at the top. */
   const [textFocus, setTextFocus] = useState(false);
   useEffect(() => {
     const vv = window.visualViewport;
@@ -214,9 +177,6 @@ export function BottomSheet({
     sync();
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
-    // iOS does not always fire a visualViewport event for a keyboard raised by
-    // an autofocus, so the focus itself is a second trigger. Deferred a frame
-    // because the keyboard animates in and the height is wrong until it lands.
     const onFocus = () => {
       requestAnimationFrame(sync);
       setTimeout(sync, 300);
@@ -257,7 +217,6 @@ export function BottomSheet({
     cancelAnimationFrame(collapseFrame.current);
     if (!collapsePending.current || pressing.current) return;
     collapseFrame.current = requestAnimationFrame(() => {
-      // A new press can start before the frame. Its own release reschedules.
       if (!collapsePending.current || pressing.current) return;
       collapsePending.current = false;
       setTextFocus(false);
@@ -288,9 +247,6 @@ export function BottomSheet({
   }, [collapseAfterPress]);
 
   useEffect(() => {
-    // Where the current touch began, so a touchmove can be classified as a
-    // horizontal or a vertical gesture. A wheel event carries its own deltas
-    // and needs no history.
     let startX = 0;
     let startY = 0;
     const onStart = (e: TouchEvent) => {
@@ -300,7 +256,6 @@ export function BottomSheet({
       startY = t.clientY;
     };
 
-    /** Can this element scroll along the axis the gesture is moving? */
     const scrollsOnAxis = (n: HTMLElement, horizontal: boolean) => {
       const cs = getComputedStyle(n);
       return horizontal
@@ -308,11 +263,6 @@ export function BottomSheet({
         : (cs.overflowY === 'auto' || cs.overflowY === 'scroll') && n.scrollHeight > n.clientHeight;
     };
 
-    // Keeps the page behind the sheet still: a gesture that no scroller inside
-    // the sheet can consume would otherwise chain through to the document.
-    // The axis matters. Testing overflowY alone blocked sideways panning of
-    // the filter chip rows, which scroll on X and have nothing to scroll on Y,
-    // so the walk found no taker and swallowed the gesture.
     const swallow = (e: Event) => {
       const overlay = overlayRef.current;
       if (!overlay) return;
@@ -356,17 +306,6 @@ export function BottomSheet({
     };
   }, []);
 
-  /**
-   * The gap above the sheet exists so the grab handle stays clear of the
-   * browser chrome. With a keyboard open there is nothing to spend it on: every
-   * pixel between the chrome and the keyboard is form, and holding 56 of them
-   * empty is what pushed the disclosure and the submit button below the fold
-   * even after the sheet itself stopped hiding behind the keyboard.
-   *
-   * `innerHeight` is the layout viewport, which iOS does not shrink for the
-   * keyboard, so the difference between the two *is* the keyboard. 80px of
-   * slack keeps browser-chrome collapse from reading as one.
-   */
   const keyboardOpen =
     textFocus || (viewport !== null && viewport.height < window.innerHeight - 80);
   const gap = keyboardOpen ? Math.min(topGap, 8) : topGap;
@@ -375,7 +314,6 @@ export function BottomSheet({
     capHeightPx != null && viewportMax != null
       ? Math.min(viewportMax, capHeightPx)
       : capHeightPx ?? viewportMax;
-
 
   /*
    * Portalled to the body, and that is the sheet's own job rather than each
@@ -410,15 +348,10 @@ export function BottomSheet({
         collapsePending.current = true;
         collapseAfterPress();
       }}
-      // Bounded to the visible area rather than `inset-0`, so "the bottom" is
-      // the top of the keyboard when one is open and the bottom of the screen
-      // when it is not.
       style={
         viewport
-          ? // `top`, not a transform. A transform on a `position: fixed`
-            // element is a long-standing iOS Safari minefield — it can promote
-            // the element to a layer positioned against the document rather
-            // than the viewport, which is the opposite of what is wanted here.
+          ?
+
             { zIndex: layerZIndex, top: `${viewport.top}px`, height: `${viewport.height}px` }
           : { zIndex: layerZIndex, top: 0, bottom: 0 }
       }
@@ -461,13 +394,7 @@ export function BottomSheet({
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
       >
-        {/* The header and its accessory share a box, so the accessory can
-            be placed against the header alone. */}
         <div className="relative shrink-0" data-testid="bottom-sheet-header-frame">
-          {/* Grab handle — drag down or tap to close. Min 44px touch target per
-              Apple HIG, which is why the padding tightens rather than collapses
-              when a keyboard is open: the header is still something to aim at,
-              just not something to spend 24px of a third of a screen on. */}
           <button
             type="button"
             data-testid="bottom-sheet-header"
@@ -483,7 +410,6 @@ export function BottomSheet({
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
             <span className="w-full text-sm font-semibold">{title}</span>
           </button>
-          {/* Inline accessories align with the title below the grab handle. */}
           {headerAccessory ? (
             <div className={`absolute right-2 z-10 flex items-center ${keyboardOpen ? 'top-3.5 bottom-1.5' : 'top-5 bottom-3'}`}>
               {headerAccessory}
@@ -491,9 +417,6 @@ export function BottomSheet({
           ) : null}
         </div>
         <div className="border-b" />
-        {/* Its own scroll container: a long form scrolls here, and
-            `overscroll-contain` stops that scroll continuing into the app once
-            it reaches an end. */}
         <div
           className={
             exportChrome

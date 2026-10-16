@@ -16,7 +16,6 @@ const ports = (root as PlaywrightTestConfig).webServer as { port: number }[];
 const servers: { close(): Promise<void> }[] = [];
 let child: ChildProcess | undefined;
 let interrupted = false;
-// Cancellation can deliver another signal while the servers close.
 for (const signal of ['SIGINT', 'SIGTERM'] as const) process.on(signal, () => {
   if (interrupted) return;
   interrupted = true;

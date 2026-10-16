@@ -30,8 +30,6 @@
   -webkit-clip-path: none;
 }
 
-/* Rotates with the card. Overflow stays visible so the raised-edge
-   shadow paints past the paper. `.export-foil` still clips shine. */
 .export-foil-lift {
   position: relative;
   overflow: visible;
@@ -45,15 +43,11 @@
   box-shadow: none;
 }
 
-/* The lift sits centered in the stage, so its own perspective() about its
-   center draws the same picture a stage perspective did. hover-tilt's
-   transform is in @/components/export/hover-tilt/hoverTilt.css. */
 .export-foil-hit[data-hover-tilt='1'] .export-foil-lift {
   transform-style: flat;
   -webkit-transform-style: flat;
 }
 
-/* At rest the lift is flat and scaled down from its popped layout size. */
 .export-foil-hit[data-hover-tilt='1'][data-tilt-active='0'] .export-foil-lift {
   -webkit-transform: scale(var(--export-lift-rest, 1));
   transform: scale(var(--export-lift-rest, 1));
@@ -128,7 +122,6 @@
   --foil-shift-x: calc((var(--foil-across) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   --foil-shift-y: calc((var(--foil-down) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   position: relative;
-  /* The PNG alpha owns the outline, including each joined pane's corners. */
   border-radius: 0;
   isolation: isolate;
   background-color: transparent;
@@ -241,7 +234,6 @@
     hsl(calc(120 + var(--foil-across) * 360), 88%, 58%),
     hsl(calc(240 + var(--foil-across) * 360), 88%, 58%)
   );
-  /* soft-light, like the rainbow, so the shift never darkens the ink. */
   mix-blend-mode: var(--foil-rainbow-blend, soft-light);
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--foil-reach)));
@@ -313,8 +305,6 @@
   opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--foil-reach)));
 }
 
-/* hover-tilt's glare gradient and its ::before layer are in
-   @/components/export/hover-tilt/hoverTilt.css. */
 .export-foil[data-hover-tilt='1'] {
   --hover-tilt-from-center: var(--foil-reach);
   --hover-tilt-at-edge: var(--foil-reach);

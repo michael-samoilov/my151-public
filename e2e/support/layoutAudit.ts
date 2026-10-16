@@ -1,21 +1,5 @@
 import type { Page } from '@playwright/test';
 
-/**
- * A structural check for the two ways a flex layout stops looking finished.
- *
- * This exists because a test can assert every element is inside the sheet and
- * still miss that they are inside it *on top of each other*. The keyboard fix
- * did exactly that: the textarea, the disclosure and the submit button all
- * reported bottoms above the keyboard line while being drawn over one another,
- * and the spec was green in the same build the screenshot showed as broken.
- *
- * Bounds checks answer "is it in the box". These answer "is the box laid out",
- * which is the question a person actually asks when they look at a screen.
- *
- * Structural rather than pixel snapshots, for the reason `i18n-layout.spec.ts`
- * already gives: a baseline per state per locale per viewport churns on every
- * unrelated CSS tweak and trains everyone to re-bless it without looking.
- */
 interface LayoutProblem {
   kind: 'overlap' | 'escapes-parent';
   detail: string;
@@ -35,7 +19,6 @@ export async function auditLayout(page: Page, selector: string): Promise<LayoutP
 
     const problems: { kind: 'overlap' | 'escapes-parent'; detail: string }[] = [];
 
-    /** A short, human-recognisable name for an element in a failure message. */
     const name = (el: Element): string => {
       const tag = el.tagName.toLowerCase();
       const text = (el.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 24);
@@ -44,10 +27,6 @@ export async function auditLayout(page: Page, selector: string): Promise<LayoutP
       return text ? `${id} "${text}"` : id;
     };
 
-    // Only in-flow boxes participate. `absolute`/`fixed` children are placed on
-    // purpose and routinely sit over their siblings — a backdrop under a sheet,
-    // an icon inside a button — so counting those as overlap would flag every
-    // correct layer in the app and teach everyone to ignore the result.
     const inFlow = (el: Element): boolean => {
       // Inside an `<svg>` there is no CSS box model. Two `<path>`s in a lucide
       // icon share a 4x4px corner because that is what the drawing is, and
@@ -96,13 +75,6 @@ export async function auditLayout(page: Page, selector: string): Promise<LayoutP
       return new DOMRect(r.left, r.top, r.right - r.left, r.bottom - r.top);
     };
 
-    // Every rendered in-flow box in the subtree, not just sibling sets.
-    //
-    // Siblings alone are not enough, and the bug that prompted this proves it:
-    // the textarea overlapped its *parent's* sibling, so a sibling-only sweep
-    // reported nothing while the screen showed the field drawn across the
-    // button. Any two boxes where neither contains the other are two things the
-    // eye sees side by side, whatever their depth.
     const boxes: Element[] = [];
     const collect = (el: Element) => {
       for (const kid of Array.from(el.children)) {
@@ -115,14 +87,10 @@ export async function auditLayout(page: Page, selector: string): Promise<LayoutP
 
     for (let i = 0; i < boxes.length; i++) {
       for (let j = i + 1; j < boxes.length; j++) {
-        // An ancestor always covers its descendant. That is containment, not
-        // collision, and it is every correct nesting in the document.
         if (boxes[i].contains(boxes[j]) || boxes[j].contains(boxes[i])) continue;
         const a = visibleRect(boxes[i]);
         const b = visibleRect(boxes[j]);
         if (!a || !b) continue;
-        // 1px of slack absorbs subpixel rounding and deliberate hairline
-        // overlaps like a -1px margin collapsing two borders into one rule.
         const overX = Math.min(a.right, b.right) - Math.max(a.left, b.left);
         const overY = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
         if (overX > 1 && overY > 1) {
@@ -137,16 +105,6 @@ export async function auditLayout(page: Page, selector: string): Promise<LayoutP
     const walk = (parent: Element) => {
       const kids = Array.from(parent.children).filter(inFlow);
 
-      // A child sticking out of a parent is what produces the overlap above,
-      // one level up, so catching it here names the cause rather than the
-      // symptom.
-      //
-      // Only when nothing up the chain manages the overflow, though. Content
-      // that spills out of a plain `<form>` sitting inside a scroll container
-      // is not a fault — the scroller is exactly the thing whose job that is,
-      // and the user reaches it by scrolling. What is a fault is content that
-      // escapes into space no ancestor accounts for, which is when it lands on
-      // top of whatever was drawn there.
       let managed = false;
       for (let p: Element | null = parent; p; p = p.parentElement) {
         const s = getComputedStyle(p);

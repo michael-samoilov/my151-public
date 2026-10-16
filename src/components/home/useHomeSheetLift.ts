@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef } from 'react';
 
-/** Keep each floating sheet inside its pocket and clear of preceding copy. */
 export function useHomeSheetLift(floated: number | null) {
   const ref = useRef<HTMLSpanElement>(null);
   useLayoutEffect(() => {
@@ -29,8 +28,6 @@ export function useHomeSheetLift(floated: number | null) {
       let lift = Math.min(bounds.top - clipTop - inset,
         Math.min(points[2].y, points[3].y) - pocket.bottom - inset);
 
-      // Translation along screen Y also moves a tilted side across the rounded
-      // corner. Bound that movement against the actual pocket curve.
       const slope = (points[3].x - points[0].x) / (points[3].y - points[0].y);
       const radius = parseFloat(getComputedStyle(sheetPanel).borderBottomLeftRadius);
       if (Math.abs(slope) > 0.0001) {
@@ -61,8 +58,6 @@ export function useHomeSheetLift(floated: number | null) {
       if (!active) return;
       const pocket = panel.getBoundingClientRect();
       let rearLift = pocket.height * 0.55;
-      // Share one rear lift per row. Front sheets move exactly half as far.
-      // Short-paper and text clearances constrain the pair together.
       for (const peer of grid.querySelectorAll('.hub-card')) {
         const peerPanel = peer.querySelector<HTMLElement>('[data-card-panel]');
         if (!peerPanel || Math.abs(peerPanel.getBoundingClientRect().top - pocket.top) > 1) continue;

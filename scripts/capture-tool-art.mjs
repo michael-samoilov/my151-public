@@ -1,4 +1,3 @@
-/** Capture native runtime blobs and phone pages. Run against a local Vite server. */
 import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -25,7 +24,6 @@ async function blob(page,name){
  await image.evaluate(el=>el.decode());
  const raw=await image.evaluate(async el=>{const b=await(await fetch(el.src)).blob();return Array.from(new Uint8Array(await b.arrayBuffer()))});
  writeFileSync(resolve(out,`${name}.png`),Buffer.from(raw));source(name);
- // Audit the entire native artboard, rather than the scaled overlay.
  const native=await browser.newPage();
  await native.setContent(`<style>*{margin:0}img{display:block}</style><img data-audit-scale="intended" src="data:image/png;base64,${Buffer.from(raw).toString('base64')}">`);
  await native.locator('img').evaluate(el=>el.decode());
@@ -47,8 +45,7 @@ async function phonePage(tab,name){
  if(tab==='analytics')await p.evaluate(top=>{const h=[...document.querySelectorAll('h1,h2,h3')].find(h=>h.textContent.trim()==='Pokémon Type');if(!h)throw Error('missing type heading');const s=h.closest('.overflow-y-auto')||document.scrollingElement;s.scrollTop+=h.getBoundingClientRect().top-top-16},chrome);
  await p.waitForTimeout(1000);await p.locator('img').evaluateAll(images=>Promise.all(images.filter(i=>i.getBoundingClientRect().width&&i.getBoundingClientRect().top<innerHeight).map(i=>i.decode().catch(()=>null))));
  await audit(p,name);await p.screenshot({path:resolve(out,`${name}-whole.png`),fullPage:true});
- // The Build pane reserves a scrollbar rail. Exclude that rail from artwork
- // so its right gutter matches the native left/top content padding.
+
  const clip=tab==='build'
   ? await p.locator('[data-build-scroll]').evaluate(el=>{const r=el.getBoundingClientRect();return{x:r.left+el.clientLeft,y:r.top+el.clientTop,width:el.clientWidth,height:844}})
   : {x:0,y:chrome,width:390,height:844};
@@ -81,7 +78,6 @@ try{
  await blob(p,'dex-share-stats');await p.close();
  }
  if(has('dex-plain')){
- // The 151 demo grid with section outlines and Detailed Stats off: sprites and dex numbers only.
  const p=await browser.newPage({viewport:{width:1280,height:900}});
  await p.goto(`${base}/pokedex-builder?demo=151&notme`);await p.locator('[data-nav="view"]').first().click();await p.locator('[data-dex-export]').click();
  await p.locator('[data-dex-export-confirm]:not([disabled])').waitFor({timeout:90000});

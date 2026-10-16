@@ -1,9 +1,7 @@
 import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
 
-/** One completion burst, as the page saw it. */
 export interface Burst {
-  /** Canvas pixels per CSS pixel: the screen's pixel ratio when the pieces are sharp. */
   scale: number;
   /**
    * The types whose color covers at least `MIN_PIXELS` canvas pixels, 12
@@ -13,24 +11,12 @@ export interface Burst {
   types?: string[] | null;
 }
 
-/** The app's 18 type colors, from `src/data/type-colors.ts`. */
 const TYPE_COLORS = Object.fromEntries(
   [...readFileSync('src/data/type-colors.ts', 'utf8').matchAll(/^\s+([a-z]+): '#([0-9A-Fa-f]{6})',$/gm)]
     .map((m) => [m[1], m[2]]),
 );
 if (Object.keys(TYPE_COLORS).length !== 18) throw new Error('Expected 18 type colors in src/data/type-colors.ts');
 
-/**
- * Records each confetti burst the page starts in `window.__bursts`. A burst
- * is a canvas added to `<body>` with fixed position and no pointer events:
- * the canvas-confetti library's own canvas and the sticker canvas both are.
- *
- * Twelve frames in, it counts the opaque pixels nearest to each type color.
- * A sticker is its type color inside a thin white edge, so a burst of
- * stickers shows most of the 18 colors, and the old five-color burst none.
- *
- * Call before `page.goto`. Each page load starts a new record.
- */
 export async function watchConfetti(page: Page): Promise<void> {
   await page.addInitScript((colors) => {
     const MIN_PIXELS = 20;
@@ -83,12 +69,10 @@ export async function watchConfetti(page: Page): Promise<void> {
   }, TYPE_COLORS);
 }
 
-/** The bursts this page load has started so far. */
 export function bursts(page: Page): Promise<Burst[]> {
   return page.evaluate(() => (window as unknown as { __bursts?: Burst[] }).__bursts ?? []);
 }
 
-/** Waits until the first burst's frame has been read, and returns every burst. */
 export async function settledBursts(page: Page): Promise<Burst[]> {
   await page.waitForFunction(() => {
     const found = (window as unknown as { __bursts?: Burst[] }).__bursts ?? [];

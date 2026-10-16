@@ -1,11 +1,3 @@
-/**
- * Native hover-tilt recipe for the export preview.
- *
- * Props and CSS custom properties follow https://hover-tilt.simey.me/options/props/
- * and https://hover-tilt.simey.me/options/css/. Masks are a closed set: unknown
- * ids from a URL or localStorage drop out at parse time.
- */
-
 import { HOVER_TILT_ROTATION } from './hover-tilt/hoverTilt';
 
 export const HOVER_TILT_MASK_IDS = [
@@ -34,7 +26,6 @@ export type HoverTiltRecipe = {
   shadow: boolean;
   shadowBlur: number;
   glareIntensity: number;
-  /** 0.2-1: how far the glare's light reaches. 1 is hover-tilt's full-card glare. */
   glareSize: number;
   glareHue: number;
   glareMask: HoverTiltMaskId;
@@ -71,16 +62,8 @@ export const HOVER_TILT_MASK_META = {
 
 export const HOVER_TILT_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-tilt';
 
-/**
- * Multiplier on the edge tilt. Above 1 the tilt reaches the max tilt cap
- * before the pointer reaches the edge: at 10/7 it caps 85% of the way out.
- */
 export const DEFAULT_TILT_FACTOR = 10 / 7;
 
-/**
- * Michael's workshop pick, September 27, with the pop kept at 1.15. The
- * glare dropped from 1 to 0.6 on October 11: Michael found it too strong.
- */
 export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   tiltFactor: DEFAULT_TILT_FACTOR,
   tiltFactorY: DEFAULT_TILT_FACTOR,
@@ -122,14 +105,12 @@ function readNumber(value: unknown, fallback: number, min: number, max: number):
   return typeof value === 'number' ? clamp(value, min, max) : fallback;
 }
 
-/** hover-tilt `tiltFactor` is a 0–4 multiplier. Old recipes stored edge degrees. */
 function readTiltFactor(value: unknown, fallback: number): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
   if (value > 4) return clamp(value / 10, 0, 4);
   return clamp(value, 0, 4);
 }
 
-/** Parse untrusted JSON / URL / localStorage into a complete recipe. */
 export function parseHoverTiltRecipe(input: unknown): HoverTiltRecipe {
   const base = cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE);
   if (typeof input !== 'object' || input === null) return base;
@@ -174,7 +155,6 @@ const MASK_COMPOSITE_WEBKIT: Record<HoverTiltMaskComposite, string> = {
   subtract: 'source-out',
 };
 
-/** Static CSS custom properties the preview card reads from the recipe. */
 export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string> {
   return {
     '--hover-tilt-scale': recipe.scaleFactor.toFixed(3),

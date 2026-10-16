@@ -2,8 +2,6 @@ import { openAdmin } from './admin-ready';
 import { expect, test } from '@playwright/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 
-// One browser in each of these countries, so nearly every flag folds into the
-// Who card's Other rail. Laying out that many rows once froze the page.
 const COUNTRIES = (
   'AD AE AF AG AL AM AO AR AT AU AZ BA BB BD BE BF BG BH BI BJ BN BO BR BS BT BW BY BZ CA CD CF CG ' +
   'CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FR GA GB GD GE GH GM ' +

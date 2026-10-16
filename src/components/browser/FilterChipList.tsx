@@ -6,11 +6,6 @@ interface FilterChipItem {
   color: string;
 }
 
-/**
- * A wrapped row of pill buttons for a single filter dimension (classification,
- * places, archetypes, game mechanics). The active chip is filled with its own
- * color; tapping any chip calls onSelect with its id.
- */
 export function FilterChipList({
   items,
   activeId,
@@ -20,9 +15,6 @@ export function FilterChipList({
   items: FilterChipItem[];
   activeId: string | null;
   onSelect: (id: string) => void;
-  /** The chip's display name. Supplied by the caller because the same list
-   *  component serves categories and archetypes, which live in different
-   *  message namespaces — `item.name` is the untranslated dataset value. */
   label: (item: FilterChipItem) => string;
 }) {
   return (

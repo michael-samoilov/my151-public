@@ -1,7 +1,5 @@
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 
-// With this column order and the EXTRA_GEN_AXIS row order, no pointer cell
-// reads a cell that comes after it in its row or column.
 export const EXTRA_TYPE_AXIS = ['starter', 'legendary', 'gimmick', 'favorite'] as const;
 export type ExtraTypeAxis = (typeof EXTRA_TYPE_AXIS)[number];
 export type TypeAxisId = TypeName | ExtraTypeAxis;

@@ -2,12 +2,6 @@ import { openAdmin } from './admin-ready';
 import { expect, test, type Page } from '@playwright/test';
 import { buildDashboard, type DashboardSource } from '../api/_dashboard';
 
-/**
- * The Suite tab's Database card shows Upstash's own numbers, read through
- * `/api/submissions?usage=1`. The stub returns the fields Upstash's
- * "Get Database Stats" sends.
- */
-
 const SOURCE: DashboardSource = {
   clients: {}, archived: [], funnel: {}, funnelWindow: null, leagueClients: {},
 };
@@ -74,9 +68,7 @@ test.describe('admin database usage', () => {
     await expect(card).toContainText('$0.64');
     await expect(card).toContainText('1.79 GB');
     await expect(card.getByTestId('usage-days')).toContainText('65,6990.57 GB · $0.13');
-    // Upstash has not filled in today yet, so its 0 is left out.
     await expect(card.getByTestId('usage-days')).not.toContainText('Fri');
-    // Busiest command first; a command with no calls today is left out.
     await expect(card.getByTestId('usage-commands')).toHaveText(/GET.*3,100.*HGET.*2,400/);
     await expect(card.getByTestId('usage-commands')).not.toContainText('DEL');
   });
@@ -89,7 +81,6 @@ test.describe('admin database usage', () => {
     expect(new Set(widths).size, widths.join(', ')).toBe(1);
   });
 
-  // Each read costs the admin rate-limit check plus an MGET, so only the Search tab pays it.
   test('Search data loads on the Search tab, not with every dashboard load', async ({ page }) => {
     const searchReads = await stub(page, { status: 'not_configured' });
     await expect(page.getByText('Not connected')).toBeVisible();
@@ -98,7 +89,6 @@ test.describe('admin database usage', () => {
     expect(searchReads).toHaveLength(0);
     await page.getByRole('navigation', { name: 'Admin section' }).getByRole('button', { name: 'Search', exact: true }).click();
     await expect.poll(() => searchReads.length).toBe(1);
-    // A range change on the Search tab still reloads it.
     await page.getByRole('group', { name: 'Date range' }).getByRole('button', { name: '28d' }).click();
     await expect.poll(() => searchReads.length).toBe(2);
   });

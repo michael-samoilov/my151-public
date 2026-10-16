@@ -1,18 +1,9 @@
-/**
- * Prints what a locale would actually have to translate, by tier and by
- * source group. Run: npm run i18n:tiers
- *
- * The headline number is how much of the corpus a locale needs before it can
- * leave the preview flag. The per-group breakdown matters more than the total,
- * because the groups differ enormously in how translatable they are: official
- * terminology is *looked up*, whereas archetype and section names are fandom
- * coinages with no published translation in any language.
- */
+
+
 import { en } from '../../src/i18n/catalogs/en';
 import { keysByTier, tierOf, LAUNCH_TIERS, type Tier } from '../../src/i18n/tiers';
 import type { MessageKey } from '../../src/i18n/types';
 
-/** Coarse grouping by key prefix, to show where the volume actually is. */
 function group(key: string): string {
   if (key.startsWith('term.')) return 'in-game terms';
   if (key.startsWith('region.') || key === 'dex.national') return 'regions';
@@ -41,7 +32,6 @@ function main(): void {
   console.log(`  ${'—'.repeat(20)}`);
   console.log(`  ${'LAUNCH'.padEnd(10)} ${String(launch).padStart(4)}  ${pct(launch)}   (${LAUNCH_TIERS.join(' + ')})\n`);
 
-  // Cross-tab: which groups make up each tier, and whether they can be sourced.
   const table = new Map<string, Record<Tier, number>>();
   for (const key of keys) {
     const g = group(key);

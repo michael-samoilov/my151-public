@@ -4,7 +4,6 @@ import {isOptedOut} from '@/lib/clientId';
 import type {AttentionPayload,AttentionSegment} from '../../api/_attention';
 const GAP=5*60_000,MAX_SPAN=24*60*60_000;
 type Tool='dex'|'league'|'favorites';
-/** Estimate interaction time only between trusted foreground activities, never through terminal idle. */
 class AttentionTracker {
  private tool:Tool;
  constructor(tool:Tool){this.tool=tool;}
@@ -26,7 +25,6 @@ class AttentionTracker {
   if(event instanceof PointerEvent&&event.type==='pointermove'&&!event.buttons)return;
   const now=Date.now();
   const rollback=now<this.lastActivity;
-  // Reset only the derived five-minute intervals; pending minute facts survive.
   if(now<(this.segments.at(-1)?.end??-Infinity))this.reset();
   if(rollback)this.run=undefined;
   this.run??=crypto.randomUUID();recordMinuteActivity(this.tool,this.run,now,rollback);
@@ -38,7 +36,6 @@ class AttentionTracker {
    this.current={id:crypto.randomUUID(),start:last.end,end:now};this.segments.push(this.current);
   } else last.end=now;
   this.segments=this.segments.slice(-50);
-  // This only schedules the existing bounded debounce; there is no heartbeat write.
   if(now-this.notified>=60_000&&canScheduleMinuteActivity(this.tool)){this.notified=now;this.dirty=false;for(const notify of this.subscribers)notify();}
  };
  private events=['pointerdown','pointermove','keydown','wheel','touchstart','touchmove','input','change'];

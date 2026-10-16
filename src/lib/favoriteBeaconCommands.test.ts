@@ -17,15 +17,12 @@ const snapshot = { v: 1, fills: { 'water|1': 7, 'favorite|1': 7 } };
 let ids = 0;
 const beacon = (extra: Record<string, unknown>) => ({ cid: 'browser-0001', id: `request-${String(++ids).padStart(5, '0')}`, kind: 'progress', snapshot, ts: NOW, ...extra });
 
-/** The record script is the only one that touches six keys. */
 const isRecordWrite = (cmd: string[]) => cmd[0].toLowerCase() === 'eval' && cmd[1].includes('KEYS[6]');
 
-/** Sends one beacon against a stored record and returns the bill and the atomic write's events. */
 async function send(extra: Record<string, unknown>, stored: FavoriteRecord | null = null) {
   const commands = recordRedisCommands((cmd) => {
     const name = cmd[0].toLowerCase();
     if (name === 'hget') return cmd[1] === 'favorites:clients' && stored ? JSON.stringify(stored) : null;
-    // The rate limiter's script answers [remaining, reset]; the record script answers 1 (written).
     if (name === 'evalsha' || (name === 'eval' && !isRecordWrite(cmd))) return [100, NOW + 60_000];
     return 1;
   });

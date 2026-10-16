@@ -1,22 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { blankLeague } from './support/leagueSeed';
 
-/**
- * A quick drag moves an evolution boundary, and the stage being moved shows.
- *
- * The card's touch sensor began a drag only after a 250ms hold, and it
- * sampled nothing before it began. So a flick that moved a Pokémon two rows
- * and lifted inside the hold never began a drag, and a flick that stopped
- * inside the hold began at the cell it started from, with the finger's real
- * position unknown until it moved again. Both are driven here with a real
- * touch, and each is checked against the store.
- *
- * While the drag is in flight, every cell of the moving stage wears a light
- * wash of the Pokémon's primary type -- the run is the thing being dragged,
- * not one cell of it -- and the wash goes with the finger.
- */
-
-// A phone, tall enough for the card's cells to be a comfortable flick apart.
 test.use({ viewport: { width: 393, height: 800 }, hasTouch: true, isMobile: true });
 
 const openCard = async (page: Page) => {
@@ -43,14 +27,12 @@ const seatLine = async (page: Page, query: string) => {
   await page.waitForTimeout(700);
 };
 
-/** Seat 1's line as the store holds it. */
 const line = (page: Page) =>
   page.evaluate(() => {
     const card = JSON.parse(window.localStorage.getItem('league-builder')!).state.cards[0];
     return card.lines[0] as { branch: number[]; boundaries: number[] };
   });
 
-/** The cells wearing the stage wash, by row, seat and sprite. */
 const washed = (page: Page) =>
   page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('[data-stage-tint]')].map((el) => {
@@ -65,12 +47,6 @@ const washed = (page: Page) =>
     }),
   );
 
-/**
- * A touch from one cell's centre to another's: three moves over ~90ms, so
- * the whole gesture fits inside the sensor's hold. `settle` is how long
- * the finger rests at the far end before it lifts, and `during` runs while
- * it rests.
- */
 async function flick(
   page: Page,
   from: string,
@@ -102,12 +78,6 @@ async function flick(
 }
 
 test.describe('a quick drag moves an evolution boundary', () => {
-  /**
-   * Seat Charmander and find the top row of its Charizard run. Charizard
-   * arrives at level 36, which the level curve puts on row 6, so there are
-   * rows above it to flick into; Charmeleon's run starts on row 2 and has
-   * none.
-   */
   const setUp = async (page: Page) => {
     await openCard(page);
     await seatLine(page, 'charmander');
@@ -127,8 +97,6 @@ test.describe('a quick drag moves an evolution boundary', () => {
 
   test('a flick that stops inside the hold lands where the finger stopped', async ({ page }) => {
     const { before, top } = await setUp(page);
-    // The finger rests past the hold before it lifts: the drag begins in
-    // the hold, and has to know where the finger already is.
     await flick(page, `[data-testid="card-cell-${top}-1"]`, `[data-testid="card-cell-${top - 2}-1"]`, 450);
     const after = await line(page);
     expect(after.boundaries[2], `Charizard now starts two rows up: ${before.boundaries} -> ${after.boundaries}`).toBe(top - 2);
@@ -145,11 +113,8 @@ test.describe('a quick drag moves an evolution boundary', () => {
       );
     });
     expect(inFlight.length, 'the wash is on while the drag is in flight').toBeGreaterThan(0);
-    // Every washed cell is a Charizard cell in seat 1, and every such cell
-    // is washed: the run, whole, and nothing else.
     expect(inFlight.every((c) => c.seat === 1 && c.alt === 'charizard'), JSON.stringify(inFlight)).toBe(true);
     expect(inFlight.length, 'the whole run').toBe(charizards);
-    // Charizard is Fire, and the wash is painted, not just declared.
     expect(inFlight[0].tint?.toLowerCase(), 'a light Fire wash').toMatch(/^#e62829/);
     expect(inFlight[0].painted, 'painted as a layer over the cell').toContain('linear-gradient');
     expect(await washed(page), 'and gone once the finger lifts').toEqual([]);

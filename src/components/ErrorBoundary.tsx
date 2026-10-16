@@ -19,11 +19,6 @@ import { sendCrashReport } from '@/lib/feedbackContext';
  * than the whole session's work.
  */
 
-/**
- * The feedback form's route for each boundary, so the admin counts a crash with
- * its surface's reports and opens the right tool from it. The boundary's own
- * name travels in the report as `where`.
- */
 const ROUTE: Record<string, string> = {
   hub: 'home',
   'pokedex-builder': 'builder',
@@ -37,7 +32,6 @@ const ROUTE: Record<string, string> = {
 
 interface Props {
   children: ReactNode;
-  /** Named in the report so a crash can be traced to the boundary that caught it. */
   where: string;
 }
 
@@ -61,17 +55,12 @@ export class ErrorBoundary extends Component<Props, State> {
       componentStack: info.componentStack ?? undefined,
       where,
     });
-    // Logged as well as shown: the console is where this is visible during
-    // development, and swallowing it here would be a regression on today's
-    // behaviour of letting it reach the console uncaught.
     console.error(`[P151] crash in ${this.props.where}:`, error, info.componentStack);
   }
 
   render() {
     if (!this.state.error) return this.props.children;
 
-    // The empty state's Psyduck and type, with the picture larger: this is the
-    // whole page, not one list.
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <PsyduckArt className="mb-4 size-24 shrink-0 text-[#a3a3a3]" />

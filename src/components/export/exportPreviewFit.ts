@@ -1,29 +1,12 @@
-/** Geometry for keeping a tilted export card inside its preview box. */
-
-/**
- * Camera distance as a multiple of the card's long edge. A fixed distance
- * leans a big desktop card harder than a phone card at the same angle: at
- * 600 px and full tilt, a 1090 px card drew its near edge 1.25 times its far
- * edge, and a 342 px phone card 1.06 times. 1.75 is the phone card's ratio,
- * so every card leans like the phone card did.
- */
 export const PREVIEW_PERSPECTIVE_RATIO = 1.75;
 
-/** Camera distance in px for a card of this size. The workshop swaps in others. */
 export type PreviewCamera = (width: number, height: number) => number;
 
 export const previewPerspectivePx: PreviewCamera = (width, height) =>
   PREVIEW_PERSPECTIVE_RATIO * Math.max(1, width, height);
 
-/**
- * The card's size comes from a fit for this fixed camera, the one the
- * preview had before October 10. Its strong lean on a big card kept the
- * desktop card at the size Michael wants; the look still uses
- * `previewPerspectivePx`, whose milder lean then leaves the card spare room.
- */
 export const previewSizeCamera: PreviewCamera = () => 600;
 export const PREVIEW_REST_PAD = 8;
-/** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;
 
 type ProjectedCardAabb = {
@@ -39,16 +22,6 @@ function rad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
 
-/**
- * Screen-space AABB of a plane turned about X first, then about Y, under a
- * perspective camera sitting `perspectivePx` in front of the card,
- * by default `camera` (`previewPerspectivePx`) of the card's own size.
- * Origin is the card centre. No translateZ — the rotator does not lift.
- *
- * The lift's CSS `rotateX() rotateY()` turns about Y first. At full tilt this
- * model puts a corner about 1 px short of where it paints, so the 8 px rest
- * gap is about 7 px in practice. Kept on October 11: the fit sizes stay put.
- */
 function projectedCardAabb(opts: {
   width: number;
   height: number;
@@ -95,7 +68,6 @@ function projectedCardAabb(opts: {
   return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY };
 }
 
-/** True when a centred AABB sits inside the box with `pad` on each side. */
 function aabbFitsCentered(
   aabb: ProjectedCardAabb,
   boxWidth: number,
@@ -112,7 +84,6 @@ function aabbFitsCentered(
   );
 }
 
-/** Scale that keeps the projected card inside the box at this tilt. */
 function fitScaleForTilt(opts: {
   cardWidth: number;
   cardHeight: number;
@@ -149,9 +120,6 @@ function fitScaleForTilt(opts: {
   return lo;
 }
 
-/**
- * Unrotated contain size of a card with `aspect` (width/height) inside the box.
- */
 function containUnrotatedSize(opts: {
   boxWidth: number;
   boxHeight: number;
@@ -168,13 +136,6 @@ function containUnrotatedSize(opts: {
   return { width: innerW, height: innerW / aspect };
 }
 
-/**
- * Pixel size that fills the box at rest as much as possible while the AABB
- * at `tiltDeg` (idle orbit) still stays inside. Pointer tilt past that is
- * clamped live; do not size for max tilt or the rest card looks zoomed out.
- *
- * `pad` is the gutter around the tilted AABB. Apply it once.
- */
 export function fitCardInPreviewBox(opts: {
   boxWidth: number;
   boxHeight: number;
@@ -198,7 +159,6 @@ export function fitCardInPreviewBox(opts: {
   return { width: contained.width * scale, height: contained.height * scale };
 }
 
-/** Scale a tilt vector so hypot(x, y) never exceeds `maxHypot`. */
 export function clampHypot(
   x: number,
   y: number,
@@ -210,7 +170,6 @@ export function clampHypot(
   return { x: x * scale, y: y * scale };
 }
 
-/** Shrink a tilt vector until the projected AABB fits the box. */
 export function clampTiltToBox(opts: {
   tiltX: number;
   tiltY: number;

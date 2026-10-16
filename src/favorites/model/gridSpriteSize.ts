@@ -3,7 +3,6 @@ import spriteInk from './spriteInk.json';
 const MAX_CANVAS_PERCENT = 120;
 const MAX_VISIBLE_PERCENT = 100;
 
-/** Cap visible artwork, not its 96px transparent canvas. */
 export function gridSpriteSizePercent(sprite: string): number {
   const id = /^\/sprites\/pokemon\/([^/?]+)\.png(?:\?|$)/.exec(sprite)?.[1];
   const diameter = id ? (spriteInk as Record<string, number>)[id] : undefined;

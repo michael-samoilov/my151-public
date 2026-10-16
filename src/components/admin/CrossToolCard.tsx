@@ -6,17 +6,11 @@ import { cn } from '@/lib/utils';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 
-/** The launch day in the viewer's time zone: `7 Sep`. */
 function launchDay(ts: number): string {
   const d = new Date(ts);
   return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
-/**
- * Opportunity conversion, companion share, league⊂dex, and one area-exact
- * diagram of every browser in the range by the tools it ever used. A launch
- * chip narrows the whole card to browsers active since that tool launched.
- */
 export function CrossToolCard({ data, since }: { data: CrossToolSnapshot; since?: Record<string, CrossToolSnapshot> }) {
   const [pick, setPick] = useState<string | null>(null);
   const chips = data.catalog.filter(

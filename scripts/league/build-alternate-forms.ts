@@ -19,10 +19,7 @@ const output = `${JSON.stringify(records, null, 2)}\n`;
 const namesRoot = fileURLToPath(new URL('../../src/i18n/picker-names/', import.meta.url));
 const scopedRoot = fileURLToPath(new URL('../../src/league/data/names/', import.meta.url));
 const formIds = new Set(records.map(form => String(form.id)));
-// The card names its Mega, Primal, and Gigantamax forms as the picker does, so
-// the subset carries their descriptors too: every harvested powerup form, the
-// picker-only Mega variants, and Gigantamax Rapid Strike Urshifu, whose name
-// sits under `picker:10227` because 10227 is Rapid Strike Urshifu itself.
+
 const powerupKeys = [...new Set([
   ...Object.values(powerupForms as Record<string, Record<string, { id: number }[]>>)
     .flatMap(kinds => Object.values(kinds).flat().map(form => String(form.id))),
@@ -36,7 +33,6 @@ for (const filename of fs.readdirSync(namesRoot).filter(name => name.endsWith('.
     if (catalog.species[form.id] !== form.ownerId) throw new Error(`League species mismatch: ${filename}, ${form.id}`);
   }
   const scoped: Record<string, Record<string, unknown>> = Object.fromEntries(['forms', 'formSource', 'formCompact'].map(key => [
-    // A powerup form needs only its descriptor: the card uses its full name.
     key, Object.fromEntries(Object.entries(catalog[key]).filter(([id]) => formIds.has(id) || (key === 'forms' && powerupKeys.includes(id)))),
   ]));
   scoped.powerupSpecies = Object.fromEntries(powerupKeys.map(id => {

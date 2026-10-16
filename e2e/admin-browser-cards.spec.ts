@@ -27,7 +27,6 @@ function leagueRecord(cid: string, sessions: Span[]) {
   };
 }
 
-/** A Picker record from a beacon at the start and the end of each session. */
 function pickerRecord(cid: string, sessions: Span[]) {
   const snapshot = parseFavoriteSnapshot({ v: 1, fills: { 'fire|1': 6 } })!;
   let rec: ReturnType<typeof mergeFavoriteRecord> | null = null;
@@ -38,13 +37,6 @@ function pickerRecord(cid: string, sessions: Span[]) {
   return rec!;
 }
 
-/**
- * Four browsers, answered by the server's own buildDashboard.
- * - e2e-three: Dex 0–40, League 30–50, Picker 60–75, one visit. Total 1 session, 1h 5m.
- * - e2e-two: Dex 0–10 and Picker 5–25, then a Picker visit two days later. Total 2 sessions, 33m.
- * - e2e-one: Picker only, so no total.
- * - e2e-arch: archived, Dex and Picker.
- */
 async function stub(page: Page) {
   await page.route('**/api/submissions?**', (route) => {
     const now = Date.now();
@@ -118,9 +110,7 @@ test.describe('Newest browsers cards @viewport', () => {
         ['league', '1 session · 20m'],
         ['picker', '1 session · 15m'],
       ]);
-      // One visit across three tools: one session, and the minutes Dex and League share count once.
       expect(total.map((t) => t.text)).toEqual(['1 session · 1h 5m']);
-      // Each tool's time sits under its progress chip, at the same width; the total ends the row.
       for (const [i, p] of progress.entries()) {
         expect(Math.abs(p.y - progress[0].y)).toBeLessThan(1);
         expect(time[i].y).toBeGreaterThan(p.y + 1);
@@ -138,7 +128,6 @@ test.describe('Newest browsers cards @viewport', () => {
       if (tab === 'Picker') {
         const one = card(page, 'e2e-one');
         await expect(one.locator('[data-metric="session"][data-tool="picker"]')).toHaveText('1 session · 12m');
-        // Every card shows all three tools; the ones this browser never used are greyed.
         await expect(one.locator('[data-metric="dex"]')).toHaveAttribute('data-empty', 'true');
         await expect(one.locator('[data-metric="league"]')).toHaveAttribute('data-empty', 'true');
         await expect(one.locator('[data-metric="picker"]')).not.toHaveAttribute('data-empty', 'true');
@@ -172,7 +161,6 @@ test.describe('Newest browsers cards @viewport', () => {
     const box = async (l: Locator) => (await l.boundingBox())!;
     const progress = await box(three.locator('[data-metric="dex"]'));
     const time = await box(three.locator('[data-metric="session"][data-tool="dex"]'));
-    // Country, device, OS, browser, and language chips, in that order.
     const who = await three.locator('button[data-tooltip-chip]').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON() as DOMRect));
     expect(who).toHaveLength(5);
     for (const w of who) {
@@ -185,7 +173,6 @@ test.describe('Newest browsers cards @viewport', () => {
     });
     expect(bar.left).toBeLessThanOrEqual(0.5);
     expect(Math.abs(bar.width - bar.page)).toBeLessThanOrEqual(1);
-    // The date pills stay over the nav, not at the window's left edge.
     const firstPill = await box(page.getByRole('group', { name: 'Date range' }).getByRole('button').first());
     const firstTab = await box(page.getByRole('navigation', { name: 'Admin section' }).getByRole('button').first());
     expect(Math.abs(firstPill.x - firstTab.x)).toBeLessThanOrEqual(24);

@@ -2,21 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { Pokemon } from '@/types/pokemon';
 import { homeGen, packRows, type PackableGroup } from './packRows';
 
-/**
- * The row packer behind every evolution-line grid.
- *
- * A line never straddles a row, and the rows are uniform so the grid can be
- * windowed. A line wider than the grid -- Eevee's nine standalone tiles in
- * six columns -- once broke both: it spilled into the next row, and every
- * row after it started early, so the padding meant for a row's end landed
- * mid-row as a one-cell gap.
- */
-
 let nextId = 1;
 const mon = (generation: number): Pokemon =>
   ({ id: nextId++, name: `p${nextId}`, generation }) as unknown as Pokemon;
 
-/** A line of members in the given generations, all matched unless said. */
 const line = (key: string, gens: number[], matched?: (m: Pokemon) => boolean): PackableGroup => {
   const members = gens.map(mon);
   return {
@@ -39,9 +28,6 @@ describe('packRows', () => {
   });
 
   it('gives each piece the whole line’s home generation', () => {
-    // Under the Generation 1 heading only the Gen 1 members matched. The
-    // second piece holds none of them, and read alone would call Gen 4 home
-    // and drop the badges that say Leafeon and Glaceon are not Gen 1.
     const eevee = line('eevee', [1, 1, 1, 1, 2, 2, 4, 4, 6], (m) => m.generation === 1);
     const rows = packRows([eevee], 6);
     const pieces = rows.flatMap((r) => r.groups);

@@ -1,20 +1,6 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * A press and hold on a league row picks it up before any drag.
- *
- * Four things that has to mean, and none of them is visible in the markup:
- *
- * 1. the row is in hand after the hold alone, with the thumb still;
- * 2. the row in hand is drawn *in the slot it would fill*, centred on it —
- *    on the first frame that is the row it came from, and after that whichever
- *    row it is over;
- * 3. the copy is shorter than the row it came from, or it reaches a full row
- *    either side of the thumb and reads as displacing the row above as well;
- * 4. while held it shows the glyph and team size of the slot it is over, not
- *    the ones it came from — the question mid-drag is what this trainer would
- *    become there.
- *
  * Touch is dispatched through CDP because Playwright's own touch helpers do
  * not hold a contact still for a timed activation.
  */
@@ -51,7 +37,6 @@ test.describe('holding a league row', { tag: '@viewport' }, () => {
       const y = row.y + row.height / 2;
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
 
-      // 1, 2 and 3: in hand on the hold alone, centred in its own slot, and shorter.
       await page.waitForTimeout(450);
       const still = await held();
       expect(still, 'the row is in hand after the hold, with no movement').not.toBeNull();
@@ -59,7 +44,6 @@ test.describe('holding a league row', { tag: '@viewport' }, () => {
         .toBeLessThan(1.5);
       expect(still!.height, 'the copy is shorter than the row').toBeLessThan(row.height - 2);
 
-      // 4: over a later slot it wears that slot's team size.
       await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchMove', touchPoints: [{ x, y: target.y + target.height / 2 }],
       });

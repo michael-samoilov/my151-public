@@ -1,4 +1,3 @@
-// keeps: API request exclusion, validation, and atomic Redis behavior cannot run through browser API stubs.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 const mocks=vi.hoisted(()=>({hget:vi.fn(),eval:vi.fn(),hincrby:vi.fn(),limit:vi.fn(),readOnly:vi.fn()}));

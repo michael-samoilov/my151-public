@@ -1,4 +1,3 @@
-// keeps: E2E stubs each analytics write, so durable span and replay accounting needs API-level coverage.
 import {describe, expect, it} from 'vitest';
 import {buildBrowser} from '../../api/_dashboard';
 import {parseRecord} from '../../api/_shared';

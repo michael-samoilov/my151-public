@@ -1,6 +1,5 @@
-// Read-only health check: which engines can this sandbox actually drive right
-// now? Run before any verification, and again after anything looks off. Prints a
-// matrix and exits 0 if at least Blink (the guaranteed floor) is up.
+
+
 import fs from 'node:fs';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
@@ -44,8 +43,7 @@ export async function probeEngines(): Promise<EngineHealth[]> {
 }
 
 async function main() {
-  // Say which driver Blink is about to use, so a run's evidence names it and a
-  // silent fallback to Playwright is visible here rather than guessed at later.
+
   try {
     const { driver, detail } = blinkDriverChoice();
     console.log(`driver blink   ${driver} (${detail})`);

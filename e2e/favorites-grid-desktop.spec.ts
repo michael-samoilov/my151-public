@@ -23,7 +23,6 @@ test('desktop grid keeps native sprites, aligned rows, and a larger minimap', as
   expect(Math.abs(last!.height - lastH!.height)).toBeLessThan(1);
   await scroll.evaluate((el) => { el.scrollTop = 0; });
 
-  // The grid scrolls inside a frame that fills the screen below the headers.
   const frame = (await scroll.boundingBox())!;
   expect(frame.y + frame.height).toBeLessThanOrEqual(800);
   expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeGreaterThan(800);
@@ -34,7 +33,6 @@ test('desktop grid keeps native sprites, aligned rows, and a larger minimap', as
   expect((await grid.boundingBox())!.width).toBeCloseTo(widthBefore, 0);
   await page.getByTestId('favorites-pick-644').click();
   const sprite = page.getByTestId('favorites-cell-electric-5').locator('img[data-grid-sprite-size]');
-  // The sprite may draw from a pack's object URL (src/favorites/model/spritePreload.ts).
   await expect(sprite).toHaveAttribute('alt', 'Zekrom');
   await expect.poll(() => sprite.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBe(96);
   expect((await sprite.boundingBox())!.width).toBeCloseTo(96, 0);

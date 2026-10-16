@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { t } from '@/i18n';
 import type { PickerConditionalStats } from '../stats/pickerConditionalStats';
-/** Conditional reference and observed distribution share bins, ticks, mean rails and native paint. */
 export function PickerBstHistogram({bst,onBinClick,activeBin}:{bst:PickerConditionalStats['bst'];onBinClick?:(start:number,end:number)=>void;activeBin?:number|null}){
  const ref=useRef<HTMLDivElement>(null),[width,setWidth]=useState(0);
  useEffect(()=>{if(!ref.current)return;const observer=new ResizeObserver(entries=>setWidth(entries[0]?.contentRect.width??0));observer.observe(ref.current);return()=>observer.disconnect();},[]);

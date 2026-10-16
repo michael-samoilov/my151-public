@@ -1,7 +1,6 @@
 import { openAdmin } from './admin-ready';
 import {expect,test} from '@playwright/test';
 import {buildDashboard} from '../api/_dashboard';
-// @viewport: source controls and measured provenance must remain usable in every layout.
 test('active time keeps historical spans separate and shares metric/tool controls @viewport',async({page},info)=>{
  const now=Date.UTC(2026,9,10),start=now-3_600_000;
  const record={cid:'attention-e2e-browser',firstTs:start,firstAt:new Date(start).toISOString(),lastTs:now,lastAt:new Date(now).toISOString(),submits:2,sessions:1,sessionMs:[3_600_000],sessionLog:[{ts:now,ids:[1]}],maxDepth:1,localHour:12,everIds:[1],latestIds:[1],completed:false,exported:false,

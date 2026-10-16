@@ -47,7 +47,6 @@ const WORKSHOP_DEX_SECTIONS: Record<string, number[]> = {
   mythical: DEMO_DEX_SECTIONS.mythical,
 };
 
-/** Every Kanto Pokémon, placed: the fully filled Dex. */
 const FULL_DEX_SECTIONS: Record<string, number[]> = {
   other: Array.from({ length: 151 }, (_, i) => i + 1),
 };
@@ -67,7 +66,6 @@ const WORKSHOP_SAMPLES = [
   { id: 'flat-tall', label: 'Flat gray, tall' },
 ] as const;
 
-/** A few picks across types and generations, like a chart in progress. */
 const WORKSHOP_FAVORITE_FILLS: Record<string, number> = {
   'fire|1': 4,
   'grass|1': 1,
@@ -122,12 +120,6 @@ function sampleMaskContext(sample: WorkshopSample): HoverTiltMaskContext {
   return hoverTiltMaskContextFromDex(getPokemonByIds(Object.values(dex).flat()), dex);
 }
 
-/**
- * Keep only the dials this page shows; the rest are the export's defaults.
- * A recipe saved by an older workshop kept values it can no longer show,
- * such as no pop (scaleFactor 1) or an auto-tilt smaller than max tilt.
- */
-/** Foil layers the page has dials for. */
 const WORKSHOP_LAYERS = ['gleam', 'prism', 'pointLight', 'iridescence'] as const;
 
 function workshopFoil(saved: FoilRecipe): FoilRecipe {
@@ -172,21 +164,12 @@ function readStoredTilt(): HoverTiltRecipe {
   return cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE);
 }
 
-/**
- * Dials for the export proposals, read against the live site's look: the
- * camera distance, the rainbow and iridescence blend, the glare's dark edge
- * (October 9), and the card size (October 11). They live
- * in the URL only, so a shared link shows the same.
- */
 type RainbowBlend = 'soft-light' | 'hue';
 
 type Proposal = {
-  /** Camera distance as a multiple of the card's long edge, or a fixed 600 px. */
   camera: number | 'live';
   blend: RainbowBlend;
-  /** 0 keeps the glare light only; 1 is hover-tilt's dark far stop. */
   glareDark: number;
-  /** A multiple of the pre-October-10 size, or `room`: as big as the tilt allows. */
   size: number | 'room';
 };
 
@@ -198,7 +181,6 @@ const NEW_PROPOSAL: Proposal = {
   glareDark: 0,
   size: 1,
 };
-/** The live site from October 10 to October 11. */
 const LIVE_PROPOSAL: Proposal = { ...NEW_PROPOSAL, size: 'room' };
 const NEW_GLARE = DEFAULT_HOVER_TILT_RECIPE.glareIntensity;
 const LIVE_GLARE = 1;
@@ -277,7 +259,6 @@ export function FoilWorkshopPage() {
     persistWorkshop(recipe, tilt, sample, proposal);
   }, [proposal, recipe, sample, tilt]);
 
-  /** Switch to a look in one tap: the proposal dials and the glare strength. */
   const applyLook = (next: Proposal, glareIntensity: number) => {
     setProposal(next);
     setTilt({ ...tilt, glareIntensity });

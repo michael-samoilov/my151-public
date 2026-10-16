@@ -32,62 +32,25 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { EggIcon } from '@/components/shared/AppIcons';
 import { pathScale } from '@/lib/pathScale';
 
-/**
- * The router page: one card per tool, plus a call to action.
- *
- * The card is a red panel with the screenshots breaking out of its top and left
- * edges, cut only by its bottom, and the copy in a caption below it. The copy
- * sits below rather than inside because inside it needed a gradient to stay
- * legible over the artwork, and it was capped at 9.4px by a one-line title rule.
- * Outside, it is 14px and free to wrap.
- *
- * Every measurement inside a card is a percentage of the card's own width, so a
- * breakpoint only picks how many cards fit in a row and the card scales itself.
- * That is `cqw` against the cell wrapper, which is the container-relative knob
- * CLAUDE.md sanctions — not a `vw` clamp, which would fight the root font-size
- * and shrink under an iOS pinch-zoom.
- *
- * The ratios come from `docs/future-tools/home-page/build-artboards.mjs`, where
- * a 45-frame sweep proves them from 320px to 2560px. They are written here as
- * percentages of a 166-unit-wide card, the same base the generator uses.
- */
 const U = (n: number) => `${((n / 166) * 100).toFixed(3)}cqw`;
 
-/** Shorter than the artboard's 104: the copy no longer lives inside the panel. */
 const PANEL_ASPECT = '166 / 79.167';
-// Capped in px so the wide desktop band does not take a huge rounded corner:
-// the radius is a share of the card's width, and a third-of-the-page card would
-// otherwise round ~34px, whose bottom-left curve exposes the screenshot behind
-// it. See `--shot-nudge`, which shifts the shots clear of this corner.
 const RADIUS = `min(${U(14)}, 14px)`;
-/** Caption type. Capped in px so a full-width card does not balloon it. */
 const TITLE = `min(${U(9.1)}, 19px)`;
 const BLURB = `min(${U(7.6)}, 15.6px)`;
-// Room for each screenshot's drop shadow to fall outside the clip box without
-// being sliced off at its edge. The artwork shifts by the same amount, so it
-// lands where it would have anyway.
 const BLEED = U(34);
 
-/** Export-paper corners are gentle and leave each native title band intact. */
 const EXPORT_RADIUS = 0.02;
 
-/** Equal-width sheets share their top anchor and rotate in 7° steps. */
 const FAN = [
   { tilt: -3.5, offset: 0 },
   { tilt: 3.5, offset: 16 },
 ];
-// One width makes the shortest native export bleed below the unchanged panel.
 const SHOT_W = 134;
 const SHOT_TOP = 8;
 const POP_TOP = 56;
 const POP_LEFT = 9.6;
 
-/**
- * Every device loads the 800px originals. A shot draws 128 to 201 CSS px wide,
- * so a 2x or 3x screen draws each one at about half size, which stays sharp.
- * Smaller copies saved bytes but no measured speed, and they drew at about
- * their own size, which blurred them. They were removed on 9 October.
- */
 const shot = (src: string, avif: string, width: number, height: number, fetchPriority?: 'high') => ({ src, avif, width, height, fetchPriority });
 
 function Screenshot({
@@ -105,25 +68,16 @@ function Screenshot({
 
 interface Tool {
   key: string;
-  /** Absent on a card that opens something in place rather than navigating. */
   href?: string;
   title: string;
   blurb: string;
-  /** Saved work for this tool in this browser. `count` is 0 when there is none. */
   progress?: { count: number; total: number; label: string };
   shots?: [ReturnType<typeof shot>, ReturnType<typeof shot>];
-  /** One description per shot, back then front. The shots are content, not
-   *  decoration: they show what each tool produces. */
   alts?: [string, string];
 }
 
 const NEXT_CARD = 'next';
 
-/**
- * The tools, in the order they appear. Adding the favorite picker back is one
- * entry here — the grid's column count and the call to action's shape both
- * follow from the length, so nothing else changes. See `gridStyle` below.
- */
 const PROGRESS_TOKEN = '{progress}';
 
 function readSavedState(key: string): Record<string, unknown> | null {
@@ -135,7 +89,6 @@ function readSavedState(key: string): Record<string, unknown> | null {
   }
 }
 
-/** Read saved work without creating a demo league or changing either store. */
 function useSavedToolProgress() {
   const [league, setLeague] = useState(0);
   const [favorites, setFavorites] = useState({ filled: 0, total: 257 });
@@ -157,7 +110,7 @@ function useSavedToolProgress() {
           if (active) setFavorites({ filled, total });
         } else if (active) setFavorites({ filled: 0, total: 257 });
       } catch {
-        // Blocked storage or an unreadable save must not stop the homepage.
+        return;
       }
     }
     void readSaved();
@@ -177,8 +130,6 @@ function useTools(placed: number): Tool[] {
       title: t('home.dex.title'),
       blurb: t('home.dex.blurb'),
       progress: { count: placed, total: 151, label: t('home.dex.saved', { progress: PROGRESS_TOKEN }) },
-      // The page's largest paint on a phone. The hub's HTML is prerendered,
-      // so the browser sees this priority before it requests anything.
       shots: [shot(dexFront, dexFrontAvif, 800, 1777, 'high'), shot(dexBack, dexBackAvif, 800, 942)],
       alts: [t('home.dex.buildAlt'), t('home.dex.exportAlt')],
     },
@@ -207,33 +158,18 @@ function useTools(placed: number): Tool[] {
 interface CardProps {
   tool: Tool;
   onPress?: () => void;
-  /** Render as the wide bar that fills a row on its own. */
   wide?: boolean;
-  /** Leave room above the panel for artwork to pop into. See `reserveByRow`. */
   reserve?: boolean;
 }
 
-/** The wide bar spans both columns of the phone grid; a tall card takes one. */
 const SPAN = 'col-span-2';
 
-/**
- * One card. The cell wrapper is the query container, so everything inside sizes
- * itself off the card's own width.
- *
- * Cells top-align. That is what keeps the red panels in a row on one edge, and
- * so the FIRST line of every title on one baseline, however many lines the
- * caption below runs to. Copy can be tuned to equal line counts in English, but
- * it cannot hold this on its own — the app ships in eight languages and a
- * translated title wraps differently.
- */
 function Card({ tool, onPress, wide, reserve }: CardProps) {
   for (const image of tool.shots ?? []) {
     preload(image.avif, { as: 'image', type: 'image/avif', fetchPriority: image.fetchPriority });
   }
   const panel = 'relative block w-full text-left bg-primary text-white no-underline';
   const body = wide ? <WideBody tool={tool} /> : <TallBody tool={tool} />;
-  // `--panel-ar` is set on the grid: the tall proportion on a phone, a wide low
-  // band on desktop (see `.hub-grid` in index.css). PANEL_ASPECT is the fallback.
   const style = wide ? undefined : { aspectRatio: `var(--panel-ar, ${PANEL_ASPECT})`, borderRadius: RADIUS };
   const wideStyle = { borderRadius: `min(${U(14)}, 18px)` };
   const inner = onPress ? (
@@ -267,11 +203,6 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
     </div>
   );
 
-  // `hub-card` is the hover trigger and stays put. On hover only the screenshots
-  // inside the panel float up and settle back — the red panel and the caption do
-  // not move. The motion is on the artwork (`.hub-float`), so a stationary
-  // trigger keeps the pointer from chasing a target that slides out from under
-  // it, and there is no hover flicker. The float lives in `index.css`.
   return (
     <div
       data-hub-card={tool.shots ? tool.key : undefined}
@@ -284,13 +215,9 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
   );
 }
 
-/** The egg draws 35% larger in its box; its stroke stays 2 units. */
 const EGG = pathScale(1.35);
-/** The egg's box: 35 units on the phone panel, which is 79.167 units tall. It
- *  keeps that share of the panel's height on the lower desktop panel. */
 const EGG_BOX = `calc(${U(35)} * var(--panel-h, 79.167) / 79.167)`;
 
-/** The panel body for a card in the grid: artwork, or the egg. */
 function TallBody({ tool }: { tool: Tool }) {
   return tool.shots ? (
     <Artwork tool={tool} />
@@ -301,11 +228,6 @@ function TallBody({ tool }: { tool: Tool }) {
   );
 }
 
-/**
- * The call to action fills a row on its own, so it takes a wider, shorter panel
- * and sets its mark beside the copy rather than above it. It is not a tool, and
- * this is the one place the page says so in shape rather than in words.
- */
 function WideBody({ tool }: { tool: Tool }) {
   return (
     <span
@@ -348,19 +270,11 @@ function ProgressText({ progress }: { progress: NonNullable<Tool['progress']> })
   );
 }
 
-/** Ink on the page, under the panel. */
-// fetch keepalive lets the beacon outlive the navigation a card link starts.
 function sendCardBeacon(key: string) {
   sendEventBeacon(key === 'dex' ? 'hub-cta-dex' : key === 'league' ? 'hub-cta-league' : 'hub-cta-favorites');
 }
 
 function Caption({ tool }: { tool: Tool }) {
-  // The tool cards are the page's h2 list: one heading per tool. The heading
-  // holds a link to the tool, so its words are anchor text, and the panel link
-  // above carries the same name through its artwork's alt text. The link
-  // inherits the heading's colour and adds no underline, so the card looks the
-  // same. The call to action is not a tool, so it is styled the same and is
-  // not a heading.
   const Title = tool.href ? 'h2' : 'p';
   return (
     <div style={{ padding: `var(--caption-top, ${U(5.6)}) ${U(1.7)} 0` }} data-card-caption>
@@ -384,14 +298,6 @@ function Caption({ tool }: { tool: Tool }) {
         {tool.blurb}
       </p>
       {tool.progress && (
-        // The saved-work line. It shows on every visit, with 0 before the
-        // tool is used, so a first visitor sees what the tool counts and that
-        // this browser keeps it. The counts are read after the app adopts the
-        // prerendered HTML (zustand's hook gives React the dex store's initial
-        // state while it hydrates), so a visitor with saved work would see 0
-        // first; index.css hides the count until it arrives (`p151-saved-*`).
-        // An invisible copy at the largest count gives the line its size
-        // before the count arrives.
         <p
           data-card-progress={tool.key}
           data-empty={tool.progress.count > 0 ? undefined : ''}
@@ -408,31 +314,11 @@ function Caption({ tool }: { tool: Tool }) {
   );
 }
 
-/**
- * Two clip boxes, not one. Both reach past the panel's top and left edges so the
- * screenshots break out there, and both stop at its bottom, which is the only
- * edge that cuts them. The shadows get their own box with a fade, so they thin
- * out instead of ending on a straight line at that edge.
- *
- */
 function Artwork({ tool }: { tool: Tool }) {
-  // Which shot is floating, or none. Driven by pointer events on the stationary
-  // hit twins below, not by `:has(:hover)`: the CSS approach silently no-ops on
-  // older Chrome and pre-16.4 iOS Safari, so this drives it in JS instead. The
-  // guard is unchanged — the handlers sit on the twins, which never move, so a
-  // floating shot can never move out from under the pointer and toggle itself.
   const [floated, setFloated] = useState<number | null>(null);
   const stageRef = useHomeSheetLift(floated);
-  // Shorter sheets need slightly more paper below the pocket for the extra lift.
   const widerPair = tool.key === 'dex' || tool.key === 'league';
   const shotWidth = tool.key === 'dex' ? 147 : tool.key === 'league' ? 149 : SHOT_W;
-  // The shortest front sheet sets a shared resting top and bottom reserve.
-  // Both clip boxes reach far past the panel's top-left edge, mostly over empty
-  // space. That whole rectangle used to be part of the link, so a click well
-  // above or beside the artwork still navigated. `pointerEvents: 'none'` here
-  // hands those transparent margins back to the page; the screenshots below
-  // re-enable events on themselves, so the link's hit target is the panel and
-  // the two screenshots, nothing more.
   const box = {
     position: 'absolute',
     top: `calc((${U(POP_TOP)} * var(--art) + ${BLEED} + var(--panel-height) * 0.55) * -1)`,
@@ -442,58 +328,29 @@ function Artwork({ tool }: { tool: Tool }) {
     overflow: 'hidden',
     pointerEvents: 'none',
   } as const;
-  // The rest geometry of a shot: where it sits and how it tilts, with no float.
   const geom = (i: number) => {
     const f = FAN[i];
-    // The shorter league summary needs extra paper below the shared hover fold.
     const scale = tool.key === 'league' && i === 0 ? 'var(--rear-scale, 1)' : '1';
     return {
       position: 'absolute' as const,
-      // The nudge clears bottom corners; the front sheet uses half the remaining
-      // right clearance. All visible, shadow and stationary hit copies share it.
       left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px)${i === 0 ? ` - ${U(1)}` : ''}${i === 1
         ? ` + (var(--card-width, 100cqw) - (${U(FAN[1].offset)} - ${U(POP_LEFT)} * var(--art) + var(--shot-nudge, 0px) + ${U(shotWidth)} * var(--art))) / 2${widerPair ? ` - ${U(5)}` : ''}`
         : ''})`,
-      // Share the Dex's safe resting top. Compensate for the tilted top edge's
-      // half-width projection, so different sheet widths have the same top.
       top: `calc(${BLEED} + var(--panel-height) * 0.55 + ${U(SHOT_TOP)} + 6px + var(--panel-height) * 0.105 + (${U(shotWidth)} * var(--art) * ${scale} - ${U(147)} * var(--art)) * ${Math.sin(Math.abs(f.tilt) * Math.PI / 180) / 2})`,
       width: `calc(${U(shotWidth)} * var(--art) * ${scale})`,
       transformOrigin: '50% 0' as const,
       borderRadius: `calc(${U(shotWidth)} * var(--art) * ${scale} * ${EXPORT_RADIUS})`,
     };
   };
-  // The floating shots carry `--hf`, the per-shot hover float that `index.css`
-  // sets to 0 at rest and a lift on hover. It sits ahead of the rotate, so the
-  // shot rises straight up in screen space whatever its tilt. The clip box does
-  // not move, so the shot slides up inside it and reveals the part of itself
-  // that sits hidden below the card's bottom edge.
   const floatTransform = (i: number) => `translateY(var(--hf, 0px)) rotate(${FAN[i].tilt}deg)`;
   const restTransform = (i: number) => `rotate(${FAN[i].tilt}deg)`;
-  // `data-float` names the floating shot; `index.css` reads it to set `--hf`.
-  // `display: contents` keeps this wrapper out of the box tree, so the clip
-  // boxes still position against the panel. Images are `draggable={false}` so a
-  // drag grabs nothing — otherwise the browser drags the card link and shows a
-  // ghost of the whole card, which reads as one merged image.
   return (
     <span data-artwork data-float={floated ?? undefined} style={{ display: 'contents' }}>
-      {/* The stage. A fixed-size box pinned to the panel's bottom-left that owns
-          the screenshots' size: everything inside is a share of the STAGE's
-          width, not the card's, so widening or shortening the red panel around it
-          moves and resizes nothing here. Full width (= the panel) on a phone;
-          narrower on desktop (see `.hub-stage`), so the card can grow wide and
-          short while the screenshots keep the size and left-edge position they
-          have now — the extra width becomes red to their right. */}
       <span className="hub-stage" ref={stageRef}>
-      {/* Shadows. Masked so they fade out near the top break-out rather than
-          ending on a straight line at the clip edge. Each rides its own shot's
-          `--hf`, so a shadow floats with the shot it belongs to. */}
       <span
         data-audit-clip="intended"
         style={{
           ...box,
-          // Past the panel's right edge by the shadow's reach (21px blur, -5px
-          // spread, so 16px), plus margin: on a phone the front sheet sits a few
-          // pixels from that edge, and its shadow ended on a straight line there.
           right: `calc(100cqw - var(--card-width, 100cqw) - 24px)`,
           maskImage: `linear-gradient(to top, transparent 0, #000 ${BLEED})`,
           WebkitMaskImage: `linear-gradient(to top, transparent 0, #000 ${BLEED})`,
@@ -514,8 +371,6 @@ function Artwork({ tool }: { tool: Tool }) {
           </span>
         ))}
       </span>
-      {/* The visible shots. They float, so they carry no pointer events — the
-          stationary hit layer below owns hovering and clicking. */}
       <span style={box} data-audit-clip="intended">
         {FAN.map((f, i) => (
           <span
@@ -524,8 +379,6 @@ function Artwork({ tool }: { tool: Tool }) {
             className="hub-float-shot block"
             style={{ ...geom(i), transform: floatTransform(i) }}
           >
-            {/* Not lazy: every card sits in the first viewport at every
-                width, and these are the page's largest paint. */}
             <Screenshot
               image={tool.shots![i]}
               alt={tool.alts?.[i] ?? ''}
@@ -536,13 +389,6 @@ function Artwork({ tool }: { tool: Tool }) {
           </span>
         ))}
       </span>
-      {/* The hit layer: one transparent twin per shot, at the shot's REST
-          footprint, and it never moves. Its pointer handlers float that one shot
-          and drop it again. Because the thing you hover stays put while the shot
-          lifts, the shot can never rise out from under the pointer and toggle
-          itself — the guard against hover flicker. The twins are the click
-          target too, so a click on a screenshot still follows the card's link;
-          the front twin sits last, so it wins the overlap. */}
       <span style={box} data-audit-clip="intended">
         {FAN.map((f, i) => (
           <span
@@ -570,19 +416,6 @@ function Artwork({ tool }: { tool: Tool }) {
   );
 }
 
-/**
- * Which cards leave room above themselves for artwork to pop into.
- *
- * The room belongs to the artwork, not to the card, so a row with no artwork in
- * it simply sits higher. That is how the call-to-action row closes the gap under
- * the tools today, and how it drops back down by itself when the favorite picker
- * ships with screenshots of its own.
- *
- * The reserve is shared across a row, though — one card in a row keeping room it
- * does not need is the price of the panels in that row sharing a top edge, and
- * the alignment is worth more than the gap. A spanning card always starts a row,
- * because it only spans when the count is odd.
- */
 function reserveByRow(tools: Tool[], cols: number): boolean[] {
   const rowHasArt = new Map<number, boolean>();
   tools.forEach((tool, i) => {
@@ -597,7 +430,6 @@ export function HomePage() {
   useDocumentLocale();
   useJsErrorCounter();
   useEffect(() => {
-    // Child controls have installed their handlers. Replay any earlier button tap.
     document.dispatchEvent(new Event('p151-hub-interactive'));
     sendEventBeacon('hub-shown', { once: true });
   }, []);
@@ -605,20 +437,8 @@ export function HomePage() {
   const tools = useTools(placed);
 
   useEffect(() => { markLeaguePromoSeen(); }, []);
-  // Columns grow with the width and never fall back: two up below 1300px, and
-  // every card on one row from 1300px. At 1300px every tool's description and
-  // saved-work line fits on one line at 12px or more, in every language (13
-  // October); four up from 1024px shrank them to 9.4px. From 1024px the cards
-  // go wide and short so the red reads as a low band, not a block; the
-  // screenshots do not change, because each renders in a fixed-size stage
-  // pinned to its card's bottom-left (see `.hub-stage`). On a phone an odd
-  // last card is left alone on its row, so it spans instead.
   const desktopCols = tools.length;
   const gridStyle = { '--tool-cols': desktopCols } as React.CSSProperties;
-  // The wide bar is a phone shape only, and the two shapes are different markup
-  // rather than different CSS, so exactly one of them mounts. That is what
-  // `useIsDesktop` is for elsewhere in this app; the alternative is rendering
-  // both and hiding one, which duplicates the call to action's button.
   const isDesktop = useIsDesktop();
   const { titleRef, descriptionRef, offset: descriptionOffset } = useXHeightAlignment(isDesktop);
   const spansOnPhone = !isDesktop && tools.length % 2 === 1;
@@ -627,11 +447,6 @@ export function HomePage() {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="flex flex-col bg-background text-foreground">
-        {/* The fold. Header and content fill one viewport on their own, so the
-            footer always starts below it — what a visitor sees before scrolling
-            is exactly this block. `min-h` rather than `h`, so a viewport too
-            short for the content pushes the footer further down instead of
-            crushing the grid. */}
         <div className="flex min-h-dvh flex-col">
           <header className="border-b bg-card">
             <div className="flex items-center justify-between px-3 sm:px-6 py-2">
@@ -639,7 +454,6 @@ export function HomePage() {
                 <span className="text-primary">my151</span>
                 <span className="text-foreground">.app</span>
               </span>
-              {/* The same site bar as every tool page: language, report, tools. */}
               <div className="flex flex-shrink-0 items-center gap-0 min-[360px]:gap-1">
                 <LanguagePicker />
                 <FeedbackButton />
@@ -648,41 +462,17 @@ export function HomePage() {
             </div>
           </header>
 
-          {/* Horizontal padding is a share of the viewport, not a rem step: rem
-              here rides the root font-size knob, which caps at 1024px, so a rem
-              gutter would stop growing exactly where the page gets widest. Type
-              below is the opposite case and stays in rem on purpose, so it does
-              follow that knob.
-
-              Vertically it is three equal spacers, so the air above the hero,
-              between the hero and the grid, and below the grid all match.
-              `min-h-6` is the floor they collapse to when the content is taller
-              than the viewport. */}
-          {/* `overflow-x-clip` cuts the screenshot shadows' clip boxes, which
-              reach past the right-hand card, at the screen edge, so the page
-              never scrolls sideways. The shadows themselves end inside it.
-              Safari before 16 has no `clip` and gets `hidden`, which makes
-              `main` a scroll container; nothing in it overflows vertically. */}
           <main className="hub-home flex flex-1 flex-col overflow-x-clip not-supports-[overflow:clip]:overflow-x-hidden px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
             <ErrorBoundary where="hub">
             <div className="hub-spacer min-h-6 flex-1" />
             <section className="md:grid md:grid-cols-4 md:items-baseline md:gap-x-6">
               <h1
                 ref={titleRef}
-                // Every step here was measured, not guessed — see the README.
-                // 1.3125rem is 21px at the mobile root size, the largest whole
-                // pixel that keeps this heading to two lines at 320px, the
-                // narrowest width the e2e projects cover; 22px spills to three.
-                // Desktop copy spans the same two-card halves as the grid.
-                // Keep the larger heading size at xl to preserve its line fit.
-                // `auto-phrase` breaks Japanese between phrases, not inside
-                // ジムリーダー. Other languages break as before.
                 className="m-0 font-extrabold tracking-tight text-pretty [word-break:auto-phrase] text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:col-span-2"
                 style={{ lineHeight: 1.08 }}
               >
                 {t('home.h1')}
               </h1>
-              {/* Share the first baseline, then align the two fonts' lowercase x tops. */}
               <div
                 className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:col-span-2"
                 style={isDesktop ? { transform: `translateY(${descriptionOffset}px)` } : undefined}
@@ -695,14 +485,6 @@ export function HomePage() {
 
             <div className="hub-spacer min-h-6 flex-1" />
 
-            {/* `--art` scales the artwork against the card without touching the
-                card itself.
-
-                Every tablet rule is `sm:max-md:`, never a bare `sm:`. This repo
-                sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value
-                ahead of `sm`'s 40rem, so it emits the md block FIRST — a bare
-                `sm:` then beats its own `md:` override above 1024px. Bounding the
-                tablet rules at md means the two bands cannot overlap at all. */}
             <div
               className="hub-grid grid grid-cols-2 min-[1300px]:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
               style={gridStyle}
@@ -713,8 +495,6 @@ export function HomePage() {
                   tool={tool}
                   wide={spansOnPhone && i === tools.length - 1}
                   reserve={reserves[i]}
-                  // The card asks what to build next, so the form opens on Idea
-                  // rather than the Bug it defaults to elsewhere.
                   onPress={tool.key === NEXT_CARD ? () => openFeedback('idea') : undefined}
                 />
               ))}

@@ -1,15 +1,3 @@
-/**
- * Perceptual colour measurement, for judging the card's ramp.
- *
- * Used by `theme.test.ts` and `scripts/shade-report.ts`, never by the app —
- * "do these two types look the same?" is a question for a number, not for
- * the eye that just called fighting and ground the same brown.
- *
- * CIEDE2000 rather than a hex or HSL distance: it models how far apart two
- * colours *look*. Roughly, 1 is the just-noticeable difference, 5 reads as
- * a clear difference at a glance, and 10 is unmistakable.
- */
-
 type Rgb = [number, number, number];
 
 function hexToRgb(hex: string): Rgb {
@@ -25,7 +13,6 @@ function toLinear(c: number): number {
   return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
 }
 
-/** CIE L*a*b* under D65, the space CIEDE2000 is defined in. */
 function rgbToLab([r, g, b]: Rgb): [number, number, number] {
   const R = toLinear(r);
   const G = toLinear(g);
@@ -38,7 +25,6 @@ function rgbToLab([r, g, b]: Rgb): [number, number, number] {
   return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 }
 
-/** Perceptual distance between two hex colours. */
 export function deltaE2000(hex1: string, hex2: string): number {
   const [L1, a1, b1] = rgbToLab(hexToRgb(hex1));
   const [L2, a2, b2] = rgbToLab(hexToRgb(hex2));
@@ -87,7 +73,6 @@ export function deltaE2000(hex1: string, hex2: string): number {
   );
 }
 
-/** WCAG contrast ratio against white — the card's cells carry white glyphs. */
 export function contrastWithWhite(hex: string): number {
   const [r, g, b] = hexToRgb(hex);
   const l = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);

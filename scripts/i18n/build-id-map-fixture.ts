@@ -1,29 +1,5 @@
-/**
- * Freeze the upstream facts `id-map.test.ts` checks the id map against.
- *
- * The test used to call `readCsv()` directly, which reads the PokeAPI cache
- * under `docs/i18n/pokeapi/`. That cache is gitignored on purpose — the pin
- * against upstream drift is the committed *output*, not a checked-in copy of
- * 21k lines of raw dump — so the test passed on any machine that had run a
- * generator and failed on every clean checkout. Which is to say it failed in
- * CI, continuously, while passing locally.
- *
- * So the test gets a fixture instead: the handful of upstream rows the id map
- * actually references, and nothing else. Two things follow, and the second is
- * the one worth getting right.
- *
- * The test becomes hermetic — no network, no cache, same result everywhere.
- *
- * And it must not become vacuous. A fixture built by looking up exactly the ids
- * the map claims would satisfy "every entry points at a form that exists" by
- * construction, turning a real check into a tautology. So this records the
- * *result* of each lookup rather than only its successes: an id the map
- * references that upstream does not have is simply absent here, and the test
- * still fails on it. Regenerating after a map change is what re-validates the
- * whole thing against live upstream.
- *
- * Run: npm run i18n:fixture  (after `npm run i18n:names`, which populates the cache)
- */
+
+
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -63,18 +39,15 @@ function main(): void {
     const species: IdMapFixture['species'] = {};
 
     for (const e of entries) {
-      // The anti-naive-join tripwire needs to know what upstream calls this id,
-      // including when that is a different creature entirely.
+
       const row = pokemonRows.get(e.appId);
       if (row) pokemon[e.appId] = { identifier: row.identifier, speciesId: Number(row.species_id) };
-      // Recorded only if upstream really has it, so a dangling reference in the
-      // map shows up as a missing entry rather than being papered over.
+
       if (formIds.has(e.formId)) forms.push(e.formId);
       const identifier = speciesRows.get(e.speciesId);
       const en = englishNames.get(e.speciesId);
       if (identifier && en) species[e.speciesId] = { identifier, en };
-      // The tripwire also resolves the species behind whatever upstream has at
-      // this id, which may be a species no map entry points at.
+
       if (row) {
         const upstreamSpecies = Number(row.species_id);
         const ui = speciesRows.get(upstreamSpecies);
@@ -92,10 +65,7 @@ function main(): void {
       forms: [...new Set(forms)].sort((a, b) => a - b),
       species,
     };
-    // One line per record rather than pretty-printed: this is a generated
-    // artifact nobody reads top to bottom, and at 1089 entries the indented
-    // form is 145 kB of review noise where a single changed row should be a
-    // single changed line.
+
     const rows = (o: object) =>
       Object.entries(o).map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(',\n');
     writeFileSync(

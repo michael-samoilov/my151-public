@@ -1,4 +1,3 @@
-// keeps: API preference aggregation is stubbed by browser tests; guard form-count bias and chart deduplication.
 import {describe, expect, it, vi} from 'vitest';
 import cellData from '../../../api/_favoriteCells.json';
 import {favoritePicks, favoritePreference, fitFavoritePreference, favoriteSpeciesId} from '../../../api/_favoriteAggregate';

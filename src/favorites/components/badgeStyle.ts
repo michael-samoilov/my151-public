@@ -7,7 +7,6 @@ import { ROMAN, type ExtraTypeAxis, type GenNumber } from '../model/cells';
 
 export type BadgeStops = readonly (readonly [number, string])[];
 
-/** Each extra column's badge takes the fill of its header icon's edge. */
 export const AXIS_FILL: Record<ExtraTypeAxis, string | BadgeStops> = {
   starter: '#dc2626',
   gimmick: [[0, '#d27a22'], [0.22, '#b8941a'], [0.42, '#4f9a3a'], [0.62, '#2a86c2'], [0.8, '#6a4fc0'], [1, '#c0357f']],
@@ -15,12 +14,10 @@ export const AXIS_FILL: Record<ExtraTypeAxis, string | BadgeStops> = {
   favorite: [[0, '#7a5410'], [0.3, '#b8861f'], [0.5, '#caa033'], [0.7, '#a8781c'], [1, '#6e4a0c']],
 };
 
-/** Each generation's badge takes its disc's hard-edged split. */
 export const GEN_FILL = Object.fromEntries(
   Object.entries(GEN_STOPS).map(([gen, stops]) => [gen, stops.map((s) => [parseFloat(s.offset) / 100, s.color] as const)]),
 ) as unknown as Record<GenNumber, BadgeStops>;
 
-/** A badge with no symbol keeps the type badge's 22-unit side margins. */
 export const WORD_BADGE_MARGIN = 22;
 
 export function generationLabel(gen: GenNumber): string {
@@ -29,10 +26,6 @@ export function generationLabel(gen: GenNumber): string {
 
 let unitsCache: { key: string; units: number } | null = null;
 
-/**
- * Pill length, in badge units, that fits the longest generation name at the
- * type names' letter height. All nine generation badges share it.
- */
 export function generationBadgeUnits(): number {
   const labels = ([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((gen) => localeUppercase(generationLabel(gen)));
   const cohort = localeTypeLabels();
@@ -41,8 +34,6 @@ export function generationBadgeUnits(): number {
   const key = `${labels.join('|')}|${typeof document !== 'undefined' ? document.fonts?.status : ''}`;
   if (unitsCache?.key === key) return unitsCache.units;
   const widest = Math.max(...labels.map((label) => typeBadgeNaturalWidth(label, cohort) ?? 0));
-  // Two units of slack, so a platform whose font runs a hair wider than the
-  // one measured condenses a little instead of touching the ends.
   const units = Math.max(TYPE_BADGE_W, Math.ceil(widest + 2 * WORD_BADGE_MARGIN + 2));
   unitsCache = { key, units };
   return units;

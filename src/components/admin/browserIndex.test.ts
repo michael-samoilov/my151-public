@@ -3,15 +3,6 @@ import { buildDashboard, type DashboardSource } from '../../../api/_dashboard';
 import { mergeFavoriteRecord, parseFavoriteSnapshot, type FavoriteRecord } from '../../../api/_favoriteRecord';
 import type { DashboardRange } from '../../../api/_range';
 
-// How the Newest browsers index can go wrong, and the test that catches each:
-// 1. A browser falls out of the index: a page size, a cap, or the date range
-//    trims a list, so the admin can neither scroll to it nor filter for it.
-// 2. A country-split Dex record (`<cid>::<country>`) loses its own row, or its
-//    row loses the League and Picker of the browser it belongs to.
-// 3. The Dex chip counts evolution lines instead of Pokémon.
-// 4. The index carries whole records, so the response grows back toward the
-//    megabytes the full records cost.
-
 const NOW = Date.UTC(2026, 9, 9, 12);
 const MIN = 60_000;
 const DAY = 86_400_000;
@@ -34,7 +25,6 @@ function league(cid: string, end: number, extra: Record<string, unknown> = {}) {
   };
 }
 
-/** A Picker record from a beacon at the start and the end of each daily session. */
 function picker(cid: string, end: number, sessions = 1) {
   const snapshot = parseFavoriteSnapshot({ v: 1, fills: { 'fire|1': 6 } })!;
   let rec: FavoriteRecord | null = null;
@@ -65,7 +55,6 @@ const dash = (src: DashboardSource, range: DashboardRange) => buildDashboard(src
 describe('Newest browsers index', () => {
   it('lists every record of every tool, whatever the range, archived ones flagged (1)', () => {
     const clients: Record<string, unknown> = {};
-    // Every browser older than 24 hours but one, and more than the old 500-row cap.
     for (let i = 0; i < 650; i++) clients[`d-${i}`] = dex(`d-${i}`, NOW - (i === 0 ? MIN : 2 * DAY + i * MIN));
     const src = source({
       clients,
@@ -84,7 +73,6 @@ describe('Newest browsers index', () => {
 
   it('keeps each country-split Dex record on its own row with its browser’s other tools (2, 3)', () => {
     const src = source({
-      // Bulbasaur, Ivysaur, Venusaur: one evolution line, three Pokémon.
       clients: { abc: dex('abc', NOW - 2 * DAY, { country: 'US', latestIds: [1, 2, 3] }), 'abc::DE': dex('abc::DE', NOW - DAY, { country: 'DE', latestIds: [25] }) },
       league: { abc: league('abc', NOW - 3 * DAY) },
       picker: { abc: picker('abc', NOW - 4 * DAY) },

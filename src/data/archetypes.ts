@@ -15,20 +15,20 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Regional Bug',
     description: 'Bug-type Pokémon typical of a region',
     pokemonIds: [
-      10,11,12,              // Caterpie
-      13,14,15,              // Weedle
-      165,166,               // Ledyba
-      167,168,               // Spinarak
-      265,266,267,268,269,   // Wurmple
-      401,402,               // Kricketot
-      540,541,542,           // Sewaddle
-      543,544,545,           // Venipede
-      664,665,666,           // Scatterbug
-      736,737,738,           // Grubbin
-      824,825,826,           // Blipbug
-      917,918,               // Tarountula
-      919,920,               // Nymble
-      953,954,               // Rellor
+      10,11,12,
+      13,14,15,
+      165,166,
+      167,168,
+      265,266,267,268,269,
+      401,402,
+      540,541,542,
+      543,544,545,
+      664,665,666,
+      736,737,738,
+      824,825,826,
+      917,918,
+      919,920,
+      953,954,
     ],
     suggestedSlotRange: [13, 15],
     color: '#a6b91a',
@@ -38,20 +38,20 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Regional Bird',
     description: 'Flying-type birds typical of a region',
     pokemonIds: [
-      16,17,18,       // Pidgey
-      21,22,          // Spearow
-      163,164,        // Hoothoot
-      177,178,        // Natu→Xatu
-      276,277,        // Taillow
-      278,279,        // Wingull
-      396,397,398,    // Starly
-      441,            // Chatot
-      519,520,521,    // Pidove
-      661,662,663,    // Fletchling
-      731,732,733,    // Pikipek
-      821,822,823,    // Rookidee
-      931,            // Squawkabilly
-      940,941,        // Wattrel
+      16,17,18,
+      21,22,
+      163,164,
+      177,178,
+      276,277,
+      278,279,
+      396,397,398,
+      441,
+      519,520,521,
+      661,662,663,
+      731,732,733,
+      821,822,823,
+      931,
+      940,941,
     ],
     suggestedSlotRange: [16, 18],
     color: '#a98ff3',
@@ -85,15 +85,15 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Mountain',
     description: 'Pokémon found on exposed mountain routes, cliffs, and alpine passes across all regions',
     pokemonIds: [
-      21,22,       // Spearow→Fearow
-      111,112,464, // Rhyhorn→Rhydon→Rhyperior
-      207,472,     // Gligar→Gliscor
-      227,         // Skarmory
-      231,232,     // Phanpy→Donphan
-      333,334,     // Swablu→Altaria
-      359,         // Absol
-      950,         // Klawf
-      962,         // Bombirdier
+      21,22,
+      111,112,464,
+      207,472,
+      227,
+      231,232,
+      333,334,
+      359,
+      950,
+      962,
     ],
     suggestedSlotRange: [26, 35],
     color: '#78706c',
@@ -103,29 +103,29 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Fishing',
     description: 'Fish and aquatic creatures you could catch with a fishing rod',
     pokemonIds: [
-      116,117,230, // Horsea→Seadra→Kingdra
-      118,119,     // Goldeen→Seaking
-      129,130,     // Magikarp→Gyarados
-      147,148,149, // Dratini→Dragonair→Dragonite (Dragon's Den fishing)
-      170,171,     // Chinchou→Lanturn
-      211,         // Qwilfish
-      10234, 904,  // Qwilfish-Hisui→Overqwil
-      223,224,     // Remoraid→Octillery
-      318,319,     // Carvanha→Sharpedo
-      339,340,     // Barboach→Whiscash
-      349,350,     // Feebas→Milotic
-      369,         // Relicanth
-      370,         // Luvdisc
-      456,457,     // Finneon→Lumineon
-      550, 902,    // Basculin, Basculegion
-      690,691,     // Skrelp→Dragalge
-      692,693,     // Clauncher→Clawitzer
-      746,         // Wishiwashi
-      779,         // Bruxish
-      846,847,     // Arrokuda→Barraskewda
-      976,         // Veluza
-      977,         // Dondozo
-      978,         // Tatsugiri
+      116,117,230,
+      118,119,
+      129,130,
+      147,148,149,
+      170,171,
+      211,
+      10234, 904,
+      223,224,
+      318,319,
+      339,340,
+      349,350,
+      369,
+      370,
+      456,457,
+      550, 902,
+      690,691,
+      692,693,
+      746,
+      779,
+      846,847,
+      976,
+      977,
+      978,
     ],
     suggestedSlotRange: [33, 38],
     color: '#6390f0',
@@ -135,23 +135,23 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Ocean',
     description: 'Marine Pokémon encountered while surfing or diving in open water',
     pokemonIds: [
-      72,73,       // Tentacool→Tentacruel
-      86,87,       // Seel→Dewgong
-      90,91,       // Shellder→Cloyster
-      131,         // Lapras
-      222,         // Corsola
-      10173,       // Corsola-Galar
-      864,         // Cursola
-      223,224,     // Remoraid→Octillery
-      226,         // Mantine
-      458,         // Mantyke
-      318,319,     // Carvanha→Sharpedo
-      320,321,     // Wailmer→Wailord
-      363,364,365, // Spheal→Sealeo→Walrein
-      366,367,368, // Clamperl→Huntail/Gorebyss
-      592,593,     // Frillish→Jellicent
-      781,         // Dhelmise
-      963,964,     // Finizen→Palafin
+      72,73,
+      86,87,
+      90,91,
+      131,
+      222,
+      10173,
+      864,
+      223,224,
+      226,
+      458,
+      318,319,
+      320,321,
+      363,364,365,
+      366,367,368,
+      592,593,
+      781,
+      963,964,
     ],
     suggestedSlotRange: [33, 42],
     color: '#006494',
@@ -161,21 +161,21 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Beach',
     description: 'Coastal Pokémon found on shorelines, tide pools, and sandy shores',
     pokemonIds: [
-      98,99,       // Krabby→Kingler
-      120,121,     // Staryu→Starmie
-      341,342,     // Corphish→Crawdaunt
-      422,423,     // Shellos→Gastrodon
-      688,689,     // Binacle→Barbaracle
-      739,740,     // Crabrawler→Crabominable
-      747,748,     // Mareanie→Toxapex
-      767,768,     // Wimpod→Golisopod
-      557,558,     // Dwebble→Crustle (also cave)
-      686,687,     // Inkay→Malamar
-      769,770,     // Sandygast→Palossand
-      771,         // Pyukumuku
-      845,         // Cramorant
-      871,         // Pincurchin
-      960,961,     // Wiglett→Wugtrio
+      98,99,
+      120,121,
+      341,342,
+      422,423,
+      688,689,
+      739,740,
+      747,748,
+      767,768,
+      557,558,
+      686,687,
+      769,770,
+      771,
+      845,
+      871,
+      960,961,
     ],
     suggestedSlotRange: [33, 42],
     color: '#e9c46a',
@@ -185,11 +185,11 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Lake / Riverside',
     description: 'Pokémon found at freshwater lakes, rivers, and ponds across all regions',
     pokemonIds: [
-      54,55,       // Psyduck→Golduck
-      418,419,     // Buizel→Floatzel
-      580,581,     // Ducklett→Swanna
-      751,752,     // Dewpider→Araquanid
-      973,         // Flamigo
+      54,55,
+      418,419,
+      580,581,
+      751,752,
+      973,
     ],
     suggestedSlotRange: [33, 42],
     color: '#4a9e8d',
@@ -199,38 +199,38 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Forest',
     description: 'Pokémon found in forests, woodlands, and jungles',
     pokemonIds: [
-      46,47,       // Paras→Parasect
-      102,103,     // Exeggcute→Exeggutor
-      10114,       // Exeggutor-Alola
-      114,465,     // Tangela→Tangrowth
-      127,         // Pinsir
-      190,424,     // Aipom→Ambipom
-      204,205,     // Pineco→Forretress
-      214,         // Heracross
-      216,217,     // Teddiursa→Ursaring
-      901,         // Ursaluna
-      234,         // Stantler
-      899,         // Wyrdeer
-      273,274,275, // Seedot→Nuzleaf→Shiftry
-      285,286,     // Shroomish→Breloom
-      287,288,289, // Slakoth→Vigoroth→Slaking
-      357,         // Tropius
-      420,421,     // Cherubi→Cherrim
-      455,         // Carnivine
-      585,586,     // Deerling→Sawsbuck
-      674,675,     // Pancham→Pangoro
-      708,709,     // Phantump→Trevenant
-      755,756,     // Morelull→Shiinotic
-      765,         // Oranguru
-      766,         // Passimian
-      775,         // Komala
-      412,413,414, // Burmy→Wormadam/Mothim
-      590,591,     // Foongus→Amoonguss
-      840,841,842, // Applin→Flapple/Appletun
-      1011,1019,   // Dipplin→Hydrapple
-      427,428,     // Buneary→Lopunny
-      944,945,     // Shroodle→Grafaiai
-      948,949,     // Toedscool→Toedscruel
+      46,47,
+      102,103,
+      10114,
+      114,465,
+      127,
+      190,424,
+      204,205,
+      214,
+      216,217,
+      901,
+      234,
+      899,
+      273,274,275,
+      285,286,
+      287,288,289,
+      357,
+      420,421,
+      455,
+      585,586,
+      674,675,
+      708,709,
+      755,756,
+      765,
+      766,
+      775,
+      412,413,414,
+      590,591,
+      840,841,842,
+      1011,1019,
+      427,428,
+      944,945,
+      948,949,
     ],
     suggestedSlotRange: [33, 42],
     color: '#2d6a4f',
@@ -240,24 +240,24 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Tundra',
     description: 'Ice-dwelling Pokémon found in snowy routes, frozen caves, and arctic areas',
     pokemonIds: [
-      124,         // Jynx
-      238,         // Smoochum
-      215,461,     // Sneasel→Weavile
-      10235,903,   // Sneasel-Hisui→Sneasler
-      220,221,473, // Swinub→Piloswine→Mamoswine
-      225,         // Delibird
-      361,362,478, // Snorunt→Glalie/Froslass
-      363,364,365, // Spheal→Sealeo→Walrein
-      459,460,     // Snover→Abomasnow
-      582,583,584, // Vanillite→Vanillish→Vanilluxe
-      613,614,     // Cubchoo→Beartic
-      615,         // Cryogonal
-      712,713,     // Bergmite→Avalugg
-      10243,       // Avalugg-Hisui
-      872,873,     // Snom→Frosmoth
-      875,         // Eiscue
-      974,975,     // Cetoddle→Cetitan
-      996,997,998,  // Frigibax→Arctibax→Baxcalibur
+      124,
+      238,
+      215,461,
+      10235,903,
+      220,221,473,
+      225,
+      361,362,478,
+      363,364,365,
+      459,460,
+      582,583,584,
+      613,614,
+      615,
+      712,713,
+      10243,
+      872,873,
+      875,
+      974,975,
+      996,997,998,
     ],
     suggestedSlotRange: [33, 42],
     color: '#7ec8e3',
@@ -267,27 +267,27 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Haunted',
     description: 'Ghost-type Pokémon found in haunted houses, towers, graveyards, and cursed locations',
     pokemonIds: [
-      92,93,94,     // Gastly→Haunter→Gengar
-      200,429,      // Misdreavus→Mismagius
-      302,          // Sableye
-      353,354,      // Shuppet→Banette
-      355,356,477,  // Duskull→Dusclops→Dusknoir
-      442,          // Spiritomb
-      562,563,      // Yamask→Cofagrigus
-      10179,867,    // Yamask-Galar→Runerigus
-      592,593,      // Frillish→Jellicent
-      607,608,609,  // Litwick→Lampent→Chandelure
-      708,709,      // Phantump→Trevenant
-      710,711,      // Pumpkaboo→Gourgeist
-      769,770,      // Sandygast→Palossand
-      778,          // Mimikyu
-      854,855,      // Sinistea→Polteageist
-      864,          // Cursola
-      425,426,      // Drifloon→Drifblim
-      946,947,      // Bramblin→Brambleghast
-      971,972,      // Greavard→Houndstone
-      999,1000,     // Gimmighoul→Gholdengo
-      1012,1013,    // Poltchageist→Sinistcha
+      92,93,94,
+      200,429,
+      302,
+      353,354,
+      355,356,477,
+      442,
+      562,563,
+      10179,867,
+      592,593,
+      607,608,609,
+      708,709,
+      710,711,
+      769,770,
+      778,
+      854,855,
+      864,
+      425,426,
+      946,947,
+      971,972,
+      999,1000,
+      1012,1013,
     ],
     suggestedSlotRange: [33, 42],
     color: '#735797',
@@ -297,46 +297,46 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Meadow',
     description: 'Fairy-type and flower Pokémon found in meadows, flower fields, and gardens',
     pokemonIds: [
-      35,36,173,       // Clefairy→Clefable (+Cleffa)
-      39,40,174,       // Jigglypuff→Wigglytuff (+Igglybuff)
-      43,44,45,182,    // Oddish→Gloom→Vileplume/Bellossom
-      69,70,71,        // Bellsprout→Weepinbell→Victreebel
-      114,465,         // Tangela→Tangrowth
-      175,176,468,     // Togepi→Togetic→Togekiss
-      183,184,298,     // Marill→Azumarill (+Azurill)
-      187,188,189,     // Hoppip→Skiploom→Jumpluff
-      191,192,         // Sunkern→Sunflora
-      209,210,         // Snubbull→Granbull
-      280,281,282,475, // Ralts→Kirlia→Gardevoir/Gallade
-      315,406,407,     // Roselia→Roserade (+Budew)
-      420,421,         // Cherubi→Cherrim
-      546,547,         // Cottonee→Whimsicott
-      548,549,         // Petilil→Lilligant
-      10237,           // Lilligant-Hisui
-      585,586,         // Deerling→Sawsbuck
-      669,670,671,     // Flabébé→Floette→Florges
-      682,683,         // Spritzee→Aromatisse
-      684,685,         // Swirlix→Slurpuff
-      702,             // Dedenne
-      742,743,         // Cutiefly→Ribombee
-      753,754,         // Fomantis→Lurantis
-      755,756,         // Morelull→Shiinotic
-      761,762,763,     // Bounsweet→Steenee→Tsareena
-      764,             // Comfey
-      829,830,         // Gossifleur→Eldegoss
-      29,30,31,        // Nidoran-F→Nidorina→Nidoqueen
-      32,33,34,        // Nidoran-M→Nidorino→Nidoking
-      83,              // Farfetch'd
-      128,             // Tauros
-      179,180,181,     // Mareep→Flaaffy→Ampharos
-      241,             // Miltank
-      403,404,405,     // Shinx→Luxio→Luxray
-      659,660,         // Bunnelby→Diggersby
-      672,673,         // Skiddo→Gogoat
-      741,             // Oricorio
-      928,929,930,     // Smoliv→Dolliv→Arboliva
-      955,956,         // Flittle→Espathra
-      967,             // Cyclizar
+      35,36,173,
+      39,40,174,
+      43,44,45,182,
+      69,70,71,
+      114,465,
+      175,176,468,
+      183,184,298,
+      187,188,189,
+      191,192,
+      209,210,
+      280,281,282,475,
+      315,406,407,
+      420,421,
+      546,547,
+      548,549,
+      10237,
+      585,586,
+      669,670,671,
+      682,683,
+      684,685,
+      702,
+      742,743,
+      753,754,
+      755,756,
+      761,762,763,
+      764,
+      829,830,
+      29,30,31,
+      32,33,34,
+      83,
+      128,
+      179,180,181,
+      241,
+      403,404,405,
+      659,660,
+      672,673,
+      741,
+      928,929,930,
+      955,956,
+      967,
     ],
     suggestedSlotRange: [33, 42],
     color: '#f9a8d4',
@@ -346,27 +346,27 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Temple',
     description: 'Psychic and mystical Pokémon found in ancient ruins, temples, and sacred sites',
     pokemonIds: [
-      63,64,65,        // Abra→Kadabra→Alakazam
-      79,80,199,       // Slowpoke→Slowbro/Slowking
-      10164,10165,10172, // Slowpoke-Galar→Slowbro-Galar/Slowking-Galar
-      96,97,           // Drowzee→Hypno
-      201,             // Unown
-      203,981,         // Girafarig→Farigiraf
-      307,308,         // Meditite→Medicham
-      325,326,         // Spoink→Grumpig
-      343,344,         // Baltoy→Claydol
-      433,358,         // Chingling→Chimecho
-      517,518,         // Munna→Musharna
-      436,437,         // Bronzor→Bronzong
-      439,122,866,     // Mime Jr→Mr. Mime→Mr. Rime
-      561,             // Sigilyph
-      574,575,576,     // Gothita→Gothorita→Gothitelle
-      577,578,579,     // Solosis→Duosion→Reuniclus
-      605,606,         // Elgyem→Beheeyem
-      622,623,         // Golett→Golurk
-      677,678,         // Espurr→Meowstic
-      856,857,858,     // Hatenna→Hattrem→Hatterene
-      935,936,937,     // Charcadet→Armarouge/Ceruledge
+      63,64,65,
+      79,80,199,
+      10164,10165,10172,
+      96,97,
+      201,
+      203,981,
+      307,308,
+      325,326,
+      343,344,
+      433,358,
+      517,518,
+      436,437,
+      439,122,866,
+      561,
+      574,575,576,
+      577,578,579,
+      605,606,
+      622,623,
+      677,678,
+      856,857,858,
+      935,936,937,
     ],
     suggestedSlotRange: [33, 42],
     color: '#c4b5fd',
@@ -376,26 +376,26 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Dojo',
     description: 'Fighting-type Pokémon found in dojos, training grounds, and martial arts locations',
     pokemonIds: [
-      56,57,979,       // Mankey→Primeape→Annihilape
-      66,67,68,        // Machop→Machoke→Machamp
-      106,107,236,237, // Hitmonlee/Hitmonchan/Tyrogue/Hitmontop
-      296,297,         // Makuhita→Hariyama
-      307,308,         // Meditite→Medicham
-      447,448,         // Riolu→Lucario
-      532,533,534,     // Timburr→Gurdurr→Conkeldurr
-      538,             // Throh
-      539,             // Sawk
-      559,560,         // Scraggy→Scrafty
-      619,620,         // Mienfoo→Mienshao
-      674,675,         // Pancham→Pangoro
-      701,             // Hawlucha
-      739,740,         // Crabrawler→Crabominable
-      766,             // Passimian
-      852,853,         // Clobbopus→Grapploct
-      870,             // Falinks
-      891,892,         // Kubfu→Urshifu
-      10166,865,       // Farfetch'd-Galar→Sirfetch'd
-      10235,903,       // Sneasel-Hisui→Sneasler
+      56,57,979,
+      66,67,68,
+      106,107,236,237,
+      296,297,
+      307,308,
+      447,448,
+      532,533,534,
+      538,
+      539,
+      559,560,
+      619,620,
+      674,675,
+      701,
+      739,740,
+      766,
+      852,853,
+      870,
+      891,892,
+      10166,865,
+      10235,903,
     ],
     suggestedSlotRange: [33, 42],
     color: '#c22e28',
@@ -405,26 +405,26 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Swamp',
     description: 'Pokémon found in swamps, marshes, bogs, and wetlands',
     pokemonIds: [
-      60,61,62,186,    // Poliwag→Poliwhirl→Poliwrath/Politoed
-      88,89,           // Grimer→Muk
-      10112,10113,     // Grimer-Alola→Muk-Alola
-      193,469,         // Yanma→Yanmega
-      194,195,         // Wooper→Quagsire
-      10253,980,       // Paldean Wooper→Clodsire
-      270,271,272,     // Lotad→Lombre→Ludicolo
-      283,284,         // Surskit→Masquerain
-      313,314,         // Volbeat/Illumise
-      339,340,         // Barboach→Whiscash
-      422,423,         // Shellos→Gastrodon
-      453,454,         // Croagunk→Toxicroak
-      535,536,537,     // Tympole→Palpitoad→Seismitoad
-      618,             // Stunfisk
-      10179,           // Stunfisk-Galar
-      588,589,         // Karrablast→Escavalier
-      616,617,         // Shelmet→Accelgor
-      690,691,         // Skrelp→Dragalge
-      704,705,706,     // Goomy→Sliggoo→Goodra
-      938,939,         // Tadbulb→Bellibolt
+      60,61,62,186,
+      88,89,
+      10112,10113,
+      193,469,
+      194,195,
+      10253,980,
+      270,271,272,
+      283,284,
+      313,314,
+      339,340,
+      422,423,
+      453,454,
+      535,536,537,
+      618,
+      10179,
+      588,589,
+      616,617,
+      690,691,
+      704,705,706,
+      938,939,
     ],
     suggestedSlotRange: [33, 42],
     color: '#5c6d3f',
@@ -434,18 +434,18 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Volcanic',
     description: 'Pokémon found near volcanoes, lava fields, and geothermal areas',
     pokemonIds: [
-      228,229,     // Houndour→Houndoom
-      126,240,467, // Magmar→Magby→Magmortar
-      218,219,     // Slugma→Magcargo
-      322,323,     // Numel→Camerupt
-      324,         // Torkoal
-      327,         // Spinda (Route 113 ash route)
-      631,         // Heatmor
-      636,637,     // Larvesta→Volcarona
-      757,758,     // Salandit→Salazzle
-      776,         // Turtonator
-      837,838,839, // Rolycoly→Carkol→Coalossal
-      850,851,     // Sizzlipede→Centiskorch
+      228,229,
+      126,240,467,
+      218,219,
+      322,323,
+      324,
+      327,
+      631,
+      636,637,
+      757,758,
+      776,
+      837,838,839,
+      850,851,
     ],
     suggestedSlotRange: [33, 42],
     color: '#d62828',
@@ -455,21 +455,21 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Desert',
     description: 'Pokémon found in deserts, arid ruins, and sandy wastelands',
     pokemonIds: [
-      27,28,       // Sandshrew→Sandslash
-      328,329,330, // Trapinch→Vibrava→Flygon
-      331,332,     // Cacnea→Cacturne
-      343,344,     // Baltoy→Claydol
-      449,450,     // Hippopotas→Hippowdon
-      451,452,     // Skorupi→Drapion
-      551,552,553, // Sandile→Krokorok→Krookodile
-      554,555,     // Darumaka→Darmanitan
-      556,         // Maractus
-      561,         // Sigilyph
-      562,563,     // Yamask→Cofagrigus
-      843,844,     // Silicobra→Sandaconda
-      946,947,     // Bramblin→Brambleghast
-      951,952,     // Capsakid→Scovillain
-      968,         // Orthworm
+      27,28,
+      328,329,330,
+      331,332,
+      343,344,
+      449,450,
+      451,452,
+      551,552,553,
+      554,555,
+      556,
+      561,
+      562,563,
+      843,844,
+      946,947,
+      951,952,
+      968,
     ],
     suggestedSlotRange: [33, 42],
     color: '#dda15e',
@@ -479,21 +479,13 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Gift',
     description: 'Pokémon freely given to the player by NPCs',
     pokemonIds: [
-      // RBY: Eevee, Lapras
       131, 133,134,135,136,196,197,470,471,700,
-      // GS: Togepi egg, Shuckle, Dratini (Dragon's Den gift)
       175,176,468, 213, 147,148,149,
-      // RSE: Beldum (Steven), Castform, Wynaut egg
       374,375,376, 351, 360,
-      // DPPt: Riolu egg
       447,448,
-      // BW: Zorua, Larvesta egg
       570,571, 636,637,
-      // XY: Lucario (Korrina)
       448,
-      // SM/USUM: Type: Null, Cosmog, Poipole
       772,773, 789,790, 803,804,
-      // SwSh: Toxel, Charmander (Leon), Type: Null
       848,849, 4,5,6,
     ],
     suggestedSlotRange: [77, 80],
@@ -514,11 +506,8 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Prize',
     description: 'Pokémon earned as prizes, rewards, or purchases',
     pokemonIds: [
-      // RBY: Hitmonlee/Hitmonchan (Fighting Dojo), Porygon (Game Corner), Magikarp (salesman)
       106,107,236,237, 137,233,474, 129,130,
-      // Crystal/HGSS: Tyrogue (Karate King), Extremespeed Dratini (Dragon's Den quiz)
       147,148,149,
-      // B2W2: Shiny Dratini, Shiny Gible (Benga rewards)
       443,444,445,
     ],
     suggestedSlotRange: [80, 82],
@@ -534,19 +523,19 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Industrial',
     description: 'Pokémon found in factories, construction sites, power plants, sewers, and urban/industrial areas',
     pokemonIds: [
-      66,67,68,        // Machop→Machoke→Machamp (construction)
-      81,82,462,       // Magnemite→Magneton→Magnezone (power plant)
-      88,89,           // Grimer→Muk (sewer/pollution)
-      10112,10113,     // Grimer-Alola→Muk-Alola
-      109,110,         // Koffing→Weezing (factory pollution)
-      10167,           // Weezing-Galar (industrial smokestacks)
-      532,533,534,     // Timburr→Gurdurr→Conkeldurr (construction)
-      568,569,         // Trubbish→Garbodor (garbage/pollution)
-      599,600,601,     // Klink→Klang→Klinklang (gears/machinery)
-      878,879,         // Cufant→Copperajah (construction)
-      884,1018,        // Duraludon→Archaludon (buildings)
-      957,958,959,     // Tinkatink→Tinkatuff→Tinkaton (forge/metalwork)
-      965,966,         // Varoom→Revavroom (engines)
+      66,67,68,
+      81,82,462,
+      88,89,
+      10112,10113,
+      109,110,
+      10167,
+      532,533,534,
+      568,569,
+      599,600,601,
+      878,879,
+      884,1018,
+      957,958,959,
+      965,966,
     ],
     suggestedSlotRange: [83, 87],
     color: '#b7b7ce',
@@ -556,17 +545,17 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Objectmon',
     description: 'Pokémon based on everyday objects, artificial creations, and food',
     pokemonIds: [
-      100,101,         // Voltorb→Electrode (Poke Ball)
-      10231,10232,     // Voltorb-Hisui→Electrode-Hisui
-      137,233,474,     // Porygon→Porygon2→Porygon-Z (digital)
-      582,583,584,     // Vanillite→Vanillish→Vanilluxe (ice cream)
-      679,680,681,     // Honedge→Doublade→Aegislash (sword)
-      707,             // Klefki (key ring)
-      840,841,842,1011,1019, // Applin→Flapple/Appletun/Dipplin→Hydrapple (apple)
-      854,855,         // Sinistea→Polteageist (teapot)
-      868,869,         // Milcery→Alcremie (cream/cake)
-      999,1000,        // Gimmighoul→Gholdengo (coins)
-      1012,1013,       // Poltchageist→Sinistcha (matcha tea set)
+      100,101,
+      10231,10232,
+      137,233,474,
+      582,583,584,
+      679,680,681,
+      707,
+      840,841,842,1011,1019,
+      854,855,
+      868,869,
+      999,1000,
+      1012,1013,
     ],
     suggestedSlotRange: [83, 87],
     color: '#e07c4f',
@@ -576,43 +565,42 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Version Exclusive Pair',
     description: 'Evolutionary line pairs that recur as version exclusives across multiple games',
     pokemonIds: [
-      // Gen 1 — pairs adjacent
-      23,24, 27,28,           // Ekans→Arbok / Sandshrew→Sandslash
-      37,38, 58,59,           // Vulpix→Ninetales / Growlithe→Arcanine
-      43,44,45, 69,70,71,     // Oddish line / Bellsprout line
-      52,53, 56,57,           // Meowth→Persian / Mankey→Primeape
-      90,91, 120,121,         // Shellder→Cloyster / Staryu→Starmie
-      123, 127,               // Scyther / Pinsir
-      125, 126,               // Electabuzz / Magmar
-      // Gen 2 — pairs adjacent
-      165,166, 167,168,       // Ledyba→Ledian / Spinarak→Ariados
-      198, 200,               // Murkrow / Misdreavus
-      207, 216,217, 231,232,  // Gligar / Teddiursa→Ursaring / Phanpy→Donphan
-      226, 227,               // Mantine / Skarmory
-      // Gen 3 — pairs adjacent
-      270,271,272, 273,274,275, // Lotad line / Seedot line
-      302, 303,               // Sableye / Mawile
-      311, 312,               // Plusle / Minun
-      313, 314,               // Volbeat / Illumise
-      335, 336,               // Zangoose / Seviper
-      337, 338,               // Lunatone / Solrock
-      // Gen 4 — pairs adjacent
-      408,409, 410,411,       // Cranidos→Rampardos / Shieldon→Bastiodon
-      431,432, 434,435,       // Glameow→Purugly / Stunky→Skuntank
-      // Gen 5 — pairs adjacent
-      538, 539,               // Throh / Sawk
-      546,547, 548,549,       // Cottonee→Whimsicott / Petilil→Lilligant
-      574,575,576, 577,578,579, // Gothita line / Solosis line
-      627,628, 629,630,       // Rufflet→Braviary / Vullaby→Mandibuzz
-      // Gen 6 — pairs adjacent
-      682,683, 684,685,       // Spritzee→Aromatisse / Swirlix→Slurpuff
-      690,691, 692,693,       // Skrelp→Dragalge / Clauncher→Clawitzer
-      // Gen 7 — pairs adjacent
-      765, 766,               // Oranguru / Passimian
-      776, 780,               // Turtonator / Drampa
-      10103,10104, 10101,10102, // Vulpix-Alola line / Sandshrew-Alola line
-      // Gen 8 — pairs adjacent
-      874, 875,               // Stonjourner / Eiscue
+      23,24, 27,28,
+      37,38, 58,59,
+      43,44,45, 69,70,71,
+      52,53, 56,57,
+      90,91, 120,121,
+      123, 127,
+      125, 126,
+
+      165,166, 167,168,
+      198, 200,
+      207, 216,217, 231,232,
+      226, 227,
+
+      270,271,272, 273,274,275,
+      302, 303,
+      311, 312,
+      313, 314,
+      335, 336,
+      337, 338,
+
+      408,409, 410,411,
+      431,432, 434,435,
+
+      538, 539,
+      546,547, 548,549,
+      574,575,576, 577,578,579,
+      627,628, 629,630,
+
+      682,683, 684,685,
+      690,691, 692,693,
+
+      765, 766,
+      776, 780,
+      10103,10104, 10101,10102,
+
+      874, 875,
     ],
     suggestedSlotRange: [106, 112],
     color: '#737373',
@@ -630,28 +618,18 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Static Encounter',
     description: 'Pokémon found as overworld/scripted encounters',
     pokemonIds: [
-      // RBY/FRLG
       100,101, 131, 143,
-      // GSC/HGSS
       130, 185,
-      // RSE/ORAS
       351, 352,
-      // DPPt
       425, 442, 479,
-      // BW/BW2
       518, 555, 571, 590,591, 637, 612,
-      // SM/USUM Totem Pokémon
       735, 10092, 746, 758, 754, 738, 778, 784, 752, 10115, 777, 743,
-      // Legends Arceus
       77,
-      // SV Titans
       950, 962, 968, 977, 978,
     ],
     suggestedSlotRange: [40, 50],
     color: '#f95587',
-    // Red Gyarados (Lake of Rage), Shiny Ponyta (PLA), Shiny Haxorus (BW2 Nature Preserve)
     shinyIds: [130, 77, 612],
-    // Zen Mode Darmanitan in BW overworld
     spriteOverrides: { 555: pokemonSpriteUrl(10017) },
     subgroups: [
       { label: 'Red/Blue/Yellow', pokemonIds: [100,101, 131, 143] },
@@ -669,19 +647,17 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Evil Team',
     description: 'Pokémon commonly used by villain teams',
     pokemonIds: [
-      // Grunts (common across teams)
       19,20, 41,42, 88,89, 109,110, 169, 198, 228,229, 261,262, 430, 434,435, 551,552,553, 559,560, 757,758,
-      // Bosses & Lieutenants
-      31,34,53,112,  // Giovanni: Nidoqueen, Nidoking, Persian, Rhydon
-      319,323,       // Archie(Sharpedo), Maxie(Camerupt)
-      432,435,454,   // Mars(Purugly), Jupiter(Skuntank), Saturn(Toxicroak)
-      461,430,       // Cyrus: Weavile, Honchkrow
-      635,571,601,   // Ghetsis(Hydreigon), N(Zoroark), Colress(Klinklang)
-      668,           // Lysandre(Pyroar)
-      768,758,       // Guzma(Golisopod), Plumeria(Salazzle)
-      760,           // Lusamine(Bewear)
-      879,           // Rose(Copperajah)
-      936,966,927,979,983,700, // Team Star: Mela(Armarouge), Atticus(Revavroom), Ortega(Dachsbun), Eri(Annihilape), Giacomo(Kingambit), Penny(Sylveon)
+      31,34,53,112,
+      319,323,
+      432,435,454,
+      461,430,
+      635,571,601,
+      668,
+      768,758,
+      760,
+      879,
+      936,966,927,979,983,700,
     ],
     suggestedSlotRange: [50, 60],
     color: '#705746',
@@ -703,21 +679,21 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Branched Evolution',
     description: 'Pokémon with split evolution paths where you choose which form to evolve into',
     pokemonIds: [
-      43,44,45,182,       // Oddish→Gloom→Vileplume/Bellossom
-      60,61,62,186,       // Poliwag→Poliwhirl→Poliwrath/Politoed
-      79,80,199,          // Slowpoke→Slowbro/Slowking
-      10164,10165,10172,  // Slowpoke-Galar→Slowbro-Galar/Slowking-Galar
-      133,134,135,136,196,197,470,471,700, // Eevee→8 eeveelutions
-      236,106,107,237,    // Tyrogue→Hitmonlee/Hitmonchan/Hitmontop
-      265,266,267,268,269, // Wurmple→Silcoon→Beautifly / Cascoon→Dustox
-      280,281,282,475,    // Ralts→Kirlia→Gardevoir/Gallade
-      290,291,292,        // Nincada→Ninjask/Shedinja
-      361,362,478,        // Snorunt→Glalie/Froslass
-      366,367,368,        // Clamperl→Huntail/Gorebyss
-      412,413,414,        // Burmy→Wormadam/Mothim
-      123,212,900,        // Scyther→Scizor/Kleavor
-      840,841,842,1011,1019, // Applin→Flapple/Appletun/Dipplin→Hydrapple
-      935,936,937,        // Charcadet→Armarouge/Ceruledge
+      43,44,45,182,
+      60,61,62,186,
+      79,80,199,
+      10164,10165,10172,
+      133,134,135,136,196,197,470,471,700,
+      236,106,107,237,
+      265,266,267,268,269,
+      280,281,282,475,
+      290,291,292,
+      361,362,478,
+      366,367,368,
+      412,413,414,
+      123,212,900,
+      840,841,842,1011,1019,
+      935,936,937,
     ],
     suggestedSlotRange: [40, 60],
     color: '#e07c4f',
@@ -743,23 +719,14 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Cross-Gen Evolution',
     description: 'Pokémon that gained new evolutions or pre-evolutions in later generations',
     pokemonIds: [
-      // Gen 2 evos of Gen 1
       169,182,186,196,197,199,208,212,230,233,242,
-      // Gen 2 babies of Gen 1
       106,107,172,173,174,236,237,238,239,240,
-      // Gen 3 babies of Gen 2
       298,360,
-      // Gen 4 evos (forward)
       407,424,429,430,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,476,477,478,
-      // Gen 4 babies
       406,433,438,439,440,446,458,
-      // Gen 6
       700,
-      // Gen 8
       862,863,864,865,866,867, 10164,10165,10172,
-      // Gen 8 (Legends Arceus)
       899,900,901,902,903,904,
-      // Gen 9
       979,980,981,982,983,1011,1018,1019,
     ],
     suggestedSlotRange: [50, 80],
@@ -779,44 +746,23 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Gym/Champion Ace',
     description: 'Signature Pokémon of Gym Leaders, Elite Four & Champions',
     pokemonIds: [
-      // Kanto Gym Challenge
       95,121,26,45,110,65,59,112,
-      // Kanto Pokémon League
       131,68,94,149,6,
-      // Johto Gym Challenge
       17,123,241,94,62,208,221,230,
-      // Johto Pokémon League
       178,169,68,229,149,
-      // Hoenn Gym Challenge
       299,296,310,324,289,334,337,338,350,
-      // Hoenn Pokémon League
       359,356,365,373,376,
-      // Sinnoh Gym Challenge
       408,407,448,419,429,411,460,466,
-      // Sinnoh Pokémon League
       452,450,392,437,445,
-      // Unova Gym Challenge (BW + B2W2), by gym #, BW before B2W2 within each:
-      // G1 Striaton trio → Aspertia(Cheren); G2 Nacrene(Lenora) → Virbank(Roxie);
-      // G3-6 shared (Burgh/Elesa/Clay/Skyla); G7 Icirrus(Brycen) → Humilau(Marlon);
-      // G8 Opelucid(Drayden).
       511,513,515,506,505,544,542,523,530,581,614,593,612,
-      // Unova Pokémon League
       609,625,576,620,637,
-      // Kalos Gym Challenge
       666,696,701,673,695,700,678,713,
-      // Kalos Pokémon League
       663,689,681,715,282,
-      // Alola Island Challenge (Kahunas + Trial Captains)
       740,745,10108,750, 735,752,10115,763,777,770,743,
-      // Alola Pokémon League
       733,
-      // Galar Gym Challenge
       830,834,851,68,94,869,839,131,862,884,
-      // Galar Champion
       6,
-      // Paldea Gym Challenge
       216,185,429,740,398,849,671,334,
-      // Paldea Pokémon League
       980,959,973,998,970,
     ],
     suggestedSlotRange: [40, 60],
@@ -847,94 +793,89 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Evolution Item',
     description: 'Pokémon that evolve using an evolution item',
     pokemonIds: [
-      // Gen 1 stones
-      37,38, 58,59, 133,136, // Fire Stone: Vulpix, Growlithe, Eevee→Flareon
-      60,61,62, 90,91, 120,121, 133,134, // Water Stone: Poliwag line, Shellder, Staryu, Eevee→Vaporeon
-      25,26, 133,135, // Thunder Stone: Pikachu, Eevee→Jolteon
-      43,44,45, 69,70,71, 102,103, // Leaf Stone: Gloom→Vileplume, Weepinbell→Victreebel, Exeggcute→Exeggutor
-      30,31, 33,34, 35,36, 39,40, // Moon Stone: Nidorina, Nidorino, Clefairy, Jigglypuff
-      // Gen 2 trade-with-item
-      95,208, 123,212, // Metal Coat: Onix→Steelix, Scyther→Scizor
-      61,186, 79,199, // King's Rock: Poliwhirl→Politoed, Slowpoke→Slowking
-      137,233, // Upgrade: Porygon→Porygon2
-      116,117,230, // Dragon Scale: Seadra→Kingdra
-      // Gen 2 stones
-      191,192, // Sun Stone: Sunkern→Sunflora
-      // Gen 3
-      366,367,368, // Deep Sea Tooth / Scale: Clamperl→Huntail/Gorebyss
-      270,271,272, 273,274,275, // Water/Leaf Stone: Lotad line, Nuzleaf line
-      300,301, // Moon Stone: Skitty→Delcatty
-      // Gen 4 new items
-      315,407, 176,468, // Shiny Stone: Roselia→Roserade, Togetic→Togekiss
-      198,430, 200,429, // Dusk Stone: Murkrow→Honchkrow, Misdreavus→Mismagius
-      280,281,475, 361,478, // Dawn Stone: Kirlia→Gallade, Snorunt→Froslass
-      440,113, // Oval Stone: Happiny→Chansey
-      215,461, // Razor Claw: Sneasel→Weavile
-      207,472, // Razor Fang: Gligar→Gliscor
-      125,466, 126,467, // Electirizer / Magmarizer: Electabuzz→Electivire, Magmar→Magmortar
-      112,464, // Protector: Rhydon→Rhyperior
-      356,477, // Reaper Cloth: Dusclops→Dusknoir
-      233,474, // Dubious Disc: Porygon2→Porygon-Z
-      81,82,462, 299,476, // Thunder Stone: Magneton→Magnezone (in some games), Nosepass→Probopass
-      // Gen 5
-      513,514, 515,516, 511,512, // Fire/Water/Leaf Stone: Pansear, Panpour, Pansage
-      191,192, 546,547, 548,549, // Sun Stone: Sunkern, Cottonee→Whimsicott, Petilil→Lilligant
-      517,518, // Moon Stone: Munna→Musharna
-      572,573, // Shiny Stone: Minccino→Cinccino
-      607,608,609, // Dusk Stone: Lampent→Chandelure
-      602,603,604, // Thunder Stone: Eelektrik→Eelektross
-      349,350, // Prism Scale: Feebas→Milotic
-      // Gen 6
-      670,671, // Shiny Stone: Floette→Florges
-      679,680,681, // Dusk Stone: Doublade→Aegislash
-      694,695, // Sun Stone: Helioptile→Heliolisk
-      682,683, 684,685, // Sachet / Whipped Dream: Spritzee→Aromatisse, Swirlix→Slurpuff
-      // Gen 7
-      10103,10104, // Ice Stone: A-Vulpix→A-Ninetales
-      10229,10230, // Fire Stone: H-Growlithe→H-Arcanine
-      10101,10102, // Ice Stone: A-Sandshrew→A-Sandslash
-      133,471, // Ice Stone: Eevee→Glaceon
-      736,737,738, // Thunder Stone: Charjabug→Vikavolt
-      740, // Ice Stone: Crabrawler→Crabominable
-      // Gen 8
-      10176,10177, // Ice Stone: G-Darumaka→G-Darmanitan
-      840,841, 840,842, // Tart Apple / Sweet Apple: Applin→Flapple, Applin→Appletun
-      854,855, // Cracked Pot / Chipped Pot: Sinistea→Polteageist
-      868,869,10254,10255,10256,10257,10258,10259, // Milcery Sweets: Milcery→Alcremie (7 sweets)
-      951,952, // Fire Stone: Capsakid→Scovillain
-      10164,10165,10172, // Galarica Cuff / Wreath: G-Slowpoke→G-Slowbro/G-Slowking
-      891,892,10227, // Scroll of Darkness / Waters: Kubfu→Urshifu (Single Strike / Rapid Strike)
-      // Gen 8 (Legends Arceus)
-      123,900, // Black Augurite: Scyther→Kleavor
-      217,901, // Peat Block: Ursaring→Ursaluna
-      10235,903, // Razor Claw: Sneasel-H→Sneasler
-      548,10237, // Sun Stone: Petilil→Lilligant-H (in PLA)
-      // Gen 9
-      935,936,937, // Auspicious / Malicious Armor: Charcadet→Armarouge/Ceruledge
-      938,939, // Thunder Stone: Tadbulb→Bellibolt
-      975, // Ice Stone: Cetoddle→Cetitan
-      884,1018, // Metal Alloy: Duraludon→Archaludon
-      840,1011,1019, // Syrupy Apple: Applin→Dipplin→Hydrapple
-      1012,1013, // Unremarkable / Masterpiece Teacup: Poltchageist→Sinistcha
+      37,38, 58,59, 133,136,
+      60,61,62, 90,91, 120,121, 133,134,
+      25,26, 133,135,
+      43,44,45, 69,70,71, 102,103,
+      30,31, 33,34, 35,36, 39,40,
+
+      95,208, 123,212,
+      61,186, 79,199,
+      137,233,
+      116,117,230,
+
+      191,192,
+
+      366,367,368,
+      270,271,272, 273,274,275,
+      300,301,
+
+      315,407, 176,468,
+      198,430, 200,429,
+      280,281,475, 361,478,
+      440,113,
+      215,461,
+      207,472,
+      125,466, 126,467,
+      112,464,
+      356,477,
+      233,474,
+      81,82,462, 299,476,
+
+      513,514, 515,516, 511,512,
+      191,192, 546,547, 548,549,
+      517,518,
+      572,573,
+      607,608,609,
+      602,603,604,
+      349,350,
+
+      670,671,
+      679,680,681,
+      694,695,
+      682,683, 684,685,
+
+      10103,10104,
+      10229,10230,
+      10101,10102,
+      133,471,
+      736,737,738,
+      740,
+
+      10176,10177,
+      840,841, 840,842,
+      854,855,
+      868,869,10254,10255,10256,10257,10258,10259,
+      951,952,
+      10164,10165,10172,
+      891,892,10227,
+
+      123,900,
+      217,901,
+      10235,903,
+      548,10237,
+
+      935,936,937,
+      938,939,
+      975,
+      884,1018,
+      840,1011,1019,
+      1012,1013,
     ],
     suggestedSlotRange: [1, 151],
     color: '#c77dff',
     subgroups: [
-      // Gen 1 — Evolution Stones
       { label: 'Fire Stone', pokemonIds: [38, 59, 136, 10230, 514, 952] },
       { label: 'Water Stone', pokemonIds: [62, 91, 121, 134, 272, 516] },
       { label: 'Thunder Stone', pokemonIds: [26, 135, 462, 476, 604, 738, 939] },
       { label: 'Leaf Stone', pokemonIds: [45, 71, 103, 10114, 275, 512, 549, 10237] },
       { label: 'Moon Stone', pokemonIds: [31, 34, 36, 40, 301, 518] },
-      // Gen 2 — Trade-with-Item & Sun Stone
       { label: 'Sun Stone', pokemonIds: [192, 547, 549, 695] },
       { label: 'King\'s Rock', pokemonIds: [186, 199] },
       { label: 'Metal Coat', pokemonIds: [208, 212] },
       { label: 'Dragon Scale', pokemonIds: [230] },
       { label: 'Upgrade', pokemonIds: [233] },
-      // Gen 3
       { label: 'Deep Sea Tooth / Deep Sea Scale', pokemonIds: [367, 368] },
-      // Gen 4 — New Stones & Held Items
       { label: 'Shiny Stone', pokemonIds: [468, 407, 573, 671] },
       { label: 'Dusk Stone', pokemonIds: [430, 429, 609, 681] },
       { label: 'Dawn Stone', pokemonIds: [475, 478] },
@@ -946,23 +887,17 @@ export const ARCHETYPES: Archetype[] = [
       { label: 'Protector', pokemonIds: [464] },
       { label: 'Reaper Cloth', pokemonIds: [477] },
       { label: 'Dubious Disc', pokemonIds: [474] },
-      // Gen 5
       { label: 'Prism Scale', pokemonIds: [350] },
-      // Gen 6
       { label: 'Sachet', pokemonIds: [683] },
       { label: 'Whipped Dream', pokemonIds: [685] },
-      // Gen 7
       { label: 'Ice Stone', pokemonIds: [10102, 10104, 471, 740, 10177, 975] },
-      // Gen 8
       { label: 'Tart / Sweet / Syrupy Apple', pokemonIds: [841, 842, 1011, 1019] },
       { label: 'Cracked Pot / Chipped Pot', pokemonIds: [855] },
       { label: 'Sweet (Milcery)', pokemonIds: [869, 10254, 10255, 10256, 10257, 10258, 10259] },
       { label: 'Galarica Cuff / Galarica Wreath', pokemonIds: [10165, 10172] },
       { label: 'Scroll of Darkness / Scroll of Waters', pokemonIds: [892, 10227] },
-      // Gen 8 (Legends Arceus)
       { label: 'Black Augurite', pokemonIds: [900] },
       { label: 'Peat Block', pokemonIds: [901] },
-      // Gen 9
       { label: 'Auspicious Armor / Malicious Armor', pokemonIds: [936, 937] },
       { label: 'Metal Alloy', pokemonIds: [1018] },
       { label: 'Unremarkable / Masterpiece Teacup', pokemonIds: [1013] },

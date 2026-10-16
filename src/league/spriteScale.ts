@@ -24,18 +24,8 @@ import { SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
 type SpriteScreen = 'phone' | 'standard' | 'retina';
 
 interface ScreenRule {
-  /**
-   * The largest a league summary sprite draws, in CSS px, or null where the
-   * summary squashes to fit instead of growing.
-   */
   homeCeilingPx: ((dpr: number) => number) | null;
-  /**
-   * The zoom the summary holds while it gives up its own spacing
-   * (`Compact.holds`): the ceiling, so the sprites stay at it, or the fit's
-   * floor, so the zoom follows the window until it has nowhere left to go.
-   */
   holds: 'ceiling' | 'floor';
-  /** Below this many device px per source px, a sprite is smoothed. */
   smoothBelow: number;
 }
 
@@ -54,23 +44,13 @@ export function screenRule(screen: SpriteScreen): ScreenRule {
   return RULES[screen];
 }
 
-/**
- * Float noise on a zoom that holds a sprite at exactly 1x reads 0.99999...,
- * which must not count as below it.
- */
 const SCALE_EPS = 1e-3;
 
-/** The `image-rendering` for a sprite drawn `cssPx` wide on `screen`. */
 export function spriteRendering(screen: SpriteScreen, cssPx: number, dpr: number): 'pixelated' | 'auto' {
   const deviceScale = (cssPx * dpr) / SPRITE_NATIVE;
   return deviceScale < RULES[screen].smoothBelow - SCALE_EPS ? 'auto' : 'pixelated';
 }
 
-/**
- * The custom property a fitted block sets for the sprites inside it. The
- * block knows its zoom, so it decides; the sprites only read it.
- */
 export const SPRITE_RENDERING_VAR = '--lg-sprite-rendering';
 
-/** What a league sprite wears: its block's choice, pixelated by default. */
 export const SPRITE_RENDERING = `var(${SPRITE_RENDERING_VAR}, pixelated)` as React.CSSProperties['imageRendering'];

@@ -68,12 +68,9 @@ import './ExportPreview3D.css';
 import './foil/my151Holo.css';
 
 const TAP_MS = 320;
-/** Opening the export eases auto-tilt, glare, pop, and foil in from flat. */
 const PREVIEW_OPEN_MS = 1500;
-/** The most one frame advances the opening, so a stalled frame cannot skip it. */
 const PREVIEW_OPEN_STEP_MS = 34;
 
-/** The opening ramp, 0 to 1, from the ms the loop counted since the card showed. */
 function openEase(ms: number | null): number {
   if (ms === null) return 0;
   const u = Math.min(1, ms / PREVIEW_OPEN_MS);
@@ -83,11 +80,6 @@ const TAP_PX = 10;
 
 type Orbit = 'idle' | 'pointer' | 'rest' | 'paused' | 'static';
 
-/**
- * `auto` orbits until a mouse first hovers the card. `hover` tilts under the
- * mouse and rests flat when it leaves. `locked` rests flat and ignores hover
- * until the next click. Touch toggles between `auto` and `locked`.
- */
 type TiltMode = 'auto' | 'hover' | 'locked';
 
 function lerpPose(from: HoverTiltPose, to: HoverTiltPose, u: number): HoverTiltPose {
@@ -109,11 +101,6 @@ function tiltAxes(tilt: HoverTiltRecipe | undefined, maxTilt: number): HoverTilt
   };
 }
 
-/**
- * Live export preview. It tilts with hover-tilt's pointer tracking, springs,
- * and leave, which live in `@/components/export/hover-tilt/`, and writes
- * hover-tilt's documented CSS variables.
- */
 export function ExportPreview3D({
   src,
   alt,
@@ -133,16 +120,10 @@ export function ExportPreview3D({
   className?: string;
   recipe?: FoilRecipe;
   frames?: { activeKey: string; urls: Record<string, string> };
-  /** Native hover-tilt knobs and masks. Live overlay uses the default recipe. */
   tilt?: HoverTiltRecipe;
   maskContext?: HoverTiltMaskContext;
   darkCard?: boolean;
-  /** Camera distance for a card size. The workshop compares others. */
   camera?: PreviewCamera;
-  /**
-   * A multiple of the card size `previewSizeCamera` gives, never past the
-   * room the tilt leaves. `room` fills that room, as on October 10.
-   */
   size?: number | 'room';
 }) {
   const t = useT();
@@ -180,9 +161,6 @@ export function ExportPreview3D({
   const layerIds = activeFoilLayerIds(recipe);
   const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
   const liveSrc = (frames ? frames.urls[frames.activeKey] : null) ?? src;
-  // While a changed setting renders, keep the last picture on screen: a
-  // placeholder between two finished pictures flickers. The Save button shows
-  // the wait instead. A picture the cache has since released is not kept.
   const [heldSrc, setHeldSrc] = useState(liveSrc);
   if (liveSrc && liveSrc !== heldSrc) setHeldSrc(liveSrc);
   const heldIsLive = heldSrc != null && (heldSrc === src || Object.values(frames?.urls ?? {}).includes(heldSrc));
@@ -203,8 +181,6 @@ export function ExportPreview3D({
     const cardH = cardMaxRef.current.h;
     const tiltNowEarly = tiltRef.current ?? DEFAULT_HOVER_TILT_RECIPE;
     const activation = Math.min(1, Math.max(0, springARef.current.value));
-    // The glare and the pop ease in with the opening. The foil does not: a
-    // flat card already shows it at its floor.
     const open = openEase(openMsRef.current);
     const liveScale = hoverTiltScale(tiltNowEarly.scaleFactor, activation, open);
     if (stageSize.w > 0 && cardW > 0 && cardH > 0) {
@@ -215,8 +191,6 @@ export function ExportPreview3D({
         cardHeight: cardH * liveScale,
         boxWidth: stageSize.w,
         boxHeight: stageSize.h,
-        // The fit already holds the widest tilt this far inside, so this
-        // only catches a stage that resized before the card refit.
         pad: PREVIEW_REST_PAD,
         camera: cameraRef.current,
       });
@@ -267,8 +241,6 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-scale', liveScale.toFixed(3));
     const hit = hitRef.current;
     if (hit) {
-      // The card is laid out at its popped size, so tilt never enlarges a
-      // raster: the lift scales down to rest and up to 1 while active.
       const pop = Math.max(1, tiltNow.scaleFactor);
       hit.style.setProperty('--rotation-x', `${rotateX}deg`);
       hit.style.setProperty('--rotation-y', `${rotateY}deg`);
@@ -278,7 +250,6 @@ export function ExportPreview3D({
       hit.style.setProperty('--shadow-x', shadowX.toFixed(4));
       hit.style.setProperty('--shadow-y', shadowY.toFixed(4));
       hit.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
-      // In layout px, which the lift's transform then scales back down.
       hit.style.setProperty('--hover-tilt-shadow-blur', String(Math.round(tiltNow.shadowBlur * pop)));
       hit.dataset.hoverTiltShadow = shadowOn ? '1' : '0';
       hit.setAttribute('data-shadow-x', shadowX.toFixed(2));
@@ -306,11 +277,8 @@ export function ExportPreview3D({
 
   const idleAt = useCallback((now: number) => {
     const origin = originRef.current;
-    // Reduced motion holds the card still. Activation still rises in idle, so
-    // the foil stays on. Hover, drag, and tap are the user's own motion.
     if (reducedMotionRef.current || origin === null) return REST_POSE;
     const recipeNow = recipeRef.current;
-    // The orbit radius grows with `open`, so auto-tilt starts flat and spirals out.
     return idleOrbitPose({
       now,
       origin,
@@ -321,7 +289,6 @@ export function ExportPreview3D({
     });
   }, []);
 
-  /** Unrotated box. The lift's transformed rect inverts left and right. */
   const restPointerBox = useCallback((): DOMRect | null => {
     const hit = hitRef.current;
     if (!hit || hit.offsetWidth <= 0) return null;
@@ -345,8 +312,6 @@ export function ExportPreview3D({
     if (!box || box.width === 0) return;
     const axes = tiltAxes(tiltRef.current, recipeRef.current.maxTilt);
     const pose = hoverTiltFromPointer(clientX, clientY, box, axes);
-    // Start the springs at the tilt on screen, whatever drew it: auto-tilt,
-    // a release, or rest.
     const last = lastPoseRef.current;
     const from = normalizedForTilt(last.rotateX, last.rotateY, axes);
     springXRef.current.value = from.nx;
@@ -414,9 +379,6 @@ export function ExportPreview3D({
       stageSizeRef.current = { w: r.width, h: r.height };
       const img = imgRef.current;
       const aspect = img && img.naturalWidth > 0 ? img.naturalWidth / img.naturalHeight : 1;
-      // Room for the widest tilt a pointer or auto-tilt can reach. A card
-      // sized for more leans on clampTiltToBox, which jumps: the projected
-      // card is tallest mid-tilt, so fitting is not monotonic in the angle.
       const fitFor = (fitCamera: PreviewCamera) =>
         fitCardInPreviewBox({
           boxWidth: r.width,
@@ -471,7 +433,6 @@ export function ExportPreview3D({
     const sync = () => {
       if (reducedMotionRef.current === query.matches) return;
       reducedMotionRef.current = query.matches;
-      // Ease into the new idle pose instead of jumping to it.
       if (orbitRef.current === 'idle' && !pausedRef.current) {
         releaseRef.current = { from: { ...lastPoseRef.current }, t0: performance.now() };
       }
@@ -487,10 +448,6 @@ export function ExportPreview3D({
       const lastTick = lastTickRef.current ?? now;
       const dt = now - lastTick;
       lastTickRef.current = now;
-      // The opening starts once the card shows with its foil maps: the loop
-      // runs while the preview renders, and building the maps stalls the main
-      // thread right after the image loads. A card that first showed mid-orbit
-      // would jump in at full tilt.
       if (openMsRef.current === null) {
         const maps = cardRef.current?.dataset.foilMaps;
         if (imgRef.current?.complete && (maps === '1' || maps === 'failed')) {
@@ -522,7 +479,6 @@ export function ExportPreview3D({
           ) {
             restAtRef.current = null;
             orbitRef.current = modeRef.current === 'auto' ? 'idle' : 'static';
-            // Auto-tilt never passes through flat, so ease into it.
             if (orbitRef.current === 'idle') releaseRef.current = { from: REST_POSE, t0: now };
             paint(REST_POSE);
           }
@@ -581,7 +537,6 @@ export function ExportPreview3D({
     for (const [key, value] of Object.entries(tiltVars)) {
       el.style.setProperty(key, value);
     }
-    // On the hit, so the card and its shape shadow both inherit the outline.
     hitRef.current?.style.setProperty('--export-shape-mask', foilMaskCss(activeSrc ?? ''));
     el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
     el.dataset.hoverTilt = '1';
@@ -605,7 +560,6 @@ export function ExportPreview3D({
     };
   }, [activeSrc, camera, idleAt, maskContext, paint, recipe, size, tilt]);
 
-  // The fit reserves room for the tilt, so a new extent, camera, or size refits the card.
   useLayoutEffect(() => {
     measureRef.current();
   }, [camera, recipe.idleTilt, recipe.maxTilt, size]);
@@ -684,7 +638,6 @@ export function ExportPreview3D({
         const dist = Math.hypot(e.clientX - down.x, e.clientY - down.y);
         if (dist > TAP_PX) down.dragged = true;
       }
-      // A mouse already tilts by hover, so only a finger or pen drags the card.
       const dragging = e.pointerType !== 'mouse' && Boolean(down?.dragged || (down && e.buttons > 0));
       if (dragging) {
         lastPointerRef.current = { x: e.clientX, y: e.clientY };
@@ -747,7 +700,6 @@ export function ExportPreview3D({
       restAtRef.current = null;
       enterSinceRef.current = null;
       if (modeRef.current === 'locked') {
-        // Unlock into hover tilt. The mouse is over the card, so it tilts now.
         modeRef.current = 'hover';
         pausedRef.current = false;
         releaseRef.current = null;
@@ -802,8 +754,6 @@ export function ExportPreview3D({
   const pop = Math.max(1, tilt?.scaleFactor ?? 1);
   const maxW = cardMax.w > 0 ? `${Math.round(cardMax.w * pop)}px` : '100%';
   const maxH = cardMax.h > 0 ? `${Math.round(cardMax.h * pop)}px` : '100%';
-  // The lift is laid out at its popped size, so the camera scales with that.
-  // Until the first measure, the stylesheet's default stands in.
   const perspectivePx =
     cardMax.w > 0 ? Math.round(camera(cardMax.w * pop, cardMax.h * pop)) : null;
 

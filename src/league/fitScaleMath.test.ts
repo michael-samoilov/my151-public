@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { proposeFit, stabilizeMeasure, SCALE_EPS, WIDTH_EPS } from './fitScaleMath';
 
-/**
- * Values from the forced-avail vibration repro @ 912×705 (Firefox):
- * avail alternated 578.47 ↔ 572.47 with natural ≈ 917.5, producing
- * next ≈ 0.630 ↔ 0.624 (Δ ≈ 0.0067) — above the old 0.003 deadband.
- */
 const A = {
   mode: 'squash' as const,
   natural: 917.51,

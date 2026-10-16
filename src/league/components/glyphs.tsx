@@ -1,8 +1,3 @@
-/**
- * The stage glyphs, white on the card's glyph cells. Shapes and proportions
- * come from the design canvas (docs/future-tools/league-builder/canvas).
- */
-
 const GAP_PX = 2;
 
 function starMark(size: number, key: number) {
@@ -28,8 +23,6 @@ function diamondMark(size: number, key: number, filled: boolean) {
   );
 }
 
-/** N−1 filled square diamonds plus one outline. Four or fewer sit on one line;
- *  more stack in a fixed four-wide grid so the count never reflows. */
 export function GymBadges({ n, size = 7 }: { n: number; size?: number }) {
   const marks = Array.from({ length: n }, (_, i) => diamondMark(size, i, i < n - 1));
   if (n <= 4) {
@@ -69,8 +62,6 @@ export function Crown({ size = 15 }: { size?: number }) {
   );
 }
 
-/** The solid pokeball: the ball is the white, the cell colour its negative
- *  space — the weight of the filled crown (concept B on the boards). */
 export function BossBall({ cell, size = 17 }: { cell: string; size?: number }) {
   return (
     <svg viewBox="0 0 24 24" style={{ width: size, height: size }}>
@@ -82,7 +73,6 @@ export function BossBall({ cell, size = 17 }: { cell: string; size?: number }) {
   );
 }
 
-/** The view page's empty-slot mark: a faint pokeball, turned 30°. */
 export function EmptySlotBall({ size = 26 }: { size?: number | string }) {
   const c = 'rgba(10,10,10,0.14)';
   return (
@@ -96,7 +86,6 @@ export function EmptySlotBall({ size = 26 }: { size?: number | string }) {
   );
 }
 
-/** A pokeball with the band taken out, sheared — the TM disc. */
 export function TmDisc({ colour, size = 22 }: { colour: string; size?: number | string }) {
   return (
     <svg viewBox="0 0 24 24" style={{ width: size, height: size }}>

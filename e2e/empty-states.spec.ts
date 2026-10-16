@@ -1,14 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { blankLeague } from './support/leagueSeed';
 
-/**
- * The lists share one empty state (`src/components/shared/EmptyState.tsx`): a
- * title that names the cause, one line of body, and a button only when the
- * person can fix the cause there. These press each button and check that it
- * fixes what the title names. The Favorite Picker's buttons are in
- * `favorites-picker.spec.ts`.
- */
-
 const count = (page: Page) => page.locator('[data-result-count]').filter({ visible: true }).first();
 const results = async (page: Page) => Number(await count(page).getAttribute('data-result-count'));
 
@@ -78,7 +70,6 @@ test('the TM picker clears a search, then filters, that find nothing', async ({ 
   await expect(search).toHaveValue('');
   await expect(page.locator('[data-testid^="tm-move-"]').first()).toBeVisible();
 
-  // No Fire move is a Cool contest move.
   await page.getByTestId('tm-filter-contest').click();
   await page.getByRole('button', { name: 'Cool', exact: true }).click();
   await expect(empty.getByRole('heading', { name: 'No moves match these filters' })).toBeVisible();
@@ -89,8 +80,6 @@ test('the TM picker clears a search, then filters, that find nothing', async ({ 
 });
 
 test('Pokédex analytics with no Pokémon goes back to Build', async ({ page }, testInfo) => {
-  // A person who reached 25 Pokémon and then emptied the Pokédex: Analytics
-  // stays unlocked.
   await page.goto('/pokedex-builder?tune&lang=en');
   await page.waitForFunction(() => '__pokedexStore' in window);
   await page.evaluate(() => {
@@ -107,7 +96,6 @@ test('Pokédex analytics with no Pokémon goes back to Build', async ({ page }, 
   await testInfo.attach('analytics-empty', { body: JSON.stringify({ view: 'builder' }), contentType: 'application/json' });
 });
 
-/** Lines of text per part, and whether any part leaves the screen. */
 async function measure(empty: Locator) {
   return empty.evaluate((el) => {
     const lines = (node: Element) => {

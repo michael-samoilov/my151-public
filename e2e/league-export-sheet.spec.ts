@@ -130,7 +130,6 @@ test.describe('mobile export sheet', () => {
     const foil = page.locator('[data-export-preview]');
     await expect(foil).toHaveAttribute('data-paused', '0');
 
-    // The default layers, and only those: point light, prism, gleam, iridescence.
     await expect
       .poll(async () => (await page.locator('[data-foil-layer]').evaluateAll((els) => els.map((el) => el.getAttribute('data-foil-layer')))).sort().join(','))
       .toBe('gleam,iridescence,pointLight,prism');
@@ -261,7 +260,6 @@ test.describe('desktop export preview', () => {
     expect(box).toBeTruthy();
     await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
-    // The springs start from the auto-tilt pose, so wait for the hover pose.
     await expect
       .poll(async () => Math.hypot(Number(await foil.getAttribute('data-tilt-x')), Number(await foil.getAttribute('data-tilt-y'))))
       .toBeGreaterThan(2);
@@ -278,7 +276,6 @@ test.describe('desktop export preview', () => {
         mask,
         amount: Number(getComputedStyle(card).getPropertyValue('--foil-gleam')),
         foil: Number(card.getAttribute('data-foil-opacity')),
-        // The drop shadow is the PNG's own shape, blurred.
         shadow: document.querySelectorAll('[data-export-shadow-layer]').length,
         hypot: Math.hypot(Number(card.getAttribute('data-tilt-x') || 0), Number(card.getAttribute('data-tilt-y') || 0)),
       };
@@ -353,7 +350,6 @@ test.describe('gym trainer-card export', () => {
     expect(box).toBeTruthy();
     await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
-    // The springs start from the auto-tilt pose, so wait for the hover pose.
     await expect
       .poll(async () => Math.hypot(Number(await foil.getAttribute('data-tilt-x')), Number(await foil.getAttribute('data-tilt-y'))))
       .toBeGreaterThan(2);

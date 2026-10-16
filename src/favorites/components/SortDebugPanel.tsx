@@ -13,13 +13,6 @@ import {
   type SortOrder,
 } from '../model/sortKeys';
 
-/**
- * A preview-only tool for trying selector sort orders (`?sortdebug=1`). A
- * small button at the top of the page opens it: a pane docked on the right
- * on desktop, a bottom sheet on mobile. The button sits above an open
- * selector sheet, so a change reorders the open selector too. Copy is
- * English only: users never see it.
- */
 export function SortDebugPanel({
   desktop,
   order,
@@ -53,7 +46,6 @@ export function SortDebugPanel({
       className="fixed left-1/2 top-2 z-[120] inline-flex h-7 -translate-x-1/2 cursor-pointer items-center gap-1 rounded-full border border-dashed border-amber-500 bg-amber-50 px-2.5 text-xs font-semibold text-amber-800 shadow-sm"
     >
       <ArrowUpDown className="h-3.5 w-3.5" aria-hidden />
-      {/* Icon only on a narrow phone, where the label would cover the wordmark. */}
       <span className="max-[359px]:sr-only">Sort</span>
     </button>
   );
@@ -226,8 +218,6 @@ function KeyRow({
   );
 }
 
-// Label and move buttons share the first line. The description spans the
-// full width below them, so it stays at two lines in a narrow pane.
 const ROW = 'grid grid-cols-[1rem_1rem_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-0.5 px-2 py-2';
 const POSITION = 'text-right text-xs tabular-nums text-muted-foreground';
 const CHECKBOX = 'h-4 w-4 accent-primary';

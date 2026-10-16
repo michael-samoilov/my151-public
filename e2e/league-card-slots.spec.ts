@@ -1,26 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 import { blankLeague, pairLeague, seededLeague } from './support/leagueSeed';
 
-/**
- * The gym card's two authored slots: the TM and the badge.
- *
- * Both had a wrong signal that only shows up in the rendered box — a TM disc
- * painted in the gym's colour rather than the move's, and a badge whose word
- * "Badge" sat under the name instead of finishing the phrase. So both are
- * checked against what the browser actually paints.
- */
-
 const openCard = async (page: Page) => {
   await blankLeague(page);
   await page.goto('/custom-gym-leader');
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.click('[data-testid="league-slot-0"]');
   await page.waitForSelector('[data-testid="card-cell-1-1"]');
-  // The mobile pane track finishes translating before anything is measured.
   await page.waitForTimeout(500);
 };
 
-/** Seat a line by searching the selection pane for it. */
 const seat = async (page: Page, cell: string, query: string) => {
   await page.click(cell);
   await page.waitForTimeout(600);
@@ -36,22 +25,6 @@ const seat = async (page: Page, cell: string, query: string) => {
   await page.waitForTimeout(400);
 };
 
-/**
- * The longest single-word move stays inside its box, at every phone shape.
- *
- * A single word cannot wrap, so the box either holds it or cuts it — and this
- * box has been re-cut twice, once to fit the word and once to move the name
- * off the disc. What must never happen is the third thing: the word painting
- * over the cell beside it. So the invariant checked here is containment, not
- * fit.
- *
- * Fit is not containment, and the difference is measured. The card is laid
- * out at `room / squash` and then zoomed down, so a *short* viewport lays the
- * card out wider and gives the text more room; a tall one gives it least.
- * Flamethrower fits at 393x661 and is cut by 10px at 393x800. That is
- * today's behaviour on both sides of this change, and it is a defect of the
- * box's own width, not of where the name starts.
- */
 const PHONES = [
   { width: 360, height: 661 },
   { width: 393, height: 800 },
@@ -65,7 +38,6 @@ test.describe('the longest move in the TM box', () => {
         viewport, deviceScaleFactor: 3, isMobile: true, hasTouch: true,
       });
       const page = await context.newPage();
-      // Flamethrower, twelve letters, seated straight into the card.
       await page.addInitScript(() => {
         const cards = Array.from({ length: 14 }, () => ({
           type: null as string | null,
@@ -108,13 +80,10 @@ test.describe('the longest move in the TM box', () => {
 test.describe('gym card slots', () => {
   test('the signature pane reads the team as lines, in league order', async ({ page }, testInfo) => {
     await openCard(page);
-    // Seeded out of order on purpose. Magnezone is a generation 4 Pokémon
-    // whose line starts at Magnemite in generation 1 — the line's own
-    // earliest generation is what orders it, not the member that matched.
-    await seat(page, '[data-testid="card-cell-1-1"]', 'lotad');      // gen 3, #270
-    await seat(page, '[data-testid="card-cell-1-2"]', 'magnezone');  // line: gen 1, #81
-    await seat(page, '[data-testid="card-cell-2-3"]', 'chinchou');   // gen 2, #170
-    await seat(page, '[data-testid="card-cell-5-4"]', 'caterpie');   // gen 1, #10
+    await seat(page, '[data-testid="card-cell-1-1"]', 'lotad');
+    await seat(page, '[data-testid="card-cell-1-2"]', 'magnezone');
+    await seat(page, '[data-testid="card-cell-2-3"]', 'chinchou');
+    await seat(page, '[data-testid="card-cell-5-4"]', 'caterpie');
 
     await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-filter-chip="scope"]');
@@ -126,7 +95,6 @@ test.describe('gym card slots', () => {
       members: [...document.querySelectorAll('[data-testid="verify-evo-card"] img[alt]')].map((i) => (i as HTMLImageElement).alt),
     }));
 
-    // One group, not a generation heading in sight.
     expect(view.headings).toEqual(['Current Team']);
     expect(view.members).toEqual([
       'Caterpie', 'Metapod', 'Butterfree',
@@ -139,8 +107,6 @@ test.describe('gym card slots', () => {
 
   test('the team scope draws the seated branch, not the whole chain', async ({ page }, testInfo) => {
     await openCard(page);
-    // Scyther's chain splits: Scizor and Kleavor. Only the seated branch
-    // belongs in the pane, and Scyther belongs in it once.
     await seat(page, '[data-testid="card-cell-1-1"]', 'scizor');
     await seat(page, '[data-testid="card-cell-1-2"]', 'chinchou');
 
@@ -153,8 +119,6 @@ test.describe('gym card slots', () => {
       const tiles = [...document.querySelectorAll('[data-testid="verify-evo-card"]')];
       const names = tiles.flatMap((t) => [...t.querySelectorAll('img[alt]')].map((i) => (i as HTMLImageElement).alt));
       const cell = document.querySelector('[data-row-cell]')!.getBoundingClientRect().width;
-      // The backing rectangle: one per line when tiles are grouped, one per
-      // Pokémon when they stand alone.
       const backs = [...document.querySelectorAll('div.absolute.rounded-md.border')]
         .map((e) => e.getBoundingClientRect().width);
       return {
@@ -167,10 +131,7 @@ test.describe('gym card slots', () => {
 
     expect(view.names).toEqual(['Scyther', 'Scizor', 'Chinchou', 'Lanturn']);
     expect(view.names).not.toContain('Kleavor');
-    // The count beside the search box agrees with what is drawn.
     expect(view.count).toBe(4);
-    // Every backing rectangle fits inside one cell: each Pokémon is its own
-    // tile, not one rectangle stretched over a line.
     expect(view.widestBack).toBeLessThan(view.cell);
     await testInfo.attach('seated-branch', { body: JSON.stringify(view), contentType: 'application/json' });
   });
@@ -189,8 +150,6 @@ test.describe('gym card slots', () => {
     const after = await page.evaluate(
       () => Number(document.querySelector('[data-result-count]')?.getAttribute('data-result-count')),
     );
-    // Restricting to a set of none is not the same as not restricting. The
-    // two used to share a memo key, so the chip handed back everything.
     expect(after).toBe(0);
   });
 
@@ -200,7 +159,6 @@ test.describe('gym card slots', () => {
       page.evaluate(() => Number(document.querySelector('[data-result-count]')?.getAttribute('data-result-count')));
     const chipIsOff = () => page.locator('[data-filter-chip="scope"]').count();
 
-    // Nothing seated: there is no team to narrow to, so no chip at all.
     await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
     await page.waitForSelector('[data-result-count]');
     await page.waitForTimeout(500);
@@ -219,7 +177,6 @@ test.describe('gym card slots', () => {
     const scoped = await results();
     expect(scoped).toBe(5);
 
-    // Reopening keeps it on.
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
     await page.click('[data-testid="slot-ace"]', { position: { x: 8, y: 8 } });
@@ -229,7 +186,6 @@ test.describe('gym card slots', () => {
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
 
-    // Emptying the card clears it: the scope cannot outlive what it scopes to.
     for (let i = 0; i < 2; i++) {
       await page.locator('[aria-label^="Remove"]').first().click();
       await page.waitForTimeout(500);
@@ -241,9 +197,6 @@ test.describe('gym card slots', () => {
   });
 
   test('the My dex chip stays on until it is turned off', async ({ page }) => {
-    // Seeded before any app script runs: the chip filters to the dex builder's
-    // own placed set, and an empty dex makes "filtered" and "unfiltered"
-    // indistinguishable from a mistake.
     await page.addInitScript(() => {
       localStorage.setItem('personal-151-pokedex-v3', JSON.stringify({
         state: {
@@ -265,7 +218,6 @@ test.describe('gym card slots', () => {
     const filtered = await results();
     expect(filtered).toBeLessThan(unfiltered);
 
-    // Close the pane and open it for a different seat.
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
     await page.click('[data-testid="card-cell-1-2"]');
@@ -273,7 +225,6 @@ test.describe('gym card slots', () => {
     expect(await page.locator('[data-filter-chip="my-dex"]').count(), 'the off-state chip is gone').toBe(0);
     expect(await results(), 'the filter is still applied').toBe(filtered);
 
-    // Turning it off sticks too.
     await page.evaluate(() => {
       const chip = [...document.querySelectorAll('span')].find(
         (el) => /My dex/.test(el.textContent ?? '') && el.className.includes('bg-foreground'),
@@ -298,12 +249,9 @@ test.describe('gym card slots', () => {
     await page.waitForTimeout(400);
 
     const stroke = await page.evaluate(() => {
-      // The disc is the one skewed pokeball on the card.
       const disc = [...document.querySelectorAll('svg')].find((s) => s.querySelector('g[transform*="skew"]'));
       return disc?.querySelector('circle')?.getAttribute('stroke') ?? null;
     });
-    // Fire, from the Gen IX badge palette. The card has no type set at all
-    // here, so a disc wearing the gym colour would be the neutral grey.
     expect(stroke?.toUpperCase()).toBe('#E62829');
   });
 
@@ -343,11 +291,10 @@ test.describe('gym card slots', () => {
 
   test('the badge refuses text that would spill out of its slot', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
-    await expectBadgeKeepsTypedHead(page);
+    await expectBadgePreservesOrderWithFittedTail(page);
   });
 });
 
-/** Types "Thunder" into the badge and expects the phrase "Thunder Badge". */
 async function expectThunderBadge(page: Page) {
   const field = page.locator('[aria-label="Badge name"]');
   await field.click();
@@ -357,9 +304,6 @@ async function expectThunderBadge(page: Page) {
   const short = await page.evaluate(() => {
     const el = document.querySelector('[aria-label="Badge name"]')!;
     const box = el.parentElement!;
-    // The lines the typed word is drawn on. The field breaks a word that is
-    // wider than its box rather than refusing it, so the text can be right
-    // while the reader sees "THUNDE" and "R".
     const text = el.firstChild;
     let lines = 0;
     if (text?.nodeType === Node.TEXT_NODE && text.textContent?.startsWith('Thunder')) {
@@ -371,14 +315,12 @@ async function expectThunderBadge(page: Page) {
     return { field: el.textContent, phrase: box.textContent, lines };
   });
   await test.info().attach('badge-thunder.json', { body: JSON.stringify(short), contentType: 'application/json' });
-  // The suffix lives inside the field now so wrap and caret stay one phrase.
   expect(short.field).toBe('Thunder Badge');
   expect(short.phrase).toBe('Thunder Badge');
   expect(short.lines, 'Thunder is drawn whole, on one line').toBe(1);
 }
 
-/** Types far past the badge's room and expects the head of it, in order. */
-async function expectBadgeKeepsTypedHead(page: Page) {
+async function expectBadgePreservesOrderWithFittedTail(page: Page) {
   const field = page.locator('[aria-label="Badge name"]');
   await field.click();
   await page.keyboard.type('Thunder Cascade Marsh Rainbow Soul Volcano Earth Boulder Zephyr Glacier');
@@ -396,47 +338,21 @@ async function expectBadgeKeepsTypedHead(page: Page) {
     };
   });
   await test.info().attach('badge-long-name.json', { body: JSON.stringify(state), contentType: 'application/json' });
-  // Typing kept going long past the limit; the slot stayed intact.
   expect(state.overflows).toBe(false);
   expect(state.insideSlot).toBe(true);
-  // What survived is what fits, and it is the head of what was typed —
-  // not a scrambled reorder, which is what a field that rewrites itself
-  // mid-keystroke produces.
-  // The box is a row and a half now, two lines beside the hexagon rather
-  // than three under it, so what fits is shorter than it was. The property
-  // is that what survived is the *head* of what was typed, whatever length
-  // the box allows — a field that rewrites itself mid-keystroke produces a
-  // scrambled reorder instead, which is what this catches.
   expect(state.rendered.length).toBeGreaterThan(4);
   expect(state.rendered.length).toBeLessThan(60);
-  // The head of what was typed, in order. Not every character of it, and
-  // not a fixed prefix: how much fits depends on the width the card is
-  // drawn at, and once the box is full a narrow letter can still slip in
-  // where a wide one was refused, so the last character may not be the one
-  // that came next. Both are the field's own behaviour. What this test is
-  // for is that everything before that point survives *in order*, which is
-  // what a field rewriting itself mid-keystroke destroys.
   const typed = 'Thunder Cascade Marsh Rainbow Soul Volcano Earth Boulder Zephyr Glacier';
   const kept = state.rendered.replace(/\u00a0/g, ' ').replace(/\s*Badge$/, '').trimEnd();
   let common = 0;
   while (common < kept.length && kept[common] === typed[common]) common++;
-  // Everything but the tail is the head of what was typed, in order. The
-  // tail can hold a character or two that never followed: once the box is
-  // full the field tests each keystroke on its own, so a narrow letter fits
-  // where a wide one was refused, and a trailing space arrives as a
-  // non-breaking one. Order is the property; the last couple of characters
-  // are the field's own arithmetic.
-  expect(common, `"${kept}" is the head of what was typed`)
-    .toBeGreaterThanOrEqual(kept.length - 2);
+  const FITTED_TAIL_ALLOWANCE = 2;
+  expect(common, `"${kept}" preserves the typed order within its final two fitted characters`)
+    .toBeGreaterThanOrEqual(kept.length - FITTED_TAIL_ALLOWANCE);
   expect(common, 'and enough of it to show the order held').toBeGreaterThan(4);
   expect(state.stored.replace(/\u00a0/g, ' ').trimEnd()).toBe(kept);
 }
 
-/**
- * PARTNER / SHOULDERMON must sit inside the dashed rounded pane, as two
- * whole words. The slot's outline is rounded-lg; a heading that is only
- * inside the rectangular box still paints through the corner dash.
- */
 test.describe('the partner heading', () => {
   test('keeps both words inside the rounded pane', { tag: '@viewport' }, async ({ page }) => {
     await openCard(page);
@@ -485,9 +401,6 @@ test.describe('the partner heading', () => {
       const aceHead = document.querySelector('[data-slot-head="ace"]');
       const aceArt = document.querySelector('[data-testid="slot-ace"] [data-slot-art]');
       if (!head || !art || !aceHead || !aceArt) return { ok: false, detail: 'missing' };
-      // Each heading sits by its own sprite: the partner's ends at the
-      // partner's left edge, a caption gap short of it, and the ace's is
-      // centred under the ace.
       const h = head.getBoundingClientRect();
       const a = art.getBoundingClientRect();
       const ah = aceHead.getBoundingClientRect();
@@ -525,21 +438,7 @@ test.describe('the partner heading', () => {
   });
 });
 
-/**
- * Filling a slot moves nothing inside it.
- *
- * An empty slot used to wear its dashed outline as a border, and a border is
- * layout: with `box-sizing: border-box` it takes its pixel from the inside,
- * so every slot's content sat a pixel further in while empty and stepped
- * back out the moment something was chosen. The outline is an overlay now.
- * This reads each pane's anchor in both states and expects the same offset,
- * to a twentieth of a pixel rather than the whole pixel that used to hide it.
- *
- * The heading colours ride along: the ace and partner words follow the TM
- * and BADGE words -- the gym's hint shade while empty, its band once filled.
- */
 test.describe('an empty slot and a filled one', () => {
-  /** Each pane's anchor, offset from the pane's own outer edge, in slot px. */
   const anchors = (page: Page) =>
     page.evaluate(() => {
       const hex = (c: string) => {
@@ -573,13 +472,6 @@ test.describe('an empty slot and a filled one', () => {
       };
     });
 
-  // The slot solves its placement from measured text, so a webfont that swaps
-  // after the settle window used to leave the placement solved against
-  // fallback metrics with nothing to correct it. CI caught it at 320px: the
-  // empty card and the filled one disagreed by 0.59px on the ace, because
-  // they mounted on opposite sides of the swap. Hold the font back past the
-  // window and the placement must still land where it does with the font
-  // already resident.
   test('the placement survives a webfont that lands late', { tag: '@viewport' }, async ({ page }) => {
     await page.route('**/*.woff2', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -590,8 +482,6 @@ test.describe('an empty slot and a filled one', () => {
     await page.waitForTimeout(300);
     const late = await anchors(page);
 
-    // Second pass with the font resident: the route is gone and it is served
-    // from the cache, so it swaps before the slot ever measures.
     await page.unroute('**/*.woff2');
     await openCard(page);
     const resident = await anchors(page);
@@ -606,8 +496,6 @@ test.describe('an empty slot and a filled one', () => {
     await openCard(page);
     const empty = await anchors(page);
 
-    // Seeded Brock has an ace and no partner. Both halves stay; the empty
-    // partner heading and the diagonal stay with them.
     await seededLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
@@ -652,20 +540,7 @@ test.describe('an empty slot and a filled one', () => {
   });
 });
 
-/**
- * The two "add type" marks, as painted.
- *
- * The card's is a solid red tile with a white plus and word; the summary's is
- * a dashed grey square, the grey of the action square beside it. Read from
- * the paint rather than the class list, because a class being present says
- * nothing about a colour being painted. `src/index.css` once set
- * `* { border-color }` outside any `@layer`, and an unlayered rule beats every
- * border-colour utility, which is how a red border came out grey here. That
- * rule now sits in `@layer base`, but the reason to assert on paint stands:
- * this test is what would catch it coming back.
- */
 test.describe('the red marks', () => {
-  /** A colour string as Chrome would report it for `color`. */
   const asRgb = (page: Page, value: string) =>
     page.evaluate((v) => {
       const el = document.createElement('span');
@@ -694,7 +569,6 @@ test.describe('the red marks', () => {
     });
     expect(got.mark.text, 'the "+ TYPE" mark exists').toBeTruthy();
     expect(got.square, 'the summary square exists').toBeTruthy();
-    // Against the tokens as painted, so a retuned palette moves both sides.
     expect(got.mark.fill, 'the mark is filled with the primary red').toBe(await asRgb(page, 'var(--color-primary)'));
     expect(got.mark.text, 'the mark\'s plus and word are white on it').toBe(await asRgb(page, 'var(--color-primary-foreground)'));
     expect(got.mark.border, 'the mark has no border').toBe('0px');
@@ -702,11 +576,6 @@ test.describe('the red marks', () => {
     expect(got.square, 'and that grey is the border token').toBe(await asRgb(page, 'var(--color-border)'));
   });
 
-  /**
-   * Seeded with short names on purpose. `usePencilRoom` drops a pencil that
-   * would sit on the text, and at 320px the empty theme's placeholder leaves
-   * it no room -- so a blank league has no pencil there to check.
-   */
   test('both header pencils wear the primary token', async ({ page }) => {
     await page.addInitScript(() => {
       const blank = { type: null, theme: '', lines: [], signatureSeat: null, tmMoveId: null, badgeName: '', legend: null, powerup: null };
@@ -719,8 +588,6 @@ test.describe('the red marks', () => {
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(500);
-    // Every pencil in the document. Both panes stay mounted, and a colour is
-    // computed whether or not its pane is the one on screen.
     const got = await page.evaluate(() => {
       const probe = document.createElement('span');
       probe.style.color = 'var(--color-primary)';
@@ -734,7 +601,6 @@ test.describe('the red marks', () => {
   });
 });
 
-/** Seed gym 1 with a TM and badge, then open the card at a squat phone size. */
 async function openTmCard(
   page: Page,
   opts: { tmMoveId: number; badgeName?: string; width?: number; height?: number },
@@ -782,8 +648,6 @@ function measureTm(source: string) {
   const cs = getComputedStyle(name);
   const lineH = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4;
   const lines = lineH > 0 ? Math.round(name.offsetHeight / lineH) : 0;
-  // Whether the name fits its column on one line: set it unwrapped for one
-  // synchronous read, then put it back.
   const wrap = name.style.whiteSpace;
   name.style.whiteSpace = 'nowrap';
   const fits = name.scrollWidth <= name.clientWidth + 1;
@@ -816,7 +680,6 @@ function measureTm(source: string) {
   return {
     found: true,
     text: raw,
-    // A cut, not the style: a one-word name always carries `truncate`.
     ellipsis: name.scrollWidth > name.clientWidth + 1,
     lines,
     fits,
@@ -826,11 +689,6 @@ function measureTm(source: string) {
   };
 }
 
-/**
- * A TM name takes one line when it fits its column and wraps at its spaces
- * when it does not, as the export draws it. Rock Slide fits at both widths
- * and Stomping Tantrum fits at neither, so each case is driven at each.
- */
 test.describe('TM names wrap only when they do not fit', () => {
   for (const vp of [
     { width: 390, height: 667, label: 'squat 390×667' },

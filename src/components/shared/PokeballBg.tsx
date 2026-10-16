@@ -1,14 +1,6 @@
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
-/**
- * The two-tone ball a sprite sits on: top half its first type, bottom half its
- * second, split by a band in the page's own background colour.
- *
- * The dex builder's view page draws every tile this way, and the league's
- * ace and partner slots now draw theirs the same. A single type fills both
- * halves, so a mono-type Pokemon reads as one colour rather than a mistake.
- */
 export function PokeballBg({ pokemon }: { pokemon: Pick<Pokemon, 'types'> }) {
   const primary = TYPE_COLORS[pokemon.types[0] as TypeName];
   const secondary = TYPE_COLORS[(pokemon.types[1] ?? pokemon.types[0]) as TypeName];

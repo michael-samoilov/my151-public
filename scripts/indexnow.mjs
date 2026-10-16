@@ -34,7 +34,6 @@ const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const explicit = args.filter((a) => a.startsWith('http'));
 
-/** Read URLs from the sitemap so this stays correct as pages are added. */
 function urlsFromSitemap() {
   const xml = readFileSync(join(root, 'public/sitemap.xml'), 'utf8');
   return [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((m) => m[1]);
@@ -102,7 +101,6 @@ if (/not in allowlist|network egress|proxy/i.test(text)) {
   process.exit(1);
 }
 
-// Documented IndexNow responses, translated into something actionable.
 const meaning = {
   200: 'OK — URLs submitted.',
   202: 'Accepted — submitted, key validation still pending.',
