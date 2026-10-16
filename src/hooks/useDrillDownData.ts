@@ -35,7 +35,6 @@ interface SectionGroup {
     tileOverlay?: (pokemon: Pokemon, spritePx: number) => ReactNode;
     tileAttributes?: Record<string, string>;
     tileTestId?: string;
-    displayName?: string;
     displayLabel?: PokemonLabel;
     onSelect?: (pokemon: Pokemon) => void;
 

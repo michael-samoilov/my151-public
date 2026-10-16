@@ -386,9 +386,14 @@ export const usePokedexStore = create<PokedexState>()(
           const current = state.sections[groupId];
           if (!current || current.length !== orderedIds.length) return {};
           // Guard: only accept a true permutation of the group's current members.
-          const curSet = new Set(current);
+          const remaining = new Map<number, number>();
+          for (const id of current) {
+            remaining.set(id, (remaining.get(id) ?? 0) + 1);
+          }
           for (const id of orderedIds) {
-            if (!curSet.has(id)) return {};
+            const count = remaining.get(id) ?? 0;
+            if (count === 0) return {};
+            remaining.set(id, count - 1);
           }
           return { sections: { ...state.sections, [groupId]: [...orderedIds] } };
         }),
