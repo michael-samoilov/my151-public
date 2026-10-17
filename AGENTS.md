@@ -59,7 +59,8 @@
 
 ## 1. Verify before you show
 
-- Run `/verify-my151` on the change. If that command is unavailable, read `.claude/skills/verify-my151/SKILL.md` and follow it.
+- Run canonical affected CI on the final merge candidate, or use the recorded proportional-verification exception in `CLAUDE.md`. CI-only work can finish with runner proofs and fast checks. Reserve full regression for actual broad release risk.
+- For visual/platform changes, read `.claude/skills/verify-my151/SKILL.md` and capture the relevant screens and actual affected engines. Reserve its exhaustive matrix for full/release QA.
 - If verification fails, fix the cause and run it again until it passes.
 - Do not bring work for review while verification still fails.
 - For a bugfix, prove the fix with a proof test that fails on the old behavior and passes on the fix. Report both results, then delete the test. See section 4, "Testing".
@@ -112,4 +113,4 @@ Maintain the suite this way:
 - A test that asserts behavior Michael asked to change is stale. Update it. It is not a regression.
 - Tag a Playwright test or describe `@viewport` when its result depends on the viewport or device. Untagged tests run only in the `desktop` project. `scripts/check-viewport-tags.mjs` enforces the tag on tests that skip `desktop`.
 - `scripts/check-test-rules.mjs` fails on a committed proof test, and on a new unit test outside `api/`, `scripts/`, or saved-data code unless its first 5 lines hold `// keeps: <bug E2E misses>`.
-- Run tests by the two-tier rule in `CLAUDE.md`, "Build Verification".
+- Run tests by the fast/affected/full policy in `CLAUDE.md`, "Build Verification". Keep all cheap API and migration gates in every code mode.

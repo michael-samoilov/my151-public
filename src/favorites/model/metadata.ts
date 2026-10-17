@@ -8,12 +8,10 @@ const byId = new Map((pokemonData as Pokemon[]).map(mon => [mon.id, mon]));
 const overrides = formMetadata as Record<number, Partial<Pick<Pokemon, 'stats' | 'bst' | 'shape' | 'color' | 'captureRate' | 'growthRate' | 'eggGroups'>>>;
 const parents = new Set(pokemonData.flatMap(mon => mon.evolvesFrom == null ? [] : [mon.evolvesFrom]));
 
-/** Biological Dex identity preserves regional evolution edges and cosmetic owner roles. */
 function biologicalMetadata(mon: PickerMon) {
   return byId.get(pickerDexId(mon));
 }
 
-/** Actual form attributes; sprite/name/ID stay the user's selected form. */
 export function pickerPokemonMetadata(mon: PickerMon): Pokemon | undefined {
   const biological = biologicalMetadata(mon);
   return biological ? { ...biological, ...overrides[mon.id], id: mon.id, name: mon.name,
@@ -21,7 +19,6 @@ export function pickerPokemonMetadata(mon: PickerMon): Pokemon | undefined {
     shape: pokemonShape(mon.id, overrides[mon.id]?.shape ?? biological.shape) } : undefined;
 }
 
-/** Stage roles follow the biological form's evolution graph, not temporary battle power. */
 export function pickerEvolutionRole(mon: PickerMon) {
   const data = biologicalMetadata(mon);
   if (!data) return undefined;

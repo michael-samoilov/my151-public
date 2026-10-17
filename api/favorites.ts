@@ -10,7 +10,6 @@ import { parseNotmeFlag } from './_exportStats.js';
 import { FAVORITE_CLIENTS_KEY, FAVORITE_VERSION_KEY, favoriteSessionAt, parseFavoriteSnapshot, parseFavoriteRecord, mergeFavoriteRecord, type FavoriteBeaconKind, type FavoriteExportKind } from './_favoriteRecord.js';
 const burstLimiter = new Ratelimit({redis,limiter:Ratelimit.fixedWindow(500,'10 m'),analytics:false,prefix:'rl:burst'});
 const clientLimiter = new Ratelimit({redis,limiter:Ratelimit.fixedWindow(SUBMIT_CLIENT_DAILY_CAP,'1 d'),analytics:false,prefix:'rl:client'});
-/** Commit record, dedupe, milestone counters, and journal atomically. One billed command. */
 const CAS = `
 if redis.call('EXISTS', KEYS[3]) == 1 then return 2 end
 local cur = redis.call('HGET', KEYS[2], ARGV[1]) or '0'
@@ -64,7 +63,6 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
       for(const [threshold,event] of [[1,'favorites-first-pick'],[65,'favorites-quarter'],[129,'favorites-half'],[257,'favorites-complete']] as const){
         if(snapshot.filled>=threshold&&(existing?.maxFilled??0)<threshold)events.push(event);
       }
-      // The popup and dialog-open events are once per visit; every export still counts.
       if(b.kind==='nudge-shown'&&!session?.events.includes('favorites-nudge-complete-shown'))events.push('favorites-nudge-complete-shown');
       if(b.kind==='export-shown'&&!session?.events.includes('favorites-export-shown'))events.push('favorites-export-shown');
       if(exportKind)events.push(`favorites-export-${exportKind}`);

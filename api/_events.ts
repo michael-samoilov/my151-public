@@ -1,26 +1,10 @@
-/**
- * The vocabulary shared by every analytics endpoint and the client: which
- * tool a beacon comes from, and which funnel events exist.
- *
- * One list, imported by event.ts and submit.ts, because the two once carried
- * separate copies that disagreed (`js-error` was in one and not the other),
- * and the league builder's export events were rejected with 400 for a week
- * because only the client knew their names.
- *
- * Dependency-free on purpose, like _limits.ts: the client and its unit tests
- * import it too. The leading underscore keeps Vercel from serving it.
- */
-
 export const TOOLS = ['dex', 'league', 'hub', 'favorites'] as const;
 export type Tool = (typeof TOOLS)[number];
 
-/** The tool a beacon names, defaulting to the dex for clients that predate
- *  the field — every record written before the launch was a dex record. */
 export function parseTool(v: unknown): Tool {
   return typeof v === 'string' && (TOOLS as readonly string[]).includes(v) ? (v as Tool) : 'dex';
 }
 
-/** The page path a beacon names. Shape-checked and bounded; absent is fine. */
 export function parsePage(v: unknown): string | undefined {
   return typeof v === 'string' && v.startsWith('/') && v.length <= 80 && !/[\s<>"']/.test(v) ? v : undefined;
 }
@@ -70,7 +54,6 @@ export function leagueNudgeEvent(
 }
 
 const FUNNEL_EVENTS = [
-  // Dex builder onboarding.
   'intro-shown',
   'intro-cta',
   'intro-dismiss',
@@ -78,10 +61,7 @@ const FUNNEL_EVENTS = [
   'milestone-100',
   'milestone-151',
   'view-visit',
-  // Uncaught client errors, counted once per browser. No payload — see
-  // src/hooks/useJsErrorCounter.ts for why this is a counter, not a reporter.
   'js-error',
-  // The hub: seen once per browser; each card click.
   'hub-shown',
   'hub-cta-dex',
   'hub-cta-league',
@@ -93,29 +73,20 @@ const FUNNEL_EVENTS = [
   'favorites-complete',
   'favorites-export-full',
   'favorites-export-simplified',
-  // The Picker export dialog opened, once per visit; and a Full grid export
-  // that included the detailed stats, beside its favorites-export-full.
   'favorites-export-shown',
   'favorites-export-stats',
-  // The popup that points at Export when the Picker grid is first complete,
-  // named like league-nudge-card-shown.
   'favorites-nudge-complete-shown',
-  // The gym leader maker.
   'league-open',
   'league-first-seat',
   'league-card-named',
   LEAGUE_EXPORT_CARD_EVENT,
   LEAGUE_EXPORT_LEAGUE_EVENT,
-  // Export nudges: a full trainer card, then a full gym-leader roster.
-  // shown / cta / dismiss match intro and league-promo so Admin can overlay
-  // which sitting saw the popup and whether they acted.
   'league-nudge-card-shown',
   'league-nudge-card-cta',
   'league-nudge-card-dismiss',
   'league-nudge-league-shown',
   'league-nudge-league-cta',
   'league-nudge-league-dismiss',
-  // The callout in the dex builder that points at the gym leader maker.
   'league-promo-shown',
   'league-promo-cta',
   'league-promo-dismiss',
@@ -133,7 +104,6 @@ export function isLeagueExportEvent(
   return s === LEAGUE_EXPORT_CARD_EVENT || s === LEAGUE_EXPORT_LEAGUE_EVENT;
 }
 
-/** Names and `exportTool` for a successful league-home or gym-card share. */
 export function leagueExportEventBody(exportKind: 'league' | 'card'): {
   event: typeof LEAGUE_EXPORT_CARD_EVENT | typeof LEAGUE_EXPORT_LEAGUE_EVENT;
   exportTool: 'league' | 'card';
@@ -145,7 +115,6 @@ export function leagueExportEventBody(exportKind: 'league' | 'card'): {
 
 const FUNNEL_EVENT_LIST_CAP = 20;
 
-/** Sanitize a buffered funnel-event list from a build or league beacon. */
 export function parseFunnelEventList(v: unknown, cap = FUNNEL_EVENT_LIST_CAP): FunnelEvent[] {
   if (!Array.isArray(v)) return [];
   const out: FunnelEvent[] = [];
@@ -183,7 +152,6 @@ export function parseJournalEntry(raw: unknown): JournalEntry | null {
   };
 }
 
-/** Per-browser skip list, joined onto user-detail in /api/submissions. */
 export const EXPORT_SURVEY_SKIPS_KEY = 'export-survey-skips';
 const EXPORT_SURVEY_SKIPS_CAP = 20;
 
@@ -276,16 +244,10 @@ export function stampExportSurveySkips<T extends { cid: string }>(
   return { ...row, exportSurveySkips: list };
 }
 
-/**
- * Per-day raw journal of funnel events, so a view designed after launch can
- * replay from launch day instead of from the day its counter was added.
- * `journal:<YYYY-MM-DD>` is a list of compact JSON entries; the day is UTC.
- */
 export const JOURNAL_PREFIX = 'journal';
 export const JOURNAL_TTL_S = 400 * 24 * 60 * 60;
 export const JOURNAL_MAX_PER_DAY = 50_000;
 
-/** One journal entry, as api/event.ts writes it and api/journal.ts returns it. */
 export interface JournalEntry {
   t: number;
   cid: string;

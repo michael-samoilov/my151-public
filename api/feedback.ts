@@ -4,26 +4,14 @@ import { sanitizeFavoriteFeedback } from './_favoriteFeedback.js';
 import { FEEDBACK_KEY, storeReport, underHourlyCap } from './_feedbackStore.js';
 import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
 
-/**
- * Human-authored feedback: bug reports, translation corrections, ideas.
- *
- * Modelled on event.ts, with the limits turned down hard. Funnel events are
- * machine-generated and expected in volume; these are typed by a person, so
- * anything arriving faster than a person can type is either a mistake or an
- * attack. There is no public read path — the admin dashboard is the only reader.
- * Storage is in _feedbackStore.ts, shared with the error screen's crash reports.
- */
-
 const CATEGORIES = new Set(['bug', 'translation', 'idea', 'data', 'other']);
 
 const MIN_MESSAGE = 4;
 const MAX_MESSAGE = 1000;
 /** Serialized context cap. Rejected rather than truncated — a silently clipped
  *  context is worse than none, because it reads as complete. */
-export const MAX_CONTEXT_BYTES = 4096;
-/** Faster than this after the form opened and it was not typed by a person. */
+export const MAX_CONTEXT_CODE_UNITS = 4096;
 const MIN_DWELL_MS = 2000;
-/** Global ceiling, so a distributed flood still cannot fill the list. */
 const GLOBAL_HOURLY_CAP = 200;
 
 const ipLimiter = new Ratelimit({
@@ -54,12 +42,6 @@ function strArray(value: unknown, maxItems: number, maxLen: number): string[] {
     .map((v) => v.slice(0, maxLen));
 }
 
-/**
- * Rebuild the context from an allow-list rather than storing what the client
- * sent. Arbitrary client JSON in a store the admin page renders is how a
- * feedback form turns into a persistence and injection surface; every field
- * here is one this app's own collector produces, clamped to its own type.
- */
 export function sanitizeContext(raw: unknown): Record<string, unknown> {
   const c = (raw ?? {}) as Record<string, unknown>;
   const out: Record<string, unknown> = {
@@ -113,7 +95,6 @@ export function sanitizeContext(raw: unknown): Record<string, unknown> {
   return out;
 }
 
-/** URLs in the body, the cheapest spam signal that costs a real user nothing. */
 function urlCount(text: string): number {
   return (text.match(/https?:\/\//gi) ?? []).length;
 }
@@ -125,9 +106,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const body = (req.body ?? {}) as Record<string, unknown>;
 
-    // Honeypot: hidden from sight and from the accessibility tree, so only an
-    // automated form-filler reaches it. Answered with 200 rather than an error —
-    // a bot that learns it was caught just tries again differently.
     if (typeof body.website === 'string' && body.website.trim()) {
       return res.status(200).json({ ok: true });
     }
@@ -141,16 +119,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (urlCount(message) >= 3) return res.status(400).json({ error: 'invalid message' });
 
-    // No contact field: the form deliberately does not ask for one, so anything
-    // arriving here claiming to be an address is either an old client or a bot.
-    // Dropped rather than stored — an endpoint that quietly accepts PII it never
-    // asked for is the same problem as a form that asks.
-
     const dwellMs = typeof body.dwellMs === 'number' ? body.dwellMs : 0;
     if (dwellMs < MIN_DWELL_MS) return res.status(400).json({ error: 'too fast' });
 
     const context = sanitizeContext(body.context);
-    if (JSON.stringify(context).length > MAX_CONTEXT_BYTES) {
+    if (JSON.stringify(context).length > MAX_CONTEXT_CODE_UNITS) {
       return res.status(400).json({ error: 'context too large' });
     }
 

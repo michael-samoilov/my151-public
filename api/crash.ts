@@ -1,21 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
-import { MAX_CONTEXT_BYTES, sanitizeContext } from './feedback.js';
+import { MAX_CONTEXT_CODE_UNITS, sanitizeContext } from './feedback.js';
 import { FEEDBACK_KEY, storeReport, underHourlyCap } from './_feedbackStore.js';
 import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
 
-/**
- * Crash reports the error screen sends by itself.
- *
- * No person writes these, so the feedback form's checks for a typed message and
- * time on the form do not apply. What stands in for them: the report must carry
- * an error, its context goes through the same allow-list, and the limits are
- * tight. The client sends each distinct crash once per page load and three at
- * most, so a real browser stays far under them. Reports land in the feedback
- * list as category `crash`, where the admin's Feedback tab already reads.
- */
-
-/** Global ceiling, so a crash that hits every visitor cannot fill the list. */
 const GLOBAL_HOURLY_CAP = 100;
 
 const ipLimiter = new Ratelimit({
@@ -40,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const context = sanitizeContext(body.context);
     const error = context.error as { message: string; stack: string } | undefined;
     if (!error || (!error.message && !error.stack)) return res.status(400).json({ error: 'no error' });
-    if (JSON.stringify(context).length > MAX_CONTEXT_BYTES) {
+    if (JSON.stringify(context).length > MAX_CONTEXT_CODE_UNITS) {
       return res.status(400).json({ error: 'context too large' });
     }
     const cid = typeof body.cid === 'string' && body.cid.length <= 64 ? body.cid : undefined;

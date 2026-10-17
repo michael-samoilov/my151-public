@@ -1,4 +1,3 @@
-// keeps: THIRD_PARTY_NOTICES.md naming types the icon build no longer takes from a source; no E2E reads that file.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { renderNotices } from './notices';

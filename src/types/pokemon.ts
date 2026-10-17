@@ -6,9 +6,6 @@ export const TYPE_NAMES = [
 
 export type TypeName = typeof TYPE_NAMES[number];
 
-/** Official dex body-shape groups (the 14 HOME/Pokédex shape icons), in the
- *  canonical shape-id order. Populated onto pokemon.json by
- *  scripts/add-shapes.mjs from species data plus documented form exceptions. */
 export const SHAPE_NAMES = [
   'ball', 'squiggle', 'fish', 'arms', 'blob', 'upright', 'legs',
   'quadruped', 'wings', 'tentacles', 'heads', 'humanoid', 'bug-wings', 'armor',
@@ -16,17 +13,12 @@ export const SHAPE_NAMES = [
 
 export type ShapeName = typeof SHAPE_NAMES[number];
 
-/** Official Pokédex color groups (the 10 `pokemon_colors` classifications).
- *  Populated onto pokemon.json by scripts/add-color-egg.mjs. */
 export const COLOR_NAMES = [
   'black', 'blue', 'brown', 'gray', 'green', 'pink', 'purple', 'red', 'white', 'yellow',
 ] as const;
 
 export type ColorName = typeof COLOR_NAMES[number];
 
-/** Official egg groups (the 15 `egg_groups` classifications, using PokeAPI's
- *  internal identifiers; display names live in EggGroupFilter). A species has
- *  one or two. Populated onto pokemon.json by scripts/add-color-egg.mjs. */
 export const EGG_GROUP_NAMES = [
   'monster', 'water1', 'water2', 'water3', 'bug', 'flying', 'ground', 'fairy',
   'plant', 'humanshape', 'mineral', 'indeterminate', 'ditto', 'dragon', 'no-eggs',
@@ -74,6 +66,6 @@ export interface Archetype {
   suggestedSlotRange: [number, number];
   color: string;
   subgroups?: { label: string; pokemonIds: number[]; shinyIds?: number[] }[];
-  shinyIds?: number[]; // Pokemon IDs that should display shiny sprites in this archetype
-  spriteOverrides?: Record<number, string>; // Pokemon ID -> alternate sprite URL
+  shinyIds?: number[];
+  spriteOverrides?: Record<number, string>;
 }

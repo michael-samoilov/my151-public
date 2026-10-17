@@ -30,6 +30,7 @@ __pycache__/
 
 # Playwright
 /test-results/
+/.audit/
 /playwright-report/
 /blob-report/
 /playwright/.cache/

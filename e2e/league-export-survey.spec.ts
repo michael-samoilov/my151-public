@@ -3,7 +3,6 @@ import { seededLeague } from './support/leagueSeed';
 import { auditLayout } from './support/layoutAudit';
 
 const MOBILE = { width: 390, height: 844 } as const;
-/** iPhone 15 Pro remainder with the keyboard up. Same figure as sheet-behaviour. */
 const KEYBOARD_LEAVES = 338;
 
 async function raiseKeyboard(page: Page, visible: number) {
@@ -145,9 +144,6 @@ test.describe('league export survey', () => {
     await page.locator('[data-export-other]').click();
     await expect(other).toBeFocused();
 
-    // Focus alone must lift the sheet so the field is in the upper half —
-    // the iOS screenshot failed because Other sat under the keyboard at the
-    // bottom of a content-sized sheet, even before visualViewport updated.
     const afterFocus = await other.evaluate((el) => {
       const r = el.getBoundingClientRect();
       return { top: r.top, bottom: r.bottom, height: r.height };

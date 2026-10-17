@@ -1,5 +1,5 @@
-// Prints the intro-showcase stage section maps as JSON (loads the TS module
-// through vite's SSR transform so path aliases + TS just work).
+
+
 import { createServer } from 'vite';
 
 const server = await createServer({

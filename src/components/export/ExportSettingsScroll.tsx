@@ -3,11 +3,6 @@ import { ChevronDown } from 'lucide-react';
 import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 
-/**
- * Settings list with an eased fade and a down-arrow when more content sits
- * below the fold. Pattern from shadcn MessageScroller: show what is out of
- * view, then jump toward it on tap.
- */
 export function ExportSettingsScroll({
   children,
   className,

@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import { expect, test } from '@playwright/test';
 
 function searchPanel(page: import('@playwright/test').Page) {
@@ -6,7 +7,7 @@ function searchPanel(page: import('@playwright/test').Page) {
 
 test.describe('admin search performance', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
   });
 
@@ -20,7 +21,6 @@ test.describe('admin search performance', () => {
     await expect(panel.getByText('Bing ready')).toBeVisible();
     await expect(panel.getByText(/^Current \w{3} \d+–\w{3} \d+$/)).toBeVisible();
     await expect(panel.getByText(/^Through /)).toBeVisible();
-    // All has no period before it, so nothing compares.
     await expect(panel.getByText('Previous —', { exact: true })).toBeVisible();
     await expect(panel.locator('[data-kpi="clicks"]')).toContainText('—');
     await expect(panel.getByText('28d')).toHaveCount(0);
@@ -28,11 +28,9 @@ test.describe('admin search performance', () => {
     await expect(panel.getByTestId('search-page-home')).toContainText('Homepage');
     await expect(panel.getByTestId('search-page-pokedex-builder')).toContainText('pokedex builder');
     await expect(panel.getByTestId('search-page-custom-gym-leader')).toContainText('gym leader maker');
-    // The old by-type path redirects to the Picker, so its rows join the Picker's group.
     const picker = panel.getByTestId('search-page-favorite-pokemon-picker');
     await expect(picker).toContainText('Favorite Pokémon Picker');
     await expect(picker).toContainText('favorite pokemon picker');
-    // The long path gives way, so the name shows in full at every width.
     expect(await picker.getByRole('heading').evaluate((h) => h.scrollWidth <= h.clientWidth)).toBe(true);
     await expect(panel.getByTestId('search-page-favorite-pokemon-by-type')).toHaveCount(0);
 
@@ -41,7 +39,6 @@ test.describe('admin search performance', () => {
 
     const ribbon = page.getByRole('group', { name: 'Date range' });
     await ribbon.getByRole('button', { name: '24h' }).click();
-    // Bing reports no hours.
     await expect(panel.getByText('Current —', { exact: true })).toBeVisible();
     await panel.getByRole('group', { name: 'Search provider' }).getByRole('button', { name: 'Google' }).click();
     await expect(panel.getByText(/^Current \w{3} \d+, \d+ [AP]M–/)).toBeVisible();

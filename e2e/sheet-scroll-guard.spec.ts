@@ -1,21 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-/**
- * While a bottom sheet is open, a gesture the sheet cannot consume must not
- * scroll the page behind it. The guard that enforces this asks whether any
- * ancestor between the touch and the sheet can scroll — and it has to ask
- * about the axis the finger is actually moving in.
- *
- * Asking only about the vertical axis froze the filter chip rows: they scroll
- * on X and have nothing to scroll on Y, so the guard read them as dead area
- * and swallowed every sideways swipe.
- */
-
 test.use({ viewport: { width: 412, height: 915 }, hasTouch: true });
 
-/** Dispatches a drag on the first element matching `role` and reports whether
- *  the page prevented it. Synthetic events keep this deterministic — headless
- *  gesture synthesis does not reliably drive native scrolling. */
 async function drag(
   page: import('@playwright/test').Page,
   role: 'chips' | 'list' | 'backdrop',
@@ -87,8 +73,6 @@ test.describe('bottom sheet scroll guard', () => {
   });
 
   test('a gesture with nothing to scroll never reaches the page behind', async ({ page }) => {
-    // Dragging the chip row vertically, and the backdrop in any direction,
-    // has no taker inside the sheet — both must stay swallowed.
     expect(await drag(page, 'chips', 3, -90)).toBe('blocked');
     expect(await drag(page, 'backdrop', 3, -90)).toBe('blocked');
   });

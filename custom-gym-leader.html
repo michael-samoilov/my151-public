@@ -45,23 +45,23 @@
     </script>
 
     <style>
-      /* Pre-hydration shell colours; must match the LIGHT palette in
-       * src/index.css, same as the dex builder entry's head block. */
+
+
       html { background-color: #f7f7f8; }
       body { margin: 0; background-color: #f7f7f8; color: #0a0a0a;
              font-family: system-ui, -apple-system, sans-serif; }
-      /* The root font-size the app installs from JS (src/lib/layoutFontSize.ts),
-       * as CSS, so the shell below lays out in the same rem the app will. At
-       * load the two agree exactly; the JS value then takes over as an inline
-       * style, so no vw clamp ever shrinks the app under a pinch. */
+
+
+
+
       html { font-size: clamp(16px, 13px + 0.7vw, 20px); }
-      /* The shell is the app's own first paint: the site header, the tool bar
-       * with the page's h1 as its eyebrow, and the copy under them. A person
-       * arriving from the dex builder saw a smaller header and a block of
-       * text for the 80ms before React mounted, then both jumped. Every size
-       * here is the app's (LeagueApp.tsx GlobalHeader and the tool bar), and
-       * the copy is held back for a second, as the dex builder's shell holds
-       * its own -- it is for a crawler and a slow connection, not a flash. */
+
+
+
+
+
+
+
       .lg-shell { display: flex; flex-direction: column; min-height: 100dvh; }
       .lg-header { display: flex; align-items: center; justify-content: space-between;
                    height: 2.75rem; box-sizing: border-box;
@@ -85,21 +85,20 @@
       .lg-copy { opacity: 0; animation: lg-reveal 320ms ease-out 1s forwards; }
       .lg-copy p { margin: 0 0 0.5rem; font-size: 0.875rem; line-height: 1.5; color: #525252; }
       @keyframes lg-reveal { to { opacity: 1; } }
-      /* The app's one loading mark (src/components/shared/PokeBallSpinner.tsx). */
       .lg-loading { display: flex; align-items: center; gap: 0.5rem; }
       .lg-ball { width: 1.25rem; height: 1.25rem; flex-shrink: 0; animation: lg-spin 1s linear infinite; }
       @keyframes lg-spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) { .lg-ball { animation: none; } }
       @media (prefers-reduced-motion: reduce) { .lg-copy { animation-duration: 1ms; } }
-      /* The served FAQ (scripts/static-faq.ts): one collapsed line under the
-       * loading line, revealed with the rest of .lg-copy. */
+
+
       .p151-faq summary { cursor: pointer; font-size: 0.6875rem; color: #6e6e6e; text-decoration: underline; text-underline-offset: 2px; }
       .p151-faq > div { display: flex; flex-direction: column; gap: 1rem; padding: 0.5rem 0 1rem; }
       .p151-faq h2 { margin: 0; font-size: 0.8125rem; font-weight: 600; color: #0a0a0a; }
       .lg-copy .p151-faq p { margin: 0.25rem 0 0; font-size: 0.75rem; line-height: 1.625; color: #6e6e6e; }
       @media (min-width: 640px) { .lg-header { padding-left: 1.5rem; padding-right: 1.5rem; } }
-      /* Desktop: the tool bar is the left pane's, half the width with the seam
-       * showing, and its content centres a phone-width column (LeagueApp.tsx). */
+
+
       @media (min-width: 1024px) {
         .lg-bar { width: 50%; padding: 0 1rem; border-right: 1px solid #e5e5e5; }
         .lg-bar-inner { width: 100%; max-width: 26rem; margin: 0 auto; }
@@ -108,10 +107,6 @@
     </style>
   </head>
   <body>
-    <!-- Static, crawlable content. React replaces it on mount, so keep the
-         shape close to the app's own first paint: header, h1, one honest
-         paragraph. See docs/future-tools/HANDOFF.md for why this must be
-         real served HTML, not a client-side route. -->
     <div id="root">
       <div class="lg-shell">
         <header class="lg-header">

@@ -3,15 +3,6 @@ import { FAQ_KEYS, type FaqPage } from './faqKeys';
 
 export type { FaqPage };
 
-/**
- * The "About this tool" block under a page's footer.
- *
- * The questions are the page's h2 headings and the answers are paragraphs,
- * rendered by React and collapsed by default (docs/seo/PAGE-SEO-CONTRACT.md).
- * The copy is docs/seo/LAUNCH-COPY.md, owner-approved, through the catalog
- * like every other visible string. The tool pages also serve the English copy
- * in their HTML before the app loads (`scripts/static-faq.ts`).
- */
 export function Faq({ page, compact = false }: { page: FaqPage; compact?: boolean }) {
   const t = useT();
   return (

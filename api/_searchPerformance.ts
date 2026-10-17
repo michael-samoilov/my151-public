@@ -26,7 +26,6 @@ const BING_API_URL = 'https://ssl.bing.com/webmaster/api.svc/json';
 const REQUEST_TIMEOUT_MS = 15_000;
 const DAY_MS = 86_400_000;
 const SEARCH_CONSOLE_MONTHS = 16;
-/** Two 24-hour windows, even when the latest reported hour lags a day behind. */
 const HOURLY_FETCH_DAYS = 4;
 const BING_TOP_ROWS = 25;
 const DAY_RANGES = SEARCH_RANGES.filter((range) => SEARCH_RANGE_SPECS[range].granularity === 'day');
@@ -52,7 +51,6 @@ interface BingRow {
   Query?: unknown;
 }
 
-/** A provider row inside one bucket, grouped by `keys` (a page, a query, or both). */
 interface SearchBucketRow extends SearchSeriesPoint {
   keys: string[];
 }
@@ -83,7 +81,6 @@ function metricOf(row: GoogleRow | BingRow): SearchMetric {
   };
 }
 
-/** A Search Console date or hour key as a bucket start, or null when it is neither. */
 function parseBucket(value: unknown, granularity: SearchGranularity): string | null {
   if (typeof value !== 'string') return null;
   if (granularity === 'day') return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
@@ -102,7 +99,6 @@ function trimmedKeys(keys: unknown[]): string[] | null {
   return trimmed.every(Boolean) ? trimmed : null;
 }
 
-/** Rows grouped by a leading date or hour dimension, oldest first. */
 export function googleBucketRows(payload: unknown, granularity: SearchGranularity): SearchBucketRow[] {
   return googleRows(payload)
     .map((row): SearchBucketRow | null => {
@@ -164,7 +160,6 @@ function seriesOf(rows: SearchBucketRow[]): SearchSeriesPoint[] {
   return rows.filter((row) => row.keys.length === 0).map(({ keys: _keys, ...point }) => point);
 }
 
-/** Sum the rows inside `window` into one row per key, most clicks first. */
 export function rollUp(rows: SearchBucketRow[], window: SearchDateRange): (SearchMetric & { keys: string[] })[] {
   const groups = new Map<string, { keys: string[]; rows: SearchMetric[] }>();
   for (const row of rows) {
@@ -214,7 +209,6 @@ function base64UrlJson(value: unknown): string {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
 }
 
-/** Build the signed JWT assertion used by Google's service-account OAuth flow. */
 export function createGoogleServiceAccountAssertion(
   clientEmail: string,
   privateKey: string,
@@ -299,7 +293,6 @@ interface GoogleQueryBody {
 
 type GoogleQuery = (body: GoogleQueryBody) => Promise<unknown>;
 
-/** Null when no Google credentials are set. */
 async function connectGoogle(): Promise<GoogleQuery | null> {
   const serviceAccountJson = process.env.GOOGLE_SEARCH_SERVICE_ACCOUNT_JSON?.trim();
   const clientId = process.env.GOOGLE_SEARCH_CLIENT_ID?.trim();
@@ -323,7 +316,6 @@ async function connectGoogle(): Promise<GoogleQuery | null> {
     });
 }
 
-/** Daily ranges: the date series, then pages and queries for each window. */
 async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
   const query = await connectGoogle();
   if (!query) return notConfigured('google');
@@ -362,7 +354,6 @@ async function fetchGoogleDaily(): Promise<SearchProviderSnapshot> {
   };
 }
 
-/** The 24h range: hourly totals, pages, and queries, summed per window. */
 async function fetchGoogleHourly(): Promise<SearchProviderSnapshot> {
   const query = await connectGoogle();
   if (!query) return notConfigured('google');

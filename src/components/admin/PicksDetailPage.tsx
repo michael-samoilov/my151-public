@@ -2,7 +2,6 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Seg } from '@/components/admin/ui';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { sectionName, typeLabel } from '@/i18n';
 import { NO_TYPE } from '@/league/theme';
 import { deriveSectionColor, sectionColor, type SectionColor } from '@/lib/sectionColors';
@@ -182,7 +181,6 @@ function LineGrid({
   countMode: boolean;
   cols?: number;
   unit?: string;
-  /** Starter rows: equal fr tracks so nine faces share the row without min-width wrap. */
   uniformFrTracks?: boolean;
 }) {
   if (lines.length === 0) {
@@ -240,8 +238,7 @@ function DualGrids({
   pairDensity?: boolean;
   unit?: string;
 }) {
-  const isDesktop = useIsDesktop();
-  const cols = pairDensity ? picksStarterCols() : picksGridCols(true, isDesktop);
+  const cols = pairDensity ? picksStarterCols() : picksGridCols(true);
   const max = countMode ? maxPicks(columns.most) : maxIndex(columns.most);
   return (
     <div
@@ -326,13 +323,11 @@ export function PicksPage({
   unit: string;
   onBack: () => void;
   controls?: ReactNode;
-  /** Fill a page that does not scroll. The header then stays in the flow. */
   fill?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className={cn('flex min-w-0 flex-col', fill ? 'min-h-0 flex-1 gap-2' : 'gap-3')}>
-      {/* Under the header; on desktop also under the admin bar. */}
       <div
         className={cn(
           'border-b border-border bg-background py-2',
@@ -371,8 +366,7 @@ export function PicksDetailPage({
   const [view, setView] = useState<'most' | 'off'>('most');
   const [excludeOneOffs, setExcludeOneOffs] = useState(false);
   const offSection = view === 'off';
-  const isDesktop = useIsDesktop();
-  const splitCap = useMemo(() => picksSplitCap(offSection, isDesktop), [offSection, isDesktop]);
+  const splitCap = useMemo(() => picksSplitCap(), []);
   const sections = useMemo(
     () => viewsForPicks(picksBySectionAll, { offSection, excludeOneOffs: offSection && excludeOneOffs, cap: splitCap }),
     [picksBySectionAll, offSection, excludeOneOffs, splitCap],
@@ -450,7 +444,6 @@ function leagueSectionLook(id: LeaguePicksSectionId): { name: string; color: Sec
   return { name: typeLabel(id), color: deriveSectionColor(TYPE_COLORS[id]) };
 }
 
-/** The league's picks: its aces, then one section per chosen card type. */
 export function LeaguePicksPage({
   picks,
   n,

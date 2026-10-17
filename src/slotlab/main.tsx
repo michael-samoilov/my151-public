@@ -8,15 +8,6 @@ import { usePokedexStore } from '../store/usePokedexStore'
 import { PRODUCTION_DEPLOY } from '../lib/demoMode'
 import { SlotLabPage } from './SlotLabPage'
 
-/**
- * The slot lab's entry.
- *
- * A page for building the league builder rather than for using it, so the
- * production deploy never mounts it — the gate is here rather than in a route
- * guard, so no code path can render it on the live site. Preview deployments
- * and local builds get the page.
- */
-
 const rootEl = document.getElementById('root')!;
 
 installLayoutFontSize();

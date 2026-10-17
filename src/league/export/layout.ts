@@ -1,16 +1,3 @@
-/**
- * The export's geometry, in export pixels.
- *
- * Both exports are drawn on a canvas at 1× sprites, which fixes the scale: a
- * team sprite is its native 96px, and every rem-based measurement is the app's
- * own value multiplied by `K`. Nothing here reads the DOM, so the numbers are
- * the same on every engine and the tests can assert them without a browser.
- *
- * The design of record is the canvas at
- * docs/future-tools/league-builder/DECISIONS.md; the artboards were generated
- * from these same constants.
- */
-
 import { localeUppercase, raw, t, type NoArgKey } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
 import { headingTracks } from '../slotHeadings';
@@ -19,44 +6,19 @@ import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import { soloSprite } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
-/** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
 export const K = 96 / 52;
 
-// ---------- the picture, shared by both exports ----------
-
-/**
- * One box for both pictures.
- *
- * Each picture is its content, edge to edge: no page around it and no card
- * chrome, so nothing reads as a card floating on a blank ground. The trainer
- * card is the box wide plus a frame either side of it; the league adds the same
- * frame around its own width. Each picture is as tall as its own content.
- *
- * The box is the league's natural width at 1× sprites. The trainer card's
- * columns are derived from it below.
- */
 const BOX_W = 864;
 
-/** The credit strip under the content. */
 export const FOOT = 36;
 
-/**
- * The credit's size and its prefix. Fitted to a 393pt phone screen a 14px run
- * lands at about 6.4pt, the size the dex poster's credit lands at.
- */
 export const CREDIT_PX = 14;
 export const cardCreditPrefix = (): string => t('league.export.cardCredit');
 export const homeCreditPrefix = (): string => t('league.export.homeCredit');
 
-/**
- * A label's tracking in the active locale. Japanese, Korean and Chinese are
- * set untracked, as the app's `:lang()` rule sets them on screen.
- */
 export function labelTrack(track: number): number {
   return headingTracks() ? track : 0;
 }
-
-// ---------- the gym card ----------
 
 /**
  * Half a pixel over the app's 15, so that with an odd column every cell
@@ -66,37 +28,12 @@ export function labelTrack(track: number): number {
  * when the export was diffed against its artboard.
  */
 export const PADX = 15.5;
-/**
- * The column: the box less the card's padding, over seven.
- *
- * On a phone the app fits the card by keeping the pane's width and giving up
- * height, so the columns end up wider than the rows are tall: 3.9rem across
- * to 3.375rem down, measured on an iPhone. The desktop's 3.11rem column made
- * the export taller and narrower than the card people actually look at. At
- * 119px the column is a touch wider still, so the trainer card can share the
- * league's box.
- */
 export const COL = (BOX_W - 2 * PADX) / 7;
 export const ROW = 100;
-/** A spacer band's height. */
 export const BAND = 37;
-/** Vertical inset of a cell inside its row. */
 export const INY = 11;
-/** Horizontal inset of a cell inside its column. */
 export const INX = 5.5;
 
-/**
- * The left rail: the one left edge every run of text starts on.
- *
- * A glyph cell and a slot are drawn one inset in from the card's padding, and
- * that inset is the rail. Text starts there — the bar's title, the THEME
- * label, a band's label — rather than the box the text sits in.
- *
- * A rounded box overhangs the rail by its own corner radius, so its curve
- * ends where the rail is and its label starts there. It overhangs the rail's
- * mirror on the right by the same amount, so the picture stays symmetric and
- * the overhang stays short.
- */
 export const RAIL = 3 * K;
 
 export const CELL_R = 11;
@@ -105,17 +42,7 @@ export const SLOT_R = 15;
 
 export const CARD_W = BOX_W;
 
-/**
- * The title row: "Pro Trainer Card", a break, then the type badge and "Type
- * Specialist", all at one size and one weight so the row reads as a header
- * rather than a title with a caption. A card with no type shows the title
- * alone. The row is a whole pixel tall so the grid under it starts on one.
- */
 export const cardTitle = (): string => t('league.card.title');
-/**
- * "Type Specialist" either side of the type badge, in the locale's order:
- * `before` is drawn ahead of the badge and `after` behind it, each trimmed.
- */
 export function specialistRuns(): { before: string; after: string } {
   const parts = splitTemplate(raw('league.export.specialist'));
   const at = parts.findIndex((p) => p.kind === 'slot');
@@ -128,69 +55,36 @@ export const TITLE_SEP = '·';
 export const TITLE_PX = 15 * K;
 export const TITLE_TRACK = -0.01 * TITLE_PX;
 const TITLE_ROW_H = 34;
-/** Either side of the break. */
 export const TITLE_GAP = 14;
-/** Between the badge and "Type Specialist". */
 export const TITLE_WORD_GAP = 8;
-/** The badge, a touch over the 4.5rem the first draft had. */
 export const TITLE_BADGE_W = 5 * 16 * K;
 export const TITLE_BADGE_H = TITLE_BADGE_W / TYPE_BADGE_ASPECT;
 
-/**
- * The theme row: THEME, then a white rounded field to the right edge, so the
- * theme reads as something its owner filled in. The label keeps the size it
- * had; the value is the size the showcase names were set at.
- */
 export const THEME_LABEL_PX = 10.5 * K;
 export const THEME_TEXT_PX = 13 * K;
-/** Between the title row and the theme field. */
 export const THEME_GAP = 14;
 export const FIELD_H = 40;
 export const FIELD_R = 10;
 export const FIELD_PADX = 12;
-/** Between THEME and its field. */
 export const LABEL_GAP = 8;
-/** Under the theme field, above the first band. */
 const HDR_GAP = 16;
 
-/**
- * The header bar: the band shade, edge to edge across the top of the picture
- * with square corners, and the title row inside it in white. It is the
- * picture's own top edge rather than a card on it. A card with no type takes
- * the site's red. The title starts on the rail, so it shares a left edge with
- * the bands and the leftmost glyph cells under it, and the badge wears a
- * white ring so the pill reads on the bar.
- */
 const BAR_PADY = 20;
 export const BAR_H = TITLE_ROW_H + 2 * BAR_PADY;
 export const BAR_TEXT_X = PADX + RAIL;
 export const BAR_RING = 2;
-/** The bar, the theme field and their gaps: what sits above the grid. */
 export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
 
-/**
- * The frame, as wide as on every export (`EXPORT_FRAME_PX` beside 1× sprites).
- * The trainer card wears its bar's own colour down both sides and along the
- * bottom, with the bar as the top edge, so the picture reads as one bordered
- * card. The league wears it on all four sides. The content keeps its size and
- * the picture grows by the frame.
- */
 export const FRAME = EXPORT_FRAME_PX;
 
-/**
- * The word under the TM disc or the badge hexagon. The export's column has
- * room for it on one line, so a word the live card stacks in two is joined.
- */
 export function markWord(key: 'league.tm.mark' | 'league.badge.mark'): string {
   return localeUppercase(t(key)).split('\n').join(headingTracks() ? ' ' : '');
 }
 
-/** Badge phrase in the same caps as ACE POKÉMON, with the badge word where the locale puts it. */
 export function badgeExportPhrase(name: string): string {
   return localeUppercase(t('league.badge.phrase', { name }));
 }
 
-/** The badge word that follows the name, if the locale sets it after: " BADGE" in English. */
 export function badgeExportSuffix(): string {
   const parts = splitTemplate(raw('league.badge.phrase'));
   const at = parts.findIndex((p) => p.kind === 'slot');
@@ -198,33 +92,23 @@ export function badgeExportSuffix(): string {
   return localeUppercase(after.trim());
 }
 
-/** Move name in the same caps as ACE POKÉMON. */
 export function moveExportName(name: string): string {
   return localeUppercase(name);
 }
 
-/** The partner: one team sprite, at the team's own 1×. */
 export const PARTNER_SPRITE = 96;
-/** The ace: exactly twice the partner. */
 const ACE_SPRITE = 2 * PARTNER_SPRITE;
 
-/**
- * One ace or one partner, centered. Largest of 1×, 2×, 3× of 96 that still
- * fits the slot after pad, heading and name.
- */
 export function soloExportSprite(w: number, h: number): number {
   return soloSprite(w, h, 16 * K);
 }
 
-/** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */
 export const HEAD_PX = 8.5 * K;
 export const HEAD_LINE = HEAD_PX * 1.4;
-/** Species, TM, and badge names. Same rem as ACE POKÉMON / CardGrid NAME_CLASS. */
 export const NAME_PX = HEAD_PX;
 export const NAME_TRACK = 0.02 * NAME_PX;
 export const NAME_LINE = NAME_PX * 1.4;
 
-/** The glyph cell spans two columns on rows 1, 8 and 9. */
 export const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
 
 export const BAND_BEFORE: Record<number, [NoArgKey, NoArgKey]> = {
@@ -232,45 +116,24 @@ export const BAND_BEFORE: Record<number, [NoArgKey, NoArgKey]> = {
   [BOSS_ROW]: ['league.band.boss', 'league.band.bossNote'],
 };
 
-/**
- * Glyph column for the TM and badge slots.
- *
- * CardGrid uses `min(2.75rem, 26%)` of the slot. A fixed 45px column made the
- * disc as short as the type row, so `items-center` pinned their tops together
- * and the move name sat on the disc.
- */
 export const MARK_COL = Math.min(2.75 * 16 * K, 0.26 * (2 * COL - 2 * INX));
 export const MARK_LABEL_PX = 6.7 * K;
 export const MARK_TRACK = 0.06 * MARK_LABEL_PX;
 export const TM_BADGE_W = 2.75 * 16 * K;
 export const MARK_PAD = 7;
-/** CardGrid CategoryChip on the TM slot: `h-[0.6875rem] w-[0.9375rem]`. */
 export const TM_CHIP_W = 0.9375 * 16 * K;
 export const TM_CHIP_H = 0.6875 * 16 * K;
-/** CardGrid type-row `gap-[3px]` and stack `gap-[2px]`. */
 export const TM_TYPE_GAP = 3 * K;
 export const TM_STACK_GAP = 2 * K;
 
-/** Circle top inside the TM disc's 24-unit viewBox (r=9, stroke 2 at 12,12). */
 const TM_DISC_PAD = 2 / 24;
 
-/**
- * Inter ExtraBold Latin em-ascent. Uppercase ink sits on this baseline, so
- * the export TM gaps compare badge/disc tops to name/TM ink bottoms, not
- * the 1.4 line boxes.
- */
 const LATIN_EM_ASCENT = 0.73;
 
 export function tmBadgeH(): number {
   return TM_BADGE_W / TYPE_BADGE_ASPECT;
 }
 
-/**
- * Disc + TM word, as `drawMarkColumn` paints them: a column centred on `cy`.
- *
- * Same grouping as CardGrid's mark `flex-col` (disc at 72% of the column,
- * label pulled up by one `K` against the disc's viewBox padding).
- */
 export function tmMarkColumn(cy: number): {
   top: number;
   height: number;
@@ -309,13 +172,6 @@ function tmInkGapsFrom(
   };
 }
 
-/**
- * Type badge + category chip + move name, as CardGrid's TM slot lays them
- * out: a column beside the disc. Badge top and disc-icon top leave the same
- * gap as name bottom and the “TM” label bottom.
- *
- * `nameLines` is how many lines the move name wraps to.
- */
 export function tmMoveBody(cy: number, nameLines = 1): {
   top: number;
   height: number;
@@ -349,7 +205,6 @@ export function tmMoveBody(cy: number, nameLines = 1): {
   };
 }
 
-/** Live-card rem nudge so badge→disc matches name→TM the way export does. */
 export function tmBodyShiftRem(nameLines = 1): number {
   const cy = 100;
   const lines = Math.max(1, nameLines);
@@ -380,16 +235,11 @@ export function cssLineAlphabetic(
   return lineTop + (lineH - fontPx) / 2 + emAscent;
 }
 
-/**
- * Distances Michael named: type-badge top → disc-icon top, and move-name
- * bottom → “TM” label bottom. They must match within 1px.
- */
 export function tmInkGaps(cy: number, nameLines = 1): { top: number; bottom: number } {
   const body = tmMoveBody(cy, nameLines);
   return tmInkGapsFrom(tmMarkColumn(cy), body);
 }
 
-/** Top of a row inside the grid box, which starts at the first band. */
 export function rowTop(row: number): number {
   let top = BAND;
   for (let r = 1; r < row; r++) {
@@ -399,15 +249,6 @@ export function rowTop(row: number): number {
   return top;
 }
 
-/**
- * Left edge and width of a slot spanning columns `from`..`to`, 1-indexed,
- * measured from the grid's own left edge (the card's content box).
- *
- * The slot wears the same horizontal inset a team cell does, so its left
- * edge lines up with the cells below it and its right edge stops one inset
- * short of the next column. An earlier version also added the card's padding
- * here, which pushed all three slots 15px right and over the glyph cells.
- */
 export function slotX(from: number, to: number): { left: number; width: number } {
   return {
     left: (from - 1) * COL + INX,
@@ -415,7 +256,6 @@ export function slotX(from: number, to: number): { left: number; width: number }
   };
 }
 
-/** The ace/partner slot: three columns wide, four rows tall. */
 export function showcaseBox(): { left: number; top: number; width: number; height: number } {
   const { left, width } = slotX(1, 3);
   return { left, top: rowTop(1) + INY, width, height: 4 * ROW - 2 * INY };
@@ -464,54 +304,28 @@ export function showcaseSquares(ox: number, oy: number): { ace: Box; partner: Bo
   return { ace, partner };
 }
 
-/** Between the ace and its caption under it: the in-app design's 0.0625rem. */
 export const CAPTION_GAP_Y = 0.0625 * 16 * K;
-/** Between the partner and its caption to its left: the in-app design's 0.1875rem. */
 export const CAPTION_GAP_X = 0.1875 * 16 * K;
-/** Between a caption and the pane's edge: the in-app design's 0.25rem. */
 export const SHOWCASE_PAD = 0.25 * 16 * K;
-/**
- * The smallest a caption name shrinks to before it takes an ellipsis: the
- * TM and BADGE labels' size, the smallest type the card paints. The in-app
- * design floors its captions at those labels' size too.
- */
 export const CAPTION_NAME_MIN_PX = MARK_LABEL_PX;
-/** How far past a caption line's ink the seam fades: the in-app design's 0.125rem. */
 export const CAPTION_HALO = 0.125 * 16 * K;
 
 const TAN_30 = Math.tan(Math.PI / 6);
 const COS_30 = Math.cos(Math.PI / 6);
 
-/** How near the seam may come to a sprite's square: the in-app design's 0.25rem. */
 export const SEAM_SQUARE_CLEAR = 0.25 * 16 * K;
 
-/**
- * The seam's strength where it runs through a caption line's halo. The seam
- * is already the type's cell colour at 28% over white, so half of that is
- * still a visible, unbroken line, and the letters read over it.
- */
 export const SEAM_FADE = 0.5;
 
-/** How far across the 30° seam a point sits. Every point of one seam has one depth. */
 function depthOf(x: number, y: number): number {
   return y + TAN_30 * x;
 }
 
-/** One side of the seam: its sprite square and its caption lines' halos. */
 interface SeamSide {
   square: Box;
   lines: readonly Box[];
 }
 
-/**
- * The seam's depth: midway between the ace's side and the partner's side.
- *
- * The seam rises to the right at 30°, so the ace side reaches furthest across
- * it at each box's bottom-right corner, and the partner side at each box's
- * top-left corner. Where no 30° line separates the two sides' captions, the
- * seam takes the middle anyway and fades where it runs through a caption
- * line. Either way it keeps `SEAM_SQUARE_CLEAR` off both squares.
- */
 export function seamDepth(ace: SeamSide, partner: SeamSide): number {
   const lo = Math.max(...[ace.square, ...ace.lines].map((b) => depthOf(b.x + b.w, b.y + b.h)));
   const hi = Math.min(...[partner.square, ...partner.lines].map((b) => depthOf(b.x, b.y)));
@@ -521,7 +335,6 @@ export function seamDepth(ace: SeamSide, partner: SeamSide): number {
   return Math.min(max, Math.max(min, (lo + hi) / 2));
 }
 
-/** The seam of `depth`, cut to `box`: its lower-left end first. */
 export function seamSegment(
   box: Box,
   depth: number,
@@ -539,66 +352,27 @@ export function gridHeight(): number {
   return rowTop(ROW_COUNT) + ROW;
 }
 
-/** The grid's top inside the picture: under the bar and the theme field. */
 export function gridTop(): number {
   return TITLE_BLOCK_H;
 }
 
-// ---------- the league home ----------
-
-/** Export px per app rem-unit on the home, whose seat sprite is 2.625rem. */
 export const K2 = 96 / 42;
 
 export const ROW2 = 44 * K2;
 export const BAND2 = 20 * K2;
 const HPADY = 4 * K2;
 export const HPADX = 8 * K2;
-/**
- * The glyph column is wider than the app's own 2.75rem: its cell is drawn at
- * three by two, the shape the cell has on a phone once the home is fitted to
- * the screen, rather than the near-square the stylesheet asks for.
- */
 export const GLYPH_COL = 57 * K2;
 export const TYPE_COL = 32 * K2;
-/**
- * One line: the league's name.
- *
- * An unnamed league has no line at all — no placeholder, and no tag saying
- * which teams these are — so the picture starts at its first band and is a
- * line shorter. `homeImgH` takes the height from that.
- */
 export const HOME_HDR_H = 24 * K2;
 export const HOME_R = 5 * K2;
 
-/**
- * The home's left rail, the counterpart of the card's.
- *
- * A glyph cell is drawn one inset inside its row, so the league's name and a
- * section band's label start there too. The band overhangs the rail by its
- * own corner radius, and by the same amount past the rail's mirror.
- */
 export const HOME_RAIL = 3 * K2;
 
-/**
- * What a band sits in from the picture's left and right edges.
- *
- * An unnamed league has no name line, so this is also the least whitespace
- * above its first band; `homeTopPad` adds what the frame's round corner needs.
- */
 const HOME_GUTTER = HPADX + HOME_RAIL - HOME_R;
 
-/** Fourteen rows, four bands with their gaps, and the credit. */
 const HOME_BODY_H = 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT;
 
-/**
- * The whitespace above the first thing the picture draws.
- *
- * An unnamed league opens on a band, and the frame's inner corner is round, so
- * the band's corner must keep `HOME_GUTTER` from the curve as well as from the
- * straight edges: its corner arc sits no higher than the frame's. The inner
- * radius follows the picture's short edge; when that is the height, which
- * grows with this pad, the pad is solved for directly.
- */
 export function homeTopPad(named: boolean, homeW: number): number {
   if (named) return HPADY;
   const r = EXPORT_CORNER_RATIO;
@@ -609,54 +383,19 @@ export function homeTopPad(named: boolean, homeW: number): number {
 
 const HOME_W = BOX_W;
 const HOME_INNER = HOME_W - 2 * HPADX;
-/** Team seats per row — six wide, matching the largest team the template holds. */
 export const SEAT_COUNT = 6;
-/**
- * Default team column width at the standard picture width, with no optional
- * columns. Six seats share what the glyph and type columns leave; the old
- * seven-column grid left a dead column between the type mark and the team.
- */
 const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
 
-/**
- * Gym-detail column bounds. The column holds theme, TM, and badge on three
- * lines, and it is as wide as its widest line, so short themes leave no empty
- * space before the teams.
- *
- * `HOME_DETAILS_MIN` makes the first part of a split band (glyph, type, and
- * details columns) as wide as one team block, so the three parts of a
- * story-and-rematch band match. A picture with one team block keeps the same
- * floor.
- *
- * A line wider than `HOME_DETAILS_MAX` ends in an ellipsis. The cap gives a
- * theme 1.5 times the room that a fixed 220 * K2 column gave it: about 58
- * characters of mixed-case text instead of about 38.
- */
 const HOME_DETAILS_MIN =
   SEAT_COUNT * SEAT_COL - (GLYPH_COL + TYPE_COL + HOME_R - HOME_RAIL);
 const HOME_DETAILS_MAX = 310 * K2;
-/**
- * Air between the details column, story teams, and rematch teams — and
- * between the spacers that sit on those blocks. One number, so the gaps
- * stay uniform when a spacer splits.
- */
 export const HOME_SIDE_GAP = 20 * K2;
 
-/** Type square on a league row. Gym-detail type marks scale from this. */
 export const HOME_TYPE_MARK = 22 * K2;
-/**
- * Corner radius for a type mark of `size`, matching the row square's
- * `HOME_R / HOME_TYPE_MARK` ratio. Using `HOME_R` on a smaller square
- * turns the mark into a circle.
- */
 export function homeTypeMarkRadius(size: number): number {
   return (size / HOME_TYPE_MARK) * HOME_R;
 }
 
-/**
- * TM disc, type square, and badge hex inside one third of a home row.
- * Larger than this and the three lines overlap each other.
- */
 export const HOME_DETAIL_ICON = 9 * K2;
 export const HOME_DETAIL_TYPE = 9 * K2;
 export const HOME_DETAIL_GAP = 4 * K2;
@@ -664,14 +403,8 @@ export const HOME_DETAIL_CHIP_H = 8 * K2;
 export const HOME_DETAIL_CHIP_W = HOME_DETAIL_CHIP_H * (0.9375 / 0.6875);
 export const HOME_DETAIL_PAD_Y = 3 * K2;
 
-/** Home-export label and body sizes that mirror the gym card's TM/badge marks. */
 export const HOME_MARK_LABEL_PX = 8 * K2;
 export const HOME_MARK_TRACK = 0.06 * HOME_MARK_LABEL_PX;
-/**
- * Sentence-case theme. Inter's x-height is ~0.53em; smallcaps cap-height is
- * ~0.72em at `HOME_MARK_LABEL_PX`. At 9.5 the x-height sits just under that
- * smallcaps height, instead of matching the old 11px move size.
- */
 export const HOME_THEME_TEXT_PX = 9.5 * K2;
 
 export interface HomeExportGeometry {
@@ -679,18 +412,11 @@ export interface HomeExportGeometry {
   homeInner: number;
   seatCol: number;
   detailsCol: number;
-  /** Gap after the details (or type) column, before the first team block. */
   leadGap: number;
   sideGap: number;
   blockWidth: number;
 }
 
-/**
- * Picture width for export permutations. Team seats keep the default
- * `SEAT_COL`; the details column, lead gaps, and side-by-side blocks add width
- * only. `detailsNeed` is the widest details line in export px, which the
- * column clamps between `HOME_DETAILS_MIN` and `HOME_DETAILS_MAX`.
- */
 export function homeExportGeometry(
   gymDetails: boolean,
   sideBySide: boolean,
@@ -715,15 +441,10 @@ export function homeExportGeometry(
   };
 }
 
-/** Left edge of the first team block (story, or the only team). */
 export function homeTeamOriginX(ox: number, geom: HomeExportGeometry): number {
   return ox + GLYPH_COL + TYPE_COL + geom.detailsCol + geom.leadGap;
 }
 
-/**
- * Right edge vacancy copy aligns to. Combined story/rematch exports pin
- * that edge to the rematch block, not the leftover air after it.
- */
 export function homeVacancyAnchorX(
   ox: number,
   geom: HomeExportGeometry,
@@ -741,12 +462,6 @@ interface HomeSectionPill {
   align: 'left' | 'right';
 }
 
-/**
- * Section-band pills. In both-teams mode every band splits into three
- * equal-gapped pills at the same x: the title, then one over each team block.
- * Only the first band names the blocks (`nameTeams`); the bands under it keep
- * the split without the words. Other modes draw one full-width pill.
- */
 export function homeSectionPills(
   ox: number,
   geom: HomeExportGeometry,
@@ -773,7 +488,6 @@ export function homeSectionPills(
   ];
 }
 
-/** The section band drawn before a slot index. */
 export const SECTION_BEFORE: Record<number, NoArgKey> = {
   0: 'league.section.gyms',
   8: 'league.section.elite',
@@ -781,7 +495,6 @@ export const SECTION_BEFORE: Record<number, NoArgKey> = {
   13: 'league.section.boss',
 };
 
-/** What an empty row says, by slot kind. */
 export const VACANCY: Record<string, NoArgKey> = {
   gym: 'league.vacancy.gym',
   elite: 'league.vacancy.elite',
@@ -789,19 +502,9 @@ export const VACANCY: Record<string, NoArgKey> = {
   boss: 'league.vacancy.boss',
 };
 
-// ---------- the pictures: one width, each as tall as its content ----------
-
-/**
- * The trainer card: the frame either side; the bar and the theme field, the
- * grid, and the credit; and the frame's bottom edge.
- */
 export const CARD_IMG_W = CARD_W + 2 * FRAME;
 export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT + FRAME;
 
-/**
- * The league: its padding, the name line if there is one, four bands with
- * their gaps, fourteen rows, and the credit.
- */
 export function homeImgH(named: boolean, homeW: number): number {
   return Math.ceil(homeTopPad(named, homeW) + (named ? HOME_HDR_H : 0) + HOME_BODY_H);
 }

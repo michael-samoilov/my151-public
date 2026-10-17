@@ -1,5 +1,4 @@
 import {acknowledgeMinuteActivity,encodeActivityBeacon} from '@/lib/minuteActivity';
-/** Bounded best-effort delivery. Requests retain one ID across retries. */
 interface Operation {
   id: string;
   body: string;
@@ -67,7 +66,7 @@ export function createFavoriteBeaconDelivery(enabled: () => boolean) {
         }
       } else if (response.status < 500) retry = false;
     } catch {
-      // Network errors and timed-out keepalive requests use the same bounded retry budget.
+      return;
     } finally {
       clearTimeout(timeout);
       operation.controller = undefined;

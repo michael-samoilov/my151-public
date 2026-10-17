@@ -121,8 +121,8 @@ def compound(candidate):
     result = pathops.Path()
     for fill, shape in paints:
         all_shapes.addPath(shape)
-        # White paints add coverage; black paints erase it. This also preserves
-        # a later white shape that overlaps a black cutout in source paint order.
+
+
         operation = pathops.PathOp.UNION if fill == '#fff' else pathops.PathOp.DIFFERENCE
         result = pathops.op(result, shape, operation)
     original = bounds(all_shapes)

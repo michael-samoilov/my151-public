@@ -19,9 +19,7 @@ import { PicksPage } from './PicksDetailPage';
 import { Seg } from './ui';
 import { formatPreferenceStrength, rankCell, topFills, type PickCell } from './pickerPicks';
 
-/** The selector's columns, as in the app. */
 const MAX_COLS = 6;
-/** The count band under each selector sprite: a bar and its number. */
 const CAPTION_PX = 16;
 
 function axisColor(type: TypeAxisId): string {
@@ -39,8 +37,6 @@ function PickCount({ picks, max, color }: { picks: number; max: number; color: s
   );
 }
 
-/** The app's selector, read-only: no type or origin icons, and a pick count
- *  under each Pokémon, most picked first. */
 function PickSelector({
   cell,
   rows,
@@ -91,7 +87,6 @@ function PickSelector({
       gapPx={desktop ? 6 : 2}
     />
   );
-  // Fade a Pokémon no chart picked here, as the Dex picks page fades a drop.
   const body = (
     <div
       className="pb-4 pt-1 [&_[data-selector-tile]:has([data-unpicked])_img]:opacity-40"
@@ -183,8 +178,6 @@ function PreferenceRanking({ preference }: { preference: Preference | undefined 
   }, [preference, available]);
   const entries = useMemo(() => new Map(ranked.map(({ entry }) => [entry.id, entry])), [ranked]);
   const mons = useMemo(() => ranked.map(({ mon }) => mon), [ranked]);
-  // PrettySpriteGrid keeps the selector's six-column cap. Fit the actual
-  // page width without changing its viewport-sized sprites.
   const maxCols = Math.max(1, Math.min(MAX_COLS, Math.floor(width / spritePx)));
 
   return (
@@ -232,9 +225,6 @@ function PreferenceRanking({ preference }: { preference: Preference | undefined 
   );
 }
 
-/** Picker's Most picked page: the app's wide grid, each cell showing its
- *  most-picked Pokémon across the charts active in the range. A cell opens
- *  the selector with every Pokémon's pick count. */
 export function PickerPicksPage({ picks, onBack }: { picks: FavoritePicks; onBack: () => void }) {
   const desktop = useIsDesktop();
   const fills = useMemo(() => topFills(picks.cells), [picks.cells]);

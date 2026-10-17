@@ -1,23 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/**
- * How the league summary fits its sprites and its 14 rows on screen.
- *
- * On a Retina screen (2 device px per CSS px) the summary holds every sprite
- * at exactly 1x and keeps all 14 rows on screen. A short window takes the
- * height out of the summary's own spacing, and a taller one gives it back in
- * a fixed order: first the trimmed sprite box, then the spacing, then the
- * hint lines (`src/league/homeLayout.ts`). On a 1080p screen the summary
- * keeps today's layout and zoom, and smooths a sprite drawn below 1x.
- *
- * A phone and a 1080p desktop zoom as before until the zoom reaches its
- * floor. A shorter window then takes the same spacing, in the same order,
- * instead of pushing rows off the screen.
- *
- * Every test pins its own viewport and device pixel ratio, so each runs once,
- * in the desktop project.
- */
-
 function summary(page: Page) {
   return page.evaluate(() => {
     const root = document.querySelector('[data-lg-league-root]')!;
@@ -65,7 +47,6 @@ const FLOOR = 0.55;
 
 type Step = Awaited<ReturnType<typeof summary>>;
 
-/** The summary at each window height, in the order given. */
 async function sweep(page: Page, width: number, heights: number[]) {
   const steps: Step[] = [];
   for (const height of heights) {
@@ -79,7 +60,6 @@ async function sweep(page: Page, width: number, heights: number[]) {
 const heights = (from: number, to: number, step: number) =>
   Array.from({ length: Math.floor((to - from) / step) + 1 }, (_, i) => from + i * step);
 
-/** Spare height goes back in order: the sprite box, the spacing, the hints. */
 function expectStagesInOrder(s: Step) {
   const at = `at ${s.height}px`;
   if (s.bandRem > TIGHT_BAND_REM + 0.01) {
@@ -90,11 +70,6 @@ function expectStagesInOrder(s: Step) {
   }
 }
 
-/**
- * A window that zooms to its floor before it gives up spacing: every row on
- * screen at every height, today's layout wherever the zoom is above the floor,
- * and the same fit on the way back up as on the way down.
- */
 function expectHeldAtTheFloor(down: Step[], up: Step[]) {
   for (const [i, s] of [...down, ...up].entries()) {
     const at = `at ${s.height}px`;
@@ -128,8 +103,6 @@ test.describe('a Retina desktop', () => {
     const steps = await sweep(page, 1470, heights(760, 1060, 20));
     await info.attach('sweep.json', { body: JSON.stringify(steps, null, 2), contentType: 'application/json' });
 
-    // 760px is too short for even the tightest layout at 1x; the zoom takes
-    // over there, and the rows still fit.
     for (const [i, s] of steps.entries()) {
       const at = `at ${s.height}px`;
       expect(s.rowsOnScreen, `every row on screen ${at}`).toBe(14);
@@ -182,8 +155,6 @@ test.describe('a short phone', () => {
 
   test('gives up its spacing at the zoom floor and keeps every row on screen', async ({ page }, info) => {
     await openLeague(page);
-    // 568px is an iPhone SE with no toolbars; 418px is the same phone with
-    // both toolbars showing and 50px more taken.
     const down = await sweep(page, 320, heights(568, 418, -10));
     const up = await sweep(page, 320, heights(438, 568, 26));
     await info.attach('sweep.json', { body: JSON.stringify({ down, up }, null, 2), contentType: 'application/json' });
@@ -200,8 +171,6 @@ test.describe('a short 1080p window', () => {
     const up = await sweep(page, 1280, heights(570, 720, 30));
     await info.attach('sweep.json', { body: JSON.stringify({ down, up }, null, 2), contentType: 'application/json' });
     expectHeldAtTheFloor(down, up);
-    // Above the floor the zoom keeps its 0.015 deadband, which can leave the
-    // pane's bottom padding a few px past the fold. A held zoom spends it.
     for (const s of [...down, ...up].filter((s) => s.zoom <= FLOOR + 1e-3)) {
       expect(s.paneScrolls, `no scroll at ${s.height}px`).toBe(false);
     }

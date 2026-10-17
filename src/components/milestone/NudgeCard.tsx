@@ -6,14 +6,7 @@ import { useT } from '@/i18n';
 const AUTO_DISMISS_MS = 10000;
 const CARD_W = 264;
 
-/**
- * The milestone popup: a card that hangs under the control `anchor` selects,
- * with an arrow up at it, a call to action, and a close button. It dismisses
- * itself 10 seconds after it appears. Mount it only while it should show; pass
- * a stable `onDismiss`, or the timer restarts on every render.
- */
 export function NudgeCard({ anchor, title, body, cta, onCta, onDismiss }: {
-  /** CSS selector of the control the card points at. */
   anchor: string;
   title: string;
   body: string;
@@ -24,7 +17,6 @@ export function NudgeCard({ anchor, title, body, cta, onCta, onDismiss }: {
   const t = useT();
   const [rect, setRect] = useState<DOMRect | null>(null);
 
-  // Track the control's position while the card is up.
   useLayoutEffect(() => {
     const el = document.querySelector(anchor);
     if (!el) return;
@@ -53,11 +45,6 @@ export function NudgeCard({ anchor, title, body, cta, onCta, onDismiss }: {
   return createPortal(
     <div className="fixed z-[220]" style={{ left, top, width: CARD_W }} role="status">
       <div className="relative rounded-lg border bg-popover shadow-xl p-3 milestone-nudge-in">
-        {/* up-arrow — a rotated square whose two bordered edges form the
-            pointer. Sized + positioned in px (not rem) so its left/right
-            corners land exactly on the card's top border line: the element's
-            vertical center sits at the border (top = -border - size/2), and its
-            fill covers the border between the corners so there's no seam. */}
         <div
           className="absolute z-10 rotate-45 bg-popover border-l border-t"
           style={{ width: 12, height: 12, left: arrowLeft - 6, top: -7 }}

@@ -2,14 +2,6 @@ import { BUILD_GROUPS } from '@/data/slot-template';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { getPokemonById } from '@/hooks/usePokemonData';
 
-/**
- * Intro-card showcase stages: the demo/seed dex captured mid-build at roughly
- * 45 and 95 Pokémon (cut at whole evolution lines, walking sections in build
- * order) plus the finished 151. Drives both the dots face (rendered live from
- * this data) and the pre-rendered screenshot faces (scripts/intro-shots.mjs
- * loads this module to seed the store before capturing the View page).
- */
-
 export interface ShowcaseStage {
   count: number;
   sections: Record<string, number[]>;
@@ -22,8 +14,6 @@ interface EvoLine {
   ids: number[];
 }
 
-/** Demo dex flattened to whole evolution lines in build order. Sections store
- *  lines contiguously, so a line break is simply a change of chain id. */
 function demoDexLines(): EvoLine[] {
   const lines: EvoLine[] = [];
   for (const g of BUILD_GROUPS) {
@@ -47,7 +37,6 @@ function demoDexLines(): EvoLine[] {
 export function computeShowcaseStages(): [ShowcaseStage, ShowcaseStage, ShowcaseStage] {
   const lines = demoDexLines();
 
-  // Cumulative count after each line — the legal cut points.
   const cuts: number[] = [];
   let cum = 0;
   for (const l of lines) {

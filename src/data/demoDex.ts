@@ -1,6 +1,3 @@
-// Sample personal-151 dex (151 Pokémon) used ONLY in demo mode for visual
-// testing of the View-page section outlines — the section layout matches a
-// user-supplied build. Never seeded for real users — see src/lib/demoMode.ts.
 export const DEMO_DEX_SECTIONS: Record<string, number[]> = {
   'starter': [387, 388, 389, 255, 256, 257, 656, 657, 658],
   'early-bug': [736, 737, 738, 543, 544, 545, 123, 212, 900],

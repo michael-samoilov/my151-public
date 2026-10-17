@@ -5,7 +5,6 @@ import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
 import { roundRect } from '@/league/export/paint';
 import type { BadgeStops } from '../components/badgeStyle';
 
-/** Preserve hard generation stops and the WordBadge diagonal on its frame. */
 export function badgePaint(ctx: CanvasRenderingContext2D, fill: string | BadgeStops,
   x: number, y: number, width: number, height: number): string | CanvasGradient {
   if (typeof fill === 'string') return fill;
@@ -15,7 +14,6 @@ export function badgePaint(ctx: CanvasRenderingContext2D, fill: string | BadgeSt
   return gradient;
 }
 
-/** WordBadge's measured fit and split outline, using the frame's shared paint. */
 export function drawWordBadge(ctx: CanvasRenderingContext2D, label: string,
   paint: string | CanvasGradient, cx: number, edgeY: number, width: number, height: number, split = false): void {
   const scale = height / 40;
@@ -33,7 +31,6 @@ export function drawWordBadge(ctx: CanvasRenderingContext2D, label: string,
     ctx.strokeStyle = '#d4d4d8';
     ctx.lineWidth = scale;
     ctx.stroke();
-    // Paint the repeated black outline once at group opacity, as WordBadge does.
     const outline = Math.max(fit.fontSize * (1.25 / 15) / 2, 0.6 / scale);
     const spread = outline * (1 - fit.scaleX);
     const x = Math.floor(left), y = Math.floor(top);

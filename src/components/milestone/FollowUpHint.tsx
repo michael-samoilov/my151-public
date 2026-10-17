@@ -3,15 +3,6 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useT } from '@/i18n';
 
-/**
- * A small arrow-popup that floats in pointing at a specific on-page control —
- * a follow-up to a milestone celebration whose CTA lands the user on a page
- * where the promised feature is one more tap away (behind a settings panel,
- * a toolbar icon, etc). Clears itself the moment `fulfilled` flips true — the
- * user's own interaction with the target IS the hint's purpose — or when
- * dismissed directly.
- */
-
 const AUTO_DISMISS_MS = 10000;
 const CARD_W = 244;
 const REVEAL_DELAY_MS = 260;
@@ -27,14 +18,10 @@ export function FollowUpHint({
 }: {
   armed: boolean;
   dismiss: () => void;
-  /** Flips true once the user has done the thing the hint points at (opened
-   *  the settings pane, clicked export, ...) — dismisses the hint in response. */
   fulfilled: boolean;
   anchorRef: RefObject<HTMLElement | null>;
   title: string;
   body: string;
-  /** Called each time the hint appears on screen, for a "shown" beacon. Pass a
-   *  stable function, or it runs again on every render. */
   onShown?: () => void;
 }) {
   const t = useT();
@@ -44,11 +31,9 @@ export function FollowUpHint({
     if (fulfilled) dismiss();
   }, [fulfilled, dismiss]);
 
-  // Small delay so it floats in gracefully once the page has actually
-  // settled, rather than popping in the instant the CTA navigates.
   const [armedReady, setArmedReady] = useState(false);
   useEffect(() => {
-    if (!armed) return; // hidden state resets via the cleanup below
+    if (!armed) return;
     const t = setTimeout(() => setArmedReady(true), REVEAL_DELAY_MS);
     return () => {
       clearTimeout(t);

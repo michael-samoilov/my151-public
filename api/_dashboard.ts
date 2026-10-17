@@ -2,9 +2,6 @@ import {ATTENTION_GAP_MS,attentionSessionCount,type AttentionRecording} from './
 import type {RecordingFields} from './_sessionize.js';
 import {parseFavoriteRecord, type FavoriteRecord} from './_favoriteRecord.js';
 import {favoritePicks, favoriteSummary, favoriteUsageFunnel, favoriteUser} from './_favoriteAggregate.js';
-// The admin dashboard payload, computed from the raw Redis reads in
-// api/submissions.ts. It reads no Redis and no request, and it takes the
-// clock as an argument.
 import { parseRecord, type ClientRecord } from './_shared.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
 import {
@@ -46,23 +43,16 @@ import { asArchivedSet, bareCid, isArchived, withoutArchived } from './_archive.
 import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot } from './_crossTool.js';
 import { leaguePicks } from './_leaguePicks.js';
 import { activeSince, firstSeenSince, rangeStart, type DashboardRange } from './_range.js';
-/** Distinct evolution lines represented by a set of ids (unknown ids count as
- *  their own line). Mirrors the client's countEvoLines so server-derived depth
- *  matches what the beacon reports. */
 function countEvoLines(ids: number[]): number {
   const chains = new Set<number>();
   for (const id of ids) chains.add(EVOLUTION_CHAIN_BY_ID[id] ?? -id);
   return chains.size;
 }
 
-/** Pokémon count at the end of each session. A record with no session log
- *  has one: its current build. */
 function monEndsOf(r: ClientRecord): number[] {
   return r.sessionLog?.map((s) => (s.ids ?? []).length) ?? [r.latestIds?.length ?? 0];
 }
 
-/** Earliest beacon per browser, keyed by the bare cid so a country-split dex
- *  record still matches its league record. */
 function firstTsByCid(records: { cid: string; firstTs: number }[]): Map<string, number> {
   const out = new Map<string, number>();
   for (const r of records) {
@@ -72,26 +62,14 @@ function firstTsByCid(records: { cid: string; firstTs: number }[]): Map<string, 
   return out;
 }
 
-// Date the onboarding suite (intro card + milestone progress bar + funnel
-// beacons) shipped to prod — deploy-branch merge on 2026-07-08 (commit
-// f5f4e55). The pre/post cohort slider defaults here. Update if it's re-dated.
-const ONBOARDING_LAUNCH_TS = Date.UTC(2026, 6, 8); // 2026-07-08 UTC (month is 0-based)
+const ONBOARDING_LAUNCH_TS = Date.UTC(2026, 6, 8);
 
-// Per-minute time-before-churn bars up to this cap; everything longer (incl.
-// returning users who came back another day) falls in the final overflow bar.
-/** Ranked entries (desc) including only those with count >= min. No hard cap,
- *  so evolution lines are never truncated mid-family. */
 function rankedAtLeast(counts: Record<string, number>, min: number): [string, number][] {
   return Object.entries(counts)
     .filter(([, n]) => n >= min)
     .sort((a, b) => b[1] - a[1]);
 }
 
-/** Self-scaling qualification threshold: the MEAN per-Pokemon count. For a
- *  long-tailed distribution the head pulls the mean above the median, so
- *  "appears in >= the average number of dexes" naturally cuts the sparse tail
- *  without a hand-picked constant. Floored at 2 (a single-dex Pokemon is tail
- *  by definition) and rounded up. */
 function tailThreshold(counts: Record<string, number>): number {
   const v = Object.values(counts);
   if (v.length === 0) return 2;
@@ -99,7 +77,6 @@ function tailThreshold(counts: Record<string, number>): number {
   return Math.max(2, Math.ceil(mean));
 }
 
-/** Apply rankedAtLeast within each section, dropping sections left empty. */
 function rankBySection(
   bySection: Record<string, Record<string, number>>,
   min: number,
@@ -112,11 +89,6 @@ function rankBySection(
   return out;
 }
 
-/** Rank within each section against that section's OWN mean, not the global
- *  one. Using the global threshold front-loads early-route Pokemon: incomplete
- *  dexes over-represent them, so they dominate the global mean and later
- *  sections get cut too hard. A per-section threshold shows what was popular
- *  within each section on its own terms. */
 function rankBySectionSelf(
   bySection: Record<string, Record<string, number>>,
 ): Record<string, [string, number][]> {
@@ -128,16 +100,12 @@ function rankBySectionSelf(
   return out;
 }
 
-/** UTC Monday (ms) of the week a timestamp falls in. Weeks, not days, because
- *  a per-day crossover rate on this traffic is mostly noise. */
 function weekStart(ts: number): number {
   const day = dayStart(ts);
-  const dow = new Date(day).getUTCDay(); // 0 = Sunday
+  const dow = new Date(day).getUTCDay();
   return day - ((dow + 6) % 7) * DAY_MS;
 }
 
-/** Where a browser's two tools sit relative to each other. `same-day` covers
- *  the common case of finding the second tool from the first one's page. */
 type ToolOrder = 'dex-first' | 'league-first' | 'same-day';
 
 function toolOrder(dexFirstTs: number, leagueFirstTs: number): ToolOrder {
@@ -146,13 +114,6 @@ function toolOrder(dexFirstTs: number, leagueFirstTs: number): ToolOrder {
   return gap > 0 ? 'dex-first' : 'league-first';
 }
 
-/**
- * One browser's league record, as the per-user cards read it.
- *
- * Serves two places: attached to a dex user's card, where `order` says which
- * tool they met first, and as a card of its own under the League slice, where
- * a browser that never touched the dex builder still has to be visible.
- */
 interface LeagueUser extends RecordingFields {
   cid: string;
   firstTs: number;
@@ -174,7 +135,6 @@ interface LeagueUser extends RecordingFields {
   exportedCardAt?: string;
   exportedLeagueAt?: string;
   exportSurveySkips?: ExportSurveySkip[];
-  /** Each session's end state, so the card can diff visit to visit. */
   sessionLog: LeagueRecord['sessionLog'];
   country?: string;
   region?: string;
@@ -187,9 +147,7 @@ interface LeagueUser extends RecordingFields {
   browser?: string;
   /** Coarse acquisition source (external referrer host), forward-only. */
   firstReferrer?: string;
-  /** Whether this browser also has a dex record. */
   hasDex: boolean;
-  /** True when this browser is archived and dropped from aggregates. */
   archived?: boolean;
   /** Absent when this browser has no dex record to be ordered against. */
   order?: ToolOrder;
@@ -241,7 +199,6 @@ function leagueUser(r: LeagueRecord, dexFirstTs?: number): LeagueUser {
 }
 
 interface Journeys {
-  /** Browsers with a record in both stores. */
   both: number;
   dexFirst: number;
   leagueFirst: number;
@@ -260,15 +217,6 @@ interface Journeys {
   }[];
 }
 
-/**
- * The number the launch was for: does one tool feed the other?
- *
- * Read from `firstTs` in both stores, so it reaches back to each tool's first
- * beacon. "Within 7 days" is deliberately one-directional — a browser counts
- * as converted only when the second tool's first beacon comes AFTER the
- * first tool's and inside the window. Someone who already used both before
- * the week in question is not a conversion.
- */
 function crossToolJourneys(dexFirst: Map<string, number>, leagueFirst: Map<string, number>): Journeys {
   const gaps: number[] = [];
   let dexFirstCount = 0;
@@ -319,19 +267,15 @@ function crossToolJourneys(dexFirst: Map<string, number>, leagueFirst: Map<strin
   };
 }
 
-/** The Redis reads the dashboard is computed from, as the SDK returns them. */
 export interface DashboardSource {
   clients: Record<string, unknown> | null;
   archived: unknown;
   funnel: Record<string, unknown> | null;
-  /** The per-day funnel counters of the range's cohort window, summed. `null`
-   *  when the funnels read the all-time `funnel` hash (see funnelDayKeys). */
   funnelWindow: Record<string, unknown> | null;
   leagueClients: Record<string, unknown> | null;
   favoriteClients?: Record<string, unknown> | null;
 }
 
-/** A counter hash as numbers, skipping any field that is not one. */
 function counts(hash: Record<string, unknown> | null): Record<string, number> {
   const out: Record<string, number> = {};
   for (const [k, v] of Object.entries(hash ?? {})) {
@@ -349,11 +293,9 @@ export interface BrowserTime {
   partial?: true;
 }
 
-/** One tool of a browser, as its Newest browsers row shows it. */
 export interface ToolStat {
   /** Progress: Pokémon in the Dex, Gyms with a line, or filled Picker cells. */
   count: number;
-  /** Present once the tool exported. */
   exported?: true;
   /** Every session the tool counted, and their summed time. */
   sessions: number;
@@ -395,8 +337,6 @@ export interface BrowserIndex {
   picker: BrowserRow[];
 }
 
-/** What a row reads from each tool's record. A stored record and the shaped
- *  user the admin page holds both satisfy these. */
 type Sessions = { sessions?: number; sessionMs?: number[]; attention?: AttentionRecording };
 type DexTool = Sessions & { latestIds?: number[]; exported?: boolean; sessionLog?: { ts: number }[] };
 type LeagueTool = Sessions & { maxCards: number; exportsCard: number; exportsLeague: number; sessionLog?: { ts: number }[] };
@@ -407,7 +347,6 @@ type PickerTool = Sessions & {
   sessionLog?: { ts: number; endTs: number }[];
 };
 
-/** Use only dated retained intervals, so cross-tool time can be deduplicated exactly. */
 function foregroundTime(recordings: readonly (AttentionRecording | undefined)[]): BrowserTime | undefined {
   const measured = recordings.filter((a): a is AttentionRecording => !!a);
   if (!measured.length) return undefined;
@@ -428,7 +367,6 @@ function toolStat(count: number, exported: boolean, usage: ToolUsage, attention?
   return { count, ...(exported ? { exported: true as const } : {}), sessions: usage.sessions, totalMs: usage.totalMs, ...(active ? {active} : {}) };
 }
 
-/** One list record's row, with the tools of its browser. */
 function browserRow(
   rec: SessionRecord,
   tools: { dex?: DexTool; league?: LeagueTool; picker?: PickerTool },
@@ -460,12 +398,6 @@ function browserRow(
   };
 }
 
-/**
- * The Newest browsers lists: every record of each tool, archived ones
- * flagged. A country-split Dex record (`<cid>::<country>`) is a row of its
- * own; the League and Picker rows of its browser read the browser's own Dex
- * record, or its newest split when it has none.
- */
 export function browserIndex(
   dex: (SessionRecord & DexTool)[],
   league: (SessionRecord & LeagueTool)[],
@@ -518,7 +450,6 @@ type RecordedRow = {
 };
 type RecordedSpan = {start: number; end: number; timed: boolean};
 
-/** Dated retained spans only. Neither lifetime counters nor first/last visits supply missing time. */
 export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', readonly RecordedRow[]>, start: number | null, now: number, source: 'legacy' | 'active' = 'legacy'): RecordedUsage {
   const groups = {all: new Map<string, RecordedSpan[]>(), dex: new Map<string, RecordedSpan[]>(), league: new Map<string, RecordedSpan[]>(), favorites: new Map<string, RecordedSpan[]>()};
   const incomplete = {all: new Set<string>(), dex: new Set<string>(), league: new Set<string>(), favorites: new Set<string>()};
@@ -591,7 +522,6 @@ export function recordedUsage(rows: Record<'dex' | 'league' | 'favorites', reado
           earliest = Math.min(earliest, s.start);
           let from = Math.max(s.start, end);
           total += Math.max(0, s.end - from);
-          // Account only the uncovered suffix: Suite overlaps are unioned per browser.
           while (from < s.end) {
             const week = weekStart(from);
             const until = Math.min(s.end, week + weekMs);
@@ -631,18 +561,11 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     .map(parseRecord)
     .filter((r): r is ClientRecord => r !== null);
   const archivedSet = asArchivedSet(source.archived);
-  // Aggregates skip archived browsers. The browser index still carries them,
-  // flagged, so the admin can open or un-archive a card.
   const records = withoutArchived(allRecords, archivedSet);
 
-  // Funnel event counters (from api/event.ts) — top-of-funnel signals that
-  // fire with zero placements, so they live outside the per-user records.
   const funnelEvents = counts(source.funnel);
   const cohortEvents = source.funnelWindow ? counts(source.funnelWindow) : funnelEvents;
 
-  // The gym leader maker's records, in their own hash. A person who used
-  // both tools is one cid present in both, so overlap is a set
-  // intersection at read time — retroactive by construction.
   const allLeagueRecords: LeagueRecord[] = Object.values(source.leagueClients ?? {})
     .map(parseLeagueRecord)
     .filter((r): r is LeagueRecord => r !== null);
@@ -651,7 +574,6 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const allFavoriteRecords = Object.values(source.favoriteClients ?? {}).map(parseFavoriteRecord).filter((r): r is FavoriteRecord => r !== null);
   const favoriteRecords = withoutArchived(allFavoriteRecords, archivedSet);
 
-  // For `all`, every card reads the same arrays it read before ranges existed.
   const start = rangeStart(range, now);
   const within = <T>(list: T[], keep: (r: T) => boolean): T[] => (start === null ? list : list.filter(keep));
   const active = (r: SessionRecord) => activeSince(r, start);
@@ -659,7 +581,6 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const leagueIn = within(leagueRecords, active);
   const favoriteIn = within(favoriteRecords, active);
   const favoriteNew = within(favoriteRecords, (r) => firstSeenSince(r, start));
-  // Cross-tool cards: every record, of any tool, of the browsers active after `from`.
   const crossWindow = (from: number | null) => {
     const keep = <T>(list: T[], test: (r: T) => boolean): T[] => (from === null ? list : list.filter(test));
     const on = (r: SessionRecord) => activeSince(r, from);
@@ -693,16 +614,12 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const dexFirstTs = firstTsByCid(records);
   const journeys = crossToolJourneys(firstTsByCid(crossDex), firstTsByCid(crossLeague));
   const crossTool = buildCrossTool(crossDex, crossLeague, undefined, crossFavorite);
-  // The same snapshot per later tool, with the window opening no earlier than
-  // its launch. Built from the records already read: no Redis command.
   const crossToolSince: Record<string, CrossToolSnapshot> = {};
   for (const { id, start: from } of sinceLaunchStarts(TOOL_CATALOG, start)) {
     const w = crossWindow(from);
     crossToolSince[id] = buildCrossTool(w.dex, w.league, undefined, w.favorite);
   }
 
-  // The league funnel, from the records: opened is a record at all (the
-  // first beacon needs a seated line), then named, then exported.
   const leagueDaily: Record<number, Set<string>> = {};
   for (const r of leagueRecords) {
     for (const s of r.sessionLog) {
@@ -738,21 +655,11 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
       })),
   };
 
-  // Depth (evolution-line) drop-off, four bases:
-  //  total   = peak lines ever reached (overall breadth) — the default view.
-  //  first   = lines net-added in the user's FIRST session.
-  //  longest = lines net-added in the user's longest-DURATION session.
-  //  all     = lines net-added per session, pooled (one point per session).
-  // Per-session contribution = diff of cumulative end-depths, floored at 0
-  // (a session that net-pruned counts as 0 added, not negative).
-  // Two metrics, same four bases: evolution lines and raw Pokemon count.
   const lineVals = { total: [] as number[], first: [] as number[], longest: [] as number[], all: [] as number[] };
   const monVals = { total: [] as number[], first: [] as number[], longest: [] as number[], all: [] as number[] };
-  const picksFinal: Record<string, number> = {}; // one vote per user's final dex
-  const droppedCounts: Record<string, number> = {}; // ever placed but not in final dex
-  // Same, but split by the section the user actually placed each Pokemon in
-  // (sectionId -> { pokemonId -> count }). Forward-only; only records with
-  // section placement contribute.
+  const picksFinal: Record<string, number> = {};
+  const droppedCounts: Record<string, number> = {};
+
   const picksBySection: Record<string, Record<string, number>> = {};
   const droppedBySection: Record<string, Record<string, number>> = {};
   const bump = (m: Record<string, Record<string, number>>, sid: string, id: number) => {
@@ -761,18 +668,10 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
 
   let completed = 0;
   let exported = 0;
-  let multiSession = 0; // users with 2+ sessions (why the bases can differ)
-  // Compact per-user cohort samples for the pre/post date comparison: one
-  // tuple per user [firstTs, peakMon, peakLines, completed(0/1), exported(0/1)].
-  // firstTs + peakMon predate onboarding, so the whole history is comparable.
+  let multiSession = 0;
+
   const cohort: [number, number, number, 0 | 1, 0 | 1][] = [];
-  // Peak Pokemon count per record, paired with its device, for the
-  // depth-by-device survival curves. This is the exact same value
-  // monVals.total collects, so depthByDevice's `all` matches the existing
-  // total curve.
   const monPeakEntries: { device?: string; value: number }[] = [];
-  // Tally the View settings exporters actually used (forward-only — only
-  // exports captured since settings-tracking shipped contribute).
   const exportSettingsAgg = {
     tracked: 0,
     outlines: 0,
@@ -783,21 +682,14 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
 
   for (const r of dexIn) {
     const sessSecs = sessionSeconds(r);
-    // Index of this user's longest-DURATION session (aligns with the time
-    // chart's "longest"); used to pick that session's build contribution.
     let li = 0;
     for (let i = 1; i < sessSecs.length; i++) if (sessSecs[i] > sessSecs[li]) li = i;
 
-    // Per-session END sizes (cumulative) for each metric. Prefer stored evo-
-    // line end depths; otherwise BACK-POPULATE from sessionLog (each entry has
-    // that session's ids). Pokemon count comes straight from those ids.
     const logCounts = r.sessionLog?.map((s) => countEvoLines(s.ids ?? []));
     const lineEnds =
       r.sessionDepth && r.sessionDepth.length > 0 ? r.sessionDepth : (logCounts ?? [r.maxDepth]);
     const monEnds = monEndsOf(r);
 
-    // total = peak size ever; first/longest/all = size ADDED per session
-    // (diff of cumulative ends, floored at 0), keyed to the same longest idx.
     const fill = (target: typeof lineVals, ends: number[]) => {
       const added = ends.map((d, i) => Math.max(0, i === 0 ? d : d - ends[i - 1]));
       target.total.push(Math.max(...ends));
@@ -809,26 +701,19 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     fill(monVals, monEnds);
     if (Math.max(lineEnds.length, monEnds.length) >= 2) multiSession += 1;
 
-    // Cohort sample for the pre/post date slider. Peak raw-Pokemon count (the
-    // milestone threshold basis, 25/100/151) and peak evo lines, both derived
-    // from history so pre-onboarding users are included.
     const peakMon = Math.max(0, ...monEnds);
     const peakLines = Math.max(0, ...lineEnds);
     cohort.push([r.firstTs, peakMon, peakLines, r.completed ? 1 : 0, r.exported ? 1 : 0]);
     monPeakEntries.push({ device: r.device, value: peakMon });
 
-    // Popularity across every user's final/current dex (one vote each), so it
-    // reflects everyone — not just the few who finish a full 151.
     for (const id of r.latestIds ?? []) picksFinal[id] = (picksFinal[id] ?? 0) + 1;
     if (r.completed) completed += 1;
 
-    // Adjustment signal: placed at some point but not kept in the final dex.
     const kept = new Set(r.latestIds ?? []);
     for (const id of r.everIds ?? []) {
       if (!kept.has(id)) droppedCounts[id] = (droppedCounts[id] ?? 0) + 1;
     }
 
-    // Per-section breakdowns (forward-only; needs captured placement).
     if (r.latestSections) {
       for (const [sid, sIds] of Object.entries(r.latestSections)) {
         for (const id of sIds) bump(picksBySection, sid, id);
@@ -851,14 +736,6 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     }
   }
 
-  // --- Survival (drop-off) curves -------------------------------------
-  // S(t) = fraction of sessions still active at t. The steepest part of the
-  // curve is where people churn — that's where to intervene. See
-  // api/_aggregate.ts for how the x-axis is sampled.
-
-  // Every record-agnostic aggregate, once per tool. `all` is one record per
-  // browser with both tools' sessions merged, so a person who used both is
-  // one user with one set of days — not two.
   const dexAgg = aggregate(records, now, dexIn, start);
   const leagueAgg = aggregate(leagueRecords, now, leagueIn, start);
   const favoriteAgg = aggregate(favoriteRecords, now, favoriteIn, start);
@@ -871,50 +748,33 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     all: allAgg,
   };
 
-  // Back-compat surface: the dex slice, where it has always been.
   const timeCurves = dexAgg.timeCurves;
   const timeSurvival = timeCurves.longest.survival;
   const timeStats = timeCurves.longest.stats;
 
-  // Depth survival: x in evolution lines, 0..maxObserved.
   const curvesFor = (v: typeof lineVals) => ({
     total: buildDepthCurve(v.total),
     first: buildDepthCurve(v.first),
     longest: buildDepthCurve(v.longest),
     all: buildDepthCurve(v.all),
   });
-  // Both metrics, four bases each. lineCurves = evolution lines (legacy
-  // depthCurves), monCurves = raw Pokemon count (new default).
   const lineCurves = curvesFor(lineVals);
   const monCurves = curvesFor(monVals);
-  const depthCurves = lineCurves; // back-compat name (evolution lines)
-  // Back-compat flat surface (total lines ever reached).
+  const depthCurves = lineCurves;
+
   const depthSurvival = lineCurves.total.survival;
   const depthStats = lineCurves.total.stats;
 
-  // Dex cohorts for the built/incomplete/completed toggle: same three
-  // fields (users, devices, countries, browsers) tallied over three
-  // non-overlapping slices of `dexIn`. No "bounced" cohort — a browser
-  // that never sent a beacon has no ClientRecord, so its device, country
-  // and browser are unknowable.
   const cohorts: Record<'built' | 'incomplete' | 'completed', Cohort> = {
     built: tallyCohort(dexIn),
     completed: tallyCohort(dexIn.filter((r) => r.completed === true)),
     incomplete: tallyCohort(dexIn.filter((r) => r.completed !== true)),
   };
 
-  // Build-depth survival by device, on the same per-record peak-Pokemon
-  // value monVals.total uses — `all` is that same curve, split further by
-  // device for `mobile` and `desktop`.
   const depthByDeviceCurves = depthByDevice(monPeakEntries);
 
-  // Acquisition hosts ranked by reach across both tools. Records with no
-  // host count as "referrer not known" rather than dropping out.
   const referrerRows = referrerFlow(dexNew, leagueNew, favoriteNew);
 
-  // League depth: how far a league gets, on the dex builder's pattern. Two
-  // metrics, because a league can be wide (11 cards, one line each) or deep
-  // (a few cards, six lines each) and the two fail differently.
   const leagueCurves = {
     cards: buildDepthCurve(leagueIn.map((r) => r.maxCards)),
     seats: buildDepthCurve(leagueIn.map((r) => r.maxSeats)),
@@ -938,16 +798,11 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     })),
     funnelEventCount(cohortEvents, 'league-open'),
   );
-  // Every browser of each tool, for the Newest browsers lists. Built from the
-  // records already read, so it costs no Redis command.
   const browsers = browserIndex(allRecords, allLeagueRecords, allFavoriteRecords, archivedSet);
 
-  // Self-scaling qualification thresholds: median per-Pokemon count per list.
   const popularMin = tailThreshold(picksFinal);
   const droppedMin = tailThreshold(droppedCounts);
 
-  // The dex builder's daily active-users series (see api/_aggregate.ts for
-  // rolling24/rolling7 are trailing-hour unique counts; see dailyActive).
   const activity = dexAgg.activity;
   const lastPointLabels = lastPointLabelCounts(merged, now);
 
@@ -963,7 +818,6 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     leagueFunnel,
     favoriteFunnel:favoriteUsageFunnel(favoriteNew),
     favorite:favoriteSummary(favoriteIn),
-    // Per-cell pick counts of the charts active in the range, from the records already read.
     favoritePicks:favoritePicks(favoriteIn),
     tools,
     crossTool,
@@ -984,8 +838,6 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     depthCurves,
     lineCurves,
     monCurves,
-    // The dex slice, kept at the top level where every existing card reads
-    // it. `byTool.dex` is the same object.
     countries: dexAgg.countries,
     languages: dexAgg.languages,
     devices: dexAgg.devices,
@@ -996,14 +848,10 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     depthByDevice: depthByDeviceCurves,
     referrerFlow: referrerRows,
     leagueCurves,
-    // Full ranked lists; the admin UI previews the top N and expands the rest.
-    // Qualification threshold = the median per-Pokemon count for that list, so
-    // it self-scales with the data. No cap, so evo lines aren't cut off.
     popularFinal: rankedAtLeast(picksFinal, popularMin),
     mostDropped: rankedAtLeast(droppedCounts, droppedMin),
     popularMin,
     droppedMin,
-    // Same, split by the section users actually placed them in (forward-only).
     popularBySection: rankBySectionSelf(picksBySection),
     droppedBySection: rankBySection(droppedBySection, droppedMin),
     picksBySectionAll: rankBySection(picksBySection, 1),
@@ -1011,7 +859,6 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   };
 }
 
-/** The stored values one browser has in each store, from one HGET apiece. */
 interface BrowserSource {
   dex: unknown;
   league: unknown;

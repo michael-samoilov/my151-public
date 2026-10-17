@@ -1,11 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
 
-/**
- * Icons drawn for this app, in lucide's idiom: a 24-unit box, a 2-unit stroke,
- * round caps and joins, outline only. Lucide has no Pokédex, no Gym emblem, no
- * Bug-type glyph and no Pokémon ribbon. The sources and the rejected drafts are
- * in `docs/design/tools-menu-icons/`.
- */
 interface IconProps { className?: string; style?: CSSProperties; strokeWidth?: number }
 
 function Icon({ className, style, strokeWidth = 2, children }: IconProps & { children: ReactNode }) {
@@ -26,7 +20,6 @@ function Icon({ className, style, strokeWidth = 2, children }: IconProps & { chi
   );
 }
 
-/** A handheld Pokédex: lens, two indicator lights, and the curved hinge line. */
 export function PokedexIcon(props: IconProps) {
   return (
     <Icon {...props}>
@@ -39,7 +32,6 @@ export function PokedexIcon(props: IconProps) {
   );
 }
 
-/** The Pokémon Gym emblem. */
 export function GymIcon(props: IconProps) {
   return (
     <Icon {...props}>
@@ -51,10 +43,6 @@ export function GymIcon(props: IconProps) {
   );
 }
 
-/**
- * The Bug type glyph with legs. The body is `scripts/build-type-icons.ts`'s
- * bug at 85%; the legs are lucide `Bug`'s, cut where they meet its outline.
- */
 export function BugIcon(props: IconProps) {
   return (
     <Icon {...props}>
@@ -75,10 +63,6 @@ export function BugIcon(props: IconProps) {
   );
 }
 
-/**
- * A ribbon with a Poké Ball as its pin, after the games' ribbons: two tails
- * with swallowtail cuts hang from behind the ball.
- */
 export function RibbonIcon(props: IconProps) {
   return (
     <Icon {...props}>
@@ -92,14 +76,6 @@ export function RibbonIcon(props: IconProps) {
   );
 }
 
-/**
- * A Pokémon Egg about to hatch. The outline, the crack and the three edge
- * spots are traced from the games' cracked-egg sprite. The crack opens a little
- * about the crown, so every run stays 2 units clear of its neighbours. The left
- * spot sits 3.75 sprite pixels left of and 2.75 below its traced place, to make
- * room for the left run's down-left turn. Drawn at `pathScale(1.35)`. Sources:
- * `docs/design/tools-menu-icons/egg-*`.
- */
 export function EggIcon(props: IconProps) {
   return (
     <Icon {...props}>

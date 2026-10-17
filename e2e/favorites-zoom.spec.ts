@@ -1,17 +1,9 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
-/**
- * Pinch zoom on the favorite picker grid, driven with real input: two-finger
- * CDP touches on touch projects and a synthesized touchpad pinch elsewhere.
- * Every measurement is taken on screen, through the visual viewport, so it
- * holds whether the grid or the whole page zooms.
- */
-
 type Box = { left: number; top: number; right: number; bottom: number };
 
 const nextFrame = (page: Page) => page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
 
-/** The middle of the grid frame's visible part, where every pinch lands. */
 async function pinchPoint(page: Page) {
   const frame = (await page.getByTestId('favorites-grid-scroll').boundingBox())!;
   const viewport = page.viewportSize()!;
@@ -39,12 +31,10 @@ async function pinchGrid(page: Page, testInfo: TestInfo, factor: number) {
   await page.waitForTimeout(200);
 }
 
-/** Scroll toward the bottom-right the way the device would: finger drags or wheel. */
 async function scrollGrid(page: Page, testInfo: TestInfo, times: number) {
   const frame = (await page.getByTestId('favorites-grid-scroll').boundingBox())!;
   const viewport = page.viewportSize()!;
   const right = Math.min(frame.x + frame.width, viewport.width) - 20;
-  // Start above the minimap. While it shows, a finger on it drives the minimap.
   const bottom = Math.min(frame.y + frame.height, viewport.height) - 100;
   const cdp = await page.context().newCDPSession(page);
   for (let i = 0; i < times; i++) {
@@ -66,7 +56,6 @@ async function scrollGrid(page: Page, testInfo: TestInfo, times: number) {
   await page.waitForTimeout(300);
 }
 
-/** The part of the grid frame on screen, in layout-viewport coordinates. */
 function visibleFrame(page: Page) {
   return page.evaluate(() => {
     const frame = document.querySelector('[data-testid="favorites-grid-scroll"]')!.parentElement!.getBoundingClientRect();
@@ -80,7 +69,6 @@ function visibleFrame(page: Page) {
   });
 }
 
-/** Width of one body cell on screen, in device-independent pixels. */
 function cellOnScreen(page: Page) {
   return page.getByTestId('favorites-cell-normal-1').evaluate(
     (el) => el.getBoundingClientRect().width * (window.visualViewport?.scale ?? 1),
@@ -136,14 +124,11 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
     const visible = await visibleFrame(page);
     await page.screenshot({ path: testInfo.outputPath('zoomed-sticky-headers.png') });
     await testInfo.attach('sticky-headers.json', { body: JSON.stringify({ visible, edges }), contentType: 'application/json' });
-    // The first body cell has moved up and left, so the view is scrolled on
-    // both axes and only sticky headers can still be at the edges.
     expect(edges.firstTop).toBeLessThan(visible.top + edges.rowHeight - 1);
     expect(edges.firstLeft).toBeLessThan(visible.left + edges.columnWidth - 1);
     expect.soft(edges.headerTop, 'header row top').toBeCloseTo(visible.top, 0);
     expect.soft(edges.genLeft, 'generation column left').toBeCloseTo(visible.left, 0);
 
-    // The headers paint above scrolled body cells and their sprites.
     const hits = await page.evaluate(({ visible, row, column }) => {
       const at = (x: number, y: number) => document.elementFromPoint(x, y);
       const header = at(visible.left + column * 1.5, visible.top + row * 0.9);
@@ -158,8 +143,6 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
 
   test('headers stay compact at maximum zoom and the pinch point holds', async ({ page }, testInfo) => {
     await page.goto('/favorite-pokemon-picker');
-    // On-screen header sizes and the body cell under the pinch point, with
-    // where in that cell the point falls.
     const measure = (point: { x: number; y: number }, testId?: string) => page.evaluate(({ point, testId }) => {
       const grid = document.querySelector('[data-testid="favorites-grid"]')!;
       const typeHeader = [...grid.querySelectorAll(':scope > div:not([data-row-banded])')].at(-1)!.getBoundingClientRect();
@@ -186,12 +169,9 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
     await testInfo.attach('max-zoom.json', { body: JSON.stringify({ point, before, after }), contentType: 'application/json' });
 
     expect(after.cellWidth).toBeGreaterThan(before.cellWidth * 2.4);
-    // The header row stops at 1.25x, plus what its column badges grow past
-    // that: they keep their 5:1 shape at 90% of the column.
     const cappedHead = before.rowHeight * 1.25;
     expect.soft(after.rowHeight, 'header row height').toBeLessThanOrEqual(cappedHead + 0.18 * (after.cellWidth - cappedHead) + 1);
     expect.soft(after.columnWidth, 'generation column width').toBeLessThanOrEqual(before.columnWidth * 1.25 + 1);
-    // A column badge keeps its 5:1 shape and spans 90% of its column.
     const badge = await page.evaluate(() => {
       const scroller = document.querySelector('[data-testid="favorites-grid-scroll"]')!.getBoundingClientRect();
       const shown = [...document.querySelectorAll('[data-testid^="favorites-header-badge-"]')]
@@ -202,7 +182,6 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
     });
     expect(badge.width / after.cellWidth, 'badge share of the column').toBeCloseTo(0.9, 2);
     expect(badge.width / badge.height, 'badge aspect').toBeCloseTo(5, 1);
-    // The same spot of the same body cell is still under the pinch point.
     expect(Math.abs(after.box.left + before.fx * after.box.width - point.x), 'pinch point x').toBeLessThan(3);
     expect(Math.abs(after.box.top + before.fy * after.box.height - point.y), 'pinch point y').toBeLessThan(3);
   });
@@ -274,7 +253,6 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
       cdp.send('Input.dispatchTouchEvent', { type, touchPoints: [{ x, y, id: 1 }] });
     const lift = () => cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 
-    // Drag the window 20px right and 10px down from where the finger lands.
     const start = (await view.boundingBox())!;
     const x0 = start.x + start.width / 2;
     const y0 = start.y + start.height / 2;
@@ -290,7 +268,6 @@ test.describe('favorite picker zoom', { tag: '@viewport' }, () => {
     await nextFrame(page);
     const dragged = await state();
 
-    // A press off the window centers the window under the finger.
     const mapBox = (await map.boundingBox())!;
     const press = { x: mapBox.x + mapBox.width * 0.25, y: mapBox.y + mapBox.height * 0.5 };
     // Sample in the page one second after touchend. Driver round trips for

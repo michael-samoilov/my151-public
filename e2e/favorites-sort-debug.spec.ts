@@ -3,7 +3,6 @@ import { expect, test, type Page } from '@playwright/test';
 const PAGE = '/favorite-pokemon-picker';
 const REGIONAL_FIRST = 'unownLast,formKind,debut,tier,dex';
 
-/** The open selector's entries, first to last, as `id:name`. */
 async function selectorOrder(page: Page): Promise<string[]> {
   const grid = page.getByTestId('favorites-picker').getByTestId('favorites-pretty-grid');
   await expect(grid).toBeVisible();
@@ -18,7 +17,6 @@ test('the sort debug panel reorders an open selector and stays off without its f
     sessionStorage.setItem('sort-debug-reset', '1');
   });
 
-  // Users: no button, and a `sort` list in the URL changes nothing.
   await page.goto(`${PAGE}?sort=${REGIONAL_FIRST}`);
   await expect(page.getByTestId('favorites-grid')).toBeVisible();
   await expect(page.getByTestId('favorites-sort-debug-open')).toHaveCount(0);
@@ -30,7 +28,6 @@ test('the sort debug panel reorders an open selector and stays off without its f
   const defaultOrder = await selectorOrder(page);
   expect(defaultOrder).toEqual(userOrder);
 
-  // A preset reorders the selector that is already open.
   await page.getByTestId('favorites-sort-debug-open').click();
   await page.getByTestId('favorites-sort-preset-regional-first').click();
   await expect(page.getByTestId('favorites-sort-order')).toHaveText(REGIONAL_FIRST);
@@ -38,13 +35,11 @@ test('the sort debug panel reorders an open selector and stays off without its f
   const regionalFirstOrder = await selectorOrder(page);
   expect(regionalFirstOrder).not.toEqual(defaultOrder);
   expect(regionalFirstOrder.slice().sort()).toEqual(defaultOrder.slice().sort());
-  // Regional first lists every regional variant before the first Mega.
   const firstMega = regionalFirstOrder.findIndex((entry) => entry.includes('Mega '));
   const lastRegional = regionalFirstOrder.findLastIndex((entry) => /^\d+:(Alolan|Galarian|Hisuian|Paldean) /.test(entry));
   expect(lastRegional).toBeGreaterThanOrEqual(0);
   expect(lastRegional).toBeLessThan(firstMega);
 
-  // The move buttons and checkboxes edit the same list as the presets.
   await page.getByTestId('favorites-sort-preset-default').click();
   await expect(page.getByTestId('favorites-sort-order')).toHaveText('unownLast,debut,formKind,tier,dex');
   await page.getByTestId('favorites-sort-down-debut').click();
@@ -55,7 +50,6 @@ test('the sort debug panel reorders an open selector and stays off without its f
   await page.getByTestId('favorites-sort-toggle-legendaryLast').uncheck();
   expect(await selectorOrder(page)).toEqual(regionalFirstOrder);
 
-  // The choice has its own storage key and survives a reload.
   expect(await page.evaluate(() => ({
     order: localStorage.getItem('personal-151-favorites-sort-order-v1'),
     picks: localStorage.getItem('favorite-picker'),

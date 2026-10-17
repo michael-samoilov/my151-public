@@ -1,4 +1,3 @@
-// keeps: Exhaustive progress/export combinations catch lost or double-counted browser flows that UI fixtures cannot cover.
 import { describe, expect, it } from 'vitest';
 import { dexUsageFunnel } from '../../api/_aggregate';
 import { dexFunnelSankey, favoriteFunnelSankey, referrerFlowSankey } from './usageFunnels';
@@ -70,7 +69,6 @@ describe('referrerFlowSankey', () => {
   });
 });
 
-
 describe('favoriteFunnelSankey', () => {
   const stageNode = (label: string) => (label === 'Not started' ? 'Bounced' : label);
   it('conserves each browser through every progress and export combination', () => {
@@ -86,7 +84,6 @@ describe('favoriteFunnelSankey', () => {
               expect(flowOut(s, 'Opened')).toBe(count);
               expect(flowInto(s, stageNode(label))).toBe(count);
               expect(flowInto(s, 'Placed a Pokémon')).toBe(label === 'Not started' ? 0 : count);
-              // Only Completed peels to Not exported. Every other stage ends there.
               expect(flowOut(s, stageNode(label))).toBe(completed ? count : count - notExported);
               expect(flowInto(s, 'Not exported')).toBe(completed ? notExported : 0);
               expect(flowInto(s, 'Full grid')).toBe(full);

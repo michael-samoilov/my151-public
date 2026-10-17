@@ -1,40 +1,5 @@
 #!/usr/bin/env node
-/**
- * Lab speed comparison: production (or any git ref) against the working tree.
- *
- *   node scripts/performance/lab.mjs                       # 5 runs, both profiles
- *   node scripts/performance/lab.mjs --runs 9 --profile mobile --case dex,dex-full
- *   node scripts/performance/lab.mjs --base HEAD~1
- *   node scripts/performance/lab.mjs --no-base             # measure only this tree
- *
- * What it does:
- *
- * 1. Builds the working tree, and the base ref in a temporary worktree.
- * 2. Serves each build over HTTP/2 with Brotli and the cache headers in
- *    vercel.json, like the Vercel edge. API routes answer `{}`.
- * 3. Loads each case in a fresh Chromium context, alternating base and
- *    candidate on every run so drift on the machine hits both equally.
- * 4. Prints the median of each metric, base against candidate.
- *
- * Profiles are the Lighthouse lab presets. Mobile: 390x844, 150 ms round
- * trip, 1.6 Mbps down, CPU slowed 4x. Desktop: 1280x800, 40 ms, 10 Mbps, 1x.
- *
- * Metrics, all in milliseconds except `dom` (element count):
- * - `lcp`, `fcp`, `cls`: the Web Vitals, from the browser's own observers.
- * - `tbt`: total blocking time after first paint, the main-thread cost of
- *   startup.
- * - `ready`: when the case's first control is in the DOM.
- * - `inp:<step>`: the slowest interaction during that step, from the Event
- *   Timing API. This is what Interaction to Next Paint reports in the field.
- *
- * A change is marked only when every candidate run falls outside the range of
- * the base runs, and the medians differ by more than 5%. With 5 runs each,
- * that separation happens by chance less than 1 time in 100; with 3 runs, 1
- * time in 10. Timing on a shared machine is noisy, so this is evidence for a
- * pull request, not a gate in ci-local.
- * Wrap other browser runs in `flock "${TMPDIR:-/tmp}/my151-browser.lock"` so
- * they wait for this one, and it for them.
- */
+
 import fs from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -64,11 +29,6 @@ const PROFILES = {
   },
 };
 
-/**
- * Each case loads one page and may drive steps after it settles. `ready` is
- * the selector whose first appearance counts as usable. `fullDex` seeds a
- * saved Pokédex with all 151 placed before the page loads.
- */
 const CASES = {
   hub: { path: '/', ready: 'a[href="/pokedex-builder"]' },
   dex: {
@@ -117,7 +77,6 @@ const CASES = {
   },
 };
 
-// Runs in the page before any app script.
 function observe(readySelector) {
   const perf = { lcp: 0, cls: 0, long: [], events: [], ready: null };
   window.__lab = perf;
@@ -134,7 +93,6 @@ function observe(readySelector) {
   new MutationObserver(check).observe(document, { childList: true, subtree: true });
 }
 
-/** The saved Pokédex a returning visitor with all 151 placed would have. */
 async function fullDexFixture(browser, origin) {
   const context = await browser.newContext({ ignoreHTTPSErrors: true, serviceWorkers: 'block' });
   const page = await context.newPage();
@@ -200,7 +158,6 @@ holdBrowserLock();
     const tls = selfSignedTls(work);
 
     const cases = Object.entries(CASES).filter(([name]) => !CASE_NAMES || CASE_NAMES.includes(name));
-    // The saved-dex fixture needs `?tune`, which a production build ignores.
     const needsFixture = cases.some(([, spec]) => spec.fullDex);
     const builds = [['candidate', build(work, 'candidate', null)]];
     if (BASE) builds.unshift(['base', build(work, 'base', BASE)]);
@@ -227,8 +184,6 @@ holdBrowserLock();
       process.stdout.write('\n');
     }
 
-    // One row per profile and case. A cell is the candidate median, or
-    // "base → candidate" with the change when there is a base.
     const METRICS = ['lcp', 'fcp', 'tbt', 'ready', 'cls', 'dom'];
     const table = new Map();
     for (const [key, byTarget] of Object.entries(samples)) {

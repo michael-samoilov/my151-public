@@ -2,30 +2,6 @@ import { defineConfig, devices } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
-/**
- * Two servers, each authoritative for what it can actually prove.
- *
- * Most specs run against `vite preview` — the real production bundle, the same
- * output Vercel deploys. The pseudo-locale specs cannot: `PREVIEW_FEATURES` is
- * deliberately false in a production build, so `?lang=en-XA` is ignored there.
- * That gate is correct (a real user seeing "[Ɓúíłđ···]" would think the app was
- * broken), so those specs run against the dev server instead, which is where
- * the pseudo-locales are actually used.
- *
- * The previous root-level harnesses each hardcoded a different URL (:5173 and
- * :5199) and needed a server started by hand, so one of them could never pass.
- */
-
-/**
- * A port pair of this checkout's own, from 10000 through 29999.
- *
- * Two worktrees on one machine each start these servers, and a local run
- * reuses whatever already answers on the port. On shared fixed ports, the
- * second worktree's run silently tests the first worktree's build. Hashing
- * the checkout path (FNV-1a) gives each worktree the same pair on every run
- * and, barring a hash collision, a different pair from its neighbors.
- * PLAYWRIGHT_PREVIEW_PORT and PLAYWRIGHT_DEV_PORT override it.
- */
 function worktreePort(offset: 0 | 1): number {
   let hash = 2166136261;
   for (const char of path.resolve(process.cwd()).toLowerCase()) {
@@ -106,7 +82,7 @@ function resolveChromium(): string | undefined {
       }
     }
   } catch {
-    /* fall through to Playwright's own resolution */
+    return undefined;
   }
   return undefined;
 }
@@ -124,9 +100,7 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PREVIEW_PORT}`,
     trace: 'on-first-retry',
-    // See resolveChromium() below. An empty launchOptions means "let Playwright
-    // resolve its own browser", which is correct on a machine that ran
-    // `npx playwright install`.
+
     launchOptions: CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {},
     // Without an explicit path, Playwright's default headless browser is the
     // separate chrome-headless-shell binary, which snaps glyph advances to
@@ -137,26 +111,6 @@ export default defineConfig({
     ...(CHROMIUM_PATH ? {} : { channel: 'chromium' as const }),
   },
 
-  /**
-   * Mobile and desktop are peers in this app (see CLAUDE.md), so both are
-   * first-class projects rather than one being a variant of the other. `narrow`
-   * exists specifically to guard the header, which is the tightest horizontal
-   * budget in the UI and the thing most at risk from longer translated labels.
-   *
-   * `desktop` runs every test. `mobile` and `narrow` run only tests tagged
-   * `@viewport`. Tag a test or a describe `@viewport` when its result depends
-   * on the project's width or device: a measured box, overflow, wrap, scroll
-   * offset, fit or scale, `page.viewportSize()`, the project name, touch, or a
-   * sheet-versus-pane branch. A test that checks only state, copy, storage, or
-   * network, or that pins its own viewport, gets the same result from one
-   * desktop run. A test that skips `desktop` must carry the tag, or it runs
-   * nowhere; `scripts/check-viewport-tags.mjs` enforces that.
-   *
-   * Specs under e2e/sweeps/ drive their own viewport sizes, so running them
-   * under every project would just repeat the same work three times; only the
-   * desktop project picks them up. Specs under e2e/dev/ need the dev server and
-   * run only in the `dev` project.
-   */
   projects: [
     {
       name: 'mobile',
@@ -175,10 +129,7 @@ export default defineConfig({
       grep: /@viewport/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
     },
-    // Specs that need the dev server rather than the production bundle:
-    // pseudo-locales (PREVIEW_FEATURES is correctly false in a prod build) and
-    // anything importing app source directly. Narrow-ish width, because that is
-    // where expanded text breaks first.
+
     {
       name: 'dev',
       testMatch: '**/dev/**',

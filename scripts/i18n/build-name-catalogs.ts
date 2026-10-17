@@ -1,13 +1,5 @@
-/**
- * Generates `src/i18n/names/<locale>.json` — species names, form descriptors
- * and search affixes for the nine shipped locales.
- *
- * Missing PokeAPI descriptors come from pinned game text. Combinations of
- * published strings, such as Alcremie's cream and sweet, retain composed
- * provenance. An absent official descriptor never becomes a translated slug.
- *
- * Run: npm run i18n:names
- */
+
+
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { GAME_TERMS_PATH, type GameTermsFixture } from './extract-game-terms';
 import { LANGUAGE_IDS, ROMAJI_LANGUAGE_ID, ensureCsvs, readCsv } from './pokeapi';
@@ -18,7 +10,6 @@ import { ALTERNATE_PICKER_FORMS } from '../../src/favorites/model/alternateForms
 
 const OUT_DIR = 'src/i18n/names';
 const PICKER_OUT_DIR = 'src/i18n/picker-names';
-/** Picker-only Mega variants: [variant, the plain Mega, the matching cosmetic form]. */
 const MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 10322, 11007]] as const;
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
@@ -56,7 +47,6 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
 const TERASTAL_MASKS: Readonly<Record<number, number>> = { 11113: 1017, 11114: 10273, 11115: 10274, 11116: 10275 };
 const TERASTAL_FORM = 10276;
 
-/** Regions whose forms the app carries, by PokeAPI region id. */
 const REGIONS: Record<string, number> = { alola: 7, galar: 8, hisui: 9, paldea: 10 };
 
 /**
@@ -77,11 +67,8 @@ const SWEET_ITEMS: Record<string, string> = {
 
 interface NameCatalog {
   locale: string;
-  /** Dense, indexed by speciesId - 1. */
   species: string[];
-  /** Form descriptor per app id, only for entries that have one. */
   forms: Record<string, string>;
-  /** Provenance for each form descriptor, same keys as `forms`. */
   formSource: Record<string, NameProvenance>;
   /**
    * A one-grapheme marker distinguishing an alt form from its species, for the
@@ -141,8 +128,7 @@ async function main(): Promise<void> {
   for (const form of ALTERNATE_PICKER_FORMS) {
     if (originalIds.has(form.id)) continue;
     const speciesId = entries.find((entry) => entry.appId === form.ownerId)?.speciesId ?? form.ownerId;
-    // A Terastal Ogerpon's identity names its whole mask, as the masks' own
-    // identities do, so its compact code is the mask's code plus T.
+
     addForm(form.id, form.name, form.name === 'vivillon-pokeball' ? 'vivillon-poke-ball'
       : form.name.replace(/^(ogerpon-[a-z]+)-tera$/, '$1-mask-tera'), speciesId);
   }
@@ -271,8 +257,6 @@ async function main(): Promise<void> {
       formMark: {},
     };
 
-    // First grapheme, not first code unit: Korean syllables and any character
-    // outside the BMP would be cut in half by `[0]`.
     const firstGrapheme = (text: string): string => {
       const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
       return [...seg.segment(text.normalize('NFC'))][0]?.segment ?? '';
@@ -408,8 +392,7 @@ async function main(): Promise<void> {
     const affix = catalog.species.map((name, i) =>
       name ? searchAffix(locale, name, romaji.get(i + 1)) : '',
     );
-    // Omitted rather than shipped empty: for the five Latin locales every entry
-    // would be '', which is 1,025 commas of nothing in the payload.
+
     if (affix.some(Boolean)) catalog.affix = affix;
 
     if (locale === 'en') englishDescriptors = { ...catalog.forms };
@@ -441,12 +424,6 @@ async function main(): Promise<void> {
     );
   }
 
-  /**
-   * appId -> speciesId, but only where they differ. For all 1,025 base species
-   * they are equal, so shipping the full map would put ~1,000 redundant pairs
-   * (and every entry's slug, form id and note) into the main bundle — it added
-   * ~95 kB before this was split out. Only alt forms need stating.
-   */
   const altForms = Object.fromEntries(
     entries.filter((e) => originalIds.has(e.appId) && e.appId !== e.speciesId).map((e) => [e.appId, e.speciesId]),
   );

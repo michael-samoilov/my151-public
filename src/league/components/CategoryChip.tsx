@@ -2,11 +2,6 @@ import { useT } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { CATEGORY_COLORS, CATEGORY_LABEL, type Move } from '../moves';
 
-/**
- * Bulbapedia's move-category mark: the Scarlet/Violet icon on its category
- * colour in a white-bordered rounded square. `className` carries the size
- * (the TM picker's rows and the card's TM slot draw it at different scales).
- */
 export function CategoryChip({ category, className }: {
   category: Move['category'];
   className?: string;

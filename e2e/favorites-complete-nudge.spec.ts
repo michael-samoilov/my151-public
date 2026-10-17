@@ -3,7 +3,6 @@ import { FAVORITE_CELLS, LAST_CELL, clearLastCell, favoritesBoard, pickLastCell,
 
 const TITLE = 'Grid complete';
 
-/** Seeds the board and records the picker's beacons. */
 async function open(page: Page, fills: Record<string, number>) {
   const beacons: Record<string, unknown>[] = [];
   await page.route('**/api/favorites', async (route) => { beacons.push(route.request().postDataJSON()); await route.fulfill({ json: { ok: true } }); });
@@ -45,14 +44,12 @@ test.describe('Picker completion popup @viewport', () => {
     expect(Object.keys((shown.snapshot as { fills: object }).fills)).toHaveLength(257);
     await testInfo.attach('complete-popup.png', { body: await page.screenshot(), contentType: 'image/png' });
 
-    // Opening Export is what the popup asks for, so the popup goes.
     await page.getByTestId('favorites-export-open').click();
     await expect(popup(page)).toHaveCount(0);
     await expect.poll(() => beacons.filter((b) => b.kind === 'export-shown').length).toBe(1);
     await page.locator('[data-export-scrim] button').click({ position: { x: 4, y: 4 } });
     await expect(page.locator('[data-export-scrim]')).toHaveCount(0);
 
-    // Clearing a cell and filling it again, or a reload, does not replay it.
     await clearLastCell(page, picked);
     await expect(page.getByTestId('favorites-completion')).toHaveText('256/257');
     await pickLastCell(page);

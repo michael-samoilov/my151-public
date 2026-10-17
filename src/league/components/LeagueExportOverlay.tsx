@@ -49,7 +49,6 @@ export function LeagueExportOverlay() {
   );
   const [cardTeamOrder, setCardTeamOrder] = useState<CardTeamOrder>('fixed');
   const [exportBusy, setExportBusy] = useState(false);
-  // A failed save says so in the pane; the next try clears it.
   const [exportFailed, setExportFailed] = useState(false);
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
   const [surveyOpenedAt, setSurveyOpenedAt] = useState(0);

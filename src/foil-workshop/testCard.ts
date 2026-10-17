@@ -11,13 +11,6 @@ const LABEL_W = 230;
 const PAD = 56;
 const FONT = '"Inter Variable", system-ui, sans-serif';
 
-/**
- * A debug sheet for judging the foil, shaped like an export (rounded
- * transparent corners, red frame). Each type color appears as full ink, as a
- * Dex tile circle (33% over white), and as a league row tint, next to a gray
- * ramp, a hue sweep, flat dark, mid, and paper blocks, and text. A seam, a
- * wash, or a row the mask treats differently shows at a glance.
- */
 export async function renderFoilTestCard(): Promise<Blob> {
   await document.fonts.ready;
   const canvas = document.createElement('canvas');
@@ -128,13 +121,6 @@ export async function renderFoilTestCard(): Promise<Blob> {
   });
 }
 
-/**
- * One flat mid-gray field in the export frame. With no ink edges to break
- * them up, the holo bands show their whole cross-section: the highlight, the
- * darker core, and the reflected light on either side. The default is the
- * test card's shape; `league` matches the filled league export's, and `tall`
- * the full Dex export's.
- */
 export async function renderFoilFlatCard(shape: 'wide' | 'league' | 'tall' = 'wide'): Promise<Blob> {
   const [w, h] = shape === 'tall' ? [1100, 1800] : shape === 'league' ? [1260, 1700] : [W, H];
   const canvas = document.createElement('canvas');

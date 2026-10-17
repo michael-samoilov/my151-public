@@ -1,27 +1,5 @@
-/**
- * Extract move names, move categories, contest conditions, game titles,
- * villain names, the Paldean Tauros breeds and the region names from the
- * games' own text, and write them out as checked-in fixtures.
- *
- * Same source and the same deal as `fetch-game-text.ts`: `abcboy101/poke-corpus`
- * at a pinned commit, one gzipped file per game per language, line-aligned
- * against a `qid` file of message ids. Every string here is a line of a shipped
- * game's text, recorded with its game, file and message id. Where a label
- * joins several official strings (a game series, a team with its leaders), the
- * fixture says so in `composed` and lists every part.
- *
- * The most recent game that has a string wins: Pokémon Champions, then
- * Legends: Z-A, then Pokémon HOME, then Scarlet/Violet and older. A string
- * a language lacks in every game stays English, and the fixture lists it.
- *
- * Manual and network-touching, like `i18n:game-text`; never part of the build.
- * Downloads are cached in `docs/i18n/poke-corpus/` (not committed) and checked
- * against the SHA-256 the fixtures record, so a re-run either reproduces the
- * fixtures byte for byte or fails.
- *
- * Run: npm run i18n:game-terms
- * Then: npm run i18n:terms && npm run i18n:names
- */
+
+
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -121,7 +99,6 @@ async function readGz(game: string, file: string, lang: string): Promise<string[
   return gunzipSync(bytes).toString('utf8').split(/\r?\n/);
 }
 
-/** qid -> each language's text, for one file. */
 type Table = Map<string, Text>;
 const tables = new Map<string, Table>();
 
@@ -143,7 +120,6 @@ async function load(): Promise<void> {
   }
 }
 
-/** A message, verbatim, with every language it has. Throws if it does not exist. */
 function message(game: string, file: string, qid: string): Sourced {
   const text = tables.get(`${game}/${file}`)?.get(qid);
   if (!text?.en) throw new Error(`${game}/${file}: no ${qid}`);
@@ -189,7 +165,6 @@ function moveNames(): MoveNamesFixture['moves'] {
 //#endregion
 //#region Game titles
 
-/** The series line every language opens a title with. */
 const BRAND: Record<Locale, RegExp> = {
   en: /^Pokémon\s+/,
   fr: /^Pokémon\s+/,
@@ -202,7 +177,6 @@ const BRAND: Record<Locale, RegExp> = {
   'zh-Hant': /^(精靈)?寶可夢\s+/,
 };
 
-/** How a language joins game titles in the series lines: 赤・緑, 红／绿. */
 const TITLE_JOIN: Record<Locale, string> = {
   en: '/', fr: '/', de: '/', es: '/', it: '/', ko: '・', ja: '・', 'zh-Hans': '／', 'zh-Hant': '／',
 };
@@ -240,7 +214,6 @@ const SERIES: Record<string, [qid: string, count: number]> = {
   SV: ['cmp.bgm_series.bgm_series_SV', 2],
 };
 
-/** A game title: an item of a Champions series line, or a title of its own. */
 type Title = { series: keyof typeof SERIES; item: number } | { game: string; file: string; qid: string; brand: boolean };
 
 const TITLES: Record<string, Title> = {
@@ -278,7 +251,6 @@ const TITLES: Record<string, Title> = {
 
 const JAPANESE_SCRIPT = /[぀-ヿ]/;
 
-/** One title in one language, and the message it came from; undefined if the language has none. */
 function title(id: string, locale: Locale): { value: string; from: Sourced } | undefined {
   const def = TITLES[id];
   if ('series' in def) {
@@ -342,8 +314,7 @@ function gameTitleTerms(): GameTerm[] {
       parts.forEach((p) => p && from.set(p.from.qid, p.from));
       const missing = titles.filter((_, i) => !parts[i]);
       const found = parts.filter((p): p is NonNullable<typeof p> => !!p).map((p) => p.value);
-      // A label must still name its games: one that would lose all of them,
-      // or every title of a pair (Black 2 and White 2), stays English.
+
       if (found.length === 0) {
         english[locale] = `No ${locale} title for ${missing.join(', ')} in any game.`;
         continue;
@@ -418,7 +389,6 @@ const JA_TEAMS: Record<string, [game: string, file: string, qid: string]> = {
   aether: ['Masters', 'messages', 'masters.profile_hash_tag_name.280007000'],
 };
 
-/** "Team Aqua/Magma (Archie/Maxie)": teams, then their people in brackets. */
 const VILLAINS: Record<string, { teams: string[]; people: string[]; paired?: boolean }> = {
   'archetype.evil-team.sub.1': { teams: ['rocket'], people: ['giovanni'] },
   'archetype.evil-team.sub.2': { teams: ['aqua', 'magma'], people: ['archie', 'maxie'], paired: true },
@@ -487,8 +457,7 @@ function verbatim(key: string, use: string, game: string, file: string, qid: str
 function singleTerms(): GameTerm[] {
   const category = (id: string, n: string) =>
     verbatim(`league.category.${id}`, 'Move category: the TM picker’s filter chips and the category icon’s name.', 'Champions', 'ms', `cmp.narrowdown.narrowdown_s_${n}`);
-  // Pokémon HOME's condition names, which the contests file a move under:
-  // Japanese かっこよさ, German Coolness, French Sang-froid.
+
   const contest = (id: string, n: string) =>
     verbatim(`league.contest.${id}`, 'Contest condition: the TM picker’s filter chips.', 'HOME', 'megaturtle_nx', `home.nx.status_system.nx_status_detailed_${n}`);
   const breed = (appId: number, n: string) =>
@@ -520,7 +489,6 @@ function regions(): Record<string, Sourced> {
     [id, message('HOME', 'megaturtle_nx', `home.nx.box_system.nx_box_list_pokedex_${String(i + 1).padStart(2, '0')}`)]));
 }
 
-/** One move per line: 845 of them pretty-printed would be 12,000 lines. */
 function writeMoves(fixture: MoveNamesFixture): void {
   const rows = Object.entries(fixture.moves).map(([id, row]) => `    ${JSON.stringify(id)}: ${JSON.stringify(row)}`);
   const head = JSON.stringify({ source: fixture.source, note: fixture.note }, null, 2).slice(0, -2);
@@ -559,8 +527,6 @@ async function main(): Promise<void> {
   }
 }
 
-// The term and name generators and `verify.ts` import the paths and types from
-// here, so fetching must not be a side effect of loading the module.
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   void main();
 }

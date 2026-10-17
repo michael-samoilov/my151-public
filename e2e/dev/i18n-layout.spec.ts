@@ -2,20 +2,6 @@ import { expect, test, type Page } from '@playwright/test';
 import { NAV_PAGES, seedDex } from '../support/dexSeed';
 import { LOCALES } from '../../src/i18n/config';
 
-/**
- * Layout verification against the pseudo-locales, run before any real
- * translation exists.
- *
- * `?lang=en-XA` accents every letter, pads the text ~40% (German's worst case)
- * and brackets it; `?lang=en-XC` swaps Latin for full-width CJK. Between them
- * they exercise the two ways translated text breaks a layout: it gets longer,
- * and its glyphs get wider and taller.
- *
- * Assertions here are structural rather than pixel snapshots — 9 locales x 4
- * pages x 3 viewports of baselines would churn on every unrelated CSS tweak and
- * teach everyone to re-bless them without looking.
- */
-
 const PSEUDO = ['en-XA', 'en-XC'] as const;
 
 async function open(page: Page, lang: string, nav: (typeof NAV_PAGES)[number]) {
@@ -27,7 +13,6 @@ async function open(page: Page, lang: string, nav: (typeof NAV_PAGES)[number]) {
 
 test.describe('pseudo-locale layout', () => {
   test('en-XA actually reaches the DOM', async ({ page }) => {
-    // If this fails, every other assertion in this file is vacuous.
     await page.goto('/pokedex-builder?tune&lang=en-XA');
     const build = page.locator('[data-nav="builder"] span').first();
     await expect(build).toHaveText(/^\[/);
@@ -35,8 +20,6 @@ test.describe('pseudo-locale layout', () => {
   });
 
   test('the picker is not offered a pseudo-locale', async ({ page }) => {
-    // They are a development tool; a real user seeing "[Ɓúíłđ···]" would just
-    // think the app is broken.
     await page.goto('/pokedex-builder?tune');
     await expect(page.locator('[data-nav="builder"] span').first()).toHaveText('Build');
   });
@@ -54,8 +37,6 @@ test.describe('pseudo-locale layout', () => {
 
       test(`${lang} · ${nav}: no translated label is clipped`, async ({ page }) => {
         await open(page, lang, nav);
-        // en-XA brackets every string, so a visible "[" with no "]" means the
-        // tail was cut off rather than merely being wide.
         const clipped = await page.evaluate(() => {
           const bad: string[] = [];
           for (const el of Array.from(document.querySelectorAll('span, div, button, p, h1, h2, h3'))) {
@@ -63,23 +44,12 @@ test.describe('pseudo-locale layout', () => {
             const text = (el.textContent ?? '').trim();
             if (!text.startsWith('[')) continue;
             const r = el.getBoundingClientRect();
-            // Skip anything with no meaningful box. Zero is the obvious case;
-            // 1px is the `sr-only` pattern, which hides text from sight by
-            // clipping it to a single pixel on purpose. Asking whether that
-            // text overflows is asking the wrong question — it is *all*
-            // overflow, by design, and it is never read with the eyes. The
-            // header's SEO tagline is one, and it turned this check red the
-            // moment it was routed through the catalog and picked up brackets.
             if (r.width <= 1 || r.height <= 1) continue;
             // Text nobody can see cannot be clipped: the FAQ under the footer
             // sits in a closed <details>, whose content keeps a box but is not
             // rendered (content-visibility), so its paragraphs report a
             // zero client width against a real scroll width.
             if (!(el as HTMLElement).checkVisibility()) continue;
-            // An ellipsis is a decision, not an accident. The tool bar's h1
-            // eyebrow keeps its full text in the DOM for crawlers and truncates
-            // by CSS where the bar is too narrow (docs/seo/HANDOFF.md, the
-            // gym leader agent's item 3); that is the one string allowed to.
             if (getComputedStyle(el).textOverflow === 'ellipsis') continue;
             if (el.scrollWidth > el.clientWidth + 1) bad.push(text.slice(0, 40));
           }
@@ -91,26 +61,7 @@ test.describe('pseudo-locale layout', () => {
   }
 });
 
-/**
- * Section outline labels on the View page, in every real language.
- *
- * An outline label falls back through the section name, its short form and its
- * tiny form until one fits (`fitLabel` in src/lib/sectionOutlines.ts), and the
- * tiny form is what an outline one cell wide shows. A translation that is too
- * long never overflows: the label is squashed to fit. So the defect a long
- * translation causes is a label squashed too thin to read, and the check is on
- * the squash itself.
- *
- * English sets the bar. Its own one-cell labels stay as they are, and several
- * of them sit below the 0.72 squash floor, so a translation passes when it is
- * at the floor or at least as wide as the English label for the same section.
- * The width check catches the other failure: the label is measured on a canvas
- * in Inter, and a script that renders in another font could come out wider on
- * the page than the measurement allowed for.
- */
 test.describe('section outline labels in every language', () => {
-  // One Pokémon in every build section, so every outline is one cell wide. The
-  // ids sit in different evolution lines, so the View page keeps them apart.
   const ONE_EACH: Record<string, number[]> = {
     starter: [1], 'early-bug': [10], 'early-bird': [16], 'early-rodent': [19], 'pikachu-clone': [25],
     'early-normal': [52], forest: [43], meadow: [35], 'cave-pokemon': [41], swamp: [88], dojo: [56],
@@ -119,7 +70,6 @@ test.describe('section outline labels in every language', () => {
     other: [200], fossil: [138], 'pseudo-legendary': [147], legendary: [144], mythical: [151],
   };
   const FLOOR = 0.72;
-  // A cell gives a label 0.86 of a tile to fill, at a font 0.26 of a tile.
   const CELL_EM = 0.86 / 0.26;
 
   async function labels(page: Page, lang: string) {
@@ -152,8 +102,6 @@ test.describe('section outline labels in every language', () => {
 
   test('the shortest label fits a one-cell outline', async ({ page }, testInfo) => {
     test.setTimeout(120_000);
-    // The League notice's tooltip covers the View tab once the favorites
-    // notice window has closed (src/lib/launchFlags.ts).
     await page.addInitScript(() => localStorage.setItem('p151-league-promo-seen', '1'));
     const english = await labels(page, 'en');
     const results: Record<string, { text: string; scale: number; widthEm: number }[]> = { en: english };

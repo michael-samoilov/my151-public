@@ -42,7 +42,6 @@ const REGION_SUFFIX: Partial<Record<Locale, string>> = {
   en: ' Region', ja: '地方', ko: '지방', 'zh-Hans': '地区', 'zh-Hant': '地區',
 };
 
-/** App key suffix -> PokeAPI row id, for each term family. */
 const TYPES: Record<string, number> = {
   normal: 1, fighting: 2, flying: 3, poison: 4, ground: 5, rock: 6, bug: 7,
   ghost: 8, steel: 9, fire: 10, water: 11, grass: 12, electric: 13,

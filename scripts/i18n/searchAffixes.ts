@@ -1,20 +1,6 @@
 import { pinyin } from 'pinyin-pro';
 import { normalizeSearch } from '../../src/i18n/searchNormalize';
 
-/**
- * What someone might actually type to find a Pokémon in each script.
- *
- * A name in a script the user's keyboard cannot easily produce is a name they
- * cannot search for. Japanese is typed by romaji and converted; Korean by jamo,
- * of which the initials alone are a search convention every Korean app
- * supports; Chinese by pinyin, with initials as the same shorthand. Latin
- * locales need only diacritic folding, which the normalizer already does.
- *
- * These are generated into the per-locale name catalogs, not computed in the
- * browser: pinyin needs a ~1 MB reading table, and none of it changes between
- * runs.
- */
-
 /** The 19 Hangul lead consonants, in the order the syllable block encodes them. */
 const CHOSEONG = [
   'ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ',
@@ -25,13 +11,6 @@ const HANGUL_LAST = 0xd7a3;
 /** Each lead consonant spans 21 medials x 28 finals. */
 const CHOSEONG_SPAN = 588;
 
-/**
- * The lead consonants of a Hangul word: 피카츄 -> ㅍㅋㅊ.
- *
- * Typing initials is how Korean apps are searched — it is what a Korean user
- * expects, not a clever extra. Characters outside the syllable block (a digit,
- * a middle dot) are kept as they are so the run still lines up with the word.
- */
 function jamoInitials(text: string): string {
   let out = '';
   for (const ch of text) {
@@ -45,12 +24,10 @@ function jamoInitials(text: string): string {
   return out;
 }
 
-/** Toneless pinyin, run together: 妙蛙种子 -> `miaowazhongzi`. */
 function pinyinFull(text: string): string {
   return pinyin(text, { toneType: 'none', type: 'array' }).join('').toLowerCase();
 }
 
-/** Pinyin initials: 妙蛙种子 -> `mwzz`. The same shorthand jamo initials are. */
 function pinyinInitials(text: string): string {
   return pinyin(text, { pattern: 'first', toneType: 'none', type: 'array' })
     .join('')

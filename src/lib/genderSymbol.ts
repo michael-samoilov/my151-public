@@ -1,4 +1,3 @@
-/** Shared symbol ink, independent of the platform's Unicode fallback font. */
 export const GENDER_SYMBOL_HEIGHT_EM = 0.73;
 
 const SYMBOLS = {
@@ -15,7 +14,6 @@ export function genderSymbolWidth(mark: string, markerFontSize: number): number 
   return symbol ? markerFontSize * GENDER_SYMBOL_HEIGHT_EM * symbol.width / 20 : 0;
 }
 
-/** The symbol's bottom shares the text baseline, like a regional capital. */
 export function drawGenderSymbol(
   ctx: CanvasRenderingContext2D, mark: string, x: number, baseline: number, markerFontSize: number,
 ): void {

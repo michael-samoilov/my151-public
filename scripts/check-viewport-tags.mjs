@@ -1,31 +1,5 @@
 #!/usr/bin/env node
-/**
- * Fails when a Playwright spec skips the `desktop` project outside a test or
- * describe tagged `@viewport`.
- *
- *   node scripts/check-viewport-tags.mjs
- *
- * `playwright.config.ts` runs every test in `desktop`, and only `@viewport`
- * tests in `mobile` and `narrow`. An untagged test that skips `desktop` so
- * runs in no project at all, and Playwright reports nothing. This finds the
- * skips that exclude `desktop` and checks that an enclosing test or describe
- * carries the tag.
- *
- * It is a text heuristic, not a parser:
- *
- * - A skip is a `test.skip(`, `test.fixme(`, `testInfo.skip(` or `info.skip(`
- *   call. Only its first argument, the condition, is read.
- * - The condition excludes `desktop` when one of its comparisons is true for
- *   the desktop project: `project.name === 'desktop'` or `!== 'mobile'`, a
- *   width compared so that 1280 passes (`width >= 1024`), a negated
- *   `isMobile` or `hasTouch`, or a bare `desktop` or `md` flag.
- * - The enclosing blocks are found by indentation: each earlier line indented
- *   less than the current one opens the block around it. Formatted code holds
- *   that; a skip inside an early `return` branch is not seen.
- *
- * Specs under e2e/sweeps/ and e2e/dev/ are skipped: they are not in the
- * `mobile` or `narrow` projects.
- */
+
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,7 +9,6 @@ const E2E = join(root, 'e2e');
 const EXCLUDED_DIRS = new Set(['sweeps', 'dev']);
 const TAG = '@viewport';
 
-/** The desktop project, as the conditions see it. */
 const DESKTOP = { name: 'desktop', width: 1280 };
 
 const SKIP_CALL = /\b(?:test|testInfo|info|test\.info\(\))\.(?:skip|fixme)\(/;
@@ -52,7 +25,6 @@ function specFiles(dir) {
 
 const indentOf = (line) => /^\s*/.exec(line)[0].length;
 
-/** The text with every string literal's contents replaced by `_`, same length. */
 function maskStrings(text) {
   return text.replace(
     /'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|`(?:\\.|[^`\\])*`/g,
@@ -60,10 +32,6 @@ function maskStrings(text) {
   );
 }
 
-/**
- * The first argument of the call whose `(` is the first character of `rest`,
- * both as written and with its strings masked.
- */
 function firstArgument(rest) {
   const raw = rest.slice(0, 2000);
   const masked = maskStrings(raw);
@@ -91,7 +59,6 @@ const OPERATORS = {
 };
 const compare = (a, op, b) => OPERATORS[op](a, b);
 
-/** The comparisons in a skip condition that hold for the desktop project. */
 function desktopExclusions({ raw, masked }) {
   const hits = [];
   for (const m of raw.matchAll(/project\.name\s*(===|!==|==|!=)\s*['"](\w+)['"]/g)) {
@@ -108,7 +75,6 @@ function desktopExclusions({ raw, masked }) {
   return hits;
 }
 
-/** The declaration heads enclosing line `index`, innermost first. */
 function enclosingDeclarations(lines, index) {
   const heads = [];
   let limit = indentOf(lines[index]);
@@ -116,7 +82,6 @@ function enclosingDeclarations(lines, index) {
     if (lines[i].trim() === '' || indentOf(lines[i]) >= limit) continue;
     limit = indentOf(lines[i]);
     if (!DECLARATION.test(lines[i])) continue;
-    // A head can wrap: read on to the line that opens the callback.
     let end = i;
     while (end < lines.length - 1 && end < i + 5 && !lines[end].includes('=>')) end += 1;
     heads.push({ line: i + 1, head: lines.slice(i, end + 1).join('\n') });

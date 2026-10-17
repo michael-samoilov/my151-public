@@ -1,4 +1,3 @@
-/** Manual refresh from immutable PokeAPI CSVs; never runs in the build. */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { allPickerMons, pickerDexId } from '../src/favorites/model/catalog';
@@ -20,7 +19,6 @@ const sharedRecords=new Map([[11105,'reshiram'],[11106,'zekrom'],[11107,'kyurem-
 for(const mon of allPickerMons()){
  const reviewedMon=map.get(pickerDexId(mon)),owner=map.get(mon.ownerId),speciesId=reviewedMon?.speciesId??owner?.speciesId??mon.ownerId;
  let row;
- // Exact identifier wins over app numeric IDs: local IDs deliberately collide with upstream forms.
  const slug=mon.name.toLowerCase().replaceAll(' ','-');
  const formSlug=slug==='vivillon-pokeball'?'vivillon-poke-ball':/^alcremie-(berry|love|star|clover|flower|ribbon)$/.test(slug)?`alcremie-vanilla-cream-${slug.slice(9)}-sweet`:slug;
  const form=formByName.get(formSlug);

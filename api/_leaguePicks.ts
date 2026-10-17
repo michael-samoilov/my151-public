@@ -1,24 +1,9 @@
-/**
- * What people pick in the gym leader maker, for the admin picks page.
- *
- * The unit is a league: each browser's current league (`latestCards`) votes
- * once per Pokémon per section, however many cards repeat it. That is the
- * dex picks page's unit too, where a browser's dex votes once per section.
- *
- * A seat stands for the member its line fields at the boss row. A plain
- * placement seats the path from the base form to the tapped Pokémon, so that
- * is the tapped Pokémon. An ace or partner pick seats the whole line and
- * pushes the later stages off the card, so it is the picked stage again.
- *
- * Pure, so src/lib/leaguePicks.test.ts drives it without Redis.
- */
 import { LEAGUE_BOSS_ROW, type LeagueCardShape, type LeagueLineShape, type LeagueRecord } from './_leagueRecord.js';
 
 /** `[pokemonId, leagues]`, most leagues first, then lowest id. */
 export type LeaguePickRows = [string, number][];
 
 export interface LeaguePicks {
-  /** Each league's aces, across every card. */
   ace: LeaguePickRows;
   /**
    * Each league's seated Pokémon, by the card's chosen type. `none` is the
@@ -27,7 +12,6 @@ export interface LeaguePicks {
   byType: Record<string, LeaguePickRows>;
 }
 
-/** The member a seated line fields at the boss row. */
 function fieldedMember(line: LeagueLineShape): number {
   if (!line.bd) return line.b[line.b.length - 1];
   let stage = 0;
@@ -37,7 +21,6 @@ function fieldedMember(line: LeagueLineShape): number {
   return line.b[stage];
 }
 
-/** The ace a card shows. Mirrors `signatureMember` in src/league/model/engine.ts. */
 function aceMember(card: LeagueCardShape): number | null {
   if (card.ace === undefined) return null;
   const line = card.l[card.ace - 1];

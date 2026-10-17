@@ -18,41 +18,6 @@ import {
 } from '@/lib/feedbackContext';
 import type { NoArgKey, TFn, TnFn } from '@/i18n';
 
-/**
- * The report form.
- *
- * Categories are chips, not a `<select>`: four options is below the width where
- * a dropdown earns its collapse, and a chip row shows the whole vocabulary at a
- * glance — which matters here, because seeing "Wrong translation" listed is
- * what tells a user that reporting one is wanted.
- *
- * The chip sends a stable enum key, never its label. A translated label round-
- * tripped through the API would arrive as `Falsche Übersetzung` and match
- * nothing.
- *
- * There is deliberately no email field. Asking for one solicits PII for a
- * channel that has no way to reply anyway, and a form that asks reads as a form
- * that expects — someone who wants a response can put an address in the
- * message, which is their initiative rather than our prompt.
- */
-
-// Four, so the row fits on one line and the space the second line was taking
-// goes to the field instead. "Data looks wrong" is the one dropped: it is the
-// hardest of the five to tell apart from "Bug" from the outside — a wrong type
-// on a Pokémon is honestly both — and anything it would have caught arrives
-// under Bug or Other with the same message attached.
-//
-// `'data'` stays in `FeedbackCategory` and in the API's accepted set. Reports
-// already filed under it are in Redis and still have to read back in the admin
-// view; narrowing the type would only make old rows unrepresentable.
-//
-// `NoArgKey` rather than `MessageKey`: a plain `MessageKey` annotation widens
-// each entry to the whole key union, including keys that take placeholders, and
-// then `t(key)` rightly demands arguments none of these have.
-//
-// `scale` evens out the four icons: their square box, the area inside their
-// outline and their ink come out about the same. The bug is set larger by eye
-// than its measured 91%.
 type ChipIcon = ComponentType<{ className?: string; style?: CSSProperties; strokeWidth?: number }>;
 const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: ChipIcon; scale: number }[] = [
   { id: 'bug', key: 'feedback.category.bug', Icon: BugIcon, scale: 1.12 },
@@ -64,13 +29,6 @@ const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: ChipIcon; scale: 
 const MIN_MESSAGE = 4;
 const MAX_MESSAGE = 1000;
 
-/**
- * The context, rendered as the plain lines the "what gets sent" panel shows.
- *
- * Only the labels are translated. The values are the raw data the report
- * carries (route, locale codes, filter ids, user agent), so the panel shows
- * what is sent rather than a translation of it.
- */
 function contextLines(context: FeedbackContext, t: TFn, tn: TnFn): string[] {
   const lines = [
     t('feedback.context.page', { route: context.route }),
@@ -117,37 +75,23 @@ function FeedbackForm({
   route: string;
   toolContext?: FeedbackToolContext;
   initialCategory: FeedbackCategory;
-  /**
-   * Lay the form out to its container's height rather than to its content, so
-   * the textarea absorbs whatever is left over. Set by the sheet, where the
-   * container height is the space above the keyboard; left off on desktop,
-   * where the card is content-sized and there is nothing to absorb.
-   */
   fill?: boolean;
   onDone: () => void;
 }) {
   const t = useT();
   const tn = useTn();
-  // Whether the sheet is currently sharing the screen with a keyboard. Drives
-  // the compact spacing below — see the comment on the form's className.
   const tight = useSheetKeyboard();
   const [category, setCategory] = useState<FeedbackCategory>(initialCategory);
   const [message, setMessage] = useState('');
-  const [website, setWebsite] = useState(''); // honeypot
+  const [website, setWebsite] = useState('');
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
-  // Set on mount rather than during render — the dwell check needs the moment
-  // the form appeared, and `Date.now()` is impure so it cannot be read here.
   const openedAt = useRef(0);
   useEffect(() => {
     openedAt.current = Date.now();
   }, []);
 
-  // Collected once, on open: the point is to capture the state the person was
-  // looking at when something went wrong, not the state after they navigated to
-  // the form.
   const context = useMemo(() => collectFeedbackContext(route, toolContext), [route, toolContext]);
 
-  // Close a moment after success so the acknowledgement is actually read.
   useEffect(() => {
     if (state !== 'sent') return;
     const id = setTimeout(onDone, 1600);
@@ -167,26 +111,6 @@ function FeedbackForm({
 
   return (
     <form
-      // pt-3, not 0: the chips carry an outline, and with the form flush to the
-      // header above it the two strokes met and read as one broken rule.
-      //
-      // `h-full` only resolves when the sheet has a definite height, which it
-      // takes on exactly when a keyboard is open. Any other time this is a no-op
-      // and the form sizes to its content as before.
-      //
-      // Not `min-h-full`, which looks like the safer version of the same idea
-      // and is not the same idea at all. A minimum lets the form grow to its
-      // content, so the column never runs out of room, so nothing ever shrinks
-      // — the field keeps its four rows and pushes the button off the end,
-      // which is the whole bug. Compression is the point, and `h-full` is what
-      // asks for it.
-      //
-      // The padding and the gaps halve while a keyboard is up. Compression
-      // alone leaves the field at about two lines on a 15 Pro, because every
-      // pixel it gives up is the only pixel anything gives up — and whitespace
-      // between five fixed rows is worth less than a message you can read back.
-      // Spacing is the first thing to spend and it is spent only while the
-      // screen is a third of itself.
       className={`px-4 flex flex-col ${tight ? 'pt-1.5 pb-2 gap-1.5' : 'pt-3 pb-4 gap-3'}${
         fill ? ' h-full' : ''
       }`}
@@ -211,12 +135,6 @@ function FeedbackForm({
             type="button"
             onClick={() => setCategory(id)}
             aria-pressed={category === id}
-            // `px-2` and `min-h-8` rather than `px-2.5`/`min-h-9`: four chips
-            // have to clear 390px on one line, and the vertical trim buys the
-            // field another 4px. 32px is under Apple's 44px target, but the row
-            // is a set of adjacent chips with 6px between them rather than an
-            // isolated control, and losing a whole second row to reach 36 costs
-            // the field more than it buys the thumb.
             className={`inline-flex items-center gap-1.5 px-2 min-h-8 rounded-full border text-xs font-medium cursor-pointer transition-colors ${
               category === id
                 ? 'border-primary bg-primary/10 text-primary'
@@ -229,26 +147,6 @@ function FeedbackForm({
         ))}
       </div>
 
-      {/* The field is the one element allowed to give. Everything else in this
-          column is a fixed size, so when a keyboard takes two thirds of the
-          screen the field shrinks and the disclosure and the button keep their
-          places instead of being pushed below the fold.
-
-          Label and field are siblings of the chips and the button rather than a
-          wrapped pair, and that is load-bearing rather than tidying. Wrapped,
-          the field is a flex item of a flex item, and the outer box's automatic
-          minimum height is its *content's* minimum — where a textarea
-          contributes its `rows` height, not its `min-height`. So the wrapper
-          refuses to shrink to the field's real floor and pushes the button off
-          the end. Add `min-h-0` to unstick it and it shrinks straight past the
-          floor instead, the field spills out of a parent that no longer
-          contains it, and it paints over the disclosure and the button. Those
-          are the only two settings the wrapper has, and both are wrong.
-
-          Flattened, the field is a flex item carrying an explicit `min-height`,
-          which replaces the automatic minimum outright. It compresses to
-          exactly its floor and no further, and there is no second box left to
-          disagree with it. */}
       <label htmlFor="feedback-message" className="text-xs font-medium">
         {t('feedback.message.label')}
         {(category === 'bug' || category === 'idea') && (
@@ -261,10 +159,6 @@ function FeedbackForm({
         id="feedback-message"
         autoFocus
         required
-        // `rows` is the height with room to spare, `flex-1` grows it into
-        // whatever the column has left over, and `min-h-14` is the floor it
-        // compresses to when a keyboard takes that room away — two lines, below
-        // which the field stops reading as somewhere to write.
         rows={4}
         maxLength={MAX_MESSAGE}
         value={message}
@@ -297,9 +191,6 @@ function FeedbackForm({
         }`}
       />
 
-      {/* Honeypot. Off-screen rather than display:none (which some bots skip),
-          hidden from assistive tech, and unreachable by keyboard — so only an
-          automated form-filler ever puts anything in it. */}
       <input
         type="text"
         name="website"
@@ -313,10 +204,6 @@ function FeedbackForm({
 
       <details className="text-xs text-muted-foreground">
         <summary className="cursor-pointer select-none">{t('feedback.context.summary')}</summary>
-        {/* `wrap-anywhere`, not `break-all`: a line breaks at a space first, and
-            only a token too long for the line (a route, a URL) splits. With
-            `break-all`, words split anywhere: "Übersicht" ended one line with
-            "Übersic" and started the next with "ht". */}
         <ul className="mt-1.5 pl-3 flex flex-col gap-0.5 font-mono text-[0.6875rem] wrap-anywhere">
           {contextLines(context, t, tn).map((line) => (
             <li key={line}>{line}</li>
@@ -348,15 +235,10 @@ export function FeedbackSheet({
   route: string;
   toolContext?: FeedbackToolContext;
   initialCategory?: FeedbackCategory;
-  /** The control that opened the form; the desktop card opens beside it. */
   anchor?: FeedbackAnchor;
   onClose: () => void;
 }) {
   const t = useT();
-  // Picked in JS rather than by rendering both and hiding one with `md:`. The
-  // usual CSS approach is fine for a list of buttons, but this is a form:
-  // two copies means two sets of half-typed state and two honeypots, and
-  // whichever one is display:none still submits.
   const isDesktop = useViewportAtLeast(1024);
 
   useEffect(() => {
@@ -367,8 +249,6 @@ export function FeedbackSheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // Every anchor the app passes today is a desktop-visible control, but the
-  // mobile branch renders no card, so gate on the breakpoint too.
   const anchored = isDesktop && anchor !== null;
   const cardRef = useAnchoredCard(anchor, isDesktop);
 
@@ -382,7 +262,6 @@ export function FeedbackSheet({
     />
   );
 
-  // Mobile: the app's bottom sheet, same as every other mobile surface.
   if (!isDesktop) {
     return (
       <BottomSheet onClose={onClose} title={t('feedback.title')} closeLabel={t('feedback.title')}>
@@ -391,16 +270,6 @@ export function FeedbackSheet({
     );
   }
 
-  // Desktop: a card anchored to the control that opened it, rather than a
-  // sheet scaled up — the same shape-differs-by-breakpoint treatment the
-  // language picker and the analytics drilldowns use.
-  //
-  // `w-[26rem]`, not the `w-80` this started at: 320px left the chip row 288px
-  // to work with, where the mobile sheet gives it 358 and needs about 348 for
-  // German. So the one row the mobile layout is built around wrapped to two on
-  // the wider screen. 416px clears the widest locale with room to spare and
-  // still fits a 1024px window twice over. The cap keeps it inside a narrow
-  // desktop window, where wrapping is the right answer.
   return (
     <>
       <div className="fixed inset-0 z-[140]" onClick={onClose} aria-hidden />
@@ -414,10 +283,6 @@ export function FeedbackSheet({
       >
         <div className="px-4 pt-3 flex items-start justify-between gap-2">
           <span className="text-sm font-semibold">{t('feedback.title')}</span>
-          {/* Clicking the bug icon again closes the form, and so does Escape or
-              a click outside — none of which is visible in the card. A control
-              that offers no way out reads as stuck even when it is not. Same
-              accessible name as the sheet's own close control on mobile. */}
           <button
             type="button"
             onClick={onClose}

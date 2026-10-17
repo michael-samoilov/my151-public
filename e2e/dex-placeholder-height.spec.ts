@@ -1,19 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/**
- * A dashed placeholder in the build grid is as tall as the Pokémon tiles in
- * its row, on every width. A row that holds no tile keeps its placeholders
- * square, because there is no tile height to match.
- *
- * Four cases, one seed:
- * - Starters holds the Torchic and Froakie lines, so its first row is three
- *   Grass placeholders beside Torchic, Combusken, and Blaziken.
- * - Regional Bug holds nine, so its trailing "+" shares the second row with
- *   Scyther, Scizor, and Kleavor.
- * - Domestic holds six, so its trailing "+" starts a row of its own.
- * - Meadow is empty, so its lone "+" is the only cell in its grid.
- */
-
 const STORE_KEY = 'personal-151-pokedex-v3';
 const SECTIONS: Record<string, number[]> = {
   starter: [255, 256, 257, 656, 657, 658],
@@ -28,7 +14,6 @@ const SEED = JSON.stringify({
 
 interface Cell { kind: 'tile' | 'dashed'; width: number; height: number }
 
-/** A section's grid cells, grouped into rows by their top edge. */
 async function readRows(page: Page, sectionId: string): Promise<Cell[][]> {
   return page.evaluate((id) => {
     const grid = document.querySelector(`[data-section-id="${id}"] > .grid`);
@@ -36,8 +21,6 @@ async function readRows(page: Page, sectionId: string): Promise<Cell[][]> {
     const rows = new Map<number, { kind: 'tile' | 'dashed'; width: number; height: number }[]>();
     for (const el of grid.children) {
       const isTile = el.matches('[data-tile-id]');
-      // A tile's visible card, not its grid cell: the card is what a
-      // placeholder has to line up with.
       const box = (isTile ? el.querySelector(':scope > .bg-card') ?? el : el).getBoundingClientRect();
       const top = Math.round(el.getBoundingClientRect().top);
       rows.set(top, [...(rows.get(top) ?? []), {
@@ -60,8 +43,6 @@ test('a placeholder beside a tile is as tall as the tile; a lone one stays squar
   }, [STORE_KEY, SEED] as const);
   await page.goto('/pokedex-builder');
   await page.waitForSelector('[data-tile-id="early-bug::900"]');
-  // The name line is a fixed-height skeleton until the catalog lands; wait
-  // for the real names so the measured heights are the settled ones.
   await page.waitForFunction(() => !document.querySelector('[data-name-skeleton]'));
 
   const starter = await readRows(page, 'starter');

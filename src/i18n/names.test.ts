@@ -5,19 +5,8 @@ import { setCatalog } from './core';
 import { formLabel, formProvenance, getNamesVersion, speciesName, __setNamesForTest, type NameProvenance } from './names';
 import type { Locale } from './config';
 
-/**
- * Goldens for the generated name catalogs.
- *
- * Structural checks can't catch a bad composition rule — every id would still
- * be valid and every string non-empty. These are values a knowledgeable person
- * can state, so a change in the generator has to be defended rather than
- * re-blessed.
- */
-
 const LOCALES = ['en', 'ja', 'ko', 'zh-Hant', 'zh-Hans', 'fr', 'de', 'es', 'it'] as const;
 
-/** Eagerly loaded here so the goldens read the generated files directly,
- *  without going through the lazy loader they are meant to be independent of. */
 const CATALOGS = import.meta.glob<NameCatalogFile>('./names/*.json', {
   import: 'default',
   eager: true,
@@ -57,12 +46,12 @@ describe('name catalogs', () => {
 
   it('resolves species names through the id map, including alt forms', () => {
     use('ja');
-    expect(speciesName(25)).toBe('ピカチュウ'); // Pikachu
-    expect(speciesName(10100)).toBe('ライチュウ'); // Alolan Raichu -> Raichu
+    expect(speciesName(25)).toBe('ピカチュウ');
+    expect(speciesName(10100)).toBe('ライチュウ');
     // The collision that a naive id join gets wrong: app 10254 is an Alcremie
     // sweet, but upstream id 10254 is Oinkologne.
-    expect(speciesName(10254)).toBe('マホイップ'); // Alcremie
-    expect(speciesName(10179)).toBe('マッギョ'); // Galarian Stunfisk -> Stunfisk
+    expect(speciesName(10254)).toBe('マホイップ');
+    expect(speciesName(10179)).toBe('マッギョ');
   });
 
   it('gives officially published form descriptors where they exist', () => {
@@ -91,13 +80,12 @@ describe('name catalogs', () => {
     };
     for (const [locale, label] of Object.entries(expected)) {
       use(locale as Locale);
-      expect(formLabel(10229), locale).toBe(label); // Hisuian Growlithe
+      expect(formLabel(10229), locale).toBe(label);
       expect(formProvenance(10229), locale).toBe('official');
     }
   });
 
   it('has a descriptor for every regional form in every locale', () => {
-    // Between official and composed, no regional form should be left unnamed.
     const regional = pokemonData.filter((p) => /-(alola|galar|hisui|paldea)/.test(p.name));
     for (const locale of LOCALES) {
       const catalog = load(locale);
@@ -107,16 +95,6 @@ describe('name catalogs', () => {
   });
 });
 
-/**
- * The snapshot `useNamesVersion` hands React.
- *
- * A locale switch changes the names a component would render, and it does not
- * always come with a name catalog download: the target locale's names may be
- * loaded already, or — as `applyLocale` orders things — the download may land
- * *before* the switch that started it. When the snapshot ignored the locale,
- * React was called back with an unchanged value and skipped the re-render, so
- * a gym card showed Japanese type badges under an English name.
- */
 describe('getNamesVersion', () => {
   it('changes when the locale changes', () => {
     const before = getNamesVersion();

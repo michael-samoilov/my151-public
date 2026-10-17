@@ -6,7 +6,6 @@ import { drawExportCredit } from './exportCredit';
 const PAD = 24;
 const MAX_CANVAS_AREA = 16_000_000;
 
-/** Join framed sheets on one shared border; pixels outside their rounded outlines stay transparent. */
 export async function composeStatsExport(
   main: Blob,
   naturalSize: { w: number; h: number },

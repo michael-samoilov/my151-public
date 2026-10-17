@@ -26,7 +26,6 @@ describe('leaguePicks', () => {
   });
 
   it('counts the member a seat fields at the boss row, not the line leaf', () => {
-    // An ace pick of Onix seats Onix→Steelix and pushes Steelix off the card.
     const onix: LeagueCardShape = { i: 1, t: 'rock', l: [{ b: [95, 208], bd: [1, LEAGUE_BOSS_ROW + 1] }], ace: 1, aceId: 95 };
     const picks = leaguePicks([league(onix)]);
     expect(picks.byType.rock).toEqual([['95', 1]]);

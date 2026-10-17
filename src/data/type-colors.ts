@@ -1,15 +1,5 @@
 import type { TypeName } from '@/types/pokemon';
 
-/**
- * The official Gen IX badge palette, sampled from the badge art itself.
- *
- * Sixteen of the eighteen already matched; `ground` (#945121) and `dragon`
- * (#5261DE) had drifted, which only became visible once the badge stopped being
- * a picture and started being a filled shape next to the same sprites.
- *
- * Not to be confused with the `--color-type-*` tokens in `src/index.css`, which
- * are a different (Bulbapedia) palette used for chart series.
- */
 export const TYPE_COLORS: Record<TypeName, string> = {
   normal: '#9FA19F',
   fire: '#E62829',

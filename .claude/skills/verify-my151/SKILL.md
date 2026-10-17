@@ -3,8 +3,8 @@ name: verify-my151
 description: >-
   Drive the my151.app pokedex builder across real browser engines (Blink, WebKit,
   Gecko) to prove a change works and regresses nothing, without a human verifier.
-  Use before declaring UI/behavior work done, to verify a diff on every user
-  surface, or when you need cross-engine evidence (iOS Safari, iOS Chrome, Android
+  Use for targeted visual/platform evidence or full/release QA,
+  or when you need cross-engine evidence (iOS Safari, iOS Chrome, Android
   Chrome, desktop Chrome, desktop Firefox).
 ---
 
@@ -17,10 +17,11 @@ and returns a pass/fail verdict with evidence. It exists so agent work verifies
 itself, so read it cold and follow it.
 
 **The model is a per-change before/after differential, not a frozen baseline.**
-Assume the current app is correct. On a change, drive the standard surfaces plus
-the surfaces the diff touches, at the base ref and at the change, and report the
-delta. This never staleness-churns as the app grows, and it matches the repo's
-standing rejection of pixel snapshots. Checks are structural (the DOM, computed
+On a visual or platform change, drive the relevant screens and affected engines
+at the base ref and at the change, then report the delta. Run the exhaustive
+matrix as separate full/release QA. The fast/affected/full CI policy in
+`CLAUDE.md` controls ordinary merge verification. Each diff compares identical
+inputs on both builds, without a frozen pixel baseline. Checks are structural (the DOM, computed
 style, the localStorage store), never localized text.
 
 ## Surfaces to engines
@@ -114,17 +115,21 @@ honestly and its surfaces are skipped, never faked.
 From the repo root:
 
 ```
-# Absolute: invariants must hold on the working-tree build.
+# Full/release QA: invariants must hold on the working-tree build.
 node_modules/.bin/tsx .claude/skills/verify-my151/harness/verify.ts absolute
 
-# Diff (the per-change default): build both, drive identical flows, name regressions.
-node_modules/.bin/tsx .claude/skills/verify-my151/harness/verify.ts diff --base HEAD
+# Targeted diff: choose the relevant screen IDs and engines for the change.
+node_modules/.bin/tsx .claude/skills/verify-my151/harness/verify.ts diff --base HEAD --screens builder-progress --surfaces blink
 
 # Narrow the surfaces while iterating:
 ... verify.ts absolute --surfaces blink,webkit
 ```
 
-The change's production tier in `CLAUDE.md` picks the surfaces: `--surfaces blink` for Small, `--surfaces blink,blink-ios-safari` for Standard, and every surface for Full. A full diff on every surface takes about 25 minutes on a 4-core machine.
+Select relevant screens with `--screens id,id` and engines with `--surfaces a,b`.
+Visual changes require before/after mobile and desktop evidence. Platform changes
+require the actual affected engine. Reserve the exhaustive all-screen/all-engine
+diff for full/release QA. Its documented estimate is about 25 minutes on four cores.
+The canonical CI runner does not add this matrix to each ordinary change.
 
 Flags: `--base <ref>` (diff), `--surfaces a,b`, `--no-build` (reuse an existing
 `dist/`). The standard suite per surface is boot (React mounts), no horizontal
@@ -239,7 +244,7 @@ present a sandbox clip as a performance proof.
 ## Evidence
 
 Each run writes to `.claude/skills/verify-my151/evidence/<runId>/` (gitignored):
-`report.json` (the verdict, per-surface checks, named regressions), one
+`report.json` (the verdict, per-surface checks, named regressions, missing coverage), one
 `<surface>.json` per surface, and per-step screenshots per surface. Screenshots
 are proof for a human or agent to inspect, not an auto-diff baseline. Observe the
 real user path and its side effects (the localStorage `personal-151-pokedex-v3`
@@ -247,6 +252,11 @@ store is the local oracle). Beacons are not suppressed locally. Only demo mode
 or `?notme` holds them back, and `?notme` still lets an export report through.
 On `vite preview` they POST and get a 404, so do not wait on the network. State
 plainly what is device-only.
+
+Unavailable requested engines, empty suites, and unexplained skipped checks make
+the verdict `INCONCLUSIVE`. Measured capability exceptions apply only to their
+registered checks. Diff mode also reports previously passing checks that disappear
+or become skipped. A failed check takes precedence and produces `FAIL`.
 
 ## The hand-off test
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react';
 import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -21,19 +21,14 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { StageDistributionChart } from './StageDistributionChart';
 
-// The gen and shape charts use a single app-red bar (no per-category colors);
-// the gen badge and shape silhouette carry the identity in the icon column.
 const CHART_BAR_RED = '#ef4444';
 
-
-/** Align yours + national histograms to the same bins, merge into single dataset */
 function alignHistograms(
   yours: { bin: string; pct: number }[],
   national: { bin: string; pct: number }[],
   binSize: number,
   xTickInterval?: number,
 ) {
-  // Collect all bins from both
   const allBins = new Set<string>();
   for (const y of yours) allBins.add(y.bin);
   for (const n of national) allBins.add(n.bin);
@@ -42,14 +37,12 @@ function alignHistograms(
   const yoursMap = new Map(yours.map(y => [y.bin, y.pct]));
   const nationalMap = new Map(national.map(n => [n.bin, n.pct]));
 
-  // Merged data: one entry per bin with both pct values
   const merged = bins.map(bin => ({
     x: parseInt(bin) + binSize / 2,
     nationalPct: nationalMap.get(bin) ?? 0,
     yoursPct: yoursMap.get(bin) ?? 0,
   }));
 
-  // X-axis boundary ticks
   const tickStep = xTickInterval ?? binSize;
   const minBin = parseInt(bins[0]);
   const maxBin = parseInt(bins[bins.length - 1]);
@@ -70,7 +63,6 @@ function alignHistograms(
   return { merged, xTicks, xDomain, binSize, yDomain, yTicks };
 }
 
-/** `onAddPokemon` goes back to Build, from the page shown with no Pokémon. */
 export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void }) {
   const t = useT();
   const [excludeSpecial, setExcludeSpecial] = useState(false);
@@ -88,8 +80,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
   const openDrillDown = usePokedexStore((s) => s.openDrillDown);
   const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
 
-  // Compute active labels for chart focus states
-  // activeTypeLabel only highlights when drilldown dex context matches the displayed chart
   const drillDownIsYours = drillDownDexId === null;
   const activeTypeKey = drillDownSegment?.kind === 'type' ? drillDownSegment.type : null;
   const activeGenKey = drillDownSegment?.kind === 'generation' ? String(drillDownSegment.generation) : null;
@@ -100,7 +90,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     ? drillDownSegment.binStart + (drillDownSegment.binEnd - drillDownSegment.binStart) / 2 : null;
 
   const handleDrillToggle = useCallback((segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeFlag?: boolean, dexId?: string | null, newOnly?: boolean) => {
-    // If tapping same segment with same dex context, close; otherwise open new
     const sameDex = (dexId ?? null) === drillDownDexId;
     if (sameDex && drillDownSegment && drillDownSegment.kind === segment.kind &&
       JSON.stringify(drillDownSegment) === JSON.stringify(segment)) {
@@ -110,7 +99,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     }
   }, [drillDownDexId, drillDownSegment, closeDrillDown, openDrillDown]);
 
-  // The Yours type chart keeps its existing independent exclusion filter.
   const typeChart = useMemo<{ rows: ButterflyRow[]; total: number }>(() => {
     const base = excludeSpecial ? filteredBaseline : fullBaseline;
     const allIds = Object.values(sections).flat();
@@ -143,9 +131,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     [analytics.generationDeviation, t],
   );
 
-  // Body-shape distribution vs the national dex (same over/under-index
-  // treatment as type/gen). Baseline = base-dex species (id ≤ 1025); your
-  // side counts every placed member by its official shape group.
   const shapeChartData: ButterflyRow[] = useMemo(() => {
     const yours = getPokemonByIds(Object.values(sections).flat());
     const yoursFiltered = excludeSpecial ? withoutSpecials(yours) : yours;
@@ -171,7 +156,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     });
   }, [sections, excludeSpecial]);
 
-  // Compute sibling lists for swipe navigation
   const typeSiblings = useMemo((): DrillDownSegment[] =>
     typeChartData.filter(d => d.count > 0).map(d => ({ kind: 'type' as const, type: rowKey(d) })),
     [typeChartData]);
@@ -182,7 +166,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     shapeChartData.filter(d => d.count > 0).map(d => ({ kind: 'shape' as const, shape: rowKey(d) })),
     [shapeChartData]);
 
-  // Compute type chart data for a regional or National Dex.
   const regionalTypeChart = useMemo<{ rows: ButterflyRow[]; total: number }>(() => {
     if (selectedTypeChart === 'yours') return { rows: [], total: 0 };
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
@@ -218,13 +201,8 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
   const isNationalSelected = selectedTypeChart === 'national';
   const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
 
-  // The matchup sweeps below run computeTypeDominance over the whole dex
-  // (18 types x N pokemon, two to four times). Skip them entirely unless
-  // the matchup chart or a matchup drilldown is on screen — otherwise every
-  // region-tab tap paid for a chart the user could not see.
   const matchupVisible = typeView === 'matchup' || drillDownSegment?.kind === 'typeMatchup';
 
-  // Type matchup strength: per-type average advantage score + deviation from national
   const typeMatchupData: ButterflyRow[] = useMemo(() => {
     if (!matchupVisible) return [];
     let pokemon;
@@ -269,8 +247,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     })).sort((a, b) => isNationalSelected ? b.count - a.count : b.deviation - a.deviation);
   }, [matchupVisible, sections, selectedTypeChart, excludeSpecial, newPokemonOnly, isNationalSelected]);
 
-  // Check if any permutation of the matchup chart has both neg AND pos scores (bidirectional)
-  // so layout stays stable when toggling filters
   const matchupForceBidirectional = useMemo(() => {
     if (!matchupVisible) return false;
     const checkBidi = (pokemon: NonNullable<ReturnType<typeof getPokemonById>>[]) => {
@@ -297,16 +273,12 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     return permutations([allInDex, genOnly]);
   }, [matchupVisible, selectedTypeChart, isNationalSelected, sections]);
 
-  // Type matchup siblings for drill-down navigation
   const typeMatchupSiblings = useMemo((): DrillDownSegment[] =>
     typeMatchupData.map(d => ({ kind: 'typeMatchup' as const, type: rowKey(d) })),
     [typeMatchupData]);
 
   const activeMatchupKey = drillDownSegment?.kind === 'typeMatchup' ? drillDownSegment.type : null;
 
-  // Sorted copies for each chart. These used to be inline `[...data].sort()`
-  // in JSX, which handed every chart a new array identity on every dashboard
-  // render and defeated the React.memo boundaries below.
   const sortedTypeChartData = useMemo(() => activeTypeChartData.map(row => ({ ...row, icon: typeChartIcon(rowKey(row) as TypeName) })).sort((a, b) =>
     typeSortBy === 'deviation' ? b.deviation - a.deviation
       : typeSortBy === 'label' ? a.label.localeCompare(b.label)
@@ -331,8 +303,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
       : a.label.localeCompare(b.label)
   ), [shapeChartData, shapeSortBy]);
 
-  // Stable bar-click handlers — inline arrows would give each memoized chart
-  // a new prop identity on every dashboard render.
   const handleTypeBarClick = useCallback((type: string) => {
     if (selectedTypeChart === 'yours') {
       handleDrillToggle({ kind: 'type', type }, typeSiblings, excludeSpecial);
@@ -358,22 +328,21 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     handleDrillToggle({ kind: 'shape', shape }, shapeSiblings);
   }, [handleDrillToggle, shapeSiblings]);
 
-  // Sync drilldown filters when analytics filter chips change while a drilldown is open
-  useEffect(() => {
+  const syncOpenTypeDrilldown = useEffectEvent((excluded: boolean, chart: typeof selectedTypeChart, onlyNew: boolean) => {
     if (!drillDownSegment) return;
     const kind = drillDownSegment.kind;
     if (kind === 'type' || kind === 'typeMatchup') {
-      const dexId = selectedTypeChart === 'yours' ? null : selectedTypeChart;
+      const dexId = chart === 'yours' ? null : chart;
       const siblings = kind === 'typeMatchup'
         ? typeMatchupSiblings
-        : (selectedTypeChart === 'yours' ? typeSiblings : regionalTypeSiblings);
-      openDrillDown(drillDownSegment, siblings, excludeSpecial, dexId, newPokemonOnly);
+        : (chart === 'yours' ? typeSiblings : regionalTypeSiblings);
+      openDrillDown(drillDownSegment, siblings, excluded, dexId, onlyNew);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    syncOpenTypeDrilldown(excludeSpecial, selectedTypeChart, newPokemonOnly);
   }, [excludeSpecial, selectedTypeChart, newPokemonOnly]);
 
-  // Fixed axis extents — max across all toggle permutations (exclusion × gen-only/regional)
-  // so toggling filters only shrinks bars, never shifts axes
   const { fixedMaxCount: unfilteredMaxCount, fixedDevRight } = useMemo(() => {
     const computeDevRight = (deviations: number[]) => {
       return Math.max(...deviations, 50);
@@ -394,7 +363,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     };
 
     if (selectedTypeChart === 'yours') {
-      // For "yours": permutations are exclusion on/off (no gen-only toggle)
       const allIds = Object.values(sections).flat();
       const allPokemon = getPokemonByIds(allIds);
       const starterIds = new Set(sections['starter'] ?? []);
@@ -421,7 +389,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
     if (!dex) return { fixedMaxCount: undefined, fixedDevRight: undefined };
 
-    // Only share axis extent across exclusion on/off for the *current* gen toggle
     const allInDex = getPokemonByIds(dex.pokemonIds);
     const base = newPokemonOnly ? allInDex.filter(p => p.generation === dex.generation) : allInDex;
     const unfiltered = computeTypeStats(base, fullBaseline);
@@ -474,19 +441,15 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain md:overscroll-auto">
       <div className="p-6 pb-0 space-y-8 max-w-6xl md:max-w-2xl mx-auto">
-        {/* What's Missing Advisor — moved to top */}
         <section className="bg-card rounded-lg shadow-elevated overflow-hidden">
           <WhatsAdvisor />
         </section>
 
-        {/* Type Analysis — tabbed: Distribution / Matchup */}
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.type.heading')}</h3>
 
           <div className="space-y-1.5 mb-3">
-          {/* Region selector tabs — matches build page filter chip styling */}
           <div className="flex items-stretch border-x border-border">
-            {/* Fixed left (outside scroll container): National + Yours */}
             <div className="shrink-0 self-stretch flex items-center gap-1.5 bg-background border-r border-border pl-2 pr-2 py-1">
               <button type="button"
                 onClick={() => setSelectedTypeChart('national')}
@@ -509,7 +472,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
                 {t('analytics.dex.yours')}
               </button>
             </div>
-            {/* Scrollable: regional dexes */}
             <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 pl-2 pr-2 py-1">
               {REGIONAL_DEXES.map(dex => (
                 <button type="button"
@@ -527,7 +489,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
             </div>
           </div>
 
-          {/* Filters */}
           <div className="flex items-center gap-1.5 overflow-x-auto">
             <button type="button"
               onClick={() => setExcludeSpecial(!excludeSpecial)}
@@ -568,11 +529,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
           </div>
 
           <div className="bg-card rounded-lg shadow-elevated overflow-hidden">
-            {/* Tab headers — inside card. Selected tab is filled primary
-                with white text. An explicit primary-colored strip below the
-                tab row visually connects the selected tab into a horizontal
-                bar spanning the full container width, so the tab reads as
-                merging into the divider between tabs and content. */}
             <div className="flex">
               <button type="button"
                 onClick={() => setTypeView('distribution')}
@@ -642,7 +598,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
           </div>
         </section>
 
-        {/* Generation Origin */}
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.gen.heading')}</h3>
           <div className="bg-card rounded-lg shadow-elevated p-4">
@@ -661,7 +616,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
           </div>
         </section>
 
-        {/* Body Shape Distribution */}
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.shape.heading')}</h3>
           <div className="bg-card rounded-lg shadow-elevated p-4">
@@ -680,7 +634,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
           </div>
         </section>
 
-        {/* Evolution Level Histogram */}
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.evoLevel.heading')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
@@ -713,7 +666,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
           </div>
         </section>
 
-        {/* BST Histogram */}
         <section>
           <h3 className="text-lg font-semibold mb-1">{t('analytics.bst.heading')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
@@ -747,7 +699,6 @@ export function AnalyticsDashboard({ onAddPokemon }: { onAddPokemon: () => void 
           </div>
         </section>
 
-        {/* Stage Distribution — mekko chart, self-contained component */}
         <StageDistributionChart
           sections={sections}
           drillDownSegment={drillDownSegment}

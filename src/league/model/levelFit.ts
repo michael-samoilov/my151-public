@@ -16,17 +16,14 @@ export interface LevelFit {
   intercept: number;
 }
 
-/** True for a form that evolves from something at a stated level. */
 export function isLevelEvolver(p: Pokemon): boolean {
   return p.evolvesFrom !== null && p.evolutionLevel !== null;
 }
 
-/** True for a form that evolves by a stone, a trade, friendship, or similar. */
 export function isLevellessEvolver(p: Pokemon): boolean {
   return p.evolvesFrom !== null && p.evolutionLevel === null;
 }
 
-/** Ordinary least squares of evolution level on BST, over level-evolvers. */
 export function fitLevelOnBst(all: Pokemon[]): LevelFit {
   const points = all.filter(isLevelEvolver);
   const n = points.length;
@@ -42,7 +39,6 @@ export function fitLevelOnBst(all: Pokemon[]): LevelFit {
   return { slope, intercept };
 }
 
-/** How well the fit explains the data it was fitted to. */
 export function fitQuality(all: Pokemon[], fit: LevelFit): { n: number; r2: number; rmse: number } {
   const points = all.filter(isLevelEvolver);
   const n = points.length;
@@ -58,24 +54,20 @@ export function fitQuality(all: Pokemon[], fit: LevelFit): { n: number; r2: numb
   return { n, r2: ssTot > 0 ? 1 - ssRes / ssTot : 0, rmse: Math.sqrt(ssRes / n) };
 }
 
-/** The raw prediction, before the clamp. */
 export function predictLevel(bst: number, fit: LevelFit): number {
   return fit.slope * bst + fit.intercept;
 }
 
-/** Keeps a prediction inside the range real evolution levels occupy. */
 function clampLevel(level: number): number {
   return Math.max(1, Math.min(70, Math.round(level)));
 }
 
-/** `arrivalLevel` against a fit supplied by the caller. */
 export function arrivalLevelWith(p: Pokemon, fit: LevelFit): number {
   if (p.evolvesFrom === null) return 0;
   if (p.evolutionLevel !== null) return p.evolutionLevel;
   return clampLevel(predictLevel(p.bst, fit));
 }
 
-/** First row whose threshold admits a level; ROW_COUNT + 1 means never. */
 export function rowForLevel(level: number): number {
   for (let row = 1; row <= ROW_COUNT; row++) {
     if (LEVEL_CURVE[row - 1] >= level) return row;

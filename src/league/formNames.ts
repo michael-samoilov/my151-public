@@ -6,7 +6,6 @@ interface FormNames {
   forms: Record<string, string>;
   formSource: Record<string, NameProvenance>;
   formCompact?: Record<string,string>;
-  /** Powerup form key → its species, for the names of Mega, Primal, and Gigantamax forms. */
   powerupSpecies?: Record<string, number>;
 }
 
@@ -40,7 +39,6 @@ registerNameExtension(async (locale, catalog, species) => {
       catalog.formSource[id] = names.forms[id] ? names.formSource[id] ?? 'official-composed' : 'official-composed';
     }
   }
-  // Mega, Primal, and Gigantamax forms: enough for the card's full names.
   for (const [key, owner] of Object.entries(names.powerupSpecies ?? {})) {
     if (!key.startsWith('picker:')) species[key] = owner;
     catalog.forms[key] = names.forms[key];

@@ -1,4 +1,3 @@
-// keeps: real users' writes dropped when my151.app points at a preview deployment (PR #81), and preview visits writing production analytics.
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { VercelRequest } from '@vercel/node';
 

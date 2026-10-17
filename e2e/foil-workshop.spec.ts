@@ -68,7 +68,6 @@ test.describe('export foil workshop', () => {
     await setRange(page, 'gleam', '0.91');
     await expect.poll(async () => foilVar(foil, '--foil-gleam')).toBe('0.910');
 
-    // The prism is its own layer, on at 0.21, and toggles without the gleam.
     await expect(page.locator('[data-foil-layer="prism"]')).toHaveCount(1);
     await expect.poll(async () => foilVar(foil, '--foil-prism')).toBe('0.210');
     await page.locator('[data-foil-on="prism"]').uncheck();
@@ -79,7 +78,6 @@ test.describe('export foil workshop', () => {
     await expect(page.locator('[data-foil-layer="gleam"]')).toHaveCount(0);
     await expect(page.locator('[data-foil-layer="prism"]')).toHaveCount(1);
 
-    // Max tilt drives the auto-tilt past the default 10 degrees.
     await setRange(page, 'maxTilt', '16');
     await expect
       .poll(async () => {
@@ -111,8 +109,6 @@ test.describe('export foil workshop', () => {
     await expect(foil).toHaveAttribute('data-hover-tilt-shadow', '1');
     await setRange(page, 'shadowBlur', '32');
     await expect.poll(async () => foilVar(foil, '--hover-tilt-shadow-blur')).toBe('32');
-    // The hit's shadow flag follows on the next painted frame. The shadow is
-    // the card's shape, blurred, so the blur slider sets its filter.
     const shadowFilter = () =>
       page.locator('[data-export-shadow-layer="far"]').evaluate((el) => getComputedStyle(el).filter);
     await expect.poll(shadowFilter).toMatch(/blur\(/);
@@ -224,7 +220,6 @@ test.describe('export foil workshop', () => {
     await expect.poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 }).toBe('1');
     await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('1');
     const lift = page.locator('[data-export-foil-lift]');
-    // The pop eases in over the opening, which counts painted frames.
     await expect.poll(async () => foil.getAttribute('data-tilt-scale'), { timeout: 15_000 }).toBe('1.150');
     await expect.poll(async () => lift.evaluate((el) => getComputedStyle(el).transform)).not.toBe('none');
     const popped = await lift.boundingBox();
@@ -243,7 +238,6 @@ test.describe('export foil workshop', () => {
     }
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
     await expect.poll(async () => foil.getAttribute('data-tilt-active')).toBe('0');
-    // Flat at rest: a uniform scale-down from the popped layout, no rotation.
     await expect
       .poll(async () => lift.evaluate((el) => getComputedStyle(el).transform))
       .toMatch(/^matrix\(([\d.]+), 0, 0, \1, 0, 0\)$/);

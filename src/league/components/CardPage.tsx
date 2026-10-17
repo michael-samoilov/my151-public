@@ -26,18 +26,6 @@ import { usePencilRoom } from './usePencilRoom';
 import { MovePicker } from './MovePicker';
 import { confirmOnEnter } from './confirmOnEnter';
 
-/**
- * One open gym card: its identity row (type badge, theme), the 11-row grid,
- * and the pickers it launches. `showBack` is the mobile full-screen mode;
- * the desktop pane renders the same component without it.
- */
-
-/**
- * "No type" as a real option: the type badge pipeline's geometry, fit and
- * casing over the no-type grey, with the app's 4-point star spandrel where
- * the type symbol sits. It spans the picker grid's full bottom row — the
- * viewBox widens while the 40-unit height keeps badge-height parity.
- */
 const NO_TYPE_BADGE_WIDE_W = 621;
 
 function NoTypeBadge({ className }: { className?: string }) {
@@ -59,9 +47,6 @@ function NoTypeBadge({ className }: { className?: string }) {
         d={starPath(glyph.x + glyph.size / 2, glyph.y + glyph.size / 2, glyph.size / 2)}
         fill="#ffffff"
       />
-      {/* The condense is part of the fit, not decoration: without it the word
-          is set a third wider than every real type badge and overhangs the
-          space the geometry reserves on both sides. */}
       <g transform={`translate(${cx} 0) scale(${fit.scaleX} 1) translate(${-cx} 0)`}>
         <text
           x={cx}
@@ -78,41 +63,12 @@ function NoTypeBadge({ className }: { className?: string }) {
   );
 }
 
-/**
- * The gym's type, as the square icon rather than the wide chip.
- *
- * The 1x1 Gen IX icon the browser and the analytics pages already draw,
- * standing beside the identity block rather than inside it, so the page's
- * name and the theme field both start to its right. 1.875rem is the block's
- * own height, so the square spans the two lines exactly.
- *
- * The chip it replaces was 4.75rem of a 44px bar, and it rode the name line
- * — a line the theme does not use. The square is smaller but it stands
- * beside both lines, so the theme field is about 37px narrower than it was.
- * That is the trade: a mark the gym is recognised by, against six characters
- * of theme.
- */
 const TYPE_MARK = '1.875rem';
-/**
- * The corner all three squares share.
- *
- * The Gen IX asset is drawn square — measured, its own corner is inset one
- * pixel of sixty, which is half a pixel at this size — so left alone it reads
- * as a sharp tile beside the app's rounded everything. Clipping it here gives
- * the chosen type the same corner the empty and the no-type squares are drawn
- * with, and puts the three states on one shape.
- */
 const TYPE_MARK_RADIUS = '0.4375rem';
 
-/** The square a card wears before a type is chosen. */
 function UnsetTypeMark() {
   const t = useT();
   return (
-    // A plus alone says "add something". The word says what — the same job
-    // the TM disc and the badge hexagon give their own words, and the same
-    // 0.06em extrabold they are set in. A solid red tile with white on it
-    // rather than the card's dashed grey: this one is a thing left undone,
-    // not a slot waiting, and it sits where the chosen type's tile will.
     <span
       className="flex flex-col items-center justify-center gap-[0.09375rem] bg-primary text-primary-foreground"
       style={{ width: TYPE_MARK, height: TYPE_MARK, borderRadius: TYPE_MARK_RADIUS }}
@@ -123,11 +79,8 @@ function UnsetTypeMark() {
   );
 }
 
-/** The square a card wears once "no type" is the answer. */
 function NoTypeMark() {
   return (
-    // The no-type grey and the 4-point star the NO TYPE badge carries, so
-    // the two say the same thing in the header and in the picker.
     <span
       className="grid place-items-center"
       style={{
@@ -146,8 +99,6 @@ function TypeMark({ type }: { type: CardType }) {
   if (type === null) return <UnsetTypeMark />;
   if (type === 'none') return <NoTypeMark />;
   return (
-    // The PNG carries its own colour and its own padding; only its corner
-    // has to be taken in.
     <img
       src={typeIconPath(type as TypeName)}
       alt=""
@@ -186,9 +137,6 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
               key={type}
               type="button"
               onClick={() => pick(type)}
-              // A static light-grey outline on hover, shown at once (no bloom,
-              // no fade): a 3px ring that hugs the badge with no gap, the same
-              // idiom the dex builder's type filter uses.
               className="cursor-pointer rounded-full hover:ring-[3px] hover:ring-foreground/25"
             >
               <TypeBadge type={type} className="w-full" />
@@ -207,24 +155,12 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
   );
 }
 
-/**
- * The card's identity, for whichever bar holds it.
- *
- * Its own component for the same reason `LeagueNameRow` is: the two layouts
- * put it in different bars. Mobile gives the card a bar of its own inside the
- * sliding pane; desktop hands it the pane's own header, which is where the
- * league home puts its identity too — so the page's name and the theme land
- * at the size and height the league's own two lines do, instead of a row
- * below a second, differently set title.
- */
 export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showBack: boolean }) {
   const view = useCardView(cardIndex);
   const setCardTheme = useLeagueStore((s) => s.setCardTheme);
   const closeCardPage = useLeagueUi((s) => s.closeCardPage);
   const setTypePickerOpen = useLeagueUi((s) => s.setTypePickerOpen);
   const t = useT();
-  // The square carries no word, so the button says which type it is. "No
-  // type" is a chosen answer, not the absence of one, so it says so.
   const typeButtonLabel = view.card.type === null
     ? t('league.type.label')
     : view.card.type === 'none'
@@ -246,36 +182,23 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
           <ChevronLeft size={20} />
         </button>
       )}
-      {/* The gym's own mark, before the words and outside them: the square
-          stands beside the whole identity block, so the page's name and the
-          theme field both start to its right. */}
       <button
         type="button"
         onClick={() => setTypePickerOpen(true)}
         aria-label={typeButtonLabel}
-        // A static light-grey outline on hover, matching the type picker's
-        // badges — shown at once, hugging the square.
         className="shrink-0 cursor-pointer rounded-[0.4375rem] hover:ring-[3px] hover:ring-foreground/25"
       >
         <TypeMark type={view.card.type} />
       </button>
-      {/* The league home's identity block, on the card: the page's name
-          above, small and quiet, and one editable line under it. */}
       <div ref={blockRef} className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
         <h2 className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
           {t('league.card.title')}
         </h2>
-        {/* The field is sized to its own text by an invisible copy in the
-            same grid cell, so the dashed line ends where the words do and
-            the pencil sits after them. */}
         <label className="group flex min-w-0 max-w-full cursor-text items-center gap-1 overflow-hidden">
           <span
             className="grid min-w-0 items-center overflow-hidden border-b border-dashed border-foreground/25 transition-colors [grid-template-columns:minmax(0,max-content)] group-hover:border-foreground/50 group-focus-within:border-foreground/60"
             style={{ height: HEADER_FIELD_H }}
           >
-            {/* The league name's own type: 0.875rem bold. The two fields
-                are the same field on two pages, so they are set the same
-                and the shared line box puts them at the same height. */}
             <span
               ref={ghostRef}
               aria-hidden
@@ -315,7 +238,6 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
   );
 }
 
-/** The controls both bars carry on their right: how to edit it, and export. */
 export function CardActions({ cardIndex }: { cardIndex: number }) {
   return (
     <span className="ml-auto flex shrink-0 items-center gap-1">
@@ -328,7 +250,6 @@ export function CardActions({ cardIndex }: { cardIndex: number }) {
 export function CardPage({ cardIndex, showBack, withBar = true }: {
   cardIndex: number;
   showBack: boolean;
-  /** Desktop hands the bar to the pane, so the card draws only its body. */
   withBar?: boolean;
 }) {
   const view = useCardView(cardIndex);
@@ -336,9 +257,6 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   const movePickerOpen = useLeagueUi((s) => s.movePickerOpen);
   const fitRef = useRef<HTMLDivElement>(null);
   const isDesktop = useIsDesktop();
-  // Desktop grows the card to fill the pane, up to the browser's 1x sprite
-  // size (96px native). Mobile keeps the squash-to-fit that the sliding pane
-  // and the pickers depend on.
   const fit = useFitScale(
     fitRef,
     0.55,
@@ -354,7 +272,6 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   return (
     <div className="w-full">
       {withBar && (
-        // The tool bar — same 44px as the dex builder's.
         <div
           data-testid="league-tool-bar"
           className={cn('flex h-11 items-center gap-2 px-3', showBack && 'border-b bg-card')}

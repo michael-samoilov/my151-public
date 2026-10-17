@@ -1,6 +1,5 @@
 import type { Page } from '@playwright/test';
 
-/** Observe actual painted Canvas paths, including their transforms, before the app loads. */
 export async function observeChartPaint(page: Page) {
   await page.addInitScript(`(() => {
     if (window.chartPaintObserved) return; window.chartPaintObserved = true;
@@ -64,8 +63,6 @@ export async function observeChartPaint(page: Page) {
 export async function paintedAxes(page: Page) {
   return page.evaluate(() => {
     const target = window as unknown as { chartLines: { width: number; height: number; color: string; points: { x: number; y: number }[] }[] };
-    // Real butterfly zero lines are vertical muted strokes. Keep source canvas dimensions
-    // and top/bottom, so charts in different native columns can be compared locally.
     return target.chartLines.filter(record => record.color === '#737373' && record.points.length === 2 && Math.abs(record.points[0].x - record.points[1].x) < .001 && record.points[1].y - record.points[0].y > 20);
   });
 }

@@ -1,4 +1,3 @@
-/** Rebuild API eligibility from the same catalogue and pointer rules as the Picker. */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { GEN_AXIS, TYPE_AXIS, cellKey } from '../src/favorites/model/cells';
 import { eligibleFor, kindFor } from '../src/favorites/model/eligibility';
@@ -13,8 +12,7 @@ for(const {type,gen,key} of positions) {
   if(kind==='pick')cells[key]={kind,ids:eligibleFor(type,gen).map(mon=>mon.id)};
   if(kind==='pointer')cells[key]={kind,sources:positions.filter(position=>pointerPool(type,gen,{[position.key]:1}).includes(1)).map(position=>position.key)};
 }
-// Regional saved IDs are not upstream IDs. Use the reviewed species identity,
-// rather than treating an evolution line or a form's saved owner as a species.
+
 const dex = new Map(pokemonData.map(mon => [mon.id, mon]));
 const identities = new Map(reviewedIdentities.entries.map(entry => [entry.appId, entry]));
 const species: Record<string, number> = {};

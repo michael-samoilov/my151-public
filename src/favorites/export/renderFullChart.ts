@@ -20,8 +20,6 @@ import { pickerSpriteSrc } from '../model/spritePreload';
 import { createFavoritesCanvas, drawBall, drawFavoritesCredit, encodeFavoritesCanvas, image } from './canvas';
 import { drawFavoriteCrown, FAVORITE_ORNAMENTS } from './laurelPaint';
 
-// Native 96px sprites, with 12px breathing room on each side. The shared
-// frame and corner geometry are the same as Dex and League PNGs.
 const FULL_CHART_CELL = EXPORT_SPRITE_PX + 24;
 const FULL_CHART_GRID_Y = EXPORT_FRAME_PX + 32 + 72;
 const FULL_CHART_LAYOUT = {
@@ -34,7 +32,6 @@ const EXTRA_ICONS: Record<ExtraTypeAxis, string> = {
   favorite: favoriteIcon, gimmick: gimmickIcon, legendary: legendaryIcon, starter: starterIcon,
 };
 
-/** No-symbol axis pills use the app's colors, font fitter and 200×40 units. */
 function axisBadge(ctx: CanvasRenderingContext2D, axis: ExtraTypeAxis, x: number, y: number, width: number) {
   const fill: string | BadgeStops = AXIS_FILL[axis];
   const label = localeUppercase(t(`favorites.axis.${axis}`));
@@ -60,11 +57,6 @@ function axisBadge(ctx: CanvasRenderingContext2D, axis: ExtraTypeAxis, x: number
   ctx.restore();
 }
 
-/**
- * Paint a validated snapshot; empty and incomplete charts are valid exports.
- * `axisBadges: false` leaves the axis icons without their label badges. Only
- * the search-image capture uses it; the export UI always draws the badges.
- */
 export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges = true } = {}): Promise<Blob> {
   await document.fonts.ready;
   const urls = new Set<string>([
@@ -103,7 +95,6 @@ export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges 
     const row = Math.floor(index / TYPE_AXIS.length);
     const x = gridX + (col + 1) * cell;
     const y = gridY + (row + 1) * cell;
-    // Reserve space under the doubled crown without scaling the Favorite sprite.
     const contentY = y + cell / 2 + (entry.type === 'favorite' && entry.generation === 'favorite' ? 8 : 0);
     ctx.fillStyle = entry.kind === 'disabled' || entry.kind === 'null' ? '#fafafa' : '#ffffff';
     ctx.fillRect(x, y, cell, cell);
@@ -124,8 +115,6 @@ export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges 
       ctx.fillText('—', x + cell / 2, y + cell / 2);
     }
   });
-  // A crisp 2× crown straddles the border above the Ultimate Favorite.
-  // The structurally disabled cell above has no Pokémon artwork to obscure.
   const favoriteX = gridX + (TYPE_AXIS.indexOf('favorite') + 1.5) * cell;
   const favoriteY = gridY + (GEN_AXIS.indexOf('favorite') + 1) * cell;
   drawFavoriteCrown(ctx, images.get(FAVORITE_ORNAMENTS.crown)!, {

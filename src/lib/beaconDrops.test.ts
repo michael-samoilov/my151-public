@@ -8,10 +8,6 @@ describe('liveDropReasons', () => {
     ).toEqual([{ tool: 'dex', reason: 'cap', count: 3 }]);
   });
 
-  // The reason this module exists. The pre-split `rate-limit` counter holds 31
-  // real drops from before the cadence/cap fix, and nothing increments it any
-  // more — so it can never clear, and showing it means the dashboard carries a
-  // permanent warning about a problem that is already fixed.
   it('hides the retired rate-limit counter', () => {
     expect(liveDropReasons({ 'submit-drop:rate-limit': 31 })).toEqual([]);
   });

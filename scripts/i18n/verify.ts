@@ -1,21 +1,5 @@
-/**
- * The deterministic i18n gates. Runs in `npm run build` and in CI, exits 1 on
- * any failure.
- *
- * These are the checks a machine can make without judgement. They do not ask
- * whether a translation is *good* — nothing here can — they ask whether it is
- * structurally sound: that it says what the games say where an official string
- * exists, that it carries the same placeholders as the English it replaces,
- * that it isn't English wearing a locale's filename, and that no code path
- * uppercases text that has no uppercase.
- *
- * `tsc -b` already covers key parity, because every non-English catalog is
- * typed as `Messages` and `MessageKey` is `keyof typeof en`. That is the
- * strongest gate in the set and it costs nothing. The checks here are the ones
- * types cannot express.
- *
- * Run: npm run i18n:verify
- */
+
+
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { en } from '../../src/i18n/catalogs/en';
@@ -47,10 +31,6 @@ const termCatalogs = new Map<Locale, Record<string, string>>(
   LOCALES.map((l) => [l, readJson<Record<string, string>>(join(TERMS_DIR, `${l}.json`))]),
 );
 
-/**
- * The translated — not sourced — UI strings. English has no file here: it is
- * the source these are translated from, and lives in `catalogs/en.ts`.
- */
 const uiCatalogs = new Map<Locale, Record<string, string>>(
   LOCALES.filter((l) => l !== 'en' && existsSync(join(UI_DIR, `${l}.json`))).map((l) => [
     l,
@@ -60,16 +40,6 @@ const uiCatalogs = new Map<Locale, Record<string, string>>(
 
 //#region 1. Official game text
 
-/**
- * The flagship gate: every type name the app paints must be the string the
- * games paint.
- *
- * This is the one check whose failure means "we are showing players a word
- * their game does not use", which is worse than showing them English. The
- * fixture is dumped from Scarlet/Violet's own `typename` table — see
- * `fetch-game-text.ts` for how, and for why the Italian Bug type is the reason
- * to distrust a dictionary here.
- */
 function gameTextParity(): void {
   const { source, types } = readJson<GameTextSource>(GAME_TEXT_PATH);
   const expectedTypes = Object.keys(types);
@@ -98,7 +68,6 @@ function gameTextParity(): void {
 
 const gameTerms = readJson<GameTermsFixture>(GAME_TERMS_PATH);
 const moveNames = readJson<MoveNamesFixture>(MOVE_NAMES_PATH);
-/** Catalog keys whose values are the games' own text, held to the fixture below. */
 const SOURCED_KEYS = new Set(gameTerms.terms.map((t) => t.key).filter((k) => !k.startsWith('form.')));
 
 /** HOME's box list adds this after a region name; see build-term-catalogs.ts. */
@@ -106,12 +75,6 @@ const REGION_SUFFIX: Partial<Record<Locale, string>> = {
   en: ' Region', ja: '地方', ko: '지방', 'zh-Hans': '地区', 'zh-Hant': '地區',
 };
 
-/**
- * The move names, move categories, contest conditions, sub-labels and region
- * names sourced from the games (`npm run i18n:game-terms`) must be what the
- * fixtures say, so a hand edit to a catalog fails here rather than shipping a
- * word no game uses. A key the fixture leaves out for a locale stays English.
- */
 function sourcedGameText(): void {
   for (const locale of LOCALES) {
     if (locale === 'en') continue;
@@ -149,8 +112,7 @@ function sourcedGameText(): void {
       fail('game-text', `${path} has ${Object.keys(shipped).length} moves, the fixture ${Object.keys(moveNames.moves).length}`, locale);
     }
   }
-  // The league's English names come from src/data/moves.json. A regenerated
-  // moves.json that renames or adds a move must regenerate the fixture too.
+
   const appMoves = readJson<{ id: number; name: string }[]>('src/data/moves.json');
   for (const move of appMoves) {
     const row = moveNames.moves[move.id];
@@ -169,15 +131,6 @@ function sourcedGameText(): void {
 const placeholders = (text: string): string[] =>
   [...text.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1]).sort();
 
-/**
- * A translation must carry exactly the placeholders its English source does —
- * as a multiset, so a duplicated or dropped `{count}` is caught too.
- *
- * Also rejects full-width braces and unbalanced ones. Full-width `｛｝` is a
- * real machine-translation failure in CJK: the model helpfully converts the
- * punctuation to match the surrounding script, and the result renders the
- * literal text `｛count｝` to the user because the interpolator never sees it.
- */
 function placeholderIntegrity(): void {
   for (const [locale, catalog] of termCatalogs) {
     if (locale === 'en') continue;
@@ -206,7 +159,6 @@ function placeholderIntegrity(): void {
 //#endregion
 //#region 3. Untranslated leftovers
 
-/** Latin letters, so a CJK string of the same length doesn't read as ASCII. */
 const asciiLetters = (s: string) => (s.match(/[A-Za-z]/g) ?? []).length;
 
 /**
@@ -270,22 +222,11 @@ function untranslatedLeftovers(): void {
 //#endregion
 //#region 4. Unicode hygiene
 
-/**
- * The class of defect that survives every review because it is invisible.
- *
- * A trailing space renders as a gap nobody can explain; a non-breaking space
- * silently disables wrapping and blows out a label; a BOM in the middle of a
- * value is a zero-width character that breaks string equality against the
- * source it was copied from. All of them are byte-level facts, so all of them
- * belong here rather than in a reviewer's eyes.
- */
 function unicodeHygiene(): void {
   for (const [locale, catalog] of termCatalogs) {
     for (const [key, value] of Object.entries(catalog)) {
       if (value !== value.trim()) fail('unicode', 'leading or trailing whitespace', locale, key);
-      // Written as escapes rather than as the characters themselves: a literal
-      // NBSP in this file is invisible in an editor and in a diff, which is the
-      // exact property that makes it worth gating against in the first place.
+
       if (/[\u00a0\u2007\u202f]/.test(value)) fail('unicode', 'non-breaking space', locale, key);
       if (/[\ufeff\u200b-\u200d]/.test(value)) fail('unicode', 'zero-width character', locale, key);
       if (value !== value.normalize('NFC')) fail('unicode', 'not NFC-normalized', locale, key);
@@ -299,42 +240,7 @@ function unicodeHygiene(): void {
 //#endregion
 //#region 5. CJK safety
 
-/**
- * Case transforms are Latin-only operations, and CJK reaches them by three
- * different routes. Each route gets the treatment it deserves rather than a
- * blanket ban — running the blanket version first is what showed why.
- *
- * **CSS `text-transform` / `letter-spacing`** is handled globally, not
- * per-site. Fourteen `uppercase tracking-wide` headings turned up, and every
- * one is a correct English small-caps heading; deleting them to satisfy a gate
- * would trade a real design for a green check. The `:lang()` block in
- * `index.css` neutralizes both properties for CJK everywhere at once, so this
- * gate's job is to assert that block still exists. If someone removes it, all
- * fourteen silently become bugs again — which is exactly the kind of action at
- * a distance a gate should be watching for.
- *
- * **`toUpperCase()` in JS** CSS cannot reach — it runs before the text is ever
- * a DOM node, which matters for the canvas exporter, where there is no CSS at
- * all. The app has one sanctioned path, `localeUppercase()`, which is a no-op
- * for CJK.
- *
- * **`capitalize` on a name** is a separate defect that is not about CJK: it is
- * the reason English renders `Mr-Mime` and `Farfetchd` today. `:lang()` cannot
- * help, because the string is wrong in the locale the rule does not cover. It
- * is tracked in `docs/i18n/proposed-english-changes.md` and needs a real name
- * catalog rather than a CSS property, so it is reported as a known exemption
- * rather than a hard failure — with the exemption pinned to an exact count, so
- * a *new* one fails the build.
- */
-
-/** Sites where `capitalize` still stands in for a real name catalog. */
-const CAPITALIZE_EXEMPT = new Set([
-  'src/components/shared/PokemonTile.tsx',
-  'src/components/browser/PokemonBrowser.tsx',
-]);
-
 function cjkSafety(): void {
-  // The mechanism the fourteen headings depend on.
   const css = readFileSync('src/index.css', 'utf8');
   const scoped = /:lang\(ja\)[^{]*\{[^}]*text-transform:\s*none[^}]*letter-spacing:\s*normal/s.test(css);
   if (!scoped) {
@@ -357,7 +263,6 @@ function cjkSafety(): void {
 
   const translated = String.raw`(?:t|tn|typeLabel|colorLabel|eggGroupLabel|shapeLabel|speciesName|formLabel|displayName)`;
   for (const file of files) {
-    // Owner-only and deliberately English; see the note atop catalogs/en.ts.
     if (file.includes('components/admin/')) continue;
     const lines = readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
@@ -368,8 +273,7 @@ function cjkSafety(): void {
       }
       if (
         /className=/.test(line) &&
-        /(?:^|[\s"'`])capitalize(?:[\s"'`]|$)/.test(line) &&
-        !CAPITALIZE_EXEMPT.has(file.replace(/\\/g, '/'))
+        /(?:^|[\s"'`])capitalize(?:[\s"'`]|$)/.test(line)
       ) {
         fail(
           'cjk-safety',
@@ -426,7 +330,6 @@ const SAME_AS_ENGLISH_OK = new Set([
   'fr:favorites.stats.final', // Final is the French masculine evolution-role adjective.
   'es:favorites.stats.final', // Final is also the Spanish evolution-role adjective.
   'fr:sort.type', // Type is the French noun too.
-  // The poster's clause separator is a spaced middle dot in every locale.
   'de:poster.separator',
   'es:poster.separator',
   'fr:poster.separator',
@@ -435,7 +338,6 @@ const SAME_AS_ENGLISH_OK = new Set([
   'ko:poster.separator',
   'zh-Hans:poster.separator',
   'zh-Hant:poster.separator',
-  // League builder. The game terms follow docs/i18n/sources/league-interface-terms.json.
   'de:league.tm.mark', // The German games label TMs "TM".
   'de:league.powerup.dynamax', // Dynamax is the German, French and Italian game term.
   'fr:league.powerup.dynamax',
@@ -456,7 +358,6 @@ const SAME_AS_ENGLISH_OK = new Set([
   'zh-Hant:league.tm.col.pp',
   'fr:feedback.category.bug', // French tech writing uses "Bug".
   'it:feedback.context.browser', // Italian says "browser".
-  // The Pokémon browser, drill-downs and analytics.
   'de:browser.sheet.generation', // "Generation" is the German noun.
   'de:browser.subgroupGeneration',
   'de:drilldown.generationTitle',
@@ -488,22 +389,10 @@ const SAME_AS_ENGLISH_OK = new Set([
   'fr:ack.group.code',
 ]);
 
-/**
- * How wide a chip label may be. These sit in a wrapping row that has to survive
- * a 320px screen, so a long value pushes the layout rather than wrapping
- * neatly. CJK gets a smaller budget because its characters are about twice as
- * wide as Latin ones at the same size.
- */
 const UI_LENGTH_BUDGETS: { prefix: string; maxLatin: number; maxCjk: number }[] = [
   { prefix: 'feedback.category.', maxLatin: 22, maxCjk: 8 },
 ];
 
-/**
- * The translated layer, held to what a machine can actually check: that the
- * keys exist and are real, that nothing is silently English, that it fits, and
- * that it is clean Unicode. Whether the wording is any *good* is not in here
- * and cannot be — that needs a speaker.
- */
 function translatedUi(): void {
   const english = en as Record<string, string>;
   for (const [locale, catalog] of uiCatalogs) {
@@ -511,8 +400,7 @@ function translatedUi(): void {
     if (!keys.length) fail('ui', 'file exists but is empty', locale);
 
     for (const [key, value] of Object.entries(catalog)) {
-      // A key English does not have is a typo or a leftover; it would sit in
-      // the catalog forever, translated, and never render.
+
       if (!(key in english)) {
         fail('ui', 'not a key in the English catalog', locale, key);
         continue;
@@ -538,7 +426,6 @@ function translatedUi(): void {
       }
     }
 
-    // Every locale must cover the same set, or a language is quietly half-done.
     const reference = [...uiCatalogs.values()][0];
     const missing = Object.keys(reference).filter((k) => !(k in catalog));
     if (missing.length) {
@@ -550,22 +437,6 @@ function translatedUi(): void {
 //#endregion
 //#region 7. Length budgets
 
-/**
- * The handful of slots whose width is fixed by layout rather than by content,
- * with a separate budget per script because a CJK character is roughly twice
- * as wide as a Latin one at the same size.
- *
- * Deliberately short. A budget on a string that has room to grow is a gate
- * that fails for no reason and gets raised until it means nothing; these are
- * only the places where overflow is a visual break rather than a reflow.
- *
- * Type names are *not* here. They are official strings we may not shorten, so
- * their fit is the badge's problem — solved by scaling the word to the pill in
- * `typeBadgeGeometry.ts` and asserted for real, in a browser, by
- * `e2e/dev/type-badge.spec.ts`. A character budget would be the wrong tool
- * twice over: it can't see the font, and it would fail on strings we are not
- * allowed to change.
- */
 const LENGTH_BUDGETS: { prefix: string; maxLatin: number; maxCjk: number; why: string }[] = [
   { prefix: 'region.', maxLatin: 12, maxCjk: 6, why: 'region filter chips' },
   { prefix: 'term.color.', maxLatin: 14, maxCjk: 7, why: 'colour filter chips' },

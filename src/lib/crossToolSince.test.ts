@@ -5,18 +5,6 @@ import { FAVORITES_LAUNCH_TS, LEAGUE_LAUNCH_TS, TOOL_CATALOG, sinceLaunchStarts 
 import { buildDashboard, type DashboardSource } from '../../api/_dashboard';
 import type { DashboardRange } from '../../api/_range';
 
-// How the per-launch cross-tool snapshots can go wrong, and the test that
-// catches each:
-// 1. The window opens at the wrong instant: at the launch when the range
-//    starts later, or at the range start when the launch is later.
-// 2. A browser active only before the launch is counted.
-// 3. A browser active after the launch loses a tool it used before it, so
-//    the snapshot no longer counts every tool the browser ever used.
-// 4. The plain `crossTool` snapshot changes, which breaks open tabs on the
-//    old bundle.
-// 5. The snapshots cost Redis commands: they must come from the records the
-//    handler already read.
-
 vi.hoisted(() => {
   process.env.UPSTASH_REDIS_REST_URL ||= 'https://example.upstash.io';
   process.env.UPSTASH_REDIS_REST_TOKEN ||= 'test-token';
@@ -125,7 +113,6 @@ describe('crossToolSince', () => {
   });
 
   it('opens at the range start when the range starts after the launch (1)', () => {
-    // 7d opens on 30 Sep: old-dex's league session on 20 Sep is outside.
     expect(regionsOf(dash('7d').crossToolSince.league)).toEqual({ dex: 1 });
   });
 
@@ -164,7 +151,6 @@ describe('submissions Redis bill', () => {
       },
     };
     await handler({ method: 'GET', query: { range }, headers: {} } as never, res as never);
-    // The bill is the set of commands; the SDK may send them in any order.
     return { commands: commands.map((c) => `${c[0].toLowerCase()} ${c[0].toLowerCase() === 'eval' ? '<script>' : c[1]}`).sort(), body };
   }
 

@@ -47,7 +47,6 @@ describe('mergeLeagueRecord', () => {
     expect(rec.sessions).toBe(2);
     expect(rec.sessionMs).toEqual([60_000, 0]);
     expect(rec.sessionLog).toHaveLength(2);
-    // Deepest ever, not latest.
     expect(rec.maxCards).toBe(3);
     expect(rec.latest.cards).toBe(2);
   });
@@ -56,16 +55,12 @@ describe('mergeLeagueRecord', () => {
     const cardsA = parseCards([{ i: 0, l: [{ b: [1, 2] }] }])!;
     let rec = mergeLeagueRecord(null, beacon({ cards: cardsA }));
     expect(rec.sessionLog[0].cards).toEqual(cardsA);
-    // A within-session beacon that carries no structure keeps the session's
-    // board rather than blanking it (an export beacon can omit structure).
     rec = mergeLeagueRecord(
       rec,
       beacon({ now: 1_000_000 + 60_000, kind: 'export', exportKind: 'league', cards: undefined }),
     );
     expect(rec.sessionLog).toHaveLength(1);
     expect(rec.sessionLog[0].cards).toEqual(cardsA);
-    // A new session with a new board logs the new structure separately, and the
-    // earlier session keeps its own — this is what lets the scrubber replay.
     const cardsB = parseCards([
       { i: 0, l: [{ b: [1, 2] }] },
       { i: 1, l: [{ b: [4, 5] }] },
@@ -86,8 +81,6 @@ describe('mergeLeagueRecord', () => {
   it('records the first referrer once and never overwrites it (forward-only)', () => {
     let rec = mergeLeagueRecord(null, beacon({ referrer: 'reddit.com' }));
     expect(rec.firstReferrer).toBe('reddit.com');
-    // A later beacon — whose referrer is this origin, or none — must not clobber
-    // the acquisition source that first brought the browser here.
     rec = mergeLeagueRecord(rec, beacon({ now: 1_000_500, referrer: 'discord.com' }));
     expect(rec.firstReferrer).toBe('reddit.com');
   });
@@ -122,17 +115,6 @@ describe('mergeLeagueRecord', () => {
   });
 });
 
-/**
- * The drop-then-restore the admin showed: a league ~85% filled, then one evo
- * line, then the gyms back. Two clocks could have caused it. These pin the
- * one that actually does.
- *
- * Timezone cannot reverse board state. Session `ts` is epoch ms; sorting or
- * placing by it is independent of UTC vs America/New_York labels. A delayed
- * beacon can: the server used to stamp Date.now() at arrival, so a keepalive
- * from the first sitting landed AFTER a later sitting and opened a new
- * session whose board was the old one-line snapshot.
- */
 describe('out-of-order league beacons', () => {
   const T0 = 1_000_000;
   const oneLine = parseCards([{ i: 0, l: [{ b: [1] }] }])!;
@@ -211,16 +193,6 @@ describe('parseSummary', () => {
   });
 });
 
-/**
- * The ceiling the API clamps a summary to must be the number of cards the app
- * actually renders.
- *
- * It was 11 while the app rendered 14, and `clampInt` clamps rather than
- * rejects — so a league with 12, 13 or 14 filled cards was written to Redis as
- * exactly 11, and up to 84 seats as 66. Silent, lossy, and unrecoverable: the
- * true number never reached the server, so no later fix can restore it. These
- * hold the two constants together.
- */
 describe('the summary ceiling matches the app', () => {
   it('clamps cards to the number of league slots the app renders', () => {
     expect(CARD_COUNT).toBe(SLOT_COUNT);
@@ -246,14 +218,6 @@ describe('the summary ceiling matches the app', () => {
   });
 });
 
-/**
- * The card structure the beacon now carries.
- *
- * parseCards is a trust boundary: everything in it came from a browser, so
- * every field is bounded and a malformed part is dropped rather than failing
- * the whole beacon — the counts beside it are still worth recording when one
- * card arrives mangled.
- */
 describe('parseCards', () => {
   const card = (over: Record<string, unknown> = {}) => ({ i: 0, l: [{ b: [1, 2, 3] }], ...over });
 
@@ -265,7 +229,6 @@ describe('parseCards', () => {
     expect(parseCards([card({ l: [{ b: [1, 2], bd: [1, 4] }] })])).toEqual([
       { i: 0, l: [{ b: [1, 2], bd: [1, 4] }] },
     ]);
-    // A partial set says a stage moved without saying where to.
     expect(parseCards([card({ l: [{ b: [1, 2, 3], bd: [1, 4] }] })])).toEqual([
       { i: 0, l: [{ b: [1, 2, 3] }] },
     ]);
@@ -305,8 +268,6 @@ describe('parseCards', () => {
     expect(parseCards([card({ t: '<script>' })])![0].t).toBeUndefined();
   });
 
-  // The distinction mergeLeagueRecord depends on: no structure at all leaves
-  // what is stored alone, while an empty league really is empty.
   it('separates "no structure sent" from "an empty league"', () => {
     expect(parseCards(undefined)).toBeUndefined();
     expect(parseCards('nope')).toBeUndefined();
@@ -320,8 +281,6 @@ describe('mergeLeagueRecord and the card structure', () => {
     expect(rec.latestCards).toEqual([{ i: 0, l: [{ b: [1] }] }]);
   });
 
-  // A client that sends no structure must not erase one an earlier beacon
-  // stored — that is what an old tab still running the previous bundle does.
   it('leaves a stored structure alone when a beacon omits it', () => {
     const first = mergeLeagueRecord(null, beacon({ cards: [{ i: 0, l: [{ b: [1] }] }] }));
     const second = mergeLeagueRecord(first, beacon({ now: 2_000_000 }));

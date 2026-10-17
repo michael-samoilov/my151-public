@@ -1,21 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { redis, requireAdmin, firstQueryValue } from './_shared.js';
 
-/**
- * Admin read for the feedback list. The only reader of `feedback` — there is no
- * public path to it, by design.
- *
- * The list is stored newest-first (LPUSH), so LRANGE pages it in the order the
- * dashboard wants without sorting. Read/unread is deliberately not tracked
- * server-side: there is exactly one admin, and their own localStorage is a
- * simpler place for it than a Redis field that can drift.
- */
-
 const FEEDBACK_KEY = 'feedback';
 const COUNT_PREFIX = 'feedback:count';
 const MAX_PAGE = 200;
 
-/** The UTC dates of the last `days` days, newest first: api/feedback.ts counts each report under its date. */
 function dayStamps(days: number, now: number): string[] {
   const out: string[] = [];
   for (let i = 0; i < days; i++) out.push(new Date(now - i * 86_400_000).toISOString().slice(0, 10));
@@ -25,12 +14,6 @@ function dayStamps(days: number, now: number): string[] {
 type Counts = { last7: Record<string, number>; last30: Record<string, number> };
 type Item = Record<string, unknown>;
 
-/**
- * Per-category totals for the last 7 and 30 UTC days, counted from the rows
- * themselves. That works when the first page reaches past the 30-day window,
- * or holds the whole list; otherwise this returns null and the daily hashes
- * answer. Nothing deletes reports below the 5,000 cap, so the two agree.
- */
 export function countsFromRows(items: Item[], total: number, offset: number, now: number): Counts | null {
   const stamps = dayStamps(30, now);
   const stampOf = (it: Item) => (typeof it.ts === 'number' && it.ts > 0 ? new Date(it.ts).toISOString().slice(0, 10) : '');
@@ -51,7 +34,6 @@ export function countsFromRows(items: Item[], total: number, offset: number, now
   return { last7, last30 };
 }
 
-/** The same totals summed from the 30 daily hashes, one HGETALL each. */
 async function countsFromHashes(now: number): Promise<Counts> {
   const hashes = await Promise.all(
     dayStamps(30, now).map((d) => redis.hgetall<Record<string, string | number>>(`${COUNT_PREFIX}:${d}`)),
@@ -68,6 +50,7 @@ async function countsFromHashes(now: number): Promise<Counts> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Cache-Control', 'no-store');
   if (!(await requireAdmin(req, res))) return;
   try {
     const offset = Math.max(0, Number(firstQueryValue(req.query.offset)) || 0);

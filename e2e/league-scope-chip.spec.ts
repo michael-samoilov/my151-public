@@ -1,17 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { seededLeague } from './support/leagueSeed';
 
-/**
- * The signature picker's "Current Team" chip.
- *
- * Two rules meet here. Scoping to the team and filtering by the gym's type
- * ask the same question — every line on a Rock gym is Rock — so the scope
- * puts the type filter aside, and gives it back when it lets go. And once the
- * template is full the scope is not a choice at all, because there is no
- * seventh seat for a line from outside it; the chip stays on, wears a lock,
- * and says why when pressed.
- */
-
 const openSignature = async (page: Page, slot: number) => {
   await seededLeague(page);
   await page.goto('/custom-gym-leader');
@@ -30,7 +19,6 @@ const openPane = async (page: Page) => {
   await page.waitForTimeout(1200);
 };
 
-/** Which type chips the pane is showing, by their own label. */
 const typeChips = (page: Page) =>
   page.evaluate(() =>
     [...document.querySelectorAll('span.rounded-full')]
@@ -42,7 +30,7 @@ const tiles = (page: Page) => page.locator('[data-testid="verify-evo-card"]').co
 
 test.describe('the team scope chip', () => {
   test('a full card locks it on, and says why when pressed', async ({ page }) => {
-    await openSignature(page, 0); // Brock: six lines, so the template is full
+    await openSignature(page, 0);
     await openPane(page);
 
     const locked = page.locator('[data-filter-chip="scope-locked"]');
@@ -54,16 +42,12 @@ test.describe('the team scope chip', () => {
     expect(await page.locator('[data-scope-lock-hint]').count(), 'no hint until asked').toBe(0);
     await locked.click();
     await expect(page.locator('[data-scope-lock-hint]')).toHaveText('Choose a pokemon from your team');
-    // It is a hint, not a dialog: it goes on its own.
     await expect(page.locator('[data-scope-lock-hint]')).toHaveCount(0, { timeout: 6000 });
   });
 
   test('turning it on parks the type filter, and turning it off gives it back', async ({ page }) => {
     await openSignature(page, 0);
-    // One line out, so the template has room and the chip is the user's.
     await page.evaluate(() => {
-      // A *cell's* remove, not one of the slot removes the ace, partner, TM
-      // and badge now carry — those come first in the card's DOM.
       (document.querySelector(
         'button[aria-label^="Remove"]:not([data-slot-remove])',
       ) as HTMLButtonElement).click();
@@ -80,7 +64,6 @@ test.describe('the team scope chip', () => {
     const scoped = await tiles(page);
     expect(scoped, 'and narrows the grid to the team').toBeLessThan(unscoped);
 
-    // Dismiss the chip the way the chip offers.
     await page.evaluate(() => {
       const chip = [...document.querySelectorAll('span')].find(
         (s) => /Current Team/.test(s.textContent ?? '') && s.className.includes('rounded-full'),

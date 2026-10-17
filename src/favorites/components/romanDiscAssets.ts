@@ -2,8 +2,6 @@ import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { type GenNumber } from '../model/cells';
 
 import romanPaths from '../fonts/roman-disc-paths.json';
-// Round joins keep the outline one thickness at the points of V and X, where
-// a mitred join reaches up to four times further out.
 const ROMAN_DISC_STROKE = 1.25;
 
 function gradStops(stops: { offset: string; color: string }[]): string {

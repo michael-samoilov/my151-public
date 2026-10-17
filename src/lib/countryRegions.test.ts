@@ -8,9 +8,6 @@ describe('regionOf', () => {
     expect(regionOf('ZZ')).toBe('Unknown');
   });
 
-  // The live tally at the time of writing. If a real country falls through to
-  // 'Unknown' the region chart quietly grows a junk row, so pin the countries
-  // actually observed in production.
   it('covers every country seen in production', () => {
     const observed = [
       'US', 'GB', 'IT', 'AU', 'CA', 'BR', 'NL', 'DE', 'NZ', 'SG', 'ES', 'CZ', 'CN', 'VN',

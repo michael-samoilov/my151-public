@@ -1,58 +1,23 @@
-/**
- * The people and projects the footer's Acknowledgements panel credits.
- *
- * Entry content stays in English in every locale: the names are proper nouns,
- * and the credit lines and license texts are the sources' own words. Only the
- * panel's chrome goes through the i18n catalogs.
- *
- * License texts live in `public/licenses/` and load when an entry opens, so
- * none of them reach a page's first download.
- *
- * Lists and terms come from data, not from this file: each sprite artist's
- * entry and sprites from `spriteAttribution.json` (see `spriteCredits.ts`),
- * every quoted term from `creditTerms.json` (see `creditTerms.ts`), the type
- * icons each source drew from the icon build's `selections.json`, and the npm
- * packages from the build's own license list.
- */
 import typeIconSelections from '../../scripts/type-icons/selections.json';
 import { hasSpriteRows, spriteArtists } from './spriteCredits';
 
-/** A license or terms file under `public/licenses/`. */
 export interface LicenseFile {
-  /** Heading above the text when an entry ships more than one file. */
   name: string;
-  /** File name under `public/licenses/`. */
   file: string;
 }
 
 export interface Acknowledgement {
-  /** Stable id: the React key and the test hook. */
   id: string;
   name: string;
-  /** The author, when the credit names one. Shown as "by …". */
   by?: string;
-  /** Who compiled a collection whose parts others drew. Shown as "compiled by …". */
   compiledBy?: string;
-  /** What my151 uses it for. An artist's entry builds its own from the sprite rows. */
   usedFor?: string;
-  /** Short license or terms label for the row's second line. Absent when the source states none. */
   license?: string;
-  /**
-   * my151's own words about the license, such as where to find the source of
-   * changed files. A source's terms are never written here: the panel quotes
-   * them from `creditTerms.json`, by the entry's id.
-   */
   note?: string;
   links: readonly string[];
-  /** A link's button text, for an entry whose links share one site. Otherwise the button names the site. */
   linkLabels?: Readonly<Record<string, string>>;
   texts?: readonly LicenseFile[];
-  /**
-   * What the detail shows below "Used for": a sprite project's artists, an
-   * artist's sprites, or the npm packages in the build.
-   */
   kind?: 'project' | 'artist' | 'packages';
-  /** A project whose sprites reach the app only as rows shows only while one of them does. */
   rowsOnly?: true;
 }
 
@@ -70,10 +35,8 @@ export interface AcknowledgementGroup {
   entries: readonly Acknowledgement[];
 }
 
-/** An artist's entry id. */
 export const artistEntryId = (name: string) => `artist:${name}`;
 
-/** The type icons one source drew, in the games' type order, from the icon build's own selection. */
 const typeIconsFrom = (source: string) => {
   const names = Object.entries(typeIconSelections as Record<string, { source: string }>)
     .filter(([, selection]) => selection.source === source)
@@ -81,15 +44,9 @@ const typeIconsFrom = (source: string) => {
   return `The ${new Intl.ListFormat('en', { type: 'conjunction' }).format(names)} type icons.`;
 };
 
-/** Most sprites first (Michael, 2026-10-13); a tie goes by name. */
 const byCount = <T,>(count: (item: T) => number, name: (item: T) => string) => (a: T, b: T) =>
   count(b) - count(a) || name(a).localeCompare(name(b), 'en', { sensitivity: 'base' });
 
-/**
- * The bundles the app's sprites came through, credited under their own
- * permissions (Michael, 2026-10-13; docs/credits/README.md). Each one says
- * only what can be proven, with no count and no list of sprites.
- */
 const SPRITE_SOURCES: readonly Acknowledgement[] = [
   {
     id: 'pokeapi-sprites',
@@ -105,12 +62,8 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
   {
     id: 'gen9-resource-pack',
     name: 'Generation 9 Resource Pack',
-    // Caruban compiled the pack; its sheet credits none of the sprites the
-    // app takes from it to Caruban (credits research, 2026-10-13).
     compiledBy: 'Caruban',
     rowsOnly: true,
-    // Rows via the pack include the Furfrou trims (11096-11104) and Mega
-    // Eelektross (10290).
     usedFor: 'The source of some newer forms and Mega Evolutions, such as the Furfrou trims and Mega Eelektross.',
     license: 'Open collaboration, with credit',
     kind: 'project',
@@ -125,7 +78,6 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     usedFor: 'Its artists drew many of the fan-made sprites distributed through PokéAPI.',
     license: 'Non-profit use, with credit',
     kind: 'project',
-    // The X and Y thread asks for a credit page that links back to it.
     links: [
       'https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/',
       'https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/',
@@ -142,15 +94,10 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
 export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
   {
     id: 'sprite-projects',
-    // The bundles that carried the files first, and last the project whose
-    // artists drew most of them.
     entries: SPRITE_SOURCES.filter((project) => !project.rowsOnly || hasSpriteRows(project.id)),
   },
   {
     id: 'sprite-artists',
-    // Only artists whose sprites the app took from them directly, not
-    // through a bundle. Counted from the same list the artist's Used for
-    // shows, so the order and the entry cannot disagree.
     entries: [...spriteArtists()].sort(byCount((artist) => artist.sprites.length, (artist) => artist.name)).map((artist) => ({
       id: artistEntryId(artist.name),
       name: artist.name,
@@ -180,13 +127,10 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         by: 'Elginive',
         usedFor: typeIconsFrom('elginive'),
         license: 'Free to use',
-        // The README says the icons recreate the games' own type icons.
         note: 'The type symbols the icons draw are artwork © Nintendo / Game Freak / TPC.',
         links: ['https://github.com/Elginive/pokemon-type-icons'],
       },
       {
-        // ShapeIcon.tsx: the 14 silhouettes of the games' shape search. Git
-        // history does not say which site the files came from.
         id: 'pokemon-home-shapes',
         name: 'Pokémon HOME body-shape icons',
         usedFor: "The body-shape icons the app shows for a Pokémon's shape, from Pokémon HOME.",
@@ -293,8 +237,6 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         links: ['https://github.com/abcboy101/poke-corpus'],
       },
       {
-        // Data, not art: the app reads which body shape each alternate form
-        // has from Bulbapedia's text, and shows no image from it.
         id: 'bulbapedia',
         name: 'Bulbapedia',
         usedFor: 'The body shapes of alternate forms.',
@@ -310,9 +252,6 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
         name: 'npm packages',
         usedFor: "The open-source libraries in the site's code. Each one is listed below with its version, by license.",
         kind: 'packages',
-        // vite.config.ts writes both lists into the build: npm-packages.txt
-        // (build.license) and npm-packages.json, which the panel reads.
-        // npm-packages-extra.txt holds the notices Vite's list misses.
         links: [],
       },
       {

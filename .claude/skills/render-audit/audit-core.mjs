@@ -368,15 +368,8 @@ export function auditBody(cfg) {
   return `${IN_PAGE_SOURCE}\nreturn inPage(${JSON.stringify(cfg)});`;
 }
 
-/** Findings that are defects on a static page or an export; the other kinds are warnings to read. */
 export const HARD_KINDS = ['clipped', 'text-cut', 'outside-frame', 'overflow-frame', 'image-broken', 'image-scale', 'truncated', 'font-fallback', 'overlap'];
 
-/**
- * Findings that are defects in a running app. On screen, pixel art is sized
- * by CSS and an ellipsis is a designed truncation, so those two stay
- * warnings there; a clipped box, cut text, or a broken image is a defect
- * anywhere.
- */
 export const APP_HARD_KINDS = ['clipped', 'text-cut', 'image-broken', 'overlap'];
 
 /** One stable line per finding, for set comparison across runs. */

@@ -11,7 +11,6 @@ import * as Flags from 'country-flag-icons/string/3x2';
 
 const SZ = 15;
 
-/** Device family icon (FontAwesome brands via react-icons). */
 export function DeviceIcon({ value }: { value?: string }) {
   const v = (value ?? '').toLowerCase();
   if (v.includes('mobile') || v.includes('phone')) return <FaMobileScreenButton size={SZ} />;
@@ -20,7 +19,6 @@ export function DeviceIcon({ value }: { value?: string }) {
   return <MonitorSmartphone size={SZ} />;
 }
 
-/** OS icon — the platform's own logo. */
 export function OsIcon({ value }: { value?: string }) {
   const v = (value ?? '').toLowerCase();
   if (v.includes('mac') || v.includes('ios') || v.includes('ipad')) return <FaApple size={SZ} />;
@@ -31,7 +29,6 @@ export function OsIcon({ value }: { value?: string }) {
   return <span className="text-[0.65rem] font-semibold leading-none">OS</span>;
 }
 
-/** Browser icon — the browser's own logo. */
 export function BrowserIcon({ value }: { value?: string }) {
   const v = (value ?? '').toLowerCase();
   if (v.includes('edge')) return <FaEdge size={SZ} />;
@@ -42,7 +39,6 @@ export function BrowserIcon({ value }: { value?: string }) {
   return <Compass size={SZ} />;
 }
 
-/** Real flag icon (inline SVG, no network) for an ISO 3166-1 alpha-2 code. */
 export function FlagIcon({ country, className }: { country?: string; className?: string }) {
   const code = (country ?? '').toUpperCase();
   const svg = (Flags as Record<string, string>)[code];
@@ -66,8 +62,6 @@ export function FlagIcon({ country, className }: { country?: string; className?:
   );
 }
 
-/** Coordinates the icon-chip tooltips so only one shows at a time and a press
- *  anywhere else (including another chip) dismisses it. */
 const TooltipCtx = createContext<{ openId: string | null; setOpenId: (id: string | null) => void }>({
   openId: null,
   setOpenId: () => {},
@@ -108,11 +102,6 @@ export function useTooltipChip() {
   };
 }
 
-/**
- * A compact chip whose label is disclosed on press (mobile) and hover (desktop).
- * Presses are coordinated by TooltipScope: opening one closes any other, and a
- * press anywhere else fades it.
- */
 export function InfoChip({
   children,
   label,
@@ -149,7 +138,6 @@ export function InfoChip({
         data-tooltip-chip
         className={cn(
           'flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground outline-none hover:text-foreground focus:outline-none focus-visible:outline-none focus-visible:ring-0 [-webkit-tap-highlight-color:transparent]',
-          // On desktop the chip fills its table cell, as tall as the tool chips beside it.
           fillMd && 'md:h-full md:w-full md:justify-center md:rounded-xl',
         )}
         aria-label={label}

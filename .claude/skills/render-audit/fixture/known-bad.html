@@ -2,25 +2,15 @@
 <html><head><meta charset="utf-8"><style>body{margin:0;font-family:system-ui,sans-serif}</style></head>
 <body>
 <div style="width:420px;height:320px;background:#fff;position:relative;box-sizing:border-box;padding:12px;display:flex;flex-direction:column;gap:8px">
-  <!-- truncated: an ellipsis box narrower than its text -->
   <div style="width:60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px">Gigantamax Charizard</div>
-  <!-- text-cut: a height clip hiding a third line -->
   <div style="width:90px;max-height:36px;overflow:hidden;font-size:15px;line-height:18px">One two three four five six seven</div>
-  <!-- clipped: a chip with a border running past its overflow-hidden column -->
   <div style="width:70px;overflow:hidden;display:flex;gap:4px"><span style="flex:none;width:50px;height:18px;background:#ddd"></span><span style="flex:none;width:30px;height:18px;border:2px solid #333;box-sizing:border-box"></span></div>
-  <!-- image-scale: pixel art at 1.75x -->
   <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEklEQVR4nGP8z8DAwMDAxAABABYCAQG4Xy6ZAAAAAElFTkSuQmCC" alt="pixel art" style="width:7px;height:7px;image-rendering:pixelated">
-  <!-- image-broken -->
   <img src="missing.png" alt="missing" style="width:8px;height:8px">
-  <!-- awkward-wrap: a short label on three lines -->
   <div style="width:52px;font-size:14px;line-height:16px">No gym badge awarded</div>
-  <!-- stretched-box: a line handed a height meant for something else, which tears the block apart -->
   <div style="width:120px"><span style="display:block;height:70px;font-size:14px;line-height:18px">ACE</span><span style="display:block;font-size:14px;line-height:18px">POKEMON</span></div>
-  <!-- tiny-text -->
   <div style="font-size:9px">fine print</div>
-  <!-- overlap: two in-flow badges each wider than the column that holds them -->
   <div style="display:flex;gap:0"><div style="width:40px;display:flex;justify-content:center"><span style="width:56px;height:14px;background:#2980ef;flex:none"></span></div><div style="width:40px;display:flex;justify-content:center"><span style="width:56px;height:14px;background:#fac000;flex:none"></span></div></div>
-  <!-- outside-frame: a label past the frame's bottom edge -->
   <div style="position:absolute;left:12px;top:310px;font-size:14px">past the edge</div>
 </div>
 </body></html>

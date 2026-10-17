@@ -12,21 +12,15 @@ export interface PokemonCategory {
   };
 }
 
-// Ultra Beast IDs
 export const ULTRA_BEAST_IDS = new Set([793,794,795,796,797,798,799, 803,804,805,806]);
 
-// Paradox Pokemon IDs (ancient + future)
 export const PARADOX_IDS = new Set([984,985,986,987,988,989, 990,991,992,993,994,995, 1005,1006, 1009,1010, 1020,1021,1022,1023]);
 
-// Paradox counterparts of legendary Pokemon (Swords of Justice + Beasts parallels)
 export const LEGENDARY_PARADOX_IDS = new Set([1009,1010, 1020,1021,1022,1023]);
 
-// Convergent Evolution IDs
 const CONVERGENT_IDS = new Set([948,949, 960,961]);
 
-// Ordered by introduction to the series
 export const CATEGORIES: PokemonCategory[] = [
-  // Gen 1 concepts
   {
     id: 'starter',
     name: 'Starter',
@@ -73,14 +67,12 @@ export const CATEGORIES: PokemonCategory[] = [
     color: '#ed64a6',
     filter: (p) => p.isMythical,
   },
-  // Gen 2
   {
     id: 'baby',
     name: 'Baby Pokemon',
     color: '#ed8936',
     filter: (p) => p.isBaby,
   },
-  // Gen 7 (Alola)
   {
     id: 'alolan-form',
     name: 'Alolan Form',
@@ -93,7 +85,6 @@ export const CATEGORIES: PokemonCategory[] = [
     color: '#1a202c',
     filter: (p) => ULTRA_BEAST_IDS.has(p.id),
   },
-  // Gen 8 (Galar)
   {
     id: 'galarian-form',
     name: 'Galarian Form',
@@ -106,7 +97,6 @@ export const CATEGORIES: PokemonCategory[] = [
       { label: 'Generation 5 originals', pokemonIds: [10176,10177,10178,10179] },
     ],
   },
-  // Gen 8 (Legends Arceus)
   {
     id: 'hisuian-form',
     name: 'Hisuian Form',
@@ -120,7 +110,6 @@ export const CATEGORIES: PokemonCategory[] = [
       { label: 'Generation 7 originals', pokemonIds: [10244] },
     ],
   },
-  // Gen 9 (Paldea)
   {
     id: 'paldean-form',
     name: 'Paldean Form',
@@ -143,10 +132,10 @@ export const CATEGORIES: PokemonCategory[] = [
     color: '#e53e3e',
     filter: (p) => PARADOX_IDS.has(p.id),
     subgroups: [
-      { label: 'Generation 1 originals', pokemonIds: [985,989] }, // Scream Tail (Jigglypuff), Sandy Shocks (Magneton)
-      { label: 'Generation 2 originals', pokemonIds: [984,990, 987, 991,995, 1009,1020,1021] }, // Great Tusk/Iron Treads (Donphan), Flutter Mane (Misdreavus), Iron Bundle (Delibird), Iron Thorns (Tyranitar), Walking Wake (Suicune), Gouging Fire (Entei), Raging Bolt (Raikou)
-      { label: 'Generation 3 originals', pokemonIds: [992,1005, 1006] }, // Iron Hands (Hariyama), Roaring Moon (Salamence), Iron Valiant (Gardevoir/Gallade)
-      { label: 'Generation 5 originals', pokemonIds: [986,988, 993,994, 1010,1022,1023] }, // Brute Bonnet (Amoonguss), Slither Wing (Volcarona), Iron Jugulis (Hydreigon), Iron Moth (Volcarona), Iron Leaves (Virizion), Iron Boulder (Terrakion), Iron Crown (Cobalion)
+      { label: 'Generation 1 originals', pokemonIds: [985,989] },
+      { label: 'Generation 2 originals', pokemonIds: [984,990, 987, 991,995, 1009,1020,1021] },
+      { label: 'Generation 3 originals', pokemonIds: [992,1005, 1006] },
+      { label: 'Generation 5 originals', pokemonIds: [986,988, 993,994, 1010,1022,1023] },
     ],
     dualColumns: {
       left: { label: 'Past', ids: [984,985,986,987,988,989, 1005, 1009,1020,1021] },
@@ -155,7 +144,6 @@ export const CATEGORIES: PokemonCategory[] = [
   },
 ];
 
-// Fossil Pokemon (all stages)
 export const FOSSIL_IDS = new Set([
   138,139, 140,141, 142,
   345,346, 347,348,
@@ -165,14 +153,12 @@ export const FOSSIL_IDS = new Set([
   880,881,882,883,
 ]);
 
-// Pseudo-Legendary lines (600 BST final forms + pre-evos)
 export const PSEUDO_LEGENDARY_IDS = new Set([
   147,148,149, 246,247,248, 371,372,373, 374,375,376,
   443,444,445, 633,634,635, 704,705,706, 10241,10242,
   782,783,784, 885,886,887, 996,997,998,
 ]);
 
-// Starter Pokemon (all stages, all gens)
 export const STARTER_IDS = new Set([
   1,2,3, 4,5,6, 7,8,9,
   152,153,154, 155,156,157, 158,159,160,
@@ -183,11 +169,9 @@ export const STARTER_IDS = new Set([
   722,723,724, 725,726,727, 728,729,730,
   810,811,812, 813,814,815, 816,817,818,
   906,907,908, 909,910,911, 912,913,914,
-  // Regional starter forms
   10233, 10236, 10244,
 ]);
 
-// Derive sub-legendary and restricted legendary IDs from CATEGORIES to avoid duplication
 const legendaryCategory = CATEGORIES.find(c => c.id === 'legendary')!;
 export const SUB_LEGENDARY_IDS = new Set(legendaryCategory.dualColumns!.left.ids);
 export const RESTRICTED_LEGENDARY_IDS = new Set(legendaryCategory.dualColumns!.right.ids);

@@ -1,16 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
 
-/**
- * Measure the official badge art so the drawn badge can match it, instead of
- * being eyeballed against a screenshot.
- *
- * Throwaway analysis tool, kept only as long as the badge geometry is being
- * tuned. Everything it prints is in the badge's own 200x40 space, which is the
- * same space `src/lib/typeBadgeGeometry.ts` works in.
- */
-
-/** Always RGBA once decoded, whatever the file's own colour type was. */
 interface Raster { width: number; height: number; data: Uint8Array }
 
 function decode(png: Buffer): Raster {
@@ -53,10 +43,7 @@ function decode(png: Buffer): Raster {
     src += stride;
   }
   if (channels === 4) {
-    // Composite onto black. The art has transparent corners and a screenshot
-    // does not, and the corner-radius reading depends on how the antialiased
-    // edge blends — so both inputs are put on the same backdrop before anything
-    // is measured, or the two radii are not comparable numbers.
+
     for (let i = 0; i < out.length; i += 4) {
       const a = out[i + 3] / 255;
       out[i] = Math.round(out[i] * a);
@@ -66,7 +53,6 @@ function decode(png: Buffer): Raster {
     }
     return { width, height, data: out };
   }
-  // Widen RGB to RGBA so the samplers below need only one shape.
   const rgba = new Uint8Array(width * height * 4);
   for (let i = 0, j = 0; i < out.length; i += 3, j += 4) {
     rgba[j] = out[i]; rgba[j + 1] = out[i + 1]; rgba[j + 2] = out[i + 2]; rgba[j + 3] = 255;
@@ -78,19 +64,11 @@ const at = (r: Raster, x: number, y: number) => {
   const i = (y * r.width + x) * 4;
   return { r: r.data[i], g: r.data[i + 1], b: r.data[i + 2], a: r.data[i + 3] };
 };
-/** White symbol/text: opaque and near-white on every channel. */
 const isInk = (r: Raster, x: number, y: number) => {
   const p = at(r, x, y);
   return p.a > 140 && Math.min(p.r, p.g, p.b) > 170;
 };
 
-/**
- * Corner radius: how far along the top row the fill starts.
- *
- * Works for both inputs. The sprite art is transparent outside the pill, and a
- * screenshot is filled with the page background — either way the first pixel
- * that matches the badge's own fill marks where the curve meets the edge.
- */
 function cornerRadius(r: Raster): number {
   const fill = at(r, 4, r.height >> 1);
   const near = (p: { r: number; g: number; b: number; a: number }) =>
@@ -101,7 +79,6 @@ function cornerRadius(r: Raster): number {
 
 interface Box { x0: number; y0: number; x1: number; y1: number }
 
-/** Bounding box of the ink between two columns, inclusive. */
 function inkBox(r: Raster, xFrom: number, xTo: number): Box {
   const box: Box = { x0: r.width, y0: r.height, x1: -1, y1: -1 };
   for (let x = xFrom; x <= xTo; x++) {
@@ -116,7 +93,6 @@ function inkBox(r: Raster, xFrom: number, xTo: number): Box {
   return box;
 }
 
-/** Ink columns, grouped into runs separated by >= `gap` empty columns. */
 function inkRuns(r: Raster, gap: number): Box[] {
   const cols: number[] = [];
   for (let x = 0; x < r.width; x++) {
@@ -147,7 +123,6 @@ const CAPS_NO_DESCENDER: Record<number, string> = {
   1: 'NORMAL', 7: 'BUG', 10: 'FIRE', 12: 'GRASS', 13: 'ELECTRIC', 16: 'DRAGON',
 };
 
-/** x below this is the symbol, at or above it is the word. */
 const GLYPH_TEXT_SPLIT = 46;
 
 const DIR = process.argv[2] ?? '/tmp/badgeref';
@@ -162,16 +137,10 @@ function main() {
     const radius = cornerRadius(r);
     const bg = at(r, 4, r.height >> 1);
 
-    // Split on the known boundary rather than on run gaps. Some symbols are
-    // several disjoint shapes (the Grass leaves) and some sit close enough to
-    // the first letter to merge with it, so gap-based segmentation mis-reads
-    // exactly the badges worth checking.
     const glyph = inkBox(r, 0, GLYPH_TEXT_SPLIT - 1);
     const text = inkBox(r, GLYPH_TEXT_SPLIT, r.width - 1);
     const letters = inkRuns(r, 2).filter((run) => run.x0 >= GLYPH_TEXT_SPLIT);
-    // Apparent weight: what fraction of the word's bounding box is actually
-    // inked. Thicker strokes fill more of the same box, so this compares the
-    // weight of two renderings of the same word without needing to find stems.
+
     let inked = 0;
     for (let x = text.x0; x <= text.x1; x++) {
       for (let y = text.y0; y <= text.y1; y++) if (isInk(r, x, y)) inked++;
@@ -179,8 +148,7 @@ function main() {
     const coverage = inked / ((text.x1 - text.x0 + 1) * (text.y1 - text.y0 + 1));
     const capH = text.y1 - text.y0 + 1;
     const gaps = letters.slice(1).map((l, i) => l.x0 - letters[i].x1 - 1);
-    // Text reaching the split means the word has grown into the symbol's space,
-    // which is a finding rather than a measurement artefact.
+
     if (text.x0 <= GLYPH_TEXT_SPLIT) console.log(`   ! ${id}: text reaches the symbol`);
 
     console.log(

@@ -10,16 +10,6 @@ import { BOSS_ROW, ROW_COUNT, TEAM_SIZES } from '../model/constants';
 import { useLeagueStore } from './useLeagueStore';
 import { useLeagueUi, type BrowserPurpose } from './useLeagueUi';
 
-/**
- * The league's implementation of the browser's store interface, so
- * `PokemonBrowser` renders unchanged against league state.
- *
- * The browser speaks the dex builder's domain verbs. The bridge translates:
- * `sections` is one pseudo-section holding the open card's placed ids,
- * `addToSection` seats a branch (or marks the signature, or sets the boss
- * legend, depending on why the pane was opened), `removeEvoLine` unseats one.
- */
-
 const LEGEND_ELIGIBLE: Set<number> = (() => {
   const ub = CATEGORIES.find((c) => c.id === 'ultra-beast');
   return new Set(
@@ -29,28 +19,11 @@ const LEGEND_ELIGIBLE: Set<number> = (() => {
   );
 })();
 
-/**
- * The whole line through one Pokemon, root to leaf, along its first branch.
- *
- * What an ace or a partner pick seats. `branchEndingAt` stops at the tapped
- * Pokemon, and a line that stops there has nothing below it: pick Pikachu and
- * the column holds Pichu and Pikachu, and no drag can reveal a Raichu that
- * was never seated. The picker's own line for a mid-stage tap is its first
- * branch, which is also the one the picker lists first.
- */
 function lineThrough(pokemonId: number): number[] {
   const line = getEvolutionLine(pokemonId).map((p) => p.id);
   return line.includes(pokemonId) ? line : branchEndingAt(pokemonId);
 }
 
-/**
- * Field one stage of a seated line: push every later stage off the card.
- *
- * The same operation a downward drag performs, so the line then reads as
- * edited, blue reset and all, and a drag back up reveals what was pushed.
- * The seed does the same for Brock's Onix. A leaf has nothing after it and
- * is left alone.
- */
 function fieldStage(card: number, seat: number, branch: number[], pokemonId: number): void {
   const stage = branch.indexOf(pokemonId);
   if (stage < 0 || stage >= branch.length - 1) return;
@@ -62,21 +35,8 @@ function sectionKey(card: number): string {
 }
 
 interface BridgeState extends BrowserStoreState {
-  /** (Re)aim the pane at a card and reset the filter state for its purpose. */
   openFor: (card: number) => void;
-  /** Recompute the sections mirror after any league mutation. */
   refresh: () => void;
-  /**
-   * The type filter the team scope displaced, kept so turning the scope off
-   * puts it back.
-   *
-   * Scoping to the card's own team and filtering by the gym's type are the
-   * same question asked twice: every line on a Rock gym is already Rock, so
-   * the type chip only narrows the team to a subset of itself, and on a
-   * mono-type card it can narrow it to nothing. The scope therefore clears
-   * the type filter — and remembers it, because turning the scope back off
-   * restores a pane the user recognises.
-   */
   typeBeforeScope?: string[] | null;
 }
 
@@ -127,13 +87,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       const lines = league().cards[card]?.lines ?? [];
       const placed = new Set(placedIds(lines));
       const cardFull = lines.length >= TEAM_SIZES[BOSS_ROW - 1];
-      // The signature comes from the team once the template is full: there is
-      // no seventh seat for a line from outside it. That is a lock rather
-      // than a hidden rule, so the chip shows, shows as on, and says why.
       const scopeLocked = purpose === 'signature' && cardFull;
-      // Both one-Pokemon pickers offer the chip; only the ace's can lock it.
-      // A partner is the leader's companion rather than their sixth Pokemon,
-      // so narrowing to the team stays available and never becomes the rule.
       const scoped = purpose === 'signature' || purpose === 'partner';
       const scopeOn = scoped && lines.length > 0
         ? (scopeLocked || (get().scopeFilter ?? false))
@@ -145,15 +99,6 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         searchQuery: '',
         activeCategoryFilter: null,
         activeArchetypeFilter: null,
-        // The leader's own type arrives pre-selected whatever the pane is
-        // picking — a line, a replacement, the signature, or the endgame
-        // boss's legendary. The chip is there to remove when the gym wants
-        // something off-type.
-        //
-        // Except under the team scope, which asks the same question already:
-        // every line on a Rock gym is Rock, so the type chip narrows the team
-        // to a subset of itself and can narrow it to nothing. It is put aside
-        // rather than dropped, and comes back when the scope goes off.
         typeFilter: scopeOn ? null : gymType,
         typeBeforeScope: scopeOn ? gymType : null,
         typeFilterMode: 'any',
@@ -162,44 +107,21 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         colorFilter: null,
         eggGroupFilter: null,
         evoLineSizeFilter: null,
-        // "My dex" is the user's own choice and survives reopening the pane;
-        // only its contents are re-read.
         myDexFilter: get().myDexFilter ?? false,
-        // "My dex" filters to the dex builder's own placed set, read from its
-        // store (both stores share the page); snapshot at open is enough. The
-        // sections come along so the chip can group results the way the user
-        // built them.
         myDexIds: new Set(Object.values(usePokedexStore.getState().sections).flat()),
         myDexSections: usePokedexStore.getState().sections,
-        // The legendary picker restricts structurally. The signature picker
-        // starts on the gym's type with a "Current Team" chip to narrow to
-        // the card's own placed lines — and once the template is full, the
-        // restriction
-        // is structural: a seventh line has nowhere to sit.
         restrictIds:
           purpose === 'legend'
             ? LEGEND_ELIGIBLE
             : purpose === 'signature' && cardFull
               ? placed
               : undefined,
-        // The scope chip is the user's choice and survives reopening the
-        // pane, like "My dex". It cannot outlive what it scopes to, though:
-        // with no lines seated it would filter to nothing, so an empty card
-        // clears it rather than handing back a dead end.
         scopeFilter: scopeOn,
-        // No chip at all on an empty card: there is no team to narrow to, and
-        // a chip whose only effect is an empty result is a dead end. A full
-        // card does get one, locked — see `scopeLocked` above.
         scopeFilterIds: scoped && lines.length > 0 ? placed : undefined,
         scopeFilterLabel: scoped && lines.length > 0 ? t('league.scope.team') : undefined,
         scopeFilterLocked: scopeLocked,
         scopeFilterLockedHint: scopeLocked ? t('league.scope.locked') : undefined,
-        // The branches themselves, so the scoped view can draw the lines the
-        // user seated rather than the chains they belong to.
         scopeFilterLines: scoped ? lines.map((l) => l.branch) : undefined,
-        // The ace is one Pokemon, and so are the boss's legendary and the
-        // partner, so each Pokemon is its own tile — and the grid merges a
-        // split chain's branches, so none of them appears twice.
         standaloneTiles: purpose === 'signature' || purpose === 'legend' || purpose === 'partner',
       });
     },
@@ -218,15 +140,9 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         });
         ui().closeBrowser();
       } else if (purpose === 'replace') {
-        // The seat keeps its place in the team; only its line changes.
         league().replaceLine(card, ui().targetSeat, branch);
         ui().closeBrowser();
       } else if (purpose === 'signature') {
-        // Under six lines the signature line seats itself rightmost,
-        // shifting the rest left (DECISIONS.md item 12). The whole line is
-        // seated and the tapped Pokemon is the stage fielded, so it is what
-        // the slot and the boss row show, and what sits below it on the
-        // line is still there for a drag to reveal.
         const picked = ids[ids.length - 1];
         const line = lineThrough(picked);
         const before = league().cards[card]?.lines.length ?? 0;
@@ -235,13 +151,6 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         league().setSignatureSeat(card, 1, picked);
         ui().closeBrowser();
       } else if (purpose === 'partner') {
-        // A partner is seated when the card has room and not otherwise, so
-        // one pick means two different things depending on how full the card
-        // is. `placeBranch` already no-ops on a full card, which is exactly
-        // the rule: on a five-line card the partner becomes the sixth line
-        // *and* the partner; on a full one it lives in the slot alone. When
-        // it does seat, it seats the whole line and fields the tapped stage,
-        // as the ace does.
         const picked = ids[ids.length - 1];
         const line = lineThrough(picked);
         const before = league().cards[card]?.lines.length ?? 0;
@@ -266,12 +175,6 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         }
         ui().closeBrowser();
       } else if (purpose === 'replace') {
-        // Already on the card: the seat takes another of that line. A gym
-        // can field two Geodudes, so a line the team holds is as good a
-        // replacement as any other — whole, as the card holds it, for the
-        // reason given under the line picker below. The line the seat
-        // itself holds is the one exception: replacing it with itself asks
-        // for nothing, so nothing changes.
         const seat = ui().targetSeat;
         const lines = useLeagueStore.getState().cards[card]?.lines ?? [];
         const held = lines.find((l) => l.branch.includes(pokemonId));
@@ -281,30 +184,14 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         }
         ui().closeBrowser();
       } else if (purpose === 'signature') {
-        // Tapping an already-placed line marks it, rather than removing it.
-        // The mark carries the tapped Pokemon as well as its seat: the tiles
-        // are one Pokemon each, so a tap on Geodude means Geodude and not
-        // whichever member of its line the boss row would field.
         const seat =
           useLeagueStore.getState().cards[card]?.lines.findIndex((l) => l.branch.includes(pokemonId)) ?? -1;
         if (seat >= 0) useLeagueStore.getState().setSignatureSeat(card, seat + 1, pokemonId);
         ui().closeBrowser();
       } else if (purpose === 'partner') {
-        // Already on the card: a tap names it the partner rather than
-        // removing the line it sits in.
         useLeagueStore.getState().setPartner(card, pokemonId);
         ui().closeBrowser();
       } else {
-        // A second tap on a species already on the card adds another of it,
-        // rather than taking the first one away. A gym can field two
-        // Geodudes, and the card's own red ✗ is how a line comes off — so
-        // the picker never has to double as the remove control.
-        //
-        // "Another of it" is the line the card already holds, whole. The id
-        // that arrives is the first member of the tapped tile the card has,
-        // which for a placed line is its root -- and the branch ending at a
-        // root is the root alone, so a second Geodude came as a Geodude that
-        // never evolved on any row.
         const held = useLeagueStore.getState().cards[card]?.lines.find((l) => l.branch.includes(pokemonId));
         useLeagueStore.getState().placeBranch(card, held ? [...held.branch] : branchEndingAt(pokemonId));
       }
@@ -365,15 +252,12 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         if (on) {
           return { scopeFilter: true, typeFilter: null, typeBeforeScope: s.typeFilter };
         }
-        // Only the filter the scope itself displaced comes back. A type the
-        // user picked while scoped is their newer answer and outranks it.
         const restore = (s.typeFilter?.length ?? 0) > 0 ? s.typeFilter : (s.typeBeforeScope ?? null);
         return { scopeFilter: false, typeFilter: restore, typeBeforeScope: null };
       }),
   };
 });
 
-/** Open the selection pane aimed at a card, for one of its three purposes. */
 export function openLeagueBrowser(
   card: number,
   purpose: BrowserPurpose,

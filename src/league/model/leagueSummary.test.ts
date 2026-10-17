@@ -24,12 +24,6 @@ describe('summarizeLeague', () => {
   });
 });
 
-/**
- * The structure the beacon sends alongside the counts.
- *
- * The privacy line is the point of most of these: the record may hold which
- * Pokemon a card seats, and must never hold what the user typed on it.
- */
 describe('describeLeague', () => {
   const branch = [1, 2, 3];
   const placed = (over: Partial<{ branch: number[]; boundaries: number[] }> = {}) =>
@@ -44,8 +38,6 @@ describe('describeLeague', () => {
     expect(out).toEqual([{ i: 1, l: [{ b: branch }] }]);
   });
 
-  // The whole reason boundaries are conditional: their presence IS the signal
-  // that a user dragged a stage, and only the client knows the default.
   it('sends boundaries only when the user moved a stage', () => {
     const untouched = describeLeague([card({ lines: [placed()] })]);
     expect(untouched[0].l[0].bd).toBeUndefined();
@@ -70,9 +62,6 @@ describe('describeLeague', () => {
     expect(out[0].lg).toEqual([[3, 144]]);
   });
 
-  // The rule this repo already encodes: read a card through legendsOf, never
-  // the raw field, so a card saved before a row could hold more than one
-  // legendary still reports its legendary.
   it('folds in a legacy single legendary', () => {
     const out = describeLeague([card({ lines: [placed()], legend: { seat: 1, pokemonId: 150 } })]);
     expect(out[0].lg).toEqual([[1, 150]]);

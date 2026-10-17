@@ -1,29 +1,20 @@
 export interface BuildGroup {
   id: string;
   name: string;
-  filterType: 'archetype' | 'category' | null; // null = catch-all
+  filterType: 'archetype' | 'category' | null;
   filterId: string | null;
-  color: string; // subtle tint for the group box
+  color: string;
 }
 
-/**
- * Ordered list of build groups shown on the Pokedex grid.
- * Each maps to an archetype or category that pre-filters the browser.
- * Excluded: game mechanics (evolution-item, branched-evo, cross-gen-evo,
- * static-encounter, gift, prize) and gym-champion-ace.
- */
 export const BUILD_GROUPS: BuildGroup[] = [
-  // Starters
   { id: 'starter', name: 'Starters', filterType: 'category', filterId: 'starter', color: '#888888' },
 
-  // Regional
   { id: 'early-bug', name: 'Regional Bug', filterType: 'archetype', filterId: 'early-bug', color: '#a6b91a' },
   { id: 'early-bird', name: 'Regional Bird', filterType: 'archetype', filterId: 'early-bird', color: '#a98ff3' },
   { id: 'early-rodent', name: 'Regional Mammal', filterType: 'archetype', filterId: 'early-rodent', color: '#a8a77a' },
   { id: 'pikachu-clone', name: 'Pikaclone', filterType: 'archetype', filterId: 'pikachu-clone', color: '#f7d02c' },
   { id: 'early-normal', name: 'Domestic', filterType: 'archetype', filterId: 'early-normal', color: '#a8a77a' },
 
-  // Places (ordered by typical game progression)
   { id: 'forest', name: 'Forest', filterType: 'archetype', filterId: 'forest', color: '#2d6a4f' },
   { id: 'meadow', name: 'Meadow', filterType: 'archetype', filterId: 'meadow', color: '#f9a8d4' },
   { id: 'cave-pokemon', name: 'Cave', filterType: 'archetype', filterId: 'cave-pokemon', color: '#b6a136' },
@@ -39,18 +30,14 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'tundra', name: 'Tundra', filterType: 'archetype', filterId: 'tundra', color: '#7ec8e3' },
   { id: 'industrial', name: 'Industrial', filterType: 'archetype', filterId: 'industrial', color: '#b7b7ce' },
 
-  // Thematic
   { id: 'mimic', name: 'Mimic/Disguise', filterType: 'archetype', filterId: 'mimic', color: '#735797' },
   { id: 'rivalry-pair', name: 'Rivalry Pair', filterType: 'archetype', filterId: 'rivalry-pair', color: '#c22e28' },
   { id: 'evil-team', name: 'Evil Team', filterType: 'archetype', filterId: 'evil-team', color: '#705746' },
 
-  // Catch-all (before fossil/endgame classifications)
   { id: 'other', name: 'Other Areas', filterType: null, filterId: null, color: '#888888' },
 
-  // Fossil
   { id: 'fossil', name: 'Fossil', filterType: 'category', filterId: 'fossil', color: '#a0855b' },
 
-  // Endgame
   { id: 'pseudo-legendary', name: 'Pseudo-Legendary', filterType: 'category', filterId: 'pseudo-legendary', color: '#6b46c1' },
   { id: 'legendary', name: 'Legendary', filterType: 'category', filterId: 'legendary', color: '#d69e2e' },
   { id: 'mythical', name: 'Mythical', filterType: 'category', filterId: 'mythical', color: '#ed64a6' },

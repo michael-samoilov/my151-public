@@ -17,11 +17,8 @@ import {
 
 const DEX_EXPORT_COLS = 10;
 export const DEX_EXPORT_TILE = 48;
-/** PNG px per layout px: a tile's sprite paints at 1× (`EXPORT_SPRITE_PX`). */
 export const DEX_EXPORT_SCALE = EXPORT_SPRITE_PX / DEX_EXPORT_TILE;
-/** The red frame in layout px, so it paints `EXPORT_FRAME_PX` wide. */
 export const DEX_EXPORT_FRAME = EXPORT_FRAME_PX / DEX_EXPORT_SCALE;
-/** Added space below the existing top frame, matching the trainer title band. */
 export const DEX_EXPORT_HEADER = BAR_H / DEX_EXPORT_SCALE - DEX_EXPORT_FRAME;
 export const DEX_EXPORT_PAD_X = 12;
 export const DEX_EXPORT_PAD_TOP = 8;
@@ -72,7 +69,6 @@ function spot(index: number, x: number, y: number, pokemon: Pokemon): DexExportS
   };
 }
 
-/** Tile centres and canvas size for a Dex PNG. Masks use the same coordinates. */
 export function layoutDexExportGrid(
   pokemon: Pokemon[],
   sections: Record<string, number[]> | null = null,

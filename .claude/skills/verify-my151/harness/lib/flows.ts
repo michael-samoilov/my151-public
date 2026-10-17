@@ -1,6 +1,5 @@
-// Standard-surface invariants every change re-checks, driven through the Session
-// interface so one flow runs on all three engines. Handles are structural
-// (data-nav, computed style, the localStorage oracle), never localized text.
+
+
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Session } from './engines.ts';
@@ -8,16 +7,10 @@ import { READ_PERSONA, assertPersona, type PersonaReadback, type PersonaName } f
 import type { Check } from './evidence.ts';
 import { auditBody, findingKey, APP_HARD_KINDS } from '../../../render-audit/audit-core.mjs';
 
-// Source of truth: src/lib/demoMode.ts POKEDEX_STORAGE_KEY (local build) and
-// src/store/usePokedexStore.ts persist version.
-// The dex builder's own page since the launch of the hub at "/".
 const DEX_PATH = '/pokedex-builder';
 const STORE_KEY = 'personal-151-pokedex-v3';
 const STORE_VERSION = 10;
 
-// A real slice of src/data/demoDex.ts (genuine group assignments), 37 placed —
-// past the 25 analytics unlock. Seeded through localStorage, which is engine- and
-// build-agnostic (no dependence on preview-only ?demo / ?tune).
 const SEED_SECTIONS: Record<string, number[]> = {
   starter: [387, 388, 389, 255, 256, 257, 656, 657, 658],
   'early-bug': [736, 737, 738, 543, 544, 545, 123, 212, 900],
@@ -28,8 +21,7 @@ const SEED_COUNT = Object.values(SEED_SECTIONS).reduce((n, a) => n + a.length, 0
 function seedValue(sections: Record<string, number[]>): string {
   const count = Object.values(sections).reduce((n, a) => n + a.length, 0);
   return JSON.stringify({
-    // `locale` pins English, so each engine's own navigator.languages cannot
-    // change a label the flows read.
+
     state: { sections, milestoneMax: count, milestoneCelebrated: [25].filter((m) => m <= count), localeNoticeSeen: true, locale: 'en' },
     version: STORE_VERSION,
   });
@@ -39,15 +31,6 @@ const ok = (name: string, cond: boolean, detail?: string): Check => ({ name, sta
 
 interface AuditFinding { kind: string; severity: string; path: string; text: string; detail: string; }
 
-/**
- * The render audit (.claude/skills/render-audit), run on the page as it
- * stands: clipped boxes, cut text, broken images. Sprites are CSS-sized on
- * screen and an ellipsis is a designed truncation, so those stay warnings
- * here. The frame checks stay off: an app page scrolls, so content below the
- * fold is not outside anything. The check fails on hard findings; every finding
- * rides along as a key, so diff mode names the new ones as regressions even
- * when the base already carried some.
- */
 async function auditRender(s: Session, name: string): Promise<Check> {
   try {
     const result = await s.evalJson<{ findings: AuditFinding[] }>(auditBody({ minFont: 8, annotate: false, checkFrame: false, offCanvasOk: true }));
@@ -64,17 +47,6 @@ async function auditRender(s: Session, name: string): Promise<Check> {
   }
 }
 
-/**
- * Wait for a page to stop drawing before it is audited.
- *
- * A tab click flips the active pill at once, but the view and analytics pages
- * fetch and lay out their content after that. Auditing there reads a page
- * that is not yet the page — the evidence for one false regression showed the
- * view page still on its spinner — and whether the grid has painted is a
- * race, so two identical trees disagreed run to run by 175 to 188 findings.
- * Poll until the element count holds still twice, then audit. On a timeout,
- * audit what is there rather than failing: a slow page is still a page.
- */
 async function settle(s: Session, limit = 5000): Promise<void> {
   let last = -1;
   let steady = 0;
@@ -91,12 +63,6 @@ async function settle(s: Session, limit = 5000): Promise<void> {
   }
 }
 
-/**
- * Waits until an element's box and scroll height hold still twice. A sheet
- * slides in with the same element count, so `settle` returns mid-slide, and
- * WebKit's software paint made `favorites:tall-selector-fits` read the gimmick
- * sheet before it reached its place in two runs out of three.
- */
 async function settleBox(s: Session, selector: string, limit = 5000): Promise<void> {
   let last = '';
   let steady = 0;
@@ -128,10 +94,6 @@ async function waitForApp(s: Session, tries = 40): Promise<boolean> {
   return false;
 }
 
-// The store's persist layer writes its initial value shortly after mount. Seeding
-// before that write races it: our value lands, then the app clobbers it with an
-// empty dex before the reload. Wait for the key to appear first, so our write is
-// the last one before we reload.
 async function waitForStoreKey(s: Session, tries = 40): Promise<boolean> {
   for (let i = 0; i < tries; i++) {
     const present = await s.evalJson<boolean>(`return !!localStorage.getItem(${JSON.stringify(STORE_KEY)});`).catch(() => false);
@@ -143,17 +105,12 @@ async function waitForStoreKey(s: Session, tries = 40): Promise<boolean> {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-// Count placed Pokémon in the persisted store; 0 if absent or unparseable.
 async function readSeedCount(s: Session): Promise<number> {
   return s
     .evalJson<number>(`const raw=localStorage.getItem(${JSON.stringify(STORE_KEY)}); if(!raw) return 0; try { const d=JSON.parse(raw); return Object.values(d.state?.sections||{}).reduce((n,a)=>n+a.length,0); } catch { return 0; }`)
     .catch(() => 0);
 }
 
-// The store persists several times during boot (locale, milestone, intro effects).
-// A single pre-reload write races those: a late boot write clobbers our seed with
-// an empty dex. Write, then confirm it holds across two reads (~0.5s) so our value
-// is the last one before reload; rewrite if a boot write overwrote it.
 async function writeSeedUntilStable(s: Session): Promise<boolean> {
   const value = seedValue(SEED_SECTIONS);
   for (let i = 0; i < 15; i++) {
@@ -166,9 +123,6 @@ async function writeSeedUntilStable(s: Session): Promise<boolean> {
   return false;
 }
 
-// Seed a known dex, engine-agnostic (localStorage, no preview-only flags), then
-// reload so the app rehydrates from it. Retry the whole cycle if a reload lands
-// empty.
 export async function seedDex(s: Session, base: string): Promise<void> {
   for (let attempt = 0; attempt < 3; attempt++) {
     await s.navigate(base + DEX_PATH);
@@ -182,10 +136,6 @@ export async function seedDex(s: Session, base: string): Promise<void> {
   }
 }
 
-// Which view is active. Prefer aria-selected (tab set). Fall back to a
-// non-transparent fill so a ghost-vs-default chrome still reads. The fill
-// serializes as rgb(), rgba(), or oklab() depending on the engine, so test
-// for "not transparent" rather than parse a color format.
 const ACTIVE_VIEW = `
 const TRANSPARENT = new Set(['rgba(0, 0, 0, 0)', 'transparent', '']);
 const btns = [...document.querySelectorAll('[data-nav]')];
@@ -199,9 +149,6 @@ async function activeView(s: Session): Promise<{ active: string[]; navs: string[
   return s.evalJson(ACTIVE_VIEW);
 }
 
-// Nav buttons animate background-color, so just after a click both the old and new
-// tab read non-transparent for a beat. Poll until the active set settles to exactly
-// the target, or time out and return the last reading.
 async function waitForActiveView(s: Session, nav: string, timeoutMs = 2500): Promise<{ active: string[]; navs: string[] }> {
   const deadline = Date.now() + timeoutMs;
   let last = await activeView(s);
@@ -213,30 +160,17 @@ async function waitForActiveView(s: Session, nav: string, timeoutMs = 2500): Pro
   return last;
 }
 
-// No horizontal page scroll, and the document painted a non-trivial area.
 const LAYOUT = `
 const de = document.documentElement;
 return { scrollWidth: de.scrollWidth, innerWidth: window.innerWidth, bodyH: document.body.getBoundingClientRect().height };
 `;
 
-// A blanket overlap audit over the whole body false-positives on the dense sprite
-// grid, whose type badges and labels intentionally overlap their tiles, so it is
-// not a standard check. For a scoped overlap/escapes-parent audit of a specific
-// container in a future tool, port e2e/support/layoutAudit.ts, which is built to
-// run over one subtree, not the whole app.
-
 async function totalPlaced(s: Session): Promise<number> {
   return readSeedCount(s);
 }
 
-// A real user action that mutates the persisted store, not a seed round-trip: open
-// the browser for a seed-free section and click an evo-line card, which on desktop
-// instantly adds the line (PokemonBrowser.tsx handleToggleStage). Runs on
-// desktop-width Blink, where the instant-add path applies; a phone stages the pick
-// and commits it from a floating button instead.
 const PLACE_CARD = '[data-testid="verify-evo-card"]';
-// The section's own "+" by structure. Its aria-label is translated, so a label
-// match skips under any locale but English.
+
 const MEADOW_ADD = '[data-section-id="meadow"] [data-add-slot]';
 
 async function driveRealPlacement(s: Session): Promise<Check> {
@@ -246,7 +180,6 @@ async function driveRealPlacement(s: Session): Promise<Check> {
   const before = await totalPlaced(s);
   await s.click(MEADOW_ADD);
   await sleep(800);
-  // The browser renders its cards only once opened, so check the handle now.
   const cardPresent = await s.evalJson<boolean>(`return !!document.querySelector(${JSON.stringify(PLACE_CARD)});`).catch(() => false);
   if (!cardPresent) return ok(name, false, `${PLACE_CARD} not rendered after opening the browser`);
   await s.click(PLACE_CARD);
@@ -257,7 +190,6 @@ async function driveRealPlacement(s: Session): Promise<Check> {
 
 export interface FlowContext { base: string; surface: string; shot: (label: string) => string; }
 
-// The full standard suite for one surface. Persona is asserted first when set.
 export async function runStandardSuite(s: Session, persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
   const checks: Check[] = [];
 
@@ -267,10 +199,8 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
     catch (e) { checks.push(ok(`persona:${persona}`, false, (e as Error).message)); }
   }
 
-  // Boot on a clean origin.
   await s.navigate(ctx.base + DEX_PATH);
-  // The moved-notice key makes the session a returning visitor, which shows the
-  // picker launch callout over the header from Oct 6 to 13 2026; mark it seen too.
+
   await s.evalJson(`try{localStorage.setItem('p151-league-promo-seen','1');localStorage.setItem('p151-moved-notice-seen','1');localStorage.setItem('p151-favorites-launch-seen','1');}catch{} return true;`);
   await s.navigate(ctx.base + DEX_PATH);
   const booted = await waitForApp(s);
@@ -281,27 +211,18 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   checks.push(ok('layout:no-horizontal-overflow', layout.scrollWidth <= layout.innerWidth + 2, `scrollWidth ${layout.scrollWidth} vs innerWidth ${layout.innerWidth}`));
   checks.push(ok('layout:painted-area', layout.bodyH > 100, `body height ${layout.bodyH}`));
 
-  // Seed a dex so analytics unlocks and the grid is populated.
   await seedDex(s, ctx.base);
   const oracle = await s.evalJson<{ has: boolean; count: number }>(
     `const raw=localStorage.getItem(${JSON.stringify(STORE_KEY)}); if(!raw) return {has:false,count:0}; const d=JSON.parse(raw); const secs=d.state?.sections||{}; const c=Object.values(secs).reduce((n,a)=>n+a.length,0); return {has:c>0,count:c};`,
   );
   checks.push(ok('oracle:seed-persisted', oracle.has && oracle.count === SEED_COUNT, `sections count ${oracle.count}, expected ${SEED_COUNT}`));
 
-  // Grid renders the seeded dex (sprite images present). Settle first: the
-  // grid mounts after the store rehydrates, and on the software-rendered
-  // WebKit lane the count was read before a single tile existed, so the same
-  // two trees passed one run and failed the next with `img count 0`.
   await settle(s);
   const sprites = await s.evalJson<number>(`return document.querySelectorAll('img').length;`);
   checks.push(ok('builder:sprites-rendered', sprites >= 10, `img count ${sprites}`));
   await s.screenshot(ctx.shot('builder-seeded'));
   checks.push(await auditRender(s, 'render:no-clipped-content'));
 
-  // Navigate each tab and confirm exactly it becomes active — and that the
-  // tool bar's three cells (title/count, centred nav, page controls) hold
-  // their lanes: title content must end before the nav starts, and the nav
-  // must end before the right cell's first control. Structural rects only.
   for (const nav of ['view', 'analytics', 'builder'] as const) {
     await s.click(`[data-nav="${nav}"]`);
     const view = await waitForActiveView(s, nav);
@@ -374,7 +295,6 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
     checks.push(await auditRender(s, `render:${nav}-no-clipped-content`));
   }
 
-  // Scroll the builder container: setting the offset must take (proves it scrolls).
   await s.click('[data-nav="builder"]');
   await new Promise((r) => setTimeout(r, 300));
   const scrolled = await s.evalJson<{ before: number; after: number; found: boolean }>(
@@ -382,12 +302,10 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   );
   checks.push(ok('scroll:builder-container', scrolled.found && scrolled.after > scrolled.before, `top ${scrolled.before}->${scrolled.after}`));
 
-  // Prove a real user action mutates the persisted store, on desktop-width Blink
-  // where the instant-add path applies. Other surfaces prove rendering, not this.
   if (s.engine === 'blink' && persona === null) {
     checks.push(await driveRealPlacement(s));
   } else {
-    checks.push({ name: 'placement:real-add-grows-store', status: 'skip', detail: 'desktop-width Blink only (picker staging differs by surface)' });
+    checks.push({ name: 'placement:real-add-grows-store', status: 'skip', skipReason: 'desktop-blink-only', detail: 'desktop-width Blink only (picker staging differs by surface)' });
   }
 
   // Zero-tolerance regression tripwire: no uncaught error or ErrorBoundary crash
@@ -558,7 +476,6 @@ async function readDexPreviewMotion(s: Session): Promise<{
   }));
 }
 
-/** A person often already has the cursor over the card. That must not freeze idle. */
 async function sitCursorOnDexPreview(s: Session): Promise<void> {
   await s.evalJson(
     `const hit=document.querySelector('[data-export-tilt-hit]');
@@ -615,8 +532,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     rainbowOnOpen = await readInkOnlyRainbow(s);
   }
   rainbowOnOpen = { ...rainbowOnOpen, reason: `${rainbowOnOpen.reason} after ${Date.now() - rainbowStart}ms` };
-  // Do not move the Playwright mouse. Sit a stationary cursor on the card,
-  // the way a person often has it, then require the painted box to change.
+
   await sitCursorOnDexPreview(s);
   const idleWait = Date.now();
   let idleA = await readDexPreviewMotion(s);
@@ -628,7 +544,6 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const idleB = await readDexPreviewMotion(s);
   const idleDelta = Math.hypot(idleB.x - idleA.x, idleB.y - idleA.y);
   const visualDelta = visualTiltDelta(idleA, idleB);
-  // The lift projects itself: perspective() is inside its own transform.
   const perspectiveOn = parseFloat(idleA.perspective) > 0 && idleB.liftTransform.startsWith('matrix3d');
   const idleMoved =
     idleA.orbit === 'idle' &&
@@ -799,8 +714,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:probe.x,clientY:probe.y,pointerType:'mouse',pointerId:1}));
      return {ok:true,reason:'probe='+probe.x.toFixed(0)+','+probe.y.toFixed(0)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
-  // The pose lands on later frames, so poll instead of reading the frame the
-  // move arrived on.
+
   if (paintedHit.ok) {
     const probeAt = paintedHit.reason;
     const started = Date.now();
@@ -822,7 +736,6 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      return {ok:true,reason:card.getAttribute('data-export-orbit')||''};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await sleep(350);
-  // Leaving after a hover rests the card flat, and auto-tilt does not return.
   const restHold = await readDexPreviewMotion(s);
   let restAfter = restHold;
   for (let i = 0; i < 40; i++) {
@@ -962,13 +875,6 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   ];
 }
 
-// ---------------------------------------------------------------------------
-// League builder page (/custom-gym-leader), added 2026-08-29. Checks are
-// the invariants that change introduced: the page boots on its own entry, the
-// served HTML carries the static SEO content, layout holds, a real drive
-// writes the league's own store key, and the run stays error-free. The drive
-// runs on desktop-width Blink (the instant-add path); other surfaces prove
-// boot, layout, and rendering.
 const LEAGUE_PATH = '/custom-gym-leader';
 /** How far the TM text's top and bottom gaps may differ, in px. The gaps come
  *  from text-box rects, so each engine's font metrics shift them: Blink differs
@@ -999,15 +905,10 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
   const checks: Check[] = [];
   const url = ctx.base + LEAGUE_PATH;
 
-  // The served HTML must carry the static SEO content (crawlers see no JS).
-  // Fetched host-side so the check reads the wire bytes, not the DOM.
   try {
     const res = await fetch(url);
     const html = await res.text();
-    // Structural, not the shell's wording: the title was renamed once, a text
-    // match turned this whole suite into a silent skip, and every run since
-    // reported the league as passing without driving it. The league page is
-    // its own build entry, so its canonical link names its own path.
+
     const hasH1 = /<h1[^>]*>[^<]{3,}<\/h1>/i.test(html);
     const hasTitle = /<title>[^<]{3,}<\/title>/i.test(html);
     const canonical = html.match(/<link rel="canonical"[^>]*>/i)?.[0] ?? '';
@@ -1026,8 +927,7 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
   }
 
   await s.navigate(url);
-  // waitForApp is satisfied by the static SEO shell too (it also fills #root),
-  // so hydration is proven by polling for an app-only handle.
+
   let hydrated = false;
   for (let i = 0; i < 40 && !hydrated; i++) {
     hydrated = await s
@@ -1045,11 +945,6 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
   const layout = await s.evalJson<{ scrollWidth: number; innerWidth: number; bodyH: number }>(LAYOUT);
   checks.push(ok('league:no-horizontal-overflow', layout.scrollWidth <= layout.innerWidth + 2, `scrollWidth ${layout.scrollWidth} vs innerWidth ${layout.innerWidth}`));
 
-  // The league's tool bar holds the dex bar's 44px, home and (where the
-  // desktop pane shows it) card page alike.
-  // h-11 = 2.75rem; the expected pixels follow the root font-size knob.
-  // Both bars carry a stable handle. Reading up the tree from a control
-  // inside them broke the moment the name field grew its own border.
   const bars = await s.evalJson<{ home: number; card: number; expected: number }>(
     `const b=[...document.querySelectorAll('[data-testid="league-tool-bar"]')];
      const height=(el)=>el?el.getBoundingClientRect().height:-1;
@@ -1065,14 +960,9 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
     ),
   );
 
-  // The real drive: open a card, set its type, seat a line, pick a TM. The
-  // pickers and instant-add flow are desktop-shaped; personas and other
-  // engines stop at rendering.
   if (s.engine === 'blink' && persona === null && hydrated) {
     const CARD = 3;
-    // A first visit seeds a Kanto league, and the drive wants an empty
-    // card: a type to set and one line to seat. Start from a blank league,
-    // written to the store and reloaded, as the change suite below does.
+
     await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BLANK_LEAGUE}); return true;`);
     await s.navigate(url);
     await waitLeagueHome(s);
@@ -1088,7 +978,6 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
     const searched = await s
       .evalJson<boolean>(`const i=[...document.querySelectorAll('input')].find(x=>x.placeholder&&x.type!=='hidden'&&x.closest('[class*="flex-col"]'));return !!i;`)
       .catch(() => false);
-    // Type into the browser's search box (the last text input on the page).
     await s.evalJson(`const is=[...document.querySelectorAll('input')]; const i=is[is.length-1];
       const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
       set.call(i,'chinchou'); i.dispatchEvent(new Event('input',{bubbles:true})); return ${JSON.stringify('ok')};`);
@@ -1102,13 +991,13 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
     checks.push(ok('league:drive-writes-store', oracle.has && oracle.cardType === 'water' && oracle.lineCount === 1,
       `searched=${searched} type=${oracle.cardType} lines=${oracle.lineCount}`));
 
-    // The drive must not have touched the dex store's placements.
     const dexAfter = await readSeedCount(s);
     checks.push(ok('league:dex-store-untouched', dexAfter === dexBefore, `dex count ${dexBefore} -> ${dexAfter}`));
   } else {
     checks.push({
       name: 'league:drive-writes-store',
       status: 'skip',
+      skipReason: hydrated ? 'desktop-blink-only' : undefined,
       detail: hydrated ? 'desktop-width Blink only' : 'page never hydrated, drive not attempted',
     });
   }
@@ -1117,17 +1006,6 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
   checks.push(ok('league:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
 }
-
-// ---------------------------------------------------------------------------
-// The league builder's 2026-09-02/03 changes, driven as the user meets them:
-// the one-Pokémon pickers name their slot and pack a chain wider than the
-// grid without a gap; a powerup press carries the rows it filled and a
-// second seat fills down too; the replace picker takes a line already on
-// the card; and a quick flick moves an evolution boundary, washing the
-// moving stage while it moves. Handles are structural (test ids, the
-// league store, computed style). The flick is a synthetic touch, so it
-// drives the card's own sensor on every engine that exposes `TouchEvent`,
-// and skips by name on one that does not.
 
 const BLANK_LEAGUE =
   "JSON.stringify({state:{name:'',cards:Array.from({length:14},()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null}))},version:1})";
@@ -1141,10 +1019,6 @@ async function waitLeagueHome(s: Session): Promise<boolean> {
   return false;
 }
 
-/** Wait until every visible image has loaded, up to about 10s. The render
- *  audit reads boxes, and a sprite that is still loading has none, so an
- *  audit taken early saw a different page on each run: on Gecko 54 of 61
- *  league-home images were still loading at hydration in 2 of 3 runs. */
 async function waitForImages(s: Session): Promise<number> {
   let pending = 0;
   for (let i = 0; i < 50; i++) {
@@ -1166,7 +1040,6 @@ async function waitFor(s: Session, selector: string, tries = 40): Promise<boolea
   return false;
 }
 
-/** Type into the picker's search box, which is the last text input on the page. */
 async function searchPicker(s: Session, query: string): Promise<void> {
   await s.evalJson(`const is=[...document.querySelectorAll('input')]; const i=is[is.length-1];
     const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
@@ -1174,7 +1047,6 @@ async function searchPicker(s: Session, query: string): Promise<void> {
   await sleep(900);
 }
 
-/** A card's lines and powerups, as the league store holds them. */
 async function readCard(s: Session, card: number): Promise<{ lines: { branch: number[]; boundaries: number[] }[]; powerups: Record<string, { seat: number; kind: string; index: number }[]> }> {
   return s.evalJson(`const d=JSON.parse(localStorage.getItem(${JSON.stringify(LEAGUE_KEY)})||'{}'); const c=d.state?.cards?.[${card}]||{};
     return {lines:c.lines||[], powerups:c.powerups||{}};`);
@@ -1192,7 +1064,6 @@ async function clickHandle(s: Session, selector: string): Promise<boolean> {
   }
 }
 
-/** Open a card from the league home; the home must be showing. */
 async function openLeagueCard(s: Session, card: number): Promise<boolean> {
   if (!(await clickHandle(s, `[data-testid="league-slot-${card}"]`))) return false;
   const there = await waitFor(s, '[data-testid="card-cell-1-1"]');
@@ -1200,7 +1071,6 @@ async function openLeagueCard(s: Session, card: number): Promise<boolean> {
   return there;
 }
 
-/** Press a powerup button beside a cell, as the user does. */
 async function pressPowerup(s: Session, row: number, seat: number, kind: 'mega' | 'dynamax'): Promise<boolean> {
   const pressed = await s.evalJson<boolean>(`const cell=document.querySelector('[data-testid="card-cell-${row}-${seat}"]');
     const b=cell&&cell.parentElement&&cell.parentElement.querySelector('[data-powerup="${kind}"]'); if(!b) return false; b.click(); return true;`);
@@ -1216,8 +1086,6 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
   const url = ctx.base + LEAGUE_PATH;
   const CARD = 9;
 
-  // A blank league, seeded through the store and reloaded, so the drive
-  // starts from the same empty card on every engine.
   await s.navigate(url);
   if (!(await waitLeagueHome(s))) {
     checks.push({ name: 'league-change:blank-league', status: 'skip', detail: 'league home never hydrated' });
@@ -1229,7 +1097,6 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
   checks.push(ok('league-change:blank-league', blank));
   if (!blank) return checks;
 
-  // Story / Rematch is the shared pill tab set, not a lone primary button.
   const tabset = await s.evalJson<{ ok: boolean; detail: string }>(
     `const TRANSPARENT=new Set(['rgba(0, 0, 0, 0)','transparent','']);
      const list=document.querySelector('[data-testid="league-nav"]');
@@ -1325,8 +1192,7 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
        const zoom=Number(root?.parentElement?.style.zoom)||1;
        return {n:marks.length,ySpread,xSpread,increasing,zoom};`,
     ).catch(() => ({ n: 0, ySpread: 99, xSpread: 0, increasing: false, zoom: 1 }));
-    // The stars are px-sized inside the zoomed card, so their spread scales
-    // with the fit: 20px at zoom 1.
+
     checks.push(ok(
       'league:elite-stars-one-row',
       stars.n === 4 && stars.ySpread < 2 && stars.increasing && stars.xSpread > 20 * stars.zoom,
@@ -1343,7 +1209,6 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       return lead&&lead.parentElement?lead.parentElement.textContent.replace(/\\s+/g,' ').trim():'';`).catch(() => '');
     checks.push(ok('league-change:ace-picker-names-slot', pickerUp && /Ace Pok/.test(heading), heading || 'no heading found'));
 
-    // Read stable sprite IDs: full localized labels differ between builds.
     let eevee = false;
     for (let i = 0; i < 60 && !eevee; i++) {
       eevee = await s.evalJson<boolean>(`const scrollerOf=(el)=>{let n=el.parentElement;while(n){const oy=getComputedStyle(n).overflowY;if(oy==='auto'||oy==='scroll')return n;n=n.parentElement;}return null;};
@@ -1367,8 +1232,6 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     checks.push({ name: 'league-change:ace-picker-names-slot', status: 'skip', detail: 'card never opened' });
   }
 
-  // 2. Powerups: a second press carries the rows it filled; a second seat
-  //    fills down like the first. Fresh page, so the picker is closed.
   await s.navigate(url);
   if ((await waitLeagueHome(s)) && (await openLeagueCard(s, CARD))) {
     await s.click('[data-testid="card-cell-1-1"]');
@@ -1392,7 +1255,6 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       checks.push(ok('league-change:second-press-carries-the-fill', champion?.index === 1 && boss?.index === 1, `champion ${JSON.stringify(champion)}, boss ${JSON.stringify(boss)}`));
       await s.screenshot(ctx.shot('league-change-charizard-y'));
 
-      // A second seat, with a Mega already on the team.
       await s.click('[data-testid="card-cell-1-2"]');
       await waitFor(s, '[data-filter-chip="my-dex"]');
       await sleep(600);
@@ -1409,8 +1271,6 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       checks.push(ok('league-change:second-seat-fills-down', two && seat2.every((p) => p?.kind === 'dynamax' && p.index === 0) && powerupOf(card, 10, 1)?.index === 1,
         `lines ${card.lines.length}, seat 2 rows 10/11 ${JSON.stringify(seat2)}, seat 1 champion ${JSON.stringify(powerupOf(card, 10, 1))}`));
 
-      // 3. The replace picker takes a line already on the card: tap a
-      //    Lapras cell, pick Charmander, and the seat holds Charizard's line.
       const tapped = await s.evalJson<string | null>(`const cells=[...document.querySelectorAll('[data-testid^="card-cell-"]')];
         const c=cells.find(el=>{const p=el.getAttribute('data-testid').split('-'); const row=Number(p[2]); const seat=Number(p[3]); const alt=el.querySelector('img')?el.querySelector('img').getAttribute('alt'):''; return seat===2&&row<11&&alt==='lapras';});
         if(!c) return null; c.click(); return c.getAttribute('data-testid');`).catch(() => null);
@@ -1425,20 +1285,19 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       checks.push(ok('league-change:replace-with-placed-line', replaceUp && card.lines.map((l) => l.branch.join()).join('|') === '4,5,6|4,5,6',
         `tapped ${tapped}, lines ${JSON.stringify(card.lines.map((l) => l.branch))}`));
 
-      // 4. A quick flick of Charizard's top cell two rows up, on the card's
-      //    own touch sensor, with the wash read while the finger is down.
       await s.navigate(url);
       await waitLeagueHome(s);
       await openLeagueCard(s, CARD);
       // Detected by construction, not by name: an engine can expose the
       // constructors and still refuse the init dictionaries.
       const touch = await s.evalJson<boolean>(`try { const t=new Touch({identifier:1,target:document.body,clientX:0,clientY:0});
-        new TouchEvent('touchstart',{bubbles:true,touches:[t],targetTouches:[t],changedTouches:[t]}); return true; } catch (e) { return false; }`).catch(() => false);
+        new TouchEvent('touchstart',{bubbles:true,touches:[t],targetTouches:[t],changedTouches:[t]}); return true; } catch (e) { return false; }`);
       const before = await readCard(s, CARD);
       const top = before.lines[0]?.boundaries[2] ?? 0;
       if (!touch) {
-        checks.push({ name: 'league-change:flick-moves-stage', status: 'skip', detail: 'this engine cannot construct a Touch or TouchEvent; a real finger on a device is the only proof here' });
-        checks.push({ name: 'league-change:flick-washes-the-stage', status: 'skip', detail: 'as above' });
+        const detail = 'this engine cannot construct a Touch or TouchEvent; a real finger on a device is the only proof here';
+        checks.push({ name: 'league-change:flick-moves-stage', status: 'skip', skipReason: 'synthetic-touch-unavailable', detail });
+        checks.push({ name: 'league-change:flick-washes-the-stage', status: 'skip', skipReason: 'synthetic-touch-unavailable', detail });
       } else if (top < 4) {
         checks.push(ok('league-change:flick-moves-stage', false, `Charizard's run starts on row ${top}, no room to flick`));
       } else {
@@ -1512,13 +1371,11 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
   return checks;
 }
 
-/** Cells in a seat column wearing the gym hover gradient wash. */
 async function columnWashCount(s: Session, seat: number): Promise<number> {
   return s.evalJson<number>(`const cells=[...document.querySelectorAll('[data-testid^="card-cell-"][data-testid$="-${seat}"]')];
     return cells.filter((c)=>getComputedStyle(c).background.includes('linear-gradient')).length;`).catch(() => 0);
 }
 
-/** Close the league browser sheet the way the overlays spec does. */
 async function dismissLeagueBrowser(s: Session): Promise<boolean> {
   const closed = await s.evalJson<boolean>(`const desktop=window.matchMedia('(min-width: 1024px)').matches;
     if(desktop){
@@ -1536,7 +1393,6 @@ async function dismissLeagueBrowser(s: Session): Promise<boolean> {
   return closed;
 }
 
-/** Move a fine pointer over a column so the grid records hoverSeat. */
 async function pointerOverColumn(s: Session, testId: string): Promise<boolean> {
   try {
     await s.hover(`[data-testid="${testId}"]`);
@@ -1546,10 +1402,6 @@ async function pointerOverColumn(s: Session, testId: string): Promise<boolean> {
   }
 }
 
-/**
- * PR #31: column hover must not stick on touch after the browser closes; desktop
- * pointer hover still washes the column. Structural reads only (computed style).
- */
 export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
   const checks: Check[] = [];
   const url = ctx.base + LEAGUE_PATH;
@@ -1588,11 +1440,9 @@ export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName
   // The wash is gated on a hover-capable fine pointer (CardGrid.tsx). Headless
   // Firefox reports neither, so there is nothing to wash on that engine and a
   // zero count says nothing about the app.
-  const hoverPointer = await s
-    .evalJson<boolean>(`return matchMedia('(hover: hover) and (pointer: fine)').matches;`)
-    .catch(() => false);
+  const hoverPointer = await s.evalJson<boolean>(`return matchMedia('(hover: hover) and (pointer: fine)').matches;`);
   if (!hoverPointer) {
-    checks.push({ name: 'league-hover:desktop-column-wash', status: 'skip', detail: 'engine reports no hover-capable fine pointer (headless); a desktop browser with a mouse is the proof' });
+    checks.push({ name: 'league-hover:desktop-column-wash', status: 'skip', skipReason: 'hover-pointer-unavailable', detail: 'engine reports no hover-capable fine pointer (headless); a desktop browser with a mouse is the proof' });
     return checks;
   }
   await pointerOverColumn(s, 'card-cell-5-2');
@@ -1602,7 +1452,6 @@ export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName
   return checks;
 }
 
-// Occupied home rows shift the nearest occupied segment; empty rows fill only.
 const E4_ONLY_LEAGUE =
   "JSON.stringify({state:{name:'Verify',cards:(()=>{const e=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null,powerups:{},signatureId:null,partnerId:null,legends:[]});const c=Array.from({length:14},e);const m=(t,b)=>({...e(),type:t,badgeName:b,lines:[{branch:[25],boundaries:[1]}]});c[8]=m('electric','E4-1');c[9]=m('fire','E4-2');c[10]=m('grass','E4-3');c[11]=m('psychic','E4-4');return c;})()},version:1})";
 
@@ -1709,21 +1558,13 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
   try {
     const res = await fetch(url);
     const html = await res.text();
-    const hasH1 = /<h1[^>]*>[^<]*Favorite Pokémon Picker/i.test(html);
-    const hasTitle = /<title>[^<]*Favorite Pokémon Picker/i.test(html);
-    if (!res.ok) {
-      checks.push(ok('favorites:static-seo-content', false, `status ${res.status}`));
-      return checks;
-    }
-    if (!hasH1 || !hasTitle) {
-      checks.push({
-        name: 'favorites:static-seo-content',
-        status: 'skip',
-        detail: `favorite picker not in this build yet (SPA fallback at ${FAV_PATH})`,
-      });
-      return checks;
-    }
-    checks.push(ok('favorites:static-seo-content', true, `status ${res.status}`));
+    const hasH1 = /<h1[^>]*>[^<]{3,}<\/h1>/i.test(html);
+    const hasTitle = /<title>[^<]{3,}<\/title>/i.test(html);
+    const canonical = html.match(/<link rel="canonical"[^>]*>/i)?.[0] ?? '';
+    const ownEntry = canonical.includes(FAV_PATH);
+    checks.push(ok('favorites:static-seo-content', res.ok && hasH1 && hasTitle && ownEntry,
+      `status ${res.status} h1=${hasH1} title=${hasTitle} canonical=${ownEntry}`));
+    if (!res.ok) return checks;
   } catch (e) {
     checks.push({ name: 'favorites:static-seo-content', status: 'fail', detail: (e as Error).message });
     return checks;
@@ -1786,9 +1627,6 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     return checks;
   }
 
-  // Fire x Gen V has full rows of six on both sides of a diff. Electric x Gen V
-  // lost its row of six when Overdrive Zekrom made it 13 picks in rows of 5, 5
-  // and 3, and sprite-matches-six-col needs a row of six to measure.
   await clickCell(s, '[data-testid="favorites-cell-fire-5"]');
   const pretty = await waitFor(s, '[data-testid="favorites-pretty-grid"]');
   checks.push(ok('favorites:picker-opens', pretty));
@@ -1863,7 +1701,6 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     const rowLens = () => s.evalJson<number[]>(`
       return [...document.querySelectorAll('[data-pretty-row]')].map((row) => Number(row.getAttribute('data-pretty-len')));
     `);
-    // Escape closes the mobile sheet and the desktop pane alike.
     const closePicker = async () => {
       await s.evalJson(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return true;`);
       await sleep(250);
@@ -1872,7 +1709,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     const sheetOpen = await s.evalJson<boolean>(`return !!document.querySelector('[role="dialog"]');`);
     let starterRows: number[] = [];
     if (!sheetOpen) {
-      checks.push({ name: 'favorites:short-sheet', status: 'skip', detail: 'desktop pane' });
+      checks.push({ name: 'favorites:short-sheet', status: 'skip', skipReason: 'desktop-pane', detail: 'desktop pane' });
       await closePicker();
       await clickCell(s, '[data-testid="favorites-cell-starter-1"]');
       if (await waitFor(s, '[data-testid="favorites-pretty-grid"]')) starterRows = await rowLens();
@@ -1928,8 +1765,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     await closePicker();
     await clickCell(s, '[data-testid="favorites-cell-favorite-1"]');
     await waitFor(s, '[data-testid="favorites-picker"]');
-    // The Gen I favorite has nothing to choose yet: the empty state names the
-    // cause and offers the way there, a button that opens a Gen I cell.
+
     const emptyCard = await s.evalJson<boolean>(`
       const empty = document.querySelector('[data-testid="favorites-picker-empty"]');
       return !!empty && !!empty.querySelector('svg')
@@ -1975,7 +1811,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     checks.push(tall.mobile
       ? ok('favorites:tall-selector-fits', tall.rows >= 9 && tall.inside && tall.noScroll && tall.same,
         `rows=${tall.rows} inside=${tall.inside} noScroll=${tall.noScroll} same=${tall.same}`)
-      : { name: 'favorites:tall-selector-fits', status: 'skip', detail: 'desktop pane' });
+      : { name: 'favorites:tall-selector-fits', status: 'skip', skipReason: 'desktop-pane', detail: 'desktop pane' });
     if (tall.mobile) {
       const deadline = Date.now() + 10_000;
       while (Date.now() < deadline) {
@@ -2126,7 +1962,6 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       `alt=${trash.alt} opacity=${trash.opacity} outlined=${trash.outlined} layered=${trash.layered} oldLeft=${trash.oldLeft} arrow=${trash.arrowBetween} trashRight=${trash.trashRight} mark=${trash.mark}`,
     ));
     await s.screenshot(ctx.shot('favorites-packing-moves'));
-    // Keep this audit scoped to the packing sheet so grid findings stay separate.
     try {
       const result = await s.evalJson<{ findings: AuditFinding[] }>(auditBody({ minFont: 8, annotate: false, checkFrame: false, offCanvasOk: true }));
       const hard = result.findings.filter((f) => APP_HARD_KINDS.includes(f.kind) && /pack/i.test(`${f.path} ${f.text}`));
@@ -2323,8 +2158,7 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     `cells=${mini.cells} gridCells=${mini.gridCells} filled=${mini.filled} empty=${mini.empty} stroke=${mini.stroke} offset=${mini.offset} tinted=${mini.tinted} primary=${mini.primary}`,
   ));
   if (mini.shown) await s.screenshot(ctx.shot('favorites-minimap-scrolling'));
-  // The phone minimap stays 2 s after the last scroll so a finger can reach
-  // it, so allow up to 3.5 s for the fade.
+
   let miniIdle = 1;
   for (let waited = 0; waited < 3500 && miniIdle >= 0.05; waited += 250) {
     await sleep(250);
@@ -2387,10 +2221,6 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
     `ready=${directReady} pikachu=${placedPikachu} raichu=${placedRaichu} id=${direct.id} packing=${direct.packing}`,
   ));
 
-  // App zoom. Synthetic ctrl+wheel events reach the same handler as a
-  // trackpad pinch on every engine. Zoomed and scrolled to the far corner,
-  // the last cell must sit inside the frame, the headers on its edges, and
-  // the minimap inside it without a transform.
   await s.evalJson(`
     const el = document.querySelector('[data-testid="favorites-grid-scroll"]');
     if (!el) return false;
@@ -2452,7 +2282,6 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
 
 const FAV_NUDGE_KEY = 'personal-151-favorites-complete-nudge-v1';
 
-/** Every eligible Picker cell filled except Normal × Gen I, with no pointer on that cell. */
 function almostFullFavorites(): Record<string, number> {
   type Cell = { kind: string; ids?: number[]; sources?: string[] };
   const cells = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'api/_favoriteCells.json'), 'utf8')) as Record<string, Cell>;
@@ -2466,12 +2295,6 @@ function almostFullFavorites(): Record<string, number> {
   return fills;
 }
 
-/**
- * The completion popup. With 256 of 257 cells saved, the user fills the last
- * one. A popup must appear under Export with its arrow on the button, and its
- * view must post a `nudge-shown` beacon. Structural only: the popup is the
- * fixed `role="status"` card portaled to the body, with its rotated arrow.
- */
 async function runFavoritesCompletionPopup(s: Session, url: string, ctx: FlowContext): Promise<Check[]> {
   const saved = JSON.stringify({ state: { fills: almostFullFavorites() }, version: 3 });
   await s.evalJson(`try{localStorage.setItem(${JSON.stringify(FAV_KEY)}, ${JSON.stringify(saved)}); localStorage.removeItem(${JSON.stringify(FAV_NUDGE_KEY)});}catch{} return true;`);
@@ -2492,7 +2315,6 @@ async function runFavoritesCompletionPopup(s: Session, url: string, ctx: FlowCon
   if (first) await s.click(`[data-testid="${first}"]`);
   const popupSelector = 'body > div.fixed[role="status"]';
   const shown = first ? await waitFor(s, popupSelector, 25) : false;
-  // Let the 520 ms entrance animation finish before measuring.
   await sleep(900);
   const m = await s.evalJson<{ filled: string; popup: boolean; offset: number; gap: number; inside: boolean; beacons: number }>(`
     const card = document.querySelector('${popupSelector}');
@@ -2625,7 +2447,6 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
   return checks;
 }
 
-/** League and gym live overlays must share Dex foil: ink-only rainbow, hypot, shadow. */
 export async function runLeagueGymExportFoilSuite(
   s: Session,
   _persona: PersonaName | null,
@@ -2699,15 +2520,6 @@ const NIMBUS_SOLO_LEAGUE = NIMBUS_LEAGUE.replace('partnerId:179', 'partnerId:nul
 const SABRINA_SOLO_LEAGUE =
   "JSON.stringify({state:{name:'',cards:(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,signatureId:null,partnerId:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const cards=Array.from({length:14},empty);cards[0]={type:'psychic',theme:'Sabrina',lines:[{branch:[63,64,65],boundaries:[1,4,8]}],signatureSeat:1,signatureId:65,partnerId:null,tmMoveId:94,badgeName:'Marsh',legend:null,powerup:null};return cards;})()},version:1})";
 
-/**
- * Gym-card export preview for the Nimbus/Cotton Guard card. Proves the overlay
- * paints a real PNG of that card; layout parity lives in layout.test.ts.
- */
-/**
- * The league export starts at the team the league tab shows: Rematch on the
- * Rematch tab, Story on the Story tab. The pane marks its team with a tinted
- * background, so exactly one `[data-export-team]` paints one.
- */
 export async function runLeagueExportTeamSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
   const checks: Check[] = [];
   const url = ctx.base + LEAGUE_PATH;
@@ -2792,16 +2604,14 @@ export async function runGymCardExportParitySuite(
     tmFit.inside && tmFit.tmW > 70,
     `tmW=${tmFit.tmW.toFixed(1)} chipRight=${tmFit.chipRight.toFixed(1)} tmRight=${tmFit.tmRight.toFixed(1)}`,
   ));
-  // The card's own export, not the league pane's: both carry the attribute, and
-  // the league pane's comes first in the DOM, which WebKit and Gecko pick.
+
   await s.click('[data-league-export="card"]');
   if (!(await waitFor(s, '[data-export-preview] img', 60))) {
     checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'export preview image never mounted' });
     return checks;
   }
   await sleep(800);
-  // A card export has no league detail toggles; the league export has four.
-  // That tells the two apart, which a width floor alone did not.
+
   const painted = await s.evalJson<{ w: number; complete: boolean; details: number }>(
     `const img=document.querySelector('[data-export-preview] img');
      return { w: img?.naturalWidth ?? 0, complete: !!img?.complete, details: document.querySelectorAll('[data-export-detail]').length };`,
@@ -3070,11 +2880,9 @@ const FIVE_LINE_LEAGUE =
 const SEVEN_GYMS_LEAGUE =
   "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1]});const cards=Array.from({length:14},empty);for(let i=0;i<7;i++)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:[]},version:2});})()";
 
-/** Every card but Elite Four 1 filled, after the eight-gym popup was seen. */
 const LAST_CARD_EMPTY_LEAGUE =
   "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1],boundaryMode:'auto'});const cards=Array.from({length:14},empty);for(let i=0;i<14;i++)if(i!==8)cards[i]={...empty(),lines:[line(i+1)]};return JSON.stringify({state:{name:'',cards,celebratedNudges:['league']},version:3});})()";
 
-/** A full v3 league that saw the eight-gym popup, which said "League ready" before v4. */
 const FULL_SEEN_V3_LEAGUE =
   "(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const line=(id)=>({branch:[id],boundaries:[1],boundaryMode:'auto'});const cards=Array.from({length:14},(_,i)=>({...empty(),lines:[line(i+1)]}));return JSON.stringify({state:{name:'',cards,celebratedNudges:['league']},version:3});})()";
 
@@ -3088,7 +2896,6 @@ async function closeLeagueCard(s: Session): Promise<void> {
   await waitFor(s, '[data-testid="league-slot-0"]');
 }
 
-/** Seat the current picker result. Native click, then close the desktop pane. */
 async function placePickerLine(s: Session): Promise<boolean> {
   const clicked = await s.evalJson<boolean>(`const el=document.querySelector(${JSON.stringify(PLACE_CARD)}); if(!el) return false; el.click(); return true;`).catch(() => false);
   await sleep(600);
@@ -3139,8 +2946,7 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   await s.screenshot(ctx.shot('league-funnel-roster-nudge'));
   checks.push(ok('league-funnel:roster-nudge-shown', roster, roster ? 'league export nudge' : 'no roster nudge after 8 gyms'));
   if (roster) {
-    // The popup sits under or beside the summary, never over a row, and the
-    // league Export button pulses while it shows.
+
     const geo = await s.evalJson<{ covered: number[]; pulse: boolean; placement: string | null }>(
       `const n=document.querySelector('[data-testid="league-nudge"]').getBoundingClientRect();
        const covered=[];for(let i=0;i<14;i++){const r=document.querySelector('[data-testid="league-slot-'+i+'"]').getBoundingClientRect();
@@ -3165,7 +2971,6 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
       `const r=JSON.parse(localStorage.getItem(${JSON.stringify(LEAGUE_KEY)})||'{}');return {version:r.version??null,celebrated:r.state?.celebratedNudges??[],nudges:document.querySelectorAll('[data-testid="league-nudge"]').length};`,
     ).catch(() => ({ version: null, celebrated: [] as string[], nudges: -1 }));
     await s.screenshot(ctx.shot('league-funnel-full-save'));
-    // v4 records the seen popup; later save versions must keep it suppressed.
     checks.push(ok(
       'league-funnel:full-save-skips-seen-popup',
       saved.nudges === 0 && saved.version !== null && saved.version >= 4 && saved.celebrated.includes('complete'),
@@ -3193,9 +2998,6 @@ export async function runLeagueFunnelNudgeSuite(s: Session, _persona: PersonaNam
   return checks;
 }
 
-// The 404 page types its lines letter by letter with a stepped clip-path. Once
-// the animations end, every line must show whole: WebKit held a 9-step line one
-// step short when the animation kept its last frame, and cut the last letter.
 export async function runNotFoundSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
   await s.navigate(ctx.base + '/404.html');
   let lines: Array<{ text: string; clip: string; running: number }> = [];

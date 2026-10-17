@@ -8,21 +8,6 @@ import {
 import { translate } from './core';
 import type { MessageKey } from './types';
 
-/**
- * In-game terminology: types, Pokédex colours, egg groups and body shapes.
- *
- * These are keyed by exhaustive `Record`s rather than by string concatenation,
- * so adding a type or shape to `src/types/pokemon.ts` without adding its
- * message is a compile error rather than a `term.type.stellar` rendered to a
- * user. That exhaustiveness is the whole reason this file exists instead of a
- * one-line `t(\`term.type.\${type}\`)` helper.
- *
- * Type, color and egg-group translations have published source catalogs.
- * Games display body-shape symbols rather than translated shape names.
- * The concise shape labels are authored UI descriptions in all nine locales.
- * See docs/i18n/sources/pokemon-shape-provenance.md for source distinctions.
- */
-
 const TYPE_KEYS = {
   normal: 'term.type.normal',
   fire: 'term.type.fire',
@@ -96,13 +81,6 @@ export function typeLabel(type: TypeName): string {
   return translate(TYPE_KEYS[type]);
 }
 
-/**
- * All eighteen type names in the active locale.
- *
- * The type badge sizes its text from this set rather than from the one word it
- * is drawing, so every badge in a language shares one cap height instead of
- * each finding its own — see `src/lib/typeBadgeFit.ts`.
- */
 export function typeLabels(): string[] {
   return TYPE_NAMES.map(typeLabel);
 }

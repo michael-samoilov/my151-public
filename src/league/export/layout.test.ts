@@ -5,12 +5,6 @@ import { emptyCard, type GymCard } from '../store/useLeagueStore';
 import { makePlacedLine } from '../model/engine';
 import { DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT } from './exportOptions';
 
-/**
- * The export's geometry is arithmetic, not layout: nothing here reads the DOM,
- * so a drift shows up as a failing number rather than as a crooked picture
- * somebody has to notice. The card's own drawing is verified by rendering it
- * and diffing against the design canvas, which these numbers underwrite.
- */
 describe('export layout', () => {
   it('puts every team sprite on a whole pixel', () => {
     // A sprite centred on a half pixel is resampled one device pixel off the
@@ -27,7 +21,6 @@ describe('export layout', () => {
   });
 
   it('puts the ace and the partner on whole pixels, inside the panel', () => {
-    // Same hatching as a team sprite on a half pixel, at twice the size.
     const ox = L.FRAME + L.PADX;
     const oy = L.gridTop();
     const box = L.showcaseBox();
@@ -44,9 +37,6 @@ describe('export layout', () => {
   });
 
   it('runs the seam clear of both sprites and inside the panel, for any caption width', () => {
-    // The captions change with every name and locale, so sweep their widths:
-    // the ace's two lines centred under it, the partner's three ending at its
-    // left. Where a 30° line fits between the captions, the seam crosses none.
     const box = L.showcaseBox();
     const panel = { x: box.left, y: box.top, w: box.width, h: box.height };
     const { ace, partner } = L.showcaseSquares(0, 0);
@@ -70,8 +60,6 @@ describe('export layout', () => {
           expect(sy).toBeLessThanOrEqual(panel.y + panel.h + 1e-9);
           expect(depth(sx, sy)).toBeCloseTo(d, 9);
         }
-        // The squares come first: a seam that clears both captions only
-        // has to exist where it also clears both squares.
         const aceReach = Math.max(
           depth(ace.x + ace.w, ace.y + ace.h) + clear,
           ...aceLines.map((b) => depth(b.x + b.w, b.y + b.h)),
@@ -100,7 +88,6 @@ describe('export layout', () => {
   });
 
   it('splits every band at the same x in both-teams mode, with equal gaps and pills', () => {
-    // At the narrowest details column, the title pill is as wide as a team pill.
     const geom = L.homeExportGeometry(true, true, 0);
     const gym = L.homeSectionPills(0, geom, 'GYM LEADERS', true, true);
     expect(gym).toHaveLength(3);
@@ -120,10 +107,6 @@ describe('export layout', () => {
   });
 
   it('centers the TM type/name stack on the disc+label the way the live card flexes', () => {
-    // CardGrid TmSlot: parent `flex items-center`; body is a column of
-    // (type row `items-center` + 2px gap + NAME_CLASS). The type row's box
-    // is the taller child — the category chip, not the 5:1 type badge.
-    // NAME_CLASS is `leading-[1.4]`, so the name box is NAME_LINE.
     const badgeH = L.tmBadgeH();
     expect(L.TM_CHIP_H).toBeGreaterThan(badgeH);
     const typeRowH = Math.max(badgeH, L.TM_CHIP_H);
@@ -188,8 +171,6 @@ describe('reading a card for export', () => {
   });
 
   it('shows the dashed square for a seat with no Pokémon and no type', () => {
-    // An open seat reads as the app shows it. A team with no type, or a type
-    // with no team, is a choice someone made, and keeps its mark.
     expect(vacantRow(emptyCard())).toBe(true);
     expect(vacantRow(cardWith({ type: 'none' }))).toBe(true);
     expect(vacantRow(cardWith({ type: 'fire' }))).toBe(false);

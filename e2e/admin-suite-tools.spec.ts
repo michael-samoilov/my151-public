@@ -1,3 +1,4 @@
+import { openAdmin } from './admin-ready';
 import {test,expect} from '@playwright/test';
 import {buildDashboard,type RecordedUsageSlice} from '../api/_dashboard';
 
@@ -6,7 +7,6 @@ function sample(values:number[],sessions:number[],hours:number):RecordedUsageSli
   return {browsers:values.length,missingTime:0,missingSessions:0,incompleteHistory:0,time:distribution(values),sessions:distribution(sessions),weekly:[{week:Date.UTC(2026,9,5),start:Date.UTC(2026,9,5),end:Date.UTC(2026,9,10),partial:true,totalMs:hours*3_600_000}]};
 }
 
-// @viewport: two independent controls, three curve colors, and shared scrub values must fit all admin widths.
 test('Suite tools overlay preserves samples, ties, metric and range controls @viewport',async({page},testInfo)=>{
   const response=buildDashboard({clients:{},archived:[],funnel:{},funnelWindow:null,leagueClients:{}},{range:'all'},Date.UTC(2026,9,10));
   response.recordedUsage={all:sample([0,60_000,120_000],[1,2,3],1),dex:sample([0,60_000,120_000],[1,2,3],2),league:sample([120_000,120_000],[2,2],3),favorites:sample([60_000],[1],4)};
@@ -31,7 +31,7 @@ test('Suite tools overlay preserves samples, ties, metric and range controls @vi
       return path ? stroke.call(this,path) : stroke.call(this);
     };
   });
-  await page.goto('/?admin');
+  await openAdmin(page, '/?admin');
   const panel=page.locator('section').filter({has:page.getByRole('heading',{name:'Recorded time and sessions'})});
   await panel.getByRole('button',{name:'Legacy spans',exact:true}).click();
   await expect(panel.getByRole('img',{name:/Recorded minutes retention: 3 browsers/})).toBeVisible();

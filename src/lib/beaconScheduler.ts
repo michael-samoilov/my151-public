@@ -1,43 +1,8 @@
-/**
- * Trailing debounce with a hard latency cap and an explicit flush.
- *
- * The progress beacon used a plain trailing debounce: each edit reset a 4s
- * timer, and the beacon fired 4s after the *last* edit. Two failure modes fell
- * out of that, both mobile-biased and both silent:
- *
- *   1. Starvation. A user editing continuously — never a 4s quiet gap — sent
- *      nothing for the whole burst. The only beacon was the one scheduled after
- *      their final edit.
- *   2. Loss at departure. That final pending timer died with the page. Closing
- *      the tab or swiping the app away within 4s of the last edit — the normal
- *      way a phone session ends — lost it. For a short first visit, that was
- *      every beacon: the user never existed in analytics.
- *
- * `maxWaitMs` fixes starvation: however often schedule() is called, the fire
- * happens no later than maxWait after the first pending call. `flush()` fixes
- * departure: lifecycle listeners (visibilitychange/pagehide) deliver the
- * pending beacon immediately while the page can still send it.
- *
- * Timer and clock are injectable so tests drive time; defaults are the real
- * ones.
- */
-
-// The progress-beacon cadence. Exported (rather than private to the hook)
-// because the pair defines the client's maximum send rate — 3.6e6 / maxWait
-// per hour — and a unit test holds that rate inside the server's per-client
-// daily allowance (api/_limits.ts). The two were once tuned separately: a 15s
-// max wait against a 120/day cap cut off every session longer than ~30
-// minutes of building, and the most engaged users lost the rest of their day.
 export const PROGRESS_DEBOUNCE_MS = 4000;
-// One beacon per minute during nonstop editing is plenty for analytics whose
-// finest-grained question is "which sessions happened and how deep did they
-// get" — the debounce already delivers promptly whenever the user pauses.
 export const PROGRESS_MAX_WAIT_MS = 60_000;
 
 export interface BeaconDebouncer {
-  /** Note new work. The latest `fire` wins; earlier pending ones are dropped. */
   schedule(fire: () => void): void;
-  /** Deliver the pending fire now, if any. Safe to call when idle. */
   flush(): void;
   pending(): boolean;
 }
@@ -58,7 +23,6 @@ export function createBeaconDebouncer(opts: DebouncerOptions): BeaconDebouncer {
 
   let latest: (() => void) | null = null;
   let timer: unknown = null;
-  /** Send-by time for the current pending window (set on its first schedule). */
   let deadline = 0;
 
   const fireNow = () => {
@@ -68,8 +32,6 @@ export function createBeaconDebouncer(opts: DebouncerOptions): BeaconDebouncer {
       clearTimer(timer);
       timer = null;
     }
-    // State is reset before firing, so a fire that throws cannot wedge the
-    // debouncer with a stale `latest` that flush() would then re-send.
     if (fire) fire();
   };
 

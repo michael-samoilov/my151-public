@@ -4,7 +4,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { bumpDexPickFreq, parseNotmeFlag, recordToolExport } from './_exportStats.js';
-import { parseFunnelEventList, parsePage, parseTool } from './_events.js';
+import { parseFunnelEventList, parsePage } from './_events.js';
 import {
   redis,
   getClientIp,
@@ -27,35 +27,18 @@ import {
 import { alignSessionMs, isSubsetRegression, parseCapturedAt, sessionTarget, checkpointRecording, endStampedSpans, retiredCapture } from './_sessionize.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
 
-/** A Pokédex holds species and forms, such as Alolan Raichu (10100). The chain
- *  table is generated from src/data/pokemon.json, so its keys are exactly the
- *  ids a build can hold. A fixed 1025 ceiling rejected every beacon from a
- *  build with a form in it. */
 function isDexId(id: unknown): id is number {
   return typeof id === 'number' && Number.isInteger(id) && Object.hasOwn(EVOLUTION_CHAIN_BY_ID, id);
 }
 
-/** A Pokédex may grow past 151. Unique known ids bound a build, and a section,
- *  at this many entries. */
 const DEX_ID_COUNT = Object.keys(EVOLUTION_CHAIN_BY_ID).length;
 
-// Rate limiters: per-IP, analytics disabled to avoid doubling Upstash command count.
-// Every limiter in api/ uses a fixed window: Upstash bills each command inside
-// the limiter's script, and a fixed window runs 2 (EVALSHA, INCRBY) where a
-// sliding window runs 4 (EVALSHA, two GETs, INCRBY). A fixed window never
-// blocks a request that a sliding one would allow; it only lets a burst that
-// straddles a window boundary reach up to twice the limit.
 const burstLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.fixedWindow(500, '10 m'),
   analytics: false,
   prefix: 'rl:burst',
 });
-// Per-client write cap so one browser can't spam updates. Sized in
-// _limits.ts from the client's own maximum send rate — a cap below that
-// ceiling silences the most engaged users mid-session, which is a data-loss
-// bug, not protection. (The old 120/day cut off anyone building for more than
-// half an hour; a unit test now pins cadence × cap so they can't drift apart.)
 const clientLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.fixedWindow(SUBMIT_CLIENT_DAILY_CAP, '1 d'),
@@ -63,18 +46,10 @@ const clientLimiter = new Ratelimit({
   prefix: 'rl:client',
 });
 
-// Compare-and-set on a version counter: write `next` to the record only if the
-// record's version still equals the one we read (`expectedVer`); then bump the
-// version. Returns 1 on success, 0 if another beacon wrote first (caller
-// re-reads and retries). This makes the whole read-merge-write atomic across the
-// completion/progress/export beacons a single browser fires within seconds of
-// each other — without it they clobber one another (lost updates: missing
-// export flag, wrong pick count, whole record dropped).
-// KEYS[1]=clients hash  KEYS[2]=version hash
-// ARGV[1]=cid  ARGV[2]=expectedVer  ARGV[3]=record JSON
 const CAS_LUA = `
 local cur = redis.call('HGET', KEYS[2], ARGV[1]) or '0'
 if cur == ARGV[2] then
+  if redis.call('HEXISTS', KEYS[1], ARGV[1]) == 0 and redis.call('HLEN', KEYS[1]) >= tonumber(ARGV[4]) then return 2 end
   redis.call('HSET', KEYS[1], ARGV[1], ARGV[3])
   redis.call('HSET', KEYS[2], ARGV[1], tostring(tonumber(cur) + 1))
   return 1
@@ -82,7 +57,6 @@ end
 return 0
 `;
 
-/** Hour-of-day (0–23) in the given IANA timezone, defaulting to UTC. */
 function localHourIn(tz: string | undefined, when: number): number {
   try {
     const h = new Intl.DateTimeFormat('en-US', {
@@ -97,7 +71,6 @@ function localHourIn(tz: string | undefined, when: number): number {
   }
 }
 
-/** Day-of-week (0=Sun…6=Sat) in the given IANA timezone, defaulting to UTC. */
 function localDowIn(tz: string | undefined, when: number): number {
   const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   try {
@@ -109,7 +82,6 @@ function localDowIn(tz: string | undefined, when: number): number {
   }
 }
 
-/** Validate a non-empty build of unique known ids; returns the ids or null. */
 function validIds(ids: unknown): number[] | null {
   if (!Array.isArray(ids) || ids.length === 0 || ids.length > DEX_ID_COUNT) return null;
   const seen = new Set<number>();
@@ -121,9 +93,6 @@ function validIds(ids: unknown): number[] | null {
   return ids as number[];
 }
 
-/** Sanitize the per-section placement map (groupId -> ids). Caps section count
- *  and ids per section, and validates each id, so a hostile client can't bloat
- *  the record. Returns undefined when absent/invalid. */
 function validSections(sections: unknown): Record<string, number[]> | undefined {
   if (!sections || typeof sections !== 'object' || Array.isArray(sections)) return undefined;
   const out: Record<string, number[]> = {};
@@ -143,8 +112,6 @@ function validSections(sections: unknown): Record<string, number[]> | undefined 
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
-/** Sanitize the export-settings object sent with an export beacon. Returns
- *  undefined when absent/invalid so a hostile client can't store junk. */
 const VALID_SORTS = new Set(['build-order', 'regional', 'national', 'type', 'custom']);
 function validExportSettings(
   v: unknown,
@@ -160,7 +127,6 @@ function validExportSettings(
   };
 }
 
-/** Sanitize the buffered funnel-event list sent with a build beacon. */
 function validEvents(v: unknown): string[] {
   return parseFunnelEventList(v);
 }
@@ -190,7 +156,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       notme?: unknown;
     };
 
-    // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
       return res.status(400).json({ error: 'invalid cid' });
     }
@@ -219,32 +184,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true });
     }
 
-    // Distinct evolution lines reached, computed client-side; clamp defensively.
     const depth =
       typeof body.depth === 'number' && Number.isFinite(body.depth)
         ? Math.max(0, Math.min(ids.length, Math.round(body.depth)))
         : ids.length;
 
-    // Count the paths where a genuine beacon is dropped server-side, into the
-    // funnel hash the admin already reads. "My friend's session never showed
-    // up" is otherwise undiagnosable: these are the only drops the server can
-    // see, so they must be the drops the server records. Counted only after a
-    // rate-limit check has been paid for, so the counter itself is not a free
-    // write for a hostile client.
-    // The two limiters are separate keys, learned the hard way: a single
-    // 'rate-limit' bucket showed 31 drops with no way to tell whether an IP
-    // was bursting or real users were exhausting the per-client allowance.
     const countDrop = async (
       reason: 'rate-limit-ip' | 'rate-limit-client' | 'cap' | 'contention',
     ) => {
       try {
         await redis.hincrby('funnel', `submit-drop:${reason}`, 1);
       } catch {
-        // the drop still happens; only its bookkeeping failed
+        return;
       }
     };
 
-    // Rate limit per IP + per client before touching state.
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
     if (!burst.success) {
@@ -252,17 +206,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
-    // Keyed per tool as well as per browser, so a person running two tools in
-    // two tabs each cannot exhaust one budget with the other's beacons.
-    const tool = parseTool(body.tool);
     const page = parsePage(body.page);
-    const perClient = await clientLimiter.limit(`${tool}:${cid}`);
+    const perClient = await clientLimiter.limit(`dex:${cid}`);
     if (!perClient.success) {
       await countDrop('rate-limit-client');
       res.setHeader('Retry-After', Math.ceil((perClient.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
-
 
     const captured = parseCapturedAt(body.ts, receivedAt);
     const now = captured ?? receivedAt;
@@ -274,14 +224,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const secs = validSections(body.sections);
     const settings = kind === 'export' ? validExportSettings(body.exportSettings) : undefined;
     const newEvents = validEvents(body.events);
-    // The locale the client actually rendered in, and any picker pin.
     const locale = parseLocale(body.locale);
     const switched = parseLocale(body.switched);
-    // External referrer host, if the client sent one (host-only, forward-only).
     const ref = parseReferrerHost(body.ref);
 
-    // Merge this beacon into an existing record (or seed a new one). Pure given
-    // `existing`, so it can be re-run on retry after a concurrent write.
     const mergeRecord = (existing: ClientRecord | null, recCid: string): ClientRecord => {
       const oldSpans = existing?.sessions !== undefined ? endStampedSpans(existing) : [];
       const rec: ClientRecord = existing ? {...existing} : {
@@ -433,10 +379,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return rec;
     };
 
-    // Decide the record key once, based on the original cid's current record.
-    // Multi-user CID collision: a submission from a different country whose picks
-    // barely overlap the existing build is almost certainly a different person on
-    // the same browser/CID (shared device) — route to a country-keyed record.
     const rawExisting = parseRecord(await redis.hget(CLIENTS_KEY, cid));
     let effectiveCid = cid;
     if (rawExisting && geo.country && rawExisting.country && geo.country !== rawExisting.country) {
@@ -447,10 +389,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (jaccard < 0.2) effectiveCid = `${cid}::${geo.country}`;
     }
 
-    // Atomic read-merge-write with optimistic-concurrency retry. Each attempt
-    // reads the record + its version, merges, then CAS-writes only if the
-    // version is unchanged — so concurrent completion/progress/export beacons
-    // from the same browser can't clobber each other.
     for (let attempt = 0; attempt < 6; attempt++) {
       const [rawStr, verStr] = await Promise.all([
         redis.hget(CLIENTS_KEY, effectiveCid) as Promise<unknown>,
@@ -459,21 +397,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const existing = parseRecord(rawStr);
       const expectedVer = verStr == null ? '0' : String(verStr);
 
-      // Cap distinct clients; new clients past the cap are dropped.
-      if (!existing) {
-        const count = await redis.hlen(CLIENTS_KEY);
-        if (count >= MAX_CLIENTS) {
-          await countDrop('cap');
-          return res.status(200).json({ ok: true, capped: true });
-        }
-      }
-
       const rec = mergeRecord(existing, effectiveCid);
       const ok = await redis.eval(
         CAS_LUA,
         [CLIENTS_KEY, VERSION_KEY],
-        [effectiveCid, expectedVer, JSON.stringify(rec)],
+        [effectiveCid, expectedVer, JSON.stringify(rec), MAX_CLIENTS],
       );
+      if (ok === 2) {
+        await countDrop('cap');
+        return res.status(200).json({ ok: true, capped: true });
+      }
       if (ok === 1) {
         const activityAck = await appendMinuteActivity(cid, 'dex', body.activity, receivedAt);
         const prevEver = new Set(existing?.everIds ?? []);
@@ -485,11 +418,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         return res.status(200).json({ ok: true, activityAck });
       }
-      // Lost the race — brief backoff, then re-read and retry.
       await new Promise((r) => setTimeout(r, 15 + attempt * 20));
     }
-    // Exhausted retries under heavy contention; report success (best-effort
-    // analytics) rather than erroring the client.
     await countDrop('contention');
     return res.status(200).json({ ok: true, contended: true });
   } catch (err) {

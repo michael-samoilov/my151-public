@@ -1,18 +1,8 @@
+import { openAdmin } from './admin-ready';
 import { expect, test } from '@playwright/test';
 
-/**
- * Admin user-detail pages, driven through `/?admin&demo` so the production
- * bundle is the thing under test and no live token is required.
- *
- * League must fit the viewport (no page scroll). Demo user 70cd carries a
- * count-only drop-then-restore phantom; tidy must hide it so the scrubber
- * has 3 sessions, not 4. Dex may scroll inside its pane. The Dex / League
- * toggle is always present; a tool the browser never used is greyed.
- */
-
 async function openDemo(page: import('@playwright/test').Page) {
-  await page.goto('/?admin&demo');
-  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  await openAdmin(page, '/?admin&demo');
 }
 
 function userTools(page: import('@playwright/test').Page) {

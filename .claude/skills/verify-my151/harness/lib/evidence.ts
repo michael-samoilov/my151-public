@@ -1,39 +1,20 @@
-// Evidence for a run: per-surface invariant records, screenshots, and one
-// verdict file. Screenshots are proof for a human or agent to inspect, not an
-// auto-diff baseline; this repo rejects stored pixel snapshots on purpose. The
-// visual diff (visual.ts) compares two builds rendered in the same run instead.
+
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from './servers.ts';
-
-export type Status = 'pass' | 'fail' | 'skip';
-
-export interface Check {
-  name: string;
-  status: Status;
-  detail?: string;
-  /** Stable one-line keys, for checks whose result is a set (the render audit). Diff mode names new members as regressions. */
-  findings?: string[];
-}
-
-export interface SurfaceResult {
-  surface: string; // e.g. "blink", "blink:ios-safari", "webkit", "gecko"
-  engine: string;
-  persona: string | null;
-  available: boolean;
-  checks: Check[];
-  screenshots: string[];
-  videos?: string[];
-  error?: string;
-}
+import type { SurfaceResult, Verdict } from './contract.ts';
+export { compareChecks, coverageGaps, rollup, surfaceVerdict } from './contract.ts';
+export type { Status, Check, SurfaceResult } from './contract.ts';
 
 export interface RunReport {
   mode: 'absolute' | 'diff';
   base?: string;
   startedAt: string;
   surfaces: SurfaceResult[];
-  regressions: string[]; // diff mode: named before/after deltas
-  verdict: 'PASS' | 'FAIL' | 'INCONCLUSIVE';
+  regressions: string[];
+  missingCoverage: string[];
+  verdict: Verdict;
   /** Diff mode: changed regions on the fixed screens (lib/visual.ts). Not part of the verdict. */
   visual?: import('./visual.ts').VisualReport;
 }
@@ -57,17 +38,4 @@ export class Evidence {
     fs.writeFileSync(file, JSON.stringify(r, null, 2));
     return file;
   }
-}
-
-export function surfaceVerdict(r: SurfaceResult): Status {
-  if (!r.available) return 'skip';
-  if (r.error) return 'fail';
-  return r.checks.some((c) => c.status === 'fail') ? 'fail' : 'pass';
-}
-
-export function rollup(surfaces: SurfaceResult[], regressions: string[]): RunReport['verdict'] {
-  const graded = surfaces.filter((s) => s.available);
-  if (graded.length === 0) return 'INCONCLUSIVE';
-  const anyFail = graded.some((s) => surfaceVerdict(s) === 'fail') || regressions.length > 0;
-  return anyFail ? 'FAIL' : 'PASS';
 }

@@ -1,11 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { seededLeague } from './support/leagueSeed';
 
-/**
- * Story / Rematch on the gym-leader tool bar is the shared pill tab set
- * (PR 79): one muted track, a raised card pill, not a lone primary button.
- */
-
 async function expectMutualTabSet(page: Page) {
   const report = await page.evaluate(() => {
     const TRANSPARENT = new Set(['rgba(0, 0, 0, 0)', 'transparent', '']);

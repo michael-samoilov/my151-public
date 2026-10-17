@@ -31,7 +31,6 @@ const SPECIES = pokemonData as Pokemon[];
 const FORMS = powerupForms as PowerupForms;
 const POWERUP_TYPES = powerupTypes as Record<number, TypeName[]>;
 
-// A cap Pikachu names a region but is not a regional form.
 const REGIONAL_RE = /-(alola|galar|hisui|paldea)(?!-cap)(?:-|$)/;
 const SPECIES_BY_ID = new Map(SPECIES.map((p) => [p.id, p]));
 const REGIONAL_FAMILY_IDS = new Set<number>();
@@ -62,14 +61,9 @@ const LINE_BY_ID = new Map<number, number>();
 const STAGE_BY_ID = new Map<number, number>();
 const FIRST_BY_LINE = new Map<number, number>();
 const listedOrder = (ids: number[]) => new Map(ids.map((id, index) => [id, index]));
-/** Form order within one species, where ID order would read wrong. */
 const FORM_ORDER_BY_OWNER = new Map([
-  // Each Terastal form follows its mask.
   [1017, listedOrder([1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116])],
-  // Each Overdrive follows the fusion it belongs to.
   [646, listedOrder([646, 10022, 11107, 10023, 11108])],
-  // Ultra Necrozma and Terapagos's forms sit with their species, not after
-  // the battle-form sort (Michael, 2026-10-12).
   [800, listedOrder([800, 10155, 10156, 10157])],
   [1024, listedOrder([1024, 10276, 10277])],
 ]);
@@ -190,7 +184,6 @@ function isTerastalForm(mon: PickerMon): boolean {
 }
 
 export function isGimmickForm(mon: PickerMon): boolean {
-  // Ultra Necrozma is reached with Ultranecrozium Z, not Mega Evolution.
   return isPowerupForm(mon) || isTerastalForm(mon) || mon.id === 10157;
 }
 
@@ -198,12 +191,10 @@ export function isStarter(mon: PickerMon): boolean {
   return STARTER_IDS.has(mon.id) || mon.id === 25 || mon.id === 133;
 }
 
-/** Evolution chain for this form. Members of one chain stay on one picker row. */
 export function evolutionLineKey(mon: PickerMon): number {
   return LINE_BY_ID.get(mon.id) ?? LINE_BY_ID.get(mon.ownerId) ?? mon.id;
 }
 
-/** Whether the species lists its form order in `FORM_ORDER_BY_OWNER`. */
 export function hasListedFormOrder(ownerId: number): boolean {
   return FORM_ORDER_BY_OWNER.has(ownerId);
 }

@@ -16,19 +16,10 @@ const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 interface Axis {
   n: number;
   label: (i: number) => string;
-  /** Label every `every`th slot. */
   every: number;
   totals: number[];
 }
 
-/**
- * Day-by-hour heatmap of browsers, each counted once in every weekday hour it
- * was active in, on one of two clocks. Days run down and hours across at
- * every width. Narrow cards omit hourly totals to keep labels readable.
- * Each row ends in its total, in browser-hours. A mouse reads a cell on
- * hover; a tap toggles the readout,
- * so it stays up while the clock changes.
- */
 export function HeatmapCard({ heatmaps }: { heatmaps: Record<HeatmapClock, number[][]> }) {
   const [clock, setClock] = useState<HeatmapClock>('local');
   const [active, setActive] = useState<{ dow: number; hour: number } | null>(null);

@@ -1,24 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/**
- * The report-a-problem chips, in every language.
- *
- * These are the first strings in the app that are *translated* rather than
- * sourced — everything before them came out of the games' own text. So they get
- * checked at the only place that proves anything about a translation without a
- * speaker: on screen, in the language, at a width someone might actually use.
- *
- * Three things are asserted, and it is worth being clear about what they are
- * and are not. They catch a key that never reaches the DOM, a string that is
- * still English, and a label too wide for the row it sits in. They say nothing
- * about whether the wording is natural — that needs a person, and the chip
- * labelled "Translation" is how one tells us.
- *
- * The expected strings are written out rather than imported from the catalog.
- * A spec that reads its expectations from the file under test would pass on an
- * empty catalog, which is precisely the failure worth catching here.
- */
-
 const CHIPS: Record<string, { bug: string; translation: string; idea: string; other: string }> = {
   en: { bug: 'Bug', translation: 'Translation', idea: 'Idea', other: 'Other' },
   ja: { bug: '不具合', translation: '誤訳', idea: '提案', other: 'その他' },
@@ -33,14 +14,9 @@ const CHIPS: Record<string, { bug: string; translation: string; idea: string; ot
 
 async function gotoLocale(page: Page, locale: string) {
   await page.goto(`/pokedex-builder?lang=${locale}`, { waitUntil: 'domcontentloaded' });
-  // Locale loading is intentionally allowed to outlive the 1.2s boot budget.
-  // Under a busy dev server, wait for that background catalog commit before
-  // inspecting translated copy instead of mistaking the English fallback for
-  // the final state.
   await expect(page.locator('html')).toHaveAttribute('lang', locale, { timeout: 15_000 });
 }
 
-// 320px: the narrowest width the app supports, and where a long chip shows.
 test.use({ viewport: { width: 320, height: 800 } });
 
 test.describe('feedback chips', () => {
@@ -53,9 +29,6 @@ test.describe('feedback chips', () => {
       await expect(dialog).toBeVisible();
 
       const measured = await dialog.evaluate((root) => {
-        // The chips are the buttons in the row above the textarea. Reading them
-        // positionally rather than by text is the point: matching on the text
-        // would make the assertion circular.
         const row = root.querySelector('form')?.querySelector('div');
         const chips = Array.from(row?.querySelectorAll('button') ?? []);
         return chips.map((c) => ({
@@ -72,13 +45,11 @@ test.describe('feedback chips', () => {
         expect(texts, `${locale} is missing "${want}"`).toContain(want);
       }
 
-      // No chip may be clipped by its own box...
       expect(
         measured.filter((m) => m.overflows).map((m) => m.text),
         'these chips are clipped',
       ).toEqual([]);
 
-      // ...nor run off a 320px screen.
       expect(
         measured.filter((m) => m.right > 320).map((m) => m.text),
         'these chips run off the screen',
@@ -87,9 +58,6 @@ test.describe('feedback chips', () => {
   }
 
   test('an untranslated locale still shows English rather than a blank chip', async ({ page }) => {
-    // The layering promise: a locale with no entry for a key falls back to
-    // English. Worth pinning, because the failure mode of a partial catalog
-    // should be "in the wrong language" and never "missing".
     await gotoLocale(page, 'ja');
     const openers = page.getByRole('button', { name: /.+/ });
     await expect(openers.first()).toBeVisible();
@@ -97,7 +65,6 @@ test.describe('feedback chips', () => {
     await page.locator('[data-feedback-open]').first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    // Whatever the layering resolves to, the submit button must not be blank.
     const submit = dialog.locator('button[type="submit"]');
     await expect(submit).toBeVisible();
     await expect(submit).not.toHaveText('');

@@ -10,24 +10,6 @@ import { raw, useT, type NoArgKey } from '@/i18n';
 import { splitTemplate } from '@/lib/richTemplate';
 import { LaurelIcon } from './LaurelIcon';
 
-/**
- * The trainer card's instructions: an info button in the card's own bar, and
- * the popup it opens.
- *
- * The card has three gestures that show nothing until you try them: a drag up
- * or down, a press-and-hold sideways, and a tap on the boss row. The one-line
- * hints under the card name them in small grey type at the card's foot; this
- * names them again at the top, beside the card's other control, with a line of
- * detail each.
- *
- * Mobile gets the app's bottom sheet and desktop a card anchored to the button,
- * the same split the feedback form uses.
- */
-
-/**
- * The blue reset disc a moved line wears (`CardGrid`'s reset control, same
- * blue), drawn inline so the words point at the thing on the card.
- */
 function ResetDisc() {
   return (
     <span
@@ -42,16 +24,11 @@ function ResetDisc() {
 
 interface Gesture {
   id: 'evolve' | 'reorder' | 'legend';
-  /** The same marks the hints under the card use, so the two read as one set. */
   Icon: ComponentType<{ className?: string }>;
   title: NoArgKey;
   body: () => ReactNode;
 }
 
-/**
- * The undo sentence, with the disc where the words put it. `{undo}` is one
- * run kept on one line, so a wrap never starts a line on the disc.
- */
 function EvolveBody() {
   return (
     <>
@@ -92,7 +69,6 @@ const GESTURES: Gesture[] = [
 ];
 
 function GestureList() {
-  // Subscribes the list to the locale; the bodies read the catalog directly.
   const t = useT();
   return (
     <ul className="flex flex-col gap-3.5">
@@ -103,8 +79,6 @@ function GestureList() {
           </span>
           <div className="min-w-0">
             <h3 className="text-sm font-semibold leading-snug">{t(title)}</h3>
-            {/* `auto-phrase` breaks Japanese between phrases rather than
-                inside them; other languages ignore it. */}
             <p className="mt-0.5 text-[0.8125rem] leading-snug text-muted-foreground text-pretty [word-break:auto-phrase]">{body()}</p>
           </div>
         </li>
@@ -115,14 +89,6 @@ function GestureList() {
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/**
- * Focus in, keep it in, and on desktop let Escape out.
- *
- * `start` is the element that takes focus when the popup opens. Tab and
- * Shift+Tab wrap inside the dialog that holds it, so a keyboard user does not
- * walk into the page behind a popup a click outside would close. Mobile's
- * Escape belongs to the bottom sheet, which already handles it.
- */
 function useDialogFocus(
   start: RefObject<HTMLElement | null>,
   onClose: () => void,
@@ -215,13 +181,7 @@ function CardHelpDialog({ anchor, onClose }: { anchor: HTMLElement; onClose: () 
   );
 }
 
-/**
- * The info button. It sits left of the card's export button and wears the same
- * box, in the muted colour, so export stays the bar's one red control.
- */
 export function CardHelpButton() {
-  // The button that opened the popup, which is also the open flag: the desktop
-  // card anchors to it, and focus goes back to it on close.
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const t = useT();
   const close = useCallback(() => {

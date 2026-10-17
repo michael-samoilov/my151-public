@@ -12,7 +12,6 @@ import { AlertTriangle, ChevronDown } from 'lucide-react';
 
 const pokemonList = pokemonData as Pokemon[];
 
-// National type frequency baseline (proportion of national-dex Pokemon that have each type)
 let _nationalTypeFreq: Map<string, number> | null = null;
 function getNationalTypeFreq(): Map<string, number> {
   if (_nationalTypeFreq) return _nationalTypeFreq;
@@ -27,7 +26,6 @@ function getNationalTypeFreq(): Map<string, number> {
   return freq;
 }
 
-// Early-route archetype IDs for the late-evolution warning
 const EARLY_ROUTE_IDS = new Set([
   ...ARCHETYPES.find(a => a.id === 'early-bug')!.pokemonIds,
   ...ARCHETYPES.find(a => a.id === 'early-bird')!.pokemonIds,
@@ -55,7 +53,6 @@ export function WhatsAdvisor() {
   const advice = useMemo(() => {
     const items: { type: 'missing' | 'suggestion' | 'complete'; text: string }[] = [];
 
-    // Check total fill
     const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
     if (totalPlaced === 0) {
       items.push({ type: 'missing', text: t('advisor.empty') });
@@ -67,10 +64,8 @@ export function WhatsAdvisor() {
       items.push({ type: 'missing', text: t('advisor.over', { count: totalPlaced, over: totalPlaced - 151 }) });
     }
 
-    // Check archetype coverage
     const allIds = new Set(Object.values(sections).flat());
 
-    // Starter check: count distinct evolution chains in the starter section
     const starterIds = sections['starter'] ?? [];
     {
       const starterChains = new Set<number>();
@@ -87,7 +82,6 @@ export function WhatsAdvisor() {
       }
     }
 
-    // Other archetype checks
     const otherCategories = ['pseudo-legendary', 'legendary', 'mythical'];
     for (const catId of otherCategories) {
       const cat = CATEGORIES.find((c) => c.id === catId);
@@ -100,7 +94,6 @@ export function WhatsAdvisor() {
       }
     }
 
-    // Check type coverage
     const typeCoverage = new Set<string>();
     for (const id of allIds) {
       const pokemon = getPokemonById(id);
@@ -116,7 +109,6 @@ export function WhatsAdvisor() {
       items.push({ type: 'complete', text: t('advisor.allTypes') });
     }
 
-    // Type over-representation warning (>2x vs national, in BOTH full and filtered pools)
     if (totalPlaced >= 15) {
       const nationalTypeFreq = getNationalTypeFreq();
       const placedPokemon = [...allIds].map(id => getPokemonById(id)).filter((p): p is Pokemon => !!p);
@@ -155,7 +147,6 @@ export function WhatsAdvisor() {
       }
     }
 
-    // Late-evolving early route Pokemon warning (direct evolution from base form at level 40+)
     {
       const lateEvoWarnings: string[] = [];
       const checkedChains = new Set<number>();
@@ -166,12 +157,10 @@ export function WhatsAdvisor() {
         if (checkedChains.has(pokemon.evolutionChainId)) continue;
         checkedChains.add(pokemon.evolutionChainId);
 
-        // Find the base form (stage 1, no evolvesFrom) of this chain
         const chainIds = getEvolutionChainIds(id);
         const chainMembers = chainIds.map(cid => getPokemonById(cid)).filter((p): p is Pokemon => !!p);
         const baseForm = chainMembers.find(p => p.evolvesFrom === null) ?? chainMembers[0];
 
-        // Only flag direct evolutions from the base form (not later stages)
         for (const member of chainMembers) {
           if (
             member.evolvesFrom === baseForm.id &&
@@ -180,7 +169,7 @@ export function WhatsAdvisor() {
           ) {
             const name = speciesName(member.id) ?? member.name.charAt(0).toUpperCase() + member.name.slice(1);
             lateEvoWarnings.push(t('advisor.lateEvoEntry', { name, level: member.evolutionLevel }));
-            break; // one warning per chain
+            break;
           }
         }
       }

@@ -1,4 +1,3 @@
-// keeps: /api/submit rejecting Pokédex beacons whose ids the generated chain table lacks; E2E stubs the API, so the drop is invisible there.
 import { describe, expect, it } from 'vitest';
 import pokemonData from '@/data/pokemon.json';
 import { EVOLUTION_CHAIN_BY_ID } from '../../api/_chains';

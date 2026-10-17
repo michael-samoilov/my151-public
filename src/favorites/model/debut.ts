@@ -1,15 +1,6 @@
 import type { GenNumber } from './cells';
 import { isPowerupForm, type PickerMon } from './catalog';
 
-/**
- * Games in release order, limited to games where a picker entry debuted. RB
- * stands for Red, Green, Blue, and Yellow, and GS for Gold, Silver, and
- * Crystal. Sword/Shield and Scarlet/Violet include their DLC.
- *
- * All are main-series games except Pokémon Pokopia, the one spin-off listed.
- * DJ Rotom and Smearguru debuted there. A form takes the generation and
- * debut of the game that introduced it.
- */
 const DEBUT_GAMES = [
   'RB', 'GS', 'RS', 'FRLG', 'E', 'DP', 'Pt', 'HGSS', 'BW', 'B2W2', 'XY', 'ORAS',
   'SM', 'USUM', 'LGPE', 'SwSh', 'PLA', 'SV', 'PLZA', 'Pokopia',
@@ -25,47 +16,36 @@ const REGION_GAME: Record<string, DebutGame> = {
 };
 const REGION_RE = /-(alola|galar|hisui|paldea)(?:-|$)/;
 
-/**
- * Picker IDs, inclusive ranges, that debuted after the first game of their
- * generation row. Every other entry follows the rules in `debutGame`.
- */
 const LATER_DEBUTS: readonly (readonly [first: number, last: number, game: DebutGame])[] = [
-  [10001, 10002, 'FRLG'], // Deoxys Attack and Defense Formes
-  [10003, 10003, 'E'], // Deoxys Speed Forme
-  [10006, 10012, 'Pt'], // Shaymin Sky, Giratina Origin, Rotom appliances
-  [11064, 11064, 'HGSS'], // Spiky-eared Pichu
-  [10019, 10023, 'B2W2'], // Therian Formes, Black and White Kyurem
-  [11107, 11108, 'B2W2'], // Black and White Kyurem Overdrive
-  [10062, 10090, 'ORAS'], // ORAS Megas, Primal Reversion, Cosplay Pikachu, Hoopa Unbound
-  [803, 807, 'USUM'], // Poipole to Zeraora
-  [10148, 10148, 'USUM'], // Partner Cap Pikachu
-  [10152, 10152, 'USUM'], // Dusk Lycanroc
-  [10155, 10157, 'USUM'], // Dusk Mane, Dawn Wings, and Ultra Necrozma
-  [808, 809, 'LGPE'], // Meltan and Melmetal
-  [899, 905, 'PLA'], // Wyrdeer to Enamorus
-  [10245, 10249, 'PLA'], // Origin Dialga and Palkia, White-Striped Basculin, female Basculegion, Therian Enamorus
-  [10278, 10325, 'PLZA'], // Legends: Z-A Megas, including Mega Dimension
-  [11112, 11112, 'Pokopia'], // DJ Rotom
-  [11117, 11117, 'Pokopia'], // Smearguru
+  [10001, 10002, 'FRLG'],
+  [10003, 10003, 'E'],
+  [10006, 10012, 'Pt'],
+  [11064, 11064, 'HGSS'],
+  [10019, 10023, 'B2W2'],
+  [11107, 11108, 'B2W2'],
+  [10062, 10090, 'ORAS'],
+  [803, 807, 'USUM'],
+  [10148, 10148, 'USUM'],
+  [10152, 10152, 'USUM'],
+  [10155, 10157, 'USUM'],
+  [808, 809, 'LGPE'],
+  [899, 905, 'PLA'],
+  [10245, 10249, 'PLA'],
+  [10278, 10325, 'PLZA'],
+  [11112, 11112, 'Pokopia'],
+  [11117, 11117, 'Pokopia'],
 ];
 
 function debutGame(mon: PickerMon): DebutGame {
   const listed = LATER_DEBUTS.find(([first, last]) => mon.id >= first && mon.id <= last);
   if (listed) return listed[2];
   if (mon.name.startsWith('Gigantamax ')) return 'SwSh';
-  if (isPowerupForm(mon)) return 'XY'; // A Mega not listed above.
+  if (isPowerupForm(mon)) return 'XY';
   const region = REGION_RE.exec(mon.name)?.[1];
   if (region) return REGION_GAME[region];
   return GENERATION_GAME[mon.generation];
 }
 
-/**
- * Each game's generation and primary region. Games that share both are one
- * debut: B2W2 sorts with BW, USUM with SM, and Emerald with Ruby and
- * Sapphire. A game in the same generation but another region stays apart:
- * FRLG, HGSS, ORAS, LGPE, PLA, and PLZA. Pokopia has no main-series region,
- * so its own value keeps it apart and last.
- */
 const GAME_REGION: Record<DebutGame, `${GenNumber} ${string}`> = {
   RB: '1 kanto', GS: '2 johto', RS: '3 hoenn', FRLG: '3 kanto', E: '3 hoenn',
   DP: '4 sinnoh', Pt: '4 sinnoh', HGSS: '4 johto', BW: '5 unova', B2W2: '5 unova',
@@ -73,7 +53,6 @@ const GAME_REGION: Record<DebutGame, `${GenNumber} ${string}`> = {
   SwSh: '8 galar', PLA: '8 hisui', SV: '9 paldea', PLZA: '9 kalos', Pokopia: '9 pokopia',
 };
 
-/** Release position of the entry's debut region. Earlier regions sort first. */
 export function debutRank(mon: PickerMon): number {
   const region = GAME_REGION[debutGame(mon)];
   return DEBUT_GAMES.findIndex((game) => GAME_REGION[game] === region);

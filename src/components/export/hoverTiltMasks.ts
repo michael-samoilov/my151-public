@@ -96,7 +96,6 @@ export function hoverTiltMaskContextFromDex(
   };
 }
 
-/** Frame / card size. Empty workshop contexts fall back to the trainer card. */
 function dexBorderInsets(ctx: HoverTiltMaskContext): { x: number; y: number } {
   const dex = ctx.width > 8;
   const frame = dex ? DEX_EXPORT_FRAME : FRAME;
@@ -115,7 +114,6 @@ function dexBorderFrameSvg(ctx: HoverTiltMaskContext): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="0" y="0" width="100" height="${top.toFixed(3)}" fill="white"/><rect x="0" y="${(100 - top).toFixed(3)}" width="100" height="${top.toFixed(3)}" fill="white"/><rect x="0" y="0" width="${left.toFixed(3)}" height="100" fill="white"/><rect x="${(100 - left).toFixed(3)}" y="0" width="${left.toFixed(3)}" height="100" fill="white"/></svg>`;
 }
 
-/** Square contain-fit box for each sprite's primary-type glyph. Side = pokéball diameter. */
 function typeIconGlyphBoxes(ctx: HoverTiltMaskContext): TypeIconGlyphBox[] {
   return ctx.sprites.map((s) => ({
     type: s.type,

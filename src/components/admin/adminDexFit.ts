@@ -1,6 +1,5 @@
 import { OUTLINE_GAP, OUTLINE_PAD, OUTLINE_STROKE_FRAC } from '@/lib/sectionOutlines';
 
-/** Columns + gaps + outline pad + stroke + 1.2× sprite bleed, in tile units. */
 function dexColFactor(cols: number): number {
   return cols + (cols - 1) * OUTLINE_GAP + 2 * OUTLINE_PAD + OUTLINE_STROKE_FRAC + 0.2;
 }

@@ -1,25 +1,12 @@
 import { expect, test, type Browser } from '@playwright/test';
 
-// The build writes the hub's English first render into index.html
-// (scripts/prerender-hub.ts), so the page paints before its JavaScript runs.
-// These tests hold the promises that make that safe: the markup is complete
-// without JavaScript, the app adopts it without redrawing or moving it, and a
-// visitor who would get a different page waits behind the spinner instead.
-
-// Saved work in all three tools, in the shapes the tools save. The hub shows
-// a "saved in this browser" line under each card for it.
 const SAVED = {
   'p151-visited': '1',
   'personal-151-pokedex-v3': JSON.stringify({ state: { sections: { starter: [1, 4, 7] } }, version: 10 }),
   'league-builder': JSON.stringify({ state: { name: '', cards: [{ lines: [{ pokemonId: 25 }] }] }, version: 1 }),
   'favorite-picker': JSON.stringify({ state: { fills: { 'normal|1': 16, 'fire|1': 4, 'water|1': 7 } }, version: 3 }),
 };
-// A preview build gives a first visitor a demo league (src/league/store/
-// seedLeague.ts), which adds a saved line to the hub after it loads. A
-// production build does not. An empty saved league starts a first visit as
-// production does.
 const NO_LEAGUE = { 'league-builder': JSON.stringify({ state: { name: '', cards: [] }, version: 1 }) };
-// The Tools menu's favorites notice runs October 6–13 (src/lib/launchFlags.ts).
 const IN_NOTICE = '2026-10-10T12:00:00-04:00';
 const AFTER_NOTICE = '2026-10-20T12:00:00-04:00';
 
@@ -46,7 +33,6 @@ test('the hub HTML holds the whole page without JavaScript', async ({ browser, b
 // holds the script until the stylesheet has loaded.
 test('the hub HTML reads no layout before its stylesheet', async ({ request }, testInfo) => {
   const html = await (await request.get('/')).text();
-  // The stylesheet is the largest inline <style>; layout reads come after it.
   const styles = [...html.matchAll(/<style>[\s\S]*?<\/style>/g)];
   const largest = styles.reduce((a, b) => (b[0].length > a[0].length ? b : a));
   const sheet = largest.index + largest[0].length;
@@ -59,16 +45,10 @@ test('the hub HTML reads no layout before its stylesheet', async ({ request }, t
 test('the hub inlines its stylesheet and prefetches the file for the tools', async ({ page }) => {
   const response = await page.goto('/?notme');
   expect(await response!.text()).not.toContain('<link rel="stylesheet"');
-  // The prefetch starts after the load event, so it never competes with the screenshots.
   const href = await page.locator('link[rel="prefetch"][href$=".css"]').getAttribute('href');
   expect((await page.request.get(href!)).status()).toBe(200);
 });
 
-/**
- * Loads the hub and reports what the visitor saw: whether #root showed before
- * the app ran, whether the app kept the prerendered heading, the layout shifts
- * before the app took over, and the console errors.
- */
 async function visit(
   browser: Browser,
   baseURL: string | undefined,
@@ -77,9 +57,6 @@ async function visit(
 ) {
   const context = await browser.newContext({ baseURL, ...options, serviceWorkers: 'block' });
   if (now) await context.clock.setFixedTime(new Date(now));
-  // On a phone the prerendered page paints well before the app takes it over.
-  // Locally the app can take over before the first paint, which would hide a
-  // shift, so the scripts wait until the page has painted.
   await context.route('**/assets/*.js', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 400));
     await route.fallback();
@@ -102,7 +79,6 @@ async function visit(
     document.addEventListener('DOMContentLoaded', () => {
       probe.rootShown = getComputedStyle(document.getElementById('root')!).display !== 'none';
       probe.h1 = document.querySelector('#root h1');
-      // src/home/main.tsx removes the spinner when the app takes over.
       new MutationObserver(() => {
         if (!probe.tookOver && !document.querySelector('.p151-boot')) probe.tookOver = performance.now();
       }).observe(document.body, { childList: true });
@@ -119,8 +95,6 @@ async function visit(
   });
   await page.goto('/?notme');
   await expect(page.locator('.p151-boot')).toHaveCount(0);
-  // The dex card's front shot. Its alt text is translated, so it is found by
-  // its file and by having alt text at all (the shadow and hit copies have none).
   await expect(page.locator('img[alt]:not([alt=""])[src*="/tool-dex-"]:not([src*="/tool-dex-b-"])')).toHaveJSProperty('complete', true);
   await expect(page.locator('[data-card-progress]:not([data-empty])')).toHaveCount(lines);
   await page.waitForTimeout(500);
@@ -153,8 +127,6 @@ for (const [name, device] of [['phone', PHONE], ['desktop', DESKTOP]] as const) 
     expect(seen.shiftTotal).toBe(0);
     expect(seen.errors).toEqual([]);
     expect(seen.shot).toHaveLength(1);
-    // No saved work: every line shows 0, so a first visitor sees what each
-    // tool counts and that this browser keeps it.
     expect(seen.progress).toEqual([
       { tool: 'dex', shown: true, text: '0/151 entries saved in this browser' },
       { tool: 'league', shown: true, text: '0/14 trainers saved in this browser' },
@@ -177,10 +149,6 @@ for (const [name, device] of [['phone', PHONE], ['desktop', DESKTOP]] as const) 
   });
 }
 
-// The prerendered lines show 0 until the app reads the saved counts. The head
-// script marks the tools with saved work, so a returning visitor never sees 0
-// for work they saved. No app script loads here, so this is the page before
-// the app runs.
 test('before the app runs, a tool with saved work holds its count back and the others show 0', async ({ browser, baseURL }, testInfo) => {
   const context = await browser.newContext({ baseURL, ...PHONE, locale: 'en-US', serviceWorkers: 'block' });
   await context.clock.setFixedTime(new Date(AFTER_NOTICE));
@@ -208,13 +176,11 @@ test('before the app runs, a tool with saved work holds its count back and the o
     { tool: 'league', text: '0/14 trainers saved in this browser' },
     { tool: 'favorites', text: '0/257 picks saved in this browser' },
   ]);
-  // The held line keeps its height, so the count arrives without a shift.
   for (const line of lines) expect(line.height).toBeGreaterThan(0);
 });
 
 for (const [name, options, settings] of [
   ['in another language', { ...PHONE, locale: 'ja-JP' }, { seed: NO_LEAGUE }],
-  // The Tools menu shows a returning visitor a notice the HTML cannot hold.
   ['who visited before, while the favorites notice runs', { ...PHONE, locale: 'en-US' }, { seed: { ...NO_LEAGUE, 'p151-visited': '1' }, now: IN_NOTICE }],
 ] as const) {
   test(`a visitor ${name} waits for the app instead`, async ({ browser, baseURL }, testInfo) => {

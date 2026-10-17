@@ -1,27 +1,10 @@
 import { test, expect } from '@playwright/test';
 
-/**
- * Width sweep for the hub at `/`.
- *
- * The page has no fixed breakpoint layout to eyeball: every card measurement is
- * a share of the card's own width, so the widths *between* the design sizes are
- * where a mistake hides. This drives 20 of them and reads geometry, never text,
- * so a copy change never breaks it.
- *
- * The same checks run against the mockup generator in
- * `docs/future-tools/home-page/sweep.mjs`, which sweeps 45 frames and carries a
- * mutation test proving the checks can fail.
- */
 const WIDTHS = [
   320, 360, 375, 390, 414, 428, 540, 600, 700, 768, 800, 834, 900, 1000, 1023,
   1024, 1180, 1280, 1299, 1300, 1440, 1920,
 ];
 
-/**
- * Four hub cards: dex, league, favorite picker, then the feedback call.
- * The page reads the count and lays itself out from that, so a stale number
- * here would pass while the page is wrong.
- */
 const CARDS = 4;
 
 type Problem = string;
@@ -43,14 +26,10 @@ test.describe('home page responsive sweep', () => {
         const desktop = window.innerWidth >= 1024;
         if (cards.length !== cardCount) fail.push(`expected ${cardCount} cards, found ${cards.length}`);
 
-        // 1. The page may grow downward and scroll. It may never scroll sideways.
         if (root.scrollWidth - root.clientWidth > 0.5) {
           fail.push(`h-overflow ${root.scrollWidth} > ${root.clientWidth}`);
         }
 
-        // 2. The footer starts below the fold at every size. What a visitor
-        // sees before scrolling is the header, the hero and the grid — the
-        // footer is something they scroll to, never part of the first screen.
         const footer = document.querySelector('main')?.parentElement?.nextElementSibling;
         if (!footer) {
           fail.push('footer not found after the fold block');
@@ -58,11 +37,6 @@ test.describe('home page responsive sweep', () => {
           fail.push(`footer top at ${R(footer).top.toFixed(1)}, above the ${window.innerHeight}px fold`);
         }
 
-        // 3. Panels in one row share a top edge, which is what puts the first
-        // line of every title in that row on one baseline. The overhang reserve
-        // is shared across a row for exactly this reason, so a row that mixes a
-        // card with artwork and one without still lines up. Cells whose tops
-        // match are one row; their panels must match too.
         const rows = new Map<number, number[]>();
         cards.forEach((cell) => {
           const panel = cell.querySelector('[data-card-panel]');
@@ -75,7 +49,6 @@ test.describe('home page responsive sweep', () => {
           if (spread > 0.5) fail.push(`row at ${cellTop}: panel tops differ by ${spread.toFixed(1)}px`);
         }
 
-        // 4. No two cards touch.
         for (let i = 0; i < cards.length; i += 1) {
           for (let j = i + 1; j < cards.length; j += 1) {
             const a = R(cards[i]);
@@ -86,10 +59,6 @@ test.describe('home page responsive sweep', () => {
           }
         }
 
-        // 5. The call to action is the wide bar below the desktop breakpoint and
-        // an ordinary card at or above it. The two are different markup, and
-        // exactly one of them mounts, so the caption is the tell: the bar keeps
-        // its copy inside the panel and has none.
         const wide = cards.filter((cell) => !cell.querySelector('[data-card-title]'));
         if (desktop && wide.length) fail.push(`${wide.length} cards have no caption at desktop width`);
         if (!desktop) {
@@ -102,8 +71,6 @@ test.describe('home page responsive sweep', () => {
         }
 
         cards.forEach((cell, i) => {
-          // The red panel, not the cell: the cell also holds the overhang, so a
-          // structural selector picks the wrapper instead.
           const panel = cell.querySelector('[data-card-panel]');
           if (!panel) {
             fail.push(`card ${i} is missing its panel`);
@@ -113,9 +80,6 @@ test.describe('home page responsive sweep', () => {
           const h2 = cell.querySelector('[data-card-title]');
           const p = cell.querySelector('[data-card-title] + p');
 
-          // 6. Copy fits. Caption titles may wrap, with every line visible;
-          // the blurb is never clipped. The wide bar's copy stays in its panel.
-          // A text range measures each rendered line inside the title's box.
           if (h2 && p) {
             const range = document.createRange();
             range.selectNodeContents(h2);
@@ -143,13 +107,7 @@ test.describe('home page responsive sweep', () => {
             });
           }
 
-          // 7. Artwork never reaches the card's right edge: a bare red strip has
-          // to remain, or the screenshot reads as clipped there. The owner moved
-          // the front sheet halfway into its old clearance: preserve half
-          // the original 8% minimum while still guarding against side clipping.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
-            // The rotated tail below the pocket is invisible. Measure the
-            // actual sheet polygon above the fold, not that tail's bounding box.
             const sheet = img.parentElement!;
             const box = R(sheet);
             const style = getComputedStyle(sheet);
@@ -174,18 +132,11 @@ test.describe('home page responsive sweep', () => {
             }
           });
 
-          // 8. Every screenshot still reaches the panel's bottom edge. The
-          // assets are cropped to their own content — the dex's grid ends above
-          // the app's footer, an export ends at its own edge — so one cropped
-          // too far would leave bare red under the artwork. That is a change to
-          // a file, invisible to a type check and to every other check here.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
             const short = c.bottom - R(img).bottom;
             if (short > 0.5) fail.push(`card ${i} shot ${k} stops ${short.toFixed(1)}px above the panel's edge`);
           });
 
-          // 9. Artwork breaks out of the panel's top and left, so it has to
-          // clear both the card above it and the window's own left edge.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
             const r = R(img);
             if (r.left < -0.5) fail.push(`card ${i} shot ${k} runs ${(-r.left).toFixed(1)}px off the left edge`);
@@ -200,10 +151,6 @@ test.describe('home page responsive sweep', () => {
             });
           });
 
-          // 10. A card with no artwork carries the build mark instead. It stays
-          // wholly inside its panel, and where it is the only thing in there it
-          // sits centred. Centred means the two centres agree — not equal air on
-          // every side, which a panel wider than it is tall never has.
           const badge = cell.querySelector('[data-card-badge]');
           const mark = badge?.querySelector('svg');
           if (badge && mark) {
@@ -234,7 +181,6 @@ test.describe('home page responsive sweep', () => {
           fail.push(`gutter is ${pad.toFixed(2)}%, expected ${wantPad}% at ${window.innerWidth}px`);
         }
 
-        // 12. Hero copy stays inside the frame and breaks rather than overrunning.
         const hero = document.querySelector('main > section');
         [...(hero?.querySelectorAll('h1, p') ?? [])].forEach((e, i) => {
           const r = R(e);
@@ -242,11 +188,6 @@ test.describe('home page responsive sweep', () => {
           if (e.scrollWidth - e.clientWidth > 0.5) fail.push(`hero text ${i} overruns its measure`);
         });
 
-        // 13. On a wide desktop the row carries one track per tool and fills the
-        // width, rather than leaving an empty trailing column. Below 1300px it is
-        // two up, so each caption keeps one line at 12px or more. Either way the
-        // first card sits flush to the grid's left and the last flush to its
-        // right.
         if (desktop && grid) {
           const tracks = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean);
           const wantTracks = window.innerWidth >= 1300 ? cardCount : 2;
@@ -262,12 +203,6 @@ test.describe('home page responsive sweep', () => {
           }
         }
 
-        // 14. Desktop cards are the wide low band, not a tall block: each panel is
-        // clearly wider than it is tall. This is what keeps the red from
-        // dominating, and it is invisible to every ratio check above (they scale
-        // with the panel). The screenshots do not depend on it — they size off
-        // their own stage — so a panel that reverted to the tall proportion would
-        // pass everything else while burying the page in red.
         if (desktop) {
           cards.forEach((cell, i) => {
             const panel = cell.querySelector('[data-card-panel]');
@@ -279,10 +214,6 @@ test.describe('home page responsive sweep', () => {
           });
         }
 
-        // 15. Each screenshot's shadow fits inside the layer that clips it. The
-        // shadow (`0 9px 21px -5px`) reaches 16px past its sheet. When that
-        // layer ended at the panel's right edge, a phone's front sheet sat a
-        // few pixels from it, and its shadow stopped on a straight line.
         document.querySelectorAll('.hub-stage').forEach((stage, i) => {
           const clip = R(stage.children[0]);
           stage.querySelectorAll('[data-shot]').forEach((shot, k) => {

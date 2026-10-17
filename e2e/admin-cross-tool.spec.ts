@@ -1,16 +1,10 @@
+import { openAdmin } from './admin-ready';
 import { test, expect } from '@playwright/test';
 
-/**
- * The admin Cross-tool tile, in demo mode so CI does not need a token.
- * Locks the one diagram of every browser in the
- * range, summed over all arrival eras. Inclusive tool totals sit beside
- * the shapes. Exclusive counts sit on the diagram.
- */
 test.describe('admin cross-tool tile', () => {
   test('demo dashboard shows only the diagram for all eras, no percent row', async ({ page }) => {
-    await page.goto('/?admin&demo');
+    await openAdmin(page, '/?admin&demo');
     const tile = page.locator('section', { has: page.getByRole('heading', { name: /Cross-tool/ }) });
-    // Michael removed the percent row on 8 October; the diagram alone stays.
     await expect(tile.getByTestId('cross-tool-venns')).toBeVisible();
     await expect(tile.getByText('Dex → League')).toHaveCount(0);
     await expect(tile.getByText('League has a dex')).toHaveCount(0);
@@ -40,7 +34,6 @@ test.describe('admin cross-tool tile', () => {
   });
 });
 
-/** Live counts on 7 Oct 2026, summed over the three arrival eras. League + Picker is 0. */
 const LEAGUE = Date.UTC(2026, 8, 8);
 const PICKER = Date.UTC(2026, 9, 7);
 const catalog = [
@@ -66,7 +59,7 @@ test.describe('cross-tool diagram @viewport', () => {
         json: { totalUsers: 0, funnel: { users: 0, completed: 0, exported: 0 }, retention: { returning: 0, newUsers: 0 }, timeSurvival: [], timeStats: stats, depthSurvival: [], depthStats: stats, countries: {}, devices: {}, os: {}, popularFinal: [], mostDropped: [], popularBySection: {}, droppedBySection: {}, picksBySectionAll: {}, crossTool: { catalog, kpis: [], eras } },
       }),
     );
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     const chart = page.getByTestId('cross-tool-venns');
     await expect(chart.locator('svg[role="img"]')).toHaveCount(1);
     await expect(chart.getByTestId('cross-tool-region-label')).toHaveCount(6);
@@ -111,7 +104,6 @@ test.describe('cross-tool diagram @viewport', () => {
   });
 });
 
-/** A launch chip narrows the card to the matching `crossToolSince` snapshot. */
 const kpi = (n: number, of: number) => ({ key: 'dex-to-league', label: 'Dex → League', hint: 'of dex users active after 8 Sep 2026', n, of, pct: Math.round((n / of) * 100) });
 const snapshot = (regions: Record<string, number>, conv: [number, number]) => ({
   catalog,
@@ -138,7 +130,7 @@ test.describe('cross-tool launch chips @viewport', () => {
         json: { totalUsers: 0, funnel: { users: 0, completed: 0, exported: 0 }, retention: { returning: 0, newUsers: 0 }, timeSurvival: [], timeStats: stats, depthSurvival: [], depthStats: stats, countries: {}, devices: {}, os: {}, popularFinal: [], mostDropped: [], popularBySection: {}, droppedBySection: {}, picksBySectionAll: {}, crossTool: { catalog, kpis: [kpi(156, 333)], eras }, crossToolSince },
       });
     });
-    await page.goto('/?admin');
+    await openAdmin(page, '/?admin');
     const tile = page.locator('section', { has: page.getByRole('heading', { name: /Cross-tool/ }) });
     const chips = tile.getByRole('group', { name: 'Since launch' }).getByRole('button');
     const leagueChip = chips.filter({ hasText: 'League 7 Sep' });
@@ -175,7 +167,6 @@ test.describe('cross-tool launch chips @viewport', () => {
     await expect(pickerChip).toHaveAttribute('aria-pressed', 'false');
     await expect(tile.getByText('901 browsers')).toBeVisible();
 
-    // The chips fit on one line, whole, at every width.
     const fit = await chips.evaluateAll((els) =>
       els.map((el) => ({ top: Math.round(el.getBoundingClientRect().top), cut: el.scrollWidth > el.clientWidth, lines: Math.round(el.getBoundingClientRect().height) })),
     );
