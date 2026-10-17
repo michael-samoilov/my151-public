@@ -66,7 +66,9 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail-name')).toHaveText('KingOfThe-X-Roads');
     const sprites = dialog.getByTestId('ack-sprites');
     await expect(sprites.getByTestId('ack-sprites-summary')).toHaveText('In addition to their sprites in the projects above, we use these 13 additional sprites from their own uploads.');
-    for (const summary of await sprites.locator('details:not([open]) > summary').all()) await summary.click();
+    const generations = sprites.getByTestId('ack-sprites-generation');
+    await expect(generations).toHaveCount(2);
+    for (const summary of await generations.locator('summary').all()) await summary.click();
     await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Rotom (DJ)');
     await expect(sprites.getByRole('listitem')).toHaveCount(13);
     const kingSprites = await sprites.getByRole('listitem').count();
