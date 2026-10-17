@@ -7,8 +7,8 @@ import { isPowerupForm, type PickerMon } from './catalog';
  * Crystal. Sword/Shield and Scarlet/Violet include their DLC.
  *
  * All are main-series games except Pokémon Pokopia, the one spin-off listed.
- * DJ Rotom debuted there, and a form takes the generation and debut of the
- * game that introduced it.
+ * DJ Rotom and Smearguru debuted there. A form takes the generation and
+ * debut of the game that introduced it.
  */
 const DEBUT_GAMES = [
   'RB', 'GS', 'RS', 'FRLG', 'E', 'DP', 'Pt', 'HGSS', 'BW', 'B2W2', 'XY', 'ORAS',
@@ -46,6 +46,7 @@ const LATER_DEBUTS: readonly (readonly [first: number, last: number, game: Debut
   [10245, 10249, 'PLA'], // Origin Dialga and Palkia, White-Striped Basculin, female Basculegion, Therian Enamorus
   [10278, 10325, 'PLZA'], // Legends: Z-A Megas, including Mega Dimension
   [11112, 11112, 'Pokopia'], // DJ Rotom
+  [11117, 11117, 'Pokopia'], // Smearguru
 ];
 
 function debutGame(mon: PickerMon): DebutGame {

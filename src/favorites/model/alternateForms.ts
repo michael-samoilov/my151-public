@@ -208,4 +208,8 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11114, ownerId: 1017, name: 'ogerpon-wellspring-tera', types: ['grass', 'water'] },
   { id: 11115, ownerId: 1017, name: 'ogerpon-hearthflame-tera', types: ['grass', 'fire'] },
   { id: 11116, ownerId: 1017, name: 'ogerpon-cornerstone-tera', types: ['grass', 'rock'] },
+  // Pokopia's Smearguru keeps Smeargle's biological identity, like DJ Rotom.
+  { id: 11117, ownerId: 235, name: 'smeargle-smearguru', types: ['normal'], generation: 9 },
+  { id: 11118, ownerId: 1007, name: 'koraidon-limited-build', types: ['fighting', 'dragon'] },
+  { id: 11119, ownerId: 1008, name: 'miraidon-low-power-mode', types: ['electric', 'dragon'] },
 ];

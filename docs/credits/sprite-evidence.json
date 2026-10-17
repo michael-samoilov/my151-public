@@ -33934,7 +33934,7 @@
  },
  {
   "file": "public/sprites/pokemon/10304.png",
-  "sha256": "dd5b7b7cd905189bc68fb7633a73865005c95a496fa20d22e170e4f91490d85b",
+  "sha256": "4ab8d027bfa3d768cc567eb97e05f6de8816424781c692c2270d33a1a5127f58",
   "pokemon": [
    "Mega Raichu X"
   ],
@@ -33943,24 +33943,19 @@
    "League builder"
   ],
   "creditedNow": [
-   "Kyle Dove"
+   "KingOfThe-X-Roads"
   ],
-  "creditedVia": "pokeapi",
-  "evidenceType": "pokeapi-readme",
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
   "sources": [
    {
-    "url": "https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10304.png",
-    "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/.git",
-    "sha256": "dd5b7b7cd905189bc68fb7633a73865005c95a496fa20d22e170e4f91490d85b",
-    "gitBlob": "f0c46ad20046460b24f017e8f0babf8726217285"
-   },
-   {
-    "url": "https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/README.md#L313",
-    "sha256": null,
-    "quote": "for providing the back_default, back_shiny and z-a mega sprites for generation 9."
+    "url": "https://sta.sh/03id19f0dha",
+    "localCopy": "docs/favorite-picker-work/sprites/2026-10-17-king-originals/mega-raichu-x.png",
+    "sha256": "4ab8d027bfa3d768cc567eb97e05f6de8816424781c692c2270d33a1a5127f58",
+    "title": "mega-raichu-x by KingOfThe-X-Roads"
    }
   ],
-  "comparison": "the app file is byte-identical to sprites/pokemon/10304.png as added in PokéAPI commit 4bc9d60186, the commit that put the README line crediting Kyle Dove \"for providing the back_default, back_shiny and z-a mega sprites for generation 9.\" No file posted by the artist was found to compare pixel by pixel.",
+  "comparison": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/03id19f0dha, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
   "verdict": "confirmed"
  },
  {
@@ -37775,5 +37770,80 @@
   ],
   "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/shiny/612.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
   "verdict": "official Game Freak"
+ },
+ {
+  "file": "public/sprites/pokemon/11117.png",
+  "sha256": "6771453151747baa6bdefdb34d8c5352ae1d78565317eaea38f3f1604123d22b",
+  "pokemon": [
+   "smeargle-smearguru"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "KingOfThe-X-Roads"
+  ],
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
+  "sources": [
+   {
+    "url": "https://sta.sh/0qi9vfww1kg",
+    "localCopy": "docs/favorite-picker-work/sprites/2026-10-17-king-originals/smearguru.png",
+    "sha256": "6771453151747baa6bdefdb34d8c5352ae1d78565317eaea38f3f1604123d22b",
+    "title": "smearguru by KingOfThe-X-Roads"
+   }
+  ],
+  "comparison": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/0qi9vfww1kg, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11118.png",
+  "sha256": "22052a1cf3ad1dae28e5b31a730690240b0c284e10df58eccc4b70547c559e8c",
+  "pokemon": [
+   "koraidon-limited-build"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "KingOfThe-X-Roads"
+  ],
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
+  "sources": [
+   {
+    "url": "https://sta.sh/01ppvyo9gx1l",
+    "localCopy": "docs/favorite-picker-work/sprites/2026-10-17-king-originals/koraidon-limited-build.png",
+    "sha256": "22052a1cf3ad1dae28e5b31a730690240b0c284e10df58eccc4b70547c559e8c",
+    "title": "koraidon-limited-build by KingOfThe-X-Roads"
+   }
+  ],
+  "comparison": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/01ppvyo9gx1l, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11119.png",
+  "sha256": "287beffbf9fc0a5a151972186160633fe9d731861eba5d78c4c7193296f763f0",
+  "pokemon": [
+   "miraidon-low-power-mode"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "KingOfThe-X-Roads"
+  ],
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
+  "sources": [
+   {
+    "url": "https://sta.sh/0p5wp0lgq01",
+    "localCopy": "docs/favorite-picker-work/sprites/2026-10-17-king-originals/miraidon-low-power-mode.png",
+    "sha256": "287beffbf9fc0a5a151972186160633fe9d731861eba5d78c4c7193296f763f0",
+    "title": "miraidon-low-power-mode by KingOfThe-X-Roads"
+   }
+  ],
+  "comparison": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/0p5wp0lgq01, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
+  "verdict": "confirmed"
  }
 ]

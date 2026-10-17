@@ -13,8 +13,6 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Armored Mewtwo | Mewtwo's Gen 1 legendary family | No matching sprite verified. |
 | Zygarde Cell | Gen 6 Zygarde family | No matching battle-style sprite verified. |
 | Zygarde Core | Gen 6 Zygarde family | No matching battle-style sprite verified. |
-| Koraidon Limited Build | Gen 9 Koraidon family | KingOfThe-X-Roads source identified on 2026-10-16: https://sta.sh/01ppvyo9gx1l. Original PNG download is blocked by the environment network allowlist. |
-| Miraidon Low-Power Mode | Gen 9 Miraidon family | KingOfThe-X-Roads source identified on 2026-10-16: https://sta.sh/0p5wp0lgq01. Original PNG download is blocked by the environment network allowlist. |
 | Purple Kecleon (Mystery Dungeon) | Gen 3 Kecleon family | No matching Gen 5-style front sprite verified. |
 | Ukulele Pichu | Gen 4 Pichu family | Confirmed by Michael 2026-09-30. Pokémon Ranger: Guardian Signs design. No matching Gen 5-style front sprite verified in the searched source. |
 | Mega Darkrai eye form | Gen 4 Darkrai gimmick family | The existing Mega Darkrai sprite is present; no distinct matching eye-form sprite verified. |
@@ -24,6 +22,19 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Miraidon ride modes (Drive, Aquatic, Glide) | Gen 9 Miraidon family | Requested 2026-09-30. No separately named Gen 5 front sprite found for these ride builds in the current Smogon source. |
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
+
+## Imported on 2026-10-17 (release candidate)
+
+The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve the artist's canvas and bytes. [Originals and provenance](favorite-picker-work/sprites/2026-10-17-king-originals/originals.json) record the source pages, hashes, dimensions, transparency, and ink bounds.
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Smearguru | 11117 | Smeargle appearance in Normal × IX, debut Pokopia, with compact S and full label “Smeargle (Smearguru)”. https://sta.sh/0qi9vfww1kg |
+| Koraidon Limited Build | 11118 | After Koraidon in Fighting/Dragon × IX and Legendary pools. https://sta.sh/01ppvyo9gx1l |
+| Miraidon Low-Power Mode | 11119 | After Miraidon in Electric/Dragon × IX and Legendary pools. https://sta.sh/0p5wp0lgq01 |
+| Mega Raichu X | 10304 | Replaces existing shared Picker/League art with a cache revision. Identity stays 10304. https://sta.sh/03id19f0dha |
+
+King's direct-upload credit lists 13 sprites. Mega Raichu Y keeps its Generation 9 Resource Pack credit. The three additions stay out of the main Pokédex evolution catalog. Production release status belongs in [the picker handoff](favorite-picker-handoff.md).
 
 ## Added on 2026-10-12
 
@@ -61,7 +72,6 @@ Requested by Michael on 2026-10-06. Sprite sources and picker placement have not
 | Mosslax | Sprite search pending. |
 | Tinkmaster Tinkaton | Sprite search pending. |
 | Peakychu | Sprite search pending. |
-| Smearguru | KingOfThe-X-Roads source confirmed in his Gen 2 sheet: https://sta.sh/0qi9vfww1kg. Original PNG download is blocked by the environment network allowlist. Treat as a Smeargle appearance that debuted in Pokopia (Gen IX), like DJ Rotom. |
 | Chef Dente Greedent | Sprite search pending. |
 
 ## Sprites to replace
@@ -70,7 +80,6 @@ These forms are in the picker, but Michael (2026-09-30) finds their sprites poor
 
 | Form | Picker id | Note |
 | --- | --- | --- |
-| Mega Raichu X | 10304 (`src/league/data/powerupForms.json`) | Michael requested KingOfThe-X-Roads’s sprite on 2026-10-16: https://sta.sh/03id19f0dha. Existing X is Kyle Dove via PokéAPI; the credited Generation 9 Resource Pack lists Caruban for X, so King’s X requires a direct-source replacement unless a matching bundle file is proven. Original PNG download is blocked by the environment network allowlist. |
 | Mega Sceptile | 10065 (`src/league/data/powerupForms.json`) | Candidate from current Smogon Gen 5 source found 2026-09-30; review before replacing shared art. |
 | Gigantamax Blastoise | 10197 (`src/league/data/powerupForms.json`) | Candidate from current Smogon Gen 5 source found 2026-09-30; review before replacing shared art. |
 | Terapagos Stellar Form | 10277 (`src/favorites/model/alternateForms.ts`) | Current Smogon Gen 5 source is pixel-identical to the existing art. Continue searching for a distinct alternative. |

@@ -1,9 +1,5 @@
 # my151 Codex instructions
 
-## Credits and sprites continuation
-
-If continuing the acknowledgements or KingOfThe-X-Roads sprite task, read [CREDITS-SPRITES-HANDOFF.md](CREDITS-SPRITES-HANDOFF.md) at the repository root first. The saved continuation is on `claude/handoff-credits-sprites-2026-10-17`; its complete code, source inventories, logs, and review images are committed there. Do not search the default branch or require files from the previous session's `/tmp` or `.artifacts` directories. Resume its Pending tasks without repeating completed research.
-
 ## Repository and coordination
 
 - Treat the repository root that contains this file as the main my151 repository.

@@ -6108,11 +6108,11 @@
   },
   "10304": {
    "artists": [
-    "Kyle Dove"
+    "KingOfThe-X-Roads"
    ],
    "role": "drew",
-   "via": "pokeapi",
-   "evidence": "App file is byte-identical to PokéAPI sprites/pokemon/10304.png as added in commit 4bc9d60186 (2026-06-22, 'Added Z-A mega sprites (#236)'). PokéAPI sprites README, Special Thanks: 'x.com/DoveKyle/github.com/kyledovey for providing the back_default, back_shiny and z-a mega sprites for generation 9.' Not compared with Kyle Dove's own uploads.",
+   "via": "own upload",
+   "evidence": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/03id19f0dha, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
    "name": "raichu-mega-x"
   },
   "10305": {
@@ -6915,6 +6915,33 @@
    "via": "pokeapi",
    "evidence": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/172-spiky-eared.png",
    "notes": "Source verified; individual artist unproven. Previous version evidence is retained in docs/credits/sprite-evidence.json."
+  },
+  "11117": {
+   "artists": [
+    "KingOfThe-X-Roads"
+   ],
+   "role": "drew",
+   "via": "own upload",
+   "evidence": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/0qi9vfww1kg, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
+   "name": "smeargle-smearguru"
+  },
+  "11118": {
+   "artists": [
+    "KingOfThe-X-Roads"
+   ],
+   "role": "drew",
+   "via": "own upload",
+   "evidence": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/01ppvyo9gx1l, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
+   "name": "koraidon-limited-build"
+  },
+  "11119": {
+   "artists": [
+    "KingOfThe-X-Roads"
+   ],
+   "role": "drew",
+   "via": "own upload",
+   "evidence": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/0p5wp0lgq01, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
+   "name": "miraidon-low-power-mode"
   }
  },
  "artists": {

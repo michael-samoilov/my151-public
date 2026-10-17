@@ -13,19 +13,19 @@ Built on 2026-10-13 from production commit 8739dac6. Pages and files were read o
 3. Sources, strongest first: a file the artist posted; the Smogon attachment on a credit-sheet row that names the artist; the Generation 9 pack file on its sheet row; a PokéAPI commit and README line that name the artist; a Game Freak sprite from PokéAPI's Black and White import.
 4. A near match is reported with its mask IoU (shared opaque pixels over all opaque pixels, at the best offset) and the share of shared pixels with the same colour.
 
-Source files are not in git. Each source in the JSON has its URL and sha256, so anyone can download it again and compare.
+The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/`. Earlier source files are not in git. Each source in the JSON has its URL and sha256, so anyone can download it again and compare.
 
 ## Summary
 
 | Count | What |
 |---:|---|
-| 1419 | Sprite files a production page can show (all of `public/sprites/pokemon`) |
+| 1422 | Sprite files a production page can show (all of `public/sprites/pokemon`) |
 | 1096 | Shown in the Pokédex builder |
 | 1347 | Shown in the League builder |
-| 1413 | Shown in the Favorite picker |
+| 1416 | Shown in the Favorite picker |
 | 0 | Served files that no page shows |
 | 0 | Shown files that are missing |
-| 655 | Verdict: confirmed |
+| 658 | Verdict: confirmed |
 | 0 | Verdict: corrected |
 | 67 | Verdict: unproven |
 | 697 | Verdict: official Game Freak |
@@ -33,14 +33,15 @@ Source files are not in git. Each source in the JSON has its URL and sha256, so 
 | Count | Evidence type |
 |---:|---|
 | 697 | Game Freak sprite: exact match to PokéAPI's Black and White import |
-| 585 | Exact match to the Smogon attachment on a credit-sheet row naming the artist |
-| 48 | No source names an artist |
-| 46 | Byte-identical to the PokéAPI file added in the commit whose README line names the artist |
+| 584 | Exact match to the Smogon attachment on a credit-sheet row naming the artist |
+| 47 | No source names an artist |
+| 45 | Byte-identical to the PokéAPI file added in the commit whose README line names the artist |
 | 18 | Near match only |
-| 16 | Exact match to a file the artist posted (Sta.sh upload or the artist's DeviantArt sheet) |
+| 20 | Exact match to a file the artist posted (Sta.sh upload or the artist's DeviantArt sheet) |
 | 7 | Exact match to the Generation 9 pack file on its sheet row |
 | 1 | Exact match to an attachment in a Smogon thread post |
 | 1 | my151's own drawing, by this repository's history |
+| 2 | Pinned source identified; individual artist unproven |
 
 ## Credit changes
 
@@ -572,7 +573,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 | `10300.png` | Mega Hawlucha | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10300.png |
 | `10302.png` | Mega Drampa | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10302.png |
 | `10303.png` | Mega Falinks | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10303.png |
-| `10304.png` | Mega Raichu X | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10304.png |
+| `10304.png` | Mega Raichu X | KingOfThe-X-Roads own upload | confirmed | https://sta.sh/03id19f0dha |
 | `10306.png` | Mega Chimecho | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10306.png |
 | `10307.png` | Mega Absol Z | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10307.png |
 | `10308.png` | Mega Staraptor | PokéAPI README | confirmed | https://github.com/PokeAPI/sprites/blob/4bc9d60186fe2e499ee2f3d4d1b796806cb99a67/sprites/pokemon/10308.png |
@@ -1245,3 +1246,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 ## October 16 PokéAPI form sourcing
 
 [The 50-form comparison](pokeapi-form-sources.json) records the pinned source paths and hashes. Forty-eight existing files match in visible pixels. Spiky-eared Pichu (11064) and female Pyroar (11071) now use the PokéAPI files. Individual authorship of both replacements is unproven; the former Pyroar artist attribution applies only to the previous file. Their current hashes and historical evidence are in the JSON ledger. The Smogon project credit and non-profit terms remain in the panel; its separate Showdown source entry is removed.
+
+## KingOfThe-X-Roads originals imported on 2026-10-17
+
+Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/previous-mega-raichu-x-evidence.json`. The JSON ledger contains the current hashes and sources.

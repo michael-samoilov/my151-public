@@ -78,7 +78,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await artists.first().click();
     await expect(dialog.getByTestId('ack-detail-name')).toHaveText('KingOfThe-X-Roads');
     const sprites = dialog.getByTestId('ack-sprites');
-    await expect(sprites.getByTestId('ack-sprites-summary')).toHaveText('In addition to their sprites in the projects above, we use these 9 additional sprites from their own uploads.');
+    await expect(sprites.getByTestId('ack-sprites-summary')).toHaveText('In addition to their sprites in the projects above, we use these 13 additional sprites from their own uploads.');
     await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Rotom (DJ)');
     const kingSprites = await sprites.getByRole('listitem').count();
     await dialog.getByRole('button', { name: 'Back' }).click();
