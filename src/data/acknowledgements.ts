@@ -70,7 +70,6 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     links: ['https://eeveeexpo.com/resources/1101/'],
   },
   {
-    // Its artists drew many of the fan sprites distributed through PokéAPI.
     // Its terms ask to credit the spriter or the project; this credits the
     // project.
     id: 'smogon-sprite-project',
