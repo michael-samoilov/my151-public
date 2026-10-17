@@ -3,8 +3,8 @@
  * panel.
  *
  * The panel credits sprites the way other users of these bundles do (Michael,
- * 2026-10-13): through the bundle each file came from (PokéAPI, Pokémon
- * Showdown, the Generation 9 Resource Pack) and the Smogon Sprite Project,
+ * 2026-10-13): through the bundle each file came from (PokéAPI and the
+ * Generation 9 Resource Pack) and the Smogon Sprite Project,
  * whose artists drew most of them, under each bundle's own permission. Only
  * an artist whose sprites the app took from the artist directly, not through
  * a bundle, has an entry of their own. docs/credits/README.md has the policy.

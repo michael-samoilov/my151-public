@@ -5,12 +5,12 @@ import { resolve } from 'node:path';
 import { ALTERNATE_PICKER_FORMS } from '../src/favorites/model/alternateForms';
 
 const DIRECTORY = resolve(process.cwd(), 'public/sprites/pokemon');
-const SOURCE = 'https://play.pokemonshowdown.com/sprites/gen5';
-const pending = ALTERNATE_PICKER_FORMS.filter((form) => form.spriteSlug);
+const SOURCE = 'https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white';
+const pending = ALTERNATE_PICKER_FORMS.filter((form) => form.spritePath);
 
 async function importSprite(form: (typeof pending)[number]): Promise<string> {
-  const slug = form.spriteSlug!;
-  if (!/^[a-z0-9-]+$/.test(slug) || !Number.isInteger(form.id)) {
+  const slug = form.spritePath!;
+  if (!/^(?:female\/)?[a-z0-9-]+$/.test(slug) || !Number.isInteger(form.id)) {
     throw new Error(`Invalid sprite entry: ${form.id} ${slug}`);
   }
   const target = resolve(DIRECTORY, `${form.id}.png`);

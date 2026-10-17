@@ -1,5 +1,5 @@
 {
- "note": "Every fan-made sprite file my151 serves from public/sprites/pokemon: Pokémon #650-#1025 (Alcremie as its sweet files), the PokéAPI forms from 10025 up that a tool shows, my151's own form ids, and the Alcremie files. Game Freak's sprites (#1-#649, Generation 5 forms, Unown, seasonal Deerling and Sawsbuck, East Sea Shellos and Gastrodon, Spiky-eared Pichu, Generation 4-5 female sprites, Overdrive forms) are left out. Built 2026-10-13 from production 60662926 by credits-tools/build_attribution.py from exact and near pixel matches (evidence/*.json). Copied into the app on 2026-10-13 with these changes: KyleDove merged into Kyle Dove; DJ Rotom (11112) credited to KingOfThe-X-Roads as his own upload; Mega Eelektross (10290) credited to Ghasty001 with kiriaura's base sprite; MyMarshlands added to Mega Victreebel (10279); Mega Zygarde (10301) marked as my151's; the cleanup notes of the old spriteSources.json kept. Corrected on 2026-10-13 (credits-research/app-data/CHANGES.md): same-colour sheet rows, a sheet cell parsed again, five name merges or renames with proof, five stale files renamed, Mega Victreebel's and DJ Rotom's sources. Trimmed on 2026-10-13: the files that no tool showed were deleted with their rows (869.png, which Alcremie's sweet files replace; the Pumpkaboo and Gourgeist sizes 10027-10032; and 31 PokéAPI forms from 10093 to 10259 that the app gives other ids, uses another file for, or leaves out).",
+ "note": "Every fan-made sprite file my151 serves from public/sprites/pokemon: Pokémon #650-#1025 (Alcremie as its sweet files), the PokéAPI forms from 10025 up that a tool shows, my151's own form ids, and the Alcremie files. Game Freak's sprites (#1-#649, Generation 5 forms, Unown, seasonal Deerling and Sawsbuck, East Sea Shellos and Gastrodon, Spiky-eared Pichu, Generation 4-5 female sprites, Overdrive forms) are left out. Built 2026-10-13 from production 60662926 by credits-tools/build_attribution.py from exact and near pixel matches (evidence/*.json). Copied into the app on 2026-10-13 with these changes: KyleDove merged into Kyle Dove; DJ Rotom (11112) credited to KingOfThe-X-Roads as his own upload; Mega Eelektross (10290) credited to Ghasty001 with kiriaura's base sprite; MyMarshlands added to Mega Victreebel (10279); Mega Zygarde (10301) marked as my151's; the cleanup notes of the old spriteSources.json kept. Corrected on 2026-10-13 (credits-research/app-data/CHANGES.md): same-colour sheet rows, a sheet cell parsed again, five name merges or renames with proof, five stale files renamed, Mega Victreebel's and DJ Rotom's sources. Trimmed on 2026-10-13: the files that no tool showed were deleted with their rows (869.png, which Alcremie's sweet files replace; the Pumpkaboo and Gourgeist sizes 10027-10032; and 31 PokéAPI forms from 10093 to 10259 that the app gives other ids, uses another file for, or leaves out). On 2026-10-16, two source-only rows were added or updated for the PokéAPI variants of Spiky-eared Pichu and female Pyroar; individual authorship is unproven.",
  "sprites": {
   "650": {
    "artists": [
@@ -6535,13 +6535,11 @@
    "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '666 Vivillon-tundra': Spriter 'Basic Vanillite, Larryturbo, TheAetherPlayer (shiny)', QC 'TheAetherPlayer'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/666_3-png.273584/."
   },
   "11071": {
-   "artists": [
-    "Arkeis"
-   ],
+   "artists": [],
    "role": "drew",
-   "via": "smogon-gen6",
-   "evidence": "Smogon Gen6 Sprite Project sheet, tab 'static sprites', section 'Gen 6 Pokemon', row '668 Pyroar-female': Spriter 'Arkeis (front), Layell (back)', QC 'leParagon, G.E.Z.'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/668f-png.653039/.",
-   "notes": "Arkeis (front)"
+   "via": "pokeapi",
+   "evidence": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/668.png",
+   "notes": "Source verified; individual artist unproven. Previous version evidence is retained in docs/credits/sprite-evidence.json."
   },
   "11072": {
    "artists": [
@@ -6910,6 +6908,13 @@
    "evidence": "Smogon Gen8 Sprite Project sheet, tab 'static sprites', section 'Gen 8 Pokemon', row '869 Alcremie-vanilla strawberry': Spriter 'PumpkinPastel (front), leParagon (back)', QC 'leParagon'. The app file has the same opaque pixels as that row's Front attachment https://www.smogon.com/forums/attachments/869_1-png.218736/.",
    "name": "alcremie-strawberry",
    "notes": "RadicalCharizard (sweets) leParagon (flavours)"
+  },
+  "11064": {
+   "artists": [],
+   "role": "drew",
+   "via": "pokeapi",
+   "evidence": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/172-spiky-eared.png",
+   "notes": "Source verified; individual artist unproven. Previous version evidence is retained in docs/credits/sprite-evidence.json."
   }
  },
  "artists": {

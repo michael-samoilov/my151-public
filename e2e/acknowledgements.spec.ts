@@ -20,12 +20,19 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
 
     const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
     await expect(dialog).toBeVisible();
-    for (const group of ['Sprite sources', 'Sprite artists', 'Pokémon icons and art', 'Interface icons', 'Fonts', 'Data', 'Code']) {
+    for (const group of ['Sprite projects', 'Additional sprites', 'Pokémon icons and art', 'Interface icons', 'Fonts', 'Data', 'Code']) {
       await expect(dialog.getByRole('heading', { name: new RegExp(`^${group}`) })).toBeVisible();
     }
     // The count matches the rows: a sprite source with no sprite in this build has no row.
     const rows = await dialog.locator('[data-ack-id]').count();
     await expect(dialog.getByText(`${rows} credits`)).toBeVisible();
+
+    await expect(dialog.locator('[data-ack-id="pokemon-showdown"]')).toHaveCount(0);
+    await dialog.locator('[data-ack-id="smogon-sprite-project"]').click();
+    await expect(dialog.getByTestId('ack-detail').getByText('Non-profit use, with credit', { exact: true })).toBeVisible();
+    await expect(dialog.locator('blockquote')).toContainText('the spriter or the project itself is credited');
+    await expect(dialog.getByRole('link', { name: 'Generation 6 thread' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Back' }).click();
 
     // The container differs by width: a sheet along the bottom on a phone, a
     // full-height pane along the right on desktop.
@@ -71,11 +78,21 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await artists.first().click();
     await expect(dialog.getByTestId('ack-detail-name')).toHaveText('KingOfThe-X-Roads');
     const sprites = dialog.getByTestId('ack-sprites');
-    await expect(sprites.getByTestId('ack-sprites-summary')).toHaveText(/^\d+ sprites from their own uploads$/);
+    await expect(sprites.getByTestId('ack-sprites-summary')).toHaveText('In addition to their sprites in the projects above, we use these 9 additional sprites from their own uploads.');
     await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Rotom (DJ)');
     const kingSprites = await sprites.getByRole('listitem').count();
     await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
+
+    for (const id of ['partywhale-type-icons', 'elginive-type-icons']) {
+      await dialog.locator(`[data-ack-id="${id}"]`).click();
+      await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Gen 9 Type Icons');
+      await dialog.getByRole('button', { name: 'Back' }).click();
+    }
+    await dialog.locator('[data-ack-id="bulbagarden-archives"]').click();
+    await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Pokémon symbols and item icons');
+    await expect(dialog.getByRole('link', { name: /archives.bulbagarden.net/ })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Back' }).click();
 
     // The npm packages come from the build's own list, by license, and each
     // license file is named for what it holds.
@@ -111,5 +128,30 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
         kingSprites,
       }, null, 2),
     });
+  });
+
+  test('keeps the full Partywhale author credit on one line', async ({ page }, testInfo) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Acknowledgements' }).last().click();
+    const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
+    await expect(dialog).toBeVisible();
+    const row = dialog.locator('[data-ack-id="partywhale-type-icons"]');
+    await row.scrollIntoViewIfNeeded();
+    await page.evaluate(() => document.fonts.ready);
+    const geometry = await row.evaluate((element) => {
+      const label = element.firstElementChild!.firstElementChild!;
+      const author = [...label.children].find((child) => child.textContent === 'by Partywhale (James Watkins)');
+      if (!author) throw new Error('Missing full Partywhale author credit');
+      const range = document.createRange();
+      range.selectNodeContents(author);
+      const rects = [...range.getClientRects()].filter((rect) => rect.width > 0);
+      const row = element.getBoundingClientRect();
+      const chevron = element.querySelector('svg')!.getBoundingClientRect();
+      return { authorLines: rects.length, authorRight: Math.max(...rects.map((rect) => rect.right)), chevronLeft: chevron.left, chevronRight: chevron.right, rowRight: row.right };
+    });
+    expect(geometry.authorLines).toBe(1);
+    expect(geometry.authorRight).toBeLessThanOrEqual(geometry.chevronLeft);
+    expect(geometry.chevronRight).toBeLessThanOrEqual(geometry.rowRight);
+    await testInfo.attach('author-credit-geometry', { body: JSON.stringify(geometry), contentType: 'application/json' });
   });
 });

@@ -7,8 +7,8 @@ export interface AlternatePickerForm {
   name: string;
   types: TypeName[];
   generation?: GenNumber;
-  /** Source filename in Pokémon Showdown's Gen 5-style sprite directory. */
-  spriteSlug?: string;
+  /** Path without .png in PokéAPI's Black and White sprite directory. */
+  spritePath?: string;
   /** A battle form, such as a cosmetic variant of a Mega that the League
    *  builder collapses into one Mega. It belongs in the gimmick cells. */
   source?: 'powerup';
@@ -19,7 +19,7 @@ const unownLetters: AlternatePickerForm[] = Array.from('BCDEFGHIJKLMNOPQRSTUVWXY
   ownerId: 201,
   name: `unown-${letter.toLowerCase()}`,
   types: ['psychic'],
-  spriteSlug: `unown-${letter.toLowerCase()}`,
+  spritePath: `201-${letter.toLowerCase()}`,
 }));
 
 const flowerColors: AlternatePickerForm[] = [
@@ -32,7 +32,7 @@ const flowerColors: AlternatePickerForm[] = [
     ownerId: Number(ownerId),
     name: `${species}-${color}`,
     types: ['fairy'],
-    spriteSlug: `${species}-${color}`,
+    spritePath: `${ownerId}-${color}`,
   })));
 
 // The nine trims in game order (PokéAPI forms 10115–10123). Natural Form is
@@ -171,22 +171,20 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11035, ownerId: 666, name: 'vivillon-sun', types: ['bug', 'flying'] },
   { id: 11036, ownerId: 666, name: 'vivillon-tundra', types: ['bug', 'flying'] },
   ...unownLetters,
-  { id: 11062, ownerId: 201, name: 'unown-exclamation', types: ['psychic'], generation: 3, spriteSlug: 'unown-em' },
-  { id: 11063, ownerId: 201, name: 'unown-question', types: ['psychic'], generation: 3, spriteSlug: 'unown-qm' },
-  { id: 11064, ownerId: 172, name: 'pichu-spiky-eared', types: ['electric'], generation: 4, spriteSlug: 'pichu-spikyeared' },
-  { id: 11065, ownerId: 422, name: 'shellos-east', types: ['water'], spriteSlug: 'shellos-east' },
-  { id: 11066, ownerId: 423, name: 'gastrodon-east', types: ['water', 'ground'], spriteSlug: 'gastrodon-east' },
-  { id: 11067, ownerId: 449, name: 'hippopotas-female', types: ['ground'], spriteSlug: 'hippopotas-f' },
-  { id: 11068, ownerId: 450, name: 'hippowdon-female', types: ['ground'], spriteSlug: 'hippowdon-f' },
-  { id: 11069, ownerId: 592, name: 'frillish-female', types: ['water', 'ghost'], spriteSlug: 'frillish-f' },
-  { id: 11070, ownerId: 593, name: 'jellicent-female', types: ['water', 'ghost'], spriteSlug: 'jellicent-f' },
-  { id: 11071, ownerId: 668, name: 'pyroar-female', types: ['fire', 'normal'], spriteSlug: 'pyroar-f' },
-  // Sprites from PokeAPI's Black/White female folder: Showdown is unreachable
-  // from the build machines, and that folder matches Showdown's Gen 5 art
-  // pixel for pixel (checked on hippopotas-f).
-  { id: 11094, ownerId: 415, name: 'combee-female', types: ['bug', 'flying'], spriteSlug: 'combee-f' },
-  { id: 11095, ownerId: 521, name: 'unfezant-female', types: ['normal', 'flying'], spriteSlug: 'unfezant-f' },
-  { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spriteSlug: 'darmanitan-galarzen' },
+  { id: 11062, ownerId: 201, name: 'unown-exclamation', types: ['psychic'], generation: 3, spritePath: '201-exclamation' },
+  { id: 11063, ownerId: 201, name: 'unown-question', types: ['psychic'], generation: 3, spritePath: '201-question' },
+  { id: 11064, ownerId: 172, name: 'pichu-spiky-eared', types: ['electric'], generation: 4, spritePath: '172-spiky-eared' },
+  { id: 11065, ownerId: 422, name: 'shellos-east', types: ['water'], spritePath: '422-east' },
+  { id: 11066, ownerId: 423, name: 'gastrodon-east', types: ['water', 'ground'], spritePath: '423-east' },
+  { id: 11067, ownerId: 449, name: 'hippopotas-female', types: ['ground'], spritePath: 'female/449' },
+  { id: 11068, ownerId: 450, name: 'hippowdon-female', types: ['ground'], spritePath: 'female/450' },
+  { id: 11069, ownerId: 592, name: 'frillish-female', types: ['water', 'ghost'], spritePath: 'female/592' },
+  { id: 11070, ownerId: 593, name: 'jellicent-female', types: ['water', 'ghost'], spritePath: 'female/593' },
+  { id: 11071, ownerId: 668, name: 'pyroar-female', types: ['fire', 'normal'], spritePath: 'female/668' },
+  // Female variants use PokéAPI's Black and White female subdirectory.
+  { id: 11094, ownerId: 415, name: 'combee-female', types: ['bug', 'flying'], spritePath: 'female/415' },
+  { id: 11095, ownerId: 521, name: 'unfezant-female', types: ['normal', 'flying'], spritePath: 'female/521' },
+  { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spritePath: '10178' },
   ...flowerColors,
   ...furfrouTrims,
   // In-battle appearances with no record of their own. They keep the owner's

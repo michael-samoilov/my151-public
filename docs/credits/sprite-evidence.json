@@ -35507,9 +35507,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-b.png",
     "sha256": "6b7b5a242d77ba922f50d17cdbd688354c62535b9d859ab30f87bdd973a4ac79",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-b.png",
+    "sha256": "6b7b5a242d77ba922f50d17cdbd688354c62535b9d859ab30f87bdd973a4ac79"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-b.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-b.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35530,9 +35534,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-c.png",
     "sha256": "4636d7187a069ab3b2eccfd96952ddc753d4eee6b35fd78d0c29a5ba9408b782",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-c.png",
+    "sha256": "4636d7187a069ab3b2eccfd96952ddc753d4eee6b35fd78d0c29a5ba9408b782"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-c.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-c.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35553,9 +35561,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-d.png",
     "sha256": "f5611e6b2125a97c6dcc50bb7127465827b2c91dc055ba62b1051a5fa217ea72",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-d.png",
+    "sha256": "f5611e6b2125a97c6dcc50bb7127465827b2c91dc055ba62b1051a5fa217ea72"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-d.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-d.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35576,9 +35588,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-e.png",
     "sha256": "228fe620dc12dde4df552f924ded60734dd19853526fcc3ac1134ef163085b45",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-e.png",
+    "sha256": "228fe620dc12dde4df552f924ded60734dd19853526fcc3ac1134ef163085b45"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-e.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-e.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35599,9 +35615,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-f.png",
     "sha256": "2f2629409a196b1ce70b94f641616b045c83d486f49c6cb0143e4e145cf83aa5",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-f.png",
+    "sha256": "2f2629409a196b1ce70b94f641616b045c83d486f49c6cb0143e4e145cf83aa5"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-f.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-f.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35622,9 +35642,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-g.png",
     "sha256": "6d32b601d41ec9bd08d9b8d958d73ede74250c9cfd9bbc65a7929b2513296025",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-g.png",
+    "sha256": "6d32b601d41ec9bd08d9b8d958d73ede74250c9cfd9bbc65a7929b2513296025"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-g.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-g.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35645,9 +35669,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-h.png",
     "sha256": "0e7db2f279648e8b6d7b954ce6f361057b9f7fcf47bfde75c631f198474ab82a",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-h.png",
+    "sha256": "0e7db2f279648e8b6d7b954ce6f361057b9f7fcf47bfde75c631f198474ab82a"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-h.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-h.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35668,9 +35696,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-i.png",
     "sha256": "d9dc4354f6a8869fa103e81f6a916fd08f247260acdbd147aeef158d01a21e40",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-i.png",
+    "sha256": "d9dc4354f6a8869fa103e81f6a916fd08f247260acdbd147aeef158d01a21e40"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-i.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-i.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35691,9 +35723,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-j.png",
     "sha256": "89ee4d007a26fd86a48e327c97265aa875d1d42677cb2023c8143ebd3981ca15",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-j.png",
+    "sha256": "89ee4d007a26fd86a48e327c97265aa875d1d42677cb2023c8143ebd3981ca15"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-j.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-j.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35714,9 +35750,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-k.png",
     "sha256": "95d77a8f4224dce0218f25cc16792f3d7e871d4b0b5ff9f0bf083ddfc63d1928",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-k.png",
+    "sha256": "95d77a8f4224dce0218f25cc16792f3d7e871d4b0b5ff9f0bf083ddfc63d1928"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-k.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-k.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35737,9 +35777,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-l.png",
     "sha256": "8b0daefdde1319901bbfa040bc699ae157a1d182aaa72a1cb0a17936ca1604ef",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-l.png",
+    "sha256": "8b0daefdde1319901bbfa040bc699ae157a1d182aaa72a1cb0a17936ca1604ef"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-l.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-l.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35760,9 +35804,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-m.png",
     "sha256": "b55c8230c56834d6d5bb3bbfdb8a0ea14711a59431b84e3efc72f6fe5d6e394e",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-m.png",
+    "sha256": "b55c8230c56834d6d5bb3bbfdb8a0ea14711a59431b84e3efc72f6fe5d6e394e"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-m.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-m.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35783,9 +35831,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-n.png",
     "sha256": "e6cdce048cce14a052e037b7aac5abf659b89d2a77b302c885feb838e378b76c",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-n.png",
+    "sha256": "e6cdce048cce14a052e037b7aac5abf659b89d2a77b302c885feb838e378b76c"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-n.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-n.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35806,9 +35858,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-o.png",
     "sha256": "63999cc7e1b0364820538013b4dd78cc33658a973c9c6ce6916cd95bf6cee6b8",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-o.png",
+    "sha256": "63999cc7e1b0364820538013b4dd78cc33658a973c9c6ce6916cd95bf6cee6b8"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-o.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-o.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35829,9 +35885,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-p.png",
     "sha256": "f5b776bc87e6ebf2a4537f5c68dd7a5163b6e76db6c78049244c25587072c443",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-p.png",
+    "sha256": "f5b776bc87e6ebf2a4537f5c68dd7a5163b6e76db6c78049244c25587072c443"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-p.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-p.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35852,9 +35912,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-q.png",
     "sha256": "3516140296b5502e38b9cef16dd05dbd30b517adf359b7d7b1a3807ba59dde04",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-q.png",
+    "sha256": "3516140296b5502e38b9cef16dd05dbd30b517adf359b7d7b1a3807ba59dde04"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-q.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-q.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35875,9 +35939,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-r.png",
     "sha256": "b9e055830b0ec5971ce51e9877b8024af398e5be8d8a2131ea75c3dc52640615",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-r.png",
+    "sha256": "b9e055830b0ec5971ce51e9877b8024af398e5be8d8a2131ea75c3dc52640615"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-r.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-r.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35898,9 +35966,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-s.png",
     "sha256": "0f86315b9cf3c8d9882f97ea3eacc019a036bf87e9bbd17101740d59591fc262",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-s.png",
+    "sha256": "0f86315b9cf3c8d9882f97ea3eacc019a036bf87e9bbd17101740d59591fc262"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-s.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-s.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35921,9 +35993,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-t.png",
     "sha256": "316cf4a4ddd6a80e8363ee30fc0eaf84eddd5c4700eec24b21de84469cadcf47",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-t.png",
+    "sha256": "316cf4a4ddd6a80e8363ee30fc0eaf84eddd5c4700eec24b21de84469cadcf47"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-t.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-t.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35944,9 +36020,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-u.png",
     "sha256": "0c70d0bf61c05c3e068c2f610ca3ab5ddb27654a3935b19885a66963de0bbbc4",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-u.png",
+    "sha256": "0c70d0bf61c05c3e068c2f610ca3ab5ddb27654a3935b19885a66963de0bbbc4"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-u.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-u.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35967,9 +36047,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-v.png",
     "sha256": "3d6e4d6e49b7030210c165fc3a90ad1ba55c9cf487bb909b233e5463f9d1911d",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-v.png",
+    "sha256": "3d6e4d6e49b7030210c165fc3a90ad1ba55c9cf487bb909b233e5463f9d1911d"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-v.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-v.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -35990,9 +36074,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-w.png",
     "sha256": "482f85c74555625a8bdcb9febdbc154b2aa8a605e3015b7b04d28b9f69cbc125",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-w.png",
+    "sha256": "482f85c74555625a8bdcb9febdbc154b2aa8a605e3015b7b04d28b9f69cbc125"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-w.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-w.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36013,9 +36101,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-x.png",
     "sha256": "9e82cf4e687cdab4517c6ebcb0c966ce695cddf501b68944edbf231c04ce18e4",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-x.png",
+    "sha256": "9e82cf4e687cdab4517c6ebcb0c966ce695cddf501b68944edbf231c04ce18e4"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-x.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-x.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36036,9 +36128,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-y.png",
     "sha256": "bcba4db46a66ffa48d0fa8bb0af8ea823911f87211c40d623a36fad64121aa53",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-y.png",
+    "sha256": "bcba4db46a66ffa48d0fa8bb0af8ea823911f87211c40d623a36fad64121aa53"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-y.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-y.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36059,9 +36155,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-z.png",
     "sha256": "9af854c4778caca6a331ba242da14e635b742f31170f6d5afe8938122569d1b9",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-z.png",
+    "sha256": "9af854c4778caca6a331ba242da14e635b742f31170f6d5afe8938122569d1b9"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-z.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-z.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36082,9 +36182,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-exclamation.png",
     "sha256": "9638c197de344df2cff116dc289a88a5e990e7bc6828c8bdc96e3c589e2e7722",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-exclamation.png",
+    "sha256": "9638c197de344df2cff116dc289a88a5e990e7bc6828c8bdc96e3c589e2e7722"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-exclamation.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-exclamation.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36105,14 +36209,18 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/201-question.png",
     "sha256": "b7b3a1b705f16531b909cdacebbe823acda182c359e384f379e569e20f9cf085",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-question.png",
+    "sha256": "b7b3a1b705f16531b909cdacebbe823acda182c359e384f379e569e20f9cf085"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-question.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/201-question.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
   "file": "public/sprites/pokemon/11064.png",
-  "sha256": "edcb586e58fd79a7b0f2089c2842f193f7844df490ed9f347e8b910dc2ee81b6",
+  "sha256": "301c0ef7e6fcd99a90f7870429b8dbe25f31ab5f19cf970369d5f9dba9fba159",
   "pokemon": [
    "pichu-spiky-eared"
   ],
@@ -36121,17 +36229,31 @@
    "League builder"
   ],
   "creditedNow": [],
-  "creditedVia": null,
-  "evidenceType": "none",
+  "creditedVia": "pokeapi",
+  "evidenceType": "source-only",
   "sources": [
    {
-    "url": "https://play.pokemonshowdown.com/sprites/gen5/pichu-spikyeared.png",
-    "localCopy": "sprite-evidence-work/dl/showdown-gen5/pichu-spikyeared.png",
-    "sha256": "edcb586e58fd79a7b0f2089c2842f193f7844df490ed9f347e8b910dc2ee81b6"
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/172-spiky-eared.png",
+    "sha256": "301c0ef7e6fcd99a90f7870429b8dbe25f31ab5f19cf970369d5f9dba9fba159"
    }
   ],
-  "comparison": " Exact pixel match to Pokémon Showdown gen5/pichu-spikyeared.png, which names no maker.",
-  "verdict": "unproven"
+  "comparison": "Exact file from the pinned PokéAPI Black and White sprite directory. The previous artwork differs; its artist evidence does not establish authorship of this version.",
+  "verdict": "unproven",
+  "previousEvidence": {
+   "sha256": "edcb586e58fd79a7b0f2089c2842f193f7844df490ed9f347e8b910dc2ee81b6",
+   "creditedNow": [],
+   "creditedVia": null,
+   "evidenceType": "none",
+   "sources": [
+    {
+     "url": "https://play.pokemonshowdown.com/sprites/gen5/pichu-spikyeared.png",
+     "localCopy": "sprite-evidence-work/dl/showdown-gen5/pichu-spikyeared.png",
+     "sha256": "edcb586e58fd79a7b0f2089c2842f193f7844df490ed9f347e8b910dc2ee81b6"
+    }
+   ],
+   "comparison": " Exact pixel match to Pokémon Showdown gen5/pichu-spikyeared.png, which names no maker.",
+   "verdict": "unproven"
+  }
  },
  {
   "file": "public/sprites/pokemon/11065.png",
@@ -36152,9 +36274,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/422-east.png",
     "sha256": "4f3c5d7a0ce4a34f7d5e0f597f16afc2a85cc100882faa734b7eedce1413859c",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/422-east.png",
+    "sha256": "4f3c5d7a0ce4a34f7d5e0f597f16afc2a85cc100882faa734b7eedce1413859c"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/422-east.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/422-east.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36176,9 +36302,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/423-east.png",
     "sha256": "7e56eed9b132fde3f1f14ec250ddd0de001fd1705729c34466d48da31e9b7548",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/423-east.png",
+    "sha256": "7e56eed9b132fde3f1f14ec250ddd0de001fd1705729c34466d48da31e9b7548"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/423-east.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/423-east.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36200,9 +36330,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/female/449.png",
     "sha256": "dcf5d7311b75eae2fda878d9c971e30801e45f16b4cd8856bf3818346da2f39d",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/449.png",
+    "sha256": "dcf5d7311b75eae2fda878d9c971e30801e45f16b4cd8856bf3818346da2f39d"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/449.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/449.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36224,9 +36358,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/female/450.png",
     "sha256": "3f748dc72113aaf349f0fc918dc2459666826b76274be253615da45567134c4d",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/450.png",
+    "sha256": "3f748dc72113aaf349f0fc918dc2459666826b76274be253615da45567134c4d"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/450.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/450.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36248,9 +36386,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/female/592.png",
     "sha256": "b8f551f57b9e7a2290e1f47ae300d6dc11e2252fafdb4950f4321a6415809c40",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/592.png",
+    "sha256": "b8f551f57b9e7a2290e1f47ae300d6dc11e2252fafdb4950f4321a6415809c40"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/592.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/592.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36272,14 +36414,18 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/female/593.png",
     "sha256": "a95a6427d8adcdc42d3272d65175f480397ac9961ed9faab8f142157b7dca4fc",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/593.png",
+    "sha256": "a95a6427d8adcdc42d3272d65175f480397ac9961ed9faab8f142157b7dca4fc"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/593.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/593.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
   "file": "public/sprites/pokemon/11071.png",
-  "sha256": "b7f29833de2fb40c1964bf36eb157bcb45c5858436d965f7758aef9582841879",
+  "sha256": "2c90f7a1bd1556b9d18fb97caf292165c11f406b617fc4b62c7fa49514a47425",
   "pokemon": [
    "pyroar-female"
   ],
@@ -36287,22 +36433,36 @@
    "Favorite picker",
    "League builder"
   ],
-  "creditedNow": [
-   "Arkeis"
-  ],
-  "creditedVia": "smogon-gen6",
-  "evidenceType": "exact-smogon-sheet",
+  "creditedNow": [],
+  "creditedVia": "pokeapi",
+  "evidenceType": "source-only",
   "sources": [
    {
-    "url": "https://www.smogon.com/forums/attachments/668f-png.653039/",
-    "localCopy": "credits-audit/dl/smogon/668f-png.653039",
-    "sha256": "b412c256ee0007b22eebe13649c35f95c6c8c99b5b28a9e6b3ffdb8fecc59c91",
-    "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
-    "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '668 Pyroar-female', Spriter 'Arkeis (front), Layell (back)'"
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/668.png",
+    "sha256": "2c90f7a1bd1556b9d18fb97caf292165c11f406b617fc4b62c7fa49514a47425"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
-  "verdict": "confirmed"
+  "comparison": "Exact file from the pinned PokéAPI Black and White sprite directory. The previous artwork differs; its artist evidence does not establish authorship of this version.",
+  "verdict": "unproven",
+  "previousEvidence": {
+   "sha256": "b7f29833de2fb40c1964bf36eb157bcb45c5858436d965f7758aef9582841879",
+   "creditedNow": [
+    "Arkeis"
+   ],
+   "creditedVia": "smogon-gen6",
+   "evidenceType": "exact-smogon-sheet",
+   "sources": [
+    {
+     "url": "https://www.smogon.com/forums/attachments/668f-png.653039/",
+     "localCopy": "credits-audit/dl/smogon/668f-png.653039",
+     "sha256": "b412c256ee0007b22eebe13649c35f95c6c8c99b5b28a9e6b3ffdb8fecc59c91",
+     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
+     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '668 Pyroar-female', Spriter 'Arkeis (front), Layell (back)'"
+    }
+   ],
+   "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+   "verdict": "confirmed"
+  }
  },
  {
   "file": "public/sprites/pokemon/11072.png",
@@ -36325,9 +36485,13 @@
     "sha256": "c0832ada79c541c8277a6c0a0d9231bf87e67df7890b58e31002170d0d7f3694",
     "sheet": "https://docs.google.com/spreadsheets/d/1acgzAjh0dnFRQnjZu8kSjS177rKCzpFfEHRLtwuuXRU",
     "sheetRow": "gen8 sheet, section 'Galarian Forms', row '555 Darmanitan-zen', Spriter 'G.E.Z.'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/10178.png",
+    "sha256": "5c21f0899d1fd98f8801318d0f04c340e04d8372e4fe7d0dc2f3a73f8d7f0768"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36353,9 +36517,13 @@
     "sha256": "a4a20a860c7c53f40874454970ce294e5c68b15752975c256a0e5faf856e0ed9",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '669 Flabébé-blue', Spriter 'TheCynicalPoet, princessofmusic (colours)'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/669-blue.png",
+    "sha256": "721200646aabed367f248b0bf0a0928972d387d0eb47a7f2699e985c3eaa143e"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36381,9 +36549,13 @@
     "sha256": "be5e65d7f278955f529408c6254a6e5c47c60166ae92616ca492bde8b51e9c99",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '669 Flabébé-orange', Spriter 'TheCynicalPoet, princessofmusic (colours)'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/669-orange.png",
+    "sha256": "4d02bd9e907138715cafc55ef3efa1416cd5531edced49a394043f44630aff05"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36409,9 +36581,13 @@
     "sha256": "42647d4efaabdc031cda1e2831a1220d88c110649a6b60b636de06cf6bd1ac36",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '669 Flabébé-white', Spriter 'TheCynicalPoet, princessofmusic (colours)'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/669-white.png",
+    "sha256": "8a0487b41d8790e485071e6fd3ee08d1d7a2f9e4285dd19b6aca74125a52f60a"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36437,9 +36613,13 @@
     "sha256": "e5a0fa77c03d7a2d81ca77a6e214e53d1182044c8f0fa46c5ba7246772c20970",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '669 Flabébé-yellow', Spriter 'TheCynicalPoet, princessofmusic (colours)'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/669-yellow.png",
+    "sha256": "de99a910f50fd78afa5a5b8d93efc87c14aac155c546395edb1ada8272b80512"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36464,9 +36644,13 @@
     "sha256": "7c3ea3f0faf2cfd01053aa6fbbec635c8a982118928a72a95289d4819bb1fa31",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '670 Floette-blue', Spriter 'princessofmusic'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/670-blue.png",
+    "sha256": "6e8758713d2ba0b4518e54257b8aa90e8ccf0c046858a9617ad8be0a3a62d3ca"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36491,9 +36675,13 @@
     "sha256": "db54735d69be115f3a054fa46b4fbc4589c3e3302d48992593a632fff73f3c38",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '670 Floette-orange', Spriter 'princessofmusic'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/670-orange.png",
+    "sha256": "07905afbcd88a51cada30a3b17c4334660d4e6ba3828d422c4b888fa5a1b8f76"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36518,9 +36706,13 @@
     "sha256": "5f56c59f5500ec0056328135c963c216f916b9c70a44fb2ecbc8e8842879c8b4",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '670 Floette-white', Spriter 'princessofmusic'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/670-white.png",
+    "sha256": "389e9a1d8871a2289595968f2cf1faccfce8e7fae4bfd400b149361c7636b378"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36545,9 +36737,13 @@
     "sha256": "c07119750508ae539e1258a374cbcd6dd290ead149563c2e9dfb0dc77a40df0a",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '670 Floette-yellow', Spriter 'princessofmusic'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/670-yellow.png",
+    "sha256": "0c6c164e426a14415adc4850e1439601de2ebc9c664c99f7a63a2f6c8b96fc91"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36572,9 +36768,13 @@
     "sha256": "96358761d442b5fd7869c3f226239c4965be63a1bf055156cda815c7fa17b020",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '671 Florges-blue', Spriter 'princessofmusic'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/671-blue.png",
+    "sha256": "75963fa02c9cf276d871c79cbe81fb0f1bc27da25ba0b3de90ecad7ed1dbe727"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36599,9 +36799,13 @@
     "sha256": "82c5c58d48c4816925e11da09e38ef66dc2c18fd0f4ba5eaf674d30719b78e56",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '671 Florges-orange', Spriter 'princessofmusic'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/671-orange.png",
+    "sha256": "8cead84543f07b69800133003b18d4288da462aacf3db25f0181c267470449eb"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36626,9 +36830,13 @@
     "sha256": "1b9b2dcb382dd7ff94f5bfe708a48e6df330788e1bd5604a8abe9e75e320e710",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '671 Florges-white', Spriter 'princessofmusic'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/671-white.png",
+    "sha256": "f0ac80cb356af9c6d34d2d838fd3a1f622a090c86b99fe2dae23848d102aa93d"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36653,9 +36861,13 @@
     "sha256": "96d18950e371a351f4920c3cfd9918827f1dfef849e95c5e1d0590587de6e8f2",
     "sheet": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo",
     "sheetRow": "gen6 sheet, section 'Gen 6 Pokemon', row '671 Florges-yellow', Spriter 'princessofmusic'"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/671-yellow.png",
+    "sha256": "4a689b90b51e863f7de66448252db0b4c150e47821a7e39613c6afc8a5d050ad"
    }
   ],
-  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s)",
+  "comparison": "exact pixel match to the Front attachment of the sheet row that names the credited artist(s) Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "confirmed"
  },
  {
@@ -36677,9 +36889,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/female/415.png",
     "sha256": "a347c353f14b65353eb19b4006e385280333a0482e80f0f1f506ab50ab4825bb",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/415.png",
+    "sha256": "a347c353f14b65353eb19b4006e385280333a0482e80f0f1f506ab50ab4825bb"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/415.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/415.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
@@ -36701,9 +36917,13 @@
     "localCopy": "sprite-evidence-work/dl/pokeapi-sprites/sprites/pokemon/versions/generation-v/black-white/female/521.png",
     "sha256": "01462eab8e5798e6dcd1726178b0a1074ab213eadf5e7bf7995bf181fa545622",
     "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/521.png",
+    "sha256": "01462eab8e5798e6dcd1726178b0a1074ab213eadf5e7bf7995bf181fa545622"
    }
   ],
-  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/521.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update.",
+  "comparison": "exact pixel match to PokéAPI sprites/pokemon/versions/generation-v/black-white/female/521.png; that path came in PokéAPI commit 96c282e (Black and White import), not a Smogon update. Also matches the pinned PokéAPI file in visible pixels (PNG encoding and fully transparent RGB ignored).",
   "verdict": "official Game Freak"
  },
  {
