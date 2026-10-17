@@ -38,7 +38,7 @@ King's direct-upload credit lists 13 sprites. Mega Raichu Y keeps its Generation
 
 ## Added on 2026-10-12
 
-Michael chose these sprites from the sprite lab's locked selections (`sprite-lab/selections/`). They are copied without pixel edits. The forms are on the preview branch `claude/new-forms` until Michael ships them.
+Michael chose these sprites from the sprite lab's locked selections (`sprite-lab/selections/`). They are copied without pixel edits. These forms are included in production baseline `6405eb76`.
 
 | Form | Picker id | Placement and note |
 | --- | --- | --- |
