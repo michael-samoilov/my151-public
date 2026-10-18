@@ -9,7 +9,6 @@ It does not replace the rules or decisions in those records.
 | --- | --- |
 | What does my151 do, and how do I run it? | [Project overview](../README.md) |
 | How do the tools, saved data, and server interact? | [Architecture](architecture.md) |
-| Which product and engineering examples explain the work? | [Selected examples](showcase.md) |
 | What performance targets and measurement methods apply? | [Performance](performance.md) |
 | Where do sprites and their permissions come from? | [Credits and provenance](credits/README.md) |
 

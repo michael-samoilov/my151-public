@@ -32,8 +32,3 @@ The [archive index](evidence/archive/README.md) records the completed batches an
 
 The archive uses existing reachable Git history and the repository's existing access controls. It requires no separate storage account or public upload. A full clone still includes historical objects. This policy reduces checkout size and future growth, not existing Git history.
 
-## Keep the showcase separate from verification
-
-The [case study](showcase.md) uses existing product illustrations and links to measured engineering results. Illustrations are not current visual baselines. Do not include visitor records, admin captures, credentials, or proprietary source in public portfolio material.
-
-Before an external publication, review its selected images, claims, licenses, and audience. Creating repository documentation does not publish the implementation or change the live product.
