@@ -23,7 +23,7 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
 
-## Imported on 2026-10-17 (release candidate)
+## Imported on 2026-10-17, released on 2026-10-18
 
 The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve the artist's canvas and bytes. [Originals and provenance](favorite-picker-work/sprites/2026-10-17-king-originals/originals.json) record the source pages, hashes, dimensions, transparency, and ink bounds.
 
