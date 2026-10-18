@@ -1,5 +1,7 @@
 # Copy review tool: requirements for the next build
 
+Historical captures and commands are in this folder's Git history.
+
 The copy review artifact lets the owner edit every SEO field beside a live
 preview and hand the edits back. The current version is linked from
 `SEO-PLAN.md` P16. These requirements come from using it across four rounds.

@@ -1,5 +1,7 @@
 # Picker interface localization evidence
 
+Historical captures and commands are in this folder's Git history.
+
 The interface uses the existing English catalog and eight translated UI overlays. All nine locales now have picker badges, empty states, settings, buttons, scroll hints, headings, and accessible generation labels.
 
 Pokémon names and power-up terminology remain the name worker's scope. Type names still use the checked-in official game terms. Picker wording is authored UI copy. Shared Gym Leader and Legendary terminology follows the pinned game text in `docs/i18n/sources/picker-interface-terms.json`. The same fixture records German `Starter-Pokémon` from X/Y. German `Starter` and `Generation` match English spelling, so the translation gate has two explicit exceptions.
@@ -20,8 +22,8 @@ The French screens use the same saved picks, `fire|1=6` and `water|1=9`, and ope
 
 | Screen | Before | After |
 | --- | --- | --- |
-| Phone | ![English picker text before localization](evidence/before-390.png) | ![French picker text after localization](evidence/after-390.png) |
-| Desktop | ![English picker text before localization](evidence/before-1280.png) | ![French picker text after localization](evidence/after-1280.png) |
+| Phone | English picker text before localization | French picker text after localization |
+| Desktop | English picker text before localization | French picker text after localization |
 
 The after screens pass the render audit with no app hard findings. Existing small-text and sprite-scale warnings remain. Whole-screen screenshots were inspected after the audit.
 
@@ -46,8 +48,8 @@ The temporary proof is removed before commit.
 
 | Screen | Before shared-control translations | After shared-control translations |
 | --- | --- | --- |
-| Phone | ![English tool-menu label before translation](evidence/after-390.png) | ![French tool-menu label after translation](evidence/chrome-after-390.png) |
-| Desktop | ![English tool-menu label before translation](evidence/after-1280.png) | ![French tool-menu label after translation](evidence/chrome-after-1280.png) |
+| Phone | English tool-menu label before translation | French tool-menu label after translation |
+| Desktop | English tool-menu label before translation | French tool-menu label after translation |
 
 `evidence/locale-fit.json` records 27 render-audit rounds across all nine
 locales at 320, 390, and 1280 pixels. Each round has zero app hard findings.
@@ -72,8 +74,8 @@ app-hard audit and was visually inspected.
 
 | Screen | Before | After |
 | --- | --- | --- |
-| Phone | ![Old FAQ answer](evidence/faq-before-390.png) | ![Truthful export and filter answer](evidence/faq-after-390.png) |
-| Desktop | ![Old FAQ answer](evidence/faq-before-1280.png) | ![Truthful export and filter answer](evidence/faq-after-1280.png) |
+| Phone | Old FAQ answer | Truthful export and filter answer |
+| Desktop | Old FAQ answer | Truthful export and filter answer |
 
 ## Verification boundary
 
