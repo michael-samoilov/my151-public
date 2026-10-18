@@ -1,5 +1,5 @@
 import {parseAttentionForIngest} from './_attention.js';
-import {appendMinuteActivity} from './_activityHistoryStore.js';
+import {acknowledgeUnstored,appendMinuteActivity} from './_activityHistoryStore.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
@@ -17,6 +17,7 @@ import {
   parseSummary,
 } from './_leagueRecord.js';
 import { parseNotmeFlag, parsePokemonIds, recordToolExport } from './_exportStats.js';
+import { parseAutoFlag } from './_automation.js';
 
 const burstLimiter = new Ratelimit({
   redis,
@@ -62,6 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       activity?: unknown;
       ts?: unknown;
       notme?: unknown;
+      auto?: unknown;
       events?: unknown;
     };
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
@@ -79,16 +81,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (body.kind === 'export' && !exportKind) return res.status(400).json({ error: 'invalid exportKind' });
     const pokemonIds = body.kind === 'export' ? parsePokemonIds(body.pokemonIds) : [];
     const notme = parseNotmeFlag(body.notme);
-    if (notme || isReadOnlyDeployment(req)) {
+    if (notme || parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) {
+      const activityAck = acknowledgeUnstored(body.activity, receivedAt);
       if (exportKind) {
         const highlight = await recordToolExport(
           exportKind === 'card' ? 'card' : 'league',
           pokemonIds,
           { notme: true },
         );
-        return res.status(200).json({ ok: true, highlight });
+        return res.status(200).json({ ok: true, highlight, activityAck });
       }
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, activityAck });
     }
 
     const countDrop = async (reason: 'rate-limit-ip' | 'rate-limit-client' | 'cap' | 'contention') => {

@@ -41,6 +41,14 @@ for i=2,#KEYS do
  else result[1]='invalid' end
 end
 return result`;
+/** The ack stored batches get, without storing them. A browser whose beacons
+ *  are not saved clears its queue exactly as a counted visitor's does. */
+export function acknowledgeUnstored(raw:unknown,receivedAt:number):MinuteActivityAck|undefined {
+ if(raw===undefined)return undefined;
+ const payload=parseMinuteActivity(raw,receivedAt);
+ if(!payload)return {accepted:[],status:'invalid'};
+ return {accepted:payload.batches.map(batch=>batch.id),status:'recorded'};
+}
 export async function appendMinuteActivity(cid:string,tool:MinuteActivityTool,raw:unknown,receivedAt:number,options:ActivityHistoryOptions={}):Promise<MinuteActivityAck|undefined> {
  if(raw===undefined)return undefined;
  const config=settings(receivedAt,options);

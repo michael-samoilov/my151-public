@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
 import { FUNNEL_DAY_TTL_S } from './_range.js';
+import { parseAutoFlag } from './_automation.js';
 import {
   appendExportSurveySkip,
   EXPORT_SURVEY_SKIP_EVENT,
@@ -49,6 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       page?: unknown;
       exportTool?: unknown;
       reason?: unknown;
+      auto?: unknown;
     };
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
       return res.status(400).json({ error: 'invalid cid' });
@@ -67,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       skipFields?.tool ??
       (isLeagueExportEvent(body.event) ? parseExportSurveyToolField(body.exportTool) : undefined);
 
-    if (isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
+    if (parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
     if (!burst.success) {

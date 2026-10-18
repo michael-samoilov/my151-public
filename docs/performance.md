@@ -92,7 +92,7 @@ A change can raise the score without a faster page. These guards stop that.
 | Accessibility, best practices, and SEO: no score drop and no audit that passed before and fails now. | Speed bought with a worse page. "Serves images with appropriate resolution" is in best practices. |
 | Every image must stay at least as sharp as before on the screen. | Smaller image copies that look blurry. |
 | After load, each page must match production in pixels and text, phone and desktop. | Any change that people can see. A difference is not a failure: it means Michael decides before it ships. |
-| `scripts/check-speed-test-detection.mjs`, in `ci-local.sh`, fails when shipped code mentions Lighthouse, PageSpeed, a headless browser, or WebDriver. | A page that serves a test a lighter page than people get. |
+| `scripts/check-speed-test-detection.mjs`, in `ci-local.sh`, fails when shipped code mentions Lighthouse, PageSpeed, a headless browser, or WebDriver. One file is exempt: `src/lib/automation.ts` reads `navigator.webdriver` only to mark beacons so the server stores nothing. `e2e/automation-flag.spec.ts` proves the page sends the same requests with and without the flag. | A page that serves a test a lighter page than people get. |
 | `lab.mjs`: INP of each tap step must not get worse. | Startup work moved into the first tap. |
 
 ## Merge bar

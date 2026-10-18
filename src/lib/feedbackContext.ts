@@ -2,6 +2,7 @@ import { getLocale } from '@/i18n';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
+import { AUTOMATED } from '@/lib/automation';
 import { BUILD_TIMESTAMP } from '@/lib/buildVersion';
 
 export interface FeedbackContext {
@@ -82,7 +83,7 @@ export async function sendFeedback(body: FeedbackSubmission): Promise<boolean> {
     const res = await fetch('/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cid ? { ...body, cid } : body),
+      body: JSON.stringify({ ...body, ...(cid ? { cid } : {}), auto: AUTOMATED || undefined }),
     });
     return res.ok;
   } catch {
@@ -112,7 +113,7 @@ export function sendCrashReport(route: string, error: NonNullable<FeedbackContex
     void fetch('/api/crash', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cid ? { context, cid } : { context }),
+      body: JSON.stringify({ context, ...(cid ? { cid } : {}), auto: AUTOMATED || undefined }),
       keepalive: true,
     }).catch(() => {});
   } catch {

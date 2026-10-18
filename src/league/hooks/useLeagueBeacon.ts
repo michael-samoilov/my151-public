@@ -3,6 +3,7 @@ import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useState } from 'react';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
+import { AUTOMATED } from '@/lib/automation';
 import { getLocale } from '@/i18n/core';
 import { getPinnedLocale } from '@/lib/pinnedLocale';
 import { currentPage } from '@/lib/tool';
@@ -59,6 +60,7 @@ function postLeagueBeacon(
     attention: attentionPayload('league'),
     activity: minuteActivityPayload('league'),
     notme: isOptedOut() || undefined,
+    auto: AUTOMATED || undefined,
     events: events.length ? events : undefined,
   });
   return fetch('/api/league', {

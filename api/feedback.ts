@@ -3,6 +3,7 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { sanitizeFavoriteFeedback } from './_favoriteFeedback.js';
 import { FEEDBACK_KEY, storeReport, underHourlyCap } from './_feedbackStore.js';
 import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
+import { parseAutoFlag } from './_automation.js';
 
 const CATEGORIES = new Set(['bug', 'translation', 'idea', 'data', 'other']);
 
@@ -129,7 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const cid = str(body.cid, 64);
 
-    if (isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
+    if (parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) return res.status(200).json({ ok: true });
     const ip = getClientIp(req);
     const perIp = await ipLimiter.limit(ip);
     if (!perIp.success) {

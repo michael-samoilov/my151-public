@@ -5,6 +5,7 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
+import { AUTOMATED } from '@/lib/automation';
 import type { ExportSurveySkipReason, ExportSurveyTool } from '@/lib/exportSurvey';
 import { getLocale } from '@/i18n/core';
 import { getPinnedLocale } from '@/lib/pinnedLocale';
@@ -92,6 +93,7 @@ function postBeacon(
     attention: attentionPayload('dex'),
     activity: minuteActivityPayload('dex'),
     notme: isOptedOut() || undefined,
+    auto: AUTOMATED || undefined,
   });
   void fetch('/api/submit', {
     method: 'POST',
@@ -187,6 +189,7 @@ export async function sendExportBeacon(
     attention: attentionPayload('dex'),
     activity: minuteActivityPayload('dex'),
     notme: isOptedOut() || undefined,
+    auto: AUTOMATED || undefined,
   });
   try {
     const res = await fetch('/api/submit', {
@@ -232,6 +235,7 @@ export function sendEventBeacon(
       page: currentPage(),
       ...(opts?.exportTool ? { exportTool: opts.exportTool } : {}),
       ...(opts?.reason ? { reason: opts.reason } : {}),
+      auto: AUTOMATED || undefined,
     }),
     keepalive: true,
   }).catch(() => {

@@ -75,6 +75,7 @@ import maintenance from '../api/admin-maintenance';
 import submit from '../api/submit';
 import league from '../api/league';
 import favorites from '../api/favorites';
+import event from '../api/event';
 import {requireAdmin} from '../api/_shared';
 
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<unknown>;
@@ -242,4 +243,23 @@ describe('Anonymous cid ownership: known-id integrity attacks', () => {
     expect((await request('submit', submit, {method: 'POST', body: {cid: suffixed, kind: 'progress', ids: [1]}})).status).toBe(200);
     expect(local.hashes.get('clients')?.[suffixed]).toBeDefined();
   });
+});
+
+describe('Automated browsers', () => {
+  const day = new Date(fixedNow).toISOString().slice(0, 10);
+  const activity = {v: 1, batches: [{id: 'batch-0001', tab: 'tab-00001', day, buckets: [{run: 'run-00001', first: fixedNow - 60_000, last: fixedNow - 60_000}]}]};
+  const beacons: [string, Handler, Record<string, unknown>][] = [
+    ['submit', submit, {cid, kind: 'progress', ids: [1], ts: fixedNow, activity}],
+    ['league', league, {cid, kind: 'progress', summary: {cards: 1, seats: 1, typed: 0, named: 0, aces: 0}, ts: fixedNow, activity}],
+    ['favorites', favorites, {cid, id: 'fixture-request-1', kind: 'progress', snapshot: {v: 1, fills: {}}, ts: fixedNow, activity}],
+    ['event', event, {cid, event: 'intro-shown', tool: 'dex'}],
+  ];
+  for (const [name, handler, body] of beacons) {
+    it(`${name}: answers an auto-flagged beacon as accepted and stores nothing`, async () => {
+      const result = await request(name, handler, {method: 'POST', body: {...body, auto: true}});
+      expect(result.status).toBe(200);
+      expect(result.body).toMatchObject({ok: true, ...(body.activity ? {activityAck: {status: 'recorded', accepted: ['batch-0001']}} : {})});
+      expect(local.calls).toEqual([]);
+    });
+  }
 });
