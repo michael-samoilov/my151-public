@@ -121,12 +121,12 @@ function EntryRow({ entry, note, onOpen }: { entry: Acknowledgement; note: strin
       type="button"
       data-ack-id={entry.id}
       onClick={() => onOpen(entry.id)}
-      className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+      className="flex w-full cursor-pointer items-center gap-0 py-2.5 ps-2 pe-0 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
     >
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="break-words text-sm text-muted-foreground">
           <span className="font-medium text-foreground">{entry.name}</span>
-          {entry.by && ` ${t('ack.by', { name: entry.by })}`}
+          {entry.by && <> <span className="inline-block max-w-full">{t('ack.by', { name: entry.by })}</span></>}
         </span>
         <span className="break-words text-xs text-muted-foreground">{note}</span>
       </span>
@@ -365,7 +365,7 @@ function Detail({ entry, backRef, onBack }: {
         </div>
         <Section label={t('ack.usedFor')}>
           {entry.kind === 'artist' ? (
-            <ArtistSprites name={entry.name} />
+            <ArtistSprites name={entry.name} summary={entry.usedFor} />
           ) : (
             <p className="text-sm leading-relaxed">{entry.usedFor}</p>
           )}

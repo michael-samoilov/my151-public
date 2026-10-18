@@ -1,6 +1,6 @@
 # How my151 credits sprites
 
-The Acknowledgements panel credits sprites through the bundles they came from. It names a sprite artist only when my151 took that artist's sprites from them directly.
+The Acknowledgements panel credits sprites through the bundles they came from. It names a sprite artist only when my151 took that artist's sprites from them directly. The panel calls these groups “Sprite projects” and “Additional sprites”. An additional artist’s direct-upload list supplements the artwork credited through the projects above.
 
 ## The policy
 
@@ -13,11 +13,12 @@ A bundle is a published collection that my151 took sprite files from, and that c
 | Bundle | Where it credits its artists |
 |---|---|
 | PokéAPI sprites | Its GitHub repository and the README credits |
-| Pokémon Showdown | The smogon/sprites repository |
 | Generation 9 Resource Pack | Its Eevee Expo resource page and its sprite sheet |
 | Smogon Sprite Project | Its three project threads and their credit sheets |
 
-The Smogon Sprite Project drew most of the fan sprites that PokéAPI and Showdown carry. Its terms ask users to credit "the spriter or the project itself", so crediting the project meets them.
+The Smogon Sprite Project contributed fan sprites distributed through PokéAPI. Its terms ask users to credit "the spriter or the project itself", so crediting the project meets them.
+
+The 50 form sprites previously mapped to Showdown now map to a pinned PokéAPI commit. Forty-eight match the existing visible pixels; Spiky-eared Pichu and female Pyroar use the PokéAPI variants. [The comparison](pokeapi-form-sources.json) records every path and hash. The importer downloads from PokéAPI. Historical source and artist evidence remains in the ledger. This does not claim that changing the download source overrides the artists’ terms.
 
 Each bundle entry in the panel says only what the evidence proves about the bundle's part in the app, with no count. It shows one permission quote from the bundle's own page and the bundle's links. It does not list the sprites.
 

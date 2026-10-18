@@ -7,7 +7,7 @@ export interface AlternatePickerForm {
   name: string;
   types: TypeName[];
   generation?: GenNumber;
-  spriteSlug?: string;
+  spritePath?: string;
   source?: 'powerup';
 }
 
@@ -16,7 +16,7 @@ const unownLetters: AlternatePickerForm[] = Array.from('BCDEFGHIJKLMNOPQRSTUVWXY
   ownerId: 201,
   name: `unown-${letter.toLowerCase()}`,
   types: ['psychic'],
-  spriteSlug: `unown-${letter.toLowerCase()}`,
+  spritePath: `201-${letter.toLowerCase()}`,
 }));
 
 const flowerColors: AlternatePickerForm[] = [
@@ -29,7 +29,7 @@ const flowerColors: AlternatePickerForm[] = [
     ownerId: Number(ownerId),
     name: `${species}-${color}`,
     types: ['fairy'],
-    spriteSlug: `${species}-${color}`,
+    spritePath: `${ownerId}-${color}`,
   })));
 
 const furfrouTrims: AlternatePickerForm[] = [
@@ -164,19 +164,19 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11035, ownerId: 666, name: 'vivillon-sun', types: ['bug', 'flying'] },
   { id: 11036, ownerId: 666, name: 'vivillon-tundra', types: ['bug', 'flying'] },
   ...unownLetters,
-  { id: 11062, ownerId: 201, name: 'unown-exclamation', types: ['psychic'], generation: 3, spriteSlug: 'unown-em' },
-  { id: 11063, ownerId: 201, name: 'unown-question', types: ['psychic'], generation: 3, spriteSlug: 'unown-qm' },
-  { id: 11064, ownerId: 172, name: 'pichu-spiky-eared', types: ['electric'], generation: 4, spriteSlug: 'pichu-spikyeared' },
-  { id: 11065, ownerId: 422, name: 'shellos-east', types: ['water'], spriteSlug: 'shellos-east' },
-  { id: 11066, ownerId: 423, name: 'gastrodon-east', types: ['water', 'ground'], spriteSlug: 'gastrodon-east' },
-  { id: 11067, ownerId: 449, name: 'hippopotas-female', types: ['ground'], spriteSlug: 'hippopotas-f' },
-  { id: 11068, ownerId: 450, name: 'hippowdon-female', types: ['ground'], spriteSlug: 'hippowdon-f' },
-  { id: 11069, ownerId: 592, name: 'frillish-female', types: ['water', 'ghost'], spriteSlug: 'frillish-f' },
-  { id: 11070, ownerId: 593, name: 'jellicent-female', types: ['water', 'ghost'], spriteSlug: 'jellicent-f' },
-  { id: 11071, ownerId: 668, name: 'pyroar-female', types: ['fire', 'normal'], spriteSlug: 'pyroar-f' },
-  { id: 11094, ownerId: 415, name: 'combee-female', types: ['bug', 'flying'], spriteSlug: 'combee-f' },
-  { id: 11095, ownerId: 521, name: 'unfezant-female', types: ['normal', 'flying'], spriteSlug: 'unfezant-f' },
-  { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spriteSlug: 'darmanitan-galarzen' },
+  { id: 11062, ownerId: 201, name: 'unown-exclamation', types: ['psychic'], generation: 3, spritePath: '201-exclamation' },
+  { id: 11063, ownerId: 201, name: 'unown-question', types: ['psychic'], generation: 3, spritePath: '201-question' },
+  { id: 11064, ownerId: 172, name: 'pichu-spiky-eared', types: ['electric'], generation: 4, spritePath: '172-spiky-eared' },
+  { id: 11065, ownerId: 422, name: 'shellos-east', types: ['water'], spritePath: '422-east' },
+  { id: 11066, ownerId: 423, name: 'gastrodon-east', types: ['water', 'ground'], spritePath: '423-east' },
+  { id: 11067, ownerId: 449, name: 'hippopotas-female', types: ['ground'], spritePath: 'female/449' },
+  { id: 11068, ownerId: 450, name: 'hippowdon-female', types: ['ground'], spritePath: 'female/450' },
+  { id: 11069, ownerId: 592, name: 'frillish-female', types: ['water', 'ghost'], spritePath: 'female/592' },
+  { id: 11070, ownerId: 593, name: 'jellicent-female', types: ['water', 'ghost'], spritePath: 'female/593' },
+  { id: 11071, ownerId: 668, name: 'pyroar-female', types: ['fire', 'normal'], spritePath: 'female/668' },
+  { id: 11094, ownerId: 415, name: 'combee-female', types: ['bug', 'flying'], spritePath: 'female/415' },
+  { id: 11095, ownerId: 521, name: 'unfezant-female', types: ['normal', 'flying'], spritePath: 'female/521' },
+  { id: 11072, ownerId: 10177, name: 'darmanitan-galar-zen', types: ['ice', 'fire'], generation: 8, spritePath: '10178' },
   ...flowerColors,
   ...furfrouTrims,
   { id: 11105, ownerId: 643, name: 'reshiram-overdrive', types: ['dragon', 'fire'] },
@@ -191,4 +191,7 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11114, ownerId: 1017, name: 'ogerpon-wellspring-tera', types: ['grass', 'water'] },
   { id: 11115, ownerId: 1017, name: 'ogerpon-hearthflame-tera', types: ['grass', 'fire'] },
   { id: 11116, ownerId: 1017, name: 'ogerpon-cornerstone-tera', types: ['grass', 'rock'] },
+  { id: 11117, ownerId: 235, name: 'smeargle-smearguru', types: ['normal'], generation: 9 },
+  { id: 11118, ownerId: 1007, name: 'koraidon-limited-build', types: ['fighting', 'dragon'] },
+  { id: 11119, ownerId: 1008, name: 'miraidon-low-power-mode', types: ['electric', 'dragon'] },
 ];

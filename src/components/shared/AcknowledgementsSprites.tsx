@@ -85,12 +85,12 @@ function SpriteList({ sprites }: { sprites: readonly CreditedSprite[] }) {
   );
 }
 
-export function ArtistSprites({ name }: { name: string }) {
+export function ArtistSprites({ name, summary }: { name: string; summary?: string }) {
   const tn = useTn();
   const sprites = useMemo(() => artistCredit(name)?.sprites ?? [], [name]);
   return (
     <div className="flex flex-col gap-3" data-testid="ack-sprites">
-      <p className="text-sm leading-relaxed" data-testid="ack-sprites-summary">{tn('ack.spritesOwn', sprites.length)}</p>
+      <p className="text-sm leading-relaxed" data-testid="ack-sprites-summary">{summary ?? tn('ack.spritesOwn', sprites.length)}</p>
       <SpriteList sprites={sprites} />
     </div>
   );

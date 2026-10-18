@@ -13,8 +13,6 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Armored Mewtwo | Mewtwo's Gen 1 legendary family | No matching sprite verified. |
 | Zygarde Cell | Gen 6 Zygarde family | No matching battle-style sprite verified. |
 | Zygarde Core | Gen 6 Zygarde family | No matching battle-style sprite verified. |
-| Koraidon Limited Build | Gen 9 Koraidon family | No distinct matching sprite verified. |
-| Miraidon Low-Power Mode | Gen 9 Miraidon family | No distinct matching sprite verified. |
 | Purple Kecleon (Mystery Dungeon) | Gen 3 Kecleon family | No matching Gen 5-style front sprite verified. |
 | Ukulele Pichu | Gen 4 Pichu family | Confirmed by Michael 2026-09-30. Pokémon Ranger: Guardian Signs design. No matching Gen 5-style front sprite verified in the searched source. |
 | Mega Darkrai eye form | Gen 4 Darkrai gimmick family | The existing Mega Darkrai sprite is present; no distinct matching eye-form sprite verified. |
@@ -25,9 +23,22 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
 
+## Imported on 2026-10-17 (release candidate)
+
+The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve the artist's canvas and bytes. [Originals and provenance](favorite-picker-work/sprites/2026-10-17-king-originals/originals.json) record the source pages, hashes, dimensions, transparency, and ink bounds.
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Smearguru | 11117 | Smeargle appearance in Normal × IX, debut Pokopia, with compact S and full label “Smeargle (Smearguru)”. https://sta.sh/0qi9vfww1kg |
+| Koraidon Limited Build | 11118 | After Koraidon in Fighting/Dragon × IX and Legendary pools. https://sta.sh/01ppvyo9gx1l |
+| Miraidon Low-Power Mode | 11119 | After Miraidon in Electric/Dragon × IX and Legendary pools. https://sta.sh/0p5wp0lgq01 |
+| Mega Raichu X | 10304 | Replaces existing shared Picker/League art with a cache revision. Identity stays 10304. https://sta.sh/03id19f0dha |
+
+King's direct-upload credit lists 13 sprites. Mega Raichu Y keeps its Generation 9 Resource Pack credit. The three additions stay out of the main Pokédex evolution catalog. Production release status belongs in [the picker handoff](favorite-picker-handoff.md).
+
 ## Added on 2026-10-12
 
-Michael chose these sprites from the sprite lab's locked selections (`sprite-lab/selections/`). They are copied without pixel edits. The forms are on the preview branch `claude/new-forms` until Michael ships them.
+Michael chose these sprites from the sprite lab's locked selections (`sprite-lab/selections/`). They are copied without pixel edits. These forms are included in production baseline `6405eb76`.
 
 | Form | Picker id | Placement and note |
 | --- | --- | --- |
@@ -61,7 +72,6 @@ Requested by Michael on 2026-10-06. Sprite sources and picker placement have not
 | Mosslax | Sprite search pending. |
 | Tinkmaster Tinkaton | Sprite search pending. |
 | Peakychu | Sprite search pending. |
-| Smearguru | Sprite search pending. |
 | Chef Dente Greedent | Sprite search pending. |
 
 ## Sprites to replace

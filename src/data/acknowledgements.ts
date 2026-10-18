@@ -60,14 +60,6 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     },
   },
   {
-    id: 'pokemon-showdown',
-    name: 'Pokémon Showdown',
-    usedFor: "The source of some form sprites, such as Unown's letters and the Flabébé family's colors.",
-    kind: 'project',
-    links: ['https://github.com/smogon/sprites'],
-    linkLabels: { 'https://github.com/smogon/sprites': 'the smogon/sprites repository' },
-  },
-  {
     id: 'gen9-resource-pack',
     name: 'Generation 9 Resource Pack',
     compiledBy: 'Caruban',
@@ -78,12 +70,11 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     links: ['https://eeveeexpo.com/resources/1101/'],
   },
   {
-    // Its artists drew most of the fan sprites PokéAPI and Showdown carry.
     // Its terms ask to credit the spriter or the project; this credits the
     // project.
     id: 'smogon-sprite-project',
     name: 'Smogon Sprite Project',
-    usedFor: 'Its artists drew most of the fan-made sprites that PokéAPI and Showdown carry.',
+    usedFor: 'Its artists drew many of the fan-made sprites distributed through PokéAPI.',
     license: 'Non-profit use, with credit',
     kind: 'project',
     links: [
@@ -109,6 +100,9 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
     entries: [...spriteArtists()].sort(byCount((artist) => artist.sprites.length, (artist) => artist.name)).map((artist) => ({
       id: artistEntryId(artist.name),
       name: artist.name,
+      usedFor: artist.name === 'KingOfThe-X-Roads'
+        ? `In addition to their sprites in the projects above, we use these ${artist.sprites.length} additional sprites from their own uploads.`
+        : undefined,
       links: artist.links,
       kind: 'artist',
     })),
@@ -118,7 +112,7 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
     entries: [
       {
         id: 'partywhale-type-icons',
-        name: 'Pokémon type icons',
+        name: 'Gen 9 Type Icons',
         by: 'Partywhale (James Watkins)',
         usedFor: typeIconsFrom('partywhale'),
         license: 'MIT',
@@ -128,7 +122,7 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
       },
       {
         id: 'elginive-type-icons',
-        name: 'Generation 9 type icons',
+        name: 'Gen 9 Type Icons',
         by: 'Elginive',
         usedFor: typeIconsFrom('elginive'),
         license: 'Free to use',
@@ -145,7 +139,7 @@ export const ACKNOWLEDGEMENTS: readonly AcknowledgementGroup[] = [
       },
       {
         id: 'bulbagarden-archives',
-        name: 'Bulbagarden Archives',
+        name: 'Pokémon symbols and item icons',
         usedFor:
           'Move category icons, the Mega Evolution and Dynamax symbols, the Blue and Red Orbs, the Leaf Crown and the Shiny Leaf.',
         license: 'Artwork © Nintendo / Game Freak / TPC',

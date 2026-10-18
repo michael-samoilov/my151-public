@@ -1,0 +1,1006 @@
+{
+  "pokeapiCommit": "ba403973fdf9d0ac59175813861e6a1f8ed5020c",
+  "note": "48 existing files have identical visible pixels; two were replaced with the pinned PokéAPI variants. Source equivalence does not establish individual authorship or override upstream rights.",
+  "forms": [
+    {
+      "id": 11037,
+      "path": "201-b.png",
+      "sha": "df1d88a8bfb1eded4da8500935561455785af440",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-b.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "ec2b7c102d8c1ef75aac60bd31ee5bfa57d8599000b0d2d19819d30447610cae",
+      "pokeapiFileSHA256": "6b7b5a242d77ba922f50d17cdbd688354c62535b9d859ab30f87bdd973a4ac79",
+      "currentFileSHA256": "ec2b7c102d8c1ef75aac60bd31ee5bfa57d8599000b0d2d19819d30447610cae"
+    },
+    {
+      "id": 11038,
+      "path": "201-c.png",
+      "sha": "51502bd97a1806b939442bf63b79a56f3455a5d7",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-c.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "b6cf48b6794d211ebaba01e60da44d77179a6c074f8fd3e3b121cff0cf07bc1f",
+      "pokeapiFileSHA256": "4636d7187a069ab3b2eccfd96952ddc753d4eee6b35fd78d0c29a5ba9408b782",
+      "currentFileSHA256": "b6cf48b6794d211ebaba01e60da44d77179a6c074f8fd3e3b121cff0cf07bc1f"
+    },
+    {
+      "id": 11039,
+      "path": "201-d.png",
+      "sha": "b4a7e49f46b2f76faa533687317b7fc65177497c",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-d.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "e540fcae3e0674c4004f80f29f2c5436bf632a05cae3bb1bb46b6bae861fef53",
+      "pokeapiFileSHA256": "f5611e6b2125a97c6dcc50bb7127465827b2c91dc055ba62b1051a5fa217ea72",
+      "currentFileSHA256": "e540fcae3e0674c4004f80f29f2c5436bf632a05cae3bb1bb46b6bae861fef53"
+    },
+    {
+      "id": 11040,
+      "path": "201-e.png",
+      "sha": "c8c7920c7739bfd433da3a2e59f8416d746c674c",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-e.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "bcf5d80c75f107920fa2cc788b5fccb488a8845945762df805327b24eb225c1b",
+      "pokeapiFileSHA256": "228fe620dc12dde4df552f924ded60734dd19853526fcc3ac1134ef163085b45",
+      "currentFileSHA256": "bcf5d80c75f107920fa2cc788b5fccb488a8845945762df805327b24eb225c1b"
+    },
+    {
+      "id": 11041,
+      "path": "201-f.png",
+      "sha": "0aa476534f0729a3ccd60852981be9350fd27f24",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-f.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "0a2561d0c995ace8261f2f358ef3426dd53f6705d3efcd2ec1f74d1385d87557",
+      "pokeapiFileSHA256": "2f2629409a196b1ce70b94f641616b045c83d486f49c6cb0143e4e145cf83aa5",
+      "currentFileSHA256": "0a2561d0c995ace8261f2f358ef3426dd53f6705d3efcd2ec1f74d1385d87557"
+    },
+    {
+      "id": 11042,
+      "path": "201-g.png",
+      "sha": "9af063e2b4367d9c3815055997e8dfd6b09b03cb",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-g.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "d06ab2ab4b4b060e3a40b6a91b857391654e6e993e1e3de0e770883619c8940c",
+      "pokeapiFileSHA256": "6d32b601d41ec9bd08d9b8d958d73ede74250c9cfd9bbc65a7929b2513296025",
+      "currentFileSHA256": "d06ab2ab4b4b060e3a40b6a91b857391654e6e993e1e3de0e770883619c8940c"
+    },
+    {
+      "id": 11043,
+      "path": "201-h.png",
+      "sha": "8f2ee638a057b325fc2999e9e9dab7e9dc3a91e6",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-h.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "65523826884668776308c1bd2e800c5f5e834607ddb6c9e2a968194d59aa1b67",
+      "pokeapiFileSHA256": "0e7db2f279648e8b6d7b954ce6f361057b9f7fcf47bfde75c631f198474ab82a",
+      "currentFileSHA256": "65523826884668776308c1bd2e800c5f5e834607ddb6c9e2a968194d59aa1b67"
+    },
+    {
+      "id": 11044,
+      "path": "201-i.png",
+      "sha": "1d712bf4b8d3d27224a5dcdc04b6ae3a4d856c60",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-i.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "45a8cca4138fa55208b4cf0e510c12734bd9d2a343a56fc3b7d07041a49f5354",
+      "pokeapiFileSHA256": "d9dc4354f6a8869fa103e81f6a916fd08f247260acdbd147aeef158d01a21e40",
+      "currentFileSHA256": "45a8cca4138fa55208b4cf0e510c12734bd9d2a343a56fc3b7d07041a49f5354"
+    },
+    {
+      "id": 11045,
+      "path": "201-j.png",
+      "sha": "345ad675abf6babb1577256600d7063cc261d817",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-j.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "3983a813a26565d2c43f9f40aae35ae5438328d276358a5d01838866a00e62f8",
+      "pokeapiFileSHA256": "89ee4d007a26fd86a48e327c97265aa875d1d42677cb2023c8143ebd3981ca15",
+      "currentFileSHA256": "3983a813a26565d2c43f9f40aae35ae5438328d276358a5d01838866a00e62f8"
+    },
+    {
+      "id": 11046,
+      "path": "201-k.png",
+      "sha": "a7f8399d7c6cb0ee067f8c3531b7d76e6f0863cc",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-k.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "3e8c894d2397a50b35629ec45cb3fbbc17ecec7388347d2173b9d75736c905ca",
+      "pokeapiFileSHA256": "95d77a8f4224dce0218f25cc16792f3d7e871d4b0b5ff9f0bf083ddfc63d1928",
+      "currentFileSHA256": "3e8c894d2397a50b35629ec45cb3fbbc17ecec7388347d2173b9d75736c905ca"
+    },
+    {
+      "id": 11047,
+      "path": "201-l.png",
+      "sha": "61fb40af57f107620876a3550250a58f0ed82f23",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-l.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "d6c3b307f8dfb58f9b9ee9f136bb7539323f25b866d686aba26618d031a7cc77",
+      "pokeapiFileSHA256": "8b0daefdde1319901bbfa040bc699ae157a1d182aaa72a1cb0a17936ca1604ef",
+      "currentFileSHA256": "d6c3b307f8dfb58f9b9ee9f136bb7539323f25b866d686aba26618d031a7cc77"
+    },
+    {
+      "id": 11048,
+      "path": "201-m.png",
+      "sha": "772e41a6e6804f8dc3256c086dc6a0f2fd8918ae",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-m.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "15c7fe554caca29bc883326dc9a1d5a3d837841e54d0183c98115f3985aadf2e",
+      "pokeapiFileSHA256": "b55c8230c56834d6d5bb3bbfdb8a0ea14711a59431b84e3efc72f6fe5d6e394e",
+      "currentFileSHA256": "15c7fe554caca29bc883326dc9a1d5a3d837841e54d0183c98115f3985aadf2e"
+    },
+    {
+      "id": 11049,
+      "path": "201-n.png",
+      "sha": "5aa9909fe3db9af018a405218cc3ebebcf0a3248",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-n.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "810bfdafc467bd3a9795145b34930ecdbe77ae02b614d47e5b607c3140c7fd73",
+      "pokeapiFileSHA256": "e6cdce048cce14a052e037b7aac5abf659b89d2a77b302c885feb838e378b76c",
+      "currentFileSHA256": "810bfdafc467bd3a9795145b34930ecdbe77ae02b614d47e5b607c3140c7fd73"
+    },
+    {
+      "id": 11050,
+      "path": "201-o.png",
+      "sha": "ded38a4ba0e7ba17584a4dc819c57e2e08c17ce7",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-o.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "8023072055e5db43dd8488aba5bdffde0ce3071242777814a20019db84ca1949",
+      "pokeapiFileSHA256": "63999cc7e1b0364820538013b4dd78cc33658a973c9c6ce6916cd95bf6cee6b8",
+      "currentFileSHA256": "8023072055e5db43dd8488aba5bdffde0ce3071242777814a20019db84ca1949"
+    },
+    {
+      "id": 11051,
+      "path": "201-p.png",
+      "sha": "f2b1fef5e593f7611188f653c5ae486e6f6c7486",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-p.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "5196a1e72d678499fd24a9eb3d28f0ee08c5cb555af0ac745161d10e95948105",
+      "pokeapiFileSHA256": "f5b776bc87e6ebf2a4537f5c68dd7a5163b6e76db6c78049244c25587072c443",
+      "currentFileSHA256": "5196a1e72d678499fd24a9eb3d28f0ee08c5cb555af0ac745161d10e95948105"
+    },
+    {
+      "id": 11052,
+      "path": "201-q.png",
+      "sha": "9dc2546611b9f0d5a7b97c8e078e22a55847863c",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-q.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "83ef36b6cb09e09dc1bd7bd8fb89d29273591dda9159c22a5ee6d2108556dbad",
+      "pokeapiFileSHA256": "3516140296b5502e38b9cef16dd05dbd30b517adf359b7d7b1a3807ba59dde04",
+      "currentFileSHA256": "83ef36b6cb09e09dc1bd7bd8fb89d29273591dda9159c22a5ee6d2108556dbad"
+    },
+    {
+      "id": 11053,
+      "path": "201-r.png",
+      "sha": "231a859be50c8b713f3a9125e8492bf8c5f34732",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-r.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "9fcd8d1fa0122af35f435492f8d195577bc4ccdac0180c7b13986c37a9dc0d70",
+      "pokeapiFileSHA256": "b9e055830b0ec5971ce51e9877b8024af398e5be8d8a2131ea75c3dc52640615",
+      "currentFileSHA256": "9fcd8d1fa0122af35f435492f8d195577bc4ccdac0180c7b13986c37a9dc0d70"
+    },
+    {
+      "id": 11054,
+      "path": "201-s.png",
+      "sha": "678ff2490d6df4b7d655cb3b69c229732b5f1145",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-s.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "3c8f1495d6466bd3e55934e6439fb7a9aa3539a0584e666270343c027a1c37a5",
+      "pokeapiFileSHA256": "0f86315b9cf3c8d9882f97ea3eacc019a036bf87e9bbd17101740d59591fc262",
+      "currentFileSHA256": "3c8f1495d6466bd3e55934e6439fb7a9aa3539a0584e666270343c027a1c37a5"
+    },
+    {
+      "id": 11055,
+      "path": "201-t.png",
+      "sha": "ce9416e976664dd518b3d52e5167b17d267091a6",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-t.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "1c2e1d693ef47704ffa9967ded7901876cfbfce4c02729ba0cde8c856aea9289",
+      "pokeapiFileSHA256": "316cf4a4ddd6a80e8363ee30fc0eaf84eddd5c4700eec24b21de84469cadcf47",
+      "currentFileSHA256": "1c2e1d693ef47704ffa9967ded7901876cfbfce4c02729ba0cde8c856aea9289"
+    },
+    {
+      "id": 11056,
+      "path": "201-u.png",
+      "sha": "bb4e5980fb4e3d23b5e3c5034a5151db3fc81561",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-u.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "7e401b3430674cec7d96089f166f8597d7d155d7c2201dfdc286e2b31254b848",
+      "pokeapiFileSHA256": "0c70d0bf61c05c3e068c2f610ca3ab5ddb27654a3935b19885a66963de0bbbc4",
+      "currentFileSHA256": "7e401b3430674cec7d96089f166f8597d7d155d7c2201dfdc286e2b31254b848"
+    },
+    {
+      "id": 11057,
+      "path": "201-v.png",
+      "sha": "aebbea558aed2c9437c161260bf3cc84e17d69c1",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-v.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "178d6e1da0a7de8874ad3be6171822b7f48597eaf2d2c0f71e3d8804a1550ec6",
+      "pokeapiFileSHA256": "3d6e4d6e49b7030210c165fc3a90ad1ba55c9cf487bb909b233e5463f9d1911d",
+      "currentFileSHA256": "178d6e1da0a7de8874ad3be6171822b7f48597eaf2d2c0f71e3d8804a1550ec6"
+    },
+    {
+      "id": 11058,
+      "path": "201-w.png",
+      "sha": "04caf00d9d792690b096ca807e30a1c6d60ff428",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-w.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "c10f2113feb2d25f03e9ccb4346fd212d3e36d9e75a45f7272655e4a61aa45ba",
+      "pokeapiFileSHA256": "482f85c74555625a8bdcb9febdbc154b2aa8a605e3015b7b04d28b9f69cbc125",
+      "currentFileSHA256": "c10f2113feb2d25f03e9ccb4346fd212d3e36d9e75a45f7272655e4a61aa45ba"
+    },
+    {
+      "id": 11059,
+      "path": "201-x.png",
+      "sha": "1188d575c64efcdabc35ddd76222859a59779508",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-x.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "f0e29d68648295cf9f1b31ee19cd3c34fb8173ea960430b16ff563882f73ab14",
+      "pokeapiFileSHA256": "9e82cf4e687cdab4517c6ebcb0c966ce695cddf501b68944edbf231c04ce18e4",
+      "currentFileSHA256": "f0e29d68648295cf9f1b31ee19cd3c34fb8173ea960430b16ff563882f73ab14"
+    },
+    {
+      "id": 11060,
+      "path": "201-y.png",
+      "sha": "3841a38ba354b3038a44f03373c4e6cb172dc3d9",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-y.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "eb6c6ceb0403a81ba74fdec15eab879dd0a11503a80e867112535c613063a6ec",
+      "pokeapiFileSHA256": "bcba4db46a66ffa48d0fa8bb0af8ea823911f87211c40d623a36fad64121aa53",
+      "currentFileSHA256": "eb6c6ceb0403a81ba74fdec15eab879dd0a11503a80e867112535c613063a6ec"
+    },
+    {
+      "id": 11061,
+      "path": "201-z.png",
+      "sha": "c8e4bc790fc85c971f483f68bde8ac96d394acc2",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-z.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "b47d13ea6ae3ea858a72c338e79d7b57a204f0ee57b447031c1e15be19fdfaa1",
+      "pokeapiFileSHA256": "9af854c4778caca6a331ba242da14e635b742f31170f6d5afe8938122569d1b9",
+      "currentFileSHA256": "b47d13ea6ae3ea858a72c338e79d7b57a204f0ee57b447031c1e15be19fdfaa1"
+    },
+    {
+      "id": 11062,
+      "path": "201-exclamation.png",
+      "sha": "5674725896ac9ae912f2c602e8840a02e37b5aac",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-exclamation.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "d23322764a65d144ba97189a6508f94b5d34277be51c7d1e27ab5ac22ea89e53",
+      "pokeapiFileSHA256": "9638c197de344df2cff116dc289a88a5e990e7bc6828c8bdc96e3c589e2e7722",
+      "currentFileSHA256": "d23322764a65d144ba97189a6508f94b5d34277be51c7d1e27ab5ac22ea89e53"
+    },
+    {
+      "id": 11063,
+      "path": "201-question.png",
+      "sha": "da7980c939247eff77a617e96946a6a2638a1a25",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/201-question.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "be9bb10d4bdd356980e3514991b7a9f6369f63c5993cece2a479b8ac8ee4c9de",
+      "pokeapiFileSHA256": "b7b3a1b705f16531b909cdacebbe823acda182c359e384f379e569e20f9cf085",
+      "currentFileSHA256": "be9bb10d4bdd356980e3514991b7a9f6369f63c5993cece2a479b8ac8ee4c9de"
+    },
+    {
+      "id": 11064,
+      "path": "172-spiky-eared.png",
+      "sha": "71e589d5265369e0ebcccc279d1c76966b7c8b8b",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/172-spiky-eared.png",
+      "sameBytes": false,
+      "rgbaIdentical": false,
+      "visiblePixelsIdentical": false,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "edcb586e58fd79a7b0f2089c2842f193f7844df490ed9f347e8b910dc2ee81b6",
+      "pokeapiFileSHA256": "301c0ef7e6fcd99a90f7870429b8dbe25f31ab5f19cf970369d5f9dba9fba159",
+      "currentFileSHA256": "301c0ef7e6fcd99a90f7870429b8dbe25f31ab5f19cf970369d5f9dba9fba159"
+    },
+    {
+      "id": 11065,
+      "path": "422-east.png",
+      "sha": "6971c0fdab8da251c8c75e101ad5e37dbf94f50c",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/422-east.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "e86f23f042f22a6ed397e200a3db16b2c7830798887899c93745577cd3542fc0",
+      "pokeapiFileSHA256": "4f3c5d7a0ce4a34f7d5e0f597f16afc2a85cc100882faa734b7eedce1413859c",
+      "currentFileSHA256": "e86f23f042f22a6ed397e200a3db16b2c7830798887899c93745577cd3542fc0"
+    },
+    {
+      "id": 11066,
+      "path": "423-east.png",
+      "sha": "314a7064822b21206d1a6147d7b01e9e079b1aef",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/423-east.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "bb81ef262d82ebd030dcc5a3c33f7efe6f41c322faaacee0c6566c36c5c6aedd",
+      "pokeapiFileSHA256": "7e56eed9b132fde3f1f14ec250ddd0de001fd1705729c34466d48da31e9b7548",
+      "currentFileSHA256": "bb81ef262d82ebd030dcc5a3c33f7efe6f41c322faaacee0c6566c36c5c6aedd"
+    },
+    {
+      "id": 11067,
+      "path": "female/449.png",
+      "sha": "62fe2f5ceeb8ed85a41140cf51e153d554619f1c",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/449.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "3d3954c713983f5070fc8f9a48885ace60dfa3ef7de168876e3352606bae5346",
+      "pokeapiFileSHA256": "dcf5d7311b75eae2fda878d9c971e30801e45f16b4cd8856bf3818346da2f39d",
+      "currentFileSHA256": "3d3954c713983f5070fc8f9a48885ace60dfa3ef7de168876e3352606bae5346"
+    },
+    {
+      "id": 11068,
+      "path": "female/450.png",
+      "sha": "147481f11bfc1d32d57a2acf336893a69d546cdd",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/450.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "5eb20bbb607b158aae067b8b703a97b3b4e379cd26dbeb18be2574efe0413aa8",
+      "pokeapiFileSHA256": "3f748dc72113aaf349f0fc918dc2459666826b76274be253615da45567134c4d",
+      "currentFileSHA256": "5eb20bbb607b158aae067b8b703a97b3b4e379cd26dbeb18be2574efe0413aa8"
+    },
+    {
+      "id": 11069,
+      "path": "female/592.png",
+      "sha": "8963e59b9f19c8c5b8f3bec621dcc0935b06d478",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/592.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "84ff11e95ec31251bde7c17e5b2a4800246a2dcfe1c264cbde16d5a58e686254",
+      "pokeapiFileSHA256": "b8f551f57b9e7a2290e1f47ae300d6dc11e2252fafdb4950f4321a6415809c40",
+      "currentFileSHA256": "84ff11e95ec31251bde7c17e5b2a4800246a2dcfe1c264cbde16d5a58e686254"
+    },
+    {
+      "id": 11070,
+      "path": "female/593.png",
+      "sha": "fe944cc732f78d2202651a75ff632b3d0e0b2982",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/593.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "d05b861e96b2e156fb2399f25c237505749c197459b7c5fa1affc56a3d4e83ec",
+      "pokeapiFileSHA256": "a95a6427d8adcdc42d3272d65175f480397ac9961ed9faab8f142157b7dca4fc",
+      "currentFileSHA256": "d05b861e96b2e156fb2399f25c237505749c197459b7c5fa1affc56a3d4e83ec"
+    },
+    {
+      "id": 11071,
+      "path": "female/668.png",
+      "sha": "8d1e7a6d9b3cbee73763287773e1eda782248734",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/668.png",
+      "sameBytes": false,
+      "rgbaIdentical": false,
+      "visiblePixelsIdentical": false,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "b7f29833de2fb40c1964bf36eb157bcb45c5858436d965f7758aef9582841879",
+      "pokeapiFileSHA256": "2c90f7a1bd1556b9d18fb97caf292165c11f406b617fc4b62c7fa49514a47425",
+      "currentFileSHA256": "2c90f7a1bd1556b9d18fb97caf292165c11f406b617fc4b62c7fa49514a47425"
+    },
+    {
+      "id": 11072,
+      "path": "10178.png",
+      "sha": "fd37970a40cf0a794ddee73c37ebea4fbcea043c",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/10178.png",
+      "sameBytes": false,
+      "rgbaIdentical": false,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "e144595e99a314a0645b6bef240b10427ad8d3a40ff2cb89a0e6f07e42c413c3",
+      "pokeapiFileSHA256": "5c21f0899d1fd98f8801318d0f04c340e04d8372e4fe7d0dc2f3a73f8d7f0768",
+      "currentFileSHA256": "e144595e99a314a0645b6bef240b10427ad8d3a40ff2cb89a0e6f07e42c413c3"
+    },
+    {
+      "id": 11082,
+      "path": "669-blue.png",
+      "sha": "fc9d9e1e2dc1f9e28c64f5ce23fbbc4a416378a3",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/669-blue.png",
+      "sameBytes": false,
+      "rgbaIdentical": false,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "49baac5f5fb85cccd084ce3f38bd530b6741fa526b3f4403fef41dfd273f6be2",
+      "pokeapiFileSHA256": "721200646aabed367f248b0bf0a0928972d387d0eb47a7f2699e985c3eaa143e",
+      "currentFileSHA256": "49baac5f5fb85cccd084ce3f38bd530b6741fa526b3f4403fef41dfd273f6be2"
+    },
+    {
+      "id": 11083,
+      "path": "669-orange.png",
+      "sha": "de35ec53ecb1ac34f7be58da334ea19932d104c5",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/669-orange.png",
+      "sameBytes": false,
+      "rgbaIdentical": false,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "ad2f11be81b81a755c2760b76f2e9999b7b3d2c5caceb9a39c1da85e3e2b09cf",
+      "pokeapiFileSHA256": "4d02bd9e907138715cafc55ef3efa1416cd5531edced49a394043f44630aff05",
+      "currentFileSHA256": "ad2f11be81b81a755c2760b76f2e9999b7b3d2c5caceb9a39c1da85e3e2b09cf"
+    },
+    {
+      "id": 11084,
+      "path": "669-white.png",
+      "sha": "3494f84fca0ffb340bd382bdd5fee1083a441a82",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/669-white.png",
+      "sameBytes": false,
+      "rgbaIdentical": false,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "a0f038760b697bda8cb075d753ba811755ba12c5f40f664ca326a8753d7c230b",
+      "pokeapiFileSHA256": "8a0487b41d8790e485071e6fd3ee08d1d7a2f9e4285dd19b6aca74125a52f60a",
+      "currentFileSHA256": "a0f038760b697bda8cb075d753ba811755ba12c5f40f664ca326a8753d7c230b"
+    },
+    {
+      "id": 11085,
+      "path": "669-yellow.png",
+      "sha": "f60f7eeaac5f2174793aaa7a540d52f1b9ca247f",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/669-yellow.png",
+      "sameBytes": false,
+      "rgbaIdentical": false,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "614f0a5d17ef4a40efddd6fc52efc2daa9dad0295b10d52d88295be1228dc6b5",
+      "pokeapiFileSHA256": "de99a910f50fd78afa5a5b8d93efc87c14aac155c546395edb1ada8272b80512",
+      "currentFileSHA256": "614f0a5d17ef4a40efddd6fc52efc2daa9dad0295b10d52d88295be1228dc6b5"
+    },
+    {
+      "id": 11086,
+      "path": "670-blue.png",
+      "sha": "b95b456219a99345a098ee6f18b10061c80f51e5",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/670-blue.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "178de7e22ca8f4a3321d8a388f8720b60ac61e9835a2b875e7658ed6a98894af",
+      "pokeapiFileSHA256": "6e8758713d2ba0b4518e54257b8aa90e8ccf0c046858a9617ad8be0a3a62d3ca",
+      "currentFileSHA256": "178de7e22ca8f4a3321d8a388f8720b60ac61e9835a2b875e7658ed6a98894af"
+    },
+    {
+      "id": 11087,
+      "path": "670-orange.png",
+      "sha": "0f460d5abdd7b04defba39cf7eef3922fb4faef9",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/670-orange.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "ab134b55f75eee819b383f8513ed83c09a00d4a03caf97699cb5caa6be3e19d6",
+      "pokeapiFileSHA256": "07905afbcd88a51cada30a3b17c4334660d4e6ba3828d422c4b888fa5a1b8f76",
+      "currentFileSHA256": "ab134b55f75eee819b383f8513ed83c09a00d4a03caf97699cb5caa6be3e19d6"
+    },
+    {
+      "id": 11088,
+      "path": "670-white.png",
+      "sha": "091c67fff7c1a122ea53d219f0e6ba78a0e9b4cd",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/670-white.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "5ea933e71225209ec4ec2acdf29b55e9272f3fbda847343862928d69642e8530",
+      "pokeapiFileSHA256": "389e9a1d8871a2289595968f2cf1faccfce8e7fae4bfd400b149361c7636b378",
+      "currentFileSHA256": "5ea933e71225209ec4ec2acdf29b55e9272f3fbda847343862928d69642e8530"
+    },
+    {
+      "id": 11089,
+      "path": "670-yellow.png",
+      "sha": "49f36c3b5f9fcb10d0cfc9f139edf5428e21056b",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/670-yellow.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "8967094a8b2635f11f11345d6e1828efa10b66ff4a628517945e028035a7d01c",
+      "pokeapiFileSHA256": "0c6c164e426a14415adc4850e1439601de2ebc9c664c99f7a63a2f6c8b96fc91",
+      "currentFileSHA256": "8967094a8b2635f11f11345d6e1828efa10b66ff4a628517945e028035a7d01c"
+    },
+    {
+      "id": 11090,
+      "path": "671-blue.png",
+      "sha": "475d636a89f4aef72f181e820f690d6385672ab3",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/671-blue.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "0f821f8e1204ef155c678ef014dabd9817134a537570d852d7fc57a80fcce761",
+      "pokeapiFileSHA256": "75963fa02c9cf276d871c79cbe81fb0f1bc27da25ba0b3de90ecad7ed1dbe727",
+      "currentFileSHA256": "0f821f8e1204ef155c678ef014dabd9817134a537570d852d7fc57a80fcce761"
+    },
+    {
+      "id": 11091,
+      "path": "671-orange.png",
+      "sha": "3cd34554296a80ac9826125b0a489eda7a544069",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/671-orange.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "65bdd784b4249aee79bca9557eaaa8a09362dff6b88d7da37b423c161f1e2efa",
+      "pokeapiFileSHA256": "8cead84543f07b69800133003b18d4288da462aacf3db25f0181c267470449eb",
+      "currentFileSHA256": "65bdd784b4249aee79bca9557eaaa8a09362dff6b88d7da37b423c161f1e2efa"
+    },
+    {
+      "id": 11092,
+      "path": "671-white.png",
+      "sha": "1ec4788b621fa35e3eb21bcf132d0019b77280f9",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/671-white.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "e51ff5fc137266c6600d911dc8dc02ef59e246cf5d5e5fe79735f3f0d8b402e1",
+      "pokeapiFileSHA256": "f0ac80cb356af9c6d34d2d838fd3a1f622a090c86b99fe2dae23848d102aa93d",
+      "currentFileSHA256": "e51ff5fc137266c6600d911dc8dc02ef59e246cf5d5e5fe79735f3f0d8b402e1"
+    },
+    {
+      "id": 11093,
+      "path": "671-yellow.png",
+      "sha": "ef6336f710b73b2c96cce879149e20d01442e83c",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/671-yellow.png",
+      "sameBytes": false,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "b0795060db1219d20401512e8898a6bc26d9e2dfdce3912443dac39190cbdbe5",
+      "pokeapiFileSHA256": "4a689b90b51e863f7de66448252db0b4c150e47821a7e39613c6afc8a5d050ad",
+      "currentFileSHA256": "b0795060db1219d20401512e8898a6bc26d9e2dfdce3912443dac39190cbdbe5"
+    },
+    {
+      "id": 11094,
+      "path": "female/415.png",
+      "sha": "d51d173917a07392848bc742ff280341ad076c7b",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/415.png",
+      "sameBytes": true,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "a347c353f14b65353eb19b4006e385280333a0482e80f0f1f506ab50ab4825bb",
+      "pokeapiFileSHA256": "a347c353f14b65353eb19b4006e385280333a0482e80f0f1f506ab50ab4825bb",
+      "currentFileSHA256": "a347c353f14b65353eb19b4006e385280333a0482e80f0f1f506ab50ab4825bb"
+    },
+    {
+      "id": 11095,
+      "path": "female/521.png",
+      "sha": "8263f933823f03b0341b67acd7a597d81a4ec854",
+      "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/female/521.png",
+      "sameBytes": true,
+      "rgbaIdentical": true,
+      "visiblePixelsIdentical": true,
+      "appSize": [
+        96,
+        96
+      ],
+      "pokeapiSize": [
+        96,
+        96
+      ],
+      "previousFileSHA256": "01462eab8e5798e6dcd1726178b0a1074ab213eadf5e7bf7995bf181fa545622",
+      "pokeapiFileSHA256": "01462eab8e5798e6dcd1726178b0a1074ab213eadf5e7bf7995bf181fa545622",
+      "currentFileSHA256": "01462eab8e5798e6dcd1726178b0a1074ab213eadf5e7bf7995bf181fa545622"
+    }
+  ]
+}

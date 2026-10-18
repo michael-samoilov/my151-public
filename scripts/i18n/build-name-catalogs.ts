@@ -21,11 +21,6 @@ const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
  */
 export type NameProvenance = 'official' | 'official-composed' | 'english-only';
 
-/**
- * Battle appearances with no official name in any language, by app id. Each
- * locale gets the English descriptor, never an invented translation. A fusion
- * leads with its official name, so the two Kyurem Overdrives stay distinct.
- */
 const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; officialPrefix?: number }>> = {
   11105: { descriptor: 'Overdrive' },
   11106: { descriptor: 'Overdrive' },
@@ -35,6 +30,7 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
   11110: { descriptor: 'Full Moon Phase' },
   11111: { descriptor: 'Zenith' },
   11112: { descriptor: 'DJ' },
+  11117: { descriptor: 'Smearguru' },
 };
 
 /**
