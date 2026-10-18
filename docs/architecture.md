@@ -69,6 +69,12 @@ The tools also share specific state connections:
 - The browser's [`Favorite Picker bridge`](../src/components/browser/favoritePickerBridge.ts) reads saved favorites and maps their IDs into browser IDs.
 - All public entry points initialize language from the preference in the Dex store.
 
+The browser context accepts a read-only Zustand contract.
+TypeScript checks its required state and actions without an unchecked adapter cast.
+ESLint rejects direct static imports of Node built-ins, server infrastructure, and API endpoints from production browser code.
+Erased types and pure API helpers remain allowed.
+This rule does not inspect dynamic or transitive imports.
+
 These connections make browser, catalog, and saved-state changes affect more than one tool.
 The [surface handoffs](README.md#make-a-change) preserve the standing product decisions for each owner.
 
