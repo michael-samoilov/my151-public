@@ -108,3 +108,36 @@ describe('Newest browsers index', () => {
     expect(JSON.stringify(heavyDex).length).toBeGreaterThan(20_000);
   });
 });
+
+describe('Page loads and suspected automation', () => {
+  function pageLoad(cid: string, now: number) {
+    const snapshot = parseFavoriteSnapshot({ v: 1, fills: {} })!;
+    return mergeFavoriteRecord(null, { cid, id: `${cid}-0`, now, kind: 'progress', snapshot, events: ['favorites-open'], country: 'US' });
+  }
+
+  it('keeps a browser that never placed or touched anything out of the users, and in the funnel opens', () => {
+    const d = dash(source({ picker: { 'p-load': pageLoad('p-load', NOW - MIN), 'p-user': picker('p-user', NOW - MIN) } }), '7d');
+    expect(d.byTool.favorites.users).toBe(1);
+    expect(d.pageLoads).toEqual({ dex: 0, league: 0, favorites: 1 });
+    expect(d.favoriteFunnel.opened).toBe(2);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-load')?.pageLoadOnly).toBe(true);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-user')?.pageLoadOnly).toBeUndefined();
+  });
+
+  it('flags three fresh look-alike browsers within ten minutes, and a browser with no language', () => {
+    const bot = (cid: string, at: number) =>
+      dex(cid, at, { firstTs: at, sessionMs: [0], region: 'OH', device: 'Desktop', os: 'Linux', browser: 'Chrome' });
+    const clients = {
+      'b-0': bot('b-0', NOW - 60 * MIN),
+      'b-4': bot('b-4', NOW - 56 * MIN),
+      'b-9': bot('b-9', NOW - 51 * MIN),
+      'b-late': bot('b-late', NOW - 30 * MIN),
+      'person': dex('person', NOW - 58 * MIN, { region: 'OH', device: 'Desktop', os: 'Linux', browser: 'Chrome' }),
+      'no-lang': dex('no-lang', NOW - MIN, { lang: undefined }),
+    };
+    const reasons = Object.fromEntries(dash(source({ clients }), 'all').browsers.dex.map((r) => [r.cid, r.suspect]));
+    expect(reasons).toEqual({
+      'b-0': ['burst'], 'b-4': ['burst'], 'b-9': ['burst'], 'b-late': undefined, person: undefined, 'no-lang': ['no-language'],
+    });
+  });
+});

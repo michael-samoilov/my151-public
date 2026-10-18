@@ -35,8 +35,15 @@ describe('isReadOnlyDeployment', () => {
     expect(isReadOnlyDeployment(req({ 'x-forwarded-host': PREVIEW_HOST, host: 'my151.app' }))).toBe(true);
   });
 
-  it('never blocks production or local builds, whatever the host', () => {
-    for (const env of ['production', 'development', '']) {
+  it('blocks a production deployment reached by its own vercel.app URL, and never the live hosts', () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    expect(isReadOnlyDeployment(req({ host: 'preview-host.vercel.app' }))).toBe(true);
+    expect(isReadOnlyDeployment(req({}))).toBe(true);
+    for (const host of ['my151.app', 'www.my151.app']) expect(isReadOnlyDeployment(req({ host }))).toBe(false);
+  });
+
+  it('never blocks local builds, whatever the host', () => {
+    for (const env of ['development', '']) {
       vi.stubEnv('VERCEL_ENV', env);
       expect(isReadOnlyDeployment(req({ host: PREVIEW_HOST }))).toBe(false);
     }

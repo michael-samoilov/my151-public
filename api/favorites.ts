@@ -1,5 +1,5 @@
 import {parseAttentionForIngest} from './_attention.js';
-import {appendMinuteActivity} from './_activityHistoryStore.js';
+import {acknowledgeUnstored,appendMinuteActivity} from './_activityHistoryStore.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
@@ -7,6 +7,8 @@ import { JOURNAL_MAX_PER_DAY, JOURNAL_TTL_S, parsePage } from './_events.js';
 import { redis, getClientIp, getClient, getGeo, getLang, isReadOnlyDeployment, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
 import { parseCapturedAt } from './_sessionize.js';
 import { parseNotmeFlag } from './_exportStats.js';
+import { parseAutoFlag } from './_automation.js';
+import { FUNNEL_DAY_TTL_S } from './_range.js';
 import { FAVORITE_CLIENTS_KEY, FAVORITE_VERSION_KEY, favoriteSessionAt, parseFavoriteSnapshot, parseFavoriteRecord, mergeFavoriteRecord, type FavoriteBeaconKind, type FavoriteExportKind } from './_favoriteRecord.js';
 const burstLimiter = new Ratelimit({redis,limiter:Ratelimit.fixedWindow(500,'10 m'),analytics:false,prefix:'rl:burst'});
 const clientLimiter = new Ratelimit({redis,limiter:Ratelimit.fixedWindow(SUBMIT_CLIENT_DAILY_CAP,'1 d'),analytics:false,prefix:'rl:client'});
@@ -25,7 +27,7 @@ for _, event in ipairs(events) do
  redis.call('RPUSH', KEYS[6], cjson.encode(event))
 end
 if #events > 0 then
- redis.call('EXPIRE', KEYS[5], 10368000)
+ redis.call('EXPIRE', KEYS[5], ${FUNNEL_DAY_TTL_S})
  redis.call('EXPIRE', KEYS[6], ARGV[6])
  redis.call('LTRIM', KEYS[6], -tonumber(ARGV[7]), -1)
 end
@@ -44,7 +46,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse) {
     const exportKind=b.kind==='export'&&(b.exportKind==='full'||b.exportKind==='simplified')?b.exportKind:undefined;
     if(b.kind==='export'&&!exportKind)return res.status(400).json({error:'invalid export kind'});
     const stats=exportKind!==undefined&&b.stats===true;
-    if(parseNotmeFlag(b.notme)||isReadOnlyDeployment(req))return res.status(200).json({ok:true});
+    if(parseNotmeFlag(b.notme)||parseAutoFlag(b.auto)||isReadOnlyDeployment(req))return res.status(200).json({ok:true,activityAck:acknowledgeUnstored(b.activity,Date.now())});
     const received=Date.now();const now=parseCapturedAt(b.ts,received);
     if(now===null)return res.status(400).json({error:'invalid captured time'});
     const attention=parseAttentionForIngest(b.attention,received);

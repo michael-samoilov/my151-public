@@ -127,8 +127,13 @@ function headerValue(req: VercelRequest, name: string): string | undefined {
 
 const LIVE_HOSTS = new Set(['my151.app', 'www.my151.app']);
 
+/** True on a Vercel deployment reached by any address but the live site: a
+ *  preview, or a production deployment's own `*.vercel.app` URL. Only agents,
+ *  reviewers, and tests visit those, so they record nothing. Local builds
+ *  (no VERCEL_ENV) are never blocked. */
 export function isReadOnlyDeployment(req: VercelRequest): boolean {
-  if (process.env.VERCEL_ENV !== 'preview') return false;
+  const env = process.env.VERCEL_ENV;
+  if (env !== 'preview' && env !== 'production') return false;
   const host = headerValue(req, 'x-forwarded-host') ?? headerValue(req, 'host') ?? '';
   return !LIVE_HOSTS.has(host.split(',')[0].trim().toLowerCase().replace(/:\d+$/, ''));
 }

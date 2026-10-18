@@ -14,6 +14,16 @@
 - The user-facing task is the coordinator. It is the user's single entry point: accept new work there, delegate bounded implementation or research to workers, monitor them, resolve conflicts, and return one consolidated outcome. Do not make the user chase worker tasks for status or results.
 - Apply every instruction in this file to the root agent and every delegated worker. Include the relevant requirements in each worker assignment.
 
+## Visits to the live site
+
+The admin dashboard counts every browser that visits `my151.app` or `www.my151.app`. Agent work must never count, on any platform.
+
+- Test against a local build or a Vercel preview. Neither records anything.
+- Before you open the live site in a browser, call `protectLiveSite(context)` from `scripts/live-site.ts`. Without Playwright, open `/?notme` first in every new browser context.
+- Keep the automation flag on. The server stores nothing for a browser with `navigator.webdriver` set. Do not use stealth plugins or `--disable-blink-features=AutomationControlled` on the live site.
+- Do not submit the feedback form on the live site.
+- `scripts/check-live-site-visits.mjs` fails a committed script that opens the live site without one of these protections.
+
 ## Coordinator operating protocol
 
 - When a request has independent workstreams or benefits from specialization, start workers immediately. Keep small, tightly coupled work in the coordinator when delegation would add overhead.

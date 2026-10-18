@@ -3,6 +3,7 @@ import {attentionPayload,subscribeAttention} from '@/lib/activeAttention';
 import { useEffect, useState } from 'react';
 import { DEMO_MODE, PREVIEW_DEPLOY } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
+import { AUTOMATED } from '@/lib/automation';
 import { getLocale } from '@/i18n/core';
 import { getPinnedLocale } from '@/lib/pinnedLocale';
 import { currentPage } from '@/lib/tool';
@@ -24,7 +25,7 @@ function post(snapshot: FavoritesSnapshot, report?: FavoriteReport, capturedAt =
   delivery.send({cid:getClientId(),tool:'favorites',page:currentPage(),
     kind:report?.kind ?? (snapshot.completion.filled===snapshot.completion.total?'completion':'progress'),
     exportKind:exported?.exportKind,stats:exported?.stats||undefined,
-    snapshot:{v:1,fills},attention,activity,ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined},content,!!report);
+    snapshot:{v:1,fills},attention,activity,ts:capturedAt,locale:getLocale(),switched:getPinnedLocale(),ref:externalReferrerHost()||undefined,auto:AUTOMATED||undefined},content,!!report);
 }
 export function useFavoriteBeacon() {
   const fills=useFavoritesStore(state=>state.fills);

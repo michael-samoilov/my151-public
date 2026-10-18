@@ -1,9 +1,10 @@
 import {parseAttentionForIngest,mergeAttention} from './_attention.js';
-import {appendMinuteActivity} from './_activityHistoryStore.js';
+import {acknowledgeUnstored,appendMinuteActivity} from './_activityHistoryStore.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { bumpDexPickFreq, parseNotmeFlag, recordToolExport } from './_exportStats.js';
+import { parseAutoFlag } from './_automation.js';
 import { parseFunnelEventList, parsePage } from './_events.js';
 import {
   redis,
@@ -154,6 +155,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       activity?: unknown;
       ts?: unknown;
       notme?: unknown;
+      auto?: unknown;
     };
 
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
@@ -176,12 +178,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const notme = parseNotmeFlag(body.notme);
-    if (notme || isReadOnlyDeployment(req)) {
+    if (notme || parseAutoFlag(body.auto) || isReadOnlyDeployment(req)) {
+      const activityAck = acknowledgeUnstored(body.activity, receivedAt);
       if (kind === 'export') {
         const highlight = await recordToolExport('pokedex', ids, { notme: true });
-        return res.status(200).json({ ok: true, highlight });
+        return res.status(200).json({ ok: true, highlight, activityAck });
       }
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, activityAck });
     }
 
     const depth =

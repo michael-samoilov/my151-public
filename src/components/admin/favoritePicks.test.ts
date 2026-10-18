@@ -107,6 +107,7 @@ describe('submissions Redis bill with the pick counts', () => {
       'hgetall clients',
       'hgetall favorites:clients',
       'hgetall funnel',
+      'hgetall funnel:excluded',
       'hgetall league:clients',
       'smembers clients:archived',
     ]);

@@ -8,6 +8,7 @@ import {
   type ClientRecord,
 } from './_shared.js';
 import { FAVORITE_CLIENTS_KEY } from './_favoriteRecord.js';
+import { ARCHIVED_KEY, asArchivedSet, isArchived } from './_archive.js';
 import { LEAGUE_CLIENTS_KEY } from './_leagueRecord.js';
 import {
   HAS_DEX,
@@ -68,7 +69,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (from > to) return res.status(400).json({ error: 'from is after to' });
 
     const days = dayRange(from, to);
-    const lists = await Promise.all(days.map((d) => redis.lrange<unknown>(`${JOURNAL_PREFIX}:${d}`, 0, -1)));
+    const [lists, archivedRaw] = await Promise.all([
+      Promise.all(days.map((d) => redis.lrange<unknown>(`${JOURNAL_PREFIX}:${d}`, 0, -1))),
+      redis.smembers(ARCHIVED_KEY),
+    ]);
+    const archived = asArchivedSet(archivedRaw);
 
     const perDay = days.map((day, i) => ({
       day,
@@ -79,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const entries: JournalEntry[] = [];
     let truncated = false;
     for (let i = lists.length - 1; i >= 0; i--) {
-      const parsed = (lists[i] ?? []).map(parseEntry).filter((e): e is JournalEntry => e !== null);
+      const parsed = (lists[i] ?? []).map(parseEntry).filter((e): e is JournalEntry => e !== null && !isArchived(e.cid, archived));
       if (entries.length + parsed.length > JOURNAL_MAX_ENTRIES) {
         truncated = true;
         break;

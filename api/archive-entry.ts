@@ -1,13 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { redis, isReadOnlyDeployment, requireAdmin } from './_shared.js';
 import { ARCHIVED_KEY, bareCid } from './_archive.js';
+import { adjustFunnelExclusions } from './_funnelExclusions.js';
 
 /** Mark a browser archived, or clear that mark. Idempotent. */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-  if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Preview deployments are read-only' });
+  if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Only the live site saves data' });
   if (!(await requireAdmin(req, res))) return;
 
   const { cid, archived } = (req.body ?? {}) as { cid?: unknown; archived?: unknown };
@@ -20,8 +21,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const key = bareCid(cid);
-    if (archived) await redis.sadd(ARCHIVED_KEY, key);
-    else await redis.srem(ARCHIVED_KEY, key);
+    const changed = archived ? await redis.sadd(ARCHIVED_KEY, key) : await redis.srem(ARCHIVED_KEY, key);
+    // Only a real change moves the funnel exclusions, so a repeated click is a no-op.
+    // If the recount fails, the mark stands; the `funnel-exclusions` upkeep task repairs it.
+    if (changed) await adjustFunnelExclusions(key, archived ? 1 : -1).catch((err) => console.error('Funnel exclusions error:', err));
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ ok: true, cid: key, archived });
   } catch (err) {

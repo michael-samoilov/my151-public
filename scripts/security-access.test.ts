@@ -71,9 +71,11 @@ import feedbackList from '../api/feedback-list';
 import search from '../api/search-performance';
 import history from '../api/activity-history';
 import archive from '../api/archive-entry';
+import maintenance from '../api/admin-maintenance';
 import submit from '../api/submit';
 import league from '../api/league';
 import favorites from '../api/favorites';
+import event from '../api/event';
 import {requireAdmin} from '../api/_shared';
 
 type Handler = (req: VercelRequest, res: VercelResponse) => Promise<unknown>;
@@ -89,7 +91,7 @@ async function request(name: string, handler: Handler, input: {method?: string; 
   let status = 200, body: unknown;
   const headers: Record<string, unknown> = {};
   const res = {status(code: number) {status = code; return this;}, json(value: unknown) {body = value; return this;}, setHeader(key: string, value: unknown) {headers[key.toLowerCase()] = value; return this;}};
-  const req = {method: input.method ?? 'GET', headers: {'x-real-ip': '192.0.2.10', ...input.headers}, query: input.query ?? {}, body: input.body, socket: {remoteAddress: '192.0.2.10'}};
+  const req = {method: input.method ?? 'GET', headers: {host: 'my151.app', 'x-real-ip': '192.0.2.10', ...input.headers}, query: input.query ?? {}, body: input.body, socket: {remoteAddress: '192.0.2.10'}};
   await handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
   const safe = JSON.parse(JSON.stringify(req).replaceAll(token, '[generated fake token]'));
   local.evidence.push({route: `/api/${name}`, request: safe, response: {status, headers, body}, redisCalls: local.calls.slice(callStart).map(c => ({method: c.method, args: c.args})), limiterCalls: local.limits.slice(limitStart)});
@@ -189,6 +191,18 @@ describe('Admin writes and removed destructive routes', () => {
       expect(local.sets.get('clients:archived')?.has(cid) ?? false).toBe(archived);
     }
   });
+  it('role flags cannot run data upkeep', async () => {
+    expect((await request('admin-maintenance', maintenance, {method: 'POST', body: {task: 'funnel-retention'}, headers: {'x-role': 'admin'}})).status).toBe(401);
+    expect(local.calls).toHaveLength(0);
+  });
+  it('owner bearer runs only a named upkeep task, and it touches only day counters', async () => {
+    expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task: 'reset'}})).status).toBe(400);
+    expect(local.calls).toHaveLength(0);
+    expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task: 'funnel-retention'}})).status).toBe(200);
+    expect(local.calls.map(c => c.method)).toEqual(['eval']);
+    const [keys] = local.calls[0].args as [string[]];
+    expect(keys.every(k => /^funnel:\d{4}-\d{2}-\d{2}$/.test(k))).toBe(true);
+  });
   it('removed reset and delete endpoints have no callable source route', () => {
     expect(existsSync('api/reset.ts')).toBe(false);
     expect(existsSync('api/delete-entry.ts')).toBe(false);
@@ -229,4 +243,23 @@ describe('Anonymous cid ownership: known-id integrity attacks', () => {
     expect((await request('submit', submit, {method: 'POST', body: {cid: suffixed, kind: 'progress', ids: [1]}})).status).toBe(200);
     expect(local.hashes.get('clients')?.[suffixed]).toBeDefined();
   });
+});
+
+describe('Automated browsers', () => {
+  const day = new Date(fixedNow).toISOString().slice(0, 10);
+  const activity = {v: 1, batches: [{id: 'batch-0001', tab: 'tab-00001', day, buckets: [{run: 'run-00001', first: fixedNow - 60_000, last: fixedNow - 60_000}]}]};
+  const beacons: [string, Handler, Record<string, unknown>][] = [
+    ['submit', submit, {cid, kind: 'progress', ids: [1], ts: fixedNow, activity}],
+    ['league', league, {cid, kind: 'progress', summary: {cards: 1, seats: 1, typed: 0, named: 0, aces: 0}, ts: fixedNow, activity}],
+    ['favorites', favorites, {cid, id: 'fixture-request-1', kind: 'progress', snapshot: {v: 1, fills: {}}, ts: fixedNow, activity}],
+    ['event', event, {cid, event: 'intro-shown', tool: 'dex'}],
+  ];
+  for (const [name, handler, body] of beacons) {
+    it(`${name}: answers an auto-flagged beacon as accepted and stores nothing`, async () => {
+      const result = await request(name, handler, {method: 'POST', body: {...body, auto: true}});
+      expect(result.status).toBe(200);
+      expect(result.body).toMatchObject({ok: true, ...(body.activity ? {activityAck: {status: 'recorded', accepted: ['batch-0001']}} : {})});
+      expect(local.calls).toEqual([]);
+    });
+  }
 });
