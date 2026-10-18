@@ -1,4 +1,4 @@
-import type {RecordedUsage} from '../../../api/_dashboard';
+import type {buildBrowser,RecordedUsage} from '../../../api/_dashboard';
 import {RecordedUsagePanel} from './RecordedUsagePanel';
 import {FavoriteDetailBody} from './FavoriteDetailBody';
 import type {FavoritePicks,FavoriteUser,FavoriteUsageFunnel} from '../../../api/_favoriteAggregate';
@@ -12,7 +12,7 @@ import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { dexFunnelSankey, leagueFunnelSankey, favoriteFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
-import type { DexUsageFunnel, HeatmapClock, LeagueUsageFunnel, WhoBucket } from '../../../api/_aggregate';
+import type { Aggregates as ApiAggregates, DexUsageFunnel, LeagueUsageFunnel, SurvivalCurve as ApiSurvivalCurve } from '../../../api/_aggregate';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
 import { Panel, Seg, Kpi } from '@/components/admin/ui';
 import { ClampChip, PlatformStacks } from '@/components/admin/PlatformStacks';
@@ -26,6 +26,8 @@ import { getPokemonById as getLeaguePokemonById } from '@/league/data/catalog';
 import { cn, displayName } from '@/lib/utils';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
+import type { LeagueCardShape as ApiLeagueCard, LeagueSummary as ApiLeagueSummary } from '../../../api/_leagueRecord';
+import type { ClientRecord as ApiClientRecord } from '../../../api/_shared';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
@@ -89,7 +91,7 @@ const rangeCache = new Map<DashboardRange, { data: ApiResponse; at: number }>();
 
 export type ToolSlice = 'all' | 'dex' | 'league' | 'favorites';
 
-export type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
+export type SurvivalCurve = ApiSurvivalCurve;
 
 const TOOL_TABS: { key: ToolSlice; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -143,126 +145,19 @@ function loadRange(): DashboardRange {
   return 'all';
 }
 
-export interface ClientRecord {
-  cid: string;
-  firstTs: number;
-  firstAt: string;
-  lastTs: number;
-  lastAt: string;
-  submits: number;
-  sessions?: number;
-  maxSessionMs?: number;
-  sessionMs?: number[];
-  sessionLog?: { ts: number; ids: number[]; country?: string; dev?: string; events?: string[]; sections?: Record<string, number[]> }[];
-  maxDepth: number;
-  localHour: number;
-  localDow?: number;
-  country?: string;
-  region?: string;
-  tz?: string;
-  lang?: string;
-  locale?: string;
-  switched?: string;
-  device?: string;
-  os?: string;
-  browser?: string;
-  everIds: number[];
-  everSections?: Record<string, number[]>;
-  latestIds: number[];
-  latestSections?: Record<string, number[]>;
-  completed: boolean;
-  completedAt?: string;
-  completedIds?: number[];
-  exported: boolean;
-  exportedAt?: string;
-  exportedIds?: number[];
-  exportSettings?: {
-    sort: string;
-    outlines: boolean;
-    groupSpecial: boolean;
-    showStats?: boolean;
-  };
+export interface ClientRecord extends ApiClientRecord {
   exportSurveySkips?: ExportSurveySkip[];
   archived?: boolean;
 }
 
-export interface Aggregates {
-  users: number;
-  activity: { day: number; dau: number; rolling7: number; label24h?: number | null; label168h?: number | null }[];
-  retention: { returning: number; newUsers: number };
-  timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
-  countries: Record<string, number>;
-  languages: Record<string, number>;
-  locales: Record<string, number>;
-  devices: Record<string, number>;
-  os: Record<string, number>;
-  browsers: Record<string, number>;
-  joints?: PlatformJoint[];
-  whoBuckets?: WhoBucket[];
-  heatmaps?: Record<HeatmapClock, number[][]>;
-  hourly?: { hour: number; unique: number }[];
-}
+export type Aggregates = Omit<ApiAggregates, 'hourly' | 'joints' | 'whoBuckets' | 'heatmaps'>
+  & Partial<Pick<ApiAggregates, 'hourly' | 'joints' | 'whoBuckets' | 'heatmaps'>>;
 
-export interface LeagueUser {
-  cid: string;
-  submits: number;
-  sessionMs: number[];
-  country?: string;
-  region?: string;
-  tz?: string;
-  lang?: string;
-  locale?: string;
-  switched?: string;
-  device?: string;
-  os?: string;
-  browser?: string;
-  hasDex: boolean;
-  firstTs: number;
-  firstAt: string;
-  lastTs: number;
-  lastAt: string;
-  sessions: number;
-  maxSessionMs: number;
-  maxCards: number;
-  maxSeats: number;
-  latest: LeagueSummary;
-  latestCards?: LeagueCard[];
-  exportsCard: number;
-  exportsLeague: number;
-  exportedCardAt?: string;
-  exportedLeagueAt?: string;
-  sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[]; events?: string[] }[];
-  exportSurveySkips?: ExportSurveySkip[];
-  order?: 'dex-first' | 'league-first' | 'same-day';
-  gapDays?: number;
-  archived?: boolean;
-}
+export type LeagueUser = NonNullable<ReturnType<typeof buildBrowser>['league']>;
 
-interface LeagueLine {
-  b: number[];
-  bd?: number[];
-}
+export type LeagueCard = ApiLeagueCard;
 
-export interface LeagueCard {
-  i: number;
-  t?: string;
-  l: LeagueLine[];
-  ace?: number;
-  aceId?: number;
-  pa?: number;
-  tm?: number;
-  lg?: [number, number][];
-  pw?: [number, number, number, number][];
-}
-
-export interface LeagueSummary {
-  cards: number;
-  seats: number;
-  typed: number;
-  named: number;
-  aces: number;
-  leagueNamed: boolean;
-}
+export type LeagueSummary = ApiLeagueSummary;
 
 export interface ApiResponse {
   recordedUsage?: RecordedUsage;
