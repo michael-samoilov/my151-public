@@ -56,6 +56,7 @@ import {
   formatWhen,
   langName,
   matchesArchiveFilter,
+  suspectText,
   matchesFacetFilters,
   matchesToolFilter,
   previewLanguage,
@@ -1208,7 +1209,7 @@ function UserPreviewCard({
   onFeedback,
   sizer,
 }: {
-  rec: HeaderRec & { lastTs: number; tz?: string };
+  rec: HeaderRec & { lastTs: number; tz?: string; suspect?: readonly string[] };
   cells: ToolCell[];
   total: CardTime;
   pickerRow?: boolean;
@@ -1322,6 +1323,9 @@ function UserPreviewCard({
         </FitNowrap>
       </div>
       <BrowserUsage cells={cells} total={total} />
+      {!sizer && rec.suspect?.length ? (
+        <p data-bot-lead className="text-xs text-amber-700 md:col-span-full">{suspectText(rec.suspect)}</p>
+      ) : null}
     </div>
   );
 }
@@ -2141,7 +2145,7 @@ export function AdminPage() {
                 const list = data.browsers?.[listKey] ?? [];
                 const archivedOf = (row: BrowserRow) => archiveOverride[bareCid(row.cid)] ?? row.archived;
                 const listed = list.filter((row) => {
-                  if (!matchesArchiveFilter(archivedOf(row), archiveFilter)) return false;
+                  if (!matchesArchiveFilter(archivedOf(row), archiveFilter, row)) return false;
                   return matchesToolFilter(row, toolFilter);
                 });
                 const rows = listed.filter((row) => matchesFacetFilters(row, facetFilters));
