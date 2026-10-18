@@ -52,14 +52,4 @@ docs/i18n/poke-corpus/
 # Scratch worktree the home page screenshot capture makes (see docs/future-tools/home-page).
 .league-shot-tree/
 
-# Disposable form-metadata source downloads and browser evidence.
-docs/favorite-picker-work/form-metadata-audit/local/
-
-# Disposable form-shape proof and rendered comparison artifacts.
-docs/favorite-picker-work/form-shape-implementation/local/
-
-# Disposable homepage feedback and pocket-shadow captures.
-docs/evidence/home-feedback-pocket/local/
-
-# Disposable owner-review page screenshots and imported drafts.
-docs/evidence/launch-review-refresh/local/
+docs/**/local/

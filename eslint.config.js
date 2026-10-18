@@ -1,3 +1,4 @@
+import { builtinModules } from 'node:module'
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -30,6 +31,28 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: { ...unusedVars },
+  },
+
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/**/*.{test,spec}.{ts,tsx}', 'src/**/__fixtures__/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: builtinModules.map(name => ({ name, allowTypeImports: true })),
+        patterns: [
+          {
+            regex: '^(?:node:|@upstash(?:/|$)|@vercel/node(?:/|$))',
+            allowTypeImports: true,
+            message: 'Keep server runtime dependencies out of browser code.',
+          },
+          {
+            regex: '(?:^|/)api/(?:_shared|_feedbackStore|_exportStats|_activityHistoryStore|_searchPerformance|_dashboard|[^/_][^/]*)(?:\\.[cm]?[jt]s)?$',
+            allowTypeImports: true,
+            message: 'Use HTTP endpoints from browser code. Import only pure API helpers or erased types.',
+          },
+        ],
+      }],
+    },
   },
 
   {
