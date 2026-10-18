@@ -29,6 +29,7 @@ import { GymConnector } from './components/GymConnector';
 import { cardShades } from './theme';
 import { CardActions, CardIdentity, CardPage } from './components/CardPage';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
 import { LeagueFunnelNudge } from './components/LeagueFunnelNudge';
@@ -192,10 +193,11 @@ export function LeagueApp() {
   return (
     <TooltipProvider>
       <div className="flex h-dvh flex-col bg-background">
+        <SkipLink />
         <GlobalHeader />
 
         {!isDesktop && (
-        <main className="min-h-0 flex-1 overflow-hidden md:hidden">
+        <main id={MAIN_ID} tabIndex={-1} className="min-h-0 flex-1 overflow-hidden focus:outline-none md:hidden">
         <ErrorBoundary where="league">
           <div
             className="p151-pane-track flex h-full w-[200%]"
@@ -234,7 +236,7 @@ export function LeagueApp() {
         )}
 
         {isDesktop && (
-        <main className="hidden min-h-0 flex-1 flex-col overflow-y-auto md:flex">
+        <main id={MAIN_ID} tabIndex={-1} className="hidden min-h-0 flex-1 flex-col overflow-y-auto focus:outline-none md:flex">
         <ErrorBoundary where="league-desktop">
           <div className="relative flex h-full min-h-0 shrink-0">
             {openCard !== null && <GymConnector openCard={openCard} color={connectorColor} />}

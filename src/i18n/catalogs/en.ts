@@ -172,6 +172,7 @@ export const enUi = {
   'chart.header.weakerHere1': 'WEAKER',
   'chart.header.weakerHere2': '← HERE',
   'common.dismiss': 'Dismiss',
+  'common.skipToMain': 'Skip to main content',
   'dnd.cancelled': 'Dragging was cancelled. Draggable item {id} was dropped.',
   'dnd.dropped': 'Draggable item {id} was dropped.',
   'dnd.droppedOver': 'Draggable item {id} was dropped over droppable area {over}',

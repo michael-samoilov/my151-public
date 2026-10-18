@@ -9,6 +9,7 @@ import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -448,6 +449,7 @@ export function HomePage() {
     <TooltipProvider delayDuration={200}>
       <div className="flex flex-col bg-background text-foreground">
         <div className="flex min-h-dvh flex-col">
+          <SkipLink />
           <header className="border-b bg-card">
             <div className="flex items-center justify-between px-3 sm:px-6 py-2">
               <span lang="en" className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
@@ -462,7 +464,7 @@ export function HomePage() {
             </div>
           </header>
 
-          <main className="hub-home flex flex-1 flex-col overflow-x-clip not-supports-[overflow:clip]:overflow-x-hidden px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
+          <main id={MAIN_ID} tabIndex={-1} className="hub-home flex flex-1 flex-col overflow-x-clip focus:outline-none not-supports-[overflow:clip]:overflow-x-hidden px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
             <ErrorBoundary where="hub">
             <div className="hub-spacer min-h-6 flex-1" />
             <section className="md:grid md:grid-cols-4 md:items-baseline md:gap-x-6">
