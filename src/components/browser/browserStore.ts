@@ -53,10 +53,10 @@ export interface BrowserStoreState {
   standaloneTiles?: boolean;
 }
 
-type BrowserStoreHook = UseBoundStore<StoreApi<BrowserStoreState>>;
+type BrowserStoreHook = UseBoundStore<Omit<StoreApi<BrowserStoreState>, 'setState'>>;
 
 export const BrowserStoreContext = createContext<BrowserStoreHook>(
-  usePokedexStore as unknown as BrowserStoreHook,
+  usePokedexStore,
 );
 
 export function useBrowserStore<T>(selector: (s: BrowserStoreState) => T): T {
