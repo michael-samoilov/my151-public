@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# my151
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[my151.app](https://my151.app) helps Pokémon fans build a personal Pokédex, design a League, and choose their favorites.
+The tools save edits in the browser and export PNG images.
 
-Currently, two official plugins are available:
+| Tool | Purpose | Live page |
+| --- | --- | --- |
+| Dex Builder | Arrange Pokémon into regional roles and inspect the resulting statistics. | [Pokédex builder](https://my151.app/pokedex-builder) |
+| League Builder | Create trainer cards and teams that change through badge progression. | [League builder](https://my151.app/custom-gym-leader) |
+| Favorite Picker | Choose favorites by type and generation, then compare their statistics. | [Favorite Pokémon Picker](https://my151.app/favorite-pokemon-picker) |
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Start development
 
-## React Compiler
+Use a Node.js version supported by Vite 8, such as Node.js 24.
+Use npm with the committed lockfile.
+The browser tools run without production credentials.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open the Vite URL and select a tool.
+Vite does not run the Vercel functions in `api/`.
+Authenticated admin reports need the configured backend.
+The browser suite uses API fixtures.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Verify a change
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run ci:fast
 ```
+
+For the final candidate, run `npm run ci:affected -- --base REF` with the intended production base.
+Use `npm run ci:full` for broad release risk.
+[Build Verification in CLAUDE.md](CLAUDE.md#build-verification) owns check selection, exceptions, receipts, and deployment requirements.
+
+## Understand the project
+
+- [Documentation index](docs/README.md) identifies the authoritative record for each topic.
+- [Architecture](docs/architecture.md) explains state, shared components, APIs, and exports.
+- [Product and engineering examples](docs/showcase.md) presents selected work and its evidence.
+- [Evidence retention](docs/evidence-retention.md) distinguishes durable records from temporary verification output.
+
+This repository contains private implementation code.
+[Published license source](CLAUDE.md#published-license-source) defines the limited third-party source disclosures.
+[Third-party notices](THIRD_PARTY_NOTICES.md) record dependencies and asset obligations.
