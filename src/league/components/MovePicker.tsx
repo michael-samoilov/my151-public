@@ -248,6 +248,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('league.tm.search')}
+            aria-label={t('league.tm.search')}
             className="pl-9"
           />
         </div>

@@ -58,6 +58,8 @@ interface BrowserSubgroup {
 }
 
 const SEARCH_RENDER_LIMIT = 150;
+// The count changes on most keystrokes. A screen reader hears it once typing pauses.
+const COUNT_ANNOUNCE_DELAY_MS = 500;
 
 interface SubgroupGridGroup {
   key: string;
@@ -622,6 +624,11 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
     }
     return ids.size;
   }, [scopedToLines, standaloneTiles, subgroupModels, totalCount]);
+  const [announcedCount, setAnnouncedCount] = useState(shownCount);
+  useEffect(() => {
+    const timer = setTimeout(() => setAnnouncedCount(shownCount), COUNT_ANNOUNCE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [shownCount]);
 
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const shapeKey = shapeFilter ? shapeFilter.join(',') : 'none';
@@ -859,6 +866,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
               onCompositionEnd={() => setComposingFrom(null)}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('browser.search.placeholder')}
+              aria-label={t('browser.search.placeholder')}
               className="pl-9 pr-9"
             />
             {searchQuery && (
@@ -874,8 +882,12 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection, deferRows 
           <span
             className="shrink-0 text-xs text-muted-foreground text-right whitespace-nowrap"
             data-result-count={shownCount}
+            aria-hidden
           >
             {tn('browser.results', shownCount)}
+          </span>
+          <span className="sr-only" aria-live="polite" aria-atomic="true">
+            {tn('browser.results', announcedCount)}
           </span>
         </div>
       </div>
