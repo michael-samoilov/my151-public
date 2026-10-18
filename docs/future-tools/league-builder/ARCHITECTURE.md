@@ -1,5 +1,7 @@
 # League builder — phase 1 architecture
 
+Historical captures and commands are in this folder's Git history.
+
 Output of the architect pass, 2026-08-29. The synthesized sketch below is the
 contract for `src/league/`. DECISIONS.md holds the product decisions; this file
 holds the code shape.

@@ -1,5 +1,7 @@
 # Security review verification, October 16, 2026
 
+Historical captures and commands are in this folder's Git history.
+
 Base application commit: `40aceaf91e2262f93dff843ebe9128ce0bc93e68`.
 Fix commit: `e4ea66c956603acf8068bfabcfe53f9186fd718c`.
 Evidence commits after the fix change documentation only.
@@ -38,10 +40,10 @@ change occurs.
 
 Evidence:
 
-- [Full run status](../evidence/security-review-2026-10-16/full-ci-status.json) and [log](../evidence/security-review-2026-10-16/full-ci.log).
+- Full run status and log.
 - [Baseline method and results](../evidence/security-review-2026-10-16/browser/stale-deploy-baseline/README.md).
-- [Final build status](../evidence/security-review-2026-10-16/final-build-status.json) and [log](../evidence/security-review-2026-10-16/final-build.log).
-- [Combined security log](../evidence/security-review-2026-10-16/combined-security.log) and [mutation control](../evidence/security-review-2026-10-16/mutation-results.json).
+- Final build status and log.
+- Combined security log and mutation control.
 
 No test accounts exist in this app. Synthetic browser contexts and isolated
 Redis processes are closed after execution. No real visitor selections or

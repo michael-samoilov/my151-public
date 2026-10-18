@@ -1,5 +1,7 @@
 # How my151 credits sprites
 
+Historical captures and commands are in this folder's Git history.
+
 The Acknowledgements panel credits sprites through the bundles they came from. It names a sprite artist only when my151 took that artist's sprites from them directly. The panel calls these groups “Sprite projects” and “Additional sprites”. An additional artist’s direct-upload list supplements the artwork credited through the projects above.
 
 ## The policy
