@@ -1,5 +1,7 @@
 # Adversarial review, October 16, 2026
 
+Historical captures and commands are in this folder's Git history.
+
 ## Scope and execution plan
 
 Base: `40aceaf9`, from `origin/claude/pokedex-region-builder-AviYF`.
@@ -92,8 +94,8 @@ network round trip, but Lua subcommands still count toward provider usage.
 
 ## Evidence and repeat the checks
 
-- [Access baseline and scope](access-2026-10-16/README.md), [after transcript](access-2026-10-16/after/requests-responses.json).
-- [Limits baseline](../evidence/security-review-2026-10-16/limits-review.md), [Redis before](../evidence/security-review-2026-10-16/redis-caps-before.json), [Redis after](../evidence/security-review-2026-10-16/redis-caps-after.json).
+- [Access baseline and scope](access-2026-10-16/README.md), after transcript.
+- [Limits baseline](../evidence/security-review-2026-10-16/limits-review.md), Redis before, Redis after.
 - [Browser method and results](../evidence/security-review-2026-10-16/browser/README.md).
 
 Before the next launch, rerun the saved security command. The combined run

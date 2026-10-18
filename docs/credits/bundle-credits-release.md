@@ -1,5 +1,7 @@
 # Bundle credits release
 
+Historical captures and commands are in this folder's Git history.
+
 Michael approves the bundle-credits design and its release in the coordinator
 chat on October 14, 2026. The release combines `claude/credits-audit-fixes`
 (`67d7a50c`) with production (`35383747`). The research-only
@@ -73,8 +75,8 @@ artifacts only. They do not change the application or its dependencies.
 
 ## Evidence
 
-- [Measured results](release-evidence/verification.json)
-- [Mobile overview, before and after](release-evidence/01-top-390-comparison.png)
-- [Desktop overview, before and after](release-evidence/01-top-1280-comparison.png)
-- [Mobile Showdown description, before and after](release-evidence/06-showdown-390-comparison.png)
-- [Desktop Showdown description, before and after](release-evidence/06-showdown-1280-comparison.png)
+- Measured results
+- Mobile overview, before and after
+- Desktop overview, before and after
+- Mobile Showdown description, before and after
+- Desktop Showdown description, before and after

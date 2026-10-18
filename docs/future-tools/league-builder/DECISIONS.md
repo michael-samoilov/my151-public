@@ -1,5 +1,7 @@
 # League builder — settled design decisions (v2)
 
+Historical captures and commands are in this folder's Git history.
+
 Outcome of grilling rounds 1–3, closed 2026-08-28. Round 2 and round 3 answers
 replace the round-1 items they touch. Treat each item as settled. Reopen an
 item only if the owner asks.

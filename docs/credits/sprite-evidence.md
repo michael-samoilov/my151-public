@@ -1,5 +1,7 @@
 # Sprite evidence ledger
 
+Historical captures and commands are in this folder's Git history.
+
 This page lists every Pokémon sprite file that my151.app can show, and the evidence for who drew each one.
 The machine-readable copy is [`sprite-evidence.json`](sprite-evidence.json), one row per file.
 `npm run credits:check-sprites` fails when a shown file changes without its row, or when a shown file has no row.
