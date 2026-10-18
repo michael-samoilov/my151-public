@@ -28,7 +28,10 @@ export function firstSeenSince(r: { firstTs: number }, start: number | null): bo
   return start === null || r.firstTs >= dayStart(start);
 }
 
-const FUNNEL_DAY_TTL_DAYS = 120;
+/** How long a `funnel:<day>` counter lives. It covers the longest bounded
+ *  range (365d is 366 day keys), so every bounded range sums exact day counts. */
+export const FUNNEL_DAY_TTL_DAYS = 400;
+export const FUNNEL_DAY_TTL_S = FUNNEL_DAY_TTL_DAYS * 24 * 60 * 60;
 
 export function funnelDayKeys(range: DashboardRange, now: number): string[] | null {
   const start = rangeStart(range, now);

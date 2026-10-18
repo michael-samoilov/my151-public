@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, getClientIp, isReadOnlyDeployment } from './_shared.js';
+import { FUNNEL_DAY_TTL_S } from './_range.js';
 import {
   appendExportSurveySkip,
   EXPORT_SURVEY_SKIP_EVENT,
@@ -18,7 +19,6 @@ import {
 } from './_events.js';
 
 const FUNNEL_KEY = 'funnel';
-const DAILY_TTL_S = 120 * 24 * 60 * 60;
 
 const burstLimiter = new Ratelimit({
   redis,
@@ -109,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     await Promise.all(writes);
     await Promise.all([
-      redis.expire(dailyKey, DAILY_TTL_S),
+      redis.expire(dailyKey, FUNNEL_DAY_TTL_S),
       redis.expire(journalKey, JOURNAL_TTL_S),
       redis.ltrim(journalKey, -JOURNAL_MAX_PER_DAY, -1),
     ]);

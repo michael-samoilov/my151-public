@@ -71,6 +71,7 @@ import feedbackList from '../api/feedback-list';
 import search from '../api/search-performance';
 import history from '../api/activity-history';
 import archive from '../api/archive-entry';
+import maintenance from '../api/admin-maintenance';
 import submit from '../api/submit';
 import league from '../api/league';
 import favorites from '../api/favorites';
@@ -188,6 +189,18 @@ describe('Admin writes and removed destructive routes', () => {
       expect((await request('archive-entry', archive, {method: 'POST', headers: bearer(), body: {cid, archived}})).status).toBe(200);
       expect(local.sets.get('clients:archived')?.has(cid) ?? false).toBe(archived);
     }
+  });
+  it('role flags cannot run data upkeep', async () => {
+    expect((await request('admin-maintenance', maintenance, {method: 'POST', body: {task: 'funnel-retention'}, headers: {'x-role': 'admin'}})).status).toBe(401);
+    expect(local.calls).toHaveLength(0);
+  });
+  it('owner bearer runs only a named upkeep task, and it touches only day counters', async () => {
+    expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task: 'reset'}})).status).toBe(400);
+    expect(local.calls).toHaveLength(0);
+    expect((await request('admin-maintenance', maintenance, {method: 'POST', headers: bearer(), body: {task: 'funnel-retention'}})).status).toBe(200);
+    expect(local.calls.map(c => c.method)).toEqual(['eval']);
+    const [keys] = local.calls[0].args as [string[]];
+    expect(keys.every(k => /^funnel:\d{4}-\d{2}-\d{2}$/.test(k))).toBe(true);
   });
   it('removed reset and delete endpoints have no callable source route', () => {
     expect(existsSync('api/reset.ts')).toBe(false);
