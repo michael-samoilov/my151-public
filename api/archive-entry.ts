@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-  if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Preview deployments are read-only' });
+  if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Only the live site saves data' });
   if (!(await requireAdmin(req, res))) return;
 
   const { cid, archived } = (req.body ?? {}) as { cid?: unknown; archived?: unknown };

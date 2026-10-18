@@ -36,7 +36,7 @@ export function funnelRetentionPlan(now: number): { keys: string[]; expireAt: st
  *  funnel counters written under the old 120-day expiry the current one. */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Preview deployments are read-only' });
+  if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Only the live site saves data' });
   if (!(await requireAdmin(req, res))) return;
   res.setHeader('Cache-Control', 'no-store');
 

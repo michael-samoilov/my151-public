@@ -90,7 +90,7 @@ async function request(name: string, handler: Handler, input: {method?: string; 
   let status = 200, body: unknown;
   const headers: Record<string, unknown> = {};
   const res = {status(code: number) {status = code; return this;}, json(value: unknown) {body = value; return this;}, setHeader(key: string, value: unknown) {headers[key.toLowerCase()] = value; return this;}};
-  const req = {method: input.method ?? 'GET', headers: {'x-real-ip': '192.0.2.10', ...input.headers}, query: input.query ?? {}, body: input.body, socket: {remoteAddress: '192.0.2.10'}};
+  const req = {method: input.method ?? 'GET', headers: {host: 'my151.app', 'x-real-ip': '192.0.2.10', ...input.headers}, query: input.query ?? {}, body: input.body, socket: {remoteAddress: '192.0.2.10'}};
   await handler(req as unknown as VercelRequest, res as unknown as VercelResponse);
   const safe = JSON.parse(JSON.stringify(req).replaceAll(token, '[generated fake token]'));
   local.evidence.push({route: `/api/${name}`, request: safe, response: {status, headers, body}, redisCalls: local.calls.slice(callStart).map(c => ({method: c.method, args: c.args})), limiterCalls: local.limits.slice(limitStart)});
