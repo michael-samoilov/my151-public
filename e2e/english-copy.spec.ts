@@ -37,7 +37,7 @@ test.describe('English copy is unchanged by extraction', { tag: '@viewport' }, (
     const search = sheet.getByPlaceholder('Search by name or number...');
     await expect(search).toBeVisible();
 
-    await expect(sheet.getByText(/^\d+ found$/)).toBeVisible();
+    await expect(sheet.locator('[data-result-count]')).toHaveText(/^\d+ found$/);
     await search.fill('zzzzzz');
     await expect(sheet.getByRole('heading', { name: 'No Pokémon match “zzzzzz”' })).toBeVisible();
     await expect(sheet.getByText('Check the spelling, or search by Pokédex number.')).toBeVisible();

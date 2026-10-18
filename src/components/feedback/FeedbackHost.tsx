@@ -31,10 +31,12 @@ export function FeedbackHost({ route, getToolContext }: {
   const [OpenSheet, setOpenSheet] = useState<Sheet | typeof LazySheet | null>(null);
   const [category, setCategory] = useState<FeedbackCategory>('bug');
   const [anchor, setAnchor] = useState<FeedbackAnchor>(null);
+  const opener = useRef<HTMLElement | null>(null);
 
   useEffect(
     () =>
       registerFeedbackOpener((c, from) => {
+        opener.current = from ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
         setCategory(c);
         setAnchor(from);
         setToolContext(contextRef.current?.());
@@ -51,7 +53,10 @@ export function FeedbackHost({ route, getToolContext }: {
         toolContext={toolContext}
         initialCategory={category}
         anchor={anchor}
-        onClose={() => setOpenSheet(null)}
+        onClose={() => {
+          setOpenSheet(null);
+          opener.current?.focus({ preventScroll: true });
+        }}
       />
     </Suspense>
   );

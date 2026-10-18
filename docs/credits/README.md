@@ -34,7 +34,7 @@ my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do n
 
 ## Where the evidence lives
 
-- `docs/credits/sprite-evidence.json` and `docs/credits/sprite-evidence.md`: the provenance of every sprite file a page shows, file by file. `npm run credits:check-sprites` fails when a shown file has no row or its bytes changed.
+- `docs/credits/sprite-evidence.json` and `docs/credits/sprite-evidence.md`: the provenance of every sprite file a page shows, file by file. `npm run credits:check-sprites` fails when a shown file has no row or its bytes changed, unless `scripts/sprite-reencodes.json` lists the change as a lossless re-encode.
 - `src/data/spriteAttribution.json`: each fan-made sprite file's artists and source, with evidence.
 - `src/data/creditTerms.json`: each source's and artist's terms, quoted from their pages with the read date, and each artist's proven links with their proof.
 
