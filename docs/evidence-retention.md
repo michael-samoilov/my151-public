@@ -31,4 +31,3 @@ Before retaining a report, identify its source revision, command, result, and li
 The [archive index](evidence/archive/README.md) records the completed batches and recovery commands. Historical reports can contain artifact paths relative to their recorded revision. Those paths describe that revision, not necessarily the current checkout.
 
 The archive uses existing reachable Git history and the repository's existing access controls. It requires no separate storage account or public upload. A full clone still includes historical objects. This policy reduces checkout size and future growth, not existing Git history.
-
