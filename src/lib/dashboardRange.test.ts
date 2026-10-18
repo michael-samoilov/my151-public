@@ -148,6 +148,13 @@ describe('dashboard funnels by date range', () => {
     expect(funnels('7d').leagueFunnel).toMatchObject({ opened: 1, placed: 1 });
   });
 
+  it("subtracts archived browsers' funnel events from the day and all-time counters", () => {
+    const excluded = { funnelExcluded: { [`${dayKey(8).slice('funnel:'.length)}|intro-shown`]: '2' } };
+    const opened = (range: DashboardRange) => buildDashboard({ ...withWindow(range), ...excluded }, { range }, NOW).dexFunnel.opened;
+    expect([opened('7d'), opened('28d'), opened('all')]).toEqual([3, 5, 10]);
+    expect([funnels('7d'), funnels('28d'), funnels('all')].map((d) => d.dexFunnel.opened)).toEqual([3, 7, 12]);
+  });
+
   it('sums day counters for every bounded range and all-time counters only for all', () => {
     expect(funnelDayKeys('90d', NOW)).toHaveLength(91);
     expect(funnelDayKeys('365d', NOW)).toHaveLength(366);

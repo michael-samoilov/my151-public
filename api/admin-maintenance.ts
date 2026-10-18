@@ -2,6 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { redis, isReadOnlyDeployment, requireAdmin } from './_shared.js';
 import { DAY_MS, dayStart } from './_aggregate.js';
 import { FUNNEL_DAY_TTL_DAYS } from './_range.js';
+import { ARCHIVED_KEY } from './_archive.js';
+import { rebuildFunnelExclusions } from './_funnelExclusions.js';
 
 // Moves each existing key's expiry later, never earlier, so a rerun is a no-op.
 const EXTEND_EXPIRY = `
@@ -33,7 +35,8 @@ export function funnelRetentionPlan(now: number): { keys: string[]; expireAt: st
 }
 
 /** Owner-only, idempotent data upkeep. `funnel-retention` gives the daily
- *  funnel counters written under the old 120-day expiry the current one. */
+ *  funnel counters written under the old 120-day expiry the current one.
+ *  `funnel-exclusions` recounts the funnel events of every archived browser. */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (isReadOnlyDeployment(req)) return res.status(403).json({ error: 'Only the live site saves data' });
@@ -48,6 +51,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const args = [...expireAt, String(Math.floor(now / 1000))];
       const extended = Number(await redis.eval(EXTEND_EXPIRY, keys, args));
       return res.status(200).json({ ok: true, task, checked: keys.length, extended });
+    }
+    if (task === 'funnel-exclusions') {
+      const archived = ((await redis.smembers(ARCHIVED_KEY)) ?? []).map(String);
+      const excluded = await rebuildFunnelExclusions(archived);
+      return res.status(200).json({ ok: true, task, browsers: archived.length, excluded });
     }
     return res.status(400).json({ error: 'unknown task' });
   } catch (err) {

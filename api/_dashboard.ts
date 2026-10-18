@@ -43,7 +43,8 @@ import { asArchivedSet, bareCid, isArchived, withoutArchived } from './_archive.
 import { engagedDex, engagedLeague, engagedPicker, suspectReasons, type SuspectInput, type SuspectReason } from './_visitorQuality.js';
 import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot } from './_crossTool.js';
 import { leaguePicks } from './_leaguePicks.js';
-import { activeSince, firstSeenSince, rangeStart, type DashboardRange } from './_range.js';
+import { activeSince, firstSeenSince, funnelDayKeys, rangeStart, type DashboardRange } from './_range.js';
+import { excludedTotals } from './_funnelExclusions.js';
 function countEvoLines(ids: number[]): number {
   const chains = new Set<number>();
   for (const id of ids) chains.add(EVOLUTION_CHAIN_BY_ID[id] ?? -id);
@@ -275,6 +276,8 @@ export interface DashboardSource {
   funnelWindow: Record<string, unknown> | null;
   leagueClients: Record<string, unknown> | null;
   favoriteClients?: Record<string, unknown> | null;
+  /** Funnel events of archived browsers, `<day>|<event>` (api/_funnelExclusions.ts). */
+  funnelExcluded?: Record<string, unknown> | null;
 }
 
 function counts(hash: Record<string, unknown> | null): Record<string, number> {
@@ -589,8 +592,13 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const archivedSet = asArchivedSet(source.archived);
   const records = withoutArchived(allRecords, archivedSet).filter(engagedDex);
 
-  const funnelEvents = counts(source.funnel);
-  const cohortEvents = source.funnelWindow ? counts(source.funnelWindow) : funnelEvents;
+  const without = (all: Record<string, number>, gone: Record<string, number>) =>
+    Object.fromEntries(Object.entries(all).map(([ev, n]) => [ev, Math.max(0, n - (gone[ev] ?? 0))]));
+  const funnelEvents = without(counts(source.funnel), excludedTotals(source.funnelExcluded, null));
+  const windowDays = funnelDayKeys(range, now)?.map((k) => k.slice('funnel:'.length));
+  const cohortEvents = source.funnelWindow && windowDays
+    ? without(counts(source.funnelWindow), excludedTotals(source.funnelExcluded, new Set(windowDays)))
+    : funnelEvents;
 
   const allLeagueRecords: LeagueRecord[] = Object.values(source.leagueClients ?? {})
     .map(parseLeagueRecord)

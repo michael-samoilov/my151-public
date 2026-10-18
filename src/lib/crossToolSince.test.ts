@@ -161,6 +161,7 @@ describe('submissions Redis bill', () => {
       'hgetall clients',
       'hgetall favorites:clients',
       'hgetall funnel',
+      'hgetall funnel:excluded',
       'hgetall league:clients',
       'smembers clients:archived',
     ]);
@@ -170,6 +171,7 @@ describe('submissions Redis bill', () => {
       'hgetall clients',
       'hgetall favorites:clients',
       'hgetall funnel',
+      'hgetall funnel:excluded',
       'hgetall league:clients',
       'smembers clients:archived',
     ]);
