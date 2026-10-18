@@ -44,6 +44,12 @@
         "inLanguage": "en"
       }
     </script>
+    <!-- Fetches a tool's HTML when a visitor is about to open it (hover or
+         press on desktop, links in view on phones). Prefetch runs no script,
+         so analytics only count a page someone actually opens. -->
+    <script type="speculationrules">
+      {"prefetch": [{"where": {"href_matches": ["/pokedex-builder", "/custom-gym-leader", "/favorite-pokemon-picker"]}, "eagerness": "moderate"}]}
+    </script>
 
     <style>
 

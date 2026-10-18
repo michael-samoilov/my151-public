@@ -167,12 +167,14 @@ export function prerenderHub(): Plugin {
         // marker is parsed (Chromium); the `:has()` rule hides the hub until
         // then in other browsers.
         // React puts the screenshots' preloads at the start of the markup. They
-        // go in the head instead, ahead of the inline stylesheet, so the
-        // browser starts the images before it has read the styles.
+        // go first in the head instead, so the browser starts the images
+        // before it has read the styles.
         const { preloads: imagePreloads, markup: body } = splitImagePreloads(markup);
         html = html.replace(root, () => `<div id="root" data-prerendered>${body}</div><span id="p151-end" hidden></span>`);
+        const viewport = /<meta name="viewport"[^>]*>/;
+        if (!viewport.test(html)) throw new Error('prerender-hub: index.html has no viewport meta tag');
+        html = html.replace(viewport, (tag) => [tag, ...imagePreloads].join('\n    '));
         const head = [
-          ...imagePreloads,
           initialInter(config.root, markup),
           '<link rel="expect" href="#p151-end" blocking="render">',
 
@@ -180,10 +182,12 @@ export function prerenderHub(): Plugin {
           '<style>html:not(:has(#p151-end)) #root{visibility:hidden}html.p151-hub-images-pending .hub-grid{visibility:hidden}html.p151-hub-images-pending .hub-home:has(.hub-grid),html.p151-hub-images-pending #root:has(.hub-grid) div:has(>footer){visibility:hidden}'+['dex','league','favorites'].map(k=>`html.p151-hub-${k}-fallback .hub-card[data-hub-card="${k}"] [data-card-panel]{visibility:hidden}`).join('')+'</style>',
           `<script>${bootScript(inputs)}</script>`,
         ].join('\n    ');
-        // Before any stylesheet: an inline script after one waits for it.
-        const viewport = /<meta name="viewport"[^>]*>/;
-        if (!viewport.test(html)) throw new Error('prerender-hub: index.html has no viewport meta tag');
-        html = html.replace(viewport, (tag) => `${tag}\n    ${head}`);
+        // Before any stylesheet, because an inline script after one waits for
+        // it. After the title and share tags, because link previews read only
+        // the first 32 KB or so, and the inline font alone is about 40 KB.
+        const firstStyle = html.indexOf('<style');
+        if (firstStyle === -1 || firstStyle > html.indexOf('</head>')) throw new Error('prerender-hub: index.html has no <style> in its head');
+        html = `${html.slice(0, firstStyle)}${head}\n    ${html.slice(firstStyle)}`;
 
         const sheets = [...html.matchAll(/<link rel="stylesheet" crossorigin href="([^"]+\.css)">/g)];
         if (sheets.length === 0) throw new Error('prerender-hub: index.html links no stylesheet');
