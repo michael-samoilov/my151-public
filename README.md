@@ -39,7 +39,6 @@ Use `npm run ci:full` for broad release risk.
 
 - [Documentation index](docs/README.md) identifies the authoritative record for each topic.
 - [Architecture](docs/architecture.md) explains state, shared components, APIs, and exports.
-- [Product and engineering examples](docs/showcase.md) presents selected work and its evidence.
 - [Evidence retention](docs/evidence-retention.md) distinguishes durable records from temporary verification output.
 
 This repository contains private implementation code.
