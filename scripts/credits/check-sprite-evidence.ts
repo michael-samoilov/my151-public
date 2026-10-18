@@ -6,6 +6,10 @@
  * - a shown file's bytes changed, so its sha256 no longer equals its row's;
  * - a row names a file that no page shows any more.
  *
+ * A file that scripts/sprite-reencodes.json lists with its current content is a
+ * lossless re-encode that renders like the file its row proves, so the row keeps
+ * the original's sha256. check-sprite-revisions.mjs fails when that entry goes stale.
+ *
  * It runs offline. The list of shown files comes from the app's own catalogs
  * (scripts/credits/shownSprites.ts), which loads them through Vite so
  * `import.meta.glob` and the `@/` alias resolve as they do in the build.
@@ -13,7 +17,7 @@
  * Usage: npx tsx scripts/credits/check-sprite-evidence.ts [--list <out.json>]
  */
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { shownSprites } from './shownSprites';
 
@@ -24,6 +28,8 @@ interface LedgerRow {
 
 const root = process.cwd();
 const LEDGER = 'docs/credits/sprite-evidence.json';
+const REENCODES = path.join(root, 'scripts/sprite-reencodes.json');
+const reencodes: Record<string, string> = existsSync(REENCODES) ? JSON.parse(readFileSync(REENCODES, 'utf8')) : {};
 
 const shown = await shownSprites(root);
 
@@ -43,8 +49,10 @@ for (const file of [...shown.keys()].sort()) {
     problems.push(`${served}: shown, but has no row in ${LEDGER}.`);
     continue;
   }
-  const digest = createHash('sha256').update(readFileSync(path.join(root, served))).digest('hex');
-  if (digest !== row.sha256) {
+  const bytes = readFileSync(path.join(root, served));
+  const digest = createHash('sha256').update(bytes).digest('hex');
+  const reencoded = reencodes[`/sprites/${file}`] === createHash('md5').update(bytes).digest('hex').slice(0, 8);
+  if (digest !== row.sha256 && !reencoded) {
     problems.push(`${served}: sha256 is ${digest}, but its row says ${row.sha256}. Re-prove who drew the new file and update the row.`);
   }
 }
