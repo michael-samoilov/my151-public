@@ -1,33 +1,30 @@
-# Keep evidence useful and recoverable
+# Keep files that support current work
 
-Keep the evidence needed to explain, reproduce, and verify the current product. Store routine captures outside the tracked tree.
+Retain a file because of its use, never to reach a repository size target.
 
-## Keep in the repository
+Keep these files in the checkout:
 
-- Current visual baselines, representative before-and-after examples, and regression inputs.
-- Decision records, verification summaries, measurements, and the revision each result describes.
-- Source inventories, licenses, attribution, and provenance for shipped assets and data.
-- Inputs consumed by build, generation, verification, or browser tests, including `favorite-picker-work/export/seed.json`.
-- Unresolved design alternatives until the decision and its selected evidence are recorded.
+- App source, assets, dependencies, and configuration.
+- Inputs and tools for current builds, tests, verification, editing, and generation. Preserve offline reproducibility.
+- Original artwork, licenses, attribution, source inventories, and provenance for shipped assets and data.
+- Standing decisions, current guides, concise verification records, and evidence for a genuinely unresolved choice.
 
-Do not infer obsolescence from file age or size. Read later handoff updates before treating an earlier proposal as unresolved.
+Completed screenshots, detailed execution reports, logs, and obsolete prototypes belong in reachable Git history. Being a representative comparison does not make a completed capture a current baseline. A baseline stays only when a current check or decision uses it.
 
-## Store routine captures outside Git
+Read later handoff updates before treating an earlier proposal as unresolved. An unused import search alone does not prove that code, a generator, or its inputs are unnecessary.
 
-Use `.audit/` for local experiments, intermediate browser reports, and repeated capture rounds. Use `docs/**/local/` when an existing capture tool needs a path beside its report. Both locations are ignored.
+## Store new run output outside Git
 
-Keep live CI output in the Git operational directory, as the canonical runner does. Commit a concise result and the representative artifacts needed to assess it. Do not copy every run into documentation.
+Use `.audit/` or `docs/**/local/` for captures and detailed reports. Both paths are ignored. Keep live CI output in the Git operational directory, as the canonical runner does. Commit a concise result with its source revision, command, outcome, and limits. A failed or incomplete run remains failed or incomplete.
 
-Before retaining a report, identify its source revision, command, result, and limits. A failed or incomplete run remains failed or incomplete.
+## Remove completed artifacts safely
 
-## Archive a completed capture set
+1. Trace incoming references and executable consumers, including generators and verification tools.
+2. Preserve current inputs, decisions, provenance, and nonredundant output guards.
+3. Record the source commit, path, mode, blob ID, SHA-256, and byte count in the existing archive manifest format.
+4. Restore and compare every selected file before removal. Replace navigational links with commit-pinned links.
+5. Verify retained inputs, development workflows, and unchanged app output. Let checkout size follow from these decisions.
 
-1. Check incoming references and executable consumers, including generators and verification harnesses.
-2. Keep the decision, measurements, provenance, required inputs, and representative comparisons in the current tree.
-3. Record an immutable source commit, path, Git blob ID, SHA-256, byte count, and mode for every archived file.
-4. Verify recovery before removing current copies. Replace navigational links with commit-pinned links.
-5. Confirm retained files are unchanged, and record the measured checkout reduction.
+The [archive index](evidence/archive/README.md) records recovery commands. Byte recovery does not assemble a runnable historical application. Replay commands in historical reports from a worktree at their recorded revision.
 
-The [archive index](evidence/archive/README.md) records the completed batches and recovery commands. Historical reports can contain artifact paths relative to their recorded revision. Those paths describe that revision, not necessarily the current checkout.
-
-The archive uses existing reachable Git history and the repository's existing access controls. It requires no separate storage account or public upload. A full clone still includes historical objects. This policy reduces checkout size and future growth, not existing Git history.
+The archive uses reachable Git history and existing access controls. It needs no separate service or public upload. Checkout size decreases. Full-clone historical storage does not.

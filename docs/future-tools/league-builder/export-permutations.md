@@ -1,5 +1,7 @@
 # League summary export permutations
 
+Historical captures and commands are in this folder's Git history.
+
 The league export button draws a PNG from `src/league/export/exportLeague.ts`. The default picture matches the on-screen Story/Rematch toggle and uses six team columns so sprites are not crowded against the type mark.
 
 Use **Export** in the tool bar. The overlay shows a live preview and layout checkboxes:
