@@ -3,6 +3,7 @@
 This page lists every Pokémon sprite file that my151.app can show, and the evidence for who drew each one.
 The machine-readable copy is [`sprite-evidence.json`](sprite-evidence.json), one row per file.
 `npm run credits:check-sprites` fails when a shown file changes without its row, or when a shown file has no row.
+A lossless re-encode listed in `scripts/sprite-reencodes.json` keeps its row: the row's sha256 names the original file that the evidence describes, and the re-encode decodes to the same pixels.
 
 Built on 2026-10-13 from production commit 8739dac6. Pages and files were read on 2026-10-13 unless a row says otherwise.
 
