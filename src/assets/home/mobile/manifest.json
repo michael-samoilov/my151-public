@@ -1,7 +1,7 @@
 {
   "version": 1,
   "status": "PASS",
-  "baseCommit": "24b229ea0f066a77de949710558197a81309fc56",
+  "baseCommit": "beca5e797e0146118e92d9c2cfb11c6852868e99",
   "inputs": [
     {
       "path": "src/components/home/HomePage.tsx",
@@ -13,11 +13,11 @@
     },
     {
       "path": "src/home/artwork-data.ts",
-      "sha256": "4a8bccded5b1543f364b02a6d58e6366764a822bb708204d744c08883261e06d"
+      "sha256": "a76f1c723c6e7aaabd47f10ae74853f0d9f63ecaa94e24435934fed5bdfcbbd2"
     },
     {
       "path": "src/home/artwork-controller.js",
-      "sha256": "43273551547b248fdf457845c6e22adc633dc5a956ccef01d5fa8f409f6bfc23"
+      "sha256": "5dd567bfc83cbc3146e0f019ee19c75b448c8d08ad5fc6e7d0185c8a57889617"
     },
     {
       "path": "src/components/home/useHomeSheetLift.ts",
@@ -1168,8 +1168,8 @@
     }
   ],
   "provenance": {
-    "sourceCommit": "24b229ea0f066a77de949710558197a81309fc56",
-    "sourceDirty": " M scripts/home-artwork/manifest.mjs\n M scripts/prerender-hub.ts\n M src/components/home/HomePage.tsx\n M src/home/main.tsx\n M src/home/prerender.ts\n M vite.config.ts\n?? src/assets/home/mobile/\n?? src/home/artwork-controller.d.ts\n?? src/home/artwork-controller.js\n?? src/home/artwork-data.ts\n?? src/home/artwork-types.ts\n?? src/home/artwork.tsx\n",
+    "sourceCommit": "beca5e797e0146118e92d9c2cfb11c6852868e99",
+    "sourceDirty": " M e2e/hub-prerender.spec.ts\n M src/home/artwork-controller.js\n M src/home/artwork-data.ts\n",
     "browserVersion": "151.0.7922.173",
     "pillowVersions": [
       "12.3.0"
@@ -1188,7 +1188,7 @@
       480
     ],
     "dpr": 3,
-    "startedAt": "2026-10-19T12:33:58.330Z",
-    "finishedAt": "2026-10-19T12:34:39.371Z"
+    "startedAt": "2026-10-19T12:37:15.918Z",
+    "finishedAt": "2026-10-19T12:37:56.255Z"
   }
 }

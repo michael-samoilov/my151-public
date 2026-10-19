@@ -8,7 +8,7 @@ export function installHomeArtwork(poses) {
   }
   const root = document.documentElement;
   const keys = ['dex', 'league', 'favorites'];
-  const media = matchMedia('(max-width:480px) and (hover:none) and (pointer:coarse) and (any-hover:none)');
+  const media = matchMedia('(max-width:480px) and (hover:none) and (pointer:coarse) and (any-hover:none) and (scripting:enabled)');
   const snapshots = new Map();
   const decoding = new WeakMap();
   let generation = 0;
