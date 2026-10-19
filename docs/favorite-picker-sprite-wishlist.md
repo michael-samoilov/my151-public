@@ -32,7 +32,7 @@ Michael chose kiriaura's sprites on 2026-10-19: "lets use kiraura for mosslax, p
 | Mosslax | 11120 | Snorlax appearance in Normal × IX, debut Pokopia, with compact M and full label “Snorlax (Mosslax)”. Offset (1, 7) on the 96×96 canvas. https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280 |
 | Peakychu | 11121 | Pikachu appearance in Electric × IX, debut Pokopia, with compact PE and full label “Pikachu (Peakychu)”. PE keeps Pikachu Ph.D.'s P. Offset (28, 26). https://www.deviantart.com/kiriaura/art/Peakychu-sprite-1263882502 |
 
-Neither has a shiny. kiriaura gets her own credit entry with both sprites. Like Smearguru, both names are English in every locale (`english-only`): the name scripts read no Pokopia game text. Bulbapedia lists official names in each language, such as German Mooslaxo and Schlappchu. Using them for all four Pokopia forms is an open choice for Michael. sprite-lab's Pokopia report notes that kiriaura's Peakychu matches camioftargon's earlier Peakychu in outline and body colour; the direction is not proven.
+Neither has a shiny. kiriaura gets a credit entry of their own with both sprites. Like Smearguru, both names are English in every locale (`english-only`): the name scripts read no Pokopia game text. Bulbapedia lists official names in each language, such as German Mooslaxo and Schlappchu. Using them for all four Pokopia forms is an open choice for Michael. sprite-lab's Pokopia report notes that kiriaura's Peakychu matches camioftargon's earlier Peakychu in outline and body colour; the direction is not proven.
 
 ## Imported on 2026-10-17, released on 2026-10-18
 

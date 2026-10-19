@@ -24,7 +24,7 @@ The 50 form sprites previously mapped to Showdown now map to a pinned PokéAPI c
 
 Each bundle entry in the panel says only what the evidence proves about the bundle's part in the app, with no count. It shows one permission quote from the bundle's own page and the bundle's links. It does not list the sprites.
 
-An artist has an entry of their own only when my151 took the sprites from the artist's own upload, not from a bundle. On 2026-10-13 that is KingOfThe-X-Roads: the Ogerpon sprites from his Sta.sh uploads and DJ Rotom from his X post. On 2026-10-19 kiriaura joins him: Mosslax and Peakychu from her DeviantArt uploads, with her About-page terms quoted in `src/data/creditTerms.json`.
+An artist has an entry of their own only when my151 took the sprites from the artist's own upload, not from a bundle. On 2026-10-13 that is KingOfThe-X-Roads: the Ogerpon sprites from the artist's Sta.sh uploads and DJ Rotom from the artist's X post. On 2026-10-19 kiriaura joins: Mosslax and Peakychu from kiriaura's DeviantArt uploads, with the About-page terms quoted in `src/data/creditTerms.json`.
 
 my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do not credit my151 for zygarde"). Mega Zygarde's lineage is recorded only in `src/data/spriteAttribution.json`.
 
