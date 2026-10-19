@@ -14,7 +14,7 @@ export function SkipLink() {
         e.preventDefault();
         document.getElementById(MAIN_ID)?.focus();
       }}
-      className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-1.5 focus:z-[500] focus:inline-flex focus:h-8 focus:items-center focus:rounded-md focus:border focus:bg-card focus:px-3 focus:text-sm focus:font-semibold focus:whitespace-nowrap focus:text-foreground focus:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:focus:left-6"
+      className="sr-only focus:not-sr-only focus:flex focus:h-9 focus:w-full focus:shrink-0 focus:items-center focus:border-b focus:bg-card focus:px-3 focus:text-sm focus:font-semibold focus:whitespace-nowrap focus:text-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring sm:focus:px-6"
     >
       {t('common.skipToMain')}
     </a>
