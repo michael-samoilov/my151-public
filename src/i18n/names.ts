@@ -5,7 +5,7 @@ import { normalizeSearch } from './searchNormalize';
 import { genderFormOf, GENDER_MARKS } from './genderForms';
 import { formatFullPokemonName, pokemonNameContext, type PokemonNameContext } from './fullPokemonName';
 
-export type NameProvenance = 'official' | 'official-composed' | 'english-only';
+export type NameProvenance = 'official' | 'official-composed' | 'official-bulbapedia' | 'english-only';
 
 interface NameCatalog {
   locale: string;

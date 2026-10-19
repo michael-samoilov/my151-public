@@ -14,13 +14,27 @@ const MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 103
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
 /**
- * How a name was arrived at. `english-only` marks a descriptor that no game
- * publishes in any language: every locale carries the same English words.
- * `formProvenance` in src/i18n/names.ts exposes the value; no UI marker
- * renders it yet.
+ * How a name was arrived at. `official` comes from game text or PokéAPI.
+ * `official-bulbapedia` is an official name that no game-text corpus in the
+ * repository carries, copied from Bulbapedia (BULBAPEDIA_NAMES_PATH).
+ * `english-only` marks a descriptor with no official name in that language:
+ * the locale carries the English words. `formProvenance` in
+ * src/i18n/names.ts exposes the value; no UI marker renders it yet.
  */
-export type NameProvenance = 'official' | 'official-composed' | 'english-only';
+export type NameProvenance = 'official' | 'official-composed' | 'official-bulbapedia' | 'english-only';
 
+const BULBAPEDIA_NAMES_PATH = 'docs/i18n/sources/bulbapedia-form-names.json';
+
+interface BulbapediaNames {
+  read: string;
+  forms: Record<string, { page: string; revid: number; section: string; names: Partial<Record<string, string>> }>;
+}
+
+/**
+ * English descriptors for app forms that no game-text row names. Each locale
+ * shows its official name from BULBAPEDIA_NAMES_PATH when it has one, and the
+ * English words otherwise.
+ */
 const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; officialPrefix?: number }>> = {
   11105: { descriptor: 'Overdrive' },
   11106: { descriptor: 'Overdrive' },
@@ -195,6 +209,11 @@ async function main(): Promise<void> {
       .map((term) => [Number(term.key.slice('form.'.length)), term.from[0].text]),
   );
 
+  const bulbapedia = (JSON.parse(readFileSync(BULBAPEDIA_NAMES_PATH, 'utf8')) as BulbapediaNames).forms;
+  for (const id of Object.keys(bulbapedia)) {
+    if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`Bulbapedia name ${id} is not a picker form`);
+  }
+
   const itemIdBySlug = new Map<string, number>();
   for (const r of readCsv('items')) itemIdBySlug.set(r.identifier, Number(r.id));
   const itemNames = new Map<string, string>();
@@ -285,6 +304,7 @@ async function main(): Promise<void> {
 
     let official = 0;
     let composed = 0;
+    let sourced = 0;
     let marked = 0;
     for (const entry of entries) {
       const markRegion = originalIds.has(entry.appId) ? regionOf(entry.appName) : null;
@@ -377,6 +397,16 @@ async function main(): Promise<void> {
       catalog.forms[id] = prefix ? `${prefix} — ${descriptor}` : descriptor;
       catalog.formSource[id] = 'english-only';
     }
+    for (const [id, { names }] of Object.entries(bulbapedia)) {
+      const name = names[locale];
+      if (!name) continue;
+      if (catalog.formSource[id] && catalog.formSource[id] !== 'english-only') {
+        throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the Bulbapedia name`);
+      }
+      catalog.forms[id] = name;
+      catalog.formSource[id] = 'official-bulbapedia';
+      sourced += 1;
+    }
     const femaleDescriptor = catalog.forms[10025];
     if (femaleDescriptor) {
       for (const entry of entries.filter(entry => entry.formIdentifier.endsWith('-female') && !catalog.forms[entry.appId])) {
@@ -417,7 +447,7 @@ async function main(): Promise<void> {
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(catalog)}\n`);
     const named = catalog.species.filter(Boolean).length;
     summary.push(
-      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
+      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(sourced).padStart(2)} Bulbapedia   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
     );
   }
 

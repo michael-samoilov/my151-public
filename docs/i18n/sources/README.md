@@ -101,9 +101,35 @@ generator checks each picker form's species before it imports a descriptor.
 Combinations of official pieces retain `official-composed` provenance.
 
 Chinese sources contain no descriptor for the six Cosplay Pikachu variants or
-Spiky-eared Pichu. Those sprites show their localized species name. Female
-sprite variants without a published form descriptor use the sex symbol `♀`.
-Neither case invents official form wording.
+Spiky-eared Pichu. Female sprite variants without a published form descriptor
+use the sex symbol `♀`. Neither case invents official form wording.
+
+## Names from Bulbapedia
+
+Michael decided on 2026-10-19 to show the official localized name of every form
+the app adds, when one exists. Some official names are in no game-text corpus
+that the scripts read: Pokémon Pokopia's characters, Solgaleo's and Lunala's
+phases, and some Chinese names from outside the games.
+`bulbapedia-form-names.json` records them. Each row names the Bulbapedia page,
+the revision ID, and the table it was copied from, and the file gives the read
+date. A Mandarin name in traditional characters is listed for zh-Hant only,
+unless every character is the same in simplified Chinese.
+
+`npm run i18n:names` gives these names `official-bulbapedia` provenance. Game
+text wins: the generator fails when a row names a form that game text or PokéAPI
+already names in that locale. A locale with no row keeps the English
+descriptor. That is still true for Overdrive in every
+locale, for Zenith outside Japanese, for Cosplay Pikachu in both Chinese
+locales, and for Pikachu Rock Star and Pikachu Belle in Simplified Chinese.
+
+Read a page again with the MediaWiki API, then update the row's name and
+revision ID:
+
+```sh
+curl -sG https://bulbapedia.bulbagarden.net/w/api.php --data-urlencode titles=Mosslax \
+  -d action=query -d prop=revisions -d rvprop='ids|content' -d rvslots=main -d format=json
+npm run i18n:names
+```
 
 ## Move names and other game terms
 
