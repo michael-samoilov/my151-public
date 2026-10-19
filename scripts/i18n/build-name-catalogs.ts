@@ -31,6 +31,7 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
   11111: { descriptor: 'Zenith' },
   11112: { descriptor: 'DJ' },
   11117: { descriptor: 'Smearguru' },
+  11122: { descriptor: 'Purple' },
 };
 
 /**

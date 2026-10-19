@@ -13,7 +13,6 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Armored Mewtwo | Mewtwo's Gen 1 legendary family | No matching sprite verified. |
 | Zygarde Cell | Gen 6 Zygarde family | No matching battle-style sprite verified. |
 | Zygarde Core | Gen 6 Zygarde family | No matching battle-style sprite verified. |
-| Purple Kecleon (Mystery Dungeon) | Gen 3 Kecleon family | No matching Gen 5-style front sprite verified. |
 | Ukulele Pichu | Gen 4 Pichu family | Confirmed by Michael 2026-09-30. Pokémon Ranger: Guardian Signs design. No matching Gen 5-style front sprite verified in the searched source. |
 | Mega Darkrai eye form | Gen 4 Darkrai gimmick family | The existing Mega Darkrai sprite is present; no distinct matching eye-form sprite verified. |
 | Pecharunt Shell | Gen 9 Pecharunt family | No distinct matching sprite verified. |
@@ -22,6 +21,16 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Miraidon ride modes (Drive, Aquatic, Glide) | Gen 9 Miraidon family | Requested 2026-09-30. No separately named Gen 5 front sprite found for these ride builds in the current Smogon source. |
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
+
+## Purple Kecleon, added on 2026-10-19 (review candidate)
+
+Michael approved a recolor for this one form on 2026-10-19: "for purple kecleon, let's turn the yellow markings green". It is the exception to the no-recolor rule above. The sprite is my151's palette recolor of the app's Game Freak Kecleon (352), with the Mystery Dungeon purple Kecleon colors. No model was used. [Provenance](favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json).
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Purple Kecleon | 11122 | Kecleon appearance in Normal × III, debut Pokémon Mystery Dungeon: Red Rescue Team and Blue Rescue Team, with compact P and full label “Kecleon (Purple)”. The tooltip names Pokémon Mystery Dungeon. |
+
+No shiny. No credit, because the art is Game Freak's. No game gives the purple Kecleon a name, so the descriptor is English in every locale (`english-only`), like Smearguru.
 
 ## Imported on 2026-10-17, released on 2026-10-18
 

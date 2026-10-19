@@ -37845,5 +37845,34 @@
   ],
   "comparison": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/0p5wp0lgq01, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
   "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11122.png",
+  "sha256": "f51990ab818a3e0e45e92261334473e8c56e0100ad07a4148d9bf635925b6c81",
+  "pokemon": [
+   "kecleon-purple"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": "my151",
+  "evidenceType": "repository-history",
+  "sources": [
+   {
+    "url": "not in this copy: sprite-lab/selections/add-kecleon-purple.png",
+    "localCopy": "public/sprites/pokemon/11122.png",
+    "sha256": "f51990ab818a3e0e45e92261334473e8c56e0100ad07a4148d9bf635925b6c81",
+    "title": "add-kecleon-purple.png, sprite-lab selection"
+   },
+   {
+    "url": "public/sprites/pokemon/352.png",
+    "localCopy": "public/sprites/pokemon/352.png",
+    "sha256": "76510406e2d3023550ff30479553b3612277d05ddfd2e5b6b0bc268cf5539f43",
+    "title": "Kecleon, Game Freak, Black and White"
+   }
+  ],
+  "comparison": "my151's palette recolor of the app's Game Freak Kecleon (352.png): same indexed 96x96 canvas, every pixel keeps its palette index and the alpha mask is identical; 10 palette slots change to the Mystery Dungeon purple Kecleon colors. Byte-identical to sprite-lab/selections/add-kecleon-purple.png at commit deac73e0. No credit: Game Freak art with my151's recolor (Michael, 2026-10-13). Provenance: docs/favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json.",
+  "verdict": "confirmed"
  }
 ]

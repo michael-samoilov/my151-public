@@ -22,13 +22,13 @@ The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `doc
 
 | Count | What |
 |---:|---|
-| 1422 | Sprite files a production page can show (all of `public/sprites/pokemon`) |
+| 1423 | Sprite files a production page can show (all of `public/sprites/pokemon`) |
 | 1096 | Shown in the Pokédex builder |
 | 1347 | Shown in the League builder |
-| 1416 | Shown in the Favorite picker |
+| 1417 | Shown in the Favorite picker |
 | 0 | Served files that no page shows |
 | 0 | Shown files that are missing |
-| 658 | Verdict: confirmed |
+| 659 | Verdict: confirmed |
 | 0 | Verdict: corrected |
 | 67 | Verdict: unproven |
 | 697 | Verdict: official Game Freak |
@@ -43,7 +43,7 @@ The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `doc
 | 20 | Exact match to a file the artist posted (Sta.sh upload or the artist's DeviantArt sheet) |
 | 7 | Exact match to the Generation 9 pack file on its sheet row |
 | 1 | Exact match to an attachment in a Smogon thread post |
-| 1 | my151's own drawing, by this repository's history |
+| 2 | my151's own work, by this repository's history: one drawing, one recolor of a Game Freak sprite |
 | 2 | Pinned source identified; individual artist unproven |
 
 ## Credit changes
@@ -1253,3 +1253,7 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 ## KingOfThe-X-Roads originals imported on 2026-10-17
 
 Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/previous-mega-raichu-x-evidence.json`. The JSON ledger contains the current hashes and sources.
+
+## Purple Kecleon added on 2026-10-19
+
+Purple Kecleon (11122) is a picker-only appearance. The file is my151's palette recolor of the app's Game Freak Kecleon (352): the same indexed 96×96 canvas, every pixel on its palette index, and 10 palette slots changed to the Mystery Dungeon purple Kecleon colors. It has no credit and no Acknowledgements entry, because the art is Game Freak's (Michael, 2026-10-13). The ledger row is `repository-history`. Provenance: `docs/favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json`.
