@@ -182,7 +182,7 @@ export function prerenderHub(): Plugin {
           const lo = index ? (poses[index - 1].viewportWidth + pose.viewportWidth) / 2 + 0.001 : 0;
           const hi = index === poses.length - 1 ? 480 : (pose.viewportWidth + poses[index + 1].viewportWidth) / 2;
           const media = `${inputs.HOME_MOBILE_MEDIA} and (min-width:${lo}px) and (max-width:${hi}px)`;
-          pose.cards.forEach(card => imagePreloads.push(`<link rel="preload" as="image" type="image/avif" media="${media}" href="/assets/home-mobile/${card.avif.file}">`));
+          pose.cards.forEach(card => imagePreloads.push(`<link rel="preload" as="image" type="image/avif" fetchpriority="high" media="${media}" href="/assets/home-mobile/${card.avif.file}">`));
         });
         html = html.replace(root, () => `<div id="root" data-prerendered>${body}</div><span id="p151-end" hidden></span>`);
         const viewport = /<meta name="viewport"[^>]*>/;

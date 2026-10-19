@@ -50,6 +50,6 @@ export function MobileArtwork({ toolKey, alt }: { toolKey: string; alt: string }
   return <>{[0, 1].map(slot => <Picture key={slot} id={`${toolKey}-mobile-${slot}`}
     resources={{ src: EMPTY_IMAGE, sources: slot === 0 ? sources : [] }}
     alt={alt} data-baked-resource={toolKey} data-card-scene={toolKey} data-scene-slot={slot}
-    draggable={false} decoding="sync"
+    draggable={false} decoding="sync" fetchPriority="high"
   />)}</>;
 }

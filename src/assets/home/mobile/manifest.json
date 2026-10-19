@@ -1,7 +1,7 @@
 {
   "version": 1,
   "status": "PASS",
-  "baseCommit": "beca5e797e0146118e92d9c2cfb11c6852868e99",
+  "baseCommit": "ea2cead79a723bd64c4d3f1833d8d908beb15988",
   "inputs": [
     {
       "path": "src/components/home/HomePage.tsx",
@@ -9,7 +9,7 @@
     },
     {
       "path": "src/home/artwork.tsx",
-      "sha256": "38cf214d2eab65693af9ccb7878abf922badc1cfa7fb9037e625e482f5b88901"
+      "sha256": "962c8af84a6d5c9148f35a6b8a9535e692dfcf07edf652d1f08c4323922bb63a"
     },
     {
       "path": "src/home/artwork-data.ts",
@@ -1168,8 +1168,8 @@
     }
   ],
   "provenance": {
-    "sourceCommit": "beca5e797e0146118e92d9c2cfb11c6852868e99",
-    "sourceDirty": " M e2e/hub-prerender.spec.ts\n M src/home/artwork-controller.js\n M src/home/artwork-data.ts\n",
+    "sourceCommit": "ea2cead79a723bd64c4d3f1833d8d908beb15988",
+    "sourceDirty": " M scripts/prerender-hub.ts\n M src/home/artwork.tsx\n",
     "browserVersion": "151.0.7922.173",
     "pillowVersions": [
       "12.3.0"
@@ -1188,7 +1188,7 @@
       480
     ],
     "dpr": 3,
-    "startedAt": "2026-10-19T12:37:15.918Z",
-    "finishedAt": "2026-10-19T12:37:56.255Z"
+    "startedAt": "2026-10-19T12:44:27.625Z",
+    "finishedAt": "2026-10-19T12:45:11.350Z"
   }
 }
