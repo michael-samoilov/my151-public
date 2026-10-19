@@ -1,7 +1,13 @@
 import { enData } from './en.data';
 
 export const enUi = {
+  'ack.alsoCredited': 'Also credited through',
+  'ack.artistCount_one': '{count} artist',
+  'ack.artistCount_other': '{count} artists',
+  'ack.artists': 'Artists',
   'ack.back': 'Back',
+  'ack.bundleSprites_one': '{count} fan-made sprite in the app is credited through this project.',
+  'ack.bundleSprites_other': '{count} fan-made sprites in the app are credited through this project.',
   'ack.by': 'by {name}',
   'ack.compiledBy': 'compiled by {name}',
   'ack.count_one': '{count} credit',
@@ -21,6 +27,7 @@ export const enUi = {
   'ack.licenseCount_other': '{count} licenses',
   'ack.loadFailed': 'The license text did not load.',
   'ack.loading': 'Loading…',
+  'ack.notConfirmed': 'Artist not confirmed',
   'ack.open': 'Open {site}',
   'ack.packageCount_one': '{count} package',
   'ack.packageCount_other': '{count} packages',
@@ -28,6 +35,9 @@ export const enUi = {
   'ack.packageTexts_other': 'License texts of {count} packages',
   'ack.packages': 'Packages',
   'ack.packagesFailed': 'The package list did not load.',
+  'ack.sharedSprites': 'A sprite with more than one artist counts for each of them.',
+  'ack.showAllArtists_one': 'Show {count} artist',
+  'ack.showAllArtists_other': 'Show all {count} artists',
   'ack.spritesOwn_one': '{count} sprite from their own uploads',
   'ack.spritesOwn_other': '{count} sprites from their own uploads',
   'ack.sprites_one': '{count} sprite',

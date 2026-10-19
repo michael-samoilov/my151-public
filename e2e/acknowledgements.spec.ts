@@ -26,6 +26,11 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail').getByText('Non-profit use, with credit', { exact: true })).toBeVisible();
     await expect(dialog.locator('blockquote')).toContainText('the spriter or the project itself is credited');
     await expect(dialog.getByRole('link', { name: 'Generation 6 thread' })).toBeVisible();
+    const smogonArtists = dialog.getByTestId('ack-artists');
+    await expect(smogonArtists.getByTestId('ack-artists-summary')).toHaveText(/^\d+ fan-made sprites in the app are credited through this project\.$/);
+    await expect(smogonArtists.locator(':scope > ol > li')).toHaveCount(10);
+    await expect(smogonArtists.getByTestId('ack-artists-more').locator('summary')).toHaveText(/^Show all \d+ artists$/);
+    await expect(smogonArtists.getByTestId('ack-artists-unconfirmed')).toHaveText(/^Artist not confirmed\d+ sprites?$/);
     await dialog.getByRole('button', { name: 'Back' }).click();
 
     const viewport = page.viewportSize()!;
@@ -71,6 +76,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     for (const summary of await generations.locator('summary').all()) await summary.click();
     await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Rotom (DJ)');
     await expect(sprites.getByRole('listitem')).toHaveCount(13);
+    await expect(dialog.getByTestId('ack-also-credited').getByRole('listitem')).toHaveCount(3);
     const kingSprites = await sprites.getByRole('listitem').count();
     await dialog.getByRole('button', { name: 'Back' }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');

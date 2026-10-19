@@ -13,8 +13,9 @@ import {
 } from '@/data/acknowledgements';
 import type { NpmPackageIndex } from '@/data/npmPackages';
 import { artistTerms, sourceTerms, type TermsQuote } from '@/data/creditTerms';
-import { artistCredit } from '@/data/spriteCredits';
+import { artistCredit, bundleCredit, bundlesCrediting } from '@/data/spriteCredits';
 import { ArtistSprites } from './AcknowledgementsSprites';
+import { BundleArtists } from './AcknowledgementsArtists';
 
 const GROUP_KEYS = {
   'sprite-projects': 'ack.group.spriteSources',
@@ -29,6 +30,8 @@ const GROUP_KEYS = {
 const GROUPS = ACKNOWLEDGEMENTS.filter((group) => group.entries.length > 0);
 
 const ENTRIES = new Map(GROUPS.flatMap((group) => group.entries.map((entry) => [entry.id, entry] as const)));
+
+const BUNDLE_IDS = GROUPS.find((group) => group.id === 'sprite-projects')?.entries.map((entry) => entry.id) ?? [];
 
 const licenseTexts = new Map<string, Promise<string>>();
 
@@ -145,6 +148,8 @@ function useRowNote() {
       if (!index.index) return index.failed ? t('ack.packagesFailed') : t('ack.loading');
       return `${tn('ack.packageCount', packageCount(index.index))} · ${tn('ack.licenseCount', byLicense(index.index).length)}`;
     }
+    const bundle = entry.kind === 'project' ? bundleCredit(entry.id) : undefined;
+    if (bundle) return [tn('ack.artistCount', bundle.artists.length), entry.license].filter(Boolean).join(' · ');
     return entry.license ?? t('ack.credit');
   };
 }
@@ -339,7 +344,10 @@ function Detail({ entry, backRef, onBack }: {
   onBack: () => void;
 }) {
   const t = useT();
+  const tn = useTn();
   const links = entry.links.map((href) => ({ href, label: t('ack.open', { site: entry.linkLabels?.[href] ?? host(href) }) }));
+  const bundle = entry.kind === 'project' ? bundleCredit(entry.id) : undefined;
+  const alsoThrough = entry.kind === 'artist' ? bundlesCrediting(entry.name, BUNDLE_IDS) : [];
   const quotes = entry.kind === 'artist' ? artistTerms(entry.name) : entry.texts ? [] : sourceTerms(entry.id);
   const hasLicense = entry.license || quotes.length > 0 || entry.note || entry.texts;
   return (
@@ -370,6 +378,23 @@ function Detail({ entry, backRef, onBack }: {
             <p className="text-sm leading-relaxed">{entry.usedFor}</p>
           )}
         </Section>
+        {bundle && (
+          <Section label={t('ack.artists')} count={bundle.artists.length}>
+            <BundleArtists entry={bundle} />
+          </Section>
+        )}
+        {alsoThrough.length > 0 && (
+          <Section label={t('ack.alsoCredited')}>
+            <ul className="-my-1.5 divide-y" data-testid="ack-also-credited">
+              {alsoThrough.map(([id, files]) => (
+                <li key={id} className="flex items-baseline justify-between gap-3 py-1.5 text-sm">
+                  <span className="min-w-0 break-words">{ENTRIES.get(id)?.name}</span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">{tn('ack.sprites', files)}</span>
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
         {entry.kind === 'packages' && <NpmPackages />}
         <ExternalLinks links={links} />
         {hasLicense && (

@@ -22,7 +22,17 @@ The Smogon Sprite Project contributed fan sprites distributed through PokéAPI. 
 
 The 50 form sprites previously mapped to Showdown now map to a pinned PokéAPI commit. Forty-eight match the existing visible pixels; Spiky-eared Pichu and female Pyroar use the PokéAPI variants. [The comparison](pokeapi-form-sources.json) records every path and hash. The importer downloads from PokéAPI. Historical source and artist evidence remains in the ledger. This does not claim that changing the download source overrides the artists’ terms.
 
-Each bundle entry in the panel says only what the evidence proves about the bundle's part in the app, with no count. It shows one permission quote from the bundle's own page and the bundle's links. It does not list the sprites.
+Each bundle entry in the panel shows one permission quote from the bundle's own page, the bundle's links, and an "Artists" list. It does not list the sprites. Michael asked for the list on 2026-10-19: rank each project's artists by the sprites they contributed, link a relevant page, use only reliable data, and keep the credits MECE.
+
+## The artist lists
+
+`npm run credits:bundles` (`scripts/credits/bundle-credits.ts`) writes `src/data/bundleCredits.json` from the ledger and `src/data/spriteAttribution.json`. `npm run credits:check-sprites` fails when that file is out of date, or when the counts stop being a partition.
+
+- Every shown fan-made sprite file counts under exactly one entry. A direct upload counts under its artist's own entry. Any other file counts under the bundle whose records credit its artist: the Smogon Sprite Project for its four credit sheets (whether the file came through PokéAPI or not), PokéAPI for its own README credits, or the Generation 9 Resource Pack for its sheet. Fan-made files with no attribution row came from PokéAPI's files, so they count under PokéAPI.
+- Game Freak's sprites, the two Kyurem Overdrive stills (Game Freak's animation frames), and my151's Mega Zygarde count nowhere.
+- An artist counts a file only when the ledger's verdict is `confirmed`. Every other file counts under its entry as "Artist not confirmed". A file with two artists counts for each of them.
+- An artist's name links only to a profile whose `linkStatus` in `creditTerms.json` is `proven`, never to a Smogon member page. No artist's terms are quoted: the bundle's permission covers the files it carried.
+- A direct-upload artist's own files appear only in their own entry. That entry also lists the bundles that credit them, with the count from each.
 
 An artist has an entry of their own only when my151 took the sprites from the artist's own upload, not from a bundle. On 2026-10-13 that is KingOfThe-X-Roads: the Ogerpon sprites from his Sta.sh uploads and DJ Rotom from his X post.
 
