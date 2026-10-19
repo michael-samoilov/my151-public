@@ -61,6 +61,7 @@
   "builder.remove": "Quitar a {name}",
   "builder.settings": "Ajustes",
   "common.dismiss": "Cerrar",
+  "common.skipToMain": "Saltar al contenido principal",
   "dex.national": "Pokédex Nacional",
   "header.tagline": " — crea tu propia Pokédex",
   "header.toolNameCore": "Pokédex personalizada",

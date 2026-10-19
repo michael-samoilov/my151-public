@@ -37,6 +37,7 @@ import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
 import { PokeBallSpinner, ScreenSpinner } from '@/components/shared/PokeBallSpinner';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
+import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
 import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
 import { sectionName as sectionLabel, useDocumentLocale, useT } from '@/i18n';
@@ -193,10 +194,11 @@ function App() {
   return (
     <TooltipProvider>
       <div className="h-dvh flex flex-col">
+        <SkipLink />
         <Header ref={headerRef} currentView={currentView} onViewChange={handleViewChange} toolbarRef={setToolbarEl} />
 
         <ToolbarSlotContext.Provider value={{ el: toolbarEl, view: currentView }}>
-        <main className="flex min-h-0 flex-1 flex-col">
+        <main id={MAIN_ID} tabIndex={-1} className="flex min-h-0 flex-1 flex-col focus:outline-none">
         <ErrorBoundary where="pokedex-builder">
         <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' ? 'hidden' : 'p151-view-enter')}>
           <div className={cn(

@@ -8,6 +8,7 @@ import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { whenIdle } from '@/lib/whenIdle';
 import { reloadIfStale } from '@/lib/staleDeploy';
@@ -181,10 +182,11 @@ function FavoritesContent({ sel, setSel }: {
   return (
     <>
       <div inert={exportOpen} className="flex min-h-dvh flex-col bg-background text-foreground">
+        <SkipLink />
         <GlobalHeader />
         {/* One `<main>` for both tabs. A `<main>` that is also a tab panel
             loses its landmark role, so the panels are plain elements. */}
-        <main className="flex shrink-0 flex-col">
+        <main id={MAIN_ID} tabIndex={-1} className="flex shrink-0 flex-col focus:outline-none">
         <FavoritesHeader fills={fills} filled={filled} analyticsUnlocked={analytics.unlocked}
           currentView={currentView} exportOpen={exportOpen} exportRef={exportRef}
           onViewChange={(view) => {
