@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { spawnSync } from 'node:child_process';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,13 +10,14 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const out=process.env.OG_OUT_DIR||resolve(root,'public');
 const evidence=process.env.OG_HTML_OUT_DIR||resolve(root,'docs/evidence/tool-art-rebake/local/og');
 const data=(path,mime)=>`data:${mime};base64,${readFileSync(resolve(root,path)).toString('base64')}`;
+const JPEG="import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],'JPEG',quality=90,subsampling=0,optimize=True,progressive=True)";
 const font=data('node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2','font/woff2');
 const tools={
 
- hub:{file:'og-hub.png',title:'Free<br>Pokémon<br>Fan Tools',fan:{left:350,center:413,width:480,spread:174,step:7},images:[['back','src/assets/home/tool-favorites-b.webp','Full grid portrait favorite Pokémon chart'],['middle','public/og-sources/dex-stats.webp','Custom regional Pokédex export with detailed statistics'],['front','src/assets/home/tool-league.webp','Brock trainer-card export']]},
- pokedex:{file:'og-image.png',title:'Custom Region &<br>Pokédex Builder',images:[['build','public/og-sources/dex-build.webp','In-progress Pokédex Build page'],['front','public/og-sources/dex-stats.webp','Custom regional Pokédex export with detailed statistics and no section outlines']]},
- league:{file:'og-gym-leader.png',title:'Trainer Card &<br>Gym Leader Maker',images:[['back','src/assets/home/tool-league-b.webp','Kanto league story-team export'],['front','src/assets/home/tool-league.webp','Brock trainer-card export']]},
- favorites:{file:'og-favorite-picker.png',title:'Favorite Pokémon<br> Picker by Type &amp; Gen',images:[['back','src/assets/home/tool-favorites.webp','Summary portrait favorite Pokémon chart'],['front','src/assets/home/tool-favorites-b.webp','Full grid portrait favorite Pokémon chart']]},
+ hub:{file:'og-hub.jpg',title:'Free<br>Pokémon<br>Fan Tools',fan:{left:350,center:413,width:480,spread:174,step:7},images:[['back','src/assets/home/tool-favorites-b.webp','Full grid portrait favorite Pokémon chart'],['middle','public/og-sources/dex-stats.webp','Custom regional Pokédex export with detailed statistics'],['front','src/assets/home/tool-league.webp','Brock trainer-card export']]},
+ pokedex:{file:'og-image.jpg',title:'Custom Region &<br>Pokédex Builder',images:[['build','public/og-sources/dex-build.webp','In-progress Pokédex Build page'],['front','public/og-sources/dex-stats.webp','Custom regional Pokédex export with detailed statistics and no section outlines']]},
+ league:{file:'og-gym-leader.jpg',title:'Trainer Card &<br>Gym Leader Maker',images:[['back','src/assets/home/tool-league-b.webp','Kanto league story-team export'],['front','src/assets/home/tool-league.webp','Brock trainer-card export']]},
+ favorites:{file:'og-favorite-picker.jpg',title:'Favorite Pokémon<br> Picker by Type &amp; Gen',images:[['back','src/assets/home/tool-favorites.webp','Summary portrait favorite Pokémon chart'],['front','src/assets/home/tool-favorites-b.webp','Full grid portrait favorite Pokémon chart']]},
 };
 const FAN_TOP = 140;
 const FAN_REAR_SHIFT = 24;
@@ -54,7 +56,11 @@ try{
   })),title);
   if(titleGap<6)throw Error(`${name}: artwork approaches title by less than 6px`);
   reports.push({name,...audit,hardCount:hard.length,titleGap,geometry:geometry.map(g=>({...g,hiddenBottom:g.bottom-630})),title});if(hard.length)throw Error(JSON.stringify(hard));
-  const path=resolve(out,tools[name].file);await page.screenshot({path});console.log(`Wrote ${path} (1200x630)`);
+  const path=resolve(out,tools[name].file);const master=resolve(evidence,`${name}.png`);await page.screenshot({path:master});
+  // JPEG at full colour resolution: Chrome's own encoder halves it, which blurs the title's edges.
+  const encoded=spawnSync('python3',['-I','-c',JPEG,master,path],{stdio:'inherit'});
+  if(encoded.status!==0)throw Error(`${name}: encoding the JPEG needs python3 with Pillow`);
+  console.log(`Wrote ${path} (1200x630)`);
  }
  writeFileSync(resolve(evidence,'audit.json'),JSON.stringify(reports,null,2));
 }finally{await browser.close()}
