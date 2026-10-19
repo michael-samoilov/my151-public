@@ -34,6 +34,7 @@ const LATER_DEBUTS: readonly (readonly [first: number, last: number, game: Debut
   [10278, 10325, 'PLZA'],
   [11112, 11112, 'Pokopia'],
   [11117, 11117, 'Pokopia'],
+  [11120, 11121, 'Pokopia'],
 ];
 
 function debutGame(mon: PickerMon): DebutGame {

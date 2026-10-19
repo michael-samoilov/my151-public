@@ -14,8 +14,8 @@ const byId=new Map(pokemon.rows.map(row=>[Number(row.id),row]));const byName=new
 const formByName=new Map(forms.rows.map(row=>[row.identifier,row]));const map=new Map(reviewed.entries.map(row=>[row.appId,row]));
 const bst:Record<number,number>={},inventory:unknown[]=[],unknown:unknown[]=[];
 const cosmeticGenderIds=new Set([11067,11068,11094,11095]);
-// Appearances with no upstream record of their own use the record they are drawn from: Overdrive, the legendary phases, Zenith Marshadow, DJ Rotom, and Smearguru. Kyurem's Overdrives take the fusion's record, not the species'. Each Terastal Ogerpon takes its mask's record; Scarlet and Violet give both the same stats.
-const sharedRecords=new Map([[11105,'reshiram'],[11106,'zekrom'],[11107,'kyurem-black'],[11108,'kyurem-white'],[11109,'solgaleo'],[11110,'lunala'],[11111,'marshadow'],[11112,'rotom'],[11113,'ogerpon'],[11114,'ogerpon-wellspring-mask'],[11115,'ogerpon-hearthflame-mask'],[11116,'ogerpon-cornerstone-mask'],[11117,'smeargle']]);
+// Appearances with no upstream record of their own use the record they are drawn from: Overdrive, the legendary phases, Zenith Marshadow, DJ Rotom, Smearguru, Mosslax, and Peakychu. Kyurem's Overdrives take the fusion's record, not the species'. Each Terastal Ogerpon takes its mask's record; Scarlet and Violet give both the same stats.
+const sharedRecords=new Map([[11105,'reshiram'],[11106,'zekrom'],[11107,'kyurem-black'],[11108,'kyurem-white'],[11109,'solgaleo'],[11110,'lunala'],[11111,'marshadow'],[11112,'rotom'],[11113,'ogerpon'],[11114,'ogerpon-wellspring-mask'],[11115,'ogerpon-hearthflame-mask'],[11116,'ogerpon-cornerstone-mask'],[11117,'smeargle'],[11120,'snorlax'],[11121,'pikachu']]);
 for(const mon of allPickerMons()){
  const reviewedMon=map.get(pickerDexId(mon)),owner=map.get(mon.ownerId),speciesId=reviewedMon?.speciesId??owner?.speciesId??mon.ownerId;
  let row;
