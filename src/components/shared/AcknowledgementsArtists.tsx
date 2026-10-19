@@ -50,7 +50,7 @@ export function BundleArtists({ entry }: { entry: BundleCredit }) {
             <span>{tn('ack.showAllArtists', entry.artists.length)}</span>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90 motion-reduce:transition-none" aria-hidden />
           </summary>
-          <ol className="divide-y px-3 pb-1">
+          <ol className="divide-y px-3">
             {rest.map(([name, files]) => <ArtistRow key={name} name={name} files={files} />)}
           </ol>
         </details>
