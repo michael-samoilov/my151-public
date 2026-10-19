@@ -140,6 +140,33 @@ describe('favorite preference evidence', () => {
 });
 
 describe('favorite preference numerical fit', () => {
+  it('finishes a fit whose last Newton step gains less than the objective value can resolve', () => {
+    // Near the optimum of this seeded 120-chart cohort, a step's predicted gain
+    // is below the rounding of the objective value. A value-only line search
+    // shrank every step to nothing and stopped at the iteration limit, so the
+    // admin showed "Preference strength unavailable".
+    let seed = 4;
+    const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const keys = Object.keys(cells);
+    const charts = Array.from({length: 120}, () => {
+      const fills: Record<string, number> = {};
+      for (const key of keys) {
+        const ids = cells[key].ids;
+        if (cells[key].kind === 'pick' && ids && rand() < 0.55) fills[key] = ids[Math.floor(rand() * ids.length)];
+      }
+      for (const key of keys) {
+        if (cells[key].kind !== 'pointer' || rand() > 0.5) continue;
+        const options = (cells[key].sources ?? []).map(source => fills[source]).filter((id): id is number => id !== undefined);
+        if (options.length) fills[key] = options[Math.floor(rand() * options.length)];
+      }
+      return record(fills);
+    });
+    const result = favoritePreference(charts);
+    expect(result.converged).toBe(true);
+    expect(result.gradientResidual).toBeLessThanOrEqual(1e-7);
+    expect(result.entries.filter(entry => entry.score !== null).length).toBeGreaterThan(100);
+  });
+
   it('keeps every displayed estimate unavailable when a numerical time budget expires', () => {
     const clock = vi.spyOn(Date, 'now');
     clock.mockReturnValueOnce(0).mockReturnValue(3000);

@@ -188,10 +188,15 @@ export function fitFavoritePreference(input: FavoritePreferencePool[], lambda = 
   }
   const slope=dot(state.g,d);if(!(slope<0)){reason="non-descent direction";break;}
   let step=1, next: PreferenceState | undefined, nextTheta: Float64Array | undefined, accepted=false;
+  // Near the optimum a step's predicted decrease falls below the rounding of
+  // the objective value, so comparing values is decided by rounding and the
+  // search shrinks the step to nothing. Judge those steps by the gradient.
+  const valueNoise=64*Number.EPSILON*Math.max(1,Math.abs(state.value));
   for(let backtrack=0;backtrack<40;backtrack++){
    if (Date.now() - started >= timeBudgetMs) {reason = 'time budget'; break optimization;}
    nextTheta=Float64Array.from(theta,(x,i)=>x+step*d[i]);next=evaluate(nextTheta);
    if(Number.isFinite(next.value)&&next.value<=state.value+1e-4*step*slope){accepted=true;break;}
+   if(Number.isFinite(next.value)&&-step*slope<=valueNoise&&next.g.reduce((a,b)=>Math.max(a,Math.abs(b)),0)<residual){accepted=true;break;}
    step*=0.5;
   }
   if(!accepted || !next || !nextTheta){reason="line search failed";break;}
