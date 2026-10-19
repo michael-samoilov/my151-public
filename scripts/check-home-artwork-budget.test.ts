@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto';
 const root=join(dirname(fileURLToPath(import.meta.url)),'..');
 const temporary: string[]=[];
 afterEach(()=>temporary.splice(0).forEach(path=>rmSync(path,{recursive:true,force:true})));
-const media='(max-width:480px) and (hover:none) and (pointer:coarse) and (any-hover:none)';
+const media='(max-width:480px) and (hover:none) and (pointer:coarse) and (any-hover:none) and (scripting:enabled)';
 const empty='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 const widths=[320,340,360,375,390,393,414,430,480];
 const keys=['favorites','dex','league'];

@@ -207,7 +207,7 @@ function homepageArtwork(found, skip, keys) {
   if (!html.includes('data-home-picture=')) return none;
   const fail = detail => { throw new Error('Homepage artwork resource contract: ' + detail); };
   const artwork = validateHomeArtwork(root);
-  const media = '(max-width:480px) and (hover:none) and (pointer:coarse) and (any-hover:none)';
+  const media = '(max-width:480px) and (hover:none) and (pointer:coarse) and (any-hover:none) and (scripting:enabled)';
   const empty = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
   const pictures = new Map(), expectedPreloads = [], credited = new Set(), sets = [];
   let outside = html.replace(/<!--[^]*?-->|<script\b[^>]*>[^]*?<\/script\s*>/gi, '');
