@@ -21,7 +21,6 @@ export function PokeBallSpinner({ className, tone = 'color', delayed = false }: 
     <svg viewBox="0 0 32 32" className={classes} aria-hidden>
       <circle cx="16" cy="16" r="15" fill="#fafafa" stroke="#dc2626" strokeWidth="1.5" />
       <path d="M2 16 A14 14 0 0 1 30 16" fill="#dc2626" />
-      <line x1="2" y1="16" x2="30" y2="16" stroke="#fafafa" strokeWidth="2" />
       <circle cx="16" cy="16" r="4.5" fill="#fafafa" stroke="#dc2626" strokeWidth="2" />
     </svg>
   );
