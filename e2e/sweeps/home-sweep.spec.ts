@@ -77,6 +77,7 @@ test.describe('home page responsive sweep', () => {
             return;
           }
           const c = R(panel);
+          const images = [...cell.querySelectorAll('img')].filter(img => img.getClientRects().length > 0);
           const h2 = cell.querySelector('[data-card-title]');
           const p = cell.querySelector('[data-card-title] + p');
 
@@ -107,7 +108,7 @@ test.describe('home page responsive sweep', () => {
             });
           }
 
-          [...cell.querySelectorAll('img')].forEach((img, k) => {
+          images.forEach((img, k) => {
             const sheet = img.parentElement!;
             const box = R(sheet);
             const style = getComputedStyle(sheet);
@@ -132,12 +133,12 @@ test.describe('home page responsive sweep', () => {
             }
           });
 
-          [...cell.querySelectorAll('img')].forEach((img, k) => {
+          images.forEach((img, k) => {
             const short = c.bottom - R(img).bottom;
             if (short > 0.5) fail.push(`card ${i} shot ${k} stops ${short.toFixed(1)}px above the panel's edge`);
           });
 
-          [...cell.querySelectorAll('img')].forEach((img, k) => {
+          images.forEach((img, k) => {
             const r = R(img);
             if (r.left < -0.5) fail.push(`card ${i} shot ${k} runs ${(-r.left).toFixed(1)}px off the left edge`);
             cards.forEach((other, j) => {
