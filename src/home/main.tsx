@@ -58,12 +58,15 @@ const prerendered = rootEl.hasAttribute('data-prerendered') && !waiting;
 
 function mount(app: ReactNode) {
   flushSync(() => createRoot(rootEl).render(app));
-  document.documentElement.classList.remove('p151-wait');
+  const artworkReady = rootEl.querySelector('.hub-grid') ? window.p151HomeArtwork?.refresh() : undefined;
+  void (artworkReady ?? Promise.resolve()).then(() => {
+    document.documentElement.classList.remove('p151-wait');
+  });
 }
 
 function finishHubMount() {
   const html = document.documentElement;
-  const ready = () => !html.classList.contains('p151-hub-images-pending')
+  const ready = () => !html.classList.contains('p151-wait') && !html.classList.contains('p151-hub-images-pending')
     && !html.classList.contains('p151-hub-font-pending');
   if (ready()) {
     document.querySelector('.p151-boot')?.remove();
@@ -102,6 +105,7 @@ if (new URLSearchParams(window.location.search).has('admin')) {
       </StrictMode>
     );
     if (prerendered) {
+      document.documentElement.classList.add('p151-hub-hydrating');
       hydrateRoot(rootEl, app);
     } else {
       mount(app);

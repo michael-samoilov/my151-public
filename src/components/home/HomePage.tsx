@@ -1,5 +1,8 @@
-import { useEffect, useState, type ComponentProps } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { preload } from 'react-dom';
+import { HomeScreenshot, MobileArtwork } from '@/home/artwork';
+import { mobileArtwork, MOBILE_MEDIA } from '@/home/artwork-data';
+import { installHomeArtwork } from '@/home/artwork-controller.js';
 import { useHomeSheetLift } from './useHomeSheetLift';
 import { SLOT_COUNT } from '@/league/model/constants';
 import { useDocumentLocale, useT } from '@/i18n';
@@ -54,18 +57,6 @@ const POP_LEFT = 9.6;
 
 const shot = (src: string, avif: string, width: number, height: number, fetchPriority?: 'high') => ({ src, avif, width, height, fetchPriority });
 
-function Screenshot({
-  image,
-  ...props
-}: { image: ReturnType<typeof shot> } & Omit<ComponentProps<'img'>, 'src' | 'fetchPriority'>) {
-  const { avif, ...img } = image;
-  return (
-    <picture className="contents">
-      <source type="image/avif" srcSet={avif} />
-      <img {...img} {...props} />
-    </picture>
-  );
-}
 
 interface Tool {
   key: string;
@@ -167,7 +158,7 @@ const SPAN = 'col-span-2';
 
 function Card({ tool, onPress, wide, reserve }: CardProps) {
   for (const image of tool.shots ?? []) {
-    preload(image.avif, { as: 'image', type: 'image/avif', fetchPriority: image.fetchPriority });
+    preload(image.avif, { as: 'image', type: 'image/avif', fetchPriority: image.fetchPriority, media: mobileArtwork.length ? 'not all and ' + MOBILE_MEDIA : undefined });
   }
   const panel = 'relative block w-full text-left bg-primary text-white no-underline';
   const body = wide ? <WideBody tool={tool} /> : <TallBody tool={tool} />;
@@ -221,7 +212,7 @@ const EGG_BOX = `calc(${U(35)} * var(--panel-h, 79.167) / 79.167)`;
 
 function TallBody({ tool }: { tool: Tool }) {
   return tool.shots ? (
-    <Artwork tool={tool} />
+    <><Artwork tool={tool} /><MobileArtwork toolKey={tool.key} alt={tool.alts?.join(' / ') ?? tool.title} /></>
   ) : (
     <span className="absolute inset-0 flex items-center justify-center" data-card-badge>
       <EggIcon style={{ width: EGG_BOX, height: EGG_BOX, ...EGG.style }} strokeWidth={EGG.strokeWidth} />
@@ -380,7 +371,8 @@ function Artwork({ tool }: { tool: Tool }) {
             className="hub-float-shot block"
             style={{ ...geom(i), transform: floatTransform(i) }}
           >
-            <Screenshot
+            <HomeScreenshot
+              id={`${tool.key}-${i}`}
               image={tool.shots![i]}
               alt={tool.alts?.[i] ?? ''}
               draggable={false}
@@ -428,6 +420,7 @@ function reserveByRow(tools: Tool[], cols: number): boolean[] {
 
 export function HomePage() {
   const t = useT();
+  useLayoutEffect(() => { installHomeArtwork(mobileArtwork); }, []);
   useDocumentLocale();
   useJsErrorCounter();
   useEffect(() => {

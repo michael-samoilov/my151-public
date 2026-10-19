@@ -91,11 +91,14 @@ async function visit(
   const shot: string[] = [];
   page.on('request', (r) => {
     const name = new URL(r.url()).pathname.split('/').pop() ?? '';
-    if (name.startsWith('tool-dex') && !name.startsWith('tool-dex-b')) shot.push(name);
+    if (name.startsWith('home-mobile-dex-') || name.startsWith('tool-dex') && !name.startsWith('tool-dex-b')) shot.push(name);
   });
   await page.goto('/?notme');
   await expect(page.locator('.p151-boot')).toHaveCount(0);
-  await expect(page.locator('img[alt]:not([alt=""])[src*="/tool-dex-"]:not([src*="/tool-dex-b-"])')).toHaveJSProperty('complete', true);
+  const mobileArtwork = await page.locator('html').getAttribute('data-home-scene') === 'mobile';
+  const dexImage = page.locator(mobileArtwork ? '[data-card-scene="dex"][data-scene-slot="0"]' : '[data-home-picture="dex-0"] img');
+  await expect(dexImage).toHaveJSProperty('complete', true);
+  await expect.poll(() => dexImage.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(1);
   await expect(page.locator('[data-card-progress]:not([data-empty])')).toHaveCount(lines);
   await page.waitForTimeout(500);
   const seen = await page.evaluate(() => {

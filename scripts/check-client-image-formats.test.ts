@@ -12,8 +12,9 @@ function check(groups: typeof group[], outsideBytes = 50) {
   const root = mkdtempSync(join(tmpdir(), 'format-budget-test-'));
   work.push(root);
   const dist = join(root, 'dist');
-  for (const p of ['scripts/performance', 'dist/.vite', 'dist/assets']) mkdirSync(join(root, p), { recursive: true });
+  for (const p of ['scripts/performance', 'scripts/home-artwork', 'dist/.vite', 'dist/assets']) mkdirSync(join(root, p), { recursive: true });
   writeFileSync(join(root, 'scripts/check-bundle-budget.mjs'), readFileSync(new URL('./check-bundle-budget.mjs', import.meta.url)));
+  writeFileSync(join(root, 'scripts/home-artwork/manifest.mjs'), readFileSync(new URL('./home-artwork/manifest.mjs', import.meta.url)));
   writeFileSync(join(root, 'scripts/performance/budgets.json'), JSON.stringify({ pages: { page: {
     html: 'index.html', startup: [], imageFormats: groups,
     text: { baseline: 100, ceiling: 1000 }, images: { baseline: 150, ceiling: 158 },

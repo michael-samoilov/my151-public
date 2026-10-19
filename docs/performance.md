@@ -197,3 +197,24 @@ resources match, but preview-toolbar delivery is not fully verified. This
 does not erase the candidate negative or establish a clean Google pass.
 Full metrics, resource prescriptions, remaining opportunities and limitations
 are in the handoff. No 0.2-second FCP or universal improvement is claimed.
+
+## Mobile-only composed homepage artwork, 19 October
+
+[The implementation and full measurement handoff](handoff/home-mobile-artwork-2026-10-19.md)
+records three composed DPR-3 images on small touch phones and the six originals
+with independent hover on desktop. Incoming artwork must decode before a resize
+replaces the outgoing artwork. Inter, captions, routes, and the shared initial
+loading state stay intact. Regenerate with `node scripts/home-artwork/refresh.mjs`
+after screenshot, layout, renderer, or font inputs change; ordinary builds
+validate the generated inputs and require no capture tools.
+
+Five quiet cold samples per arm/profile measure slow-4G complete-card readiness
+2,184 → 1,567 ms, with separated ranges. Fast medians are 562 → 616 ms, with
+overlapping ranges; no fast-network gain is established. These are DOM/decode
+proxies, not physical iPhone paint times. Three matched Google homepage mobile
+runs have median score 89 → 98 and LCP 3,751 → 2,401 ms, with overlapping LCP
+ranges and a changed LCP image. Desktop score stays 100; modeled LCP rises
+721 → 761 ms. Local canonical Lighthouse preserves its exit-1 identity guard
+for the selected composition, and local lab records DOM growth of 32%.
+The handoff retains every negative, full Google reports, unscored insights,
+resource prescriptions, source identities, and proportional CI receipts.
