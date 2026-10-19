@@ -6,6 +6,8 @@ import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import react from '@vitejs/plugin-react';
 import { build, type Plugin, type ResolvedConfig } from 'vite';
+import { copyHomeArtwork } from './home-artwork/manifest.mjs';
+import type { ArtworkPose } from '../src/home/artwork-types';
 
 const ENTRY = 'src/home/prerender.ts';
 const STORE_KEY = 'personal-151-pokedex-v3';
@@ -34,6 +36,8 @@ function initialInter(root: string, markup: string): string {
 }
 
 interface BootInputs {
+  HOME_ARTWORK: ArtworkPose[];
+  HOME_MOBILE_MEDIA: string;
   LOCALES: readonly string[];
   SLOT_COUNT: number;
   FAVORITES_NOTICE_START: number;
@@ -67,7 +71,7 @@ function prioritizeHubImages(html: string): string {
   const startup = `(function(){
 var d=document.documentElement,started=false,preloaded=false,observer;
 function preload(){if(preloaded)return;preloaded=true;${files}.forEach(function(h){var l=document.createElement('link');l.rel='modulepreload';l.crossOrigin='';l.href=h;document.head.appendChild(l)})}
-function loaded(){var imgs=Array.from(document.querySelectorAll('[data-artwork] img[alt]:not([alt=""])'));if(imgs.length&&imgs.every(function(i){return i.complete&&i.naturalWidth}))preload()}
+function loaded(){var imgs=Array.from(document.querySelectorAll(d.dataset.homeScene==='mobile'?'[data-card-scene][data-scene-slot="'+d.dataset.homeSlot+'"]':'[data-artwork] img[alt]:not([alt=""])'));if(imgs.length&&imgs.every(function(i){return i.complete&&i.naturalWidth&&i.currentSrc&&!i.currentSrc.startsWith('data:')}))preload()}
 function intent(e){var t=e.target;if(e.type==='keydown'||t&&t.closest&&t.closest('button'))start()}
 function error(e){if(e.target instanceof HTMLImageElement)start()}
 function start(){
@@ -130,6 +134,7 @@ export function prerenderHub(): Plugin {
       const outDir = path.resolve(config.root, config.build.outDir);
       const htmlFile = path.join(outDir, 'index.html');
       if (!fs.existsSync(htmlFile)) return;
+      if (process.env.MY151_HOME_ARTWORK_CAPTURE !== '1') copyHomeArtwork(config.root, outDir);
       // Inside the project, so the server bundle resolves react from node_modules.
       const ssrDir = path.join(config.root, 'node_modules/.cache/my151-prerender', path.basename(outDir));
       try {
@@ -169,7 +174,16 @@ export function prerenderHub(): Plugin {
         // React puts the screenshots' preloads at the start of the markup. They
         // go first in the head instead, so the browser starts the images
         // before it has read the styles.
-        const { preloads: imagePreloads, markup: body } = splitImagePreloads(markup);
+        const { preloads, markup: body } = splitImagePreloads(markup);
+        const poses = inputs.HOME_ARTWORK;
+        const imagePreloads = preloads.map(tag => poses.length && !tag.includes(' media=')
+          ? tag.replace(/\/?>$/, ` media="not all and ${inputs.HOME_MOBILE_MEDIA}"/>`) : tag);
+        poses.forEach((pose, index) => {
+          const lo = index ? (poses[index - 1].viewportWidth + pose.viewportWidth) / 2 + 0.001 : 0;
+          const hi = index === poses.length - 1 ? 480 : (pose.viewportWidth + poses[index + 1].viewportWidth) / 2;
+          const media = `${inputs.HOME_MOBILE_MEDIA} and (min-width:${lo}px) and (max-width:${hi}px)`;
+          pose.cards.forEach(card => imagePreloads.push(`<link rel="preload" as="image" type="image/avif" media="${media}" href="/assets/home-mobile/${card.avif.file}">`));
+        });
         html = html.replace(root, () => `<div id="root" data-prerendered>${body}</div><span id="p151-end" hidden></span>`);
         const viewport = /<meta name="viewport"[^>]*>/;
         if (!viewport.test(html)) throw new Error('prerender-hub: index.html has no viewport meta tag');
@@ -180,6 +194,7 @@ export function prerenderHub(): Plugin {
 
           '<style>html .p151-boot{display:none}html.p151-wait .p151-boot{display:flex}html.p151-hub-images-pending:has(.hub-grid) .p151-boot{display:flex}html.p151-hub-images-pending .p151-boot{pointer-events:none}html.p151-hub-font-pending .p151-boot{visibility:hidden}html.p151-wait #root{display:none}</style>',
           '<style>html:not(:has(#p151-end)) #root{visibility:hidden}html.p151-hub-images-pending .hub-grid{visibility:hidden}html.p151-hub-images-pending .hub-home:has(.hub-grid),html.p151-hub-images-pending #root:has(.hub-grid) div:has(>footer){visibility:hidden}'+['dex','league','favorites'].map(k=>`html.p151-hub-${k}-fallback .hub-card[data-hub-card="${k}"] [data-card-panel]{visibility:hidden}`).join('')+'</style>',
+          '<style>[data-card-scene]{display:none;position:absolute;pointer-events:none;max-width:none}html[data-home-scene="mobile"] [data-artwork]{display:none!important}html[data-home-scene="mobile"][data-home-slot="0"] [data-card-scene][data-scene-slot="0"],html[data-home-scene="mobile"][data-home-slot="1"] [data-card-scene][data-scene-slot="1"]{display:block}'+['dex','league','favorites'].map(key=>`[data-card-scene="${key}"]{left:var(--scene-${key}-left);top:var(--scene-${key}-top);width:var(--scene-${key}-width);height:var(--scene-${key}-height)}`).join('')+'</style>',
           `<script>${bootScript(inputs)}</script>`,
         ].join('\n    ');
         // Before any stylesheet, because an inline script after one waits for
@@ -199,23 +214,9 @@ export function prerenderHub(): Plugin {
           html = html.replace('</body>', () => `<script>${prefetch}</script>\n  </body>`);
         }
 
-        const ready = `(function(){
-var d=document.documentElement,decoded=new WeakSet(),pending=new WeakSet();
-function reveal(){var cards=Array.from(document.querySelectorAll('[data-hub-card]'));if(cards.length&&cards.every(function(card){var key=card.getAttribute('data-hub-card');return d.classList.contains('p151-hub-'+key+'-ready')||d.classList.contains('p151-hub-'+key+'-fallback')}))d.classList.remove('p151-hub-images-pending')}
-function fallback(card){var key=card.getAttribute('data-hub-card');if(card.isConnected&&!d.classList.contains('p151-hub-'+key+'-ready')){d.classList.add('p151-hub-'+key+'-fallback');reveal()}}
-function check(card){
-if(!card)return;var key=card.getAttribute('data-hub-card'),imgs=Array.from(card.querySelectorAll('[data-artwork] img[alt]:not([alt=""])'));
-if(!imgs.length||d.classList.contains('p151-hub-'+key+'-ready'))return;
-if(imgs.some(function(img){return img.complete&&!img.naturalWidth})){fallback(card);return}
-imgs.forEach(function(img){if(decoded.has(img)||pending.has(img))return;pending.add(img);img.decode().then(function(){decoded.add(img);check(img.closest('[data-hub-card]'))},function(){if(img.isConnected)fallback(img.closest('[data-hub-card]'))})});
-if(imgs.some(function(img){return !decoded.has(img)}))return;
-if(card.isConnected){d.classList.remove('p151-hub-'+key+'-fallback');d.classList.add('p151-hub-'+key+'-ready');reveal()}
-}
-function event(e){if(e.target instanceof HTMLImageElement)check(e.target.closest('[data-hub-card]'))}
-document.addEventListener('load',event,true);document.addEventListener('error',event,true);
-Array.from(document.querySelectorAll('[data-hub-card]')).forEach(check);
-setTimeout(function(){Array.from(document.querySelectorAll('[data-hub-card]')).forEach(fallback)},8000)
-})();`;
+        const controller = fs.readFileSync(path.join(config.root, 'src/home/artwork-controller.js'), 'utf8')
+          .replace('export function installHomeArtwork', 'function installHomeArtwork');
+        const ready = `(${controller})(${JSON.stringify(inputs.HOME_ARTWORK)})`;
         html = html.replace('</body>', () => `<script>${ready}</script>\n  </body>`);
         html = prioritizeHubImages(html);
         const lastSheet = html.lastIndexOf('</style>');

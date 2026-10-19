@@ -10,3 +10,5 @@ export { RETURNING_KEYS } from '../lib/visitorAtBoot';
 export function renderHub(): string {
   return renderToString(createElement(HomePage));
 }
+
+export { mobileArtwork as HOME_ARTWORK, MOBILE_MEDIA as HOME_MOBILE_MEDIA } from './artwork-data';

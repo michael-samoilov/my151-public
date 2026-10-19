@@ -1,0 +1,1194 @@
+{
+  "version": 1,
+  "status": "PASS",
+  "baseCommit": "24b229ea0f066a77de949710558197a81309fc56",
+  "inputs": [
+    {
+      "path": "src/components/home/HomePage.tsx",
+      "sha256": "3ee1118d815c423bace3f6febc0e8a6439cc1334b751222b8e13bae08e6cb050"
+    },
+    {
+      "path": "src/home/artwork.tsx",
+      "sha256": "38cf214d2eab65693af9ccb7878abf922badc1cfa7fb9037e625e482f5b88901"
+    },
+    {
+      "path": "src/home/artwork-data.ts",
+      "sha256": "4a8bccded5b1543f364b02a6d58e6366764a822bb708204d744c08883261e06d"
+    },
+    {
+      "path": "src/home/artwork-controller.js",
+      "sha256": "43273551547b248fdf457845c6e22adc633dc5a956ccef01d5fa8f409f6bfc23"
+    },
+    {
+      "path": "src/components/home/useHomeSheetLift.ts",
+      "sha256": "ef319fbc19ff218413954e228467ef5c96a508bbf77fa1bc0a1de47144d67feb"
+    },
+    {
+      "path": "src/index.css",
+      "sha256": "c5ff2a6d5f0a3154e0b577cafe5ec5ec7f1742b3013160fd58b52e53a5c0df53"
+    },
+    {
+      "path": "src/lib/layoutFontSize.ts",
+      "sha256": "6eaa95ad7c84d85344c018da1d8f96a158f81c2ae1bc8d95ffd1c3ec7641cfbe"
+    },
+    {
+      "path": "src/lib/viewport.ts",
+      "sha256": "4154125291894c288180753a2c56f2be883e8ca310450a6f16cb2baaa2b063f1"
+    },
+    {
+      "path": "src/assets/fonts/inter-home-initial.woff2",
+      "sha256": "5e7b0243efd443addf97f136298dfd095dc733aee281516241cdf928eb04e459"
+    },
+    {
+      "path": "src/assets/fonts/inter-home-initial.json",
+      "sha256": "28bac02d8feea75acc9618bad53d09103b2f3fd8792d92b3cfddba1e851f925a"
+    },
+    {
+      "path": "node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
+      "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62"
+    },
+    {
+      "path": "src/assets/home/tool-dex.avif",
+      "sha256": "ba867bf1c7d5d7d5c44eb9c1f523117ffa4b5784ce344b4232c4a8d3e79f9636"
+    },
+    {
+      "path": "src/assets/home/tool-dex.webp",
+      "sha256": "ab2345195367ba106d36af602ff95d369e15a21b07786f03100de9ccd62512e1"
+    },
+    {
+      "path": "src/assets/home/tool-dex-b.avif",
+      "sha256": "4417726e09e8e544467bed9c40e84e82200da2c0399fa28aa8e4fc3ff33fa1c5"
+    },
+    {
+      "path": "src/assets/home/tool-dex-b.webp",
+      "sha256": "c73ed0886f45ba8ccd4d9a7a5beea4aa8d22d5a72e6775f546056be1b4d12a9d"
+    },
+    {
+      "path": "src/assets/home/tool-league.avif",
+      "sha256": "8e4819d233cf3816b76d32bc448e74be2f48be8ff3a9c6296ae373d2b79541e2"
+    },
+    {
+      "path": "src/assets/home/tool-league.webp",
+      "sha256": "5ac41ba8dd21c0c47aaff91115da4afbd345dc8b8c26dc2da5f0ba6c252512b2"
+    },
+    {
+      "path": "src/assets/home/tool-league-b.avif",
+      "sha256": "7179fd20ee9a7474fa26a8fac050ab914ea9302e5e5e476979ae25af301c712f"
+    },
+    {
+      "path": "src/assets/home/tool-league-b.webp",
+      "sha256": "7b2431ecff9cfa8729a57fae397632613a59e6b737ebe6b59a105f8e4abee9ba"
+    },
+    {
+      "path": "src/assets/home/tool-favorites.avif",
+      "sha256": "337edc3af2f4c53d6ba1d621336362e723d2c6d467cb2539bc036ad4c4d50e6c"
+    },
+    {
+      "path": "src/assets/home/tool-favorites.webp",
+      "sha256": "95281e118e4ee4dc51e0d3bbcbc78233be66bf78d5bda9d21f4b283740105de0"
+    },
+    {
+      "path": "src/assets/home/tool-favorites-b.avif",
+      "sha256": "370f500d4736cd4b2d402070b98d55a507dce9b9a735684211bfdd7dcd6c782c"
+    },
+    {
+      "path": "src/assets/home/tool-favorites-b.webp",
+      "sha256": "8047ee383d6ae3d2d4aaa423a93f837cc12f3f72c52b77f4d29db7c9cb3e89c3"
+    },
+    {
+      "path": "scripts/home-artwork/bake.mjs",
+      "sha256": "f54a7299c4a0044e10ea5bc143f3250b2d104a4d71a811126501aad9ff84322b"
+    },
+    {
+      "path": "scripts/home-artwork/encode.py",
+      "sha256": "5af78c856f390e8cb737d0a8cdcee500867e2455b4fdb887775cfe909978946d"
+    },
+    {
+      "path": "scripts/home-artwork/refresh.mjs",
+      "sha256": "042ecb5cd1c174393796da755e5416928c57aef1955be7e0a2adeb7da653c4f0"
+    },
+    {
+      "path": "scripts/home-artwork/manifest.mjs",
+      "sha256": "6aa5934d6549bdd6eef9fae82911ccbe0a6bca1449e3d10efcbf9a8a3d0f542a"
+    }
+  ],
+  "poses": [
+    {
+      "viewportWidth": 320,
+      "dpr": 3,
+      "cards": [
+        {
+          "key": "favorites",
+          "panel": {
+            "x": 12.796875,
+            "y": 645.984375,
+            "width": 140.203125,
+            "height": 66.859375
+          },
+          "capture": {
+            "x": 0,
+            "y": 353.6666666666667,
+            "width": 249,
+            "height": 407.3333333333333
+          },
+          "trim": {
+            "left": 3,
+            "top": 710,
+            "width": 492,
+            "height": 368
+          },
+          "placement": {
+            "left": -11.796875,
+            "top": -55.65104166666663,
+            "width": 164,
+            "height": 122.66666666666667
+          },
+          "avif": {
+            "file": "home-mobile-favorites-320-3x-7151f1aee27baddc.avif",
+            "bytes": 45567,
+            "sha256": "7151f1aee27baddc32270165d28f98d0eed074345ac930d86eae4daf9de16811"
+          },
+          "webp": {
+            "file": "home-mobile-favorites-320-3x-b9997c4fbc7e159d.webp",
+            "bytes": 82190,
+            "sha256": "b9997c4fbc7e159d2b0fdf49706120489fcae00e87398c21869b6f94ff0a41fa"
+          }
+        },
+        {
+          "key": "dex",
+          "panel": {
+            "x": 12.796875,
+            "y": 459.203125,
+            "width": 140.203125,
+            "height": 66.859375
+          },
+          "capture": {
+            "x": 0,
+            "y": 166.66666666666666,
+            "width": 249,
+            "height": 407.66666666666674
+          },
+          "trim": {
+            "left": 3,
+            "top": 712,
+            "width": 492,
+            "height": 366
+          },
+          "placement": {
+            "left": -11.796875,
+            "top": -55.203125,
+            "width": 164,
+            "height": 122
+          },
+          "avif": {
+            "file": "home-mobile-dex-320-3x-bbfe9907bf5f6556.avif",
+            "bytes": 62496,
+            "sha256": "bbfe9907bf5f65563b468946e866a01c5285c6d6352b0ad3da44a118b1bd3516"
+          },
+          "webp": {
+            "file": "home-mobile-dex-320-3x-9450176dde910360.webp",
+            "bytes": 123552,
+            "sha256": "9450176dde9103604009c01487d7de1288a1f12ad9c9a58dc5967fb4da7a784c"
+          }
+        },
+        {
+          "key": "league",
+          "panel": {
+            "x": 167,
+            "y": 459.203125,
+            "width": 140.203125,
+            "height": 66.859375
+          },
+          "capture": {
+            "x": 71,
+            "y": 166.66666666666666,
+            "width": 249,
+            "height": 407.66666666666674
+          },
+          "trim": {
+            "left": 252,
+            "top": 712,
+            "width": 495,
+            "height": 366
+          },
+          "placement": {
+            "left": -12,
+            "top": -55.203125,
+            "width": 165,
+            "height": 122
+          },
+          "avif": {
+            "file": "home-mobile-league-320-3x-c2106e8d45a8f987.avif",
+            "bytes": 37818,
+            "sha256": "c2106e8d45a8f9872ac5e1144e227c9fa5ae5e5b7b4aa7a4ab81359bccb13a8b"
+          },
+          "webp": {
+            "file": "home-mobile-league-320-3x-17083cad20e1dc11.webp",
+            "bytes": 67440,
+            "sha256": "17083cad20e1dc1192e5a6cc108a59196dea413202e5547d39c637ffecb65fad"
+          }
+        }
+      ]
+    },
+    {
+      "viewportWidth": 340,
+      "dpr": 3,
+      "cards": [
+        {
+          "key": "favorites",
+          "panel": {
+            "x": 13.59375,
+            "y": 646.4375,
+            "width": 149.40625,
+            "height": 71.25
+          },
+          "capture": {
+            "x": 0,
+            "y": 341,
+            "width": 259,
+            "height": 425
+          },
+          "trim": {
+            "left": 6,
+            "top": 741,
+            "width": 516,
+            "height": 390
+          },
+          "placement": {
+            "left": -11.59375,
+            "top": -58.4375,
+            "width": 172,
+            "height": 130
+          },
+          "avif": {
+            "file": "home-mobile-favorites-340-3x-5cc230dc2157a725.avif",
+            "bytes": 48771,
+            "sha256": "5cc230dc2157a725cd701d87f36d5a329cbb408f53285752f47b02b7fece1b4c"
+          },
+          "webp": {
+            "file": "home-mobile-favorites-340-3x-2bf237d8e9473921.webp",
+            "bytes": 90678,
+            "sha256": "2bf237d8e94739216966ecc755afbca063ca98333776bc2e48b865244250205d"
+          }
+        },
+        {
+          "key": "dex",
+          "panel": {
+            "x": 13.59375,
+            "y": 448.96875,
+            "width": 149.40625,
+            "height": 71.25
+          },
+          "capture": {
+            "x": 0,
+            "y": 143.66666666666666,
+            "width": 259,
+            "height": 424.66666666666674
+          },
+          "trim": {
+            "left": 6,
+            "top": 741,
+            "width": 519,
+            "height": 388
+          },
+          "placement": {
+            "left": -11.59375,
+            "top": -58.30208333333337,
+            "width": 173,
+            "height": 129.33333333333334
+          },
+          "avif": {
+            "file": "home-mobile-dex-340-3x-6133a139ca8c4094.avif",
+            "bytes": 68345,
+            "sha256": "6133a139ca8c40941ba00ef1a7586db93505cff27da4396dae355200855f30f8"
+          },
+          "webp": {
+            "file": "home-mobile-dex-340-3x-ec21549265ebca8c.webp",
+            "bytes": 136202,
+            "sha256": "ec21549265ebca8c6e18800230bc81b79272bda01370bd1fdbd9edfeffa00b53"
+          }
+        },
+        {
+          "key": "league",
+          "panel": {
+            "x": 177,
+            "y": 448.96875,
+            "width": 149.40625,
+            "height": 71.25
+          },
+          "capture": {
+            "x": 81,
+            "y": 143.66666666666666,
+            "width": 259,
+            "height": 424.66666666666674
+          },
+          "trim": {
+            "left": 252,
+            "top": 741,
+            "width": 522,
+            "height": 388
+          },
+          "placement": {
+            "left": -12,
+            "top": -58.30208333333337,
+            "width": 174,
+            "height": 129.33333333333334
+          },
+          "avif": {
+            "file": "home-mobile-league-340-3x-9a7f6288f7bce0e7.avif",
+            "bytes": 41167,
+            "sha256": "9a7f6288f7bce0e73f27e418ad648cb232b9805c1e08b3be35279245c1960093"
+          },
+          "webp": {
+            "file": "home-mobile-league-340-3x-ca48fdd29537e153.webp",
+            "bytes": 73554,
+            "sha256": "ca48fdd29537e153239c93883bb90291a8936c693155676288bfc00d65073b4b"
+          }
+        }
+      ]
+    },
+    {
+      "viewportWidth": 360,
+      "dpr": 3,
+      "cards": [
+        {
+          "key": "favorites",
+          "panel": {
+            "x": 14.390625,
+            "y": 646.890625,
+            "width": 158.609375,
+            "height": 75.640625
+          },
+          "capture": {
+            "x": 0,
+            "y": 328.6666666666667,
+            "width": 269,
+            "height": 441.99999999999994
+          },
+          "trim": {
+            "left": 9,
+            "top": 769,
+            "width": 543,
+            "height": 414
+          },
+          "placement": {
+            "left": -11.390625,
+            "top": -61.890625,
+            "width": 181,
+            "height": 138
+          },
+          "avif": {
+            "file": "home-mobile-favorites-360-3x-0a71e7f500471933.avif",
+            "bytes": 53972,
+            "sha256": "0a71e7f500471933e300e79a46ba0a24c1b33c94d698a48a4b2f02947af111c0"
+          },
+          "webp": {
+            "file": "home-mobile-favorites-360-3x-1dfec590aaf56eba.webp",
+            "bytes": 99278,
+            "sha256": "1dfec590aaf56eba5e6b6eb61c38f6378edbe1333776a3412b57b964ab6f49db"
+          }
+        },
+        {
+          "key": "dex",
+          "panel": {
+            "x": 14.390625,
+            "y": 438.71875,
+            "width": 158.609375,
+            "height": 75.640625
+          },
+          "capture": {
+            "x": 0,
+            "y": 120.33333333333333,
+            "width": 269,
+            "height": 442.3333333333333
+          },
+          "trim": {
+            "left": 9,
+            "top": 769,
+            "width": 543,
+            "height": 412
+          },
+          "placement": {
+            "left": -11.390625,
+            "top": -62.05208333333337,
+            "width": 181,
+            "height": 137.33333333333334
+          },
+          "avif": {
+            "file": "home-mobile-dex-360-3x-20f106d38218ccff.avif",
+            "bytes": 71002,
+            "sha256": "20f106d38218ccff353d53b734da75e6859b2266a9b77026c2998278631b663a"
+          },
+          "webp": {
+            "file": "home-mobile-dex-360-3x-e6d54670662ae42f.webp",
+            "bytes": 148650,
+            "sha256": "e6d54670662ae42f02449b4bd253a581a8470b147fdaed3fe35b6c1446d08c10"
+          }
+        },
+        {
+          "key": "league",
+          "panel": {
+            "x": 187,
+            "y": 438.71875,
+            "width": 158.609375,
+            "height": 75.640625
+          },
+          "capture": {
+            "x": 91,
+            "y": 120.33333333333333,
+            "width": 269,
+            "height": 442.3333333333333
+          },
+          "trim": {
+            "left": 255,
+            "top": 768,
+            "width": 546,
+            "height": 413
+          },
+          "placement": {
+            "left": -11,
+            "top": -62.385416666666686,
+            "width": 182,
+            "height": 137.66666666666666
+          },
+          "avif": {
+            "file": "home-mobile-league-360-3x-41b92d77214d9c6e.avif",
+            "bytes": 43940,
+            "sha256": "41b92d77214d9c6e95adabf213e757191bca0d93814c7271a5bdff38e4bdf596"
+          },
+          "webp": {
+            "file": "home-mobile-league-360-3x-0f1beb42bb5ab66b.webp",
+            "bytes": 79306,
+            "sha256": "0f1beb42bb5ab66b044798909fbf93ace5dbd06d27bfca472af9c751e27a9fed"
+          }
+        }
+      ]
+    },
+    {
+      "viewportWidth": 375,
+      "dpr": 3,
+      "cards": [
+        {
+          "key": "favorites",
+          "panel": {
+            "x": 15,
+            "y": 640.46875,
+            "width": 165.5,
+            "height": 78.921875
+          },
+          "capture": {
+            "x": 0,
+            "y": 312.6666666666667,
+            "width": 276.6666666666667,
+            "height": 454.99999999999994
+          },
+          "trim": {
+            "left": 12,
+            "top": 789,
+            "width": 561,
+            "height": 430
+          },
+          "placement": {
+            "left": -11,
+            "top": -64.80208333333326,
+            "width": 187,
+            "height": 143.33333333333334
+          },
+          "avif": {
+            "file": "home-mobile-favorites-375-3x-c75930b28be4670e.avif",
+            "bytes": 56276,
+            "sha256": "c75930b28be4670e033cc1ba907ec9f677a3957deef14088db6ac786107e6f56"
+          },
+          "webp": {
+            "file": "home-mobile-favorites-375-3x-36640380efbf7f9c.webp",
+            "bytes": 104428,
+            "sha256": "36640380efbf7f9ca80c41ebf77324464d7ea1ce7aed5330f3f74608abd245eb"
+          }
+        },
+        {
+          "key": "dex",
+          "panel": {
+            "x": 15,
+            "y": 424.296875,
+            "width": 165.5,
+            "height": 78.921875
+          },
+          "capture": {
+            "x": 0,
+            "y": 96.33333333333333,
+            "width": 276.6666666666667,
+            "height": 455.00000000000006
+          },
+          "trim": {
+            "left": 12,
+            "top": 789,
+            "width": 564,
+            "height": 431
+          },
+          "placement": {
+            "left": -11,
+            "top": -64.96354166666669,
+            "width": 188,
+            "height": 143.66666666666666
+          },
+          "avif": {
+            "file": "home-mobile-dex-375-3x-8b56494532c96de5.avif",
+            "bytes": 85027,
+            "sha256": "8b56494532c96de54c2596a8c39140e972df253eb58aa2c049fa726dd0460633"
+          },
+          "webp": {
+            "file": "home-mobile-dex-375-3x-36e2226c866c00a4.webp",
+            "bytes": 163068,
+            "sha256": "36e2226c866c00a429d1448ce9fafe907255f5397a759615d5f673d9cd6baccf"
+          }
+        },
+        {
+          "key": "league",
+          "panel": {
+            "x": 194.5,
+            "y": 424.296875,
+            "width": 165.5,
+            "height": 78.921875
+          },
+          "capture": {
+            "x": 98.33333333333333,
+            "y": 96.33333333333333,
+            "width": 276.6666666666667,
+            "height": 455.00000000000006
+          },
+          "trim": {
+            "left": 254,
+            "top": 789,
+            "width": 567,
+            "height": 431
+          },
+          "placement": {
+            "left": -11.5,
+            "top": -64.96354166666669,
+            "width": 189,
+            "height": 143.66666666666666
+          },
+          "avif": {
+            "file": "home-mobile-league-375-3x-69adea7ea920a558.avif",
+            "bytes": 49932,
+            "sha256": "69adea7ea920a5580f09deaf03d265ad43a348e538507824fe6aec0bb18cd844"
+          },
+          "webp": {
+            "file": "home-mobile-league-375-3x-86deb18ea3e59f49.webp",
+            "bytes": 86294,
+            "sha256": "86deb18ea3e59f494fed17dd42478913687db7bd0efb7050a71a3ce40ab852c2"
+          }
+        }
+      ]
+    },
+    {
+      "viewportWidth": 390,
+      "dpr": 3,
+      "cards": [
+        {
+          "key": "favorites",
+          "panel": {
+            "x": 15.59375,
+            "y": 640.8125,
+            "width": 172.40625,
+            "height": 82.21875
+          },
+          "capture": {
+            "x": 0,
+            "y": 303.3333333333333,
+            "width": 284,
+            "height": 468.00000000000006
+          },
+          "trim": {
+            "left": 12,
+            "top": 811,
+            "width": 579,
+            "height": 448
+          },
+          "placement": {
+            "left": -11.59375,
+            "top": -67.14583333333337,
+            "width": 193,
+            "height": 149.33333333333334
+          },
+          "avif": {
+            "file": "home-mobile-favorites-390-3x-c1635ac9ad9490c9.avif",
+            "bytes": 57533,
+            "sha256": "c1635ac9ad9490c90af705ee1beb3bb27fff7b1e8564e309a1d11efda8fd6258"
+          },
+          "webp": {
+            "file": "home-mobile-favorites-390-3x-c8f763bcb6c96c5b.webp",
+            "bytes": 110448,
+            "sha256": "c8f763bcb6c96c5b5b9f892f251322ac9d80e70fdd7c156b26d4c74481097141"
+          }
+        },
+        {
+          "key": "dex",
+          "panel": {
+            "x": 15.59375,
+            "y": 416.625,
+            "width": 172.40625,
+            "height": 82.21875
+          },
+          "capture": {
+            "x": 0,
+            "y": 79,
+            "width": 284,
+            "height": 468
+          },
+          "trim": {
+            "left": 12,
+            "top": 811,
+            "width": 582,
+            "height": 449
+          },
+          "placement": {
+            "left": -11.59375,
+            "top": -67.29166666666669,
+            "width": 194,
+            "height": 149.66666666666666
+          },
+          "avif": {
+            "file": "home-mobile-dex-390-3x-2ead6ba6ff1a5d75.avif",
+            "bytes": 89890,
+            "sha256": "2ead6ba6ff1a5d7520fbef55d7a4e1222882cea5f8d256d88dd3f31c6e1ace1c"
+          },
+          "webp": {
+            "file": "home-mobile-dex-390-3x-931dccbe747a7a48.webp",
+            "bytes": 177592,
+            "sha256": "931dccbe747a7a482fa86779a13ec6d508bfb68f94dd529395445cd37eccbd6e"
+          }
+        },
+        {
+          "key": "league",
+          "panel": {
+            "x": 202,
+            "y": 416.625,
+            "width": 172.40625,
+            "height": 82.21875
+          },
+          "capture": {
+            "x": 106,
+            "y": 79,
+            "width": 284,
+            "height": 468
+          },
+          "trim": {
+            "left": 255,
+            "top": 813,
+            "width": 582,
+            "height": 447
+          },
+          "placement": {
+            "left": -11,
+            "top": -66.625,
+            "width": 194,
+            "height": 149
+          },
+          "avif": {
+            "file": "home-mobile-league-390-3x-e50ba52e66344680.avif",
+            "bytes": 53176,
+            "sha256": "e50ba52e6634468045e25fcaba9a62e0c32144c1419207b049ea2b0582b6b1ae"
+          },
+          "webp": {
+            "file": "home-mobile-league-390-3x-dcc489d92470910d.webp",
+            "bytes": 90820,
+            "sha256": "dcc489d92470910de30e79c02d6059439f9eb85df89b9e330aea79445805cae6"
+          }
+        }
+      ]
+    },
+    {
+      "viewportWidth": 393,
+      "dpr": 3,
+      "cards": [
+        {
+          "key": "favorites",
+          "panel": {
+            "x": 15.71875,
+            "y": 640.875,
+            "width": 173.78125,
+            "height": 82.875
+          },
+          "capture": {
+            "x": 0,
+            "y": 301.3333333333333,
+            "width": 285.6666666666667,
+            "height": 470.6666666666667
+          },
+          "trim": {
+            "left": 12,
+            "top": 817,
+            "width": 585,
+            "height": 451
+          },
+          "placement": {
+            "left": -11.71875,
+            "top": -67.20833333333337,
+            "width": 195,
+            "height": 150.33333333333334
+          },
+          "avif": {
+            "file": "home-mobile-favorites-393-3x-2f2f90719a97366c.avif",
+            "bytes": 59985,
+            "sha256": "2f2f90719a97366cb9cc76b191c5ef7d2ad6c604c51b87ebd80251c4f05dd22d"
+          },
+          "webp": {
+            "file": "home-mobile-favorites-393-3x-fa09cc9756b2f2b4.webp",
+            "bytes": 113564,
+            "sha256": "fa09cc9756b2f2b4e06f8d691544a50ae6eaf3bc6e87710c833d30a4eb220b2b"
+          }
+        },
+        {
+          "key": "dex",
+          "panel": {
+            "x": 15.71875,
+            "y": 415.125,
+            "width": 173.78125,
+            "height": 82.875
+          },
+          "capture": {
+            "x": 0,
+            "y": 75.66666666666667,
+            "width": 285.6666666666667,
+            "height": 470.3333333333333
+          },
+          "trim": {
+            "left": 12,
+            "top": 814,
+            "width": 588,
+            "height": 453
+          },
+          "placement": {
+            "left": -11.71875,
+            "top": -68.125,
+            "width": 196,
+            "height": 151
+          },
+          "avif": {
+            "file": "home-mobile-dex-393-3x-0abe913951d4dda2.avif",
+            "bytes": 91389,
+            "sha256": "0abe913951d4dda2a0163ab19d116948890b57492c307d134e7877c39a6e4cc5"
+          },
+          "webp": {
+            "file": "home-mobile-dex-393-3x-6864a529da8b192e.webp",
+            "bytes": 178784,
+            "sha256": "6864a529da8b192ed2482aa79a44c48b8ef05c13e9e448a1ed15d93c1a682e06"
+          }
+        },
+        {
+          "key": "league",
+          "panel": {
+            "x": 203.5,
+            "y": 415.125,
+            "width": 173.78125,
+            "height": 82.875
+          },
+          "capture": {
+            "x": 107.33333333333333,
+            "y": 75.66666666666667,
+            "width": 285.6666666666667,
+            "height": 470.3333333333333
+          },
+          "trim": {
+            "left": 254,
+            "top": 817,
+            "width": 591,
+            "height": 450
+          },
+          "placement": {
+            "left": -11.5,
+            "top": -67.125,
+            "width": 197,
+            "height": 150
+          },
+          "avif": {
+            "file": "home-mobile-league-393-3x-722a2cb38f614480.avif",
+            "bytes": 55182,
+            "sha256": "722a2cb38f6144802af3ba2f989c1edfc438ff798dc3b98350354e8da4655b8d"
+          },
+          "webp": {
+            "file": "home-mobile-league-393-3x-d50abd12ecc1f411.webp",
+            "bytes": 94100,
+            "sha256": "d50abd12ecc1f411e1a904450d311e068db77705b08dbf3d7b183842bf9b79bf"
+          }
+        }
+      ]
+    },
+    {
+      "viewportWidth": 414,
+      "dpr": 3,
+      "cards": [
+        {
+          "key": "favorites",
+          "panel": {
+            "x": 16.546875,
+            "y": 641.328125,
+            "width": 183.453125,
+            "height": 87.484375
+          },
+          "capture": {
+            "x": 0,
+            "y": 288.3333333333333,
+            "width": 296,
+            "height": 488.6666666666667
+          },
+          "trim": {
+            "left": 15,
+            "top": 846,
+            "width": 609,
+            "height": 476
+          },
+          "placement": {
+            "left": -11.546875,
+            "top": -70.99479166666674,
+            "width": 203,
+            "height": 158.66666666666666
+          },
+          "avif": {
+            "file": "home-mobile-favorites-414-3x-db065fcc07b8bacc.avif",
+            "bytes": 68627,
+            "sha256": "db065fcc07b8bacc9c7d2a8942bcf4a71b18fb27edf87ef93476c90c6ed854d3"
+          },
+          "webp": {
+            "file": "home-mobile-favorites-414-3x-e4ce4661950abdd3.webp",
+            "bytes": 126138,
+            "sha256": "e4ce4661950abdd33991124f0fb37aa76fd265213213fc1436a2b7e302d9e8d0"
+          }
+        },
+        {
+          "key": "dex",
+          "panel": {
+            "x": 16.546875,
+            "y": 404.28125,
+            "width": 183.453125,
+            "height": 87.484375
+          },
+          "capture": {
+            "x": 0,
+            "y": 51.333333333333336,
+            "width": 296,
+            "height": 488.6666666666667
+          },
+          "trim": {
+            "left": 16,
+            "top": 845,
+            "width": 610,
+            "height": 477
+          },
+          "placement": {
+            "left": -11.213541666666668,
+            "top": -71.28125,
+            "width": 203.33333333333334,
+            "height": 159
+          },
+          "avif": {
+            "file": "home-mobile-dex-414-3x-4195da14d4b15046.avif",
+            "bytes": 99081,
+            "sha256": "4195da14d4b15046c97482565dd9718874cfddc6a1a5b67a0f6e6e419ee08bea"
+          },
+          "webp": {
+            "file": "home-mobile-dex-414-3x-1d4dbbdfaacc5a38.webp",
+            "bytes": 195850,
+            "sha256": "1d4dbbdfaacc5a383060e0b0fa892e874db10dc9e9ded15cbac35dab8ea39289"
+          }
+        },
+        {
+          "key": "league",
+          "panel": {
+            "x": 214,
+            "y": 404.28125,
+            "width": 183.453125,
+            "height": 87.484375
+          },
+          "capture": {
+            "x": 118,
+            "y": 51.333333333333336,
+            "width": 296,
+            "height": 488.6666666666667
+          },
+          "trim": {
+            "left": 253,
+            "top": 845,
+            "width": 613,
+            "height": 477
+          },
+          "placement": {
+            "left": -11.666666666666686,
+            "top": -71.28125,
+            "width": 204.33333333333334,
+            "height": 159
+          },
+          "avif": {
+            "file": "home-mobile-league-414-3x-61bcfa7fbda85938.avif",
+            "bytes": 58756,
+            "sha256": "61bcfa7fbda85938cec6a3894b48d6c77084edde87285a65ddbff05e1aedbc24"
+          },
+          "webp": {
+            "file": "home-mobile-league-414-3x-55e7f276d74a3b86.webp",
+            "bytes": 102652,
+            "sha256": "55e7f276d74a3b86a6113c092aeba8c8e8aabecfdb4e555cc53ade8a32db5b63"
+          }
+        }
+      ]
+    },
+    {
+      "viewportWidth": 430,
+      "dpr": 3,
+      "cards": [
+        {
+          "key": "favorites",
+          "panel": {
+            "x": 17.1875,
+            "y": 641.734375,
+            "width": 190.8125,
+            "height": 91
+          },
+          "capture": {
+            "x": 0,
+            "y": 278.3333333333333,
+            "width": 304,
+            "height": 502.6666666666667
+          },
+          "trim": {
+            "left": 15,
+            "top": 869,
+            "width": 633,
+            "height": 495
+          },
+          "placement": {
+            "left": -12.1875,
+            "top": -73.734375,
+            "width": 211,
+            "height": 165
+          },
+          "avif": {
+            "file": "home-mobile-favorites-430-3x-2bf86481a565521b.avif",
+            "bytes": 70934,
+            "sha256": "2bf86481a565521b8ff7364cad141388c29c67be8ed7d4e62304c1f8eb1cfdc4"
+          },
+          "webp": {
+            "file": "home-mobile-favorites-430-3x-0d6f23dd48c9d018.webp",
+            "bytes": 135846,
+            "sha256": "0d6f23dd48c9d018d77f9838396a78ed6b6121336286abcf8740d3073e58b9e7"
+          }
+        },
+        {
+          "key": "dex",
+          "panel": {
+            "x": 17.1875,
+            "y": 396.21875,
+            "width": 190.8125,
+            "height": 91
+          },
+          "capture": {
+            "x": 0,
+            "y": 33,
+            "width": 304,
+            "height": 502.33333333333337
+          },
+          "trim": {
+            "left": 15,
+            "top": 869,
+            "width": 633,
+            "height": 493
+          },
+          "placement": {
+            "left": -12.1875,
+            "top": -73.55208333333331,
+            "width": 211,
+            "height": 164.33333333333334
+          },
+          "avif": {
+            "file": "home-mobile-dex-430-3x-1fa87229594bf935.avif",
+            "bytes": 102368,
+            "sha256": "1fa87229594bf935f6ac7ecaebd25b1d78649322205dc0472352bdcbbddf62bf"
+          },
+          "webp": {
+            "file": "home-mobile-dex-430-3x-567426871da344e4.webp",
+            "bytes": 206860,
+            "sha256": "567426871da344e4234ccd869515589c54614388b00888da040781a805de0202"
+          }
+        },
+        {
+          "key": "league",
+          "panel": {
+            "x": 222,
+            "y": 396.21875,
+            "width": 190.8125,
+            "height": 91
+          },
+          "capture": {
+            "x": 126,
+            "y": 33,
+            "width": 304,
+            "height": 502.33333333333337
+          },
+          "trim": {
+            "left": 252,
+            "top": 869,
+            "width": 638,
+            "height": 493
+          },
+          "placement": {
+            "left": -12,
+            "top": -73.55208333333331,
+            "width": 212.66666666666666,
+            "height": 164.33333333333334
+          },
+          "avif": {
+            "file": "home-mobile-league-430-3x-0da49ba840d79bfb.avif",
+            "bytes": 62406,
+            "sha256": "0da49ba840d79bfbe8ca61226ee2c5cbc6eff131535f97618bba47b917fc81a8"
+          },
+          "webp": {
+            "file": "home-mobile-league-430-3x-ab5f2ba47dc8bd4e.webp",
+            "bytes": 108476,
+            "sha256": "ab5f2ba47dc8bd4e2cfe56a64654dd941142b1ed8aa17da62e7176404fead726"
+          }
+        }
+      ]
+    },
+    {
+      "viewportWidth": 480,
+      "dpr": 3,
+      "cards": [
+        {
+          "key": "favorites",
+          "panel": {
+            "x": 19.1875,
+            "y": 644.234375,
+            "width": 213.65625,
+            "height": 101.890625
+          },
+          "capture": {
+            "x": 0,
+            "y": 249,
+            "width": 329,
+            "height": 545.3333333333334
+          },
+          "trim": {
+            "left": 19,
+            "top": 941,
+            "width": 694,
+            "height": 550
+          },
+          "placement": {
+            "left": -12.854166666666668,
+            "top": -81.56770833333326,
+            "width": 231.33333333333334,
+            "height": 183.33333333333334
+          },
+          "avif": {
+            "file": "home-mobile-favorites-480-3x-26c0ea06e05fcd6b.avif",
+            "bytes": 81173,
+            "sha256": "26c0ea06e05fcd6bcd25a7fcad3ac2d3aecf5fa5765c8181035d8878a7127291"
+          },
+          "webp": {
+            "file": "home-mobile-favorites-480-3x-a5defe700d7d53eb.webp",
+            "bytes": 161118,
+            "sha256": "a5defe700d7d53ebde4d1127faf0343205aa586e2a1b82b20c5b188576b4113b"
+          }
+        },
+        {
+          "key": "dex",
+          "panel": {
+            "x": 19.1875,
+            "y": 371.625,
+            "width": 213.65625,
+            "height": 101.890625
+          },
+          "capture": {
+            "x": 0,
+            "y": 0,
+            "width": 329,
+            "height": 521.6666666666666
+          },
+          "trim": {
+            "left": 19,
+            "top": 870,
+            "width": 697,
+            "height": 552
+          },
+          "placement": {
+            "left": -12.854166666666668,
+            "top": -81.625,
+            "width": 232.33333333333334,
+            "height": 184
+          },
+          "avif": {
+            "file": "home-mobile-dex-480-3x-727644e8e68c5f45.avif",
+            "bytes": 119660,
+            "sha256": "727644e8e68c5f45d2d8ce0aced15c33125cf3a84ec9d017cdc19f4bf6c1db99"
+          },
+          "webp": {
+            "file": "home-mobile-dex-480-3x-7804923f2b3da4db.webp",
+            "bytes": 248192,
+            "sha256": "7804923f2b3da4dbf07d67195699bc5afab56696e0e1aa6a1f4e35460b4729b3"
+          }
+        },
+        {
+          "key": "league",
+          "panel": {
+            "x": 247.15625,
+            "y": 371.625,
+            "width": 213.65625,
+            "height": 101.890625
+          },
+          "capture": {
+            "x": 151,
+            "y": 0,
+            "width": 329,
+            "height": 521.6666666666666
+          },
+          "trim": {
+            "left": 250,
+            "top": 870,
+            "width": 700,
+            "height": 552
+          },
+          "placement": {
+            "left": -12.822916666666686,
+            "top": -81.625,
+            "width": 233.33333333333334,
+            "height": 184
+          },
+          "avif": {
+            "file": "home-mobile-league-480-3x-219ddb197f05f42a.avif",
+            "bytes": 72864,
+            "sha256": "219ddb197f05f42a1ec7f2570a13c58b8d30cff4aaa09a2ce729510cea5b213b"
+          },
+          "webp": {
+            "file": "home-mobile-league-480-3x-970b2e144668cf5c.webp",
+            "bytes": 130174,
+            "sha256": "970b2e144668cf5c00849d3949450a7dd3e0d885fbc5a86a4b51d426b5296656"
+          }
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "sourceCommit": "24b229ea0f066a77de949710558197a81309fc56",
+    "sourceDirty": " M scripts/home-artwork/manifest.mjs\n M scripts/prerender-hub.ts\n M src/components/home/HomePage.tsx\n M src/home/main.tsx\n M src/home/prerender.ts\n M vite.config.ts\n?? src/assets/home/mobile/\n?? src/home/artwork-controller.d.ts\n?? src/home/artwork-controller.js\n?? src/home/artwork-data.ts\n?? src/home/artwork-types.ts\n?? src/home/artwork.tsx\n",
+    "browserVersion": "151.0.7922.173",
+    "pillowVersions": [
+      "12.3.0"
+    ],
+    "lockfileSha256": "22f54abfa0302b11cc37e266425053c919e541ea054c085887f8b7f41d578dbf",
+    "captureCss": "html,body,#root,.bg-background,[data-card-panel]{background:transparent!important}body *{visibility:hidden!important}[data-bake-artwork],[data-bake-artwork] *{visibility:visible!important}[data-card-pocket],[data-card-caption]{visibility:hidden!important}",
+    "widths": [
+      320,
+      340,
+      360,
+      375,
+      390,
+      393,
+      414,
+      430,
+      480
+    ],
+    "dpr": 3,
+    "startedAt": "2026-10-19T12:33:58.330Z",
+    "finishedAt": "2026-10-19T12:34:39.371Z"
+  }
+}

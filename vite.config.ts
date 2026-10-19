@@ -2,6 +2,7 @@ import { defineConfig, type Plugin, type PreviewServer, type ViteDevServer } fro
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import fs from 'node:fs'
 import { prerenderHub } from './scripts/prerender-hub'
 import { staticFaq } from './scripts/static-faq'
 import { pickerSpritePacks } from './scripts/picker-sprite-packs'
@@ -69,9 +70,19 @@ function startAppAfterFirstPaint(): Plugin {
   }
 }
 
+const artworkFile = path.resolve(__dirname, 'src/assets/home/mobile/manifest.json');
+const artwork = fs.existsSync(artworkFile) ? JSON.parse(fs.readFileSync(artworkFile, 'utf8')) : { poses: [] };
+const artworkPoses = artwork.poses.map((pose: { viewportWidth: number; cards: Record<string, unknown>[] }) => ({
+  viewportWidth: pose.viewportWidth,
+  cards: pose.cards.map(({ key, panel, placement, avif, webp }) => ({ key, panel: { width: (panel as { width: number }).width }, placement,
+    avif: { file: (avif as { file: string }).file }, webp: { file: (webp as { file: string }).file } })),
+}));
+
 export default defineConfig({
   plugins: [pickerRouteRedirect(), react(), tailwindcss(), buildTimestampMeta(), startAppAfterFirstPaint(), staticFaq(), prerenderHub(), pickerSpritePacks(), npmPackageIndex(), stripCreditNotes()],
   define: {
+    __HOME_ARTWORK_CAPTURE__: process.env.MY151_HOME_ARTWORK_CAPTURE === '1',
+    __HOME_MOBILE_ARTWORK__: JSON.stringify(artworkPoses),
 
     __BUILD_TIMESTAMP__: JSON.stringify(BUILD_TIMESTAMP),
 

@@ -9,6 +9,7 @@ export const ASSET_URL = '/assets/home-mobile/';
 export const INPUT_FILES = [
   'src/components/home/HomePage.tsx',
   'src/home/artwork.tsx',
+  'src/home/artwork-data.ts',
   'src/home/artwork-controller.js',
   'src/components/home/useHomeSheetLift.ts',
   'src/index.css',
