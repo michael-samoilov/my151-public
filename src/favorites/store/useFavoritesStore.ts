@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { cellKey, isGenNumber, type GenAxisId, type TypeAxisId } from '../model/cells';
+import { cellKey, isGenNumber, parseCellKey, type GenAxisId, type TypeAxisId } from '../model/cells';
 import { getPickerMon } from '../model/catalog';
+import { eligibleFor, kindFor } from '../model/eligibility';
 import {
   applyPathToTypeMap,
   applyTypeMapToFills,
@@ -33,7 +34,32 @@ export function migrateFavoriteFills(saved: Record<string, number>): Record<stri
     && pointerPool('gimmick', 'gimmick', fills).includes(previousGimmickFavorite)) {
     fills['gimmick|gimmick'] = previousGimmickFavorite;
   }
+  migrateRetypedForms(fills);
   return prunePointers(fills);
+}
+
+/** Stereo Rotom became Electric/Normal and Terastal Ogerpon took its single Tera type on 2026-10-20.
+ *  A saved pick that no longer fits its cell becomes the same mask's Grass form when that fits, or is cleared. */
+const TERASTAL_MASK: Record<number, number> = { 11114: 10273, 11115: 10274, 11116: 10275 };
+const RETYPED = new Set([11112, 11114, 11115, 11116]);
+
+function migrateRetypedForms(fills: Record<string, number>) {
+  const retyped = Object.entries(fills).flatMap(([key, id]) => {
+    const cell = parseCellKey(key);
+    return cell && RETYPED.has(id) ? [{ key, id, ...cell, kind: kindFor(cell.type, cell.gen) }] : [];
+  });
+  for (const { key, id, type, gen } of retyped.filter((cell) => cell.kind === 'pick')) {
+    const fits = (candidate: number) => eligibleFor(type, gen).some((mon) => mon.id === candidate);
+    if (fits(id)) continue;
+    const mask = TERASTAL_MASK[id];
+    if (mask != null && fits(mask)) fills[key] = mask;
+    else delete fills[key];
+  }
+  for (const { key, id, type, gen } of retyped.filter((cell) => cell.kind === 'pointer')) {
+    const pool = pointerPool(type, gen, fills);
+    const mask = TERASTAL_MASK[id];
+    if (!pool.includes(id) && mask != null && pool.includes(mask)) fills[key] = mask;
+  }
 }
 
 interface FavoritesState {
@@ -68,7 +94,7 @@ export const useFavoritesStore = create<FavoritesState>()(
     }),
     {
       name: FAVORITES_STORAGE_KEY,
-      version: 3,
+      version: 4,
       migrate: (saved) => {
         const previous = saved as { fills?: Record<string, number> };
         return { ...previous, fills: migrateFavoriteFills(previous.fills ?? {}) } as FavoritesState;
