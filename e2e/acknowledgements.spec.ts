@@ -82,7 +82,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
     const artists = dialog.getByTestId('ack-group-sprite-artists').locator('[data-ack-id]');
-    await expect(artists).toHaveCount(3);
+    await expect(artists).toHaveCount(4);
     await artists.first().click();
     await expect(dialog.getByTestId('ack-detail-name')).toHaveText('KingOfThe-X-Roads');
     const sprites = dialog.getByTestId('ack-sprites');
