@@ -1,4 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
+
+const top = async (locator: Locator) => (await locator.boundingBox())!.y;
 
 test.describe('acknowledgements', { tag: '@viewport' }, () => {
   test('opens from the hub footer, shows a license, goes back, and closes', async ({ page }, testInfo) => {
@@ -26,6 +28,21 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail').getByText('Non-profit use, with credit', { exact: true })).toBeVisible();
     await expect(dialog.locator('blockquote')).toContainText('the spriter or the project itself is credited');
     await expect(dialog.getByRole('link', { name: 'Generation 6 thread' })).toBeVisible();
+    const smogonArtists = dialog.getByTestId('ack-artists');
+    const smogonUse = dialog.getByTestId('ack-detail').getByText(/^Its artists drew \d+ of the app's fan-made sprites\. \d+ of them reach the app through PokéAPI\.$/);
+    await expect(smogonUse).toBeVisible();
+    expect((await smogonUse.textContent())!).toContain(`drew ${(await smogonArtists.getByTestId('ack-artists-summary').textContent())!.match(/^\d+/)![0]} of`);
+    await expect(smogonArtists.getByTestId('ack-artists-summary')).toHaveText(/^\d+ fan-made sprites in the app are credited through this project\.$/);
+    // The threads and the license come before the artists, and the list shows every artist.
+    const artistSection = dialog.getByTestId('ack-detail').locator('section').filter({ has: page.getByTestId('ack-artists') });
+    const artistTotal = Number(await artistSection.locator('h4 > span').last().textContent());
+    expect(artistTotal).toBeGreaterThan(10);
+    await expect(smogonArtists.locator(':scope > ol > li')).toHaveCount(artistTotal);
+    expect(await top(dialog.getByRole('link', { name: 'Generation 8 and later thread' }))).toBeLessThan(await top(artistSection));
+    expect(await top(dialog.getByTestId('ack-terms'))).toBeLessThan(await top(artistSection));
+    // The panel never says which sprites my151 changed (Michael, 2026-10-20).
+    await expect(dialog.getByTestId('ack-detail')).not.toContainText(/changed/i);
+    await expect(smogonArtists.getByTestId('ack-artists-unconfirmed')).toHaveText(/^Artist not confirmed\d+ sprites?$/);
     await dialog.getByRole('button', { name: 'Back', exact: true }).click();
 
     const viewport = page.viewportSize()!;
@@ -54,7 +71,11 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(row).toBeFocused();
 
     await dialog.locator('[data-ack-id="pokeapi-sprites"]').click();
-    await expect(dialog.getByTestId('ack-detail')).toContainText("The source of most of the app's sprite files.");
+    const pokeapiUse = dialog.getByTestId('ack-detail').getByText(/^The source of \d+ official sprites from the games, and \d+ sprites by Smogon Sprite Project artists\. We also use it for \d+ additional fan-made sprites\.$/);
+    await expect(pokeapiUse).toBeVisible();
+    const pokeapiOwn = (await pokeapiUse.textContent())!.match(/for (\d+) additional/)![1];
+    await expect(dialog.getByTestId('ack-artists-summary')).toHaveText(`${pokeapiOwn} fan-made sprites in the app are credited through this project.`);
+    expect(await top(dialog.getByTestId('ack-terms'))).toBeLessThan(await top(dialog.getByTestId('ack-artists')));
     await expect(dialog.getByTestId('ack-terms').locator('blockquote')).toHaveCount(1);
     await expect(dialog.getByTestId('ack-sprites')).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Back', exact: true }).click();
@@ -69,11 +90,17 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     const generations = sprites.getByTestId('ack-sprites-generation');
     await expect(generations).toHaveCount(2);
     for (const summary of await generations.locator('summary').all()) await summary.click();
-    await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('DJ Rotom');
+    await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Stereo Rotom');
     await expect(sprites.getByRole('listitem')).toHaveCount(13);
+    await expect(dialog.getByTestId('ack-also-credited').getByRole('listitem')).toHaveCount(3);
     const kingSprites = await sprites.getByRole('listitem').count();
     await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
+
+    await dialog.locator('[data-ack-id="artist:JoeTEStrikesBack"]').click();
+    await expect(dialog.getByTestId('ack-sprites-summary')).toHaveText('2 sprites from their own uploads');
+    await expect(dialog.getByTestId('ack-detail')).not.toContainText(/changed/i);
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
 
     for (const id of ['partywhale-type-icons', 'elginive-type-icons']) {
       await dialog.locator(`[data-ack-id="${id}"]`).click();

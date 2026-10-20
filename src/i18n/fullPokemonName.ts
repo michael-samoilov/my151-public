@@ -35,16 +35,6 @@ const REGIONAL_DESCRIPTOR = /^(?:(?:Alolan|Galarian|Hisuian|Paldean) Form|Forme 
 const REGION_FORM_IDS: Record<string, number> = { alola: 10100, galar: 10177, hisui: 10238, paldea: 10250 };
 const POWERUP_QUALIFIERS: Record<number, number> = { 10219: 849, 10226: 892, 10322: 978 };
 
-/**
- * Pokopia characters, by identity. Their form name is the character's whole
- * name, so the full label shows it alone: "Mosslax", not "Snorlax (Mosslax)"
- * (Michael, 2026-10-20). Search still finds them by the species name.
- */
-const CHARACTER_NAMES: ReadonlySet<string> = new Set([
-  'rotom-dj', 'smeargle-smearguru', 'snorlax-mosslax', 'pikachu-peakychu', 'tinkaton-tinkmaster', 'tangrowth-professor',
-  'greedent-chef-dente',
-]);
-
 export function pokemonNameContext(appId: number, identity: string, forms: Record<string, string>, locale: Locale): PokemonNameContext {
   const region = identity.match(/-(alola|galar|hisui|paldea)(?!-cap)(?:-|$)/u)?.[1];
   const regionalDescriptor = region ? forms[REGION_FORM_IDS[region]]?.match(REGIONAL_DESCRIPTOR)?.[0] : undefined;
@@ -115,7 +105,7 @@ export function formatFullPokemonName(species: string, descriptor: string | unde
     (cleanQualifier(part) !== gender.descriptor && cleanQualifier(part) !== gender.mark));
   let principal = parts.shift() ?? '';
   const qualifiers = [...parts];
-  const complete = principal && (includesSpecies(principal, species) || CHARACTER_NAMES.has(context.identity ?? ''));
+  const complete = principal && includesSpecies(principal, species);
   let name = complete ? principal : gender ? species.replace(/[♂♀]$/u, '') : species;
   if (!complete) {
     const regionalDescriptor = principal.match(REGIONAL_DESCRIPTOR)?.[0] ?? context.regionalDescriptor;

@@ -5,7 +5,7 @@ import { normalizeSearch } from './searchNormalize';
 import { genderFormOf, GENDER_MARKS } from './genderForms';
 import { formatFullPokemonName, pokemonNameContext, type PokemonNameContext } from './fullPokemonName';
 
-export type NameProvenance = 'official' | 'official-composed' | 'official-bulbapedia' | 'idiomatic' | 'english-only';
+export type NameProvenance = 'official' | 'official-composed' | 'official-bulbapedia' | 'official-usage' | 'idiomatic' | 'english-only';
 
 interface NameCatalog {
   locale: string;
@@ -14,6 +14,8 @@ interface NameCatalog {
   formSource: Record<string, NameProvenance>;
   formMark: Record<string, string>;
   formCompact?: Record<string, string>;
+  /** Other names a form is known by, for search only: a Pokopia character's name. */
+  formAlias?: Record<string, string>;
   formSearchIndex?: Record<string, string>;
   affix?: string[];
   searchIndex?: string[];
@@ -193,7 +195,8 @@ function buildFormSearchIndex(catalog: NameCatalog): void {
   catalog.formSearchIndex = Object.fromEntries(Object.entries(catalog.forms).map(([key, descriptor]) => {
     const id = Number(key);
     const species = catalog.species[speciesIndex(id)] ?? '';
-    return [key, normalizeSearch(`${species} ${descriptor}`).replace(/[^\p{L}\p{N}♂♀]+/gu, ' ')];
+    const alias = catalog.formAlias?.[key];
+    return [key, normalizeSearch(alias ? `${species} ${descriptor} ${alias}` : `${species} ${descriptor}`).replace(/[^\p{L}\p{N}♂♀]+/gu, ' ')];
   }));
   const genderCandidates = new Set([...catalog.species.keys()].map(index => index + 1));
   for (const key of Object.keys(catalog.forms)) if (Number.isFinite(Number(key))) genderCandidates.add(Number(key));

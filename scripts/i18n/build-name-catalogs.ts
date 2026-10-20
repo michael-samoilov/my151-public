@@ -20,18 +20,40 @@ const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
  * `english-only` marks a descriptor with no official name in that language:
  * the locale carries the English words. `formProvenance` in
  * src/i18n/names.ts exposes the value; no UI marker renders it yet.
+ * `official-usage` is an official name from outside game text and
+ * Bulbapedia: The Pokémon Company's own websites, or a licensed product
+ * (OFFICIAL_USAGE_PATH).
  * `idiomatic` is my151's own wording where no official name exists: the
  * species' official name with an official word, as the language orders an
  * adjective (MY151_NAMES_PATH).
  */
-export type NameProvenance = 'official' | 'official-composed' | 'official-bulbapedia' | 'idiomatic' | 'english-only';
+export type NameProvenance = 'official' | 'official-composed' | 'official-bulbapedia' | 'official-usage' | 'idiomatic' | 'english-only';
 
 const BULBAPEDIA_NAMES_PATH = 'docs/i18n/sources/bulbapedia-form-names.json';
+const OFFICIAL_USAGE_PATH = 'docs/i18n/sources/official-usage-form-names.json';
 const MY151_NAMES_PATH = 'docs/i18n/sources/my151-form-names.json';
+
+interface BulbapediaSection {
+  page: string;
+  revid?: number;
+  section: string;
+  read?: string;
+  via?: 'search index';
+  names: Partial<Record<string, string>>;
+}
 
 interface BulbapediaNames {
   read: string;
-  forms: Record<string, { page: string; revid: number; section: string; read?: string; names: Partial<Record<string, string>> }>;
+  /**
+   * `names` is the name Bulbapedia gives the form, or for a Pokopia character
+   * the character's name. `form`, when present, is the form name from the
+   * species page: it becomes the descriptor, and `names` stays a search alias.
+   */
+  forms: Record<string, BulbapediaSection & { form?: BulbapediaSection }>;
+}
+
+interface OfficialUsageNames {
+  forms: Record<string, { basis: string; sources: { url: string; quote: string }[]; names: Partial<Record<string, string>> }>;
 }
 
 interface My151Names {
@@ -52,6 +74,16 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
   11110: { descriptor: 'Full Moon Phase' },
   11111: { descriptor: 'Zenith' },
 };
+
+/**
+ * Stereo Rotom's compact code. The other Rotom forms show Latin codes in every
+ * locale (H, W, FR, F, M). English keeps DJ (Michael, 2026-10-20: "for the
+ * rotom short form i meant <DJ>"), and so does each locale whose character name
+ * has DJ in it: DJ 로토무, DJ Motisma, DJ Rotom. The others take the initial of
+ * their own name in Latin, like the other codes: ステレオロトム and 立体音响洛托姆
+ * (stereo) give S, Discorotom gives D.
+ */
+const STEREO_ROTOM_CODES: Readonly<Partial<Record<string, string>>> = { ja: 'S', 'zh-Hans': 'S', 'zh-Hant': 'S', it: 'D' };
 
 /**
  * The six Cosplay Pikachu. PokéAPI gives all six one German descriptor,
@@ -225,8 +257,9 @@ async function main(): Promise<void> {
   );
 
   const bulbapedia = (JSON.parse(readFileSync(BULBAPEDIA_NAMES_PATH, 'utf8')) as BulbapediaNames).forms;
+  const officialUsage = (JSON.parse(readFileSync(OFFICIAL_USAGE_PATH, 'utf8')) as OfficialUsageNames).forms;
   const my151 = (JSON.parse(readFileSync(MY151_NAMES_PATH, 'utf8')) as My151Names).forms;
-  for (const id of [...Object.keys(bulbapedia), ...Object.keys(my151)]) {
+  for (const id of [...Object.keys(bulbapedia), ...Object.keys(officialUsage), ...Object.keys(my151)]) {
     if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`Sourced name ${id} is not a picker form`);
   }
 
@@ -321,6 +354,7 @@ async function main(): Promise<void> {
     let official = 0;
     let composed = 0;
     let sourced = 0;
+    let usage = 0;
     let idiomatic = 0;
     let marked = 0;
     for (const entry of entries) {
@@ -416,8 +450,15 @@ async function main(): Promise<void> {
       catalog.forms[id] = prefix ? `${prefix} — ${descriptor}` : descriptor;
       catalog.formSource[id] = 'english-only';
     }
-    for (const [id, { names }] of Object.entries(bulbapedia)) {
-      const name = names[locale];
+    // A sourced descriptor for an English-only form keeps its official prefix:
+    // ブラックキュレム — オーバードライブ.
+    const prefixed = (id: string, name: string): string => {
+      const prefix = ENGLISH_ONLY_FORMS[Number(id)]?.officialPrefix;
+      return prefix === undefined ? name : `${catalog.forms[prefix]} — ${name}`;
+    };
+    const formAlias: Record<string, string> = {};
+    for (const [id, { names, form }] of Object.entries(bulbapedia)) {
+      const name = form?.names[locale] ?? names[locale];
       if (!name) continue;
       if (catalog.formSource[id] && catalog.formSource[id] !== 'english-only') {
         throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the Bulbapedia name`);
@@ -426,15 +467,30 @@ async function main(): Promise<void> {
       catalog.formSource[id] = 'official-bulbapedia';
       sourced += 1;
     }
+    for (const [id, { names }] of Object.entries(officialUsage)) {
+      const name = names[locale];
+      if (!name) continue;
+      if (catalog.formSource[id] && !['english-only', 'official-bulbapedia'].includes(catalog.formSource[id])) {
+        throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the official-usage name`);
+      }
+      catalog.forms[id] = prefixed(id, name);
+      catalog.formSource[id] = 'official-usage';
+      usage += 1;
+    }
     for (const [id, { names }] of Object.entries(my151)) {
       const name = names[locale];
       if (!name) continue;
       if (catalog.formSource[id] && catalog.formSource[id] !== 'english-only') {
         throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the my151 name`);
       }
-      catalog.forms[id] = name;
+      catalog.forms[id] = prefixed(id, name);
       catalog.formSource[id] = 'idiomatic';
       idiomatic += 1;
+    }
+    // A Pokopia character's name stays searchable after its form name replaces it.
+    for (const [id, { names, form }] of Object.entries(bulbapedia)) {
+      const character = names[locale];
+      if (form && character && character !== catalog.forms[id]) formAlias[id] = character;
     }
     // A form these files name in English, with no English-only fallback, needs
     // a name in every locale.
@@ -466,7 +522,9 @@ async function main(): Promise<void> {
       composed += 1;
     }
     catalog.formCompact = compactFormLabels(entries, catalog.forms, catalog.formMark);
-    const overlay = { formCompact: {} as Record<string, string>, species: Object.fromEntries(entries.filter(e => !originalIds.has(e.appId) && e.appId !== e.speciesId).map(e => [e.appId, e.speciesId])), forms: {} as Record<string, string>, formSource: {} as Record<string, NameProvenance> };
+    const stereoRotom = STEREO_ROTOM_CODES[locale];
+    if (stereoRotom) catalog.formCompact[11112] = stereoRotom;
+    const overlay = { formCompact: {} as Record<string, string>, formAlias, species: Object.fromEntries(entries.filter(e => !originalIds.has(e.appId) && e.appId !== e.speciesId).map(e => [e.appId, e.speciesId])), forms: {} as Record<string, string>, formSource: {} as Record<string, NameProvenance> };
     for (const key of Object.keys(catalog.forms)) {
       if (originalIds.has(Number(key))) continue;
       overlay.forms[key] = catalog.forms[key];
@@ -483,7 +541,7 @@ async function main(): Promise<void> {
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(catalog)}\n`);
     const named = catalog.species.filter(Boolean).length;
     summary.push(
-      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(sourced).padStart(2)} Bulbapedia   ${String(idiomatic).padStart(2)} idiomatic   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
+      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(sourced).padStart(2)} Bulbapedia   ${String(usage).padStart(2)} official usage   ${String(idiomatic).padStart(2)} idiomatic   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
     );
   }
 

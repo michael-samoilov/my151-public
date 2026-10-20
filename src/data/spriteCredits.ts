@@ -1,19 +1,18 @@
 import attribution from './spriteAttribution.json';
+import bundleCredits from './bundleCredits.json';
 import { allPickerMons, comparePickerOrder, type PickerMon } from '@/favorites/model/catalog';
 import { artistLinks } from './creditTerms';
 
 const OWN_UPLOAD = 'own upload';
 
 interface AttributionFile {
-  sprites: Record<string, { via: string; artists?: string[]; changedBy?: string }>;
+  sprites: Record<string, { via: string; artists?: string[] }>;
 }
 
 const DATA = attribution as unknown as AttributionFile;
 
 export interface CreditedSprite {
   mon: PickerMon;
-  /** my151 changed pixels of the artist's file; the row's evidence lists them. */
-  changed: boolean;
 }
 
 export interface ArtistCredit {
@@ -43,7 +42,7 @@ function parse(): Parsed {
     for (const artist of row.artists ?? []) {
       const list = direct.get(artist) ?? [];
       direct.set(artist, list);
-      list.push({ mon, changed: row.changedBy === 'my151' });
+      list.push({ mon });
     }
   }
   const artists = new Map<string, ArtistCredit>();
@@ -66,4 +65,46 @@ export function artistCredit(name: string): ArtistCredit | undefined {
 
 export function hasSpriteRows(source: string): boolean {
   return data().sources.has(source);
+}
+
+/**
+ * A bundle's share of the app's fan-made sprite files, from
+ * scripts/credits/bundle-credits.ts: each file counts under one entry, and an
+ * artist counts a file only when the ledger confirms it.
+ */
+export interface BundleCredit {
+  sprites: number;
+  unconfirmed: number;
+  /** [artist, files], most files first, ties by name. */
+  artists: [string, number][];
+}
+
+/** The shown files that PokéAPI delivers: Game Freak's, the Smogon Sprite Project's, and its own. */
+export interface PokeApiDelivery {
+  official: number;
+  smogon: number;
+  own: number;
+}
+
+const BUNDLES = bundleCredits as unknown as {
+  entries: Record<string, BundleCredit>;
+  pokeapi: PokeApiDelivery;
+  links: Record<string, string>;
+};
+
+export const bundleCredit = (id: string): BundleCredit | undefined => BUNDLES.entries[id];
+
+export const pokeapiDelivery = (): PokeApiDelivery => BUNDLES.pokeapi;
+
+/** An artist's profile, only where it is proven to be theirs. */
+export const artistProfile = (name: string): string | undefined => BUNDLES.links[name];
+
+/** The bundles that credit an artist, most files first. */
+export function bundlesCrediting(name: string, ids: readonly string[]): [string, number][] {
+  return ids
+    .flatMap((id): [string, number][] => {
+      const files = BUNDLES.entries[id]?.artists.find(([artist]) => artist === name)?.[1];
+      return files ? [[id, files]] : [];
+    })
+    .sort((a, b) => b[1] - a[1]);
 }

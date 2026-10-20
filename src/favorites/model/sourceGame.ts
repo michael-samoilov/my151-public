@@ -32,22 +32,31 @@ const everywhere = (title: string): GameTitle =>
  * "pokemon" from the game name in all languages"). Pokémon GO, Pokémon HOME
  * and Japanese Pokopia keep it: the rest of the title would not name the game.
  * Each source is in the evidence README. A game with no release in a locale
- * keeps the English title there.
+ * uses the name its community there uses, when one exists, and the English
+ * title otherwise.
  */
 const GAMES = {
   pokopia: { ...everywhere('Pokopia'), ja: 'ぽこ あ ポケモン' },
   'mystery-dungeon': {
     ...everywhere('Mystery Dungeon'),
     ja: '不思議のダンジョン', ko: '불가사의 던전',
+    'zh-Hans': '不可思议迷宫', 'zh-Hant': '不可思議迷宮',
     fr: 'Donjon Mystère', es: 'Mundo misterioso',
   },
   xd: {
     ...everywhere('XD: Gale of Darkness'),
-    ja: 'ＸＤ 闇の旋風ダーク・ルギア', fr: 'XD : Le Souffle des Ténèbres', de: 'XD: Der Dunkle Sturm',
+    ja: 'XD 闇の旋風ダーク・ルギア', ko: 'XD 어둠의 선풍 다크루기아',
+    'zh-Hans': 'XD 暗之旋风 黑暗洛奇亚', 'zh-Hant': 'XD 暗之旋風 陰暗洛奇亞',
+    fr: 'XD : Le Souffle des Ténèbres', de: 'XD: Der Dunkle Sturm',
     es: 'XD: Tempestad oscura', it: 'XD: Tempesta Oscura',
   },
   go: everywhere('Pokémon GO'),
   home: everywhere('Pokémon HOME'),
+  dp: {
+    en: 'Diamond and Pearl', ja: 'ダイヤモンド・パール', ko: 'DP 디아루가・DP 펄기아',
+    'zh-Hans': '钻石／珍珠', 'zh-Hant': '鑽石／珍珠',
+    fr: 'Diamant et Perle', de: 'Diamant und Perl', es: 'Diamante y Perla', it: 'Diamante e Perla',
+  },
   bw: {
     en: 'Black and White', ja: 'ブラック・ホワイト', ko: '블랙・화이트',
     'zh-Hans': '黑／白', 'zh-Hant': '黑／白',
@@ -98,16 +107,16 @@ type Game = keyof typeof GAMES;
 
 /** Picker id, then the game the form comes from and why it names it. */
 const FORM_SOURCES: Readonly<Record<number, readonly [Game, SourceGroup]>> = {
-  11112: ['pokopia', 'spin-off'], // DJ Rotom
-  11117: ['pokopia', 'spin-off'], // Smearguru
-  11120: ['pokopia', 'spin-off'], // Mosslax
-  11121: ['pokopia', 'spin-off'], // Peakychu
+  11112: ['pokopia', 'spin-off'], // Stereo Rotom
+  11117: ['pokopia', 'spin-off'], // Smeargle (Decorator)
+  11120: ['pokopia', 'spin-off'], // Snorlax (Mossy)
+  11121: ['pokopia', 'spin-off'], // Pikachu (Pale)
   11122: ['mystery-dungeon', 'spin-off'], // Purple Kecleon
   11123: ['xd', 'spin-off'], // Shadow Lugia
   11124: ['mystery-dungeon', 'spin-off'], // Primal Dialga
-  11125: ['pokopia', 'spin-off'], // Tinkmaster
-  11126: ['pokopia', 'spin-off'], // Professor Tangrowth
-  11127: ['pokopia', 'spin-off'], // Chef Dente
+  11125: ['pokopia', 'spin-off'], // Tinkaton (Supervisor)
+  11126: ['pokopia', 'spin-off'], // Tangrowth (Professor)
+  11127: ['pokopia', 'spin-off'], // Greedent (Cook)
   10263: ['go', 'spin-off'], // Gimmighoul (Roaming Form)
   11064: ['hgss', 'event'], // Spiky-eared Pichu
   10094: ['sm', 'event'], // Pikachu (Original Cap)
@@ -124,6 +133,7 @@ const FORM_SOURCES: Readonly<Record<number, readonly [Game, SourceGroup]>> = {
   10192: ['swsh', 'event'], // Zarude (Dada)
   10147: ['home', 'event'], // Magearna (Original Color)
   10190: ['swsh', 'story'], // Eternamax Eternatus
+  11128: ['dp', 'state'], // Cherrim (Sunshine Form)
   11105: ['bw', 'state'], // Reshiram (Overdrive)
   11106: ['bw', 'state'], // Zekrom (Overdrive)
   11107: ['b2w2', 'state'], // Black Kyurem (Overdrive)
