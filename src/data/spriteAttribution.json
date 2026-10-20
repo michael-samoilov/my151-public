@@ -7018,6 +7018,22 @@
    "evidence": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/421-sunshine.png",
    "notes": "Game Freak's Black and White sprite: byte-identical to that file, which came in PokéAPI's Black and White import (96c282e, 2020-08-01). No credit, as for the other Game Freak sprites. Ledger: docs/credits/sprite-evidence.json.",
    "name": "cherrim-sunshine"
+  },
+  "11129": {
+   "artists": [],
+   "role": "drew",
+   "via": "my151",
+   "evidence": "Rebuilt cell by cell (8.88 image px per sprite px; every cell uniform within 12/255) from the sprite labelled \"Sprite\" in DrLava's image https://x.com/DrLavaYT/status/1224724318765977603, which Michael uploaded on 2026-10-20. 32x38 px, 14 colours, placed on Game Freak Pichu's (172.png) bottom line and centre. Who drew it is not confirmed; it is likely Pokémon Ranger: Guardian Signs' own sprite. Not credited: Michael, 2026-10-20: \"i imagine it can go uncredited for now\".",
+   "name": "pichu-ukulele"
+  },
+  "11130": {
+   "artists": [
+    "DarkwarePX"
+   ],
+   "role": "drew",
+   "via": "own upload",
+   "evidence": "DarkwarePX's own DeviantArt upload \"Shadow Mewtwo\" https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154 (96x96 GIF, 46 frames); frame 0 on a 96x96 canvas, every pixel unchanged. The shiny https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-Shiny-944072689 is the same drawing. Lab record: sprite-lab/inputs/darkwarepx/manifest.json.",
+   "name": "mewtwo-shadow"
   }
  },
  "artists": {

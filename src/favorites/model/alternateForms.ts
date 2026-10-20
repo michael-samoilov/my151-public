@@ -203,4 +203,6 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11126, ownerId: 465, name: 'tangrowth-professor', types: ['grass'], generation: 9 },
   { id: 11127, ownerId: 820, name: 'greedent-chef-dente', types: ['normal'], generation: 9 },
   { id: 11128, ownerId: 421, name: 'cherrim-sunshine', types: ['grass'], spritePath: '421-sunshine' },
+  { id: 11129, ownerId: 172, name: 'pichu-ukulele', types: ['electric'], generation: 4 },
+  { id: 11130, ownerId: 150, name: 'mewtwo-shadow', types: ['psychic'], generation: 6 },
 ];

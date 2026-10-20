@@ -50,6 +50,17 @@ const GAMES = {
     fr: 'XD : Le Souffle des Ténèbres', de: 'XD: Der Dunkle Sturm',
     es: 'XD: Tempestad oscura', it: 'XD: Tempesta Oscura',
   },
+  'ranger-gs': {
+    ...everywhere('Ranger: Guardian Signs'),
+    ja: 'レンジャー 光の軌跡', ko: '레인저 빛의 궤적',
+    'zh-Hans': '巡护员 光的轨迹', 'zh-Hant': '巡護員 光的軌跡',
+    fr: 'Ranger : Sillages de Lumière', de: 'Ranger: Spuren des Lichts',
+    es: 'Ranger: Trazos de luz', it: 'Ranger: Tracce di Luce',
+  },
+  pokken: {
+    ...everywhere('Pokkén Tournament'),
+    ja: 'ポッ拳 POKKÉN TOURNAMENT', 'zh-Hans': '宝可拳', 'zh-Hant': '寶可拳',
+  },
   go: everywhere('Pokémon GO'),
   home: everywhere('Pokémon HOME'),
   dp: {
@@ -134,6 +145,8 @@ const FORM_SOURCES: Readonly<Record<number, readonly [Game, SourceGroup]>> = {
   10147: ['home', 'event'], // Magearna (Original Color)
   10190: ['swsh', 'story'], // Eternamax Eternatus
   11128: ['dp', 'state'], // Cherrim (Sunshine Form)
+  11129: ['ranger-gs', 'spin-off'], // Ukulele Pichu
+  11130: ['pokken', 'spin-off'], // Shadow Mewtwo
   11105: ['bw', 'state'], // Reshiram (Overdrive)
   11106: ['bw', 'state'], // Zekrom (Overdrive)
   11107: ['b2w2', 'state'], // Black Kyurem (Overdrive)

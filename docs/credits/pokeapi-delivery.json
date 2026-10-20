@@ -438,6 +438,8 @@
   "public/sprites/pokemon/11126.png": {"sha256": "065ce307c9affd532da5257dde69704275ea1c4514515128e9fd9a9a9e285351", "pokeapi": null},
   "public/sprites/pokemon/11127.png": {"sha256": "46fd84de9a0faa6a9e3fedceefe22e8cf53c48d8ed4305e644729894d92412a9", "pokeapi": null},
   "public/sprites/pokemon/11128.png": {"sha256": "7853bfcdf5f093d2e17f8db2ecf206c86d2e665e81dc8d1b10b056622835ea08", "pokeapi": "ba403973:sprites/pokemon/versions/generation-v/black-white/421-sunshine.png"},
+  "public/sprites/pokemon/11129.png": {"sha256": "4ac9d39a82070d909db7a0e60697eb1774c9342d14a4667565f5592bf27ceee2", "pokeapi": null},
+  "public/sprites/pokemon/11130.png": {"sha256": "2726734ea34f7cf2bb2219658b113a9483f8eec5ff64bb529b0cbd37d1f64049", "pokeapi": null},
   "public/sprites/pokemon/112.png": {"sha256": "219f6f5e22e598def13a22180a49eba3e4dc166abb33ce92b2a5e44b7ec22c82", "pokeapi": "ba403973:sprites/pokemon/versions/generation-v/black-white/112.png"},
   "public/sprites/pokemon/113.png": {"sha256": "095e3c94149ae531b040f5b4ac4b6f7dc22dee7bf8104828bffde6253ceacb28", "pokeapi": "ba403973:sprites/pokemon/versions/generation-v/black-white/113.png"},
   "public/sprites/pokemon/114.png": {"sha256": "a449f3cbc4610d6112b5b9fdf66e651227030159e7e4a80b83104eb0f8b3f0c4", "pokeapi": "ba403973:sprites/pokemon/versions/generation-v/black-white/114.png"},
