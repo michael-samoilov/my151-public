@@ -33,10 +33,19 @@ Each bundle entry in the panel shows one permission quote from the bundle's own 
 - An artist counts a file only when the ledger's verdict is `confirmed`. Every other file counts under its entry as "Artist not confirmed". A file with two artists counts for each of them.
 - An artist's name links only to a profile whose `linkStatus` in `creditTerms.json` is `proven`, never to a Smogon member page. No artist's terms are quoted: the bundle's permission covers the files it carried.
 - A direct-upload artist's own files appear only in their own entry. That entry also lists the bundles that credit them, with the count from each.
+- A bundle entry shows its links and its license before its artists, and it lists every artist (Michael, 2026-10-20).
+
+## What PokéAPI delivers
+
+Michael asked on 2026-10-20 for PokéAPI's "Used for" to say how many official sprites and other sprites the app takes from PokéAPI, and then how many fan-made sprites it credits through PokéAPI itself. The Smogon Sprite Project still counts each of its sprites once in its own artist list. PokéAPI's text states only what it delivers.
+
+`scripts/credits/pokeapi-delivery.py` writes `docs/credits/pokeapi-delivery.json`. A shown file counts as delivered when its pixels equal a PNG in PokéAPI's sprites repository: any PNG under `sprites/pokemon` at the pinned commit in `pokeapi-form-sources.json`, or an earlier version of the file at the same path. The comparison is the ledger's own: RGBA after the transparent margins are trimmed. The script header lists the clone commands; the run needs the network once. `npm run credits:check-sprites` fails when a Game Freak, Smogon, or PokéAPI-credited file has no current row, so a changed or added sprite of that kind needs a new run. A file that my151 changed is never PokéAPI's file.
+
+On 2026-10-20 the counts are 699 Game Freak sprites (695 PNG files, and four Overdrive stills cut from PokéAPI's animated GIFs), 596 of the Smogon Sprite Project's 603 files, and all 91 files credited through PokéAPI. The 7 other Smogon files are Vivillon, Neutral Mode Xerneas, Radiant Sun Solgaleo, Full Moon Lunala, Zenith Marshadow, and the two sprites my151 changed.
 
 An artist has an entry of their own only when my151 took the sprites from the artist's own upload, not from a bundle. On 2026-10-13 that is KingOfThe-X-Roads: the Ogerpon sprites from the artist's Sta.sh uploads and DJ Rotom from the artist's X post. On 2026-10-19 kiriaura joins: Mosslax and Peakychu from kiriaura's DeviantArt uploads, with the About-page terms quoted in `src/data/creditTerms.json`. On 2026-10-20 JoeTEStrikesBack joins: Shadow Lugia and Primal Dialga from the artist's DeviantArt sheet, with the deviation's terms. my151 changed both sprites, so their rows carry `"changedBy": "my151"` and the entry shows one line that says so (Michael: "indicate we made a change").
 
-A fan sprite that my151 extended keeps its artist's credit through the project that published it: Tinkmaster (Travis, #959) and Chef Dente (G.E.Z., #820) are credited through the Smogon Sprite Project, and their rows carry `"changedBy": "my151"`. The items the sprite lab added get no credit of their own. Professor Tangrowth is the lab's own drawing from Game Freak's #465 and has no credit line.
+A fan sprite that my151 extended keeps its artist's credit through the project that published it: Tinkmaster (Travis, #959) and Chef Dente (G.E.Z., #820) are credited through the Smogon Sprite Project, and their rows carry `"changedBy": "my151"`. The artist's row in the project's list names the sprite: "Base of Chef Dente. my151 changed this sprite." (Michael, 2026-10-20: "credit G.E.Z. with being the base of the sprite"). The items the sprite lab added get no credit of their own. Professor Tangrowth is the lab's own drawing from Game Freak's #465 and has no credit line.
 
 my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do not credit my151 for zygarde"). Mega Zygarde's lineage is recorded only in `src/data/spriteAttribution.json`.
 

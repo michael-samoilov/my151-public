@@ -378,11 +378,6 @@ function Detail({ entry, backRef, onBack }: {
             <p className="text-sm leading-relaxed">{entry.usedFor}</p>
           )}
         </Section>
-        {bundle && (
-          <Section label={t('ack.artists')} count={bundle.artists.length}>
-            <BundleArtists entry={bundle} />
-          </Section>
-        )}
         {alsoThrough.length > 0 && (
           <Section label={t('ack.alsoCredited')}>
             <ul className="-my-1.5 divide-y" data-testid="ack-also-credited">
@@ -405,6 +400,11 @@ function Detail({ entry, backRef, onBack }: {
             {entry.texts?.map((file) => (
               <LicenseText key={file.file} file={file} titled={entry.texts!.length > 1} />
             ))}
+          </Section>
+        )}
+        {bundle && (
+          <Section label={t('ack.artists')} count={bundle.artists.length}>
+            <BundleArtists entry={bundle} />
           </Section>
         )}
       </div>

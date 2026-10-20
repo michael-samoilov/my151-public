@@ -85,6 +85,20 @@ function SpriteList({ sprites }: { sprites: readonly CreditedSprite[] }) {
   );
 }
 
+/** Names a bundle artist's sprites that my151 changed: the artist drew their base. */
+export function ChangedBase({ sprites }: { sprites: readonly CreditedSprite[] }) {
+  const tn = useTn();
+  const locale = useLocale();
+  const ready = useNameTables();
+  if (!ready || !sprites.length) return null;
+  const names = new Intl.ListFormat(locale, { type: 'conjunction' }).format(sprites.map((sprite) => pickerFullName(sprite.mon, ready)));
+  return (
+    <p className="text-xs leading-relaxed text-muted-foreground" data-testid="ack-artist-changed">
+      {tn('ack.changedBase', sprites.length, { names })}
+    </p>
+  );
+}
+
 export function ArtistSprites({ name, summary }: { name: string; summary?: string }) {
   const tn = useTn();
   const sprites = useMemo(() => artistCredit(name)?.sprites ?? [], [name]);

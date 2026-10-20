@@ -30,6 +30,7 @@ const dexOrder = (a: CreditedSprite, b: CreditedSprite) => a.mon.ownerId - b.mon
 interface Parsed {
   artists: Map<string, ArtistCredit>;
   sources: Set<string>;
+  monByFile: Map<string, PickerMon>;
 }
 
 function parse(): Parsed {
@@ -51,7 +52,7 @@ function parse(): Parsed {
   for (const name of [...direct.keys()].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }))) {
     artists.set(name, { name, links: artistLinks(name), sprites: direct.get(name)!.sort(dexOrder) });
   }
-  return { artists, sources };
+  return { artists, sources, monByFile };
 }
 
 let parsed: Parsed | undefined;
@@ -79,11 +80,36 @@ export interface BundleCredit {
   unconfirmed: number;
   /** [artist, files], most files first, ties by name. */
   artists: [string, number][];
+  /** Each artist's files that my151 changed, by file id. */
+  changed?: Record<string, string[]>;
 }
 
-const BUNDLES = bundleCredits as unknown as { entries: Record<string, BundleCredit>; links: Record<string, string> };
+/** The shown files that PokéAPI delivers: Game Freak's, the Smogon Sprite Project's, and its own. */
+export interface PokeApiDelivery {
+  official: number;
+  smogon: number;
+  own: number;
+}
+
+const BUNDLES = bundleCredits as unknown as {
+  entries: Record<string, BundleCredit>;
+  pokeapi: PokeApiDelivery;
+  links: Record<string, string>;
+};
 
 export const bundleCredit = (id: string): BundleCredit | undefined => BUNDLES.entries[id];
+
+export const pokeapiDelivery = (): PokeApiDelivery => BUNDLES.pokeapi;
+
+/** An artist's sprites in a bundle that my151 changed, in Pokédex order. */
+export function changedSprites(entry: BundleCredit, name: string): CreditedSprite[] {
+  return (entry.changed?.[name] ?? [])
+    .flatMap((file) => {
+      const mon = data().monByFile.get(file);
+      return mon ? [{ mon, changed: true }] : [];
+    })
+    .sort(dexOrder);
+}
 
 /** An artist's profile, only where it is proven to be theirs. */
 export const artistProfile = (name: string): string | undefined => BUNDLES.links[name];
