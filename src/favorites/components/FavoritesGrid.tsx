@@ -55,6 +55,12 @@ const MINIMAP_PAD = 3;
 function minimapRight(base: number, mapWidth: number): number {
   return Math.max(0, Math.round(2.57 * base - 0.67 * (mapWidth + 2 * MINIMAP_PAD)));
 }
+function overlapsPane(map: HTMLElement, scroller: HTMLElement): boolean {
+  const pane = scroller.querySelector('[data-testid="favorites-picker"]')?.getBoundingClientRect();
+  if (!pane) return false;
+  const m = map.getBoundingClientRect();
+  return m.left < pane.right && m.right > pane.left && m.top < pane.bottom && m.bottom > pane.top;
+}
 
 function trackPart(track: '--cell' | '--head', fraction: number): string {
   return `calc((var(${track}) - 1px) * ${fraction})`;
@@ -238,6 +244,7 @@ function useZoomFrame(
     let wheel: { x: number; y: number; time: number; body: BodyPoint } | null = null;
     let frame = 0;
     let fadeTimer = 0;
+    let paneFrame = 0;
     let scrolled = false;
     let hoverTimer = 0;
     let armed = false;
@@ -293,6 +300,24 @@ function useZoomFrame(
     const showMap = () => {
       const map = mapRef.current;
       if (!map) return;
+      // A scroll does not draw the minimap over an open selector's tiles. The
+      // check repeats each frame while the minimap shows, because opening a
+      // selector scrolls the grid before the selector grows to full size.
+      const hideUnderPane = () => {
+        if (armed || drag || !overlapsPane(map, el)) return false;
+        map.style.transition = 'none';
+        map.style.opacity = '0';
+        void map.offsetWidth;
+        map.style.transition = '';
+        return true;
+      };
+      if (hideUnderPane()) return;
+      const until = performance.now() + MINIMAP_LINGER_MS;
+      const watch = () => {
+        paneFrame = !hideUnderPane() && performance.now() < until ? requestAnimationFrame(watch) : 0;
+      };
+      cancelAnimationFrame(paneFrame);
+      paneFrame = requestAnimationFrame(watch);
       map.style.opacity = armed || drag ? MINIMAP_HOVER : MINIMAP_SHOWN;
       if (!desktop) map.style.pointerEvents = 'auto';
       window.clearTimeout(fadeTimer);
@@ -632,6 +657,7 @@ function useZoomFrame(
       el.removeEventListener('gestureend', onGestureEnd);
       el.removeEventListener('wheel', onWheel);
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(paneFrame);
       if (preview) endPreview(preview);
       window.clearTimeout(settleTimer);
       window.clearTimeout(fadeTimer);
