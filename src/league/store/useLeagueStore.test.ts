@@ -267,7 +267,7 @@ describe('what a card may now hold', () => {
     useLeagueStore.getState().placeBranch(0, [GEODUDE]);
     useLeagueStore.getState().setLegend(0, { pokemonId: 243, seat: 1 });
     useLeagueStore.getState().setLegend(0, { pokemonId: 244, seat: 2 });
-    useLeagueStore.getState().swapLegends(0, 1, 2);
+    useLeagueStore.getState().moveLegend(0, 1, 2);
     expect(legendAt(card0(), 1)?.pokemonId).toBe(244);
     expect(legendAt(card0(), 2)?.pokemonId).toBe(243);
     expect(legendsOf(card0()), 'neither vanished').toHaveLength(2);

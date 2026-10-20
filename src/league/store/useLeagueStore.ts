@@ -75,7 +75,7 @@ interface LeagueState {
   setTm: (card: number, moveId: number | null) => void;
   setBadgeName: (card: number, name: string) => void;
   setLegend: (card: number, legend: LegendPick | null, seat?: number) => void;
-  swapLegends: (card: number, fromSeat: number, toSeat: number) => void;
+  moveLegend: (card: number, fromSeat: number, toSeat: number) => void;
   moveSlot: (fromIndex: number, toIndex: number) => void;
   markNudgeCelebrated: (id: LeagueNudgeId) => void;
   markFullLeagueCelebrated: () => void;
@@ -120,14 +120,19 @@ function powerupMap(card: GymCard): CardPowerups {
   return Object.fromEntries(POWERUP_ROWS.map((row) => [row, powerupsAt(card, row)]));
 }
 
-function withPowerups(card: GymCard, fn: (p: Powerup) => Powerup | null): GymCard {
+function withPowerups(card: GymCard, fn: (p: Powerup, row: number) => Powerup | null): GymCard {
   const powerups = Object.fromEntries(
     POWERUP_ROWS.map((row) => [
       row,
-      powerupsAt(card, row).map(fn).filter((p): p is Powerup => p !== null),
+      powerupsAt(card, row).map((p) => fn(p, row)).filter((p): p is Powerup => p !== null),
     ]),
   );
   return { ...card, powerups, powerup: null };
+}
+
+/** A legendary replaces its line on the boss row, so the powerup there is its own. */
+function legendCell(card: GymCard, row: number, seat: number): boolean {
+  return row === BOSS_ROW && legendAt(card, seat) !== null;
 }
 
 const MAX_SEATS = TEAM_SIZES[BOSS_ROW - 1];
@@ -279,7 +284,9 @@ export const useLeagueStore = create<LeagueState>()(
             };
             const same = (p: Powerup | null) =>
               p === null ? current === null : current !== null && p.kind === current.kind && p.index === current.index;
-            const rows = POWERUP_ROWS.filter((r) => r === row || (r > row && same(powerupAt(c, r, seat))));
+            const rows = POWERUP_ROWS.filter(
+              (r) => r === row || (r > row && !legendCell(c, r, seat) && same(powerupAt(c, r, seat))),
+            );
             const powerups = {
               ...powerupMap(c),
               ...Object.fromEntries(rows.map((r) => [r, withSeat(powerupsAt(c, r))])),
@@ -293,7 +300,10 @@ export const useLeagueStore = create<LeagueState>()(
           cards: withCard(s.cards, card, (c) => {
             if (seat < 1 || seat > c.lines.length) return c;
             const lines = c.lines.map((line, i) => (i === seat - 1 ? makePlacedLine(branch) : line));
-            return { ...withPowerups(c, (p) => (p.seat === seat ? null : p)), lines };
+            return {
+              ...withPowerups(c, (p, row) => (p.seat === seat && !legendCell(c, row, seat) ? null : p)),
+              lines,
+            };
           }),
         })),
 
@@ -387,19 +397,32 @@ export const useLeagueStore = create<LeagueState>()(
             const target = legend?.seat ?? seat;
             if (target === undefined) return c;
             const rest = legendsOf(c).filter((l) => l.seat !== target);
-            return { ...c, legends: legend ? [...rest, legend] : rest, legend: null };
+            // The form on the boss row belonged to the Pokémon that leaves it.
+            const { powerups } = withPowerups(c, (p, row) => (row === BOSS_ROW && p.seat === target ? null : p));
+            return { ...c, legends: legend ? [...rest, legend] : rest, legend: null, powerups, powerup: null };
           }),
         })),
 
-      swapLegends: (card, fromSeat, toSeat) =>
+      moveLegend: (card, fromSeat, toSeat) =>
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
+            if (fromSeat === toSeat || !legendAt(c, fromSeat)) return c;
+            const traded = legendAt(c, toSeat) !== null;
+            // Onto a seat without a legendary it moves; onto one with a
+            // legendary the two trade places. Each takes its form along, and
+            // the line it now covers loses its own boss-row form.
             const legends = legendsOf(c).map((l) =>
               l.seat === fromSeat ? { ...l, seat: toSeat }
               : l.seat === toSeat ? { ...l, seat: fromSeat }
               : l,
             );
-            return { ...c, legends, legend: null };
+            const { powerups } = withPowerups(c, (p, row) => {
+              if (row !== BOSS_ROW) return p;
+              if (p.seat === fromSeat) return { ...p, seat: toSeat };
+              if (p.seat === toSeat) return traded ? { ...p, seat: fromSeat } : null;
+              return p;
+            });
+            return { ...c, legends, legend: null, powerups, powerup: null };
           }),
         })),
 

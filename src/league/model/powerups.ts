@@ -80,7 +80,7 @@ export function cyclePowerup(
 ): Powerup | null {
   const forms = formsFor(pokemonId, kind);
   if (forms.length === 0) return current;
-  if (current && current.seat === seat && current.kind === kind) {
+  if (current && current.seat === seat && current.kind === kind && current.index < forms.length) {
     const next = current.index + 1;
     return next < forms.length ? { seat, kind, index: next } : null;
   }
