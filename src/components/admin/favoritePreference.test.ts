@@ -28,6 +28,32 @@ describe('favorite preference evidence', () => {
     expect(picks.top).toContainEqual([10034, 1]);
   });
 
+  it('counts a species once per selector pane, however many forms the pane lists', () => {
+    // A pick of another Pokémon must not count as one loss per listed form of a
+    // repeated species (psychic|2 lists 26 Unown forms). One chart picks another
+    // Pokémon in every such pane; a second picks the repeated species itself.
+    const panes = Object.entries(cells).filter(([, cell]) =>
+      cell.kind === 'pick' && new Set(cell.ids!.map(favoriteSpeciesId)).size < cell.ids!.length);
+    expect(panes.length).toBeGreaterThan(100);
+    const other: Record<string, number> = {};
+    const repeatedPick: Record<string, number> = {};
+    const pools = panes.flatMap(([key, cell]) => {
+      const species = cell.ids!.map(favoriteSpeciesId);
+      const repeated = new Set(species.filter((id, i) => species.indexOf(id) !== i));
+      other[key] = cell.ids!.find(id => !repeated.has(favoriteSpeciesId(id))) ?? cell.ids![0];
+      repeatedPick[key] = cell.ids!.find(id => repeated.has(favoriteSpeciesId(id)))!;
+      const ids = [...new Set(species)];
+      return [other[key], repeatedPick[key]].map(pick => ({ids, wins: ids.map(id => id === favoriteSpeciesId(pick) ? 1 : 0)}));
+    });
+    const result = favoritePreference([record(other), record(repeatedPick)]);
+    const expected = fitFavoritePreference(pools);
+    expect(result.converged).toBe(true);
+    expect(result.candidates).toBe(expected.ids.length);
+    const scored = result.entries.filter(entry => entry.score !== null);
+    expect(scored.length).toBeGreaterThan(100);
+    for (const entry of scored) expect(entry.score).toBeCloseTo(expected.scores[expected.ids.indexOf(entry.id)], 8);
+  });
+
   it('does not treat favorite pointers between forms of one species as comparisons', () => {
     const direct = {'fire|1': 6, 'gimmick|1': 10034};
     const before = favoritePreference([record(direct)]);
