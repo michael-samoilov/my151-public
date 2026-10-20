@@ -45,8 +45,8 @@ const GAMES = {
   },
   xd: {
     ...everywhere('XD: Gale of Darkness'),
-    ja: 'ＸＤ 闇の旋風ダーク・ルギア', ko: 'XD 어둠의 선풍 다크루기아',
-    'zh-Hans': 'ＸＤ 暗之旋风 黑暗洛奇亚', 'zh-Hant': 'ＸＤ 暗之旋風 陰暗洛奇亞',
+    ja: 'XD 闇の旋風ダーク・ルギア', ko: 'XD 어둠의 선풍 다크루기아',
+    'zh-Hans': 'XD 暗之旋风 黑暗洛奇亚', 'zh-Hant': 'XD 暗之旋風 陰暗洛奇亞',
     fr: 'XD : Le Souffle des Ténèbres', de: 'XD: Der Dunkle Sturm',
     es: 'XD: Tempestad oscura', it: 'XD: Tempesta Oscura',
   },
