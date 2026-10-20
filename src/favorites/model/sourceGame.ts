@@ -41,15 +41,6 @@ const GAMES = {
     ja: '不思議のダンジョン', ko: '불가사의 던전',
     fr: 'Donjon Mystère', es: 'Mundo misterioso',
   },
-  'mystery-dungeon-explorers': {
-    ...everywhere('Mystery Dungeon: Explorers of Time, Darkness and Sky'),
-    ja: '不思議のダンジョン 時の探検隊・闇の探検隊・空の探検隊',
-    ko: '불가사의 던전: 시간의 탐험대・어둠의 탐험대',
-    fr: 'Donjon Mystère : Explorateurs du Temps, de l’Ombre et du Ciel',
-    de: 'Mystery Dungeon: Erkundungsteam Zeit, Dunkelheit und Himmel',
-    es: 'Mundo misterioso: Exploradores del tiempo, de la oscuridad y del cielo',
-    it: 'Mystery Dungeon: Esploratori del Tempo, dell’Oscurità e del Cielo',
-  },
   xd: {
     ...everywhere('XD: Gale of Darkness'),
     ja: 'ＸＤ 闇の旋風ダーク・ルギア', fr: 'XD : Le Souffle des Ténèbres', de: 'XD: Der Dunkle Sturm',
@@ -113,7 +104,7 @@ const FORM_SOURCES: Readonly<Record<number, readonly [Game, SourceGroup]>> = {
   11121: ['pokopia', 'spin-off'], // Peakychu
   11122: ['mystery-dungeon', 'spin-off'], // Purple Kecleon
   11123: ['xd', 'spin-off'], // Shadow Lugia
-  11124: ['mystery-dungeon-explorers', 'spin-off'], // Primal Dialga
+  11124: ['mystery-dungeon', 'spin-off'], // Primal Dialga
   11125: ['pokopia', 'spin-off'], // Tinkmaster
   11126: ['pokopia', 'spin-off'], // Professor Tangrowth
   11127: ['pokopia', 'spin-off'], // Chef Dente

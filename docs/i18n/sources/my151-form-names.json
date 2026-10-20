@@ -3,7 +3,7 @@
  "read": "2026-10-20",
  "forms": {
   "11122": {
-   "basis": "Species name from game text (pokemon_species_names), and the word for purple from the Pokédex colour names the games use (PokéAPI pokemon_color_names, colour 7): むらさきいろ, 보라, 紫色, Violet, Violett, Morado, Viola, Purple. No game or Bulbapedia page names the purple Kecleon: Kecleon Shop rev 4649465 calls it the younger, purple Kecleon.",
+   "basis": "Species name from game text (pokemon_species_names), and the word for purple from the Pokédex colour names the games use (PokéAPI pokemon_color_names, colour 7): むらさきいろ, 보라, 紫色, Violet, Violett, Morado, Viola, Purple. No game or Bulbapedia page names the purple Kecleon: Kecleon Shop rev 4649465 calls it the younger, purple Kecleon. German uses violett, not lila, because game text does: in Sword/Shield, Scarlet/Violet and Legends: Z-A (poke-corpus commit 57e50780), 9 of the 11 English names that start with Purple use violett (Purple Petal is Violettes Blatt, a neuter noun like das Kecleon), one uses lila (Purple Stripes is Lila gestreift, Z-A), and Purple Nectar is Purpurner Nektar. Michael asked for this check on 2026-10-20.",
    "names": {
     "en": "Purple Kecleon",
     "ja": "むらさきのカクレオン",
