@@ -69,7 +69,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     const generations = sprites.getByTestId('ack-sprites-generation');
     await expect(generations).toHaveCount(2);
     for (const summary of await generations.locator('summary').all()) await summary.click();
-    await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('DJ Rotom');
+    await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Stereo Rotom');
     await expect(sprites.getByRole('listitem')).toHaveCount(13);
     const kingSprites = await sprites.getByRole('listitem').count();
     await dialog.getByRole('button', { name: 'Back', exact: true }).click();
