@@ -91,9 +91,6 @@ export function ArtistSprites({ name, summary }: { name: string; summary?: strin
   return (
     <div className="flex flex-col gap-3" data-testid="ack-sprites">
       <p className="text-sm leading-relaxed" data-testid="ack-sprites-summary">{summary ?? tn('ack.spritesOwn', sprites.length)}</p>
-      {sprites.length > 0 && sprites.every((sprite) => sprite.changed) && (
-        <p className="text-sm leading-relaxed" data-testid="ack-sprites-changed">{tn('ack.spritesChanged', sprites.length)}</p>
-      )}
       <SpriteList sprites={sprites} />
     </div>
   );

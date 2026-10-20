@@ -37998,10 +37998,8 @@
   "shownIn": [
    "Favorite picker"
   ],
-  "creditedNow": [
-   "Travis"
-  ],
-  "creditedVia": "smogon-gen9",
+  "creditedNow": [],
+  "creditedVia": "my151",
   "evidenceType": "repository-history",
   "changedBy": "my151",
   "sources": [
@@ -38018,7 +38016,7 @@
     "title": "Tinkaton by Travis, Smogon Gen9 Sprite Project"
    }
   ],
-  "comparison": "Travis's Tinkaton (959.png) with tools that my151 added: the body is 959.png pixel for pixel (1,412 body pixels, 0 differ), moved down 4 px. The tools come from the sprite lab's custom-v1 family edit (an image-model edit of 959.png) and code-only hand edits. Credit stays with Travis through the Smogon Sprite Project. Byte-identical to sprite-lab/selections/add-tinkaton-tinkmaster-hand-a.png at commit 5d29640b. Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+  "comparison": "Travis's Tinkaton (959.png) with tools that my151 added: the body is 959.png pixel for pixel (1,412 body pixels, 0 differ), moved down 4 px. The tools come from the sprite lab's custom-v1 family edit (an image-model edit of 959.png) and code-only hand edits. Credit stays with Travis through the Smogon Sprite Project. Byte-identical to sprite-lab/selections/add-tinkaton-tinkmaster-hand-a.png at commit 5d29640b. Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json. Not credited in the panel, like the sprite lab's own drawings: its tools are model-drawn (Michael, 2026-10-20). Travis stays credited for Tinkaton (959.png) through the Smogon Sprite Project. To credit this file to Travis instead, set via to smogon-gen9 and artists to [\"Travis\"].",
   "verdict": "confirmed"
  },
  {
@@ -38059,10 +38057,8 @@
   "shownIn": [
    "Favorite picker"
   ],
-  "creditedNow": [
-   "G.E.Z."
-  ],
-  "creditedVia": "smogon-gen8",
+  "creditedNow": [],
+  "creditedVia": "my151",
   "evidenceType": "repository-history",
   "changedBy": "my151",
   "sources": [
@@ -38079,7 +38075,7 @@
     "title": "Greedent by G.E.Z., Smogon Gen8 Sprite Project"
    }
   ],
-  "comparison": "G.E.Z.'s Greedent (820.png, Smogon Gen8 Sprite Project sheet row '820 Greedent') as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added. The items come from the sprite lab's drawings from official Pokopia art; no model saw 820.png. Credit stays with G.E.Z. through the Smogon Sprite Project; the lab-drawn items get no credit of their own (Michael, 2026-10-20). Byte-identical to sprite-lab/selections/add-greedent-chef-dente.png at commit b1689310; 22 colours (approved by Michael). Records: not in this copy: sprite-lab/docs/chef-dente-v2/changes.json. Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+  "comparison": "G.E.Z.'s Greedent (820.png, Smogon Gen8 Sprite Project sheet row '820 Greedent') as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added. The items come from the sprite lab's drawings from official Pokopia art; no model saw 820.png. Credit stays with G.E.Z. through the Smogon Sprite Project; the lab-drawn items get no credit of their own (Michael, 2026-10-20). Byte-identical to sprite-lab/selections/add-greedent-chef-dente.png at commit b1689310; 22 colours (approved by Michael). Records: not in this copy: sprite-lab/docs/chef-dente-v2/changes.json. Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json. Not credited in the panel, like the sprite lab's own drawings: its hat, ladle and pan come from the lab's drawing (Michael, 2026-10-20). G.E.Z. stays credited for Greedent (820.png) through the Smogon Sprite Project. To credit this file to G.E.Z. instead, set via to smogon-gen8 and artists to [\"G.E.Z.\"].",
   "verdict": "confirmed"
  },
  {
