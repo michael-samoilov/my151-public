@@ -4,6 +4,7 @@ import interLatinUrl from '@fontsource-variable/inter/files/inter-latin-wght-nor
 import '@fontsource-variable/inter/index.css'
 import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
+import { installTranslationGuard } from '../lib/translationGuard'
 import { installOptOut, isOptedOut } from '../lib/clientId'
 import { installStaleDeployReload } from '../lib/staleDeploy'
 import { installHideBrokenImages } from '../lib/hideBrokenImages'
@@ -22,6 +23,7 @@ preload.href = interLatinUrl;
 document.head.prepend(preload);
 
 installLayoutFontSize();
+installTranslationGuard();
 installOptOut();
 installHideBrokenImages()
 installStaleDeployReload();

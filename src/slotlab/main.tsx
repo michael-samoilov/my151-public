@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/inter/index.css'
 import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
+import { installTranslationGuard } from '../lib/translationGuard'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
 import { PRODUCTION_DEPLOY } from '../lib/demoMode'
@@ -11,6 +12,7 @@ import { SlotLabPage } from './SlotLabPage'
 const rootEl = document.getElementById('root')!;
 
 installLayoutFontSize();
+installTranslationGuard();
 
 void initLocale({
   search: window.location.search,
