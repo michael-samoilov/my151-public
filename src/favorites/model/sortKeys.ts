@@ -96,7 +96,7 @@ type SortKey = (typeof SORT_KEYS)[number];
 export const DEX_KEY = {
   id: 'dex',
   label: 'Dex order',
-  description: 'Evolution line, stage, then species number. Always the final tie-break.',
+  description: 'National Dex number, then form. Always the final tie-break.',
 } as const;
 
 export type SortOrder = readonly SortKeyId[];
