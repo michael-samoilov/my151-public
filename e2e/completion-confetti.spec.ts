@@ -65,6 +65,7 @@ async function placeDex(page: Page, count: number, extra: Record<string, unknown
 }
 
 const dexPopup = (page: Page) => page.getByRole('status').filter({ hasText: 'Your 151 is complete!' });
+const leagueNudge = (page: Page) => page.getByRole('status').filter({ hasText: 'All 14 teams are full!' });
 
 test.describe('completion confetti', () => {
   test.use({ deviceScaleFactor: 2 });
@@ -96,14 +97,18 @@ test.describe('completion confetti', () => {
     await reloadAndAttach(page, testInfo, seen);
   });
 
-  test('the League Maker bursts on desktop as the last card gets its sixth line', async ({ page }, testInfo) => {
+  test('the League Maker bursts on desktop, with its export tooltip, once the picker closes', async ({ page }, testInfo) => {
     await stubApi(page);
     await watchConfetti(page);
     await oneLineShortLeague(page, 13);
     await page.goto('/custom-gym-leader?lang=en');
     await seatSixthLine(page, 13);
+    await page.waitForTimeout(1500);
+    expect(await bursts(page), 'no burst while the picker is open').toHaveLength(0);
+    await page.getByTestId('browser-close').click();
     const seen = await settledBursts(page);
     expectStickerBurst(seen, 2);
+    await expect(leagueNudge(page)).toBeVisible();
     await reloadAndAttach(page, testInfo, seen);
   });
 });
@@ -122,6 +127,7 @@ test.describe('completion confetti on a phone', () => {
     await page.getByRole('button', { name: /Back to the league/ }).click();
     const seen = await settledBursts(page);
     expectStickerBurst(seen, 3);
+    await expect(leagueNudge(page)).toBeVisible();
     await reloadAndAttach(page, testInfo, seen);
   });
 });

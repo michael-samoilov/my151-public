@@ -153,7 +153,8 @@ describe('alternate picker forms', () => {
       [[791, 11109], ['psychic', 7], ['steel', 7], ['legendary', 7], ['steel', 'legendary']],
       [[792, 11110], ['psychic', 7], ['ghost', 7], ['legendary', 7], ['ghost', 'legendary']],
       [[802, 11111], ['fighting', 7], ['ghost', 7], ['legendary', 7], ['fighting', 'legendary']],
-      [[1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116], ['grass', 9], ['grass', 'legendary'], ['legendary', 9]],
+      [[1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116], ['legendary', 9]],
+      [[1017, 11113, 10273, 10274, 10275], ['grass', 9], ['grass', 'legendary']],
       [[10273, 11114], ['water', 9], ['water', 'legendary']],
       [[10274, 11115, 1020], ['fire', 9], ['fire', 'legendary']],
       [[10275, 11116, 1022], ['rock', 9], ['rock', 'legendary']],
@@ -167,7 +168,9 @@ describe('alternate picker forms', () => {
         expect(list.slice(start, start + expected.length), `${type}|${gen}`).toEqual(expected);
       }
     }
-    for (const type of ['electric', 'ghost'] as const) expect(ids(type, 9).at(-1), type).toBe(11112);
+    expect(ids('electric', 9).at(-1)).toBe(11112);
+    expect(ids('normal', 9)).toContain(11112);
+    expect(ids('ghost', 9)).not.toContain(11112);
     expect(ids('electric', 4)).not.toContain(11112);
     expect(ids('legendary', 9)).not.toContain(11112);
     for (const [type, gen] of [['gimmick', 6], ['dragon', 'gimmick'], ['ground', 'gimmick'], ['legendary', 'gimmick']] as const) {
