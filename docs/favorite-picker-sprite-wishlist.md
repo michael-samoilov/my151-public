@@ -22,6 +22,14 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
 
+## Forms batch 3, 2026-10-20 (review candidate)
+
+Pokopia forms are named by species and form, with the character name as a search alias: “Snorlax (Mossy)”, “Pikachu (Pale)”, “Smeargle (Decorator)”, “Stereo Rotom”, “Greedent (Cook)”, “Tinkaton (Supervisor)”, “Tangrowth (Professor)”. Compact codes: M, PE, D, DJ, C, S, P. Sources: [the name sources](i18n/sources/README.md#character-names-and-costume-names).
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Cherrim (Sunshine Form) | 11128 | Cherrim's battle form, Grass × IV, debut Diamond and Pearl, compact S. Game Freak's Black and White sprite, byte-identical to PokéAPI's `421-sunshine.png` from the Black and White import. No credit. Kept out of the League builder as a battle form. |
+
 ## Added on 2026-10-20 (review candidate)
 
 Michael approved each sprite in the sprite lab. The app files are byte copies of the lab selections. [Provenance](favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json).
@@ -30,11 +38,11 @@ Michael approved each sprite in the sprite lab. The app files are byte copies of
 | --- | --- | --- |
 | Shadow Lugia | 11123 | Lugia appearance, Psychic and Flying × III (Pokémon XD is a Generation III game), debut XD, compact S. JoeTEStrikesBack's sprite; my151 changed 229 pixels. |
 | Primal Dialga | 11124 | Dialga appearance, Steel and Dragon × IV, debut Explorers of Time and Darkness, compact P. JoeTEStrikesBack's sprite; my151 made 8 background pixels transparent. |
-| Tinkmaster | 11125 | Tinkaton appearance, Fairy and Steel × IX, debut Pokopia, compact T. Travis's #959 with tools my151 added. |
+| Tinkmaster | 11125 | Tinkaton appearance, Fairy and Steel × IX, debut Pokopia, compact T (S since forms batch 3). Travis's #959 with tools my151 added. |
 | Professor Tangrowth | 11126 | Tangrowth appearance, Grass × IX, debut Pokopia, compact P. The sprite lab's own drawing from Game Freak's #465. No credit. |
-| Chef Dente | 11127 | Greedent appearance, Normal × IX, debut Pokopia, compact CD. G.E.Z.'s #820 with kitchen items my151 added. |
+| Chef Dente | 11127 | Greedent appearance, Normal × IX, debut Pokopia, compact CD (C since forms batch 3). G.E.Z.'s #820 with kitchen items my151 added. |
 
-None has a shiny. Types are the species' own, as for the other picker-only forms; the generation is the source game's, as for the Pokopia forms. Each shows its official name, or its character name for the Pokopia forms, in every locale where one exists. The full label is the character's name alone (“Mosslax”, “DJ Rotom”). None is in the League builder (Michael, 2026-10-20: “for now, we can keep off all of these spinoff-game etc. pokemon forms from the league builder”).
+None has a shiny. Types are the species' own, as for the other picker-only forms; the generation is the source game's, as for the Pokopia forms. Each shows its official name, or its character name for the Pokopia forms, in every locale where one exists. The full label was the character's name alone (“Mosslax”, “DJ Rotom”) until forms batch 3. None is in the League builder (Michael, 2026-10-20: “for now, we can keep off all of these spinoff-game etc. pokemon forms from the league builder”).
 
 ## Imported on 2026-10-19 (review candidate)
 
@@ -63,7 +71,7 @@ The exact KingOfThe-X-Roads originals are native 96×96 PNGs. All four preserve 
 
 | Appearance | Picker ID | Placement and source |
 | --- | --- | --- |
-| Smearguru | 11117 | Smeargle appearance in Normal × IX, debut Pokopia, with compact S and full label “Smeargle (Smearguru)”. https://sta.sh/0qi9vfww1kg |
+| Smearguru | 11117 | Smeargle appearance in Normal × IX, debut Pokopia, with compact S and full label “Smeargle (Smearguru)” (D and “Smeargle (Decorator)” since forms batch 3). https://sta.sh/0qi9vfww1kg |
 | Koraidon Limited Build | 11118 | After Koraidon in Fighting/Dragon × IX and Legendary pools. https://sta.sh/01ppvyo9gx1l |
 | Miraidon Low-Power Mode | 11119 | After Miraidon in Electric/Dragon × IX and Legendary pools. https://sta.sh/0p5wp0lgq01 |
 | Mega Raichu X | 10304 | Replaces existing shared Picker/League art with a cache revision. Identity stays 10304. https://sta.sh/03id19f0dha |
@@ -84,7 +92,7 @@ Michael chose these sprites from the sprite lab's locked selections (`sprite-lab
 | Mega Zygarde | 10301 | `src/league/data/powerupForms.json`, not a picker-only form. Its label is unique to Zygarde, and `npm run league:powerups` dropped it only because PokeAPI has no sprite. With the local sprite in place, the harvester keeps it, so the League builder also gets a Mega button on Zygarde. |
 | Ogerpon Teal, Wellspring, Hearthflame, and Cornerstone Mask Terastal | 11113–11116 | `alternateForms.ts` and `TERASTAL_FORM_IDS`. In each type × Gen IX cell and Legendary cell, each follows its mask; in the Gimmick cells, they sort before Terapagos's Terastal forms. Kept out of the League builder as battle forms. Sprites by KingOfThe-X-Roads (`sprite-lab/inputs/kingofthe-x-roads/`), not from the locked selections. |
 
-Overdrive, the two phases, Zenith, and DJ Rotom have no localized name from a game-text source in the repository. Since 2026-10-19, the phases and DJ Rotom take their official name in each locale from Bulbapedia, and Zenith takes its Japanese name ぜんりょくのマーシャドー, with `official-bulbapedia` provenance. Bulbapedia gives no localized name for Overdrive, or for Zenith outside Japanese, so those keep the English descriptor with `english-only` provenance. See [the Bulbapedia names](i18n/sources/README.md#names-from-bulbapedia).
+Overdrive, the two phases, Zenith, and DJ Rotom have no localized name from a game-text source in the repository. Since 2026-10-19, the phases and DJ Rotom take their official name in each locale from Bulbapedia, and Zenith takes its Japanese name ぜんりょくのマーシャドー, with `official-bulbapedia` provenance. Bulbapedia gives no localized name for Overdrive, or for Zenith outside Japanese, so those keep the English descriptor with `english-only` provenance. Since forms batch 3, Overdrive is オーバードライブ and 오버드라이브 (`official-usage`) and 超频驱动 and 超頻驅動 (`idiomatic`). See [the Bulbapedia names](i18n/sources/README.md#names-from-bulbapedia).
 
 No game names the Terastal Ogerpon forms. Each locale joins two official names, the mask and Terapagos's Terastal Form, with `official-composed` provenance. The tooltip reads "Ogerpon (Wellspring Mask, Terastal Form)" and the compact code is WM T: the mask's code, then Terapagos's T. Black and White Kyurem Overdrive read B O and W O by the same rule.
 
