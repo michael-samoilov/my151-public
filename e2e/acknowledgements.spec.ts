@@ -26,7 +26,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail').getByText('Non-profit use, with credit', { exact: true })).toBeVisible();
     await expect(dialog.locator('blockquote')).toContainText('the spriter or the project itself is credited');
     await expect(dialog.getByRole('link', { name: 'Generation 6 thread' })).toBeVisible();
-    await dialog.getByRole('button', { name: 'Back' }).click();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
 
     const viewport = page.viewportSize()!;
     const box = (await dialog.boundingBox())!;
@@ -46,10 +46,10 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail-name')).toHaveText('PokéAPI');
     const license = dialog.getByTestId('ack-license-text');
     await expect(license).toContainText('Redistribution and use in source and binary forms');
-    await expect(dialog.getByRole('button', { name: 'Back' })).toBeFocused();
+    await expect(dialog.getByRole('button', { name: 'Back', exact: true })).toBeFocused();
     const licenseChars = (await license.textContent())!.length;
 
-    await dialog.getByRole('button', { name: 'Back' }).click();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
     await expect(row).toBeFocused();
 
@@ -57,7 +57,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail')).toContainText("The source of most of the app's sprite files.");
     await expect(dialog.getByTestId('ack-terms').locator('blockquote')).toHaveCount(1);
     await expect(dialog.getByTestId('ack-sprites')).toHaveCount(0);
-    await dialog.getByRole('button', { name: 'Back' }).click();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
     const artists = dialog.getByTestId('ack-group-sprite-artists').locator('[data-ack-id]');
@@ -72,18 +72,18 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('DJ Rotom');
     await expect(sprites.getByRole('listitem')).toHaveCount(13);
     const kingSprites = await sprites.getByRole('listitem').count();
-    await dialog.getByRole('button', { name: 'Back' }).click();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
     for (const id of ['partywhale-type-icons', 'elginive-type-icons']) {
       await dialog.locator(`[data-ack-id="${id}"]`).click();
       await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Gen 9 Type Icons');
-      await dialog.getByRole('button', { name: 'Back' }).click();
+      await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     }
     await dialog.locator('[data-ack-id="bulbagarden-archives"]').click();
     await expect(dialog.getByTestId('ack-detail-name')).toHaveText('Pokémon symbols and item icons');
     await expect(dialog.getByRole('link', { name: /archives.bulbagarden.net/ })).toBeVisible();
-    await dialog.getByRole('button', { name: 'Back' }).click();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
 
     await dialog.locator('[data-ack-id="npm-packages"]').click();
     const packages = dialog.getByTestId('ack-packages');
@@ -93,7 +93,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
       /^License texts of \d+ packagesnpm-packages\.txt$/,
       /^License texts of 4 packagestailwindcss, modern-normalize, country-flag-icons, and echarts NOTICE$/,
     ]);
-    await dialog.getByRole('button', { name: 'Back' }).click();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
     await page.keyboard.press('Escape');
