@@ -510,6 +510,12 @@ function useZoomFrame(
       const rect = map.getBoundingClientRect();
       return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
     };
+    // An open selector wins where it overlaps the minimap, so every tile in it
+    // stays clickable: the minimap does not arm under the selector.
+    const overSelector = (x: number, y: number) => {
+      const rect = el.querySelector('[data-testid="favorites-picker"]')?.getBoundingClientRect();
+      return !!rect && x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    };
     const arm = (on: boolean) => {
       window.clearTimeout(hoverTimer);
       hoverTimer = 0;
@@ -520,7 +526,7 @@ function useZoomFrame(
     };
     const onFrameMove = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse' || drag) return;
-      if (!overMap(event.clientX, event.clientY)) arm(false);
+      if (!overMap(event.clientX, event.clientY) || overSelector(event.clientX, event.clientY)) arm(false);
       else if (!armed && !hoverTimer) hoverTimer = window.setTimeout(() => arm(true), MINIMAP_HOVER_MS);
     };
     const onFrameLeave = () => {

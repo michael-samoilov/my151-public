@@ -115,7 +115,7 @@ function Name({ label: source, detail: detailOf, testId }: {
     data-testid={testId}
     aria-label={detail ? `${label.full}${cjk ? '（' : ' ('}${detail}${cjk ? '）' : ')'}` : label.full}
     collisionPadding={getAppliedRootFontSizePx()}
-    className="z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg max-w-[calc(100vw-2rem)] whitespace-normal break-words text-left"
+    className={`z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg max-w-[calc(100vw-2rem)] whitespace-normal break-words ${detail ? 'text-center' : 'text-left'}`}
   >
     <TooltipArrow className="fill-foreground" />
     <span data-i18n-exempt="pokemon-name"><PokemonNameText name={label.full} /></span>
