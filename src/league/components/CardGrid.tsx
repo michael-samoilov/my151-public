@@ -1576,7 +1576,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const setStageBoundary = useLeagueStore((s) => s.setStageBoundary);
   const setLineBoundaries = useLeagueStore((s) => s.setLineBoundaries);
   const setLegend = useLeagueStore((s) => s.setLegend);
-  const swapLegends = useLeagueStore((s) => s.swapLegends);
+  const moveLegend = useLeagueStore((s) => s.moveLegend);
   const removeLineAt = useLeagueStore((s) => s.removeLineAt);
   const cyclePowerupOnCard = useLeagueStore((s) => s.cyclePowerup);
   const { card, shades, rows } = view;
@@ -1596,9 +1596,9 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   // The set is every member of every line, not the ones the rows show today:
   // moving a line to a deeper seat, or dragging an evolution boundary, brings
   // in stages no row showed before. Powerup forms come too, because the
-  // powerup rides its seat and a reorder hands it to another line.
-  const warmable = [...new Set(card.lines
-    .flatMap((line) => line.branch)
+  // powerup rides its seat and a reorder hands it to another line. The
+  // legendaries come with theirs, because a press swaps their sprite too.
+  const warmable = [...new Set([...card.lines.flatMap((line) => line.branch), ...legendsOf(card).map((l) => l.pokemonId)]
     .flatMap((id) => {
       const sprite = getPokemonById(id)?.sprite;
       const forms = [...formsFor(id, 'mega'), ...formsFor(id, 'dynamax')];
@@ -1624,6 +1624,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   // portal is the root's rem, not the card's.
   const [held, setHeld] = useState<{
     ids: number[];
+    form?: PowerupForm | null;
     sprite: number;
     face: { width: number; height: number; radius: number; shadow: string; rendering?: React.CSSProperties['imageRendering'] };
   } | null>(null);
@@ -1649,7 +1650,13 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       const pickedUp = travelRef.current <= (cell?.height ?? 0) / 2;
       const grabbed = card.lines[d.seat - 1];
       if (d.isLegend) {
-        setHeld({ ids: legendAt(card, d.seat) ? [legendAt(card, d.seat)!.pokemonId] : [], sprite, face });
+        const legend = legendAt(card, d.seat);
+        setHeld({
+          ids: legend ? [legend.pokemonId] : [],
+          form: formAt(powerupsAt(card, BOSS_ROW), BOSS_ROW, d.seat, legend?.pokemonId ?? null),
+          sprite,
+          face,
+        });
       } else if (grabbed) {
         const column = { ids: grabbed.branch, sprite, face };
         if (pickedUp) {
@@ -1773,11 +1780,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       const to = e.over?.data.current as CellDatum | undefined;
       if (!p) return;
       if (p.legend) {
-        const moving = legendAt(card, p.seat);
-        if (to && to.row === BOSS_ROW && moving && to.seat !== p.seat) {
-          if (legendAt(card, to.seat)) swapLegends(cardIndex, p.seat, to.seat);
-          else setLegend(cardIndex, { ...moving, seat: to.seat });
-        }
+        if (to && to.row === BOSS_ROW) moveLegend(cardIndex, p.seat, to.seat);
         return;
       }
       if (to && to.seat !== p.seat) {
@@ -1785,7 +1788,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         moveSeat(cardIndex, p.seat, to.seat);
       }
     },
-    [card, cardIndex, moveSeat, setLegend, setLineBoundaries, swapLegends],
+    [cardIndex, moveLegend, moveSeat, setLineBoundaries],
   );
 
   const vars = {
@@ -1821,9 +1824,12 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     (seat: number) => (previewMove ? seatAfterMove(seat, previewMove.from, previewMove.to) ?? seat : seat),
     [previewMove],
   );
+  // A lifted legendary takes its form along, so the line it uncovers shows none.
   const previewPowerups = useCallback(
-    (row: number) => powerupsAt(card, row).map((p) => ({ ...p, seat: previewSeat(p.seat) })),
-    [card, previewSeat],
+    (row: number) => powerupsAt(card, row)
+      .filter((p) => !(legendDrag && row === BOSS_ROW && legendAt(card, p.seat)))
+      .map((p) => ({ ...p, seat: previewSeat(p.seat) })),
+    [card, legendDrag, previewSeat],
   );
   const inHand = previewMove !== null || legendDrag;
   const renderRows =
@@ -1927,6 +1933,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                     pokemonId: cell.pokemonId,
                   };
                   const topId = topRowBySeat.get(cell.seat) === row ? cell.pokemonId : null;
+                  const form = formAt(previewPowerups(row), row, cell.seat, cell.pokemonId);
                   const custom =
                     topId !== null && line !== undefined
                     && effectiveBoundaries(line).join() !== defaultBoundaries(line.branch).join();
@@ -1941,14 +1948,10 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       columnHovered={!browserOpen && !inHand && stageDrag === null && !legendDrag && hoverSeat === cell.seat}
                       tint={tinted ? stageTint(line.branch[stageDrag.stage]) : undefined}
                       pokemonId={cell.pokemonId}
-                      form={formAt(previewPowerups(row), row, cell.seat, cell.pokemonId)}
-                      powerupKind={
-                        isPowerupRow(row)
-                          ? previewPowerups(row).find((p) => p.seat === cell.seat)?.kind ?? null
-                          : null
-                      }
+                      form={form}
+                      powerupKind={form ? previewPowerups(row).find((p) => p.seat === cell.seat)?.kind ?? null : null}
                       onPowerup={
-                        !inHand && isPowerupRow(row) && cell.pokemonId !== null && !cell.isLegend
+                        !inHand && isPowerupRow(row) && cell.pokemonId !== null
                           ? (kind) => cyclePowerupOnCard(cardIndex, row, cell.seat, kind, cell.pokemonId as number)
                           : undefined
                       }
@@ -2020,7 +2023,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                 {heldPokemon.map((p) => (
                   <img
                     key={p.id}
-                    src={p.sprite}
+                    src={held.form ? formSprite(held.form) : p.sprite}
                     alt=""
                     className="max-w-none"
                     style={{ width: held.sprite, height: held.sprite, imageRendering: held.face.rendering ?? 'pixelated' }}

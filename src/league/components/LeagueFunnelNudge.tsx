@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useT, type NoArgKey } from '@/i18n';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { isRosterNudge, leagueNudgeEvent, type LeagueNudgeId } from '../model/funnelNudges';
 import { pickVisibleAnchor, revealToolbarButton } from '../model/nudgeAnchor';
 import { useLeagueUi } from '../store/useLeagueUi';
@@ -30,13 +31,27 @@ const COPY: Record<LeagueNudgeId, NudgeCopy> = {
     bodyKey: 'nudge.complete.body',
     ctaKey: 'nudge.gyms.cta',
   },
+  full: {
+    titleKey: 'nudge.full.title',
+    bodyKey: 'nudge.complete.body',
+    ctaKey: 'nudge.gyms.cta',
+  },
 };
 
 const AUTO_DISMISS_MS = 10000;
 const CARD_W = 264;
 export const REVEAL_DELAY_MS = 360;
 
-const isCardNudge = (id: LeagueNudgeId) => id === 'card';
+/**
+ * Whether a nudge floats under an Export button rather than sitting under the
+ * league summary. The summary beside an open card on desktop is too narrow
+ * for the full-league nudge, so it points at the league's Export button.
+ */
+function useFloats() {
+  const openCard = useLeagueUi((s) => s.openCard);
+  const isDesktop = useIsDesktop();
+  return (id: LeagueNudgeId) => id === 'card' || (id === 'full' && isDesktop && openCard !== null);
+}
 
 function useNudge(owns: (id: LeagueNudgeId) => boolean) {
   const active = useLeagueUi((s) => s.activeNudge);
@@ -141,7 +156,7 @@ function NudgeContent({ id, finish, inline = false }: {
 const POPUP_CLASS = 'relative rounded-lg border bg-popover shadow-xl p-3 milestone-nudge-in';
 
 export function LeagueFunnelNudge() {
-  const { id, armed, ready, finish } = useNudge(isCardNudge);
+  const { id, armed, ready, finish } = useNudge(useFloats());
   const [anchor, setAnchor] = useState<{ id: LeagueNudgeId; rect: DOMRect } | null>(null);
 
   useLayoutEffect(() => {
@@ -149,7 +164,7 @@ export function LeagueFunnelNudge() {
     let cancelled = false;
     let raf = 0;
     let frames = 0;
-    const selector = '[data-league-export="card"]';
+    const selector = id === 'card' ? '[data-league-export="card"]' : '[data-league-export="league"]';
     const capture = () => {
       if (cancelled) return;
       const nodes = [...document.querySelectorAll(selector)];
@@ -224,7 +239,8 @@ function samePlacement(a: Placement | null, b: Placement): boolean {
 }
 
 export function LeagueRosterNudge({ fit }: { fit: Fit }) {
-  const { id, ready, finish } = useNudge(isRosterNudge);
+  const floats = useFloats();
+  const { id, ready, finish } = useNudge((nudge) => isRosterNudge(nudge) && !floats(nudge));
   const slotRef = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<Placement | null>(null);
 

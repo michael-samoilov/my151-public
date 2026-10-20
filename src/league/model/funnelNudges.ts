@@ -5,7 +5,7 @@ import {
   type LeagueNudgeId as LeagueNudgeEventId,
 } from '../../../api/_events';
 
-export type LeagueNudgeId = LeagueNudgeEventId | 'complete';
+export type LeagueNudgeId = LeagueNudgeEventId | 'complete' | 'full';
 
 const GYM_LEADER_SLOTS = [...Array(SLOT_COUNT).keys()].filter(
   (i) => slotKind(i) === 'gym',
@@ -14,7 +14,7 @@ const GYM_LEADER_SLOTS = [...Array(SLOT_COUNT).keys()].filter(
 const CARD_LINE_CAP = TEAM_SIZES[BOSS_ROW - 1];
 
 export function leagueNudgeEvent(id: LeagueNudgeId, action: LeagueNudgeAction) {
-  return funnelEventName(id === 'complete' ? 'league' : id, action);
+  return funnelEventName(id === 'card' ? 'card' : 'league', action);
 }
 
 export function cardHasFullTeam(card: { lines: readonly unknown[] }): boolean {
@@ -64,8 +64,8 @@ export function nextLeagueNudge(ctx: LeagueNudgeContext): LeagueNudgeId | null {
   return null;
 }
 
-export function isRosterNudge(id: LeagueNudgeId | null): id is 'league' | 'complete' {
-  return id === 'league' || id === 'complete';
+export function isRosterNudge(id: LeagueNudgeId | null): id is 'league' | 'complete' | 'full' {
+  return id === 'league' || id === 'complete' || id === 'full';
 }
 
 function isLeagueNudgeId(v: unknown): v is LeagueNudgeId {
