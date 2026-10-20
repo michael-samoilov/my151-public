@@ -7014,6 +7014,14 @@
    "via": "my151",
    "evidence": "my151's sprite lab drew it: an image-model edit of the app's Game Freak Tangrowth (465.png) from official Pokopia art only, then code-only hand fixes. No outside artist; not credited in the panel (Michael, 2026-10-13). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
    "name": "tangrowth-professor"
+  },
+  "11128": {
+   "artists": [],
+   "role": "drew",
+   "via": "pokeapi",
+   "evidence": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/421-sunshine.png",
+   "notes": "Game Freak's Black and White sprite: byte-identical to that file, which came in PokéAPI's Black and White import (96c282e, 2020-08-01). No credit, as for the other Game Freak sprites. Ledger: docs/credits/sprite-evidence.json.",
+   "name": "cherrim-sunshine"
   }
  },
  "artists": {
