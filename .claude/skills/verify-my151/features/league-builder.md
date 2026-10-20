@@ -17,7 +17,8 @@ and a legendary on the boss row.
   picker instead.
 - The boss row keeps its legendaries in `legends[]`, at most one per seat. A
   legendary dropped on a seat that holds one swaps the two. Dropped on a seat
-  without one, it moves there.
+  without one, it moves there. A column with no line has nothing for it to
+  replace, so a drop there leaves it where it was.
 - The ace and partner slots open one-Pokémon pickers with standalone tiles.
   When the card has room, a pick also seats the tapped Pokémon's whole line.
 - A cell dragged up or down moves an evolution boundary. A press and hold lifts
