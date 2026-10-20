@@ -58,6 +58,22 @@
     "zh-Hans": "原始帝牙卢卡",
     "zh-Hant": "原始帝牙盧卡"
    }
+  },
+  "11129": {
+   "basis": "Pokémon Ranger: Guardian Signs had no Korean or Chinese release, so no game names Ukulele Pichu there. Korean: the Korean Pokémon wiki's page title 우쿨렐레 피츄 (pokemon.fandom.com/ko). Chinese: 52poke's Guardian Signs page (乌克丽丽皮丘). Read through a search index on 2026-10-20.",
+   "names": {
+    "ko": "우쿨렐레 피츄",
+    "zh-Hans": "乌克丽丽皮丘",
+    "zh-Hant": "烏克麗麗皮丘"
+   }
+  },
+  "11130": {
+   "basis": "Pokkén Tournament had no Korean release and no Chinese text, so no game names Shadow Mewtwo there. The word is Pokémon GO's official term for Shadow Pokémon (Bulbapedia, Shadow Pokémon (GO) rev 4640838: 그림자 포켓몬, 暗影寶可夢), before the species' official name, as for Shadow Lugia.",
+   "names": {
+    "ko": "그림자 뮤츠",
+    "zh-Hans": "暗影超梦",
+    "zh-Hant": "暗影超夢"
+   }
   }
  }
 }

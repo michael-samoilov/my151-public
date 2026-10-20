@@ -38104,5 +38104,50 @@
   ],
   "comparison": "byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/421-sunshine.png at 96c282e, 0dc105d and the pinned ba40397 that scripts/fetch-favorite-picker-sprites.ts reads; that path came in PokéAPI commit 96c282e (Black and White import), and its parent 5d12162 has no such file, so it is not a Smogon update. Checked 2026-10-20.",
   "verdict": "official Game Freak"
+ },
+ {
+  "file": "public/sprites/pokemon/11129.png",
+  "sha256": "4ac9d39a82070d909db7a0e60697eb1774c9342d14a4667565f5592bf27ceee2",
+  "pokemon": [
+   "pichu-ukulele"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": "my151",
+  "evidenceType": "repository-history",
+  "sources": [
+   {
+    "url": "https://x.com/DrLavaYT/status/1224724318765977603",
+    "localCopy": "public/sprites/pokemon/11129.png",
+    "sha256": "4ac9d39a82070d909db7a0e60697eb1774c9342d14a4667565f5592bf27ceee2",
+    "title": "Sprite in DrLava's Ukulele Pichu image, rebuilt at 1 px per sprite pixel; artist not confirmed (likely Pokémon Ranger: Guardian Signs)"
+   }
+  ],
+  "notes": "Michael, 2026-10-20: \"let's use that pichu sprite\" and \"i imagine it can go uncredited for now\"."
+ },
+ {
+  "file": "public/sprites/pokemon/11130.png",
+  "sha256": "2726734ea34f7cf2bb2219658b113a9483f8eec5ff64bb529b0cbd37d1f64049",
+  "pokemon": [
+   "mewtwo-shadow"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "DarkwarePX"
+  ],
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
+  "sources": [
+   {
+    "url": "https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154",
+    "localCopy": "sprite-lab/inputs/darkwarepx/",
+    "sha256": "2726734ea34f7cf2bb2219658b113a9483f8eec5ff64bb529b0cbd37d1f64049",
+    "title": "Shadow Mewtwo by DarkwarePX, frame 0"
+   }
+  ]
  }
 ]

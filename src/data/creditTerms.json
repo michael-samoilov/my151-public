@@ -359,6 +359,22 @@
      "verified": true
     }
    ]
+  },
+  "darkwarepx": {
+   "name": "DarkwarePX",
+   "urls": [
+    "https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "free for public use, no need to credit me but don't say you made it",
+     "url": "https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154",
+     "where": "Deviation description, \"Shadow Mewtwo\"; the shiny's page gives the same sentence",
+     "read": "2026-10-20",
+     "verified": true
+    }
+   ]
   }
  },
  "artists": {
@@ -686,7 +702,7 @@
     }
    ],
    "linkStatus": "proven",
-   "note": "Terms first read on 2026-10-19 and read again on 2026-10-20 with the same text. my151 changed both sprites; the credit entry says so."
+   "note": "Terms first read on 2026-10-19 and read again on 2026-10-20 with the same text. my151 changed both sprites; the change is recorded in the evidence ledger, and the panel does not mention it (Michael, 2026-10-20)."
   },
   "Katten": {
    "urls": [],
@@ -1233,6 +1249,30 @@
    "termsSource": "smogon-sprite-project",
    "linkEvidence": [],
    "linkStatus": "none-found"
+  },
+  "DarkwarePX": {
+   "urls": [
+    "https://www.deviantart.com/darkwarepx"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "free for public use, no need to credit me but don't say you made it",
+     "url": "https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154",
+     "read": "2026-10-20"
+    }
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/darkwarepx",
+     "proof": "a-pixel-match",
+     "detail": "11130.png (Shadow Mewtwo) is frame 0 of this deviation's 96x96 GIF, posted by the profile on 2023-01-06, every pixel unchanged.",
+     "source": "https://www.deviantart.com/darkwarepx/art/Shadow-Mewtwo-944066154",
+     "read": "2026-10-20"
+    }
+   ],
+   "linkStatus": "proven",
+   "note": "Terms ask for no credit; my151 credits DarkwarePX as it credits every direct-upload artist, which also makes clear my151 did not make the sprite."
   }
  }
 }

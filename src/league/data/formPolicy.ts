@@ -15,7 +15,7 @@ const FUSION_FORM_IDS = new Set([10022, 10023, 10155, 10156, 10193, 10194]);
  * spinoff-game etc. pokemon forms from the league builder."
  */
 const PICKER_ONLY_FORM_IDS = new Set([
-  11117, 11118, 11119, 11120, 11121, 11122, 11123, 11124, 11125, 11126, 11127,
+  11117, 11118, 11119, 11120, 11121, 11122, 11123, 11124, 11125, 11126, 11127, 11129, 11130,
 ]);
 
 export const isLeagueAlternateForm = (form: AlternatePickerForm): boolean =>

@@ -88,9 +88,10 @@ const STEREO_ROTOM_CODES: Readonly<Partial<Record<string, string>>> = { ja: 'S',
 /**
  * The six Cosplay Pikachu. PokéAPI gives all six one German descriptor,
  * "Cosplayform", which names none of them. Omega Ruby and Alpha Sapphire game
- * text names each costume (Rocker-Pikachu, Damen-Pikachu, ...), so German game
- * text wins for these forms (Michael, 2026-10-20: "let's fix the german cosplay
- * pikachu names in the app"). Other locales keep PokéAPI's costume names.
+ * text names each costume (Rocker-Pikachu, Damen-Pikachu, ...), so game text
+ * wins for these forms in every locale that has it (Michael, 2026-10-20: "let's
+ * fix the german cosplay pikachu names in the app", then "add both leftovers").
+ * It also corrects English "Pikachu, Ph.D." and Japanese "マスク・ド・ピカチュウ".
  */
 const COSTUMES: ReadonlySet<string> = new Set([
   'pikachu-rock-star', 'pikachu-belle', 'pikachu-pop-star', 'pikachu-phd', 'pikachu-libre', 'pikachu-cosplay',
@@ -373,8 +374,13 @@ async function main(): Promise<void> {
 
       const pokeapi = formNames.get(`${entry.formId}:${langId}`);
       const game = gameDescriptor(entry, locale);
+      // Japanese base forms such as Kyogre's are named "カイオーガのすがた",
+      // "Kyogre's form": no form name, so the descriptor is the species name
+      // and the label is the species alone, as English "Kyogre" is.
+      const speciesName = speciesNames.get(`${entry.speciesId}:${langId}`);
+      const bare = locale === 'ja' && speciesName && pokeapi === `${speciesName}のすがた` ? speciesName : undefined;
       const descriptor = sourcedForms.get(entry.appId)?.[locale as keyof typeof LANGUAGE_IDS]
-        ?? (locale === 'de' && COSTUMES.has(entry.formIdentifier) && game ? game : pokeapi ?? game);
+        ?? (COSTUMES.has(entry.formIdentifier) && game ? game : bare ?? pokeapi ?? game);
       if (descriptor) {
         catalog.forms[entry.appId] = descriptor;
         catalog.formSource[entry.appId] = 'official';

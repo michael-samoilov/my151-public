@@ -2,8 +2,8 @@ import type { GenNumber } from './cells';
 import { isPowerupForm, type PickerMon } from './catalog';
 
 const DEBUT_GAMES = [
-  'RB', 'GS', 'RS', 'FRLG', 'E', 'XD', 'PMD', 'DP', 'PMDTD', 'Pt', 'HGSS', 'BW', 'B2W2', 'XY', 'ORAS',
-  'SM', 'USUM', 'LGPE', 'SwSh', 'PLA', 'SV', 'PLZA', 'Pokopia',
+  'RB', 'GS', 'RS', 'FRLG', 'E', 'XD', 'PMD', 'DP', 'PMDTD', 'Pt', 'HGSS', 'RangerGS', 'BW', 'B2W2', 'XY', 'ORAS',
+  'Pokken', 'SM', 'USUM', 'LGPE', 'SwSh', 'PLA', 'SV', 'PLZA', 'Pokopia',
 ] as const;
 type DebutGame = (typeof DEBUT_GAMES)[number];
 
@@ -39,6 +39,8 @@ const LATER_DEBUTS: readonly (readonly [first: number, last: number, game: Debut
   [11117, 11117, 'Pokopia'],
   [11120, 11121, 'Pokopia'],
   [11125, 11127, 'Pokopia'],
+  [11129, 11129, 'RangerGS'],
+  [11130, 11130, 'Pokken'],
 ];
 
 function debutGame(mon: PickerMon): DebutGame {
@@ -53,8 +55,8 @@ function debutGame(mon: PickerMon): DebutGame {
 
 const GAME_REGION: Record<DebutGame, `${GenNumber} ${string}`> = {
   RB: '1 kanto', GS: '2 johto', RS: '3 hoenn', FRLG: '3 kanto', E: '3 hoenn', XD: '3 orre', PMD: '3 mystery-dungeon',
-  DP: '4 sinnoh', PMDTD: '4 mystery-dungeon', Pt: '4 sinnoh', HGSS: '4 johto', BW: '5 unova', B2W2: '5 unova',
-  XY: '6 kalos', ORAS: '6 hoenn', SM: '7 alola', USUM: '7 alola', LGPE: '7 kanto',
+  DP: '4 sinnoh', PMDTD: '4 mystery-dungeon', Pt: '4 sinnoh', HGSS: '4 johto', RangerGS: '4 oblivia', BW: '5 unova', B2W2: '5 unova',
+  XY: '6 kalos', ORAS: '6 hoenn', Pokken: '6 ferrum', SM: '7 alola', USUM: '7 alola', LGPE: '7 kanto',
   SwSh: '8 galar', PLA: '8 hisui', SV: '9 paldea', PLZA: '9 kalos', Pokopia: '9 pokopia',
 };
 
