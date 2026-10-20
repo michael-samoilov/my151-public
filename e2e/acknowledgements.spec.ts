@@ -37,10 +37,8 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(smogonArtists.locator(':scope > ol > li')).toHaveCount(artistTotal);
     expect(await top(dialog.getByRole('link', { name: 'Generation 8 and later thread' }))).toBeLessThan(await top(artistSection));
     expect(await top(dialog.getByTestId('ack-terms'))).toBeLessThan(await top(artistSection));
-    await expect(smogonArtists.locator('li').filter({ hasText: 'Travis' }).getByTestId('ack-artist-changed'))
-      .toHaveText(/^Base of .*Tinkmaster.*\. my151 changed this sprite\.$/);
-    await expect(smogonArtists.locator('li').filter({ hasText: 'G.E.Z.' }).getByTestId('ack-artist-changed'))
-      .toHaveText(/^Base of .*Chef Dente.*\. my151 changed this sprite\.$/);
+    // The panel never says which sprites my151 changed (Michael, 2026-10-20).
+    await expect(dialog.getByTestId('ack-detail')).not.toContainText(/changed/i);
     await expect(smogonArtists.getByTestId('ack-artists-unconfirmed')).toHaveText(/^Artist not confirmed\d+ sprites?$/);
     await dialog.getByRole('button', { name: 'Back', exact: true }).click();
 
@@ -95,6 +93,11 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     const kingSprites = await sprites.getByRole('listitem').count();
     await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
+
+    await dialog.locator('[data-ack-id="artist:JoeTEStrikesBack"]').click();
+    await expect(dialog.getByTestId('ack-sprites-summary')).toHaveText('2 sprites from their own uploads');
+    await expect(dialog.getByTestId('ack-detail')).not.toContainText(/changed/i);
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
 
     for (const id of ['partywhale-type-icons', 'elginive-type-icons']) {
       await dialog.locator(`[data-ack-id="${id}"]`).click();

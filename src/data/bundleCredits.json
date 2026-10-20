@@ -9,13 +9,7 @@
      "JoeTEStrikesBack",
      2
     ]
-   ],
-   "changed": {
-    "JoeTEStrikesBack": [
-     "11123",
-     "11124"
-    ]
-   }
+   ]
   },
   "artist:KingOfThe-X-Roads": {
    "sprites": 13,
@@ -66,7 +60,7 @@
    ]
   },
   "smogon-sprite-project": {
-   "sprites": 603,
+   "sprites": 601,
    "unconfirmed": 16,
    "artists": [
     [
@@ -83,18 +77,18 @@
     ],
     [
      "G.E.Z.",
-     35
+     34
     ],
     [
      "princessofmusic",
      22
     ],
     [
-     "Travis",
-     22
+     "Falgaia",
+     21
     ],
     [
-     "Falgaia",
+     "Travis",
      21
     ],
     [
@@ -289,15 +283,7 @@
      "Zerudez",
      1
     ]
-   ],
-   "changed": {
-    "Travis": [
-     "11125"
-    ],
-    "G.E.Z.": [
-     "11127"
-    ]
-   }
+   ]
   }
  },
  "pokeapi": {

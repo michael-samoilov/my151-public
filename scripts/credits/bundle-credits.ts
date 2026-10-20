@@ -15,8 +15,8 @@
  *
  * Game Freak's own sprites and my151's own drawing count nowhere. An artist
  * counts a file only when docs/credits/sprite-evidence.json confirms it;
- * every other file counts under its entry as "artist not confirmed". A file
- * that my151 changed (`changedBy`) is listed under its artist as well.
+ * every other file counts under its entry as "artist not confirmed". The
+ * panel never says which files my151 changed (`changedBy`).
  *
  * `pokeapi` counts the files PokéAPI delivers, from
  * docs/credits/pokeapi-delivery.json (scripts/credits/pokeapi-delivery.py):
@@ -56,8 +56,6 @@ export interface BundleEntry {
   unconfirmed: number;
   /** [artist, files], most files first, ties by name. */
   artists: [string, number][];
-  /** Each artist's confirmed files that my151 changed, by file id. */
-  changed?: Record<string, string[]>;
 }
 /** The shown files that PokéAPI delivers. */
 export interface PokeApiDelivery {
@@ -141,10 +139,7 @@ for (const row of ledger) {
   }
   const counts = byArtist.get(entry) ?? new Map<string, number>();
   byArtist.set(entry, counts);
-  for (const name of attribution[id].artists) {
-    counts.set(name, (counts.get(name) ?? 0) + 1);
-    if (attribution[id].changedBy === OUR_OWN) ((tally.changed ??= {})[name] ??= []).push(id);
-  }
+  for (const name of attribution[id].artists) counts.set(name, (counts.get(name) ?? 0) + 1);
 }
 for (const [entry, counts] of byArtist) {
   entries[entry].artists = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en', { sensitivity: 'base' }));
