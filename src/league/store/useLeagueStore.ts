@@ -222,7 +222,11 @@ seedLeagueOnFirstVisit();
 function withoutSeat(c: GymCard, seat: number): GymCard {
   if (seat < 1 || seat > c.lines.length) return c;
   const lines = c.lines.filter((_, i) => i !== seat - 1);
-  const { powerups } = withPowerups(c, (p) => shiftPowerupAfterRemoval(p, seat));
+  // A form on a seat with no line left would dress the next line placed there.
+  const { powerups } = withPowerups(c, (p) => {
+    const next = shiftPowerupAfterRemoval(p, seat);
+    return next && next.seat <= lines.length ? next : null;
+  });
   let signatureSeat = c.signatureSeat;
   let signatureId = c.signatureId ?? null;
   if (signatureSeat === seat) {
@@ -406,7 +410,9 @@ export const useLeagueStore = create<LeagueState>()(
       moveLegend: (card, fromSeat, toSeat) =>
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
-            if (fromSeat === toSeat || !legendAt(c, fromSeat)) return c;
+            // A legendary replaces a line's boss-row Pokémon, so a column with
+            // no line has nothing for it to replace.
+            if (fromSeat === toSeat || !legendAt(c, fromSeat) || toSeat > c.lines.length) return c;
             const traded = legendAt(c, toSeat) !== null;
             // Onto a seat without a legendary it moves; onto one with a
             // legendary the two trade places. Each takes its form along, and
