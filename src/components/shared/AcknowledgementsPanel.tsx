@@ -13,7 +13,7 @@ import {
 } from '@/data/acknowledgements';
 import type { NpmPackageIndex } from '@/data/npmPackages';
 import { artistTerms, sourceTerms, type TermsQuote } from '@/data/creditTerms';
-import { artistCredit, bundleCredit, bundlesCrediting } from '@/data/spriteCredits';
+import { artistCredit, bundleCredit, bundlesCrediting, pokeapiDelivery } from '@/data/spriteCredits';
 import { ArtistSprites } from './AcknowledgementsSprites';
 import { BundleArtists } from './AcknowledgementsArtists';
 
@@ -338,6 +338,25 @@ function TermsQuotes({ quotes }: { quotes: readonly TermsQuote[] }) {
   );
 }
 
+/** A sprite project's "Used for" text, with its counts from the credit data. */
+function useProjectUse() {
+  const t = useT();
+  return (id: string): string | undefined => {
+    const delivery = pokeapiDelivery();
+    const files = bundleCredit(id)?.sprites ?? 0;
+    switch (id) {
+      case 'pokeapi-sprites':
+        return t('ack.usedPokeapi', { official: delivery.official, smogon: delivery.smogon, own: delivery.own });
+      case 'smogon-sprite-project':
+        return t('ack.usedSmogon', { drawn: files, delivered: delivery.smogon });
+      case 'gen9-resource-pack':
+        return t('ack.usedGen9Pack', { files });
+      default:
+        return undefined;
+    }
+  };
+}
+
 function Detail({ entry, backRef, onBack }: {
   entry: Acknowledgement;
   backRef: RefObject<HTMLButtonElement | null>;
@@ -345,6 +364,7 @@ function Detail({ entry, backRef, onBack }: {
 }) {
   const t = useT();
   const tn = useTn();
+  const usedFor = useProjectUse()(entry.id) ?? entry.usedFor;
   const links = entry.links.map((href) => ({ href, label: t('ack.open', { site: entry.linkLabels?.[href] ?? host(href) }) }));
   const bundle = entry.kind === 'project' ? bundleCredit(entry.id) : undefined;
   const alsoThrough = entry.kind === 'artist' ? bundlesCrediting(entry.name, BUNDLE_IDS) : [];
@@ -375,7 +395,7 @@ function Detail({ entry, backRef, onBack }: {
           {entry.kind === 'artist' ? (
             <ArtistSprites name={entry.name} summary={entry.usedFor} />
           ) : (
-            <p className="text-sm leading-relaxed">{entry.usedFor}</p>
+            <p className="text-sm leading-relaxed">{usedFor}</p>
           )}
         </Section>
         {alsoThrough.length > 0 && (

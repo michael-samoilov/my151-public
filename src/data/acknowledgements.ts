@@ -1,5 +1,5 @@
 import typeIconSelections from '../../scripts/type-icons/selections.json';
-import { hasSpriteRows, pokeapiDelivery, spriteArtists } from './spriteCredits';
+import { hasSpriteRows, spriteArtists } from './spriteCredits';
 
 export interface LicenseFile {
   name: string;
@@ -44,13 +44,6 @@ const typeIconsFrom = (source: string) => {
   return `The ${new Intl.ListFormat('en', { type: 'conjunction' }).format(names)} type icons.`;
 };
 
-const pokeapiUse = () => {
-  const { official, smogon, own } = pokeapiDelivery();
-  const n = (count: number) => count.toLocaleString('en');
-  return `The source of ${n(official)} official sprites from the games, and ${n(smogon)} sprites by Smogon Sprite Project artists. `
-    + `We also use it for ${n(own)} additional fan-made sprites.`;
-};
-
 const byCount = <T,>(count: (item: T) => number, name: (item: T) => string) => (a: T, b: T) =>
   count(b) - count(a) || name(a).localeCompare(name(b), 'en', { sensitivity: 'base' });
 
@@ -58,7 +51,6 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
   {
     id: 'pokeapi-sprites',
     name: 'PokéAPI sprites',
-    usedFor: pokeapiUse(),
     kind: 'project',
     links: ['https://github.com/PokeAPI/sprites', 'https://github.com/PokeAPI/sprites/blob/master/README.md#special-thanks'],
     linkLabels: {
@@ -71,7 +63,6 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     name: 'Generation 9 Resource Pack',
     compiledBy: 'Caruban',
     rowsOnly: true,
-    usedFor: 'The source of some newer forms and Mega Evolutions, such as the Furfrou trims and Mega Eelektross.',
     license: 'Open collaboration, with credit',
     kind: 'project',
     links: ['https://eeveeexpo.com/resources/1101/'],
@@ -81,7 +72,6 @@ const SPRITE_SOURCES: readonly Acknowledgement[] = [
     // project.
     id: 'smogon-sprite-project',
     name: 'Smogon Sprite Project',
-    usedFor: 'Its artists drew many of the fan-made sprites distributed through PokéAPI.',
     license: 'Non-profit use, with credit',
     kind: 'project',
     links: [

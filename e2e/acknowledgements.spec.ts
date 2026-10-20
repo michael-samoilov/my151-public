@@ -29,6 +29,9 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.locator('blockquote')).toContainText('the spriter or the project itself is credited');
     await expect(dialog.getByRole('link', { name: 'Generation 6 thread' })).toBeVisible();
     const smogonArtists = dialog.getByTestId('ack-artists');
+    const smogonUse = dialog.getByTestId('ack-detail').getByText(/^Its artists drew \d+ of the app's fan-made sprites\. \d+ of them reach the app through PokéAPI\.$/);
+    await expect(smogonUse).toBeVisible();
+    expect((await smogonUse.textContent())!).toContain(`drew ${(await smogonArtists.getByTestId('ack-artists-summary').textContent())!.match(/^\d+/)![0]} of`);
     await expect(smogonArtists.getByTestId('ack-artists-summary')).toHaveText(/^\d+ fan-made sprites in the app are credited through this project\.$/);
     // The threads and the license come before the artists, and the list shows every artist.
     const artistSection = dialog.getByTestId('ack-detail').locator('section').filter({ has: page.getByTestId('ack-artists') });
