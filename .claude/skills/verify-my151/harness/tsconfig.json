@@ -1,0 +1,13 @@
+{
+  "extends": "../../../../tsconfig.node.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": null,
+    /* evalJson bodies and Playwright callbacks run in the page. */
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    /* tsx runs the harness and accepts parameter properties. */
+    "erasableSyntaxOnly": false,
+    /* flows.ts imports render-audit's audit-core.mjs. */
+    "allowJs": true
+  },
+  "include": ["**/*.ts"]
+}

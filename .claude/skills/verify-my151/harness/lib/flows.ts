@@ -428,7 +428,7 @@ async function measureSharedExportFoil(s: Session, hypotOk: (h: number) => boole
   return { img, maps, rainbow, hypot: pose.hypot, orbit: pose.orbit, waited: Date.now() - started };
 }
 
-async function readDexPreviewMotion(s: Session): Promise<{
+interface DexPreviewMotion {
   x: number;
   y: number;
   hypot: number;
@@ -445,8 +445,10 @@ async function readDexPreviewMotion(s: Session): Promise<{
   height: number;
   perspective: string;
   liftTransform: string;
-}> {
-  return s.evalJson(
+}
+
+async function readDexPreviewMotion(s: Session): Promise<DexPreviewMotion> {
+  return s.evalJson<DexPreviewMotion>(
     `const el=document.querySelector('[data-export-preview]');
      const hit=document.querySelector('[data-export-tilt-hit]');
      const light=document.querySelector('[data-foil-layer="pointLight"]');
@@ -831,7 +833,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   let sprite = { ok: false, reason: 'missing', devicePx: 0, native: 96 };
   const surveyWait = Date.now();
   while (Date.now() - surveyWait < 20000) {
-    sprite = await s.evalJson(
+    sprite = await s.evalJson<typeof sprite>(
       `const img=document.querySelector('[data-export-survey-sprite]');
        if(!(img instanceof HTMLImageElement)) return {ok:false,reason:'missing',devicePx:0,native:96};
        const r=img.getBoundingClientRect();
@@ -3003,7 +3005,7 @@ export async function runNotFoundSuite(s: Session, _persona: PersonaName | null,
   let lines: Array<{ text: string; clip: string; running: number }> = [];
   for (let i = 0; i < 40; i++) {
     await sleep(250);
-    lines = await s.evalJson(`return [...document.querySelectorAll('.say span, .title span')].map((el) => ({
+    lines = await s.evalJson<typeof lines>(`return [...document.querySelectorAll('.say span, .title span')].map((el) => ({
       text: el.textContent || '', clip: getComputedStyle(el).clipPath,
       running: el.getAnimations().filter((a) => a.playState === 'running' || a.playState === 'pending').length }));`).catch(() => []);
     if (lines.length && lines.every((l) => l.running === 0)) break;

@@ -25,6 +25,10 @@ const areas = [
   { name: 'dex', paths: /^(?:src\/components\/(?:pokedex|view)\/|src\/(?:App|main)\.tsx$|e2e\/dex-)/, suites: `(?:${dexSuites})` },
 ];
 const docs = /^(?:docs\/.+\.md|README\.md|AGENTS\.md|CLAUDE\.md|LICENSE)$/;
+const tooling = [
+  { paths: /^\.claude\/(?:skills|agents|vendor)\//, coverage: 'agent tooling, covered by check-pstack, the verify-my151 contract test, and the harness typecheck.' },
+  { paths: /^docs\/i18n\/sources\/(?:bulbapedia|my151)-form-names\.json$/, coverage: 'read only by npm run i18n:names, whose regenerated catalogs under src/i18n/ select full.' },
+];
 const crossTool = [
   /^src\/favorites\/(?:model|export|data|icons|stats)\//,
   /^src\/favorites\/(?:pickerFullName|pickerDisplayNames)\./,
@@ -90,12 +94,17 @@ export function select(requestedMode: Mode, changedPaths: string[], baseSha: str
   const selected = new Set<string>();
   for (const path of changedPaths) {
     if (docs.test(path)) continue;
+    const tool = tooling.find(tool => tool.paths.test(path));
+    if (tool) {
+      selection.reasons.push(`${path}: ${tool.coverage}`);
+      continue;
+    }
     const area = shared.test(path) || crossTool.some(pattern => pattern.test(path)) ? undefined : areas.find(area => area.paths.test(path));
     if (!area) return { ...selection, effectiveMode: 'full', suitePattern: '.*', reasons: [`Shared or unclassified input requires full regression: ${path}`] };
     selected.add(area.suites);
     selection.reasons.push(`${path}: all ${area.name} specs.`);
   }
-  return { ...selection, suitePattern: ['@ci-smoke', ...selected].join('|') };
+  return { ...selection, effectiveMode: selected.size ? 'affected' : 'fast', suitePattern: ['@ci-smoke', ...selected].join('|') };
 }
 
 export function projectFilter(suitePattern: string, viewportOnly: boolean): RegExp {

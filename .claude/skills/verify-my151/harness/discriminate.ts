@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openBlink } from './lib/engines.ts';
 import { runStandardSuite } from './lib/flows.ts';
-import { addWorktree, buildIn, startPreview } from './lib/servers.ts';
+import { addWorktree, buildIn, startPreview, type Preview } from './lib/servers.ts';
 import { Evidence, type Check } from './lib/evidence.ts';
 
 const PORT = 4182;
@@ -58,12 +58,12 @@ async function suiteAt(url: string, ev: Evidence, label: string): Promise<Check[
 
 async function runVariant(ev: Evidence, label: string, mutate: ((dir: string) => void) | null): Promise<Check[]> {
   const wt = addWorktree('HEAD');
-  let preview: { stop: () => void } | null = null;
+  let preview: Preview | null = null;
   try {
     if (mutate) mutate(wt.dir);
     await buildIn(wt.dir);
     preview = await startPreview(wt.dir, PORT);
-    return await suiteAt((preview as { url: string }).url, ev, label);
+    return await suiteAt(preview.url, ev, label);
   } finally {
     preview?.stop();
     wt.cleanup();

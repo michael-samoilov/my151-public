@@ -191,6 +191,12 @@ into a worktree, builds, runs the Blink suite, and asserts the matching check
 fails, with the clean tree passing. Run it after changing the harness. A verifier
 that always says PASS is worse than none.
 
+Every CI code mode typechecks the harness with
+`node node_modules/typescript/bin/tsc -p .claude/skills/verify-my151/harness`, and
+a diff that changes only agent tooling selects fast mode. The typecheck catches a
+broken edit in seconds. Only `discriminate.ts` proves that the checks still fail
+on a regression.
+
 ```
 node_modules/.bin/tsx .claude/skills/verify-my151/harness/discriminate.ts
 ```

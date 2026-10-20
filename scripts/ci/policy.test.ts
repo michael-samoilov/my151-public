@@ -112,3 +112,20 @@ test('ignored local build environment files cannot silently bypass affected sele
   expect(changes.paths).toContain('.env.production.local');
   expect(select('affected', changes.paths, changes.baseSha).effectiveMode).toBe('full');
 });
+
+test('agent tooling keeps cheap gates and smoke; settings, hooks, and app inputs in the same diff keep their coverage', () => {
+  for (const path of ['.claude/skills/verify-my151/harness/lib/visual.ts', '.claude/skills/how/SKILL.md', '.claude/agents/poteto-agent.md', '.claude/vendor/open-pstack/upstream/README.md']) {
+    expect(select('affected', [path], 'abc'), path).toMatchObject({ effectiveMode: 'fast', suitePattern: '@ci-smoke' });
+  }
+  for (const path of ['.claude/settings.json', '.claude/hooks/session-start.sh', '.claude/new-hook-config.json']) {
+    expect(select('affected', [path], 'abc').effectiveMode, path).toBe('full');
+  }
+  expect(select('affected', ['.claude/skills/verify-my151/SKILL.md', 'src/favorites/FavoritesApp.tsx'], 'abc').effectiveMode).toBe('affected');
+  expect(select('affected', ['.claude/skills/verify-my151/SKILL.md', 'src/lib/utils.ts'], 'abc').effectiveMode).toBe('full');
+});
+
+test('form-name sources that only the name generator reads skip browser families; regenerated catalogs and test fixtures do not', () => {
+  expect(select('affected', ['docs/i18n/sources/my151-form-names.json'], 'abc')).toMatchObject({ effectiveMode: 'fast', suitePattern: '@ci-smoke' });
+  expect(select('affected', ['docs/i18n/sources/my151-form-names.json', 'src/i18n/names/de.json'], 'abc').effectiveMode).toBe('full');
+  expect(select('affected', ['docs/i18n/sources/pokemon-formnames.json'], 'abc').effectiveMode).toBe('full');
+});
