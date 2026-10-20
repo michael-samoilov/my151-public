@@ -9,10 +9,13 @@ import { useLeagueUi } from '../store/useLeagueUi';
 export function useFullLeagueConfetti() {
   const due = useLeagueStore((s) => !s.fullLeagueCelebrated && allCardsHaveFullTeams(s.cards));
   const markCelebrated = useLeagueStore((s) => s.markFullLeagueCelebrated);
+  const armNudge = useLeagueUi((s) => s.armNudge);
   const openCard = useLeagueUi((s) => s.openCard);
   const exportOpen = useLeagueUi((s) => s.exportOpen);
+  const browserOpen = useLeagueUi((s) => s.browserOpen);
   const isDesktop = useIsDesktop();
-  const summaryOnScreen = (isDesktop || openCard === null) && !exportOpen;
+  // A tooltip waits for the picker to close, so the burst waits with it.
+  const summaryOnScreen = (isDesktop || openCard === null) && !exportOpen && !browserOpen;
 
   useEffect(() => {
     if (due) preloadCompletionConfetti();
@@ -23,7 +26,9 @@ export function useFullLeagueConfetti() {
     const timer = setTimeout(() => {
       markCelebrated();
       fireCompletionConfetti();
+      // The tooltip says what the burst celebrates, and offers the export.
+      armNudge('full');
     }, REVEAL_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [due, summaryOnScreen, markCelebrated]);
+  }, [due, summaryOnScreen, markCelebrated, armNudge]);
 }

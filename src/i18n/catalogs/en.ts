@@ -583,6 +583,7 @@ export const enUi = {
   'nudge.card.title': 'Trainer card complete',
   'nudge.complete.body': 'Export the league as an image and share it.',
   'nudge.complete.title': 'League ready',
+  'nudge.full.title': 'All 14 teams are full! 🎉',
   'nudge.gyms.body': 'Export now, or keep building and export when it is complete.',
   'nudge.gyms.cta': 'Export league',
   'nudge.gyms.title': 'Gym leaders complete',

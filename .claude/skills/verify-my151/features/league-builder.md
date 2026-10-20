@@ -65,8 +65,11 @@ league suites, then `favorites`. The league suites:
   tab shows (see `league-export.md`).
 - `league-funnel`: the export nudges (`[data-testid="league-nudge"]`). Its
   `data-league-nudge` is `card` for a full trainer card, `league` for eight
-  gym leaders with a card still empty, and `complete` for every card filled.
-  The two roster popups never cover a summary row: `data-nudge-placement`
+  gym leaders with a card still empty, `complete` for every card filled, and
+  `full` for six lines on all 14 cards. `full` arrives with the confetti,
+  once the summary is on screen and the picker is shut. Beside an open card
+  on desktop it floats under the league Export button.
+  The roster popups never cover a summary row: `data-nudge-placement`
   is `beside` where the pane has room right of the summary (a desktop) and
   `below` elsewhere, where the popup joins the page flow and the fit shrinks
   the summary to make room. The league Export button carries

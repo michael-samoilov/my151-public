@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { nextLeagueNudge } from '../model/funnelNudges';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { isRosterNudge, nextLeagueNudge } from '../model/funnelNudges';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 
@@ -13,13 +14,16 @@ export function useLeagueFunnelNudges() {
   const activeNudge = useLeagueUi((s) => s.activeNudge);
   const armNudge = useLeagueUi((s) => s.armNudge);
   const dismissNudge = useLeagueUi((s) => s.dismissNudge);
+  const isDesktop = useIsDesktop();
 
   useEffect(() => {
     if (activeNudge === 'card' && openCard === null) {
       dismissNudge();
       return;
     }
-    if ((activeNudge === 'league' || activeNudge === 'complete') && openCard !== null) {
+    // The full-league tooltip comes with the confetti, which plays beside an
+    // open card on desktop.
+    if (isRosterNudge(activeNudge) && openCard !== null && !(activeNudge === 'full' && isDesktop)) {
       dismissNudge();
       return;
     }
@@ -44,5 +48,6 @@ export function useLeagueFunnelNudges() {
     mark,
     armNudge,
     dismissNudge,
+    isDesktop,
   ]);
 }
