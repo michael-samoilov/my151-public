@@ -55,6 +55,22 @@
     }
    ]
   },
+  "kiriaura": {
+   "name": "kiriaura",
+   "urls": [
+    "https://www.deviantart.com/kiriaura/about"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "hi, if you enjoy my sprites and you'd like to use them for your projects, feel free to do so! c:",
+     "url": "https://www.deviantart.com/kiriaura/about",
+     "where": "About page, My Bio",
+     "read": "2026-10-19",
+     "verified": true
+    }
+   ]
+  },
   "kyle-dove": {
    "name": "Kyle Dove",
    "urls": [
@@ -686,6 +702,30 @@
     }
    ],
    "linkStatus": "proven"
+  },
+  "kiriaura": {
+   "urls": [
+    "https://www.deviantart.com/kiriaura"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "hi, if you enjoy my sprites and you'd like to use them for your projects, feel free to do so! c:",
+     "url": "https://www.deviantart.com/kiriaura/about",
+     "read": "2026-10-19"
+    }
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/kiriaura",
+     "proof": "a-pixel-match",
+     "detail": "11120.png (Mosslax) and 11121.png (Peakychu) hold kiriaura's uploads \"Mosslax Sprite\" and \"Peakychu sprite\" pixel for pixel: 0 of 8,075 and 0 of 2,162 original pixels differ; the app files only add transparent margin.",
+     "source": "https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280",
+     "read": "2026-10-19"
+    }
+   ],
+   "linkStatus": "proven",
+   "note": "Terms first read on 2026-10-13 with the same text. kiriaura's About page lists no other profile."
   },
   "Kyle Dove": {
    "urls": [

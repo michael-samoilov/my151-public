@@ -37847,6 +37847,56 @@
   "verdict": "confirmed"
  },
  {
+  "file": "public/sprites/pokemon/11120.png",
+  "sha256": "1a67272cfa6ef16d91097f7511d96cc6bfb140374b32be929dd54da7d8fa999a",
+  "pokemon": [
+   "snorlax-mosslax"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "kiriaura"
+  ],
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
+  "sources": [
+   {
+    "url": "https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280",
+    "localCopy": "docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/mosslax.png",
+    "sha256": "5fa68204fc0894f8dcc09657e4e22dd51c56e7b1a9df68d64d47fb3c66d8702a",
+    "title": "Mosslax Sprite by kiriaura"
+   }
+  ],
+  "comparison": "Pixel-identical to kiriaura's own DeviantArt upload https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280 (original 95x85 PNG), downloaded on 2026-10-19: every pixel of the original sits at offset (1, 7) on a transparent 96x96 canvas, with no resize, recolor, or mirror. Source inventory: docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json.",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11121.png",
+  "sha256": "b033d70056605d737bcabc390caeeb7c6c2c5f13abc17e94555e8dda1ee44f30",
+  "pokemon": [
+   "pikachu-peakychu"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "kiriaura"
+  ],
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
+  "sources": [
+   {
+    "url": "https://www.deviantart.com/kiriaura/art/Peakychu-sprite-1263882502",
+    "localCopy": "docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/peakychu.png",
+    "sha256": "7595c7867481c1b9719116fcf105769f14484799658e1d8d6e28aaf3e5d225ef",
+    "title": "Peakychu sprite by kiriaura"
+   }
+  ],
+  "comparison": "Pixel-identical to kiriaura's own DeviantArt upload https://www.deviantart.com/kiriaura/art/Peakychu-sprite-1263882502 (original 46x47 PNG), downloaded on 2026-10-19: every pixel of the original sits at offset (28, 26) on a transparent 96x96 canvas, with no resize, recolor, or mirror. Source inventory: docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json.",
+  "verdict": "confirmed"
+ },
+ {
   "file": "public/sprites/pokemon/11122.png",
   "sha256": "f51990ab818a3e0e45e92261334473e8c56e0100ad07a4148d9bf635925b6c81",
   "pokemon": [

@@ -194,5 +194,7 @@ export const ALTERNATE_PICKER_FORMS: readonly AlternatePickerForm[] = [
   { id: 11117, ownerId: 235, name: 'smeargle-smearguru', types: ['normal'], generation: 9 },
   { id: 11118, ownerId: 1007, name: 'koraidon-limited-build', types: ['fighting', 'dragon'] },
   { id: 11119, ownerId: 1008, name: 'miraidon-low-power-mode', types: ['electric', 'dragon'] },
+  { id: 11120, ownerId: 143, name: 'snorlax-mosslax', types: ['normal'], generation: 9 },
+  { id: 11121, ownerId: 25, name: 'pikachu-peakychu', types: ['electric'], generation: 9 },
   { id: 11122, ownerId: 352, name: 'kecleon-purple', types: ['normal'] },
 ];

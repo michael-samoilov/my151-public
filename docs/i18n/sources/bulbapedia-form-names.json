@@ -1,0 +1,19 @@
+{
+  "source": "Bulbapedia, https://bulbapedia.bulbagarden.net, read through its MediaWiki API on the date below. Each name is copied from the Names or In other languages table of the page and revision named, unless the row names another section. A locale is listed only when that table gives a name in that script: a Mandarin name in traditional characters is listed for zh-Hant only, unless every character is the same in simplified Chinese.",
+  "read": "2026-10-19",
+  "forms": {
+    "10080": { "page": "Cosplay Pikachu", "revid": 4608708, "section": "In other languages: Pikachu Rock Star (zh_cmn)", "names": { "zh-Hant": "重搖滾皮卡丘" } },
+    "10081": { "page": "Cosplay Pikachu", "revid": 4608708, "section": "In other languages: Pikachu Belle (zh_cmn)", "names": { "zh-Hant": "貴婦皮卡丘" } },
+    "10082": { "page": "Cosplay Pikachu", "revid": 4608708, "section": "In other languages: Pikachu Pop Star (zh_cmn)", "names": { "zh-Hans": "偶像皮卡丘", "zh-Hant": "偶像皮卡丘" } },
+    "10083": { "page": "Cosplay Pikachu", "revid": 4608708, "section": "In other languages: Pikachu, Ph.D. (zh_cmn)", "names": { "zh-Hans": "博士皮卡丘", "zh-Hant": "博士皮卡丘" } },
+    "10084": { "page": "Cosplay Pikachu", "revid": 4608708, "section": "In other languages: Pikachu Libre (zh_cmn)", "names": { "zh-Hans": "蒙面皮卡丘", "zh-Hant": "蒙面皮卡丘" } },
+    "11064": { "page": "Spiky-eared Pichu", "revid": 4615860, "section": "Names (zh_cmn)", "names": { "zh-Hans": "刺刺耳皮丘", "zh-Hant": "刺刺耳皮丘" } },
+    "11109": { "page": "Solgaleo (Pokémon)", "revid": 4630060, "section": "In other languages: Radiant Sun phase", "names": { "ja": "ライジングフェーズ", "ko": "라이징페이즈", "zh-Hans": "旭日状态", "zh-Hant": "旭日狀態", "fr": "Phase Soleil Levant", "de": "Sonnenaufgangsphase", "es": "Fase Sol Ascendente", "it": "Fase sole nascente" } },
+    "11110": { "page": "Lunala (Pokémon)", "revid": 4630062, "section": "In other languages: Full Moon phase", "names": { "ja": "フルムーンフェーズ", "ko": "풀문페이즈", "zh-Hans": "满月状态", "zh-Hant": "滿月狀態", "fr": "Phase Pleine Lune", "de": "Vollmondphase", "es": "Fase Luna Llena", "it": "Fase luna piena" } },
+    "11111": { "page": "Marshadow (Pokémon)", "revid": 4633359, "section": "Biology: Zenith Marshadow, which cites the Legendary and Mythical Guidebook: Deluxe Edition and pokemon.co.jp", "names": { "ja": "ぜんりょくのマーシャドー" } },
+    "11112": { "page": "DJ Rotom", "revid": 4624322, "section": "Names", "names": { "ja": "アゲ↑ロトム", "ko": "DJ 로토무", "zh-Hans": "嗨high洛托姆", "zh-Hant": "嗨high洛托姆", "fr": "DJ Motisma", "de": "DJ Rotom", "es": "DJ Rotom", "it": "Discorotom" } },
+    "11117": { "page": "Smearguru", "revid": 4595461, "section": "Names", "names": { "ja": "ドーブルせんせい", "ko": "루브도 선생", "zh-Hans": "图图犬老师", "zh-Hant": "圖圖犬老師", "fr": "Maître Queulorior", "de": "Meister Farbeagle", "es": "Maestro Smeargle", "it": "Maestro Smeargle" } },
+    "11120": { "page": "Mosslax", "revid": 4586339, "section": "Names", "names": { "ja": "こけカビゴン", "ko": "이끼만보", "zh-Hans": "苔卡比兽", "zh-Hant": "苔卡比獸", "fr": "Ronflex Moussu", "de": "Mooslaxo", "es": "Musgorlax", "it": "Granmuschio" } },
+    "11121": { "page": "Peakychu", "revid": 4610065, "section": "Names", "names": { "ja": "うすチュウ", "ko": "창백카츄", "zh-Hans": "浅浅丘", "zh-Hant": "淺淺丘", "fr": "Pikapâle", "de": "Schlappchu", "es": "Palidachu", "it": "Pallichu" } }
+  }
+}

@@ -16,19 +16,19 @@ Built on 2026-10-13 from production commit 8739dac6. Pages and files were read o
 3. Sources, strongest first: a file the artist posted; the Smogon attachment on a credit-sheet row that names the artist; the Generation 9 pack file on its sheet row; a PokéAPI commit and README line that name the artist; a Game Freak sprite from PokéAPI's Black and White import.
 4. A near match is reported with its mask IoU (shared opaque pixels over all opaque pixels, at the best offset) and the share of shared pixels with the same colour.
 
-The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/`. Earlier source files are not in git. Each source in the JSON has its URL and sha256, so anyone can download it again and compare.
+The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/`. The two kiriaura originals imported on 2026-10-19 are retained in `docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/`. Earlier source files are not in git. Each source in the JSON has its URL and sha256, so anyone can download it again and compare.
 
 ## Summary
 
 | Count | What |
 |---:|---|
-| 1423 | Sprite files a production page can show (all of `public/sprites/pokemon`) |
+| 1425 | Sprite files a production page can show (all of `public/sprites/pokemon`) |
 | 1096 | Shown in the Pokédex builder |
 | 1347 | Shown in the League builder |
-| 1417 | Shown in the Favorite picker |
+| 1419 | Shown in the Favorite picker |
 | 0 | Served files that no page shows |
 | 0 | Shown files that are missing |
-| 659 | Verdict: confirmed |
+| 661 | Verdict: confirmed |
 | 0 | Verdict: corrected |
 | 67 | Verdict: unproven |
 | 697 | Verdict: official Game Freak |
@@ -40,7 +40,7 @@ The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `doc
 | 47 | No source names an artist |
 | 45 | Byte-identical to the PokéAPI file added in the commit whose README line names the artist |
 | 18 | Near match only |
-| 20 | Exact match to a file the artist posted (Sta.sh upload or the artist's DeviantArt sheet) |
+| 22 | Exact match to a file the artist posted (Sta.sh upload, DeviantArt upload, or the artist's DeviantArt sheet) |
 | 7 | Exact match to the Generation 9 pack file on its sheet row |
 | 1 | Exact match to an attachment in a Smogon thread post |
 | 2 | my151's own work, by this repository's history: one drawing, one recolor of a Game Freak sprite |
@@ -1253,6 +1253,10 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 ## KingOfThe-X-Roads originals imported on 2026-10-17
 
 Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/previous-mega-raichu-x-evidence.json`. The JSON ledger contains the current hashes and sources.
+
+## kiriaura originals imported on 2026-10-19
+
+Two picker-only additions use kiriaura's own DeviantArt uploads: Mosslax (11120) and Peakychu (11121). Each original is smaller than 96×96, so its whole canvas sits on a transparent 96×96 canvas without resize, recolor, or mirror. The art is centered on the base sprite's ink and stands on that sprite's bottom edge: offset (1, 7) for Mosslax on Snorlax (143), and (28, 26) for Peakychu on Pikachu (25). The JSON ledger contains the current hashes and sources.
 
 ## Purple Kecleon added on 2026-10-19
 

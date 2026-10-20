@@ -22,6 +22,17 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
 
+## Imported on 2026-10-19 (review candidate)
+
+Michael chose kiriaura's sprites on 2026-10-19: "lets use kiraura for mosslax, peakychu. Having no shiny is fine." Each original is smaller than 96×96. Its whole canvas sits on a transparent 96×96 canvas without resize, recolor, or mirror, centered on the base sprite's ink and on that sprite's bottom edge. [Originals and provenance](favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json) record the source pages, hashes, offsets, and the terms.
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Mosslax | 11120 | Snorlax appearance in Normal × IX, debut Pokopia, with compact M and full label “Snorlax (Mosslax)”. Offset (1, 7) on the 96×96 canvas. https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280 |
+| Peakychu | 11121 | Pikachu appearance in Electric × IX, debut Pokopia, with compact PE and full label “Pikachu (Peakychu)”. PE keeps Pikachu Ph.D.'s P. Offset (28, 26). https://www.deviantart.com/kiriaura/art/Peakychu-sprite-1263882502 |
+
+Neither has a shiny. kiriaura gets a credit entry of their own with both sprites. Michael chose official localized names for every added form on 2026-10-19. All four Pokopia forms take their official name in each locale from Bulbapedia, with `official-bulbapedia` provenance: for example, German “Relaxo (Mooslaxo)” and “Pikachu (Schlappchu)”, and Japanese “こけカビゴン” and “ピカチュウ（うすチュウ）”. English is unchanged. See [the Bulbapedia names](i18n/sources/README.md#names-from-bulbapedia). sprite-lab's Pokopia report notes that kiriaura's Peakychu matches camioftargon's earlier Peakychu in outline and body colour; the direction is not proven.
+
 ## Purple Kecleon, added on 2026-10-19 (review candidate)
 
 Michael approved a recolor for this one form on 2026-10-19: "for purple kecleon, let's turn the yellow markings green". It is the exception to the no-recolor rule above. The sprite is my151's palette recolor of the app's Game Freak Kecleon (352), with the Mystery Dungeon purple Kecleon colors. No model was used. [Provenance](favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json).
@@ -59,7 +70,7 @@ Michael chose these sprites from the sprite lab's locked selections (`sprite-lab
 | Mega Zygarde | 10301 | `src/league/data/powerupForms.json`, not a picker-only form. Its label is unique to Zygarde, and `npm run league:powerups` dropped it only because PokeAPI has no sprite. With the local sprite in place, the harvester keeps it, so the League builder also gets a Mega button on Zygarde. |
 | Ogerpon Teal, Wellspring, Hearthflame, and Cornerstone Mask Terastal | 11113–11116 | `alternateForms.ts` and `TERASTAL_FORM_IDS`. In each type × Gen IX cell and Legendary cell, each follows its mask; in the Gimmick cells, they sort before Terapagos's Terastal forms. Kept out of the League builder as battle forms. Sprites by KingOfThe-X-Roads (`sprite-lab/inputs/kingofthe-x-roads/`), not from the locked selections. |
 
-Overdrive, the two phases, Zenith, and DJ Rotom have no official name in any language. Every locale shows the same English descriptor, with `english-only` provenance in the name catalogs.
+Overdrive, the two phases, Zenith, and DJ Rotom have no localized name from a game-text source in the repository. Since 2026-10-19, the phases and DJ Rotom take their official name in each locale from Bulbapedia, and Zenith takes its Japanese name ぜんりょくのマーシャドー, with `official-bulbapedia` provenance. Bulbapedia gives no localized name for Overdrive, or for Zenith outside Japanese, so those keep the English descriptor with `english-only` provenance. See [the Bulbapedia names](i18n/sources/README.md#names-from-bulbapedia).
 
 No game names the Terastal Ogerpon forms. Each locale joins two official names, the mask and Terapagos's Terastal Form, with `official-composed` provenance. The tooltip reads "Ogerpon (Wellspring Mask, Terastal Form)" and the compact code is WM T: the mask's code, then Terapagos's T. Black and White Kyurem Overdrive read B O and W O by the same rule.
 
@@ -78,9 +89,7 @@ Requested by Michael on 2026-10-06. Sprite sources and picker placement have not
 | Wanted character | Status / note |
 | --- | --- |
 | Professor Tangrowth | Sprite search pending. |
-| Mosslax | Sprite search pending. |
 | Tinkmaster Tinkaton | Sprite search pending. |
-| Peakychu | Sprite search pending. |
 | Chef Dente Greedent | Sprite search pending. |
 
 ## Sprites to replace
