@@ -331,7 +331,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
     }
   };
 
-  const ringed = isOver && ringWhenOver && datum.row === BOSS_ROW;
+  const ringed = isOver && ringWhenOver && datum.row === BOSS_ROW && datum.filled;
 
   return (
     <div
