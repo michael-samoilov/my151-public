@@ -1,0 +1,79 @@
+{
+ "source": "Official names that no game-text corpus in the repository and no Bulbapedia table gives: names that The Pokémon Company prints on its own websites, or that a licensed product prints. This container cannot open those hosts, so each page was read through a search index on the date below. Each row names the page and quotes the text the index returned, and says whether that text is the page title or the index's reading of a list page. npm run i18n:names gives these names `official-usage` provenance. Game text wins: the generator fails when game text or PokéAPI already names the form in that locale.",
+ "read": "2026-10-20",
+ "forms": {
+  "11105": {
+   "basis": "Overdrive, the look Reshiram, Zekrom and the Kyurem fusions take in battle. Japanese: Bandai Candy's December 2010 product page for 「ポケモンキッズ ベストウイッシュ～レシラム・ゼクロム編～」 (https://www.bandai.co.jp/candy/products/2010/646705.html) heads its lineup with 「ゼクロム オーバードライブ」「レシラム オーバードライブ」, a licensed product. Korean: Pokémon Korea's official site (https://new.pokemonkorea.co.kr/animation/18) says Zekrom enters 오버드라이브 상태 and its tail emits strong electricity. The descriptor is the bare word, without 状態 or 상태, like the English. Not Toxtricity's move Overdrive, which is a different thing that only shares the word.",
+   "sources": [
+    {"url": "https://www.bandai.co.jp/candy/products/2010/646705.html", "quote": "ゼクロム オーバードライブ / レシラム オーバードライブ"},
+    {"url": "https://new.pokemonkorea.co.kr/animation/18", "quote": "오버드라이브 상태"}
+   ],
+   "names": {"ja": "オーバードライブ", "ko": "오버드라이브"}
+  },
+  "11106": {"basis": "Overdrive: as 11105.", "sources": [], "names": {"ja": "オーバードライブ", "ko": "오버드라이브"}},
+  "11107": {"basis": "Overdrive: as 11105. The fusion's official name comes first, as in English.", "sources": [], "names": {"ja": "オーバードライブ", "ko": "오버드라이브"}},
+  "11108": {"basis": "Overdrive: as 11107.", "sources": [], "names": {"ja": "オーバードライブ", "ko": "오버드라이브"}},
+  "11112": {
+   "basis": "Stereo Rotom on the official Pokopia site (pocoapokemon.jp), which names each form as species（form）. Japanese is the detail page title; both Chinese names are the site's list page as the search index read it.",
+   "sources": [
+    {"url": "https://www.pocoapokemon.jp/ja/pokemon/260227_01/", "quote": "ロトム（ステレオロトム） ｜ 『ぽこ あ ポケモン』公式サイト"},
+    {"url": "https://www.pocoapokemon.jp/sc/pokemon/", "quote": "洛托姆（立体音响洛托姆）"},
+    {"url": "https://www.pocoapokemon.jp/tc/pokemon/", "quote": "洛托姆（立體音響洛托姆）"}
+   ],
+   "names": {"ja": "ステレオロトム", "zh-Hans": "立体音响洛托姆", "zh-Hant": "立體音響洛托姆"}
+  },
+  "11117": {
+   "basis": "Smeargle's Pokopia form (English Decorator) on the official Pokopia site. All three are detail page titles.",
+   "sources": [
+    {"url": "https://www.pocoapokemon.jp/ja/pokemon/251113_04/", "quote": "ドーブル（ペインター） ｜ 『ぽこ あ ポケモン』公式サイト"},
+    {"url": "https://www.pocoapokemon.jp/sc/pokemon/251113_04/", "quote": "图图犬（彩绘匠） ｜ 《Pokémon Pokopia》官方网站"},
+    {"url": "https://www.pocoapokemon.jp/tc/pokemon/251113_04/", "quote": "圖圖犬（彩繪匠） ｜ 《Pokémon Pokopia》官方網站"}
+   ],
+   "names": {"ja": "ペインター", "zh-Hans": "彩绘匠", "zh-Hant": "彩繪匠"}
+  },
+  "11120": {
+   "basis": "Snorlax's Pokopia form (English Mossy) on the official Pokopia site. Japanese and Traditional Chinese are detail page titles; Simplified Chinese is the list page as the search index read it. 萌苔 is the same in both scripts.",
+   "sources": [
+    {"url": "https://www.pocoapokemon.jp/ja/pokemon/251113_03/", "quote": "カビゴン（こけむし） ｜ 『ぽこ あ ポケモン』公式サイト"},
+    {"url": "https://www.pocoapokemon.jp/sc/pokemon/", "quote": "卡比兽（萌苔）"},
+    {"url": "https://www.pocoapokemon.jp/tc/pokemon/251113_03/", "quote": "卡比獸（萌苔） ｜ 《Pokémon Pokopia》官方網站"}
+   ],
+   "names": {"ja": "こけむし", "zh-Hans": "萌苔", "zh-Hant": "萌苔"}
+  },
+  "11121": {
+   "basis": "Pikachu's Pokopia form (English Pale) on the official Pokopia site. All three are detail page titles.",
+   "sources": [
+    {"url": "https://www.pocoapokemon.jp/ja/pokemon/251113_02/", "quote": "ピカチュウ（うすいろ） ｜ 『ぽこ あ ポケモン』公式サイト"},
+    {"url": "https://www.pocoapokemon.jp/sc/pokemon/251113_02/", "quote": "皮卡丘（浅色） ｜ 《Pokémon Pokopia》官方网站"},
+    {"url": "https://www.pocoapokemon.jp/tc/pokemon/251113_02/", "quote": "皮卡丘（淺色） ｜ 《Pokémon Pokopia》官方網站"}
+   ],
+   "names": {"ja": "うすいろ", "zh-Hans": "浅色", "zh-Hant": "淺色"}
+  },
+  "11125": {
+   "basis": "Tinkaton's Pokopia form (English Supervisor) on the official Pokopia site. Japanese is the detail page title; Traditional Chinese is the list page as the search index read it. No search returned the Simplified Chinese entry, so Simplified Chinese keeps the character name.",
+   "sources": [
+    {"url": "https://www.pocoapokemon.jp/ja/pokemon/260428_01/", "quote": "デカヌチャン（おやかた） ｜ 『ぽこ あ ポケモン』公式サイト"},
+    {"url": "https://www.pocoapokemon.jp/tc/pokemon/", "quote": "巨鍛匠（頭頭）"}
+   ],
+   "names": {"ja": "おやかた", "zh-Hant": "頭頭"}
+  },
+  "11126": {
+   "basis": "Tangrowth's Pokopia form (English Professor) on the official Pokopia site. All three are detail page titles.",
+   "sources": [
+    {"url": "https://www.pocoapokemon.jp/ja/pokemon/251113_01/", "quote": "モジャンボ（はかせ） ｜ 『ぽこ あ ポケモン』公式サイト"},
+    {"url": "https://www.pocoapokemon.jp/sc/pokemon/251113_01/", "quote": "巨蔓藤（博士） ｜ 《Pokémon Pokopia》官方网站"},
+    {"url": "https://www.pocoapokemon.jp/tc/pokemon/251113_01/", "quote": "巨蔓藤（博士） ｜ 《Pokémon Pokopia》官方網站"}
+   ],
+   "names": {"ja": "はかせ", "zh-Hans": "博士", "zh-Hant": "博士"}
+  },
+  "11127": {
+   "basis": "Greedent's Pokopia form (English Cook) on the official Pokopia site. Japanese and Traditional Chinese are detail page titles; Simplified Chinese is the list page as the search index read it.",
+   "sources": [
+    {"url": "https://www.pocoapokemon.jp/ja/pokemon/260227_02/", "quote": "ヨクバリス（コック） ｜ 『ぽこ あ ポケモン』公式サイト"},
+    {"url": "https://www.pocoapokemon.jp/sc/pokemon/", "quote": "藏饱栗鼠（厨师）"},
+    {"url": "https://www.pocoapokemon.jp/tc/pokemon/260227_02/", "quote": "藏飽栗鼠（廚師） ｜ 《Pokémon Pokopia》官方網站"}
+   ],
+   "names": {"ja": "コック", "zh-Hans": "厨师", "zh-Hant": "廚師"}
+  }
+ }
+}

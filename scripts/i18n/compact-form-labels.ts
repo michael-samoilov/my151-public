@@ -12,7 +12,9 @@ const CODES: Record<string, string> = {
   '10': '10%', '50': '50%', complete: '100%',
   mega: 'M', primal: 'P', gmax: 'GMX',
   male: '♂', female: '♀',
-  dj: 'DJ', peakychu: 'PE',
+  // Pokopia identities name the character; the codes follow the form names
+  // (Stereo Rotom, Pale, Decorator, Cook, Supervisor). Pikachu, Ph.D. has P.
+  dj: 'DJ', peakychu: 'PE', smearguru: 'D', 'chef-dente': 'C', tinkmaster: 'S',
 };
 const DEFAULT_SUFFIX: Record<string, string> = {
   castform: 'normal', hoopa: 'confined', zacian: 'hero', zamazenta: 'hero',

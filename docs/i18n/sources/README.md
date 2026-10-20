@@ -118,9 +118,13 @@ unless every character is the same in simplified Chinese.
 `npm run i18n:names` gives these names `official-bulbapedia` provenance. Game
 text wins: the generator fails when a row names a form that game text or PokéAPI
 already names in that locale. A locale with no row keeps the English
-descriptor. That is still true for Overdrive in every
-locale, for Zenith outside Japanese, for Cosplay Pikachu in both Chinese
+descriptor. That is still true for Overdrive in French, German, Spanish and
+Italian, for Zenith outside Japanese, for Cosplay Pikachu in both Chinese
 locales, and for Pikachu Rock Star and Pikachu Belle in Simplified Chinese.
+
+Bulbapedia blocked this container on 2026-10-20, so the rows read that day for
+the Pokopia form names carry `via: search index` and no revision ID. The search
+index returned the quoted sentence of each species page.
 
 Read a page again with the MediaWiki API, then update the row's name and
 revision ID:
@@ -130,6 +134,33 @@ curl -sG https://bulbapedia.bulbagarden.net/w/api.php --data-urlencode titles=Mo
   -d action=query -d prop=revisions -d rvprop='ids|content' -d rvslots=main -d format=json
 npm run i18n:names
 ```
+
+## Official names outside game text
+
+Some official names are in no game text and no Bulbapedia table: The Pokémon
+Company prints them on its own websites, or a licensed product prints them.
+`official-usage-form-names.json` records them, and `npm run i18n:names` gives
+them `official-usage` provenance. Each row names the page and quotes the text,
+and says whether the text is a page title or a list page. Both hosts block this
+container, so the pages were read through a search index on 2026-10-20. Game
+text and PokéAPI still win; an `official-usage` name replaces only an
+English-only descriptor or a Bulbapedia character name.
+
+- Overdrive in Japanese and Korean (Michael, 2026-10-20: "do with these
+  whatever you think is right"). Bandai Candy's December 2010 product
+  「ポケモンキッズ ベストウイッシュ～レシラム・ゼクロム編～」, a licensed product,
+  heads its lineup with 「ゼクロム オーバードライブ」「レシラム オーバードライブ」.
+  Pokémon Korea's official site says Zekrom enters 오버드라이브 상태. The
+  descriptor is the bare word, as in English: オーバードライブ, 오버드라이브.
+  Black and White Kyurem take the same word after the fusion's official name.
+- The Pokopia form names in Japanese and Chinese. The official Pokopia site
+  (pocoapokemon.jp) titles each form page species（form）: カビゴン（こけむし）,
+  ピカチュウ（うすいろ）, ドーブル（ペインター）, ロトム（ステレオロトム）,
+  ヨクバリス（コック）, デカヌチャン（おやかた）, モジャンボ（はかせ）. Its Simplified
+  and Traditional Chinese pages do the same. No search returned the Simplified
+  Chinese Tinkaton entry, so Simplified Chinese Tinkaton keeps its character
+  name. No reachable source gave the form names in Korean, French, German,
+  Spanish or Italian, so those locales keep the character name.
 
 ## Names that no official source gives
 
@@ -142,18 +173,38 @@ basis for each, and `npm run i18n:names` gives them `idiomatic` provenance. The
 same file holds Shadow Lugia in Korean and Chinese (Pokémon GO's official
 Shadow term before the species name; Pokémon XD had no release there) and
 Primal Dialga in Chinese (the official 原始 of Primal Reversion; the Explorers
-games had no Chinese release). The generator fails when an official name
-already exists, and when a form these files name in English lacks a name in
-any locale.
+games had no Chinese release), and Overdrive in Chinese: 超频驱动 and 超頻驅動,
+the short form of the fan references' 超频驱动模式 (52poke, and Baidu Baike's
+捷克罗姆 entry), without 模式 like the other locales. Pokémon Masters EX
+Traditional Chinese text at the pinned commit has no 超頻驅動. The generator
+fails when an official name already exists, and when a form these files name in
+English lacks a name in any locale.
 
 ## Character names and costume names
 
-Pokopia forms show only the character's name in every locale (Michael,
-2026-10-20): "Mosslax", not "Snorlax (Mosslax)". `CHARACTER_NAMES` in
-`src/i18n/fullPokemonName.ts` lists their identities. The English names of DJ
-Rotom, Smearguru, Mosslax, Peakychu, Tinkmaster, Professor Tangrowth and Chef
-Dente, and Zenith Marshadow (Legendary and Mythical Guidebook: Deluxe Edition),
-are in `bulbapedia-form-names.json` as well.
+Pokopia forms are named by species and form (Michael, 2026-10-20: "change the
+pokopia names to match species rather than character names whenever
+possible"). The app's one rule applies: a form name that holds the species
+name is the whole label ("Stereo Rotom", like "Heat Rotom"), and any other
+form name follows the species in brackets ("Snorlax (Mossy)"). The English form
+names are Bulbapedia's species-page names, in the `form` field of each Pokopia
+row in `bulbapedia-form-names.json`: Mossy, Pale, Decorator, Stereo Rotom,
+Cook, Supervisor and Professor. Japanese and Chinese take the official site's
+names (see "Official names outside game text"). A locale with no form name
+keeps the character's official name, under the same rule: "Relaxo
+(Mooslaxo)", or "DJ Rotom" alone because it holds the species name. Each
+character name stays a search alias (`formAlias` in
+`src/i18n/picker-names/*.json`), so "mosslax" and こけカビゴン still find the form.
+The English name of Zenith Marshadow (Legendary and Mythical Guidebook: Deluxe
+Edition) is in `bulbapedia-form-names.json` as well.
+
+The compact codes follow the form names: Mossy M, Decorator D, Cook C,
+Supervisor S, Professor P. Pale stays PE, because Pikachu, Ph.D. has P. Stereo
+Rotom stays DJ in English (Michael, 2026-10-20: "for the rotom short form i
+meant <DJ>"), and in each locale whose character name has DJ in it (Korean,
+French, German, Spanish). The other Rotom forms show Latin codes in every
+locale, so Japanese and Chinese take S (stereo) and Italian takes D
+(Discorotom).
 
 PokéAPI names all six Cosplay Pikachu "Cosplayform" in German. German game text
 from Omega Ruby and Alpha Sapphire (`pokemon-formnames.json`, rows
@@ -164,16 +215,16 @@ that game text for German only. English and Japanese game text differ from
 PokéAPI in two places ("Pikachu, Ph.D.", マスク・ド・ピカチュウ); those keep
 PokéAPI's names until Michael decides.
 
-## Overdrive, checked on 2026-10-20
+## Overdrive, decided on 2026-10-20
 
-The move Overdrive (Toxtricity's signature move) is オーバードライブ, 오버드라이브,
-破音, Overdrive (French, German, Italian) and Amplificador (Spanish) in game
-text (`move-names.json`, `cmp.wazaname.WAZANAME_786`). That is a different
-thing from the look Reshiram, Zekrom and the Kyurem fusions take in battle.
-Pokémon Masters EX text (poke-corpus `Masters/ja_messages`, pinned commit)
-uses オーバードライブ only for Toxtricity's moves, and Bulbapedia has no page
-with オーバードライブ状態. No official localized name for the state is
-verified, so Overdrive keeps the English descriptor.
+The look Reshiram, Zekrom and the Kyurem fusions take in battle is
+オーバードライブ in Japanese and 오버드라이브 in Korean, from official usage (see
+"Official names outside game text"). Chinese uses my151's 超频驱动 and 超頻驅動
+(`idiomatic`, see "Names that no official source gives"). French, German,
+Spanish and Italian keep the English descriptor: no official name for the
+state is known there. The move Overdrive (Toxtricity's signature move) is a
+different thing that shares the word, so its game-text names (`move-names.json`,
+`cmp.wazaname.WAZANAME_786`: 破音, Amplificador) are not used.
 
 ## Move names and other game terms
 

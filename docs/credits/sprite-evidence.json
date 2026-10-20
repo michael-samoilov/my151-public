@@ -38081,5 +38081,32 @@
   ],
   "comparison": "G.E.Z.'s Greedent (820.png, Smogon Gen8 Sprite Project sheet row '820 Greedent') as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added. The items come from the sprite lab's drawings from official Pokopia art; no model saw 820.png. Credit stays with G.E.Z. through the Smogon Sprite Project; the lab-drawn items get no credit of their own (Michael, 2026-10-20). Byte-identical to sprite-lab/selections/add-greedent-chef-dente.png at commit b1689310; 22 colours (approved by Michael). Records: not in this copy: sprite-lab/docs/chef-dente-v2/changes.json. Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
   "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11128.png",
+  "sha256": "7853bfcdf5f093d2e17f8db2ecf206c86d2e665e81dc8d1b10b056622835ea08",
+  "pokemon": [
+   "cherrim-sunshine"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": null,
+  "evidenceType": "official-game-freak",
+  "sources": [
+   {
+    "url": "https://github.com/PokeAPI/sprites/blob/0dc105d5b12416932f29b594078282ab4be045f5/sprites/pokemon/versions/generation-v/black-white/421-sunshine.png",
+    "localCopy": "public/sprites/pokemon/11128.png",
+    "sha256": "7853bfcdf5f093d2e17f8db2ecf206c86d2e665e81dc8d1b10b056622835ea08",
+    "firstCommit": "96c282ef5677a26364d95b34f90d307aad2276d9 2020-08-01 Christian Garza|Add gen-v sprite images"
+   },
+   {
+    "url": "https://raw.githubusercontent.com/PokeAPI/sprites/ba403973fdf9d0ac59175813861e6a1f8ed5020c/sprites/pokemon/versions/generation-v/black-white/421-sunshine.png",
+    "sha256": "7853bfcdf5f093d2e17f8db2ecf206c86d2e665e81dc8d1b10b056622835ea08"
+   }
+  ],
+  "comparison": "byte-identical to PokéAPI sprites/pokemon/versions/generation-v/black-white/421-sunshine.png at 96c282e, 0dc105d and the pinned ba40397 that scripts/fetch-favorite-picker-sprites.ts reads; that path came in PokéAPI commit 96c282e (Black and White import), and its parent 5d12162 has no such file, so it is not a Smogon update. Checked 2026-10-20.",
+  "verdict": "official Game Freak"
  }
 ]
