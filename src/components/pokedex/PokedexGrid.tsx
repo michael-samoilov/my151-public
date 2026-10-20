@@ -460,7 +460,10 @@ function GroupBox({
           paddingBottom: showEmptyState ? '0px' : '2px',
         }}
       >
-        {sectionName(group.id)}{pokemonIds.length > 0 && ` (${pokemonIds.length})`}
+        {/* The count is an element, not a bare text node: a browser's page
+            translation replaces text nodes, and React then crashes removing
+            one when the section empties (20 October). */}
+        {sectionName(group.id)}{pokemonIds.length > 0 && <span>{` (${pokemonIds.length})`}</span>}
       </div>
 
       {showEmptyState ? (

@@ -8,6 +8,7 @@ import {
 } from '@/data/categories';
 import powerupForms from '@/league/data/powerupForms.json';
 import powerupTypes from '../data/powerupTypes.json';
+import altFormSpecies from '@/i18n/alt-form-species.json';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import type { PowerupForms } from '@/league/model/powerups';
 import { GEN_NUMBERS, type GenNumber } from './cells';
@@ -58,8 +59,6 @@ const ALL: PickerMon[] = [];
 const BY_ID = new Map<number, PickerMon>();
 const DEX_ID_BY_PICKER_ID = new Map<number, number>();
 const LINE_BY_ID = new Map<number, number>();
-const STAGE_BY_ID = new Map<number, number>();
-const FIRST_BY_LINE = new Map<number, number>();
 const listedOrder = (ids: number[]) => new Map(ids.map((id, index) => [id, index]));
 const FORM_ORDER_BY_OWNER = new Map([
   [1017, listedOrder([1017, 11113, 10273, 11114, 10274, 11115, 10275, 11116])],
@@ -71,11 +70,6 @@ const COSPLAY_PIKACHU_FORM_ORDER = new Map(
   [10085, 10080, 10081, 10082, 10083, 10084].map((id, index) => [id, 10080 + index]),
 );
 
-for (const p of SPECIES) {
-  const first = FIRST_BY_LINE.get(p.evolutionChainId);
-  if (first == null || p.id < first) FIRST_BY_LINE.set(p.evolutionChainId, p.id);
-}
-
 function pushMon(mon: PickerMon): void {
   if (BY_ID.has(mon.id)) return;
   ALL.push(mon);
@@ -86,7 +80,6 @@ for (const p of SPECIES) {
   const pickerId = p.id === 10178 ? 10179 : p.id === 10179 ? 10180 : p.id === 10227 ? 10191 : p.id;
   DEX_ID_BY_PICKER_ID.set(pickerId, p.id);
   LINE_BY_ID.set(pickerId, p.evolutionChainId);
-  STAGE_BY_ID.set(pickerId, p.evolutionStage);
   pushMon({
     id: pickerId,
     name: p.id === 892 ? 'urshifu-single-strike' : p.name,
@@ -199,20 +192,19 @@ export function hasListedFormOrder(ownerId: number): boolean {
   return FORM_ORDER_BY_OWNER.has(ownerId);
 }
 
+export function nationalDexNumber(mon: PickerMon): number {
+  const owner = pickerNameId(getPickerMon(mon.ownerId) ?? mon);
+  return (altFormSpecies as Record<string, number>)[owner] ?? owner;
+}
+
 export function comparePickerOrder(a: PickerMon, b: PickerMon): number {
-  const lineA = evolutionLineKey(a);
-  const lineB = evolutionLineKey(b);
-  const firstA = FIRST_BY_LINE.get(lineA) ?? a.ownerId;
-  const firstB = FIRST_BY_LINE.get(lineB) ?? b.ownerId;
-  const stageA = STAGE_BY_ID.get(a.id) ?? STAGE_BY_ID.get(a.ownerId) ?? 1;
-  const stageB = STAGE_BY_ID.get(b.id) ?? STAGE_BY_ID.get(b.ownerId) ?? 1;
   const ownerOrder = a.ownerId === b.ownerId ? FORM_ORDER_BY_OWNER.get(a.ownerId) : undefined;
   const listedFormOrder = ownerOrder ? (ownerOrder.get(a.id) ?? 99) - (ownerOrder.get(b.id) ?? 99) : 0;
   const floetteEternalLast = a.ownerId === 670 && b.ownerId === 670
     ? Number(a.id === 10061) - Number(b.id === 10061)
     : 0;
   const formOrder = (COSPLAY_PIKACHU_FORM_ORDER.get(a.id) ?? a.id) - (COSPLAY_PIKACHU_FORM_ORDER.get(b.id) ?? b.id);
-  return firstA - firstB || stageA - stageB || a.ownerId - b.ownerId || listedFormOrder || floetteEternalLast || formOrder;
+  return nationalDexNumber(a) - nationalDexNumber(b) || a.ownerId - b.ownerId || listedFormOrder || floetteEternalLast || formOrder;
 }
 
 const LEGENDARY_OWNER_IDS = new Set<number>();
