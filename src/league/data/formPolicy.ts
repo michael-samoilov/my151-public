@@ -9,11 +9,20 @@ const TEMPORARY_FORM_IDS = new Set([
   11112,
 ]);
 const FUSION_FORM_IDS = new Set([10022, 10023, 10155, 10156, 10193, 10194]);
+/**
+ * Picker-only appearances from spin-off games, Pokopia, and battle or ride
+ * looks. Michael, 2026-10-20: "for now, we can keep off all of these
+ * spinoff-game etc. pokemon forms from the league builder."
+ */
+const PICKER_ONLY_FORM_IDS = new Set([
+  11117, 11118, 11119, 11120, 11121, 11122, 11123, 11124, 11125, 11126, 11127,
+]);
 
 export const isLeagueAlternateForm = (form: AlternatePickerForm): boolean =>
   form.source !== 'powerup' && form.id !== 10191
   && form.ownerId !== 201
-  && !TEMPORARY_FORM_IDS.has(form.id) && !FUSION_FORM_IDS.has(form.id);
+  && !TEMPORARY_FORM_IDS.has(form.id) && !FUSION_FORM_IDS.has(form.id)
+  && !PICKER_ONLY_FORM_IDS.has(form.id);
 
 export const STANDALONE_FORM_IDS = new Set([
   10080, 10081, 10082, 10083, 10084, 10085,

@@ -71,6 +71,22 @@
     }
    ]
   },
+  "joetestrikesback": {
+   "name": "JoeTEStrikesBack",
+   "urls": [
+    "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Feel free to use these for whatever you'd like, just make sure to mention that I made them.",
+     "url": "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481",
+     "where": "Deviation description, \"B/W Shadow Lugia + Primal Dialga Sprites (Updated)\"",
+     "read": "2026-10-20",
+     "verified": true
+    }
+   ]
+  },
   "kyle-dove": {
    "name": "Kyle Dove",
    "urls": [
@@ -647,6 +663,30 @@
    "termsSource": "smogon-sprite-project",
    "linkEvidence": [],
    "linkStatus": "none-found"
+  },
+  "JoeTEStrikesBack": {
+   "urls": [
+    "https://www.deviantart.com/joetestrikesback"
+   ],
+   "status": "read",
+   "terms": [
+    {
+     "text": "Feel free to use these for whatever you'd like, just make sure to mention that I made them.",
+     "url": "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481",
+     "read": "2026-10-20"
+    }
+   ],
+   "linkEvidence": [
+    {
+     "url": "https://www.deviantart.com/joetestrikesback",
+     "proof": "a-pixel-match",
+     "detail": "11123.png (Shadow Lugia) and 11124.png (Primal Dialga) are the front cells of this deviation's sheet, posted by the profile on 2012-11-16, with only my151's recorded pixel changes: 229 and 8 pixels.",
+     "source": "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481",
+     "read": "2026-10-20"
+    }
+   ],
+   "linkStatus": "proven",
+   "note": "Terms first read on 2026-10-19 and read again on 2026-10-20 with the same text. my151 changed both sprites; the credit entry says so."
   },
   "Katten": {
    "urls": [],

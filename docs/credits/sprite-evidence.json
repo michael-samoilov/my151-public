@@ -37895,5 +37895,191 @@
   ],
   "comparison": "Pixel-identical to kiriaura's own DeviantArt upload https://www.deviantart.com/kiriaura/art/Peakychu-sprite-1263882502 (original 46x47 PNG), downloaded on 2026-10-19: every pixel of the original sits at offset (28, 26) on a transparent 96x96 canvas, with no resize, recolor, or mirror. Source inventory: docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json.",
   "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11122.png",
+  "sha256": "f51990ab818a3e0e45e92261334473e8c56e0100ad07a4148d9bf635925b6c81",
+  "pokemon": [
+   "kecleon-purple"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": "my151",
+  "evidenceType": "repository-history",
+  "sources": [
+   {
+    "url": "not in this copy: sprite-lab/selections/add-kecleon-purple.png",
+    "localCopy": "public/sprites/pokemon/11122.png",
+    "sha256": "f51990ab818a3e0e45e92261334473e8c56e0100ad07a4148d9bf635925b6c81",
+    "title": "add-kecleon-purple.png, sprite-lab selection"
+   },
+   {
+    "url": "public/sprites/pokemon/352.png",
+    "localCopy": "public/sprites/pokemon/352.png",
+    "sha256": "76510406e2d3023550ff30479553b3612277d05ddfd2e5b6b0bc268cf5539f43",
+    "title": "Kecleon, Game Freak, Black and White"
+   }
+  ],
+  "comparison": "my151's palette recolor of the app's Game Freak Kecleon (352.png): same indexed 96x96 canvas, every pixel keeps its palette index and the alpha mask is identical; 10 palette slots change to the Mystery Dungeon purple Kecleon colors. Byte-identical to sprite-lab/selections/add-kecleon-purple.png at commit deac73e0. No credit: Game Freak art with my151's recolor (Michael, 2026-10-13). Provenance: docs/favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json.",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11123.png",
+  "sha256": "4b96302b8de26db24d651a1127a1364bbac1c65c42b4e884f60f7640e31b722e",
+  "pokemon": [
+   "lugia-shadow"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "JoeTEStrikesBack"
+  ],
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
+  "changedBy": "my151",
+  "sources": [
+   {
+    "url": "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481",
+    "localCopy": "docs/favorite-picker-work/sprites/2026-10-20-picker-forms/joetestrikesback-338093481.png",
+    "sha256": "de3c8d5c98654a49256eb41a1107fdbcf737fc104459a0ac31b9b723152ae3c6",
+    "title": "B/W Shadow Lugia + Primal Dialga Sprites (Updated) by JoeTEStrikesBack"
+   },
+   {
+    "url": "not in this copy: sprite-lab/selections/add-lugia-shadow.png",
+    "localCopy": "public/sprites/pokemon/11123.png",
+    "sha256": "4b96302b8de26db24d651a1127a1364bbac1c65c42b4e884f60f7640e31b722e",
+    "title": "add-lugia-shadow.png, sprite-lab selection"
+   }
+  ],
+  "comparison": "The front cell (x624-720, y4-132) of JoeTEStrikesBack's own sheet, read again on 2026-10-20, moved up 16 px on a 96x96 canvas, with 229 pixels changed by my151: 21 enclosed green background pixels made transparent, the pupil made red, 207 top-edge outline pixels lightened. Every other pixel is the artist's. Byte-identical to sprite-lab/selections/add-lugia-shadow.png at commit b6885d0e. Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11124.png",
+  "sha256": "c62b1a461ebec313d175c58b68064dfd8e83cbafec605f1da64135093e18cb2f",
+  "pokemon": [
+   "dialga-primal"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "JoeTEStrikesBack"
+  ],
+  "creditedVia": "own upload",
+  "evidenceType": "exact-artist-own",
+  "changedBy": "my151",
+  "sources": [
+   {
+    "url": "https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481",
+    "localCopy": "docs/favorite-picker-work/sprites/2026-10-20-picker-forms/joetestrikesback-338093481.png",
+    "sha256": "de3c8d5c98654a49256eb41a1107fdbcf737fc104459a0ac31b9b723152ae3c6",
+    "title": "B/W Shadow Lugia + Primal Dialga Sprites (Updated) by JoeTEStrikesBack"
+   },
+   {
+    "url": "not in this copy: sprite-lab/selections/add-dialga-primal.png",
+    "localCopy": "public/sprites/pokemon/11124.png",
+    "sha256": "c62b1a461ebec313d175c58b68064dfd8e83cbafec605f1da64135093e18cb2f",
+    "title": "add-dialga-primal.png, sprite-lab selection"
+   }
+  ],
+  "comparison": "The front cell (x624-720, y268-396) of JoeTEStrikesBack's own sheet, read again on 2026-10-20, moved up 12 px on a 96x96 canvas, with 8 enclosed green background pixels made transparent by my151. Every other pixel is the artist's. Byte-identical to sprite-lab/selections/add-dialga-primal.png at commit b6885d0e. Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11125.png",
+  "sha256": "28a2e6386ac68fefc2da97827361e0a0cb57dd2ce0ab2d8176a54d7cb4de4784",
+  "pokemon": [
+   "tinkaton-tinkmaster"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "Travis"
+  ],
+  "creditedVia": "smogon-gen9",
+  "evidenceType": "repository-history",
+  "changedBy": "my151",
+  "sources": [
+   {
+    "url": "not in this copy: sprite-lab/selections/add-tinkaton-tinkmaster-hand-a.png",
+    "localCopy": "public/sprites/pokemon/11125.png",
+    "sha256": "28a2e6386ac68fefc2da97827361e0a0cb57dd2ce0ab2d8176a54d7cb4de4784",
+    "title": "add-tinkaton-tinkmaster-hand-a.png, sprite-lab selection"
+   },
+   {
+    "url": "public/sprites/pokemon/959.png",
+    "localCopy": "public/sprites/pokemon/959.png",
+    "sha256": "88196489bdbe6b15859c4eb6820352a1376660c45c8a28b7a778927fd2bd0e44",
+    "title": "Tinkaton by Travis, Smogon Gen9 Sprite Project"
+   }
+  ],
+  "comparison": "Travis's Tinkaton (959.png) with tools that my151 added: the body is 959.png pixel for pixel (1,412 body pixels, 0 differ), moved down 4 px. The tools come from the sprite lab's custom-v1 family edit (an image-model edit of 959.png) and code-only hand edits. Credit stays with Travis through the Smogon Sprite Project. Byte-identical to sprite-lab/selections/add-tinkaton-tinkmaster-hand-a.png at commit 5d29640b. Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11126.png",
+  "sha256": "065ce307c9affd532da5257dde69704275ea1c4514515128e9fd9a9a9e285351",
+  "pokemon": [
+   "tangrowth-professor"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [],
+  "creditedVia": "my151",
+  "evidenceType": "repository-history",
+  "sources": [
+   {
+    "url": "not in this copy: sprite-lab/selections/add-tangrowth-professor.16.png",
+    "localCopy": "public/sprites/pokemon/11126.png",
+    "sha256": "065ce307c9affd532da5257dde69704275ea1c4514515128e9fd9a9a9e285351",
+    "title": "add-tangrowth-professor.16.png, sprite-lab selection"
+   },
+   {
+    "url": "public/sprites/pokemon/465.png",
+    "localCopy": "public/sprites/pokemon/465.png",
+    "sha256": "2f81fda9c4aa1f7b28cced674a833491c8097760469d5ce660dffc9835083acf",
+    "title": "Tangrowth, Game Freak, Black and White"
+   }
+  ],
+  "comparison": "The sprite lab's own drawing: an image-model edit of the app's Game Freak Tangrowth (465.png) from official Pokopia art only, then code-only hand fixes; 0 pixels differ from 465.png outside the edited regions (hair, disc, glasses, face and arms). Byte-identical to sprite-lab/selections/add-tangrowth-professor.16.png at commit dec3dbc1. No credit: Game Freak art with my151's changes (Michael, 2026-10-13). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+  "verdict": "confirmed"
+ },
+ {
+  "file": "public/sprites/pokemon/11127.png",
+  "sha256": "46fd84de9a0faa6a9e3fedceefe22e8cf53c48d8ed4305e644729894d92412a9",
+  "pokemon": [
+   "greedent-chef-dente"
+  ],
+  "shownIn": [
+   "Favorite picker"
+  ],
+  "creditedNow": [
+   "G.E.Z."
+  ],
+  "creditedVia": "smogon-gen8",
+  "evidenceType": "repository-history",
+  "changedBy": "my151",
+  "sources": [
+   {
+    "url": "not in this copy: sprite-lab/selections/add-greedent-chef-dente.png",
+    "localCopy": "public/sprites/pokemon/11127.png",
+    "sha256": "46fd84de9a0faa6a9e3fedceefe22e8cf53c48d8ed4305e644729894d92412a9",
+    "title": "add-greedent-chef-dente.png, sprite-lab selection"
+   },
+   {
+    "url": "public/sprites/pokemon/820.png",
+    "localCopy": "public/sprites/pokemon/820.png",
+    "sha256": "6f390b494aec6b428a4677cbb166e7ac5c75b1d74686e585cb3acc3714066e1e",
+    "title": "Greedent by G.E.Z., Smogon Gen8 Sprite Project"
+   }
+  ],
+  "comparison": "G.E.Z.'s Greedent (820.png, Smogon Gen8 Sprite Project sheet row '820 Greedent') as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added. The items come from the sprite lab's drawings from official Pokopia art; no model saw 820.png. Credit stays with G.E.Z. through the Smogon Sprite Project; the lab-drawn items get no credit of their own (Michael, 2026-10-20). Byte-identical to sprite-lab/selections/add-greedent-chef-dente.png at commit b1689310; 22 colours (approved by Michael). Records: not in this copy: sprite-lab/docs/chef-dente-v2/changes.json. Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+  "verdict": "confirmed"
  }
 ]

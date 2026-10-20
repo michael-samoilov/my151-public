@@ -23,6 +23,7 @@
   "ack.packages": "패키지",
   "ack.packagesFailed": "패키지 목록을 불러오지 못했습니다.",
   "ack.spritesOwn_other": "본인 업로드 스프라이트 {count}개",
+  "ack.spritesChanged_other": "my151이 이 스프라이트를 수정했습니다.",
   "ack.sprites_other": "스프라이트 {count}개",
   "ack.title": "감사의 말",
   "ack.usedFor": "사용처",

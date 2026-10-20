@@ -13,7 +13,6 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 | Armored Mewtwo | Mewtwo's Gen 1 legendary family | No matching sprite verified. |
 | Zygarde Cell | Gen 6 Zygarde family | No matching battle-style sprite verified. |
 | Zygarde Core | Gen 6 Zygarde family | No matching battle-style sprite verified. |
-| Purple Kecleon (Mystery Dungeon) | Gen 3 Kecleon family | No matching Gen 5-style front sprite verified. |
 | Ukulele Pichu | Gen 4 Pichu family | Confirmed by Michael 2026-09-30. Pokémon Ranger: Guardian Signs design. No matching Gen 5-style front sprite verified in the searched source. |
 | Mega Darkrai eye form | Gen 4 Darkrai gimmick family | The existing Mega Darkrai sprite is present; no distinct matching eye-form sprite verified. |
 | Pecharunt Shell | Gen 9 Pecharunt family | No distinct matching sprite verified. |
@@ -23,16 +22,40 @@ Checked 2026-09-23 against the [Pokémon Showdown Gen 5 front-sprite index](http
 
 Michael confirmed Ukulele Pichu and ordinary Gholdengo without the surfboard on 2026-09-30.
 
+## Added on 2026-10-20 (review candidate)
+
+Michael approved each sprite in the sprite lab. The app files are byte copies of the lab selections. [Provenance](favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json).
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Shadow Lugia | 11123 | Lugia appearance, Psychic and Flying × III (Pokémon XD is a Generation III game), debut XD, compact S. JoeTEStrikesBack's sprite; my151 changed 229 pixels. |
+| Primal Dialga | 11124 | Dialga appearance, Steel and Dragon × IV, debut Explorers of Time and Darkness, compact P. JoeTEStrikesBack's sprite; my151 made 8 background pixels transparent. |
+| Tinkmaster | 11125 | Tinkaton appearance, Fairy and Steel × IX, debut Pokopia, compact T. Travis's #959 with tools my151 added. |
+| Professor Tangrowth | 11126 | Tangrowth appearance, Grass × IX, debut Pokopia, compact P. The sprite lab's own drawing from Game Freak's #465. No credit. |
+| Chef Dente | 11127 | Greedent appearance, Normal × IX, debut Pokopia, compact CD. G.E.Z.'s #820 with kitchen items my151 added. |
+
+None has a shiny. Types are the species' own, as for the other picker-only forms; the generation is the source game's, as for the Pokopia forms. Each shows its official name, or its character name for the Pokopia forms, in every locale where one exists. The full label is the character's name alone (“Mosslax”, “DJ Rotom”). None is in the League builder (Michael, 2026-10-20: “for now, we can keep off all of these spinoff-game etc. pokemon forms from the league builder”).
+
 ## Imported on 2026-10-19 (review candidate)
 
 Michael chose kiriaura's sprites on 2026-10-19: "lets use kiraura for mosslax, peakychu. Having no shiny is fine." Each original is smaller than 96×96. Its whole canvas sits on a transparent 96×96 canvas without resize, recolor, or mirror, centered on the base sprite's ink and on that sprite's bottom edge. [Originals and provenance](favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json) record the source pages, hashes, offsets, and the terms.
 
 | Appearance | Picker ID | Placement and source |
 | --- | --- | --- |
-| Mosslax | 11120 | Snorlax appearance in Normal × IX, debut Pokopia, with compact M and full label “Snorlax (Mosslax)”. Offset (1, 7) on the 96×96 canvas. https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280 |
+| Mosslax | 11120 | Snorlax appearance in Normal × IX, debut Pokopia, with compact M and full label “Mosslax” (“Snorlax (Mosslax)” until 2026-10-20). Offset (1, 7) on the 96×96 canvas. https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280 |
 | Peakychu | 11121 | Pikachu appearance in Electric × IX, debut Pokopia, with compact PE and full label “Pikachu (Peakychu)”. PE keeps Pikachu Ph.D.'s P. Offset (28, 26). https://www.deviantart.com/kiriaura/art/Peakychu-sprite-1263882502 |
 
 Neither has a shiny. kiriaura gets a credit entry of their own with both sprites. Michael chose official localized names for every added form on 2026-10-19. All four Pokopia forms take their official name in each locale from Bulbapedia, with `official-bulbapedia` provenance: for example, German “Relaxo (Mooslaxo)” and “Pikachu (Schlappchu)”, and Japanese “こけカビゴン” and “ピカチュウ（うすチュウ）”. English is unchanged. See [the Bulbapedia names](i18n/sources/README.md#names-from-bulbapedia). sprite-lab's Pokopia report notes that kiriaura's Peakychu matches camioftargon's earlier Peakychu in outline and body colour; the direction is not proven.
+
+## Purple Kecleon, added on 2026-10-19 (review candidate)
+
+Michael approved a recolor for this one form on 2026-10-19: "for purple kecleon, let's turn the yellow markings green". It is the exception to the no-recolor rule above. The sprite is my151's palette recolor of the app's Game Freak Kecleon (352), with the Mystery Dungeon purple Kecleon colors. No model was used. [Provenance](favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json).
+
+| Appearance | Picker ID | Placement and source |
+| --- | --- | --- |
+| Purple Kecleon | 11122 | Kecleon appearance in Normal × III, debut Pokémon Mystery Dungeon: Red Rescue Team and Blue Rescue Team, with compact P and full label “Purple Kecleon”. The tooltip names Mystery Dungeon. |
+
+No shiny. No credit, because the art is Game Freak's. No game gives the purple Kecleon a name. Michael decided on 2026-10-20 that each locale shows the species name with its word for purple, in the place an adjective takes: French “Kecleon violet”, Japanese “むらさきのカクレオン”. The names have `idiomatic` provenance ([sources](i18n/sources/README.md#names-that-no-official-source-gives)).
 
 ## Imported on 2026-10-17, released on 2026-10-18
 
