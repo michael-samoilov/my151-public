@@ -30,6 +30,8 @@ export const enUi = {
   'ack.packagesFailed': 'The package list did not load.',
   'ack.spritesOwn_one': '{count} sprite from their own uploads',
   'ack.spritesOwn_other': '{count} sprites from their own uploads',
+  'ack.spritesChanged_one': 'my151 changed this sprite.',
+  'ack.spritesChanged_other': 'my151 changed these sprites.',
   'ack.sprites_one': '{count} sprite',
   'ack.sprites_other': '{count} sprites',
   'ack.title': 'Acknowledgements',

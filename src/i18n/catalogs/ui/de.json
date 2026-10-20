@@ -28,6 +28,8 @@
   "ack.packagesFailed": "Die Paketliste konnte nicht geladen werden.",
   "ack.spritesOwn_one": "{count} Sprite aus eigenen Uploads",
   "ack.spritesOwn_other": "{count} Sprites aus eigenen Uploads",
+  "ack.spritesChanged_one": "my151 hat dieses Sprite geändert.",
+  "ack.spritesChanged_other": "my151 hat diese Sprites geändert.",
   "ack.sprites_one": "{count} Sprite",
   "ack.sprites_other": "{count} Sprites",
   "ack.title": "Danksagungen",

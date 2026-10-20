@@ -61,7 +61,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     await expect(dialog.getByTestId('ack-detail')).toHaveAttribute('inert', '');
 
     const artists = dialog.getByTestId('ack-group-sprite-artists').locator('[data-ack-id]');
-    await expect(artists).toHaveCount(2);
+    await expect(artists).toHaveCount(3);
     await artists.first().click();
     await expect(dialog.getByTestId('ack-detail-name')).toHaveText('KingOfThe-X-Roads');
     const sprites = dialog.getByTestId('ack-sprites');
@@ -69,7 +69,7 @@ test.describe('acknowledgements', { tag: '@viewport' }, () => {
     const generations = sprites.getByTestId('ack-sprites-generation');
     await expect(generations).toHaveCount(2);
     for (const summary of await generations.locator('summary').all()) await summary.click();
-    await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('Rotom (DJ)');
+    await expect(sprites.getByRole('listitem').filter({ hasText: 'Rotom' })).toHaveText('DJ Rotom');
     await expect(sprites.getByRole('listitem')).toHaveCount(13);
     const kingSprites = await sprites.getByRole('listitem').count();
     await dialog.getByRole('button', { name: 'Back' }).click();

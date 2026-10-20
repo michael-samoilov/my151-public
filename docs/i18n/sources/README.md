@@ -131,6 +131,50 @@ curl -sG https://bulbapedia.bulbagarden.net/w/api.php --data-urlencode titles=Mo
 npm run i18n:names
 ```
 
+## Names that no official source gives
+
+Michael decided on 2026-10-20 that Purple Kecleon reads as the species' official
+name with the language's word for purple, in the place an adjective takes:
+"could we just include 'purple' in that language as that adjective would
+typically modify a word in that language". No game, guide or Bulbapedia page
+names the purple Kecleon. `my151-form-names.json` records these names with the
+basis for each, and `npm run i18n:names` gives them `idiomatic` provenance. The
+same file holds Shadow Lugia in Korean and Chinese (Pokémon GO's official
+Shadow term before the species name; Pokémon XD had no release there) and
+Primal Dialga in Chinese (the official 原始 of Primal Reversion; the Explorers
+games had no Chinese release). The generator fails when an official name
+already exists, and when a form these files name in English lacks a name in
+any locale.
+
+## Character names and costume names
+
+Pokopia forms show only the character's name in every locale (Michael,
+2026-10-20): "Mosslax", not "Snorlax (Mosslax)". `CHARACTER_NAMES` in
+`src/i18n/fullPokemonName.ts` lists their identities. The English names of DJ
+Rotom, Smearguru, Mosslax, Peakychu, Tinkmaster, Professor Tangrowth and Chef
+Dente, and Zenith Marshadow (Legendary and Mythical Guidebook: Deluxe Edition),
+are in `bulbapedia-form-names.json` as well.
+
+PokéAPI names all six Cosplay Pikachu "Cosplayform" in German. German game text
+from Omega Ruby and Alpha Sapphire (`pokemon-formnames.json`, rows
+`oras.common.5.729`-`734`) names each costume, and Bulbapedia's Cosplay Pikachu
+page (rev 4608708) agrees: Rocker-Pikachu, Damen-Pikachu, Star-Pikachu,
+Professoren-Pikachu, Wrestler-Pikachu, Cosplay-Pikachu. The generator prefers
+that game text for German only. English and Japanese game text differ from
+PokéAPI in two places ("Pikachu, Ph.D.", マスク・ド・ピカチュウ); those keep
+PokéAPI's names until Michael decides.
+
+## Overdrive, checked on 2026-10-20
+
+The move Overdrive (Toxtricity's signature move) is オーバードライブ, 오버드라이브,
+破音, Overdrive (French, German, Italian) and Amplificador (Spanish) in game
+text (`move-names.json`, `cmp.wazaname.WAZANAME_786`). That is a different
+thing from the look Reshiram, Zekrom and the Kyurem fusions take in battle.
+Pokémon Masters EX text (poke-corpus `Masters/ja_messages`, pinned commit)
+uses オーバードライブ only for Toxtricity's moves, and Bulbapedia has no page
+with オーバードライブ状態. No official localized name for the state is
+verified, so Overdrive keeps the English descriptor.
+
 ## Move names and other game terms
 
 `move-names.json` and `game-terms.json` come from `npm run i18n:game-terms`

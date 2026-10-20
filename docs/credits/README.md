@@ -24,7 +24,9 @@ The 50 form sprites previously mapped to Showdown now map to a pinned PokéAPI c
 
 Each bundle entry in the panel says only what the evidence proves about the bundle's part in the app, with no count. It shows one permission quote from the bundle's own page and the bundle's links. It does not list the sprites.
 
-An artist has an entry of their own only when my151 took the sprites from the artist's own upload, not from a bundle. On 2026-10-13 that is KingOfThe-X-Roads: the Ogerpon sprites from the artist's Sta.sh uploads and DJ Rotom from the artist's X post. On 2026-10-19 kiriaura joins: Mosslax and Peakychu from kiriaura's DeviantArt uploads, with the About-page terms quoted in `src/data/creditTerms.json`.
+An artist has an entry of their own only when my151 took the sprites from the artist's own upload, not from a bundle. On 2026-10-13 that is KingOfThe-X-Roads: the Ogerpon sprites from the artist's Sta.sh uploads and DJ Rotom from the artist's X post. On 2026-10-19 kiriaura joins: Mosslax and Peakychu from kiriaura's DeviantArt uploads, with the About-page terms quoted in `src/data/creditTerms.json`. On 2026-10-20 JoeTEStrikesBack joins: Shadow Lugia and Primal Dialga from the artist's DeviantArt sheet, with the deviation's terms. my151 changed both sprites, so their rows carry `"changedBy": "my151"` and the entry shows one line that says so (Michael: "indicate we made a change").
+
+A fan sprite that my151 extended keeps its artist's credit through the project that published it: Tinkmaster (Travis, #959) and Chef Dente (G.E.Z., #820) are credited through the Smogon Sprite Project, and their rows carry `"changedBy": "my151"`. The items the sprite lab added get no credit of their own. Professor Tangrowth is the lab's own drawing from Game Freak's #465 and has no credit line.
 
 my151's own drawings get no credit line in the panel (Michael, 2026-10-13: "Do not credit my151 for zygarde"). Mega Zygarde's lineage is recorded only in `src/data/spriteAttribution.json`.
 

@@ -95,7 +95,7 @@ interface QuoteInput {
 type CheckedInput<Input, Source extends Input> = Source extends Input ? Input : never;
 
 type AttributionInput = CheckedInput<{
-  sprites: Record<string, { via: string; artists?: string[] | null }>;
+  sprites: Record<string, { via: string; artists?: string[] | null; changedBy?: string }>;
 }, typeof spriteAttribution>;
 
 type TermsInput = CheckedInput<{
@@ -156,6 +156,7 @@ function readAttribution(file: string): AttributionInput {
       return [name, {
         via,
         artists: artists === undefined || artists === null ? artists : readStrings(artists, `${file}.sprites.${name}.artists`),
+        ...(row.changedBy === undefined ? {} : { changedBy: readString(row.changedBy, `${file}.sprites.${name}.changedBy`) }),
       }];
     })),
   };
@@ -186,7 +187,9 @@ function projectAttribution(data: AttributionInput): AttributionInput {
   return {
     sprites: Object.fromEntries(Object.entries(data.sprites)
       .filter(([, row]) => PANEL_ROWS.has(row.via))
-      .map(([file, row]) => [file, row.via === OWN_UPLOAD ? { via: row.via, artists: row.artists } : { via: row.via }])),
+      .map(([file, row]) => [file, row.via === OWN_UPLOAD
+        ? { via: row.via, artists: row.artists, ...(row.changedBy ? { changedBy: row.changedBy } : {}) }
+        : { via: row.via }])),
   };
 }
 

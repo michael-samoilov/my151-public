@@ -15,7 +15,10 @@ import type { PickerMon } from './catalog';
  */
 type SourceGroup = 'spin-off' | 'event' | 'story' | 'state';
 
-/** The groups whose forms show the game. `state` waits on Michael. */
+/**
+ * The groups whose forms show the game. Michael, 2026-10-20: "let's do it for
+ * spin-off games, event-only, and story-only, but not for battle/ride states".
+ */
 const SHOWN_GROUPS: ReadonlySet<SourceGroup> = new Set(['spin-off', 'event', 'story']);
 
 type GameTitle = Readonly<Record<Locale, string>>;
@@ -25,61 +28,78 @@ const everywhere = (title: string): GameTitle =>
   ({ en: title, ja: title, ko: title, 'zh-Hans': title, 'zh-Hant': title, fr: title, de: title, es: title, it: title });
 
 /**
- * Official titles. Each source is in the evidence README. Mystery Dungeon has
- * no Chinese release, so both Chinese locales keep the English title.
+ * Official titles without the series word (Michael, 2026-10-20: "drop the word
+ * "pokemon" from the game name in all languages"). Pokémon GO, Pokémon HOME
+ * and Japanese Pokopia keep it: the rest of the title would not name the game.
+ * Each source is in the evidence README. A game with no release in a locale
+ * keeps the English title there.
  */
 const GAMES = {
-  pokopia: { ...everywhere('Pokémon Pokopia'), ja: 'ぽこ あ ポケモン' },
+  pokopia: { ...everywhere('Pokopia'), ja: 'ぽこ あ ポケモン' },
   'mystery-dungeon': {
-    ...everywhere('Pokémon Mystery Dungeon'),
-    ja: 'ポケモン不思議のダンジョン', ko: '포켓몬 불가사의 던전',
-    fr: 'Pokémon Donjon Mystère', es: 'Pokémon Mundo misterioso',
+    ...everywhere('Mystery Dungeon'),
+    ja: '不思議のダンジョン', ko: '불가사의 던전',
+    fr: 'Donjon Mystère', es: 'Mundo misterioso',
+  },
+  'mystery-dungeon-explorers': {
+    ...everywhere('Mystery Dungeon: Explorers of Time, Darkness and Sky'),
+    ja: '不思議のダンジョン 時の探検隊・闇の探検隊・空の探検隊',
+    ko: '불가사의 던전: 시간의 탐험대・어둠의 탐험대',
+    fr: 'Donjon Mystère : Explorateurs du Temps, de l’Ombre et du Ciel',
+    de: 'Mystery Dungeon: Erkundungsteam Zeit, Dunkelheit und Himmel',
+    es: 'Mundo misterioso: Exploradores del tiempo, de la oscuridad y del cielo',
+    it: 'Mystery Dungeon: Esploratori del Tempo, dell’Oscurità e del Cielo',
+  },
+  xd: {
+    ...everywhere('XD: Gale of Darkness'),
+    ja: 'ＸＤ 闇の旋風ダーク・ルギア', fr: 'XD : Le Souffle des Ténèbres', de: 'XD: Der Dunkle Sturm',
+    es: 'XD: Tempestad oscura', it: 'XD: Tempesta Oscura',
   },
   go: everywhere('Pokémon GO'),
   home: everywhere('Pokémon HOME'),
   bw: {
-    en: 'Pokémon Black and White', ja: 'ポケットモンスター ブラック・ホワイト', ko: '포켓몬스터 블랙・화이트',
-    'zh-Hans': '宝可梦 黑／白', 'zh-Hant': '寶可夢 黑／白',
-    fr: 'Pokémon Noir et Blanc', de: 'Pokémon Schwarze Edition und Weiße Edition',
-    es: 'Pokémon Negro y Blanco', it: 'Pokémon Nero e Bianco',
+    en: 'Black and White', ja: 'ブラック・ホワイト', ko: '블랙・화이트',
+    'zh-Hans': '黑／白', 'zh-Hant': '黑／白',
+    fr: 'Noir et Blanc', de: 'Schwarze Edition und Weiße Edition',
+    es: 'Negro y Blanco', it: 'Nero e Bianco',
   },
   hgss: {
-    en: 'Pokémon HeartGold and SoulSilver', ja: 'ポケットモンスター ハートゴールド・ソウルシルバー',
-    ko: '포켓몬스터 하트골드・소울실버', 'zh-Hans': '宝可梦 心金／魂银', 'zh-Hant': '寶可夢 心金／魂銀',
-    fr: 'Pokémon HeartGold et SoulSilver', de: 'Pokémon HeartGold und SoulSilver',
-    es: 'Pokémon HeartGold y SoulSilver', it: 'Pokémon Oro HeartGold e Argento SoulSilver',
+    en: 'HeartGold and SoulSilver', ja: 'ハートゴールド・ソウルシルバー',
+    ko: '하트골드・소울실버', 'zh-Hans': '心金／魂银', 'zh-Hant': '心金／魂銀',
+    fr: 'HeartGold et SoulSilver', de: 'HeartGold und SoulSilver',
+    es: 'HeartGold y SoulSilver', it: 'Oro HeartGold e Argento SoulSilver',
   },
   b2w2: {
-    en: 'Pokémon Black 2 and White 2', ja: 'ポケットモンスター ブラック2・ホワイト2', ko: '포켓몬스터 블랙2・화이트2',
-    'zh-Hans': '宝可梦 黑２／白２', 'zh-Hant': '寶可夢 黑２／白２',
-    fr: 'Pokémon Noir 2 et Blanc 2', de: 'Pokémon Schwarze Edition 2 und Weiße Edition 2',
-    es: 'Pokémon Negro 2 y Blanco 2', it: 'Pokémon Nero 2 e Bianco 2',
+    en: 'Black 2 and White 2', ja: 'ブラック2・ホワイト2', ko: '블랙2・화이트2',
+    'zh-Hans': '黑２／白２', 'zh-Hant': '黑２／白２',
+    fr: 'Noir 2 et Blanc 2', de: 'Schwarze Edition 2 und Weiße Edition 2',
+    es: 'Negro 2 y Blanco 2', it: 'Nero 2 e Bianco 2',
   },
   xy: {
-    en: 'Pokémon X and Y', ja: 'ポケットモンスター X・Y', ko: '포켓몬스터 X・Y',
-    'zh-Hans': '宝可梦 X／Y', 'zh-Hant': '寶可夢 X／Y',
-    fr: 'Pokémon X et Y', de: 'Pokémon X und Y', es: 'Pokémon X y Y', it: 'Pokémon X e Y',
+    en: 'X and Y', ja: 'X・Y', ko: 'X・Y',
+    'zh-Hans': 'X／Y', 'zh-Hant': 'X／Y',
+    fr: 'X et Y', de: 'X und Y', es: 'X y Y', it: 'X e Y',
   },
   sm: {
-    en: 'Pokémon Sun and Moon', ja: 'ポケットモンスター サン・ムーン', ko: '포켓몬스터 썬・문',
-    'zh-Hans': '精灵宝可梦 太阳／月亮', 'zh-Hant': '精靈寶可夢 太陽／月亮',
-    fr: 'Pokémon Soleil et Lune', de: 'Pokémon Sonne und Mond', es: 'Pokémon Sol y Luna', it: 'Pokémon Sole e Luna',
+    en: 'Sun and Moon', ja: 'サン・ムーン', ko: '썬・문',
+    'zh-Hans': '太阳／月亮', 'zh-Hant': '太陽／月亮',
+    fr: 'Soleil et Lune', de: 'Sonne und Mond', es: 'Sol y Luna', it: 'Sole e Luna',
   },
   usum: {
-    en: 'Pokémon Ultra Sun and Ultra Moon', ja: 'ポケットモンスター ウルトラサン・ウルトラムーン',
-    ko: '포켓몬스터 울트라썬・울트라문', 'zh-Hans': '精灵宝可梦 究极之日／究极之月', 'zh-Hant': '精靈寶可夢 究極之日／究極之月',
-    fr: 'Pokémon Ultra-Soleil et Ultra-Lune', de: 'Pokémon Ultrasonne und Ultramond',
-    es: 'Pokémon Ultrasol y Ultraluna', it: 'Pokémon Ultrasole e Ultraluna',
+    en: 'Ultra Sun and Ultra Moon', ja: 'ウルトラサン・ウルトラムーン',
+    ko: '울트라썬・울트라문', 'zh-Hans': '究极之日／究极之月', 'zh-Hant': '究極之日／究極之月',
+    fr: 'Ultra-Soleil et Ultra-Lune', de: 'Ultrasonne und Ultramond',
+    es: 'Ultrasol y Ultraluna', it: 'Ultrasole e Ultraluna',
   },
   swsh: {
-    en: 'Pokémon Sword and Shield', ja: 'ポケットモンスター ソード・シールド', ko: '포켓몬스터 소드・실드',
-    'zh-Hans': '宝可梦 剑／盾', 'zh-Hant': '寶可夢 劍／盾',
-    fr: 'Pokémon Épée et Bouclier', de: 'Pokémon Schwert und Schild', es: 'Pokémon Espada y Escudo', it: 'Pokémon Spada e Scudo',
+    en: 'Sword and Shield', ja: 'ソード・シールド', ko: '소드・실드',
+    'zh-Hans': '剑／盾', 'zh-Hant': '劍／盾',
+    fr: 'Épée et Bouclier', de: 'Schwert und Schild', es: 'Espada y Escudo', it: 'Spada e Scudo',
   },
   sv: {
-    en: 'Pokémon Scarlet and Violet', ja: 'ポケットモンスター スカーレット・バイオレット', ko: '포켓몬스터 스칼렛・바이올렛',
-    'zh-Hans': '宝可梦 朱／紫', 'zh-Hant': '寶可夢 朱／紫',
-    fr: 'Pokémon Écarlate et Violet', de: 'Pokémon Karmesin und Purpur', es: 'Pokémon Escarlata y Púrpura', it: 'Pokémon Scarlatto e Violetto',
+    en: 'Scarlet and Violet', ja: 'スカーレット・バイオレット', ko: '스칼렛・바이올렛',
+    'zh-Hans': '朱／紫', 'zh-Hant': '朱／紫',
+    fr: 'Écarlate et Violet', de: 'Karmesin und Purpur', es: 'Escarlata y Púrpura', it: 'Scarlatto e Violetto',
   },
 } as const satisfies Record<string, GameTitle>;
 
@@ -89,9 +109,14 @@ type Game = keyof typeof GAMES;
 const FORM_SOURCES: Readonly<Record<number, readonly [Game, SourceGroup]>> = {
   11112: ['pokopia', 'spin-off'], // DJ Rotom
   11117: ['pokopia', 'spin-off'], // Smearguru
-  11120: ['pokopia', 'spin-off'], // Mosslax, live once claude/pokopia-kiriaura merges
-  11121: ['pokopia', 'spin-off'], // Peakychu, likewise
+  11120: ['pokopia', 'spin-off'], // Mosslax
+  11121: ['pokopia', 'spin-off'], // Peakychu
   11122: ['mystery-dungeon', 'spin-off'], // Purple Kecleon
+  11123: ['xd', 'spin-off'], // Shadow Lugia
+  11124: ['mystery-dungeon-explorers', 'spin-off'], // Primal Dialga
+  11125: ['pokopia', 'spin-off'], // Tinkmaster
+  11126: ['pokopia', 'spin-off'], // Professor Tangrowth
+  11127: ['pokopia', 'spin-off'], // Chef Dente
   10263: ['go', 'spin-off'], // Gimmighoul (Roaming Form)
   11064: ['hgss', 'event'], // Spiky-eared Pichu
   10094: ['sm', 'event'], // Pikachu (Original Cap)

@@ -23,6 +23,7 @@
   "ack.packages": "パッケージ",
   "ack.packagesFailed": "パッケージ一覧を読み込めませんでした。",
   "ack.spritesOwn_other": "本人の投稿からドット絵{count}点",
+  "ack.spritesChanged_other": "my151 がこれらのドット絵を変更しました。",
   "ack.sprites_other": "ドット絵{count}点",
   "ack.title": "謝辞",
   "ack.usedFor": "使用箇所",

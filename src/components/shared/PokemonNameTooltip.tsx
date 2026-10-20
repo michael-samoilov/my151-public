@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { Tooltip, TooltipArrow, TooltipContent, TooltipPortal, TooltipTrigger } from '@/components/ui/tooltip';
 import { getLocale, useNamesVersion, type PokemonLabel } from '@/i18n';
+import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
 import { PokemonNameText } from './PokemonNameText';
 
 const HOLD_MS = 450;
@@ -109,13 +110,16 @@ function Name({ label: source, detail: detailOf, testId }: {
   const label = typeof source === 'function' ? source() : source;
   const detail = detailOf?.() ?? null;
   const cjk = /^(ja|zh-)/.test(getLocale());
+  // The tooltip keeps 1rem from each screen edge, the same gutter its max width leaves.
   return <TooltipContent
     data-testid={testId}
     aria-label={detail ? `${label.full}${cjk ? '（' : ' ('}${detail}${cjk ? '）' : ')'}` : label.full}
-    className="z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg max-w-[calc(100vw-32px)] whitespace-normal break-words text-left"
+    collisionPadding={getAppliedRootFontSizePx()}
+    className="z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg max-w-[calc(100vw-2rem)] whitespace-normal break-words text-left"
   >
     <TooltipArrow className="fill-foreground" />
     <span data-i18n-exempt="pokemon-name"><PokemonNameText name={label.full} /></span>
-    {detail && <span data-testid={`${testId}-detail`} data-i18n-exempt="game-title" className="block font-normal opacity-70">{detail}</span>}
+    {detail && <span data-testid={`${testId}-detail`} data-i18n-exempt="game-title"
+      className="block text-[0.625rem] font-normal leading-tight opacity-70">{detail}</span>}
   </TooltipContent>;
 }

@@ -23,6 +23,7 @@
   "ack.packages": "套件",
   "ack.packagesFailed": "套件清單未能載入。",
   "ack.spritesOwn_other": "來自本人發布的 {count} 張精靈圖",
+  "ack.spritesChanged_other": "my151 修改了這些精靈圖。",
   "ack.sprites_other": "{count} 張精靈圖",
   "ack.title": "致謝",
   "ack.usedFor": "用途",

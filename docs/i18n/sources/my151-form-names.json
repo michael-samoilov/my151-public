@@ -1,0 +1,35 @@
+{
+ "source": "my151's own wording for app forms that no game, guide or Bulbapedia names in a locale. Each name joins the species' official name with an official word, in the order the language puts an adjective. Michael decided this for Purple Kecleon on 2026-10-20: \"could we just include 'purple' in that language as that adjective would typically modify a word in that language\". npm run i18n:names gives these names `idiomatic` provenance and fails when an official name already exists.",
+ "read": "2026-10-20",
+ "forms": {
+  "11122": {
+   "basis": "Species name from game text (pokemon_species_names), and the word for purple from the Pokédex colour names the games use (PokéAPI pokemon_color_names, colour 7): むらさきいろ, 보라, 紫色, Violet, Violett, Morado, Viola, Purple. No game or Bulbapedia page names the purple Kecleon: Kecleon Shop rev 4649465 calls it the younger, purple Kecleon.",
+   "names": {
+    "en": "Purple Kecleon",
+    "ja": "むらさきのカクレオン",
+    "ko": "보라색 켈리몬",
+    "zh-Hans": "紫色变隐龙",
+    "zh-Hant": "紫色變隱龍",
+    "fr": "Kecleon violet",
+    "de": "Violettes Kecleon",
+    "es": "Kecleon morado",
+    "it": "Kecleon viola"
+   }
+  },
+  "11123": {
+   "basis": "Pokémon XD had no Korean or Chinese release, so no game names Shadow Lugia there. The word is Pokémon GO's official term for Shadow Pokémon (Bulbapedia, Shadow Pokémon (GO) rev 4640838: 그림자 포켓몬, 暗影寶可夢), before the species' official name.",
+   "names": {
+    "ko": "그림자 루기아",
+    "zh-Hans": "暗影洛奇亚",
+    "zh-Hant": "暗影洛奇亞"
+   }
+  },
+  "11124": {
+   "basis": "The Explorers games had no Chinese release, so no game names Primal Dialga there. The word is the official Chinese 原始 of Primal Reversion (原始回归, 原始回歸 in game text), before the species' official name, as Korean 원시 디아루가 does.",
+   "names": {
+    "zh-Hans": "原始帝牙卢卡",
+    "zh-Hant": "原始帝牙盧卡"
+   }
+  }
+ }
+}
