@@ -38,6 +38,8 @@
   "ack.showAllArtists_other": "Mostra tutti i {count} artisti",
   "ack.spritesOwn_one": "{count} sprite dai suoi caricamenti",
   "ack.spritesOwn_other": "{count} sprite dai suoi caricamenti",
+  "ack.spritesChanged_one": "my151 ha modificato questo sprite.",
+  "ack.spritesChanged_other": "my151 ha modificato questi sprite.",
   "ack.sprites_one": "{count} sprite",
   "ack.sprites_other": "{count} sprite",
   "ack.title": "Riconoscimenti",

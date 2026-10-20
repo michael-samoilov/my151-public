@@ -30,6 +30,7 @@
   "ack.sharedSprites": "由多位画师合作的精灵图，会计入每一位画师。",
   "ack.showAllArtists_other": "显示全部 {count} 位画师",
   "ack.spritesOwn_other": "来自本人发布的 {count} 张精灵图",
+  "ack.spritesChanged_other": "my151 修改了这些精灵图。",
   "ack.sprites_other": "{count} 张精灵图",
   "ack.title": "致谢",
   "ack.usedFor": "用途",

@@ -38,6 +38,8 @@
   "ack.showAllArtists_other": "Afficher les {count} artistes",
   "ack.spritesOwn_one": "{count} sprite issu de ses propres publications",
   "ack.spritesOwn_other": "{count} sprites issus de ses propres publications",
+  "ack.spritesChanged_one": "my151 a modifié ce sprite.",
+  "ack.spritesChanged_other": "my151 a modifié ces sprites.",
   "ack.sprites_one": "{count} sprite",
   "ack.sprites_other": "{count} sprites",
   "ack.title": "Remerciements",

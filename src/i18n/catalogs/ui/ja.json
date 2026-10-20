@@ -30,6 +30,7 @@
   "ack.sharedSprites": "複数のアーティストが描いたドット絵は、それぞれのアーティストに数えています。",
   "ack.showAllArtists_other": "アーティスト{count}人をすべて表示",
   "ack.spritesOwn_other": "本人の投稿からドット絵{count}点",
+  "ack.spritesChanged_other": "my151 がこれらのドット絵を変更しました。",
   "ack.sprites_other": "ドット絵{count}点",
   "ack.title": "謝辞",
   "ack.usedFor": "使用箇所",

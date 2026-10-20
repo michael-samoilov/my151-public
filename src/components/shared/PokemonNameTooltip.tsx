@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement } from 'react';
 import { Tooltip, TooltipArrow, TooltipContent, TooltipPortal, TooltipTrigger } from '@/components/ui/tooltip';
-import { useNamesVersion, type PokemonLabel } from '@/i18n';
+import { getLocale, useNamesVersion, type PokemonLabel } from '@/i18n';
+import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
 import { PokemonNameText } from './PokemonNameText';
 
 const HOLD_MS = 450;
@@ -8,6 +9,8 @@ const HOLD_SLOP_PX = 10;
 
 interface PokemonNameTooltipProps {
   label: PokemonLabel | (() => PokemonLabel);
+  /** A second, muted line under the name, such as the game a form comes from. */
+  detail?: () => string | null;
   children: ReactElement;
   enabled?: boolean;
   touchHold?: boolean;
@@ -27,14 +30,14 @@ export function PokemonNameTooltip({ enabled = true, ...props }: PokemonNameTool
   return enabled ? <ActiveNameTooltip {...props} /> : props.children;
 }
 
-function ActiveNameTooltip({ label, children, touchHold = true, testId = 'pokemon-name-tooltip' }: PokemonNameTooltipProps) {
+function ActiveNameTooltip({ label, detail, children, touchHold = true, testId = 'pokemon-name-tooltip' }: PokemonNameTooltipProps) {
   const [open, setOpen] = useState(false);
   const hold = useTouchHold(setOpen);
   return (
     <Tooltip open={open} onOpenChange={setOpen} disableHoverableContent>
       <TooltipTrigger asChild className="select-none" {...(touchHold ? hold : {})}>{children}</TooltipTrigger>
       <TooltipPortal>
-        <Name label={label} testId={testId} />
+        <Name label={label} detail={detail} testId={testId} />
       </TooltipPortal>
     </Tooltip>
   );
@@ -98,15 +101,25 @@ function useTouchHold(setOpen: (open: boolean) => void) {
   return { onPointerDown, onContextMenu, onClickCapture };
 }
 
-function Name({ label: source, testId }: { label: PokemonLabel | (() => PokemonLabel); testId: string }) {
+function Name({ label: source, detail: detailOf, testId }: {
+  label: PokemonLabel | (() => PokemonLabel);
+  detail?: () => string | null;
+  testId: string;
+}) {
   useNamesVersion();
   const label = typeof source === 'function' ? source() : source;
+  const detail = detailOf?.() ?? null;
+  const cjk = /^(ja|zh-)/.test(getLocale());
+  // The tooltip keeps 1rem from each screen edge, the same gutter its max width leaves.
   return <TooltipContent
     data-testid={testId}
-    aria-label={label.full}
-    className="z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg max-w-[calc(100vw-32px)] whitespace-normal break-words text-left"
+    aria-label={detail ? `${label.full}${cjk ? '（' : ' ('}${detail}${cjk ? '）' : ')'}` : label.full}
+    collisionPadding={getAppliedRootFontSizePx()}
+    className={`z-[200] border-0 bg-foreground px-2 py-1 text-xs font-medium text-background shadow-lg max-w-[calc(100vw-2rem)] whitespace-normal break-words ${detail ? 'text-center' : 'text-left'}`}
   >
     <TooltipArrow className="fill-foreground" />
     <span data-i18n-exempt="pokemon-name"><PokemonNameText name={label.full} /></span>
+    {detail && <span data-testid={`${testId}-detail`} data-i18n-exempt="game-title"
+      className="block text-[0.625rem] font-normal leading-tight opacity-70">{detail}</span>}
   </TooltipContent>;
 }

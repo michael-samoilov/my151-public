@@ -49,6 +49,45 @@ const openPickerCell = (cell: string) => async (page: Page) => {
   '#favorites-selector [data-testid^="favorites-pick-"] img[alt]:not([alt=""])', { timeout: 30_000 });
 };
 
+/**
+ * Opens a picker cell and shows the name tooltip on the first listed tile the
+ * build has, so the base and the change render the same input even when the
+ * base lacks a newer form. Hover on desktop; a touch hold on mobile.
+ */
+const pickTooltip = (cell: string, ids: number[]) => async (page: Page) => {
+  await openPickerCell(cell)(page);
+  for (const id of ids) {
+    const tile = page.getByTestId(`favorites-pick-${id}`);
+    if (!await tile.count()) continue;
+    await tile.scrollIntoViewIfNeeded();
+    const box = (await tile.boundingBox())!;
+    const point = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    const tip = page.getByTestId('favorites-name-tooltip');
+    if ((page.viewportSize()?.width ?? 1280) < 1024) {
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ ...point, id: 1 }] });
+    } else {
+      await page.mouse.move(point.x, point.y, { steps: 4 });
+    }
+    await tip.waitFor({ state: 'visible', timeout: 10_000 });
+    return;
+  }
+};
+const openArtist = (name: string) => async (page: Page) => {
+  const link = page.getByRole('button', { name: 'Acknowledgements' }).last();
+  await link.scrollIntoViewIfNeeded();
+  await link.click();
+  const dialog = page.getByRole('dialog', { name: 'Acknowledgements' });
+  const entry = dialog.locator(`[data-ack-id="artist:${name}"]`);
+  await dialog.getByTestId('ack-group-sprite-artists').waitFor({ timeout: 30_000 });
+  if (await entry.count()) {
+    await entry.click();
+    await dialog.getByTestId('ack-sprites').waitFor({ timeout: 30_000 });
+  } else {
+    await dialog.getByTestId('ack-group-sprite-artists').scrollIntoViewIfNeeded();
+  }
+};
+
 export const SCREENS: Screen[] = [
   { id: 'hub', path: '/' },
   { id: 'hub-progress', path: '/', seed: { ...DEX, ...LEAGUE, ...FAVORITES } },
@@ -91,6 +130,10 @@ export const SCREENS: Screen[] = [
     },
   },
   { id: 'favorites-selector-filled', path: '/favorite-pokemon-picker', seed: FAVORITES, act: openPickerCell('fire-5') },
+  { id: 'favorites-tooltip-pokopia', path: '/favorite-pokemon-picker?lang=en', act: pickTooltip('normal-9', [11120]) },
+  { id: 'favorites-tooltip-shadow-lugia', path: '/favorite-pokemon-picker?lang=en', act: pickTooltip('psychic-3', [11123, 385]) },
+  { id: 'favorites-tooltip-purple-kecleon', path: '/favorite-pokemon-picker?lang=fr', act: pickTooltip('normal-3', [11122, 352]) },
+  { id: 'ack-artist-joetestrikesback', path: '/?lang=en', act: openArtist('JoeTEStrikesBack') },
   {
     id: 'favorites-export', path: '/favorite-pokemon-picker', seed: FAVORITES,
     act: async (page) => {

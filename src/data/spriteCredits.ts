@@ -6,13 +6,15 @@ import { artistLinks } from './creditTerms';
 const OWN_UPLOAD = 'own upload';
 
 interface AttributionFile {
-  sprites: Record<string, { via: string; artists?: string[] }>;
+  sprites: Record<string, { via: string; artists?: string[]; changedBy?: string }>;
 }
 
 const DATA = attribution as unknown as AttributionFile;
 
 export interface CreditedSprite {
   mon: PickerMon;
+  /** my151 changed pixels of the artist's file; the row's evidence lists them. */
+  changed: boolean;
 }
 
 export interface ArtistCredit {
@@ -42,7 +44,7 @@ function parse(): Parsed {
     for (const artist of row.artists ?? []) {
       const list = direct.get(artist) ?? [];
       direct.set(artist, list);
-      list.push({ mon });
+      list.push({ mon, changed: row.changedBy === 'my151' });
     }
   }
   const artists = new Map<string, ArtistCredit>();

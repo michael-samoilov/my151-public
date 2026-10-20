@@ -14,13 +14,35 @@ const MEGA_VARIANTS = [[10318, 10317, 10147], [10323, 10322, 11006], [10324, 103
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
 /**
- * How a name was arrived at. `english-only` marks a descriptor that no game
- * publishes in any language: every locale carries the same English words.
- * `formProvenance` in src/i18n/names.ts exposes the value; no UI marker
- * renders it yet.
+ * How a name was arrived at. `official` comes from game text or PokéAPI.
+ * `official-bulbapedia` is an official name that no game-text corpus in the
+ * repository carries, copied from Bulbapedia (BULBAPEDIA_NAMES_PATH).
+ * `english-only` marks a descriptor with no official name in that language:
+ * the locale carries the English words. `formProvenance` in
+ * src/i18n/names.ts exposes the value; no UI marker renders it yet.
+ * `idiomatic` is my151's own wording where no official name exists: the
+ * species' official name with an official word, as the language orders an
+ * adjective (MY151_NAMES_PATH).
  */
-export type NameProvenance = 'official' | 'official-composed' | 'english-only';
+export type NameProvenance = 'official' | 'official-composed' | 'official-bulbapedia' | 'idiomatic' | 'english-only';
 
+const BULBAPEDIA_NAMES_PATH = 'docs/i18n/sources/bulbapedia-form-names.json';
+const MY151_NAMES_PATH = 'docs/i18n/sources/my151-form-names.json';
+
+interface BulbapediaNames {
+  read: string;
+  forms: Record<string, { page: string; revid: number; section: string; read?: string; names: Partial<Record<string, string>> }>;
+}
+
+interface My151Names {
+  forms: Record<string, { basis: string; names: Partial<Record<string, string>> }>;
+}
+
+/**
+ * English descriptors for app forms that no game-text row names. Each locale
+ * shows its official name from BULBAPEDIA_NAMES_PATH when it has one, and the
+ * English words otherwise.
+ */
 const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; officialPrefix?: number }>> = {
   11105: { descriptor: 'Overdrive' },
   11106: { descriptor: 'Overdrive' },
@@ -29,9 +51,18 @@ const ENGLISH_ONLY_FORMS: Readonly<Record<number, { descriptor: string; official
   11109: { descriptor: 'Radiant Sun Phase' },
   11110: { descriptor: 'Full Moon Phase' },
   11111: { descriptor: 'Zenith' },
-  11112: { descriptor: 'DJ' },
-  11117: { descriptor: 'Smearguru' },
 };
+
+/**
+ * The six Cosplay Pikachu. PokéAPI gives all six one German descriptor,
+ * "Cosplayform", which names none of them. Omega Ruby and Alpha Sapphire game
+ * text names each costume (Rocker-Pikachu, Damen-Pikachu, ...), so German game
+ * text wins for these forms (Michael, 2026-10-20: "let's fix the german cosplay
+ * pikachu names in the app"). Other locales keep PokéAPI's costume names.
+ */
+const COSTUMES: ReadonlySet<string> = new Set([
+  'pikachu-rock-star', 'pikachu-belle', 'pikachu-pop-star', 'pikachu-phd', 'pikachu-libre', 'pikachu-cosplay',
+]);
 
 /**
  * Terastallized Ogerpon, by app id, with the mask each one wears. No game
@@ -193,6 +224,12 @@ async function main(): Promise<void> {
       .map((term) => [Number(term.key.slice('form.'.length)), term.from[0].text]),
   );
 
+  const bulbapedia = (JSON.parse(readFileSync(BULBAPEDIA_NAMES_PATH, 'utf8')) as BulbapediaNames).forms;
+  const my151 = (JSON.parse(readFileSync(MY151_NAMES_PATH, 'utf8')) as My151Names).forms;
+  for (const id of [...Object.keys(bulbapedia), ...Object.keys(my151)]) {
+    if (!entries.some((entry) => entry.appId === Number(id))) throw new Error(`Sourced name ${id} is not a picker form`);
+  }
+
   const itemIdBySlug = new Map<string, number>();
   for (const r of readCsv('items')) itemIdBySlug.set(r.identifier, Number(r.id));
   const itemNames = new Map<string, string>();
@@ -283,6 +320,8 @@ async function main(): Promise<void> {
 
     let official = 0;
     let composed = 0;
+    let sourced = 0;
+    let idiomatic = 0;
     let marked = 0;
     for (const entry of entries) {
       const markRegion = originalIds.has(entry.appId) ? regionOf(entry.appName) : null;
@@ -298,8 +337,10 @@ async function main(): Promise<void> {
         marked += 1;
       }
 
+      const pokeapi = formNames.get(`${entry.formId}:${langId}`);
+      const game = gameDescriptor(entry, locale);
       const descriptor = sourcedForms.get(entry.appId)?.[locale as keyof typeof LANGUAGE_IDS]
-        ?? formNames.get(`${entry.formId}:${langId}`) ?? gameDescriptor(entry, locale);
+        ?? (locale === 'de' && COSTUMES.has(entry.formIdentifier) && game ? game : pokeapi ?? game);
       if (descriptor) {
         catalog.forms[entry.appId] = descriptor;
         catalog.formSource[entry.appId] = 'official';
@@ -375,6 +416,33 @@ async function main(): Promise<void> {
       catalog.forms[id] = prefix ? `${prefix} — ${descriptor}` : descriptor;
       catalog.formSource[id] = 'english-only';
     }
+    for (const [id, { names }] of Object.entries(bulbapedia)) {
+      const name = names[locale];
+      if (!name) continue;
+      if (catalog.formSource[id] && catalog.formSource[id] !== 'english-only') {
+        throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the Bulbapedia name`);
+      }
+      catalog.forms[id] = name;
+      catalog.formSource[id] = 'official-bulbapedia';
+      sourced += 1;
+    }
+    for (const [id, { names }] of Object.entries(my151)) {
+      const name = names[locale];
+      if (!name) continue;
+      if (catalog.formSource[id] && catalog.formSource[id] !== 'english-only') {
+        throw new Error(`${locale} ${id}: ${catalog.formSource[id]} name ${JSON.stringify(catalog.forms[id])} already exists; drop the my151 name`);
+      }
+      catalog.forms[id] = name;
+      catalog.formSource[id] = 'idiomatic';
+      idiomatic += 1;
+    }
+    // A form these files name in English, with no English-only fallback, needs
+    // a name in every locale.
+    const covered = [...Object.entries(bulbapedia), ...Object.entries(my151)]
+      .filter(([id, row]) => row.names.en && !(Number(id) in ENGLISH_ONLY_FORMS)).map(([id]) => id);
+    for (const id of covered) {
+      if (!catalog.forms[id]) throw new Error(`${locale} ${id}: no name; add one to ${BULBAPEDIA_NAMES_PATH} or ${MY151_NAMES_PATH}`);
+    }
     const femaleDescriptor = catalog.forms[10025];
     if (femaleDescriptor) {
       for (const entry of entries.filter(entry => entry.formIdentifier.endsWith('-female') && !catalog.forms[entry.appId])) {
@@ -415,7 +483,7 @@ async function main(): Promise<void> {
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(catalog)}\n`);
     const named = catalog.species.filter(Boolean).length;
     summary.push(
-      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
+      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(sourced).padStart(2)} Bulbapedia   ${String(idiomatic).padStart(2)} idiomatic   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
     );
   }
 

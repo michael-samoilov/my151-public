@@ -16,19 +16,19 @@ Built on 2026-10-13 from production commit 8739dac6. Pages and files were read o
 3. Sources, strongest first: a file the artist posted; the Smogon attachment on a credit-sheet row that names the artist; the Generation 9 pack file on its sheet row; a PokéAPI commit and README line that name the artist; a Game Freak sprite from PokéAPI's Black and White import.
 4. A near match is reported with its mask IoU (shared opaque pixels over all opaque pixels, at the best offset) and the share of shared pixels with the same colour.
 
-The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/`. Earlier source files are not in git. Each source in the JSON has its URL and sha256, so anyone can download it again and compare.
+The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/`. The two kiriaura originals imported on 2026-10-19 are retained in `docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/`. Earlier source files are not in git. Each source in the JSON has its URL and sha256, so anyone can download it again and compare.
 
 ## Summary
 
 | Count | What |
 |---:|---|
-| 1422 | Sprite files a production page can show (all of `public/sprites/pokemon`) |
+| 1430 | Sprite files a production page can show (all of `public/sprites/pokemon`) |
 | 1096 | Shown in the Pokédex builder |
 | 1347 | Shown in the League builder |
-| 1416 | Shown in the Favorite picker |
+| 1424 | Shown in the Favorite picker |
 | 0 | Served files that no page shows |
 | 0 | Shown files that are missing |
-| 658 | Verdict: confirmed |
+| 666 | Verdict: confirmed |
 | 0 | Verdict: corrected |
 | 67 | Verdict: unproven |
 | 697 | Verdict: official Game Freak |
@@ -40,10 +40,10 @@ The four KingOfThe-X-Roads originals imported on 2026-10-17 are retained in `doc
 | 47 | No source names an artist |
 | 45 | Byte-identical to the PokéAPI file added in the commit whose README line names the artist |
 | 18 | Near match only |
-| 20 | Exact match to a file the artist posted (Sta.sh upload or the artist's DeviantArt sheet) |
+| 24 | Exact match to a file the artist posted (Sta.sh upload, DeviantArt upload, or the artist's DeviantArt sheet); 2 of them carry my151's recorded pixel changes |
 | 7 | Exact match to the Generation 9 pack file on its sheet row |
 | 1 | Exact match to an attachment in a Smogon thread post |
-| 1 | my151's own drawing, by this repository's history |
+| 5 | my151's own work or change, by this repository's history: two drawings, one recolor of a Game Freak sprite, two fan sprites with added items |
 | 2 | Pinned source identified; individual artist unproven |
 
 ## Credit changes
@@ -1253,3 +1253,20 @@ Every file matches PokéAPI's `sprites/pokemon/versions/generation-v/black-white
 ## KingOfThe-X-Roads originals imported on 2026-10-17
 
 Four byte-identical native 96×96 originals are direct uploads. The three picker-only additions use IDs 11117–11119. Mega Raichu X replaces ID 10304 in both the Picker and League, with a cache revision. Mega Raichu Y retains its bundle credit. The prior X evidence remains in `docs/favorite-picker-work/sprites/2026-10-17-king-originals/previous-mega-raichu-x-evidence.json`. The JSON ledger contains the current hashes and sources.
+
+## kiriaura originals imported on 2026-10-19
+
+Two picker-only additions use kiriaura's own DeviantArt uploads: Mosslax (11120) and Peakychu (11121). Each original is smaller than 96×96, so its whole canvas sits on a transparent 96×96 canvas without resize, recolor, or mirror. The art is centered on the base sprite's ink and stands on that sprite's bottom edge: offset (1, 7) for Mosslax on Snorlax (143), and (28, 26) for Peakychu on Pikachu (25). The JSON ledger contains the current hashes and sources.
+
+## Purple Kecleon added on 2026-10-19
+
+Purple Kecleon (11122) is a picker-only appearance. The file is my151's palette recolor of the app's Game Freak Kecleon (352): the same indexed 96×96 canvas, every pixel on its palette index, and 10 palette slots changed to the Mystery Dungeon purple Kecleon colors. It has no credit and no Acknowledgements entry, because the art is Game Freak's (Michael, 2026-10-13). The ledger row is `repository-history`. Provenance: `docs/favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json`.
+
+## Picker forms added on 2026-10-20
+
+Five picker-only appearances, each a byte copy of the sprite-lab selection Michael approved. Provenance: `docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json`.
+
+- Shadow Lugia (11123) and Primal Dialga (11124) are JoeTEStrikesBack's own DeviantArt sheet, kept in the same folder (sha256 `de3c8d5c…`), with my151's recorded changes: 229 pixels on Shadow Lugia (21 background pixels made transparent, the pupil made red, 207 top-edge outline pixels lightened) and 8 background pixels on Primal Dialga. The rows carry `"changedBy": "my151"`, and JoeTEStrikesBack's credit entry says that my151 changed both sprites. Shadowgate31 is not credited: their outline colours are only in a variant the app does not use.
+- Tinkmaster (11125) is Travis's Tinkaton (959) pixel for pixel in the body, with tools that my151 added. The tools come from the sprite lab's family edit, an image-model edit of 959.png, and code-only hand edits. Credit stays with Travis through the Smogon Sprite Project; the row carries `"changedBy": "my151"`.
+- Professor Tangrowth (11126) is the sprite lab's own drawing from the app's Game Freak Tangrowth (465) and official Pokopia art. It has no credit and no Acknowledgements entry (Michael, 2026-10-13).
+- Chef Dente (11127) is G.E.Z.'s Greedent (820) as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added from the sprite lab's drawings of official Pokopia art. Credit stays with G.E.Z. through the Smogon Sprite Project; the added items get no credit of their own (Michael, 2026-10-20). The row carries `"changedBy": "my151"`.

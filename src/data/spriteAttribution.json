@@ -6942,6 +6942,78 @@
    "via": "own upload",
    "evidence": "Byte-identical to KingOfThe-X-Roads's own Sta.sh upload https://sta.sh/0p5wp0lgq01, downloaded on 2026-10-17. Native 96x96 RGBA canvas preserved without crop, resize, or pixel edits. Source inventory: docs/favorite-picker-work/sprites/2026-10-17-king-originals/originals.json.",
    "name": "miraidon-low-power-mode"
+  },
+  "11120": {
+   "artists": [
+    "kiriaura"
+   ],
+   "role": "drew",
+   "via": "own upload",
+   "evidence": "Pixel-identical to kiriaura's own DeviantArt upload \"Mosslax Sprite\" https://www.deviantart.com/kiriaura/art/Mosslax-Sprite-1263866280 (original file 95x85 PNG), downloaded on 2026-10-19. The whole original canvas sits at offset (1, 7) on a transparent 96x96 canvas, without resize, recolor, or mirror. Source inventory: docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json.",
+   "name": "snorlax-mosslax"
+  },
+  "11121": {
+   "artists": [
+    "kiriaura"
+   ],
+   "role": "drew",
+   "via": "own upload",
+   "evidence": "Pixel-identical to kiriaura's own DeviantArt upload \"Peakychu sprite\" https://www.deviantart.com/kiriaura/art/Peakychu-sprite-1263882502 (original file 46x47 PNG), downloaded on 2026-10-19. The whole original canvas sits at offset (28, 26) on a transparent 96x96 canvas, without resize, recolor, or mirror. Source inventory: docs/favorite-picker-work/sprites/2026-10-19-kiriaura-originals/originals.json.",
+   "name": "pikachu-peakychu"
+  },
+  "11123": {
+   "artists": [
+    "JoeTEStrikesBack"
+   ],
+   "role": "drew",
+   "via": "own upload",
+   "changedBy": "my151",
+   "evidence": "JoeTEStrikesBack's own DeviantArt upload \"B/W Shadow Lugia + Primal Dialga Sprites (Updated)\" https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481 (724x532 sheet, sha256 de3c8d5c98654a49256eb41a1107fdbcf737fc104459a0ac31b9b723152ae3c6), front cell x624-720, y4-132, moved up 16 px on a 96x96 canvas. my151 changed 229 pixels: 21 enclosed green background pixels made transparent, the pupil made red, and 207 top-edge outline pixels lightened. Each change: sprite-lab/docs/joe-forms/changes.json on claude/sprite-lab (b6885d0e). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+   "name": "lugia-shadow"
+  },
+  "11124": {
+   "artists": [
+    "JoeTEStrikesBack"
+   ],
+   "role": "drew",
+   "via": "own upload",
+   "changedBy": "my151",
+   "evidence": "JoeTEStrikesBack's own DeviantArt upload \"B/W Shadow Lugia + Primal Dialga Sprites (Updated)\" https://www.deviantart.com/joetestrikesback/art/B-W-Shadow-Lugia-Primal-Dialga-Sprites-Updated-338093481 (724x532 sheet, sha256 de3c8d5c98654a49256eb41a1107fdbcf737fc104459a0ac31b9b723152ae3c6), front cell x624-720, y268-396, moved up 12 px on a 96x96 canvas. my151 made 8 enclosed green background pixels transparent. Each change: sprite-lab/docs/joe-forms/changes.json on claude/sprite-lab (b6885d0e). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+   "name": "dialga-primal"
+  },
+  "11125": {
+   "artists": [
+    "Travis"
+   ],
+   "role": "drew",
+   "via": "smogon-gen9",
+   "changedBy": "my151",
+   "evidence": "Travis's Tinkaton (959.png, Smogon Gen9 Sprite Project sheet row '959 Tinkaton') with tools that my151 added. The body is 959.png pixel for pixel (1,412 body pixels, 0 differ), moved down 4 px. The tools come from the sprite lab's custom-v1 family edit (an image-model edit of 959.png at 10x with official Tinkmaster art), then code-only hand edits in sprite-lab/src/hand_edits/ (claude/sprite-lab 5d29640b). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+   "name": "tinkaton-tinkmaster"
+  },
+  "11127": {
+   "artists": [
+    "G.E.Z."
+   ],
+   "role": "drew",
+   "via": "smogon-gen8",
+   "changedBy": "my151",
+   "evidence": "G.E.Z.'s Greedent (820.png, Smogon Gen8 Sprite Project sheet row '820 Greedent') as the base, with a pot hat, neckerchief, ladle, pan, whisk and spatula that my151 added. The items come from the sprite lab's drawings from official Pokopia art; no model saw 820.png. Credit stays with G.E.Z. through the Smogon Sprite Project; the lab-drawn items get no credit of their own (Michael, 2026-10-20). Records: sprite-lab/docs/chef-dente-v2/changes.json on claude/sprite-lab (b1689310). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+   "name": "greedent-chef-dente"
+  },
+  "11122": {
+   "artists": [],
+   "role": "drew",
+   "via": "my151",
+   "evidence": "my151's palette recolor of the app's Game Freak Kecleon (352.png): 10 palette slots changed to the Mystery Dungeon purple Kecleon colors, every pixel on its palette index. No outside artist; not credited in the panel (Michael, 2026-10-13). Provenance: docs/favorite-picker-work/sprites/2026-10-19-purple-kecleon/provenance.json.",
+   "name": "kecleon-purple"
+  },
+  "11126": {
+   "artists": [],
+   "role": "drew",
+   "via": "my151",
+   "evidence": "my151's sprite lab drew it: an image-model edit of the app's Game Freak Tangrowth (465.png) from official Pokopia art only, then code-only hand fixes. No outside artist; not credited in the panel (Michael, 2026-10-13). Provenance: docs/favorite-picker-work/sprites/2026-10-20-picker-forms/provenance.json.",
+   "name": "tangrowth-professor"
   }
  },
  "artists": {
