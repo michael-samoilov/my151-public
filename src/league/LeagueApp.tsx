@@ -33,6 +33,7 @@ import { MAIN_ID, SkipLink } from '@/components/shared/SkipLink';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
 import { LeagueFunnelNudge } from './components/LeagueFunnelNudge';
+import { FitModeSwitch } from './components/FitModeSwitch';
 import { usePencilRoom } from './components/usePencilRoom';
 import { confirmOnEnter } from './components/confirmOnEnter';
 import { ScreenSpinner } from '@/components/shared/PokeBallSpinner';
@@ -292,6 +293,7 @@ export function LeagueApp() {
         </ErrorBoundary>
         </main>
         )}
+        {isDesktop && <FitModeSwitch />}
 
         {browserOpen && !isDesktop && (
           <BottomSheet
