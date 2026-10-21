@@ -11,7 +11,6 @@ import {
 import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
 
 const GLYPHS: Record<TypeName, readonly string[]> = GLYPH_PATHS;
-const glyphShapes = new Map<TypeName, Path2D[]>();
 
 /**
  * Fills a type's white glyph so that its shared 44-unit frame spans `frame`
@@ -20,7 +19,9 @@ const glyphShapes = new Map<TypeName, Path2D[]>();
  *
  * A path rather than the SVG file: the browser rasterizes an SVG image drawn
  * into a canvas, and exports from Samsung Internet and from Chrome on Windows
- * showed that glyph faint, or between two thin lines.
+ * showed that glyph faint, or between two thin lines. Each call builds new
+ * `Path2D` objects: Chrome drew a reused one with slightly different edges,
+ * so a second render of the same export did not match the first.
  */
 export function fillTypeGlyph(
   ctx: CanvasRenderingContext2D,
@@ -29,17 +30,12 @@ export function fillTypeGlyph(
   cy: number,
   frame: number,
 ): void {
-  let shapes = glyphShapes.get(type);
-  if (!shapes) {
-    shapes = GLYPHS[type].map((d) => new Path2D(d));
-    glyphShapes.set(type, shapes);
-  }
   const unit = frame / 100;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(unit, unit);
   ctx.fillStyle = '#ffffff';
-  for (const shape of shapes) ctx.fill(shape);
+  for (const d of GLYPHS[type]) ctx.fill(new Path2D(d));
   ctx.restore();
 }
 
