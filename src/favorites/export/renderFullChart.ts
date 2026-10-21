@@ -1,9 +1,8 @@
 import { ROMAN_URIS } from '../components/romanDiscAssets';
 import { localeTypeLabels } from '@/components/shared/typeBadgeSvg';
-import { typeGlyphPath, typeIconPath } from '@/data/type-ids';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { localeUppercase, t } from '@/i18n';
-import { drawTypeBadge } from '@/lib/drawTypeBadge';
+import { drawTypeBadge, drawTypeIcon } from '@/lib/drawTypeBadge';
 import { EXPORT_FRAME_PX, EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
 import { TYPE_BADGE } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
@@ -61,7 +60,7 @@ export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges 
   await document.fonts.ready;
   const urls = new Set<string>([
     ...snapshot.cells.flatMap(cell => cell.mon ? [cell.mon.sprite] : []),
-    ...TYPE_AXIS.flatMap(axis => isTypeName(axis) ? [typeIconPath(axis), typeGlyphPath(axis)] : [EXTRA_ICONS[axis]]),
+    ...TYPE_AXIS.flatMap(axis => isTypeName(axis) ? [] : [EXTRA_ICONS[axis]]),
     ...GEN_AXIS.filter(isGenNumber).map(gen => ROMAN_URIS[gen]),
     FAVORITE_ORNAMENTS.crown,
   ]);
@@ -76,10 +75,10 @@ export async function renderFullChart(snapshot: FavoritesSnapshot, { axisBadges 
   const badgeY = gridY + cell * 0.76;
   TYPE_AXIS.forEach((axis, index) => {
     const x = gridX + (index + 1) * cell;
-    const mark = images.get(isTypeName(axis) ? typeIconPath(axis) : EXTRA_ICONS[axis])!;
-    ctx.drawImage(mark, x + 17, gridY + 3, 86, 86);
+    if (isTypeName(axis)) drawTypeIcon(ctx, axis, x + 17, gridY + 3, 86);
+    else ctx.drawImage(images.get(EXTRA_ICONS[axis])!, x + 17, gridY + 3, 86, 86);
     if (!axisBadges) return;
-    if (isTypeName(axis)) drawTypeBadge(ctx, axis, images.get(typeGlyphPath(axis))!, x + 6, badgeY, badgeW / 5);
+    if (isTypeName(axis)) drawTypeBadge(ctx, axis, x + 6, badgeY, badgeW / 5);
     else axisBadge(ctx, axis, x + 6, badgeY, badgeW);
   });
   GEN_AXIS.forEach((gen, index) => {

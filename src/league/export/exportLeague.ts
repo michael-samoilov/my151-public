@@ -16,9 +16,8 @@
 
 import type { TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeIconPath, typeGlyphPath } from '@/data/type-ids';
 import { getPokemonById } from '@/league/data/catalog';
-import { drawTypeBadge } from '@/lib/drawTypeBadge';
+import { drawTypeBadge, drawTypeIcon } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE, TYPE_BADGE_H } from '@/lib/typeBadgeGeometry';
 import { drawExportCredit as drawCredit } from '@/lib/exportCredit';
 import { clipExportCanvas, exportInnerCornerRadius } from '@/lib/exportPngShape';
@@ -144,7 +143,6 @@ async function loadAll(urls: Iterable<string>): Promise<Images> {
 
 function cardImageUrls(card: GymCard): string[] {
   const urls: string[] = [];
-  if (card.type && card.type !== 'none') urls.push(typeGlyphPath(card.type));
   const { ace, partner } = showcasePair(card);
   for (const id of [ace, partner]) {
     const url = spriteUrl(id, null);
@@ -157,10 +155,7 @@ function cardImageUrls(card: GymCard): string[] {
     }
   }
   const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
-  if (move) {
-    urls.push(typeGlyphPath(move.type as TypeName));
-    urls.push(`/sprites/moves/${move.category}.png`);
-  }
+  if (move) urls.push(`/sprites/moves/${move.category}.png`);
   return urls;
 }
 
@@ -180,13 +175,9 @@ export function homeRowsForCard(
 function homeImageUrls(cards: GymCard[], view: LeagueView, layout: LeagueHomeExportLayout): string[] {
   const urls: string[] = [];
   cards.forEach((card, index) => {
-    if (card.type && card.type !== 'none') urls.push(typeIconPath(card.type));
     if (layout.showTmReward) {
       const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
-      if (move) {
-        urls.push(typeIconPath(move.type as TypeName));
-        urls.push(`/sprites/moves/${move.category}.png`);
-      }
+      if (move) urls.push(`/sprites/moves/${move.category}.png`);
     }
     if (card.lines.length === 0) return;
     for (const row of homeRowsForCard(index, view, layout)) {
@@ -202,19 +193,16 @@ function homeImageUrls(cards: GymCard[], view: LeagueView, layout: LeagueHomeExp
 function drawTypeMark(
   ctx: CanvasRenderingContext2D,
   type: GymCard['type'],
-  images: Images,
   x: number,
   y: number,
   size: number,
   radius: number,
 ): void {
-  const icon = type && type !== 'none' ? images.get(typeIconPath(type)) : undefined;
-  if (icon) {
+  if (type && type !== 'none') {
     ctx.save();
     roundRect(ctx, x, y, size, size, radius);
     ctx.clip();
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(icon, x, y, size, size);
+    drawTypeIcon(ctx, type, x, y, size);
     ctx.restore();
     return;
   }
@@ -649,14 +637,7 @@ function drawTmSlot(
   ctx.rect(bodyX, y, bodyW, h);
   ctx.clip();
 
-  drawTypeBadge(
-    ctx,
-    move.type as TypeName,
-    images.get(typeGlyphPath(move.type as TypeName)) ?? null,
-    bodyX,
-    body.badgeY,
-    badgeH,
-  );
+  drawTypeBadge(ctx, move.type as TypeName, bodyX, body.badgeY, badgeH);
 
   const chipX = bodyX + L.TM_BADGE_W + L.TM_TYPE_GAP;
   ctx.fillStyle = CATEGORY_COLORS[move.category];
@@ -899,7 +880,7 @@ function drawGymCard(
       r + L.BAR_RING / 2,
     );
     ctx.stroke();
-    drawTypeBadge(ctx, type, images.get(typeGlyphPath(type)) ?? null, x, badgeTop, L.TITLE_BADGE_H);
+    drawTypeBadge(ctx, type, x, badgeTop, L.TITLE_BADGE_H);
     x += L.TITLE_BADGE_W + L.TITLE_WORD_GAP;
     ctx.fillStyle = '#ffffff';
     if (specialist.after) fillTracked(ctx, specialist.after, x, titleBase, titleTrack);
@@ -1094,7 +1075,6 @@ function homeDetailLines(
         drawTypeMark(
           ctx,
           move.type as TypeName,
-          images,
           typeX,
           midY - L.HOME_DETAIL_TYPE / 2,
           L.HOME_DETAIL_TYPE,
@@ -1282,7 +1262,7 @@ function drawHomeRow(
     ctx.stroke();
     ctx.restore();
   } else {
-    drawTypeMark(ctx, card.type, images, sqX, sqY, sq, L.HOME_R);
+    drawTypeMark(ctx, card.type, sqX, sqY, sq, L.HOME_R);
   }
 
   const detailsX = x + L.GLYPH_COL + L.TYPE_COL;
