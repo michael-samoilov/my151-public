@@ -36,7 +36,7 @@ export class RunJournal {
 
   private save() { atomicJson(join(this.directory, 'status.json'), this.status); }
 
-  async stage(name: string, command: string, args: string[], env = process.env): Promise<void> {
+  async stage(name: string, command: string, args: string[], env = process.env, { notices = false } = {}): Promise<void> {
     if (this.signal.aborted) throw new Error('Run interrupted.');
     const started = Date.now();
     const stage: Stage = { name, outcome: 'running', startedAt: new Date().toISOString() };
@@ -45,7 +45,7 @@ export class RunJournal {
     console.log(`CI ${name} started`);
     const output = openSync(join(this.directory, `${name}.log`), 'a');
     try {
-      const child = spawn(command, args, { cwd: this.root, env, detached: true, stdio: ['ignore', output, output] });
+      const child = spawn(command, args, { cwd: this.root, env, detached: true, stdio: ['ignore', output, output, ...(notices ? [1] : [])] });
       stage.pid = child.pid;
       this.save();
       let force: ReturnType<typeof setTimeout> | undefined;

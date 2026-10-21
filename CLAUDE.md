@@ -145,7 +145,8 @@ those records and the PID after a reconnect. Completed output is copied to
 `.audit/ci/<run-id>` after browser shutdown; `.audit/ci/latest.json` locates it.
 Browser-lock wait is recorded separately. The canonical runner acquires the shared
 `my151-browser.lock` in the platform temporary directory (`os.tmpdir()`) itself;
-do not wrap it in the same lock.
+do not wrap it in the same lock. When another run holds the lock, the runner names
+the holder in `browser.log` and on stdout, and repeats the message every 5 minutes.
 
 Test rules: read `AGENTS.md` section 4, "Testing", before you write, change, or delete a test. Those rules apply to every agent in this repository. In short: prove a change with a proof test that fails on the old code and passes on the new code, report both results, and do not commit that test. Prefer E2E tests that end with a repeatable artifact. Keep a unit test only when it catches a bug that E2E misses.
 
