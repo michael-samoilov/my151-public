@@ -3,12 +3,12 @@ import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
-import { typeIconPath } from '@/data/type-ids';
+import { drawTypeIcon } from '@/lib/drawTypeBadge';
 import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
 import { STARTER_IDS } from '@/data/categories';
 import { expandTemplate } from '@/lib/richTemplate';
 import { formatListToParts, raw, t, typeLabel } from '@/i18n';
-import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, type StatsHeights } from './exportStats';
+import { measureStatsPanel, drawStatsPanel, type StatsHeights } from './exportStats';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import {
   fitLabel,
@@ -260,13 +260,8 @@ export async function generateExportImage(
     const measure = document.createElement('canvas').getContext('2d');
     if (!measure) throw new Error('Canvas unavailable');
     const layout = measureStatsPanel(measure, data, heights);
-    const badges = new Map<string, HTMLImageElement>();
-    await Promise.all(statsBadgeUrls(data).map(async ({ type, url }) => {
-      const image = await maybeLoadImage(url);
-      if (image) badges.set(type, image);
-    }));
     return composeStatsExport(base, layout, t('export.detailedStatsTitle'),
-      ctx => drawStatsPanel(ctx, data, badges, heights),
+      ctx => drawStatsPanel(ctx, data, heights),
       { size: 6 * SCALE, bottomOffset: (DEX_EXPORT_FRAME + PAD_BOTTOM - 21) * SCALE });
   }
 
@@ -278,13 +273,10 @@ export async function generateExportImage(
 
   const insights = computeFooterInsights(pokemon);
 
-  const [sprites, leanType1Img, leanType2Img, leanGen1Img, leanGen2Img, attackTypeImg, maskImgs] = await Promise.all([
+  const [sprites, leanGen1Img, leanGen2Img, maskImgs] = await Promise.all([
     Promise.all(pokemon.map((p) => loadImage(p.sprite).catch(() => null))),
-    maybeLoadImage(insights.leanTypes[0] ? typeIconPath(insights.leanTypes[0]) : null),
-    maybeLoadImage(insights.leanTypes[1] ? typeIconPath(insights.leanTypes[1]) : null),
     maybeLoadImage(insights.leanGens[0] != null ? (GEN_BADGE_URIS[insights.leanGens[0]] ?? null) : null),
     maybeLoadImage(insights.leanGens[1] != null ? (GEN_BADGE_URIS[insights.leanGens[1]] ?? null) : null),
-    maybeLoadImage(insights.bestAttackType ? typeIconPath(insights.bestAttackType) : null),
     loadSpandrelMasks(outline?.spandrelMasks ?? []),
   ]);
 
@@ -362,7 +354,8 @@ export async function generateExportImage(
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
 
-  type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; img: HTMLImageElement; sz: number };
+  type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; draw: (x: number, y: number) => void; sz: number };
+  const typeIcon = (type: TypeName): Seg => ({ kind: 'icon', draw: (x, y) => drawTypeIcon(ctx, type, x, y, TYPE_ICON_SZ), sz: TYPE_ICON_SZ });
   const insightSegs: Seg[] = [];
 
   const isKanto151 = pokemon.length === 151 &&
@@ -371,22 +364,17 @@ export async function generateExportImage(
 
   const { leanTypes, leanGens } = insights;
   const noLean = leanTypes.length === 0 && leanGens.length === 0;
-  const typeImgs = [leanType1Img, leanType2Img];
   const genImgs  = [leanGen1Img,  leanGen2Img];
 
   const leanItem = (i: number): Seg[] => {
     if (i < leanTypes.length) {
       const type = leanTypes[i];
-      const img = typeImgs[i];
-      return [
-        ...(img ? [{ kind: 'icon' as const, img, sz: TYPE_ICON_SZ }] : []),
-        { kind: 'text' as const, text: typeLabel(type), color: TYPE_COLORS[type] },
-      ];
+      return [typeIcon(type), { kind: 'text' as const, text: typeLabel(type), color: TYPE_COLORS[type] }];
     }
     const g = leanGens[i - leanTypes.length];
     const img = genImgs[i - leanTypes.length];
     return [
-      ...(img ? [{ kind: 'icon' as const, img, sz: GEN_ICON_SZ }] : []),
+      ...(img ? [{ kind: 'icon' as const, draw: (x: number, y: number) => ctx.drawImage(img, x, y, GEN_ICON_SZ, GEN_ICON_SZ), sz: GEN_ICON_SZ }] : []),
       { kind: 'text' as const, text: t('browser.genChip', { gen: g }), color: zinc },
     ];
   };
@@ -402,10 +390,7 @@ export async function generateExportImage(
 
   const attackSubject = (): Seg[] => {
     const type = insights.bestAttackType!;
-    return [
-      ...(attackTypeImg ? [{ kind: 'icon' as const, img: attackTypeImg, sz: TYPE_ICON_SZ }] : []),
-      { kind: 'text' as const, text: typeLabel(type), color: TYPE_COLORS[type] },
-    ];
+    return [typeIcon(type), { kind: 'text' as const, text: typeLabel(type), color: TYPE_COLORS[type] }];
   };
 
   const plain = (text: string): Seg => ({ kind: 'text', text, color: zinc });
@@ -455,7 +440,7 @@ export async function generateExportImage(
     let tx = footerCenterX - totalW / 2;
     for (const seg of segs) {
       if (seg.kind === 'icon') {
-        ctx.drawImage(seg.img, tx, y - seg.sz / 2, seg.sz, seg.sz);
+        seg.draw(tx, y - seg.sz / 2);
         tx += seg.sz + ICON_GAP;
       } else {
         ctx.fillStyle = seg.color;

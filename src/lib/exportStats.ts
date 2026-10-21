@@ -3,7 +3,6 @@ import { histogramMeans, histogramMeanLayout } from './histogramMeans';
 import { drawGenerationBadge } from './drawAttributeBadge';
 import type { GenNumber } from '@/favorites/model/cells';
 import { drawExportButterfly as butterfly, drawExportStatsTitle, type ButterflyRowInput, type IconDrawer } from './exportButterfly';
-import { typeGlyphPath } from '@/data/type-ids';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import { t, formatNumber } from '@/i18n';
@@ -155,10 +154,10 @@ function genIcon(gen: number): IconDrawer {
   };
 }
 
-function typeBadgeIcon(type: TypeName, glyph: HTMLImageElement | null): IconDrawer {
+function typeBadgeIcon(type: TypeName): IconDrawer {
   return (ctx, x, y, w, h) => {
     const height = Math.min(h, w / TYPE_BADGE_ASPECT);
-    drawTypeBadge(ctx, type, glyph, x + (w - height * TYPE_BADGE_ASPECT) / 2, y + (h - height) / 2, height);
+    drawTypeBadge(ctx, type, x + (w - height * TYPE_BADGE_ASPECT) / 2, y + (h - height) / 2, height);
   };
 }
 
@@ -176,7 +175,6 @@ interface StatsLayout { w: number; h: number; cards: StatsCardBox[] }
 function renderPanel(
   ctx: CanvasRenderingContext2D,
   data: DetailedStatsData,
-  badges: Map<string, HTMLImageElement>,
   heights: StatsHeights,
   draw: boolean,
   cardBg: boolean,
@@ -186,7 +184,7 @@ function renderPanel(
     deviation: d.deviation,
     color: d.color,
     barOpacity: 1,
-    icon: typeBadgeIcon(d.type as TypeName, badges.get(d.type) ?? null),
+    icon: typeBadgeIcon(d.type as TypeName),
   }));
   const genRows: ButterflyRowInput[] = data.genData.map((d) => ({
     count: d.count,
@@ -294,25 +292,18 @@ function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number,
   ctx.stroke();
 }
 
-/** Type-symbol URLs needed by the export (one per type row). Canvas does not
- *  trigger image loading, so the caller resolves these before drawing. */
-export function statsBadgeUrls(data: DetailedStatsData): { type: string; url: string }[] {
-  return data.typeData.map((d) => ({ type: d.type, url: typeGlyphPath(d.type as TypeName) }));
-}
-
 export function measureStatsPanel(
   ctx: CanvasRenderingContext2D,
   data: DetailedStatsData,
   heights: StatsHeights,
 ): StatsLayout {
-  return renderPanel(ctx, data, new Map(), heights, false, true);
+  return renderPanel(ctx, data, heights, false, true);
 }
 
 export function drawStatsPanel(
   ctx: CanvasRenderingContext2D,
   data: DetailedStatsData,
-  badges: Map<string, HTMLImageElement>,
   heights: StatsHeights,
 ) {
-  renderPanel(ctx, data, badges, heights, true, false);
+  renderPanel(ctx, data, heights, true, false);
 }

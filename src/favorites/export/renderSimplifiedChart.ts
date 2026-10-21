@@ -1,4 +1,3 @@
-import { typeGlyphPath } from '@/data/type-ids';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
 import { EXPORT_SPRITE_PX } from '@/lib/exportPngShape';
@@ -27,7 +26,6 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
   await document.fonts.ready;
   const urls = new Set([
     ...snapshot.summary.flatMap(cell => cell.mon ? [cell.mon.sprite] : []),
-    ...TYPES18.map(typeGlyphPath),
     ...GEN_NUMBERS.map(gen => ROMAN_URIS[gen]),
     FAVORITE_ORNAMENTS.leaf, FAVORITE_ORNAMENTS.crown,
   ]);
@@ -85,8 +83,7 @@ export async function renderSimplifiedChart(snapshot: FavoritesSnapshot): Promis
     const cx = L.left + (index % L.typeColumns + 0.5) * L.column;
     const top = L.typeTop + Math.floor(index / L.typeColumns) * L.rowHeight;
     const box = tile(byKey.get(cellKey(type, 'favorite'))!, cx, top, TYPE_COLORS[type]);
-    drawTypeBadge(ctx, type, images.get(typeGlyphPath(type))!, cx - L.tileWidth / 2,
-      box.edge - box.badgeHeight / 2, box.badgeHeight);
+    drawTypeBadge(ctx, type, cx - L.tileWidth / 2, box.edge - box.badgeHeight / 2, box.badgeHeight);
   });
   const special = [
     { key: cellKey('starter', 'favorite'), axis: 'starter' },
