@@ -430,6 +430,9 @@ export function ViewPage() {
     const lastRowGeom = showSectionOverlays && lastRowOffsetCols > 0
       ? { index: lastRowIndex, count: lastRowCount, offsetCols: lastRowOffsetCols }
       : null;
+    // The runs carry the section names in the active language. `t` changes
+    // with the catalog, so a language switch rebuilds them.
+    void t;
     const allRuns = showSectionOverlays ? computeSectionRuns(sorted, sections, COLS) : [];
 
     const lastConnects = (r: SectionRun) => {
@@ -460,7 +463,7 @@ export function ViewPage() {
       allRuns, lastRowGeom, gridStartRows, lastRowStartRows,
       colFactor, rowFactor, totalRows,
     };
-  }, [sorted, totalSlots, showSectionOverlays, sections]);
+  }, [sorted, totalSlots, showSectionOverlays, sections, t]);
 
   const [statsNatural, setStatsNatural] = useState({ w: 0, h: 0 });
   const [tilePx, setTilePx] = useState(0);
