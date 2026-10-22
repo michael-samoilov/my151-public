@@ -145,3 +145,11 @@ export const leaguePickKey = (entry: { summary?: { cards: number; seats: number 
 
 export const pickerPickKey = (entry: { snapshot?: { fills: Record<string, number> } }) =>
   Object.keys(entry.snapshot?.fills ?? {}).length ? JSON.stringify(entry.snapshot!.fills) : '';
+
+type DexActivity = ActivityRecord<{ ts: number } & Parameters<typeof dexPickKey>[0]> & Parameters<typeof engagedDex>[0];
+type LeagueActivity = ActivityRecord<{ ts: number } & Parameters<typeof leaguePickKey>[0]> & Parameters<typeof engagedLeague>[0];
+type PickerActivity = ActivityRecord<{ ts: number } & Parameters<typeof pickerPickKey>[0]> & Parameters<typeof engagedPicker>[0];
+
+export const dexEngagedDays = (r: DexActivity) => engagedDays(r, dexPickKey, engagedDex(r));
+export const leagueEngagedDays = (r: LeagueActivity) => engagedDays(r, leaguePickKey, engagedLeague(r));
+export const pickerEngagedDays = (r: PickerActivity) => engagedDays(r, pickerPickKey, engagedPicker(r));

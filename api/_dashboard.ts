@@ -40,7 +40,7 @@ import {
   type ToolUsage,
 } from './_aggregate.js';
 import { asArchivedSet, bareCid, isArchived, withoutArchived } from './_archive.js';
-import { dexPickKey, engagedDays, engagedDex, engagedLeague, engagedPicker, isActiveUser, leaguePickKey, pickerPickKey, suspectReasons, type SuspectInput, type SuspectReason } from './_visitorQuality.js';
+import { dexEngagedDays, isActiveUser, leagueEngagedDays, pickerEngagedDays, suspectReasons, type SuspectInput, type SuspectReason } from './_visitorQuality.js';
 import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot } from './_crossTool.js';
 import { leaguePicks } from './_leaguePicks.js';
 import { activeSince, firstSeenSince, funnelDayKeys, rangeStart, type DashboardRange } from './_range.js';
@@ -347,12 +347,11 @@ export interface BrowserIndex {
   picker: BrowserRow[];
 }
 
-type Sessions = { sessions?: number; sessionMs?: number[]; attention?: AttentionRecording; engagedDays?: number[] };
-type DexTool = Sessions & { latestIds?: number[]; everIds?: number[]; exported?: boolean; sessionLog?: { ts: number }[] };
-type LeagueTool = Sessions & { maxCards: number; maxSeats?: number; exportsCard: number; exportsLeague: number; sessionLog?: { ts: number }[] };
-type PickerTool = Sessions & {
+type Sessions = { sessions?: number; sessionMs?: number[]; attention?: AttentionRecording };
+type DexTool = SessionRecord & Sessions & Parameters<typeof dexEngagedDays>[0] & { exported?: boolean };
+type LeagueTool = SessionRecord & Sessions & Parameters<typeof leagueEngagedDays>[0] & { maxCards: number; exportsCard: number; exportsLeague: number };
+type PickerTool = SessionRecord & Sessions & Parameters<typeof pickerEngagedDays>[0] & {
   latest: { filled: number };
-  maxFilled?: number;
   exportsFull: number;
   exportsSimplified: number;
   sessionLog?: { ts: number; endTs: number }[];
@@ -388,7 +387,7 @@ function browserRow(
   const leagueUsage = league && endStampedUsage(league);
   const pickerUsage = picker && spanUsage(picker);
   const activeTotal = foregroundTime([dex, league, picker].filter((t): t is DexTool | LeagueTool | PickerTool => !!t).map(t => t.attention));
-  const engaged = [dex, league, picker].some((t) => !!t && isActiveUser(t));
+  const engaged = (!!dex && dexEngagedDays(dex).length > 0) || (!!league && leagueEngagedDays(league).length > 0) || (!!picker && pickerEngagedDays(picker).length > 0);
   return {
     cid: rec.cid,
     lastTs: rec.lastTs,
@@ -413,14 +412,14 @@ function browserRow(
 }
 
 export function browserIndex(
-  dex: (SessionRecord & DexTool)[],
-  league: (SessionRecord & LeagueTool)[],
-  picker: (SessionRecord & PickerTool)[],
+  dex: DexTool[],
+  league: LeagueTool[],
+  picker: PickerTool[],
   archived: Set<string>,
 ): BrowserIndex {
   const newest = <T extends { lastTs: number }>(list: T[]) => [...list].sort((a, b) => b.lastTs - a.lastTs);
   const dexRows = newest(dex);
-  const dexOf = new Map<string, SessionRecord & DexTool>();
+  const dexOf = new Map<string, DexTool>();
   for (const r of dexRows) if (r.cid === bareCid(r.cid) || !dexOf.has(bareCid(r.cid))) dexOf.set(bareCid(r.cid), r);
   const leagueOf = new Map(league.map((r) => [bareCid(r.cid), r]));
   const pickerOf = new Map(picker.map((r) => [bareCid(r.cid), r]));
@@ -592,10 +591,7 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const archivedSet = asArchivedSet(source.archived);
   // Each record carries the UTC days it counts as an active user. A record
   // with none is a bounce (api/_visitorQuality.ts).
-  const dexDays = (r: ClientRecord) => ({ ...r, engagedDays: engagedDays(r, dexPickKey, engagedDex(r)) });
-  const leagueDays = (r: LeagueRecord) => ({ ...r, engagedDays: engagedDays(r, leaguePickKey, engagedLeague(r)) });
-  const pickerDays = (r: FavoriteRecord) => ({ ...r, engagedDays: engagedDays(r, pickerPickKey, engagedPicker(r)) });
-  const dexVisits = withoutArchived(allRecords, archivedSet).map(dexDays);
+  const dexVisits = withoutArchived(allRecords, archivedSet).map((r) => ({ ...r, engagedDays: dexEngagedDays(r) }));
   const records = dexVisits.filter(isActiveUser);
 
   const without = (all: Record<string, number>, gone: Record<string, number>) =>
@@ -609,11 +605,11 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const allLeagueRecords: LeagueRecord[] = Object.values(source.leagueClients ?? {})
     .map(parseLeagueRecord)
     .filter((r): r is LeagueRecord => r !== null);
-  const leagueVisits = withoutArchived(allLeagueRecords, archivedSet).map(leagueDays);
+  const leagueVisits = withoutArchived(allLeagueRecords, archivedSet).map((r) => ({ ...r, engagedDays: leagueEngagedDays(r) }));
   const leagueRecords = leagueVisits.filter(isActiveUser);
 
   const allFavoriteRecords = Object.values(source.favoriteClients ?? {}).map(parseFavoriteRecord).filter((r): r is FavoriteRecord => r !== null);
-  const favoriteVisits = withoutArchived(allFavoriteRecords, archivedSet).map(pickerDays);
+  const favoriteVisits = withoutArchived(allFavoriteRecords, archivedSet).map((r) => ({ ...r, engagedDays: pickerEngagedDays(r) }));
   const favoriteRecords = favoriteVisits.filter(isActiveUser);
 
   const start = rangeStart(range, now);
@@ -844,7 +840,7 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     })),
     funnelEventCount(cohortEvents, 'league-open'),
   );
-  const browsers = browserIndex(allRecords.map(dexDays), allLeagueRecords.map(leagueDays), allFavoriteRecords.map(pickerDays), archivedSet);
+  const browsers = browserIndex(allRecords, allLeagueRecords, allFavoriteRecords, archivedSet);
 
   const popularMin = tailThreshold(picksFinal);
   const droppedMin = tailThreshold(droppedCounts);
