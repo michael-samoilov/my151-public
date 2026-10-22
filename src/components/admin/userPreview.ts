@@ -10,7 +10,7 @@ const SUBDIVISION_EN = iso31662En as Record<string, string>;
 const ISO_3166_2 = /^[A-Z]{2}-[A-Z0-9]{1,3}$/;
 const ISO_SUBDIVISION = /^[A-Z0-9]{1,3}$/;
 
-export type ArchiveFilter = 'active' | 'pageloads' | 'automation' | 'archived' | 'all';
+export type ArchiveFilter = 'active' | 'bounces' | 'automation' | 'archived' | 'all';
 export type ToolFilter = 'any' | 'dex' | 'league' | 'picker';
 export type PreviewLangKind = 'served' | 'unsupported' | 'switched';
 
@@ -30,7 +30,7 @@ export const FACET_LABEL: Record<FacetKey, string> = {
 
 export const ARCHIVE_FILTER_OPTIONS: { key: ArchiveFilter; label: string }[] = [
   { key: 'active', label: 'Active' },
-  { key: 'pageloads', label: 'Page loads' },
+  { key: 'bounces', label: 'Bounces' },
   { key: 'automation', label: 'Bot leads' },
   { key: 'archived', label: 'Archived' },
   { key: 'all', label: 'All' },
@@ -57,19 +57,20 @@ export function matchesToolFilter(row: { dex?: unknown; league?: unknown; picker
   return filter === 'any' || !!row[filter];
 }
 
-/** Active rows are the browsers the counts include. Page loads never placed a
- *  Pokémon or gave real input; bot leads look automated (api/_visitorQuality.ts). */
+/** Active rows are the browsers the counts include. Bounces have no day with a
+ *  pick change or 10 seconds of input; bot leads look automated
+ *  (api/_visitorQuality.ts). */
 export function matchesArchiveFilter(
   archived: boolean,
   filter: ArchiveFilter,
-  row: { pageLoadOnly?: boolean; suspect?: readonly string[] } = {},
+  row: { bounced?: boolean; suspect?: readonly string[] } = {},
 ): boolean {
   if (filter === 'all') return true;
   if (filter === 'archived') return archived;
   if (archived) return false;
-  if (filter === 'pageloads') return !!row.pageLoadOnly;
+  if (filter === 'bounces') return !!row.bounced;
   if (filter === 'automation') return !!row.suspect?.length;
-  return !row.pageLoadOnly;
+  return !row.bounced;
 }
 
 const SUSPECT_TEXT: Record<string, string> = {

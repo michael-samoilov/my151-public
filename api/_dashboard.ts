@@ -40,7 +40,7 @@ import {
   type ToolUsage,
 } from './_aggregate.js';
 import { asArchivedSet, bareCid, isArchived, withoutArchived } from './_archive.js';
-import { engagedDex, engagedLeague, engagedPicker, suspectReasons, type SuspectInput, type SuspectReason } from './_visitorQuality.js';
+import { dexPickKey, engagedDays, engagedDex, engagedLeague, engagedPicker, isActiveUser, leaguePickKey, pickerPickKey, suspectReasons, type SuspectInput, type SuspectReason } from './_visitorQuality.js';
 import { TOOL_CATALOG, buildCrossTool, sinceLaunchStarts, type CrossToolSnapshot } from './_crossTool.js';
 import { leaguePicks } from './_leaguePicks.js';
 import { activeSince, firstSeenSince, funnelDayKeys, rangeStart, type DashboardRange } from './_range.js';
@@ -328,8 +328,8 @@ export interface BrowserRow {
   archived: boolean;
   /** First seen in the tool this row lists. */
   firstTs: number;
-  /** No tool record placed a Pokémon or saw real input: not counted as a user. */
-  pageLoadOnly?: true;
+  /** No tool record has an engaged day: a bounce, not counted as a user. */
+  bounced?: true;
   /** Leads that this browser is automated, for the owner to review. */
   suspect?: SuspectReason[];
   dex?: ToolStat;
@@ -347,7 +347,7 @@ export interface BrowserIndex {
   picker: BrowserRow[];
 }
 
-type Sessions = { sessions?: number; sessionMs?: number[]; attention?: AttentionRecording };
+type Sessions = { sessions?: number; sessionMs?: number[]; attention?: AttentionRecording; engagedDays?: number[] };
 type DexTool = Sessions & { latestIds?: number[]; everIds?: number[]; exported?: boolean; sessionLog?: { ts: number }[] };
 type LeagueTool = Sessions & { maxCards: number; maxSeats?: number; exportsCard: number; exportsLeague: number; sessionLog?: { ts: number }[] };
 type PickerTool = Sessions & {
@@ -388,12 +388,12 @@ function browserRow(
   const leagueUsage = league && endStampedUsage(league);
   const pickerUsage = picker && spanUsage(picker);
   const activeTotal = foregroundTime([dex, league, picker].filter((t): t is DexTool | LeagueTool | PickerTool => !!t).map(t => t.attention));
-  const engaged = (!!dex && engagedDex(dex)) || (!!league && engagedLeague(league)) || (!!picker && engagedPicker(picker));
+  const engaged = [dex, league, picker].some((t) => !!t && isActiveUser(t));
   return {
     cid: rec.cid,
     lastTs: rec.lastTs,
     firstTs: rec.firstTs,
-    ...(engaged ? {} : { pageLoadOnly: true as const }),
+    ...(engaged ? {} : { bounced: true as const }),
     tz: rec.tz,
     country: rec.country,
     region: rec.region,
@@ -590,7 +590,13 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     .map(parseRecord)
     .filter((r): r is ClientRecord => r !== null);
   const archivedSet = asArchivedSet(source.archived);
-  const records = withoutArchived(allRecords, archivedSet).filter(engagedDex);
+  // Each record carries the UTC days it counts as an active user. A record
+  // with none is a bounce (api/_visitorQuality.ts).
+  const dexDays = (r: ClientRecord) => ({ ...r, engagedDays: engagedDays(r, dexPickKey, engagedDex(r)) });
+  const leagueDays = (r: LeagueRecord) => ({ ...r, engagedDays: engagedDays(r, leaguePickKey, engagedLeague(r)) });
+  const pickerDays = (r: FavoriteRecord) => ({ ...r, engagedDays: engagedDays(r, pickerPickKey, engagedPicker(r)) });
+  const dexVisits = withoutArchived(allRecords, archivedSet).map(dexDays);
+  const records = dexVisits.filter(isActiveUser);
 
   const without = (all: Record<string, number>, gone: Record<string, number>) =>
     Object.fromEntries(Object.entries(all).map(([ev, n]) => [ev, Math.max(0, n - (gone[ev] ?? 0))]));
@@ -603,12 +609,12 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const allLeagueRecords: LeagueRecord[] = Object.values(source.leagueClients ?? {})
     .map(parseLeagueRecord)
     .filter((r): r is LeagueRecord => r !== null);
-  const leagueVisits = withoutArchived(allLeagueRecords, archivedSet);
-  const leagueRecords = leagueVisits.filter(engagedLeague);
+  const leagueVisits = withoutArchived(allLeagueRecords, archivedSet).map(leagueDays);
+  const leagueRecords = leagueVisits.filter(isActiveUser);
 
   const allFavoriteRecords = Object.values(source.favoriteClients ?? {}).map(parseFavoriteRecord).filter((r): r is FavoriteRecord => r !== null);
-  const favoriteVisits = withoutArchived(allFavoriteRecords, archivedSet);
-  const favoriteRecords = favoriteVisits.filter(engagedPicker);
+  const favoriteVisits = withoutArchived(allFavoriteRecords, archivedSet).map(pickerDays);
+  const favoriteRecords = favoriteVisits.filter(isActiveUser);
 
   const start = rangeStart(range, now);
   const within = <T>(list: T[], keep: (r: T) => boolean): T[] => (start === null ? list : list.filter(keep));
@@ -616,14 +622,11 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
   const dexIn = within(records, active);
   const leagueIn = within(leagueRecords, active);
   const favoriteIn = within(favoriteRecords, active);
-  // The picker funnel starts at "opened", so its first step keeps page loads.
+  // The picker funnel starts at "opened", so its first step keeps bounces.
   const favoriteNew = within(favoriteVisits, (r) => firstSeenSince(r, start));
-  const dexVisits = withoutArchived(allRecords, archivedSet);
-  const pageLoads = {
-    dex: within(dexVisits, active).filter((r) => !engagedDex(r)).length,
-    league: within(leagueVisits, active).filter((r) => !engagedLeague(r)).length,
-    favorites: within(favoriteVisits, active).filter((r) => !engagedPicker(r)).length,
-  };
+  const visited = (r: SessionRecord) => activeSince({ ...r, engagedDays: undefined }, start);
+  const bounced = (list: SessionRecord[]) => list.filter((r) => visited(r) && !(isActiveUser(r) && active(r))).length;
+  const bounces = { dex: bounced(dexVisits), league: bounced(leagueVisits), favorites: bounced(favoriteVisits) };
   const crossWindow = (from: number | null) => {
     const keep = <T>(list: T[], test: (r: T) => boolean): T[] => (from === null ? list : list.filter(test));
     const on = (r: SessionRecord) => activeSince(r, from);
@@ -841,7 +844,7 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     })),
     funnelEventCount(cohortEvents, 'league-open'),
   );
-  const browsers = browserIndex(allRecords, allLeagueRecords, allFavoriteRecords, archivedSet);
+  const browsers = browserIndex(allRecords.map(dexDays), allLeagueRecords.map(leagueDays), allFavoriteRecords.map(pickerDays), archivedSet);
 
   const popularMin = tailThreshold(picksFinal);
   const droppedMin = tailThreshold(droppedCounts);
@@ -860,7 +863,7 @@ export function buildDashboard(source: DashboardSource, { range }: { range: Dash
     dexFunnel,
     leagueFunnel,
     favoriteFunnel:favoriteUsageFunnel(favoriteNew),
-    pageLoads,
+    bounces,
     favorite:favoriteSummary(favoriteIn),
     favoritePicks:favoritePicks(favoriteIn),
     tools,
