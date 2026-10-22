@@ -375,6 +375,7 @@ export function SectionOverlays({
           return (
             <div
               key={`label-${s.key}`}
+              data-outline-label={s.sectionId}
               className="absolute leading-none font-black uppercase select-none whitespace-nowrap"
               style={{
                 left: s.labelX,

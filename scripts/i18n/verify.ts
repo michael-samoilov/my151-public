@@ -311,6 +311,8 @@ const SAME_AS_ENGLISH_OK = new Set([
   'de:sectionTiny.pseudo-legendary', 'es:sectionTiny.pseudo-legendary',
   'fr:sectionTiny.pseudo-legendary', 'it:sectionTiny.pseudo-legendary',
   'de:sectionTiny.fossil',
+  'de:sectionTiny.starter', // German says Starter too.
+  'it:sectionTiny.volcanic', // Lava is the Italian word.
   'de:archetype.evolution-item.sub.9', // Upgrade
   'it:archetype.evolution-item.sub.9', // Upgrade
   'es:archetype.evolution-item.sub.19', // Protector
