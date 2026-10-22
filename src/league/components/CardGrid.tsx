@@ -1472,8 +1472,11 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     // scrambles its own text the moment you type two words.
     // The suffix is already in the box by the second character, so the box
     // measures the phrase the reader will see, not just the name.
+    // A shorter name always goes through. A saved name can overflow the box
+    // it was fitted to, when it was measured at another zoom or before the
+    // web font loaded, and refusing to shorten it locks the field for good.
     const fits = next.length <= BADGE_NAME_CEILING && badgeSuffixVisible(box, el);
-    if (!fits) {
+    if (!fits && next.length >= accepted.current.length) {
       writeBadgeField(el, accepted.current, badgeSuffix);
       putCaretAtEnd();
       return;
