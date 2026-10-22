@@ -65,6 +65,7 @@ export function useFitScale(
   const shortestRem = compact?.heightRem(0);
   const hasGrow = grow !== undefined;
   const wholePixel = useFitMode();
+  const modeRef = useRef(wholePixel);
   const { baseWidthRem, spriteRem, targetSpritePx, dpr } = grow ?? {
     baseWidthRem: 0,
     spriteRem: 1,
@@ -74,6 +75,12 @@ export function useFitScale(
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // A mode switch always lands: the 1.5% hold-still margin would keep the
+    // previous mode's zoom when the two differ by less.
+    if (modeRef.current !== wholePixel) {
+      modeRef.current = wholePixel;
+      scaleRef.current = 0;
+    }
     const viewport = el.closest('[data-lg-viewport]');
     const compute = () => {
       // Unzoomed layout height — not getBoundingClientRect()/scale. Zoomed
