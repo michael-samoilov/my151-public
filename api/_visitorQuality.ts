@@ -74,10 +74,10 @@ export function suspectReasons(browsers: SuspectInput[]): Map<string, SuspectRea
  *  Analytics: a shorter visit is a bounce. */
 export const ENGAGED_INPUT_MS = 10_000;
 
-/** Production clients sent input timing from 2026-10-10 19:31 UTC. Tabs can run
- *  a deploy's code for 7 days, so from this day a missing recording means no
- *  input. */
-export const INPUT_TIMING_SINCE = Date.UTC(2026, 9, 18);
+/** Production clients sent input timing from 2026-10-10 19:31 UTC, so from the
+ *  next UTC day a missing recording means no input. Only a tab opened before
+ *  that release still runs code without it, and its pick changes still count. */
+export const INPUT_TIMING_SINCE = Date.UTC(2026, 9, 11);
 
 function inputMsOn(attention: AttentionRecording, day: number): number {
   const until = day + DAY_MS;
