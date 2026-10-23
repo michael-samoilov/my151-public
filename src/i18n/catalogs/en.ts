@@ -623,7 +623,7 @@ export const enUi = {
   'sectionTiny.fossil': 'Fossil',
   'sectionTiny.haunted': 'Haunted',
   'sectionTiny.industrial': 'Indust.',
-  'sectionTiny.legendary': 'Legendary',
+  'sectionTiny.legendary': 'Legend',
   'sectionTiny.meadow': 'Meadow',
   'sectionTiny.mimic': 'Mimic',
   'sectionTiny.mythical': 'Mythical',
