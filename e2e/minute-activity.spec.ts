@@ -1,7 +1,7 @@
 import {expect,test,type Page} from '@playwright/test';
 import {filledSlotsLeague} from './support/leagueSeed';
 import type {MinuteActivityPayload} from '../api/_minuteActivity';
-type Post={activity?:MinuteActivityPayload;attention?:{segments:{start:number;end:number}[]}};
+type Post={activity?:MinuteActivityPayload;attention?:{segments:{start:number;end:number}[]};seen?:number[]};
 const tools=[{name:'Dex',path:'/pokedex-builder',api:'submit'},{name:'League',path:'/custom-gym-leader',api:'league'},{name:'Picker',path:'/favorite-pokemon-picker',api:'favorites'}];
 const start=Date.UTC(2026,9,10,12);
 async function boot(page:Page,tool:typeof tools[number],mode:{ack:boolean;paused?:boolean}={ack:true},optedOut=false){
@@ -20,6 +20,8 @@ async function boot(page:Page,tool:typeof tools[number],mode:{ack:boolean;paused
  await page.clock.install({time:start-60_000});await page.clock.pauseAt(start);
  await page.goto(tool.path+(optedOut?'?notme':''));await expect(page.locator('main').first()).toBeVisible();await page.bringToFront();
  if(!optedOut)await expect.poll(async()=>{await page.clock.runFor(5000);return posts.length;}).toBeGreaterThan(0);
+ // Ten seconds on screen sends one seen-day beacon. Wait for it, so the request counts start after it.
+ if(!optedOut)await expect.poll(async()=>{await page.clock.runFor(5000);return posts.some(p=>p.seen);}).toBe(true);
  return posts;
 }
 async function activity(page:Page){await page.keyboard.press('ArrowRight');}

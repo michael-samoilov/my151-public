@@ -109,7 +109,7 @@ describe('Newest browsers index', () => {
   });
 });
 
-describe('Page loads and suspected automation', () => {
+describe('Bounces and suspected automation', () => {
   function pageLoad(cid: string, now: number) {
     const snapshot = parseFavoriteSnapshot({ v: 1, fills: {} })!;
     return mergeFavoriteRecord(null, { cid, id: `${cid}-0`, now, kind: 'progress', snapshot, events: ['favorites-open'], country: 'US' });
@@ -118,10 +118,10 @@ describe('Page loads and suspected automation', () => {
   it('keeps a browser that never placed or touched anything out of the users, and in the funnel opens', () => {
     const d = dash(source({ picker: { 'p-load': pageLoad('p-load', NOW - MIN), 'p-user': picker('p-user', NOW - MIN) } }), '7d');
     expect(d.byTool.favorites.users).toBe(1);
-    expect(d.pageLoads).toEqual({ dex: 0, league: 0, favorites: 1 });
+    expect(d.bounces).toEqual({ dex: 0, league: 0, favorites: 1 });
     expect(d.favoriteFunnel.opened).toBe(2);
-    expect(d.browsers.picker.find((r) => r.cid === 'p-load')?.pageLoadOnly).toBe(true);
-    expect(d.browsers.picker.find((r) => r.cid === 'p-user')?.pageLoadOnly).toBeUndefined();
+    expect(d.browsers.picker.find((r) => r.cid === 'p-load')?.bounced).toBe(true);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-user')?.bounced).toBeUndefined();
   });
 
   it('flags three fresh look-alike browsers within ten minutes, and a browser with no language', () => {
@@ -139,5 +139,98 @@ describe('Page loads and suspected automation', () => {
     expect(reasons).toEqual({
       'b-0': ['burst'], 'b-4': ['burst'], 'b-9': ['burst'], 'b-late': undefined, person: undefined, 'no-lang': ['no-language'],
     });
+  });
+});
+
+describe('Active users count engaged days only', () => {
+  const day1 = NOW - 30 * 60 * MIN;
+  const day2 = NOW - 2 * 60 * MIN;
+  const attention = (segments: [number, number][]) => ({
+    v: 1, coverageFrom: day1 - 60 * MIN, checkpointFrom: day1 - 60 * MIN, asOf: NOW, totalMs: segments.reduce((n, [a, b]) => n + b - a, 0),
+    segments: segments.map(([start, end], i) => ({ id: `segment-${i}-0000`, start, end })),
+  });
+  const visits = (cid: string, extra: Record<string, unknown>) => dex(cid, day2, {
+    firstTs: day1, sessions: 2, sessionMs: [5 * MIN, MIN],
+    sessionLog: [{ ts: day1, ids: [1, 4, 7] }, { ts: day2, ids: [1, 4, 7] }], ...extra,
+  });
+  const clients = {
+    // Built a Dex on day 1, then glanced at it for 3 seconds on day 2.
+    glance: visits('glance', { attention: attention([[day1, day1 + 5 * MIN], [day2, day2 + 3_000]]) }),
+    // Read the same Dex for 20 seconds on day 2 without changing it.
+    reader: visits('reader', { attention: attention([[day1, day1 + 5 * MIN], [day2, day2 + 20_000]]) }),
+    // No input timing: both days keep the earlier rule.
+    legacy: visits('legacy', {}),
+  };
+
+  it('drops a day with no pick change and under 10 seconds of input', () => {
+    const d = dash(source({ clients }), 'all');
+    const dau = (ts: number) => d.byTool.dex.activity.find((p) => p.day === Date.UTC(2026, 9, new Date(ts).getUTCDate()))?.dau;
+    expect([dau(day1), dau(day2)]).toEqual([3, 2]);
+    expect(d.lastPointLabels.label24h).toBe(2);
+    expect(dash(source({ clients }), '24h').byTool.all.users).toBe(2);
+    expect(d.bounces).toEqual({ dex: 0, league: 0, favorites: 0 });
+  });
+
+  it('counts a day the page stayed on screen 10 seconds, with no input or pick change that day', () => {
+    // Built a Dex on day 1, then kept it on screen on day 2 without input.
+    const viewer = visits('viewer', { attention: attention([[day1, day1 + 5 * MIN]]), seenDays: [Date.UTC(2026, 9, 9)] });
+    const d = dash(source({ clients: { viewer, glance: clients.glance } }), 'all');
+    const dau = (ts: number) => d.byTool.dex.activity.find((p) => p.day === Date.UTC(2026, 9, new Date(ts).getUTCDate()))?.dau;
+    expect([dau(day1), dau(day2)]).toEqual([2, 1]);
+    expect(d.lastPointLabels.label24h).toBe(1);
+  });
+
+  it('counts a seen day with no beacon that day, such as a crossing just before midnight sent after it', () => {
+    const oct = (date: number) => Date.UTC(2026, 9, date);
+    const built = oct(7) + 12 * 60 * MIN;
+    const sent = oct(9) + 4_000;
+    // Built a Dex on October 7. On October 8 the tab came back on screen for
+    // the last 10 seconds before midnight, and its beacon left on October 9.
+    const late = dex('late', sent, {
+      firstTs: built, sessions: 2, sessionMs: [5 * MIN, 0],
+      sessionLog: [{ ts: built, ids: [1, 4, 7] }, { ts: sent, ids: [1, 4, 7] }],
+      attention: { v: 1, coverageFrom: built, checkpointFrom: built, asOf: sent, totalMs: 5 * MIN, segments: [{ id: 'segment-late-0000', start: built, end: built + 5 * MIN }] },
+      activeDays: [oct(7), oct(9)], activityCoverageFrom: built, seenDays: [oct(8)],
+    });
+    const d = dash(source({ clients: { late } }), 'all');
+    expect([7, 8, 9].map((date) => d.byTool.dex.activity.find((p) => p.day === oct(date))?.dau)).toEqual([1, 1, 0]);
+  });
+
+  it('keeps a Picker visit under 10 seconds, with no input or picks, out of the users and in the funnel', () => {
+    const empty = parseFavoriteSnapshot({ v: 1, fills: {} })!;
+    let visit: FavoriteRecord | null = null;
+    for (const [i, now] of [NOW - MIN - 8_000, NOW - MIN].entries()) {
+      visit = mergeFavoriteRecord(visit, { cid: 'p-visit', id: `p-visit-${i}`, now, kind: 'progress', snapshot: empty, events: i ? [] : ['favorites-open'], country: 'US' });
+    }
+    const d = dash(source({ picker: { 'p-visit': visit, 'p-user': picker('p-user', NOW - MIN, 2) } }), '7d');
+    expect(d.byTool.favorites.activity.find((p) => p.day === Date.UTC(2026, 9, 9))?.dau).toBe(1);
+    expect(d.lastPointLabels.label24h).toBe(1);
+    expect(d.bounces).toEqual({ dex: 0, league: 0, favorites: 1 });
+    expect(d.favoriteFunnel.opened).toBe(2);
+    expect(d.favoriteFunnel.buckets.find((b) => b.label === 'Not started')?.count).toBe(1);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-visit')?.bounced).toBe(true);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-user')?.bounced).toBeUndefined();
+  });
+});
+
+describe('The Picker saves a visitor only after the first Pokémon', () => {
+  const oct = (date: number, hour = 12) => Date.UTC(2026, 9, date, hour);
+  const empty = parseFavoriteSnapshot({ v: 1, fills: {} })!;
+
+  it('opens the funnel at placers plus bounces: saved no-pick records and visits beyond the placers saved after October 23', () => {
+    // Before October 23 the server saved every Picker visitor.
+    const legacy = mergeFavoriteRecord(null, { cid: 'p-legacy', id: 'p-legacy-0', now: oct(20), kind: 'progress', snapshot: empty, events: ['favorites-open'], country: 'US' });
+    const src = { ...source({ picker: { 'p-legacy': legacy, 'p-a': picker('p-a', oct(24)), 'p-b': picker('p-b', oct(24, 14)) } }), funnelWindow: { 'favorites-visit': 4 } };
+    const funnel = buildDashboard(src, { range: '7d' }, oct(25)).favoriteFunnel;
+    expect(funnel.opened).toBe(5);
+    expect(funnel.buckets.find((b) => b.label === 'Not started')?.count).toBe(3);
+  });
+
+  it('never counts a record with no Pokémon placed as a user, even with a seen day', () => {
+    const viewer = mergeFavoriteRecord(null, { cid: 'p-viewer', id: 'p-viewer-0', now: NOW - MIN, kind: 'progress', snapshot: empty, seen: [Date.UTC(2026, 9, 9)], events: ['favorites-open'], country: 'US' });
+    const d = dash(source({ picker: { 'p-viewer': viewer } }), '7d');
+    expect(d.byTool.favorites.activity.find((p) => p.day === Date.UTC(2026, 9, 9))?.dau ?? 0).toBe(0);
+    expect(d.bounces.favorites).toBe(1);
+    expect(d.browsers.picker.find((r) => r.cid === 'p-viewer')?.bounced).toBe(true);
   });
 });

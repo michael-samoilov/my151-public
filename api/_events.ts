@@ -67,6 +67,7 @@ const FUNNEL_EVENTS = [
   'hub-cta-league',
   'hub-cta-favorites',
   'favorites-open',
+  'favorites-visit',
   'favorites-first-pick',
   'favorites-quarter',
   'favorites-half',

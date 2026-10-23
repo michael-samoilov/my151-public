@@ -28,3 +28,27 @@ test('does not send opted-out Picker activity',async({page},testInfo)=>{
  const download=page.waitForEvent('download');await page.getByTestId('favorites-export-save').click();await download;
  expect(requests).toEqual([]);await testInfo.attach('excluded-requests',{body:JSON.stringify({requests:0}),contentType:'application/json'});
 });
+test('saves a Picker visitor only after the first Pokémon, and counts an empty visit once',async({page},testInfo)=>{
+ const favorites:{snapshot:{fills:Record<string,number>}}[]=[];const visits:number[]=[];
+ await page.route('**/api/favorites',async route=>{favorites.push(route.request().postDataJSON());await route.fulfill({json:{ok:true}});});
+ await page.route('**/api/event',async route=>{if(route.request().postDataJSON().event==='favorites-visit')visits.push(favorites.length);await route.fulfill({json:{ok:true}});});
+ await page.clock.install();
+ await page.goto('/favorite-pokemon-picker?lang=en');
+ await expect(page.getByTestId('favorites-grid')).toBeVisible();
+ await expect.poll(()=>visits.length).toBe(1);
+ await page.clock.runFor(15_000);await page.keyboard.press('ArrowRight');
+ await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+ await page.getByTestId('favorites-cell-starter-1').click();
+ await page.getByTestId('favorites-pick-25').click();
+ await page.clock.runFor(5_000);
+ await expect.poll(()=>favorites.length).toBeGreaterThan(0);
+ const empty=favorites.filter(r=>!Object.keys(r.snapshot.fills).length).length;
+ expect(empty).toBe(0);
+ await page.evaluate(()=>localStorage.removeItem('p151-ev-favorites-visit'));
+ const beforeReload=favorites.length;
+ await page.reload();await expect(page.getByTestId('favorites-grid')).toBeVisible();
+ await expect.poll(async()=>{await page.clock.runFor(5_000);return favorites.length;}).toBeGreaterThan(beforeReload);
+ expect(visits).toEqual([0]);
+ await testInfo.attach('picker-visit',{body:JSON.stringify({visitEvents:visits.length,emptyBoardBeacons:empty,filledBoardBeacons:favorites.length,
+   firstSavedFills:Object.keys(favorites[0].snapshot.fills).length},null,2),contentType:'application/json'});
+});

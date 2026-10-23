@@ -28,10 +28,11 @@ function dexRecord(i: number, now: number) {
 }
 
 function leagueRecord(cid: string, end: number) {
+  const latest = { cards: 3, seats: 3, typed: 0, named: 0, aces: 0, leagueNamed: false };
   return {
     cid, firstTs: end - 20 * MIN, firstAt: new Date(end - 20 * MIN).toISOString(), lastTs: end, lastAt: new Date(end).toISOString(),
-    submits: 2, sessions: 1, curSessionStart: end - 20 * MIN, maxSessionMs: 20 * MIN, sessionMs: [20 * MIN], sessionLog: [{ ts: end }],
-    maxCards: 3, maxSeats: 3, latest: { cards: 3, seats: 3, typed: 0, named: 0, aces: 0, leagueNamed: false }, exportsCard: 0, exportsLeague: 0,
+    submits: 2, sessions: 1, curSessionStart: end - 20 * MIN, maxSessionMs: 20 * MIN, sessionMs: [20 * MIN], sessionLog: [{ ts: end, summary: latest }],
+    maxCards: 3, maxSeats: 3, latest, exportsCard: 0, exportsLeague: 0,
     country: 'US', device: 'Desktop', os: 'Windows', browser: 'Chrome', tz: 'UTC',
   };
 }

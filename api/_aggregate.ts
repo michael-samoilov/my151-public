@@ -28,6 +28,9 @@ export interface SessionRecord {
   sessions?: number;
   sessionMs?: number[];
   sessionLog?: { ts: number }[];
+  /** The UTC days this record counts as an active user (api/_visitorQuality.ts).
+   *  When absent, every day with activity counts. */
+  engagedDays?: number[];
   country?: string;
   region?: string;
   tz?: string;
@@ -121,8 +124,8 @@ export function sessionSeconds(r: SessionRecord): number[] {
 }
 
 export function activeTimestamps(r: SessionRecord): number[] {
-  if (r.sessionLog && r.sessionLog.length > 0) return r.sessionLog.map((s) => s.ts);
-  return [r.firstTs, r.lastTs];
+  const all = r.sessionLog && r.sessionLog.length > 0 ? r.sessionLog.map((s) => s.ts) : [r.firstTs, r.lastTs];
+  return r.engagedDays ? all.filter((ts) => r.engagedDays!.includes(dayStart(ts))) : all;
 }
 
 export function lastPointLabelCounts(
@@ -270,7 +273,8 @@ function calendarDays(r: SessionRecord, now?: number): number[] {
   if (r.activityCoverageFrom == null || !Number.isFinite(r.activityCoverageFrom)) return days;
   const opening = Math.max(dayStart(r.activityCoverageFrom), now == null ? -Infinity : dayStart(now) - 89 * DAY_MS);
   const end = now == null ? Infinity : dayStart(now);
-  for (const day of r.activeDays ?? []) {
+  // An engaged day can be in neither source, such as a seen day whose beacon left after midnight.
+  for (const day of r.engagedDays ?? r.activeDays ?? []) {
     if (Number.isFinite(day) && day === dayStart(day) && day >= opening && day <= end) days.push(day);
   }
   return days;
@@ -512,11 +516,12 @@ export function aggregate(
   inRange = records,
   start: number | null = null,
   activityCoverage?: ActivityCoverage,
+  activityRecords = records,
 ): Aggregates {
   return {
     users: inRange.length,
-    activity: dailyActive(records, now, activityCoverage),
-    hourly: hourlyActive(records, now),
+    activity: dailyActive(activityRecords, now, activityCoverage),
+    hourly: hourlyActive(activityRecords, now),
     retention: retention(inRange),
     timeCurves: sessionCurves(inRange),
     countries: tallies(inRange, 'country'),
@@ -845,6 +850,9 @@ export function mergeByCid(lists: SessionRecord[][]): SessionRecord[] {
         firstTs: Math.min(prev.firstTs, r.firstTs),
         lastTs: Math.max(prev.lastTs, r.lastTs),
         activeDays: [...new Set([...(prev.activeDays ?? []), ...(r.activeDays ?? [])])].sort((a, b) => a - b),
+        ...(prev.engagedDays || r.engagedDays
+          ? { engagedDays: [...new Set([...activityDays(prev), ...activityDays(r)])].sort((a, b) => a - b) }
+          : {}),
         activityCoverageFrom: prev.activityCoverageFrom == null ? r.activityCoverageFrom
           : r.activityCoverageFrom == null ? prev.activityCoverageFrom : Math.min(prev.activityCoverageFrom, r.activityCoverageFrom),
         activityCoverageSources: [...activitySources(prev), ...activitySources(r)],
@@ -855,6 +863,11 @@ export function mergeByCid(lists: SessionRecord[][]): SessionRecord[] {
     }
   }
   return [...byCid.values()];
+}
+
+/** The days a record is active on, after its engaged-day filter. */
+function activityDays(r: SessionRecord): number[] {
+  return r.engagedDays ?? [...activeTimestamps(r).map(dayStart), ...(r.activeDays ?? [])];
 }
 
 function timedSessions(r: SessionRecord): { ts: number; ms: number }[] {
