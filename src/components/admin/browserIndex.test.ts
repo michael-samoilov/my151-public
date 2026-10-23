@@ -180,6 +180,22 @@ describe('Active users count engaged days only', () => {
     expect(d.lastPointLabels.label24h).toBe(1);
   });
 
+  it('counts a seen day with no beacon that day, such as a crossing just before midnight sent after it', () => {
+    const oct = (date: number) => Date.UTC(2026, 9, date);
+    const built = oct(7) + 12 * 60 * MIN;
+    const sent = oct(9) + 4_000;
+    // Built a Dex on October 7. On October 8 the tab came back on screen for
+    // the last 10 seconds before midnight, and its beacon left on October 9.
+    const late = dex('late', sent, {
+      firstTs: built, sessions: 2, sessionMs: [5 * MIN, 0],
+      sessionLog: [{ ts: built, ids: [1, 4, 7] }, { ts: sent, ids: [1, 4, 7] }],
+      attention: { v: 1, coverageFrom: built, checkpointFrom: built, asOf: sent, totalMs: 5 * MIN, segments: [{ id: 'segment-late-0000', start: built, end: built + 5 * MIN }] },
+      activeDays: [oct(7), oct(9)], activityCoverageFrom: built, seenDays: [oct(8)],
+    });
+    const d = dash(source({ clients: { late } }), 'all');
+    expect([7, 8, 9].map((date) => d.byTool.dex.activity.find((p) => p.day === oct(date))?.dau)).toEqual([1, 1, 0]);
+  });
+
   it('keeps a Picker visit under 10 seconds, with no input or picks, out of the users and in the funnel', () => {
     const empty = parseFavoriteSnapshot({ v: 1, fills: {} })!;
     let visit: FavoriteRecord | null = null;

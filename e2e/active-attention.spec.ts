@@ -87,6 +87,26 @@ for(const tool of tools) {
    expect(posts.some(p=>p.attention)).toBe(false);
    await info.attach('seen-without-input',{body:JSON.stringify({tool:tool.name,onScreenMs:11_000,inputEvents:0,seen:posts.at(-1)!.seen!.map(d=>new Date(d).toISOString().slice(0,10))}),contentType:'application/json'});
  });
+ test(`${tool.name}: on-screen time stops 30 minutes after input, so a tab left on screen overnight needs input the next day`,async({page},info)=>{
+   const posts=await boot(page,tool,false,false);
+   const day1=day0+86_400_000,day2=day1+86_400_000;
+   const seenOn=(day:number)=>posts.filter(p=>p.seen?.includes(day)).length;
+   const runTo=async(ms:number)=>page.clock.runFor(ms-await page.evaluate(()=>Date.now()));
+   await runTo(day1+20_000);
+   await page.keyboard.press('ArrowRight');
+   await page.clock.runFor(9_000);
+   // Wait for the input's beacon, sent after every beacon of the idle night.
+   await expect.poll(()=>posts.some(p=>p.attention)).toBe(true);
+   const idleNextDay=seenOn(day1);
+   expect(idleNextDay).toBe(0);
+   await page.clock.runFor(6_000);
+   await expect.poll(()=>seenOn(day1)).toBeGreaterThan(0);
+   await runTo(day2-15*minute);await page.keyboard.press('ArrowRight');
+   await runTo(day2+20_000);
+   await expect.poll(()=>seenOn(day2)).toBeGreaterThan(0);
+   await info.attach('seen-idle-cap',{body:JSON.stringify({tool:tool.name,seenNextDayBeforeTenSecondsOfInput:idleNextDay,
+     inputBeforeMidnightMs:15*minute,seen:posts.at(-1)!.seen!.map(d=>new Date(d).toISOString().slice(0,10))}),contentType:'application/json'});
+ });
  test(`${tool.name}: background time is not on screen; on-screen time adds up within the day`,async({page},info)=>{
    const posts=await boot(page,tool,false,false);
    await page.clock.runFor(5000);

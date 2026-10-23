@@ -5,6 +5,9 @@ import type {AttentionPayload,AttentionSegment} from '../../api/_attention';
 const GAP=5*60_000,MAX_SPAN=24*60*60_000,DAY=86_400_000;
 // Google Analytics' engaged-session threshold, in milliseconds on screen.
 const ENGAGED_ON_SCREEN_MS=10_000;
+// Google Analytics ends a session after 30 minutes without input. On-screen
+// time stops there too, so a tab left on screen overnight adds no new day.
+const IDLE_MS=30*60_000;
 const dayOf=(ms:number)=>Math.floor(ms/DAY)*DAY;
 type Tool='dex'|'league'|'favorites';
 class AttentionTracker {
@@ -19,31 +22,45 @@ class AttentionTracker {
  private notified=-Infinity;
  private onScreen=new Map<number,number>();
  private seen=new Set<number>();
- // Monotonic, so a sleeping device or a clock change adds no on-screen time.
- private since:number|undefined;
+ // The timed span's start. `mono` is monotonic, so a sleeping device or a
+ // clock change adds no on-screen time. `wall` places that time on UTC days.
+ private span:{mono:number;wall:number}|undefined;
+ // Monotonic time of the later of the return to the foreground and the last accepted input.
+ private engagedAt=-Infinity;
  private timer:ReturnType<typeof setTimeout>|undefined;
  private allowed(){return !DEMO_MODE&&!PREVIEW_DEPLOY&&!isOptedOut();}
  private foreground(){return document.visibilityState==='visible'&&document.hasFocus();}
  private reset(){this.segments=[];this.current=undefined;this.notified=-Infinity;this.run=undefined;this.dirty=false;this.lastActivity=-Infinity;}
  private resume=()=>{
-  if(this.since!==undefined||!this.subscribers.size||!this.allowed()||!this.foreground())return;
-  this.since=performance.now();this.arm();
+  if(this.span||!this.subscribers.size||!this.allowed()||!this.foreground())return;
+  this.engagedAt=performance.now();this.span={mono:this.engagedAt,wall:Date.now()};this.arm();
  };
- private pause(){if(this.since===undefined)return;this.accrue();clearTimeout(this.timer);this.since=undefined;}
+ private endSpan(){clearTimeout(this.timer);this.span=undefined;}
+ private pause(){if(this.span){this.accrue();this.endSpan();}}
+ // Credits the span up to now, or up to the idle cap, where timing stops.
  private accrue(){
-  const now=Date.now(),mono=performance.now();let from=now-(mono-this.since!),crossed=false;
-  while(from<now){
-   const day=dayOf(from),until=Math.min(now,day+DAY),ms=(this.onScreen.get(day)??0)+until-from;
+  const mono=performance.now(),cap=this.engagedAt+IDLE_MS;
+  let from=this.span!.wall,crossed=false;
+  const end=from+Math.min(mono,cap)-this.span!.mono;
+  while(from<end){
+   const day=dayOf(from),until=Math.min(end,day+DAY),ms=(this.onScreen.get(day)??0)+until-from;
    this.onScreen.set(day,ms);from=until;
    if(ms>=ENGAGED_ON_SCREEN_MS&&!this.seen.has(day)&&this.allowed()){this.seen.add(day);crossed=true;}
   }
-  this.since=mono;
+  if(mono<cap)this.span={mono,wall:Date.now()};else this.endSpan();
   if(crossed&&canScheduleMinuteActivity(this.tool))for(const notify of this.subscribers)notify();
  }
  private arm(){
   clearTimeout(this.timer);
   const now=Date.now(),day=dayOf(now),ms=this.onScreen.get(day)??0;
-  this.timer=setTimeout(()=>{this.accrue();this.arm();},ms>=ENGAGED_ON_SCREEN_MS?day+DAY-now+ENGAGED_ON_SCREEN_MS:ENGAGED_ON_SCREEN_MS-ms);
+  const crossing=ms>=ENGAGED_ON_SCREEN_MS?day+DAY-now+ENGAGED_ON_SCREEN_MS:ENGAGED_ON_SCREEN_MS-ms;
+  this.timer=setTimeout(()=>{this.accrue();if(this.span)this.arm();},Math.min(crossing,this.engagedAt+IDLE_MS-performance.now()));
+ }
+ // Input moves the idle cap. Time between the old cap and this input stays uncredited.
+ private engage(){
+  const mono=performance.now();
+  if(this.span&&mono>=this.engagedAt+IDLE_MS)this.accrue();
+  this.engagedAt=mono;this.resume();
  }
  private stop=()=>{this.pause();this.current=undefined;this.run=undefined;if(this.dirty){this.dirty=false;if(canScheduleMinuteActivity(this.tool))for(const notify of this.subscribers)notify();}};
  private visibility=()=>{if(document.visibilityState==='visible')this.resume();else this.stop();};
@@ -51,6 +68,7 @@ class AttentionTracker {
   if(!this.allowed()){recordMinuteActivity(this.tool,'',Date.now());this.reset();return;}
   if(!event.isTrusted||!this.foreground())return;
   if(event instanceof PointerEvent&&event.type==='pointermove'&&!event.buttons)return;
+  this.engage();
   const now=Date.now();
   const rollback=now<this.lastActivity;
   if(now<(this.segments.at(-1)?.end??-Infinity))this.reset();

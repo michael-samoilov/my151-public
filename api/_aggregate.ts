@@ -273,8 +273,8 @@ function calendarDays(r: SessionRecord, now?: number): number[] {
   if (r.activityCoverageFrom == null || !Number.isFinite(r.activityCoverageFrom)) return days;
   const opening = Math.max(dayStart(r.activityCoverageFrom), now == null ? -Infinity : dayStart(now) - 89 * DAY_MS);
   const end = now == null ? Infinity : dayStart(now);
-  for (const day of r.activeDays ?? []) {
-    if (r.engagedDays && !r.engagedDays.includes(day)) continue;
+  // An engaged day can be in neither source, such as a seen day whose beacon left after midnight.
+  for (const day of r.engagedDays ?? r.activeDays ?? []) {
     if (Number.isFinite(day) && day === dayStart(day) && day >= opening && day <= end) days.push(day);
   }
   return days;

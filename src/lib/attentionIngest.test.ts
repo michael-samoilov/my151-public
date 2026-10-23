@@ -58,15 +58,15 @@ describe('attention uses existing ingestion',()=>{
 });
 
 describe('seen days use existing ingestion',()=>{
- it('stores valid seen days for all tools, drops bad entries without rejecting the beacon, and keeps 90 days',async()=>{
+ it('stores valid seen days for all tools, drops bad entries without rejecting the beacon, and keeps 400 days',async()=>{
   const day=86_400_000;
   for(const handler of [dexHandler,leagueHandler,favoriteHandler]){
    const body={cid:'seen-browser',kind:'progress',id:'seen-request',snapshot:{v:1,fills:{'water|1':7}},ids:[1],summary:{cards:1,seats:1,typed:0,named:0,aces:0},ts:start+20*minute};
    const first=await send(handler,{...body,seen:[start,start,start+day,start+5,Date.UTC(2023,11,31),'x',null]},{});
    expect(first.status).toBe(200);expect(first.records[0].seenDays).toEqual([start]);
-   const stored={'seen-browser':JSON.stringify({...first.records[0],seenDays:[start-100*day,start-day]})};
+   const stored={'seen-browser':JSON.stringify({...first.records[0],seenDays:[start-400*day,start-399*day,start-100*day,start-day]})};
    const merged=await send(handler,{...body,id:'seen-request-later',seen:[start]},stored);
-   expect(merged.records[0].seenDays).toEqual([start-day,start]);
+   expect(merged.records[0].seenDays).toEqual([start-399*day,start-100*day,start-day,start]);
    const tooMany=await send(handler,{...body,id:'seen-request-many',seen:Array.from({length:9},(_,i)=>start-i*day)},{});
    expect(tooMany.status).toBe(200);expect(tooMany.records[0].seenDays).toBeUndefined();
   }
